@@ -5,7 +5,7 @@ import type { ChallengeBrett } from "@/lib/api";
 import { wenigerBewegung } from "@/lib/challenge/bewegung";
 import Karte, { Rueckseite } from "./Karte";
 import { hashText } from "@/lib/challenge/zufall";
-import { deckZiel, draftNimm, draftStart } from "./logik";
+import { draftNimm, draftStart } from "./logik";
 
 export default function Draft({ brett, onFertig }: { brett: ChallengeBrett; onFertig(ids: string[]): void }) {
   const fakten = useMemo(() => new Map(brett.fakten.map((f) => [f.id, f])), [brett.fakten]);
@@ -13,7 +13,7 @@ export default function Draft({ brett, onFertig }: { brett: ChallengeBrett; onFe
   const [d, setD] = useState(() => draftStart(brett.fakten.map((f) => f.id), seed));
   const [auf, setAuf] = useState(false);
   const [markiert, setMarkiert] = useState<string[]>([]);
-  const ziel = deckZiel(brett.fakten.length);
+  const ziel = Math.max(1, brett.fakten.length);
   const offen = auf || wenigerBewegung();
 
   const markiere = (id: string) => setMarkiert((m) => (m.includes(id) ? m.filter((x) => x !== id) : [...m, id]));

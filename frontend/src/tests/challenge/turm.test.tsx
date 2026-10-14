@@ -3,7 +3,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { themeVon } from "@/lib/challenge/themes";
 import Modus from "@/components/challenge/modi/Turm";
-import { anfuehrerFaellt, kaufe, neuerZustand, schritt, startWelle, verbessere, wellePossible } from "@/lib/challenge/turmSpiel";
+import { anfuehrerFaellt, kaufe, neuerZustand, schritt, startWelle, verbessere, welleMoeglich } from "@/lib/challenge/turmSpiel";
 
 const brett = {
   stufe: 2, etappe: 1, leben: 3, fertig: false, spiel: "turm", deck: null,
@@ -60,7 +60,7 @@ describe("Turm-Logik", () => {
     const g = z.gegner.find((x) => x.anfuehrer === "c1")!;
     expect(g).toBeTruthy();
     expect(g.hp).toBe(g.max);
-    expect(wellePossible(z)).toBe(true);
+    expect(welleMoeglich(z)).toBe(true);
     const gold = z.gold;
     anfuehrerFaellt(z, "c1");
     expect(z.gegner.find((x) => x.anfuehrer === "c1")).toBeUndefined();

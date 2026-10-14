@@ -21,7 +21,7 @@ export type ChallengeJson = {
 const modus = (c: Aufgabe): "all" | "any" => (c.solve.all ? "all" : "any");
 const loesungsIds = (c: Aufgabe) => c.solve.all ?? c.solve.any ?? [];
 
-export function ChallengeForm({ value, onChange, upload, satzId, urlFor: urlVon }: {
+export function ChallengeForm({ value, onChange, upload, satzId, urlFor }: {
   value: ChallengeJson; onChange: (v: ChallengeJson) => void; upload: (file: File) => Promise<AssetOut>; satzId: number;
   /** Vorschau-Adresse eines Bildes, wenn die Bilder nicht beim Satz liegen (Boss-Folie im TaskCrawler). */
   urlFor?: (p: string) => string;
@@ -29,9 +29,10 @@ export function ChallengeForm({ value, onChange, upload, satzId, urlFor: urlVon 
   const etappen = value.stages ?? [];
   const fakten = value.facts ?? [];
   const aufgaben = value.challenges ?? [];
-  const urlFor = urlVon ?? ((p: string) => `/uploads/challenges/${satzId}/assets/${p}`);
-  const setFakt = (i: number, f: Fakt) => onChange({ ...value, facts: fakten.map((x, j) => (j === i ? f : x)) });
-  const setAufgabe = (i: number, c: Aufgabe) => onChange({ ...value, challenges: aufgaben.map((x, j) => (j === i ? c : x)) });
+  const bildUrl = urlFor ?? ((p: string) => `/uploads/challenges/${satzId}/assets/${p}`);
+  const setzeListe = (key: "stages" | "facts" | "challenges", liste: unknown[]) => onChange({ ...value, [key]: liste });
+  const setFakt = (i: number, f: Fakt) => setzeListe("facts", fakten.map((x, j) => (j === i ? f : x)));
+  const setAufgabe = (i: number, c: Aufgabe) => setzeListe("challenges", aufgaben.map((x, j) => (j === i ? c : x)));
   const loesungsChips = fakten.filter(f => !f.decoy);
 
   function umschalten(i: number, c: Aufgabe, faktId: string) {
@@ -55,15 +56,15 @@ export function ChallengeForm({ value, onChange, upload, satzId, urlFor: urlVon 
         {etappen.map((e, i) => (
           <div key={i} className="flex gap-2 items-center">
             <input type="number" className="input w-20" aria-label={`Etappe ${i + 1} Nummer`} value={e.id}
-              onChange={ev => onChange({ ...value, stages: etappen.map((x, j) => (j === i ? { ...x, id: Number(ev.target.value) } : x)) })} />
+              onChange={ev => setzeListe("stages", etappen.map((x, j) => (j === i ? { ...x, id: Number(ev.target.value) } : x)))} />
             <input className="input flex-1" aria-label={`Etappe ${i + 1} Titel`} value={e.title}
-              onChange={ev => onChange({ ...value, stages: etappen.map((x, j) => (j === i ? { ...x, title: ev.target.value } : x)) })} />
+              onChange={ev => setzeListe("stages", etappen.map((x, j) => (j === i ? { ...x, title: ev.target.value } : x)))} />
             <ZeilenKnoepfe index={i} count={etappen.length} what="Etappe"
-              onMove={d => onChange({ ...value, stages: move(etappen, i, d) })} onRemove={() => onChange({ ...value, stages: etappen.filter((_, j) => j !== i) })} />
+              onMove={d => setzeListe("stages", move(etappen, i, d))} onRemove={() => setzeListe("stages", etappen.filter((_, j) => j !== i))} />
           </div>
         ))}
         <button type="button" className="text-xs text-accent hover:underline self-start"
-          onClick={() => onChange({ ...value, stages: [...etappen, { id: Math.max(0, ...etappen.map(e => e.id)) + 1, title: "" }] })}>
+          onClick={() => setzeListe("stages", [...etappen, { id: Math.max(0, ...etappen.map(e => e.id)) + 1, title: "" }])}>
           + Etappe
         </button>
       </Gruppe>
@@ -72,7 +73,7 @@ export function ChallengeForm({ value, onChange, upload, satzId, urlFor: urlVon 
         {fakten.map((f, i) => (
           <Karte key={i} titel={`${f.id}: ${f.text || "(leer)"}${f.decoy ? " · Ablenker" : ""}`}
             knoepfe={<ZeilenKnoepfe index={i} count={fakten.length} what="Fakt"
-              onMove={d => onChange({ ...value, facts: move(fakten, i, d) })} onRemove={() => onChange({ ...value, facts: fakten.filter((_, j) => j !== i) })} />}>
+              onMove={d => setzeListe("facts", move(fakten, i, d))} onRemove={() => setzeListe("facts", fakten.filter((_, j) => j !== i))} />}>
             <div className="grid grid-cols-1 sm:grid-cols-[8rem_1fr] gap-3">
               <Feld label="Kennung"><input className="input" value={f.id} onChange={e => setFakt(i, { ...f, id: e.target.value })} /></Feld>
               <Feld label="Text"><input className="input" value={f.text} onChange={e => setFakt(i, { ...f, text: e.target.value })} /></Feld>
@@ -80,7 +81,7 @@ export function ChallengeForm({ value, onChange, upload, satzId, urlFor: urlVon 
             <Feld label="Formel (LaTeX, optional)">
               <input className="input font-mono" value={f.formula ?? ""} onChange={e => setFakt(i, { ...f, formula: e.target.value || undefined })} />
             </Feld>
-            <BildFeld value={f.image} upload={upload} urlFor={urlFor} label={`Bild zu ${f.id}`} onChange={p => setFakt(i, { ...f, image: p ?? undefined })} />
+            <BildFeld value={f.image} upload={upload} urlFor={bildUrl} label={`Bild zu ${f.id}`} onChange={p => setFakt(i, { ...f, image: p ?? undefined })} />
             <Feld label="Nachlesen: Text" hint="Erscheint im Bereich »Wissen nachlesen«.">
               <textarea className="input" rows={2} value={f.info?.text ?? ""} onChange={e => setFakt(i, { ...f, info: { ...f.info, text: e.target.value } })} />
             </Feld>
@@ -100,7 +101,7 @@ export function ChallengeForm({ value, onChange, upload, satzId, urlFor: urlVon 
           </Karte>
         ))}
         <button type="button" className="text-xs text-accent hover:underline self-start"
-          onClick={() => onChange({ ...value, facts: [...fakten, { id: eindeutigeId("fakt", fakten.map(f => f.id)), text: "" }] })}>
+          onClick={() => setzeListe("facts", [...fakten, { id: eindeutigeId("fakt", fakten.map(f => f.id)), text: "" }])}>
           + Fakt
         </button>
       </Gruppe>
@@ -109,7 +110,7 @@ export function ChallengeForm({ value, onChange, upload, satzId, urlFor: urlVon 
         {aufgaben.map((c, i) => (
           <Karte key={i} titel={`${c.id}: ${c.text || "(leer)"}`}
             knoepfe={<ZeilenKnoepfe index={i} count={aufgaben.length} what="Challenge"
-              onMove={d => onChange({ ...value, challenges: move(aufgaben, i, d) })} onRemove={() => onChange({ ...value, challenges: aufgaben.filter((_, j) => j !== i) })} />}>
+              onMove={d => setzeListe("challenges", move(aufgaben, i, d))} onRemove={() => setzeListe("challenges", aufgaben.filter((_, j) => j !== i))} />}>
             <div className="grid grid-cols-1 sm:grid-cols-[8rem_1fr] gap-3">
               <Feld label="Kennung"><input className="input" value={c.id} onChange={e => setAufgabe(i, { ...c, id: e.target.value })} /></Feld>
               <Feld label="Text"><textarea className="input" rows={2} value={c.text} onChange={e => setAufgabe(i, { ...c, text: e.target.value })} /></Feld>
@@ -150,7 +151,7 @@ export function ChallengeForm({ value, onChange, upload, satzId, urlFor: urlVon 
           </Karte>
         ))}
         <button type="button" className="text-xs text-accent hover:underline self-start"
-          onClick={() => onChange({ ...value, challenges: [...aufgaben, { id: eindeutigeId("challenge", aufgaben.map(c => c.id)), text: "", solve: { any: [] }, stage: etappen[0]?.id ?? 1 }] })}>
+          onClick={() => setzeListe("challenges", [...aufgaben, { id: eindeutigeId("challenge", aufgaben.map(c => c.id)), text: "", solve: { any: [] }, stage: etappen[0]?.id ?? 1 }])}>
           + Challenge
         </button>
       </Gruppe>

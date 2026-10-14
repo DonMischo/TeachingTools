@@ -107,16 +107,18 @@ export default function Erkunden({ karte, theme, objekte, onBetreten, pausiert =
   }, [route, pausiert]);
 
   // Tastatur: Pfeile / WASD
+  const schrittRef = useRef(schritt);
+  schrittRef.current = schritt;
   useEffect(() => {
     if (pausiert) return;
     const f = (e: KeyboardEvent) => {
       const r = RICHTUNG[e.key.toLowerCase()];
       if (!r || e.ctrlKey || e.metaKey || e.altKey || (e.target as HTMLElement)?.closest?.("input,textarea,select")) return;
-      e.preventDefault(); schritt(r);
+      e.preventDefault(); schrittRef.current(r);
     };
     window.addEventListener("keydown", f);
     return () => window.removeEventListener("keydown", f);
-  });
+  }, [pausiert]);
 
   const h = useMemo(() => kachelLook(theme, kachel), [theme, kachel]);
   const cx = klemme(pos[0] - Math.floor(VB / 2), 0, Math.max(0, R - VB));
@@ -146,17 +148,25 @@ export default function Erkunden({ karte, theme, objekte, onBetreten, pausiert =
 
   // Minikarte oben rechts: Gänge hell, Objekte gelb, Figur rot — sonst findet niemand die fernen Räume
   const mini = useRef<HTMLCanvasElement>(null);
+  const miniFest = useRef<HTMLCanvasElement | null>(null); // Gänge und Objekte, nur bei neuer Karte/neuen Objekten gemalt
+  useEffect(() => {
+    const fest = document.createElement("canvas");
+    fest.width = fest.height = R * M;
+    const ctx = fest.getContext("2d");
+    if (!ctx) { miniFest.current = null; return; }
+    ctx.fillStyle = "rgba(255,255,255,0.55)";
+    for (let y = 0; y < R; y++) for (let x = 0; x < R; x++) {
+      if (karte.begehbar([x, y])) ctx.fillRect(x * M, y * M, M, M);
+    }
+    ctx.fillStyle = "#facc15";
+    for (const o of objekte) ctx.fillRect(o.x * M - 1, o.y * M - 1, M + 2, M + 2);
+    miniFest.current = fest;
+  }, [R, karte, objekte]);
   useEffect(() => {
     const ctx = mini.current?.getContext("2d");
     if (!ctx) return;
     ctx.clearRect(0, 0, R * M, R * M);
-    for (let y = 0; y < R; y++) for (let x = 0; x < R; x++) {
-      if (!karte.begehbar([x, y])) continue;
-      ctx.fillStyle = "rgba(255,255,255,0.55)";
-      ctx.fillRect(x * M, y * M, M, M);
-    }
-    ctx.fillStyle = "#facc15";
-    for (const o of objekte) ctx.fillRect(o.x * M - 1, o.y * M - 1, M + 2, M + 2);
+    if (miniFest.current) ctx.drawImage(miniFest.current, 0, 0);
     ctx.fillStyle = "#ef4444";
     ctx.fillRect(pos[0] * M - 1, pos[1] * M - 1, M + 2, M + 2);
   }, [R, karte, objekte, pos]);

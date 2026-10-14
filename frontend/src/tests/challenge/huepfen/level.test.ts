@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { themeVon } from "@/lib/challenge/themes";
-import { baueLevel, edelsteineGesamt, figurBilder, kettePasst, schritt, startSpieler, type Level, type Spieler } from "@/lib/challenge/huepfen";
+import { baueLevel, edelsteineGesamt, figurBilder, schritt, startSpieler, type Level, type Spieler } from "@/lib/challenge/huepfen";
+import { kettePasst } from "./kette";
 
 // Probe: vom rechten Rand der Plattform i springen (rechts gehalten, nach 0,45 s loslassen) und auf i+1 landen
 function probe(voll: Level, i: number): number {

@@ -8,14 +8,6 @@ export const BOOSTER = 5;
 export const ANGEBOTE = 2;
 
 
-/**
- * Höchstgröße des Decks: alle Fakten. Wer weniger nimmt, sagt »Fertig« — kleiner darf das Deck
- * nicht erzwungen werden, sonst fehlt womöglich ein nötiger Fakt (der Client kennt die Ablenker nicht).
- */
-export function deckZiel(n: number): number {
-  return Math.max(1, n);
-}
-
 export type Draft = { schlange: string[]; angebot: string[]; deck: string[]; runde: number; gesehen: Record<string, number> };
 
 export function draftStart(ids: string[], seed: number): Draft {
@@ -34,8 +26,6 @@ export function draftNimm(d: Draft, ids: string[], seed: number): Draft {
   const rest = [...d.schlange, ...mische(zurueck, rng(seed + d.runde + 1))];
   return naechster({ ...d, schlange: rest, angebot: [], deck: [...d.deck, ...genommen], runde: d.runde + 1 });
 }
-/** Genau eine Karte nehmen (wie draftNimm mit einer). */
-export const draftWahl = (d: Draft, id: string, seed: number): Draft => draftNimm(d, [id], seed);
 
 export type Kampf = { zug: number; nachzieh: string[]; hand: string[]; ablage: string[]; stapel: string[]; energie: number; max: number };
 

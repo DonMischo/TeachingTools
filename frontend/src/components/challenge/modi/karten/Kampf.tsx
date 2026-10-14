@@ -13,9 +13,10 @@ import {
 } from "./logik";
 
 const SCHWERT = ["..#..", "..#..", "..#..", "..#..", ".###.", "..#.."];
+const PAL_SCHWERT = { "#": "#9aa5b1" };
 const Schwerter = ({ n }: { n: number }) => (
   <span className="inline-flex gap-0.5" role="img" aria-label={`Stärke ${n}`}>
-    {Array.from({ length: Math.max(1, n) }, (_, i) => <PixelMatrix key={i} bild={SCHWERT} palette={{ "#": "#9aa5b1" }} scale={3} />)}
+    {Array.from({ length: Math.max(1, n) }, (_, i) => <PixelMatrix key={i} bild={SCHWERT} palette={PAL_SCHWERT} scale={3} />)}
   </span>
 );
 

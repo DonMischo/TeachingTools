@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { STILE, baueLevel, edelsteineGesamt, kettePasst, schritt, startSpieler, type Level, type Spieler } from "@/lib/challenge/huepfen";
+import { STILE, baueLevel, edelsteineGesamt, schritt, startSpieler, type Level, type Spieler } from "@/lib/challenge/huepfen";
+import { kettePasst } from "./kette";
 
 // Probe wie in level.test.ts: vom rechten Rand der Plattform i springen und auf i+1 landen
 function probe(voll: Level, i: number): number {

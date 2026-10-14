@@ -57,7 +57,7 @@ export function startWelle(z: Zustand, anfuehrer: string[] = []): void {
 }
 
 /** Kann eine neue Welle gestartet werden? (Keine Gegner mehr in der Warteschlange.) */
-export const wellePossible = (z: Zustand) => z.warteschlange.length === 0;
+export const welleMoeglich = (z: Zustand) => z.warteschlange.length === 0;
 
 export function punkt(pfad: [number, number][], t: number): [number, number] {
   const i = Math.max(0, Math.min(pfad.length - 1, Math.floor(t)));

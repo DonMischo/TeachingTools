@@ -1,6 +1,6 @@
 "use client";
 /** Hüpfen: Jump'n'Run im Seitenlauf. Schlüssel (= Fakten) einsammeln, an einer Tür aufschließen (= antworten). */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { BestenlisteKnopf } from "@/components/challenge/Bestenliste";
 import Fundkarte from "@/components/challenge/Fundkarte";
 import { wenigerBewegung } from "@/lib/challenge/bewegung";
@@ -10,12 +10,12 @@ import type { ChallengeAntwort, ChallengeFakt } from "@/lib/api";
 import { Sprite } from "@/components/challenge/pixel/Sprite";
 import { PixelMatrix } from "@/components/challenge/pixel/Matrix";
 import {
-  GEGNER_BONUS, VX, STIL_NAMEN, baueLevel, bewegerFlaeche, edelsteineGesamt, figurBilder, gegnerBegegnung, gegnerX, naheEdelstein, nahePogo, naheSchluessel, naheTuer,
+  GEGNER_BONUS, VX, STIL_NAMEN, baueLevel, bewegerFlaeche, type Level, edelsteineGesamt, figurBilder, gegnerBegegnung, gegnerX, naheEdelstein, nahePogo, naheSchluessel, naheTuer,
   schritt, sterne, startSpieler, zumKontrollpunkt, type Eingabe, type Spieler,
 } from "@/lib/challenge/huepfen";
 import type { ModusProps } from "./typen";
 import { Ablage, FaktKarte, Herzen, Inhalt, Treffermeldung } from "./teile";
-import { bodenKachel } from "@/lib/challenge/themes";
+import { bodenKachel, type ThemeDef } from "@/lib/challenge/themes";
 
 const SK = 3, KACHEL = 16 * SK; // Bildschirm-Pixel je Kachel
 
@@ -31,6 +31,34 @@ const PAL_SCHLEIM = { g: "#7ac943", w: "#ffffff", k: "#222222" };
 
 const POGO = [".rrrr...", ".rrrr...", "..gg....", "..gg....", "..gg....", "..gg....", ".gggg...", "..ss....", "..ss....", ".kkkk..."];
 const PAL_POGO = { r: "#d33a2c", g: "#aab4c0", s: "#6e7a88", k: "#333333" };
+
+type Hintergrund = ThemeDef["hintergrund"];
+
+/** Boden und Fahnen: ändert sich nur, wenn eine Fahne erreicht wird (nicht bei Edelsteinen und Funden). */
+const Plattformen = memo(function Plattformen({ plattformen, tile, bodenFarbe, cp, reduziert }: {
+  plattformen: Level["plattformen"]; tile: Hintergrund; bodenFarbe: string; cp: number; reduziert: boolean;
+}) {
+  return (
+    <>
+      {plattformen.map((p, i) => (
+        <div key={i} className="absolute flex" style={{ left: p.x * KACHEL, top: p.y * KACHEL, width: p.w * KACHEL }}>
+          {Array.from({ length: p.w }, (_, c) => {
+            if (tile) {
+              const k = bodenKachel(tile.muster.boden, c + i, 0);
+              return <Sprite key={c} src={tile.src} frame={{ x: (k % tile.cols) * tile.tile, y: Math.floor(k / tile.cols) * tile.tile, w: tile.tile, h: tile.tile }} scale={SK} />;
+            }
+            return <span key={c} className="inline-block" style={{ width: KACHEL, height: KACHEL / 2, background: bodenFarbe === "transparent" ? "#8b5a2b" : bodenFarbe, borderTop: "4px solid #4c8a2b" }} />;
+          })}
+          {p.cp && (
+            <span className="absolute left-2 -top-9 w-1 h-9 bg-[#6b4a2b] overflow-hidden" aria-hidden data-fahne={i <= cp ? "oben" : "unten"}>
+              <span className="absolute left-1 w-5 h-4 rounded-r-sm" style={{ background: i <= cp ? "#e63946" : "#9aa0a6", top: 0, transform: `translateY(${i <= cp ? 0 : 20}px)`, transition: reduziert ? "none" : "transform .7s ease-out, background .7s" }} />
+            </span>
+          )}
+        </div>
+      ))}
+    </>
+  );
+});
 
 export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
   // Neue Karte bei jedem Besuch: der Zufallswert gilt, solange die Komponente steht (eine Tür zu öffnen mischt nicht neu)
@@ -70,6 +98,8 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
   const timer = useRef<ReturnType<typeof setTimeout>[]>([]);
   const nachher = (f: () => void, ms: number) => { timer.current.push(setTimeout(f, ms)); };
   const kamX = useRef<number | null>(null);
+  const reduziert = useMemo(() => wenigerBewegung(), []);
+  const breiteRef = useRef(600);
 
   const fakten = new Map(brett.fakten.map((f) => [f.id, f]));
   const offene = brett.challenges.filter((c) => !c.erledigt);
@@ -93,7 +123,7 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
     nachher(() => setPlings((p) => p.filter((q) => q.id !== id)), 700);
   };
   const staubAn = (x: number, y: number) => {
-    if (wenigerBewegung()) return;
+    if (reduziert) return;
     const id = Date.now() + Math.random();
     setStaub((p) => [...p.slice(-3), { id, x, y }]);
     nachher(() => setStaub((p) => p.filter((q) => q.id !== id)), 450);
@@ -103,6 +133,17 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
     setTuer(id); setAblage([]); setTipp(false);
     if (id) { setAntwort(null); lauf.waehle(); }
   };
+
+  // Spielfeldbreite zwischenspeichern, statt sie in jedem Frame zu lesen
+  useEffect(() => {
+    const el = bildRef.current;
+    if (!el) return;
+    breiteRef.current = el.clientWidth || 600;
+    if (typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => { breiteRef.current = el.clientWidth || 600; });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   // Eingabe: Tastatur
   useEffect(() => {
@@ -166,11 +207,11 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
       const d = level.tueren.findIndex((td, i) => brett.challenges[i] && !brett.challenges[i].erledigt && naheTuer(s, td));
       const id = d >= 0 ? brett.challenges[d].id : null;
       if (id !== imTuer.current) { imTuer.current = id; if (id) oeffneTuer(id); }
-      const breite = bildRef.current?.clientWidth ?? 600;
+      const breite = breiteRef.current;
       // Kamera schaut in Laufrichtung voraus und gleitet nach
       const voraus = (s.vx / VX) * 70;
       const ziel = Math.max(0, Math.min(level.breite * KACHEL - breite, s.x * KACHEL - breite / 2 + voraus));
-      kamX.current = kamX.current === null || wenigerBewegung() ? ziel : kamX.current + (ziel - kamX.current) * Math.min(1, dt * 6);
+      kamX.current = kamX.current === null || reduziert ? ziel : kamX.current + (ziel - kamX.current) * Math.min(1, dt * 6);
       const kam = kamX.current;
       if (weltRef.current) weltRef.current.style.transform = `translateX(${-kam}px)`;
       if (wolkenRef.current) wolkenRef.current.style.transform = `translateX(${-kam * 0.35}px)`;
@@ -208,7 +249,6 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
   };
 
   const tile = theme.hintergrund;
-  const boden = (i: number) => tile ? { x: (bodenKachel(tile.muster.boden, i, 0) % tile.cols) * tile.tile, y: Math.floor(bodenKachel(tile.muster.boden, i, 0) / tile.cols) * tile.tile, w: tile.tile, h: tile.tile } : null;
   const himmel = theme.farben.himmel === "transparent" ? "linear-gradient(#bfe6ff, #eaf7ff)" : theme.farben.himmel;
   const bild = figurBilder(sp.laufen, richtung, laeuft);
   const anim = useMemo(() => ({ frames: bild.frames ?? [], fps: 8 }), [bild.frames]);
@@ -232,20 +272,7 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
           {Array.from({ length: Math.ceil(level.breite / 6) }, (_, i) => <span key={i} style={{ marginTop: (i % 3) * 24 }}>☁️</span>)}
         </div>
         <div ref={weltRef} className="absolute left-0 top-0" style={{ width: level.breite * KACHEL, height: level.hoehe * KACHEL }}>
-          {level.plattformen.map((p, i) => (
-            <div key={i} className="absolute flex" style={{ left: p.x * KACHEL, top: p.y * KACHEL, width: p.w * KACHEL }}>
-              {Array.from({ length: p.w }, (_, c) => {
-                const f = boden(c + i);
-                return f && tile ? <Sprite key={c} src={tile.src} frame={f} scale={SK} />
-                  : <span key={c} className="inline-block" style={{ width: KACHEL, height: KACHEL / 2, background: theme.farben.boden === "transparent" ? "#8b5a2b" : theme.farben.boden, borderTop: "4px solid #4c8a2b" }} />;
-              })}
-              {p.cp && (
-                <span className="absolute left-2 -top-9 w-1 h-9 bg-[#6b4a2b] overflow-hidden" aria-hidden data-fahne={i <= cp ? "oben" : "unten"}>
-                  <span className="absolute left-1 w-5 h-4 rounded-r-sm" style={{ background: i <= cp ? "#e63946" : "#9aa0a6", top: 0, transform: `translateY(${i <= cp ? 0 : 20}px)`, transition: wenigerBewegung() ? "none" : "transform .7s ease-out, background .7s" }} />
-                </span>
-              )}
-            </div>
-          ))}
+          <Plattformen plattformen={level.plattformen} tile={tile} bodenFarbe={theme.farben.boden} cp={cp} reduziert={reduziert} />
           {level.leisten.map((p, i) => (
             <div key={`l${i}`} className="absolute rounded-sm" style={{ left: p.x * KACHEL, top: p.y * KACHEL, width: p.w * KACHEL, height: 10, background: "#8b5a2b", borderTop: "4px solid #4c8a2b" }} />
           ))}

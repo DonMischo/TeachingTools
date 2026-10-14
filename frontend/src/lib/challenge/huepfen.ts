@@ -174,15 +174,6 @@ export function bewegerFlaeche(m: Beweger, t: number): Plattform {
   return { x: m.cx + m.ax * w - m.w / 2, y: m.cy + m.ay * w, w: m.w, cp: false };
 }
 
-/** Prüft nur die Geometrie der Kette (Lücke, Anstieg); die Physik-Probe steht im Test. */
-export function kettePasst(l: Level): boolean {
-  return l.plattformen.every((p, i) => {
-    if (i === 0) return true;
-    const v = l.plattformen[i - 1];
-    return p.x - (v.x + v.w) <= MAX_LUECKE && v.y - p.y <= MAX_ANSTIEG && p.y >= 3 && p.y < HOEHE;
-  });
-}
-
 export type Spieler = {
   x: number; y: number; vy: number; auf: number; coyote: number; richtung: 1 | -1; cp: number; t: number;
   vx: number; puffer: number; sprungVorher: boolean; pogo: boolean;

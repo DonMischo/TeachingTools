@@ -14,7 +14,7 @@ import { useSpielwert } from "@/lib/challenge/useSpielwert";
 import { bauplaetze, laengsterPfad, markovKarte } from "@/lib/challenge/markovKarte";
 import {
   ausbauPreis, anfuehrerFaellt, kaufe, MAX_STUFE, neuerZustand, punkt, schritt, SPIELWERT_MAX, spielpunkte,
-  startWelle, TURM_DATEN, verbessere, wellePossible, type TurmArt,
+  startWelle, TURM_DATEN, verbessere, welleMoeglich, type TurmArt,
 } from "@/lib/challenge/turmSpiel";
 
 const SCHWARM = ["..mmmm..", ".mmmmmm.", ".mwmmwm.", ".mkmmkm.", ".mmmmmm.", ".m.mm.m."];
@@ -47,7 +47,7 @@ export default function Turm({ brett, lauf, zurKarte }: ModusProps) {
   const offene = brett.challenges.filter((c) => !c.erledigt && !gefallen.includes(c.id));
   const offeneRef = useRef(offene);
   offeneRef.current = offene;
-  const fakten = new Map(brett.fakten.map((f) => [f.id, f]));
+  const fakten = useMemo(() => new Map(brett.fakten.map((f) => [f.id, f])), [brett.fakten]);
   const pausiert = !!aktiv;
 
   // Spielschleife (pausiert beim Öffnen eines Anführers und bei verdecktem Tab)
@@ -57,7 +57,9 @@ export default function Turm({ brett, lauf, zurKarte }: ModusProps) {
     const lauf_ = (t: number) => {
       const dt = Math.min(0.05, (t - letzte) / 1000);
       letzte = t;
-      if (!document.hidden) { schritt(z.current, pfad, plaetze, dt * tempo); setTakt((n) => n + 1); }
+      const q = z.current;
+      // Leerlauf (keine Gegner, Schüsse oder Welle in der Warteschlange): weder rechnen noch neu zeichnen
+      if (!document.hidden && (q.gegner.length || q.schuesse.length || q.warteschlange.length)) { schritt(q, pfad, plaetze, dt * tempo); setTakt((n) => n + 1); }
       id = requestAnimationFrame(lauf_);
     };
     id = requestAnimationFrame(lauf_);
@@ -67,7 +69,7 @@ export default function Turm({ brett, lauf, zurKarte }: ModusProps) {
   useSpielwert(lauf, "turm", brett.etappe, spielpunkte(z.current), SPIELWERT_MAX);
 
   const welle = () => {
-    if (!wellePossible(z.current)) return;
+    if (!welleMoeglich(z.current)) return;
     const neu = offeneRef.current.filter((c) => !gestartet.current.has(c.id)).slice(0, 1).map((c) => c.id);
     neu.forEach((id) => gestartet.current.add(id));
     startWelle(z.current, neu);
@@ -164,7 +166,7 @@ export default function Turm({ brett, lauf, zurKarte }: ModusProps) {
       </div>
 
       <div className="flex flex-wrap gap-2 items-center">
-        <button className="btn-primary" disabled={!wellePossible(s) || !!aktiv} onClick={welle}>{s.welle === 0 ? "Welle starten" : "Nächste Welle"}</button>
+        <button className="btn-primary" disabled={!welleMoeglich(s) || !!aktiv} onClick={welle}>{s.welle === 0 ? "Welle starten" : "Nächste Welle"}</button>
         <button className="btn-secondary" aria-pressed={tempo === 2} onClick={() => setTempo(tempo === 1 ? 2 : 1)}>{tempo === 1 ? "1×" : "2×"}</button>
         {offene.length === 0 && <span className="text-good font-bold">Alle Anführer sind gefallen!</span>}
         {offene.length > 0 && !aktiv && <span className="text-muted">Anführer (🛡) bricht nur Wissen: anklicken!</span>}
