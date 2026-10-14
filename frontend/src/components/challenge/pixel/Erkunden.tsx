@@ -14,6 +14,7 @@ import { Passend } from "./Passend";
 const T = 32; // Kantenlänge einer Kachel auf der Bühne (16-px-Kachel ×2)
 const VB = 14, VH = 9; // sichtbare Kacheln
 const SCHRITT_MS = 150;
+const M = 3; // Pixel je Feld auf der Minikarte
 
 export type ErkundKarte = {
   R: number; start: Punkt;
@@ -35,8 +36,8 @@ type Look = { src: string; tile: number; cols: number; muster: { boden: number[]
 /** Kachelbild je Art; "boden" folgt dem Theme (Themes ohne Kacheln: Höhlenlook). */
 export function kachelLook(theme: ThemeDef, art: KachelArt): Look {
   const wald = THEMES.wald.hintergrund!;
-  if (art === "hecke") return { ...wald, muster: { boden: wald.muster.boden, wand: [560] } };
-  if (art === "wald") return { ...wald, muster: { boden: wald.muster.boden, wand: [283] } };
+  if (art === "hecke") return { ...wald, muster: { boden: wald.muster.boden, wand: [602] } }; // Heckenblock (Overworld 601–603), kachelt nahtlos
+  if (art === "wald") return { ...wald, muster: { boden: wald.muster.boden, wand: [562] } }; // runder Busch
   if (art === "haus") return THEMES.antike.hintergrund!;
   return theme.hintergrund ?? THEMES.verlies.hintergrund!;
 }
@@ -130,14 +131,35 @@ export default function Erkunden({ karte, theme, objekte, onBetreten, pausiert =
       ctx.imageSmoothingEnabled = false;
       for (let y = 0; y < R; y++) {
         for (let x = 0; x < R; x++) {
+          // erst schlichter Boden darunter: Büsche, Blumen u. a. haben durchsichtige Pixel
+          const grund = h.muster.boden[0];
           const id = karte.begehbar([x, y]) ? bodenKachel(h.muster.boden, x, y) : bodenKachel(h.muster.wand, x, y);
-          ctx.drawImage(bild, (id % h.cols) * h.tile, Math.floor(id / h.cols) * h.tile, h.tile, h.tile, x * T, y * T, T, T);
+          for (const k of id === grund ? [id] : [grund, id]) {
+            ctx.drawImage(bild, (k % h.cols) * h.tile, Math.floor(k / h.cols) * h.tile, h.tile, h.tile, x * T, y * T, T, T);
+          }
         }
       }
     };
     bild.src = h.src;
     return () => { bild.onload = null; };
   }, [R, karte, h.src, h.tile, h.cols, h.muster]);
+
+  // Minikarte oben rechts: Gänge hell, Objekte gelb, Figur rot — sonst findet niemand die fernen Räume
+  const mini = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const ctx = mini.current?.getContext("2d");
+    if (!ctx) return;
+    ctx.clearRect(0, 0, R * M, R * M);
+    for (let y = 0; y < R; y++) for (let x = 0; x < R; x++) {
+      if (!karte.begehbar([x, y])) continue;
+      ctx.fillStyle = "rgba(255,255,255,0.55)";
+      ctx.fillRect(x * M, y * M, M, M);
+    }
+    ctx.fillStyle = "#facc15";
+    for (const o of objekte) ctx.fillRect(o.x * M - 1, o.y * M - 1, M + 2, M + 2);
+    ctx.fillStyle = "#ef4444";
+    ctx.fillRect(pos[0] * M - 1, pos[1] * M - 1, M + 2, M + 2);
+  }, [R, karte, objekte, pos]);
 
   const sp = theme.spieler;
   const lauf = { frames: sp.laufen[dir], fps: 8 };
@@ -165,6 +187,10 @@ export default function Erkunden({ karte, theme, objekte, onBetreten, pausiert =
               <Sprite src={sp.src} frame={sp.stehen} scale={2} animation={geht ? lauf : undefined} />
             </div>
           </div>
+          {R > VB && (
+            <canvas ref={mini} aria-hidden width={R * M} height={R * M} title="Karte"
+              className="absolute right-1 top-1 rounded pointer-events-none" style={{ background: "rgba(0,0,0,0.55)", imageRendering: "pixelated" }} />
+          )}
         </div>
       </Passend>
       <div className="flex flex-wrap items-center gap-2">

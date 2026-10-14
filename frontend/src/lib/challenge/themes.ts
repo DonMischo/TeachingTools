@@ -27,7 +27,7 @@ export const THEMES: Record<string, ThemeDef> = {
   klassisch: { name: "Klassisch", hintergrund: null, farben: { himmel: "transparent", boden: "transparent", akzent: "var(--color-accent)", text: "inherit" }, spieler: figur },
   wald: {
     name: "Wald", spieler: figur, farben: { himmel: "#c8f872", boden: "#35a541", akzent: "#1e7cb8", text: "#1b2a1e" },
-    hintergrund: { src: `${P}/gfx/Overworld.png`, tile: 16, cols: 40, muster: { boden: [1215, 642], wand: [283], deko: [161] } },
+    hintergrund: { src: `${P}/gfx/Overworld.png`, tile: 16, cols: 40, muster: { boden: [360, 0, 320], wand: [562], deko: [1] } },
   },
   ninja: {
     name: "Ninja-Dorf", spieler: ninja, farben: { himmel: "#71ddee", boden: "#adbc3a", akzent: "#bc84b5", text: "#2a2430" },
