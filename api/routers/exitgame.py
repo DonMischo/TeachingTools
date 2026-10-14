@@ -49,13 +49,13 @@ from sqlalchemy.orm import Session
 
 from .. import challenge_engine as challenge_eng
 from .. import challenge_lauf
+from ..challenge_lauf import AntwortIn, DeckIn, SKINS as BOSS_SKINS, StartIn
 from .. import dda as dda_engine
 from .. import exitgame_katalog as katalog
 from .. import scoping
 from .. import timeline_engine
 from .. import karten_quiz as karten_engine
 from .karten_quiz import karten_aufloesen
-from .challenge import AntwortIn as BossAntwortIn, SKINS as BOSS_SKINS
 from ..task_generators import check_input_answer
 from ..database import get_db
 from ..models import ExitGame, ExitGameSession, ExitGameAttempt, ExitGameEvent, Teacher, Student, Class
@@ -221,6 +221,13 @@ def _task_errors(task: dict, where: str) -> list[str]:
     return errors
 
 
+def _boss_standards(slide: dict) -> dict:
+    """Die Vorgaben einer Boss-Folie mit Standardwerten — die eine Stelle, an der sie stehen."""
+    spiel = slide.get("spiel", "boss")
+    return {"spiel": spiel, "spiele": slide.get("spiele") or [spiel], "skin": slide.get("skin", "monster"),
+            "theme": slide.get("theme", "klassisch"), "startstufe": slide.get("startstufe", challenge_lauf.STANDARD_STARTSTUFE)}
+
+
 def _boss_errors(slide: dict, where: str) -> list[str]:
     fehler: list[str] = []
     challenge = slide.get("challenge")
@@ -228,7 +235,7 @@ def _boss_errors(slide: dict, where: str) -> list[str]:
         return [f"{where}: ein Boss braucht 'challenge' (ein Challenge-Satz)"]
     f, _ = challenge_eng.pruefe_satz({"title": slide.get("title") or "Boss", **challenge})
     fehler += [f"Folie »{slide.get('id')}«: {m}" for m in f]
-    spiel = slide.get("spiel", "boss")
+    spiel = _boss_standards(slide)["spiel"]
     spiele = slide.get("spiele")
     if spiel not in challenge_eng.SPIELE:
         fehler.append(f"{where}: spiel '{spiel}' gibt es nicht (erlaubt: {', '.join(challenge_eng.SPIELE)})")
@@ -406,10 +413,10 @@ def _data_for_player(data: dict) -> dict:
             continue
         s = {k: v for k, v in slide.items() if k != "ergebnissicherung"}
         if s.get("type") == "boss":
-            spiel = s.get("spiel", "boss")
+            standards = _boss_standards(s)
             s = {k: v for k, v in s.items() if k not in ("challenge", "codeFragment")}
-            s.update(bossFragment=bool(slide.get("codeFragment")), spiel=spiel, spiele=slide.get("spiele") or [spiel],
-                     skin=slide.get("skin", "monster"), theme=slide.get("theme", "klassisch"))
+            s.update(bossFragment=bool(slide.get("codeFragment")),
+                     **{k: v for k, v in standards.items() if k != "startstufe"})
             slides.append(s)
             continue
         if isinstance(s.get("task"), dict):
@@ -1476,10 +1483,13 @@ def _boss_kontext(attempt_id: int, slide_id: str, request: Request, credentials,
     return attempt, data, slide
 
 
-def _boss_lauf(attempt: ExitGameAttempt, slide: dict) -> dict:
+def _boss_lauf(attempt: ExitGameAttempt, slide: dict, pflicht: bool = True) -> dict | None:
+    """Kopie des gespeicherten Laufs; ohne Lauf 409 (``pflicht``) oder None."""
     lauf = (attempt.boss_laeufe or {}).get(slide["id"])
     if lauf is None:
-        raise HTTPException(409, "Der Boss-Kampf wurde noch nicht gestartet")
+        if pflicht:
+            raise HTTPException(409, "Der Boss-Kampf wurde noch nicht gestartet")
+        return None
     return copy.deepcopy(lauf)
 
 
@@ -1487,54 +1497,41 @@ def _boss_speichern(attempt: ExitGameAttempt, slide: dict, lauf: dict) -> None:
     attempt.boss_laeufe = {**(attempt.boss_laeufe or {}), slide["id"]: lauf}
 
 
+def _boss_bild(attempt: ExitGameAttempt):
+    return lambda name: f"/uploads/exitgames/{attempt.session.exitgame_id}/assets/{name}"
+
+
 def _boss_brett(attempt: ExitGameAttempt, slide: dict, lauf: dict) -> dict:
-    return challenge_lauf.brett(slide["challenge"], lauf,
-                                lambda name: f"/uploads/exitgames/{attempt.session.exitgame_id}/assets/{name}")
-
-
-class BossStartIn(BaseModel):
-    spiel: str | None = None
-
-
-class BossDeckIn(BaseModel):
-    fakt_ids: list[str]
+    return challenge_lauf.brett(slide["challenge"], lauf, _boss_bild(attempt))
 
 
 @router.post("/api/exitgame-attempts/{attempt_id}/boss/{slide_id}/start")
 def boss_start(
-    attempt_id: int, slide_id: str, body: BossStartIn, request: Request,
+    attempt_id: int, slide_id: str, body: StartIn, request: Request,
     db: Session = Depends(get_db), credentials: HTTPAuthorizationCredentials | None = Depends(bearer),
 ):
     attempt, data, slide = _boss_kontext(attempt_id, slide_id, request, credentials, db)
-    standard = slide.get("spiel", "boss")
-    spiele = slide.get("spiele") or [standard]
-    lauf = (attempt.boss_laeufe or {}).get(slide_id)
-    lauf = copy.deepcopy(lauf) if lauf else None
-    wahl = body.spiel if body.spiel in spiele else (lauf["spiel"] if lauf else standard)
-    try:
-        if lauf is None:
-            lauf = challenge_lauf.neuer_lauf(slide["challenge"], slide.get("startstufe", 2), wahl)
-        else:
-            challenge_lauf.spiel_wechseln(slide["challenge"], lauf, wahl)
-    except challenge_lauf.LaufFehler as e:
-        raise HTTPException(e.status, e.text)
+    standards = _boss_standards(slide)
+    spiele = standards["spiele"]
+    lauf = _boss_lauf(attempt, slide, pflicht=False)
+    wahl = body.spiel if body.spiel in spiele else (lauf["spiel"] if lauf else standards["spiel"])
+    if lauf is None:
+        lauf = challenge_lauf.neuer_lauf(slide["challenge"], standards["startstufe"], wahl)
+    else:
+        challenge_lauf.spiel_wechseln(slide["challenge"], lauf, wahl)
     _boss_speichern(attempt, slide, lauf)
     db.commit()
-    return {**_boss_brett(attempt, slide, lauf), "skin": slide.get("skin", "monster"),
-            "theme": slide.get("theme", "klassisch"), "spiele": spiele}
+    return {**_boss_brett(attempt, slide, lauf), "skin": standards["skin"], "theme": standards["theme"], "spiele": spiele}
 
 
 @router.post("/api/exitgame-attempts/{attempt_id}/boss/{slide_id}/deck")
 def boss_deck(
-    attempt_id: int, slide_id: str, body: BossDeckIn, request: Request,
+    attempt_id: int, slide_id: str, body: DeckIn, request: Request,
     db: Session = Depends(get_db), credentials: HTTPAuthorizationCredentials | None = Depends(bearer),
 ):
-    attempt, data, slide = _boss_kontext(attempt_id, slide_id, request, credentials, db)
+    attempt, _, slide = _boss_kontext(attempt_id, slide_id, request, credentials, db)
     lauf = _boss_lauf(attempt, slide)
-    try:
-        challenge_lauf.deck_setzen(slide["challenge"], lauf, body.fakt_ids)
-    except challenge_lauf.LaufFehler as e:
-        raise HTTPException(e.status, e.text)
+    challenge_lauf.deck_setzen(slide["challenge"], lauf, body.fakt_ids)
     _boss_speichern(attempt, slide, lauf)
     db.commit()
     return _boss_brett(attempt, slide, lauf)
@@ -1542,16 +1539,14 @@ def boss_deck(
 
 @router.post("/api/exitgame-attempts/{attempt_id}/boss/{slide_id}/antwort")
 async def boss_antwort(
-    attempt_id: int, slide_id: str, body: BossAntwortIn, request: Request,
+    attempt_id: int, slide_id: str, body: AntwortIn, request: Request,
     db: Session = Depends(get_db), credentials: HTTPAuthorizationCredentials | None = Depends(bearer),
 ):
     attempt, data, slide = _boss_kontext(attempt_id, slide_id, request, credentials, db)
     lauf = _boss_lauf(attempt, slide)
-    try:
-        aus = challenge_lauf.antworte(slide["challenge"], lauf, body.challenge_id, body.fakt_ids,
-                                      body.lese_ms, body.wahl_ms, body.tipp)
-    except challenge_lauf.LaufFehler as e:
-        raise HTTPException(e.status, e.text)
+    aus, neues_brett, wertung = challenge_lauf.antworte_mit_brett(
+        slide["challenge"], lauf, body.challenge_id, body.fakt_ids, body.lese_ms, body.wahl_ms, body.tipp,
+        bild=_boss_bild(attempt))
     _boss_speichern(attempt, slide, lauf)
     db.add(ExitGameEvent(attempt_id=attempt_id, slide_id=slide_id, event_type="boss_answer", payload={
         "challenge_id": body.challenge_id, "qualitaet": aus["qualitaet"], "komplett": aus["komplett"]}))
@@ -1561,14 +1556,14 @@ async def boss_antwort(
     if aus["fertig"]:
         event_type = "success"
         db.add(ExitGameEvent(attempt_id=attempt_id, slide_id=slide_id, event_type="success", payload={
-            "task_index": 0, "boss": challenge_lauf.wertung(slide["challenge"], lauf)}))
+            "task_index": 0, "boss": wertung}))
         db.flush()
         if _slide_solved(db, attempt, slide, data) and slide_id not in attempt.solved_slide_ids:
             attempt.solved_slide_ids = [*attempt.solved_slide_ids, slide_id]
     db.commit()
     db.refresh(attempt)
     await _broadcast_progress(attempt.session.join_code, attempt, len(data["slides"]), event_type)
-    return {**aus, "attempt": _attempt_summary(attempt), "code_fragments": _fragment_state(db, attempt_id, data)}
+    return {**aus, "brett": neues_brett, "attempt": _attempt_summary(attempt), "code_fragments": _fragment_state(db, attempt_id, data)}
 
 
 def _ergebnissicherung(data: dict) -> list[dict]:
@@ -1626,10 +1621,18 @@ async def finish_attempt(
 # Results: report + detailed per-student log
 # ---------------------------------------------------------------------------
 
-def _boss_ergebnis(a: ExitGameAttempt, data: dict) -> float | None:
-    """Mittelwert der Ergebnisse aller Boss-Läufe des Versuchs; None ohne Boss-Lauf."""
-    werte = [challenge_lauf.wertung(sl["challenge"], a.boss_laeufe[sl["id"]])["ergebnis"]
-             for sl in data["slides"] if sl.get("type") == "boss" and sl["id"] in (a.boss_laeufe or {})]
+def _boss_ergebnis(a: ExitGameAttempt, data: dict, anzahl: dict) -> float | None:
+    """Mittelwert der Ergebnisse aller Boss-Läufe des Versuchs; None ohne Boss-Lauf.
+
+    ``anzahl``: Challenge-Zahl je (Folie, Stufe, Spiel), vom Bericht über alle Versuche geteilt."""
+    def ergebnis(sl: dict) -> float:
+        lauf = a.boss_laeufe[sl["id"]]
+        schluessel = (sl["id"], lauf["stufe"], lauf["spiel"])
+        if schluessel not in anzahl:
+            anzahl[schluessel] = challenge_lauf.anzahl_challenges(sl["challenge"], lauf)
+        return challenge_eng.ergebnis(lauf["fragen"], anzahl[schluessel])
+
+    werte = [ergebnis(sl) for sl in data["slides"] if sl.get("type") == "boss" and sl["id"] in (a.boss_laeufe or {})]
     return round(sum(werte) / len(werte), 4) if werte else None
 
 
@@ -1645,6 +1648,7 @@ def get_session_report(code: str, fmt: str = "json", db: Session = Depends(get_d
     # Die Klassenleitung liest ihren eigenen Bericht mit vollen Namen, jede
     # andere Lehrkraft mit »Anna B.«.
     scope = NameScope(db, current)
+    boss_anzahl: dict = {}
     for a in sorted(s.attempts, key=lambda a: _participant_name(a, scope)):
         rows.append({
             "attempt_id": a.id, "student_id": a.student_id,
@@ -1654,7 +1658,7 @@ def get_session_report(code: str, fmt: str = "json", db: Session = Depends(get_d
             "errors_total": a.errors_total, "hints_total": a.hints_total,
             "easier_taken_total": a.easier_taken_total,
             "elapsed_seconds": _attempt_summary(a)["elapsed_seconds"],
-            "boss_ergebnis": _boss_ergebnis(a, s.exitgame.data),
+            "boss_ergebnis": _boss_ergebnis(a, s.exitgame.data, boss_anzahl),
         })
 
     if fmt == "csv":

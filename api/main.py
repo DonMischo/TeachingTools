@@ -1,11 +1,13 @@
 import asyncio
 import logging
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 
+from .challenge_lauf import LaufFehler
 from .database import engine
 from .models import Base
 from .database import get_db
@@ -16,6 +18,12 @@ from .routers.capuths import _inactivity_watchdog
 from .seed import ensure_classes, ensure_sportfest_disciplines, ensure_teacher_roles, ensure_wochenstunden, ensure_calendar_tags, ensure_school_settings
 
 app = FastAPI(title="TT - Teaching Tools API")
+
+
+@app.exception_handler(LaufFehler)
+async def _lauf_fehler(_: Request, e: LaufFehler):
+    """Fehler der Challenge-Lauf-Logik (Router und Boss-Folien) im Format von HTTPException."""
+    return JSONResponse({"detail": e.text}, status_code=e.status)
 
 app.add_middleware(
     CORSMiddleware,

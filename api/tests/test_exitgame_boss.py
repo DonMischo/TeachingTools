@@ -122,6 +122,7 @@ def test_start_antwort_and_finish_solves_slide_and_opens_door(client, db, teache
     assert not _antwort(client, token, aid, "c5", ["f3"]).json()["komplett"]
     fertig = _antwort(client, token, aid, "c5").json()
     assert fertig["fertig"] and fertig["attempt"]["solved_slide_ids"] == ["boss1"]
+    assert fertig["brett"]["fertig"] and "solve" not in str(fertig["brett"])  # Antwort bringt das Brett mit
     assert fertig["code_fragments"][0]["earned"] and fertig["code_fragments"][0]["fragment"] == "XY"
 
     r = client.post(f"/api/exitgame-attempts/{aid}/events", headers=_auth(token),

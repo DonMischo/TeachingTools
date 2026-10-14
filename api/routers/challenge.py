@@ -20,7 +20,7 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, load_only
 
 from .. import challenge_engine as eng
 from .. import challenge_lauf as lauf_logik
@@ -29,6 +29,7 @@ from ..authorship import author_fields, can_modify, is_student, scope_to_student
 from ..availability import require_capability
 from ..database import get_db
 from ..display_names import short_name
+from ..challenge_lauf import AntwortIn, DeckIn, SKINS, STANDARD_STARTSTUFE, StartIn
 from ..models import ChallengeKalibrierung, ChallengeSet, ChallengeStand, Class, Student, Teacher, ToolSession, Transaction
 from ..upload_utils import ALLOWED_EXTENSIONS, save_image
 from .karten_quiz import _anzeigename, _wer
@@ -36,9 +37,6 @@ from .karten_quiz import _anzeigename, _wer
 router = APIRouter(prefix="/api/challenge", tags=["challenge"])
 
 CHALLENGE_DATA_ROOT = Path(__file__).parent.parent.parent / "data" / "challenges"
-
-STANDARD_STARTSTUFE = 2
-SKINS = ("monster", "rap", "prinzessin", "einhorn")
 
 
 # ── Sätze: Laden und Prüfen ──────────────────────────────────────────
@@ -260,11 +258,20 @@ def _stand(db: Session, s: ToolSession, spieler) -> ChallengeStand | None:
     return db.query(ChallengeStand).filter_by(session_id=s.id, **_wer(spieler)).first()
 
 
+def _stand_oder_409(db: Session, s: ToolSession, spieler) -> ChallengeStand:
+    st = _stand(db, s, spieler)
+    if st is None:
+        raise HTTPException(409, "Erst starten")
+    return st
+
+
 def _lauf(st: ChallengeStand) -> dict:
-    """Stand-Spalten als Lauf-dict (api/challenge_lauf.py); ``spiel`` liegt im ``zustand``."""
-    z = copy.deepcopy(st.zustand)
+    """Stand-Spalten als Lauf-dict (api/challenge_lauf.py); ``spiel`` liegt im ``zustand``.
+
+    Flache Kopien genügen: die Lauf-Logik ersetzt Listen und Unter-dicts, statt sie zu verändern."""
+    z = dict(st.zustand)
     return {"stufe": st.stufe, "stufe_start": st.stufe_start, "seed": st.seed, "spiel": z.pop("spiel", "normal"),
-            "zustand": z, "fragen": copy.deepcopy(st.fragen), "verlauf": copy.deepcopy(st.verlauf),
+            "zustand": z, "fragen": list(st.fragen), "verlauf": list(st.verlauf),
             "fertig": st.fertig_am is not None}
 
 
@@ -277,9 +284,9 @@ def _speichern(st: ChallengeStand, lauf: dict) -> None:
 
 def _neuer_stand(db: Session, s: ToolSession, spieler, daten: dict, spiel: str) -> ChallengeStand:
     lauf = lauf_logik.neuer_lauf(daten, _startstufe(s, spieler), spiel)
-    st = ChallengeStand(session_id=s.id, name=_anzeigename(spieler)[:100], stufe=lauf["stufe"], stufe_start=lauf["stufe"],
-                        seed=lauf["seed"], zustand={**lauf["zustand"], "spiel": spiel}, fragen=[], verlauf=[],
+    st = ChallengeStand(session_id=s.id, name=_anzeigename(spieler)[:100], stufe_start=lauf["stufe"], seed=lauf["seed"],
                         class_id=spieler.class_id if isinstance(spieler, Student) else None, **_wer(spieler))
+    _speichern(st, lauf)
     db.add(st)
     db.flush()
     return st
@@ -289,13 +296,18 @@ def _bild(set_id: int):
     return lambda name: f"/uploads/challenges/{set_id}/assets/{name}"
 
 
-def _fehler(e: lauf_logik.LaufFehler) -> HTTPException:
-    return HTTPException(e.status, e.text)
-
-
 def _kalibrierung(db: Session, class_id: int | None) -> dict | None:
     zeile = db.query(ChallengeKalibrierung).filter_by(class_id=class_id).first() if class_id is not None else None
     return zeile.werte if zeile else None
+
+
+def _kalibrierungen(db: Session, class_ids) -> dict[int, dict]:
+    """Kalibrierungen mehrerer Klassen mit einer Abfrage; Klassen ohne eigene fehlen im Ergebnis."""
+    ids = {c for c in class_ids if c is not None}
+    if not ids:
+        return {}
+    return {cid: werte for cid, werte in db.query(ChallengeKalibrierung.class_id, ChallengeKalibrierung.werte)
+            .filter(ChallengeKalibrierung.class_id.in_(ids)).all() if werte}
 
 
 # ── Spieler ──────────────────────────────────────────────────────────
@@ -312,13 +324,14 @@ def statistik(class_id: int | None = None, db: Session = Depends(get_db), lehrkr
     for st in q.all():
         gruppen.setdefault((st.class_id, st.stufe), []).append(st)
     klassen = {c.id: c.code for c in db.query(Class).filter(Class.id.in_({k[0] for k in gruppen})).all()} if gruppen else {}
+    kalibrierungen = _kalibrierungen(db, {k[0] for k in gruppen})
     zeilen = []
     for (cid, stufe), staende in sorted(gruppen.items()):
         fragen = [f for st in staende for f in st.fragen]
         tempos = [t for t in (eng.lesetempo(f["woerter"], f["lese_ms"]) for f in fragen) if t is not None]
         zeilen.append({"class_id": cid, "klasse": klassen.get(cid, str(cid)), "stufe": stufe, "teilnehmer": len(staende),
                        "lesetempo_median": round(statistics.median(tempos), 1) if tempos else None,
-                       "anteil_geraten": round(sum(_geraten(f, _kalibrierung(db, cid)) for f in fragen) / len(fragen), 3) if fragen else 0})
+                       "anteil_geraten": round(sum(_geraten(f, kalibrierungen.get(cid)) for f in fragen) / len(fragen), 3) if fragen else 0})
     return zeilen
 
 
@@ -341,8 +354,8 @@ def kalibrierung_lesen(class_id: int, db: Session = Depends(get_db), _: Teacher 
     """Aktuelle Werte der Klasse und ein Vorschlag aus allen ihren Antworten (nur Summen, nichts wird gespeichert)."""
     aktuell = _kalibrierung(db, class_id) or eng.STANDARD_KALIBRIERUNG
     je_stufe: dict[int, list[dict]] = {}
-    for st in db.query(ChallengeStand).filter_by(class_id=class_id).all():
-        for f in st.fragen:
+    for (fragen,) in db.query(ChallengeStand.fragen).filter_by(class_id=class_id).all():
+        for f in fragen:
             je_stufe.setdefault(f["stufe"], []).append(f)
     v = eng.vorschlag(je_stufe, aktuell)
     return {"aktuell": aktuell, "vorschlag": v["werte"], "stichprobe": v["stichprobe"], "genug": v["genug"]}
@@ -384,10 +397,6 @@ def info(code: str, db: Session = Depends(get_db), spieler=Depends(get_player)):
                                               "fragen": len(st.fragen), "ergebnis": st.ergebnis, "fertig": st.fertig_am is not None}}
 
 
-class StartIn(BaseModel):
-    spiel: str | None = Field(default=None, max_length=30)
-
-
 @router.post("/{code}/start")
 def start(code: str, body: StartIn | None = None, db: Session = Depends(get_db), spieler=Depends(get_player)):
     """Stand anlegen oder fortsetzen (optional mit anderer Spielart); zurück kommt das Brett der aktuellen Etappe."""
@@ -402,17 +411,10 @@ def start(code: str, body: StartIn | None = None, db: Session = Depends(get_db),
         st = _neuer_stand(db, s, spieler, g.data, wunsch if wunsch in erlaubt else erlaubt[0])
     elif wunsch in erlaubt:
         lauf = _lauf(st)
-        try:
-            lauf_logik.spiel_wechseln(g.data, lauf, wunsch)
-        except lauf_logik.LaufFehler as e:
-            raise _fehler(e)
+        lauf_logik.spiel_wechseln(g.data, lauf, wunsch)
         _speichern(st, lauf)
     db.commit()
     return lauf_logik.brett(g.data, _lauf(st), _bild(g.id))
-
-
-class DeckIn(BaseModel):
-    fakt_ids: list[str] = Field(max_length=100)
 
 
 @router.post("/{code}/deck")
@@ -420,45 +422,26 @@ def deck(code: str, body: DeckIn, db: Session = Depends(get_db), spieler=Depends
     """Kartenspiel: Deck der aktuellen Etappe festlegen; zurück kommt das Brett."""
     s = _offene_sitzung(db, code)
     g = _satz(db, s)
-    st = _stand(db, s, spieler)
-    if st is None:
-        raise HTTPException(409, "Erst starten")
+    st = _stand_oder_409(db, s, spieler)
     lauf = _lauf(st)
-    try:
-        lauf_logik.deck_setzen(g.data, lauf, body.fakt_ids)
-    except lauf_logik.LaufFehler as e:
-        raise _fehler(e)
+    lauf_logik.deck_setzen(g.data, lauf, body.fakt_ids)
     _speichern(st, lauf)
     db.commit()
     return lauf_logik.brett(g.data, lauf, _bild(g.id))
 
 
-class AntwortIn(BaseModel):
-    challenge_id: str = Field(max_length=100)
-    fakt_ids: list[str] = Field(max_length=100)
-    lese_ms: int = Field(ge=0)
-    wahl_ms: int = Field(ge=0)
-    tipp: bool = False
-
-
 @router.post("/{code}/antwort")
 def antwort(code: str, body: AntwortIn, db: Session = Depends(get_db), spieler=Depends(get_player)):
     s = _offene_sitzung(db, code)
-    daten = _satz(db, s).data
-    st = _stand(db, s, spieler)
-    if st is None:
-        raise HTTPException(409, "Erst starten")
+    g = _satz(db, s)
+    st = _stand_oder_409(db, s, spieler)
     lauf = _lauf(st)
-    try:
-        aus = lauf_logik.antworte(daten, lauf, body.challenge_id, body.fakt_ids, body.lese_ms, body.wahl_ms, body.tipp,
-                                  _kalibrierung(db, st.class_id))
-    except lauf_logik.LaufFehler as e:
-        raise _fehler(e)
+    aus, neues_brett, w = lauf_logik.antworte_mit_brett(g.data, lauf, body.challenge_id, body.fakt_ids, body.lese_ms,
+                                                        body.wahl_ms, body.tipp, _kalibrierung(db, st.class_id), _bild(g.id))
     _speichern(st, lauf)
-    w = lauf_logik.wertung(daten, lauf)
     st.guete, st.ergebnis = w["guete"], w["ergebnis"]
     db.commit()
-    return aus
+    return {**aus, "brett": neues_brett}
 
 
 class SpielwertIn(BaseModel):
@@ -485,9 +468,7 @@ def spielwert(code: str, body: SpielwertIn, db: Session = Depends(get_db), spiel
     if body.edelsteine > body.max:
         raise HTTPException(422, "Mehr Edelsteine als möglich")
     s = _offene_sitzung(db, code)
-    st = _stand(db, s, spieler)
-    if st is None:
-        raise HTTPException(409, "Erst starten")
+    st = _stand_oder_409(db, s, spieler)
     z = copy.deepcopy(st.zustand)
     je_spiel = z.setdefault("spielwerte", {}).setdefault(body.spiel, {})
     alt = je_spiel.get(str(body.etappe))
@@ -506,7 +487,8 @@ def bestenliste(code: str, spiel: str = "huepfen", db: Session = Depends(get_db)
     s = _sitzung(db, code)
     ich = _wer(spieler)
     zeilen = []
-    for st in db.query(ChallengeStand).filter_by(session_id=s.id).all():
+    spalten = [ChallengeStand.name, ChallengeStand.zustand, *(getattr(ChallengeStand, k) for k in ich)]
+    for st in db.query(ChallengeStand).options(load_only(*spalten)).filter_by(session_id=s.id).all():
         werte = (st.zustand.get("spielwerte") or {}).get(spiel)
         if not werte:
             continue
@@ -548,20 +530,30 @@ def _teilnehmer(st: ChallengeStand, klasse: str, ablenker: dict[str, str], kalib
             "edelsteine": _summe_spielwerte(st.zustand, "huepfen")[0] if (st.zustand.get("spielwerte") or {}).get("huepfen") else None}
 
 
-def _teilnehmerliste(db: Session, s: ToolSession) -> list[dict]:
+def _staende(db: Session, s: ToolSession) -> list[ChallengeStand]:
+    return db.query(ChallengeStand).filter_by(session_id=s.id).order_by(ChallengeStand.name).all()
+
+
+def _teilnehmerliste(db: Session, s: ToolSession, staende: list[ChallengeStand] | None = None) -> list[dict]:
     daten = _satz(db, s).data
     ablenker = {f["id"]: f["text"] for f in daten.get("facts", []) if f.get("decoy")}
-    klassen = {c.id: c.code for c in db.query(Class).all()}
-    staende = db.query(ChallengeStand).filter_by(session_id=s.id).order_by(ChallengeStand.name).all()
+    staende = _staende(db, s) if staende is None else staende
+    class_ids = {st.class_id for st in staende if st.class_id is not None}
+    klassen = {cid: code for cid, code in db.query(Class.id, Class.code).filter(Class.id.in_(class_ids)).all()} if class_ids else {}
+    kalibrierungen = _kalibrierungen(db, class_ids)
     return [_teilnehmer(st, klassen.get(st.class_id, "Gast" if st.guest_id else "Lehrkraft" if st.teacher_id else ""),
-                        ablenker, _kalibrierung(db, st.class_id)) for st in staende]
+                        ablenker, kalibrierungen.get(st.class_id)) for st in staende]
 
 
-def vorschau_punkte(db: Session, s: ToolSession) -> list[dict]:
-    """Je Klasse der Mittelwert der Punkte (Ergebnis × 100) ihrer Schüler:innen; Gäste und Lehrkräfte zählen nicht."""
+def vorschau_punkte(db: Session, s: ToolSession, staende: list[ChallengeStand] | None = None) -> list[dict]:
+    """Je Klasse der Mittelwert der Punkte (Ergebnis × 100) ihrer Schüler:innen; Gäste und Lehrkräfte zählen nicht.
+
+    ``staende``: schon geladene Stände der Sitzung (spart die zweite Abfrage)."""
     je: dict[int, list[int]] = {}
-    for st in db.query(ChallengeStand).filter(ChallengeStand.session_id == s.id, ChallengeStand.student_id.isnot(None)).all():
-        if st.class_id is not None:
+    if staende is None:
+        staende = db.query(ChallengeStand).filter(ChallengeStand.session_id == s.id).all()
+    for st in staende:
+        if st.student_id is not None and st.class_id is not None:
             je.setdefault(st.class_id, []).append(round(st.ergebnis * 100))
     klassen = {c.id: c.code for c in db.query(Class).filter(Class.id.in_(je.keys())).all()} if je else {}
     return sorted(({"class_id": cid, "klasse": klassen.get(cid, str(cid)), "teilnehmer": len(werte),
@@ -571,7 +563,8 @@ def vorschau_punkte(db: Session, s: ToolSession) -> list[dict]:
 @router.get("/{code}/uebersicht")
 def uebersicht(code: str, db: Session = Depends(get_db), lehrkraft: Teacher = Depends(get_current_teacher)):
     s = _eigene_sitzung(db, code, lehrkraft)
-    return {"teilnehmer": _teilnehmerliste(db, s), "punkte": vorschau_punkte(db, s)}
+    staende = _staende(db, s)
+    return {"teilnehmer": _teilnehmerliste(db, s, staende), "punkte": vorschau_punkte(db, s, staende)}
 
 
 @router.get("/{code}/export.csv")

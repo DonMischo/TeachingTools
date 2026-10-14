@@ -10,8 +10,30 @@ lauf = {"stufe", "stufe_start", "seed", "spiel", "fertig",
 import random
 from datetime import datetime, timezone
 
+from pydantic import BaseModel, Field
+
 from . import challenge_engine as eng
 from . import dda
+
+STANDARD_STARTSTUFE = 2
+SKINS = ("monster", "rap", "prinzessin", "einhorn")
+
+
+# Eingaben, die der Challenge-Router und die Boss-Folien (TaskCrawler) teilen
+class StartIn(BaseModel):
+    spiel: str | None = Field(default=None, max_length=30)
+
+
+class DeckIn(BaseModel):
+    fakt_ids: list[str] = Field(max_length=100)
+
+
+class AntwortIn(BaseModel):
+    challenge_id: str = Field(max_length=100)
+    fakt_ids: list[str] = Field(max_length=100)
+    lese_ms: int = Field(ge=0)
+    wahl_ms: int = Field(ge=0)
+    tipp: bool = False
 
 
 class LaufFehler(Exception):
@@ -46,19 +68,23 @@ def spiel_wechseln(daten: dict, lauf: dict, spiel: str) -> None:
         lauf["zustand"]["etappe"] = eng.etappen(_satz(daten, lauf))[0]
 
 
+def _in_etappe(satz: dict, nr: int) -> list[dict]:
+    return [c for c in satz["challenges"] if c.get("stage", 1) == nr]
+
+
 def _etappe(satz: dict, lauf: dict) -> int:
     """Aktuelle Etappe: ab dem gemerkten Stand die erste mit offenen Challenges (nach einem Stufenwechsel
     kann sich der Satz geändert haben), sonst die letzte."""
     erledigt = set(lauf["zustand"]["erledigt"])
     nummern = eng.etappen(satz)
     for nr in nummern:
-        if nr >= lauf["zustand"]["etappe"] and any(c["id"] not in erledigt for c in satz["challenges"] if c.get("stage", 1) == nr):
+        if nr >= lauf["zustand"]["etappe"] and any(c["id"] not in erledigt for c in _in_etappe(satz, nr)):
             return nr
     return nummern[-1]
 
 
-def brett(daten: dict, lauf: dict, bild=lambda name: name, tipps: bool | None = None) -> dict:
-    satz = _satz(daten, lauf)
+def brett(daten: dict, lauf: dict, bild=lambda name: name, tipps: bool | None = None, satz: dict | None = None) -> dict:
+    satz = satz or _satz(daten, lauf)
     etappe = _etappe(satz, lauf)
     erledigt = set(lauf["zustand"]["erledigt"])
     params = eng.STUFE_PARAMS[lauf["stufe"]]
@@ -68,7 +94,7 @@ def brett(daten: dict, lauf: dict, bild=lambda name: name, tipps: bool | None = 
     if params["ablenker"] is not None:
         ablenker = random.Random(lauf["seed"]).sample(ablenker, min(params["ablenker"], len(ablenker)))
     fakten = [f for f in satz["facts"] if not f.get("decoy")] + ablenker
-    aufgaben = [c for c in satz["challenges"] if c.get("stage", 1) == etappe]
+    aufgaben = _in_etappe(satz, etappe)
     rng = random.Random(lauf["seed"] + etappe)
     rng.shuffle(fakten)
     rng.shuffle(aufgaben)
@@ -84,7 +110,7 @@ def brett(daten: dict, lauf: dict, bild=lambda name: name, tipps: bool | None = 
         "stufe": lauf["stufe"], "etappe": etappe, "leben": lauf["zustand"]["leben"], "spiel": lauf["spiel"],
         "deck": lauf["zustand"].get("deck", {}).get(str(etappe)),
         "etappen": [{"nr": nr, "titel": titel.get(nr) or f"Etappe {nr}",
-                     "erledigt": all(c["id"] in erledigt for c in satz["challenges"] if c.get("stage", 1) == nr)}
+                     "erledigt": all(c["id"] in erledigt for c in _in_etappe(satz, nr))}
                     for nr in eng.etappen(satz)],
         "challenges": [challenge_out(c) for c in aufgaben],
         "fakten": [{"id": f["id"], "text": f["text"], "image": bild(f["image"]) if f.get("image") else None,
@@ -95,18 +121,31 @@ def brett(daten: dict, lauf: dict, bild=lambda name: name, tipps: bool | None = 
 
 def deck_setzen(daten: dict, lauf: dict, fakt_ids: list[str]) -> None:
     """Kartenspiel: die Fakten, mit denen die aktuelle Etappe gespielt wird (nur solche des Bretts)."""
-    b = brett(daten, lauf)
+    satz = _satz(daten, lauf)
+    b = brett(daten, lauf, satz=satz)
     ids = list(dict.fromkeys(fakt_ids))
     if not ids or not set(ids) <= {f["id"] for f in b["fakten"]}:
         raise LaufFehler(400, "Das Deck braucht mindestens einen Fakt aus dem Brett")
     z = lauf["zustand"]
     z["deck"] = {**z.get("deck", {}), str(b["etappe"]): ids}
-    ablenker = {f["id"] for f in _satz(daten, lauf)["facts"] if f.get("decoy")}
+    ablenker = {f["id"] for f in satz["facts"] if f.get("decoy")}
     z["deck_ablenker"] = list(dict.fromkeys([*z.get("deck_ablenker", []), *(i for i in ids if i in ablenker)]))
 
 
 def antworte(daten: dict, lauf: dict, challenge_id: str, fakt_ids: list[str], lese_ms: int, wahl_ms: int, tipp: bool,
              kalibrierung: dict | None = None) -> dict:
+    return _antworte(daten, lauf, challenge_id, fakt_ids, lese_ms, wahl_ms, tipp, kalibrierung)[0]
+
+
+def antworte_mit_brett(daten: dict, lauf: dict, challenge_id: str, fakt_ids: list[str], lese_ms: int, wahl_ms: int,
+                       tipp: bool, kalibrierung: dict | None = None, bild=lambda name: name) -> tuple[dict, dict, dict]:
+    """Antwort, neues Brett und Wertung mit einem einzigen Satz (der Stufe nach der Antwort)."""
+    aus, satz = _antworte(daten, lauf, challenge_id, fakt_ids, lese_ms, wahl_ms, tipp, kalibrierung)
+    return aus, brett(daten, lauf, bild, satz=satz), wertung(daten, lauf, satz)
+
+
+def _antworte(daten, lauf, challenge_id, fakt_ids, lese_ms, wahl_ms, tipp, kalibrierung) -> tuple[dict, dict]:
+    """(Antwort, Satz der Stufe nach der Antwort)."""
     if lauf["fertig"]:
         raise LaufFehler(409, "Schon fertig")
     satz = _satz(daten, lauf)
@@ -139,7 +178,7 @@ def antworte(daten: dict, lauf: dict, challenge_id: str, fakt_ids: list[str], le
         if z["leben"] <= 0:
             zurueck, z["leben"] = True, eng.LEBEN
             z["deck"].pop(str(etappe), None)  # neu zusammenstellen
-    if all(c["id"] in z["erledigt"] for c in satz["challenges"] if c.get("stage", 1) == etappe):
+    if all(c["id"] in z["erledigt"] for c in _in_etappe(satz, etappe)):
         etappe_geschafft = True
         z["leben"] = eng.LEBEN
         weitere = [nr for nr in eng.etappen(satz) if nr > etappe]
@@ -151,7 +190,10 @@ def antworte(daten: dict, lauf: dict, challenge_id: str, fakt_ids: list[str], le
     lauf["fragen"] = [*lauf["fragen"], frage]
     lauf["verlauf"] = [*lauf["verlauf"], snapshot][-dda.HISTORY_LIMIT:]
     lauf["zustand"] = z
+    stufe_alt = lauf["stufe"]
     lauf["stufe"] = eng.neue_stufe(lauf["stufe"], lauf["verlauf"], kalibrierung)
+    if lauf["stufe"] != stufe_alt:
+        satz = _satz(daten, lauf)
 
     aus = {"qualitaet": wertung["qualitaet"], "treffer": wertung["treffer"], "komplett": wertung["komplett"],
            "kombo": wertung["kombo"], "schaden": wertung["schaden"], "falsch_gewaehlt": len(wertung["falsch"]),
@@ -159,9 +201,14 @@ def antworte(daten: dict, lauf: dict, challenge_id: str, fakt_ids: list[str], le
            "fertig": lauf["fertig"], "stufe": lauf["stufe"]}
     if wertung["komplett"]:
         aus["feedback"] = challenge.get("feedback")
-    return aus
+    return aus, satz
 
 
-def wertung(daten: dict, lauf: dict) -> dict:
+def anzahl_challenges(daten: dict, lauf: dict) -> int:
+    return len(_satz(daten, lauf)["challenges"])
+
+
+def wertung(daten: dict, lauf: dict, satz: dict | None = None) -> dict:
+    satz = satz or _satz(daten, lauf)
     return {"guete": round(eng.guete(lauf["fragen"]), 4),
-            "ergebnis": eng.ergebnis(lauf["fragen"], len(_satz(daten, lauf)["challenges"]))}
+            "ergebnis": eng.ergebnis(lauf["fragen"], len(satz["challenges"]))}

@@ -250,6 +250,7 @@ def test_komplette_antwort_markiert_erledigt_und_haelt_loesung_zurueck(client, d
     assert not {"solve", "decoy", "loesung"} & set(_alle_schluessel(body))
     brett = _start(client, code, tok).json()
     assert next(c for c in brett["challenges"] if c["id"] == "c1")["erledigt"] is True
+    assert body["brett"] == brett  # die Antwort bringt das neue Brett mit, kein zweiter Request nötig
 
 
 def test_falsche_antwort_kostet_leben_ohne_feedback(client, db, teacher_token, klass):

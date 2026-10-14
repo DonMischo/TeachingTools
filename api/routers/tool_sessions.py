@@ -31,6 +31,8 @@ SESSION_TOOLS = ("abacus", "gleichungswaage", "bildformate", "tippen", "zeitstra
 # Zeitstrahl ist eine Bibliothek: geteilt wird immer *eine* Zeitleiste, also
 # gehoert ihre Id zur Sitzung — und je Zeitleiste gibt es einen eigenen Code.
 REF_TOOLS = {"zeitstrahl": TimelineSet, "karten": KartenSatz, "challenge": ChallengeSet}
+# Werkzeuge, deren geteilter Satz über /content an Spieler gehen darf (ein Challenge-Satz enthält die Lösungen)
+OEFFENTLICHER_INHALT = ("zeitstrahl", "karten")
 
 
 class ToolSessionOut(BaseModel):
@@ -173,7 +175,7 @@ def session_content(code: str, db: Session = Depends(get_db), _player=Depends(ge
 
     model = REF_TOOLS.get(session.tool_slug)
     # Ein Challenge-Satz enthält die Lösungen; Spieler bekommen nur das Brett (api/routers/challenge.py).
-    if model is None or session.ref_id is None or session.tool_slug == "challenge":
+    if session.tool_slug not in OEFFENTLICHER_INHALT or model is None or session.ref_id is None:
         raise HTTPException(404, "Diese Sitzung teilt keinen Inhalt")
     row = db.get(model, session.ref_id)
     if row is None:

@@ -5,6 +5,7 @@ die Lösungen verlassen den Server nie.
 """
 import copy
 import statistics
+from functools import lru_cache
 
 from . import dda
 
@@ -251,8 +252,12 @@ def _regelwerk(kalibrierung: dict | None) -> dict:
     zeit = (kalibrierung or {}).get("antwortzeit")
     if not zeit:
         return dda.DEFAULT_RULESET
+    return _regelwerk_fuer(zeit["schnell"], zeit["langsam"])
+
+
+@lru_cache(maxsize=64)
+def _regelwerk_fuer(schnell: float, langsam: float) -> dict:
     regeln = copy.deepcopy(dda.DEFAULT_RULESET)
-    schnell, langsam = zeit["schnell"], zeit["langsam"]
     grenzen = {"fast": [0, 0, schnell], "medium": [schnell * 0.67, (schnell + langsam) / 2, langsam * 1.25],
                "slow": [langsam, 60, 60]}
     eingang = next(i for i in regeln["inputs"] if i["id"] == "response_time")
