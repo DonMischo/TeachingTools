@@ -3,11 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import type { ChallengeAntwort } from "@/lib/api";
 import { themeVon } from "@/lib/challenge/themes";
-import Bestenliste from "@/components/challenge/Bestenliste";
+import { BestenlisteKnopf } from "@/components/challenge/Bestenliste";
+import { Buehne } from "@/components/challenge/pixel/Buehne";
+import Npc from "@/components/challenge/pixel/Npc";
+import { useSpielwert } from "@/lib/challenge/useSpielwert";
 import type { ModusProps } from "./typen";
 import { Ablage, FaktKarte, Herzen, Inhalt, Treffermeldung } from "./teile";
-import { GerichtStil, Saal, useSpielwert } from "./gericht/hilfen";
-import Npc from "./gericht/Npc";
+import { GerichtStil } from "./gericht/hilfen";
 
 const ZEUGEN_SPRUCH = [
   "Äh … ja, genau das habe ich gesagt!", "Das ist die reine Wahrheit, Euer Ehren!", "Daran gibt es nichts zu rütteln!",
@@ -39,7 +41,7 @@ export default function Gericht({ brett, lauf, zurKarte }: ModusProps) {
   const offene = brett.challenges.filter((c) => !c.erledigt);
   const aussage = offene[Math.min(idx, offene.length - 1)];
   const aussageId = aussage?.id;
-  useEffect(() => { if (!akte && aussageId) lauf.waehle(aussageId); }, [akte, aussageId]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (!akte && aussageId) lauf.waehle(); }, [akte, aussageId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const blaettere = (d: number) => { setIdx((idx + d + offene.length) % offene.length); setAblage([]); setTipp(false); setErgebnis(null); };
   const lege = (id: string) => {
@@ -114,7 +116,7 @@ export default function Gericht({ brett, lauf, zurKarte }: ModusProps) {
         <span className="text-muted text-sm" aria-live="polite">{musik}</span>
       </div>
       <div className={`relative ${burst ? "gr-schuettel" : ""}`}>
-        <Saal bg={saal.hintergrund} farbe={saal.farben.boden} label="Gerichtssaal">
+        <Buehne wand bg={saal.hintergrund} farbe={saal.farben.boden} label="Gerichtssaal">
           <Npc name="king" scale={4} label="Richter" className={`absolute left-1/2 -translate-x-1/2 top-2 ${daneben ? "gr-zittern" : ""}`} />
           <span className={`absolute left-[58%] top-14 text-3xl origin-bottom-right ${hammer ? "gr-hammer" : ""}`} style={{ transform: hammer ? undefined : "rotate(-40deg)" }} aria-hidden>🔨</span>
           {hammer && <span className="absolute left-[64%] top-20 font-black text-lg" aria-hidden>TOCK!</span>}
@@ -128,7 +130,7 @@ export default function Gericht({ brett, lauf, zurKarte }: ModusProps) {
           <span className="absolute left-[8%] bottom-28 text-xs font-bold bg-white text-black rounded px-1" role="status">
             {["Selbstsicher", "Schwitzt", "Zittert", "Bricht zusammen!"][stufe]}
           </span>
-        </Saal>
+        </Buehne>
         {burst && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none" role="alert">
             <svg viewBox="0 0 300 180" className="w-[80%] max-w-md gr-burst" aria-hidden>
@@ -190,10 +192,7 @@ export default function Gericht({ brett, lauf, zurKarte }: ModusProps) {
           )}
         </>
       ) : <p className="card p-3">Keine offenen Aussagen mehr – der Zeuge hat gestanden!</p>}
-      {lauf.hatBestenliste && (
-        <details className="card p-3"><summary className="font-bold cursor-pointer">🏆 Bestenliste (Nachhaken)</summary>
-          <Bestenliste laden={lauf.bestenliste} spiel="gericht" /></details>
-      )}
+      {lauf.hatBestenliste && <div><BestenlisteKnopf lauf={lauf} spiel="gericht" /></div>}
     </>
   );
 }

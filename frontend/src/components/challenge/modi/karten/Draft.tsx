@@ -2,19 +2,19 @@
 /** Deck bauen wie im Booster: fünf verdeckte Karten aufdecken, beliebig viele nehmen; Abgelehntes kommt noch einmal. */
 import { useMemo, useState } from "react";
 import type { ChallengeBrett } from "@/lib/api";
+import { wenigerBewegung } from "@/lib/challenge/bewegung";
 import Karte, { Rueckseite } from "./Karte";
-import { deckZiel, draftNimm, draftStart, hash } from "./logik";
-
-const reduziert = () => typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+import { hashText } from "@/lib/challenge/zufall";
+import { deckZiel, draftNimm, draftStart } from "./logik";
 
 export default function Draft({ brett, onFertig }: { brett: ChallengeBrett; onFertig(ids: string[]): void }) {
   const fakten = useMemo(() => new Map(brett.fakten.map((f) => [f.id, f])), [brett.fakten]);
-  const seed = useMemo(() => hash(`${brett.etappe}:${brett.fakten.map((f) => f.id).join(",")}`), [brett.etappe, brett.fakten]);
+  const seed = useMemo(() => hashText(`${brett.etappe}:${brett.fakten.map((f) => f.id).join(",")}`), [brett.etappe, brett.fakten]);
   const [d, setD] = useState(() => draftStart(brett.fakten.map((f) => f.id), seed));
   const [auf, setAuf] = useState(false);
   const [markiert, setMarkiert] = useState<string[]>([]);
   const ziel = deckZiel(brett.fakten.length);
-  const offen = auf || reduziert();
+  const offen = auf || wenigerBewegung();
 
   const markiere = (id: string) => setMarkiert((m) => (m.includes(id) ? m.filter((x) => x !== id) : [...m, id]));
   const nimm = () => {

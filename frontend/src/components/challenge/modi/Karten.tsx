@@ -7,10 +7,11 @@ import Draft from "./karten/Draft";
 import Etappenkarte, { wegInfo } from "./karten/Etappenkarte";
 import Kampf from "./karten/Kampf";
 import { KARTEN_CSS } from "./karten/Karte";
-import { ENERGIE, hash } from "./karten/logik";
+import { hashText } from "@/lib/challenge/zufall";
+import { ENERGIE } from "./karten/logik";
 
 export default function Karten({ brett, theme, lauf, zurKarte }: ModusProps) {
-  const seed = hash(`${brett.etappe}:${brett.stufe}:${brett.fakten.length}`);
+  const seed = hashText(`${brett.etappe}:${brett.stufe}:${brett.fakten.length}`);
   const etappen = Math.max(brett.etappen.length, brett.etappe, 3);
   const info = wegInfo(seed, etappen, brett.etappe);
   const [lager, setLager] = useState(false);

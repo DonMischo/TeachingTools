@@ -45,7 +45,7 @@ describe("Karten", () => {
     await u.click(screen.getByRole("button", { name: "Ausspielen" }));
     await waitFor(() => expect(lauf.antworte).toHaveBeenCalledWith("c1", ["f1"], false));
     expect(await screen.findByText("Daneben")).toBeTruthy();
-    expect(lauf.spielwert).toHaveBeenCalledWith("karten", 1, expect.any(Number), 3);
+    await waitFor(() => expect(lauf.spielwert).toHaveBeenCalledWith("karten", 1, expect.any(Number), 3), { timeout: 3000 }); // gedrosselt gemeldet
   });
   it("Zug beenden: Hand auf die Ablage, neue Hand, Energie voll", async () => {
     const lauf = mk(); const u = userEvent.setup();

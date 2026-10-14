@@ -6,7 +6,7 @@
 import { useEffect, useState } from "react";
 import type { ChallengeAntwort } from "@/lib/api";
 import type { ModusProps } from "./typen";
-import Bestenliste from "../Bestenliste";
+import { BestenlisteKnopf } from "../Bestenliste";
 import { Ablage, FaktKarte, Herzen, Inhalt, Treffermeldung } from "./teile";
 import Holz from "./bruecke/Holz";
 import Schlucht, { type Fahrt } from "./bruecke/Schlucht";
@@ -24,7 +24,6 @@ export default function Bruecke({ brett, theme, lauf, zurKarte }: ModusProps) {
   const [antwort, setAntwort] = useState<ChallengeAntwort | null>(null);
   const [sende, setSende] = useState(false);
   const [verschwendet, setVerschwendet] = useState(0);
-  const [liste, setListe] = useState(false);
 
   const fakten = new Map(brett.fakten.map((f) => [f.id, f]));
   const offeneIdx = luecken.map((c, i) => i).filter((i) => !fertig.includes(luecken[i].id));
@@ -34,24 +33,23 @@ export default function Bruecke({ brett, theme, lauf, zurKarte }: ModusProps) {
   const setAblage = (a: string[]) => c && setAblagen((m) => ({ ...m, [c.id]: a }));
 
   const aktivId = bau && !fertig.includes(c?.id ?? "") ? c?.id : undefined;
-  useEffect(() => { if (aktivId) lauf.waehle(aktivId); }, [aktivId]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (aktivId) lauf.waehle(); }, [aktivId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const kopf = (
     <div className="flex items-center justify-between gap-2 flex-wrap">
       <Herzen leben={brett.leben} />
       {bau && <span aria-label="Sterne" className="text-lg">{"★".repeat(sterne(verschwendet))}<span className="opacity-30">{"★".repeat(3 - sterne(verschwendet))}</span></span>}
       <div className="flex gap-2">
-        {lauf.hatBestenliste && <button className="btn-secondary" aria-expanded={liste} onClick={() => setListe(!liste)}>🏆 Bestenliste</button>}
+        <BestenlisteKnopf lauf={lauf} spiel="bruecke" rechts />
         <button className="btn-secondary" onClick={zurKarte}>Karte</button>
       </div>
     </div>
   );
-  const bestenliste = liste && <div className="card p-3" role="dialog" aria-label="Bestenliste"><Bestenliste laden={lauf.bestenliste} spiel="bruecke" /></div>;
 
   if (!bau) {
     return (
       <>
-        {kopf}{bestenliste}
+        {kopf}
         <h2 className="font-bold">Holz sammeln</h2>
         <Holz fakten={brett.fakten} theme={theme} seed={seed} gefunden={gesammelt}
           setGefunden={(f) => setGesammelt(f)} weiter={() => setBau(true)} />
@@ -77,7 +75,7 @@ export default function Bruecke({ brett, theme, lauf, zurKarte }: ModusProps) {
       setFahrt({ idx, art, bretter: ablage.length });
       if (r.komplett) {
         setFertig((f) => [...f, c.id]);
-        if (fertig.length + 1 >= luecken.length || r.etappe_geschafft || r.fertig) void lauf.spielwert?.("bruecke", brett.etappe, sterne(verlust), 3);
+        if (fertig.length + 1 >= luecken.length || r.etappe_geschafft || r.fertig) void lauf.spielwert("bruecke", brett.etappe, sterne(verlust), 3);
       }
       setVerschwendet(verlust);
     } catch {
@@ -98,7 +96,7 @@ export default function Bruecke({ brett, theme, lauf, zurKarte }: ModusProps) {
 
   return (
     <>
-      {kopf}{bestenliste}
+      {kopf}
       <Treffermeldung antwort={antwort} />
       {alleFertig && <p className="card p-3 font-bold text-good" role="status">Alle Brücken stehen! {"★".repeat(sterne(verschwendet))}</p>}
       <Schlucht luecken={schlucht} aktiv={idx} fahrt={fahrt} onEnde={fahrtEnde} />

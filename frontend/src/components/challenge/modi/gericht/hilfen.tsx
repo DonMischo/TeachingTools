@@ -1,15 +1,5 @@
 "use client";
-/** Kleinkram des Gericht-Modus: Stil, Gerichtssaal-Bühne, Spielwert-Meldung. */
-import { useEffect, useRef, type ReactNode } from "react";
-import type { ThemeDef } from "@/lib/challenge/themes";
-import { bodenKachel } from "@/lib/challenge/themes";
-import type { ChallengeLauf } from "@/lib/challenge/useChallengeLauf";
-import { Kachelfeld } from "@/components/challenge/pixel/Sprite";
-import { Passend } from "@/components/challenge/pixel/Passend";
-
-export const wenigerBewegung = () =>
-  typeof window !== "undefined" && typeof window.matchMedia === "function" && !!window.matchMedia("(prefers-reduced-motion: reduce)")?.matches;
-
+/** Kleinkram des Gericht-Modus: Animationsstil. */
 export function GerichtStil() {
   return (
     <style>{`
@@ -23,44 +13,4 @@ export function GerichtStil() {
       @media (prefers-reduced-motion: reduce){.gr-schuettel,.gr-burst,.gr-hammer,.gr-zittern,.gr-tropf{animation:none!important}}
     `}</style>
   );
-}
-
-type Hg = ThemeDef["hintergrund"];
-const SPALTEN = 14;
-const ZEILEN = 8;
-
-/** Gerichtssaal-Bühne 448×256 (14×8 Kacheln, Maßstab 2), oben zwei Zeilen Wand. */
-export function Saal({ bg, farbe, children, label, className }: { bg: Hg; farbe: string; children?: ReactNode; label: string; className?: string }) {
-  const karte = bg
-    ? Array.from({ length: ZEILEN }, (_, y) => Array.from({ length: SPALTEN }, (_, x) => (y < 2 ? bg.muster.wand[0] : bodenKachel(bg.muster.boden, x, y))))
-    : null;
-  return (
-    <div className={`rounded-lg ${className ?? ""}`} role="group" aria-label={label}>
-      <Passend breite={SPALTEN * 32} hoehe={ZEILEN * 32}>
-        <div className="relative mx-auto overflow-hidden" style={{ width: SPALTEN * 32, height: ZEILEN * 32, background: farbe }}>
-          {bg && karte && <Kachelfeld src={bg.src} tile={bg.tile} cols={bg.cols} scale={2} karte={karte} />}
-          {children}
-        </div>
-      </Passend>
-    </div>
-  );
-}
-
-/** Meldet den Spielwert gedrosselt und beim Abbau. */
-export function useSpielwert(lauf: ChallengeLauf, spiel: string, etappe: number, wert: number, max: number) {
-  const neu = useRef({ lauf, spiel, etappe, wert, max });
-  neu.current = { lauf, spiel, etappe, wert, max };
-  const gesendet = useRef(0);
-  const sende = () => {
-    const n = neu.current;
-    if (n.wert === gesendet.current) return;
-    gesendet.current = n.wert;
-    void n.lauf.spielwert?.(n.spiel, n.etappe, n.wert, n.max);
-  };
-  useEffect(() => {
-    if (wert === 0) return;
-    const t = setTimeout(sende, 1500);
-    return () => clearTimeout(t);
-  }, [wert]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => sende, []); // eslint-disable-line react-hooks/exhaustive-deps
 }

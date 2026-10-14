@@ -12,13 +12,13 @@ const zeilen = [
 
 describe("Bestenliste", () => {
   it("zeigt Platz, Name, Edelsteine und hebt die eigene Zeile hervor", async () => {
-    render(<Bestenliste laden={vi.fn().mockResolvedValue(zeilen)} />);
+    render(<Bestenliste spiel="huepfen" laden={vi.fn().mockResolvedValue(zeilen)} />);
     expect(await screen.findByText("Ben")).toBeTruthy();
     expect(screen.getByText("Anna (du)").closest("tr")?.getAttribute("aria-current")).toBe("true");
     expect(screen.getByText("9/20")).toBeTruthy();
   });
   it("leere Liste", async () => {
-    render(<Bestenliste laden={vi.fn().mockResolvedValue([])} />);
+    render(<Bestenliste spiel="huepfen" laden={vi.fn().mockResolvedValue([])} />);
     expect(await screen.findByText(/Noch keine Edelsteine/)).toBeTruthy();
   });
   it("Hüpfen: Knopf nur mit Bestenliste, öffnet das Panel", async () => {

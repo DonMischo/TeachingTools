@@ -3,9 +3,11 @@
  * Trankladen: Zutaten im Heckenlabyrinth sammeln, dann bestellen Kunden Tränke (= offene Challenges).
  * Zutaten in den Kessel, rühren (kosmetisch), »Abfüllen« = antworte.
  */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type { ChallengeAntwort } from "@/lib/api";
 import { PixelMatrix } from "@/components/challenge/pixel/Matrix";
+import Npc from "@/components/challenge/pixel/Npc";
+import { useSpielwert } from "@/lib/challenge/useSpielwert";
 import Bestenliste from "@/components/challenge/Bestenliste";
 import type { ModusProps } from "./typen";
 import { Ablage, FaktKarte, Herzen, Inhalt, Treffermeldung } from "./teile";
@@ -26,14 +28,9 @@ const CSS = `@keyframes alchblase{0%{transform:translateY(0);opacity:.9}100%{tra
 @media (prefers-reduced-motion: reduce){.alch-blase,.alch-puff,.alch-regen,.alch-wackel,.alch-funkel{animation:none!important}}`;
 
 function Kunde({ name, froh }: { name: string; froh?: boolean }) {
-  const [i, setI] = useState(1);
-  useEffect(() => {
-    const t = setInterval(() => { if (!document.hidden) setI((n) => (n % 4) + 1); }, 250);
-    return () => clearInterval(t);
-  }, []);
   return (
     <span className="relative inline-block">
-      <img src={`/challenge/pixel/npcs/${name}_idle_${i}.png`} alt="Kunde" width={80} height={80} draggable={false} style={{ imageRendering: "pixelated" }} />
+      <Npc name={name} scale={2.5} label="Kunde" />
       {froh && <span className="absolute -top-1 right-0 text-2xl" aria-hidden>😊</span>}
     </span>
   );
@@ -68,7 +65,7 @@ export default function Alchemie({ brett, theme, lauf, zurKarte }: ModusProps) {
   const zutaten = brett.fakten.filter((f) => gefunden.includes(f.id));
   const maxGold = brett.challenges.reduce((s, c) => s + c.strength * 15, 0);
 
-  useEffect(() => { if (phase === "laden" && aktiv) lauf.waehle(aktiv.id); }, [phase, aktiv?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (phase === "laden" && aktiv) lauf.waehle(); }, [phase, aktiv?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!ergebnis) return;
     const t = setTimeout(() => setErgebnis(null), 2500);
@@ -80,18 +77,7 @@ export default function Alchemie({ brett, theme, lauf, zurKarte }: ModusProps) {
     return () => clearTimeout(t);
   }, [geht]);
 
-  // Spielpunkte (Gold) gedrosselt melden, beim Abbau noch einmal
-  const goldRef = useRef(0);
-  goldRef.current = gold;
-  const melden = () => {
-    if (goldRef.current > 0) void lauf.spielwert?.("alchemie", brett.etappe, goldRef.current, Math.max(goldRef.current, maxGold))?.catch?.(() => {});
-  };
-  useEffect(() => {
-    if (!gold) return;
-    const t = setTimeout(melden, 1500);
-    return () => clearTimeout(t);
-  }, [gold]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => melden, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useSpielwert(lauf, "alchemie", brett.etappe, gold, Math.max(gold, maxGold));
 
   const waehleKunde = (id: string) => { setWahl(id); setAblage([]); setTipp(false); setAntwort(null); };
   const legeAuf = (id: string) => {
@@ -113,7 +99,7 @@ export default function Alchemie({ brett, theme, lauf, zurKarte }: ModusProps) {
       const verdient = art === "kombo" ? Math.round(stark * 15) : art === "komplett" ? stark * 10 : art === "teil" ? stark * 3 : 0;
       if (verdient) setGold((g) => g + verdient);
       if (art === "kombo" || art === "komplett") setGeht({ kunde, n: Date.now(), gold: verdient });
-      setAntwort(r.etappe_geschafft || r.zurueck_zur_karte || r.fertig ? null : r);
+      setAntwort(r);
     } catch {
       setErgebnis({ art: "daneben", n: Date.now() }); // z. B. 409: das Brett ist schon neu geladen
     } finally {

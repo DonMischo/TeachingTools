@@ -31,8 +31,7 @@ export const sitzungsQuelle = (code: string, token?: string | null): ChallengeQu
   bestenliste: (spiel) => api.challenge.bestenliste(code, spiel, token),
 });
 
-export function useChallengeLauf(q: ChallengeQuelle | string, token?: string | null) {
-  const quelle = typeof q === "string" ? sitzungsQuelle(q, token) : q;
+export function useChallengeLauf(quelle: ChallengeQuelle) {
   const qRef = useRef(quelle);
   qRef.current = quelle;
   const key = quelle.schluessel;
@@ -64,7 +63,7 @@ export function useChallengeLauf(q: ChallengeQuelle | string, token?: string | n
     })();
   }, [key, holeBrett]);
 
-  const waehle = useCallback((_challengeId: string) => {
+  const waehle = useCallback(() => {
     leseStart.current = performance.now();
     wahlStart.current = null;
   }, []);
@@ -82,7 +81,9 @@ export function useChallengeLauf(q: ChallengeQuelle | string, token?: string | n
         lese_ms: Math.max(0, Math.round(start - leseStart.current)), wahl_ms: Math.max(0, Math.round(jetzt - start)),
       });
       if (r.fertig) setInfo(await qRef.current.info());
-      await holeBrett();
+      // Die Antwort bringt das neue Brett mit; ältere Quellen holen es extra
+      if (r.brett) setBrett(r.brett);
+      else await holeBrett();
       return r;
     } catch (e) {
       await holeBrett().catch(() => setFehler("Die Challenge konnte nicht geladen werden."));

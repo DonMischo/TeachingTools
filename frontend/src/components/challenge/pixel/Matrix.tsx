@@ -1,5 +1,7 @@
+import { memo } from "react";
+
 /** Eigenes Pixelbild aus Zeichen: "." = transparent, sonst Schlüssel in `palette` (Hex). */
-export function PixelMatrix({ bild, palette, scale = 4, label }: {
+export const PixelMatrix = memo(function PixelMatrix({ bild, palette, scale = 4, label }: {
   bild: string[]; palette: Record<string, string>; scale?: number; label?: string;
 }) {
   const w = Math.max(...bild.map((z) => z.length));
@@ -10,4 +12,4 @@ export function PixelMatrix({ bild, palette, scale = 4, label }: {
         [...zeile].map((c, x) => (c === "." || !palette[c] ? null : <rect key={`${x}-${y}`} x={x} y={y} width={1} height={1} fill={palette[c]} />)))}
     </svg>
   );
-}
+});

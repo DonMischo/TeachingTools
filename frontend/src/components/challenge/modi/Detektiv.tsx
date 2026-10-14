@@ -2,11 +2,13 @@
 /** Detektiv (nach Ace Attorney Investigations): Tatort-Haus erkunden, Notizbuch, Verhöre, Pinnwand der Deduktion. */
 import { useState } from "react";
 import type { ChallengeAntwort, ChallengeAufgabe } from "@/lib/api";
-import Bestenliste from "@/components/challenge/Bestenliste";
+import { BestenlisteKnopf } from "@/components/challenge/Bestenliste";
+import Npc from "@/components/challenge/pixel/Npc";
+import { useSpielwert } from "@/lib/challenge/useSpielwert";
 import type { ModusProps } from "./typen";
 import { FaktKarte, Herzen, Inhalt, Treffermeldung } from "./teile";
 import Tatort from "./detektiv/Tatort";
-import { DetektivStil, Portrait, VERDAECHTIGE, skizzeVon, useSpielwert } from "./detektiv/hilfen";
+import { DetektivStil, VERDAECHTIGE, skizzeVon } from "./detektiv/hilfen";
 
 type Geloest = { id: string; text: string; belege: string[] };
 
@@ -27,7 +29,7 @@ export default function Detektiv({ brett, theme, lauf, zurKarte }: ModusProps) {
   const verdaechtig = (c: ChallengeAufgabe) => VERDAECHTIGE[Math.max(0, brett.challenges.findIndex((x) => x.id === c.id)) % VERDAECHTIGE.length];
   const notizbuch = brett.fakten.filter((f) => gefunden.includes(f.id) && !ablage.includes(f.id));
 
-  const waehle = (c: ChallengeAufgabe) => { setAktiv(c); setAblage([]); setTipp(false); setErgebnis(null); lauf.waehle(c.id); };
+  const waehle = (c: ChallengeAufgabe) => { setAktiv(c); setAblage([]); setTipp(false); setErgebnis(null); lauf.waehle(); };
   const schliesse = () => { setAktiv(null); setAblage([]); setTipp(false); setErgebnis(null); };
   const lege = (id: string) => {
     if (!aktiv || ergebnis || ablage.includes(id) || !gefunden.includes(id) || !fakten.has(id)) return;
@@ -78,7 +80,7 @@ export default function Detektiv({ brett, theme, lauf, zurKarte }: ModusProps) {
           return (
             <button key={c.id} onClick={() => waehle(c)} aria-pressed={c.id === aktiv?.id}
               className={`card p-2 flex gap-2 items-start text-left ${c.id === aktiv?.id ? "ring-2 ring-accent" : ""}`}>
-              <Portrait npc={v.npc} scale={2} />
+              <Npc name={v.npc} scale={2} />
               <span><strong className="block text-sm text-muted">{v.name}</strong>»<Inhalt x={c} />«</span>
             </button>
           );
@@ -89,7 +91,7 @@ export default function Detektiv({ brett, theme, lauf, zurKarte }: ModusProps) {
         <div className="card p-3 flex flex-col gap-3" role="group" aria-label="Verhör">
           <div className="flex gap-3 items-end">
             <div className="relative shrink-0">
-              <Portrait npc={verdaechtig(aktiv).npc} scale={4} label={verdaechtig(aktiv).name} className={daneben ? "dt-kopf" : ""} />
+              <Npc name={verdaechtig(aktiv).npc} scale={4} label={verdaechtig(aktiv).name} className={daneben ? "dt-kopf" : ""} />
               {daneben && <span className="absolute -top-1 right-0 text-xl dt-tropf" aria-hidden>💧</span>}
               {ergebnis?.komplett && <span className="absolute -top-1 right-0 text-xl" aria-hidden>😰</span>}
             </div>
@@ -164,10 +166,7 @@ export default function Detektiv({ brett, theme, lauf, zurKarte }: ModusProps) {
           </div>
         </>
       )}
-      {lauf.hatBestenliste && (
-        <details className="card p-3"><summary className="font-bold cursor-pointer">🏆 Bestenliste (Hinweise)</summary>
-          <Bestenliste laden={lauf.bestenliste} spiel="detektiv" /></details>
-      )}
+      {lauf.hatBestenliste && <div><BestenlisteKnopf lauf={lauf} spiel="detektiv" /></div>}
     </>
   );
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Boss from "@/components/challenge/modi/Boss";
 import { SKINS } from "@/components/challenge/modi/boss/figuren";
@@ -207,6 +207,6 @@ describe("Held-EP", () => {
     for (let i = 0; i < 5; i++) await u.click(schlag);
     expect(screen.getByText(`Du erhältst ${EP_SIEG} EP!`)).toBeInTheDocument();
     expect(screen.getByText(/steigt auf Level 2 auf/)).toBeInTheDocument();
-    expect(lauf.spielwert).toHaveBeenCalledWith("boss", 1, EP_SIEG, EP_SIEG);
+    await waitFor(() => expect(lauf.spielwert).toHaveBeenCalledWith("boss", 1, EP_SIEG, EP_SIEG), { timeout: 3000 }); // gedrosselt gemeldet
   }, 40000);
 });

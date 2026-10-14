@@ -18,7 +18,7 @@ export default function Normal({ brett, lauf, zurKarte }: ModusProps) {
 
   const waehle = (c: string) => {
     setAktiv(c); setAblage([]); setTipp(false); setAntwort(null);
-    lauf.waehle(c);
+    lauf.waehle();
   };
   const legeAuf = (id: string) => {
     if (!challenge || ablage.includes(id) || !fakten.has(id)) return;
@@ -32,7 +32,7 @@ export default function Normal({ brett, lauf, zurKarte }: ModusProps) {
     try {
       const r = await lauf.antworte(challenge.id, ablage, tipp);
       setAktiv(null); setAblage([]); setTipp(false);
-      setAntwort(r.etappe_geschafft || r.zurueck_zur_karte || r.fertig ? null : r);
+      setAntwort(r);
     } catch {
       setAktiv(null); setAblage([]); // z. B. 409 (schon erledigt): das Brett ist schon neu geladen
     } finally {

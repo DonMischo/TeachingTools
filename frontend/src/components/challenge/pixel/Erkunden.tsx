@@ -6,6 +6,7 @@
  * bei reduzierter Bewegung kommt die Figur ohne Zwischenschritte an. Betritt die Figur ein Objekt, meldet `onBetreten(id)`.
  */
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { wenigerBewegung } from "@/lib/challenge/bewegung";
 import { bodenKachel, THEMES, type ThemeDef } from "@/lib/challenge/themes";
 import type { Punkt } from "@/lib/gebaeude/plan";
 import { Sprite } from "./Sprite";
@@ -50,7 +51,6 @@ const KNOEPFE: { label: string; zeichen: string; r: [number, number] }[] = [
   { label: "Nach unten", zeichen: "↓", r: [0, 1] }, { label: "Nach rechts", zeichen: "→", r: [1, 0] },
 ];
 const klemme = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
-const ruhigeBewegung = () => typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
 
 export default function Erkunden({ karte, theme, objekte, onBetreten, pausiert = false, kachel = "boden", label }: {
   karte: ErkundKarte; theme: ThemeDef; objekte: ErkundObjekt[]; onBetreten(id: ErkundObjekt["id"]): void;
@@ -61,7 +61,7 @@ export default function Erkunden({ karte, theme, objekte, onBetreten, pausiert =
   const [dir, setDir] = useState<"links" | "rechts">("rechts");
   const [geht, setGeht] = useState(false);
   const [route, setRoute] = useState<Punkt[]>([]);
-  const ruhig = useMemo(ruhigeBewegung, []);
+  const ruhig = useMemo(wenigerBewegung, []);
   const betreten = useRef(onBetreten);
   betreten.current = onBetreten;
 

@@ -1,11 +1,12 @@
 "use client";
 /** Kampf: Nachziehstapel, Hand im Fächer, Ablagestapel, Energie; Gegner zeigen ihre Absicht (offene Challenges). */
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import type { ChallengeAntwort } from "@/lib/api";
 import type { ModusProps } from "../typen";
 import { Herzen, Inhalt, Treffermeldung } from "../teile";
 import { PixelMatrix } from "../../pixel/Matrix";
-import Bestenliste from "../../Bestenliste";
+import { BestenlisteKnopf } from "../../Bestenliste";
+import { useSpielwert } from "@/lib/challenge/useSpielwert";
 import Karte from "./Karte";
 import {
   ENERGIE, alleZurueck, ausgespielt, kampfStart, sterne, stapeln, zugBeenden, zuruecknehmen,
@@ -30,6 +31,7 @@ export default function Kampf({ brett, theme, lauf, zurKarte, seed, lagerKnopf, 
   const [zahl, setZahl] = useState<{ n: number; wert: number } | null>(null);
   const [gegnerZug, setGegnerZug] = useState(0);
   const [ablageOffen, setAblageOffen] = useState(false);
+  const [gespielt, setGespielt] = useState(false);
 
   const offene = brett.challenges.filter((c) => !c.erledigt);
   const challenge = offene.find((c) => c.id === aktiv);
@@ -37,18 +39,12 @@ export default function Kampf({ brett, theme, lauf, zurKarte, seed, lagerKnopf, 
   const schonErledigt = brett.challenges.filter((c) => c.erledigt).reduce((s, c) => s + c.strength * 10, 0);
   const hp = offene.length ? Math.max(1, gesamt - Math.max(erzielt, schonErledigt)) : 0;
 
-  // Spielwert (Sterne nach Zügen), gedrosselt: nach jeder Antwort und beim Abbau.
-  const stand = useRef({ zug: k.zug, n: brett.challenges.length, etappe: brett.etappe, gespielt: false, lauf });
-  stand.current = { ...stand.current, zug: k.zug, n: brett.challenges.length, etappe: brett.etappe, lauf };
-  const melde = () => {
-    const s = stand.current;
-    if (s.gespielt) void s.lauf.spielwert?.("karten", s.etappe, sterne(s.zug, s.n), 3);
-  };
-  useEffect(() => () => melde(), []); // eslint-disable-line react-hooks/exhaustive-deps
+  // Spielwert: Sterne nach Zügen, sobald die erste Antwort gespielt ist
+  useSpielwert(lauf, "karten", brett.etappe, gespielt ? sterne(k.zug, brett.challenges.length) : 0, 3);
 
   const waehle = (id: string) => {
     if (id === aktiv) return;
-    setK((s) => alleZurueck(s)); setAktiv(id); setAntwort(null); lauf.waehle(id);
+    setK((s) => alleZurueck(s)); setAktiv(id); setAntwort(null); lauf.waehle();
   };
   const lege = (id: string) => {
     if (!fakten.has(id)) return;
@@ -64,12 +60,11 @@ export default function Kampf({ brett, theme, lauf, zurKarte, seed, lagerKnopf, 
     const karten = k.stapel;
     try {
       const r = await lauf.antworte(challenge.id, karten, false);
-      stand.current.gespielt = true;
+      setGespielt(true);
       setErzielt((e) => e + r.schaden);
       if (r.schaden > 0) { setSchlag((s) => s + 1); setZahl({ n: Date.now(), wert: r.schaden }); }
       if (!r.treffer) setWackel((w) => w + 1);
-      setAntwort(r.etappe_geschafft || r.zurueck_zur_karte || r.fertig ? null : r);
-      melde();
+      setAntwort(r);
     } catch { /* Brett wurde still neu geladen */ } finally {
       setK((s) => ausgespielt(s)); setAktiv(null); setSende(false);
     }
@@ -154,10 +149,7 @@ export default function Kampf({ brett, theme, lauf, zurKarte, seed, lagerKnopf, 
         ))}
         {k.hand.length === 0 && <span className="text-muted">Hand leer – Zug beenden, um neu zu ziehen.</span>}
       </div>
-      {lauf.hatBestenliste && (
-        <details className="card p-2"><summary className="cursor-pointer font-bold">Bestenliste (Sterne)</summary>
-          <Bestenliste laden={lauf.bestenliste} spiel="karten" /></details>
-      )}
+      {lauf.hatBestenliste && <div><BestenlisteKnopf lauf={lauf} spiel="karten" /></div>}
     </>
   );
 }

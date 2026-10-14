@@ -1,7 +1,11 @@
 "use client";
 /** Hüpfen: Jump'n'Run im Seitenlauf. Schlüssel (= Fakten) einsammeln, an einer Tür aufschließen (= antworten). */
 import { useEffect, useMemo, useRef, useState } from "react";
-import Bestenliste from "@/components/challenge/Bestenliste";
+import { BestenlisteKnopf } from "@/components/challenge/Bestenliste";
+import Fundkarte from "@/components/challenge/Fundkarte";
+import { wenigerBewegung } from "@/lib/challenge/bewegung";
+import { useSpielwert } from "@/lib/challenge/useSpielwert";
+import { useUeberspringen } from "@/lib/challenge/useUeberspringen";
 import type { ChallengeAntwort, ChallengeFakt } from "@/lib/api";
 import { Sprite } from "@/components/challenge/pixel/Sprite";
 import { PixelMatrix } from "@/components/challenge/pixel/Matrix";
@@ -27,9 +31,6 @@ const PAL_SCHLEIM = { g: "#7ac943", w: "#ffffff", k: "#222222" };
 
 const POGO = [".rrrr...", ".rrrr...", "..gg....", "..gg....", "..gg....", "..gg....", ".gggg...", "..ss....", "..ss....", ".kkkk..."];
 const PAL_POGO = { r: "#d33a2c", g: "#aab4c0", s: "#6e7a88", k: "#333333" };
-const reduziertBew = () => typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
-
-const lesbar = (f: ChallengeFakt) => f.info?.text;
 
 export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
   // Neue Karte bei jedem Besuch: der Zufallswert gilt, solange die Komponente steht (eine Tür zu öffnen mischt nicht neu)
@@ -44,14 +45,13 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
   const [sende, setSende] = useState(false);
   const [laeuft, setLaeuft] = useState(false);
   const [edel, setEdel] = useState(0);
-  const [liste, setListe] = useState(false);
   const [plings, setPlings] = useState<{ id: number; x: number; y: number }[]>([]);
   const [erledigtG, setErledigtG] = useState<number[]>([]);
   const [pogo, setPogo] = useState(false);
   const [cp, setCp] = useState(0);
   const [staub, setStaub] = useState<{ id: number; x: number; y: number }[]>([]);
   const [richtung, setRichtung] = useState<1 | -1>(1);
-  const [skipDa, setSkipDa] = useState(() => typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches);
+  const skipDa = useUeberspringen();
 
   const spieler = useRef<Spieler>(startSpieler(level));
   const eingabe = useRef<Eingabe>({ links: false, rechts: false, sprung: false });
@@ -67,21 +67,9 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
   const weltRef = useRef<HTMLDivElement>(null);
   const figurRef = useRef<HTMLDivElement>(null);
   const listeRef = useRef(false);
-  // Edelsteine melden: höchstens alle 2 s, sofort an der Tür und beim Verlassen
-  const letzteMeldung = useRef(0);
-  const gemeldet = useRef(-1);
   const timer = useRef<ReturnType<typeof setTimeout>[]>([]);
   const nachher = (f: () => void, ms: number) => { timer.current.push(setTimeout(f, ms)); };
   const kamX = useRef<number | null>(null);
-  const meldeRef = useRef<(sofort: boolean) => void>(() => {});
-  meldeRef.current = (sofort) => {
-    const n = edelRef.current.size;
-    if (n === gemeldet.current || n === 0) return;
-    const jetzt = Date.now();
-    if (!sofort && jetzt - letzteMeldung.current < 2000) return;
-    letzteMeldung.current = jetzt; gemeldet.current = n;
-    void lauf.spielwert?.("huepfen", brett.etappe, n, Math.max(n, edelsteineGesamt(level)));
-  };
 
   const fakten = new Map(brett.fakten.map((f) => [f.id, f]));
   const offene = brett.challenges.filter((c) => !c.erledigt);
@@ -89,10 +77,9 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
   const sp = theme.spieler;
   const figH = sp.stehen.h * SK;
   const edelMax = edelsteineGesamt(level);
+  useSpielwert(lauf, "huepfen", brett.etappe, edel, Math.max(edel, edelMax)); // Edelsteine
 
   useEffect(() => () => timer.current.forEach(clearTimeout), []);
-  useEffect(() => { const t = setInterval(() => meldeRef.current(false), 2000); return () => { clearInterval(t); meldeRef.current(true); }; }, []);
-  useEffect(() => { if (!skipDa) { const t = setTimeout(() => setSkipDa(true), 20000); return () => clearTimeout(t); } }, [skipDa]);
 
   const sammle = (id: string, zeige = true) => {
     if (gesRef.current.includes(id)) return;
@@ -106,7 +93,7 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
     nachher(() => setPlings((p) => p.filter((q) => q.id !== id)), 700);
   };
   const staubAn = (x: number, y: number) => {
-    if (reduziertBew()) return;
+    if (wenigerBewegung()) return;
     const id = Date.now() + Math.random();
     setStaub((p) => [...p.slice(-3), { id, x, y }]);
     nachher(() => setStaub((p) => p.filter((q) => q.id !== id)), 450);
@@ -114,7 +101,7 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
   const oeffneTuer = (id: string | null) => {
     tuerRef.current = id;
     setTuer(id); setAblage([]); setTipp(false);
-    if (id) { setAntwort(null); lauf.waehle(id); meldeRef.current(true); }
+    if (id) { setAntwort(null); lauf.waehle(); }
   };
 
   // Eingabe: Tastatur
@@ -183,7 +170,7 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
       // Kamera schaut in Laufrichtung voraus und gleitet nach
       const voraus = (s.vx / VX) * 70;
       const ziel = Math.max(0, Math.min(level.breite * KACHEL - breite, s.x * KACHEL - breite / 2 + voraus));
-      kamX.current = kamX.current === null || reduziertBew() ? ziel : kamX.current + (ziel - kamX.current) * Math.min(1, dt * 6);
+      kamX.current = kamX.current === null || wenigerBewegung() ? ziel : kamX.current + (ziel - kamX.current) * Math.min(1, dt * 6);
       const kam = kamX.current;
       if (weltRef.current) weltRef.current.style.transform = `translateX(${-kam}px)`;
       if (wolkenRef.current) wolkenRef.current.style.transform = `translateX(${-kam * 0.35}px)`;
@@ -212,7 +199,7 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
     try {
       const r = await lauf.antworte(challenge.id, ablage, tipp);
       oeffneTuer(null); imTuer.current = null;
-      setAntwort(r.etappe_geschafft || r.zurueck_zur_karte || r.fertig ? null : r);
+      setAntwort(r);
     } catch {
       oeffneTuer(null); imTuer.current = null; // z. B. 409: das Brett ist schon neu geladen
     } finally {
@@ -232,13 +219,12 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
         <div className="flex items-center gap-3"><Herzen leben={brett.leben} /><span className="font-bold" aria-label="Edelsteine">💎 {edel}/{edelMax}</span><span className="text-muted">Karte: {STIL_NAMEN[level.stil]}</span>{pogo && <span className="font-bold" title="Pogo-Stab: Sprung gedrückt halten">🪀 Pogo</span>}</div>
         <div className="flex gap-2">
           {skipDa && <button className="btn-secondary" onClick={() => brett.fakten.forEach((f) => sammle(f.id, false))}>Alles einsammeln</button>}
-          {lauf.hatBestenliste && <button className="btn-secondary" aria-expanded={liste} onClick={() => { listeRef.current = !liste; setListe(!liste); }}>🏆 Bestenliste</button>}
+          <BestenlisteKnopf lauf={lauf} spiel="huepfen" rechts onWechsel={(offen) => { listeRef.current = offen; }} />
           <button className="btn-secondary" onClick={zurKarte}>Karte</button>
         </div>
       </div>
       <style>{`@keyframes hpstaub{from{opacity:.9;transform:scale(.4)}to{opacity:0;transform:scale(2) translateY(-4px)}}@media (prefers-reduced-motion: reduce){[style*="hpstaub"]{animation:none!important;opacity:0}}`}</style>
       <Treffermeldung antwort={antwort} />
-      {liste && <div className="card p-3" role="dialog" aria-label="Bestenliste"><Bestenliste laden={lauf.bestenliste} /></div>}
 
       <div ref={bildRef} className="relative overflow-hidden rounded-lg border-2 border-line" style={{ height: level.hoehe * KACHEL, background: himmel }}
         role="group" aria-label="Spielfeld: mit Pfeiltasten oder A und D laufen, mit Leertaste springen">
@@ -255,7 +241,7 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
               })}
               {p.cp && (
                 <span className="absolute left-2 -top-9 w-1 h-9 bg-[#6b4a2b] overflow-hidden" aria-hidden data-fahne={i <= cp ? "oben" : "unten"}>
-                  <span className="absolute left-1 w-5 h-4 rounded-r-sm" style={{ background: i <= cp ? "#e63946" : "#9aa0a6", top: 0, transform: `translateY(${i <= cp ? 0 : 20}px)`, transition: reduziertBew() ? "none" : "transform .7s ease-out, background .7s" }} />
+                  <span className="absolute left-1 w-5 h-4 rounded-r-sm" style={{ background: i <= cp ? "#e63946" : "#9aa0a6", top: 0, transform: `translateY(${i <= cp ? 0 : 20}px)`, transition: wenigerBewegung() ? "none" : "transform .7s ease-out, background .7s" }} />
                 </span>
               )}
             </div>
@@ -313,12 +299,7 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
         <button className="btn-primary" aria-label="Springen" {...halte("sprung", true)}>⤒ Sprung</button>
       </div>
 
-      {fund && (
-        <div className="card p-3" role="status">
-          <b>Schlüssel gefunden:</b> <Inhalt x={fund} />
-          {lesbar(fund) && <p className="text-muted mt-1">{lesbar(fund)}</p>}
-        </div>
-      )}
+      {fund && <Fundkarte fakt={fund} titel="Schlüssel gefunden:" fokus={false} onOk={() => setFund(null)} />}
 
       {challenge && (
         <div className="card p-3 flex flex-col gap-2 border-accent" role="dialog" aria-label="Tür">

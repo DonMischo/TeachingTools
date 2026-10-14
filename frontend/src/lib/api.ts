@@ -511,6 +511,8 @@ export type ChallengeAntwortIn = { challenge_id: string; fakt_ids: string[]; les
 export type ChallengeAntwort = {
   qualitaet: number; treffer: boolean; komplett: boolean; kombo: boolean; schaden: number; falsch_gewaehlt: number;
   leben: number; zurueck_zur_karte: boolean; etappe_geschafft: boolean; fertig: boolean; stufe: number; feedback?: string | null;
+  /** Das Brett nach der Antwort (spart den extra /start-Aufruf). */
+  brett?: ChallengeBrett;
 };
 export type ChallengeTeilnehmer = {
   name: string; klasse: string; stufe_start: number; stufe: number; guete: number; ergebnis: number; punkte: number;

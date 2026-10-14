@@ -1,7 +1,8 @@
 "use client";
 /** Bosskampf: erst Fakten sammeln, dann kontert die Figur die Angriffe des Bosses mit Fakten aus dem Inventar. */
 import { useEffect, useRef, useState } from "react";
-import Bestenliste from "@/components/challenge/Bestenliste";
+import { BestenlisteKnopf } from "@/components/challenge/Bestenliste";
+import { useSpielwert } from "@/lib/challenge/useSpielwert";
 import type { ChallengeAntwort } from "@/lib/api";
 import { PixelMatrix } from "@/components/challenge/pixel/Matrix";
 import type { ModusProps } from "./typen";
@@ -30,11 +31,7 @@ export default function Boss({ brett, theme, skin, lauf, zurKarte }: ModusProps)
   const [ansicht, setAnsicht] = useState<Ansicht>("menu");
   const [feld, setFeld] = useState(0);
   const [ep, setEp] = useState(0);
-  const [liste, setListe] = useState(false);
   const feldEl = useRef<(HTMLButtonElement | null)[]>([]);
-  const gemeldet = useRef(-1);
-  const epRef = useRef(0);
-  epRef.current = ep;
   const epMax = anzahlMonster(brett.fakten.length) * EP_SIEG;
 
   const offene = brett.challenges.filter((c) => !c.erledigt);
@@ -46,18 +43,9 @@ export default function Boss({ brett, theme, skin, lauf, zurKarte }: ModusProps)
   const erledigt = brett.challenges.reduce((s, c) => s + (c.erledigt ? c.strength * 10 : 0), 0);
   const hp = offene.length === 0 ? 0 : Math.max(1, max - Math.max(schaden, erledigt));
 
-  // Spielpunkte (EP aus den Klicker-Kämpfen) melden: bei jedem Gewinn und beim Verlassen
-  const melde = () => {
-    if (epMax <= 0 || epRef.current === gemeldet.current || epRef.current === 0) return;
-    gemeldet.current = epRef.current;
-    void lauf.spielwert?.("boss", brett.etappe, epRef.current, epMax);
-  };
-  const meldeRef = useRef(melde);
-  meldeRef.current = melde;
-  useEffect(() => { meldeRef.current(); }, [ep]);
-  useEffect(() => () => meldeRef.current(), []);
+  useSpielwert(lauf, "boss", brett.etappe, ep, epMax); // EP aus den Klicker-Kämpfen
   useEffect(() => { if (phase === "arena" && ansicht === "menu") feldEl.current[feld]?.focus(); }, [phase, ansicht]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { if (phase === "arena" && aktiv) lauf.waehle(aktiv.id); }, [phase, aktiv?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (phase === "arena" && aktiv) lauf.waehle(); }, [phase, aktiv?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!zahlen.length) return;
     const t = setTimeout(() => setZahlen([]), 900);
@@ -80,7 +68,7 @@ export default function Boss({ brett, theme, skin, lauf, zurKarte }: ModusProps)
         setHeldAnim({ art: "lunge", n }); setGegnerAnim({ art: "treffer", n });
         if (r.schaden > 0) setZahlen([{ id: n, wert: r.schaden }]);
       } else setGegnerAnim({ art: "wackel", n });
-      setAntwort(r.etappe_geschafft || r.zurueck_zur_karte || r.fertig ? null : r);
+      setAntwort(r);
     } catch {
       setGegnerAnim({ art: "wackel", n: Date.now() }); // z. B. 409: das Brett ist schon neu geladen
     } finally {
@@ -121,11 +109,10 @@ export default function Boss({ brett, theme, skin, lauf, zurKarte }: ModusProps)
         <Herzen leben={brett.leben} />
         <strong>{sk.titel} · Lv. {bal.level}</strong>
         <div className="flex gap-2">
-          {lauf.hatBestenliste && <button className="btn-secondary" aria-expanded={liste} onClick={() => setListe(!liste)}>🏆 Bestenliste</button>}
+          <BestenlisteKnopf lauf={lauf} spiel="boss" hinweis="Erfahrung aus den Kämpfen gegen Mini-Monster" rechts />
           <button className="btn-secondary" onClick={zurKarte}>Karte</button>
         </div>
       </div>
-      {liste && <div className="card p-3" role="dialog" aria-label="Bestenliste"><p className="text-muted text-sm">Erfahrung aus den Kämpfen gegen Mini-Monster</p><Bestenliste laden={lauf.bestenliste} spiel="boss" /></div>}
 
       {phase === "sammeln" ? (
         <Sammeln fakten={brett.fakten} theme={theme} seed={bossSeed(brett.etappe, brett.fakten.length)} gefunden={gefunden} setGefunden={setGefunden} weiter={() => setPhase("arena")}

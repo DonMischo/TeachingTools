@@ -2,8 +2,7 @@
 /** Kampfbühne im Pokémon-Layout: Gegner oben rechts, Spieler unten links, Textfeld darunter; mit Kampfstart-Übergang. */
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { Passend } from "@/components/challenge/pixel/Passend";
-
-export const reduziert = () => typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+import { wenigerBewegung } from "@/lib/challenge/bewegung";
 
 export type Anim = { art: "lunge" | "treffer" | "wackel" | "weg"; n: number } | null;
 export type Zahl = { id: number; wert: number };
@@ -59,7 +58,7 @@ export function Szene({ held, gegner, heldName, gegnerName, hp, hpMax, himmel, b
   himmel?: string; boden?: string; introText?: string; heldAnim?: Anim; gegnerAnim?: Anim; zahlen?: Zahl[]; onGegnerClick?(): void; /** EP-Balken des Helden (statt voller KP). */ heldEp?: { wert: number; max: number }; children: ReactNode;
 }) {
   // 0 Blitz · 1 Streifen · 2 Figuren und Boxen gleiten ein, Text tippt · 3 fertig
-  const [stufe, setStufe] = useState(() => (introText && !reduziert() ? 0 : 3));
+  const [stufe, setStufe] = useState(() => (introText && !wenigerBewegung() ? 0 : 3));
   useEffect(() => {
     if (stufe >= 3) return;
     const t = setTimeout(() => setStufe((s) => Math.min(3, s + 1)), [400, 400, 800][stufe]);

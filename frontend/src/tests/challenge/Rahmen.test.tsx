@@ -3,7 +3,7 @@ import { render, screen, renderHook, act, waitFor } from "@testing-library/react
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { PixelMatrix } from "@/components/challenge/pixel/Matrix";
-import { useChallengeLauf } from "@/lib/challenge/useChallengeLauf";
+import { useChallengeLauf, sitzungsQuelle } from "@/lib/challenge/useChallengeLauf";
 import ChallengeLehrkraft from "@/components/challenge/ChallengeLehrkraft";
 
 const m = vi.hoisted(() => ({
@@ -35,10 +35,10 @@ describe("useChallengeLauf", () => {
   afterEach(() => vi.restoreAllMocks());
 
   it("misst Lese- und Wahlzeit und lädt das Brett neu", async () => {
-    const { result } = renderHook(() => useChallengeLauf("ABC"));
+    const { result } = renderHook(() => useChallengeLauf(sitzungsQuelle("ABC")));
     await waitFor(() => expect(result.current.brett).not.toBeNull());
     const t = vi.mocked(performance.now);
-    t.mockReturnValue(1000); act(() => result.current.waehle("c1"));
+    t.mockReturnValue(1000); act(() => result.current.waehle());
     t.mockReturnValue(3000); act(() => result.current.gelegt());
     t.mockReturnValue(3500);
     await act(async () => { await result.current.antworte("c1", ["f1"], true); });

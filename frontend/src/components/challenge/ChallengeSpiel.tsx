@@ -4,14 +4,18 @@
  * Kampfansicht (Komponente der gewählten Spielart aus modi/) und Ende.
  * Geprüft und gewertet wird auf dem Server (api/routers/challenge.py); die Stufe bleibt verborgen.
  */
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useChallengeLauf, sitzungsQuelle, type ChallengeLauf, type ChallengeQuelle } from "@/lib/challenge/useChallengeLauf";
 import type { ChallengeAntwort } from "@/lib/api";
 import { themeVon, bodenKachel } from "@/lib/challenge/themes";
 import { SPIELARTEN } from "@/lib/challenge/spielarten";
 import { MODI } from "./modi";
 import { Kachelfeld, Sprite } from "./pixel/Sprite";
-import Bestenliste from "./Bestenliste";
+import { wenigerBewegung } from "@/lib/challenge/bewegung";
+import { BestenlisteKnopf } from "./Bestenliste";
+
+/** So lange bleibt das Ergebnis einer Antwort sichtbar, bevor der Rahmen zur Karte oder zum Ende umschaltet. */
+const UMSCHALT_MS = 1600;
 
 type Props = {
   code?: string; token?: string | null;
@@ -29,7 +33,9 @@ export default function ChallengeSpiel({ code = "", token, quelle, onAntwort, on
   const [hinweis, setHinweis] = useState("");
   const [waehlen, setWaehlen] = useState(false);
   const [wechselFehler, setWechselFehler] = useState("");
-  const [liste, setListe] = useState(false);
+  const [wartet, setWartet] = useState(false);
+  const uhr = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => clearTimeout(uhr.current), []);
 
   if (lauf.fehler) return <p className="p-6 text-center text-bad">{lauf.fehler}</p>;
   if (lauf.laden || !info) return <p className="p-6 text-center text-muted">Lade…</p>;
@@ -66,30 +72,28 @@ export default function ChallengeSpiel({ code = "", token, quelle, onAntwort, on
     );
   }
 
-  const mitListe = lauf.hatBestenliste && info.settings.spiele.includes("huepfen");
-  const listeKnopf = mitListe && (
-    <>
-      <button className="btn-secondary" aria-expanded={liste} onClick={() => setListe(!liste)}>🏆 Bestenliste</button>
-    </>
-  );
-  const listePanel = mitListe && liste && (
-    <div className="card p-3 text-left"><Bestenliste laden={lauf.bestenliste} /></div>
-  );
+  const mitListe = info.settings.spiele.includes("huepfen");
 
-  // Der Rahmen schaltet nach besonderen Ergebnissen selbst um
+  // Der Rahmen schaltet nach besonderen Ergebnissen selbst um, nachdem die Spielart ihr Ergebnis gezeigt hat
+  const schalteUm = (text: string, ziel: "karte" | "ende") => {
+    clearTimeout(uhr.current);
+    const los = () => { setWartet(false); setHinweis(text); setAnsicht(ziel); };
+    if (wenigerBewegung()) los();
+    else { setWartet(true); uhr.current = setTimeout(los, UMSCHALT_MS); }
+  };
   const rahmenLauf: ChallengeLauf = {
     ...lauf,
     antworte: async (...a) => {
       const r = await lauf.antworte(...a);
       onAntwort?.(r);
-      if (r.fertig) setAnsicht("ende");
-      else if (r.zurueck_zur_karte) { setHinweis("Drei Fehlversuche – lies noch einmal nach."); setAnsicht("karte"); }
-      else if (r.etappe_geschafft) { setHinweis("🎉 Etappe geschafft!"); setAnsicht("karte"); }
+      if (r.fertig) schalteUm("", "ende");
+      else if (r.zurueck_zur_karte) schalteUm("Drei Fehlversuche – lies noch einmal nach.", "karte");
+      else if (r.etappe_geschafft) schalteUm("🎉 Etappe geschafft!", "karte");
       return r;
     },
   };
 
-  if (ansicht === "ende" || brett.fertig) {
+  if ((ansicht === "ende" || brett.fertig) && !wartet) {
     return (
       <div className="p-6 flex justify-center">
         <div className="card px-6 py-8 max-w-md text-center">
@@ -104,8 +108,7 @@ export default function ChallengeSpiel({ code = "", token, quelle, onAntwort, on
               <h1 className="text-xl font-black">Geschafft!</h1>
               <p className="text-2xl font-black mt-2">{Math.round(100 * (info.stand?.ergebnis ?? 0))} %</p>
               {mitListe && lauf.meineEdelsteine && <p className="mt-2 font-bold">💎 {lauf.meineEdelsteine.gesamt}/{lauf.meineEdelsteine.max}</p>}
-              {listeKnopf && <div className="mt-3">{listeKnopf}</div>}
-              {listePanel && <div className="mt-3">{listePanel}</div>}
+              {mitListe && <div className="mt-3"><BestenlisteKnopf lauf={lauf} spiel="huepfen" /></div>}
             </>
           )}
         </div>
@@ -138,11 +141,10 @@ export default function ChallengeSpiel({ code = "", token, quelle, onAntwort, on
             ))}
           </ol>
           <div className="flex flex-wrap gap-2">
-            <button className="btn-primary" onClick={() => { setHinweis(""); setAnsicht("kampf"); }}>Los</button>
+            <button className="btn-primary" onClick={() => { clearTimeout(uhr.current); setHinweis(""); setAnsicht("kampf"); }}>Los</button>
             {erlaubt.length > 1 && <button className="btn-secondary" onClick={() => setWaehlen(true)}>Spielart</button>}
-            {listeKnopf}
+            {mitListe && <BestenlisteKnopf lauf={lauf} spiel="huepfen" />}
           </div>
-          {listePanel}
           {nachlesen.length > 0 && (
             <details className="card p-3">
               <summary className="cursor-pointer font-bold">Wissen nachlesen</summary>
@@ -167,7 +169,7 @@ export default function ChallengeSpiel({ code = "", token, quelle, onAntwort, on
       {ansicht === "kampf" && (
         <Suspense fallback={<p className="text-muted">Lade…</p>}>
           <Modus brett={brett} theme={theme} skin={info.settings.skin ?? "monster"} lauf={rahmenLauf}
-            zurKarte={() => { setHinweis(""); setAnsicht("karte"); }} />
+            zurKarte={() => { clearTimeout(uhr.current); setWartet(false); setHinweis(""); setAnsicht("karte"); }} />
         </Suspense>
       )}
     </div>

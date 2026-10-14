@@ -4,18 +4,16 @@
  * Die Figur läuft durch die Gänge (Erkunden); Truhen öffnen sich beim Betreten,
  * Mini-Monster starten einen Klicker-Kampf. Jedes gibt 1–2 Fakten.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { ChallengeFakt } from "@/lib/api";
 import type { ThemeDef } from "@/lib/challenge/themes";
 import { begehbar, weg } from "@/lib/gebaeude/plan";
 import { baueBossKarte, type BossObjekt } from "@/lib/challenge/bossKarte";
+import { useUeberspringen } from "@/lib/challenge/useUeberspringen";
 import { Sprite } from "@/components/challenge/pixel/Sprite";
 import Erkunden, { type ErkundObjekt } from "@/components/challenge/pixel/Erkunden";
-import { Inhalt } from "../teile";
+import Fundkarte from "@/components/challenge/Fundkarte";
 import Kampf from "./Kampf";
-import { reduziert } from "./Szene";
-
-export { reduziert };
 
 const OBJ = "/challenge/pixel/gfx/objects.png";
 const TRUHE = { x: 148, y: 0, w: 22, h: 16 };
@@ -36,12 +34,7 @@ export default function Sammeln({ fakten, theme, seed, gefunden, setGefunden, we
   const [fertig, setFertig] = useState<number[]>([]);
   const [zeige, setZeige] = useState<ChallengeFakt[]>([]);
   const [kampf, setKampf] = useState<BossObjekt | null>(null);
-  const [ueberspringen, setUeberspringen] = useState(reduziert);
-
-  useEffect(() => {
-    const t = setTimeout(() => setUeberspringen(true), 20000);
-    return () => clearTimeout(t);
-  }, []);
+  const ueberspringen = useUeberspringen();
 
   const faktenVon = (o: BossObjekt) => o.faktIdx.map((i) => fakten[i]).filter(Boolean);
   const alle = fakten.length > 0 && fakten.every((f) => gefunden.includes(f.id));
@@ -77,15 +70,7 @@ export default function Sammeln({ fakten, theme, seed, gefunden, setGefunden, we
           {alle && <button className="btn-primary" onClick={weiter}>Zum Kampf</button>}
           {!alle && ueberspringen && <button className="btn-secondary" onClick={alleEinsammeln}>Alles einsammeln</button>}
         </div>
-        {zeige.length > 0 && (
-          <div className="card p-3 flex flex-col gap-2" role="status">
-            <strong>Gefunden!</strong>
-            {zeige.map((f) => (
-              <div key={f.id}><Inhalt x={f} />{f.info && <p className="text-muted text-sm">{f.info.text}</p>}</div>
-            ))}
-            <button className="btn-secondary self-start" autoFocus onClick={() => setZeige([])}>OK</button>
-          </div>
-        )}
+        {zeige.length > 0 && <Fundkarte fakt={zeige} onOk={() => setZeige([])} />}
       </div>
     </div>
   );

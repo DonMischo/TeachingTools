@@ -1,11 +1,11 @@
 "use client";
 /** Seitenansicht der Schlucht: mehrere Lücken hintereinander, die Kamera fährt zur aktiven Lücke, ein Karren fährt zur Testfahrt. */
 import { useEffect, useRef, useState } from "react";
+import { wenigerBewegung } from "@/lib/challenge/bewegung";
 import { BODEN_Y, durchhang, HOEHE, kameraX, karren, LUECKE, lueckeX, SICHT, UFER, weltBreite, type Ausgang } from "@/lib/challenge/brueckeSpiel";
 
 export type Luecke = { id: string; bretter: number; fertig: boolean };
 export type Fahrt = { idx: number; art: Ausgang; bretter: number };
-const reduziert = () => typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
 const HOLZ = ["#c28a4a", "#a8733a"];
 
 function Deck({ x0, bretter, art, p }: { x0: number; bretter: number; art?: Ausgang; p?: number }) {
@@ -35,7 +35,7 @@ export default function Schlucht({ luecken, aktiv, fahrt, onEnde }: { luecken: L
   useEffect(() => {
     if (!fahrt) { setP(0); return; }
     // Bei reduzierter Bewegung keine Fahrt: gleich am Ziel, die Textmeldung genügt
-    if (reduziert()) { setP(1); const t = setTimeout(() => ende.current(), 0); return () => clearTimeout(t); }
+    if (wenigerBewegung()) { setP(1); const t = setTimeout(() => ende.current(), 0); return () => clearTimeout(t); }
     const dauer = 3200;
     let id = 0, alt = performance.now(), ver = 0;
     const f = (t: number) => {
@@ -58,7 +58,7 @@ export default function Schlucht({ luecken, aktiv, fahrt, onEnde }: { luecken: L
 
   return (
     <div className="relative w-full max-w-[720px] mx-auto overflow-hidden rounded-lg" style={{ aspectRatio: `${SICHT}/${HOEHE}`, background: "#bfe3f5" }} role="img" aria-label="Schlucht mit Lücken">
-      <svg viewBox={`0 0 ${W} ${HOEHE}`} style={{ width: `${(W / SICHT) * 100}%`, position: "absolute", left: 0, top: 0, transform: `translateX(-${(cam / W) * 100}%)`, transition: reduziert() ? "none" : "transform 0.9s ease-in-out" }}>
+      <svg viewBox={`0 0 ${W} ${HOEHE}`} style={{ width: `${(W / SICHT) * 100}%`, position: "absolute", left: 0, top: 0, transform: `translateX(-${(cam / W) * 100}%)`, transition: wenigerBewegung() ? "none" : "transform 0.9s ease-in-out" }}>
         <rect x={0} y={BODEN_Y + 8} width={W} height={HOEHE} fill="#2b3a55" />
         {Array.from({ length: n + 1 }, (_, i) => {
           const x = i === 0 ? 0 : lueckeX(i - 1) + LUECKE;

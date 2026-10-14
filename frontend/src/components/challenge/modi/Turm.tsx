@@ -8,8 +8,9 @@ import { useEffect, useMemo, useRef, useState, type ReactElement } from "react";
 import type { ChallengeAntwort, ChallengeAufgabe } from "@/lib/api";
 import type { ModusProps } from "./typen";
 import { PixelMatrix } from "../pixel/Matrix";
-import Bestenliste from "../Bestenliste";
+import { BestenlisteKnopf } from "../Bestenliste";
 import { Ablage, FaktKarte, Herzen, Inhalt, Treffermeldung } from "./teile";
+import { useSpielwert } from "@/lib/challenge/useSpielwert";
 import { bauplaetze, laengsterPfad, markovKarte } from "@/lib/challenge/markovKarte";
 import {
   ausbauPreis, anfuehrerFaellt, kaufe, MAX_STUFE, neuerZustand, punkt, schritt, SPIELWERT_MAX, spielpunkte,
@@ -42,7 +43,6 @@ export default function Turm({ brett, lauf, zurKarte }: ModusProps) {
   const [ergebnis, setErgebnis] = useState<ChallengeAntwort | null>(null);
   const [sende, setSende] = useState(false);
   const [gefallen, setGefallen] = useState<string[]>([]);
-  const [liste, setListe] = useState(false);
 
   const offene = brett.challenges.filter((c) => !c.erledigt && !gefallen.includes(c.id));
   const offeneRef = useRef(offene);
@@ -64,20 +64,7 @@ export default function Turm({ brett, lauf, zurKarte }: ModusProps) {
     return () => cancelAnimationFrame(id);
   }, [pausiert, tempo, pfad, plaetze]);
 
-  // Spielpunkte melden (gedrosselt, beim Unmount zuletzt)
-  const letzterWert = useRef(0);
-  const gesendet = useRef(0);
-  const meldeRef = useRef<() => void>(() => {});
-  meldeRef.current = () => {
-    if (letzterWert.current === gesendet.current) return;
-    gesendet.current = letzterWert.current;
-    void lauf.spielwert?.("turm", brett.etappe, letzterWert.current, SPIELWERT_MAX);
-  };
-  letzterWert.current = spielpunkte(z.current);
-  useEffect(() => {
-    const t = setInterval(() => meldeRef.current(), 5000);
-    return () => { clearInterval(t); meldeRef.current(); };
-  }, []);
+  useSpielwert(lauf, "turm", brett.etappe, spielpunkte(z.current), SPIELWERT_MAX);
 
   const welle = () => {
     if (!wellePossible(z.current)) return;
@@ -88,7 +75,7 @@ export default function Turm({ brett, lauf, zurKarte }: ModusProps) {
     setTakt((n) => n + 1);
   };
 
-  const waehle = (c: ChallengeAufgabe) => { setAktiv(c); setAblage([]); setTipp(false); setErgebnis(null); lauf.waehle(c.id); };
+  const waehle = (c: ChallengeAufgabe) => { setAktiv(c); setAblage([]); setTipp(false); setErgebnis(null); lauf.waehle(); };
   const schliesse = () => { setAktiv(null); setAblage([]); setTipp(false); setErgebnis(null); };
   const lege = (id: string) => {
     if (ablage.includes(id) || !fakten.has(id)) return;
@@ -129,11 +116,10 @@ export default function Turm({ brett, lauf, zurKarte }: ModusProps) {
         <span aria-label="Burg">🏰 {"❤".repeat(s.burg)}<span className="opacity-30">{"❤".repeat(s.burgMax - s.burg)}</span></span>
         <span>Welle {s.welle}</span>
         <div className="flex gap-2">
-          {lauf.hatBestenliste && <button className="btn-secondary" aria-expanded={liste} onClick={() => setListe(!liste)}>🏆 Bestenliste</button>}
+          <BestenlisteKnopf lauf={lauf} spiel="turm" rechts />
           <button className="btn-secondary" onClick={zurKarte}>Karte</button>
         </div>
       </div>
-      {liste && <div className="card p-3" role="dialog" aria-label="Bestenliste"><Bestenliste laden={lauf.bestenliste} spiel="turm" /></div>}
 
       <div className="relative mx-auto w-full max-w-[640px] aspect-square rounded-lg overflow-hidden" role="group" aria-label="Schlachtfeld">
         <svg className="absolute inset-0 w-full h-full" viewBox={`0 0 ${R} ${R}`} aria-hidden>
