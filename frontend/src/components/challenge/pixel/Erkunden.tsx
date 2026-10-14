@@ -2,7 +2,8 @@
 /**
  * Erkunden von oben: eine Markov-Karte (lib/challenge/markovKarte) als Kachelbühne.
  * Die Figur läuft per Pfeiltasten/WASD, Bildschirmknöpfe oder Klick auf ein Objekt (Weg entlang der Gänge);
- * die Kamera folgt, gezeichnet werden nur sichtbare Kacheln. Betritt die Figur ein Objekt, meldet `onBetreten(id)`.
+ * die Kamera folgt. Die Karte wird einmal in ein Canvas gemalt (nicht je Schritt hunderte Kachelbilder neu),
+ * bei reduzierter Bewegung kommt die Figur ohne Zwischenschritte an. Betritt die Figur ein Objekt, meldet `onBetreten(id)`.
  */
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { bodenKachel, THEMES, type ThemeDef } from "@/lib/challenge/themes";
@@ -86,13 +87,20 @@ export default function Erkunden({ karte, theme, objekte, onBetreten, pausiert =
   // Auto-Lauf entlang der Route (wartet, wenn der Tab verdeckt ist)
   useEffect(() => {
     if (!route.length || pausiert) return;
+    if (ruhig) {
+      // Ohne Animation: gleich bis zum Ziel bzw. bis zum ersten Objekt unterwegs
+      const halt = route.findIndex((p) => objekte.some((o) => o.x === p[0] && o.y === p[1]));
+      const ziel = halt < 0 ? route[route.length - 1] : route[halt];
+      setRoute([]); gehe(ziel);
+      return;
+    }
     let t: ReturnType<typeof setTimeout>;
     const tick = () => {
       if (document.hidden) { t = setTimeout(tick, 500); return; }
       const [p, ...rest] = route;
       setRoute(rest); gehe(p);
     };
-    t = setTimeout(tick, ruhig ? 30 : SCHRITT_MS);
+    t = setTimeout(tick, SCHRITT_MS);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route, pausiert]);
@@ -109,23 +117,27 @@ export default function Erkunden({ karte, theme, objekte, onBetreten, pausiert =
     return () => window.removeEventListener("keydown", f);
   });
 
-  const h = kachelLook(theme, kachel);
+  const h = useMemo(() => kachelLook(theme, kachel), [theme, kachel]);
   const cx = klemme(pos[0] - Math.floor(VB / 2), 0, Math.max(0, R - VB));
   const cy = klemme(pos[1] - Math.floor(VH / 2), 0, Math.max(0, R - VH));
-  const kacheln = useMemo(() => {
-    const k: ReactNode[] = [];
-    for (let y = Math.max(0, cy - 1); y <= Math.min(R - 1, cy + VH); y++) {
-      for (let x = Math.max(0, cx - 1); x <= Math.min(R - 1, cx + VB); x++) {
-        const id = karte.begehbar([x, y]) ? bodenKachel(h.muster.boden, x, y) : bodenKachel(h.muster.wand, x, y);
-        k.push(
-          <span key={`${x}-${y}`} className="absolute leading-[0]" style={{ left: x * T, top: y * T }}>
-            <Sprite src={h.src} scale={T / h.tile} frame={{ x: (id % h.cols) * h.tile, y: Math.floor(id / h.cols) * h.tile, w: h.tile, h: h.tile }} />
-          </span>,
-        );
+  // Die ganze Karte einmal ins Canvas malen; die Kamera verschiebt nur die Ebene
+  const leinwand = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const ctx = leinwand.current?.getContext("2d");
+    if (!ctx) return;
+    const bild = new Image();
+    bild.onload = () => {
+      ctx.imageSmoothingEnabled = false;
+      for (let y = 0; y < R; y++) {
+        for (let x = 0; x < R; x++) {
+          const id = karte.begehbar([x, y]) ? bodenKachel(h.muster.boden, x, y) : bodenKachel(h.muster.wand, x, y);
+          ctx.drawImage(bild, (id % h.cols) * h.tile, Math.floor(id / h.cols) * h.tile, h.tile, h.tile, x * T, y * T, T, T);
+        }
       }
-    }
-    return k;
-  }, [cx, cy, R, karte, h]);
+    };
+    bild.src = h.src;
+    return () => { bild.onload = null; };
+  }, [R, karte, h.src, h.tile, h.cols, h.muster]);
 
   const sp = theme.spieler;
   const lauf = { frames: sp.laufen[dir], fps: 8 };
@@ -137,7 +149,7 @@ export default function Erkunden({ karte, theme, objekte, onBetreten, pausiert =
       <Passend breite={VB * T} hoehe={VH * T}>
         <div role="group" aria-label={label} className="relative overflow-hidden rounded-lg" style={{ width: VB * T, height: VH * T, background: "#0b0710" }}>
           <div className="absolute left-0 top-0" style={{ width: R * T, height: R * T, transform: `translate(${-cx * T}px, ${-cy * T}px)`, transition: bewegung && `transform ${bewegung}` }}>
-            <div aria-hidden>{kacheln}</div>
+            <canvas ref={leinwand} aria-hidden width={R * T} height={R * T} className="absolute left-0 top-0" style={{ imageRendering: "pixelated" }} />
             {objekte.map((o) => {
               const stil = { left: o.x * T - 6, top: o.y * T - 8, width: T + 12, height: T + 8 };
               if (!o.label) return <span key={o.id} className="absolute flex items-center justify-center" style={stil}>{o.render()}</span>;

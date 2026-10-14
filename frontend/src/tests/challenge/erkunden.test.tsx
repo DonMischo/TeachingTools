@@ -1,9 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { configure, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Erkunden from "@/components/challenge/pixel/Erkunden";
 import { THEMES } from "@/lib/challenge/themes";
 import { markovKarte } from "@/lib/challenge/markovKarte";
+
+// Laufen und Animationen brauchen unter Last (ganze Suite parallel) länger als 1 s.
+configure({ asyncUtilTimeout: 8000 });
 
 beforeEach(() => {
   window.matchMedia = vi.fn().mockReturnValue({ matches: true, addEventListener() {}, removeEventListener() {} }) as never;

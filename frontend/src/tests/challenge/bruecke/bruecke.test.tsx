@@ -1,9 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { configure, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Bruecke from "@/components/challenge/modi/Bruecke";
 import { THEMES } from "@/lib/challenge/themes";
 import { ausgang, durchhang, kameraX, karren, lueckeX, sterne, weltBreite } from "@/lib/challenge/brueckeSpiel";
+
+// Laufen und Animationen brauchen unter Last (ganze Suite parallel) länger als 1 s.
+configure({ asyncUtilTimeout: 8000 });
 
 const brett = {
   stufe: 2, etappe: 1, leben: 3, fertig: false, spiel: "bruecke", deck: null, etappen: [],
