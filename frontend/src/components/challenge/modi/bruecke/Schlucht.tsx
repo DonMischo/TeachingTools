@@ -34,7 +34,9 @@ export default function Schlucht({ luecken, aktiv, fahrt, onEnde }: { luecken: L
 
   useEffect(() => {
     if (!fahrt) { setP(0); return; }
-    const dauer = reduziert() ? 400 : 3200;
+    // Bei reduzierter Bewegung keine Fahrt: gleich am Ziel, die Textmeldung genügt
+    if (reduziert()) { setP(1); const t = setTimeout(() => ende.current(), 0); return () => clearTimeout(t); }
+    const dauer = 3200;
     let id = 0, alt = performance.now(), ver = 0;
     const f = (t: number) => {
       if (!document.hidden) ver += t - alt;

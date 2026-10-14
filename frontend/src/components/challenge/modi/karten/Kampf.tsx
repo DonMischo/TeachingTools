@@ -18,9 +18,9 @@ const Schwerter = ({ n }: { n: number }) => (
   </span>
 );
 
-export default function Kampf({ brett, theme, lauf, zurKarte, seed, lagerKnopf }: Pick<ModusProps, "brett" | "theme" | "lauf" | "zurKarte"> & { seed: number; lagerKnopf?: ReactNode }) {
+export default function Kampf({ brett, theme, lauf, zurKarte, seed, lagerKnopf, energie = ENERGIE }: Pick<ModusProps, "brett" | "theme" | "lauf" | "zurKarte"> & { seed: number; lagerKnopf?: ReactNode; energie?: number }) {
   const fakten = new Map(brett.fakten.map((f) => [f.id, f]));
-  const [k, setK] = useState(() => kampfStart((brett.deck ?? []).filter((id) => fakten.has(id)), seed));
+  const [k, setK] = useState(() => kampfStart((brett.deck ?? []).filter((id) => fakten.has(id)), seed, energie));
   const [aktiv, setAktiv] = useState<string | null>(null);
   const [antwort, setAntwort] = useState<ChallengeAntwort | null>(null);
   const [erzielt, setErzielt] = useState(0);
@@ -132,8 +132,8 @@ export default function Kampf({ brett, theme, lauf, zurKarte, seed, lagerKnopf }
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-3 text-sm">
-          <span role="status" aria-label={`Energie ${k.energie} von ${ENERGIE}`} className="font-bold">
-            {Array.from({ length: ENERGIE }, (_, i) => <span key={i} aria-hidden className={i < k.energie ? "" : "opacity-30"}>⚡</span>)} {k.energie}/{ENERGIE}
+          <span role="status" aria-label={`Energie ${k.energie} von ${k.max}`} className="font-bold">
+            {Array.from({ length: k.max }, (_, i) => <span key={i} aria-hidden className={i < k.energie ? "" : "opacity-30"}>⚡</span>)} {k.energie}/{k.max}
           </span>
           <span title="Nachziehstapel">🂠 Stapel: {k.nachzieh.length}</span>
           <button className="underline" aria-expanded={ablageOffen} onClick={() => setAblageOffen(!ablageOffen)} title="Ablagestapel ansehen">🗑 Ablage: {k.ablage.length}</button>

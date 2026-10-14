@@ -1,11 +1,11 @@
 "use client";
-/** Kleine Slay-the-Spire-Karte aus dem Markov-Labyrinth: Kampf, Truhe (Bonus-Booster), Lagerfeuer (Wissen nachlesen). */
+/** Kleine Slay-the-Spire-Karte aus dem Markov-Labyrinth: Kampf, Truhe (+1 Energie je Zug), Lagerfeuer (Wissen nachlesen). */
 import { useMemo } from "react";
 import { knotenKarte } from "@/lib/challenge/markovKarte";
 import { knotenArt, type Raststelle } from "./logik";
 
 const SYMBOL: Record<Raststelle, string> = { kampf: "⚔️", truhe: "🎁", lager: "🔥" };
-const NAME: Record<Raststelle, string> = { kampf: "Kampf", truhe: "Truhe: Bonus-Booster", lager: "Lagerfeuer: Wissen nachlesen" };
+const NAME: Record<Raststelle, string> = { kampf: "Kampf", truhe: "Truhe: +1 ⚡ je Zug", lager: "Lagerfeuer: Wissen nachlesen" };
 
 /** Der Weg zur aktuellen Etappe: vom Start zum ersten Knoten der passenden Schicht. */
 export function route(seed: number, etappen: number, etappe: number) {

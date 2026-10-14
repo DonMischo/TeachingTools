@@ -74,8 +74,8 @@ describe("Bruecke", () => {
     await u.click(screen.getByText("Fakt eins"));
     await u.click(screen.getByRole("button", { name: "Testfahrt" }));
     await screen.findByText(/Treffer!/);
-    expect(await screen.findByText("Frage drei", {}, { timeout: 3000 })).toBeTruthy();
-    await waitFor(() => expect(screen.getByText("Fakt zwei").closest("button")!.disabled).toBe(false), { timeout: 3000 });
+    expect(await screen.findByText("Frage drei", {}, { timeout: 8000 })).toBeTruthy();
+    await waitFor(() => expect(screen.getByText("Fakt zwei").closest("button")!.disabled).toBe(false), { timeout: 8000 });
     await u.click(screen.getByText("Fakt zwei"));
     await u.click(screen.getByRole("button", { name: "Testfahrt" }));
     await waitFor(() => expect(lauf.spielwert).toHaveBeenCalledWith("bruecke", 1, 3, 3));

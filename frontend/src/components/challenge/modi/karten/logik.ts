@@ -2,7 +2,9 @@
 
 export const HAND = 5;
 export const ENERGIE = 3;
-export const BOOSTER = 3;
+export const BOOSTER = 5;
+/** So oft wird eine Karte höchstens angeboten (einmal abgelehnt → kommt noch einmal). */
+export const ANGEBOTE = 2;
 
 export function zufall(seed: number) {
   let s = (seed >>> 0) || 1;
@@ -22,32 +24,37 @@ export function hash(text: string): number {
 /**
  * Höchstgröße des Decks: alle Fakten. Wer weniger nimmt, sagt »Fertig« — kleiner darf das Deck
  * nicht erzwungen werden, sonst fehlt womöglich ein nötiger Fakt (der Client kennt die Ablenker nicht).
- * `bonus` (Truhen) bleibt für die Anzeige erhalten, ändert die Grenze aber nicht.
  */
-export function deckZiel(n: number, _bonus = 0): number {
+export function deckZiel(n: number): number {
   return Math.max(1, n);
 }
 
-export type Draft = { schlange: string[]; angebot: string[]; deck: string[]; runde: number };
+export type Draft = { schlange: string[]; angebot: string[]; deck: string[]; runde: number; gesehen: Record<string, number> };
 
 export function draftStart(ids: string[], seed: number): Draft {
-  return naechster({ schlange: mische(ids, zufall(seed)), angebot: [], deck: [], runde: 0 });
+  return naechster({ schlange: mische(ids, zufall(seed)), angebot: [], deck: [], runde: 0, gesehen: {} });
 }
 function naechster(d: Draft): Draft {
-  return { ...d, angebot: d.schlange.slice(0, BOOSTER), schlange: d.schlange.slice(BOOSTER) };
+  const angebot = d.schlange.slice(0, BOOSTER);
+  const gesehen = { ...d.gesehen };
+  for (const id of angebot) gesehen[id] = (gesehen[id] ?? 0) + 1;
+  return { ...d, angebot, schlange: d.schlange.slice(BOOSTER), gesehen };
 }
-/** Eine Karte wählen: die abgelehnten kommen hinten in die Schlange zurück (und werden wieder angeboten). */
-export function draftWahl(d: Draft, id: string, seed: number): Draft {
-  if (!d.angebot.includes(id)) return d;
-  const abgelehnt = d.angebot.filter((x) => x !== id);
-  const rest = [...d.schlange, ...mische(abgelehnt, zufall(seed + d.runde + 1))];
-  return naechster({ schlange: rest, angebot: [], deck: [...d.deck, id], runde: d.runde + 1 });
+/** Beliebig viele Karten aus dem Booster nehmen; Abgelehntes kommt später noch einmal (höchstens ANGEBOTE-mal). */
+export function draftNimm(d: Draft, ids: string[], seed: number): Draft {
+  const genommen = d.angebot.filter((x) => ids.includes(x));
+  const zurueck = d.angebot.filter((x) => !ids.includes(x) && (d.gesehen[x] ?? 0) < ANGEBOTE);
+  const rest = [...d.schlange, ...mische(zurueck, zufall(seed + d.runde + 1))];
+  return naechster({ ...d, schlange: rest, angebot: [], deck: [...d.deck, ...genommen], runde: d.runde + 1 });
 }
+/** Genau eine Karte nehmen (wie draftNimm mit einer). */
+export const draftWahl = (d: Draft, id: string, seed: number): Draft => draftNimm(d, [id], seed);
 
-export type Kampf = { zug: number; nachzieh: string[]; hand: string[]; ablage: string[]; stapel: string[]; energie: number };
+export type Kampf = { zug: number; nachzieh: string[]; hand: string[]; ablage: string[]; stapel: string[]; energie: number; max: number };
 
-export function kampfStart(deck: string[], seed: number): Kampf {
-  return zieheKarten({ zug: 1, nachzieh: mische(deck, zufall(seed)), hand: [], ablage: [], stapel: [], energie: ENERGIE }, HAND, seed);
+/** `max`: Energie je Zug — 3, plus eine je Truhe auf dem Weg. */
+export function kampfStart(deck: string[], seed: number, max = ENERGIE): Kampf {
+  return zieheKarten({ zug: 1, nachzieh: mische(deck, zufall(seed)), hand: [], ablage: [], stapel: [], energie: max, max }, HAND, seed);
 }
 /** Zieht n Karten; leerer Stapel → Ablage mischen. */
 export function zieheKarten(k: Kampf, n: number, seed: number): Kampf {
@@ -70,7 +77,7 @@ export function stapeln(k: Kampf, id: string): Kampf {
 /** Karte vom Stapel zurück in die Hand; Energie kommt zurück. */
 export function zuruecknehmen(k: Kampf, id: string): Kampf {
   if (!k.stapel.includes(id)) return k;
-  return { ...k, stapel: k.stapel.filter((x) => x !== id), hand: [...k.hand, id], energie: Math.min(ENERGIE, k.energie + 1) };
+  return { ...k, stapel: k.stapel.filter((x) => x !== id), hand: [...k.hand, id], energie: Math.min(k.max, k.energie + 1) };
 }
 export function alleZurueck(k: Kampf): Kampf {
   return k.stapel.reduce((s, id) => zuruecknehmen(s, id), k);
@@ -81,7 +88,7 @@ export function ausgespielt(k: Kampf): Kampf {
 }
 /** Zug beenden: Hand auf die Ablage, neue Hand ziehen, Energie voll. Der Kombo-Stapel bleibt liegen. */
 export function zugBeenden(k: Kampf, seed: number): Kampf {
-  const leer: Kampf = { ...k, ablage: [...k.ablage, ...k.hand], hand: [], zug: k.zug + 1, energie: ENERGIE };
+  const leer: Kampf = { ...k, ablage: [...k.ablage, ...k.hand], hand: [], zug: k.zug + 1, energie: k.max };
   return zieheKarten(leer, HAND, seed);
 }
 

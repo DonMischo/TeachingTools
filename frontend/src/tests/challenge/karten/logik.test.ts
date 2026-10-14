@@ -1,22 +1,29 @@
 import { describe, it, expect } from "vitest";
 import {
-  deckZiel, draftStart, draftWahl, kampfStart, stapeln, zugBeenden, zieheKarten, ENERGIE, HAND, sterne, seltenheit,
+  deckZiel, draftNimm, draftStart, draftWahl, kampfStart, stapeln, zugBeenden, zieheKarten, ENERGIE, HAND, sterne, seltenheit,
 } from "@/components/challenge/modi/karten/logik";
 import { route } from "@/components/challenge/modi/karten/Etappenkarte";
 
 const ids = Array.from({ length: 9 }, (_, i) => `f${i}`);
 
 describe("Draft", () => {
-  it("bietet jede Karte irgendwann an, abgelehnte kommen zurück", () => {
+  it("bietet jede Karte an, Abgelehntes höchstens zweimal, und endet", () => {
     let d = draftStart(ids, 7);
     const gesehen = new Set<string>();
-    for (let i = 0; i < deckZiel(ids.length); i++) { d.angebot.forEach((x) => gesehen.add(x)); d = draftWahl(d, d.angebot[0], 7); }
+    for (let i = 0; i < 50 && d.angebot.length; i++) { d.angebot.forEach((x) => gesehen.add(x)); d = draftWahl(d, d.angebot[0], 7); }
+    expect(d.angebot).toHaveLength(0);
     expect(gesehen.size).toBe(ids.length);
-    expect(d.deck).toHaveLength(deckZiel(ids.length));
+    expect(Math.max(...Object.values(d.gesehen))).toBeLessThanOrEqual(2);
     expect(new Set(d.deck).size).toBe(d.deck.length);
   });
+  it("nimmt mehrere Karten aus einem Booster", () => {
+    const d = draftStart(ids, 7);
+    const neu = draftNimm(d, d.angebot.slice(0, 3), 7);
+    expect(neu.deck).toEqual(d.angebot.slice(0, 3));
+    expect(neu.angebot.length).toBeGreaterThan(0);
+  });
   it("Deckziel: Fakten minus ein paar", () => {
-    expect(deckZiel(9)).toBe(9); expect(deckZiel(3)).toBe(3); expect(deckZiel(9, 5)).toBe(9);
+    expect(deckZiel(9)).toBe(9); expect(deckZiel(3)).toBe(3);
   });
 });
 
