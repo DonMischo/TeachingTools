@@ -100,12 +100,12 @@ export default function ChallengeSpiel({ code = "", token, quelle, onAntwort, on
           <div className="text-4xl mb-2">🏆</div>
           {quelle ? (
             <>
-              <h1 className="text-xl font-black">Boss besiegt!</h1>
+              <h1 className="text-xl font-black">Boss besiegt! Alle Etappen geschafft</h1>
               {onFertig && <button className="btn-primary mt-4" onClick={onFertig}>Weiter</button>}
             </>
           ) : (
             <>
-              <h1 className="text-xl font-black">Geschafft!</h1>
+              <h1 className="text-xl font-black">Sieg! Alle Etappen geschafft</h1>
               <p className="text-2xl font-black mt-2">{Math.round(100 * (info.stand?.ergebnis ?? 0))} %</p>
               {mitListe && lauf.meineEdelsteine && <p className="mt-2 font-bold">💎 {lauf.meineEdelsteine.gesamt}/{lauf.meineEdelsteine.max}</p>}
               {mitListe && <div className="mt-3"><BestenlisteKnopf lauf={lauf} spiel="huepfen" /></div>}
@@ -134,11 +134,14 @@ export default function ChallengeSpiel({ code = "", token, quelle, onAntwort, on
             </div>
           )}
           <ol className="flex flex-wrap items-center gap-2" aria-label="Etappen">
-            {brett.etappen.map((e) => (
-              <li key={e.nr} className={`chip ${e.nr === brett.etappe ? "chip-on" : ""} ${!e.erledigt && e.nr > brett.etappe ? "opacity-40" : ""}`}>
-                {e.erledigt ? "✓ " : e.nr > brett.etappe ? "🔒 " : ""}{e.titel}
-              </li>
-            ))}
+            {brett.etappen.map((e, i) => {
+              const gesperrt = !e.erledigt && e.nr !== brett.etappe;
+              return (
+                <li key={e.nr} className={`chip ${e.nr === brett.etappe ? "chip-on" : ""} ${gesperrt ? "opacity-40" : ""}`}>
+                  {e.erledigt ? "✓ " : gesperrt ? "🔒 " : ""}Etappe {i + 1} von {brett.etappen.length}: {e.titel}
+                </li>
+              );
+            })}
           </ol>
           <div className="flex flex-wrap gap-2">
             <button className="btn-primary" onClick={() => { clearTimeout(uhr.current); setHinweis(""); setAnsicht("kampf"); }}>Los</button>

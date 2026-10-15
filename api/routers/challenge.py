@@ -6,7 +6,7 @@ verlassen ihn nur als Ergebnis einer Antwort, nie im Brett.
 
 Einstellungen der Sitzung (ToolSession.settings):
   spiele list (challenge_engine.SPIELE), theme str (THEMES), skin str (Boss-Aussehen), startstufe int (Standard 2),
-  startstufen {student_id: stufe}, punkte_vergeben (Zeitstempel, verhindert doppelte Buchung)
+  startstufen {student_id: stufe}, etappen_mischen bool (Etappen je Lauf in zufälliger Reihenfolge), punkte_vergeben (Zeitstempel, verhindert doppelte Buchung)
 """
 import copy
 import csv
@@ -244,7 +244,8 @@ def _einstellungen(s: ToolSession, daten: dict) -> dict:
     e = s.settings or {}
     return {"spiele": _spiele(s, daten), "theme": e["theme"] if e.get("theme") in eng.THEMES else "klassisch",
             "skin": e["skin"] if e.get("skin") in SKINS else "monster",
-            "startstufe": _stufe(e.get("startstufe", STANDARD_STARTSTUFE))}
+            "startstufe": _stufe(e.get("startstufe", STANDARD_STARTSTUFE)),
+            "etappen_mischen": e.get("etappen_mischen") is True}
 
 
 def _startstufe(s: ToolSession, spieler) -> int:
@@ -283,7 +284,7 @@ def _speichern(st: ChallengeStand, lauf: dict) -> None:
 
 
 def _neuer_stand(db: Session, s: ToolSession, spieler, daten: dict, spiel: str) -> ChallengeStand:
-    lauf = lauf_logik.neuer_lauf(daten, _startstufe(s, spieler), spiel)
+    lauf = lauf_logik.neuer_lauf(daten, _startstufe(s, spieler), spiel, mischen=_einstellungen(s, daten)["etappen_mischen"])
     st = ChallengeStand(session_id=s.id, name=_anzeigename(spieler)[:100], stufe_start=lauf["stufe"], seed=lauf["seed"],
                         class_id=spieler.class_id if isinstance(spieler, Student) else None, **_wer(spieler))
     _speichern(st, lauf)

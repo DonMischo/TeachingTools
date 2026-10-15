@@ -1,7 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { render, screen, waitFor, within, act, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Boss from "@/components/challenge/modi/Boss";
+import Kampf from "@/components/challenge/modi/boss/Kampf";
 import { SKINS } from "@/components/challenge/modi/boss/figuren";
 import { THEMES } from "@/lib/challenge/themes";
 import { baueBossKarte, bossSeed } from "@/lib/challenge/bossKarte";
@@ -18,9 +19,16 @@ const brett = (o: Record<string, unknown> = {}) => ({
 });
 const antwort = (o = {}) => ({ qualitaet: 1, treffer: true, komplett: true, kombo: false, schaden: 20, falsch_gewaehlt: 0, leben: 3,
   zurueck_zur_karte: false, etappe_geschafft: false, fertig: false, stufe: 1, ...o });
-const mkLauf = (r = antwort()) => ({ spielwert: vi.fn(), waehle: vi.fn(), gelegt: vi.fn(), antworte: vi.fn().mockResolvedValue(r) });
+const mkLauf = (r = antwort()) => ({ deckSetzen: vi.fn().mockResolvedValue(undefined), spielwert: vi.fn(), waehle: vi.fn(), gelegt: vi.fn(), antworte: vi.fn().mockResolvedValue(r) });
 const zeige = (b: unknown, lauf: ReturnType<typeof mkLauf>, skin = "monster", zurKarte = vi.fn()) =>
   render(<Boss brett={b as never} theme={THEMES.klassisch} skin={skin} lauf={lauf as never} zurKarte={zurKarte} />);
+
+const ruesteAus = async (u: ReturnType<typeof userEvent.setup>, namen?: RegExp[]) => {
+  const reg = screen.getByRole("region", { name: "Ausrüsten" });
+  const knoepfe = within(reg).getAllByRole("button").filter((b) => !/In den Kampf/.test(b.textContent ?? ""));
+  for (const k of knoepfe) if (!namen || namen.some((n) => n.test(k.textContent ?? ""))) await u.click(k);
+  await u.click(within(reg).getByRole("button", { name: /In den Kampf/ }));
+};
 
 beforeEach(() => {
   window.matchMedia = vi.fn().mockReturnValue({ matches: true, addEventListener() {}, removeEventListener() {} }) as never;
@@ -43,6 +51,7 @@ describe("Boss", () => {
     expect(screen.getByText("Fakt Gamma")).toBeInTheDocument();
     await u.click(screen.getByRole("button", { name: "Weiter" }));
     await u.click(screen.getByRole("button", { name: "Zum Kampf" }));
+    await ruesteAus(u);
     await u.click(screen.getByRole("button", { name: "Kontern" }));
     expect(screen.getByRole("button", { name: /Fakt Gamma/ })).toBeInTheDocument();
   }, 40000);
@@ -78,6 +87,7 @@ describe("Boss", () => {
     const lauf = mkLauf(antwort({ treffer: false, komplett: false, schaden: 0 }));
     zeige(brett(), lauf);
     await u.click(screen.getByRole("button", { name: "Alles einsammeln" }));
+    await ruesteAus(u);
     expect(screen.getByText("Frage Eins")).toBeInTheDocument();
     expect(screen.queryByText("Frage Zwei")).not.toBeInTheDocument();
     await u.click(screen.getByRole("button", { name: "Kontern" }));
@@ -92,6 +102,7 @@ describe("Boss", () => {
     const u = userEvent.setup();
     zeige(brett(), mkLauf(), "rap");
     await u.click(screen.getByRole("button", { name: "Alles einsammeln" }));
+    await ruesteAus(u);
     expect(screen.getByRole("button", { name: "Konter-Line" })).toBeInTheDocument();
   });
 });
@@ -139,6 +150,7 @@ describe("Kampfmenü", () => {
     const u = userEvent.setup();
     zeige(b, lauf, skin, zurKarte);
     await u.click(screen.getByRole("button", { name: "Alles einsammeln" }));
+    await ruesteAus(u);
     return u;
   };
   it("hat vier Felder und navigiert mit den Pfeiltasten wie im Game Boy", async () => {
@@ -209,4 +221,82 @@ describe("Held-EP", () => {
     expect(screen.getByText(/steigt auf Level 2 auf/)).toBeInTheDocument();
     await waitFor(() => expect(lauf.spielwert).toHaveBeenCalledWith("boss", 1, EP_SIEG, EP_SIEG), { timeout: 3000 }); // gedrosselt gemeldet
   }, 40000);
+});
+
+describe("Ausrüsten und Etappen", () => {
+  it("Ausrüsten setzt das Deck, im Kampf liegen nur die gewählten Fakten", async () => {
+    const u = userEvent.setup();
+    const lauf = mkLauf();
+    zeige(brett(), lauf);
+    await u.click(screen.getByRole("button", { name: "Alles einsammeln" }));
+    expect(screen.getByRole("button", { name: /In den Kampf/ })).toBeDisabled();
+    await ruesteAus(u, [/Alpha/, /Gamma/]);
+    expect(lauf.deckSetzen).toHaveBeenCalledWith(["f1", "f3"]);
+    await u.click(screen.getByRole("button", { name: "Kontern" }));
+    expect(screen.getByRole("button", { name: /Fakt Alpha/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Fakt Gamma/ })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Fakt Beta/ })).not.toBeInTheDocument();
+  });
+  it("mit gesetztem Deck geht es direkt in den Kampf; Etappenanzeige", () => {
+    zeige(brett({ deck: ["f2"], geschafft_etappen: 1, gesamt_etappen: 3 }), mkLauf());
+    expect(screen.queryByRole("region", { name: "Ausrüsten" })).not.toBeInTheDocument();
+    expect(screen.getByText(/Etappe 2 von 3/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Kontern" })).toBeInTheDocument();
+  });
+  it("Etappe geschafft zeigt den Übergang", async () => {
+    const u = userEvent.setup();
+    zeige(brett({ deck: ["f1"] }), mkLauf(antwort({ etappe_geschafft: true })));
+    await u.click(screen.getByRole("button", { name: "Kontern" }));
+    await u.click(screen.getByRole("button", { name: /Fakt Alpha/ }));
+    await u.click(screen.getByRole("button", { name: "Kontern" }));
+    expect(await screen.findByText(/der Drache flieht tiefer ins Verlies/)).toBeInTheDocument();
+  });
+});
+
+describe("Mini-Monster schlägt zurück", () => {
+  const start = async (reduziert = false) => {
+    window.matchMedia = vi.fn().mockReturnValue({ matches: reduziert, addEventListener() {}, removeEventListener() {} }) as never;
+    vi.useFakeTimers();
+    const u = { click: async (el: Element) => { await act(async () => { fireEvent.click(el); }); } };
+    const fn = { onSieg: vi.fn(), onEnde: vi.fn(), onVerloren: vi.fn() };
+    render(<Kampf theme={THEMES.klassisch} fakten={[fakt("f1", "Fakt Alpha")]} {...fn} />);
+    if (!screen.queryByRole("button", { name: "Angreifen" })) await u.click(screen.getByText("Klicken zum Überspringen"));
+    return { u, fn };
+  };
+  const kp = () => Number(screen.getByRole("progressbar", { name: "Lebenspunkte des Helden" }).getAttribute("aria-valuenow"));
+  const zeit = (ms: number) => act(async () => { vi.advanceTimersByTime(ms); });
+  afterEach(() => vi.useRealTimers());
+
+  it("Angriffe kosten KP; bei 0 KP gibt es die Rückkehr zur Karte", async () => {
+    const { u, fn } = await start();
+    expect(kp()).toBe(30);
+    await zeit(4100);
+    expect(kp()).toBe(25);
+    await zeit(6 * 2500);
+    expect(screen.getByText("Du wurdest zurückgedrängt.")).toBeInTheDocument();
+    expect(kp()).toBe(0);
+    expect(screen.queryByRole("button", { name: "Angreifen" })).not.toBeInTheDocument();
+    await u.click(screen.getByRole("button", { name: "Zurück zur Karte" }));
+    expect(fn.onVerloren).toHaveBeenCalled();
+    expect(fn.onSieg).not.toHaveBeenCalled();
+  });
+  it("schnelles Klicken gewinnt ohne Schaden", async () => {
+    const { u, fn } = await start();
+    for (let i = 0; i < 5; i++) await u.click(screen.getByRole("button", { name: "Angreifen" }));
+    expect(fn.onSieg).toHaveBeenCalled();
+    expect(kp()).toBe(30);
+  });
+  it("Klick während der Ankündigung pariert", async () => {
+    const { u } = await start();
+    await zeit(3700);
+    expect(screen.getByText("Der Holzklotz holt aus!")).toBeInTheDocument();
+    await u.click(screen.getByRole("button", { name: "Angreifen" }));
+    await zeit(600);
+    expect(kp()).toBe(30);
+  });
+  it("Bei reduzierter Bewegung kommt der erste Schlag später", async () => {
+    await start(true);
+    await zeit(3000);
+    expect(kp()).toBe(30);
+  });
 });

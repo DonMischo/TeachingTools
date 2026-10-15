@@ -68,6 +68,21 @@ describe("ChallengeSpiel", () => {
     expect(await screen.findByRole("button", { name: "Los" })).toBeTruthy();
   });
 
+  it("zeigt die Etappen in Spielreihenfolge mit »Etappe x von y«", async () => {
+    m.start.mockResolvedValue(brett({ etappe: 3, etappen: [
+      { nr: 3, titel: "Drei", erledigt: false }, { nr: 1, titel: "Eins", erledigt: false }] }));
+    render(<ChallengeSpiel code="ABC" />);
+    const punkte = await screen.findAllByRole("listitem");
+    expect(punkte[0].textContent).toContain("Etappe 1 von 2: Drei");
+    expect(punkte[1].textContent).toContain("Etappe 2 von 2: Eins");
+  });
+
+  it("nennt das Ende eines fertigen Laufs »Sieg! Alle Etappen geschafft«", async () => {
+    m.start.mockResolvedValue(brett({ fertig: true }));
+    render(<ChallengeSpiel code="ABC" />);
+    expect(await screen.findByText("Sieg! Alle Etappen geschafft")).toBeTruthy();
+  });
+
   it("zeigt keine Spielauswahl bei einer Spielart", async () => {
     render(<ChallengeSpiel code="ABC" />);
     await screen.findByRole("button", { name: "Los" });

@@ -1,9 +1,9 @@
 "use client";
-/** Bosskampf: erst Fakten sammeln, dann kontert die Figur die Angriffe des Bosses mit Fakten aus dem Inventar. */
+/** Bosskampf: erst Fakten sammeln, dann das Gepäck wählen (= Deck), dann kontert die Figur die Angriffe des Bosses mit Fakten aus dem Inventar. */
 import { useEffect, useRef, useState } from "react";
 import { BestenlisteKnopf } from "@/components/challenge/Bestenliste";
 import { useSpielwert } from "@/lib/challenge/useSpielwert";
-import type { ChallengeAntwort } from "@/lib/api";
+import type { ChallengeAntwort, ChallengeBrett } from "@/lib/api";
 import { PixelMatrix } from "@/components/challenge/pixel/Matrix";
 import type { ModusProps } from "./typen";
 import { Ablage, FaktKarte, Herzen, Inhalt, Treffermeldung } from "./teile";
@@ -17,7 +17,11 @@ const FELDER = ["kontern", "tasche", "wechseln", "flucht"] as const;
 
 export default function Boss({ brett, theme, skin, lauf, zurKarte }: ModusProps) {
   const sk = skinVon(skin);
-  const [phase, setPhase] = useState<"sammeln" | "arena">(brett.fakten.length ? "sammeln" : "arena");
+  const [phase, setPhase] = useState<"sammeln" | "arena">(brett.fakten.length && !brett.deck ? "sammeln" : "arena");
+  const [deckLokal, setDeckLokal] = useState<string[] | null>(null);
+  const [markiert, setMarkiert] = useState<string[]>([]);
+  const deck = brett.deck ?? deckLokal;
+  const deckWar = useRef(!!brett.deck);
   const [gefunden, setGefunden] = useState<string[]>([]);
   const [idx, setIdx] = useState(0);
   const [ablage, setAblage] = useState<string[]>([]);
@@ -36,15 +40,25 @@ export default function Boss({ brett, theme, skin, lauf, zurKarte }: ModusProps)
 
   const offene = brett.challenges.filter((c) => !c.erledigt);
   const aktiv = offene.length ? offene[idx % offene.length] : null;
-  const inventar = brett.fakten.filter((f) => gefunden.includes(f.id));
+  const gesammelt = brett.fakten.filter((f) => gefunden.includes(f.id) || (brett.deck ?? []).includes(f.id));
+  const ausruesten = phase === "arena" && brett.fakten.length > 0 && !deck;
+  const inventar = deck ? brett.fakten.filter((f) => deck.includes(f.id)) : [];
+  const b = brett as ChallengeBrett & { geschafft_etappen?: number; gesamt_etappen?: number };
+  const gesamt = Math.max(1, b.gesamt_etappen ?? brett.etappen.length);
+  const geschafft = b.geschafft_etappen ?? brett.etappen.filter((e) => e.erledigt).length;
+  const etappeBeat = !!antwort?.etappe_geschafft && !antwort.fertig;
   const fakten = new Map(brett.fakten.map((f) => [f.id, f]));
 
   const max = brett.challenges.reduce((s, c) => s + c.strength * 15, 0);
   const erledigt = brett.challenges.reduce((s, c) => s + (c.erledigt ? c.strength * 10 : 0), 0);
   const hp = offene.length === 0 ? 0 : Math.max(1, max - Math.max(schaden, erledigt));
 
+  useEffect(() => { // Server leert das Deck nach der Rückkehr zur Karte: Gepäck neu wählen
+    if (brett.deck) deckWar.current = true;
+    else if (deckWar.current) { deckWar.current = false; setDeckLokal(null); setMarkiert([]); }
+  }, [brett.deck]);
   useSpielwert(lauf, "boss", brett.etappe, ep, epMax); // EP aus den Klicker-Kämpfen
-  useEffect(() => { if (phase === "arena" && ansicht === "menu") feldEl.current[feld]?.focus(); }, [phase, ansicht]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (phase === "arena" && !ausruesten && ansicht === "menu") feldEl.current[feld]?.focus(); }, [phase, ansicht, ausruesten]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (phase === "arena" && aktiv) lauf.waehle(); }, [phase, aktiv?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!zahlen.length) return;
@@ -52,6 +66,10 @@ export default function Boss({ brett, theme, skin, lauf, zurKarte }: ModusProps)
     return () => clearTimeout(t);
   }, [zahlen]);
 
+  const einpacken = async () => {
+    if (!markiert.length) return;
+    try { await lauf.deckSetzen(markiert); setDeckLokal(markiert); } catch { /* Brett bleibt wie es ist */ }
+  };
   const legeAuf = (id: string) => {
     if (!aktiv || ablage.includes(id) || !fakten.has(id)) return;
     lauf.gelegt();
@@ -107,7 +125,7 @@ export default function Boss({ brett, theme, skin, lauf, zurKarte }: ModusProps)
     <>
       <div className="flex items-center justify-between">
         <Herzen leben={brett.leben} />
-        <strong>{sk.titel} · Lv. {bal.level}</strong>
+        <strong>{sk.titel} · Lv. {bal.level} · Etappe {Math.min(gesamt, geschafft + 1)} von {gesamt}</strong>
         <div className="flex gap-2">
           <BestenlisteKnopf lauf={lauf} spiel="boss" hinweis="Erfahrung aus den Kämpfen gegen Mini-Monster" rechts />
           <button className="btn-secondary" onClick={zurKarte}>Karte</button>
@@ -116,9 +134,23 @@ export default function Boss({ brett, theme, skin, lauf, zurKarte }: ModusProps)
 
       {phase === "sammeln" ? (
         <Sammeln fakten={brett.fakten} theme={theme} seed={bossSeed(brett.etappe, brett.fakten.length)} gefunden={gefunden} setGefunden={setGefunden} weiter={() => setPhase("arena")}
-          ep={ep} onEp={() => setEp((e) => e + EP_SIEG)} />
+          ep={ep} etappe={brett.etappe} onEp={() => setEp((e) => e + EP_SIEG)} />
+      ) : ausruesten ? (
+        <section aria-label="Ausrüsten" className="card p-3 flex flex-col gap-2">
+          <h2 className="font-bold">🎒 Ausrüsten: Was nimmst du in den Kampf mit?</h2>
+          <p className="text-muted text-sm">Markiere die Fakten, die du mitnimmst. Im Kampf stehen nur sie zur Verfügung – wähle mit Bedacht.</p>
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,180px),1fr))] gap-2">
+            {gesammelt.map((f) => (
+              <div key={f.id} aria-pressed={markiert.includes(f.id)} className={`rounded-xl ${markiert.includes(f.id) ? "ring-4 ring-accent" : ""}`}>
+                <FaktKarte fakt={f} onClick={() => setMarkiert((m) => (m.includes(f.id) ? m.filter((x) => x !== f.id) : [...m, f.id]))} />
+              </div>
+            ))}
+          </div>
+          <button className="btn-primary self-start" disabled={!markiert.length} onClick={einpacken}>In den Kampf ({markiert.length})</button>
+        </section>
       ) : (
         <>
+          {etappeBeat && <p className="card p-3 font-bold text-good" role="status">Etappe geschafft – der Drache flieht tiefer ins Verlies!</p>}
           <Treffermeldung antwort={antwort} />
           <Szene introText={sk.intro} himmel={bg} boden={boden === "#6b7a5a" ? undefined : boden}
             held={<PixelMatrix bild={sk.held.bild} palette={sk.held.palette} scale={6} label={sk.held.name} />}
@@ -143,7 +175,7 @@ export default function Boss({ brett, theme, skin, lauf, zurKarte }: ModusProps)
                   </div>
                 )}
               </div>
-            ) : <p className="font-bold text-good">{sk.sieg}</p>}
+            ) : etappeBeat ? null : <p className="font-bold text-good">{sk.sieg}</p>}
           </Szene>
 
           {aktiv && ansicht === "kontern" && (

@@ -183,3 +183,11 @@ def test_templates_contain_valid_boss_slides(client, teacher_token):
             assert not fehler, fehler
         assert "boss" in tpl["_ai_instructions"]
         assert _upload(client, teacher_token, tpl).status_code == 201
+
+
+def test_boss_etappen_mischen_standard_und_pruefung():
+    from api.routers.exitgame import _boss_errors, _boss_standards
+    assert _boss_standards(BOSS)["etappenMischen"] is False
+    assert _boss_standards({**BOSS, "etappenMischen": True})["etappenMischen"] is True
+    assert not [f for f in _boss_errors({**BOSS, "etappenMischen": True}, "x") if "etappenMischen" in f]
+    assert any("etappenMischen" in f for f in _boss_errors({**BOSS, "etappenMischen": "ja"}, "x"))

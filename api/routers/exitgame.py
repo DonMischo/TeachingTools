@@ -225,7 +225,8 @@ def _boss_standards(slide: dict) -> dict:
     """Die Vorgaben einer Boss-Folie mit Standardwerten — die eine Stelle, an der sie stehen."""
     spiel = slide.get("spiel", "boss")
     return {"spiel": spiel, "spiele": slide.get("spiele") or [spiel], "skin": slide.get("skin", "monster"),
-            "theme": slide.get("theme", "klassisch"), "startstufe": slide.get("startstufe", challenge_lauf.STANDARD_STARTSTUFE)}
+            "theme": slide.get("theme", "klassisch"), "startstufe": slide.get("startstufe", challenge_lauf.STANDARD_STARTSTUFE),
+            "etappenMischen": slide.get("etappenMischen") is True}
 
 
 def _boss_errors(slide: dict, where: str) -> list[str]:
@@ -250,6 +251,8 @@ def _boss_errors(slide: dict, where: str) -> list[str]:
     stufe = slide.get("startstufe")
     if stufe is not None and (type(stufe) is not int or not 1 <= stufe <= 4):
         fehler.append(f"{where}: startstufe muss 1 bis 4 sein")
+    if slide.get("etappenMischen") is not None and not isinstance(slide["etappenMischen"], bool):
+        fehler.append(f"{where}: etappenMischen muss true oder false sein")
     frag = slide.get("codeFragment")
     if frag is not None and (not isinstance(frag, str) or not frag.strip()):
         fehler.append(f"{where}: codeFragment muss ein nicht-leerer Text sein")
@@ -1516,7 +1519,7 @@ def boss_start(
     lauf = _boss_lauf(attempt, slide, pflicht=False)
     wahl = body.spiel if body.spiel in spiele else (lauf["spiel"] if lauf else standards["spiel"])
     if lauf is None:
-        lauf = challenge_lauf.neuer_lauf(slide["challenge"], standards["startstufe"], wahl)
+        lauf = challenge_lauf.neuer_lauf(slide["challenge"], standards["startstufe"], wahl, mischen=standards["etappenMischen"])
     else:
         challenge_lauf.spiel_wechseln(slide["challenge"], lauf, wahl)
     _boss_speichern(attempt, slide, lauf)

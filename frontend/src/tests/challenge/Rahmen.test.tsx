@@ -80,6 +80,13 @@ describe("ChallengeLehrkraft", () => {
     expect(m.stufen).toHaveBeenCalledWith("XYZ", { 5: 3 });
   });
 
+  it("speichert »Etappen in zufälliger Reihenfolge« und behält die übrigen Einstellungen", async () => {
+    m.einstellungen.mockResolvedValue(sitzung);
+    const u = await zeige();
+    await u.click(screen.getByLabelText("Etappen in zufälliger Reihenfolge"));
+    expect(m.einstellungen).toHaveBeenCalledWith("XYZ", { ...sitzung.settings, etappen_mischen: true });
+  });
+
   it("übernimmt den Kalibrierungs-Vorschlag nur bei genug Daten", async () => {
     viewKalib(false);
     const u = await zeige();

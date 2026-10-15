@@ -499,12 +499,13 @@ export type ChallengeAufgabe = { id: string; text: string; image: string | null;
 export type ChallengeBrett = {
   stufe: number; etappe: number; leben: number; fertig: boolean;
   etappen: { nr: number; titel: string; erledigt: boolean }[];
+  gesamt_etappen?: number; geschafft_etappen?: number;
   challenges: ChallengeAufgabe[]; fakten: ChallengeFakt[];
   spiel: string; deck: string[] | null;
 };
 export type ChallengeInfo = {
   title: string; subject: string | null;
-  settings: { spiele: string[]; theme: string; skin?: string; startstufe: number };
+  settings: { spiele: string[]; theme: string; skin?: string; startstufe: number; etappen_mischen?: boolean };
   stand: { stufe: number; etappe: number; leben: number; fragen: number; ergebnis: number; fertig: boolean } | null;
 };
 export type ChallengeAntwortIn = { challenge_id: string; fakt_ids: string[]; lese_ms: number; wahl_ms: number; tipp: boolean };
@@ -894,6 +895,7 @@ export type ExitGameSlide = {
   skin?: string;
   theme?: string;
   startstufe?: number;
+  etappenMischen?: boolean;
   challenge?: Record<string, unknown>;
   codeFragment?: string;
 };

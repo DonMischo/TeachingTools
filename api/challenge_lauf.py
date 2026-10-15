@@ -4,7 +4,7 @@ Der Router (api/routers/challenge.py) bildet die Spalten von ChallengeStand auf 
 TaskCrawler (Boss-Folie) kann dieselbe Logik ohne ChallengeStand-Zeile nutzen.
 
 lauf = {"stufe", "stufe_start", "seed", "spiel", "fertig",
-        "zustand": {"etappe", "leben", "erledigt", "deck": {etappe: [fakt_ids]}, "deck_ablenker": [fakt_ids]},
+        "zustand": {"etappe", "reihenfolge" (nur gemischt: Etappen-Nummern in Spielreihenfolge), "leben", "erledigt", "deck": {etappe: [fakt_ids]}, "deck_ablenker": [fakt_ids]},
         "fragen": [...], "verlauf": [...]}
 """
 import random
@@ -50,11 +50,21 @@ def _satz(daten: dict, lauf: dict) -> dict:
     return satz
 
 
-def neuer_lauf(daten: dict, stufe: int, spiel: str = "normal", seed: int | None = None) -> dict:
+def neuer_lauf(daten: dict, stufe: int, spiel: str = "normal", seed: int | None = None, mischen: bool = False) -> dict:
     lauf = {"stufe": stufe, "stufe_start": stufe, "seed": random.getrandbits(31) if seed is None else seed,
             "spiel": spiel, "fertig": False, "fragen": [], "verlauf": [], "zustand": {}}
-    lauf["zustand"] = {"etappe": eng.etappen(_satz(daten, lauf))[0], "leben": eng.LEBEN, "erledigt": [], "deck": {}}
+    lauf["zustand"] = {"leben": eng.LEBEN, "erledigt": [], "deck": {}}
+    _ordne(daten, lauf, mischen)
     return lauf
+
+
+def _ordne(daten: dict, lauf: dict, mischen: bool) -> None:
+    """Startetappe (und bei ``mischen`` die nach dem seed gemischte Reihenfolge) für den Satz der Spielart."""
+    nummern = eng.etappen(_satz(daten, lauf))
+    if mischen:
+        random.Random(lauf["seed"]).shuffle(nummern)
+        lauf["zustand"]["reihenfolge"] = nummern
+    lauf["zustand"]["etappe"] = nummern[0]
 
 
 def spiel_wechseln(daten: dict, lauf: dict, spiel: str) -> None:
@@ -65,22 +75,31 @@ def spiel_wechseln(daten: dict, lauf: dict, spiel: str) -> None:
         raise LaufFehler(409, "Der Gerichtssaal lässt sich nach der ersten Antwort nicht mehr wechseln")
     lauf["spiel"] = spiel
     if not lauf["fragen"]:
-        lauf["zustand"]["etappe"] = eng.etappen(_satz(daten, lauf))[0]
+        _ordne(daten, lauf, "reihenfolge" in lauf["zustand"])
 
 
 def _in_etappe(satz: dict, nr: int) -> list[dict]:
     return [c for c in satz["challenges"] if c.get("stage", 1) == nr]
 
 
+def _reihenfolge(satz: dict, lauf: dict) -> list[int]:
+    """Etappen in Spielreihenfolge: die gemischte des Laufs (ohne Etappen, die der Satz nicht mehr kennt,
+    neue hinten), ohne sie aufsteigend."""
+    nummern = eng.etappen(satz)
+    gemischt = [nr for nr in lauf["zustand"].get("reihenfolge", []) if nr in nummern]
+    return gemischt + [nr for nr in nummern if nr not in gemischt] if gemischt else nummern
+
+
 def _etappe(satz: dict, lauf: dict) -> int:
     """Aktuelle Etappe: ab dem gemerkten Stand die erste mit offenen Challenges (nach einem Stufenwechsel
     kann sich der Satz geändert haben), sonst die letzte."""
     erledigt = set(lauf["zustand"]["erledigt"])
-    nummern = eng.etappen(satz)
-    for nr in nummern:
-        if nr >= lauf["zustand"]["etappe"] and any(c["id"] not in erledigt for c in _in_etappe(satz, nr)):
+    reihe = _reihenfolge(satz, lauf)
+    ab = reihe.index(lauf["zustand"]["etappe"]) if lauf["zustand"]["etappe"] in reihe else 0
+    for nr in reihe[ab:]:
+        if any(c["id"] not in erledigt for c in _in_etappe(satz, nr)):
             return nr
-    return nummern[-1]
+    return reihe[-1]
 
 
 def brett(daten: dict, lauf: dict, bild=lambda name: name, tipps: bool | None = None, satz: dict | None = None) -> dict:
@@ -89,15 +108,12 @@ def brett(daten: dict, lauf: dict, bild=lambda name: name, tipps: bool | None = 
     erledigt = set(lauf["zustand"]["erledigt"])
     params = eng.STUFE_PARAMS[lauf["stufe"]]
     titel = {s.get("id"): s.get("title") for s in satz.get("stages", []) if isinstance(s, dict)}
-    # Ablenker: eine feste Auswahl je Spieler (seed), damit sie beim Neuladen gleich bleiben
-    ablenker = [f for f in satz["facts"] if f.get("decoy")]
-    if params["ablenker"] is not None:
-        ablenker = random.Random(lauf["seed"]).sample(ablenker, min(params["ablenker"], len(ablenker)))
-    fakten = [f for f in satz["facts"] if not f.get("decoy")] + ablenker
     aufgaben = _in_etappe(satz, etappe)
+    # feste Auswahl je Spieler und Etappe (seed), damit sie beim Neuladen gleich bleibt
     rng = random.Random(lauf["seed"] + etappe)
-    rng.shuffle(fakten)
+    fakten = eng.fakten_fuer_etappe(satz, aufgaben, params["ablenker"], rng)
     rng.shuffle(aufgaben)
+    reihe = _reihenfolge(satz, lauf)
 
     def challenge_out(c: dict) -> dict:
         aus = {"id": c["id"], "text": c["text"], "image": bild(c["image"]) if c.get("image") else None,
@@ -111,7 +127,9 @@ def brett(daten: dict, lauf: dict, bild=lambda name: name, tipps: bool | None = 
         "deck": lauf["zustand"].get("deck", {}).get(str(etappe)),
         "etappen": [{"nr": nr, "titel": titel.get(nr) or f"Etappe {nr}",
                      "erledigt": all(c["id"] in erledigt for c in _in_etappe(satz, nr))}
-                    for nr in eng.etappen(satz)],
+                    for nr in reihe],
+        "gesamt_etappen": len(reihe),
+        "geschafft_etappen": sum(all(c["id"] in erledigt for c in _in_etappe(satz, nr)) for nr in reihe),
         "challenges": [challenge_out(c) for c in aufgaben],
         "fakten": [{"id": f["id"], "text": f["text"], "image": bild(f["image"]) if f.get("image") else None,
                     "formula": f.get("formula"), "info": f.get("info")} for f in fakten],
@@ -181,7 +199,8 @@ def _antworte(daten, lauf, challenge_id, fakt_ids, lese_ms, wahl_ms, tipp, kalib
     if all(c["id"] in z["erledigt"] for c in _in_etappe(satz, etappe)):
         etappe_geschafft = True
         z["leben"] = eng.LEBEN
-        weitere = [nr for nr in eng.etappen(satz) if nr > etappe]
+        reihe = _reihenfolge(satz, lauf)
+        weitere = reihe[reihe.index(etappe) + 1:]
         if weitere:
             z["etappe"] = weitere[0]
         else:

@@ -4,6 +4,7 @@ Reine Funktionen, keine Datenbank. Der Router (api/routers/challenge.py) ruft si
 die Lösungen verlassen den Server nie.
 """
 import copy
+import random
 import statistics
 from functools import lru_cache
 
@@ -21,6 +22,7 @@ STUFE_PARAMS = {  # Systemvorgaben je Stufe (4 = schwerste); ablenker None = all
 LEBEN = 3
 MALUS = 0.5
 MIN_CHALLENGES_JE_ETAPPE = 5
+MAX_FAKTEN_JE_ETAPPE = 12
 STUFE_MIN_SNAPSHOTS = 3
 GERATEN_ANTEIL = 0.3
 VORSCHLAG_MIN_STICHPROBE = 30
@@ -100,6 +102,10 @@ def _pruefe_aufgeloest(satz: dict, assets: set[str] | None) -> tuple[list[str], 
         for nr, n in sorted(je_etappe.items()):
             if n < MIN_CHALLENGES_JE_ETAPPE:
                 warnungen.append(f"Etappe {nr} hat nur {n} Challenges (empfohlen: mindestens {MIN_CHALLENGES_JE_ETAPPE}).")
+        for nr in sorted(je_etappe):
+            n = len(benoetigte_fakten([c for c in challenges if c.get("stage", 1) == nr]))
+            if n > MAX_FAKTEN_JE_ETAPPE:
+                warnungen.append(f"Etappe {nr} braucht {n} Fakten (empfohlen: höchstens {MAX_FAKTEN_JE_ETAPPE}).")
     if assets is not None:
         for e in [*fakten, *challenges]:
             if e.get("image") and e["image"] not in assets:
@@ -187,6 +193,26 @@ def claims_als_challenges(daten: dict) -> list[dict]:
     """Gerichtssaal: jede Behauptung ist eine Challenge, die durch einen der ``refutedBy``-Fakten gelöst wird."""
     return [{"id": c["id"], "text": c["text"], "solve": {"any": list(c["refutedBy"])},
              **{k: c[k] for k in ("stage", "strength", "feedback") if k in c}} for c in daten.get("claims") or []]
+
+
+def benoetigte_fakten(challenges: list[dict]) -> list[str]:
+    """Alle Fakt-ids, die in der ``solve``-Liste einer der Challenges stehen (ohne Doppelte, in Reihenfolge)."""
+    return list(dict.fromkeys(i for c in challenges for ids in c["solve"].values() for i in ids))
+
+
+def fakten_fuer_etappe(satz: dict, aufgaben: list[dict], ablenker: int | None, rng: random.Random) -> list[dict]:
+    """Brett-Fakten einer Etappe: alle nötigen plus Ablenker (erst Decoys, dann echte Fakten anderer Etappen),
+    zusammen höchstens MAX_FAKTEN_JE_ETAPPE; nötige fallen nie weg. Gemischt."""
+    noetig = set(benoetigte_fakten(aufgaben))
+    gewaehlt = [f for f in satz["facts"] if f["id"] in noetig]
+    ziel = MAX_FAKTEN_JE_ETAPPE if ablenker is None else min(MAX_FAKTEN_JE_ETAPPE, len(gewaehlt) + ablenker)
+    decoys = [f for f in satz["facts"] if f.get("decoy")]
+    andere = [f for f in satz["facts"] if not f.get("decoy") and f["id"] not in noetig]
+    rng.shuffle(decoys)
+    rng.shuffle(andere)
+    gewaehlt += [*decoys, *andere][:max(0, ziel - len(gewaehlt))]
+    rng.shuffle(gewaehlt)
+    return gewaehlt
 
 
 def etappen(satz: dict) -> list[int]:

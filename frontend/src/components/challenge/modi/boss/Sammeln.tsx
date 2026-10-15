@@ -21,8 +21,8 @@ const TRUHE_AUF = { x: 181, y: 0, w: 20, h: 16 };
 const LOG = "/challenge/pixel/gfx/log.png";
 const MONSTER = { x: 0, y: 64, w: 32, h: 32 };
 
-export default function Sammeln({ fakten, theme, seed, gefunden, setGefunden, weiter, ep = 0, onEp }: {
-  fakten: ChallengeFakt[]; theme: ThemeDef; seed: number; gefunden: string[]; setGefunden(f: (g: string[]) => string[]): void; weiter(): void; ep?: number; onEp?(): void;
+export default function Sammeln({ fakten, theme, seed, gefunden, setGefunden, weiter, ep = 0, etappe = 1, onEp }: {
+  fakten: ChallengeFakt[]; theme: ThemeDef; seed: number; gefunden: string[]; setGefunden(f: (g: string[]) => string[]): void; weiter(): void; ep?: number; etappe?: number; onEp?(): void;
 }) {
   const karte = useMemo(() => baueBossKarte(seed, fakten.length), [seed, fakten.length]);
   const { objekte } = karte;
@@ -61,10 +61,10 @@ export default function Sammeln({ fakten, theme, seed, gefunden, setGefunden, we
 
   return (
     <div className="flex flex-col gap-2">
-      {kampf && <Kampf theme={theme} fakten={faktenVon(kampf)} ep={ep}
-        onSieg={() => { setFertig((f) => [...f, kampf.id]); nimm(faktenVon(kampf)); onEp?.(); }} onEnde={() => setKampf(null)} />}
+      {kampf && <Kampf theme={theme} fakten={faktenVon(kampf)} ep={ep} stufe={etappe} zaehe={kampf.id % 3}
+        onSieg={() => { setFertig((f) => [...f, kampf.id]); nimm(faktenVon(kampf)); onEp?.(); }} onEnde={() => setKampf(null)} onVerloren={() => setKampf(null)} />}
       <div hidden={!!kampf} className="flex flex-col gap-2">
-        <p className="text-muted">Erkunde das Verlies: Pfeiltasten/WASD, die Knöpfe oder ein Ziel anklicken. Truhen öffnen sich beim Betreten, gegen Mini-Monster kämpfst du per Klick. Gefunden: {gefunden.length}/{fakten.length}</p>
+        <p className="text-muted">Erkunde das Verlies: Pfeiltasten/WASD, die Knöpfe oder ein Ziel anklicken. Truhen öffnen sich beim Betreten, gegen Mini-Monster kämpfst du per Klick – sie schlagen zurück, also sei schnell. Gefunden: {gefunden.length}/{fakten.length}</p>
         <Erkunden karte={erkundKarte} theme={theme} objekte={dinge} onBetreten={betreten} pausiert={blockiert} label="Verlies" />
         <div className="flex flex-wrap items-center gap-2">
           {alle && <button className="btn-primary" onClick={weiter}>Zum Kampf</button>}

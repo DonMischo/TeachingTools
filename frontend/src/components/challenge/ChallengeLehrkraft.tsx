@@ -176,6 +176,10 @@ export default function ChallengeLehrkraft({ satzId, titel }: { satzId: number; 
           </select>
         </label>
       </div>
+      <label className="flex items-center gap-1.5">
+        <input type="checkbox" checked={sitzung.settings?.etappen_mischen === true} onChange={(e) => speichere({ etappen_mischen: e.target.checked })} />
+        Etappen in zufälliger Reihenfolge
+      </label>
       <Startstufen code={sitzung.code} />
       <Kalibrierung />
 

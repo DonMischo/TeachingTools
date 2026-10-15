@@ -31,7 +31,7 @@ describe("ChallengeSpiel mit eigener Quelle", () => {
     await u.click(screen.getByRole("button", { name: "Angreifen" }));
     await waitFor(() => expect(quelle.antwort).toHaveBeenCalledWith(expect.objectContaining({ challenge_id: "c1", fakt_ids: ["f1"] })));
     expect(onAntwort).toHaveBeenCalledWith(expect.objectContaining({ fertig: true }));
-    expect(await screen.findByText("Boss besiegt!", {}, { timeout: 3000 })).toBeTruthy(); // der Rahmen zeigt erst das Ergebnis der Antwort
+    expect(await screen.findByText("Boss besiegt! Alle Etappen geschafft", {}, { timeout: 3000 })).toBeTruthy(); // der Rahmen zeigt erst das Ergebnis der Antwort
     await u.click(screen.getByRole("button", { name: "Weiter" }));
     expect(onFertig).toHaveBeenCalled();
   });

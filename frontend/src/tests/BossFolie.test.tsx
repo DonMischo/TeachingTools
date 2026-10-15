@@ -31,5 +31,7 @@ describe("Boss-Folie", () => {
     const nach = onWert.mock.calls.at(-1)![0].slides[0];
     expect(nach.challenge.facts).toHaveLength(1);
     expect(nach.challenge.title).toBeUndefined();
+    fireEvent.click(screen.getByLabelText("Etappen in zufälliger Reihenfolge"));
+    expect(onWert.mock.calls.at(-1)![0].slides[0].etappenMischen).toBe(true);
   });
 });

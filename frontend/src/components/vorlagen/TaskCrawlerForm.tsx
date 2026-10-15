@@ -216,6 +216,12 @@ function BossForm({ slide, onChange, exitgameId }: { slide: ExitGameSlide; onCha
             {[1, 2, 3, 4].map(n => <option key={n} value={n}>{n}</option>)}
           </select>
         </Feld>
+        <Feld label="Etappen">
+          <label className="flex items-center gap-1.5">
+            <input type="checkbox" checked={slide.etappenMischen === true} onChange={e => onChange({ ...slide, etappenMischen: e.target.checked })} />
+            Etappen in zufälliger Reihenfolge
+          </label>
+        </Feld>
         <Feld label="Codeschnipsel" hint="für die Tür; leer = keiner">
           <input className="input font-mono" value={slide.codeFragment ?? ""}
             onChange={e => onChange({ ...slide, codeFragment: e.target.value || undefined })} />
