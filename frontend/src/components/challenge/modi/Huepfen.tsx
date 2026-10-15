@@ -10,7 +10,7 @@ import type { ChallengeAntwort, ChallengeFakt } from "@/lib/api";
 import { Sprite } from "@/components/challenge/pixel/Sprite";
 import { PixelMatrix } from "@/components/challenge/pixel/Matrix";
 import {
-  GEGNER_BONUS, VX, STIL_NAMEN, baueLevel, bewegerFlaeche, type Level, edelsteineGesamt, figurBilder, gegnerBegegnung, gegnerX, naheEdelstein, nahePogo, naheSchluessel, naheTuer,
+  GEGNER_BONUS, TOR_HOCH, VIEW_H, VX, STIL_NAMEN, baueLevel, bewegerFlaeche, type Level, edelsteineGesamt, figurBilder, gegnerBegegnung, gegnerX, naheEdelstein, nahePogo, naheSchluessel, naheTuer,
   schritt, sterne, startSpieler, zumKontrollpunkt, type Eingabe, type Spieler,
 } from "@/lib/challenge/huepfen";
 import type { ModusProps } from "./typen";
@@ -23,7 +23,9 @@ const SCHLUESSEL = ["..yyy...", ".y...y..", ".y...y..", "..yyy...", "...y....", 
 const TUER = ["..bbbbbb..", ".bbbbbbbb.", "bbddddddbb", "bbddddddbb", "bbddddddbb", "bbdddddybb", "bbddddddbb", "bbddddddbb", "bbddddddbb", "bbddddddbb"];
 const EDEL = ["..cccc..", ".cwcccd.", "cwccccdd", "ccccccdd", ".ccccdd.", "..cccd..", "...cd...", "........"];
 const SCHLEIM = ["..gggg..", ".gggggg.", "gwkggwkg", "gggggggg", "gggggggg", ".gg..gg."];
+const TUER_OFFEN = ["..bbbbbb..", ".bbbbbbbb.", "bbkkkkkkbb", "bbkkkkkkbb", "bbkkkkkkbb", "bbkkkkkkbb", "bbkkkkkkbb", "bbkkkkkkbb", "bbkkkkkkbb", "bbkkkkkkbb"];
 const PAL = { y: "#f5c518", b: "#5b3a1a", d: "#8b5a2b" };
+const PAL_OFFEN = { b: "#5b3a1a", k: "#241508" };
 
 const PAL_EDEL = { c: "#35c9e8", w: "#e8fbff", d: "#1a8fb0" };
 const PAL_EDEL_SCHWER = { c: "#f5a623", w: "#fff3c4", d: "#c46a00" };
@@ -77,6 +79,7 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
   const [erledigtG, setErledigtG] = useState<number[]>([]);
   const [pogo, setPogo] = useState(false);
   const [cp, setCp] = useState(0);
+  const [, setOffen] = useState<string[]>([]); // Tore, die per vollständiger Antwort aufgegangen sind (Wert in offenRef)
   const [staub, setStaub] = useState<{ id: number; x: number; y: number }[]>([]);
   const [richtung, setRichtung] = useState<1 | -1>(1);
   const skipDa = useUeberspringen();
@@ -98,6 +101,8 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
   const timer = useRef<ReturnType<typeof setTimeout>[]>([]);
   const nachher = (f: () => void, ms: number) => { timer.current.push(setTimeout(f, ms)); };
   const kamX = useRef<number | null>(null);
+  const kamY = useRef<number | null>(null);
+  const offenRef = useRef<Set<string>>(new Set());
   const reduziert = useMemo(() => wenigerBewegung(), []);
   const breiteRef = useRef(600);
 
@@ -128,6 +133,8 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
     setStaub((p) => [...p.slice(-3), { id, x, y }]);
     nachher(() => setStaub((p) => p.filter((q) => q.id !== id)), 450);
   };
+  /** Tor i sperrt, solange seine Challenge offen und nicht aufgeschlossen ist. */
+  const torZu = (i: number) => { const c = brett.challenges[i]; return !!c && !c.erledigt && !offenRef.current.has(c.id); };
   const oeffneTuer = (id: string | null) => {
     tuerRef.current = id;
     setTuer(id); setAblage([]); setTipp(false);
@@ -169,7 +176,8 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
       if (document.hidden || tuerRef.current || listeRef.current) { letzte = 0; return; }
       const dt = letzte ? Math.min(0.05, (t - letzte) / 1000) : 0;
       letzte = t;
-      let s = schritt(spieler.current, eingabe.current, dt, level);
+      const zu = level.tueren.map((_, i) => torZu(i));
+      let s = schritt(spieler.current, eingabe.current, dt, level, zu);
       for (const g of level.gegner) {
         if (gegnerRef.current.has(g.id)) continue;
         const b = gegnerBegegnung(s, g, level);
@@ -204,17 +212,22 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
         const f = brett.fakten[k.faktIndex];
         if (f && !gesRef.current.includes(f.id) && naheSchluessel(s, k)) sammle(f.id);
       }
-      const d = level.tueren.findIndex((td, i) => brett.challenges[i] && !brett.challenges[i].erledigt && naheTuer(s, td));
+      const d = level.tueren.findIndex((td, i) => zu[i] && naheTuer(s, td));
       const id = d >= 0 ? brett.challenges[d].id : null;
       if (id !== imTuer.current) { imTuer.current = id; if (id) oeffneTuer(id); }
       const breite = breiteRef.current;
       // Kamera schaut in Laufrichtung voraus und gleitet nach
       const voraus = (s.vx / VX) * 70;
       const ziel = Math.max(0, Math.min(level.breite * KACHEL - breite, s.x * KACHEL - breite / 2 + voraus));
+      // ... und senkrecht: beim Fallen nach unten, beim Steigen nach oben
+      const hBild = VIEW_H * KACHEL;
+      const zielY = Math.max(0, Math.min(level.hoehe * KACHEL - hBild, s.y * KACHEL - hBild * 0.62 + Math.max(-1, Math.min(1, s.vy / 12)) * 110));
       kamX.current = kamX.current === null || reduziert ? ziel : kamX.current + (ziel - kamX.current) * Math.min(1, dt * 6);
       const kam = kamX.current;
-      if (weltRef.current) weltRef.current.style.transform = `translateX(${-kam}px)`;
-      if (wolkenRef.current) wolkenRef.current.style.transform = `translateX(${-kam * 0.35}px)`;
+      kamY.current = kamY.current === null || reduziert ? zielY : kamY.current + (zielY - kamY.current) * Math.min(1, dt * 7);
+      const kamH = kamY.current;
+      if (weltRef.current) weltRef.current.style.transform = `translate(${-kam}px, ${-kamH}px)`;
+      if (wolkenRef.current) wolkenRef.current.style.transform = `translate(${-kam * 0.35}px, ${-kamH * 0.25}px)`;
       if (figurRef.current) figurRef.current.style.transform = `translate(${s.x * KACHEL - sp.stehen.w * SK / 2}px, ${s.y * KACHEL - figH}px)`;
     };
     raf = requestAnimationFrame(tick);
@@ -239,7 +252,12 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
     setSende(true);
     try {
       const r = await lauf.antworte(challenge.id, ablage, tipp);
-      oeffneTuer(null); imTuer.current = null;
+      oeffneTuer(null);
+      if (r.komplett) { // Tor geht auf; sonst bleibt es zu und das Feld öffnet sich nicht neu, bis man sich entfernt
+        offenRef.current.add(challenge.id); setOffen([...offenRef.current]); imTuer.current = null;
+        const t = level.tueren[brett.challenges.findIndex((c) => c.id === challenge.id)];
+        if (t) pling(t.x, t.y - 1);
+      }
       setAntwort(r);
     } catch {
       oeffneTuer(null); imTuer.current = null; // z. B. 409: das Brett ist schon neu geladen
@@ -266,10 +284,10 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
       <style>{`@keyframes hpstaub{from{opacity:.9;transform:scale(.4)}to{opacity:0;transform:scale(2) translateY(-4px)}}@media (prefers-reduced-motion: reduce){[style*="hpstaub"]{animation:none!important;opacity:0}}`}</style>
       <Treffermeldung antwort={antwort} />
 
-      <div ref={bildRef} className="relative overflow-hidden rounded-lg border-2 border-line" style={{ height: level.hoehe * KACHEL, background: himmel }}
-        role="group" aria-label="Spielfeld: mit Pfeiltasten oder A und D laufen, mit Leertaste springen">
+      <div ref={bildRef} className="relative overflow-hidden rounded-lg border-2 border-line" style={{ height: VIEW_H * KACHEL, background: himmel }}
+        role="group" aria-label="Spielfeld: mit Pfeiltasten oder A und D laufen, mit Leertaste springen; Tore auf dem Weg gehen erst nach dem Aufschließen auf">
         <div ref={wolkenRef} className="absolute left-0 top-4 flex gap-40 opacity-60 pointer-events-none text-5xl" aria-hidden style={{ width: level.breite * KACHEL }}>
-          {Array.from({ length: Math.ceil(level.breite / 6) }, (_, i) => <span key={i} style={{ marginTop: (i % 3) * 24 }}>☁️</span>)}
+          {Array.from({ length: Math.ceil(level.breite / 6) }, (_, i) => <span key={i} style={{ marginTop: (i % 3) * 24 + (i % 2) * 260 }}>☁️</span>)}
         </div>
         <div ref={weltRef} className="absolute left-0 top-0" style={{ width: level.breite * KACHEL, height: level.hoehe * KACHEL }}>
           <Plattformen plattformen={level.plattformen} tile={tile} bodenFarbe={theme.farben.boden} cp={cp} reduziert={reduziert} />
@@ -303,14 +321,23 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
               <div key={k.faktIndex} className="absolute animate-bounce" style={{ left: k.x * KACHEL - 16, top: k.y * KACHEL - 56 }}><PixelMatrix bild={SCHLUESSEL} palette={PAL} scale={4} label="Schlüssel" /></div>
             ) : null;
           })}
+          <div className="absolute" style={{ left: level.ziel.x * KACHEL - 12, top: level.ziel.y * KACHEL - 56 }} role="img" aria-label="Ziel"><span className="text-4xl">🏁</span></div>
           {level.tueren.map((t, i) => {
             const c = brett.challenges[i];
-            return c && !c.erledigt ? (
-              <button key={c.id} onClick={() => oeffneTuer(c.id)} aria-label={`Tür: ${c.text}`}
-                className="absolute focus-visible:outline focus-visible:outline-2" style={{ left: t.x * KACHEL - 20, top: t.y * KACHEL - 80 }}>
-                <PixelMatrix bild={TUER} palette={PAL} scale={8} />
-              </button>
-            ) : null;
+            if (!c) return null;
+            if (!torZu(i)) { // schon geschafft oder aufgeschlossen: offen
+              return <div key={c.id} className="absolute pointer-events-none" style={{ left: t.x * KACHEL - 40, top: t.y * KACHEL - 80 }} data-tor="offen"><PixelMatrix bild={TUER_OFFEN} palette={PAL_OFFEN} scale={8} /></div>;
+            }
+            return (
+              <div key={c.id} data-tor="zu">
+                <div className="absolute pointer-events-none opacity-40" aria-hidden
+                  style={{ left: t.x * KACHEL - 6, top: (t.y - TOR_HOCH) * KACHEL, width: 12, height: (TOR_HOCH - 1.7) * KACHEL, background: "repeating-linear-gradient(#8b5a2b 0 10px, transparent 10px 20px)" }} />
+                <button onClick={() => oeffneTuer(c.id)} aria-label={`Tür: ${c.text}`}
+                  className="absolute focus-visible:outline focus-visible:outline-2" style={{ left: t.x * KACHEL - 40, top: t.y * KACHEL - 80 }}>
+                  <PixelMatrix bild={TUER} palette={PAL} scale={8} />
+                </button>
+              </div>
+            );
           })}
           <div ref={figurRef} className="absolute left-0 top-0" style={{ transform: `translate(${spieler.current.x * KACHEL}px, ${spieler.current.y * KACHEL - figH}px)` }}>
             <Sprite src={sp.src} frame={bild.frame} scale={SK} animation={laeuft ? anim : undefined} label="Du" />
@@ -346,7 +373,7 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
       )}
 
       <div>
-        <p className="text-muted mb-1">Schlüsselbund: {gesammelt.length} von {brett.fakten.length}{offene.length ? ` · ${offene.length} Tür(en) am Ende` : ""} · 💎 {edel}/{edelMax}</p>
+        <p className="text-muted mb-1">Schlüsselbund: {gesammelt.length} von {brett.fakten.length}{offene.length ? ` · ${offene.length} Tor(e) auf dem Weg, alle Schlüssel liegen davor` : ""} · 💎 {edel}/{edelMax}</p>
         <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,180px),1fr))] gap-2">
           {brett.fakten.filter((f) => gesammelt.includes(f.id) && !ablage.includes(f.id)).map((f) => (
             <FaktKarte key={f.id} fakt={f} disabled={!challenge} onClick={() => legeAuf(f.id)} />

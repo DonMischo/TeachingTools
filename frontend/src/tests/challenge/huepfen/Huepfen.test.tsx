@@ -48,6 +48,23 @@ describe("Huepfen", () => {
     await waitFor(() => expect(lauf.antworte).toHaveBeenCalledWith("c1", ["f1"], false));
     expect(await screen.findByText("Daneben")).toBeTruthy();
   });
+  it("ein vollständig beantwortetes Tor geht auf, ein unvollständiges bleibt zu", async () => {
+    const u = userEvent.setup();
+    const { container } = zeige();
+    expect(container.querySelectorAll('[data-tor="zu"]')).toHaveLength(1);
+    await u.click(screen.getByRole("button", { name: "Alles einsammeln" }));
+    await u.click(screen.getByRole("button", { name: /Tür: Was ist eine Wippe/ }));
+    await u.click(screen.getByText("Zweiseitiger Hebel"));
+    await u.click(screen.getByRole("button", { name: "Aufschließen" }));
+    await screen.findByText("Daneben");
+    expect(container.querySelectorAll('[data-tor="zu"]')).toHaveLength(1);
+    lauf.antworte.mockResolvedValue(antwort({ komplett: true, treffer: true }));
+    await u.click(screen.getByRole("button", { name: /Tür: Was ist eine Wippe/ }));
+    await u.click(screen.getByText("Zweiseitiger Hebel"));
+    await u.click(screen.getByRole("button", { name: "Aufschließen" }));
+    await waitFor(() => expect(container.querySelectorAll('[data-tor="zu"]')).toHaveLength(0));
+    expect(container.querySelectorAll('[data-tor="offen"]').length).toBeGreaterThanOrEqual(1);
+  });
   it("bietet erledigte Challenges nicht an", () => {
     zeige();
     expect(screen.queryByRole("button", { name: /Schon geschafft/ })).toBeNull();
