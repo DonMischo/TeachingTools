@@ -2,133 +2,655 @@
   "title": "Zeitreise der Medien – Endgegner",
   "subject": "Medienbildung",
   "grade": 7,
-  "tags": ["Mediengeschichte", "Medienkompetenz", "KI"],
+  "tags": [
+    "Mediengeschichte",
+    "Medienkompetenz",
+    "KI"
+  ],
   "stages": [
-    {"id": 1, "title": "Von der Höhle bis zum Buchdruck"},
-    {"id": 2, "title": "Strom und Wellen"},
-    {"id": 3, "title": "Digital und KI"}
+    {
+      "id": 1,
+      "title": "Von der Höhle bis zum Buchdruck"
+    },
+    {
+      "id": 2,
+      "title": "Strom und Wellen"
+    },
+    {
+      "id": 3,
+      "title": "Computer und Internet"
+    },
+    {
+      "id": 4,
+      "title": "KI und Fälschungen"
+    }
   ],
   "facts": [
-    {"id": "f-hoehle", "text": "Höhlenmalereien sind über 30.000 Jahre alt – Bilder an Felswänden waren die ersten Medien.",
-     "info": {"text": "Die Malereien in der Chauvet-Höhle in Frankreich sind rund 36.000 Jahre alt. Die Menschen hielten Tiere und Jagdszenen fest – lange bevor es Schrift gab.", "source": {"label": "TaskCrawler: Steinzeit – Die ersten Bilder"}}},
-    {"id": "f-keil", "text": "Um 3300 v. Chr. erfanden die Sumerer in Mesopotamien die Keilschrift auf Tontafeln.",
-     "info": {"text": "Mit einem angespitzten Schilfrohr drückten Schreiber keilförmige Zeichen in feuchten Ton. Zuerst ging es um Vorräte und Handel, später um Gesetze und Geschichten.", "source": {"label": "TaskCrawler: Antike – Die Erfindung der Schrift"}}},
-    {"id": "f-rolle", "text": "In der Antike schrieb man auf Schriftrollen aus Papyrus; die Bibliothek von Alexandria sammelte sie.",
-     "info": {"text": "Papyrus wurde in Ägypten aus der gleichnamigen Pflanze hergestellt. In Alexandria wollte man das Wissen der ganzen damals bekannten Welt sammeln.", "source": {"label": "TaskCrawler: Antike – Die große Bibliothek von Alexandria"}}},
-    {"id": "f-kloster", "text": "Im Mittelalter schrieben Mönche Bücher in Klöstern von Hand ab – ein Buch dauerte oft Monate.",
-     "info": {"text": "Bücher waren deshalb selten und sehr teuer. Nur wenige Menschen konnten lesen.", "source": {"label": "TaskCrawler: Mittelalter – Bücher aus Klöstern"}}},
-    {"id": "f-gutenberg", "text": "Johannes Gutenberg druckte um 1450 in Mainz mit beweglichen Lettern aus Metall.",
-     "info": {"text": "Die Buchstaben ließen sich immer wieder neu zu Seiten zusammensetzen. So konnten viele gleiche Bücher schnell und günstig entstehen.", "source": {"label": "TaskCrawler: Gutenbergs Buchdruck"}}},
-    {"id": "f-jikji", "text": "Schon 1377 wurde in Korea das Buch »Jikji« mit beweglichen Metall-Lettern gedruckt.",
-     "info": {"text": "Jikji ist das älteste erhaltene Buch, das mit beweglichen Metall-Lettern gedruckt wurde – über 70 Jahre vor Gutenberg.", "source": {"label": "TaskCrawler: Gutenberg war nicht der Erste"}}},
-    {"id": "f-zeitung", "text": "1605 erschien in Straßburg die »Relation« – sie gilt als erste Zeitung der Welt.",
-     "info": {"text": "Der Drucker Johann Carolus brachte jede Woche Neuigkeiten heraus. Zeitungen machten Nachrichten für viele Menschen zugänglich.", "source": {"label": "TaskCrawler: Die erste Zeitung"}}},
-    {"id": "f-morse", "text": "Der elektrische Telegraph schickt Nachrichten als Morsezeichen durch Drähte (Samuel Morse, ab 1837).",
-     "info": {"text": "Kurze und lange Signale stehen für Buchstaben. Eine Nachricht war in Minuten in einer anderen Stadt – vorher dauerte das Tage.", "source": {"label": "TaskCrawler: Der elektrische Telegraph"}}},
-    {"id": "f-telefon", "text": "Das Telefon überträgt die Stimme als elektrisches Signal (Bell, 1876).",
-     "info": {"text": "Zum ersten Mal konnten Menschen über weite Strecken direkt miteinander sprechen – ohne Morsezeichen zu lernen.", "source": {"label": "TaskCrawler: Das Telefon"}}},
-    {"id": "f-funk", "text": "Das Radio sendet ohne Kabel über Funkwellen an viele Empfänger gleichzeitig.",
-     "info": {"text": "Ab den 1920er-Jahren gab es in Deutschland regelmäßige Radiosendungen.", "source": {"label": "TaskCrawler: Das Radio"}}},
-    {"id": "f-masse", "text": "Massenmedien erreichen mit einer einzigen Sendung sehr viele Menschen auf einmal.",
-     "info": {"text": "Zeitung, Radio und Fernsehen sind Massenmedien: Wenige senden, viele empfangen."}},
-    {"id": "f-film", "text": "1895 zeigten die Brüder Lumière in Paris erstmals Filme vor zahlendem Publikum.",
-     "info": {"text": "Einer der ersten Filme zeigt einen einfahrenden Zug. Das Kino war geboren.", "source": {"label": "TaskCrawler: Die Geburt des Films"}}},
-    {"id": "f-tv", "text": "Das Fernsehen brachte bewegte Bilder mit Ton live in die Wohnzimmer.",
-     "info": {"text": "Nach dem Zweiten Weltkrieg wurde der Fernseher in vielen Familien zum Mittelpunkt des Wohnzimmers.", "source": {"label": "TaskCrawler: Das Fernsehen"}}},
-    {"id": "f-zuse", "text": "Konrad Zuse baute 1941 mit der Z3 einen der ersten programmierbaren Computer.",
-     "info": {"text": "Die ersten Computer füllten ganze Räume und rechneten langsamer als heute ein Taschenrechner.", "source": {"label": "TaskCrawler: Die ersten Computer"}}},
-    {"id": "f-arpanet", "text": "1969 verband das ARPANET die ersten Computer miteinander – der Vorläufer des Internets.",
-     "info": {"text": "Die erste Verbindung lief zwischen zwei Universitäten in den USA.", "source": {"label": "TaskCrawler: ARPANET"}}},
-    {"id": "f-mail", "text": "1971 verschickte Ray Tomlinson die erste E-Mail und nutzte dafür das @-Zeichen.",
-     "info": {"text": "Das @ trennt bis heute den Namen vom Rechner bzw. Anbieter: name@anbieter.de.", "source": {"label": "TaskCrawler: Die erste E-Mail"}}},
-    {"id": "f-www", "text": "Tim Berners-Lee erfand am CERN das World Wide Web: Webseiten, die durch Links verbunden sind (1989–1991).",
-     "info": {"text": "Das Web ist ein Dienst, der über das Internet läuft – so wie die E-Mail auch.", "source": {"label": "TaskCrawler: Das World Wide Web"}}},
-    {"id": "f-wiki", "text": "Wikipedia (2001) wird von Freiwilligen geschrieben und ständig verbessert.",
-     "info": {"text": "Jede und jeder kann mitschreiben. Gute Artikel nennen ihre Quellen – die sollte man prüfen.", "source": {"label": "TaskCrawler: Wikipedia"}}},
-    {"id": "f-social", "text": "In sozialen Netzwerken wie Facebook (2004) kann jede und jeder selbst veröffentlichen.",
-     "info": {"text": "Früher entschieden Redaktionen, was gedruckt oder gesendet wird. In sozialen Netzwerken fällt diese Kontrolle oft weg.", "source": {"label": "TaskCrawler: Soziale Medien"}}},
-    {"id": "f-smartphone", "text": "Das Smartphone (iPhone 2007) vereint Telefon, Kamera, Internet und Apps in einem Gerät.",
-     "info": {"text": "Seitdem tragen die meisten Menschen alle Medien in der Hosentasche.", "source": {"label": "TaskCrawler: Die Smartphone-Ära"}}},
-    {"id": "f-photoshop", "text": "Seit Photoshop (1990) lassen sich Fotos am Computer täuschend echt verändern.",
-     "info": {"text": "Retuschiert wurde schon früher – aber am Computer geht es schneller und unauffälliger.", "source": {"label": "TaskCrawler: Photoshop"}}},
-    {"id": "f-deepfake", "text": "Deepfakes sind mit KI gefälschte Videos oder Stimmen, die echt wirken.",
-     "info": {"text": "Eine KI lernt aus vielen Aufnahmen, wie ein Gesicht oder eine Stimme aussieht und klingt – und erzeugt dann Neues, das nie passiert ist.", "source": {"label": "TaskCrawler: Filter, Beauty-Apps und Deepfakes"}}},
-    {"id": "f-sprachmodell", "text": "Ein Sprachmodell wie ChatGPT (2022) sagt Wort für Wort voraus, was wahrscheinlich als Nächstes kommt.",
-     "info": {"text": "Es schlägt nicht nach, sondern rechnet Wahrscheinlichkeiten. Darum klingt alles flüssig – stimmt aber nicht immer.", "source": {"label": "TaskCrawler: ChatGPT"}}},
-    {"id": "f-rauschen", "text": "Bildgeneratoren erzeugen Bilder aus Text, indem sie Schritt für Schritt Rauschen entfernen.",
-     "info": {"text": "Am Anfang steht ein Bild wie ein gestörter Fernseher. In vielen Schritten wird daraus, was im Text beschrieben ist.", "source": {"label": "TaskCrawler: Bilder aus Text"}}},
-    {"id": "f-pruefen", "text": "Quellen prüfen und KI-Inhalte kennzeichnen hilft, Fälschungen zu erkennen.",
-     "info": {"text": "Wer hat das veröffentlicht? Berichten andere seriöse Quellen dasselbe? Ist das Bild als KI-Bild gekennzeichnet?", "source": {"label": "TaskCrawler: Kennzeichnen, was erzeugt ist"}}},
-    {"id": "x-laser", "text": "Gutenberg druckte seine Bibeln mit einem Laserdrucker.", "decoy": true},
-    {"id": "x-kabel", "text": "Für das Radio brauchte jeder Hörer ein eigenes Kabel zum Sender.", "decoy": true},
-    {"id": "x-echt", "text": "Was echt aussieht, ist auch echt.", "decoy": true},
-    {"id": "x-gleich", "text": "Das World Wide Web und das Internet sind genau dasselbe.", "decoy": true},
-    {"id": "x-wahr", "text": "Eine KI weiß immer, ob ein Satz wahr ist.", "decoy": true}
+    {
+      "id": "f-hoehle",
+      "text": "Höhlenmalereien sind über 30.000 Jahre alt – Bilder an Felswänden waren die ersten Medien.",
+      "info": {
+        "text": "Die Malereien in der Chauvet-Höhle in Frankreich sind rund 36.000 Jahre alt. Die Menschen hielten Tiere und Jagdszenen fest – lange bevor es Schrift gab.",
+        "source": {
+          "label": "TaskCrawler: Steinzeit – Die ersten Bilder"
+        }
+      }
+    },
+    {
+      "id": "f-keil",
+      "text": "Um 3300 v. Chr. erfanden die Sumerer in Mesopotamien die Keilschrift auf Tontafeln.",
+      "info": {
+        "text": "Mit einem angespitzten Schilfrohr drückten Schreiber keilförmige Zeichen in feuchten Ton. Zuerst ging es um Vorräte und Handel, später um Gesetze und Geschichten.",
+        "source": {
+          "label": "TaskCrawler: Antike – Die Erfindung der Schrift"
+        }
+      }
+    },
+    {
+      "id": "f-rolle",
+      "text": "In der Antike schrieb man auf Schriftrollen aus Papyrus; die Bibliothek von Alexandria sammelte sie.",
+      "info": {
+        "text": "Papyrus wurde in Ägypten aus der gleichnamigen Pflanze hergestellt. In Alexandria wollte man das Wissen der ganzen damals bekannten Welt sammeln.",
+        "source": {
+          "label": "TaskCrawler: Antike – Die große Bibliothek von Alexandria"
+        }
+      }
+    },
+    {
+      "id": "f-kloster",
+      "text": "Im Mittelalter schrieben Mönche Bücher in Klöstern von Hand ab – ein Buch dauerte oft Monate.",
+      "info": {
+        "text": "Bücher waren deshalb selten und sehr teuer. Nur wenige Menschen konnten lesen.",
+        "source": {
+          "label": "TaskCrawler: Mittelalter – Bücher aus Klöstern"
+        }
+      }
+    },
+    {
+      "id": "f-gutenberg",
+      "text": "Johannes Gutenberg druckte um 1450 in Mainz mit beweglichen Lettern aus Metall.",
+      "info": {
+        "text": "Die Buchstaben ließen sich immer wieder neu zu Seiten zusammensetzen. So konnten viele gleiche Bücher schnell und günstig entstehen.",
+        "source": {
+          "label": "TaskCrawler: Gutenbergs Buchdruck"
+        }
+      }
+    },
+    {
+      "id": "f-jikji",
+      "text": "Schon 1377 wurde in Korea das Buch »Jikji« mit beweglichen Metall-Lettern gedruckt.",
+      "info": {
+        "text": "Jikji ist das älteste erhaltene Buch, das mit beweglichen Metall-Lettern gedruckt wurde – über 70 Jahre vor Gutenberg.",
+        "source": {
+          "label": "TaskCrawler: Gutenberg war nicht der Erste"
+        }
+      }
+    },
+    {
+      "id": "f-zeitung",
+      "text": "1605 erschien in Straßburg die »Relation« – sie gilt als erste Zeitung der Welt.",
+      "info": {
+        "text": "Der Drucker Johann Carolus brachte jede Woche Neuigkeiten heraus. Zeitungen machten Nachrichten für viele Menschen zugänglich.",
+        "source": {
+          "label": "TaskCrawler: Die erste Zeitung"
+        }
+      }
+    },
+    {
+      "id": "f-morse",
+      "text": "Der elektrische Telegraph schickt Nachrichten als Morsezeichen durch Drähte (Samuel Morse, ab 1837).",
+      "info": {
+        "text": "Kurze und lange Signale stehen für Buchstaben. Eine Nachricht war in Minuten in einer anderen Stadt – vorher dauerte das Tage.",
+        "source": {
+          "label": "TaskCrawler: Der elektrische Telegraph"
+        }
+      }
+    },
+    {
+      "id": "f-telefon",
+      "text": "Das Telefon überträgt die Stimme als elektrisches Signal (Bell, 1876).",
+      "info": {
+        "text": "Zum ersten Mal konnten Menschen über weite Strecken direkt miteinander sprechen – ohne Morsezeichen zu lernen.",
+        "source": {
+          "label": "TaskCrawler: Das Telefon"
+        }
+      }
+    },
+    {
+      "id": "f-funk",
+      "text": "Das Radio sendet ohne Kabel über Funkwellen an viele Empfänger gleichzeitig.",
+      "info": {
+        "text": "Ab den 1920er-Jahren gab es in Deutschland regelmäßige Radiosendungen.",
+        "source": {
+          "label": "TaskCrawler: Das Radio"
+        }
+      }
+    },
+    {
+      "id": "f-masse",
+      "text": "Massenmedien erreichen mit einer einzigen Sendung sehr viele Menschen auf einmal.",
+      "info": {
+        "text": "Zeitung, Radio und Fernsehen sind Massenmedien: Wenige senden, viele empfangen."
+      }
+    },
+    {
+      "id": "f-film",
+      "text": "1895 zeigten die Brüder Lumière in Paris erstmals Filme vor zahlendem Publikum.",
+      "info": {
+        "text": "Einer der ersten Filme zeigt einen einfahrenden Zug. Das Kino war geboren.",
+        "source": {
+          "label": "TaskCrawler: Die Geburt des Films"
+        }
+      }
+    },
+    {
+      "id": "f-tv",
+      "text": "Das Fernsehen brachte bewegte Bilder mit Ton live in die Wohnzimmer.",
+      "info": {
+        "text": "Nach dem Zweiten Weltkrieg wurde der Fernseher in vielen Familien zum Mittelpunkt des Wohnzimmers.",
+        "source": {
+          "label": "TaskCrawler: Das Fernsehen"
+        }
+      }
+    },
+    {
+      "id": "f-zuse",
+      "text": "Konrad Zuse baute 1941 mit der Z3 einen der ersten programmierbaren Computer.",
+      "info": {
+        "text": "Die ersten Computer füllten ganze Räume und rechneten langsamer als heute ein Taschenrechner.",
+        "source": {
+          "label": "TaskCrawler: Die ersten Computer"
+        }
+      }
+    },
+    {
+      "id": "f-arpanet",
+      "text": "1969 verband das ARPANET die ersten Computer miteinander – der Vorläufer des Internets.",
+      "info": {
+        "text": "Die erste Verbindung lief zwischen zwei Universitäten in den USA.",
+        "source": {
+          "label": "TaskCrawler: ARPANET"
+        }
+      }
+    },
+    {
+      "id": "f-mail",
+      "text": "1971 verschickte Ray Tomlinson die erste E-Mail und nutzte dafür das @-Zeichen.",
+      "info": {
+        "text": "Das @ trennt bis heute den Namen vom Rechner bzw. Anbieter: name@anbieter.de.",
+        "source": {
+          "label": "TaskCrawler: Die erste E-Mail"
+        }
+      }
+    },
+    {
+      "id": "f-www",
+      "text": "Tim Berners-Lee erfand am CERN das World Wide Web: Webseiten, die durch Links verbunden sind (1989–1991).",
+      "info": {
+        "text": "Das Web ist ein Dienst, der über das Internet läuft – so wie die E-Mail auch.",
+        "source": {
+          "label": "TaskCrawler: Das World Wide Web"
+        }
+      }
+    },
+    {
+      "id": "f-wiki",
+      "text": "Wikipedia (2001) wird von Freiwilligen geschrieben und ständig verbessert.",
+      "info": {
+        "text": "Jede und jeder kann mitschreiben. Gute Artikel nennen ihre Quellen – die sollte man prüfen.",
+        "source": {
+          "label": "TaskCrawler: Wikipedia"
+        }
+      }
+    },
+    {
+      "id": "f-social",
+      "text": "In sozialen Netzwerken wie Facebook (2004) kann jede und jeder selbst veröffentlichen.",
+      "info": {
+        "text": "Früher entschieden Redaktionen, was gedruckt oder gesendet wird. In sozialen Netzwerken fällt diese Kontrolle oft weg.",
+        "source": {
+          "label": "TaskCrawler: Soziale Medien"
+        }
+      }
+    },
+    {
+      "id": "f-smartphone",
+      "text": "Das Smartphone (iPhone 2007) vereint Telefon, Kamera, Internet und Apps in einem Gerät.",
+      "info": {
+        "text": "Seitdem tragen die meisten Menschen alle Medien in der Hosentasche.",
+        "source": {
+          "label": "TaskCrawler: Die Smartphone-Ära"
+        }
+      }
+    },
+    {
+      "id": "f-photoshop",
+      "text": "Seit Photoshop (1990) lassen sich Fotos am Computer täuschend echt verändern.",
+      "info": {
+        "text": "Retuschiert wurde schon früher – aber am Computer geht es schneller und unauffälliger.",
+        "source": {
+          "label": "TaskCrawler: Photoshop"
+        }
+      }
+    },
+    {
+      "id": "f-deepfake",
+      "text": "Deepfakes sind mit KI gefälschte Videos oder Stimmen, die echt wirken.",
+      "info": {
+        "text": "Eine KI lernt aus vielen Aufnahmen, wie ein Gesicht oder eine Stimme aussieht und klingt – und erzeugt dann Neues, das nie passiert ist.",
+        "source": {
+          "label": "TaskCrawler: Filter, Beauty-Apps und Deepfakes"
+        }
+      }
+    },
+    {
+      "id": "f-sprachmodell",
+      "text": "Ein Sprachmodell wie ChatGPT (2022) sagt Wort für Wort voraus, was wahrscheinlich als Nächstes kommt.",
+      "info": {
+        "text": "Es schlägt nicht nach, sondern rechnet Wahrscheinlichkeiten. Darum klingt alles flüssig – stimmt aber nicht immer.",
+        "source": {
+          "label": "TaskCrawler: ChatGPT"
+        }
+      }
+    },
+    {
+      "id": "f-rauschen",
+      "text": "Bildgeneratoren erzeugen Bilder aus Text, indem sie Schritt für Schritt Rauschen entfernen.",
+      "info": {
+        "text": "Am Anfang steht ein Bild wie ein gestörter Fernseher. In vielen Schritten wird daraus, was im Text beschrieben ist.",
+        "source": {
+          "label": "TaskCrawler: Bilder aus Text"
+        }
+      }
+    },
+    {
+      "id": "f-pruefen",
+      "text": "Quellen prüfen und KI-Inhalte kennzeichnen hilft, Fälschungen zu erkennen.",
+      "info": {
+        "text": "Wer hat das veröffentlicht? Berichten andere seriöse Quellen dasselbe? Ist das Bild als KI-Bild gekennzeichnet?",
+        "source": {
+          "label": "TaskCrawler: Kennzeichnen, was erzeugt ist"
+        }
+      }
+    },
+    {
+      "id": "x-laser",
+      "text": "Gutenberg druckte seine Bibeln mit einem Laserdrucker.",
+      "decoy": true
+    },
+    {
+      "id": "x-kabel",
+      "text": "Für das Radio brauchte jeder Hörer ein eigenes Kabel zum Sender.",
+      "decoy": true
+    },
+    {
+      "id": "x-echt",
+      "text": "Was echt aussieht, ist auch echt.",
+      "decoy": true
+    },
+    {
+      "id": "x-gleich",
+      "text": "Das World Wide Web und das Internet sind genau dasselbe.",
+      "decoy": true
+    },
+    {
+      "id": "x-wahr",
+      "text": "Eine KI weiß immer, ob ein Satz wahr ist.",
+      "decoy": true
+    }
   ],
   "challenges": [
-    {"id": "c-anfang", "stage": 1, "text": "Womit begann die Geschichte der Medien?",
-     "solve": {"any": ["f-hoehle"]}, "feedback": "Bilder an Felswänden – lange vor der Schrift.", "tip": "Denk an die allererste Epoche am Lagerfeuer."},
-    {"id": "c-schrift", "stage": 1, "text": "Wann und wo entstand eine der ersten Schriften?",
-     "solve": {"any": ["f-keil"]}, "feedback": "Keilschrift in Mesopotamien.", "tip": "Ton, Schilfrohr, Mesopotamien."},
-    {"id": "c-antike", "stage": 1, "text": "Worauf hielt man in der Antike Wissen fest, bevor es Bücher gab?",
-     "solve": {"any": ["f-rolle", "f-keil"]}, "feedback": "Tontafeln und Schriftrollen.", "tip": "Ägypten hatte dafür eine besondere Pflanze."},
-    {"id": "c-gutenberg", "stage": 1, "strength": 3, "text": "Warum veränderte Gutenbergs Erfindung die Welt? Zeige, wie es vorher war und was neu war.",
-     "solve": {"all": ["f-kloster", "f-gutenberg"]}, "feedback": "Statt Monate Handarbeit: viele gleiche Bücher in kurzer Zeit.", "tip": "Du brauchst zwei Fakten: das Vorher und das Nachher."},
-    {"id": "c-jikji", "stage": 1, "text": "Gutenberg war nicht der Erste. Wer druckte schon vorher mit Metall-Lettern?",
-     "solve": {"any": ["f-jikji"]}, "feedback": "Korea, 1377: Jikji.", "tip": "Schau nach Asien."},
-    {"id": "c-zeitung", "stage": 1, "text": "Wann und wo erschien die erste Zeitung?",
-     "solve": {"any": ["f-zeitung"]}, "feedback": "1605 in Straßburg.", "tip": "Gut 150 Jahre nach Gutenberg."},
-
-    {"id": "c-telegraph", "stage": 2, "text": "Wie kam eine Nachricht um 1850 in Minuten von Stadt zu Stadt?",
-     "solve": {"any": ["f-morse"]}, "feedback": "Per Telegraph und Morsezeichen.", "tip": "Kurz – lang – kurz …"},
-    {"id": "c-telefon", "stage": 2, "text": "Was konnte das Telefon, was der Telegraph nicht konnte?",
-     "solve": {"any": ["f-telefon"]}, "feedback": "Die Stimme übertragen.", "tip": "Man muss keine Zeichen mehr lernen."},
-    {"id": "c-masse", "stage": 2, "strength": 2, "text": "Warum nennt man das Radio ein »Massenmedium«? Zeige die Technik und was sie bewirkt.",
-     "solve": {"all": ["f-funk", "f-masse"]}, "feedback": "Funkwellen erreichen viele Menschen gleichzeitig.", "tip": "Zwei Fakten: wie es sendet und wen es erreicht."},
-    {"id": "c-kino", "stage": 2, "text": "Wann begann das Kino?",
-     "solve": {"any": ["f-film"]}, "feedback": "1895 mit den Brüdern Lumière.", "tip": "Paris, Ende des 19. Jahrhunderts."},
-    {"id": "c-tv", "stage": 2, "text": "Welches Medium brachte bewegte Bilder mit Ton ins Wohnzimmer?",
-     "solve": {"any": ["f-tv"]}, "feedback": "Das Fernsehen.", "tip": "Nicht ins Kino – nach Hause."},
-
-    {"id": "c-internet", "stage": 3, "strength": 3, "text": "Wie entstand das Internet, wie wir es kennen? Zeige die drei Schritte: Rechner – Netz – Web.",
-     "solve": {"all": ["f-zuse", "f-arpanet", "f-www"]}, "feedback": "Erst Computer, dann das Netz, dann das Web mit Links.", "tip": "1941, 1969, 1991."},
-    {"id": "c-mail", "stage": 3, "text": "Seit wann gibt es E-Mails – und woher kommt das @?",
-     "solve": {"any": ["f-mail"]}, "feedback": "1971, Ray Tomlinson.", "tip": "Zwei Jahre nach dem ARPANET."},
-    {"id": "c-mitmachen", "stage": 3, "strength": 2, "text": "Heute kann jede und jeder veröffentlichen. Nenne zwei Beispiele.",
-     "solve": {"all": ["f-wiki", "f-social"]}, "feedback": "Wikipedia und soziale Netzwerke.", "tip": "Ein Lexikon und ein Netzwerk."},
-    {"id": "c-smartphone", "stage": 3, "text": "Welches Gerät vereint seit 2007 Telefon, Kamera und Internet?",
-     "solve": {"any": ["f-smartphone"]}, "feedback": "Das Smartphone.", "tip": "Es steckt in deiner Hosentasche."},
-    {"id": "c-chatgpt", "stage": 3, "text": "Wie entsteht ein Text von ChatGPT?",
-     "solve": {"any": ["f-sprachmodell"]}, "feedback": "Wort für Wort nach Wahrscheinlichkeit.", "tip": "Es rät das nächste Wort."},
-    {"id": "c-bild", "stage": 3, "text": "Wie »malt« eine KI ein Bild aus einem Text?",
-     "solve": {"any": ["f-rauschen"]}, "feedback": "Aus Rauschen, Schritt für Schritt.", "tip": "Am Anfang sieht es aus wie ein gestörter Fernseher."},
-    {"id": "c-deepfake", "stage": 3, "strength": 3, "text": "Ein Video zeigt eine Politikerin, die etwas Unglaubliches sagt. Was weißt du – und was tust du?",
-     "solve": {"all": ["f-deepfake", "f-pruefen"]}, "feedback": "Es könnte ein Deepfake sein – also Quellen prüfen!", "tip": "Ein Fakt erklärt die Gefahr, einer die Abwehr."}
+    {
+      "id": "c-anfang",
+      "stage": 1,
+      "text": "Womit begann die Geschichte der Medien?",
+      "solve": {
+        "any": [
+          "f-hoehle"
+        ]
+      },
+      "feedback": "Bilder an Felswänden – lange vor der Schrift.",
+      "tip": "Denk an die allererste Epoche am Lagerfeuer."
+    },
+    {
+      "id": "c-schrift",
+      "stage": 1,
+      "text": "Wann und wo entstand eine der ersten Schriften?",
+      "solve": {
+        "any": [
+          "f-keil"
+        ]
+      },
+      "feedback": "Keilschrift in Mesopotamien.",
+      "tip": "Ton, Schilfrohr, Mesopotamien."
+    },
+    {
+      "id": "c-antike",
+      "stage": 1,
+      "text": "Worauf hielt man in der Antike Wissen fest, bevor es Bücher gab?",
+      "solve": {
+        "any": [
+          "f-rolle",
+          "f-keil"
+        ]
+      },
+      "feedback": "Tontafeln und Schriftrollen.",
+      "tip": "Ägypten hatte dafür eine besondere Pflanze."
+    },
+    {
+      "id": "c-gutenberg",
+      "stage": 1,
+      "strength": 3,
+      "text": "Warum veränderte Gutenbergs Erfindung die Welt? Zeige, wie es vorher war und was neu war.",
+      "solve": {
+        "all": [
+          "f-kloster",
+          "f-gutenberg"
+        ]
+      },
+      "feedback": "Statt Monate Handarbeit: viele gleiche Bücher in kurzer Zeit.",
+      "tip": "Du brauchst zwei Fakten: das Vorher und das Nachher."
+    },
+    {
+      "id": "c-jikji",
+      "stage": 1,
+      "text": "Gutenberg war nicht der Erste. Wer druckte schon vorher mit Metall-Lettern?",
+      "solve": {
+        "any": [
+          "f-jikji"
+        ]
+      },
+      "feedback": "Korea, 1377: Jikji.",
+      "tip": "Schau nach Asien."
+    },
+    {
+      "id": "c-zeitung",
+      "stage": 1,
+      "text": "Wann und wo erschien die erste Zeitung?",
+      "solve": {
+        "any": [
+          "f-zeitung"
+        ]
+      },
+      "feedback": "1605 in Straßburg.",
+      "tip": "Gut 150 Jahre nach Gutenberg."
+    },
+    {
+      "id": "c-telegraph",
+      "stage": 2,
+      "text": "Wie kam eine Nachricht um 1850 in Minuten von Stadt zu Stadt?",
+      "solve": {
+        "any": [
+          "f-morse"
+        ]
+      },
+      "feedback": "Per Telegraph und Morsezeichen.",
+      "tip": "Kurz – lang – kurz …"
+    },
+    {
+      "id": "c-telefon",
+      "stage": 2,
+      "text": "Was konnte das Telefon, was der Telegraph nicht konnte?",
+      "solve": {
+        "any": [
+          "f-telefon"
+        ]
+      },
+      "feedback": "Die Stimme übertragen.",
+      "tip": "Man muss keine Zeichen mehr lernen."
+    },
+    {
+      "id": "c-masse",
+      "stage": 2,
+      "strength": 2,
+      "text": "Warum nennt man das Radio ein »Massenmedium«? Zeige die Technik und was sie bewirkt.",
+      "solve": {
+        "all": [
+          "f-funk",
+          "f-masse"
+        ]
+      },
+      "feedback": "Funkwellen erreichen viele Menschen gleichzeitig.",
+      "tip": "Zwei Fakten: wie es sendet und wen es erreicht."
+    },
+    {
+      "id": "c-kino",
+      "stage": 2,
+      "text": "Wann begann das Kino?",
+      "solve": {
+        "any": [
+          "f-film"
+        ]
+      },
+      "feedback": "1895 mit den Brüdern Lumière.",
+      "tip": "Paris, Ende des 19. Jahrhunderts."
+    },
+    {
+      "id": "c-tv",
+      "stage": 2,
+      "text": "Welches Medium brachte bewegte Bilder mit Ton ins Wohnzimmer?",
+      "solve": {
+        "any": [
+          "f-tv"
+        ]
+      },
+      "feedback": "Das Fernsehen.",
+      "tip": "Nicht ins Kino – nach Hause."
+    },
+    {
+      "id": "c-internet",
+      "stage": 3,
+      "strength": 3,
+      "text": "Wie entstand das Internet, wie wir es kennen? Zeige die drei Schritte: Rechner – Netz – Web.",
+      "solve": {
+        "all": [
+          "f-zuse",
+          "f-arpanet",
+          "f-www"
+        ]
+      },
+      "feedback": "Erst Computer, dann das Netz, dann das Web mit Links.",
+      "tip": "1941, 1969, 1991."
+    },
+    {
+      "id": "c-mail",
+      "stage": 3,
+      "text": "Seit wann gibt es E-Mails – und woher kommt das @?",
+      "solve": {
+        "any": [
+          "f-mail"
+        ]
+      },
+      "feedback": "1971, Ray Tomlinson.",
+      "tip": "Zwei Jahre nach dem ARPANET."
+    },
+    {
+      "id": "c-mitmachen",
+      "stage": 3,
+      "strength": 2,
+      "text": "Heute kann jede und jeder veröffentlichen. Nenne zwei Beispiele.",
+      "solve": {
+        "all": [
+          "f-wiki",
+          "f-social"
+        ]
+      },
+      "feedback": "Wikipedia und soziale Netzwerke.",
+      "tip": "Ein Lexikon und ein Netzwerk."
+    },
+    {
+      "id": "c-smartphone",
+      "stage": 3,
+      "text": "Welches Gerät vereint seit 2007 Telefon, Kamera und Internet?",
+      "solve": {
+        "any": [
+          "f-smartphone"
+        ]
+      },
+      "feedback": "Das Smartphone.",
+      "tip": "Es steckt in deiner Hosentasche."
+    },
+    {
+      "id": "c-lexikon",
+      "stage": 3,
+      "text": "Wie heißt das Online-Lexikon, an dem alle mitschreiben können?",
+      "solve": {
+        "any": [
+          "f-wiki"
+        ]
+      },
+      "feedback": "Wikipedia – seit 2001.",
+      "tip": "Ein Wiki …"
+    },
+    {
+      "id": "c-chatgpt",
+      "stage": 4,
+      "text": "Wie entsteht ein Text von ChatGPT?",
+      "solve": {
+        "any": [
+          "f-sprachmodell"
+        ]
+      },
+      "feedback": "Wort für Wort nach Wahrscheinlichkeit.",
+      "tip": "Es rät das nächste Wort."
+    },
+    {
+      "id": "c-bild",
+      "stage": 4,
+      "text": "Wie »malt« eine KI ein Bild aus einem Text?",
+      "solve": {
+        "any": [
+          "f-rauschen"
+        ]
+      },
+      "feedback": "Aus Rauschen, Schritt für Schritt.",
+      "tip": "Am Anfang sieht es aus wie ein gestörter Fernseher."
+    },
+    {
+      "id": "c-deepfake",
+      "stage": 4,
+      "strength": 3,
+      "text": "Ein Video zeigt eine Politikerin, die etwas Unglaubliches sagt. Was weißt du – und was tust du?",
+      "solve": {
+        "all": [
+          "f-deepfake",
+          "f-pruefen"
+        ]
+      },
+      "feedback": "Es könnte ein Deepfake sein – also Quellen prüfen!",
+      "tip": "Ein Fakt erklärt die Gefahr, einer die Abwehr."
+    },
+    {
+      "id": "c-photoshop",
+      "stage": 4,
+      "text": "Seit wann lassen sich Fotos am Computer täuschend echt verändern?",
+      "solve": {
+        "any": [
+          "f-photoshop"
+        ]
+      },
+      "feedback": "Seit Photoshop, 1990.",
+      "tip": "Ein bekanntes Bildprogramm."
+    },
+    {
+      "id": "c-quelle",
+      "stage": 4,
+      "text": "Ein Bild sieht spektakulär aus. Wie findest du heraus, ob es echt ist?",
+      "solve": {
+        "any": [
+          "f-pruefen"
+        ]
+      },
+      "feedback": "Quellen prüfen und auf Kennzeichnung achten.",
+      "tip": "Wer hat es veröffentlicht?"
+    }
   ],
   "levels": {
     "1": {
       "facts": [
-        {"id": "f-keil", "text": "Die Sumerer erfanden vor über 5.000 Jahren die Keilschrift auf Tontafeln."},
-        {"id": "f-www", "text": "Tim Berners-Lee erfand das World Wide Web: Webseiten mit Links."},
-        {"id": "f-sprachmodell", "text": "ChatGPT rät Wort für Wort, welches Wort wahrscheinlich als Nächstes kommt."}
+        {
+          "id": "f-keil",
+          "text": "Die Sumerer erfanden vor über 5.000 Jahren die Keilschrift auf Tontafeln."
+        },
+        {
+          "id": "f-www",
+          "text": "Tim Berners-Lee erfand das World Wide Web: Webseiten mit Links."
+        },
+        {
+          "id": "f-sprachmodell",
+          "text": "ChatGPT rät Wort für Wort, welches Wort wahrscheinlich als Nächstes kommt."
+        }
       ],
       "challenges": [
-        {"id": "c-gutenberg", "text": "Was erfand Gutenberg um 1450?", "solve": {"any": ["f-gutenberg"]}, "strength": 2},
-        {"id": "c-netz", "stage": 3, "text": "Was war der Vorläufer des Internets?", "solve": {"any": ["f-arpanet"]}, "tip": "1969, in den USA."}
+        {
+          "id": "c-gutenberg",
+          "text": "Was erfand Gutenberg um 1450?",
+          "solve": {
+            "any": [
+              "f-gutenberg"
+            ]
+          },
+          "strength": 2
+        },
+        {
+          "id": "c-netz",
+          "stage": 3,
+          "text": "Was war der Vorläufer des Internets?",
+          "solve": {
+            "any": [
+              "f-arpanet"
+            ]
+          },
+          "tip": "1969, in den USA."
+        }
       ],
-      "omit": ["c-internet"]
+      "omit": [
+        "c-internet"
+      ]
     }
   },
   "claims": [
-    {"id": "k-erster", "text": "Gutenberg hat als Erster auf der Welt mit Metall-Lettern gedruckt.", "refutedBy": ["f-jikji"],
-     "feedback": "Einspruch stattgegeben: Jikji, Korea 1377."},
-    {"id": "k-bote", "text": "Bis zum Internet konnte man Nachrichten nur per Bote oder Brief schicken.", "refutedBy": ["f-morse", "f-telefon"],
-     "feedback": "Telegraph und Telefon waren viel früher da."},
-    {"id": "k-web1969", "text": "Das World Wide Web gibt es schon seit 1969.", "refutedBy": ["f-www"],
-     "feedback": "1969 kam das ARPANET – das Web erst 1989 bis 1991."},
-    {"id": "k-video", "text": "Was in einem Video zu sehen ist, ist auch wirklich passiert.", "refutedBy": ["f-deepfake", "f-photoshop"],
-     "feedback": "Bilder und Videos lassen sich fälschen."},
-    {"id": "k-lexikon", "text": "ChatGPT schlägt jede Antwort in einem Lexikon nach und irrt sich deshalb nie.", "refutedBy": ["f-sprachmodell"],
-     "feedback": "Es rechnet Wahrscheinlichkeiten – und kann sich irren."}
+    {
+      "id": "k-erster",
+      "text": "Gutenberg hat als Erster auf der Welt mit Metall-Lettern gedruckt.",
+      "refutedBy": [
+        "f-jikji"
+      ],
+      "feedback": "Einspruch stattgegeben: Jikji, Korea 1377."
+    },
+    {
+      "id": "k-bote",
+      "text": "Bis zum Internet konnte man Nachrichten nur per Bote oder Brief schicken.",
+      "refutedBy": [
+        "f-morse",
+        "f-telefon"
+      ],
+      "feedback": "Telegraph und Telefon waren viel früher da."
+    },
+    {
+      "id": "k-web1969",
+      "text": "Das World Wide Web gibt es schon seit 1969.",
+      "refutedBy": [
+        "f-www"
+      ],
+      "feedback": "1969 kam das ARPANET – das Web erst 1989 bis 1991."
+    },
+    {
+      "id": "k-video",
+      "text": "Was in einem Video zu sehen ist, ist auch wirklich passiert.",
+      "refutedBy": [
+        "f-deepfake",
+        "f-photoshop"
+      ],
+      "feedback": "Bilder und Videos lassen sich fälschen."
+    },
+    {
+      "id": "k-lexikon",
+      "text": "ChatGPT schlägt jede Antwort in einem Lexikon nach und irrt sich deshalb nie.",
+      "refutedBy": [
+        "f-sprachmodell"
+      ],
+      "feedback": "Es rechnet Wahrscheinlichkeiten – und kann sich irren."
+    }
   ]
 }

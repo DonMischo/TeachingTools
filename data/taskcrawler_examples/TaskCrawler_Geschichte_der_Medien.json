@@ -1164,7 +1164,11 @@
           },
           {
             "id": 3,
-            "title": "Digital und KI"
+            "title": "Computer und Internet"
+          },
+          {
+            "id": 4,
+            "title": "KI und Fälschungen"
           }
         ],
         "facts": [
@@ -1633,8 +1637,20 @@
             "tip": "Es steckt in deiner Hosentasche."
           },
           {
-            "id": "c-chatgpt",
+            "id": "c-lexikon",
             "stage": 3,
+            "text": "Wie heißt das Online-Lexikon, an dem alle mitschreiben können?",
+            "solve": {
+              "any": [
+                "f-wiki"
+              ]
+            },
+            "feedback": "Wikipedia – seit 2001.",
+            "tip": "Ein Wiki …"
+          },
+          {
+            "id": "c-chatgpt",
+            "stage": 4,
             "text": "Wie entsteht ein Text von ChatGPT?",
             "solve": {
               "any": [
@@ -1646,7 +1662,7 @@
           },
           {
             "id": "c-bild",
-            "stage": 3,
+            "stage": 4,
             "text": "Wie »malt« eine KI ein Bild aus einem Text?",
             "solve": {
               "any": [
@@ -1658,7 +1674,7 @@
           },
           {
             "id": "c-deepfake",
-            "stage": 3,
+            "stage": 4,
             "strength": 3,
             "text": "Ein Video zeigt eine Politikerin, die etwas Unglaubliches sagt. Was weißt du – und was tust du?",
             "solve": {
@@ -1669,6 +1685,30 @@
             },
             "feedback": "Es könnte ein Deepfake sein – also Quellen prüfen!",
             "tip": "Ein Fakt erklärt die Gefahr, einer die Abwehr."
+          },
+          {
+            "id": "c-photoshop",
+            "stage": 4,
+            "text": "Seit wann lassen sich Fotos am Computer täuschend echt verändern?",
+            "solve": {
+              "any": [
+                "f-photoshop"
+              ]
+            },
+            "feedback": "Seit Photoshop, 1990.",
+            "tip": "Ein bekanntes Bildprogramm."
+          },
+          {
+            "id": "c-quelle",
+            "stage": 4,
+            "text": "Ein Bild sieht spektakulär aus. Wie findest du heraus, ob es echt ist?",
+            "solve": {
+              "any": [
+                "f-pruefen"
+              ]
+            },
+            "feedback": "Quellen prüfen und auf Kennzeichnung achten.",
+            "tip": "Wer hat es veröffentlicht?"
           }
         ],
         "levels": {
