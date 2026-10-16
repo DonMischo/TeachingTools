@@ -13,7 +13,7 @@ eigenen vollen Anteil, nicht einen Bruchteil eines geteilten Topfes.
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from .models import Class, Student, StudentGroup, StudentGroupMember
+from .models import Class, StudentGroup
 
 # Gruppenarten, die ueber Klassengrenzen hinweg gehen.
 CROSS_CLASS_GROUP_TYPES = ("kurs", "wahlpflicht")
@@ -73,17 +73,6 @@ def scope_label(db: Session, class_id: int | None, group_id: int | None) -> str:
             return f"{g.grade} {g.name}" if g.grade else g.name
         return f"Kurs {group_id}"
     return "Ohne Klasse"
-
-
-def student_class_ids_in_group(db: Session, group_id: int) -> dict[int, int]:
-    """{student_id: class_id} fuer alle Mitglieder — eine Abfrage statt N."""
-    rows = (
-        db.query(StudentGroupMember.student_id, Student.class_id)
-        .join(Student, Student.id == StudentGroupMember.student_id)
-        .filter(StudentGroupMember.group_id == group_id)
-        .all()
-    )
-    return {sid: cid for sid, cid in rows if cid is not None}
 
 
 def participant_class_id(

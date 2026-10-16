@@ -234,18 +234,6 @@ export const FINGER_FARBEN: Record<Finger, string> = {
   r5: "#f472b6",
 };
 
-export const FINGER_NAMEN: Record<Finger, string> = {
-  l5: "links: kleiner Finger",
-  l4: "links: Ringfinger",
-  l3: "links: Mittelfinger",
-  l2: "links: Zeigefinger",
-  daumen: "Daumen",
-  r2: "rechts: Zeigefinger",
-  r3: "rechts: Mittelfinger",
-  r4: "rechts: Ringfinger",
-  r5: "rechts: kleiner Finger",
-};
-
 /** Welche Hand bedient diesen Finger — für die Wahl der Umschalttaste. */
 export function hand(finger: Finger): "links" | "rechts" | "daumen" {
   if (finger === "daumen") return "daumen";

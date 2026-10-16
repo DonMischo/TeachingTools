@@ -1,7 +1,5 @@
 "use client";
 
-export type Avatar = (typeof AVATARS)[number];
-
 export const AVATARS = [
   // row 1 – bouncers
   { id: "cat",      emoji: "🐱", bg: "#FF6B6B", anim: "anim-bounce" },

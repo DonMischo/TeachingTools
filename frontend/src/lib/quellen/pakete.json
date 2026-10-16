@@ -14,13 +14,6 @@
     "art": "laufzeit"
   },
   {
-    "name": "@tanstack/react-query-devtools",
-    "version": "5.101.1",
-    "lizenz": "MIT",
-    "url": "https://tanstack.com/query",
-    "art": "laufzeit"
-  },
-  {
     "name": "@tiptap/core",
     "version": "3.31.4",
     "lizenz": "MIT",

@@ -17,7 +17,6 @@
 export type Punkt = { x: number; y: number };
 export type Spur = { id: string; titel: string; halbbreite: number; punkte: Punkt[] };
 
-export const FLAECHE = { w: 800, h: 400 };
 export const ABSTAND = 5;
 /** Suchfenster in Wegpunkten — 60 Einheiten vor und zurück. */
 export const SUCHFENSTER = 12;

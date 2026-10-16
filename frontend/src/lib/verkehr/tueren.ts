@@ -20,8 +20,6 @@ export function tuerPhase(alter: number, dauer: number = HALT_DAUER): TuerPhase 
   return "zu";
 }
 
-export const tuerOffen = (p: TuerPhase) => p === "aussteigen" || p === "einsteigen";
-
 /** Breite einer Tür und Tiefe des Streifens davor, der für Aussteigende frei bleiben muss. */
 export const TUER_BREITE = 1.3;
 export const KORRIDOR_TIEFE = 2.5;

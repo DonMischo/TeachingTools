@@ -27,8 +27,3 @@ export function zahlen(v: Vorgabe | undefined, k: string): Record<string, number
   for (const [n, w] of Object.entries(x)) if (typeof w === "number" && Number.isFinite(w)) aus[n] = w;
   return Object.keys(aus).length ? aus : undefined;
 }
-
-export function liste(v: Vorgabe | undefined, k: string): unknown[] | undefined {
-  const x = v?.[k];
-  return Array.isArray(x) && x.length ? x : undefined;
-}

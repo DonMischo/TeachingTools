@@ -180,12 +180,6 @@ export const konfigurationHoch = (k: string): string =>
 export const celsius = (k: number | null): number | null =>
   k === null ? null : Math.round((k - 273.15) * 10) / 10;
 
-/** Außenelektronen aus der Konfiguration: nur für Hauptgruppen sinnvoll. */
-export function aussenelektronen(e: PseElement): number | null {
-  if (e.hauptgruppe === null) return null;
-  return e.hauptgruppe;
-}
-
 /**
  * Radioaktiv: kein einziges stabiles Isotop. Das sind Technetium und
  * Promethium — die beiden Lücken zwischen stabilen Nachbarn — und alles ab

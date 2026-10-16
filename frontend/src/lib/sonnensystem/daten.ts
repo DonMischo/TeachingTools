@@ -673,8 +673,6 @@ export const KOERPER_NACH_ID: Record<string, Koerper> = Object.fromEntries(KOERP
 /** Sonne, Planeten und Zwergplaneten in Reihenfolge des Abstands. */
 export const HAUPTKOERPER = KOERPER.filter(k => k.art !== "mond" && k.art !== "satellit");
 
-export const PLANETEN = KOERPER.filter(k => k.art === "planet");
-
 /** Alles, was natürlich am Himmel steht — ohne die Raumfahrzeuge. */
 export const NATUERLICH = KOERPER.filter(k => k.art !== "satellit");
 

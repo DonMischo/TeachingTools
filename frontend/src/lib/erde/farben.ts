@@ -63,7 +63,3 @@ export function farbeBei(modus: Farbmodus, tiefe: number): [number, number, numb
   if (modus === "zustand") return ZUSTAND_FARBE[s.zustand];
   return hex(s.farbe);
 }
-
-export function css([r, g, b]: [number, number, number]) {
-  return `rgb(${Math.round(r * 255)},${Math.round(g * 255)},${Math.round(b * 255)})`;
-}

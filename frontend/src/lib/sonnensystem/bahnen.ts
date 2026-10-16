@@ -154,12 +154,6 @@ export function satellitVersatz(sat: Koerper, mutter: Koerper, jd: number): Vec3
   return [x, y * Math.cos(w), y * Math.sin(w)];
 }
 
-/** Ein Umlauf in Tagen, aus der gemessenen Rate der mittleren Länge. */
-export function mondUmlauf(mondId: string): number | null {
-  const b = MONDBAHNEN.monde[mondId];
-  return b ? 360 / b.nL : null;
-}
-
 export function abstand(a: Vec3, b: Vec3): number {
   return Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
 }

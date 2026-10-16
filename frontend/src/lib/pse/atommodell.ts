@@ -211,5 +211,3 @@ export const MODELLE: Modell[] = [
     luecke: "Anschaulich ist das kaum noch. Ein Bild davon ist immer eine Vereinfachung — gerechnet wird mit einer Wellenfunktion.",
   },
 ];
-
-export const modell = (id: ModellId): Modell => MODELLE.find(m => m.id === id)!;

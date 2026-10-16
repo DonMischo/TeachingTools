@@ -2,10 +2,7 @@
 /** Kleine Bausteine für »Rock your Life« — dunkler Spiel-Look wie die Verkehrs-Sim. */
 import type { ReactNode } from "react";
 
-export function euro(n: number, vorzeichen = false): string {
-  const t = Math.abs(n).toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  return `${n < 0 ? "−" : vorzeichen && n > 0 ? "+" : ""}${t} €`;
-}
+export { euro } from "@/lib/leben/kern";
 
 export function Fenster({ titel, icon, onZu, children, breit = false, fuss }: {
   titel: string; icon?: string; onZu?: () => void; children: ReactNode; breit?: boolean; fuss?: ReactNode;

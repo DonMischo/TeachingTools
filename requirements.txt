@@ -1,3 +1,0 @@
-# The Streamlit app has been migrated to FastAPI + Next.js.
-# Python dependencies are now in api/requirements.txt.
-# Use Docker to run the full stack: start.bat / start.sh

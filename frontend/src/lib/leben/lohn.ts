@@ -129,8 +129,3 @@ export function lohnsteuerMonat(brutto: number, jahr: number, svMonat: number): 
   const zvE = jahresLohn - w.arbeitnehmerPauschbetrag - w.sonderausgabenPauschbetrag - vorsorge;
   return r2(einkommensteuer(zvE, jahr) / 12);
 }
-
-/** Für die Anzeige: wie viel vom Brutto bleibt, in Prozent. */
-export function nettoQuote(a: Abrechnung): number {
-  return a.brutto > 0 ? a.netto / a.brutto : 0;
-}

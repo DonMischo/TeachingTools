@@ -5,7 +5,6 @@
  */
 
 export const START = Date.UTC(2026, 6, 1); // 1. Juli 2026
-export const DAUER_JAHRE = 5;
 export const ENDE_TAG = Math.round((Date.UTC(2031, 6, 1) - START) / 86400000); // 1. Juli 2031 = Spielende
 
 const TAG_MS = 86400000;

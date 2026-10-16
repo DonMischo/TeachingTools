@@ -112,16 +112,6 @@ def create_guest_token(code: str, name: str, epoch: int = 0, minutes: int | None
     return jwt.encode(payload, settings.secret_key, algorithm="HS256")
 
 
-def guest_epoch_for(db: Session, code: str) -> int:
-    """Aktueller Stand des »neu starten«-Zaehlers dieser Sitzung (0, wenn es
-    keine gibt oder nie neu gestartet wurde)."""
-    from .join_codes import find_sessions  # lokal: vermeidet einen Import-Zyklus
-
-    for _tool, session in find_sessions(db, code):
-        return getattr(session, "guest_epoch", 0) or 0
-    return 0
-
-
 def guest_access_restarted(db: Session, code: str, token_epoch: int | None) -> bool:
     """True, wenn der Gastzugang dieser Sitzung seit Ausgabe des Tokens neu
     gestartet wurde — dann ist das Token verbraucht.

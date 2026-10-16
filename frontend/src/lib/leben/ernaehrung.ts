@@ -126,17 +126,6 @@ export function verderben(s: Spielstand): { wert: number; namen: string[] } {
   return { wert: r2(wert), namen };
 }
 
-/** Bewertung eines Tages — Werte je −1 (schlecht) .. +1 (gut). */
-export function tagesBewertung(kcal: number, bedarf: number, obstGemuese: number, protein: number, zucker: number) {
-  const satt = Math.min(1.3, kcal / bedarf);
-  return {
-    satt,
-    vitamine: Math.min(1, obstGemuese / 5),
-    eiweiss: Math.min(1, protein / 55),
-    zuckerZuViel: zucker > 90,
-  };
-}
-
 /** Kurztext für die Anzeige »Wie habe ich mich die letzte Woche ernährt?«. */
 export function wochenfazit(s: Spielstand): string[] {
   const tage = s.ernaehrung.slice(-7);
