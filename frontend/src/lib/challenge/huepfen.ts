@@ -21,10 +21,12 @@ export const VIEW_H = 11;
 export const GEGNER_BONUS = 2;
 /** Tore: halbe Breite der Sperre und Höhe der Sperrsäule über dem Boden (nicht zu überspringen, auch nicht mit Pogo). */
 export const TOR_HALB = 0.85;
-export const TOR_HOCH = 9;
+export const TOR_HOCH = 11; // über dem Doppelsprung mit Pogo-Stab (2 x 4,8 Kacheln)
+export const DURCH_ZEIT = 0.25; // so lange wird die Plattform beim Fallenlassen ignoriert
 const BEWEGER_AB = 1000; // Index-Offset für bewegte Plattformen in Spieler.auf
 
-export type Plattform = { x: number; y: number; w: number; cp: boolean };
+/** fest = Boden (Start, Tor, Ziel): lässt sich nicht durchfallen; sonst nur von oben begehbar und per ↓ zu durchfallen. */
+export type Plattform = { x: number; y: number; w: number; cp: boolean; fest?: boolean };
 export type Schluessel = { faktIndex: number; x: number; y: number };
 /** Edelstein: (x, y) = Mittelpunkt; schwer = liegt auf einer kniffligen Stelle. */
 export type Edelstein = { id: number; x: number; y: number; schwer: boolean; pogo?: boolean };
@@ -147,7 +149,8 @@ export function baueLevel(etappe: number, nFakten: number, nTueren: number, seed
 
   // In die Welt verschieben: oben 7 Kacheln Luft, unten 4
   const minY = Math.min(...pl.map((p) => p.y)), maxY = Math.max(...pl.map((p) => p.y));
-  const plattformen = pl.map((p) => ({ ...p, y: p.y - minY + 7 }));
+  const festIdx = new Set([0, ...tuerPlat, pl.length - 1]);
+  const plattformen = pl.map((p, i) => ({ ...p, y: p.y - minY + 7, ...(festIdx.has(i) ? { fest: true } : {}) }));
   const hoehe = maxY - minY + 7 + 4;
   const n = plattformen.length, ende = plattformen[n - 1];
   // Kontrollpunkte: Start, hinter jedem Tor, Ziel, sonst alle drei Plattformen (auch in Türmen und Schächten)
@@ -261,20 +264,26 @@ export function bewegerFlaeche(m: Beweger, t: number): Plattform {
 export type Spieler = {
   x: number; y: number; vy: number; auf: number; coyote: number; richtung: 1 | -1; cp: number; t: number;
   vx: number; puffer: number; sprungVorher: boolean; pogo: boolean;
+  /** Der Sprung in der Luft ist in dieser Flugphase schon benutzt. */
+  luftSprung: boolean;
+  /** Index der Plattform, die gerade durchfallen wird (-1 = keine), und wie lange noch. */
+  durch: number; durchT: number; runterVorher: boolean;
+  /** Zählt Sprünge in der Luft (Puff unter den Füßen). */
+  luftSprunge: number;
   /** Zählt Landungen mit Tempo hoch (Landestaub). */
   landung: number;
 };
-export type Eingabe = { links: boolean; rechts: boolean; sprung: boolean };
+export type Eingabe = { links: boolean; rechts: boolean; sprung: boolean; runter?: boolean };
 
 export function startSpieler(l: Level): Spieler {
   const p = l.plattformen[0];
-  return { x: p.x + 1, y: p.y, vy: 0, auf: 0, coyote: 0, richtung: 1, cp: 0, t: 0, vx: 0, puffer: 0, sprungVorher: false, pogo: false, landung: 0 };
+  return { x: p.x + 1, y: p.y, vy: 0, auf: 0, coyote: 0, richtung: 1, cp: 0, t: 0, vx: 0, puffer: 0, sprungVorher: false, pogo: false, landung: 0, luftSprung: false, durch: -1, durchT: 0, runterVorher: false, luftSprunge: 0 };
 }
 
 /** Zurück zum letzten Kontrollpunkt, ohne Folgen. */
 export function zumKontrollpunkt(s: Spieler, l: Level): Spieler {
   const p = l.plattformen[s.cp];
-  return { ...s, x: p.x + Math.min(1, p.w / 2), y: p.y, vy: 0, vx: 0, puffer: 0, auf: s.cp, coyote: 0 };
+  return { ...s, x: p.x + Math.min(1, p.w / 2), y: p.y, vy: 0, vx: 0, puffer: 0, auf: s.cp, coyote: 0, luftSprung: false, durch: -1, durchT: 0 };
 }
 
 const stehtAuf = (p: Plattform, x: number) => x >= p.x - 0.2 && x <= p.x + p.w + 0.2;
@@ -289,7 +298,7 @@ function flaeche(l: Level, i: number, t: number): Plattform {
 export function schritt(s: Spieler, e: Eingabe, dt: number, l: Level, zu?: readonly boolean[]): Spieler {
   const dir = (e.rechts ? 1 : 0) - (e.links ? 1 : 0);
   const t1 = s.t + dt;
-  const n: Spieler = { ...s, t: t1, richtung: dir ? (dir as 1 | -1) : s.richtung, sprungVorher: e.sprung };
+  const n: Spieler = { ...s, t: t1, richtung: dir ? (dir as 1 | -1) : s.richtung, sprungVorher: e.sprung, runterVorher: !!e.runter, durchT: Math.max(0, s.durchT - dt) };
   // Beschleunigung und Reibung statt Sofortgeschwindigkeit
   const boden = s.auf >= 0;
   const ziel = dir * VX;
@@ -311,7 +320,11 @@ export function schritt(s: Spieler, e: Eingabe, dt: number, l: Level, zu?: reado
   n.puffer = e.sprung && !s.sprungVorher ? PUFFER : Math.max(0, s.puffer - dt);
   const will = n.puffer > 0 || (s.pogo && e.sprung);
   if (will && (s.auf >= 0 || s.coyote > 0)) {
-    n.vy = -(s.pogo ? VJ_POGO : VJ); n.auf = -1; n.coyote = 0; n.puffer = 0;
+    n.vy = -(s.pogo ? VJ_POGO : VJ); n.auf = -1; n.coyote = 0; n.puffer = 0; n.luftSprung = false;
+  } else if (s.auf < 0 && s.coyote <= 0 && !s.luftSprung && e.sprung && !s.sprungVorher) {
+    n.vy = -(s.pogo ? VJ_POGO : VJ); n.puffer = 0; n.luftSprung = true; n.luftSprunge = s.luftSprunge + 1;
+  } else if (s.auf >= 0 && e.runter && !s.runterVorher && !flaeche(l, s.auf, t1).fest && stehtAuf(flaeche(l, s.auf, t1), n.x)) {
+    n.durch = s.auf; n.durchT = DURCH_ZEIT; n.auf = -1; n.coyote = 0; n.vy = 2; // fallen lassen
   } else if (s.auf >= 0) {
     const p = flaeche(l, s.auf, t1);
     if (stehtAuf(p, n.x)) { n.y = p.y; n.vy = 0; return n; }
@@ -326,11 +339,12 @@ export function schritt(s: Spieler, e: Eingabe, dt: number, l: Level, zu?: reado
     const alle = l.plattformen.length + l.leisten.length;
     const ids = [...Array.from({ length: alle }, (_, i) => i), ...l.beweger.map((_, k) => BEWEGER_AB + k)];
     for (const i of ids) {
+      if (i === n.durch && n.durchT > 0) continue;
       const p = flaeche(l, i, t1);
       const vorher = i >= BEWEGER_AB ? flaeche(l, i, s.t).y : p.y;
       if (stehtAuf(p, n.x) && s.y <= vorher + 0.15 && n.y >= p.y) {
         if (n.vy > 7) n.landung = s.landung + 1;
-        n.y = p.y; n.vy = 0; n.auf = i; n.coyote = 0;
+        n.y = p.y; n.vy = 0; n.auf = i; n.coyote = 0; n.luftSprung = false; n.durch = -1;
         if (p.cp && i < l.plattformen.length) n.cp = i;
         break;
       }

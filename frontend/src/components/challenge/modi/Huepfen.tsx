@@ -85,7 +85,7 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
   const skipDa = useUeberspringen();
 
   const spieler = useRef<Spieler>(startSpieler(level));
-  const eingabe = useRef<Eingabe>({ links: false, rechts: false, sprung: false });
+  const eingabe = useRef<Eingabe>({ links: false, rechts: false, sprung: false, runter: false });
   const edelRef = useRef<Set<number>>(new Set());
   const gegnerRef = useRef<Set<number>>(new Set());
   const gegnerEl = useRef<(HTMLDivElement | null)[]>([]);
@@ -158,7 +158,7 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
       if (tuerRef.current) return;
       const k = e.key.toLowerCase();
       const feld = k === "arrowleft" || k === "a" ? "links" : k === "arrowright" || k === "d" ? "rechts"
-        : k === " " || k === "w" || k === "arrowup" ? "sprung" : null;
+        : k === " " || k === "w" || k === "arrowup" ? "sprung" : k === "arrowdown" || k === "s" ? "runter" : null;
       if (!feld) return;
       e.preventDefault();
       eingabe.current[feld] = an;
@@ -170,7 +170,7 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
 
   // Spielschleife
   useEffect(() => {
-    let raf = 0, letzte = 0, anim = false, dir: 1 | -1 = 1, landungen = 0, cpAlt = 0;
+    let raf = 0, letzte = 0, anim = false, dir: 1 | -1 = 1, landungen = 0, cpAlt = 0, luftSpruenge = 0;
     const tick = (t: number) => {
       raf = requestAnimationFrame(tick);
       if (document.hidden || tuerRef.current || listeRef.current) { letzte = 0; return; }
@@ -192,6 +192,7 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
       }
       if (level.pogo && !s.pogo && nahePogo(s, level.pogo)) { s = { ...s, pogo: true }; setPogo(true); }
       if (s.landung !== landungen) { landungen = s.landung; staubAn(s.x, s.y); }
+      if (s.luftSprunge !== luftSpruenge) { luftSpruenge = s.luftSprunge; staubAn(s.x, s.y); } // Puff unter den Füßen
       if (s.cp !== cpAlt) { cpAlt = s.cp; setCp(s.cp); }
       spieler.current = s;
       for (const g of level.edelsteine) {
@@ -285,7 +286,7 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
       <Treffermeldung antwort={antwort} />
 
       <div ref={bildRef} className="relative overflow-hidden rounded-lg border-2 border-line" style={{ height: VIEW_H * KACHEL, background: himmel }}
-        role="group" aria-label="Spielfeld: mit Pfeiltasten oder A und D laufen, mit Leertaste springen; Tore auf dem Weg gehen erst nach dem Aufschließen auf">
+        role="group" aria-label="Spielfeld: mit Pfeiltasten oder A und D laufen, mit Leertaste springen, in der Luft noch einmal; mit Pfeil nach unten durch dünne Plattformen fallen; Tore auf dem Weg gehen erst nach dem Aufschließen auf">
         <div ref={wolkenRef} className="absolute left-0 top-4 flex gap-40 opacity-60 pointer-events-none text-5xl" aria-hidden style={{ width: level.breite * KACHEL }}>
           {Array.from({ length: Math.ceil(level.breite / 6) }, (_, i) => <span key={i} style={{ marginTop: (i % 3) * 24 + (i % 2) * 260 }}>☁️</span>)}
         </div>
@@ -345,12 +346,16 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
         </div>
       </div>
 
+      <p className="text-muted text-sm">↓ fallen lassen, Sprung in der Luft</p>
       <div className="flex justify-between gap-2 select-none touch-none">
         <div className="flex gap-2">
           <button className="btn-secondary" aria-label="Nach links" {...halte("links", true)}>◀</button>
           <button className="btn-secondary" aria-label="Nach rechts" {...halte("rechts", true)}>▶</button>
         </div>
-        <button className="btn-primary" aria-label="Springen" {...halte("sprung", true)}>⤒ Sprung</button>
+        <div className="flex gap-2">
+          <button className="btn-secondary" aria-label="Fallen lassen" title="Durch die Plattform fallen lassen" {...halte("runter", true)}>▼</button>
+          <button className="btn-primary" aria-label="Springen" title="Sprung, in der Luft noch einmal" {...halte("sprung", true)}>⤒ Sprung</button>
+        </div>
       </div>
 
       {fund && <Fundkarte fakt={fund} titel="Schlüssel gefunden:" fokus={false} onOk={() => setFund(null)} />}

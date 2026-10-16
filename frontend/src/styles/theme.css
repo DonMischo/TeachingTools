@@ -199,8 +199,12 @@
   .ch-buehne :is(.card, .input, .chip) {
     color: var(--color-fg);
   }
-  .ch-buehne .btn-secondary {
+  /* Was sonst durchsichtig ist (Nebenknöpfe, Chips), bekommt auf der Bühne die normale Fläche */
+  .ch-buehne :is(.btn-secondary, .chip) {
     background-color: var(--color-surface);
+  }
+  .ch-buehne .chip-on {
+    background-color: color-mix(in srgb, var(--color-accent) 15%, var(--color-surface));
   }
 
   .btn-secondary {

@@ -30,14 +30,14 @@ describe("Hüpfen: Spielgefühl", () => {
     const kante = { ...startSpieler(l), x: 6.15, y: 8, auf: 0 };
     const weg = lauf(kante, { ...nichts, rechts: true }, 0.2, l); // von der Kante gelaufen
     expect(weg.auf).toBe(-1);
-    const frueh = { ...startSpieler(l), x: 6.5, y: 8.1, vy: 1, auf: -1, coyote: 0.05 };
+    const frueh = { ...startSpieler(l), x: 6.5, y: 8.1, vy: 1, auf: -1, coyote: 0.05, luftSprung: true };
     expect(schritt(frueh, { ...nichts, sprung: true }, DT, l).vy).toBeLessThan(-VJ + 1);
     const spaet = { ...frueh, coyote: 0 };
     expect(schritt(spaet, { ...nichts, sprung: true }, DT, l).vy).toBeGreaterThan(0);
   });
   it("Sprungpuffer: kurz vor der Landung gedrückt, springt sofort beim Aufsetzen", () => {
     const l = flach();
-    let s: Spieler = { ...startSpieler(l), x: 3, y: 7.7, vy: 6, auf: -1 };
+    let s: Spieler = { ...startSpieler(l), x: 3, y: 7.7, vy: 6, auf: -1, luftSprung: true };
     s = schritt(s, { ...nichts, sprung: true }, DT, l); // zu früh gedrückt
     expect(s.puffer).toBeGreaterThan(0);
     let sprang = false;
