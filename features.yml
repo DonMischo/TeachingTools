@@ -621,6 +621,7 @@ verwaltung:
       - Checklisten je Schüler für Klassen und Gruppen
       - Kurse, Wahlpflicht, A/B-Gruppen
       - Werkzeug-Freigaben je Klasse durch die Klassenlehrkraft
+      - Klassenbezeichnungen rücken zum 1. August von selbst weiter (7a → 8a)
       - Stabile Abschlussjahrgangs-Codes (z. B. AK2031a)
   - id: sitzplan
     name: Sitzplan

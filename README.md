@@ -295,7 +295,7 @@ Das Lehrkraft-Werkzeugset. Standardmäßig nur für Lehrkräfte sichtbar.
 
 | Bereich | Funktion |
 |---------|----------|
-| **Schülerdaten** | CSV-Import mit Vorschau und Diff · Änderungen bestätigen · Zugänge generieren · Export |
+| **Schülerdaten** | CSV-Import mit Vorschau und Diff · Änderungen bestätigen · Zugänge generieren · Export · Klassen rücken zum 1. August von selbst weiter (7a → 8a), auch vor dem nächsten Import |
 | **Lehrerdaten** | Konten und Lehrerrollen verwalten |
 | **Schülerkarten** | Felder wählen · Klassen filtern · Drucklayout · PDF-Export |
 | **Werkzeug-Freigaben** | Je Werkzeug und Fähigkeit (Öffnen, Hosten, Erstellen, Hochladen) und je Zielgruppe (Lehrkraft, Schüler) erlauben oder sperren |
