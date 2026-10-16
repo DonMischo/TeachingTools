@@ -137,7 +137,7 @@ export default function ChallengeSpiel({ code = "", token, quelle, onAntwort, on
             {brett.etappen.map((e, i) => {
               const gesperrt = !e.erledigt && e.nr !== brett.etappe;
               return (
-                <li key={e.nr} className={`chip ${e.nr === brett.etappe ? "chip-on" : ""} ${gesperrt ? "opacity-40" : ""}`}>
+                <li key={e.nr} className={`chip ${e.nr === brett.etappe ? "chip-on" : ""} ${gesperrt ? "opacity-60" : ""}`}>
                   {e.erledigt ? "✓ " : gesperrt ? "🔒 " : ""}Etappe {i + 1} von {brett.etappen.length}: {e.titel}
                 </li>
               );
