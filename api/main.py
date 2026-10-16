@@ -493,20 +493,6 @@ def _rotate_encrypted_credentials():
         db.close()
 
 
-def _repair_calendar_tags():
-    """Idempotent: clean tags broken by the old ICS import (see calendar.repair_calendar_tags)."""
-    from .database import SessionLocal
-    from .routers.calendar import repair_calendar_tags
-
-    db = SessionLocal()
-    try:
-        changed = repair_calendar_tags(db)
-        if changed:
-            logging.getLogger(__name__).info("Kalender-Tags repariert: %d Termine", changed)
-    finally:
-        db.close()
-
-
 def _backfill_group_grades():
     """One-time (idempotent) migration: give every cross-class Kurs/WPF its Jahrgang.
 
@@ -599,6 +585,5 @@ async def startup():
     ensure_teacher_roles()
     ensure_wochenstunden()
     ensure_calendar_tags()
-    _repair_calendar_tags()
     ensure_school_settings()
     asyncio.create_task(_inactivity_watchdog(get_db))

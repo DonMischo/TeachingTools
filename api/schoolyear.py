@@ -22,12 +22,6 @@ def get_school_year_start(today: date | None = None) -> int:
     return today.year if today.month >= 8 else today.year - 1
 
 
-def get_school_year_label(today: date | None = None) -> str:
-    """Return the current school year as 'YYYY/YYYY'."""
-    start = get_school_year_start(today)
-    return f"{start}/{start + 1}"
-
-
 def klasse_to_ak_code(klasse: str, today: date | None = None) -> str:
     """Convert a grade-based class label ('7a') to a stable AK-code ('AK2029a')."""
     m = _KLASSE_RE.match(klasse.strip())

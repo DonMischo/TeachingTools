@@ -380,28 +380,6 @@ def test_ics_tags_with_commas_survive_export_and_import(client, teacher_token, d
     assert client.get("/api/calendar", headers=_auth(teacher_token)).json()[0]["tags"] == ["Sport, Spiel", "Events"]
 
 
-def test_repair_calendar_tags_strips_trailing_backslashes(db, teacher):
-    from api.models import CalendarEntry, CalendarTag
-    from api.routers.calendar import repair_calendar_tags
-    d = date.today()
-    broken = CalendarEntry(title="A", category="Kollegium", start_date=d, end_date=d, created_by=teacher.id,
-                           tags=["Dienstberatung\\", "Dienstberatung", "Wichtig\\", "Sport, Spiel"])
-    clean = CalendarEntry(title="B", category="Kollegium", start_date=d, end_date=d, created_by=teacher.id,
-                          tags=["Events"])
-    db.add_all([broken, clean,
-                CalendarTag(name="Werkstatt\\", color="#111111"),
-                CalendarTag(name="Wichtig\\", color="#222222"), CalendarTag(name="Wichtig", color="#333333")])
-    db.flush()
-
-    assert repair_calendar_tags(db) == 1
-    db.refresh(broken)
-    assert broken.tags == ["Dienstberatung", "Wichtig", "Sport, Spiel"]
-    assert clean.tags == ["Events"]
-    tags = {t.name: t.color for t in db.query(CalendarTag).all()}
-    assert tags == {"Werkstatt": "#111111", "Wichtig": "#333333"}
-    assert repair_calendar_tags(db) == 0  # idempotent
-
-
 def test_export_filter_takes_tags_with_commas(client, teacher_token):
     d = date.today() + timedelta(days=10)
     for title, tags in (("Mit Komma", ["Sport, Spiel"]), ("Nur Sport", ["Sport"]), ("Andere", ["Events"])):

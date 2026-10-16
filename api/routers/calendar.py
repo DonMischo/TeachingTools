@@ -422,34 +422,6 @@ def _ics_list(value: str) -> list[str]:
     return [t for t in (_ics_unescape(x).strip() for x in items) if t]
 
 
-def repair_calendar_tags(db: Session) -> int:
-    """Strip the trailing backslash the old ICS import left on tags ("Dienstberatung\\"
-    from "Dienstberatung\\,Wichtig") and drop the duplicates that leaves. Idempotent;
-    runs at startup. Returns the number of entries changed."""
-    changed = 0
-    for entry in db.query(CalendarEntry).all():
-        old = entry.tags or []
-        new: list[str] = []
-        for t in old:
-            clean = t.rstrip("\\").strip()
-            if clean and clean not in new:
-                new.append(clean)
-        if new != old:
-            entry.tags = new
-            changed += 1
-    tags = {t.name: t for t in db.query(CalendarTag).all()}
-    for name, tag in tags.items():
-        clean = name.rstrip("\\").strip()
-        if clean == name:
-            continue
-        if not clean or clean in tags:
-            db.delete(tag)
-        else:
-            tag.name = clean
-    db.commit()
-    return changed
-
-
 def _parse_ics_date(value: str) -> date:
     value = value.split("T")[0]  # drop time component if present (treat as all-day)
     return datetime.strptime(value, "%Y%m%d").date()

@@ -9,8 +9,7 @@ from datetime import date
 import pytest
 
 from api.schoolyear import (
-    TOTAL_GRADES, ak_code_to_klasse, get_school_year_label,
-    get_school_year_start, klasse_to_ak_code,
+    TOTAL_GRADES, ak_code_to_klasse, get_school_year_start, klasse_to_ak_code,
 )
 
 
@@ -25,12 +24,10 @@ from api.schoolyear import (
 ])
 def test_school_year_starts_on_the_first_of_august(today, start):
     assert get_school_year_start(today) == start
-    assert get_school_year_label(today) == f"{start}/{start + 1}"
 
 
 def test_defaults_to_today():
     assert get_school_year_start() == get_school_year_start(date.today())
-    assert get_school_year_label().startswith(str(get_school_year_start()))
 
 
 # ── klasse → AK-code ─────────────────────────────────────────────────────────
