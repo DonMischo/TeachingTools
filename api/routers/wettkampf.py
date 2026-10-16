@@ -1114,90 +1114,29 @@ def delete_match(
 
 # ── Finish and award points ───────────────────────────────────────────────────
 
-@router.get("/api/wettkampf/{wid}/results")
-def get_wettkampf_results(wid: int, db: Session = Depends(get_db), _=Depends(get_current_user)):
-    """Dry-run recompute of awarded points for a finished wettkampf (no DB writes)."""
-    w = db.get(Wettkampf, wid)
-    if not w:
-        raise HTTPException(404, "Wettkampf nicht gefunden")
-    if w.status != "finished":
-        raise HTTPException(409, "Wettkampf ist noch nicht abgeschlossen")
+def _compute_awards(w: Wettkampf, manual_points: dict[int, float] | None = None) -> tuple[dict, list[tuple[int, int, str]]]:
+    """Points for every participant — the one calculation behind /finish and /results.
 
-    n = w.rewarded_places if w.rewarded_places is not None else max(1, len(w.participants) // 2)
-    trost = float(w.trostpreis_points)
-    max_pts = float(w.max_points)
-    contexts = _get_ranking_contexts(w)
+    Returns (response, bookings): response = {"awarded": [...], "class_awarded"?: [...]},
+    bookings = (class_id, points, reason) for each participant linked to a class.
+    """
+    awarded: list[dict] = []
+    bookings: list[tuple[int, int, str]] = []
 
-    total_pts: dict[int, float] = {p.id: 0.0 for p in w.participants}
-    context_labels: dict[int, list[str]] = {p.id: [] for p in w.participants}
-
-    for ctx in contexts:
-        members = ctx["participants"]
-        weight = ctx["weight"]
-        label = ctx["label"]
-        if len(members) < 1:
-            continue
-        ranks = _compute_ranks_for_pool(w, members)
-        place_pts = _placement_points(n, max_pts, trost)
-        for p in members:
-            rank = ranks.get(p.id)
-            if rank is not None and rank <= n:
-                pts = place_pts[rank - 1] * weight
-                context_labels[p.id].append(f"{label}: Platz {rank} ({pts:.0f} Pkt)")
-            else:
-                pts = trost * weight
-                context_labels[p.id].append(f"{label}: Teilnahme ({pts:.0f} Pkt)")
-            total_pts[p.id] = total_pts.get(p.id, 0.0) + pts
-
-    individual_stats = _match_stats(w)
-    awarded = []
-    for p in w.participants:
-        pts = total_pts.get(p.id, trost)
-        awarded.append({
-            "participant": _ser_participant(p),
-            "stage": None,
-            "points": int(round(pts)),
-            "detail": context_labels.get(p.id, []),
-        })
-    class_awarded = _compute_class_awards(w, individual_stats, max_pts, trost)
-    return {"awarded": awarded, "class_awarded": class_awarded}
-
-
-@router.post("/api/wettkampf/{wid}/finish")
-def finish_wettkampf(
-    wid: int,
-    body: FinishIn = FinishIn(),
-    db: Session = Depends(get_db),
-    teacher: Teacher = Depends(get_current_teacher),
-):
-    w = db.get(Wettkampf, wid)
-    if not w:
-        raise HTTPException(404, "Wettkampf nicht gefunden")
-    if w.status != "active":
-        raise HTTPException(409, "Wettkampf ist nicht aktiv")
-
-    if w.type != "pairing":
-        open_matches = [m for m in w.matches if m.winner_id is None and not m.is_draw and m.p1_id and m.p2_id]
-        if open_matches:
-            raise HTTPException(409, f"Noch {len(open_matches)} offene Begegnung(en)")
+    def award(p: WettkampfTeilnehmer, points: float, reason: str, stage=None, detail=None):
+        pts = int(round(points))
+        entry = {"participant": _ser_participant(p), "stage": _ser_stage(stage) if stage else None, "points": pts}
+        if detail is not None:
+            entry["detail"] = detail
+        awarded.append(entry)
+        if p.class_id:
+            bookings.append((p.class_id, pts, f"Wettkampf: {w.title} – {reason}"))
 
     # ── Manual points override (pairing type) ──
-    if body.manual_points:
-        manual_map = {e.participant_id: e.points for e in body.manual_points}
-        awarded: list[dict] = []
+    if manual_points:
         for p in w.participants:
-            points = manual_map.get(p.id, w.trostpreis_points)
-            if p.class_id:
-                db.add(Transaction(
-                    teacher_id=teacher.id,
-                    class_id=p.class_id,
-                    points=int(round(points)),
-                    reason=f"Wettkampf: {w.title} – Manuell",
-                ))
-            awarded.append({"participant": _ser_participant(p), "stage": None, "points": points})
-        w.status = "finished"
-        db.commit()
-        return {"awarded": awarded}
+            award(p, manual_points.get(p.id, w.trostpreis_points), "Manuell")
+        return {"awarded": awarded}, bookings
 
     # ── Placement-formula based awarding (new system) ──
     # Also use this path when no stages defined (legacy path would give everyone trostpreis)
@@ -1205,22 +1144,16 @@ def finish_wettkampf(
         n = w.rewarded_places if w.rewarded_places is not None else max(1, len(w.participants) // 2)
         trost = float(w.trostpreis_points)
         max_pts = float(w.max_points)
-        contexts = _get_ranking_contexts(w)
+        place_pts = _placement_points(n, max_pts, trost)
 
         # Accumulate points per participant across all contexts
         total_pts: dict[int, float] = {p.id: 0.0 for p in w.participants}
         context_labels: dict[int, list[str]] = {p.id: [] for p in w.participants}
-
-        for ctx in contexts:
-            members = ctx["participants"]
-            weight = ctx["weight"]
-            label = ctx["label"]
-            if len(members) < 1:
+        for ctx in _get_ranking_contexts(w):
+            members, weight, label = ctx["participants"], ctx["weight"], ctx["label"]
+            if not members:
                 continue
-
             ranks = _compute_ranks_for_pool(w, members)
-            place_pts = _placement_points(n, max_pts, trost)
-
             for p in members:
                 rank = ranks.get(p.id)
                 if rank is not None and rank <= n:
@@ -1229,32 +1162,13 @@ def finish_wettkampf(
                 else:
                     pts = trost * weight
                     context_labels[p.id].append(f"{label}: Teilnahme ({pts:.0f} Pkt)")
-                total_pts[p.id] = total_pts.get(p.id, 0.0) + pts
+                total_pts[p.id] += pts
 
-        awarded = []
         for p in w.participants:
-            pts = total_pts.get(p.id, trost)
-            pts_int = int(round(pts))
-            reason_detail = "; ".join(context_labels.get(p.id, []))
-            if p.class_id:
-                db.add(Transaction(
-                    teacher_id=teacher.id,
-                    class_id=p.class_id,
-                    points=pts_int,
-                    reason=f"Wettkampf: {w.title} – {reason_detail}",
-                ))
-            awarded.append({
-                "participant": _ser_participant(p),
-                "stage": None,
-                "points": pts,
-                "detail": context_labels.get(p.id, []),
-            })
-
-        individual_stats = _match_stats(w)
-        class_awarded = _compute_class_awards(w, individual_stats, max_pts, trost)
-        w.status = "finished"
-        db.commit()
-        return {"awarded": awarded, "class_awarded": class_awarded}
+            labels = context_labels[p.id]
+            award(p, total_pts[p.id], "; ".join(labels), detail=labels)
+        class_awarded = _compute_class_awards(w, _match_stats(w), max_pts, trost)
+        return {"awarded": awarded, "class_awarded": class_awarded}, bookings
 
     # ── Legacy stage-based awarding ──
     if w.type == "knockout":
@@ -1287,48 +1201,59 @@ def finish_wettkampf(
     else:
         standings_map = overall_standings
 
-    awarded = []
     for p in w.participants:
         if ranking_mode == "both":
             g_stage = group_standings.get(p.id)
             o_stage = overall_standings.get(p.id)
             g_pts = g_stage.points if g_stage else w.trostpreis_points
             o_pts = o_stage.points if o_stage else w.trostpreis_points
-            total_points = g_pts + o_pts
             reason_parts = []
             if g_stage:
                 reason_parts.append(f"Gruppe: {g_stage.name}")
             if o_stage:
                 reason_parts.append(f"Gesamt: {o_stage.name}")
-            reason = f"Wettkampf: {w.title} – " + " + ".join(reason_parts) if reason_parts else f"Wettkampf: {w.title} – Teilnahme"
-            if p.class_id:
-                db.add(Transaction(
-                    teacher_id=teacher.id,
-                    class_id=p.class_id,
-                    points=int(round(total_points)),
-                    reason=reason,
-                ))
-            awarded.append({
-                "participant": _ser_participant(p),
-                "stage": _ser_stage(g_stage) if g_stage else (_ser_stage(o_stage) if o_stage else None),
-                "points": total_points,
-            })
+            award(p, g_pts + o_pts, " + ".join(reason_parts) or "Teilnahme", stage=g_stage or o_stage)
         else:
             stage = standings_map.get(p.id)
-            points = stage.points if stage else w.trostpreis_points
-            if p.class_id:
-                db.add(Transaction(
-                    teacher_id=teacher.id,
-                    class_id=p.class_id,
-                    points=int(round(points)),
-                    reason=f"Wettkampf: {w.title} – {stage.name if stage else 'Teilnahme'}",
-                ))
-            awarded.append({
-                "participant": _ser_participant(p),
-                "stage": _ser_stage(stage) if stage else None,
-                "points": points,
-            })
+            award(p, stage.points if stage else w.trostpreis_points, stage.name if stage else "Teilnahme", stage=stage)
+    return {"awarded": awarded}, bookings
 
+
+@router.get("/api/wettkampf/{wid}/results")
+def get_wettkampf_results(wid: int, db: Session = Depends(get_db), _=Depends(get_current_user)):
+    """The points /finish awarded. Wettkämpfe finished before that was stored are
+    recomputed — the same calculation, only manual points can't be recovered then."""
+    w = db.get(Wettkampf, wid)
+    if not w:
+        raise HTTPException(404, "Wettkampf nicht gefunden")
+    if w.status != "finished":
+        raise HTTPException(409, "Wettkampf ist noch nicht abgeschlossen")
+    return w.result or _compute_awards(w)[0]
+
+
+@router.post("/api/wettkampf/{wid}/finish")
+def finish_wettkampf(
+    wid: int,
+    body: FinishIn = FinishIn(),
+    db: Session = Depends(get_db),
+    teacher: Teacher = Depends(get_current_teacher),
+):
+    w = db.get(Wettkampf, wid)
+    if not w:
+        raise HTTPException(404, "Wettkampf nicht gefunden")
+    if w.status != "active":
+        raise HTTPException(409, "Wettkampf ist nicht aktiv")
+
+    if w.type != "pairing":
+        open_matches = [m for m in w.matches if m.winner_id is None and not m.is_draw and m.p1_id and m.p2_id]
+        if open_matches:
+            raise HTTPException(409, f"Noch {len(open_matches)} offene Begegnung(en)")
+
+    manual = {e.participant_id: e.points for e in body.manual_points} if body.manual_points else None
+    result, bookings = _compute_awards(w, manual)
+    for class_id, points, reason in bookings:
+        db.add(Transaction(teacher_id=teacher.id, class_id=class_id, points=points, reason=reason))
+    w.result = result
     w.status = "finished"
     db.commit()
-    return {"awarded": awarded}
+    return result

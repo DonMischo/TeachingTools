@@ -342,6 +342,8 @@ class Wettkampf(Base):
     ranking_mode: Mapped[str] = mapped_column(String(50), nullable=False, server_default="overall")
     # number of rewarded places (1=only winner, 3=podium, etc.); None = use stages system
     rewarded_places: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # what /finish awarded ({"awarded": [...], "class_awarded": [...]}) — /results shows exactly this
+    result: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     stages: Mapped[list["WettkampfStage"]] = relationship(

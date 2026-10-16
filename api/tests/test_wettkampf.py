@@ -425,3 +425,45 @@ class TestFinishAndPoints:
         awarded = r.json()["awarded"]
         a_entry = next(e for e in awarded if e["participant"]["name"] == "A")
         assert a_entry["points"] == 10
+
+
+class TestResultsMatchFinish:
+    """GET /results (Auswertung erneut oeffnen) zeigt genau das, was /finish vergeben hat."""
+
+    def _ko_done(self, client, token, **kwargs):
+        w = _create_wettkampf(client, token, **kwargs)
+        wid = w["id"]
+        for name in ("A", "B"):
+            _add_participant(client, token, wid, name)
+        if kwargs.get("rewarded_places") is None:
+            _set_stages(client, token, wid, client.get(f"/api/wettkampf/{wid}/suggest-stages").json())
+        data = _generate(client, token, wid)
+        m = data["matches"][0]
+        _set_result(client, token, wid, m["id"], m["p1"]["id"])
+        return wid
+
+    def _pts(self, body):
+        return {e["participant"]["name"]: e["points"] for e in body["awarded"]}
+
+    def test_stage_based_results_equal_finish(self, client, teacher_token):
+        wid = self._ko_done(client, teacher_token, max_points=10, trostpreis_points=1)
+        fin = client.post(f"/api/wettkampf/{wid}/finish", headers=auth(teacher_token)).json()
+        res = client.get(f"/api/wettkampf/{wid}/results", headers=auth(teacher_token)).json()
+        assert self._pts(res) == self._pts(fin)
+
+    def test_manual_points_survive_reopening(self, client, teacher_token):
+        wid = self._ko_done(client, teacher_token)
+        ids = {p["name"]: p["id"] for p in client.get(f"/api/wettkampf/{wid}").json()["participants"]}
+        body = {"manual_points": [{"participant_id": ids["A"], "points": 7}, {"participant_id": ids["B"], "points": 3}]}
+        fin = client.post(f"/api/wettkampf/{wid}/finish", json=body, headers=auth(teacher_token)).json()
+        res = client.get(f"/api/wettkampf/{wid}/results", headers=auth(teacher_token)).json()
+        assert self._pts(fin) == {"A": 7, "B": 3}
+        assert self._pts(res) == {"A": 7, "B": 3}
+
+    def test_placement_points_are_whole_numbers_in_both(self, client, teacher_token):
+        wid = self._ko_done(client, teacher_token, max_points=10, trostpreis_points=1, rewarded_places=1)
+        fin = client.post(f"/api/wettkampf/{wid}/finish", headers=auth(teacher_token)).json()
+        res = client.get(f"/api/wettkampf/{wid}/results", headers=auth(teacher_token)).json()
+        assert all(isinstance(v, int) for v in self._pts(fin).values())
+        assert self._pts(res) == self._pts(fin)
+        assert res.get("class_awarded") == fin.get("class_awarded")
