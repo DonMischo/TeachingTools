@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  draftNimm, draftStart, kampfStart, stapeln, zugBeenden, zieheKarten, ENERGIE, HAND, sterne, seltenheit,
+  draftNimm, draftStart, kampfStart, stapeln, zugBeenden, zieheKarten, abwerfen, mischen, ENERGIE, HAND, HAND_MAX, NACHZIEHEN, sterne, seltenheit,
 } from "@/components/challenge/modi/karten/logik";
 import { route } from "@/components/challenge/modi/karten/Etappenkarte";
 
@@ -29,8 +29,38 @@ describe("Kampf", () => {
     let k = kampfStart(ids, 3);
     expect(k.hand).toHaveLength(HAND); expect(k.nachzieh).toHaveLength(4); expect(k.energie).toBe(ENERGIE);
     k = zugBeenden(k, 3);
-    expect(k.hand).toHaveLength(HAND); expect(k.ablage).toHaveLength(0); expect(k.nachzieh).toHaveLength(4); // Ablage wurde in den Stapel gemischt
+    expect(k.hand).toHaveLength(HAND + NACHZIEHEN); expect(k.nachzieh).toHaveLength(2); expect(k.ablage).toHaveLength(0);
     expect(k.hand.length + k.nachzieh.length + k.ablage.length).toBe(ids.length);
+  });
+  it("Zugende behält die Hand, zieht mindestens bis HAND und höchstens bis HAND_MAX", () => {
+    const alle = Array.from({ length: 20 }, (_, i) => `g${i}`);
+    let k = kampfStart(alle, 3);
+    const hand = k.hand;
+    k = zugBeenden(k, 3);
+    expect(k.hand.slice(0, HAND)).toEqual(hand); expect(k.hand).toHaveLength(7);
+    k = zugBeenden(zugBeenden(k, 3), 3);
+    expect(k.hand).toHaveLength(HAND_MAX);
+    expect(zugBeenden(k, 3).hand).toHaveLength(HAND_MAX);
+    const wenig = { ...k, hand: k.hand.slice(0, 1) };
+    expect(zugBeenden(wenig, 3).hand).toHaveLength(HAND);
+  });
+  it("Abwerfen legt auf die Ablage und zieht gleich viele nach", () => {
+    let k = kampfStart(ids, 3);
+    const weg = k.hand.slice(0, 2);
+    k = abwerfen(k, weg, 5);
+    expect(k.hand).toHaveLength(HAND); expect(k.ablage).toEqual(weg); expect(k.nachzieh).toHaveLength(2); expect(k.energie).toBe(ENERGIE);
+  });
+  it("Abwerfen mischt bei leerem Stapel die Ablage ein", () => {
+    let k = kampfStart(ids.slice(0, 5), 3);
+    k = abwerfen(k, k.hand.slice(0, 2), 5);
+    expect(k.hand).toHaveLength(HAND); expect(k.hand.length + k.nachzieh.length + k.ablage.length).toBe(5);
+  });
+  it("Mischen fügt die Ablage in den Nachziehstapel", () => {
+    let k = kampfStart(ids, 3);
+    k = { ...k, ablage: [k.hand[0]], hand: k.hand.slice(1) };
+    const m = mischen(k, 2);
+    expect(m.ablage).toHaveLength(0); expect([...m.nachzieh].sort()).toEqual([...k.nachzieh, ...k.ablage].sort());
+    expect(mischen(m, 2)).toBe(m);
   });
   it("Stapeln kostet 1 Energie und bei 0 geht nichts mehr", () => {
     let k = kampfStart(ids, 3);

@@ -11,9 +11,8 @@ const RAHMEN = {
 } as const;
 
 export const KARTEN_CSS = `
-.kt-fach{display:flex;justify-content:center;align-items:flex-end;padding:1.5rem 0.5rem 0.5rem;min-height:11rem}
+.kt-fach{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end;gap:0.5rem;padding:1.5rem 0.5rem 0.5rem;min-height:11rem}
 .kt-fach>*{transition:transform .18s ease;transform-origin:50% 120%}
-.kt-fach>*:not(:first-child){margin-left:-1.25rem}
 .kt-fach>*:hover,.kt-fach>*:focus-within{transform:translateY(-1.25rem) rotate(0deg)!important;z-index:5}
 .kt-zieh{animation:kt-zieh .35s ease-out both}
 @keyframes kt-zieh{from{opacity:0;transform:translate(-6rem,-2rem) scale(.7)}to{opacity:1}}

@@ -2,6 +2,9 @@
 import { hashText, mische, rng } from "@/lib/challenge/zufall";
 
 export const HAND = 5;
+/** Karten, die am Zugende nachgezogen werden (mindestens bis HAND, höchstens HAND_MAX auf der Hand). */
+export const NACHZIEHEN = 2;
+export const HAND_MAX = 10;
 export const ENERGIE = 3;
 export const BOOSTER = 5;
 /** So oft wird eine Karte höchstens angeboten (einmal abgelehnt → kommt noch einmal). */
@@ -63,10 +66,21 @@ export function alleZurueck(k: Kampf): Kampf {
 export function ausgespielt(k: Kampf): Kampf {
   return { ...k, ablage: [...k.ablage, ...k.stapel], stapel: [] };
 }
-/** Zug beenden: Hand auf die Ablage, neue Hand ziehen, Energie voll. Der Kombo-Stapel bleibt liegen. */
+/** Zug beenden: Hand bleibt, Energie voll, NACHZIEHEN Karten (mindestens bis HAND, höchstens bis HAND_MAX). Der Kombo-Stapel bleibt liegen. */
 export function zugBeenden(k: Kampf, seed: number): Kampf {
-  const leer: Kampf = { ...k, ablage: [...k.ablage, ...k.hand], hand: [], zug: k.zug + 1, energie: k.max };
-  return zieheKarten(leer, HAND, seed);
+  const n = Math.min(Math.max(NACHZIEHEN, HAND - k.hand.length), HAND_MAX - k.hand.length);
+  return zieheKarten({ ...k, zug: k.zug + 1, energie: k.max }, Math.max(0, n), seed);
+}
+/** Handkarten abwerfen und ebenso viele nachziehen (kostenlos). */
+export function abwerfen(k: Kampf, ids: string[], seed: number): Kampf {
+  const weg = k.hand.filter((x) => ids.includes(x));
+  if (!weg.length) return k;
+  return zieheKarten({ ...k, hand: k.hand.filter((x) => !weg.includes(x)), ablage: [...k.ablage, ...weg] }, weg.length, seed);
+}
+/** Ablage unter den Nachziehstapel mischen. */
+export function mischen(k: Kampf, seed: number): Kampf {
+  if (!k.ablage.length) return k;
+  return { ...k, nachzieh: mische([...k.nachzieh, ...k.ablage], rng(seed + k.zug * 17)), ablage: [] };
 }
 
 export type Seltenheit = "gewoehnlich" | "selten" | "episch";

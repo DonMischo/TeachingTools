@@ -1,5 +1,5 @@
 "use client";
-/** Kampf: Nachziehstapel, Hand im Fächer, Ablagestapel, Energie; Gegner zeigen ihre Absicht (offene Challenges). */
+/** Kampf: Nachziehstapel, Hand in Reihen, Ablagestapel, Energie; Gegner zeigen ihre Absicht (offene Challenges). */
 import { useState, type ReactNode } from "react";
 import type { ChallengeAntwort } from "@/lib/api";
 import type { ModusProps } from "../typen";
@@ -9,7 +9,7 @@ import { BestenlisteKnopf } from "../../Bestenliste";
 import { useSpielwert } from "@/lib/challenge/useSpielwert";
 import Karte from "./Karte";
 import {
-  ENERGIE, alleZurueck, ausgespielt, kampfStart, sterne, stapeln, zugBeenden, zuruecknehmen,
+  ENERGIE, abwerfen, alleZurueck, mischen, ausgespielt, kampfStart, sterne, stapeln, zugBeenden, zuruecknehmen,
 } from "./logik";
 
 const SCHWERT = ["..#..", "..#..", "..#..", "..#..", ".###.", "..#.."];
@@ -33,6 +33,7 @@ export default function Kampf({ brett, theme, lauf, zurKarte, seed, lagerKnopf, 
   const [gegnerZug, setGegnerZug] = useState(0);
   const [ablageOffen, setAblageOffen] = useState(false);
   const [gespielt, setGespielt] = useState(false);
+  const [abwurf, setAbwurf] = useState<string[] | null>(null);
 
   const offene = brett.challenges.filter((c) => !c.erledigt);
   const challenge = offene.find((c) => c.id === aktiv);
@@ -74,7 +75,8 @@ export default function Kampf({ brett, theme, lauf, zurKarte, seed, lagerKnopf, 
     setK((s) => zugBeenden(s, seed)); setGegnerZug((g) => g + 1);
   };
 
-  const drehung = (i: number) => (i - (k.hand.length - 1) / 2) * 4;
+  const markiere = (id: string) => setAbwurf((a) => (a ?? []).includes(id) ? (a ?? []).filter((x) => x !== id) : [...(a ?? []), id]);
+  const wirfAb = () => { setK((s) => abwerfen(s, abwurf ?? [], seed + s.zug * 7 + s.ablage.length)); setAbwurf(null); };
 
   return (
     <>
@@ -135,7 +137,18 @@ export default function Kampf({ brett, theme, lauf, zurKarte, seed, lagerKnopf, 
           <button className="underline" aria-expanded={ablageOffen} onClick={() => setAblageOffen(!ablageOffen)} title="Ablagestapel ansehen">🗑 Ablage: {k.ablage.length}</button>
           <span>Zug {k.zug}</span>
         </div>
-        <button className="btn-secondary" onClick={beenden}>Zug beenden</button>
+        <div className="flex flex-wrap gap-2">
+          {abwurf ? (
+            <>
+              <button className="btn-primary" disabled={!abwurf.length} onClick={wirfAb}>{abwurf.length} abwerfen &amp; nachziehen</button>
+              <button className="btn-secondary" onClick={() => setAbwurf(null)}>Abbrechen</button>
+            </>
+          ) : (
+            <button className="btn-secondary" disabled={!k.hand.length} onClick={() => setAbwurf([])}>Abwerfen</button>
+          )}
+          <button className="btn-secondary" disabled={!k.ablage.length} onClick={() => setK((s) => mischen(s, seed))}>Mischen</button>
+          <button className="btn-secondary" onClick={beenden}>Zug beenden</button>
+        </div>
       </div>
       {ablageOffen && (
         <div className="card p-2 flex flex-wrap gap-1" aria-label="Ablagestapel">
@@ -144,9 +157,9 @@ export default function Kampf({ brett, theme, lauf, zurKarte, seed, lagerKnopf, 
         </div>
       )}
       <div className="kt-fach" aria-label="Deine Hand">
-        {k.hand.map((id, i) => (
-          <Karte key={id} fakt={fakten.get(id)!} drehung={drehung(i)} klasse="kt-zieh"
-            disabled={!offene.length || k.energie < 1} onClick={() => lege(id)} />
+        {k.hand.map((id) => (
+          <Karte key={id} fakt={fakten.get(id)!} klasse="kt-zieh" gewaehlt={abwurf ? abwurf.includes(id) : undefined}
+            disabled={abwurf ? false : !offene.length || k.energie < 1} onClick={() => (abwurf ? markiere(id) : lege(id))} />
         ))}
         {k.hand.length === 0 && <span className="text-muted">Hand leer – Zug beenden, um neu zu ziehen.</span>}
       </div>

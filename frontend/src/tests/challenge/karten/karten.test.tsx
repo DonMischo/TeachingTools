@@ -47,7 +47,7 @@ describe("Karten", () => {
     expect(await screen.findByText("Daneben")).toBeTruthy();
     await waitFor(() => expect(lauf.spielwert).toHaveBeenCalledWith("karten", 1, expect.any(Number), 3), { timeout: 3000 }); // gedrosselt gemeldet
   });
-  it("Zug beenden: Hand auf die Ablage, neue Hand, Energie voll", async () => {
+  it("Zug beenden: Hand bleibt, Energie voll", async () => {
     const lauf = mk(); const u = userEvent.setup();
     zeige(brett(), lauf);
     await u.click(screen.getByText("Frage eins"));
@@ -55,5 +55,20 @@ describe("Karten", () => {
     await u.click(screen.getByRole("button", { name: "Zug beenden" }));
     expect(screen.getByLabelText("Energie 3 von 3")).toBeTruthy();
     expect(screen.getByText(/Zug 2/)).toBeTruthy();
+  });
+  it("Abwerfen-Modus markiert Karten und wirft sie ab", async () => {
+    const lauf = mk(); const u = userEvent.setup();
+    zeige(brett(), lauf);
+    await u.click(screen.getByRole("button", { name: "Abwerfen" }));
+    await u.click(screen.getByText("Fakt eins"));
+    expect(screen.getByText("Fakt eins").closest("button")!.getAttribute("aria-pressed")).toBe("true");
+    await u.click(screen.getByRole("button", { name: /1 abwerfen/ }));
+    await u.click(screen.getByRole("button", { name: "Mischen" }));
+    expect(screen.getByText(/Ablage: 0/)).toBeTruthy();
+  });
+  it("Hand liegt in Reihen ohne negative Überlappung", () => {
+    zeige(brett(), mk());
+    expect(screen.getByLabelText("Deine Hand").className).toContain("kt-fach");
+    expect(document.body.innerHTML + document.head.innerHTML).not.toMatch(/margin-left:\s*-1\.25rem/);
   });
 });
