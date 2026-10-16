@@ -7,12 +7,15 @@ import { useEffect, useState } from "react";
 import type { ChallengeAntwort } from "@/lib/api";
 import type { ModusProps } from "./typen";
 import { BestenlisteKnopf } from "../Bestenliste";
+import { useAblage } from "@/lib/challenge/useAblage";
+import Papierkorb, { WegKnopf } from "@/components/challenge/Papierkorb";
 import { Ablage, FaktKarte, Herzen, Inhalt, Treffermeldung } from "./teile";
 import Holz from "./bruecke/Holz";
 import Schlucht, { type Fahrt } from "./bruecke/Schlucht";
 import { ausgang, segmentOrt, sterne, teileBruecken } from "@/lib/challenge/brueckeSpiel";
 
 export default function Bruecke({ brett, theme, lauf, zurKarte }: ModusProps) {
+  const korb = useAblage(brett.etappe);
   const seed = brett.etappe * 131 + brett.fakten.length * 7 + 3;
   const [gesammelt, setGesammelt] = useState<string[]>([]);
   const [bau, setBau] = useState(false);
@@ -53,14 +56,14 @@ export default function Bruecke({ brett, theme, lauf, zurKarte }: ModusProps) {
         {kopf}
         <h2 className="font-bold">Holz sammeln</h2>
         <Holz fakten={brett.fakten} theme={theme} seed={seed} gefunden={gesammelt}
-          setGefunden={(f) => setGesammelt(f)} weiter={() => setBau(true)} />
+          setGefunden={(f) => setGesammelt(f)} weiter={() => setBau(true)} onWegwerfen={korb.wegwerfen} />
       </>
     );
   }
 
   const waehle = (i: number) => { setSel(i); setAntwort(null); };
   const lege = (id: string) => {
-    if (!c || ablage.includes(id) || !gesammelt.includes(id) || !fakten.has(id)) return;
+    if (!c || ablage.includes(id) || !gesammelt.includes(id) || korb.istWeg(id) || !fakten.has(id)) return;
     if (!ablage.length) lauf.gelegt();
     setAblage([...ablage, id]);
   };
@@ -91,7 +94,7 @@ export default function Bruecke({ brett, theme, lauf, zurKarte }: ModusProps) {
     setFahrt(null);
   };
 
-  const inventar = brett.fakten.filter((f) => gesammelt.includes(f.id) && !ablage.includes(f.id));
+  const inventar = brett.fakten.filter((f) => gesammelt.includes(f.id) && !ablage.includes(f.id) && !korb.istWeg(f.id));
   const alleFertig = luecken.length > 0 && fertig.length >= luecken.length;
   const ort = segmentOrt(idx, teile);
   const schlucht = luecken.map((l) => ({ id: l.id, bretter: (fahrt && luecken[fahrt.idx]?.id === l.id) ? fahrt.bretter : (ablagen[l.id]?.length ?? 0), fertig: fertig.includes(l.id) }));
@@ -129,9 +132,15 @@ export default function Bruecke({ brett, theme, lauf, zurKarte }: ModusProps) {
 
       {!alleFertig && (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,180px),1fr))] gap-2">
-          {inventar.map((f) => <FaktKarte key={f.id} fakt={f} disabled={!c || !!fahrt} onClick={() => lege(f.id)} />)}
+          {inventar.map((f) => (
+            <div key={f.id} className="flex flex-col gap-1">
+              <FaktKarte fakt={f} disabled={!c || !!fahrt} onClick={() => lege(f.id)} />
+              <WegKnopf fakt={f} onClick={() => korb.wegwerfen(f.id)} />
+            </div>
+          ))}
         </div>
       )}
+      <Papierkorb weg={korb.weg} fakten={brett.fakten} onZurueck={korb.zurueckholen} />
     </>
   );
 }

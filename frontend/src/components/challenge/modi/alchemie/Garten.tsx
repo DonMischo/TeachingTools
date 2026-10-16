@@ -16,9 +16,9 @@ const LICHT = ["rgba(255,200,120,.22)", "rgba(255,255,255,0)", "rgba(255,120,60,
 
 export function zutatArt(i: number) { return ARTEN[i % ARTEN.length]; }
 
-export default function Garten({ fakten, theme, seed, etappe, gefunden, setGefunden, weiter }: {
+export default function Garten({ fakten, theme, seed, etappe, gefunden, setGefunden, weiter, onWegwerfen }: {
   fakten: ChallengeFakt[]; theme: ThemeDef; seed: number; etappe: number; gefunden: string[];
-  setGefunden(f: (g: string[]) => string[]): void; weiter(): void;
+  setGefunden(f: (g: string[]) => string[]): void; weiter(): void; onWegwerfen?(id: string): void;
 }) {
   const karte = useMemo(() => markovKarte(seed, fakten.length + 2, "labyrinth"), [seed, fakten.length]);
   const plaetze = useMemo(() => {
@@ -51,7 +51,7 @@ export default function Garten({ fakten, theme, seed, etappe, gefunden, setGefun
         <Erkunden karte={karte} theme={theme} objekte={dinge} onBetreten={betreten} pausiert={!!zeige} kachel="hecke" label="Kräutergarten" />
         <div className="absolute inset-0 pointer-events-none rounded-lg" style={{ background: LICHT[(etappe - 1 + 4) % 4] }} aria-hidden />
       </div>
-      {zeige && <Fundkarte fakt={zeige.fakt} titel={`${zeige.art} ${NAMEN[zeige.art]} gepflückt!`} onOk={() => setZeige(null)} />}
+      {zeige && <Fundkarte fakt={zeige.fakt} titel={`${zeige.art} ${NAMEN[zeige.art]} gepflückt!`} onOk={() => setZeige(null)} onWegwerfen={onWegwerfen && (() => { onWegwerfen(zeige.fakt.id); setZeige(null); })} />}
       <div className="flex flex-wrap gap-2">
         {alle && <button className="btn-primary" onClick={weiter}>In den Laden</button>}
         {!alle && ueberspringen && <button className="btn-secondary" onClick={() => { setGefunden(() => fakten.map((f) => f.id)); setZeige(null); weiter(); }}>Alles einsammeln</button>}

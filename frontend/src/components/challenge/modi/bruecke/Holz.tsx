@@ -12,9 +12,9 @@ import { PixelMatrix } from "../../pixel/Matrix";
 const BRETT = ["..........", "bbbbbbbbbb", "bddbbddbbb", "dddddddddd", ".........."];
 const BRETT_F = { b: "#c28a4a", d: "#8a5a2b" };
 
-export default function Holz({ fakten, theme, seed, gefunden, setGefunden, weiter }: {
+export default function Holz({ fakten, theme, seed, gefunden, setGefunden, weiter, onWegwerfen }: {
   fakten: ChallengeFakt[]; theme: ThemeDef; seed: number; gefunden: string[];
-  setGefunden(f: (g: string[]) => string[]): void; weiter(): void;
+  setGefunden(f: (g: string[]) => string[]): void; weiter(): void; onWegwerfen?(id: string): void;
 }) {
   const karte = useMemo(() => markovKarte(seed, Math.max(6, fakten.length), "labyrinth"), [seed, fakten.length]);
   const m = Math.max(1, Math.min(karte.orte.length, fakten.length));
@@ -47,7 +47,7 @@ export default function Holz({ fakten, theme, seed, gefunden, setGefunden, weite
         {alle && <button className="btn-primary" onClick={weiter}>Zur Schlucht</button>}
         {!alle && ueberspringen && <button className="btn-secondary" onClick={alleEinsammeln}>Alles einsammeln</button>}
       </div>
-      {zeige.length > 0 && <Fundkarte fakt={zeige} onOk={() => setZeige([])} />}
+      {zeige.length > 0 && <Fundkarte fakt={zeige} onOk={() => setZeige([])} onWegwerfen={onWegwerfen && (() => { zeige.forEach((f) => onWegwerfen(f.id)); setZeige([]); })} />}
     </div>
   );
 }

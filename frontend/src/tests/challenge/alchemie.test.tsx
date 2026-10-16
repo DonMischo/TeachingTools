@@ -44,7 +44,7 @@ describe("Alchemie", () => {
     await u.click(screen.getAllByRole("button", { name: /pflücken/ })[0]);
     await u.click(screen.getByRole("button", { name: "OK" }));
     await u.click(screen.getByRole("button", { name: "In den Laden" }));
-    expect(screen.getByRole("button", { name: /Zutat Beta/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Zutat Beta$/ })).toBeInTheDocument();
   });
 
   it("Abfüllen ruft antworte; Kunde bestellt nur offene Rezepte; Gold wird gemeldet", async () => {
@@ -54,7 +54,7 @@ describe("Alchemie", () => {
     await inDenLaden(u);
     expect(screen.getByText("Rezept Eins")).toBeInTheDocument();
     expect(screen.queryByText("Rezept Zwei")).not.toBeInTheDocument();
-    await u.click(screen.getByRole("button", { name: /Zutat Alpha/ }));
+    await u.click(screen.getByRole("button", { name: /^Zutat Alpha$/ }));
     await u.click(screen.getByRole("button", { name: "Abfüllen" }));
     expect(lauf.antworte).toHaveBeenCalledWith("c1", ["f1"], false);
     expect(await screen.findByText("Der Kunde ist begeistert!")).toBeInTheDocument();
@@ -66,7 +66,7 @@ describe("Alchemie", () => {
     const u = userEvent.setup();
     zeige(mkLauf(antwort({ kombo: true })));
     await inDenLaden(u);
-    await u.click(screen.getByRole("button", { name: /Zutat Alpha/ }));
+    await u.click(screen.getByRole("button", { name: /^Zutat Alpha$/ }));
     await u.click(screen.getByRole("button", { name: "Abfüllen" }));
     expect(await screen.findByText(/Glitzertrank/)).toBeInTheDocument();
   });
@@ -76,7 +76,7 @@ describe("Alchemie", () => {
     zeige(mkLauf(antwort({ treffer: false, komplett: false, schaden: 0 })));
     await inDenLaden(u);
     fireEvent.click(screen.getByRole("button", { name: /Umrühren/ }));
-    await u.click(screen.getByRole("button", { name: /Zutat Alpha/ }));
+    await u.click(screen.getByRole("button", { name: /^Zutat Alpha$/ }));
     await u.click(screen.getByRole("button", { name: "Abfüllen" }));
     expect(await screen.findByText(/Kessel läuft über/)).toBeInTheDocument();
     expect(screen.getByLabelText("Trankregal")).toHaveTextContent("(0)");

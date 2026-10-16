@@ -7,6 +7,8 @@ import { THEMES, themeVon } from "@/lib/challenge/themes";
 import Boss from "@/components/challenge/modi/Boss";
 import Detektiv from "@/components/challenge/modi/Detektiv";
 import Gericht from "@/components/challenge/modi/Gericht";
+import Alchemie from "@/components/challenge/modi/Alchemie";
+import Bruecke from "@/components/challenge/modi/Bruecke";
 import Huepfen from "@/components/challenge/modi/Huepfen";
 
 beforeEach(() => {
@@ -103,6 +105,32 @@ describe("Wegwerfen in den Modi", () => {
     await u.click(screen.getByRole("button", { name: "Alles einsammeln" }));
     await u.click(screen.getByRole("button", { name: "»Fakt Alpha« wegwerfen" }));
     await u.click(screen.getByRole("button", { name: /Tür: Offene Aufgabe/ }));
+    expect(screen.queryByRole("button", { name: /^Fakt Alpha$/ })).toBeNull();
+    await u.click(screen.getByText(/Papierkorb \(1\)/));
+    await u.click(screen.getByRole("button", { name: "»Fakt Alpha« zurückholen" }));
+    expect(screen.getByRole("button", { name: /^Fakt Alpha$/ })).toBeTruthy();
+    nichtGesendet(lauf);
+  });
+
+  it("Alchemie: weggeworfene Zutaten kommen nicht in den Kessel", async () => {
+    const u = userEvent.setup(); const lauf = mkLauf();
+    render(<Alchemie brett={brett("alchemie") as never} theme={themeVon("klassisch")} skin="" lauf={lauf as never} zurKarte={() => {}} />);
+    await u.click(screen.getByRole("button", { name: "Alles einsammeln" }));
+    const laden = screen.queryByRole("button", { name: "In den Laden" });
+    if (laden) await u.click(laden);
+    await u.click(screen.getByRole("button", { name: "»Fakt Alpha« wegwerfen" }));
+    expect(screen.queryByRole("button", { name: /^Fakt Alpha$/ })).toBeNull();
+    await u.click(screen.getByText(/Papierkorb \(1\)/));
+    await u.click(screen.getByRole("button", { name: "»Fakt Alpha« zurückholen" }));
+    expect(screen.getByRole("button", { name: /^Fakt Alpha$/ })).toBeTruthy();
+    nichtGesendet(lauf);
+  });
+
+  it("Bruecke: weggeworfene Bretter werden nicht zum Bauen angeboten", async () => {
+    const u = userEvent.setup(); const lauf = mkLauf();
+    render(<Bruecke brett={brett("bruecke") as never} theme={THEMES.klassisch} skin="monster" lauf={lauf as never} zurKarte={() => {}} />);
+    await u.click(screen.getByRole("button", { name: "Alles einsammeln" }));
+    await u.click(screen.getByRole("button", { name: "»Fakt Alpha« wegwerfen" }));
     expect(screen.queryByRole("button", { name: /^Fakt Alpha$/ })).toBeNull();
     await u.click(screen.getByText(/Papierkorb \(1\)/));
     await u.click(screen.getByRole("button", { name: "»Fakt Alpha« zurückholen" }));

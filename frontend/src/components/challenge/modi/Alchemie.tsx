@@ -6,6 +6,8 @@
 import { useEffect, useState } from "react";
 import type { ChallengeAntwort } from "@/lib/api";
 import { useSpielwert } from "@/lib/challenge/useSpielwert";
+import { useAblage } from "@/lib/challenge/useAblage";
+import Papierkorb, { WegKnopf } from "@/components/challenge/Papierkorb";
 import Bestenliste from "@/components/challenge/Bestenliste";
 import type { ModusProps } from "./typen";
 import { Ablage, Herzen, Inhalt, Treffermeldung } from "./teile";
@@ -39,6 +41,7 @@ function Kunde({ art, stimmung = "neutral" }: { art: Kundenart; stimmung?: Stimm
 }
 
 export default function Alchemie({ brett, theme, lauf, zurKarte }: ModusProps) {
+  const korb = useAblage(brett.etappe);
   const [phase, setPhase] = useState<"garten" | "laden">(brett.fakten.length ? "garten" : "laden");
   const [gefunden, setGefunden] = useState<string[]>([]);
   const [wahl, setWahl] = useState<string | null>(null);
@@ -74,7 +77,7 @@ export default function Alchemie({ brett, theme, lauf, zurKarte }: ModusProps) {
 
   const waehleKunde = (id: string) => { setWahl(id); setAblage([]); setTipp(false); setAntwort(null); };
   const legeAuf = (id: string) => {
-    if (!aktiv || ablage.includes(id) || !fakten.has(id)) return;
+    if (!aktiv || ablage.includes(id) || korb.istWeg(id) || !fakten.has(id)) return;
     lauf.gelegt();
     setAblage([...ablage, id]);
   };
@@ -117,7 +120,7 @@ export default function Alchemie({ brett, theme, lauf, zurKarte }: ModusProps) {
 
       {phase === "garten" ? (
         <Garten fakten={brett.fakten} theme={theme} seed={brett.etappe * 131 + brett.fakten.length} etappe={brett.etappe}
-          gefunden={gefunden} setGefunden={setGefunden} weiter={() => setPhase("laden")} />
+          gefunden={gefunden} setGefunden={setGefunden} weiter={() => setPhase("laden")} onWegwerfen={korb.wegwerfen} />
       ) : (
         <>
           <Treffermeldung antwort={antwort} />
@@ -169,17 +172,21 @@ export default function Alchemie({ brett, theme, lauf, zurKarte }: ModusProps) {
           )}
           <div className="rounded-lg p-3" aria-label="Zutatenregal" style={{ background: "linear-gradient(#6b4524,#432a14)", boxShadow: "inset 0 2px 8px rgba(0,0,0,.5)" }}>
             <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,180px),1fr))] gap-3 pb-2" style={{ borderBottom: "8px solid #8a5d33", boxShadow: "0 6px 6px -4px rgba(0,0,0,.5)" }}>
-              {zutaten.filter((f) => !ablage.includes(f.id)).map((f) => (
-                <button key={f.id} draggable={!!aktiv} disabled={!aktiv} onClick={() => legeAuf(f.id)}
+              {zutaten.filter((f) => !ablage.includes(f.id) && !korb.istWeg(f.id)).map((f) => (
+                <div key={f.id} className="flex flex-col gap-1">
+                <button draggable={!!aktiv} disabled={!aktiv} onClick={() => legeAuf(f.id)}
                   onDragStart={(e) => e.dataTransfer.setData("text/plain", f.id)}
                   className="relative text-left text-sm p-2 pt-4 rounded-b-2xl rounded-t-md disabled:opacity-85 text-[#2b1d10] transition-transform hover:-translate-y-0.5"
                   style={{ background: "linear-gradient(135deg, rgba(255,250,235,.92), rgba(222,236,240,.82))", border: "2px solid rgba(255,255,255,.7)", boxShadow: "0 4px 6px rgba(0,0,0,.4), inset 0 0 10px rgba(255,255,255,.5)" }}>
                   <span className="absolute -top-2 left-1/2 -translate-x-1/2 w-10 h-3 rounded-sm" style={{ background: "linear-gradient(#b98650,#8a5d33)" }} aria-hidden />
                   <Inhalt x={f} />
                 </button>
+                <WegKnopf fakt={f} onClick={() => korb.wegwerfen(f.id)} />
+                </div>
               ))}
             </div>
           </div>
+          <Papierkorb weg={korb.weg} fakten={brett.fakten} onZurueck={korb.zurueckholen} />
           <Regal traenke={regal} />
           {lauf.hatBestenliste && <Bestenliste laden={lauf.bestenliste} spiel="alchemie" />}
         </>
