@@ -7,20 +7,20 @@ export type ThemeDef = {
   name: string;
   hintergrund: { src: string; tile: number; cols: number; muster: { boden: number[]; wand: number[]; deko: number[] } } | null;
   farben: { himmel: string; boden: string; akzent: string; text: string };
-  spieler: { src: string; frameW: number; frameH: number; laufen: { links: Frame[]; rechts: Frame[] }; stehen: Frame };
+  spieler: { src: string; frameW: number; frameH: number; laufen: { links: Frame[]; rechts: Frame[]; hoch?: Frame[]; runter?: Frame[] }; stehen: Frame };
 };
 
 const reihe = (y: number, w: number, h: number, n = 4): Frame[] => Array.from({ length: n }, (_, i) => ({ x: i * w, y, w, h }));
 // character.png: 16x32, Laufreihen unten/rechts/oben/links = 0..3 (das Manifest vertauscht links und rechts)
 const figur: ThemeDef["spieler"] = {
   src: `${P}/gfx/character.png`, frameW: 16, frameH: 32,
-  laufen: { links: reihe(96, 16, 32), rechts: reihe(32, 16, 32) }, stehen: { x: 0, y: 0, w: 16, h: 32 },
+  laufen: { links: reihe(96, 16, 32), rechts: reihe(32, 16, 32), hoch: reihe(64, 16, 32), runter: reihe(0, 16, 32) }, stehen: { x: 0, y: 0, w: 16, h: 32 },
 };
 // ninja/player-walk.png: 16x16, Spalten unten/oben/links/rechts, je Spalte vier Laufbilder untereinander
 const spalte = (x: number, w: number, h: number, n = 4): Frame[] => Array.from({ length: n }, (_, i) => ({ x, y: i * h, w, h }));
 const ninja: ThemeDef["spieler"] = {
   src: `${P}/ninja/player-walk.png`, frameW: 16, frameH: 16,
-  laufen: { links: spalte(32, 16, 16), rechts: spalte(48, 16, 16) }, stehen: { x: 0, y: 0, w: 16, h: 16 },
+  laufen: { links: spalte(32, 16, 16), rechts: spalte(48, 16, 16), hoch: spalte(16, 16, 16), runter: spalte(0, 16, 16) }, stehen: { x: 0, y: 0, w: 16, h: 16 },
 };
 
 export const THEMES: Record<string, ThemeDef> = {

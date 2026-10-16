@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { configure, render, screen } from "@testing-library/react";
+import { act, configure, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Erkunden from "@/components/challenge/pixel/Erkunden";
 import { THEMES } from "@/lib/challenge/themes";
@@ -30,6 +30,25 @@ describe("Erkunden", () => {
     const vor = feld();
     await u.keyboard(wand[0]);
     expect(feld()).toBe(vor);
+  });
+
+  it("gehaltene Taste läuft gleichmäßig, Tastenwiederholung zählt nicht, Loslassen hält an", () => {
+    vi.useFakeTimers();
+    try {
+      zeig();
+      const [sx, sy] = karte.start;
+      const r = ([["ArrowRight", 1, 0], ["ArrowDown", 0, 1], ["ArrowLeft", -1, 0], ["ArrowUp", 0, -1]] as const)
+        .find(([, dx, dy]) => karte.begehbar([sx + dx, sy + dy]))!;
+      const taste = (typ: "keydown" | "keyup", repeat = false) => act(() => { window.dispatchEvent(new KeyboardEvent(typ, { key: r[0], repeat })); });
+      taste("keydown");
+      expect(feld()).toBe(`${sx + r[1]},${sy + r[2]}`); // erster Schritt sofort
+      for (let i = 0; i < 10; i++) taste("keydown", true); // Systemwiederholung: kein Extra-Schritt
+      expect(feld()).toBe(`${sx + r[1]},${sy + r[2]}`);
+      taste("keyup");
+      const nach = feld();
+      act(() => { vi.advanceTimersByTime(1000); });
+      expect(feld()).toBe(nach); // losgelassen: steht
+    } finally { vi.useRealTimers(); }
   });
 
   it("Klick läuft zum Objekt und meldet onBetreten", async () => {

@@ -31,6 +31,7 @@ export type ErkundObjekt = {
   label?: string;
 };
 export type KachelArt = "boden" | "hecke" | "wald" | "haus";
+type Blick = "links" | "rechts" | "hoch" | "runter";
 
 type Look = { src: string; tile: number; cols: number; muster: { boden: number[]; wand: number[] } };
 
@@ -58,8 +59,9 @@ export default function Erkunden({ karte, theme, objekte, onBetreten, pausiert =
 }) {
   const { R } = karte;
   const [pos, setPos] = useState<Punkt>(karte.start);
-  const [dir, setDir] = useState<"links" | "rechts">("rechts");
+  const [dir, setDir] = useState<Blick>("runter");
   const [geht, setGeht] = useState(false);
+  const seite = useRef<"links" | "rechts">("rechts");
   const [route, setRoute] = useState<Punkt[]>([]);
   const ruhig = useMemo(wenigerBewegung, []);
   const betreten = useRef(onBetreten);
@@ -75,7 +77,7 @@ export default function Erkunden({ karte, theme, objekte, onBetreten, pausiert =
     const o = objekte.find((x) => x.x === p[0] && x.y === p[1]);
     if (o) setRoute([]);
     if (o?.blockiert) { betreten.current(o.id); return; }
-    if (p[0] !== pos[0]) setDir(p[0] < pos[0] ? "links" : "rechts");
+    setDir(p[0] !== pos[0] ? (p[0] < pos[0] ? "links" : "rechts") : p[1] < pos[1] ? "hoch" : "runter");
     setPos(p); setGeht(true);
     if (o) betreten.current(o.id);
   };
@@ -107,17 +109,46 @@ export default function Erkunden({ karte, theme, objekte, onBetreten, pausiert =
   }, [route, pausiert]);
 
   // Tastatur: Pfeile / WASD
+  // Gedrückt halten = gleichmäßig weiterlaufen. Die Tastenwiederholung des Systems (erst Pause,
+  // dann sehr schnell) wird ignoriert; die zuletzt gedrückte, noch gehaltene Richtung zählt.
   const schrittRef = useRef(schritt);
   schrittRef.current = schritt;
+  const gehalten = useRef<string[]>([]);
   useEffect(() => {
-    if (pausiert) return;
-    const f = (e: KeyboardEvent) => {
-      const r = RICHTUNG[e.key.toLowerCase()];
-      if (!r || e.ctrlKey || e.metaKey || e.altKey || (e.target as HTMLElement)?.closest?.("input,textarea,select")) return;
-      e.preventDefault(); schrittRef.current(r);
+    if (pausiert) { gehalten.current = []; return; }
+    let takt: ReturnType<typeof setInterval> | null = null;
+    const halt = () => { if (takt) clearInterval(takt); takt = null; };
+    const laufe = () => {
+      const taste = gehalten.current[gehalten.current.length - 1];
+      if (!taste) { halt(); return; }
+      if (!document.hidden) schrittRef.current(RICHTUNG[taste]);
     };
-    window.addEventListener("keydown", f);
-    return () => window.removeEventListener("keydown", f);
+    const runter = (e: KeyboardEvent) => {
+      const k = e.key.toLowerCase();
+      if (!RICHTUNG[k] || e.ctrlKey || e.metaKey || e.altKey || (e.target as HTMLElement)?.closest?.("input,textarea,select")) return;
+      e.preventDefault();
+      if (e.repeat || gehalten.current.includes(k)) return;
+      gehalten.current = [...gehalten.current, k];
+      laufe();
+      if (!takt) takt = setInterval(laufe, SCHRITT_MS);
+    };
+    const hoch = (e: KeyboardEvent) => {
+      gehalten.current = gehalten.current.filter((k) => k !== e.key.toLowerCase());
+      if (!gehalten.current.length) halt();
+    };
+    const loslassen = () => { gehalten.current = []; halt(); };
+    const sichtbar = () => { if (document.hidden) loslassen(); };
+    window.addEventListener("keydown", runter);
+    window.addEventListener("keyup", hoch);
+    window.addEventListener("blur", loslassen);
+    document.addEventListener("visibilitychange", sichtbar);
+    return () => {
+      halt();
+      window.removeEventListener("keydown", runter);
+      window.removeEventListener("keyup", hoch);
+      window.removeEventListener("blur", loslassen);
+      document.removeEventListener("visibilitychange", sichtbar);
+    };
   }, [pausiert]);
 
   const h = useMemo(() => kachelLook(theme, kachel), [theme, kachel]);
@@ -172,7 +203,10 @@ export default function Erkunden({ karte, theme, objekte, onBetreten, pausiert =
   }, [R, karte, objekte, pos]);
 
   const sp = theme.spieler;
-  const lauf = { frames: sp.laufen[dir], fps: 8 };
+  // Hoch/runter fehlen in manchen Blättern: dann die letzte Seitenrichtung
+  const bilder = sp.laufen[dir] ?? sp.laufen[seite.current];
+  if (dir === "links" || dir === "rechts") seite.current = dir;
+  const lauf = { frames: bilder, fps: 8 };
   const sh = sp.stehen.h * 2;
   const bewegung = ruhig ? undefined : `${SCHRITT_MS}ms linear`;
 
@@ -193,8 +227,8 @@ export default function Erkunden({ karte, theme, objekte, onBetreten, pausiert =
               );
             })}
             <div className="absolute pointer-events-none" aria-label="Spielfigur" role="img" data-feld={`${pos[0]},${pos[1]}`}
-              style={{ left: pos[0] * T, top: pos[1] * T - (sh - T), transition: bewegung && `left ${bewegung}, top ${bewegung}` }}>
-              <Sprite src={sp.src} frame={sp.stehen} scale={2} animation={geht ? lauf : undefined} />
+              style={{ left: 0, top: 0, transform: `translate(${pos[0] * T}px, ${pos[1] * T - (sh - T)}px)`, transition: bewegung && `transform ${bewegung}` }}>
+              <Sprite src={sp.src} frame={bilder[0]} scale={2} animation={geht ? lauf : undefined} />
             </div>
           </div>
           {R > VB && (
