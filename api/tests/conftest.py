@@ -100,3 +100,19 @@ def admin_token(client, admin) -> str:
 
 def auth(token: str) -> dict:
     return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture()
+def count_selects(engine):
+    """count_selects("quiz_responses") -> how many SELECTs on that table ran so far.
+    Guards against N+1 queries (one query per participant/question)."""
+    from sqlalchemy import event
+    seen: list[str] = []
+
+    def _log(conn, cursor, statement, *args):
+        if statement.lstrip().upper().startswith("SELECT"):
+            seen.append(statement)
+
+    event.listen(engine, "before_cursor_execute", _log)
+    yield lambda table: sum(1 for s in seen if f"FROM {table}" in s)
+    event.remove(engine, "before_cursor_execute", _log)

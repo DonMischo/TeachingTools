@@ -1184,15 +1184,17 @@ def get_session_report(code: str, fmt: str = "json", db: Session = Depends(get_d
     # In einer Kurs/WPF-Runde sagt der Name allein nicht, fuer welche Klasse
     # jemand gespielt hat.
     class_codes = {c.id: c.code for c in db.query(Class).all()}
+    # Alle Antworten der Sitzung auf einmal statt einer Abfrage je Schueler und Frage.
+    responses: dict[tuple[int, int], QuizResponse] = {}
+    for r in db.query(QuizResponse).filter_by(session_id=s.id).order_by(QuizResponse.id):
+        responses.setdefault((r.participant_id, r.question_id), r)
 
     rows = []
     for p in sorted(s.participants, key=lambda x: x.name):
         q_results = []
         correct_count = 0
         for q in questions:
-            resp = db.query(QuizResponse).filter_by(
-                session_id=s.id, participant_id=p.id, question_id=q.id
-            ).first()
+            resp = responses.get((p.id, q.id))
             if q.type == "survey":
                 q_results.append({"question": q.question_text, "type": q.type, "answered": resp is not None, "correct": None})
             elif resp is None:

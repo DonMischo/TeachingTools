@@ -189,3 +189,42 @@ class TestReport:
     def test_report_403_for_non_owner_teacher(self, client, other_teacher_token, session_code):
         r = client.get(f"/api/lueckentexte/sessions/{session_code}/report", headers=auth(other_teacher_token))
         assert r.status_code == 403
+
+
+class TestQueryBatching:
+    """Review, report and live ranking load all responses of a session in one query,
+    not one per participant."""
+
+    def _three_players(self, client, teacher_token, session_code):
+        client.post(f"/api/lueckentexte/sessions/{session_code}/start", headers=auth(teacher_token))
+        pids = []
+        for name in ("Ada", "Ben", "Cem"):
+            r = client.post(f"/api/lueckentexte/sessions/{session_code}/join", json={"name": name, "avatar": "cat"},
+                            headers={"Authorization": f"Bearer {create_guest_token(session_code, name)}"})
+            pids.append(r.json()["id"])
+        # Ada loest beide Luecken, Ben eine, Cem keine.
+        for pid, gaps in zip(pids, (("a", "b"), ("a",), ())):
+            for gap, text in (("a", "Verdunstung"), ("b", "Wolke")):
+                if gap in gaps:
+                    client.post(f"/api/lueckentexte/sessions/{session_code}/gaps/{gap}/attempt",
+                                json={"participant_id": pid, "text": text})
+        return pids
+
+    def test_review_uses_one_response_query(self, client, teacher_token, session_code, count_selects):
+        self._three_players(client, teacher_token, session_code)
+        before = count_selects("lueckentext_responses")
+        r = client.get(f"/api/lueckentexte/sessions/{session_code}/review", headers=auth(teacher_token))
+        assert r.status_code == 200
+        assert count_selects("lueckentext_responses") - before == 1
+        solved = {e["name"]: sum(g["solved"] for g in e["gaps"]) for e in r.json()}
+        assert solved == {"Ada": 2, "Ben": 1, "Cem": 0}
+
+    def test_ranking_uses_one_response_query(self, client, db, teacher_token, session_code, count_selects):
+        from api.models import LueckentextSession
+        from api.routers.lueckentexte import _build_ranking
+        self._three_players(client, teacher_token, session_code)
+        s = db.query(LueckentextSession).filter_by(join_code=session_code).one()
+        before = count_selects("lueckentext_responses")
+        ranking = _build_ranking(s, db)
+        assert count_selects("lueckentext_responses") - before == 1
+        assert [e["name"] for e in ranking][:2] == ["Ada", "Ben"]

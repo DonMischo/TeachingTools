@@ -392,15 +392,24 @@ def start_session(code: str, db: Session = Depends(get_db), current: Teacher = D
     return _session_out(s)
 
 
+def _responses_by_participant(s: LueckentextSession, db: Session) -> dict[int, list[LueckentextResponse]]:
+    """All responses of the session in one query, grouped by participant."""
+    out: dict[int, list[LueckentextResponse]] = {}
+    for r in db.query(LueckentextResponse).filter_by(session_id=s.id).order_by(LueckentextResponse.id):
+        out.setdefault(r.participant_id, []).append(r)
+    return out
+
+
 def _build_ranking(s: LueckentextSession, db: Session) -> list[dict]:
     gap_ids = [g["id"] for g in s.lueckentext.gaps]
     n_gaps = len(gap_ids)
     participants = s.participants
 
+    by_participant = _responses_by_participant(s, db)
     raw_scores: dict[int, float] = {}
     finish_times: dict[int, datetime] = {}
     for p in participants:
-        responses = db.query(LueckentextResponse).filter_by(participant_id=p.id).all()
+        responses = by_participant.get(p.id, [])
         raw = sum(1.0 for r in responses if r.match == "exact") + sum(0.5 for r in responses if r.match == "near")
         raw_scores[p.id] = raw
         solved = {r.gap_id: r.solved_at for r in responses if r.solved_at is not None}
@@ -523,9 +532,10 @@ async def submit_attempt(code: str, gap_id: str, data: AttemptIn, db: Session = 
 def _review_entries(s: LueckentextSession, db: Session) -> list[dict]:
     """One entry per participant, one row per gap — the shared basis of the
     Auswertung screen and the CSV, so both always tell the same story."""
+    by_participant = _responses_by_participant(s, db)
     out = []
     for p in s.participants:
-        responses = {r.gap_id: r for r in db.query(LueckentextResponse).filter_by(participant_id=p.id).all()}
+        responses = {r.gap_id: r for r in by_participant.get(p.id, [])}
         gaps = []
         for gap in s.lueckentext.gaps:
             r = responses.get(gap["id"])

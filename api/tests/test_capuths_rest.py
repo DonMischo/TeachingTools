@@ -450,3 +450,37 @@ class TestAssets:
         r = client.post(f"/api/capuths/{qid}/assets", files={"file": ("x.exe", b"MZ", "application/octet-stream")},
                         headers={"Authorization": f"Bearer {teacher_token}"})
         assert r.status_code == 400
+
+
+class TestReportQueryBatching:
+    def test_report_loads_responses_once(self, client, db, klass, teacher, teacher_token, count_selects):
+        from api.models import QuizResponse
+        quiz = Quiz(title="Quiz", max_points=4, time_limit_default=20)
+        db.add(quiz)
+        db.flush()
+        q1 = QuizQuestion(quiz_id=quiz.id, order=0, type="single", question_text="Q1?", time_limit=10)
+        q2 = QuizQuestion(quiz_id=quiz.id, order=1, type="survey", question_text="Q2?", time_limit=10)
+        db.add_all([q1, q2])
+        s = QuizSession(quiz_id=quiz.id, class_id=klass.id, teacher_id=teacher.id, join_code="BATCH1")
+        db.add(s)
+        db.flush()
+        ps = [QuizParticipant(session_id=s.id, name=n, class_id=klass.id) for n in ("Ada", "Ben", "Cem")]
+        db.add_all(ps)
+        db.flush()
+        db.add_all([
+            QuizResponse(session_id=s.id, participant_id=ps[0].id, question_id=q1.id, chosen_answer_ids=[], is_correct=True),
+            QuizResponse(session_id=s.id, participant_id=ps[0].id, question_id=q2.id, chosen_answer_ids=[], is_correct=None),
+            QuizResponse(session_id=s.id, participant_id=ps[1].id, question_id=q1.id, chosen_answer_ids=[], is_correct=False),
+        ])
+        db.flush()
+
+        before = count_selects("quiz_responses")
+        r = client.get("/api/sessions/BATCH1/report", headers=auth(teacher_token))
+        assert r.status_code == 200
+        assert count_selects("quiz_responses") - before == 1
+
+        rows = {row["name"]: row for row in r.json()["participants"]}
+        assert [rows[n]["correct"] for n in ("Ada", "Ben", "Cem")] == [1, 0, 0]
+        assert [q["answered"] for q in rows["Ada"]["questions"]] == [True, True]
+        assert [q["answered"] for q in rows["Ben"]["questions"]] == [True, False]
+        assert rows["Cem"]["questions"][0] == {"question": "Q1?", "type": "single", "answered": False, "correct": False}
