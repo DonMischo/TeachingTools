@@ -547,6 +547,30 @@ def _backfill_group_grades():
         db.close()
 
 
+def _klassen_weiterruecken():
+    """Klassenbezeichnungen auf das aktuelle Schuljahr bringen (aus dem AK-Code,
+    siehe api/klassenwechsel.py) — ab dem 1. August, nicht erst mit dem Import."""
+    from .database import SessionLocal
+    from .klassenwechsel import klassen_weiterruecken
+
+    db = SessionLocal()
+    try:
+        if n := klassen_weiterruecken(db):
+            logging.getLogger(__name__).info("Schuljahreswechsel: %d Klassen weitergerueckt", n)
+    except Exception as e:
+        db.rollback()
+        logging.getLogger(__name__).warning("Klassen weiterruecken uebersprungen: %s", e)
+    finally:
+        db.close()
+
+
+async def _klassen_taeglich():
+    """Laeuft der Server ueber den 1. August hinweg, rueckt er trotzdem weiter."""
+    while True:
+        await asyncio.sleep(24 * 3600)
+        await asyncio.to_thread(_klassen_weiterruecken)
+
+
 def _purge_last_school_year():
     """Beim ersten Start im neuen Schuljahr die Sitzungen der vergangenen
     Jahre loeschen. Siehe api/retention.py — wiederholbar, findet beim
@@ -580,6 +604,7 @@ async def startup():
     _rotate_encrypted_credentials()
     _backfill_group_grades()
     _purge_last_school_year()
+    _klassen_weiterruecken()  # vor ensure_classes: sonst blockiert eine frisch angelegte »8c« die alte 7c
     ensure_classes()
     ensure_sportfest_disciplines()
     ensure_teacher_roles()
@@ -587,3 +612,4 @@ async def startup():
     ensure_calendar_tags()
     ensure_school_settings()
     asyncio.create_task(_inactivity_watchdog(get_db))
+    asyncio.create_task(_klassen_taeglich())
