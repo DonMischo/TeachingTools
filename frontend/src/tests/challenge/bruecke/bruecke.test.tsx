@@ -3,7 +3,7 @@ import { configure, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Bruecke from "@/components/challenge/modi/Bruecke";
 import { THEMES } from "@/lib/challenge/themes";
-import { ausgang, durchhang, kameraX, karren, lueckeX, sterne, weltBreite } from "@/lib/challenge/brueckeSpiel";
+import { ausgang, durchhang, kameraX, karren, segmentOrt, sterne, teileBruecken, weltBreite } from "@/lib/challenge/brueckeSpiel";
 
 // Laufen und Animationen brauchen unter Last (ganze Suite parallel) länger als 1 s.
 configure({ asyncUtilTimeout: 8000 });
@@ -31,10 +31,25 @@ async function sammle(u: ReturnType<typeof userEvent.setup>) {
 }
 
 describe("Bruecke-Geometrie", () => {
-  it("Lücken, Kamera, Sterne, Ausgang", () => {
-    expect(lueckeX(1)).toBe(lueckeX(0) + 50);
-    expect(kameraX(0, 3)).toBeGreaterThanOrEqual(0);
-    expect(kameraX(2, 3)).toBeLessThanOrEqual(weltBreite(3));
+  it("teileBruecken", () => {
+    expect(teileBruecken(1)).toEqual([1]);
+    expect(teileBruecken(5)).toEqual([5]);
+    expect(teileBruecken(10)).toEqual([10]);
+    expect(teileBruecken(11)).toEqual([6, 5]);
+    expect(teileBruecken(12)).toEqual([6, 6]);
+    expect(teileBruecken(25)).toEqual([9, 8, 8]);
+    for (const n of [1, 5, 10, 11, 12, 25, 30, 31]) {
+      const t = teileBruecken(n);
+      expect(t.reduce((a, b) => a + b, 0)).toBe(n);
+      expect(t.length).toBeLessThanOrEqual(3);
+      if (n <= 30) expect(Math.max(...t)).toBeLessThanOrEqual(10);
+    }
+    expect(teileBruecken(31)).toEqual([11, 10, 10]);
+    expect(segmentOrt(6, [6, 6])).toEqual({ bruecke: 1, segment: 0 });
+  });
+  it("Kamera, Sterne, Ausgang", () => {
+    expect(kameraX(0, [3, 3])).toBeGreaterThanOrEqual(0);
+    expect(kameraX(1, [3, 3])).toBeLessThanOrEqual(weltBreite([3, 3]));
     expect(sterne(0)).toBe(3); expect(sterne(2)).toBe(2); expect(sterne(9)).toBe(1);
     expect(ausgang({ treffer: true, komplett: true })).toBe("haelt");
     expect(ausgang({ treffer: true, komplett: false })).toBe("biegt");
@@ -50,7 +65,7 @@ describe("Bruecke", () => {
     const lauf = mk(); const u = userEvent.setup();
     zeige(lauf);
     await sammle(u);
-    expect(screen.queryByText("Frage zwei")).toBeNull();
+    expect(screen.getByText(/Segment 1 von 3 · Brücke 1 von 1/)).toBeTruthy();
     expect(screen.getByText("Frage eins")).toBeTruthy();
     await u.click(screen.getByText("Fakt eins"));
     expect(lauf.gelegt).toHaveBeenCalled();
@@ -66,7 +81,7 @@ describe("Bruecke", () => {
     expect(await screen.findByText("Gefunden!", {}, { timeout: 15000 })).toBeTruthy();
   }, 20000);
 
-  it("mehrere Lücken: nach einer haltenden Brücke geht es zur nächsten, Sterne werden gemeldet", async () => {
+  it("mehrere Segmente: nach einem haltenden Brücke geht es zur nächsten, Sterne werden gemeldet", async () => {
     const lauf = mk(antw({ treffer: true, komplett: true }));
     const u = userEvent.setup();
     zeige(lauf);
@@ -79,5 +94,29 @@ describe("Bruecke", () => {
     await u.click(screen.getByText("Fakt zwei"));
     await u.click(screen.getByRole("button", { name: "Testfahrt" }));
     await waitFor(() => expect(lauf.spielwert).toHaveBeenCalledWith("bruecke", 1, 3, 3));
+  });
+
+  it("Teil-Treffer lässt das Segment offen, Brückenwechsel nach Brücke 1", async () => {
+    const u = userEvent.setup();
+    const lauf = mk(antw({ treffer: true }));
+    zeige(lauf);
+    await sammle(u);
+    await u.click(screen.getByText("Fakt eins"));
+    await u.click(screen.getByRole("button", { name: "Testfahrt" }));
+    await screen.findByText(/Teiltreffer/);
+    expect(screen.getByText(/Segment 1 von 3/)).toBeTruthy();
+  });
+
+  it("zwölf Segmente: nach Segment 6 beginnt Brücke 2", async () => {
+    const u = userEvent.setup();
+    const viele = { ...brett, challenges: Array.from({ length: 12 }, (_, i) => ({ id: `d${i}`, text: `Frage ${i}`, image: null, formula: null, strength: 1, erledigt: i < 5 })) };
+    const lauf = mk(antw({ treffer: true, komplett: true }));
+    render(<Bruecke brett={viele as any} theme={THEMES.klassisch} skin="monster" lauf={lauf as any} zurKarte={() => {}} />);
+    await sammle(u);
+    expect(screen.getByText(/Segment 6 von 12 · Brücke 1 von 2/)).toBeTruthy();
+    await u.click(screen.getByText("Fakt eins"));
+    await u.click(screen.getByRole("button", { name: "Testfahrt" }));
+    await waitFor(() => expect(lauf.antworte).toHaveBeenCalledWith("d5", ["f1"], false));
+    expect(await screen.findByText(/Segment 7 von 12 · Brücke 2 von 2/, {}, { timeout: 8000 })).toBeTruthy();
   });
 });
