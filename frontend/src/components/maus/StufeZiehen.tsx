@@ -14,6 +14,7 @@ import type { StufenErgebnis } from "@/lib/maus/ergebnis";
 import { Stufenkopf } from "./Stufenkopf";
 import { DemoBuehne, mitte, useDemo, type DemoSchritt, type Ort } from "./Demo";
 import { HILFE_GROESSE, useMausKontext } from "./MausKontext";
+import { Hinweiszeile } from "./aufgabenStufe";
 
 /** Wohin das eigene Tier will. */
 const FUTTER: Record<string, string> = {
@@ -242,10 +243,7 @@ function Spur({
         <span className="text-4xl">{tier.emoji}</span>
       </Stufenkopf>
 
-      <div className="min-h-6 text-center text-sm font-bold" aria-live="polite"
-        style={{ color: hinweis?.gut ? "var(--green, #16a34a)" : "var(--text-muted)" }}>
-        {hinweis?.text}
-      </div>
+      <Hinweiszeile hinweis={hinweis} />
 
       {!fertig && (
         <svg
@@ -415,10 +413,7 @@ function Aufraeumen({
         hervor={fertig}
       />
 
-      <div className="min-h-6 text-center text-sm font-bold" aria-live="polite"
-        style={{ color: hinweis?.gut ? "var(--green, #16a34a)" : "var(--text-muted)" }}>
-        {hinweis?.text}
-      </div>
+      <Hinweiszeile hinweis={hinweis} />
 
       {!fertig && (
         <>

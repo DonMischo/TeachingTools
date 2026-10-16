@@ -1,8 +1,7 @@
 "use client";
 import { useState } from "react";
-import Link from "next/link";
 import { useAvailability } from "@/hooks/useAvailability";
-import HelpButton from "@/components/HelpButton";
+import { KartenRaster, WerkzeugKarte, type Werkzeug } from "@/components/WerkzeugKarte";
 import { ToolSuche, passtZurSuche } from "@/components/ToolSuche";
 import { RequireAccount } from "@/components/RequireAccount";
 import { StandaloneDownload } from "@/components/StandaloneDownload";
@@ -12,7 +11,7 @@ import { useAdminAccess } from "@/hooks/useAdminAccess";
 import { FachEditor, FachFilter, FachSchild } from "@/components/Faecher";
 import { alleFaecher, faecherFuer, istVonHand, passtZumFach } from "@/lib/faecher";
 
-const ALL_CARDS: { slug: string; href: string; icon: string; title: string; description: string; color: string }[] = [
+const ALL_CARDS: Werkzeug[] = [
   {
     slug: "gleichungswaage",
     href: "/simulationen/gleichungswaage",
@@ -284,55 +283,25 @@ export default function SimulationenPage() {
         )}
       </div>
 
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-4">
-        {CARDS.map(card => {
-          const inhalt = (
-            <>
-              <HelpButton slug={card.slug} className="absolute top-3 right-3" />
-              <div className="flex items-center gap-3">
-                <span style={{
-                  fontSize: 40, lineHeight: 1,
-                  filter: `drop-shadow(0 2px 6px ${card.color}66)`,
-                }}>
-                  {card.icon}
-                </span>
-                <div>
-                  <div className="font-black text-lg" style={{ color: card.color }}>
-                    {card.title}
-                  </div>
-                  <div className="text-xs text-muted">→ öffnen</div>
-                </div>
-              </div>
-              <p className="text-sm text-muted leading-relaxed">
-                {card.description}
-              </p>
-              {bearbeiten ? (
-                <FachEditor faecher={card.faecher} vonHand={istVonHand(card.slug, vonHand)} vorschlaege={ALLE_FAECHER}
-                  beschaeftigt={setzen.isPending}
-                  speichern={f => setzen.mutate({ slug: card.slug, faecher: f })}
-                  zuruecksetzen={() => setzen.mutate({ slug: card.slug, faecher: null })} />
-              ) : card.faecher.length > 0 && (
-                <div className="flex flex-wrap gap-1">
-                  {card.faecher.map(f => (
-                    <FachSchild key={f} name={f} aktiv={faecherFilter.includes(f)} onClick={() => nurDieses(f)} />
-                  ))}
-                </div>
-              )}
-            </>
-          );
-          const stil = `group relative flex flex-col gap-4 p-6 rounded-2xl border border-line
-              bg-surface transition-all`;
+      <KartenRaster>
+        {CARDS.map(card => (
           // Beim Bearbeiten keine Links — sonst öffnet jeder Klick ins Eingabefeld die Simulation.
-          return bearbeiten ? (
-            <div key={card.href} className={stil}>{inhalt}</div>
-          ) : (
-            <Link key={card.href} href={card.href}
-              className={`${stil} hover:bg-surface-hover hover:border-accent hover:shadow-lg`}>
-              {inhalt}
-            </Link>
-          );
-        })}
-      </div>
+          <WerkzeugKarte key={card.href} karte={card} link={!bearbeiten}>
+            {bearbeiten ? (
+              <FachEditor faecher={card.faecher} vonHand={istVonHand(card.slug, vonHand)} vorschlaege={ALLE_FAECHER}
+                beschaeftigt={setzen.isPending}
+                speichern={f => setzen.mutate({ slug: card.slug, faecher: f })}
+                zuruecksetzen={() => setzen.mutate({ slug: card.slug, faecher: null })} />
+            ) : card.faecher.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {card.faecher.map(f => (
+                  <FachSchild key={f} name={f} aktiv={faecherFilter.includes(f)} onClick={() => nurDieses(f)} />
+                ))}
+              </div>
+            )}
+          </WerkzeugKarte>
+        ))}
+      </KartenRaster>
 
       <StandaloneDownload name="simulationen" />
     </div>

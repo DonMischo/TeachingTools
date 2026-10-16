@@ -30,6 +30,7 @@ import { FensterSymbol, KnopfImText } from "./windows/FensterSymbol";
 import { Stufenkopf } from "./Stufenkopf";
 import { Taste } from "./Taste";
 import { DemoBuehne, mitte, useDemo, type DemoSchritt } from "./Demo";
+import { Hinweiszeile } from "./aufgabenStufe";
 
 type AufgabeId =
   | "maximieren" | "wiederherstellen" | "minimieren" | "zurueckholen"
@@ -397,10 +398,7 @@ export default function StufeFenster({
         ))}
       </ul>
 
-      <div className="min-h-6 text-center text-sm font-bold" aria-live="polite"
-        style={{ color: hinweis?.gut ? "var(--green, #16a34a)" : "var(--text-muted)" }}>
-        {hinweis?.text ?? altTabHinweisText}
-      </div>
+      <Hinweiszeile hinweis={hinweis} ersatz={altTabHinweisText} />
 
       <WindowsDesktop
         aussehen={aussehen}

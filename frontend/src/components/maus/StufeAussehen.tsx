@@ -4,8 +4,9 @@
  * Akzentfarbe ändern — alles bezogen auf das Aussehen, das beim Start der
  * Stufe galt, damit jede Aufgabe eine echte Änderung verlangt.
  */
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Stufenkopf } from "./Stufenkopf";
+import { Hinweiszeile, useAufgabenStufe } from "./aufgabenStufe";
 import { DemoBuehne, mitte, useDemo, type DemoSchritt } from "./Demo";
 import { useMausKontext } from "./MausKontext";
 import { useWindows } from "./windows/WindowsKontext";
@@ -15,7 +16,6 @@ import { Einstellungen } from "./windows/Einstellungen";
 import { AKZENTE, HINTERGRUENDE, type Aussehen, type EinstellungId } from "@/lib/maus/windows";
 import { gegenModus, zielAkzent, zielHintergrund } from "@/lib/maus/einstellungen";
 import type { StufenErgebnis } from "@/lib/maus/ergebnis";
-import { wertung } from "@/lib/maus/wertung";
 
 const ANZAHL_AUFGABEN = 4;
 
@@ -25,21 +25,14 @@ export default function StufeAussehen({
   const { hilfe } = useMausKontext();
   const { aussehen, setAussehen, benutzer } = useWindows();
 
-  const start = useRef(performance.now());
   const startAussehen = useRef<Aussehen>(aussehen);
   const zielHG = useRef(zielHintergrund(startAussehen.current));
   const zielDunkel = useRef(gegenModus(startAussehen.current));
   const zielAK = useRef(zielAkzent(startAussehen.current));
 
-  const [schritt, setSchritt] = useState(0);
-  const [fehler, setFehler] = useState(0);
+  const { schritt, setSchritt, setFehler, hinweis, wechselt, fertig, weiterMit, punkte } = useAufgabenStufe("aussehen", ANZAHL_AUFGABEN, onFertig);
   const [fensterOffen, setFensterOffen] = useState(false);
   const [seite, setSeite] = useState<EinstellungId>("hintergrund");
-  const [hinweis, setHinweis] = useState<{ text: string; gut: boolean } | null>(null);
-  const gemeldet = useRef(false);
-  // Zwischen »richtig« und dem nächsten Schritt zählt kein zweiter Treffer —
-  // sonst übersprängen zwei schnelle Klicks eine Aufgabe.
-  const wechselt = useRef(false);
   const rahmenRef = useRef<HTMLDivElement>(null);
   const einstellungenRef = useRef<HTMLDivElement>(null);
 
@@ -54,18 +47,6 @@ export default function StufeAussehen({
     }
   });
 
-  const fertig = schritt >= ANZAHL_AUFGABEN;
-
-  useEffect(() => {
-    if (fertig && !gemeldet.current) {
-      gemeldet.current = true;
-      const dauerMs = Math.round(performance.now() - start.current);
-      const { punkte, details } = wertung({ stufe: "aussehen", geloest: ANZAHL_AUFGABEN, anzahl: ANZAHL_AUFGABEN, dauerMs, fehler });
-      onFertig({ punkte, dauerMs, details });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fertig]);
-
   function oeffnen() {
     if (demo.aktiv) return;
     setFensterOffen(true);
@@ -75,14 +56,6 @@ export default function StufeAussehen({
 
   function schliessen() {
     setFensterOffen(false);
-  }
-
-  function weiterMit(gut: boolean, text: string) {
-    if (wechselt.current) return;
-    setHinweis({ text, gut });
-    if (!gut) return;
-    wechselt.current = true;
-    setTimeout(() => { setHinweis(null); setSchritt(s => s + 1); wechselt.current = false; }, 700);
   }
 
   function aufAuswahl(feld: keyof Aussehen, wert: unknown) {
@@ -147,19 +120,13 @@ export default function StufeAussehen({
       <Stufenkopf
         titel="🎨 Teil 3 · Hintergrund & Farben"
         auftrag={fertig ? <>Alles geschafft — dein Windows sieht jetzt anders aus!</> : aufgabenTexte[schritt]}
-        punkte={wertung({
-          stufe: "aussehen", geloest: Math.min(schritt, ANZAHL_AUFGABEN), anzahl: ANZAHL_AUFGABEN,
-          dauerMs: performance.now() - start.current, fehler,
-        }).punkte}
+        punkte={punkte()}
         onDemo={fertig ? undefined : vorfuehren}
         onWeiter={onWeiter}
         hervor={fertig}
       />
 
-      <div className="min-h-6 text-center text-sm font-bold" aria-live="polite"
-        style={{ color: hinweis?.gut ? "var(--green, #16a34a)" : "var(--text-muted)" }}>
-        {hinweis?.text}
-      </div>
+      <Hinweiszeile hinweis={hinweis} />
 
       <WindowsDesktop
         aussehen={aussehen}

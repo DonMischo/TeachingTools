@@ -22,6 +22,7 @@ import { wertung } from "@/lib/maus/wertung";
 import { Stufenkopf } from "./Stufenkopf";
 import { DemoBuehne, mitte, useDemo, type DemoSchritt } from "./Demo";
 import { useMausKontext } from "./MausKontext";
+import { Hinweiszeile } from "./aufgabenStufe";
 
 type Hinweis = { text: string; gut: boolean } | null;
 
@@ -254,10 +255,7 @@ export default function StufeApps({
         hervor={fertigAlles}
       />
 
-      <div className="min-h-6 text-center text-sm font-bold" aria-live="polite"
-        style={{ color: hinweis?.gut ? "var(--green, #16a34a)" : "var(--text-muted)" }}>
-        {hinweis?.text}
-      </div>
+      <Hinweiszeile hinweis={hinweis} />
 
       {!fertigAlles && runde === 0 && (
         <>

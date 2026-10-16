@@ -6,8 +6,9 @@
  * Die Anmeldung kommt ohne Passwortfeld aus — Kinder sollen in einer Übung
  * nie ein echtes Passwort eintippen.
  */
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Stufenkopf } from "./Stufenkopf";
+import { Hinweiszeile, useAufgabenStufe } from "./aufgabenStufe";
 import { DemoBuehne, mitte, useDemo, type DemoSchritt } from "./Demo";
 import { useMausKontext } from "./MausKontext";
 import { useWindows } from "./windows/WindowsKontext";
@@ -21,7 +22,6 @@ import { begruessungGeaendert, zielProfilTier } from "@/lib/maus/einstellungen";
 import { startAngeheftet } from "@/lib/maus/taskleiste";
 import { TIERNAMEN, tierName } from "@/lib/maus/tiere";
 import type { StufenErgebnis } from "@/lib/maus/ergebnis";
-import { wertung } from "@/lib/maus/wertung";
 
 const ANZAHL_AUFGABEN = 4;
 const AUFGABEN = ["Profilbild", "Sperrbild", "Begrüßung", "Sperren & anmelden"];
@@ -32,20 +32,15 @@ export default function StufeProfil({
   const { hilfe } = useMausKontext();
   const { aussehen, setAussehen, benutzer } = useWindows();
 
-  const start = useRef(performance.now());
   const startAussehen = useRef<Aussehen>(aussehen);
   const zielTier = useRef(zielProfilTier(startAussehen.current, avatar, Object.keys(TIERNAMEN)));
 
-  const [schritt, setSchritt] = useState(0);
-  const [fehler, setFehler] = useState(0);
+  const { schritt, setFehler, hinweis, setHinweis, wechselt, fertig, weiterMit, punkte } = useAufgabenStufe("profil", ANZAHL_AUFGABEN, onFertig);
   const [fensterOffen, setFensterOffen] = useState(false);
   const [startOffen, setStartOffen] = useState(false);
   const [suchText, setSuchText] = useState("");
   const [gesperrt, setGesperrt] = useState(false);
   const [seite, setSeite] = useState<EinstellungId>("konto");
-  const [hinweis, setHinweis] = useState<{ text: string; gut: boolean } | null>(null);
-  const gemeldet = useRef(false);
-  const wechselt = useRef(false);
   const rahmenRef = useRef<HTMLDivElement>(null);
   const einstellungenRef = useRef<HTMLDivElement>(null);
 
@@ -59,26 +54,6 @@ export default function StufeProfil({
     setGesperrt(vorDemo.current.gesperrt);
     vorDemo.current = null;
   });
-
-  const fertig = schritt >= ANZAHL_AUFGABEN;
-
-  useEffect(() => {
-    if (fertig && !gemeldet.current) {
-      gemeldet.current = true;
-      const dauerMs = Math.round(performance.now() - start.current);
-      const { punkte, details } = wertung({ stufe: "profil", geloest: ANZAHL_AUFGABEN, anzahl: ANZAHL_AUFGABEN, dauerMs, fehler });
-      onFertig({ punkte, dauerMs, details });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fertig]);
-
-  function weiterMit(gut: boolean, text: string) {
-    if (wechselt.current) return;
-    setHinweis({ text, gut });
-    if (!gut) return;
-    wechselt.current = true;
-    setTimeout(() => { setHinweis(null); setSchritt(s => s + 1); wechselt.current = false; }, 700);
-  }
 
   function aufAuswahl(feld: keyof Aussehen, wert: unknown) {
     if (demo.aktiv || fertig || wechselt.current) return;
@@ -173,10 +148,7 @@ export default function StufeProfil({
       <Stufenkopf
         titel="🔒 Teil 3 · Profil & Sperrbildschirm"
         auftrag={fertig ? <>Klasse — das ist jetzt wirklich dein Computer!</> : aufgabenTexte[schritt]}
-        punkte={wertung({
-          stufe: "profil", geloest: Math.min(schritt, ANZAHL_AUFGABEN), anzahl: ANZAHL_AUFGABEN,
-          dauerMs: performance.now() - start.current, fehler,
-        }).punkte}
+        punkte={punkte()}
         onDemo={fertig ? undefined : vorfuehren}
         onWeiter={onWeiter}
         hervor={fertig}
@@ -190,10 +162,7 @@ export default function StufeProfil({
         ))}
       </ul>
 
-      <div className="min-h-6 text-center text-sm font-bold" aria-live="polite"
-        style={{ color: hinweis?.gut ? "var(--green, #16a34a)" : "var(--text-muted)" }}>
-        {hinweis?.text}
-      </div>
+      <Hinweiszeile hinweis={hinweis} />
 
       <WindowsDesktop
         aussehen={aussehen}

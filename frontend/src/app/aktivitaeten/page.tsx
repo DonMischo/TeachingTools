@@ -1,11 +1,10 @@
 "use client";
 import { useState } from "react";
-import Link from "next/link";
 import { useAvailability } from "@/hooks/useAvailability";
-import HelpButton from "@/components/HelpButton";
+import { KartenRaster, WerkzeugKarte, type Werkzeug } from "@/components/WerkzeugKarte";
 import { ToolSuche, passtZurSuche } from "@/components/ToolSuche";
 
-const ALL_CARDS: { slug: string; href: string; icon: string; title: string; description: string; color: string }[] = [
+const ALL_CARDS: Werkzeug[] = [
   {
     slug: "caputh",
     href: "/aktivitaeten/caputh",
@@ -88,36 +87,9 @@ export default function AktivitaetenPage() {
 
       <ToolSuche wert={suche} setzen={setSuche} treffer={CARDS.length} gesamt={ERLAUBT.length} />
 
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-4">
-        {CARDS.map(card => (
-          <Link
-            key={card.href}
-            href={card.href}
-            className="group relative flex flex-col gap-4 p-6 rounded-2xl border border-line
-              bg-surface hover:bg-surface-hover transition-all
-              hover:border-accent hover:shadow-lg"
-          >
-            <HelpButton slug={card.slug} className="absolute top-3 right-3" />
-            <div className="flex items-center gap-3">
-              <span style={{
-                fontSize: 40, lineHeight: 1,
-                filter: `drop-shadow(0 2px 6px ${card.color}66)`,
-              }}>
-                {card.icon}
-              </span>
-              <div>
-                <div className="font-black text-lg" style={{ color: card.color }}>
-                  {card.title}
-                </div>
-                <div className="text-xs text-muted">→ öffnen</div>
-              </div>
-            </div>
-            <p className="text-sm text-muted leading-relaxed">
-              {card.description}
-            </p>
-          </Link>
-        ))}
-      </div>
+      <KartenRaster>
+        {CARDS.map(card => <WerkzeugKarte key={card.href} karte={card} />)}
+      </KartenRaster>
     </div>
   );
 }

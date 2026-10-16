@@ -9,6 +9,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { Stufenkopf } from "./Stufenkopf";
+import { Hinweiszeile, useAufgabenStufe } from "./aufgabenStufe";
 import { DemoBuehne, mitte, useDemo, type DemoSchritt } from "./Demo";
 import { Kontextmenue, type Eintrag } from "./Kontextmenue";
 import { useMausKontext } from "./MausKontext";
@@ -23,7 +24,6 @@ import {
   startAngeheftet, zielAnheften, zielAusrichtung, zielLoesen,
 } from "@/lib/maus/taskleiste";
 import type { StufenErgebnis } from "@/lib/maus/ergebnis";
-import { wertung } from "@/lib/maus/wertung";
 
 const ANZAHL_AUFGABEN = 4;
 const AUFGABEN = ["App anheften", "App lösen", "Taskleiste ausrichten", "Desktop sortieren"];
@@ -42,23 +42,18 @@ export default function StufeTaskleiste({
   const { hilfe } = useMausKontext();
   const { aussehen, setAussehen, benutzer } = useWindows();
 
-  const start = useRef(performance.now());
   const startAussehen = useRef<Aussehen>(aussehen);
   // Sind wirklich schon alle Apps angeheftet, wird Paint zu Beginn gelöst.
   const zielAn = useRef<AppId>(zielAnheften(startAussehen.current) ?? "paint");
   const zielLos = useRef<AppId>(zielLoesen(startAussehen.current) ?? "word");
   const zielAusr = useRef(zielAusrichtung(startAussehen.current));
 
-  const [schritt, setSchritt] = useState(0);
-  const [fehler, setFehler] = useState(0);
+  const { schritt, setFehler, hinweis, setHinweis, wechselt, fertig, weiterMit, punkte } = useAufgabenStufe("taskleiste", ANZAHL_AUFGABEN, onFertig);
   const [fensterOffen, setFensterOffen] = useState(false);
   const [startOffen, setStartOffen] = useState(false);
   const [suchText, setSuchText] = useState("");
   const [seite, setSeite] = useState<EinstellungId>("taskleiste");
   const [menue, setMenue] = useState<Menue | null>(null);
-  const [hinweis, setHinweis] = useState<{ text: string; gut: boolean } | null>(null);
-  const gemeldet = useRef(false);
-  const wechselt = useRef(false);
   const rahmenRef = useRef<HTMLDivElement>(null);
   const einstellungenRef = useRef<HTMLDivElement>(null);
 
@@ -86,26 +81,6 @@ export default function StufeTaskleiste({
     setMenue(null);
     vorDemo.current = null;
   });
-
-  const fertig = schritt >= ANZAHL_AUFGABEN;
-
-  useEffect(() => {
-    if (fertig && !gemeldet.current) {
-      gemeldet.current = true;
-      const dauerMs = Math.round(performance.now() - start.current);
-      const { punkte, details } = wertung({ stufe: "taskleiste", geloest: ANZAHL_AUFGABEN, anzahl: ANZAHL_AUFGABEN, dauerMs, fehler });
-      onFertig({ punkte, dauerMs, details });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fertig]);
-
-  function weiterMit(gut: boolean, text: string) {
-    if (wechselt.current) return;
-    setHinweis({ text, gut });
-    if (!gut) return;
-    wechselt.current = true;
-    setTimeout(() => { setHinweis(null); setSchritt(s => s + 1); wechselt.current = false; }, 700);
-  }
 
   function falsch(text: string) {
     setFehler(f => f + 1);
@@ -248,10 +223,7 @@ export default function StufeTaskleiste({
       <Stufenkopf
         titel="📌 Teil 3 · Taskleiste & Start"
         auftrag={fertig ? <>Super — Taskleiste und Desktop sind jetzt so, wie du sie willst!</> : aufgabenTexte[schritt]}
-        punkte={wertung({
-          stufe: "taskleiste", geloest: Math.min(schritt, ANZAHL_AUFGABEN), anzahl: ANZAHL_AUFGABEN,
-          dauerMs: performance.now() - start.current, fehler,
-        }).punkte}
+        punkte={punkte()}
         onDemo={fertig ? undefined : vorfuehren}
         onWeiter={onWeiter}
         hervor={fertig}
@@ -265,10 +237,7 @@ export default function StufeTaskleiste({
         ))}
       </ul>
 
-      <div className="min-h-6 text-center text-sm font-bold" aria-live="polite"
-        style={{ color: hinweis?.gut ? "var(--green, #16a34a)" : "var(--text-muted)" }}>
-        {hinweis?.text}
-      </div>
+      <Hinweiszeile hinweis={hinweis} />
 
       <WindowsDesktop
         aussehen={aussehen}

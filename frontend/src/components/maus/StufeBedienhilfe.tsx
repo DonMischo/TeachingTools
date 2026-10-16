@@ -5,6 +5,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { Stufenkopf } from "./Stufenkopf";
+import { Hinweiszeile, useAufgabenStufe } from "./aufgabenStufe";
 import { DemoBuehne, mitte, useDemo, type DemoSchritt } from "./Demo";
 import { useMausKontext } from "./MausKontext";
 import { useWindows } from "./windows/WindowsKontext";
@@ -14,7 +15,6 @@ import { Einstellungen } from "./windows/Einstellungen";
 import { type Aussehen, type EinstellungId, type ZeigerFarbe } from "@/lib/maus/windows";
 import { zeigerFarbeGewaehlt, zeigerGroesseGenug, zielZeigerFarbe } from "@/lib/maus/einstellungen";
 import type { StufenErgebnis } from "@/lib/maus/ergebnis";
-import { wertung } from "@/lib/maus/wertung";
 
 const ANZAHL_AUFGABEN = 3;
 const ZEIGER_NAME: Record<ZeigerFarbe, string> = { weiss: "Weiß", schwarz: "Schwarz", gelb: "Gelb", bunt: "Bunt" };
@@ -25,16 +25,12 @@ export default function StufeBedienhilfe({
   const { hilfe } = useMausKontext();
   const { aussehen, setAussehen, benutzer } = useWindows();
 
-  const start = useRef(performance.now());
   const startGroesse = useRef(aussehen.zeigerGroesse);
   const zielFarbe = useRef(zielZeigerFarbe(aussehen));
 
-  const [schritt, setSchritt] = useState(0);
-  const [fehler, setFehler] = useState(0);
+  const { schritt, setFehler, hinweis, fertig, weiterMit, punkte } = useAufgabenStufe("bedienhilfe", ANZAHL_AUFGABEN, onFertig);
   const [fensterOffen, setFensterOffen] = useState(false);
   const [seite, setSeite] = useState<EinstellungId>("mauszeiger");
-  const [hinweis, setHinweis] = useState<{ text: string; gut: boolean } | null>(null);
-  const gemeldet = useRef(false);
   const rahmenRef = useRef<HTMLDivElement>(null);
   const einstellungenRef = useRef<HTMLDivElement>(null);
 
@@ -47,18 +43,6 @@ export default function StufeBedienhilfe({
     vorDemo.current = null;
   });
 
-  const fertig = schritt >= ANZAHL_AUFGABEN;
-
-  useEffect(() => {
-    if (fertig && !gemeldet.current) {
-      gemeldet.current = true;
-      const dauerMs = Math.round(performance.now() - start.current);
-      const { punkte, details } = wertung({ stufe: "bedienhilfe", geloest: ANZAHL_AUFGABEN, anzahl: ANZAHL_AUFGABEN, dauerMs, fehler });
-      onFertig({ punkte, dauerMs, details });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fertig]);
-
   function oeffnen() {
     if (demo.aktiv) return;
     setFensterOffen(true);
@@ -67,16 +51,6 @@ export default function StufeBedienhilfe({
 
   function schliessen() {
     setFensterOffen(false);
-  }
-
-  // Zwischen »richtig« und dem nächsten Schritt zählt kein zweiter Treffer.
-  const wechselt = useRef(false);
-  function weiterMit(gut: boolean, text: string) {
-    if (wechselt.current) return;
-    setHinweis({ text, gut });
-    if (!gut) return;
-    wechselt.current = true;
-    setTimeout(() => { setHinweis(null); setSchritt(s => s + 1); wechselt.current = false; }, 700);
   }
 
   // Zeigergröße/-farbe wirken sofort auf `aussehen` — hier reicht ein Effekt
@@ -137,19 +111,13 @@ export default function StufeBedienhilfe({
       <Stufenkopf
         titel="🔎 Teil 3 · Zeiger & Text"
         auftrag={fertig ? <>Klasse — Zeiger und Text sind jetzt viel besser zu sehen!</> : aufgabenTexte[schritt]}
-        punkte={wertung({
-          stufe: "bedienhilfe", geloest: Math.min(schritt, ANZAHL_AUFGABEN), anzahl: ANZAHL_AUFGABEN,
-          dauerMs: performance.now() - start.current, fehler,
-        }).punkte}
+        punkte={punkte()}
         onDemo={fertig ? undefined : vorfuehren}
         onWeiter={onWeiter}
         hervor={fertig}
       />
 
-      <div className="min-h-6 text-center text-sm font-bold" aria-live="polite"
-        style={{ color: hinweis?.gut ? "var(--green, #16a34a)" : "var(--text-muted)" }}>
-        {hinweis?.text}
-      </div>
+      <Hinweiszeile hinweis={hinweis} />
 
       <WindowsDesktop
         aussehen={aussehen}

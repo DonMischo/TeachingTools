@@ -10,10 +10,10 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminAccess } from "@/hooks/useAdminAccess";
 import { useToast } from "@/contexts/ToastContext";
+import { ImportDiffTable, FIELD_LABELS, type Filter } from "@/components/admin/ImportDiffTable";
 
 type UserType = "student" | "teacher" | "admin";
 type ResetType = "student" | "teacher";
-type Filter = "all" | "new" | "update";
 
 const TYPE_LABEL: Record<UserType, string> = {
   student: "Schüler:in",
@@ -33,25 +33,6 @@ function Hint({ text }: { text: string }) {
       <span className="absolute left-5 top-0 z-50 hidden group-hover:block w-72 bg-surface border border-line rounded-xl p-3 text-xs text-muted shadow-lg leading-relaxed">
         {text}
       </span>
-    </span>
-  );
-}
-
-const ACTION_LABEL: Record<string, string> = { new: "NEU", update: "GEÄNDERT", unchanged: "–" };
-const ACTION_COLOR: Record<string, string> = {
-  new: "bg-green-900/40 text-green-300",
-  update: "bg-yellow-900/40 text-yellow-300",
-  unchanged: "text-muted",
-};
-const FIELD_LABELS: Record<string, string> = { nummer: "Nr.", email: "E-Mail", klasse: "Klasse", role: "Rolle", geschlecht: "Geschl.", geburtsdatum: "Geb." };
-
-function FieldDiff({ field, csvVal, dbVal }: { field: string; csvVal: string; dbVal: string | undefined }) {
-  const label = FIELD_LABELS[field] ?? field;
-  return (
-    <span className="inline-flex items-center gap-1 text-xs bg-page rounded-sm px-1.5 py-0.5 mr-1 mb-1">
-      <span className="text-muted">{label}:</span>
-      {dbVal ? <><span className="line-through opacity-50">{dbVal}</span><span>→</span></> : null}
-      <span className="text-accent">{csvVal || "(leer)"}</span>
     </span>
   );
 }
@@ -235,65 +216,12 @@ function StudentImportSection() {
 
       {preview?.mode === "roster" && (
         <div className="flex flex-col gap-3">
-          <div className="flex items-start justify-between flex-wrap gap-3">
-            <p className="text-xs text-muted">
+          <ImportDiffTable rows={visibleRows} filter={filter} setFilter={setFilter}
+            selected={selected} setSelected={setSelected} toggleRow={toggleRow} newLabel="Neuer Schüler"
+            summary={<>
               {preview.summary.new} neu · {preview.summary.update} geändert · {preview.summary.unchanged} unverändert · {preview.summary.absent} nicht in der Liste
               {preview.extra_columns.length > 0 && <> · Zusatzfelder: {preview.extra_columns.join(", ")}</>}
-            </p>
-            <div className="flex gap-2 flex-wrap">
-              {(["all", "new", "update"] as Filter[]).map(f => (
-                <button key={f} onClick={() => setFilter(f)}
-                  className={`text-xs px-3 py-1 rounded-full border transition-colors ${
-                    filter === f ? "bg-accent text-accent-fg border-transparent" : "border-line hover:border-accent"
-                  }`}>
-                  {f === "all" ? "Alle" : f === "new" ? "Nur neu" : "Nur geändert"}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="flex gap-3 text-xs">
-            <button onClick={() => setSelected(new Set(visibleRows.map(r => r.key)))} className="underline opacity-70 hover:opacity-100">Alle auswählen</button>
-            <button onClick={() => setSelected(new Set())} className="underline opacity-70 hover:opacity-100">Keine</button>
-            <span className="opacity-50">{selected.size} ausgewählt</span>
-          </div>
-          <div className="overflow-x-auto max-h-[50vh] overflow-y-auto rounded-lg border border-line">
-            <table className="w-full text-xs border-collapse">
-              <thead className="sticky top-0 bg-surface z-10">
-                <tr className="border-b border-line text-muted">
-                  <th className="w-8 py-2 px-2"></th>
-                  <th className="text-left py-2 px-2 w-24">Status</th>
-                  <th className="text-left py-2 px-2">Nachname</th>
-                  <th className="text-left py-2 px-2">Vorname</th>
-                  <th className="text-left py-2 px-2">Klasse</th>
-                  <th className="text-left py-2 px-2">Änderungen</th>
-                </tr>
-              </thead>
-              <tbody>
-                {visibleRows.map((row) => (
-                  <tr key={row.key} onClick={() => toggleRow(row.key)}
-                    className={`border-b border-line/40 cursor-pointer transition-colors hover:bg-surface-hover ${selected.has(row.key) ? "bg-accent/5" : ""}`}>
-                    <td className="py-1.5 px-2 text-center">
-                      <input type="checkbox" checked={selected.has(row.key)} onChange={() => toggleRow(row.key)} onClick={e => e.stopPropagation()} className="accent-accent" />
-                    </td>
-                    <td className="py-1.5 px-2">
-                      <span className={`inline-block rounded-sm px-1.5 py-0.5 font-mono font-bold text-[10px] ${ACTION_COLOR[row.action]}`}>{ACTION_LABEL[row.action]}</span>
-                    </td>
-                    <td className="py-1.5 px-2 font-medium">{row.csv_data.nachname}</td>
-                    <td className="py-1.5 px-2">{row.csv_data.vorname}</td>
-                    <td className="py-1.5 px-2 font-mono">{row.csv_data.klasse || "–"}</td>
-                    <td className="py-1.5 px-2">
-                      {row.action === "new" ? <span className="opacity-50 italic">Neuer Schüler</span>
-                        : row.changed_fields.length > 0 ? (
-                          <div className="flex flex-wrap">
-                            {row.changed_fields.map(f => <FieldDiff key={f} field={f} csvVal={row.csv_data[f] ?? ""} dbVal={row.db_data?.[f]} />)}
-                          </div>
-                        ) : <span className="opacity-30">–</span>}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+            </>} />
 
           {preview.absent.length > 0 && (
             <div className="flex flex-col gap-2">
@@ -948,66 +876,10 @@ export default function AdminUsersPage() {
 
         {preview && (
           <div className="flex flex-col gap-3">
-            <div className="flex items-start justify-between flex-wrap gap-3">
-              <p className="text-xs text-muted">
-                {preview.summary.new} neu · {preview.summary.update} geändert · {preview.summary.unchanged} unverändert
-              </p>
-              <div className="flex gap-2 flex-wrap">
-                {(["all", "new", "update"] as Filter[]).map(f => (
-                  <button key={f} onClick={() => setFilter(f)}
-                    className={`text-xs px-3 py-1 rounded-full border transition-colors ${
-                      filter === f ? "bg-accent text-accent-fg border-transparent" : "border-line hover:border-accent"
-                    }`}>
-                    {f === "all" ? "Alle" : f === "new" ? "Nur neu" : "Nur geändert"}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="flex gap-3 text-xs">
-              <button onClick={() => setSelected(new Set(visibleRows.map(r => r.key)))} className="underline opacity-70 hover:opacity-100">Alle auswählen</button>
-              <button onClick={() => setSelected(new Set())} className="underline opacity-70 hover:opacity-100">Keine</button>
-              <span className="opacity-50">{selected.size} ausgewählt</span>
-            </div>
-            <div className="overflow-x-auto max-h-[50vh] overflow-y-auto rounded-lg border border-line">
-              <table className="w-full text-xs border-collapse">
-                <thead className="sticky top-0 bg-surface z-10">
-                  <tr className="border-b border-line text-muted">
-                    <th className="w-8 py-2 px-2"></th>
-                    <th className="text-left py-2 px-2 w-24">Status</th>
-                    <th className="text-left py-2 px-2">Nachname</th>
-                    <th className="text-left py-2 px-2">Vorname</th>
-                    <th className="text-left py-2 px-2">Klasse</th>
-                    <th className="text-left py-2 px-2">Rolle</th>
-                    <th className="text-left py-2 px-2">Änderungen</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {visibleRows.map((row) => (
-                    <tr key={row.key} onClick={() => toggleRow(row.key)}
-                      className={`border-b border-line/40 cursor-pointer transition-colors hover:bg-surface-hover ${selected.has(row.key) ? "bg-accent/5" : ""}`}>
-                      <td className="py-1.5 px-2 text-center">
-                        <input type="checkbox" checked={selected.has(row.key)} onChange={() => toggleRow(row.key)} onClick={e => e.stopPropagation()} className="accent-accent" />
-                      </td>
-                      <td className="py-1.5 px-2">
-                        <span className={`inline-block rounded-sm px-1.5 py-0.5 font-mono font-bold text-[10px] ${ACTION_COLOR[row.action]}`}>{ACTION_LABEL[row.action]}</span>
-                      </td>
-                      <td className="py-1.5 px-2 font-medium">{row.csv_data.nachname}</td>
-                      <td className="py-1.5 px-2">{row.csv_data.vorname}</td>
-                      <td className="py-1.5 px-2 font-mono">{row.csv_data.klasse || "–"}</td>
-                      <td className="py-1.5 px-2">{row.csv_data.role || "Lehrer"}</td>
-                      <td className="py-1.5 px-2">
-                        {row.action === "new" ? <span className="opacity-50 italic">Neue Lehrkraft</span>
-                          : row.changed_fields.length > 0 ? (
-                            <div className="flex flex-wrap">
-                              {row.changed_fields.map(f => <FieldDiff key={f} field={f} csvVal={row.csv_data[f] ?? ""} dbVal={row.db_data?.[f]} />)}
-                            </div>
-                          ) : <span className="opacity-30">–</span>}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <ImportDiffTable rows={visibleRows} filter={filter} setFilter={setFilter}
+              selected={selected} setSelected={setSelected} toggleRow={toggleRow} newLabel="Neue Lehrkraft"
+              extra={{ header: "Rolle", cell: r => r.csv_data.role || "Lehrer" }}
+              summary={<>{preview.summary.new} neu · {preview.summary.update} geändert · {preview.summary.unchanged} unverändert</>} />
             <div className="flex items-center gap-4">
               <button onClick={() => applyMut.mutate()} disabled={applyMut.isPending || selected.size === 0} className="btn-primary text-sm py-2 px-5">
                 {applyMut.isPending ? "Übernehme…" : `✓ ${selected.size} Änderung${selected.size !== 1 ? "en" : ""} übernehmen`}
