@@ -11,10 +11,11 @@ import { PixelMatrix } from "../pixel/Matrix";
 import { BestenlisteKnopf } from "../Bestenliste";
 import { Ablage, FaktKarte, Herzen, Inhalt, Treffermeldung } from "./teile";
 import { useSpielwert } from "@/lib/challenge/useSpielwert";
+import { wenigerBewegung } from "@/lib/challenge/bewegung";
 import { bauplaetze, laengsterPfad, markovKarte } from "@/lib/challenge/markovKarte";
 import {
   ausbauPreis, anfuehrerFaellt, kaufe, MAX_STUFE, neuerZustand, punkt, schritt, SPIELWERT_MAX, spielpunkte,
-  startWelle, TURM_DATEN, verbessere, welleMoeglich, type TurmArt,
+  startWelle, TURM_DATEN, verbessere, welleHp, welleMoeglich, zeitFaktor, type TurmArt,
 } from "@/lib/challenge/turmSpiel";
 
 const SCHWARM = ["..mmmm..", ".mmmmmm.", ".mwmmwm.", ".mkmmkm.", ".mmmmmm.", ".m.mm.m."];
@@ -48,9 +49,10 @@ export default function Turm({ brett, lauf, zurKarte }: ModusProps) {
   const offeneRef = useRef(offene);
   offeneRef.current = offene;
   const fakten = useMemo(() => new Map(brett.fakten.map((f) => [f.id, f])), [brett.fakten]);
-  const pausiert = !!aktiv;
+  const faktor = zeitFaktor(!!aktiv, wenigerBewegung());
+  const pausiert = faktor === 0;
 
-  // Spielschleife (pausiert beim Öffnen eines Anführers und bei verdecktem Tab)
+  // Spielschleife (Zeitschleife bei offener Frage, Stillstand bei reduzierter Bewegung und verdecktem Tab)
   useEffect(() => {
     if (pausiert) return;
     let id = 0, letzte = performance.now();
@@ -59,12 +61,12 @@ export default function Turm({ brett, lauf, zurKarte }: ModusProps) {
       letzte = t;
       const q = z.current;
       // Leerlauf (keine Gegner, Schüsse oder Welle in der Warteschlange): weder rechnen noch neu zeichnen
-      if (!document.hidden && (q.gegner.length || q.schuesse.length || q.warteschlange.length)) { schritt(q, pfad, plaetze, dt * tempo); setTakt((n) => n + 1); }
+      if (!document.hidden && (q.gegner.length || q.schuesse.length || q.warteschlange.length)) { schritt(q, pfad, plaetze, dt * tempo * faktor); setTakt((n) => n + 1); }
       id = requestAnimationFrame(lauf_);
     };
     id = requestAnimationFrame(lauf_);
     return () => cancelAnimationFrame(id);
-  }, [pausiert, tempo, pfad, plaetze]);
+  }, [pausiert, faktor, tempo, pfad, plaetze]);
 
   useSpielwert(lauf, "turm", brett.etappe, spielpunkte(z.current), SPIELWERT_MAX);
 
@@ -123,6 +125,12 @@ export default function Turm({ brett, lauf, zurKarte }: ModusProps) {
         </div>
       </div>
 
+      <div className="flex items-center gap-3 flex-wrap text-sm">
+        <span aria-label="Stärke">Stärke ×{welleHp(Math.max(1, s.welle)).toFixed(1)}</span>
+        {s.schwaeche > 0 && <span className="text-good font-bold" aria-label="Schwächung">Schwarm geschwächt −{Math.round(s.schwaeche * 100)} %</span>}
+        {faktor > 0 && faktor < 1 && <span className="font-bold" aria-label="Zeitschleife">⏳ Zeitschleife</span>}
+      </div>
+
       <div className="relative mx-auto w-full max-w-[640px] aspect-square rounded-lg overflow-hidden" role="group" aria-label="Schlachtfeld">
         <svg className="absolute inset-0 w-full h-full" viewBox={`0 0 ${R} ${R}`} aria-hidden>
           {feld}
@@ -130,6 +138,8 @@ export default function Turm({ brett, lauf, zurKarte }: ModusProps) {
             <line key={i} x1={sh.von[0]} y1={sh.von[1]} x2={sh.nach[0]} y2={sh.nach[1]} stroke={TURM_DATEN[sh.art].farbe} strokeWidth={sh.art === "kanone" ? 0.25 : 0.12} />
           ))}
         </svg>
+        {faktor > 0 && faktor < 1 && <div className="absolute inset-0 pointer-events-none bg-indigo-700/30 mix-blend-multiply" style={{ backdropFilter: "saturate(0.6)" }} aria-hidden />}
+        {s.blitz > 0 && <div className="absolute inset-0 pointer-events-none bg-white/30" aria-hidden><span className="absolute top-2 inset-x-0 text-center font-bold text-white drop-shadow">geschwächt!</span></div>}
         <span className="absolute -translate-x-1/2 -translate-y-1/2 text-2xl" style={pos([burg[0] + 0.5, burg[1] + 0.5])} aria-hidden>🏰</span>
         {plaetze.map((p, i) => {
           const t = s.tuerme.find((x) => x.platz === i);

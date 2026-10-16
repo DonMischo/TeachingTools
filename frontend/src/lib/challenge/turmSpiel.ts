@@ -1,13 +1,16 @@
 /** Spiellogik der Turmverteidigung (rein, ohne React): Wellen, Türme, Gold. Gegner laufen entlang eines Pfades (Index als Kommazahl). */
 
 export type TurmArt = "pfeil" | "kanone" | "magie";
-export type Gegner = { id: number; t: number; hp: number; max: number; tempo: number; bremse: number; anfuehrer?: string };
+export type Gegner = { id: number; t: number; hp: number; max: number; tempo: number; bremse: number; anfuehrer?: string; art?: GegnerArt };
+export type GegnerArt = "schwarm" | "schnell" | "panzer";
 export type Turm = { platz: number; art: TurmArt; stufe: number; kuehl: number };
 export type Schuss = { von: [number, number]; nach: [number, number]; art: TurmArt; ttl: number };
-type Eintrag = { at: number; hp: number; tempo: number; anfuehrer?: string };
+type Eintrag = { at: number; hp: number; tempo: number; anfuehrer?: string; art?: GegnerArt };
 export type Zustand = {
   gegner: Gegner[]; tuerme: Turm[]; schuesse: Schuss[]; gold: number; verdient: number; abschuesse: number;
   welle: number; burg: number; burgMax: number; uhr: number; warteschlange: Eintrag[]; naechsteId: number; meldung: string;
+  /** Schwächung künftiger Schwärme (0 bis SCHWAECHE_MAX); blitz = Sekunden Trefferblitz nach einem gefallenen Anführer */
+  schwaeche: number; blitz: number;
 };
 
 export const TURM_DATEN: Record<TurmArt, { name: string; emoji: string; preis: number; reichweite: number; schaden: number; tempo: number; farbe: string }> = {
@@ -18,10 +21,23 @@ export const TURM_DATEN: Record<TurmArt, { name: string; emoji: string; preis: n
 export const MAX_STUFE = 3;
 export const KILL_GOLD = 6;
 export const BONUS_GOLD = 40;
+/** Tempo der Simulation, solange eine Anführer-Frage offen ist */
+export const ZEITSCHLEIFE = 0.25;
+export const SCHWAECHE_JE_ANFUEHRER = 0.15;
+export const SCHWAECHE_MAX = 0.6;
+export const SOFORT_SCHADEN = 0.4;
+
+/** Zeitfaktor der Simulation: Frage offen = Zeitschleife (bei reduzierter Bewegung: Stillstand), sonst 1. */
+export const zeitFaktor = (frageOffen: boolean, reduziert: boolean) => (!frageOffen ? 1 : reduziert ? 0 : ZEITSCHLEIFE);
+
+/** Stärke der Welle (reine Spielschicht): Leben ×1,15 je Welle (bis ×4), Tempo +3 % je Welle (bis +60 %), Anzahl +1 alle 2 Wellen (bis 14). */
+export const welleHp = (welle: number) => Math.min(4, 1.15 ** Math.max(0, welle - 1));
+export const welleTempo = (welle: number) => Math.min(1.6, 1 + 0.03 * Math.max(0, welle - 1));
+export const welleAnzahl = (welle: number) => Math.min(14, 6 + Math.floor(Math.max(0, welle - 1) / 2));
 
 export const neuerZustand = (): Zustand => ({
   gegner: [], tuerme: [], schuesse: [], gold: 150, verdient: 0, abschuesse: 0, welle: 0, burg: 10, burgMax: 10,
-  uhr: 0, warteschlange: [], naechsteId: 1, meldung: "",
+  uhr: 0, warteschlange: [], naechsteId: 1, meldung: "", schwaeche: 0, blitz: 0,
 });
 
 export const ausbauPreis = (t: Turm) => 40 + 30 * t.stufe;
@@ -48,9 +64,15 @@ export function startWelle(z: Zustand, anfuehrer: string[] = []): void {
   z.welle += 1;
   z.burg = z.burgMax;
   z.uhr = 0;
-  const n = 5 + 2 * z.welle;
-  const hp = 2 + Math.floor(z.welle * 0.8);
-  for (let i = 0; i < n; i++) z.warteschlange.push({ at: i * 0.9, hp, tempo: 0.9 + (i % 3) * 0.08 });
+  const n = welleAnzahl(z.welle);
+  const hp0 = 2 * welleHp(z.welle) * (1 - z.schwaeche), tf = welleTempo(z.welle);
+  for (let i = 0; i < n; i++) {
+    // ab Welle 3: jeder 4. ein Schneller (halbes Leben, +40 % Tempo), jeder 5. ein Gepanzerter (doppeltes Leben, langsamer)
+    const art: GegnerArt = z.welle >= 3 && i % 4 === 3 ? "schnell" : z.welle >= 3 && i % 5 === 4 ? "panzer" : "schwarm";
+    const hp = Math.max(0.5, hp0 * (art === "schnell" ? 0.5 : art === "panzer" ? 2 : 1));
+    const tempo = (0.9 + (i % 3) * 0.08) * tf * (art === "schnell" ? 1.4 : art === "panzer" ? 0.8 : 1);
+    z.warteschlange.push({ at: i * 0.9, hp, tempo, art });
+  }
   anfuehrer.forEach((id, k) => z.warteschlange.push({ at: 1.5 + k * 3, hp: 1, tempo: 0.28, anfuehrer: id }));
   z.warteschlange.sort((a, b) => a.at - b.at);
   z.meldung = `Welle ${z.welle}`;
@@ -69,9 +91,10 @@ export function punkt(pfad: [number, number][], t: number): [number, number] {
 /** Ein Zeitschritt `dt` Sekunden. Anführer bleiben vor der Burg stehen und sind für Türme unverwundbar. */
 export function schritt(z: Zustand, pfad: [number, number][], plaetze: [number, number][], dt: number): void {
   z.uhr += dt;
+  z.blitz = Math.max(0, z.blitz - dt);
   while (z.warteschlange.length && z.warteschlange[0].at <= z.uhr) {
     const e = z.warteschlange.shift()!;
-    z.gegner.push({ id: z.naechsteId++, t: 0, hp: e.hp, max: e.hp, tempo: e.tempo, bremse: 0, anfuehrer: e.anfuehrer });
+    z.gegner.push({ id: z.naechsteId++, t: 0, hp: e.hp, max: e.hp, tempo: e.tempo, bremse: 0, anfuehrer: e.anfuehrer, art: e.art });
   }
   const ende = pfad.length - 1;
   for (const g of z.gegner) {
@@ -128,6 +151,15 @@ export function anfuehrerFaellt(z: Zustand, challengeId: string): void {
   z.warteschlange = z.warteschlange.filter((e) => e.anfuehrer !== challengeId);
   z.gold += BONUS_GOLD;
   z.verdient += BONUS_GOLD;
+  schwaecheAnwenden(z);
+}
+
+/** Gefallener Anführer schwächt den Schwarm: Gegner im Feld verlieren 40 % ihres aktuellen Lebens, künftige −15 % (gestapelt, höchstens −60 %). */
+export function schwaecheAnwenden(z: Zustand): void {
+  for (const g of z.gegner) if (!g.anfuehrer) g.hp *= 1 - SOFORT_SCHADEN;
+  z.schwaeche = Math.min(SCHWAECHE_MAX, z.schwaeche + SCHWAECHE_JE_ANFUEHRER);
+  z.blitz = 1.2;
+  z.meldung = "Schwarm geschwächt!";
 }
 
 export const SPIELWERT_MAX = 300;
