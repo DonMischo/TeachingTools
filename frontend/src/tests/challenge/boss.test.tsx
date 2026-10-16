@@ -25,7 +25,7 @@ const zeige = (b: unknown, lauf: ReturnType<typeof mkLauf>, skin = "monster", zu
 
 const ruesteAus = async (u: ReturnType<typeof userEvent.setup>, namen?: RegExp[]) => {
   const reg = screen.getByRole("region", { name: "Ausrüsten" });
-  const knoepfe = within(reg).getAllByRole("button").filter((b) => !/In den Kampf/.test(b.textContent ?? ""));
+  const knoepfe = within(reg).getAllByRole("button").filter((b) => !/In den Kampf/.test(b.textContent ?? "") && !/wegwerfen/.test(b.getAttribute("aria-label") ?? ""));
   for (const k of knoepfe) if (!namen || namen.some((n) => n.test(k.textContent ?? ""))) await u.click(k);
   await u.click(within(reg).getByRole("button", { name: /In den Kampf/ }));
 };
@@ -53,7 +53,7 @@ describe("Boss", () => {
     await u.click(screen.getByRole("button", { name: "Zum Kampf" }));
     await ruesteAus(u);
     await u.click(screen.getByRole("button", { name: "Kontern" }));
-    expect(screen.getByRole("button", { name: /Fakt Gamma/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Fakt Gamma$/ })).toBeInTheDocument();
   }, 40000);
 
   it("Kampfstart: mit reduzierter Bewegung ohne Übergang, sonst mit Text und Klick zum Überspringen", async () => {
@@ -91,8 +91,8 @@ describe("Boss", () => {
     expect(screen.getByText("Frage Eins")).toBeInTheDocument();
     expect(screen.queryByText("Frage Zwei")).not.toBeInTheDocument();
     await u.click(screen.getByRole("button", { name: "Kontern" }));
-    await u.click(screen.getByRole("button", { name: /Fakt Alpha/ }));
-    await u.click(screen.getByRole("button", { name: /Fakt Beta/ }));
+    await u.click(screen.getByRole("button", { name: /^Fakt Alpha$/ }));
+    await u.click(screen.getByRole("button", { name: /^Fakt Beta$/ }));
     await u.click(screen.getByRole("button", { name: "Kontern" }));
     expect(lauf.antworte).toHaveBeenCalledWith("c1", ["f1", "f2"], false);
     expect(await screen.findByText("Daneben")).toBeInTheDocument();
@@ -193,7 +193,7 @@ describe("Kampfmenü", () => {
     const u = await arena(brett(), lauf);
     expect(screen.getByText(/^Der Drache /)).toBeInTheDocument();
     await u.click(screen.getByRole("button", { name: "Kontern" }));
-    await u.click(screen.getByRole("button", { name: /Fakt Alpha/ }));
+    await u.click(screen.getByRole("button", { name: /^Fakt Alpha$/ }));
     await u.click(screen.getByRole("button", { name: "Kontern" }));
     expect(await screen.findByRole("group", { name: "Was tust du?" })).toBeInTheDocument();
   });
@@ -233,9 +233,9 @@ describe("Ausrüsten und Etappen", () => {
     await ruesteAus(u, [/Alpha/, /Gamma/]);
     expect(lauf.deckSetzen).toHaveBeenCalledWith(["f1", "f3"]);
     await u.click(screen.getByRole("button", { name: "Kontern" }));
-    expect(screen.getByRole("button", { name: /Fakt Alpha/ })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Fakt Gamma/ })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /Fakt Beta/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Fakt Alpha$/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Fakt Gamma$/ })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Fakt Beta$/ })).not.toBeInTheDocument();
   });
   it("mit gesetztem Deck geht es direkt in den Kampf; Etappenanzeige", () => {
     zeige(brett({ deck: ["f2"], geschafft_etappen: 1, gesamt_etappen: 3 }), mkLauf());
@@ -247,7 +247,7 @@ describe("Ausrüsten und Etappen", () => {
     const u = userEvent.setup();
     zeige(brett({ deck: ["f1"] }), mkLauf(antwort({ etappe_geschafft: true })));
     await u.click(screen.getByRole("button", { name: "Kontern" }));
-    await u.click(screen.getByRole("button", { name: /Fakt Alpha/ }));
+    await u.click(screen.getByRole("button", { name: /^Fakt Alpha$/ }));
     await u.click(screen.getByRole("button", { name: "Kontern" }));
     expect(await screen.findByText(/der Drache flieht tiefer ins Verlies/)).toBeInTheDocument();
   });

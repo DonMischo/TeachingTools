@@ -40,7 +40,7 @@ describe("Detektiv", () => {
     const { lauf, u } = baue();
     await sammle(u);
     await u.click(screen.getByRole("button", { name: /Offene Aufgabe/ }));
-    await u.click(screen.getByRole("button", { name: /Zweiseitiger Hebel/ }));
+    await u.click(screen.getByRole("button", { name: /^Zweiseitiger Hebel$/ }));
     await u.click(screen.getByRole("button", { name: "Beweis vorlegen" }));
     expect(lauf.antworte).toHaveBeenCalledWith("c1", ["f1"], false);
     expect(await screen.findByText("Daneben")).toBeTruthy();
@@ -50,7 +50,7 @@ describe("Detektiv", () => {
     const { u } = baue(antwort({ treffer: true, komplett: true, schaden: 10 }));
     await sammle(u);
     await u.click(screen.getByRole("button", { name: /Offene Aufgabe/ }));
-    await u.click(screen.getByRole("button", { name: /Zweiseitiger Hebel/ }));
+    await u.click(screen.getByRole("button", { name: /^Zweiseitiger Hebel$/ }));
     await u.click(screen.getByRole("button", { name: "Beweis vorlegen" }));
     await waitFor(() => expect(screen.getByText(/Treffer!/)).toBeTruthy());
   });
@@ -80,7 +80,7 @@ describe("Detektiv", () => {
     const { u } = baue(antwort({ treffer: true, komplett: true, schaden: 10 }));
     await sammle(u);
     await u.click(screen.getByRole("button", { name: /Offene Aufgabe/ }));
-    await u.click(screen.getByRole("button", { name: /Zweiseitiger Hebel/ }));
+    await u.click(screen.getByRole("button", { name: /^Zweiseitiger Hebel$/ }));
     await u.click(screen.getByRole("button", { name: "Beweis vorlegen" }));
     expect(await screen.findByRole("group", { name: "Pinnwand" })).toBeTruthy();
   });

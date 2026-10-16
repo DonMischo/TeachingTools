@@ -5,6 +5,8 @@ import { BestenlisteKnopf } from "@/components/challenge/Bestenliste";
 import Fundkarte from "@/components/challenge/Fundkarte";
 import { wenigerBewegung } from "@/lib/challenge/bewegung";
 import { useSpielwert } from "@/lib/challenge/useSpielwert";
+import { useAblage } from "@/lib/challenge/useAblage";
+import Papierkorb, { WegKnopf } from "@/components/challenge/Papierkorb";
 import { useUeberspringen } from "@/lib/challenge/useUeberspringen";
 import type { ChallengeAntwort, ChallengeFakt } from "@/lib/api";
 import { Sprite } from "@/components/challenge/pixel/Sprite";
@@ -73,6 +75,7 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
   const ci = (i: number) => abschnitt + i; // Tor i dieses Abschnitts gehört zur Challenge abschnitt + i
   const [gesammelt, setGesammelt] = useState<string[]>([]);
   const [fund, setFund] = useState<ChallengeFakt | null>(null);
+  const korb = useAblage(brett.etappe);
   const [tuer, setTuer] = useState<string | null>(null);
   const [ablage, setAblage] = useState<string[]>([]);
   const [tipp, setTipp] = useState(false);
@@ -285,7 +288,7 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
   });
 
   const legeAuf = (id: string) => {
-    if (!challenge || ablage.includes(id) || !fakten.has(id)) return;
+    if (!challenge || ablage.includes(id) || korb.istWeg(id) || !fakten.has(id)) return;
     lauf.gelegt();
     setAblage([...ablage, id]);
   };
@@ -403,7 +406,7 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
         </div>
       </div>
 
-      {fund && <Fundkarte fakt={fund} titel="Schlüssel gefunden:" fokus={false} onOk={() => setFund(null)} />}
+      {fund && <Fundkarte fakt={fund} titel="Schlüssel gefunden:" fokus={false} onOk={() => setFund(null)} onWegwerfen={() => { korb.wegwerfen(fund.id); setFund(null); }} />}
 
       {challenge && (
         <div className="card p-3 flex flex-col gap-2 border-accent" role="dialog" aria-label="Tür">
@@ -419,16 +422,21 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
               ? <span className="text-muted self-center">💡 {challenge.tip}</span>
               : <button className="btn-secondary" onClick={() => setTipp(true)}>💡 Tipp</button>)}
           </div>
+          <Papierkorb weg={korb.weg} fakten={brett.fakten} onZurueck={korb.zurueckholen} />
         </div>
       )}
 
       <div>
         <p className="text-muted mb-1">Schlüsselbund: {gesammelt.length} von {brett.fakten.length}{offene.length ? ` · ${offene.length} Tor(e) auf dem Weg, alle Schlüssel liegen davor` : ""} · 💎 {edel}/{edelMax}</p>
         <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,180px),1fr))] gap-2">
-          {brett.fakten.filter((f) => gesammelt.includes(f.id) && !ablage.includes(f.id)).map((f) => (
-            <FaktKarte key={f.id} fakt={f} disabled={!challenge} onClick={() => legeAuf(f.id)} />
+          {brett.fakten.filter((f) => gesammelt.includes(f.id) && !ablage.includes(f.id) && !korb.istWeg(f.id)).map((f) => (
+            <div key={f.id} className="flex flex-col gap-1">
+              <FaktKarte fakt={f} disabled={!challenge} onClick={() => legeAuf(f.id)} />
+              <WegKnopf fakt={f} onClick={() => korb.wegwerfen(f.id)} />
+            </div>
           ))}
         </div>
+        {!challenge && <Papierkorb weg={korb.weg} fakten={brett.fakten} onZurueck={korb.zurueckholen} />}
       </div>
     </>
   );

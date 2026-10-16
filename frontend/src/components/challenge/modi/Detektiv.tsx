@@ -5,6 +5,8 @@ import type { ChallengeAntwort, ChallengeAufgabe } from "@/lib/api";
 import { BestenlisteKnopf } from "@/components/challenge/Bestenliste";
 import Npc from "@/components/challenge/pixel/Npc";
 import { useSpielwert } from "@/lib/challenge/useSpielwert";
+import { useAblage } from "@/lib/challenge/useAblage";
+import Papierkorb, { WegKnopf } from "@/components/challenge/Papierkorb";
 import type { ModusProps } from "./typen";
 import { FaktKarte, Herzen, Inhalt, Treffermeldung } from "./teile";
 import Tatort from "./detektiv/Tatort";
@@ -21,18 +23,19 @@ export default function Detektiv({ brett, theme, lauf, zurKarte }: ModusProps) {
   const [ergebnis, setErgebnis] = useState<ChallengeAntwort | null>(null);
   const [sende, setSende] = useState(false);
   const [geloest, setGeloest] = useState<Geloest[]>([]);
+  const korb = useAblage(brett.etappe);
 
   useSpielwert(lauf, "detektiv", brett.etappe, gefunden.length, brett.fakten.length);
 
   const fakten = new Map(brett.fakten.map((f) => [f.id, f]));
   const offene = brett.challenges.filter((c) => !c.erledigt);
   const verdaechtig = (c: ChallengeAufgabe) => VERDAECHTIGE[Math.max(0, brett.challenges.findIndex((x) => x.id === c.id)) % VERDAECHTIGE.length];
-  const notizbuch = brett.fakten.filter((f) => gefunden.includes(f.id) && !ablage.includes(f.id));
+  const notizbuch = brett.fakten.filter((f) => gefunden.includes(f.id) && !ablage.includes(f.id) && !korb.istWeg(f.id));
 
   const waehle = (c: ChallengeAufgabe) => { setAktiv(c); setAblage([]); setTipp(false); setErgebnis(null); lauf.waehle(); };
   const schliesse = () => { setAktiv(null); setAblage([]); setTipp(false); setErgebnis(null); };
   const lege = (id: string) => {
-    if (!aktiv || ergebnis || ablage.includes(id) || !gefunden.includes(id) || !fakten.has(id)) return;
+    if (!aktiv || ergebnis || ablage.includes(id) || !gefunden.includes(id) || korb.istWeg(id) || !fakten.has(id)) return;
     lauf.gelegt();
     setAblage([...ablage, id]);
   };
@@ -61,7 +64,8 @@ export default function Detektiv({ brett, theme, lauf, zurKarte }: ModusProps) {
         <DetektivStil />
         <h2 className="font-bold">🔍 Tatort durchsuchen</h2>
         <Tatort fakten={brett.fakten} theme={theme} seed={brett.etappe * 1009 + brett.stufe * 31 + brett.fakten.length}
-          gefunden={gefunden} setGefunden={setGefunden} weiter={() => setVerhoer(true)} />
+          gefunden={gefunden} setGefunden={setGefunden} weiter={() => setVerhoer(true)} onWegwerfen={korb.wegwerfen} />
+        <Papierkorb weg={korb.weg} fakten={brett.fakten} onZurueck={korb.zurueckholen} />
       </>
     );
   }
@@ -134,9 +138,11 @@ export default function Detektiv({ brett, theme, lauf, zurKarte }: ModusProps) {
           <div key={f.id} className="flex flex-col gap-1">
             <span className="text-2xl self-start border border-dashed border-line rounded-md px-2 -rotate-2" aria-hidden title="Skizze">{skizzeVon(f.id)}</span>
             <FaktKarte fakt={f} disabled={!aktiv || !!ergebnis} onClick={() => lege(f.id)} />
+            <WegKnopf fakt={f} onClick={() => korb.wegwerfen(f.id)} />
           </div>
         ))}
       </div>
+      <Papierkorb weg={korb.weg} fakten={brett.fakten} onZurueck={korb.zurueckholen} />
 
       {geloest.length > 0 && (
         <>

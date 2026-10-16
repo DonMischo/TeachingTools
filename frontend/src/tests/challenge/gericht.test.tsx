@@ -31,7 +31,7 @@ describe("Gericht", () => {
     const { lauf, u } = baue();
     await u.click(screen.getByRole("button", { name: "Zur Verhandlung" }));
     expect(screen.getByText(/Offene Aufgabe/)).toBeTruthy();
-    await u.click(screen.getByRole("button", { name: /Zweiseitiger Hebel/ }));
+    await u.click(screen.getByRole("button", { name: /^Zweiseitiger Hebel$/ }));
     await u.click(screen.getByRole("button", { name: "Einspruch!" }));
     expect(lauf.antworte).toHaveBeenCalledWith("c1", ["f1"], false);
     expect(await screen.findByText("Daneben")).toBeTruthy();
@@ -41,7 +41,7 @@ describe("Gericht", () => {
     const { u } = baue(antwort({ treffer: true, komplett: true, schaden: 10 }));
     await u.click(screen.getByRole("button", { name: "Zur Verhandlung" }));
     expect(screen.getByText(/Offene Aufgabe/)).toBeTruthy();
-    await u.click(screen.getByRole("button", { name: /Zweiseitiger Hebel/ }));
+    await u.click(screen.getByRole("button", { name: /^Zweiseitiger Hebel$/ }));
     await u.click(screen.getByRole("button", { name: "Einspruch!" }));
     await waitFor(() => expect(screen.getByText(/Treffer!/)).toBeTruthy());
   });
@@ -64,7 +64,7 @@ describe("Gericht", () => {
   it("Einspruch zeigt den Comic-Schriftzug und den Zusammenbruch", async () => {
     const { u } = baue(antwort({ treffer: true, komplett: true, schaden: 10 }));
     await u.click(screen.getByRole("button", { name: "Zur Verhandlung" }));
-    await u.click(screen.getByRole("button", { name: /Zweiseitiger Hebel/ }));
+    await u.click(screen.getByRole("button", { name: /^Zweiseitiger Hebel$/ }));
     await u.click(screen.getByRole("button", { name: "Einspruch!" }));
     expect(await screen.findByRole("alert")).toBeTruthy();
     expect(screen.getByText("Der Zeuge bricht unter dem Beweis zusammen!")).toBeTruthy();
@@ -74,7 +74,7 @@ describe("Gericht", () => {
     const { lauf, u, ui } = baue(antwort({ treffer: true, komplett: true, schaden: 10 }));
     await u.click(screen.getByRole("button", { name: "Zur Verhandlung" }));
     await u.click(screen.getByRole("button", { name: "Nachhaken!" }));
-    await u.click(screen.getByRole("button", { name: /Zweiseitiger Hebel/ }));
+    await u.click(screen.getByRole("button", { name: /^Zweiseitiger Hebel$/ }));
     await u.click(screen.getByRole("button", { name: "Einspruch!" }));
     await screen.findByRole("alert");
     ui.unmount();

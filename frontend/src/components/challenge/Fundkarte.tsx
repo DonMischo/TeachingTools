@@ -3,12 +3,14 @@
 import type { ChallengeFakt } from "@/lib/api";
 import { Inhalt } from "./modi/teile";
 
-export default function Fundkarte({ fakt, onOk, titel = "Gefunden!", ok = "OK", skizze, fokus = true }: {
+export default function Fundkarte({ fakt, onOk, titel = "Gefunden!", ok = "OK", skizze, fokus = true, onWegwerfen }: {
   fakt: ChallengeFakt | ChallengeFakt[]; onOk(): void; titel?: string; ok?: string;
   /** Kleine Zeichnung neben dem Fakt (Notizbuch des Detektivs). */
   skizze?: string;
   /** false im Spiel mit Tastatursteuerung: sonst löst die Leertaste den Knopf aus. */
   fokus?: boolean;
+  /** Gibt es das, zeigt die Karte »Wegwerfen« (nur lokal, über den Papierkorb umkehrbar). */
+  onWegwerfen?(): void;
 }) {
   return (
     <div className="card p-3 flex flex-col gap-2" role="status">
@@ -19,7 +21,10 @@ export default function Fundkarte({ fakt, onOk, titel = "Gefunden!", ok = "OK", 
           <div><Inhalt x={f} />{f.info && <p className="text-muted text-sm">{f.info.text}</p>}</div>
         </div>
       ))}
-      <button className="btn-secondary self-start" autoFocus={fokus} onClick={onOk}>{ok}</button>
+      <div className="flex flex-wrap gap-2">
+        <button className="btn-secondary" autoFocus={fokus} onClick={onOk}>{ok}</button>
+        {onWegwerfen && <button className="btn-secondary" aria-label={`${(Array.isArray(fakt) ? fakt : [fakt]).map((f) => `»${f.text}«`).join(", ")} wegwerfen`} onClick={onWegwerfen}>🗑 Wegwerfen</button>}
+      </div>
     </div>
   );
 }

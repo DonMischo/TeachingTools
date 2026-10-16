@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { BestenlisteKnopf } from "@/components/challenge/Bestenliste";
 import { useSpielwert } from "@/lib/challenge/useSpielwert";
+import { useAblage } from "@/lib/challenge/useAblage";
+import Papierkorb, { WegKnopf } from "@/components/challenge/Papierkorb";
 import type { ChallengeAntwort, ChallengeBrett } from "@/lib/api";
 import { PixelMatrix } from "@/components/challenge/pixel/Matrix";
 import type { ModusProps } from "./typen";
@@ -23,6 +25,7 @@ export default function Boss({ brett, theme, skin, lauf, zurKarte }: ModusProps)
   const deck = brett.deck ?? deckLokal;
   const deckWar = useRef(!!brett.deck);
   const [gefunden, setGefunden] = useState<string[]>([]);
+  const korb = useAblage(brett.etappe);
   const [idx, setIdx] = useState(0);
   const [ablage, setAblage] = useState<string[]>([]);
   const [tipp, setTipp] = useState(false);
@@ -41,6 +44,7 @@ export default function Boss({ brett, theme, skin, lauf, zurKarte }: ModusProps)
   const offene = brett.challenges.filter((c) => !c.erledigt);
   const aktiv = offene.length ? offene[idx % offene.length] : null;
   const gesammelt = brett.fakten.filter((f) => gefunden.includes(f.id) || (brett.deck ?? []).includes(f.id));
+  const imGepaeck = gesammelt.filter((f) => !korb.istWeg(f.id));
   const ausruesten = phase === "arena" && brett.fakten.length > 0 && !deck;
   const inventar = deck ? brett.fakten.filter((f) => deck.includes(f.id)) : [];
   const b = brett as ChallengeBrett & { geschafft_etappen?: number; gesamt_etappen?: number };
@@ -134,19 +138,21 @@ export default function Boss({ brett, theme, skin, lauf, zurKarte }: ModusProps)
 
       {phase === "sammeln" ? (
         <Sammeln fakten={brett.fakten} theme={theme} seed={bossSeed(brett.etappe, brett.fakten.length)} gefunden={gefunden} setGefunden={setGefunden} weiter={() => setPhase("arena")}
-          ep={ep} etappe={brett.etappe} onEp={() => setEp((e) => e + EP_SIEG)} />
+          ep={ep} etappe={brett.etappe} onEp={() => setEp((e) => e + EP_SIEG)} onWegwerfen={korb.wegwerfen} />
       ) : ausruesten ? (
         <section aria-label="Ausrüsten" className="card p-3 flex flex-col gap-2">
           <h2 className="font-bold">🎒 Ausrüsten: Was nimmst du in den Kampf mit?</h2>
           <p className="text-muted text-sm">Markiere die Fakten, die du mitnimmst. Im Kampf stehen nur sie zur Verfügung – wähle mit Bedacht.</p>
           <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,180px),1fr))] gap-2">
-            {gesammelt.map((f) => (
-              <div key={f.id} aria-pressed={markiert.includes(f.id)} className={`rounded-xl ${markiert.includes(f.id) ? "ring-4 ring-accent" : ""}`}>
+            {imGepaeck.map((f) => (
+              <div key={f.id} aria-pressed={markiert.includes(f.id)} className={`rounded-xl flex flex-col gap-1 ${markiert.includes(f.id) ? "ring-4 ring-accent" : ""}`}>
                 <FaktKarte fakt={f} onClick={() => setMarkiert((m) => (m.includes(f.id) ? m.filter((x) => x !== f.id) : [...m, f.id]))} />
+                <WegKnopf fakt={f} onClick={() => { korb.wegwerfen(f.id); setMarkiert((m) => m.filter((x) => x !== f.id)); }} />
               </div>
             ))}
           </div>
           <button className="btn-primary self-start" disabled={!markiert.length} onClick={einpacken}>In den Kampf ({markiert.length})</button>
+          <Papierkorb weg={korb.weg} fakten={brett.fakten} onZurueck={korb.zurueckholen} />
         </section>
       ) : (
         <>
@@ -202,11 +208,15 @@ export default function Boss({ brett, theme, skin, lauf, zurKarte }: ModusProps)
           )}
           {ansicht === "kontern" && (
             <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,180px),1fr))] gap-2" aria-label="Inventar">
-              {inventar.filter((f) => !ablage.includes(f.id)).map((f) => (
-                <FaktKarte key={f.id} fakt={f} disabled={!aktiv} onClick={() => legeAuf(f.id)} />
+              {inventar.filter((f) => !ablage.includes(f.id) && !korb.istWeg(f.id)).map((f) => (
+                <div key={f.id} className="flex flex-col gap-1">
+                  <FaktKarte fakt={f} disabled={!aktiv} onClick={() => legeAuf(f.id)} />
+                  <WegKnopf fakt={f} onClick={() => korb.wegwerfen(f.id)} />
+                </div>
               ))}
             </div>
           )}
+          {ansicht === "kontern" && <Papierkorb weg={korb.weg} fakten={inventar} onZurueck={korb.zurueckholen} />}
         </>
       )}
     </>

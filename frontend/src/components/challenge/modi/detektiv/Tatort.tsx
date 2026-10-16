@@ -9,8 +9,8 @@ import Fundkarte from "@/components/challenge/Fundkarte";
 import Erkunden, { type ErkundObjekt } from "@/components/challenge/pixel/Erkunden";
 import { skizzeVon } from "./hilfen";
 
-export default function Tatort({ fakten, theme, seed, gefunden, setGefunden, weiter }: {
-  fakten: ChallengeFakt[]; theme: ThemeDef; seed: number; gefunden: string[]; setGefunden(f: (g: string[]) => string[]): void; weiter(): void;
+export default function Tatort({ fakten, theme, seed, gefunden, setGefunden, weiter, onWegwerfen }: {
+  fakten: ChallengeFakt[]; theme: ThemeDef; seed: number; gefunden: string[]; setGefunden(f: (g: string[]) => string[]): void; weiter(): void; onWegwerfen?(id: string): void;
 }) {
   const karte = useMemo(() => markovKarte(seed, Math.max(1, fakten.length), "haus"), [seed, fakten.length]);
   // eine Fundstelle je Fakt: erst in den Zimmern, bei Bedarf auf weiteren Bodenfeldern
@@ -60,7 +60,7 @@ export default function Tatort({ fakten, theme, seed, gefunden, setGefunden, wei
           </button>
         )}
       </div>
-      {zeige && <Fundkarte fakt={zeige} titel="🔍 Hinweis gefunden!" skizze={skizzeVon(zeige.id)} ok="Ins Notizbuch" onOk={() => setZeige(null)} />}
+      {zeige && <Fundkarte fakt={zeige} titel="🔍 Hinweis gefunden!" skizze={skizzeVon(zeige.id)} ok="Ins Notizbuch" onOk={() => setZeige(null)} onWegwerfen={onWegwerfen && (() => { onWegwerfen(zeige.id); setZeige(null); })} />}
     </div>
   );
 }

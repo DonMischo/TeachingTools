@@ -21,8 +21,8 @@ const TRUHE_AUF = { x: 181, y: 0, w: 20, h: 16 };
 const LOG = "/challenge/pixel/gfx/log.png";
 const MONSTER = { x: 0, y: 64, w: 32, h: 32 };
 
-export default function Sammeln({ fakten, theme, seed, gefunden, setGefunden, weiter, ep = 0, etappe = 1, onEp }: {
-  fakten: ChallengeFakt[]; theme: ThemeDef; seed: number; gefunden: string[]; setGefunden(f: (g: string[]) => string[]): void; weiter(): void; ep?: number; etappe?: number; onEp?(): void;
+export default function Sammeln({ fakten, theme, seed, gefunden, setGefunden, weiter, ep = 0, etappe = 1, onEp, onWegwerfen }: {
+  fakten: ChallengeFakt[]; theme: ThemeDef; seed: number; gefunden: string[]; setGefunden(f: (g: string[]) => string[]): void; weiter(): void; ep?: number; etappe?: number; onEp?(): void; onWegwerfen?(id: string): void;
 }) {
   const karte = useMemo(() => baueBossKarte(seed, fakten.length), [seed, fakten.length]);
   const { objekte } = karte;
@@ -70,7 +70,7 @@ export default function Sammeln({ fakten, theme, seed, gefunden, setGefunden, we
           {alle && <button className="btn-primary" onClick={weiter}>Zum Kampf</button>}
           {!alle && ueberspringen && <button className="btn-secondary" onClick={alleEinsammeln}>Alles einsammeln</button>}
         </div>
-        {zeige.length > 0 && <Fundkarte fakt={zeige} onOk={() => setZeige([])} />}
+        {zeige.length > 0 && <Fundkarte fakt={zeige} onOk={() => setZeige([])} onWegwerfen={onWegwerfen && (() => { zeige.forEach((f) => onWegwerfen(f.id)); setZeige([]); })} />}
       </div>
     </div>
   );

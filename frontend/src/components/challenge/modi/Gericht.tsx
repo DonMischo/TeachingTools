@@ -7,6 +7,8 @@ import { BestenlisteKnopf } from "@/components/challenge/Bestenliste";
 import { Buehne } from "@/components/challenge/pixel/Buehne";
 import Npc from "@/components/challenge/pixel/Npc";
 import { useSpielwert } from "@/lib/challenge/useSpielwert";
+import { useAblage } from "@/lib/challenge/useAblage";
+import Papierkorb, { WegKnopf } from "@/components/challenge/Papierkorb";
 import type { ModusProps } from "./typen";
 import { Ablage, FaktKarte, Herzen, Inhalt, Treffermeldung } from "./teile";
 import { GerichtStil } from "./gericht/hilfen";
@@ -31,6 +33,7 @@ export default function Gericht({ brett, lauf, zurKarte }: ModusProps) {
   const [sauber, setSauber] = useState<string[]>([]);
   const [burst, setBurst] = useState(false);
   const [hammer, setHammer] = useState(false);
+  const korb = useAblage(brett.etappe);
   const uhr = useRef<ReturnType<typeof setTimeout>[]>([]);
   useEffect(() => () => uhr.current.forEach(clearTimeout), []);
   const kurz = (set: (b: boolean) => void, ms: number) => { set(true); uhr.current.push(setTimeout(() => set(false), ms)); };
@@ -94,7 +97,7 @@ export default function Gericht({ brett, lauf, zurKarte }: ModusProps) {
     );
   }
 
-  const inventar = brett.fakten.filter((f) => !ablage.includes(f.id));
+  const inventar = brett.fakten.filter((f) => !ablage.includes(f.id) && !korb.istWeg(f.id));
   const komplett = !!ergebnis?.komplett;
   const daneben = !!ergebnis && !ergebnis.treffer;
   const gesamt = brett.challenges.length;
@@ -185,9 +188,11 @@ export default function Gericht({ brett, lauf, zurKarte }: ModusProps) {
               <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,180px),1fr))] gap-2">
                 {inventar.map((f) => (
                   <div key={f.id} className="flex flex-col"><span className="text-xs text-muted" aria-hidden>📎 Beweisstück</span>
-                    <FaktKarte fakt={f} onClick={() => lege(f.id)} /></div>
+                    <FaktKarte fakt={f} onClick={() => lege(f.id)} />
+                    <WegKnopf fakt={f} onClick={() => korb.wegwerfen(f.id)} /></div>
                 ))}
               </div>
+              <Papierkorb weg={korb.weg} fakten={brett.fakten} onZurueck={korb.zurueckholen} />
             </>
           )}
         </>
