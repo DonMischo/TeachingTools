@@ -3,6 +3,7 @@ import { rng } from "@/lib/challenge/zufall";
 
 export const VX = 6;       // Laufgeschwindigkeit
 export const G = 42;       // Schwerkraft
+export const VX_RENNEN = 9.5; // Shift: Höchsttempo beim Rennen (weiter springen)
 export const VJ = 16;      // Absprunggeschwindigkeit -> Scheitel ca. 3,05 Kacheln
 export const COYOTE = 0.1; // Sprung noch kurz nach dem Kantenschritt
 export const PUFFER = 0.12; // zu früh gedrückter Sprung zählt noch beim Aufsetzen
@@ -273,7 +274,13 @@ export type Spieler = {
   /** Zählt Landungen mit Tempo hoch (Landestaub). */
   landung: number;
 };
-export type Eingabe = { links: boolean; rechts: boolean; sprung: boolean; runter?: boolean };
+export type Eingabe = { links: boolean; rechts: boolean; sprung: boolean; runter?: boolean; rennen?: boolean };
+
+/** Alle gehaltenen Tasten loslassen (Fenster verloren, Panel auf ...). Ändert das Objekt selbst, damit die Spielschleife es sieht. */
+export function leereEingabe(e: Eingabe, s?: { vx: number }): void {
+  e.links = false; e.rechts = false; e.sprung = false; e.runter = false; e.rennen = false;
+  if (s) s.vx = 0;
+}
 
 export function startSpieler(l: Level): Spieler {
   const p = l.plattformen[0];
@@ -301,8 +308,10 @@ export function schritt(s: Spieler, e: Eingabe, dt: number, l: Level, zu?: reado
   const n: Spieler = { ...s, t: t1, richtung: dir ? (dir as 1 | -1) : s.richtung, sprungVorher: e.sprung, runterVorher: !!e.runter, durchT: Math.max(0, s.durchT - dt) };
   // Beschleunigung und Reibung statt Sofortgeschwindigkeit
   const boden = s.auf >= 0;
-  const ziel = dir * VX;
-  const a = (dir ? (boden ? BESCHL : BESCHL_LUFT) : (boden ? REIBUNG : REIBUNG_LUFT)) * dt;
+  // Rennen (Shift) am Boden; in der Luft bleibt das erreichte Tempo erhalten
+  const vmax = e.rennen && boden ? VX_RENNEN : boden ? VX : Math.max(VX, dir * s.vx > 0 ? Math.abs(s.vx) : 0);
+  const ziel = dir * vmax;
+  const a = (dir ? (boden ? (e.rennen ? BESCHL * 1.6 : BESCHL) : BESCHL_LUFT) : (boden ? REIBUNG : REIBUNG_LUFT)) * dt;
   n.vx = s.vx + Math.max(-a, Math.min(a, ziel - s.vx));
   n.x = Math.min(l.breite - 0.25, Math.max(0.25, s.x + n.vx * dt));
   if (n.x !== s.x + n.vx * dt) n.vx = 0;
@@ -376,3 +385,21 @@ export const nahePogo = (s: Spieler, p: { x: number; y: number }) => Math.abs(s.
 
 /** Sterne für die Etappenbilanz (reine Spielwertung). */
 export const sterne = (n: number, max: number) => (max <= 0 ? 0 : n >= max * 0.9 ? 3 : n >= max * 0.6 ? 2 : n >= max * 0.25 ? 1 : 0);
+
+/**
+ * Abschnitte einer Etappe: Abschnitt 0 mit allen Schlüsseln und dem ersten Tor, jedes weitere Tor in einem eigenen frischen Abschnitt,
+ * danach ein Zielabschnitt. Durch ein offenes Tor geht es in den nächsten Abschnitt (Abschnitt k gehört zu Challenge k).
+ */
+export function baueAbschnitte(etappe: number, nFakten: number, nTueren: number, seed = 1): Level[] {
+  if (nTueren <= 0) return [baueLevel(etappe, nFakten, 0, seed)];
+  const l: Level[] = [];
+  for (let k = 0; k < nTueren; k++) l.push(baueLevel(etappe, k === 0 ? nFakten : 0, 1, seed + k * 7919));
+  l.push(baueLevel(etappe, 0, 0, seed + nTueren * 7919));
+  return l;
+}
+
+/** Steht die Figur an einem Tor des Abschnitts (offen = schon aufgeschlossen)? Dann wirkt die Taste E. */
+export function torAmFuss(s: Spieler, l: Level, zu?: readonly boolean[]): { index: number; offen: boolean } | null {
+  const i = l.tueren.findIndex((t) => naheTuer(s, t));
+  return i < 0 ? null : { index: i, offen: !zu?.[i] };
+}

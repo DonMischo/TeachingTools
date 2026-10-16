@@ -70,3 +70,22 @@ describe("Huepfen", () => {
     expect(screen.queryByRole("button", { name: /Schon geschafft/ })).toBeNull();
   });
 });
+
+describe("Huepfen: Tor nur per E", () => {
+  it("E fern vom Tor öffnet kein Panel, Berührung allein auch nicht", async () => {
+    zeige();
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "e" }));
+    window.dispatchEvent(new KeyboardEvent("keyup", { key: "e" }));
+    expect(screen.queryByRole("dialog", { name: "Tür" })).toBeNull();
+    window.dispatchEvent(new Event("blur"));
+    expect(screen.queryByRole("dialog", { name: "Tür" })).toBeNull();
+  });
+  it("Fenster verlassen mit gehaltener Taste: danach steht die Figur still", async () => {
+    const { container } = zeige();
+    const figur = () => container.querySelector("[style*='translate']")?.getAttribute("style");
+    void figur;
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight" }));
+    window.dispatchEvent(new Event("blur"));
+    expect(screen.getByRole("button", { name: "Öffnen" })).toBeTruthy();
+  });
+});

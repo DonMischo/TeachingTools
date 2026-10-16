@@ -10,7 +10,7 @@ import type { ChallengeAntwort, ChallengeFakt } from "@/lib/api";
 import { Sprite } from "@/components/challenge/pixel/Sprite";
 import { PixelMatrix } from "@/components/challenge/pixel/Matrix";
 import {
-  GEGNER_BONUS, TOR_HOCH, VIEW_H, VX, STIL_NAMEN, baueLevel, bewegerFlaeche, type Level, edelsteineGesamt, figurBilder, gegnerBegegnung, gegnerX, naheEdelstein, nahePogo, naheSchluessel, naheTuer,
+  GEGNER_BONUS, TOR_HOCH, VIEW_H, VX, STIL_NAMEN, baueAbschnitte, leereEingabe, bewegerFlaeche, type Level, edelsteineGesamt, figurBilder, gegnerBegegnung, gegnerX, naheEdelstein, nahePogo, naheSchluessel, torAmFuss,
   schritt, sterne, startSpieler, zumKontrollpunkt, type Eingabe, type Spieler,
 } from "@/lib/challenge/huepfen";
 import type { ModusProps } from "./typen";
@@ -65,7 +65,12 @@ const Plattformen = memo(function Plattformen({ plattformen, tile, bodenFarbe, c
 export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
   // Neue Karte bei jedem Besuch: der Zufallswert gilt, solange die Komponente steht (eine Tür zu öffnen mischt nicht neu)
   const [seed] = useState(() => Math.floor(Math.random() * 2 ** 31));
-  const level = useMemo(() => baueLevel(brett.etappe, brett.fakten.length, brett.challenges.length, seed), [brett.etappe, brett.fakten.length, brett.challenges.length, seed]);
+  const levels = useMemo(() => baueAbschnitte(brett.etappe, brett.fakten.length, brett.challenges.length, seed), [brett.etappe, brett.fakten.length, brett.challenges.length, seed]);
+  const [abschnitt, setAbschnitt] = useState(0); // Durch ein offenes Tor geht es in den nächsten Abschnitt
+  const [blende, setBlende] = useState(false);
+  const level = levels[Math.min(abschnitt, levels.length - 1)];
+  const off = abschnitt * 10000; // Edelstein- und Gegner-IDs sind je Abschnitt verschoben
+  const ci = (i: number) => abschnitt + i; // Tor i dieses Abschnitts gehört zur Challenge abschnitt + i
   const [gesammelt, setGesammelt] = useState<string[]>([]);
   const [fund, setFund] = useState<ChallengeFakt | null>(null);
   const [tuer, setTuer] = useState<string | null>(null);
@@ -84,7 +89,11 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
   const [richtung, setRichtung] = useState<1 | -1>(1);
   const skipDa = useUeberspringen();
 
-  const spieler = useRef<Spieler>(startSpieler(level));
+  const spieler = useRef<Spieler>(startSpieler(levels[0]));
+  const wechselRef = useRef(false);
+  const hinweisRef = useRef<"zu" | "offen" | null>(null);
+  const aktionRef = useRef<() => void>(() => {});
+  const [hinweis, setHinweis] = useState<"zu" | "offen" | null>(null);
   const eingabe = useRef<Eingabe>({ links: false, rechts: false, sprung: false, runter: false });
   const edelRef = useRef<Set<number>>(new Set());
   const gegnerRef = useRef<Set<number>>(new Set());
@@ -111,7 +120,7 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
   const challenge = brett.challenges.find((c) => c.id === tuer);
   const sp = theme.spieler;
   const figH = sp.stehen.h * SK;
-  const edelMax = edelsteineGesamt(level);
+  const edelMax = levels.reduce((a, l) => a + edelsteineGesamt(l), 0);
   useSpielwert(lauf, "huepfen", brett.etappe, edel, Math.max(edel, edelMax)); // Edelsteine
 
   useEffect(() => () => timer.current.forEach(clearTimeout), []);
@@ -133,6 +142,31 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
     setStaub((p) => [...p.slice(-3), { id, x, y }]);
     nachher(() => setStaub((p) => p.filter((q) => q.id !== id)), 450);
   };
+  /** Alle gehaltenen Tasten loslassen und stehen bleiben (Fenster/Panel/Spielfeld verlassen). */
+  const loesche = () => leereEingabe(eingabe.current, spieler.current);
+  /** Durch das offene Tor in den nächsten Abschnitt: kurz ausblenden, neuer Anfang mit eigener Fahne. */
+  const durchTor = () => {
+    const next = abschnitt + 1;
+    if (wechselRef.current || next >= levels.length) return;
+    wechselRef.current = true;
+    const los = () => {
+      spieler.current = { ...startSpieler(levels[next]), pogo: spieler.current.pogo };
+      kamX.current = null; kamY.current = null; imTuer.current = null;
+      setCp(0); setAbschnitt(next); setBlende(false);
+    };
+    if (reduziert) los(); else { setBlende(true); nachher(los, 350); }
+  };
+  useEffect(() => { wechselRef.current = false; }, [abschnitt]);
+  /** E am Tor: davor stehend das Schloss-Panel öffnen bzw. durch das offene Tor gehen. */
+  const aktion = () => {
+    if (tuerRef.current || wechselRef.current) return;
+    const zu = level.tueren.map((_, i) => torZu(ci(i)));
+    const am = torAmFuss(spieler.current, level, zu);
+    if (!am) return;
+    if (am.offen) durchTor(); else oeffneTuer(brett.challenges[ci(am.index)].id);
+  };
+  aktionRef.current = aktion;
+  useEffect(() => { if (tuer || fund) loesche(); }, [tuer, fund]); // eslint-disable-line react-hooks/exhaustive-deps
   /** Tor i sperrt, solange seine Challenge offen und nicht aufgeschlossen ist. */
   const torZu = (i: number) => { const c = brett.challenges[i]; return !!c && !c.erledigt && !offenRef.current.has(c.id); };
   const oeffneTuer = (id: string | null) => {
@@ -157,15 +191,22 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
     const setze = (e: KeyboardEvent, an: boolean) => {
       if (tuerRef.current) return;
       const k = e.key.toLowerCase();
+      if (k === "e") { e.preventDefault(); if (an && !e.repeat) aktionRef.current(); return; }
       const feld = k === "arrowleft" || k === "a" ? "links" : k === "arrowright" || k === "d" ? "rechts"
-        : k === " " || k === "w" || k === "arrowup" ? "sprung" : k === "arrowdown" || k === "s" ? "runter" : null;
-      if (!feld) return;
+        : k === " " || k === "w" || k === "arrowup" ? "sprung" : k === "arrowdown" || k === "s" ? "runter" : k === "shift" ? "rennen" : null;
+      if (!feld) { if (!an) loesche(); return; } // unbekannte Taste losgelassen: lieber anhalten
       e.preventDefault();
       eingabe.current[feld] = an;
     };
     const ab = (e: KeyboardEvent) => setze(e, true), auf = (e: KeyboardEvent) => setze(e, false);
+    const weg = () => loesche();
+    const sicht = () => { if (document.hidden) loesche(); };
     window.addEventListener("keydown", ab); window.addEventListener("keyup", auf);
-    return () => { window.removeEventListener("keydown", ab); window.removeEventListener("keyup", auf); };
+    window.addEventListener("blur", weg); document.addEventListener("visibilitychange", sicht);
+    return () => {
+      window.removeEventListener("keydown", ab); window.removeEventListener("keyup", auf);
+      window.removeEventListener("blur", weg); document.removeEventListener("visibilitychange", sicht);
+    };
   }, []);
 
   // Spielschleife
@@ -173,17 +214,17 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
     let raf = 0, letzte = 0, anim = false, dir: 1 | -1 = 1, landungen = 0, cpAlt = 0, luftSpruenge = 0;
     const tick = (t: number) => {
       raf = requestAnimationFrame(tick);
-      if (document.hidden || tuerRef.current || listeRef.current) { letzte = 0; return; }
+      if (document.hidden || tuerRef.current || listeRef.current || wechselRef.current) { letzte = 0; return; }
       const dt = letzte ? Math.min(0.05, (t - letzte) / 1000) : 0;
       letzte = t;
-      const zu = level.tueren.map((_, i) => torZu(i));
+      const zu = level.tueren.map((_, i) => torZu(ci(i)));
       let s = schritt(spieler.current, eingabe.current, dt, level, zu);
       for (const g of level.gegner) {
-        if (gegnerRef.current.has(g.id)) continue;
+        if (gegnerRef.current.has(g.id + off)) continue;
         const b = gegnerBegegnung(s, g, level);
         if (b === "besiegt") {
-          gegnerRef.current.add(g.id); setErledigtG([...gegnerRef.current]);
-          for (let j = 0; j < GEGNER_BONUS; j++) edelRef.current.add(1000 + g.id * 10 + j);
+          gegnerRef.current.add(g.id + off); setErledigtG([...gegnerRef.current]);
+          for (let j = 0; j < GEGNER_BONUS; j++) edelRef.current.add(off + 1000 + g.id * 10 + j);
           setEdel(edelRef.current.size); pling(gegnerX(g, s.t), level.plattformen[g.plat].y - 1);
           s = { ...s, vy: -10, auf: -1 };
         } else if (b === "treffer") {
@@ -196,7 +237,7 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
       if (s.cp !== cpAlt) { cpAlt = s.cp; setCp(s.cp); }
       spieler.current = s;
       for (const g of level.edelsteine) {
-        if (!edelRef.current.has(g.id) && naheEdelstein(s, g)) { edelRef.current.add(g.id); setEdel(edelRef.current.size); pling(g.x, g.y); }
+        if (!edelRef.current.has(g.id + off) && naheEdelstein(s, g)) { edelRef.current.add(g.id + off); setEdel(edelRef.current.size); pling(g.x, g.y); }
       }
       level.gegner.forEach((g, i) => {
         const el = gegnerEl.current[i];
@@ -213,9 +254,9 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
         const f = brett.fakten[k.faktIndex];
         if (f && !gesRef.current.includes(f.id) && naheSchluessel(s, k)) sammle(f.id);
       }
-      const d = level.tueren.findIndex((td, i) => zu[i] && naheTuer(s, td));
-      const id = d >= 0 ? brett.challenges[d].id : null;
-      if (id !== imTuer.current) { imTuer.current = id; if (id) oeffneTuer(id); }
+      const am = torAmFuss(s, level, zu);
+      const hin = am ? (am.offen ? "offen" : "zu") : null;
+      if (hin !== hinweisRef.current) { hinweisRef.current = hin; setHinweis(hin); }
       const breite = breiteRef.current;
       // Kamera schaut in Laufrichtung voraus und gleitet nach
       const voraus = (s.vx / VX) * 70;
@@ -256,7 +297,7 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
       oeffneTuer(null);
       if (r.komplett) { // Tor geht auf; sonst bleibt es zu und das Feld öffnet sich nicht neu, bis man sich entfernt
         offenRef.current.add(challenge.id); setOffen([...offenRef.current]); imTuer.current = null;
-        const t = level.tueren[brett.challenges.findIndex((c) => c.id === challenge.id)];
+        const t = level.tueren[brett.challenges.findIndex((c) => c.id === challenge.id) - abschnitt];
         if (t) pling(t.x, t.y - 1);
       }
       setAntwort(r);
@@ -278,15 +319,17 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
         <div className="flex items-center gap-3"><Herzen leben={brett.leben} /><span className="font-bold" aria-label="Edelsteine">💎 {edel}/{edelMax}</span><span className="text-muted">Karte: {STIL_NAMEN[level.stil]}</span>{pogo && <span className="font-bold" title="Pogo-Stab: Sprung gedrückt halten">🪀 Pogo</span>}</div>
         <div className="flex gap-2">
           {skipDa && <button className="btn-secondary" onClick={() => brett.fakten.forEach((f) => sammle(f.id, false))}>Alles einsammeln</button>}
-          <BestenlisteKnopf lauf={lauf} spiel="huepfen" rechts onWechsel={(offen) => { listeRef.current = offen; }} />
+          <BestenlisteKnopf lauf={lauf} spiel="huepfen" rechts onWechsel={(offen) => { listeRef.current = offen; if (offen) loesche(); }} />
           <button className="btn-secondary" onClick={zurKarte}>Karte</button>
         </div>
       </div>
       <style>{`@keyframes hpstaub{from{opacity:.9;transform:scale(.4)}to{opacity:0;transform:scale(2) translateY(-4px)}}@media (prefers-reduced-motion: reduce){[style*="hpstaub"]{animation:none!important;opacity:0}}`}</style>
       <Treffermeldung antwort={antwort} />
 
-      <div ref={bildRef} className="relative overflow-hidden rounded-lg border-2 border-line" style={{ height: VIEW_H * KACHEL, background: himmel }}
-        role="group" aria-label="Spielfeld: mit Pfeiltasten oder A und D laufen, mit Leertaste springen, in der Luft noch einmal; mit Pfeil nach unten durch dünne Plattformen fallen; Tore auf dem Weg gehen erst nach dem Aufschließen auf">
+      <div ref={bildRef} className="relative overflow-hidden rounded-lg border-2 border-line" onBlur={loesche} onPointerLeave={(e) => { if (e.pointerType !== "mouse") loesche(); }} style={{ height: VIEW_H * KACHEL, background: himmel }}
+        role="group" aria-label="Spielfeld: mit Pfeiltasten oder A und D laufen, mit Leertaste springen, in der Luft noch einmal; mit Pfeil nach unten durch dünne Plattformen fallen, mit Shift rennen; Tore auf dem Weg gehen erst nach dem Aufschließen auf">
+        {hinweis && <div className="absolute left-1/2 -translate-x-1/2 bottom-2 z-10 rounded bg-black/70 text-white px-2 py-1 text-sm pointer-events-none" role="status">{hinweis === "zu" ? "E – Tür öffnen" : "E – durch die Tür gehen"}</div>}
+        <div className="absolute inset-0 z-20 bg-black pointer-events-none" aria-hidden style={{ opacity: blende ? 1 : 0, transition: "opacity .3s" }} data-blende={blende ? "an" : "aus"} />
         <div ref={wolkenRef} className="absolute left-0 top-4 flex gap-40 opacity-60 pointer-events-none text-5xl" aria-hidden style={{ width: level.breite * KACHEL }}>
           {Array.from({ length: Math.ceil(level.breite / 6) }, (_, i) => <span key={i} style={{ marginTop: (i % 3) * 24 + (i % 2) * 260 }}>☁️</span>)}
         </div>
@@ -298,10 +341,10 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
           {level.beweger.map((m, i) => (
             <div key={`m${i}`} ref={(el) => { bewegerEl.current[i] = el; }} className="absolute left-0 top-0 rounded-sm" style={{ width: m.w * KACHEL, height: 10, background: "#6b7bb3", borderTop: "4px solid #aab6e6" }} />
           ))}
-          {level.gegner.map((g, i) => !erledigtG.includes(g.id) && (
+          {level.gegner.map((g, i) => !erledigtG.includes(g.id + off) && (
             <div key={`g${g.id}`} ref={(el) => { gegnerEl.current[i] = el; }} className="absolute left-0 top-0"><PixelMatrix bild={SCHLEIM} palette={PAL_SCHLEIM} scale={3} label="Gegner" /></div>
           ))}
-          {level.edelsteine.map((g) => !edelRef.current.has(g.id) && (
+          {level.edelsteine.map((g) => !edelRef.current.has(g.id + off) && (
             <div key={`e${g.id}`} className="absolute" style={{ left: g.x * KACHEL - 12, top: g.y * KACHEL - 12 }}>
               <PixelMatrix bild={EDEL} palette={g.schwer ? PAL_EDEL_SCHWER : PAL_EDEL} scale={3} label="Edelstein" />
             </div>
@@ -322,11 +365,11 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
               <div key={k.faktIndex} className="absolute animate-bounce" style={{ left: k.x * KACHEL - 16, top: k.y * KACHEL - 56 }}><PixelMatrix bild={SCHLUESSEL} palette={PAL} scale={4} label="Schlüssel" /></div>
             ) : null;
           })}
-          <div className="absolute" style={{ left: level.ziel.x * KACHEL - 12, top: level.ziel.y * KACHEL - 56 }} role="img" aria-label="Ziel"><span className="text-4xl">🏁</span></div>
+          {abschnitt === levels.length - 1 && <div className="absolute" style={{ left: level.ziel.x * KACHEL - 12, top: level.ziel.y * KACHEL - 56 }} role="img" aria-label="Ziel"><span className="text-4xl">🏁</span></div>}
           {level.tueren.map((t, i) => {
-            const c = brett.challenges[i];
+            const c = brett.challenges[ci(i)];
             if (!c) return null;
-            if (!torZu(i)) { // schon geschafft oder aufgeschlossen: offen
+            if (!torZu(ci(i))) { // schon geschafft oder aufgeschlossen: offen
               return <div key={c.id} className="absolute pointer-events-none" style={{ left: t.x * KACHEL - 40, top: t.y * KACHEL - 80 }} data-tor="offen"><PixelMatrix bild={TUER_OFFEN} palette={PAL_OFFEN} scale={8} /></div>;
             }
             return (
@@ -346,13 +389,15 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
         </div>
       </div>
 
-      <p className="text-muted text-sm">↓ fallen lassen, Sprung in der Luft</p>
+      <p className="text-muted text-sm">↓ fallen lassen, Sprung in der Luft · Shift: rennen – weiter springen</p>
       <div className="flex justify-between gap-2 select-none touch-none">
         <div className="flex gap-2">
           <button className="btn-secondary" aria-label="Nach links" {...halte("links", true)}>◀</button>
           <button className="btn-secondary" aria-label="Nach rechts" {...halte("rechts", true)}>▶</button>
         </div>
         <div className="flex gap-2">
+          <button className="btn-secondary" aria-label="Öffnen" title="Tür öffnen bzw. durchgehen (E)" onClick={() => aktionRef.current()}>Öffnen</button>
+          <button className="btn-secondary" aria-label="Rennen" title="Gedrückt halten: rennen, weiter springen" {...halte("rennen", true)}>» Rennen</button>
           <button className="btn-secondary" aria-label="Fallen lassen" title="Durch die Plattform fallen lassen" {...halte("runter", true)}>▼</button>
           <button className="btn-primary" aria-label="Springen" title="Sprung, in der Luft noch einmal" {...halte("sprung", true)}>⤒ Sprung</button>
         </div>
