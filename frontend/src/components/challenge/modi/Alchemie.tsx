@@ -5,19 +5,17 @@
  */
 import { useEffect, useState } from "react";
 import type { ChallengeAntwort } from "@/lib/api";
-import { PixelMatrix } from "@/components/challenge/pixel/Matrix";
-import Npc from "@/components/challenge/pixel/Npc";
 import { useSpielwert } from "@/lib/challenge/useSpielwert";
 import Bestenliste from "@/components/challenge/Bestenliste";
 import type { ModusProps } from "./typen";
-import { Ablage, FaktKarte, Herzen, Inhalt, Treffermeldung } from "./teile";
+import { Ablage, Herzen, Inhalt, Treffermeldung } from "./teile";
 import Garten from "./alchemie/Garten";
-import Kessel, { braufarbe, TRANK } from "./alchemie/Kessel";
+import Kessel, { braufarbe, Flasche } from "./alchemie/Kessel";
+import Figur, { KUNDENARTEN, type Kundenart, type Stimmung } from "./alchemie/Figuren";
+import Regal, { type Trank } from "./alchemie/Regal";
 
 type Ergebnis = "kombo" | "komplett" | "teil" | "daneben";
-type Trank = { n: number; farbe: string; selten: boolean; trueb: boolean };
-const KUNDEN = ["townsfolk_m", "townsfolk_f", "merchant", "mage", "king"];
-const kundeVon = (id: string) => KUNDEN[[...id].reduce((s, c) => s + c.charCodeAt(0), 0) % KUNDEN.length];
+const kundeVon = (id: string): Kundenart => KUNDENARTEN[[...id].reduce((s, c) => s + c.charCodeAt(0), 0) % KUNDENARTEN.length];
 const CSS = `@keyframes alchblase{0%{transform:translateY(0);opacity:.9}100%{transform:translateY(-40px);opacity:0}}
 @keyframes alchpuff{0%{transform:translateX(-50%) scale(.4);opacity:1}100%{transform:translateX(-50%) scale(2.2);opacity:0}}
 @keyframes alchregen{to{filter:hue-rotate(360deg)}}
@@ -25,22 +23,17 @@ const CSS = `@keyframes alchblase{0%{transform:translateY(0);opacity:.9}100%{tra
 @keyframes alchfunkel{0%,100%{opacity:.2;transform:scale(.6)}50%{opacity:1;transform:scale(1.2)}}
 .alch-blase{animation:alchblase 1.6s infinite}.alch-puff{animation:alchpuff 1s forwards}.alch-regen{animation:alchregen 2s linear infinite}
 .alch-wackel{animation:alchwackel .25s 4}.alch-funkel{animation:alchfunkel 1.2s infinite}
-@media (prefers-reduced-motion: reduce){.alch-blase,.alch-puff,.alch-regen,.alch-wackel,.alch-funkel{animation:none!important}}`;
+@keyframes alchwippe{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes alchflug{0%{transform:translateY(-60px) scale(.6);opacity:0}100%{transform:none;opacity:1}}
+@keyframes alchtropf{0%{transform:translateY(0) scaleY(.5);opacity:1}100%{transform:translateY(120px) scaleY(1.4);opacity:0}}
+.alch-wippe{animation:alchwippe 2.4s ease-in-out infinite}.alch-flug{animation:alchflug .7s ease-out}.alch-tropf{animation:alchtropf 1.1s ease-in infinite}
+@media (prefers-reduced-motion: reduce){.alch-wippe,.alch-flug,.alch-tropf,.alch-blase,.alch-puff,.alch-regen,.alch-wackel,.alch-funkel{animation:none!important}}`;
 
-function Kunde({ name, froh }: { name: string; froh?: boolean }) {
+function Kunde({ art, stimmung = "neutral" }: { art: Kundenart; stimmung?: Stimmung }) {
   return (
     <span className="relative inline-block">
-      <Npc name={name} scale={2.5} label="Kunde" />
-      {froh && <span className="absolute -top-1 right-0 text-2xl" aria-hidden>😊</span>}
-    </span>
-  );
-}
-
-function Regalfach({ t }: { t: Trank }) {
-  return (
-    <span className={`relative inline-block ${t.selten ? "alch-regen" : ""}`} style={{ filter: t.selten ? "drop-shadow(0 0 6px #fff)" : undefined }}>
-      <PixelMatrix bild={TRANK} palette={{ k: "#1d1a24", w: "#dfeaf3", l: t.trueb ? "#8a8a6a" : t.farbe }} scale={4} />
-      {t.selten && <span className="alch-funkel absolute -top-1 -right-1 text-sm" aria-hidden>✨</span>}
+      <Figur art={art} stimmung={stimmung} etikett="Kunde" />
+      {stimmung === "froh" && <span className="absolute -top-1 right-0 text-2xl" aria-hidden>😊</span>}
     </span>
   );
 }
@@ -57,7 +50,7 @@ export default function Alchemie({ brett, theme, lauf, zurKarte }: ModusProps) {
   const [sende, setSende] = useState(false);
   const [gold, setGold] = useState(0);
   const [regal, setRegal] = useState<Trank[]>([]);
-  const [geht, setGeht] = useState<{ kunde: string; n: number; gold: number } | null>(null);
+  const [geht, setGeht] = useState<{ kunde: Kundenart; n: number; gold: number } | null>(null);
 
   const offene = brett.challenges.filter((c) => !c.erledigt);
   const aktiv = offene.find((c) => c.id === wahl) ?? offene[0] ?? null;
@@ -110,6 +103,8 @@ export default function Alchemie({ brett, theme, lauf, zurKarte }: ModusProps) {
   const farbe = ergebnis?.art === "teil" ? "#8a8a6a" : braufarbe(ruehr);
   const bg = theme.farben.himmel === "transparent" ? undefined : theme.farben.himmel;
   const kunden = offene.slice(0, 3);
+  const fuell = ergebnis ? (ergebnis.art === "daneben" ? 1 : 0.12) : Math.min(0.9, ablage.length ? 0.28 + ablage.length * 0.16 : 0.12);
+  const wirbel = ergebnis ? { kombo: 1, komplett: 0.9, teil: 0.5, daneben: 0.8 }[ergebnis.art] : ablage.length ? 0.15 : 0;
 
   return (
     <>
@@ -127,7 +122,7 @@ export default function Alchemie({ brett, theme, lauf, zurKarte }: ModusProps) {
         <>
           <Treffermeldung antwort={antwort} />
           {offene.length === 0 && <p className="card p-3 font-bold text-good">Alle Bestellungen sind abgefüllt!</p>}
-          <div className="rounded-lg p-3 flex flex-col gap-3 overflow-hidden" style={{ background: bg, color: theme.farben.text === "inherit" ? undefined : theme.farben.text }}>
+          <div className="rounded-lg p-3 flex flex-col gap-3 overflow-hidden" style={{ background: bg ? `radial-gradient(ellipse at 50% 0%, #ffe9b855, transparent 60%), ${bg}` : undefined, boxShadow: "inset 0 -12px 24px rgba(60,30,0,.25)", color: theme.farben.text === "inherit" ? undefined : theme.farben.text }}>
             <div className="flex flex-wrap items-end gap-3" aria-label="Kundschaft">
               {kunden.map((c) => {
                 const ist = aktiv?.id === c.id;
@@ -138,23 +133,22 @@ export default function Alchemie({ brett, theme, lauf, zurKarte }: ModusProps) {
                       <span className="block text-xs text-muted">Bestellung{ist ? "" : " (antippen)"}</span>
                       {ist ? <Inhalt x={c} /> : <span>…</span>}
                     </button>
-                    <Kunde name={kundeVon(c.id)} />
+                    <Kunde art={kundeVon(c.id)} stimmung={ist && (ergebnis?.art === "daneben" || ergebnis?.art === "teil") ? "unmutig" : "neutral"} />
                   </div>
                 );
               })}
               {geht && (
                 <div key={geht.n} className="flex flex-col items-center" role="status">
                   <span className="text-sm font-bold">+{geht.gold} 🪙</span>
-                  <Kunde name={geht.kunde} froh />
+                  <Kunde art={geht.kunde} stimmung="froh" />
                 </div>
               )}
             </div>
             <div className="flex items-end justify-around gap-2 flex-wrap">
-              <Kessel farbe={farbe} ruehr={ruehr} setRuehr={setRuehr} blubbert={ablage.length > 0 && !ergebnis} ueberlauf={ergebnis?.art === "daneben"} />
-              <div className={ergebnis?.art === "kombo" ? "alch-regen" : ""} style={{ filter: ergebnis && (ergebnis.art === "komplett" || ergebnis.art === "kombo") ? `drop-shadow(0 0 10px ${farbe})` : undefined }}>
-                {ergebnis && ergebnis.art !== "daneben"
-                  ? <div role="img" aria-label="Trank"><PixelMatrix bild={TRANK} palette={{ k: "#1d1a24", w: "#dfeaf3", l: farbe }} scale={6} /></div>
-                  : <span className="inline-block w-12" />}
+              <Kessel farbe={farbe} ruehr={ruehr} setRuehr={setRuehr} blubbert={ablage.length > 0 && !ergebnis} ueberlauf={ergebnis?.art === "daneben"}
+                fuellstand={fuell} wirbel={wirbel} regenbogen={ergebnis?.art === "kombo"} />
+              <div className="min-w-16" style={{ filter: ergebnis && (ergebnis.art === "komplett" || ergebnis.art === "kombo") ? `drop-shadow(0 0 10px ${farbe})` : undefined }}>
+                {ergebnis && ergebnis.art !== "daneben" && <Flasche farbe={farbe} regenbogen={ergebnis.art === "kombo"} wirbel={0.3} />}
               </div>
             </div>
           </div>
@@ -173,15 +167,20 @@ export default function Alchemie({ brett, theme, lauf, zurKarte }: ModusProps) {
               </div>
             </div>
           )}
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,180px),1fr))] gap-2" aria-label="Zutatenregal">
-            {zutaten.filter((f) => !ablage.includes(f.id)).map((f) => (
-              <FaktKarte key={f.id} fakt={f} disabled={!aktiv} onClick={() => legeAuf(f.id)} />
-            ))}
+          <div className="rounded-lg p-3" aria-label="Zutatenregal" style={{ background: "linear-gradient(#6b4524,#432a14)", boxShadow: "inset 0 2px 8px rgba(0,0,0,.5)" }}>
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,180px),1fr))] gap-3 pb-2" style={{ borderBottom: "8px solid #8a5d33", boxShadow: "0 6px 6px -4px rgba(0,0,0,.5)" }}>
+              {zutaten.filter((f) => !ablage.includes(f.id)).map((f) => (
+                <button key={f.id} draggable={!!aktiv} disabled={!aktiv} onClick={() => legeAuf(f.id)}
+                  onDragStart={(e) => e.dataTransfer.setData("text/plain", f.id)}
+                  className="relative text-left text-sm p-2 pt-4 rounded-b-2xl rounded-t-md disabled:opacity-85 text-[#2b1d10] transition-transform hover:-translate-y-0.5"
+                  style={{ background: "linear-gradient(135deg, rgba(255,250,235,.92), rgba(222,236,240,.82))", border: "2px solid rgba(255,255,255,.7)", boxShadow: "0 4px 6px rgba(0,0,0,.4), inset 0 0 10px rgba(255,255,255,.5)" }}>
+                  <span className="absolute -top-2 left-1/2 -translate-x-1/2 w-10 h-3 rounded-sm" style={{ background: "linear-gradient(#b98650,#8a5d33)" }} aria-hidden />
+                  <Inhalt x={f} />
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="card p-3" aria-label="Trankregal">
-            <div className="text-sm text-muted">🧪 Trankregal ({regal.length})</div>
-            <div className="flex flex-wrap gap-2 min-h-8">{regal.map((t) => <Regalfach key={t.n} t={t} />)}</div>
-          </div>
+          <Regal traenke={regal} />
           {lauf.hatBestenliste && <Bestenliste laden={lauf.bestenliste} spiel="alchemie" />}
         </>
       )}
