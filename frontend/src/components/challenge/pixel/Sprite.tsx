@@ -8,11 +8,16 @@ export function Sprite({ src, frame, scale = 3, animation, className, label }: {
   src: string; frame: Frame; scale?: number; animation?: { frames: Frame[]; fps: number }; className?: string; label?: string;
 }) {
   const [i, setI] = useState(0);
+  // Am Inhalt festgemacht, nicht am Objekt: ein neu gebautes {frames, fps} je Render setzte sonst den Takt
+  // bei jedem Schritt zurück, und ein neuer Lauf begann mitten im Zyklus. Jede neue Bildfolge startet bei Bild 0.
+  const takt = animation && animation.frames.length > 1 ? `${animation.fps}:${animation.frames.map((b) => `${b.x},${b.y}`).join(";")}` : "";
+  const fps = animation?.fps ?? 0;
   useEffect(() => {
-    if (!animation || animation.frames.length < 2) return;
-    const t = setInterval(() => setI((n) => n + 1), 1000 / animation.fps);
+    setI(0);
+    if (!takt) return;
+    const t = setInterval(() => setI((n) => n + 1), 1000 / fps);
     return () => clearInterval(t);
-  }, [animation]);
+  }, [takt]); // eslint-disable-line react-hooks/exhaustive-deps
   const f = animation ? animation.frames[i % animation.frames.length] : frame;
   return (
     <span className={`inline-block overflow-hidden shrink-0 ${className ?? ""}`} style={{ width: f.w * scale, height: f.h * scale }}

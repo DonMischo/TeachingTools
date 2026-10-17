@@ -35,20 +35,22 @@ export function zuRgb(farbe: string): Rgb {
 
 const cssRgb = (c: Rgb) => `rgb(${c.map((x) => Math.round(Math.max(0, Math.min(1, x)) * 255)).join(",")})`;
 
-export default function Fluessigkeit({ farbe, fuellstand, breite, hoehe, form = "roehre", wirbel = 0, blasen = false, regenbogen = false, stufe = 0, zufluss = null, className }: {
+export default function Fluessigkeit({ farbe, fuellstand, breite, hoehe, form = "roehre", wirbel = 0, blasen = false, regenbogen = false, stufe = 0, zufluss = null, tempo = 1.2, className }: {
   farbe: string | Rgb; fuellstand: number; breite: number; hoehe: number;
   form?: keyof typeof FORMEN; wirbel?: number; blasen?: boolean; regenbogen?: boolean;
   /** Helligkeitsstufe des Shaders (u_level), im Häuserpokal das Level. */
   stufe?: number;
   /** Neuer Zufluss (id ändert sich): Teilchen fallen auf die Oberfläche. */
-  zufluss?: Zufluss | null; className?: string;
+  zufluss?: Zufluss | null;
+  /** Wie schnell der Füllstand dem Ziel folgt (je Sekunde); der Häuserpokal steigt gemächlich, der Kessel reagiert sofort. */
+  tempo?: number; className?: string;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [ohneGl, setOhneGl] = useState(false);
   const rgb = typeof farbe === "string" ? zuRgb(farbe) : farbe;
-  const zustand = useRef({ farbe: rgb, regenbogen, fuell: fuellstand, anzeige: fuellstand, wirbel, wirbelAnzeige: wirbel, blasen, stufe, falls: [] as Fall[], form, kick: () => {} });
+  const zustand = useRef({ farbe: rgb, regenbogen, fuell: fuellstand, anzeige: fuellstand, wirbel, wirbelAnzeige: wirbel, blasen, stufe, falls: [] as Fall[], form, tempo, kick: () => {} });
   zustand.current.farbe = rgb; zustand.current.regenbogen = regenbogen; zustand.current.fuell = Math.max(0, Math.min(1, fuellstand));
-  zustand.current.wirbel = wirbel; zustand.current.blasen = blasen; zustand.current.stufe = stufe; zustand.current.form = form;
+  zustand.current.wirbel = wirbel; zustand.current.blasen = blasen; zustand.current.stufe = stufe; zustand.current.form = form; zustand.current.tempo = tempo;
   const letzterZufluss = useRef<number | null>(zufluss?.id ?? null);
 
   useEffect(() => {
@@ -110,7 +112,7 @@ export default function Fluessigkeit({ farbe, fuellstand, breite, hoehe, form = 
       const dt = letzte > 0 ? Math.min((now - letzte) / 1000, 0.1) : 0;
       letzte = now;
       const diff = z.fuell - z.anzeige;
-      z.anzeige = Math.abs(diff) > 0.002 ? z.anzeige + diff * Math.min(1, dt * 1.2) : z.fuell;
+      z.anzeige = Math.abs(diff) > 0.002 ? z.anzeige + diff * Math.min(1, dt * z.tempo) : z.fuell;
       z.wirbelAnzeige += (z.wirbel - z.wirbelAnzeige) * Math.min(1, dt * 4);
       phase += dt * (1 + z.wirbelAnzeige * 3);
       z.falls = z.falls.filter((f) => (now - f.startTime) / 1000 < 6.0);

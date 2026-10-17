@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Alchemie from "@/components/challenge/modi/Alchemie";
 import { THEMES } from "@/lib/challenge/themes";
+import { braufarbe, SUPPE } from "@/components/challenge/modi/alchemie/Kessel";
 
 // Erkunden durch klickbare Objekte ersetzen: Betreten = Klick
 vi.mock("@/components/challenge/pixel/Erkunden", () => ({
@@ -80,5 +81,16 @@ describe("Alchemie", () => {
     await u.click(screen.getByRole("button", { name: "Abfüllen" }));
     expect(await screen.findByText(/Kessel läuft über/)).toBeInTheDocument();
     expect(screen.getByLabelText("Trankregal")).toHaveTextContent("(0)");
+  });
+});
+
+describe("Gebräu-Farbe", () => {
+  it("leerer Kessel ist Suppe, jede Zutat ändert die Farbe, Reihenfolge egal", () => {
+    expect(braufarbe([])).toBe(SUPPE);
+    const a = braufarbe(["f1"]), ab = braufarbe(["f1", "f2"]);
+    expect(a).not.toBe(SUPPE);
+    expect(ab).not.toBe(a);
+    expect(braufarbe(["f2", "f1"])).toBe(ab);
+    expect(braufarbe(["f1"], 60)).not.toBe(a);
   });
 });

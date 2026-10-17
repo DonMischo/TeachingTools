@@ -6,7 +6,6 @@ export type BossAntwort = Awaited<ReturnType<typeof api.exitgame.attempts.boss.a
 
 export const bossQuelle = (attemptId: number, slide: ExitGameSlide): ChallengeQuelle => ({
   schluessel: `boss:${attemptId}:${slide.id}`,
-  direkt: true,
   info: async () => ({
     title: slide.title ?? "Boss", subject: null, stand: null,
     settings: { spiele: slide.spiele ?? ["boss"], theme: slide.theme ?? "klassisch", skin: slide.skin, startstufe: slide.startstufe ?? 2 },

@@ -1,7 +1,7 @@
 "use client";
 /**
  * Trankladen: Zutaten im Heckenlabyrinth sammeln, dann bestellen Kunden Tränke (= offene Challenges).
- * Zutaten in den Kessel, rühren (kosmetisch), »Abfüllen« = antworte.
+ * Zutaten in die Suppe im Kessel (jede färbt sie), rühren (kosmetisch), »Abfüllen« = antworte.
  */
 import { useEffect, useState } from "react";
 import type { ChallengeAntwort } from "@/lib/api";
@@ -12,7 +12,7 @@ import Bestenliste from "@/components/challenge/Bestenliste";
 import type { ModusProps } from "./typen";
 import { Ablage, Herzen, Inhalt, Treffermeldung } from "./teile";
 import Garten from "./alchemie/Garten";
-import Kessel, { braufarbe, Flasche } from "./alchemie/Kessel";
+import Kessel, { braufarbe, Flasche, SUPPE_STAND } from "./alchemie/Kessel";
 import Figur, { KUNDENARTEN, type Kundenart, type Stimmung } from "./alchemie/Figuren";
 import Regal, { type Trank } from "./alchemie/Regal";
 
@@ -48,12 +48,13 @@ export default function Alchemie({ brett, theme, lauf, zurKarte }: ModusProps) {
   const [ablage, setAblage] = useState<string[]>([]);
   const [tipp, setTipp] = useState(false);
   const [antwort, setAntwort] = useState<ChallengeAntwort | null>(null);
-  const [ergebnis, setErgebnis] = useState<{ art: Ergebnis; n: number } | null>(null);
+  const [ergebnis, setErgebnis] = useState<{ art: Ergebnis; n: number; farbe?: string } | null>(null);
   const [ruehr, setRuehr] = useState(0);
   const [sende, setSende] = useState(false);
   const [gold, setGold] = useState(0);
   const [regal, setRegal] = useState<Trank[]>([]);
   const [geht, setGeht] = useState<{ kunde: Kundenart; n: number; gold: number } | null>(null);
+  const [zufluss, setZufluss] = useState<{ id: number; groesse: number; teilchen: number } | null>(null);
 
   const offene = brett.challenges.filter((c) => !c.erledigt);
   const aktiv = offene.find((c) => c.id === wahl) ?? offene[0] ?? null;
@@ -80,17 +81,18 @@ export default function Alchemie({ brett, theme, lauf, zurKarte }: ModusProps) {
     if (!aktiv || ablage.includes(id) || korb.istWeg(id) || !fakten.has(id)) return;
     lauf.gelegt();
     setAblage([...ablage, id]);
+    setZufluss((z) => ({ id: (z?.id ?? 0) + 1, groesse: 0.8, teilchen: 40 }));
   };
   const fuelleAb = async () => {
     if (!aktiv || !ablage.length || sende) return;
     setSende(true);
-    const farbe = braufarbe(ruehr);
+    const farbe = braufarbe(ablage, ruehr);
     const kunde = kundeVon(aktiv.id);
     const stark = aktiv.strength;
     try {
       const r = await lauf.antworte(aktiv.id, ablage, tipp);
       const art: Ergebnis = r.komplett ? (r.kombo ? "kombo" : "komplett") : r.treffer ? "teil" : "daneben";
-      setErgebnis({ art, n: Date.now() });
+      setErgebnis({ art, n: Date.now(), farbe });
       if (art !== "daneben") setRegal((g) => [...g, { n: Date.now(), farbe, selten: art === "kombo", trueb: art === "teil" }]);
       const verdient = art === "kombo" ? Math.round(stark * 15) : art === "komplett" ? stark * 10 : art === "teil" ? stark * 3 : 0;
       if (verdient) setGold((g) => g + verdient);
@@ -103,10 +105,11 @@ export default function Alchemie({ brett, theme, lauf, zurKarte }: ModusProps) {
     }
   };
 
-  const farbe = ergebnis?.art === "teil" ? "#8a8a6a" : braufarbe(ruehr);
+  // Nach dem Abfüllen zeigt Kessel und Flasche das Gebräu, nicht die schon geleerte Suppe
+  const farbe = ergebnis?.art === "teil" ? "#8a8a6a" : ergebnis?.farbe ?? braufarbe(ablage, ruehr);
   const bg = theme.farben.himmel === "transparent" ? undefined : theme.farben.himmel;
   const kunden = offene.slice(0, 3);
-  const fuell = ergebnis ? (ergebnis.art === "daneben" ? 1 : 0.12) : Math.min(0.9, ablage.length ? 0.28 + ablage.length * 0.16 : 0.12);
+  const fuell = ergebnis?.art === "daneben" ? 1 : ergebnis ? SUPPE_STAND : Math.min(0.9, SUPPE_STAND + ablage.length * 0.1);
   const wirbel = ergebnis ? { kombo: 1, komplett: 0.9, teil: 0.5, daneben: 0.8 }[ergebnis.art] : ablage.length ? 0.15 : 0;
 
   return (
@@ -148,7 +151,7 @@ export default function Alchemie({ brett, theme, lauf, zurKarte }: ModusProps) {
               )}
             </div>
             <div className="flex items-end justify-around gap-2 flex-wrap">
-              <Kessel farbe={farbe} ruehr={ruehr} setRuehr={setRuehr} blubbert={ablage.length > 0 && !ergebnis} ueberlauf={ergebnis?.art === "daneben"}
+              <Kessel farbe={farbe} setRuehr={setRuehr} zufluss={zufluss} blubbert={ablage.length > 0 && !ergebnis} ueberlauf={ergebnis?.art === "daneben"}
                 fuellstand={fuell} wirbel={wirbel} regenbogen={ergebnis?.art === "kombo"} />
               <div className="min-w-16" style={{ filter: ergebnis && (ergebnis.art === "komplett" || ergebnis.art === "kombo") ? `drop-shadow(0 0 10px ${farbe})` : undefined }}>
                 {ergebnis && ergebnis.art !== "daneben" && <Flasche farbe={farbe} regenbogen={ergebnis.art === "kombo"} wirbel={0.3} />}

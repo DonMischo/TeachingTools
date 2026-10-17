@@ -10,8 +10,6 @@ import {
 export type ChallengeQuelle = {
   /** Für Effekt-Abhängigkeiten (das Quelle-Objekt selbst ist bei jedem Render neu). */
   schluessel: string;
-  /** true: sofort start() statt Spielauswahl (der Lauf steht auf dem Server). */
-  direkt?: boolean;
   info(): Promise<ChallengeInfo>;
   start(spiel?: string): Promise<ChallengeBrett>;
   antwort(body: ChallengeAntwortIn): Promise<ChallengeAntwort>;
@@ -54,7 +52,7 @@ export function useChallengeLauf(quelle: ChallengeQuelle) {
         const i = await qRef.current.info();
         setInfo(i);
         // Bei mehreren Spielarten und ohne laufenden Stand wählt die Person erst (spielWechseln)
-        if (qRef.current.direkt || i.settings.spiele.length <= 1 || i.stand) await holeBrett();
+        if (i.settings.spiele.length <= 1 || i.stand) await holeBrett();
       } catch (e) {
         setFehler((e as Error).message.includes("geschlossen") ? "Diese Challenge ist geschlossen." : "Die Challenge konnte nicht geladen werden.");
       } finally {

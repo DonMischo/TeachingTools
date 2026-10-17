@@ -16,7 +16,7 @@ const antwort = { qualitaet: 1, treffer: true, komplett: true, kombo: false, sch
 describe("ChallengeSpiel mit eigener Quelle", () => {
   it("nutzt die Quelle und zeigt am Ende »Boss besiegt!« mit Weiter", async () => {
     const quelle: ChallengeQuelle = {
-      schluessel: "boss:5:b1", direkt: true,
+      schluessel: "boss:5:b1",
       info: vi.fn().mockResolvedValue({ title: "Drache", subject: null, stand: null, settings: { spiele: ["normal", "karten"], theme: "klassisch", startstufe: 2 } }),
       start: vi.fn().mockResolvedValue(brett),
       antwort: vi.fn().mockResolvedValue(antwort),
@@ -25,6 +25,9 @@ describe("ChallengeSpiel mit eigener Quelle", () => {
     const onAntwort = vi.fn(); const onFertig = vi.fn();
     const u = userEvent.setup();
     render(<ChallengeSpiel quelle={quelle} onAntwort={onAntwort} onFertig={onFertig} />);
+    // mehrere Spielarten: erst wählen (die Boss-Folie setzt den Lauf auf dem Server fort)
+    await u.click(await screen.findByRole("button", { name: /Normal/ }));
+    expect(quelle.start).toHaveBeenCalledWith("normal");
     await u.click(await screen.findByRole("button", { name: "Los" }));
     await u.click(await screen.findByText("Was ist eine Wippe?"));
     await u.click(screen.getByText("Zweiseitiger Hebel"));
