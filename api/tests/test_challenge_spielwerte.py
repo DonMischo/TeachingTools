@@ -27,7 +27,7 @@ def test_mehr_edelsteine_als_max_ist_422(client, db, teacher_token, klass):
     tok = _tok(_schueler(db, klass))
     _start(client, code, tok)
     assert _wert(client, code, tok, 21, max=20).status_code == 422
-    assert _wert(client, code, tok, 1, max=501).status_code == 422
+    assert _wert(client, code, tok, 1, max=100_001).status_code == 422
     assert _wert(client, code, tok, 1, spiel="quatsch").status_code == 422
 
 

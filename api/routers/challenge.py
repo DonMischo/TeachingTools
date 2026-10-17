@@ -445,11 +445,15 @@ def antwort(code: str, body: AntwortIn, db: Session = Depends(get_db), spieler=D
     return {**aus, "brett": neues_brett}
 
 
+# Obergrenze für gemeldete Spielpunkte: Edelsteine zählen zweistellig, Glücksrad-Münzen fünfstellig
+SPIELWERT_GRENZE = 100_000
+
+
 class SpielwertIn(BaseModel):
     spiel: str = Field(max_length=30)
     etappe: int = Field(ge=1, le=1000)
     edelsteine: int = Field(ge=0)
-    max: int = Field(ge=1, le=500)
+    max: int = Field(ge=1, le=SPIELWERT_GRENZE)
 
 
 def _summe_spielwerte(zustand: dict, spiel: str) -> tuple[int, int]:
@@ -461,7 +465,7 @@ def _summe_spielwerte(zustand: dict, spiel: str) -> tuple[int, int]:
 def spielwert(code: str, body: SpielwertIn, db: Session = Depends(get_db), spieler=Depends(get_player)):
     """Edelsteine eines Minispiels (z. B. Hüpfen) je Etappe fürs Brett der Bestenliste.
 
-    Vom Client gemeldet und nur plausibilisiert (edelsteine <= max, max <= 500): ein Spielstand ohne Wettbewerbswert,
+    Vom Client gemeldet und nur plausibilisiert (edelsteine <= max, max <= SPIELWERT_GRENZE): ein Spielstand ohne Wettbewerbswert,
     wie die Bestenliste der Schreibübung (api/routers/bestenliste.py). Beeinflusst weder Güte noch Ergebnis noch
     Hauspunkte; pro Etappe zählt der beste gemeldete Wert."""
     if body.spiel not in eng.SPIELE:

@@ -292,3 +292,13 @@ def test_kalibrierung_wirkt_auf_geraten_in_der_auswertung(client, db, teacher_to
     werte = {"lese_wpm": {"1": 80, "2": 20, "3": 140, "4": 170}, "antwortzeit": {"schnell": 15, "langsam": 40}}
     client.put("/api/challenge/kalibrierung", json={"class_id": klass.id, "werte": werte}, headers=_h(client, teacher_token))
     assert client.get(f"/api/challenge/{code}/uebersicht", headers=_h(client, teacher_token)).json()["teilnehmer"][0]["geraten"] == 1
+
+
+def test_gluecksrad_ist_spielart_und_waehlbar(client, db, teacher_token, klass):
+    from api import challenge_engine
+    assert "gluecksrad" in challenge_engine.SPIELE
+    code = _sitzung(client, teacher_token, spiele=["normal", "gluecksrad"])
+    tok = _tok(_schueler(db, klass))
+    s = client.get(f"/api/challenge/{code}", headers=_h(client, tok)).json()["settings"]
+    assert s["spiele"] == ["normal", "gluecksrad"]
+    assert _start_mit(client, code, tok, "gluecksrad").json()["spiel"] == "gluecksrad"

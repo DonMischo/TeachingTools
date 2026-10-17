@@ -541,7 +541,7 @@ def download_template(_: Teacher = Depends(get_current_teacher)):
             "--- BOSS --- Eine Folie 'type': 'boss' hat 'challenge' (Pflicht), optional 'spiel' (Standard 'boss'), "
             "'spiele' (Liste, aus der der Schüler wählt), 'skin' (monster, rap, prinzessin, einhorn), 'theme' "
             "(klassisch, wald, ninja, verlies, antike, weltraum), 'startstufe' (1-4, Standard 2), 'codeFragment' und "
-            "'station'. Spielarten: normal, karten, boss, huepfen, turm, detektiv, alchemie, bruecke, gericht "
+            "'station'. Spielarten: normal, karten, boss, huepfen, turm, detektiv, alchemie, bruecke, gericht, gluecksrad "
             "('gericht' nur mit 'claims'). 'challenge' ist ein Satz aus 'facts' (Wissensbausteine, 'decoy': true = "
             "Ablenker), 'challenges' (Aufgaben mit 'solve': {'all': [fakt-ids]} oder {'any': [...]}, 'strength', "
             "'stage' = Etappe, 'feedback'), optional 'stages', 'levels' (Anpassungen je Stufe) und 'claims' "

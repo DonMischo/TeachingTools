@@ -14,6 +14,7 @@ const KOMPONENTEN: Record<string, () => Promise<{ default: ComponentType<ModusPr
   alchemie: () => import("./Alchemie"),
   bruecke: () => import("./Bruecke"),
   gericht: () => import("./Gericht"),
+  gluecksrad: () => import("./Gluecksrad"),
 };
 
 /** Alle Spielarten mit ihrer Komponente; Name und Icon aus lib/challenge/spielarten.ts. */

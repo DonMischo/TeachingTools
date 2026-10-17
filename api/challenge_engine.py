@@ -11,7 +11,7 @@ from functools import lru_cache
 from . import dda
 
 STUFEN = (1, 2, 3, 4)
-SPIELE = ("normal", "karten", "boss", "huepfen", "turm", "detektiv", "alchemie", "bruecke", "gericht")
+SPIELE = ("normal", "karten", "boss", "huepfen", "turm", "detektiv", "alchemie", "bruecke", "gericht", "gluecksrad")
 THEMES = ("klassisch", "wald", "ninja", "verlies", "antike", "weltraum")
 STUFE_PARAMS = {  # Systemvorgaben je Stufe (4 = schwerste); ablenker None = alle
     1: {"ablenker": 1, "tipps": True, "lese_wpm": 80},
