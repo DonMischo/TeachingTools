@@ -1,14 +1,14 @@
 "use client";
-/** Seitenansicht: eine Brücke aus Segmenten (bis zu drei Schluchten hintereinander), die Kamera folgt der aktiven Brücke, ein Karren fährt zur Testfahrt. */
+/** Seitenansicht: eine Brücke aus Segmenten (bis zu drei Schluchten hintereinander), die Kamera folgt der aktiven Brücke, ein Karren fährt zur Testfahrt vom Ufer bis zum letzten geprüften Segment. */
 import { memo, useEffect, useRef, useState } from "react";
 import { wenigerBewegung } from "@/lib/challenge/bewegung";
-import { BODEN_Y, bruckeX, durchhang, HOEHE, kameraX, karren, SEG, segmentOrt, segmentX, SICHT, UFER, weltBreite, type Ausgang } from "@/lib/challenge/brueckeSpiel";
+import { BODEN_Y, bruch, bruckeX, durchhang, HOEHE, kameraX, karren, SEG, segmentOrt, segmentX, SICHT, UFER, weltBreite, type Ausgang } from "@/lib/challenge/brueckeSpiel";
 
 export type Luecke = { id: string; bretter: number; fertig: boolean };
 export type Fahrt = { idx: number; art: Ausgang; bretter: number };
 const HOLZ = ["#c28a4a", "#a8733a"];
 
-function Deck({ x0, bretter, art, p, fest }: { x0: number; bretter: number; art?: Ausgang; p?: number; fest?: boolean }) {
+function Deck({ x0, bretter, art, p, fest, pb = 0.5 }: { x0: number; bretter: number; art?: Ausgang; p?: number; fest?: boolean; pb?: number }) {
   const n = fest ? 3 : Math.max(1, bretter);
   const sag = art && p !== undefined ? durchhang(art, p) : 0;
   const y = (u: number) => BODEN_Y + sag * Math.sin(Math.PI * u);
@@ -16,7 +16,7 @@ function Deck({ x0, bretter, art, p, fest }: { x0: number; bretter: number; art?
     <g>
       {Array.from({ length: n }, (_, i) => {
         const u0 = i / n, u1 = (i + 1) / n;
-        const q = art === "bricht" && p !== undefined && p > 0.5 ? p - 0.5 : 0;
+        const q = art === "bricht" && p !== undefined && p > pb ? ((p - pb) / (1 - pb)) * 0.5 : 0;
         const mx = x0 + ((u0 + u1) / 2) * SEG, my = y((u0 + u1) / 2);
         const tf = q ? `translate(0 ${q * q * 140 * (1 + i * 0.25)}) rotate(${(i % 2 ? 1 : -1) * q * 120} ${mx} ${my})` : undefined;
         return <line key={i} x1={x0 + u0 * SEG} y1={y(u0)} x2={x0 + u1 * SEG} y2={y(u1)} stroke={HOLZ[i % 2]} strokeWidth={fest ? 2.4 : 2} transform={tf} />;
@@ -93,7 +93,7 @@ export default function Schlucht({ luecken, teile, aktiv, fahrt, onEnde }: { lue
     <div className="relative w-full max-w-[720px] mx-auto overflow-hidden rounded-lg" style={{ aspectRatio: `${SICHT}/${HOEHE}`, background: "#bfe3f5" }} role="img" aria-label="Brücke über die Schlucht">
       <svg viewBox={`0 0 ${W} ${HOEHE}`} style={{ width: `${(W / SICHT) * 100}%`, position: "absolute", left: 0, top: 0, transform: `translateX(-${(cam / W) * 100}%)`, transition: wenigerBewegung() ? "none" : "transform 0.9s ease-in-out" }}>
         <Statisch luecken={luecken} teile={teile} laeuftIdx={fahrt ? fahrt.idx : -1} />
-        {fahrt && <Deck x0={segmentX(fahrt.idx, teile)} bretter={fahrt.bretter} art={fahrt.art} p={p} />}
+        {fahrt && <Deck x0={segmentX(fahrt.idx, teile)} bretter={fahrt.bretter} art={fahrt.art} p={p} pb={bruch(len)} />}
         <g transform={`translate(${kx} ${ky})`}>
           {k.schirm && <g><path d="M-3.5 -1 Q0 -7.5 3.5 -1 Z" fill="#e74c3c" /><line x1={-3.4} y1={-1} x2={-1} y2={1} stroke="#444" strokeWidth={0.2} /><line x1={3.4} y1={-1} x2={1} y2={1} stroke="#444" strokeWidth={0.2} /></g>}
           <rect x={-2.2} y={0} width={4.4} height={1.8} fill="#6d4c41" rx={0.3} />

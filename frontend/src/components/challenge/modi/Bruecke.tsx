@@ -1,7 +1,9 @@
 "use client";
 /**
  * Brückenbau (nach Poly Bridge / Bridge Constructor): Bretter (Fakten) im Wald-Labyrinth suchen, dann eine Brücke Segment für Segment (je Challenge eins;
- * über 10 Segmente bis zu drei Brücken) bauen: Bretter legen und »Testfahrt« (= antworte). Der Karren fährt: hält / biegt sich / bricht (Fallschirm, kommt zurück).
+ * über 10 Segmente bis zu drei Brücken) bauen: Bretter auf beliebige Segmente legen, dann »Testfahrt«. Der Karren fährt vom Ufer über alle belegten
+ * Segmente der Brücke und prüft sie der Reihe nach (je eins = antworte): am ersten falschen bricht die Brücke (Fallschirm, kommt zurück),
+ * ein Teiltreffer biegt sich; dahinter liegende Segmente werden dann nicht geprüft.
  */
 import { useEffect, useState } from "react";
 import type { ChallengeAntwort } from "@/lib/api";
@@ -12,7 +14,7 @@ import Papierkorb, { WegKnopf } from "@/components/challenge/Papierkorb";
 import { Ablage, FaktKarte, Herzen, Inhalt, Treffermeldung } from "./teile";
 import Holz from "./bruecke/Holz";
 import Schlucht, { type Fahrt } from "./bruecke/Schlucht";
-import { ausgang, segmentOrt, sterne, teileBruecken } from "@/lib/challenge/brueckeSpiel";
+import { ausgang, segmentOrt, sterne, strecke, teileBruecken } from "@/lib/challenge/brueckeSpiel";
 
 export default function Bruecke({ brett, theme, lauf, zurKarte }: ModusProps) {
   const korb = useAblage(brett.etappe);
@@ -28,6 +30,7 @@ export default function Bruecke({ brett, theme, lauf, zurKarte }: ModusProps) {
   const [antwort, setAntwort] = useState<ChallengeAntwort | null>(null);
   const [sende, setSende] = useState(false);
   const [verschwendet, setVerschwendet] = useState(0);
+  const [bericht, setBericht] = useState<string | null>(null);
 
   const fakten = new Map(brett.fakten.map((f) => [f.id, f]));
   const offeneIdx = luecken.map((c, i) => i).filter((i) => !fertig.includes(luecken[i].id));
@@ -62,39 +65,64 @@ export default function Bruecke({ brett, theme, lauf, zurKarte }: ModusProps) {
   }
 
   const waehle = (i: number) => { setSel(i); setAntwort(null); };
+  // Ein Brett liegt an genau einer Stelle: Fakten auf offenen Segmenten fehlen im Inventar
+  const verbaut = new Set(luecken.filter((l) => !fertig.includes(l.id)).flatMap((l) => ablagen[l.id] ?? []));
   const lege = (id: string) => {
-    if (!c || ablage.includes(id) || !gesammelt.includes(id) || korb.istWeg(id) || !fakten.has(id)) return;
+    if (!c || verbaut.has(id) || !gesammelt.includes(id) || korb.istWeg(id) || !fakten.has(id)) return;
     if (!ablage.length) lauf.gelegt();
     setAblage([...ablage, id]);
   };
 
+  // Die Testfahrt startet am Ufer der Brücke, auf der das gewählte Segment liegt
+  const offenAufBruecke = strecke(segmentOrt(idx, teile).bruecke, teile).filter((i) => !fertig.includes(luecken[i].id));
+  const erste = offenAufBruecke[0];
+  const ersteBelegt = erste !== undefined && (ablagen[luecken[erste].id]?.length ?? 0) > 0;
+
   const testfahrt = async () => {
-    if (!c || !ablage.length || sende || fahrt) return;
+    if (!ersteBelegt || sende || fahrt) return;
     setSende(true);
+    setBericht(null);
+    let verlust = verschwendet, gehalten = 0;
+    const neuFertig = [...fertig];
+    let letzte: { i: number; r: ChallengeAntwort; bretter: number } | null = null;
+    let jetzt = -1;
     try {
-      const r = await lauf.antworte(c.id, ablage, false);
-      const art = ausgang(r);
-      const verlust = art === "bricht" ? verschwendet + ablage.length : verschwendet;
-      setAntwort(r);
-      setFahrt({ idx, art, bretter: ablage.length });
-      if (r.komplett) {
-        setFertig((f) => [...f, c.id]);
-        if (fertig.length + 1 >= luecken.length || r.etappe_geschafft || r.fertig) void lauf.spielwert("bruecke", brett.etappe, sterne(verlust), 3);
+      for (const i of offenAufBruecke) {
+        const l = luecken[i];
+        const a = ablagen[l.id] ?? [];
+        if (!a.length) break; // Lücke: hier endet die Fahrt
+        jetzt = i;
+        const r = await lauf.antworte(l.id, a, false);
+        letzte = { i, r, bretter: a.length };
+        if (ausgang(r) === "bricht") verlust += a.length;
+        if (r.komplett) { neuFertig.push(l.id); gehalten++; }
+        if (!r.komplett || r.zurueck_zur_karte || r.etappe_geschafft || r.fertig) break;
       }
-      setVerschwendet(verlust);
     } catch {
-      setAblage([]);
+      if (jetzt >= 0) setAblagen((m) => ({ ...m, [luecken[jetzt].id]: [] }));
     } finally {
       setSende(false);
     }
+    if (!letzte) return;
+    const art = ausgang(letzte.r);
+    setFertig(neuFertig);
+    setAntwort(letzte.r);
+    setVerschwendet(verlust);
+    setFahrt({ idx: letzte.i, art, bretter: letzte.bretter });
+    const nr = letzte.i + 1;
+    setBericht(gehalten + (art === "haelt" ? 0 : 1) > 1
+      ? `Testfahrt: ${gehalten} ${gehalten === 1 ? "Segment hält" : "Segmente halten"}${art === "bricht" ? `, Segment ${nr} bricht` : art === "biegt" ? `, Segment ${nr} biegt sich` : ""}.`
+      : null);
+    if (neuFertig.length >= luecken.length || letzte.r.etappe_geschafft || letzte.r.fertig) void lauf.spielwert("bruecke", brett.etappe, sterne(verlust), 3);
   };
   const fahrtEnde = () => {
-    if (fahrt?.art === "bricht" && c) setAblage([]); // gebrochene Bretter sind weg; die Fakten bleiben im Inventar
+    // gebrochene Bretter sind weg; die Fakten kommen zurück ins Inventar
+    if (fahrt?.art === "bricht") { const id = luecken[fahrt.idx].id; setAblagen((m) => ({ ...m, [id]: [] })); }
     if (fahrt?.art === "haelt") setSel(null);
     setFahrt(null);
   };
 
-  const inventar = brett.fakten.filter((f) => gesammelt.includes(f.id) && !ablage.includes(f.id) && !korb.istWeg(f.id));
+  const inventar = brett.fakten.filter((f) => gesammelt.includes(f.id) && !verbaut.has(f.id) && !korb.istWeg(f.id));
   const alleFertig = luecken.length > 0 && fertig.length >= luecken.length;
   const ort = segmentOrt(idx, teile);
   const schlucht = luecken.map((l) => ({ id: l.id, bretter: (fahrt && luecken[fahrt.idx]?.id === l.id) ? fahrt.bretter : (ablagen[l.id]?.length ?? 0), fertig: fertig.includes(l.id) }));
@@ -103,6 +131,7 @@ export default function Bruecke({ brett, theme, lauf, zurKarte }: ModusProps) {
     <>
       {kopf}
       <Treffermeldung antwort={antwort} />
+      {bericht && <p className="text-muted" role="status">{bericht}</p>}
       {alleFertig && <p className="card p-3 font-bold text-good" role="status">Alle Brücken stehen! {"★".repeat(sterne(verschwendet))}</p>}
       <Schlucht luecken={schlucht} teile={teile} aktiv={idx} fahrt={fahrt} onEnde={fahrtEnde} />
 
@@ -112,7 +141,7 @@ export default function Bruecke({ brett, theme, lauf, zurKarte }: ModusProps) {
         <div className="flex flex-wrap gap-2" role="group" aria-label="Segmente">
           {luecken.map((l, i) => (
             <button key={l.id} className="btn-secondary" title={l.text} aria-pressed={i === idx && !fertig.includes(l.id)} disabled={fertig.includes(l.id) || !!fahrt} onClick={() => waehle(i)}>
-              {fertig.includes(l.id) ? "✔ " : ""}{i + 1}
+              {fertig.includes(l.id) ? "✔ " : ""}{i + 1}{!fertig.includes(l.id) && ablagen[l.id]?.length ? " 🪵" : ""}
             </button>
           ))}
         </div>
@@ -124,9 +153,12 @@ export default function Bruecke({ brett, theme, lauf, zurKarte }: ModusProps) {
           <Ablage karten={ablage.map((id) => fakten.get(id)!)} onLege={lege} onNimm={(id) => setAblage(ablage.filter((x) => x !== id))}
             leer="Lege Bretter auf das Segment." />
           <div className="flex flex-wrap gap-2">
-            <button className="btn-primary" disabled={!ablage.length || sende || !!fahrt} onClick={testfahrt}>Testfahrt</button>
+            <button className="btn-primary" disabled={!ersteBelegt || sende || !!fahrt} onClick={testfahrt}>Testfahrt</button>
             {c.tip && <span className="text-muted self-center">💡 {c.tip}</span>}
           </div>
+          {!ersteBelegt && erste !== undefined && erste !== idx && (
+            <p className="text-muted text-sm">Die Testfahrt startet am Ufer: lege zuerst Bretter auf Segment {erste + 1}.</p>
+          )}
         </div>
       )}
 

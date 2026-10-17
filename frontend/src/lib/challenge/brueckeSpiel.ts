@@ -45,10 +45,20 @@ export function durchhang(art: Ausgang, p: number): number {
   return amp * 0.25 * (1 - q) * Math.cos(q * 14);
 }
 
+/** Fortschritt, bei dem der Karren die Mitte des letzten Segments erreicht: dort bricht es. */
+export const bruch = (len = 40) => (len - SEG / 2 + 7) / (len + 7);
+
 /** Karren: x relativ zur linken Auflagerkante der Brücke, `len` = Fahrstrecke bis Segmentende, `fall` = Absturztiefe (nur bei »bricht«). */
 export function karren(art: Ausgang, p: number, len = 40): { x: number; fall: number; schirm: boolean } {
   const lauf = (q: number) => -7 + q * (len + 7);
-  if (art !== "bricht" || p < 0.5) return { x: lauf(p), fall: 0, schirm: false };
-  const q = (p - 0.5) / 0.5;
-  return { x: lauf(0.5), fall: q * 26, schirm: q > 0.15 };
+  const pb = bruch(len);
+  if (art !== "bricht" || p < pb) return { x: lauf(p), fall: 0, schirm: false };
+  const q = (p - pb) / (1 - pb);
+  return { x: lauf(pb), fall: q * 26, schirm: q > 0.15 };
+}
+
+/** Globale Segmentindizes der Brücke b, vom Ufer aus. */
+export function strecke(b: number, teile: number[]): number[] {
+  const start = teile.slice(0, b).reduce((s, t) => s + t, 0);
+  return Array.from({ length: teile[b] ?? 0 }, (_, k) => start + k);
 }

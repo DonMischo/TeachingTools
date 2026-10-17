@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { configure, render, screen, waitFor } from "@testing-library/react";
+import { configure, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Bruecke from "@/components/challenge/modi/Bruecke";
 import { THEMES } from "@/lib/challenge/themes";
-import { ausgang, durchhang, kameraX, karren, segmentOrt, sterne, teileBruecken, weltBreite } from "@/lib/challenge/brueckeSpiel";
+import { ausgang, bruch, durchhang, kameraX, karren, segmentOrt, SEG, sterne, strecke, teileBruecken, weltBreite } from "@/lib/challenge/brueckeSpiel";
 
 // Laufen und Animationen brauchen unter Last (ganze Suite parallel) länger als 1 s.
 configure({ asyncUtilTimeout: 8000 });
@@ -57,6 +57,15 @@ describe("Bruecke-Geometrie", () => {
     expect(durchhang("biegt", 0.4)).toBeGreaterThan(durchhang("haelt", 0.4));
     expect(karren("bricht", 1).fall).toBeGreaterThan(0);
     expect(karren("haelt", 1).fall).toBe(0);
+  });
+  it("die Brücke bricht erst am geprüften Segment, nicht auf halber Strecke", () => {
+    const len = 4 * SEG; // Fahrt bis zum Ende von Segment 4
+    const vorher = karren("bricht", bruch(len) - 0.01, len);
+    expect(vorher.fall).toBe(0);
+    expect(vorher.x).toBeGreaterThan(3 * SEG);
+    expect(karren("bricht", bruch(len), len).x).toBeCloseTo(len - SEG / 2);
+    expect(karren("bricht", 1, len).fall).toBeGreaterThan(0);
+    expect(strecke(1, [6, 5])).toEqual([6, 7, 8, 9, 10]);
   });
 });
 
@@ -118,5 +127,58 @@ describe("Bruecke", () => {
     await u.click(screen.getByRole("button", { name: "Testfahrt" }));
     await waitFor(() => expect(lauf.antworte).toHaveBeenCalledWith("d5", ["f1"], false));
     expect(await screen.findByText(/Segment 7 von 12 · Brücke 2 von 2/, {}, { timeout: 8000 })).toBeTruthy();
+  });
+
+  describe("Testfahrt über die ganze Brücke", () => {
+    const drei = {
+      ...brett,
+      challenges: [1, 2, 3].map((i) => ({ id: `c${i}`, text: `Frage ${i}`, image: null, formula: null, strength: 1, erledigt: false })),
+      fakten: [1, 2, 3].map((i) => ({ id: `f${i}`, text: `Fakt ${i}`, image: null, formula: null, info: null })),
+    };
+    const baue = async (lauf: ReturnType<typeof mk>, u: ReturnType<typeof userEvent.setup>, segmente: number) => {
+      render(<Bruecke brett={drei as any} theme={THEMES.klassisch} skin="monster" lauf={lauf as any} zurKarte={() => {}} />);
+      await sammle(u);
+      const gruppe = screen.getByRole("group", { name: "Segmente" });
+      for (let i = 1; i <= segmente; i++) {
+        await u.click(within(gruppe).getAllByRole("button")[i - 1]);
+        await u.click(screen.getByText(`Fakt ${i}`));
+      }
+    };
+
+    it("prüft alle belegten Segmente der Reihe nach in einer Fahrt", async () => {
+      const lauf = mk(antw({ treffer: true, komplett: true })); const u = userEvent.setup();
+      await baue(lauf, u, 3);
+      await u.click(screen.getByRole("button", { name: "Testfahrt" }));
+      await waitFor(() => expect(lauf.antworte).toHaveBeenCalledTimes(3));
+      expect(lauf.antworte.mock.calls.map((c) => c[0])).toEqual(["c1", "c2", "c3"]);
+      expect(await screen.findByText(/Alle Brücken stehen/)).toBeTruthy();
+      expect(screen.getByText("Testfahrt: 3 Segmente halten.")).toBeTruthy();
+      await waitFor(() => expect(lauf.spielwert).toHaveBeenCalledWith("bruecke", 1, 3, 3));
+    });
+
+    it("am ersten falschen Segment bricht die Brücke; dahinter wird nichts geprüft", async () => {
+      const lauf = mk(); const u = userEvent.setup();
+      lauf.antworte.mockResolvedValueOnce(antw({ treffer: true, komplett: true })).mockResolvedValueOnce(antw());
+      await baue(lauf, u, 3);
+      await u.click(screen.getByRole("button", { name: "Testfahrt" }));
+      await waitFor(() => expect(lauf.antworte).toHaveBeenCalledTimes(2));
+      expect(await screen.findByText("Testfahrt: 1 Segment hält, Segment 2 bricht.")).toBeTruthy();
+      await new Promise((r) => setTimeout(r, 50));
+      expect(lauf.antworte).toHaveBeenCalledTimes(2);
+      // Segment 2 ist leer, Fakt 2 zurück im Inventar; Segment 3 behält sein Brett
+      const gruppe = screen.getByRole("group", { name: "Segmente" });
+      expect(within(gruppe).getAllByRole("button").map((b) => b.textContent)).toEqual(["✔ 1", "2", "3 🪵"]);
+      expect(screen.getByText("Fakt 2").closest("button")!.disabled).toBe(false);
+    });
+
+    it("die Fahrt startet am Ufer: ohne Bretter auf Segment 1 keine Testfahrt", async () => {
+      const lauf = mk(); const u = userEvent.setup();
+      render(<Bruecke brett={drei as any} theme={THEMES.klassisch} skin="monster" lauf={lauf as any} zurKarte={() => {}} />);
+      await sammle(u);
+      await u.click(within(screen.getByRole("group", { name: "Segmente" })).getAllByRole("button")[1]);
+      await u.click(screen.getByText("Fakt 2"));
+      expect((screen.getByRole("button", { name: "Testfahrt" }) as HTMLButtonElement).disabled).toBe(true);
+      expect(screen.getByText(/lege zuerst Bretter auf Segment 1/)).toBeTruthy();
+    });
   });
 });
