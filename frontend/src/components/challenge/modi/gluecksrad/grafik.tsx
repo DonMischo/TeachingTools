@@ -1,56 +1,30 @@
 "use client";
-/** Zeichnungen des Glücksrads: Rad, Galgen, Showbühne. Farben als Hex (keine var() in SVG-Attributen). */
+/** Zeichnungen des Glücksrads: Galgen, Showbühne, Moderator. Farben als Hex (keine var() in SVG-Attributen). */
 import type { ReactNode } from "react";
-import { RAD, type Feld } from "@/lib/challenge/gluecksrad";
+import { GALGEN_MAX } from "@/lib/challenge/gluecksrad";
 
-const SEG = 360 / RAD.length;
-const punkt = (r: number, grad: number) => [r * Math.sin((grad * Math.PI) / 180), -r * Math.cos((grad * Math.PI) / 180)];
-const FARBEN = ["#e63946", "#f4a261", "#2a9d8f", "#457b9d", "#e9c46a", "#9b5de5"];
-const farbe = (f: Feld, i: number) => (f.art === "bankrott" ? "#111111" : f.art === "aussetzen" ? "#8d99ae" : FARBEN[i % FARBEN.length]);
-const beschriftung = (f: Feld) => (f.art === "betrag" ? String(f.betrag) : f.art === "bankrott" ? "BANKROTT" : "AUSSETZEN");
-
-/** Mittelpunktswinkel des Feldes i, im Uhrzeigersinn ab oben. */
-export const feldMitte = (i: number) => (i + 0.5) * SEG;
-
-export function Rad({ drehung, dauer }: { drehung: number; dauer: number }) {
-  return (
-    <svg viewBox="-115 -125 230 240" className="w-full max-w-xs mx-auto" role="img" aria-label="Glücksrad">
-      <g style={{ transform: `rotate(${drehung}deg)`, transition: dauer ? `transform ${dauer}ms cubic-bezier(.12,.6,.1,1)` : "none", transformOrigin: "0 0" }}>
-        {RAD.map((f, i) => {
-          const [x1, y1] = punkt(100, i * SEG);
-          const [x2, y2] = punkt(100, (i + 1) * SEG);
-          return (
-            <g key={i}>
-              <path d={`M0 0 L${x1} ${y1} A100 100 0 0 1 ${x2} ${y2} Z`} fill={farbe(f, i)} stroke="#ffffff" strokeWidth="1.5" />
-              <g transform={`rotate(${feldMitte(i)})`}>
-                <text x="0" y="-62" textAnchor="middle" fontSize={f.art === "betrag" ? 12 : 8} fontWeight="800" fill="#ffffff"
-                 >{beschriftung(f)}</text>
-              </g>
-            </g>
-          );
-        })}
-        <circle r="14" fill="#ffd700" stroke="#ffffff" strokeWidth="3" />
-      </g>
-      <circle r="102" fill="none" stroke="#ffd700" strokeWidth="5" />
-      <polygon points="-10,-122 10,-122 0,-98" fill="#ffffff" stroke="#111111" strokeWidth="2" />
-    </svg>
-  );
-}
-
-/** Galgen in 8 Stufen: Boden, Pfosten, Balken, Seil, Kopf, Körper, Arme, Beine. */
+/** Galgen in 6 Stufen (zwei je verlorenem Leben): Gerüst, Seil, Kopf, Körper, Arme, Beine – groß und hell auf der dunklen Bühne. */
 export function Galgen({ stufe }: { stufe: number }) {
-  const s = "#3b2a1a";
-  const m = "#222222";
+  const holz = "#e9c46a";
+  const figur = "#ffffff";
+  const neu = (n: number) => (n === stufe ? "gl-neu" : undefined);
+  const voll = stufe >= GALGEN_MAX;
   return (
-    <svg viewBox="0 0 120 130" className="w-28 shrink-0" role="img" aria-label={`Galgen: ${stufe} von 8 Teilen`}>
-      {stufe >= 1 && <line x1="10" y1="122" x2="80" y2="122" stroke={s} strokeWidth="6" strokeLinecap="round" />}
-      {stufe >= 2 && <line x1="30" y1="122" x2="30" y2="10" stroke={s} strokeWidth="6" strokeLinecap="round" />}
-      {stufe >= 3 && <line x1="27" y1="10" x2="85" y2="10" stroke={s} strokeWidth="6" strokeLinecap="round" />}
-      {stufe >= 4 && <line x1="85" y1="10" x2="85" y2="28" stroke="#b08a4a" strokeWidth="3" />}
-      {stufe >= 5 && <circle cx="85" cy="38" r="10" fill="none" stroke={m} strokeWidth="3" />}
-      {stufe >= 6 && <line x1="85" y1="48" x2="85" y2="82" stroke={m} strokeWidth="3" strokeLinecap="round" />}
-      {stufe >= 7 && <path d="M65 64 L85 54 L105 64" fill="none" stroke={m} strokeWidth="3" strokeLinecap="round" />}
-      {stufe >= 8 && <path d="M68 108 L85 82 L102 108" fill="none" stroke={m} strokeWidth="3" strokeLinecap="round" />}
+    <svg viewBox="0 0 120 140" className={`w-36 sm:w-48 shrink-0 ${voll ? "gl-wackel" : ""}`} role="img" aria-label={`Galgen: ${stufe} von ${GALGEN_MAX} Teilen`}>
+      <rect x="0" y="0" width="120" height="140" rx="10" fill="#0d0a2b" opacity="0.6" />
+      <g stroke={holz} strokeWidth="7" strokeLinecap="round" opacity={stufe >= 1 ? 1 : 0.12} className={neu(1)}>
+        <line x1="12" y1="130" x2="88" y2="130" /><line x1="32" y1="130" x2="32" y2="12" /><line x1="29" y1="12" x2="88" y2="12" />
+        <line x1="32" y1="34" x2="52" y2="12" strokeWidth="5" />
+      </g>
+      {stufe >= 2 && <line x1="88" y1="12" x2="88" y2="32" stroke="#c99a5b" strokeWidth="4" className={neu(2)} />}
+      {stufe >= 3 && <g className={neu(3)}>
+        <circle cx="88" cy="44" r="12" fill="none" stroke={figur} strokeWidth="4.5" />
+        {voll ? <g stroke="#e63946" strokeWidth="2.5"><path d="M81 39 l5 5 M86 39 l-5 5 M90 39 l5 5 M95 39 l-5 5" /><path d="M82 51 q6 -4 12 0" fill="none" /></g>
+          : <g fill={figur}><circle cx="84" cy="42" r="1.6" /><circle cx="92" cy="42" r="1.6" /></g>}
+      </g>}
+      {stufe >= 4 && <line x1="88" y1="56" x2="88" y2="94" stroke={figur} strokeWidth="4.5" strokeLinecap="round" className={neu(4)} />}
+      {stufe >= 5 && <path d="M68 74 L88 62 L108 74" fill="none" stroke={figur} strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" className={neu(5)} />}
+      {stufe >= 6 && <path d="M72 122 L88 94 L104 122" fill="none" stroke={figur} strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" className={neu(6)} />}
     </svg>
   );
 }
@@ -94,6 +68,10 @@ export const GluecksradStil = () => (
     .gl-kachel[data-offen="true"]>.gl-vorn{transform:rotateY(0)}
     .gl-kachel[data-offen="true"]>.gl-hinten{transform:rotateY(-180deg)}
     .gl-sonder{width:1.2rem;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.25rem;color:#fff}
-    @media (prefers-reduced-motion: reduce){.gl-licht{animation:none}.gl-kachel>span{transition:none}}
+    .gl-neu{animation:gl-pop .6s ease-out;transform-box:fill-box;transform-origin:center}
+    @keyframes gl-pop{0%{opacity:0;transform:scale(1.6)}60%{opacity:1;stroke:#e63946}100%{transform:scale(1)}}
+    .gl-wackel{animation:gl-wackel .5s 2}
+    @keyframes gl-wackel{0%,100%{transform:rotate(0)}25%{transform:rotate(-3deg)}75%{transform:rotate(3deg)}}
+    @media (prefers-reduced-motion: reduce){.gl-licht,.gl-neu,.gl-wackel{animation:none}.gl-kachel>span{transition:none}}
   `}</style>
 );

@@ -9,5 +9,5 @@ export const SPIELARTEN: { id: string; name: string; icon: string; text: string 
   { id: "alchemie", name: "Alchemie", icon: "⚗️", text: "Zutaten im Garten pflücken und nach Rezept brauen." },
   { id: "bruecke", name: "Brückenbau", icon: "🌉", text: "Mit richtigen Antworten eine Brücke bauen." },
   { id: "gericht", name: "Gerichtssaal", icon: "⚖️", text: "Falsche Behauptungen eines Zeugen mit Beweisen widerlegen." },
-  { id: "gluecksrad", name: "Glücksrad", icon: "🎡", text: "Buchstaben erdrehen, Rätselwand aufdecken und mit Fakten lösen." },
+  { id: "gluecksrad", name: "Glücksrad", icon: "🎡", text: "Fragen richtig beantworten deckt die Rätselwand auf; Fehler füllen den Galgen." },
 ];
