@@ -13,6 +13,7 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "👥 Beitreten", text: "Schüler öffnen die Beitritts-Seite und geben den Code ein." },
       { label: "⬆️ Hochladen", text: "Eigene Quizze über »+ Hochladen« als .json oder .zip importieren." },
       { label: "📄 Vorlage", text: "»Vorlage« lädt eine leere caputh_vorlage.json herunter — ausfüllen und wieder hochladen." },
+      { label: "🧑‍🏫 Selbst mitspielen", text: "»▶ Selbst mitspielen« an der Steuerung öffnet dasselbe Spiel wie bei den Schülern. Über »← Steuerung« geht es zurück, der eigene Stand bleibt erhalten. Für die Klasse bist du unsichtbar: keine Rangliste, keine Lobby, keine Hauspunkte; nur in der eigenen Auswertung stehst du, markiert als »Lehrkraft«." },
     ],
   },
   bingo: {
@@ -24,6 +25,7 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "⬆️ Hochladen", text: "Fertige Runden über »JSON importieren« laden." },
       { label: "📄 Vorlage", text: "»Vorlage« lädt eine leere bingo_vorlage.json zum Ausfüllen herunter." },
       { label: "🤖 KI-Nutzung", text: "»Mit KI erstellen« zeigt einen fertigen Prompt. Diesen in ChatGPT/Claude einfügen, das erzeugte JSON zurückkopieren und importieren. (Keine KI direkt in der App.)" },
+      { label: "🧑‍🏫 Selbst mitspielen", text: "»▶ Selbst mitspielen« an der Steuerung öffnet dasselbe Spiel wie bei den Schülern. Über »← Steuerung« geht es zurück, der eigene Stand bleibt erhalten. Für die Klasse bist du unsichtbar: keine Rangliste, keine Lobby, keine Hauspunkte; nur in der eigenen Auswertung stehst du, markiert als »Lehrkraft«." },
     ],
   },
   exitgame: {
@@ -39,6 +41,7 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "🏢 Gebäude", text: "Im Spiel schaltet »📄 Folien / 🏢 Gebäude« auf ein isometrisches Haus um: jeder Abschnitt ein Stockwerk, jede Folie ein Zimmer, jede Tür das verschlossene Treppenhaus. Laufen per Klick oder Pfeiltasten; geprüft wird genauso wie in der Folienansicht. Alle mit demselben Code laufen durch dasselbe Haus. Dazu »🗝️ Verlies« (Ebenen hinab, nur die aktuelle zu sehen, dunkel mit Fackel; Monster in den Zimmern, ein Boss bewacht jede Treppe — gelöst liegen sie besiegt am Boden) und »🗺️ Ebene« (alle Abschnitte nebeneinander, verbunden durch Türen). Zurück geht es jederzeit über die Treppe bzw. Tür, durch die man gekommen ist. Zifferntasten 1–9 laufen zum Zimmer mit dieser Nummer, 0 zur Treppe bzw. Tür. Ein Link mit ?ansicht=gebaeude|verlies|ebene startet gleich dort; »gebaeude« im Spiel-JSON legt die Startansicht fest. Ein Klick auf Schild, Objekt oder Zimmer schickt die Figur dorthin; in den Zimmern stehen Computer, Kuckucksuhr, Globus, Tresor & Co. — passend zur Aufgabe oder per \"station\" im JSON festgelegt." },
       { label: "🧰 Werkzeuge", text: "Eine Aufgabe kann eine Simulation als Werkzeug öffnen (\"sim\": {\"tool\": …, \"config\": …}), z. B. die Gleichungswaage mit genau einer Gleichung oder Funktionen mit einem festen Term. Die Simulation lässt dann nur diese Aufgabe zu; die Antwort tippen die Schüler wie gewohnt ein und sie wird auf dem Server geprüft. Welche Vorgaben es gibt, steht in der Vorlage (KI-Anleitung)." },
       { label: "🤖 KI-Nutzung", text: "Im Generatoren-Panel »In AI-Prompt kopieren« nutzen, den Text einer externen KI geben und das Ergebnis als Aufgaben einbauen. (Keine KI direkt in der App.)" },
+      { label: "🧑‍🏫 Selbst mitspielen", text: "»▶ Selbst mitspielen« an der Steuerung öffnet dasselbe Spiel wie bei den Schülern. Über »← Steuerung« geht es zurück, der eigene Stand bleibt erhalten. Für die Klasse bist du unsichtbar: keine Rangliste, keine Lobby, keine Hauspunkte; nur in der eigenen Auswertung stehst du, markiert als »Lehrkraft«." },
     ],
   },
   challenge: {
@@ -52,6 +55,7 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📊 Wertung", text: "Jede Antwort zählt, Wiederholungen heben die Güte; 100 % gibt es nur ohne Fehler im ersten Anlauf. Wer drei Leben verliert, liest auf der Karte nach." },
       { label: "🏠 Hauspunkte", text: "Je Klasse der Mittelwert der Ergebnisse (einmal je Runde), dazu CSV-Export und »Zurücksetzen« für eine neue Runde." },
       { label: "🗝️ Im TaskCrawler", text: "Eine Folie vom Typ »⚔️ Boss (Challenge)« spielt einen Satz als Zwischen- oder Endboss; gewonnen gibt sie ihren Codeschnipsel für die nächste Tür frei. Beide TaskCrawler-Vorlagen enthalten Beispiele." },
+      { label: "🧑‍🏫 Selbst mitspielen", text: "»▶ Selbst mitspielen« an der Steuerung öffnet dasselbe Spiel wie bei den Schülern. Über »← Steuerung« geht es zurück, der eigene Stand bleibt erhalten. Für die Klasse bist du unsichtbar: keine Rangliste, keine Lobby, keine Hauspunkte; nur in der eigenen Auswertung stehst du, markiert als »Lehrkraft«." },
     ],
   },
   lueckentext: {
@@ -62,6 +66,7 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "👥 Beitreten", text: "Schüler spielen bzw. korrigieren über den Code." },
       { label: "⬆️ Hochladen", text: "»+ Lückentext hochladen« importiert eine .json-Datei." },
       { label: "📄 Vorlage", text: "»Vorlage« lädt eine leere lueckentext-vorlage.json herunter. Zusätzlich: PDF-Export (leer oder gefüllt)." },
+      { label: "🧑‍🏫 Selbst mitspielen", text: "»▶ Selbst mitspielen« an der Steuerung öffnet dasselbe Spiel wie bei den Schülern. Über »← Steuerung« geht es zurück, der eigene Stand bleibt erhalten. Für die Klasse bist du unsichtbar: keine Rangliste, keine Lobby, keine Hauspunkte; nur in der eigenen Auswertung stehst du, markiert als »Lehrkraft«." },
     ],
   },
   karten: {
@@ -74,6 +79,7 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "⬇️ Arbeitsblatt", text: "PDF, Word, LibreOffice oder LaTeX: Seite 1 Karte mit Aufgabe »Finde und benenne …«, danach Tabelle — auch mit Lösung." },
       { label: "🎮 Kartenquiz", text: "Gespeicherten Kartensatz per Code/QR teilen: Nummern benennen oder Orte anklicken. Erfolge je Kategorie, Hauspunkte je Klasse nach Trefferquote." },
       { label: "⬆️ Eigene Ebenen", text: "GeoJSON, KML/KMZ (z. B. Google My Maps) oder GPX hochladen — nur Lehrkräfte." },
+      { label: "🧑‍🏫 Selbst mitspielen", text: "»▶ Selbst mitspielen« an der Steuerung öffnet dasselbe Spiel wie bei den Schülern. Über »← Steuerung« geht es zurück, der eigene Stand bleibt erhalten. Für die Klasse bist du unsichtbar: keine Rangliste, keine Lobby, keine Hauspunkte; nur in der eigenen Auswertung stehst du, markiert als »Lehrkraft«." },
     ],
   },
   zeitstrahl: {
@@ -83,6 +89,7 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "▶️ Nutzung", text: "Zeitleisten und Zahlenstrahlen aus der Bibliothek anzeigen und üben. Auch einbettbar in Caputh & TaskCrawler." },
       { label: "⬆️ Hochladen", text: "»+ Zeitstrahl hochladen« importiert eine .json-Datei." },
       { label: "📄 Vorlage & Beispiele", text: "»Vorlage« lädt eine leere Datei zum Ausfüllen. »🌍 Beispiele laden« importiert fertige Beispiel-Zeitleisten zum sofortigen Einsatz." },
+      { label: "🧑‍🏫 Selbst mitspielen", text: "»▶ Selbst mitspielen« an der Steuerung öffnet dasselbe Spiel wie bei den Schülern. Über »← Steuerung« geht es zurück, der eigene Stand bleibt erhalten. Für die Klasse bist du unsichtbar: keine Rangliste, keine Lobby, keine Hauspunkte; nur in der eigenen Auswertung stehst du, markiert als »Lehrkraft«." },
     ],
   },
   tippen: {

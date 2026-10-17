@@ -46,6 +46,7 @@ kern:
       - Befristeter Gastzugang ohne Konto, gilt nur für eine Sitzung
       - Gastzugang schließt nach dem eingestellten Fenster von selbst
       - Sitzungen für Klasse, A/B-Hälfte, Kurs oder WPF-Gruppe
+      - Lehrkraft spielt selbst mit (alle Aktivitäten), setzt nach dem Dashboard fort, unsichtbar für die Klasse und ohne Hauspunkte
 
 aktivitaeten:
   - id: caputh

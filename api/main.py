@@ -259,6 +259,10 @@ def _run_migrations(db_engine):
         "ALTER TABLE auction_sessions ADD COLUMN IF NOT EXISTS allow_guests BOOLEAN NOT NULL DEFAULT FALSE",
         "ALTER TABLE exitgame_sessions ADD COLUMN IF NOT EXISTS allow_guests BOOLEAN NOT NULL DEFAULT FALSE",
         "ALTER TABLE exitgame_attempts ADD COLUMN IF NOT EXISTS boss_laeufe JSON NOT NULL DEFAULT '{}'",
+        # Lehrkraft spielt mit
+        "ALTER TABLE quiz_participants ADD COLUMN IF NOT EXISTS teacher_id INTEGER REFERENCES teachers(id) ON DELETE CASCADE",
+        "ALTER TABLE lueckentext_participants ADD COLUMN IF NOT EXISTS student_id INTEGER REFERENCES students(id) ON DELETE SET NULL",
+        "ALTER TABLE lueckentext_participants ADD COLUMN IF NOT EXISTS teacher_id INTEGER REFERENCES teachers(id) ON DELETE CASCADE",
         "ALTER TABLE lueckentext_sessions ADD COLUMN IF NOT EXISTS allow_guests BOOLEAN NOT NULL DEFAULT FALSE",
         "ALTER TABLE schreibraum_rooms ADD COLUMN IF NOT EXISTS allow_guests BOOLEAN NOT NULL DEFAULT FALSE",
         "ALTER TABLE schreibraum_participants ADD COLUMN IF NOT EXISTS guest_id VARCHAR(36)",

@@ -55,6 +55,7 @@ Eine maschinenlesbare Fassung der Feature-Liste steht in [features.yml](features
 - **QR-Code:** Jede Sitzung zeigt einen QR zum Scannen mit dem eigenen Gerät.
 - **Gastzugang:** Ist »Gäste erlauben« eingeschaltet, kommt man auch ohne Konto hinein. Der Gast-Token gilt nur für diese eine Sitzung und läuft ab (die Dauer stellt ein Admin ein). Der Schalter selbst läuft mit ab: nach derselben Zeit schließt der Gastzugang von sich aus, der Schalter zeigt die Restzeit und springt auf aus — eine Sitzung, die seit Tagen offen steht, lässt also niemanden mehr herein. »Gastzugang neu starten« beginnt ein neues Fenster. Gäste werden über eine eigene Gast-ID gezählt, nicht über den Namen.
 - **Sitzungs-Geltungsbereich:** Sitzungen lassen sich für eine Klasse, eine A/B-Hälfte, einen Kurs oder eine WPF-Gruppe starten.
+- **Selbst mitspielen:** Auf der Steuerungsseite jeder Aktivität (Caputh, Bingo, TaskCrawler, Challenge, Lückentext, Kartenquiz, Zeitstrahl) öffnet »▶ Selbst mitspielen« dasselbe Spiel wie bei den Schülern. Ein kleiner Knopf »← Steuerung« führt zurück. Der Stand hängt am Konto der Lehrkraft, beim nächsten Öffnen geht es an derselben Stelle weiter. Für die Klasse bleibt die Lehrkraft unsichtbar: nicht in Ranglisten, Lobby, Bingo-Meldungen oder Bestenlisten, und sie zählt nie für Hauspunkte. Nur in der eigenen Auswertung und im CSV steht sie, markiert als »Lehrkraft«.
 
 ---
 

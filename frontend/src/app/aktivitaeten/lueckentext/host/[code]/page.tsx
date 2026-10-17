@@ -9,6 +9,7 @@ import { GuestAccessToggle } from "@/components/GuestAccessToggle";
 import { useLanUrl } from "@/hooks/useLanUrl";
 import { AvatarDisplay } from "@/components/AvatarPicker";
 import { api } from "@/lib/api";
+import { SelbstSpielenKnopf } from "@/components/LehrkraftSpielt";
 
 type RankingEntry = { pid: number; name: string; avatar: string; score: number; rank: number };
 
@@ -71,6 +72,7 @@ export default function LueckentextHostPage() {
             <JoinQR url={joinUrl} />
             <span className="text-xs text-muted">/aktivitaeten/lueckentext/play/{code}</span>
             <GuestAccessToggle tool="lueckentext" code={code} />
+            <SelbstSpielenKnopf href={`/aktivitaeten/lueckentext/play/${code}`} className="text-xs border border-line rounded-lg px-2 py-1 hover:border-accent" />
           </div>
         )}
       </div>

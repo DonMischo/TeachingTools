@@ -7,6 +7,7 @@ import { useSidebarPanel } from "@/contexts/SidebarPanelContext";
 import { useLessonSession } from "@/contexts/LessonSessionContext";
 import { LessonGuideSidebar } from "@/components/LessonGuideSidebar";
 import { MaterialViewerOverlay } from "@/components/MaterialViewerOverlay";
+import { LehrkraftLeiste } from "@/components/LehrkraftSpielt";
 
 // Pages that use the full screen — only icon strip shown
 const FULLSCREEN = ["/aktivitaeten/caputh/host/", "/play/"];
@@ -32,6 +33,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <main className={`flex-1 min-h-0 h-full overflow-hidden transition-[margin-right] duration-200 ease-out ${lessonMarginRight}`}>{children}</main>
         <LessonGuideSidebar />
         <MaterialViewerOverlay />
+        <LehrkraftLeiste />
       </div>
     );
   }
@@ -44,6 +46,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </main>
       <LessonGuideSidebar />
       <MaterialViewerOverlay />
+      <LehrkraftLeiste />
     </div>
   );
 }

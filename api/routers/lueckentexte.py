@@ -350,19 +350,26 @@ def join_session(code: str, data: JoinIn, db: Session = Depends(get_db), player=
     # neue Zeile an — ein Neuladen der Seite verdoppelte den Spieler in der Liste.
     # Angemeldete erscheinen unter ihrem Kontonamen in der Kurzform, nicht
     # unter dem, den der Browser mitschickt.
-    anzeigename = (short_name(player) if isinstance(player, Student)
-                   else abbreviate_stored(data.name)[:100])
-    guest_id = player.id if isinstance(player, Guest) else None
-    if guest_id is not None:
-        existing = db.query(LueckentextParticipant).filter_by(session_id=s.id, guest_id=guest_id).first()
-        if existing:
-            existing.name = anzeigename
-            existing.avatar = data.avatar
-            db.commit()
-            db.refresh(existing)
-            return ParticipantOut.model_validate(existing)
+    # Angemeldete (auch eine mitspielende Lehrkraft) an ihrem Konto: so geht es
+    # nach einem Abstecher ins Dashboard an derselben Stelle weiter.
+    if isinstance(player, Student):
+        anzeigename = short_name(player)
+    elif isinstance(player, Teacher):
+        anzeigename = f"{player.first_name} {player.last_name}".strip()[:100] or "Lehrkraft"
+    else:
+        anzeigename = abbreviate_stored(data.name)[:100]
+    wer = ({"guest_id": player.id} if isinstance(player, Guest)
+           else {"student_id": player.id} if isinstance(player, Student)
+           else {"teacher_id": player.id})
+    existing = db.query(LueckentextParticipant).filter_by(session_id=s.id, **wer).first()
+    if existing:
+        existing.name = anzeigename
+        existing.avatar = data.avatar
+        db.commit()
+        db.refresh(existing)
+        return ParticipantOut.model_validate(existing)
 
-    p = LueckentextParticipant(session_id=s.id, name=anzeigename, avatar=data.avatar, guest_id=guest_id)
+    p = LueckentextParticipant(session_id=s.id, name=anzeigename, avatar=data.avatar, **wer)
     db.add(p)
     db.commit()
     db.refresh(p)
@@ -403,7 +410,8 @@ def _responses_by_participant(s: LueckentextSession, db: Session) -> dict[int, l
 def _build_ranking(s: LueckentextSession, db: Session) -> list[dict]:
     gap_ids = [g["id"] for g in s.lueckentext.gaps]
     n_gaps = len(gap_ids)
-    participants = s.participants
+    # Die Rangliste laeuft am Beamer: eine mitspielende Lehrkraft steht nicht darin.
+    participants = [p for p in s.participants if p.teacher_id is None]
 
     by_participant = _responses_by_participant(s, db)
     raw_scores: dict[int, float] = {}
@@ -553,7 +561,8 @@ def _review_entries(s: LueckentextSession, db: Session) -> list[dict]:
                 "revealed": r.revealed, "match": r.match, "solved": r.solved_at is not None,
                 "time_spent_seconds": time_spent,
             })
-        out.append({"pid": p.id, "name": p.name, "avatar": p.avatar, "gaps": gaps})
+        out.append({"pid": p.id, "name": p.name, "avatar": p.avatar, "gaps": gaps,
+                    "lehrkraft": p.teacher_id is not None})
     return out
 
 
@@ -582,7 +591,7 @@ def session_report(code: str, fmt: str = "json", db: Session = Depends(get_db), 
         times = [g["time_spent_seconds"] for g in gaps if g["time_spent_seconds"] is not None]
         rows.append({
             "pid": entry["pid"],
-            "name": entry["name"],
+            "name": entry["name"] + (" (Lehrkraft)" if entry["lehrkraft"] else ""),
             "gaps_solved": sum(1 for g in gaps if g["solved"]),
             "gaps_total": total_gaps,
             "attempts_total": sum(g["attempts"] for g in gaps),

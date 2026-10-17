@@ -9,6 +9,7 @@ import { JoinQR } from "@/components/JoinQR";
 import { GuestAccessToggle } from "@/components/GuestAccessToggle";
 import { useLanUrl } from "@/hooks/useLanUrl";
 import { MathText } from "@/components/MathText";
+import { SelbstSpielenKnopf } from "@/components/LehrkraftSpielt";
 
 /** Render one log event as a human-readable German sentence. */
 function describeEvent(e: ExitGameLogEvent): { icon: string; text: string } {
@@ -100,6 +101,7 @@ export default function ExitgameHostPage() {
               <JoinQR url={joinUrl} />
               <span className="text-[10px] text-muted">/play/taskcrawler/{code}</span>
               <GuestAccessToggle tool="exitgame" code={code} />
+              <SelbstSpielenKnopf href={`/play/taskcrawler/${code}`} className="text-xs border border-line rounded-lg px-2 py-1 hover:border-accent" />
             </div>
           )}
           <a href={api.exitgame.sessions.reportCsvUrl(code)} className="text-sm border border-line rounded-lg px-3 py-1.5 hover:border-accent">

@@ -1322,8 +1322,13 @@ def _recent_dda_history(db: Session, attempt_id: int) -> list[dict]:
 
 def _participant_key(attempt: ExitGameAttempt) -> str:
     """Unique across both id spaces — a student and a teacher could share a
-    numeric id, so a bare student_id can't key the roster on its own."""
-    return f"s{attempt.student_id}" if attempt.student_id else f"t{attempt.teacher_id}"
+    numeric id, so a bare student_id can't key the roster on its own. Gaeste
+    tragen weder noch — frueher landeten sie alle unter »tNone«."""
+    if attempt.student_id:
+        return f"s{attempt.student_id}"
+    if attempt.guest_id:
+        return f"g{attempt.guest_id}"
+    return f"t{attempt.teacher_id}"
 
 
 async def _broadcast_progress(code: str, attempt: ExitGameAttempt, total_slides: int, last_event: str):

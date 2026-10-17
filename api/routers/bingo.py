@@ -16,7 +16,7 @@ from ..database import get_db
 from ..utils import gen_code, parse_grades
 from ..ws_auth import ws_identity, ws_guest
 from ..ws_manager import RoomManager, receive_json, reject
-from ..models import BingoCard, BingoSession, BingoSet, Class, Student, Transaction
+from ..models import BingoCard, BingoSession, BingoSet, Class, Student, Teacher, Transaction
 from ..display_names import short_name, abbreviate_stored
 from .. import scoping
 
@@ -111,6 +111,12 @@ def _session_state(session: BingoSession, db: Session, players: list | None = No
     }
 
 
+def _lehrkraft_karte(card: BingoCard) -> bool:
+    """Die Karte einer Lehrkraft, die selbst mitspielt. Sie zaehlt fuer keine
+    Klasse und steht weder in der Spielerliste noch in den Meldungen am Beamer."""
+    return (card.anon_token or "").startswith("teacher-")
+
+
 def _results(session: BingoSession) -> list[dict]:
     """Auswertung je Karte: Treffer (richtig markiert) gegen das, was von der
     eigenen Karte schon gerufen wurde — nicht gegen alles Gerufene."""
@@ -120,7 +126,7 @@ def _results(session: BingoSession) -> list[dict]:
         on_card = [pos for pos, idx in enumerate(card.grid_indices) if idx in called]
         hits = len(set(card.marked_positions) & set(on_card))
         rows.append({
-            "name": card.student_name,
+            "name": card.student_name + (" (Lehrkraft)" if _lehrkraft_karte(card) else ""),
             "hits": hits,
             "called_on_card": len(on_card),
             "has_bingo": card.has_bingo,
@@ -478,6 +484,8 @@ async def _close_and_award(session: BingoSession, db: Session):
                 "event": "score", "points": pts, "ratio": ratio,
                 "max_points": session.max_points, "correct": correctly_marked, "total_called": len(called_positions),
             })
+            if _lehrkraft_karte(card):
+                continue
             student = db.get(Student, card.student_id) if card.student_id else None
             target_class_id = (
                 student.class_id if student and student.class_id
@@ -579,6 +587,10 @@ def _card_class_id(session: BingoSession, db: Session, student: Student | None, 
     )
 
 
+def _lehrkraft_name(t: Teacher | None) -> str:
+    return (f"{t.first_name} {t.last_name}".strip() if t else "") or "Lehrkraft"
+
+
 def _find_or_create_card(session: BingoSession, db: Session, *, student_id: int = 0, anon_token: str = "",
                          name: str = "Anonym", class_id: int | None = None) -> BingoCard:
     """Find or create a bingo card for either an authenticated student or an anonymous participant."""
@@ -641,7 +653,8 @@ def get_or_create_card_rest(code: str, body: CardIn | None = None, db: Session =
     elif isinstance(current, Guest):
         card = _find_or_create_card(session, db, anon_token=current.id, name=current.name, class_id=chosen)
     else:
-        raise HTTPException(403, "Nur für Schüler")
+        card = _find_or_create_card(session, db, anon_token=f"teacher-{current.id}",
+                                    name=_lehrkraft_name(current))
     return _card_dict(card, session)
 
 
@@ -696,13 +709,14 @@ async def bingo_ws(
             if guest:
                 anon_key, anon_name = guest.id, guest.name
             elif identity and identity[0] == "teacher":
-                anon_key, anon_name = f"teacher-{identity[1]}", (name or "Lehrkraft")
+                anon_key, anon_name = f"teacher-{identity[1]}", _lehrkraft_name(db.get(Teacher, identity[1]))
             else:
                 await reject(ws, 4001)
                 return
             card = _find_or_create_card(session, db, anon_token=anon_key, name=anon_name, class_id=class_id or None)
             mgr_key = card.id
-            _mgr.add_student(code, card.id, ws, info={"name": card.student_name, "avatar": avatar})
+            _mgr.add_student(code, card.id, ws, info=None if _lehrkraft_karte(card)
+                             else {"name": card.student_name, "avatar": avatar})
         db.refresh(session)
         await ws.send_json(_session_state(session, db, players=_mgr.infos(code)))
         if card:
@@ -768,7 +782,8 @@ async def bingo_ws(
                         card.marked_positions = card.marked_positions + [pos]
                         rows, cols = _dims(session)
                         new_lines = _completed_lines(card.marked_positions, rows, cols) - old_lines
-                        for line in new_lines:
+                        leise = _lehrkraft_karte(card)  # keine Meldung am Beamer
+                        for line in ([] if leise else new_lines):
                             await _mgr.send_teachers(code, {
                                 "event": "line",
                                 "student_name": card.student_name,
@@ -778,14 +793,16 @@ async def bingo_ws(
                             card.has_bingo = True
                             db.commit()
                             await ws.send_json({"event": "bingo", "marked_positions": card.marked_positions})
-                            await _mgr.send_teachers(code, {
-                                "event": "player_bingo",
-                                "student_name": card.student_name,
-                            })
-                            await _mgr.broadcast(code, {
-                                "event": "bingo_count",
-                                "count": sum(1 for c in db.query(BingoCard).filter_by(session_id=session.id).all() if c.has_bingo),
-                            })
+                            if not leise:
+                                await _mgr.send_teachers(code, {
+                                    "event": "player_bingo",
+                                    "student_name": card.student_name,
+                                })
+                                await _mgr.broadcast(code, {
+                                    "event": "bingo_count",
+                                    "count": sum(1 for c in db.query(BingoCard).filter_by(session_id=session.id).all()
+                                                 if c.has_bingo and not _lehrkraft_karte(c)),
+                                })
                         else:
                             db.commit()
                             await ws.send_json({"event": "mark_ack", "marked_positions": card.marked_positions})

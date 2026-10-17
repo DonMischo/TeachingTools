@@ -548,20 +548,23 @@ def uebersicht(code: str, db: Session = Depends(get_db), lehrkraft: Teacher = De
     liste = aufgaben(db, _satz(db, s))
     staende = db.query(KartenQuizStand).filter_by(session_id=s.id).order_by(KartenQuizStand.name).all()
     klassen = {c.id: c.code for c in db.query(Class).all()}
+    # Die Statistik je Aufgabe beschreibt die Klasse, nicht die mitspielende Lehrkraft
+    klasse = [st for st in staende if st.teacher_id is None]
     # Lernstand der Teilnehmenden: mittlere Sicherheit je Objekt (zeigt, wo es hakt)
-    wer = {(st.student_id, st.teacher_id, st.guest_id) for st in staende}
+    wer = {(st.student_id, st.teacher_id, st.guest_id) for st in klasse}
     lern = [ls.objekte for ls in db.query(KartenLernstand).filter_by(satz_id=s.ref_id).all()
             if (ls.student_id, ls.teacher_id, ls.guest_id) in wer]
     def _sicherheit(a: dict) -> float | None:
         werte = [lernen.sicherheit(o.get(lernen.schluessel(a))) for o in lern if lernen.schluessel(a) in o]
         return round(sum(werte) / len(werte), 2) if werte else None
     je_aufgabe = [{"nr": a["nr"], "name": a["name"], "kategorie": a["kategorie"], "marke": a["marke"],
-                   "richtig": sum(1 for st in staende if st.antworten.get(str(a["nr"]), {}).get("richtig")),
-                   "versucht": sum(1 for st in staende if str(a["nr"]) in st.antworten),
+                   "richtig": sum(1 for st in klasse if st.antworten.get(str(a["nr"]), {}).get("richtig")),
+                   "versucht": sum(1 for st in klasse if str(a["nr"]) in st.antworten),
                    "sicherheit": _sicherheit(a)} for a in liste]
     return {
         "aufgaben": len(liste), "einstellungen": _einstellungen(s), "je_aufgabe": je_aufgabe,
-        "teilnehmer": [{"name": st.name, "klasse": klassen.get(st.class_id, "Gast" if st.guest_id else ""),
+        "teilnehmer": [{"name": st.name, "klasse": klassen.get(st.class_id, "Gast" if st.guest_id
+                                                         else "Lehrkraft" if st.teacher_id else ""),
                         "richtig": st.richtig, "beantwortet": len(st.antworten), "erfolge": len(st.erfolge)} for st in staende],
         "punkte": vorschau_punkte(db, s, len(liste)),
     }

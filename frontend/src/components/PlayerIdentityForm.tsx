@@ -48,19 +48,22 @@ export function PlayerIdentityForm({
 
   useEffect(() => { setMounted(true); }, []);
 
+  // Eine mitspielende Lehrkraft spielt unter ihrem Konto, ohne Team und ohne Klasse.
+  const lehrkraft = auth?.user_type === "teacher" ? auth.teacher : undefined;
   const lockedName = identity?.name ?? (auth?.student
     ? (auth.student.username ?? auth.student.display_name)
-    : null);
+    : lehrkraft ? `${lehrkraft.first_name} ${lehrkraft.last_name}`.trim() : null);
+  const zeigtTeams = teams.length > 0 && !lehrkraft;
 
-  const needsTeam = teams.length > 0 && selectedTeamId === null;
-  // Angemeldete Schüler haben ihre Klasse schon — gefragt wird nur, wer keine mitbringt.
-  const asksClass = classes.length > 0 && !auth?.student;
+  const needsTeam = zeigtTeams && selectedTeamId === null;
+  // Angemeldete haben ihre Klasse schon (oder spielen für keine) — gefragt wird nur, wer keine mitbringt.
+  const asksClass = classes.length > 0 && !auth;
   const needsClass = asksClass && selectedClassId === null;
 
   function handleSubmit() {
     const n = lockedName ?? nameInput.trim();
     if (!n || needsTeam || needsClass) return;
-    onJoin(n, avatar, teams.length > 0 ? selectedTeamId : undefined,
+    onJoin(n, avatar, zeigtTeams ? selectedTeamId : undefined,
            asksClass ? selectedClassId : undefined);
   }
 
@@ -149,7 +152,7 @@ export function PlayerIdentityForm({
         </div>
       )}
 
-      {teams.length > 0 && (
+      {zeigtTeams && (
         <div className="flex flex-col gap-2">
           <p className="text-white/70 text-sm text-center">Team wählen</p>
           <div className="flex flex-wrap gap-2 justify-center">

@@ -488,14 +488,18 @@ def spielwert(code: str, body: SpielwertIn, db: Session = Depends(get_db), spiel
 
 @router.get("/{code}/bestenliste")
 def bestenliste(code: str, spiel: str = "huepfen", db: Session = Depends(get_db), spieler=Depends(get_player)):
-    """Top 20 nach Edelsteinen; nur Stände mit einem Wert für diese Spielart (Namen wie im Stand, Gäste mit Gastname)."""
+    """Top 20 nach Edelsteinen; nur Stände mit einem Wert für diese Spielart (Namen wie im Stand, Gäste mit Gastname).
+    Eine mitspielende Lehrkraft sieht nur sie selbst darin, nie die Klasse."""
     s = _sitzung(db, code)
     ich = _wer(spieler)
     zeilen = []
-    spalten = [ChallengeStand.name, ChallengeStand.zustand, *(getattr(ChallengeStand, k) for k in ich)]
+    spalten = [ChallengeStand.name, ChallengeStand.zustand, ChallengeStand.teacher_id,
+               *(getattr(ChallengeStand, k) for k in ich if k != "teacher_id")]
     for st in db.query(ChallengeStand).options(load_only(*spalten)).filter_by(session_id=s.id).all():
         werte = (st.zustand.get("spielwerte") or {}).get(spiel)
         if not werte:
+            continue
+        if st.teacher_id is not None and st.teacher_id != ich.get("teacher_id"):
             continue
         gesamt, maximal = _summe_spielwerte(st.zustand, spiel)
         spaet = max((w.get("am") or "" for w in werte.values()), default="")

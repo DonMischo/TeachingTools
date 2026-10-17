@@ -12,6 +12,7 @@ import { TimelineGameBoard } from "@/components/timeline/TimelineGameBoard";
 import { TimelineBoard, TimelineSolution } from "@/components/timeline/types";
 import KartenBrett from "@/components/karten/KartenBrett";
 import type { KartenBrettDaten, KartenLoesung } from "@/lib/karten/quiz";
+import { SelbstSpielenKnopf } from "@/components/LehrkraftSpielt";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -549,6 +550,7 @@ export default function HostPage() {
             {/* Wie auf jeder anderen Hostseite direkt am QR — vorher steckte der
                 Schalter nur im QR-Overlay und war praktisch nicht zu finden. */}
             <GuestAccessToggle tool="caputh" code={code} className="text-sm text-fg hover:text-fg" />
+            <SelbstSpielenKnopf href={`/play/${code}`} className="text-xs border border-line rounded-lg px-2 py-1 text-fg hover:border-accent" />
           </div>
 
           {/* Participants + start */}

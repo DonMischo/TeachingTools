@@ -7,6 +7,7 @@ import { useToast } from "@/contexts/ToastContext";
 import { JoinQR } from "@/components/JoinQR";
 import { GuestAccessToggle } from "@/components/GuestAccessToggle";
 import { useLanUrl } from "@/hooks/useLanUrl";
+import { SelbstSpielenKnopf } from "@/components/LehrkraftSpielt";
 
 type CalledItem = { index: number; caller: string; answer: string };
 type Player = { name: string; avatar: string };
@@ -102,6 +103,7 @@ export default function BingoHostPage() {
             <JoinQR url={joinUrl} />
             <span className="text-xs text-muted">/play/bingo/{code}</span>
             <GuestAccessToggle tool="bingo" code={code} />
+            <SelbstSpielenKnopf href={`/play/bingo/${code}`} className="text-xs border border-line rounded-lg px-2 py-1 hover:border-accent" />
           </div>
         )}
       </div>

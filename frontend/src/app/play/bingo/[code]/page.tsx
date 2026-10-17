@@ -54,14 +54,17 @@ export default function BingoPlayPage() {
       .catch(() => {});
   }, [code]);
 
-  // Auto-connect when logged in (resume saved session or new)
+  // Angemeldet (Schüler oder mitspielende Lehrkraft): gleich verbinden; der Server
+  // erkennt das Konto und gibt dieselbe Karte wieder heraus.
+  const kontoName = auth?.student
+    ? (auth.student.username ?? auth.student.display_name)
+    : auth?.teacher ? `${auth.teacher.first_name} ${auth.teacher.last_name}`.trim() : null;
   useEffect(() => {
-    if (!mounted || !savedLoaded || !auth?.student) return;
-    const name = auth.student.username ?? auth.student.display_name;
+    if (!mounted || !savedLoaded || !kontoName) return;
     const avatar = saved?.avatar ?? AVATARS[Math.floor(Math.random() * AVATARS.length)].id;
-    connect(saved?.token ?? newAnonToken(), name, avatar);
+    connect(saved?.token ?? newAnonToken(), kontoName, avatar);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mounted, savedLoaded, auth?.student?.id]);
+  }, [mounted, savedLoaded, kontoName]);
 
   // Pfad der Live-Verbindung; null, solange noch niemand beigetreten ist.
   const [socketPath, setSocketPath] = useState<string | null>(null);
@@ -146,7 +149,7 @@ export default function BingoPlayPage() {
   // Aus dem Playhub durchgereicht — Gäste sind dort schon vorgestellt worden.
   useHubIdentity(
     code,
-    mounted && savedLoaded && !auth?.student && scopeClasses.length === 0 && phase.kind === "join",
+    mounted && savedLoaded && !kontoName && scopeClasses.length === 0 && phase.kind === "join",
     (id) => { void handleGuestJoin(id.name, id.avatar); },
   );
 
@@ -160,7 +163,7 @@ export default function BingoPlayPage() {
   if (mounted && guest.expired && !auth) return <GuestExpired gameIcon="🎰" onRejoin={guest.rejoin} />;
 
   // ── Join screen ──────────────────────────────────────────────────────────────
-  if (!mounted || (phase.kind === "join" && !auth?.student)) {
+  if (!mounted || (phase.kind === "join" && !kontoName)) {
     return (
       <PlayerIdentityForm
         gameCode={code}
@@ -174,7 +177,7 @@ export default function BingoPlayPage() {
   }
 
   // Logged-in auto-connect — show spinner while connecting
-  if (phase.kind === "join" && auth?.student) {
+  if (phase.kind === "join" && kontoName) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-muted text-sm animate-pulse">Verbinde…</p>

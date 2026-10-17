@@ -261,6 +261,9 @@ class QuizParticipant(Base):
     team_id: Mapped[int | None] = mapped_column(ForeignKey("quiz_teams.id", ondelete="SET NULL"), nullable=True)
     # Angemeldete Schueler werden mitgeschrieben, damit ihre Klasse feststeht.
     student_id: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="SET NULL"), nullable=True)
+    # Eine Lehrkraft, die selbst mitspielt: an ihr erkannt, aber nie in Rangliste,
+    # Lobby oder Klassenpunkten.
+    teacher_id: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="CASCADE"), nullable=True)
     # Die Klasse, der die Punkte dieses Teilnehmers zugute kommen. Bei einer
     # Klassensitzung immer die der Sitzung; bei Kurs/WPF die eigene Klasse des
     # angemeldeten Schuelers bzw. die vom Gast beim Beitritt gewaehlte.
@@ -1684,6 +1687,10 @@ class LueckentextParticipant(Base):
     # Wie bei QuizParticipant: erkennt denselben Gast beim Neuladen wieder,
     # statt bei jedem Beitritt eine weitere Zeile anzulegen.
     guest_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
+    # Angemeldete werden an ihrem Konto wiedererkannt, nicht nur am Browser.
+    # Eine mitspielende Lehrkraft steht nie in der Rangliste.
+    student_id: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="SET NULL"), nullable=True)
+    teacher_id: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="CASCADE"), nullable=True)
     # Nicht zu erratender Schluessel fuer den eigenen PDF-Download am Ende der
     # Runde. Der Download steht Gaesten ohne Konto offen, kann also nicht an
     # einer Anmeldung haengen — die fortlaufende `id` waere im Link aber ein

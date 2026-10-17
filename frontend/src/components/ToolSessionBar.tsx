@@ -13,6 +13,7 @@ import { JoinQR } from "@/components/JoinQR";
 import { GuestAccessToggle } from "@/components/GuestAccessToggle";
 import { useLanUrl } from "@/hooks/useLanUrl";
 import { ToolSessionList } from "@/components/ToolSessionList";
+import { SelbstSpielenKnopf } from "@/components/LehrkraftSpielt";
 
 export function ToolSessionBar({ tool, title, refId }: {
   tool: string;
@@ -99,6 +100,12 @@ export function ToolSessionBar({ tool, title, refId }: {
                       className="text-xs border border-line rounded-lg px-2.5 py-1.5 hover:border-accent">
                       {copied ? "kopiert ✓" : "kopieren"}
                     </button>
+                    {/* Aktivitäten mit Inhalt (Challenge, Kartenquiz, Zeitstrahl): die
+                        Lehrkraft spielt dieselbe Runde; Simulationen benutzt sie ohnehin selbst. */}
+                    {refId != null && (
+                      <SelbstSpielenKnopf href={`/play/simulation/${session.code}`}
+                        className="text-xs border border-line rounded-lg px-2.5 py-1.5 hover:border-accent" />
+                    )}
                   </div>
 
                   <div className="border-t border-line pt-3 flex flex-col gap-2">

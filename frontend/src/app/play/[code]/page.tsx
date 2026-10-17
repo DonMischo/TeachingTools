@@ -322,7 +322,7 @@ export default function PlayPage() {
   );
 
   async function handleJoin(joinName: string, avatar: string, teamId?: number | null, classId?: number | null) {
-    if (teamMode && teamId == null) { setJoinError("Bitte wähle ein Team."); return; }
+    if (teamMode && teamId == null && auth?.user_type !== "teacher") { setJoinError("Bitte wähle ein Team."); return; }
     clearPlayIdentity(code);
     setConnecting(true);
     setJoinError(null);

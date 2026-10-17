@@ -292,14 +292,14 @@ def _score_by_class(session: QuizSession) -> dict[int, dict]:
         return p.class_id if p.class_id is not None else session.class_id
 
     per_class: dict[int, dict] = {}
-    for p in session.participants:
+    for p in _schueler(session):
         cid = class_of(p)
         if cid is None:
             continue
         per_class.setdefault(cid, {"participants": 0, "correct": 0})
         per_class[cid]["participants"] += 1
 
-    by_participant = {p.id: class_of(p) for p in session.participants}
+    by_participant = {p.id: class_of(p) for p in _schueler(session)}
     for r in session.responses:
         if r.is_correct is not True:
             continue
@@ -372,6 +372,12 @@ def _answer_counts(s: QuizSession, q: QuizQuestion, db: Session) -> dict:
     return counts
 
 
+def _schueler(s: QuizSession) -> list[QuizParticipant]:
+    """Alle Teilnehmer ausser einer mitspielenden Lehrkraft. Nur sie stehen in
+    Rangliste und Lobby am Beamer und zaehlen fuer die Klassenpunkte."""
+    return [p for p in s.participants if p.teacher_id is None]
+
+
 def _build_ranking(s: QuizSession, scores: dict, last_delta: dict) -> list:
     if s.team_mode:
         # Aggregate by team
@@ -380,7 +386,7 @@ def _build_ranking(s: QuizSession, scores: dict, last_delta: dict) -> list:
         team_names: dict[int, str] = {}
         team_colors: dict[int, str | None] = {}
         no_team_score = 0.0
-        for p in s.participants:
+        for p in _schueler(s):
             if p.team_id is not None:
                 team_scores[p.team_id] = team_scores.get(p.team_id, 0.0) + scores.get(p.id, 0.0)
                 team_deltas[p.team_id] = team_deltas.get(p.team_id, 0.0) + last_delta.get(p.id, 0.0)
@@ -402,7 +408,7 @@ def _build_ranking(s: QuizSession, scores: dict, last_delta: dict) -> list:
             })
     else:
         result = []
-        for p in s.participants:
+        for p in _schueler(s):
             result.append({
                 "pid": p.id,
                 "name": p.name,
@@ -435,10 +441,10 @@ def _state_msg(s: QuizSession, db: Session) -> dict:
             "time_limit": q.time_limit,
             "answers": [{"id": a.id, "text": a.text, "order": a.order} for a in q.answers],
         } if q else None,
-        "participant_count": len(s.participants),
+        "participant_count": len(_schueler(s)),
         # Die Lobby der Lehrkraft baut sich beim Neuladen daraus wieder auf —
         # sonst stuende dort die Zahl, aber kein einziger Avatar.
-        "participants": [{"id": p.id, "name": p.name, "avatar": p.avatar} for p in s.participants],
+        "participants": [{"id": p.id, "name": p.name, "avatar": p.avatar} for p in _schueler(s)],
     }
 
 
@@ -1190,7 +1196,7 @@ def get_session_report(code: str, fmt: str = "json", db: Session = Depends(get_d
         responses.setdefault((r.participant_id, r.question_id), r)
 
     rows = []
-    for p in sorted(s.participants, key=lambda x: x.name):
+    for p in sorted(s.participants, key=lambda x: (x.teacher_id is not None, x.name)):
         q_results = []
         correct_count = 0
         for q in questions:
@@ -1207,7 +1213,7 @@ def get_session_report(code: str, fmt: str = "json", db: Session = Depends(get_d
         rows.append({
             "name": p.name,
             "avatar": p.avatar,
-            "class_code": class_codes.get(p.class_id, "–"),
+            "class_code": "Lehrkraft" if p.teacher_id is not None else class_codes.get(p.class_id, "–"),
             "correct": correct_count,
             "total_scored": n_scored,
             "percent": round(correct_count / n_scored * 100) if n_scored else None,
@@ -1309,8 +1315,12 @@ def join_session(code: str, body: ParticipantJoin, db: Session = Depends(get_db)
     # Der Name landet in der Rangliste am Beamer. Wer angemeldet ist, erscheint
     # unter dem Namen seines Kontos in der Kurzform — ein selbst getippter Name
     # war bisher zugleich ein freies Namensfeld fuer jeden Mitspieler.
-    name = (short_name(player) if isinstance(player, Student)
-            else abbreviate_stored(body.name)[:100])
+    if isinstance(player, Student):
+        name = short_name(player)
+    elif isinstance(player, Teacher):
+        name = f"{player.first_name} {player.last_name}".strip()[:100] or "Lehrkraft"
+    else:
+        name = abbreviate_stored(body.name)[:100]
     avatar = body.avatar[:50]
 
     # Wem die Leistung dieses Teilnehmers gutgeschrieben wird. In einer
@@ -1318,7 +1328,8 @@ def join_session(code: str, body: ParticipantJoin, db: Session = Depends(get_db)
     # der eigenen Klasse des angemeldeten Schuelers, sonst der beim Beitritt
     # gewaehlten.
     student_id = player.id if isinstance(player, Student) else None
-    target_class_id = scoping.participant_class_id(
+    teacher_id = player.id if isinstance(player, Teacher) else None
+    target_class_id = None if teacher_id is not None else scoping.participant_class_id(
         session_class_id=s.class_id,
         session_group_id=s.group_id,
         student_class_id=player.class_id if isinstance(player, Student) else None,
@@ -1333,14 +1344,17 @@ def join_session(code: str, body: ParticipantJoin, db: Session = Depends(get_db)
     guest_id = player.id if isinstance(player, Guest) else None
     if guest_id is not None:
         existing = db.query(QuizParticipant).filter_by(session_id=s.id, guest_id=guest_id).first()
+    elif teacher_id is not None:
+        existing = db.query(QuizParticipant).filter_by(session_id=s.id, teacher_id=teacher_id).first()
     else:
-        existing = db.query(QuizParticipant).filter_by(session_id=s.id, guest_id=None, name=name).first()
+        existing = db.query(QuizParticipant).filter_by(session_id=s.id, guest_id=None, teacher_id=None,
+                                                       name=name).first()
 
     if existing:
         # Beim Wiedereinstieg zaehlt die frische Wahl, nicht die von vorhin.
         existing.name = name
         existing.avatar = avatar
-        if body.team_id is not None:
+        if body.team_id is not None and teacher_id is None:
             existing.team_id = body.team_id
         existing.student_id = student_id
         if target_class_id is not None:
@@ -1350,8 +1364,9 @@ def join_session(code: str, body: ParticipantJoin, db: Session = Depends(get_db)
         return {"participant_id": existing.id, "name": existing.name, "avatar": existing.avatar,
                 "team_id": existing.team_id, "class_id": existing.class_id, "rejoined": True}
 
-    p = QuizParticipant(session_id=s.id, name=name, avatar=avatar, team_id=body.team_id, guest_id=guest_id,
-                        student_id=student_id, class_id=target_class_id)
+    p = QuizParticipant(session_id=s.id, name=name, avatar=avatar,
+                        team_id=None if teacher_id is not None else body.team_id, guest_id=guest_id,
+                        student_id=student_id, teacher_id=teacher_id, class_id=target_class_id)
     db.add(p)
     db.commit()
     db.refresh(p)
@@ -1372,15 +1387,18 @@ def _ws_participant(db: Session, s: QuizSession, websocket: WebSocket,
     nicht daran — sonst laesst sich mit der Nummer des Nachbarn dessen Platz
     uebernehmen: seine Rueckmeldungen mitlesen und unter seinem Namen antworten.
 
-    Nur fuer eine Lehrkraft, die selbst mitspielt, bleibt die Nummer der einzige
-    Anhaltspunkt (QuizParticipant kennt keine teacher_id) — die spielt in der
-    eigenen Runde und hat nichts davon, jemanden zu verdraengen.
+    Eine mitspielende Lehrkraft hat wie ein Schueler genau einen Platz: ihren.
     """
     identity = ws_identity(websocket, db)
     if identity and identity[0] == "student":
         # Ein angemeldeter Schueler hat genau einen Platz: seinen.
         return db.query(QuizParticipant).filter_by(
             session_id=s.id, student_id=identity[1]).first()
+    if identity and identity[0] == "teacher":
+        eigener = db.query(QuizParticipant).filter_by(
+            session_id=s.id, teacher_id=identity[1]).first()
+        if eigener is not None:
+            return eigener
 
     gast = ws_guest(websocket, s.join_code, db)
     if gast is not None:
@@ -1393,9 +1411,8 @@ def _ws_participant(db: Session, s: QuizSession, websocket: WebSocket,
     if p is None or p.session_id != s.id:
         return None
     # Ein Platz, der jemandem gehoert, laesst sich nicht per Nummer uebernehmen.
-    # Uebrig bleiben herrenlose Plaetze: die mitspielende Lehrkraft (kein
-    # teacher_id auf QuizParticipant) und Altbestaende von vor der Gast-Id.
-    if p.student_id is not None or p.guest_id is not None:
+    # Uebrig bleiben herrenlose Plaetze: Altbestaende von vor der Gast-Id.
+    if p.student_id is not None or p.guest_id is not None or p.teacher_id is not None:
         return None
     return p
 
@@ -1454,13 +1471,14 @@ async def session_ws(
             mgr.add_student(code, pid, websocket)
             await websocket.send_json({"event": "joined", "name": p.name, "avatar": p.avatar})
             await _resync_student(s, db, code, pid, websocket)
-            await mgr.send_teachers(code, {
-                "event": "participant_joined",
-                "participant_id": p.id,
-                "name": p.name,
-                "avatar": p.avatar,
-                "count": len(s.participants),
-            })
+            if p.teacher_id is None:  # die mitspielende Lehrkraft erscheint nicht in der Lobby am Beamer
+                await mgr.send_teachers(code, {
+                    "event": "participant_joined",
+                    "participant_id": p.id,
+                    "name": p.name,
+                    "avatar": p.avatar,
+                    "count": len(_schueler(s)),
+                })
 
         try:
             while True:
@@ -1624,9 +1642,10 @@ async def _resync_student(s: QuizSession, db: Session, code: str, pid: int, ws: 
         final_ranking = _build_ranking(s, scores, {})
         scored_questions = [q2 for q2 in questions if q2.type != "survey"]
         n_q = len(scored_questions)
-        n_p = max(len(s.participants), 1)
+        schueler = _schueler(s)
+        n_p = max(len(schueler), 1)
         max_possible = n_q * n_p
-        score_ratio = sum(scores.values()) / max_possible if max_possible > 0 else 0
+        score_ratio = sum(scores.get(p.id, 0.0) for p in schueler) / max_possible if max_possible > 0 else 0
         await ws.send_json({
             "event": "finished",
             "points_awarded": points,
@@ -1734,7 +1753,7 @@ async def _handle_teacher_action(action: str, data: dict, s: QuizSession, db: Se
             await mgr.send_teachers(code, {
                 "event": "participant_left",
                 "participant_id": pid_to_kick,
-                "count": len(s.participants),
+                "count": len(_schueler(s)),
             })
 
     # ── rename ─────────────────────────────────────────────────────────────
@@ -1968,8 +1987,10 @@ async def _finish_session(s: QuizSession, db: Session, code: str):
 
     scored_questions = [q for q in s.quiz.questions if q.type != "survey"]
     n_q = len(scored_questions)
-    n_p = len(s.participants)
-    score_ratio = (sum(1 for r in s.responses if r.is_correct is True) / (n_p * n_q)) if n_q and n_p else 0.0
+    schueler = {p.id for p in _schueler(s)}
+    n_p = len(schueler)
+    score_ratio = (sum(1 for r in s.responses if r.is_correct is True and r.participant_id in schueler)
+                   / (n_p * n_q)) if n_q and n_p else 0.0
 
     await mgr.broadcast(code, {
         "event": "finished",
