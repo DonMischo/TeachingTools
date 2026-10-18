@@ -118,12 +118,15 @@ methoden = []
 for f in sorted(glob.glob(os.path.join(HERE, 'm_*.yml'))):
     methoden += load(os.path.basename(f))
 kapitel = load('kapitel.yml')
+zusatz = load('unterkategorien_zusatz.yml') or {}
 mythen = load('mythen.yml')
 
 ids = Counter(m['id'] for m in methoden)
 for k, n in ids.items():
     if n > 1: errors.append(f'doppelte id {k}')
 mids = set(ids)
+for zid in zusatz:
+    if zid not in mids: errors.append(f'unterkategorien_zusatz: unbekannte id {zid}')
 
 def check_list(m, key, vocab):
     for v in m.get(key, []):
@@ -140,8 +143,11 @@ for m in methoden:
     check_list(m, 'anwendung', LEGENDE['anwendung'])
     if m['evidenz']['stufe'] not in LEGENDE['evidenz']: errors.append(f"{m['id']}: evidenz {m['evidenz']['stufe']}")
     if m['qualifikation'] not in LEGENDE['qualifikation']: errors.append(f"{m['id']}: qualifikation")
-    if m.get('unterkategorie') not in LEGENDE['unterkategorien'][m['kategorie']]:
-        errors.append(f"{m['id']}: unterkategorie '{m['unterkategorie']}' passt nicht zu {m['kategorie']}")
+    # Hauptunterkategorie zuerst, Zusätze aus unterkategorien_zusatz.yml ohne Dubletten
+    m['unterkategorien'] = list(dict.fromkeys([m.get('unterkategorie')] + zusatz.get(m['id'], [])))
+    for u in m['unterkategorien']:
+        if u not in LEGENDE['unterkategorien'][m['kategorie']]:
+            errors.append(f"{m['id']}: unterkategorie '{u}' passt nicht zu {m['kategorie']}")
     for q in m['quellen']:
         used[q] += 1
         if q not in qids: errors.append(f"{m['id']}: quelle {q} fehlt")

@@ -1074,6 +1074,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_ritchhart2011"
+      ],
+      "unterkategorien": [
+        "aktivierung"
       ]
     },
     {
@@ -1127,6 +1130,9 @@
       "quellen": [
         "q_birkenbihl2002",
         "q_agarwal2019"
+      ],
+      "unterkategorien": [
+        "aktivierung"
       ]
     },
     {
@@ -1183,6 +1189,9 @@
         "q_dunlosky2013",
         "q_adesope2017",
         "q_agarwal2019"
+      ],
+      "unterkategorien": [
+        "ueben"
       ]
     },
     {
@@ -1233,6 +1242,9 @@
         "q_ausubel1960",
         "q_luiten1980",
         "q_wahl2013"
+      ],
+      "unterkategorien": [
+        "instruktion"
       ]
     },
     {
@@ -1285,6 +1297,9 @@
       "quellen": [
         "q_richland2009",
         "q_limon2001"
+      ],
+      "unterkategorien": [
+        "aktivierung"
       ]
     },
     {
@@ -1334,6 +1349,9 @@
         "q_gagne1985",
         "q_keller1987",
         "q_mayer2021"
+      ],
+      "unterkategorien": [
+        "aktivierung"
       ]
     },
     {
@@ -1383,6 +1401,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_klebert2006"
+      ],
+      "unterkategorien": [
+        "aktivierung"
       ]
     },
     {
@@ -1434,6 +1455,9 @@
       "quellen": [
         "q_jonsson2007",
         "q_panadero2017"
+      ],
+      "unterkategorien": [
+        "diagnose"
       ]
     },
     {
@@ -1485,6 +1509,9 @@
       "quellen": [
         "q_osborn1953",
         "q_diehl1987"
+      ],
+      "unterkategorien": [
+        "kreativ"
       ]
     },
     {
@@ -1532,6 +1559,9 @@
       "quellen": [
         "q_rohrbach1969",
         "q_diehl1987"
+      ],
+      "unterkategorien": [
+        "kreativ"
       ]
     },
     {
@@ -1581,6 +1611,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_rico1983"
+      ],
+      "unterkategorien": [
+        "kreativ"
       ]
     },
     {
@@ -1632,6 +1665,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_keogh1999"
+      ],
+      "unterkategorien": [
+        "aktivierung"
       ]
     },
     {
@@ -1684,6 +1720,9 @@
       "quellen": [
         "q_crouch2004",
         "q_white1992"
+      ],
+      "unterkategorien": [
+        "instruktion"
       ]
     },
     {
@@ -1734,6 +1773,9 @@
       "quellen": [
         "q_ritchhart2011",
         "q_ogle1986"
+      ],
+      "unterkategorien": [
+        "aktivierung"
       ]
     },
     {
@@ -1786,6 +1828,9 @@
         "q_lemov2015",
         "q_rosenshine2012",
         "q_agarwal2019"
+      ],
+      "unterkategorien": [
+        "aktivierung"
       ]
     },
     {
@@ -1836,6 +1881,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_knowles2015"
+      ],
+      "unterkategorien": [
+        "aktivierung"
       ]
     },
     {
@@ -1888,6 +1936,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_loewenstein1994"
+      ],
+      "unterkategorien": [
+        "aktivierung"
       ]
     },
     {
@@ -1938,6 +1989,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_elbow1973"
+      ],
+      "unterkategorien": [
+        "lesen_schreiben"
       ]
     },
     {
@@ -1990,6 +2044,9 @@
         "q_meyer1987",
         "q_meyer1987b",
         "q_rosenshine2012"
+      ],
+      "unterkategorien": [
+        "instruktion"
       ]
     },
     {
@@ -2038,6 +2095,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_willingham2009"
+      ],
+      "unterkategorien": [
+        "aktivierung"
       ]
     },
     {
@@ -2090,6 +2150,9 @@
       "quellen": [
         "q_bruening2009",
         "q_pettigrew2006"
+      ],
+      "unterkategorien": [
+        "kooperativ"
       ]
     },
     {
@@ -2141,6 +2204,9 @@
       "quellen": [
         "q_meyer1987b",
         "q_wiliam2011"
+      ],
+      "unterkategorien": [
+        "aktivierung"
       ]
     },
     {
@@ -2193,6 +2259,10 @@
       "quellen": [
         "q_klebert2006",
         "q_diehl1987"
+      ],
+      "unterkategorien": [
+        "kreativ",
+        "aktivierung"
       ]
     },
     {
@@ -2246,6 +2316,9 @@
       "quellen": [
         "q_kagan2009",
         "q_barkley2014"
+      ],
+      "unterkategorien": [
+        "kreativ"
       ]
     },
     {
@@ -2298,6 +2371,9 @@
       "quellen": [
         "q_limon2001",
         "q_loewenstein1994"
+      ],
+      "unterkategorien": [
+        "aktivierung"
       ]
     },
     {
@@ -2348,6 +2424,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_ritchhart2011"
+      ],
+      "unterkategorien": [
+        "aktivierung"
       ]
     },
     {
@@ -2400,6 +2479,9 @@
       "quellen": [
         "q_panadero2017",
         "q_zimmerman2002"
+      ],
+      "unterkategorien": [
+        "diagnose"
       ]
     },
     {
@@ -2449,6 +2531,9 @@
       "quellen": [
         "q_schwartz1998",
         "q_bransford2000"
+      ],
+      "unterkategorien": [
+        "instruktion"
       ]
     },
     {
@@ -2499,6 +2584,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_mattes2011"
+      ],
+      "unterkategorien": [
+        "lesen_schreiben"
       ]
     },
     {
@@ -2552,6 +2640,9 @@
       "quellen": [
         "q_meyer1987b",
         "q_augustine2018"
+      ],
+      "unterkategorien": [
+        "gespraech"
       ]
     },
     {
@@ -2604,6 +2695,9 @@
       "quellen": [
         "q_kagan2009",
         "q_bruening2009"
+      ],
+      "unterkategorien": [
+        "kooperativ"
       ]
     },
     {
@@ -2657,6 +2751,9 @@
       "quellen": [
         "q_ogle1986",
         "q_mattes2011"
+      ],
+      "unterkategorien": [
+        "aktivierung"
       ]
     },
     {
@@ -2705,6 +2802,9 @@
       "quellen": [
         "q_hulleman2009",
         "q_keller1987"
+      ],
+      "unterkategorien": [
+        "aktivierung"
       ]
     },
     {
@@ -2758,6 +2858,9 @@
         "q_wiliam2011",
         "q_hattie2007",
         "q_meyer2004"
+      ],
+      "unterkategorien": [
+        "aktivierung"
       ]
     },
     {
@@ -2812,6 +2915,10 @@
       "quellen": [
         "q_hunsu2016",
         "q_crouch2001"
+      ],
+      "unterkategorien": [
+        "diagnose",
+        "aktivierung"
       ]
     },
     {
@@ -2864,6 +2971,10 @@
       "quellen": [
         "q_buzan1974",
         "q_nesbit2006"
+      ],
+      "unterkategorien": [
+        "kreativ",
+        "visualisierung"
       ]
     },
     {
@@ -2918,6 +3029,9 @@
       "quellen": [
         "q_kagan2009",
         "q_watson2017"
+      ],
+      "unterkategorien": [
+        "kooperativ"
       ]
     },
     {
@@ -2971,6 +3085,9 @@
       "quellen": [
         "q_wiliam2011",
         "q_jonsson2007"
+      ],
+      "unterkategorien": [
+        "diagnose"
       ]
     },
     {
@@ -3024,6 +3141,9 @@
       "quellen": [
         "q_kagan2009",
         "q_bruening2009"
+      ],
+      "unterkategorien": [
+        "kooperativ"
       ]
     },
     {
@@ -3076,6 +3196,9 @@
       "quellen": [
         "q_bruening2009",
         "q_mattes2011"
+      ],
+      "unterkategorien": [
+        "kooperativ"
       ]
     },
     {
@@ -3129,6 +3252,9 @@
       "quellen": [
         "q_mattes2011",
         "q_kagan2009"
+      ],
+      "unterkategorien": [
+        "aktivierung"
       ]
     },
     {
@@ -3181,6 +3307,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_kagan2009"
+      ],
+      "unterkategorien": [
+        "kooperativ"
       ]
     },
     {
@@ -3231,6 +3360,10 @@
       "qualifikation": "alle",
       "quellen": [
         "q_loewenstein1994"
+      ],
+      "unterkategorien": [
+        "mathe_nawi",
+        "aktivierung"
       ]
     },
     {
@@ -3283,6 +3416,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_ritchhart2011"
+      ],
+      "unterkategorien": [
+        "aktivierung"
       ]
     },
     {
@@ -3334,6 +3470,9 @@
         "q_meyer1987",
         "q_mattes2011",
         "q_rowe1986"
+      ],
+      "unterkategorien": [
+        "aktivierung"
       ]
     },
     {
@@ -3385,6 +3524,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_klebert2006"
+      ],
+      "unterkategorien": [
+        "planung"
       ]
     },
     {
@@ -3441,6 +3583,9 @@
       "quellen": [
         "q_lyman1981",
         "q_bruening2009"
+      ],
+      "unterkategorien": [
+        "kooperativ"
       ]
     },
     {
@@ -3492,6 +3637,10 @@
         "q_white1992",
         "q_chi1994",
         "q_limon2001"
+      ],
+      "unterkategorien": [
+        "mathe_nawi",
+        "aktivierung"
       ]
     },
     {
@@ -3542,6 +3691,9 @@
       "quellen": [
         "q_richland2009",
         "q_brown2014"
+      ],
+      "unterkategorien": [
+        "diagnose"
       ]
     },
     {
@@ -3593,6 +3745,9 @@
       "quellen": [
         "q_ritchhart2011",
         "q_loewenstein1994"
+      ],
+      "unterkategorien": [
+        "aktivierung"
       ]
     },
     {
@@ -3643,6 +3798,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_kulik2016"
+      ],
+      "unterkategorien": [
+        "differenzierung"
       ]
     },
     {
@@ -3696,6 +3854,9 @@
         "q_wiliam2011",
         "q_black1998",
         "q_rosenshine2012"
+      ],
+      "unterkategorien": [
+        "diagnose"
       ]
     },
     {
@@ -3747,6 +3908,9 @@
       "quellen": [
         "q_wiliam2011",
         "q_wiliam2015"
+      ],
+      "unterkategorien": [
+        "diagnose"
       ]
     },
     {
@@ -3799,6 +3963,9 @@
         "q_meyer1987b",
         "q_slamecka1978",
         "q_chi2014"
+      ],
+      "unterkategorien": [
+        "ueben"
       ]
     },
     {
@@ -3851,6 +4018,9 @@
       "quellen": [
         "q_ritchhart2011",
         "q_abrami2015"
+      ],
+      "unterkategorien": [
+        "aktivierung"
       ]
     },
     {
@@ -3903,6 +4073,9 @@
       "quellen": [
         "q_watson2017",
         "q_hyatt2007"
+      ],
+      "unterkategorien": [
+        "differenzierung"
       ]
     },
     {
@@ -3954,6 +4127,9 @@
       "quellen": [
         "q_freeman2014",
         "q_chi2014"
+      ],
+      "unterkategorien": [
+        "kooperativ"
       ]
     },
     {
@@ -4007,6 +4183,10 @@
       "quellen": [
         "q_novak2008",
         "q_nesbit2006"
+      ],
+      "unterkategorien": [
+        "visualisierung",
+        "ueben"
       ]
     },
     {
@@ -4056,6 +4236,9 @@
       "qualifikation": "fortbildung",
       "quellen": [
         "q_plattner2009"
+      ],
+      "unterkategorien": [
+        "kreativ"
       ]
     },
     {
@@ -4111,6 +4294,9 @@
         "q_alexander2020",
         "q_eef_oral",
         "q_rowe1986"
+      ],
+      "unterkategorien": [
+        "gespraech"
       ]
     },
     {
@@ -4161,6 +4347,9 @@
       "quellen": [
         "q_whitehurst1988",
         "q_mol2009"
+      ],
+      "unterkategorien": [
+        "lesen_schreiben"
       ]
     },
     {
@@ -4216,6 +4405,9 @@
         "q_tomlinson2014",
         "q_cast2018",
         "q_pashler2008"
+      ],
+      "unterkategorien": [
+        "differenzierung"
       ]
     },
     {
@@ -4267,6 +4459,9 @@
       "quellen": [
         "q_mayer2021",
         "q_clark1991"
+      ],
+      "unterkategorien": [
+        "instruktion"
       ]
     },
     {
@@ -4320,6 +4515,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_veldkamp2020"
+      ],
+      "unterkategorien": [
+        "handlung"
       ]
     },
     {
@@ -4371,6 +4569,9 @@
       "quellen": [
         "q_meyer1987b",
         "q_rosenshine2012"
+      ],
+      "unterkategorien": [
+        "selbststaendig"
       ]
     },
     {
@@ -4422,6 +4623,9 @@
         "q_dunlosky2013",
         "q_chi1994",
         "q_fiorella2016"
+      ],
+      "unterkategorien": [
+        "ueben"
       ]
     },
     {
@@ -4476,6 +4680,9 @@
       "quellen": [
         "q_hoogerheide2014",
         "q_hoogerheide2016"
+      ],
+      "unterkategorien": [
+        "visualisierung"
       ]
     },
     {
@@ -4525,6 +4732,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_behrendt2014"
+      ],
+      "unterkategorien": [
+        "handlung"
       ]
     },
     {
@@ -4577,6 +4787,9 @@
       "quellen": [
         "q_meyer1987",
         "q_mattes2011"
+      ],
+      "unterkategorien": [
+        "gespraech"
       ]
     },
     {
@@ -4632,6 +4845,9 @@
         "q_stockard2018",
         "q_engelmann1982",
         "q_kirschner2006"
+      ],
+      "unterkategorien": [
+        "instruktion"
       ]
     },
     {
@@ -4684,6 +4900,9 @@
       "quellen": [
         "q_chernikova2020",
         "q_knowles2015"
+      ],
+      "unterkategorien": [
+        "selbststaendig"
       ]
     },
     {
@@ -4733,6 +4952,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_adams2014"
+      ],
+      "unterkategorien": [
+        "mathe_nawi"
       ]
     },
     {
@@ -4783,6 +5005,9 @@
       "quellen": [
         "q_mattes2011",
         "q_lipmanowicz2013"
+      ],
+      "unterkategorien": [
+        "gespraech"
       ]
     },
     {
@@ -4832,6 +5057,9 @@
       "quellen": [
         "q_wiliam2011",
         "q_bjork2013"
+      ],
+      "unterkategorien": [
+        "diagnose"
       ]
     },
     {
@@ -4881,6 +5109,10 @@
       "qualifikation": "alle",
       "quellen": [
         "q_lag2019"
+      ],
+      "unterkategorien": [
+        "selbststaendig",
+        "planung"
       ]
     },
     {
@@ -4931,6 +5163,9 @@
         "q_meyer1987",
         "q_rowe1986",
         "q_alexander2020"
+      ],
+      "unterkategorien": [
+        "gespraech"
       ]
     },
     {
@@ -4983,6 +5218,9 @@
       "quellen": [
         "q_frayer1969",
         "q_beck2013"
+      ],
+      "unterkategorien": [
+        "visualisierung"
       ]
     },
     {
@@ -5033,6 +5271,9 @@
       "quellen": [
         "q_robinson1946",
         "q_dunlosky2013"
+      ],
+      "unterkategorien": [
+        "lesen_schreiben"
       ]
     },
     {
@@ -5086,6 +5327,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_bruening2009"
+      ],
+      "unterkategorien": [
+        "visualisierung"
       ]
     },
     {
@@ -5139,6 +5383,10 @@
       "quellen": [
         "q_sailer2020",
         "q_wang2020"
+      ],
+      "unterkategorien": [
+        "handlung",
+        "ueben"
       ]
     },
     {
@@ -5193,6 +5441,9 @@
         "q_alfieri2011",
         "q_bybee2006",
         "q_hmelosilver2007"
+      ],
+      "unterkategorien": [
+        "selbststaendig"
       ]
     },
     {
@@ -5244,6 +5495,9 @@
       "quellen": [
         "q_slamecka1978",
         "q_fiorella2016"
+      ],
+      "unterkategorien": [
+        "ueben"
       ]
     },
     {
@@ -5290,6 +5544,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_ericsson1993"
+      ],
+      "unterkategorien": [
+        "ueben"
       ]
     },
     {
@@ -5344,6 +5601,9 @@
       "quellen": [
         "q_nesbit2006",
         "q_mayer2021"
+      ],
+      "unterkategorien": [
+        "visualisierung"
       ]
     },
     {
@@ -5396,6 +5656,10 @@
         "q_aronson1978",
         "q_johnson2009",
         "q_slavin1996"
+      ],
+      "unterkategorien": [
+        "kooperativ",
+        "differenzierung"
       ]
     },
     {
@@ -5445,6 +5709,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_slavin1996"
+      ],
+      "unterkategorien": [
+        "kooperativ"
       ]
     },
     {
@@ -5495,6 +5762,9 @@
       "quellen": [
         "q_sharan1992",
         "q_slavin1996"
+      ],
+      "unterkategorien": [
+        "selbststaendig"
       ]
     },
     {
@@ -5549,6 +5819,9 @@
         "q_johnson2009",
         "q_slavin1996",
         "q_karau1993"
+      ],
+      "unterkategorien": [
+        "kooperativ"
       ]
     },
     {
@@ -5600,6 +5873,9 @@
       "quellen": [
         "q_scheller2004",
         "q_mattes2011"
+      ],
+      "unterkategorien": [
+        "handlung"
       ]
     },
     {
@@ -5649,6 +5925,9 @@
       "quellen": [
         "q_lipmanowicz2013",
         "q_scott2004"
+      ],
+      "unterkategorien": [
+        "kreativ"
       ]
     },
     {
@@ -5702,6 +5981,9 @@
       "quellen": [
         "q_fiorella2013",
         "q_jonsson2007"
+      ],
+      "unterkategorien": [
+        "visualisierung"
       ]
     },
     {
@@ -5750,6 +6032,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_mattes2011"
+      ],
+      "unterkategorien": [
+        "lesen_schreiben"
       ]
     },
     {
@@ -5800,6 +6085,10 @@
       "quellen": [
         "q_therrien2004",
         "q_rosebrock2011"
+      ],
+      "unterkategorien": [
+        "lesen_schreiben",
+        "differenzierung"
       ]
     },
     {
@@ -5851,6 +6140,9 @@
         "q_rosenshine2012",
         "q_freeman2014",
         "q_mayer2021"
+      ],
+      "unterkategorien": [
+        "instruktion"
       ]
     },
     {
@@ -5901,6 +6193,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_koch1991"
+      ],
+      "unterkategorien": [
+        "selbststaendig"
       ]
     },
     {
@@ -5953,6 +6248,9 @@
       "quellen": [
         "q_hattie2007",
         "q_bloom1984"
+      ],
+      "unterkategorien": [
+        "diagnose"
       ]
     },
     {
@@ -6004,6 +6302,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_rosenshine1996"
+      ],
+      "unterkategorien": [
+        "ueben"
       ]
     },
     {
@@ -6055,6 +6356,9 @@
       "quellen": [
         "q_gallin1990",
         "q_nueckles2009"
+      ],
+      "unterkategorien": [
+        "reflexion"
       ]
     },
     {
@@ -6107,6 +6411,9 @@
         "q_leitner1972",
         "q_dunlosky2013",
         "q_roediger2006"
+      ],
+      "unterkategorien": [
+        "ueben"
       ]
     },
     {
@@ -6158,6 +6465,9 @@
       "quellen": [
         "q_tomlinson2014",
         "q_ryan2000"
+      ],
+      "unterkategorien": [
+        "selbststaendig"
       ]
     },
     {
@@ -6211,6 +6521,9 @@
       "quellen": [
         "q_bruening2009",
         "q_wahl2013"
+      ],
+      "unterkategorien": [
+        "differenzierung"
       ]
     },
     {
@@ -6262,6 +6575,9 @@
       "quellen": [
         "q_gold2004",
         "q_eef_meta"
+      ],
+      "unterkategorien": [
+        "lesen_schreiben"
       ]
     },
     {
@@ -6311,6 +6627,9 @@
       "quellen": [
         "q_young2009",
         "q_therrien2004"
+      ],
+      "unterkategorien": [
+        "lesen_schreiben"
       ]
     },
     {
@@ -6364,6 +6683,9 @@
         "q_atkinson2000",
         "q_renkl2014",
         "q_sweller2019"
+      ],
+      "unterkategorien": [
+        "instruktion"
       ]
     },
     {
@@ -6412,6 +6734,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_rittlejohnson2007"
+      ],
+      "unterkategorien": [
+        "mathe_nawi"
       ]
     },
     {
@@ -6460,6 +6785,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_konrad2009"
+      ],
+      "unterkategorien": [
+        "lesen_schreiben"
       ]
     },
     {
@@ -6508,6 +6836,9 @@
       "quellen": [
         "q_dunlosky2013",
         "q_slamecka1978"
+      ],
+      "unterkategorien": [
+        "lesen_schreiben"
       ]
     },
     {
@@ -6561,6 +6892,10 @@
         "q_bloom1984",
         "q_kulik1990",
         "q_eef_mastery"
+      ],
+      "unterkategorien": [
+        "ueben",
+        "differenzierung"
       ]
     },
     {
@@ -6612,6 +6947,9 @@
       "quellen": [
         "q_rittlejohnson2007",
         "q_gallin1990"
+      ],
+      "unterkategorien": [
+        "mathe_nawi"
       ]
     },
     {
@@ -6660,6 +6998,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_blum2007"
+      ],
+      "unterkategorien": [
+        "mathe_nawi"
       ]
     },
     {
@@ -6708,6 +7049,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_richland2007"
+      ],
+      "unterkategorien": [
+        "instruktion"
       ]
     },
     {
@@ -6761,6 +7105,9 @@
         "q_eef_meta",
         "q_dignath2008",
         "q_bandura1977"
+      ],
+      "unterkategorien": [
+        "instruktion"
       ]
     },
     {
@@ -6811,6 +7158,9 @@
       "quellen": [
         "q_zwicky1969",
         "q_scott2004"
+      ],
+      "unterkategorien": [
+        "kreativ"
       ]
     },
     {
@@ -6860,6 +7210,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_leat2002"
+      ],
+      "unterkategorien": [
+        "selbststaendig"
       ]
     },
     {
@@ -6909,6 +7262,9 @@
       "quellen": [
         "q_kagan2009",
         "q_slavin1996"
+      ],
+      "unterkategorien": [
+        "kooperativ"
       ]
     },
     {
@@ -6961,6 +7317,9 @@
         "q_meyer1987b",
         "q_eef_peer",
         "q_johnson2009"
+      ],
+      "unterkategorien": [
+        "kooperativ"
       ]
     },
     {
@@ -7012,6 +7371,9 @@
         "q_kagan2009",
         "q_cohen1982",
         "q_eef_peer"
+      ],
+      "unterkategorien": [
+        "kooperativ"
       ]
     },
     {
@@ -7062,6 +7424,9 @@
       "quellen": [
         "q_aronson1978",
         "q_bruening2009"
+      ],
+      "unterkategorien": [
+        "kooperativ"
       ]
     },
     {
@@ -7115,6 +7480,9 @@
       "quellen": [
         "q_pecha",
         "q_fiorella2016"
+      ],
+      "unterkategorien": [
+        "visualisierung"
       ]
     },
     {
@@ -7167,6 +7535,10 @@
       "quellen": [
         "q_crouch2001",
         "q_freeman2014"
+      ],
+      "unterkategorien": [
+        "kooperativ",
+        "diagnose"
       ]
     },
     {
@@ -7224,6 +7596,10 @@
         "q_fiorella2013",
         "q_roscoe2007",
         "q_martin1985"
+      ],
+      "unterkategorien": [
+        "kooperativ",
+        "differenzierung"
       ]
     },
     {
@@ -7274,6 +7650,9 @@
       "qualifikation": "fortbildung",
       "quellen": [
         "q_eef_p4c"
+      ],
+      "unterkategorien": [
+        "gespraech"
       ]
     },
     {
@@ -7325,6 +7704,9 @@
       "quellen": [
         "q_chernikova2020",
         "q_keiser2021"
+      ],
+      "unterkategorien": [
+        "handlung"
       ]
     },
     {
@@ -7374,6 +7756,9 @@
       "quellen": [
         "q_barkley2014",
         "q_rittlejohnson2007"
+      ],
+      "unterkategorien": [
+        "kreativ"
       ]
     },
     {
@@ -7424,6 +7809,9 @@
       "quellen": [
         "q_hmelosilver2007",
         "q_kirschner2006"
+      ],
+      "unterkategorien": [
+        "selbststaendig"
       ]
     },
     {
@@ -7476,6 +7864,9 @@
       "quellen": [
         "q_polya1945",
         "q_eef_meta"
+      ],
+      "unterkategorien": [
+        "mathe_nawi"
       ]
     },
     {
@@ -7524,6 +7915,10 @@
       "qualifikation": "alle",
       "quellen": [
         "q_kapur2016"
+      ],
+      "unterkategorien": [
+        "mathe_nawi",
+        "selbststaendig"
       ]
     },
     {
@@ -7573,6 +7968,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_wittmann1994"
+      ],
+      "unterkategorien": [
+        "mathe_nawi"
       ]
     },
     {
@@ -7627,6 +8025,9 @@
         "q_kilpatrick1918",
         "q_frey1982",
         "q_chen2019"
+      ],
+      "unterkategorien": [
+        "selbststaendig"
       ]
     },
     {
@@ -7678,6 +8079,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_wineburg2019"
+      ],
+      "unterkategorien": [
+        "lesen_schreiben"
       ]
     },
     {
@@ -7729,6 +8133,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_reisman2012"
+      ],
+      "unterkategorien": [
+        "lesen_schreiben"
       ]
     },
     {
@@ -7780,6 +8187,10 @@
       "quellen": [
         "q_kagan2009",
         "q_roediger2006"
+      ],
+      "unterkategorien": [
+        "kooperativ",
+        "ueben"
       ]
     },
     {
@@ -7829,6 +8240,9 @@
       "quellen": [
         "q_kagan2009",
         "q_cohen2014"
+      ],
+      "unterkategorien": [
+        "kooperativ"
       ]
     },
     {
@@ -7880,6 +8294,10 @@
       "quellen": [
         "q_palincsar1984",
         "q_hattie2009"
+      ],
+      "unterkategorien": [
+        "lesen_schreiben",
+        "kooperativ"
       ]
     },
     {
@@ -7932,6 +8350,9 @@
       "quellen": [
         "q_beck2013",
         "q_eef_oral"
+      ],
+      "unterkategorien": [
+        "lesen_schreiben"
       ]
     },
     {
@@ -7982,6 +8403,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_cohen2014"
+      ],
+      "unterkategorien": [
+        "kooperativ"
       ]
     },
     {
@@ -8033,6 +8457,9 @@
       "quellen": [
         "q_beelmann1994",
         "q_chernikova2020"
+      ],
+      "unterkategorien": [
+        "handlung"
       ]
     },
     {
@@ -8084,6 +8511,9 @@
       "quellen": [
         "q_kagan2009",
         "q_mattes2011"
+      ],
+      "unterkategorien": [
+        "lesen_schreiben"
       ]
     },
     {
@@ -8138,6 +8568,9 @@
         "q_wood1976",
         "q_vygotsky1978",
         "q_hmelosilver2007"
+      ],
+      "unterkategorien": [
+        "instruktion"
       ]
     },
     {
@@ -8188,6 +8621,9 @@
       "quellen": [
         "q_eberle1971",
         "q_scott2004"
+      ],
+      "unterkategorien": [
+        "kreativ"
       ]
     },
     {
@@ -8237,6 +8673,9 @@
       "quellen": [
         "q_wiliam2011",
         "q_wiliam2015"
+      ],
+      "unterkategorien": [
+        "diagnose"
       ]
     },
     {
@@ -8290,6 +8729,9 @@
       "quellen": [
         "q_lipmanowicz2013",
         "q_barkley2014"
+      ],
+      "unterkategorien": [
+        "kooperativ"
       ]
     },
     {
@@ -8339,6 +8781,9 @@
       "quellen": [
         "q_graham2012",
         "q_double2020"
+      ],
+      "unterkategorien": [
+        "lesen_schreiben"
       ]
     },
     {
@@ -8390,6 +8835,9 @@
       "quellen": [
         "q_hofstein2004",
         "q_dejong2013"
+      ],
+      "unterkategorien": [
+        "handlung"
       ]
     },
     {
@@ -8440,6 +8888,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_debono1985"
+      ],
+      "unterkategorien": [
+        "kreativ"
       ]
     },
     {
@@ -8492,6 +8943,9 @@
       "quellen": [
         "q_roediger2006",
         "q_montessori1912"
+      ],
+      "unterkategorien": [
+        "differenzierung"
       ]
     },
     {
@@ -8540,6 +8994,9 @@
       "quellen": [
         "q_kagan2009",
         "q_roediger2006"
+      ],
+      "unterkategorien": [
+        "kooperativ"
       ]
     },
     {
@@ -8589,6 +9046,9 @@
       "qualifikation": "fortbildung",
       "quellen": [
         "q_heckmann1981"
+      ],
+      "unterkategorien": [
+        "gespraech"
       ]
     },
     {
@@ -8641,6 +9101,9 @@
       "quellen": [
         "q_leisen2013",
         "q_gibbons2002"
+      ],
+      "unterkategorien": [
+        "lesen_schreiben"
       ]
     },
     {
@@ -8693,6 +9156,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_scheller2004"
+      ],
+      "unterkategorien": [
+        "handlung"
       ]
     },
     {
@@ -8747,6 +9213,10 @@
         "q_mattes2011",
         "q_giaconia1982",
         "q_meyer2004"
+      ],
+      "unterkategorien": [
+        "selbststaendig",
+        "differenzierung"
       ]
     },
     {
@@ -8799,6 +9269,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_mattes2011"
+      ],
+      "unterkategorien": [
+        "gespraech"
       ]
     },
     {
@@ -8852,6 +9325,9 @@
       "quellen": [
         "q_graham2012",
         "q_meichenbaum1971"
+      ],
+      "unterkategorien": [
+        "lesen_schreiben"
       ]
     },
     {
@@ -8901,6 +9377,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_johnson2009b"
+      ],
+      "unterkategorien": [
+        "gespraech"
       ]
     },
     {
@@ -8951,6 +9430,9 @@
         "q_kiewra1985",
         "q_mueller2014",
         "q_morehead2019"
+      ],
+      "unterkategorien": [
+        "lesen_schreiben"
       ]
     },
     {
@@ -9001,6 +9483,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_mattes2011"
+      ],
+      "unterkategorien": [
+        "kreativ"
       ]
     },
     {
@@ -9051,6 +9536,9 @@
       "qualifikation": "fortbildung",
       "quellen": [
         "q_scheller2004"
+      ],
+      "unterkategorien": [
+        "handlung"
       ]
     },
     {
@@ -9104,6 +9592,9 @@
       "quellen": [
         "q_mattes2011",
         "q_chernikova2020"
+      ],
+      "unterkategorien": [
+        "gespraech"
       ]
     },
     {
@@ -9157,6 +9648,9 @@
       "quellen": [
         "q_kagan2009",
         "q_rosenshine2012"
+      ],
+      "unterkategorien": [
+        "kooperativ"
       ]
     },
     {
@@ -9206,6 +9700,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_slavin1996"
+      ],
+      "unterkategorien": [
+        "handlung"
       ]
     },
     {
@@ -9259,6 +9756,9 @@
         "q_meyer1987b",
         "q_rosenshine1996",
         "q_dunlosky2013b"
+      ],
+      "unterkategorien": [
+        "lesen_schreiben"
       ]
     },
     {
@@ -9307,6 +9807,9 @@
       "quellen": [
         "q_double2020",
         "q_gielen2010"
+      ],
+      "unterkategorien": [
+        "lesen_schreiben"
       ]
     },
     {
@@ -9361,6 +9864,10 @@
         "q_bruening2009",
         "q_johnson2009",
         "q_eef_collab"
+      ],
+      "unterkategorien": [
+        "kooperativ",
+        "gespraech"
       ]
     },
     {
@@ -9413,6 +9920,9 @@
       "quellen": [
         "q_mattes2011",
         "q_chernikova2020"
+      ],
+      "unterkategorien": [
+        "handlung"
       ]
     },
     {
@@ -9460,6 +9970,9 @@
       "quellen": [
         "q_rohrer2007",
         "q_dunlosky2013"
+      ],
+      "unterkategorien": [
+        "ueben"
       ]
     },
     {
@@ -9511,6 +10024,9 @@
         "q_cepeda2006",
         "q_dunlosky2013",
         "q_bjork2011"
+      ],
+      "unterkategorien": [
+        "ueben"
       ]
     },
     {
@@ -9561,6 +10077,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_dejong2013"
+      ],
+      "unterkategorien": [
+        "mathe_nawi"
       ]
     },
     {
@@ -9611,6 +10130,9 @@
       "quellen": [
         "q_lipmanowicz2013",
         "q_watson2017"
+      ],
+      "unterkategorien": [
+        "gespraech"
       ]
     },
     {
@@ -9659,6 +10181,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_dilts1994"
+      ],
+      "unterkategorien": [
+        "kreativ"
       ]
     },
     {
@@ -9708,6 +10233,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_dodge1995"
+      ],
+      "unterkategorien": [
+        "selbststaendig"
       ]
     },
     {
@@ -9759,6 +10287,9 @@
       "quellen": [
         "q_reichen1991",
         "q_giaconia1982"
+      ],
+      "unterkategorien": [
+        "selbststaendig"
       ]
     },
     {
@@ -9811,6 +10342,10 @@
         "q_giaconia1982",
         "q_eef_individualised",
         "q_freinet1946"
+      ],
+      "unterkategorien": [
+        "selbststaendig",
+        "differenzierung"
       ]
     },
     {
@@ -9863,6 +10398,9 @@
       "quellen": [
         "q_fernandes2018",
         "q_fiorella2016"
+      ],
+      "unterkategorien": [
+        "ueben"
       ]
     },
     {
@@ -9915,6 +10453,9 @@
         "q_rowe1986",
         "q_lemov2015",
         "q_wiliam2011"
+      ],
+      "unterkategorien": [
+        "gespraech"
       ]
     },
     {
@@ -9964,6 +10505,9 @@
       "quellen": [
         "q_agarwal2019",
         "q_wiliam2011"
+      ],
+      "unterkategorien": [
+        "reflexion"
       ]
     },
     {
@@ -10014,6 +10558,9 @@
       "quellen": [
         "q_roediger2006",
         "q_adesope2017"
+      ],
+      "unterkategorien": [
+        "ueben"
       ]
     },
     {
@@ -10060,6 +10607,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_loewenstein1994"
+      ],
+      "unterkategorien": [
+        "aktivierung"
       ]
     },
     {
@@ -10112,6 +10662,10 @@
       "quellen": [
         "q_sailer2020",
         "q_roediger2006"
+      ],
+      "unterkategorien": [
+        "handlung",
+        "ueben"
       ]
     },
     {
@@ -10161,6 +10715,9 @@
       "quellen": [
         "q_walton2011",
         "q_nueckles2009"
+      ],
+      "unterkategorien": [
+        "reflexion"
       ]
     },
     {
@@ -10210,6 +10767,9 @@
       "quellen": [
         "q_angelo1993",
         "q_dunlosky2013"
+      ],
+      "unterkategorien": [
+        "reflexion"
       ]
     },
     {
@@ -10257,6 +10817,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_fiorella2016"
+      ],
+      "unterkategorien": [
+        "visualisierung"
       ]
     },
     {
@@ -10306,6 +10869,9 @@
       "quellen": [
         "q_wiliam2011",
         "q_black1998"
+      ],
+      "unterkategorien": [
+        "diagnose"
       ]
     },
     {
@@ -10357,6 +10923,10 @@
       "quellen": [
         "q_chi1994",
         "q_fiorella2013"
+      ],
+      "unterkategorien": [
+        "ueben",
+        "reflexion"
       ]
     },
     {
@@ -10407,6 +10977,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_ritchhart2011"
+      ],
+      "unterkategorien": [
+        "reflexion"
       ]
     },
     {
@@ -10455,6 +11028,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_mattes2011"
+      ],
+      "unterkategorien": [
+        "reflexion"
       ]
     },
     {
@@ -10501,6 +11077,9 @@
       "quellen": [
         "q_eef_homework",
         "q_cepeda2006"
+      ],
+      "unterkategorien": [
+        "ueben"
       ]
     },
     {
@@ -10549,6 +11128,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_mattes2011"
+      ],
+      "unterkategorien": [
+        "reflexion"
       ]
     },
     {
@@ -10599,6 +11181,9 @@
       "quellen": [
         "q_butler1988",
         "q_black1998"
+      ],
+      "unterkategorien": [
+        "diagnose"
       ]
     },
     {
@@ -10649,6 +11234,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_fiorella2016"
+      ],
+      "unterkategorien": [
+        "visualisierung"
       ]
     },
     {
@@ -10700,6 +11288,9 @@
       "quellen": [
         "q_nueckles2009",
         "q_zimmerman2002"
+      ],
+      "unterkategorien": [
+        "reflexion"
       ]
     },
     {
@@ -10745,6 +11336,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_angelo1993"
+      ],
+      "unterkategorien": [
+        "diagnose"
       ]
     },
     {
@@ -10792,6 +11386,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_angelo1993"
+      ],
+      "unterkategorien": [
+        "diagnose"
       ]
     },
     {
@@ -10845,6 +11442,9 @@
       "quellen": [
         "q_double2020",
         "q_hattie2007"
+      ],
+      "unterkategorien": [
+        "diagnose"
       ]
     },
     {
@@ -10898,6 +11498,9 @@
       "quellen": [
         "q_panadero2017",
         "q_nueckles2009"
+      ],
+      "unterkategorien": [
+        "reflexion"
       ]
     },
     {
@@ -10946,6 +11549,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_barkley2014"
+      ],
+      "unterkategorien": [
+        "visualisierung"
       ]
     },
     {
@@ -10997,6 +11603,9 @@
       "quellen": [
         "q_lovett2013",
         "q_zimmerman2002"
+      ],
+      "unterkategorien": [
+        "diagnose"
       ]
     },
     {
@@ -11048,6 +11657,9 @@
       "quellen": [
         "q_sailer2020",
         "q_adesope2017"
+      ],
+      "unterkategorien": [
+        "handlung"
       ]
     },
     {
@@ -11099,6 +11711,9 @@
       "quellen": [
         "q_slamecka1978",
         "q_chi1994"
+      ],
+      "unterkategorien": [
+        "instruktion"
       ]
     },
     {
@@ -11149,6 +11764,9 @@
       "quellen": [
         "q_panadero2017",
         "q_hattie2007"
+      ],
+      "unterkategorien": [
+        "diagnose"
       ]
     },
     {
@@ -11199,6 +11817,9 @@
       "quellen": [
         "q_meyer1987",
         "q_mayer2021"
+      ],
+      "unterkategorien": [
+        "visualisierung"
       ]
     },
     {
@@ -11249,6 +11870,9 @@
       "quellen": [
         "q_ritchhart2011",
         "q_dunlosky2013"
+      ],
+      "unterkategorien": [
+        "aktivierung"
       ]
     },
     {
@@ -11299,6 +11923,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_zipp2007"
+      ],
+      "unterkategorien": [
+        "diagnose"
       ]
     },
     {
@@ -11349,6 +11976,9 @@
       "quellen": [
         "q_means2013",
         "q_lag2019"
+      ],
+      "unterkategorien": [
+        "planung"
       ]
     },
     {
@@ -11400,6 +12030,9 @@
       "quellen": [
         "q_johnson2009",
         "q_green2005"
+      ],
+      "unterkategorien": [
+        "kooperativ"
       ]
     },
     {
@@ -11451,6 +12084,9 @@
         "q_meyer1987",
         "q_meyer2021",
         "q_stockard2018"
+      ],
+      "unterkategorien": [
+        "planung"
       ]
     },
     {
@@ -11499,6 +12135,9 @@
       "qualifikation": "fortbildung",
       "quellen": [
         "q_deno1985"
+      ],
+      "unterkategorien": [
+        "diagnose"
       ]
     },
     {
@@ -11550,6 +12189,9 @@
       "quellen": [
         "q_wahl2013",
         "q_chi2014"
+      ],
+      "unterkategorien": [
+        "planung"
       ]
     },
     {
@@ -11600,6 +12242,9 @@
         "q_bruner1960",
         "q_dempster1988",
         "q_cepeda2006"
+      ],
+      "unterkategorien": [
+        "planung"
       ]
     },
     {
@@ -11650,6 +12295,9 @@
       "quellen": [
         "q_cook2018",
         "q_cornelius2007"
+      ],
+      "unterkategorien": [
+        "beziehung"
       ]
     },
     {
@@ -11701,6 +12349,9 @@
       "quellen": [
         "q_klebert2006",
         "q_knowles2015"
+      ],
+      "unterkategorien": [
+        "moderation"
       ]
     },
     {
@@ -11754,6 +12405,9 @@
       "quellen": [
         "q_tuckman1965",
         "q_kagan2009"
+      ],
+      "unterkategorien": [
+        "beziehung"
       ]
     },
     {
@@ -11810,6 +12464,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_lipmanowicz2013"
+      ],
+      "unterkategorien": [
+        "moderation"
       ]
     },
     {
@@ -11860,6 +12517,9 @@
       "quellen": [
         "q_augustine2018",
         "q_casel"
+      ],
+      "unterkategorien": [
+        "beziehung"
       ]
     },
     {
@@ -11910,6 +12570,9 @@
       "quellen": [
         "q_diamond2011",
         "q_diamond2013"
+      ],
+      "unterkategorien": [
+        "reform"
       ]
     },
     {
@@ -11962,6 +12625,9 @@
       "quellen": [
         "q_gordon1974",
         "q_miller2013"
+      ],
+      "unterkategorien": [
+        "kommunikation"
       ]
     },
     {
@@ -12009,6 +12675,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_skene2022"
+      ],
+      "unterkategorien": [
+        "reform"
       ]
     },
     {
@@ -12058,6 +12727,9 @@
       "qualifikation": "fortbildung",
       "quellen": [
         "q_cooperrider2005"
+      ],
+      "unterkategorien": [
+        "moderation"
       ]
     },
     {
@@ -12106,6 +12778,9 @@
       "quellen": [
         "q_balint1957",
         "q_tietze2003"
+      ],
+      "unterkategorien": [
+        "profession"
       ]
     },
     {
@@ -12159,6 +12834,10 @@
         "q_hahn1958",
         "q_hattie1997",
         "q_eef_outdoor"
+      ],
+      "unterkategorien": [
+        "partizipation",
+        "beziehung"
       ]
     },
     {
@@ -12212,6 +12891,9 @@
       "quellen": [
         "q_rosenberg2003",
         "q_durlak2011"
+      ],
+      "unterkategorien": [
+        "kommunikation"
       ]
     },
     {
@@ -12261,6 +12943,9 @@
       "quellen": [
         "q_barrish1969",
         "q_kellam2008"
+      ],
+      "unterkategorien": [
+        "fuehrung"
       ]
     },
     {
@@ -12311,6 +12996,10 @@
       "quellen": [
         "q_freinet1946",
         "q_friedrichs2009"
+      ],
+      "unterkategorien": [
+        "partizipation",
+        "konflikt"
       ]
     },
     {
@@ -12360,6 +13049,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_tietze2003"
+      ],
+      "unterkategorien": [
+        "profession"
       ]
     },
     {
@@ -12410,6 +13102,9 @@
       "quellen": [
         "q_schulzvonthun1981",
         "q_watzlawick1967"
+      ],
+      "unterkategorien": [
+        "kommunikation"
       ]
     },
     {
@@ -12457,6 +13152,9 @@
       "quellen": [
         "q_allen1969",
         "q_hattie2009"
+      ],
+      "unterkategorien": [
+        "profession"
       ]
     },
     {
@@ -12507,6 +13205,9 @@
         "q_montessori1912",
         "q_randolph2023",
         "q_lillard2017"
+      ],
+      "unterkategorien": [
+        "reform"
       ]
     },
     {
@@ -12556,6 +13257,9 @@
       "quellen": [
         "q_noblame",
         "q_gaffney2019"
+      ],
+      "unterkategorien": [
+        "konflikt"
       ]
     },
     {
@@ -12605,6 +13309,9 @@
       "quellen": [
         "q_delbecq1971",
         "q_diehl1987"
+      ],
+      "unterkategorien": [
+        "moderation"
       ]
     },
     {
@@ -12654,6 +13361,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_owen2008"
+      ],
+      "unterkategorien": [
+        "moderation"
       ]
     },
     {
@@ -12701,6 +13411,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_klein2007"
+      ],
+      "unterkategorien": [
+        "moderation"
       ]
     },
     {
@@ -12750,6 +13463,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_celio2011"
+      ],
+      "unterkategorien": [
+        "partizipation"
       ]
     },
     {
@@ -12801,6 +13517,9 @@
       "qualifikation": "fortbildung",
       "quellen": [
         "q_johnson1996"
+      ],
+      "unterkategorien": [
+        "konflikt"
       ]
     },
     {
@@ -12852,6 +13571,9 @@
       "quellen": [
         "q_royer2019",
         "q_hattie2007"
+      ],
+      "unterkategorien": [
+        "fuehrung"
       ]
     },
     {
@@ -12902,6 +13624,9 @@
       "qualifikation": "fortbildung",
       "quellen": [
         "q_augustine2018"
+      ],
+      "unterkategorien": [
+        "konflikt"
       ]
     },
     {
@@ -12951,6 +13676,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_brown2005"
+      ],
+      "unterkategorien": [
+        "moderation"
       ]
     },
     {
@@ -12999,6 +13727,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_jungk1981"
+      ],
+      "unterkategorien": [
+        "partizipation"
       ]
     },
     {
@@ -13049,6 +13780,9 @@
       "quellen": [
         "q_eef_behaviour",
         "q_kounin1970"
+      ],
+      "unterkategorien": [
+        "beziehung"
       ]
     },
     {
@@ -13097,6 +13831,9 @@
       "quellen": [
         "q_keiser2021",
         "q_tannenbaum2013"
+      ],
+      "unterkategorien": [
+        "profession"
       ]
     },
     {
@@ -13147,6 +13884,9 @@
       "quellen": [
         "q_cohn1975",
         "q_mattes2011"
+      ],
+      "unterkategorien": [
+        "beziehung"
       ]
     },
     {
@@ -13197,6 +13937,9 @@
         "q_gibbs1988",
         "q_rolfe2001",
         "q_kolb1984"
+      ],
+      "unterkategorien": [
+        "profession"
       ]
     },
     {
@@ -13248,6 +13991,10 @@
       "quellen": [
         "q_derby2006",
         "q_tannenbaum2013"
+      ],
+      "unterkategorien": [
+        "profession",
+        "moderation"
       ]
     },
     {
@@ -13300,6 +14047,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_helmke2009"
+      ],
+      "unterkategorien": [
+        "profession"
       ]
     },
     {
@@ -13349,6 +14099,9 @@
       "quellen": [
         "q_gollwitzer2006",
         "q_wahl2013"
+      ],
+      "unterkategorien": [
+        "profession"
       ]
     },
     {
@@ -13401,6 +14154,9 @@
       "quellen": [
         "q_walton2011",
         "q_seligman2011"
+      ],
+      "unterkategorien": [
+        "beziehung"
       ]
     },
     {
@@ -13450,6 +14206,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_klebert2006"
+      ],
+      "unterkategorien": [
+        "moderation"
       ]
     },
     {
@@ -13502,6 +14261,9 @@
       "quellen": [
         "q_kounin1970",
         "q_korpershoek2016"
+      ],
+      "unterkategorien": [
+        "fuehrung"
       ]
     },
     {
@@ -13551,6 +14313,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_eef_parental"
+      ],
+      "unterkategorien": [
+        "eltern"
       ]
     },
     {
@@ -13597,6 +14362,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_lewis2009"
+      ],
+      "unterkategorien": [
+        "profession"
       ]
     },
     {
@@ -13648,6 +14416,9 @@
       "quellen": [
         "q_dubois2011",
         "q_eef_mentoring"
+      ],
+      "unterkategorien": [
+        "eltern"
       ]
     },
     {
@@ -13703,6 +14474,9 @@
         "q_korpershoek2016",
         "q_eef_behaviour",
         "q_kounin1970"
+      ],
+      "unterkategorien": [
+        "fuehrung"
       ]
     },
     {
@@ -13755,6 +14529,9 @@
         "q_olweus1993",
         "q_salmivalli2011",
         "q_gaffney2019"
+      ],
+      "unterkategorien": [
+        "konflikt"
       ]
     },
     {
@@ -13804,6 +14581,9 @@
       "quellen": [
         "q_moreno1934",
         "q_hollstein2006"
+      ],
+      "unterkategorien": [
+        "profession"
       ]
     },
     {
@@ -13853,6 +14633,9 @@
       "qualifikation": "fortbildung",
       "quellen": [
         "q_cohn1975"
+      ],
+      "unterkategorien": [
+        "kommunikation"
       ]
     },
     {
@@ -13911,6 +14694,10 @@
         "q_kuyken2016",
         "q_dunning2019",
         "q_kuyken2022"
+      ],
+      "unterkategorien": [
+        "emotion_stress",
+        "positiv"
       ]
     },
     {
@@ -13963,6 +14750,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_zaccaro2018"
+      ],
+      "unterkategorien": [
+        "emotion_stress"
       ]
     },
     {
@@ -14015,6 +14805,10 @@
       "quellen": [
         "q_peseschkian1977",
         "q_peseschkian2000"
+      ],
+      "unterkategorien": [
+        "beratung",
+        "positiv"
       ]
     },
     {
@@ -14065,6 +14859,9 @@
       "quellen": [
         "q_wolfe2016",
         "q_fabiano2010"
+      ],
+      "unterkategorien": [
+        "verhalten"
       ]
     },
     {
@@ -14116,6 +14913,9 @@
       "quellen": [
         "q_swift2012",
         "q_schweitzer2007"
+      ],
+      "unterkategorien": [
+        "therapie"
       ]
     },
     {
@@ -14170,6 +14970,9 @@
         "q_brackett2012",
         "q_lieberman2007",
         "q_kuypers2011"
+      ],
+      "unterkategorien": [
+        "emotion_stress"
       ]
     },
     {
@@ -14221,6 +15024,9 @@
       "quellen": [
         "q_tryon2018",
         "q_locke2002"
+      ],
+      "unterkategorien": [
+        "therapie"
       ]
     },
     {
@@ -14271,6 +15077,10 @@
       "quellen": [
         "q_whitmore1992",
         "q_deshazer1985"
+      ],
+      "unterkategorien": [
+        "beratung",
+        "positiv"
       ]
     },
     {
@@ -14327,6 +15137,9 @@
       "quellen": [
         "q_deshazer1985",
         "q_kim2009"
+      ],
+      "unterkategorien": [
+        "beratung"
       ]
     },
     {
@@ -14375,6 +15188,9 @@
       "quellen": [
         "q_jamieson2010",
         "q_lazarus1984"
+      ],
+      "unterkategorien": [
+        "emotion_stress"
       ]
     },
     {
@@ -14428,6 +15244,10 @@
       "quellen": [
         "q_grawe2004",
         "q_flueckiger2008"
+      ],
+      "unterkategorien": [
+        "positiv",
+        "beratung"
       ]
     },
     {
@@ -14480,6 +15300,9 @@
         "q_duckworth2016",
         "q_ophir2009",
         "q_hoffmann2014"
+      ],
+      "unterkategorien": [
+        "selbststeuerung"
       ]
     },
     {
@@ -14532,6 +15355,10 @@
         "q_zimmerman2002",
         "q_dignath2008",
         "q_eef_meta"
+      ],
+      "unterkategorien": [
+        "kognition",
+        "selbststeuerung"
       ]
     },
     {
@@ -14578,6 +15405,10 @@
       "qualifikation": "alle",
       "quellen": [
         "q_ramirez2011"
+      ],
+      "unterkategorien": [
+        "emotion_stress",
+        "selbststeuerung"
       ]
     },
     {
@@ -14626,6 +15457,9 @@
       "quellen": [
         "q_prochaska1983",
         "q_west2005"
+      ],
+      "unterkategorien": [
+        "beratung"
       ]
     },
     {
@@ -14678,6 +15512,9 @@
       "qualifikation": "fortbildung",
       "quellen": [
         "q_beck2020"
+      ],
+      "unterkategorien": [
+        "therapie"
       ]
     },
     {
@@ -14727,6 +15564,9 @@
       "qualifikation": "fachkraft",
       "quellen": [
         "q_margraf2017"
+      ],
+      "unterkategorien": [
+        "diagnostik"
       ]
     },
     {
@@ -14778,6 +15618,9 @@
       "quellen": [
         "q_bratton2005",
         "q_niehues"
+      ],
+      "unterkategorien": [
+        "imaginativ"
       ]
     },
     {
@@ -14827,6 +15670,9 @@
       "qualifikation": "fachkraft",
       "quellen": [
         "q_lambert2018"
+      ],
+      "unterkategorien": [
+        "diagnostik"
       ]
     },
     {
@@ -14879,6 +15725,9 @@
         "q_yeager2019",
         "q_sisk2018",
         "q_macnamara2023"
+      ],
+      "unterkategorien": [
+        "motivation"
       ]
     },
     {
@@ -14926,6 +15775,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_cohen2006"
+      ],
+      "unterkategorien": [
+        "motivation"
       ]
     },
     {
@@ -14979,6 +15831,10 @@
         "q_miller2001",
         "q_miller2013",
         "q_hayes2012"
+      ],
+      "unterkategorien": [
+        "beratung",
+        "motivation"
       ]
     },
     {
@@ -15032,6 +15888,9 @@
         "q_oettingen2014",
         "q_gollwitzer2006",
         "q_duckworth2011"
+      ],
+      "unterkategorien": [
+        "motivation"
       ]
     },
     {
@@ -15082,6 +15941,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_locke2002"
+      ],
+      "unterkategorien": [
+        "motivation"
       ]
     },
     {
@@ -15131,6 +15993,9 @@
       "qualifikation": "fortbildung",
       "quellen": [
         "q_walton2011"
+      ],
+      "unterkategorien": [
+        "motivation"
       ]
     },
     {
@@ -15181,6 +16046,10 @@
         "q_ellis1962",
         "q_beck2020",
         "q_hofmann2012"
+      ],
+      "unterkategorien": [
+        "therapie",
+        "emotion_stress"
       ]
     },
     {
@@ -15230,6 +16099,9 @@
       "qualifikation": "fachkraft",
       "quellen": [
         "q_cuijpers2007"
+      ],
+      "unterkategorien": [
+        "therapie"
       ]
     },
     {
@@ -15279,6 +16151,9 @@
       "quellen": [
         "q_ost1987",
         "q_jacobson1938"
+      ],
+      "unterkategorien": [
+        "emotion_stress"
       ]
     },
     {
@@ -15329,6 +16204,9 @@
         "q_watkins1997",
         "q_young2003",
         "q_niehues"
+      ],
+      "unterkategorien": [
+        "imaginativ"
       ]
     },
     {
@@ -15377,6 +16255,9 @@
       "quellen": [
         "q_cirillo2006",
         "q_locke2002"
+      ],
+      "unterkategorien": [
+        "selbststeuerung"
       ]
     },
     {
@@ -15423,6 +16304,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_melby2013"
+      ],
+      "unterkategorien": [
+        "kognition"
       ]
     },
     {
@@ -15471,6 +16355,9 @@
       "qualifikation": "fortbildung",
       "quellen": [
         "q_back2005"
+      ],
+      "unterkategorien": [
+        "beratung"
       ]
     },
     {
@@ -15522,6 +16409,9 @@
       "quellen": [
         "q_vaneerde2018",
         "q_gollwitzer2006"
+      ],
+      "unterkategorien": [
+        "selbststeuerung"
       ]
     },
     {
@@ -15570,6 +16460,9 @@
       "quellen": [
         "q_cooper2020",
         "q_sanders1999"
+      ],
+      "unterkategorien": [
+        "verhalten"
       ]
     },
     {
@@ -15619,6 +16512,9 @@
       "qualifikation": "fortbildung",
       "quellen": [
         "q_stetter2002"
+      ],
+      "unterkategorien": [
+        "emotion_stress"
       ]
     },
     {
@@ -15668,6 +16564,10 @@
       "qualifikation": "alle",
       "quellen": [
         "q_schuch2016"
+      ],
+      "unterkategorien": [
+        "emotion_stress",
+        "therapie"
       ]
     },
     {
@@ -15716,6 +16616,9 @@
       "quellen": [
         "q_goessl2017",
         "q_zaccaro2018"
+      ],
+      "unterkategorien": [
+        "emotion_stress"
       ]
     },
     {
@@ -15763,6 +16666,9 @@
         "q_grand2013",
         "q_bisson2013",
         "q_niehues"
+      ],
+      "unterkategorien": [
+        "imaginativ"
       ]
     },
     {
@@ -15812,6 +16718,9 @@
       "qualifikation": "fortbildung",
       "quellen": [
         "q_eubanks2018"
+      ],
+      "unterkategorien": [
+        "therapie"
       ]
     },
     {
@@ -15861,6 +16770,9 @@
       "quellen": [
         "q_miller1956",
         "q_sweller2019"
+      ],
+      "unterkategorien": [
+        "kognition"
       ]
     },
     {
@@ -15906,6 +16818,9 @@
       "qualifikation": "fachkraft",
       "quellen": [
         "q_cbasp2003"
+      ],
+      "unterkategorien": [
+        "therapie"
       ]
     },
     {
@@ -15957,6 +16872,9 @@
       "quellen": [
         "q_whitmore1992",
         "q_theeboom2014"
+      ],
+      "unterkategorien": [
+        "beratung"
       ]
     },
     {
@@ -16009,6 +16927,9 @@
         "q_morewedge2015",
         "q_kahneman2011",
         "q_abrami2015"
+      ],
+      "unterkategorien": [
+        "kognition"
       ]
     },
     {
@@ -16058,6 +16979,9 @@
       "quellen": [
         "q_cooper2020",
         "q_alberto2013"
+      ],
+      "unterkategorien": [
+        "verhalten"
       ]
     },
     {
@@ -16107,6 +17031,10 @@
       "qualifikation": "alle",
       "quellen": [
         "q_gottman1996"
+      ],
+      "unterkategorien": [
+        "emotion_stress",
+        "sozial"
       ]
     },
     {
@@ -16157,6 +17085,9 @@
       "quellen": [
         "q_teding2016",
         "q_hofmann2016"
+      ],
+      "unterkategorien": [
+        "sozial"
       ]
     },
     {
@@ -16206,6 +17137,9 @@
       "quellen": [
         "q_janis1977",
         "q_miller2013"
+      ],
+      "unterkategorien": [
+        "beratung"
       ]
     },
     {
@@ -16257,6 +17191,9 @@
       "quellen": [
         "q_najavits2002",
         "q_linehan2015"
+      ],
+      "unterkategorien": [
+        "emotion_stress"
       ]
     },
     {
@@ -16305,6 +17242,10 @@
       "quellen": [
         "q_pennebaker1986",
         "q_frattaroli2006"
+      ],
+      "unterkategorien": [
+        "therapie",
+        "emotion_stress"
       ]
     },
     {
@@ -16356,6 +17297,11 @@
       "qualifikation": "fortbildung",
       "quellen": [
         "q_white1990"
+      ],
+      "unterkategorien": [
+        "therapie",
+        "beratung",
+        "imaginativ"
       ]
     },
     {
@@ -16407,6 +17353,9 @@
       "quellen": [
         "q_ludewig2000",
         "q_schweitzer2007"
+      ],
+      "unterkategorien": [
+        "diagnostik"
       ]
     },
     {
@@ -16455,6 +17404,9 @@
       "quellen": [
         "q_terrace1963",
         "q_cooper2020"
+      ],
+      "unterkategorien": [
+        "verhalten"
       ]
     },
     {
@@ -16506,6 +17458,9 @@
       "quellen": [
         "q_binder1996",
         "q_deno1985"
+      ],
+      "unterkategorien": [
+        "verhalten"
       ]
     },
     {
@@ -16556,6 +17511,9 @@
       "qualifikation": "fortbildung",
       "quellen": [
         "q_frederickson2003"
+      ],
+      "unterkategorien": [
+        "sozial"
       ]
     },
     {
@@ -16603,6 +17561,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_twomey2021"
+      ],
+      "unterkategorien": [
+        "kognition"
       ]
     },
     {
@@ -16651,6 +17612,9 @@
       "qualifikation": "fachkraft",
       "quellen": [
         "q_mcgoldrick1985"
+      ],
+      "unterkategorien": [
+        "diagnostik"
       ]
     },
     {
@@ -16699,6 +17663,10 @@
       "qualifikation": "fortbildung",
       "quellen": [
         "q_koppenhoefer2004"
+      ],
+      "unterkategorien": [
+        "positiv",
+        "therapie"
       ]
     },
     {
@@ -16748,6 +17716,9 @@
       "quellen": [
         "q_cooper2020",
         "q_skinner1953"
+      ],
+      "unterkategorien": [
+        "verhalten"
       ]
     },
     {
@@ -16800,6 +17771,10 @@
         "q_wolpe1958",
         "q_craske2014",
         "q_kendall1994"
+      ],
+      "unterkategorien": [
+        "therapie",
+        "verhalten"
       ]
     },
     {
@@ -16849,6 +17824,10 @@
       "qualifikation": "fachkraft",
       "quellen": [
         "q_azrin1973"
+      ],
+      "unterkategorien": [
+        "verhalten",
+        "therapie"
       ]
     },
     {
@@ -16897,6 +17876,9 @@
       "quellen": [
         "q_maggin2012",
         "q_barrish1969"
+      ],
+      "unterkategorien": [
+        "verhalten"
       ]
     },
     {
@@ -16948,6 +17930,9 @@
       "quellen": [
         "q_cooper2020",
         "q_wood1976"
+      ],
+      "unterkategorien": [
+        "verhalten"
       ]
     },
     {
@@ -17000,6 +17985,9 @@
         "q_schmidt2005",
         "q_kim2009",
         "q_niehues"
+      ],
+      "unterkategorien": [
+        "imaginativ"
       ]
     },
     {
@@ -17054,6 +18042,9 @@
         "q_kirsch1995",
         "q_lynn1997",
         "q_niehues"
+      ],
+      "unterkategorien": [
+        "imaginativ"
       ]
     },
     {
@@ -17102,6 +18093,9 @@
       "qualifikation": "fortbildung",
       "quellen": [
         "q_shure1982"
+      ],
+      "unterkategorien": [
+        "sozial"
       ]
     },
     {
@@ -17151,6 +18145,9 @@
       "qualifikation": "fachkraft",
       "quellen": [
         "q_reddemann2001"
+      ],
+      "unterkategorien": [
+        "imaginativ"
       ]
     },
     {
@@ -17204,6 +18201,9 @@
         "q_beaulieu2005",
         "q_niehues_selbstwert",
         "q_niehues"
+      ],
+      "unterkategorien": [
+        "imaginativ"
       ]
     },
     {
@@ -17254,6 +18254,9 @@
       "qualifikation": "fortbildung",
       "quellen": [
         "q_schulzvonthun1998"
+      ],
+      "unterkategorien": [
+        "beratung"
       ]
     },
     {
@@ -17301,6 +18304,9 @@
       "qualifikation": "fachkraft",
       "quellen": [
         "q_cuijpers2011"
+      ],
+      "unterkategorien": [
+        "therapie"
       ]
     },
     {
@@ -17349,6 +18355,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_luft1955"
+      ],
+      "unterkategorien": [
+        "gruppe"
       ]
     },
     {
@@ -17397,6 +18406,9 @@
       "quellen": [
         "q_krowatschek2011",
         "q_meichenbaum1971"
+      ],
+      "unterkategorien": [
+        "kognition"
       ]
     },
     {
@@ -17447,6 +18459,10 @@
         "q_stanley2012",
         "q_stanley2018",
         "q_dazzi2014"
+      ],
+      "unterkategorien": [
+        "krise",
+        "therapie"
       ]
     },
     {
@@ -17496,6 +18512,10 @@
       "qualifikation": "fortbildung",
       "quellen": [
         "q_schauer2011"
+      ],
+      "unterkategorien": [
+        "therapie",
+        "beratung"
       ]
     },
     {
@@ -17547,6 +18567,10 @@
       "quellen": [
         "q_bandura1961",
         "q_bellini2007"
+      ],
+      "unterkategorien": [
+        "sozial",
+        "verhalten"
       ]
     },
     {
@@ -17603,6 +18627,10 @@
         "q_wisniewski2020",
         "q_kluger1996",
         "q_eef_feedback"
+      ],
+      "unterkategorien": [
+        "kognition",
+        "motivation"
       ]
     },
     {
@@ -17653,6 +18681,9 @@
         "q_bjork2013",
         "q_dunlosky2013",
         "q_dignath2008"
+      ],
+      "unterkategorien": [
+        "kognition"
       ]
     },
     {
@@ -17703,6 +18734,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_dunlosky2013"
+      ],
+      "unterkategorien": [
+        "kognition"
       ]
     },
     {
@@ -17752,6 +18786,9 @@
       "quellen": [
         "q_miller2013",
         "q_lundahl2010"
+      ],
+      "unterkategorien": [
+        "beratung"
       ]
     },
     {
@@ -17802,6 +18839,9 @@
       "qualifikation": "fachkraft",
       "quellen": [
         "q_aalbers2017"
+      ],
+      "unterkategorien": [
+        "therapie"
       ]
     },
     {
@@ -17852,6 +18892,9 @@
       "quellen": [
         "q_webb2012",
         "q_gross2015"
+      ],
+      "unterkategorien": [
+        "emotion_stress"
       ]
     },
     {
@@ -17901,6 +18944,9 @@
       "qualifikation": "fortbildung",
       "quellen": [
         "q_elwyn2012"
+      ],
+      "unterkategorien": [
+        "beratung"
       ]
     },
     {
@@ -17950,6 +18996,9 @@
       "quellen": [
         "q_premack1959",
         "q_alberto2013"
+      ],
+      "unterkategorien": [
+        "verhalten"
       ]
     },
     {
@@ -17999,6 +19048,9 @@
       "quellen": [
         "q_jacobson1938",
         "q_kaluza2018"
+      ],
+      "unterkategorien": [
+        "emotion_stress"
       ]
     },
     {
@@ -18048,6 +19100,10 @@
       "quellen": [
         "q_vonderembse2013",
         "q_ramirez2011"
+      ],
+      "unterkategorien": [
+        "selbststeuerung",
+        "emotion_stress"
       ]
     },
     {
@@ -18099,6 +19155,10 @@
       "qualifikation": "fortbildung",
       "quellen": [
         "q_lukens2004"
+      ],
+      "unterkategorien": [
+        "beratung",
+        "therapie"
       ]
     },
     {
@@ -18151,6 +19211,9 @@
         "q_weiner1985",
         "q_haynes2009",
         "q_seligman1975"
+      ],
+      "unterkategorien": [
+        "kognition"
       ]
     },
     {
@@ -18198,6 +19261,9 @@
       "qualifikation": "fortbildung",
       "quellen": [
         "q_andersen1987"
+      ],
+      "unterkategorien": [
+        "beratung"
       ]
     },
     {
@@ -18248,6 +19314,9 @@
       "quellen": [
         "q_kipper2003",
         "q_moreno1934"
+      ],
+      "unterkategorien": [
+        "therapie"
       ]
     },
     {
@@ -18296,6 +19365,9 @@
       "qualifikation": "fachkraft",
       "quellen": [
         "q_young2003"
+      ],
+      "unterkategorien": [
+        "therapie"
       ]
     },
     {
@@ -18345,6 +19417,10 @@
       "quellen": [
         "q_diekelmann2010",
         "q_trauer2015"
+      ],
+      "unterkategorien": [
+        "selbststeuerung",
+        "emotion_stress"
       ]
     },
     {
@@ -18394,6 +19470,9 @@
       "qualifikation": "fortbildung",
       "quellen": [
         "q_baile2000"
+      ],
+      "unterkategorien": [
+        "beratung"
       ]
     },
     {
@@ -18444,6 +19523,9 @@
       "quellen": [
         "q_speed2018",
         "q_hinsch2015"
+      ],
+      "unterkategorien": [
+        "sozial"
       ]
     },
     {
@@ -18493,6 +19575,10 @@
       "qualifikation": "alle",
       "quellen": [
         "q_bruhn2015"
+      ],
+      "unterkategorien": [
+        "selbststeuerung",
+        "verhalten"
       ]
     },
     {
@@ -18542,6 +19628,9 @@
       "quellen": [
         "q_cuijpers1997",
         "q_carlbring2018"
+      ],
+      "unterkategorien": [
+        "therapie"
       ]
     },
     {
@@ -18596,6 +19685,10 @@
         "q_meichenbaum1971",
         "q_schneider1974",
         "q_doepfner2019"
+      ],
+      "unterkategorien": [
+        "verhalten",
+        "kognition"
       ]
     },
     {
@@ -18644,6 +19737,10 @@
       "qualifikation": "alle",
       "quellen": [
         "q_neff2003"
+      ],
+      "unterkategorien": [
+        "positiv",
+        "emotion_stress"
       ]
     },
     {
@@ -18691,6 +19788,10 @@
       "qualifikation": "fortbildung",
       "quellen": [
         "q_niehues_selbstwert"
+      ],
+      "unterkategorien": [
+        "positiv",
+        "beratung"
       ]
     },
     {
@@ -18741,6 +19842,9 @@
       "qualifikation": "fachkraft",
       "quellen": [
         "q_linehan2015"
+      ],
+      "unterkategorien": [
+        "therapie"
       ]
     },
     {
@@ -18790,6 +19894,9 @@
       "quellen": [
         "q_padesky1993",
         "q_beck2020"
+      ],
+      "unterkategorien": [
+        "therapie"
       ]
     },
     {
@@ -18837,6 +19944,10 @@
       "qualifikation": "fortbildung",
       "quellen": [
         "q_mcgowan2013"
+      ],
+      "unterkategorien": [
+        "therapie",
+        "emotion_stress"
       ]
     },
     {
@@ -18883,6 +19994,9 @@
       "qualifikation": "fortbildung",
       "quellen": [
         "q_kokina2010"
+      ],
+      "unterkategorien": [
+        "sozial"
       ]
     },
     {
@@ -18935,6 +20049,9 @@
       "quellen": [
         "q_beelmann1994",
         "q_hinsch2015"
+      ],
+      "unterkategorien": [
+        "sozial"
       ]
     },
     {
@@ -18987,6 +20104,10 @@
       "quellen": [
         "q_dzurilla1971",
         "q_beelmann1994"
+      ],
+      "unterkategorien": [
+        "sozial",
+        "kognition"
       ]
     },
     {
@@ -19035,6 +20156,9 @@
       "qualifikation": "fachkraft",
       "quellen": [
         "q_bratton2005"
+      ],
+      "unterkategorien": [
+        "therapie"
       ]
     },
     {
@@ -19084,6 +20208,10 @@
       "quellen": [
         "q_kaluza2018",
         "q_meichenbaum1985"
+      ],
+      "unterkategorien": [
+        "emotion_stress",
+        "praevention"
       ]
     },
     {
@@ -19133,6 +20261,9 @@
       "quellen": [
         "q_greenberg2002",
         "q_young2003"
+      ],
+      "unterkategorien": [
+        "therapie"
       ]
     },
     {
@@ -19187,6 +20318,9 @@
       "quellen": [
         "q_peterson2004",
         "q_bolier2013"
+      ],
+      "unterkategorien": [
+        "positiv"
       ]
     },
     {
@@ -19238,6 +20372,9 @@
       "quellen": [
         "q_selvini1980",
         "q_schweitzer2007"
+      ],
+      "unterkategorien": [
+        "beratung"
       ]
     },
     {
@@ -19287,6 +20424,9 @@
       "quellen": [
         "q_salas2008",
         "q_tannenbaum2013"
+      ],
+      "unterkategorien": [
+        "sozial"
       ]
     },
     {
@@ -19336,6 +20476,10 @@
       "quellen": [
         "q_margraf1990",
         "q_lukens2004"
+      ],
+      "unterkategorien": [
+        "beratung",
+        "therapie"
       ]
     },
     {
@@ -19388,6 +20532,9 @@
         "q_montgomery2015",
         "q_mol2009",
         "q_niehues"
+      ],
+      "unterkategorien": [
+        "imaginativ"
       ]
     },
     {
@@ -19441,6 +20588,10 @@
         "q_erickson1979",
         "q_hayes2012",
         "q_niehues"
+      ],
+      "unterkategorien": [
+        "imaginativ",
+        "beratung"
       ]
     },
     {
@@ -19490,6 +20641,9 @@
         "q_berking2014",
         "q_webb2012",
         "q_gross2015"
+      ],
+      "unterkategorien": [
+        "emotion_stress"
       ]
     },
     {
@@ -19541,6 +20695,9 @@
       "quellen": [
         "q_petermann2017",
         "q_weisz2017"
+      ],
+      "unterkategorien": [
+        "sozial"
       ]
     },
     {
@@ -19595,6 +20752,9 @@
         "q_ehlers2000",
         "q_cohen2006b",
         "q_schauer2011"
+      ],
+      "unterkategorien": [
+        "therapie"
       ]
     },
     {
@@ -19648,6 +20808,10 @@
         "q_neff2003",
         "q_greenberg2002",
         "q_niehues"
+      ],
+      "unterkategorien": [
+        "positiv",
+        "emotion_stress"
       ]
     },
     {
@@ -19698,6 +20862,9 @@
       "qualifikation": "fortbildung",
       "quellen": [
         "q_linehan2015"
+      ],
+      "unterkategorien": [
+        "beratung"
       ]
     },
     {
@@ -19746,6 +20913,9 @@
       "qualifikation": "fachkraft",
       "quellen": [
         "q_bennettlevy2004"
+      ],
+      "unterkategorien": [
+        "therapie"
       ]
     },
     {
@@ -19798,6 +20968,9 @@
       "quellen": [
         "q_skinner1953",
         "q_cooper2020"
+      ],
+      "unterkategorien": [
+        "verhalten"
       ]
     },
     {
@@ -19849,6 +21022,9 @@
       "quellen": [
         "q_cooper2020",
         "q_alberto2013"
+      ],
+      "unterkategorien": [
+        "verhalten"
       ]
     },
     {
@@ -19899,6 +21075,9 @@
       "quellen": [
         "q_alberto2013",
         "q_doepfner2019"
+      ],
+      "unterkategorien": [
+        "verhalten"
       ]
     },
     {
@@ -19948,6 +21127,9 @@
       "quellen": [
         "q_kazdin1982",
         "q_doepfner2019"
+      ],
+      "unterkategorien": [
+        "verhalten"
       ]
     },
     {
@@ -19998,6 +21180,9 @@
       "quellen": [
         "q_maggin2011",
         "q_doepfner2019"
+      ],
+      "unterkategorien": [
+        "verhalten"
       ]
     },
     {
@@ -20048,6 +21233,10 @@
       "quellen": [
         "q_zubin1977",
         "q_lukens2004"
+      ],
+      "unterkategorien": [
+        "beratung",
+        "emotion_stress"
       ]
     },
     {
@@ -20095,6 +21284,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_yeager2014"
+      ],
+      "unterkategorien": [
+        "motivation"
       ]
     },
     {
@@ -20144,6 +21336,9 @@
       "qualifikation": "fachkraft",
       "quellen": [
         "q_hayes2012"
+      ],
+      "unterkategorien": [
+        "therapie"
       ]
     },
     {
@@ -20190,6 +21385,10 @@
       "qualifikation": "fachkraft",
       "quellen": [
         "q_fava1998"
+      ],
+      "unterkategorien": [
+        "positiv",
+        "therapie"
       ]
     },
     {
@@ -20240,6 +21439,9 @@
       "quellen": [
         "q_fischer2011",
         "q_salmivalli2011"
+      ],
+      "unterkategorien": [
+        "sozial"
       ]
     },
     {
@@ -20294,6 +21496,9 @@
         "q_lochman2004",
         "q_goldstein1998",
         "q_petermann2012"
+      ],
+      "unterkategorien": [
+        "sozial"
       ]
     },
     {
@@ -20345,6 +21550,9 @@
       "quellen": [
         "q_beck2020",
         "q_hendershot2011"
+      ],
+      "unterkategorien": [
+        "therapie"
       ]
     },
     {
@@ -20397,6 +21605,10 @@
         "q_seligman2005",
         "q_emmons2003",
         "q_davis2016"
+      ],
+      "unterkategorien": [
+        "positiv",
+        "emotion_stress"
       ]
     },
     {
@@ -20446,6 +21658,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_petermann2014"
+      ],
+      "unterkategorien": [
+        "emotion_stress"
       ]
     },
     {
@@ -20496,6 +21711,9 @@
       "quellen": [
         "q_lally2010",
         "q_wood2016"
+      ],
+      "unterkategorien": [
+        "selbststeuerung"
       ]
     },
     {
@@ -20545,6 +21763,9 @@
       "qualifikation": "fortbildung",
       "quellen": [
         "q_hendershot2011"
+      ],
+      "unterkategorien": [
+        "therapie"
       ]
     },
     {
@@ -20594,6 +21815,9 @@
       "quellen": [
         "q_fabiano2010",
         "q_doepfner2019"
+      ],
+      "unterkategorien": [
+        "verhalten"
       ]
     },
     {
@@ -20643,6 +21867,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_talevski2020"
+      ],
+      "unterkategorien": [
+        "beratung"
       ]
     },
     {
@@ -20694,6 +21921,9 @@
         "q_rhodes2011",
         "q_bjork2013",
         "q_flavell1979"
+      ],
+      "unterkategorien": [
+        "kognition"
       ]
     },
     {
@@ -20744,6 +21974,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_kazantzis2010"
+      ],
+      "unterkategorien": [
+        "therapie"
       ]
     },
     {
@@ -20796,6 +22029,10 @@
         "q_kendall1994",
         "q_barrett2001",
         "q_brunwasser2009"
+      ],
+      "unterkategorien": [
+        "praevention",
+        "emotion_stress"
       ]
     },
     {
@@ -20846,6 +22083,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_ryan2000"
+      ],
+      "unterkategorien": [
+        "motivation"
       ]
     },
     {
@@ -20893,6 +22133,9 @@
       "qualifikation": "fortbildung",
       "quellen": [
         "q_chafouleas2011"
+      ],
+      "unterkategorien": [
+        "verhalten"
       ]
     },
     {
@@ -20942,6 +22185,9 @@
       "qualifikation": "fachkraft",
       "quellen": [
         "q_sanders1999"
+      ],
+      "unterkategorien": [
+        "praevention"
       ]
     },
     {
@@ -20991,6 +22237,10 @@
       "quellen": [
         "q_morgan2018",
         "q_who2011"
+      ],
+      "unterkategorien": [
+        "praevention",
+        "krise"
       ]
     },
     {
@@ -21042,6 +22292,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_jussim2005"
+      ],
+      "unterkategorien": [
+        "motivation"
       ]
     },
     {
@@ -21093,6 +22346,9 @@
         "q_persons2008",
         "q_caspar2007",
         "q_hayes_cbt_process"
+      ],
+      "unterkategorien": [
+        "diagnostik"
       ]
     },
     {
@@ -21141,6 +22397,9 @@
       "quellen": [
         "q_ainsworth1978",
         "q_bakermans2003"
+      ],
+      "unterkategorien": [
+        "praevention"
       ]
     },
     {
@@ -21192,6 +22451,9 @@
       "quellen": [
         "q_tuckman1965",
         "q_tuckman1977"
+      ],
+      "unterkategorien": [
+        "gruppe"
       ]
     },
     {
@@ -21243,6 +22505,10 @@
       "quellen": [
         "q_martin2018",
         "q_niehues"
+      ],
+      "unterkategorien": [
+        "positiv",
+        "beratung"
       ]
     },
     {
@@ -21293,6 +22559,9 @@
       "quellen": [
         "q_rogers1957",
         "q_elliott2018"
+      ],
+      "unterkategorien": [
+        "beratung"
       ]
     },
     {
@@ -21345,6 +22614,9 @@
       "quellen": [
         "q_pettigrew2006",
         "q_aronson1978"
+      ],
+      "unterkategorien": [
+        "sozial"
       ]
     },
     {
@@ -21395,6 +22667,9 @@
       "qualifikation": "fortbildung",
       "quellen": [
         "q_fonagy2002"
+      ],
+      "unterkategorien": [
+        "praevention"
       ]
     },
     {
@@ -21453,6 +22728,10 @@
         "q_papilio",
         "q_klasse2000",
         "q_lionsquest"
+      ],
+      "unterkategorien": [
+        "praevention",
+        "sozial"
       ]
     },
     {
@@ -21502,6 +22781,9 @@
       "qualifikation": "fortbildung",
       "quellen": [
         "q_who2011"
+      ],
+      "unterkategorien": [
+        "krise"
       ]
     },
     {
@@ -21551,6 +22833,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_edmondson1999"
+      ],
+      "unterkategorien": [
+        "gruppe"
       ]
     },
     {
@@ -21600,6 +22885,9 @@
       "quellen": [
         "q_goodman1997",
         "q_topp2015"
+      ],
+      "unterkategorien": [
+        "diagnostik"
       ]
     },
     {
@@ -21651,6 +22939,9 @@
         "q_maslach2016",
         "q_tietze2003",
         "q_niehues"
+      ],
+      "unterkategorien": [
+        "krise"
       ]
     },
     {
@@ -21701,6 +22992,9 @@
       "qualifikation": "alle",
       "quellen": [
         "q_bandura1977"
+      ],
+      "unterkategorien": [
+        "motivation"
       ]
     },
     {
@@ -21752,6 +23046,9 @@
       "quellen": [
         "q_flueckiger2018",
         "q_wampold2015"
+      ],
+      "unterkategorien": [
+        "therapie"
       ]
     },
     {
@@ -21802,6 +23099,10 @@
       "quellen": [
         "q_bradshaw2010",
         "q_doepfner2019"
+      ],
+      "unterkategorien": [
+        "verhalten",
+        "diagnostik"
       ]
     },
     {
@@ -21854,6 +23155,9 @@
       "qualifikation": "fachkraft",
       "quellen": [
         "q_yalom2005"
+      ],
+      "unterkategorien": [
+        "gruppe"
       ]
     }
   ],

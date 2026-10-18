@@ -17,7 +17,7 @@ import HelpButton from "@/components/HelpButton";
 
 type Evidenz = "stark" | "mittel" | "begrenzt" | "praxis" | "umstritten";
 type Methode = {
-  id: string; name: string; aliase?: string[]; kategorie: string; unterkategorie?: string; phasen: string[];
+  id: string; name: string; aliase?: string[]; kategorie: string; unterkategorie?: string; unterkategorien?: string[]; phasen: string[];
   setting: string[]; zielgruppen: string[]; anwendung: string[]; dauer?: string; kurz: string;
   ablauf?: string[]; varianten?: string[]; stolpersteine?: string[];
   evidenz: { stufe: Evidenz; text: string }; qualifikation: string; quellen: string[];
@@ -81,6 +81,16 @@ export default function KompendiumPage() {
   const marken = markenDaten ? { werte: markenDaten as Record<string, Marke> } : null;
   const [markenFilter, setMarkenFilter] = useState("");
   const [unterkategorie, setUnterkategorie] = useState("");
+  const [offen, setOffen] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!offen) return;
+    const taste = (e: KeyboardEvent) => { if (e.key === "Escape") setOffen(null); };
+    window.addEventListener("keydown", taste);
+    const vorher = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { window.removeEventListener("keydown", taste); document.body.style.overflow = vorher; };
+  }, [offen]);
   // Gewählter Eintrag je Lesereiter (Seitenleiste links, Inhalt rechts)
   const [auswahl, setAuswahl] = useState<Record<string, string>>({});
   function waehle(reiterId: string, id: string) {
@@ -131,7 +141,7 @@ export default function KompendiumPage() {
     const q = suche.trim().toLowerCase();
     return daten.methoden.filter(m =>
       FILTER.every(f => !filter[f] || WERTE[f](m).includes(filter[f]))
-      && (!unterkategorie || m.unterkategorie === unterkategorie)
+      && (!unterkategorie || (m.unterkategorien ?? [m.unterkategorie]).includes(unterkategorie))
       && (markenFilter === "ohne" ? !marken?.werte[m.id]
         : markenFilter ? marken?.werte[m.id] === markenFilter
         : marken?.werte[m.id] !== "unnoetig")
@@ -141,6 +151,7 @@ export default function KompendiumPage() {
   if (fehler) return <div className="page"><p className="text-bad">Das Kompendium konnte nicht geladen werden.</p></div>;
   if (!daten) return <div className="page"><p className="text-muted">Lade Kompendium …</p></div>;
 
+  const offeneMethode = offen ? daten.methoden.find(m => m.id === offen) : undefined;
   const L = (gruppe: string, wert: string) => daten.legende[gruppe]?.[wert] ?? wert;
   const Ref = ({ ids }: { ids: string[] }) => (
     <p className="text-xs text-muted">
@@ -254,9 +265,12 @@ export default function KompendiumPage() {
           {treffer.length === 0 && <p className="text-muted">Keine Methode passt zu dieser Filterkombination. Setzen Sie einen Filter auf »alle« zurück.</p>}
           <div className="grid gap-3 grid-cols-[repeat(auto-fill,minmax(320px,1fr))] grid-flow-row-dense">
             {treffer.map(m => (
-              <details key={m.id} id={m.id} className={`group card overflow-hidden open:col-span-full ${markeVon(m.id) === "unnoetig" ? "opacity-50" : ""}`} style={{ borderTop: `4px solid ${KAT_FARBE[m.kategorie]}` }}>
-                <summary className="cursor-pointer list-none p-4 flex flex-col gap-2">
-                  <div className="flex items-center justify-between gap-2">
+              <div key={m.id} id={m.id} role="button" tabIndex={0}
+                onClick={() => setOffen(m.id)}
+                onKeyDown={e => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); setOffen(m.id); } }}
+                className={`card overflow-hidden cursor-pointer p-4 flex flex-col gap-2 hover:border-line-active transition ${markeVon(m.id) === "unnoetig" ? "opacity-50" : ""}`}
+                style={{ borderTop: `4px solid ${KAT_FARBE[m.kategorie]}` }}>
+                <div className="flex items-center justify-between gap-2">
                     <div className="flex gap-1.5 items-center overflow-hidden whitespace-nowrap min-w-0">
                       <span className="text-xs font-semibold" style={{ color: KAT_FARBE[m.kategorie] }}
                         title={m.unterkategorie ? daten.legende.unterkategorien?.[m.kategorie]?.[m.unterkategorie] : undefined}>{KAT_NAME[m.kategorie]}</span>
@@ -276,33 +290,74 @@ export default function KompendiumPage() {
                       })}
                     </div>
                   </div>
-                  <h3 className="font-bold text-lg leading-tight line-clamp-2 min-h-[2.5em] group-open:min-h-0 group-open:line-clamp-none">{m.name}</h3>
-                  <p className="text-xs text-muted line-clamp-1 min-h-[1rem] group-open:line-clamp-none">{m.aliase?.join(" · ")}</p>
-                  <p className="text-sm line-clamp-4 min-h-[5em] group-open:line-clamp-none group-open:min-h-0">{m.kurz}</p>
-                </summary>
-                <div className="px-4 pb-4 flex flex-col gap-3 text-sm">
-                  <p className="text-xs text-muted">
-                    {m.dauer} · {m.setting.map(s => L("setting", s)).join(", ")} ·{" "}
-                    {m.zielgruppen.map(z => L("zielgruppen", z).split(" (")[0]).join(", ")}
-                  </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {m.anwendung.map(a => <span key={a} className="chip !py-0">{L("anwendung", a)}</span>)}
-                  </div>
-                  <p className={`text-xs ${m.qualifikation === "fachkraft" ? "text-bad font-semibold" : "text-muted"}`}>
-                    Qualifikation: {L("qualifikation", m.qualifikation)}
-                  </p>
-                  <Liste titel="Ablauf" punkte={m.ablauf} nummeriert />
-                  <Liste titel="Varianten" punkte={m.varianten} />
-                  <Liste titel="Stolpersteine" punkte={m.stolpersteine} />
-                  <div className="border-l-2 border-line pl-3">
-                    <p className="label uppercase tracking-wide">Evidenz · {m.evidenz.stufe}</p>
-                    <p>{m.evidenz.text}</p>
-                  </div>
-                  <Ref ids={m.quellen} />
-                </div>
-              </details>
+                <h3 className="font-bold text-lg leading-tight line-clamp-2 min-h-[2.5em]">{m.name}</h3>
+                <p className="text-xs text-muted line-clamp-1 min-h-[1rem]">{m.aliase?.join(" · ")}</p>
+                <p className="text-sm line-clamp-4 min-h-[5em]">{m.kurz}</p>
+              </div>
             ))}
           </div>
+          {offeneMethode && (() => {
+            const m = offeneMethode;
+            return (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-[5vh_5vw]"
+                onClick={() => setOffen(null)}>
+                <div role="dialog" aria-modal="true" aria-labelledby="methode-titel"
+                  className="card w-[90vw] h-[90vh] overflow-y-auto p-6 flex flex-col gap-4 shadow-2xl"
+                  style={{ borderTop: `6px solid ${KAT_FARBE[m.kategorie]}` }}
+                  onClick={e => e.stopPropagation()}>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex flex-col gap-1 min-w-0">
+                      <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: KAT_FARBE[m.kategorie] }}>
+                        {KAT_NAME[m.kategorie]} · {(m.unterkategorien ?? [m.unterkategorie ?? ""]).map(u => daten.legende.unterkategorien?.[m.kategorie]?.[u]).filter(Boolean).join(" · ")}
+                      </p>
+                      <h2 id="methode-titel" className="text-2xl font-black leading-tight">{m.name}</h2>
+                      {m.aliase?.length ? <p className="text-sm text-muted">{m.aliase.join(" · ")}</p> : null}
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      {MARKEN.map(k => {
+                        const an = markeVon(m.id) === k.wert;
+                        return (
+                          <button key={k.wert} type="button" aria-pressed={an} title={k.name} onClick={() => markieren(m.id, k.wert)}
+                            className={`rounded-md px-2 text-lg leading-8 transition ${an ? "bg-accent/20" : "opacity-35 grayscale hover:opacity-80 hover:grayscale-0"}`}>
+                            {k.symbol}
+                          </button>
+                        );
+                      })}
+                      <button type="button" autoFocus onClick={() => setOffen(null)} aria-label="Schließen (Esc)" title="Schließen (Esc)"
+                        className="btn ml-2 text-xl leading-none">✕</button>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 items-center">
+                    {m.phasen.map(p => <span key={p} className="chip !py-0">{L("phasen", p).split(" /")[0]}</span>)}
+                    <EvidenzMarke stufe={m.evidenz.stufe} />
+                  </div>
+                  <p className="text-base max-w-4xl">{m.kurz}</p>
+                  <div className="text-sm max-w-5xl">
+                    <div className="flex flex-col gap-3">
+                  <p className="text-xs text-muted">
+                          {m.dauer} · {m.setting.map(s => L("setting", s)).join(", ")} ·{" "}
+                          {m.zielgruppen.map(z => L("zielgruppen", z).split(" (")[0]).join(", ")}
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {m.anwendung.map(a => <span key={a} className="chip !py-0">{L("anwendung", a)}</span>)}
+                        </div>
+                        <p className={`text-xs ${m.qualifikation === "fachkraft" ? "text-bad font-semibold" : "text-muted"}`}>
+                          Qualifikation: {L("qualifikation", m.qualifikation)}
+                        </p>
+                        <Liste titel="Ablauf" punkte={m.ablauf} nummeriert />
+                        <Liste titel="Varianten" punkte={m.varianten} />
+                        <Liste titel="Stolpersteine" punkte={m.stolpersteine} />
+                        <div className="border-l-2 border-line pl-3">
+                          <p className="label uppercase tracking-wide">Evidenz · {m.evidenz.stufe}</p>
+                          <p>{m.evidenz.text}</p>
+                        </div>
+                        <Ref ids={m.quellen} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
         </>
       )}
 
