@@ -27,10 +27,10 @@ export const DURCH_ZEIT = 0.25; // so lange wird die Plattform beim Fallenlassen
 const BEWEGER_AB = 1000; // Index-Offset für bewegte Plattformen in Spieler.auf
 
 /** fest = Boden (Start, Tor, Ziel): lässt sich nicht durchfallen; sonst nur von oben begehbar und per ↓ zu durchfallen. */
-export type Plattform = { x: number; y: number; w: number; cp: boolean; fest?: boolean };
+export type Plattform = { x: number; y: number; w: number; cp: boolean; fest?: boolean; /** Geheimleiste: kaum sichtbar, nur über Beweger + Doppelsprung erreichbar */ geheim?: boolean };
 export type Schluessel = { faktIndex: number; x: number; y: number };
 /** Edelstein: (x, y) = Mittelpunkt; schwer = liegt auf einer kniffligen Stelle. */
-export type Edelstein = { id: number; x: number; y: number; schwer: boolean; pogo?: boolean };
+export type Edelstein = { id: number; x: number; y: number; schwer: boolean; pogo?: boolean; /** nur mit Doppelsprung (oder auf einer Geheimleiste) zu holen */ geheim?: boolean };
 /** Bewegte Plattform: Mitte (cx, cy) schwingt um (ax, ay) mit Periode per Sekunden. Nur Extra, nie auf dem sicheren Weg. */
 export type Beweger = { cx: number; cy: number; ax: number; ay: number; w: number; per: number; ph: number };
 /** Gegner patrouilliert auf plattformen[plat] zwischen a und b (Tempo v Kacheln/s). */
@@ -51,7 +51,16 @@ export type Level = {
   edelsteine: Edelstein[];
   /** Pogo-Stab (wie bei Keen): höherer Sprung, holt Edelsteine, die sonst unerreichbar sind. null = keiner in diesem Level. */
   pogo: { x: number; y: number } | null;
+  /** Offene Tür am Anfang: hier kommt man aus dem vorigen Abschnitt heraus. */
+  eingang?: { x: number; y: number };
 };
+
+/** Abschnitt einer Etappe: endet am Tor (dahinter geht es im nächsten Abschnitt weiter) und/oder beginnt an einer offenen Tür. */
+export type Bauart = { torAmEnde?: boolean; eingang?: boolean };
+/** Höhe über dem Boden, die nur ein Doppelsprung schafft (einfacher Sprung ca. 3,05, doppelt ca. 6,1 Kacheln). */
+export const DOPPEL_HOEHE = 5.2;
+/** Geheimleiste so weit über dem höchsten Punkt des Bewegers: von dort per Doppelsprung, vom Boden nie. */
+export const GEHEIM_UEBER_BEWEGER = 4.8;
 
 export type Stil = "treppe" | "tal" | "tuerme" | "inseln" | "hoehle" | "zickzack";
 export const STILE: Stil[] = ["treppe", "tal", "tuerme", "inseln", "hoehle", "zickzack"];
@@ -73,7 +82,7 @@ const STIL: Record<Stil, { w: [number, number]; g: [number, number]; muster: Mus
  * Abschnitte (Turm, Schacht, Treppe ...) liegen in eigenen, getrennten x-Bereichen, damit kein Tor zu umgehen ist.
  * Schlüssel und Tore liegen auf der festen, erreichbaren Kette; Extras (Leisten, Beweger, Edelsteine) abseits davon.
  */
-export function baueLevel(etappe: number, nFakten: number, nTueren: number, seed = 1, stilWahl?: Stil): Level {
+export function baueLevel(etappe: number, nFakten: number, nTueren: number, seed = 1, stilWahl?: Stil, bauart: Bauart = {}): Level {
   const r = rng(Math.imul(seed >>> 0, 0x9e3779b1) ^ (etappe * 1000 + 13));
   const stil: Stil = stilWahl ?? STILE[Math.floor(r() * STILE.length)];
   const S = STIL[stil];
@@ -140,13 +149,17 @@ export function baueLevel(etappe: number, nFakten: number, nTueren: number, seed
   for (let j = 0; pl.length - 1 < kZiel; j++) rezept[stil].k[j % rezept[stil].k.length]();
   const kLetzte = pl.length - 1;
   const tuerPlat: number[] = [];
+  const amEnde = !!bauart.torAmEnde && nTueren > 0;
   for (let d = 0; d < nTueren; d++) {
-    anh(ri(-1, 1), 6); // Torplattform: Tor in der Mitte
+    anh(ri(-1, 1), 6); // Torplattform: Tor in der Mitte (am Abschnittsende rechts)
     tuerPlat.push(pl.length - 1);
+    if (amEnde && d === nTueren - 1) break; // dahinter geht es im nächsten Abschnitt weiter
     rezept[stil].g[d % rezept[stil].g.length]();
   }
-  flach(2);
-  anh(ri(-1, 1), 5); // Ziel
+  if (!amEnde) {
+    flach(2);
+    anh(ri(-1, 1), 5); // Ziel
+  }
 
   // In die Welt verschieben: oben 7 Kacheln Luft, unten 4
   const minY = Math.min(...pl.map((p) => p.y)), maxY = Math.max(...pl.map((p) => p.y));
@@ -172,7 +185,7 @@ export function baueLevel(etappe: number, nFakten: number, nTueren: number, seed
     keyPlat.add(idx);
     schluessel.push({ faktIndex: i, x: p.x + p.w / 2, y: p.y });
   }
-  const tueren: Tor[] = tuerPlat.map((idx) => ({ x: plattformen[idx].x + plattformen[idx].w / 2, y: plattformen[idx].y, plat: idx }));
+  const tueren: Tor[] = tuerPlat.map((idx) => ({ x: plattformen[idx].x + (amEnde && idx === n - 1 ? plattformen[idx].w - 1.5 : plattformen[idx].w / 2), y: plattformen[idx].y, plat: idx }));
   const ziel = { x: ende.x + ende.w / 2, y: ende.y };
 
   // Extras (Edelsteine, Leisten, Beweger, Gegner) liegen abseits des sicheren Wegs und abseits der Tore.
@@ -194,6 +207,11 @@ export function baueLevel(etappe: number, nFakten: number, nTueren: number, seed
   // Liegt im Kasten schon eine andere Kettenplattform?
   const belegt = (ausser: number, x0: number, x1: number, y0: number, y1: number) =>
     plattformen.some((q, j) => j !== ausser && q.x < x1 && q.x + q.w > x0 && q.y > y0 && q.y < y1);
+  // Von keiner Kettenplattform oder Leiste aus erreichbar: nichts in 5 Kacheln seitlich, das höher als 6,6 Kacheln darunter liegt
+  // (Doppelsprung schafft 6,1; was darüber liegt, könnte hinunterfallen)
+  const nebenGeheim = (x0: number, x1: number, y: number) =>
+    [...plattformen, ...leisten].some((q) => q.x < x1 + 5 && q.x + q.w > x0 - 5 && q.y < y + 6.6);
+  const geheimUeber: Beweger[] = [];
   const moverPlat = new Set(ziehe(Math.min(1 + etappe + S.beweger, 7), [...rest]));
   const gegnerPool = rest.filter((i) => !keyPlat.has(i) && !plattformen[i].cp && plattformen[i].w >= 3 && !moverPlat.has(i));
   const gegnerPlat = new Set(ziehe(Math.min(etappe + (nTueren > 0 ? 1 : 0), 6), gegnerPool));
@@ -224,17 +242,22 @@ export function baueLevel(etappe: number, nFakten: number, nTueren: number, seed
       }
     }
     if (moverPlat.has(i)) {
-      if (stil === "tuerme" || Math.abs(nx.y - p.y) >= 2) { // Aufzug in der Lücke
-        const mv: Beweger = { cx: gx, cy: Math.max(3, gy - 1.5), ax: 0, ay: 1.8, w: 2, per: 4.5, ph: r() };
-        beweger.push(mv);
-        gem(mv.cx, Math.max(0.9, mv.cy - mv.ay - 2.2), true);
-      } else {
-        const mv: Beweger = { cx: gx, cy: Math.max(2.5, gy - 2), ax: stil === "inseln" ? 1.6 : 1.2, ay: 0, w: 2, per: 4 + r() * 2, ph: r() };
-        beweger.push(mv);
-        gem(mv.cx, mv.cy - 2.2, true);
-      }
+      const mv: Beweger = stil === "tuerme" || Math.abs(nx.y - p.y) >= 2 // Aufzug in der Lücke, sonst Fähre
+        ? { cx: gx, cy: Math.max(3, gy - 1.5), ax: 0, ay: 1.8, w: 2, per: 4.5, ph: r() }
+        : { cx: gx, cy: Math.max(2.5, gy - 2), ax: stil === "inseln" ? 1.6 : 1.2, ay: 0, w: 2, per: 4 + r() * 2, ph: r() };
+      beweger.push(mv);
+      gem(mv.cx, Math.max(0.9, mv.cy - mv.ay - 2.2), true);
+      if (etappe >= 2 || r() < 0.5) geheimUeber.push(mv);
     }
     if (gegnerPlat.has(i)) gegner.push({ id: gegner.length, plat: i, a: p.x + 0.7, b: p.x + p.w - 0.7, v: 1.2 + 0.3 * Math.min(etappe, 5) + r() * 0.4, ph: r() });
+  }
+  // Geheimleisten hoch über Bewegern: nur von deren höchstem Punkt per Doppelsprung, mit drei geheimen Kristallen
+  // (erst nach allen anderen Leisten, damit die Prüfung sie alle sieht)
+  for (const mv of geheimUeber) {
+    const gy2 = mv.cy - mv.ay - GEHEIM_UEBER_BEWEGER;
+    if (gy2 < 1.5 || nebenGeheim(mv.cx - 1.5, mv.cx + 1.5, gy2)) continue;
+    leisten.push({ x: mv.cx - 1.5, y: gy2, w: 3, cp: false, geheim: true });
+    for (const dx of [-0.9, 0, 0.9]) edelsteine.push({ id: edelsteine.length, x: mv.cx + dx, y: gy2 - 0.7, schwer: true, geheim: true });
   }
   if (!edelsteine.length) gem(plattformen[1].x + plattformen[1].w / 2, plattformen[1].y - 0.7, false);
   // Pogo-Stab auf der zweiten Plattform; Hochsprung-Edelsteine nur über freien Plattformen (keine andere Plattform in der Spalte)
@@ -244,11 +267,17 @@ export function baueLevel(etappe: number, nFakten: number, nTueren: number, seed
     && !beweger.some((mv) => Math.abs(mv.cx - (p.x + p.w / 2)) < 3.5));
   if (hoch.length) {
     pogo = { x: plattformen[1].x + 0.9, y: plattformen[1].y - 0.7 };
-    for (const { p } of ziehe(Math.min(1 + etappe, 4), hoch.map((_, k) => k)).map((k) => hoch[k])) {
+    const pool = hoch.map((_, k) => k);
+    for (const { p } of ziehe(Math.min(1 + etappe, 4), pool).map((k) => hoch[k])) {
       edelsteine.push({ id: edelsteine.length, x: p.x + p.w / 2, y: p.y - 6, schwer: true, pogo: true });
     }
+    // Doppelsprung-Kristalle über weiteren freien Plattformen: ein einfacher Sprung reicht nicht
+    for (const { p } of ziehe(Math.min(etappe, 3), pool).map((k) => hoch[k])) {
+      edelsteine.push({ id: edelsteine.length, x: p.x + p.w / 2, y: p.y - DOPPEL_HOEHE, schwer: true, geheim: true });
+    }
   }
-  return { stil, breite: ende.x + ende.w + 3, hoehe, plattformen, schluessel, tueren, ziel, leisten, beweger, gegner, edelsteine, pogo };
+  const eingang = bauart.eingang ? { x: plattformen[0].x + 1, y: plattformen[0].y } : undefined;
+  return { stil, breite: ende.x + ende.w + (amEnde ? 0 : 3), hoehe, plattformen, schluessel, tueren, ziel, leisten, beweger, gegner, edelsteine, pogo, eingang };
 }
 
 
@@ -284,7 +313,7 @@ export function leereEingabe(e: Eingabe, s?: { vx: number }): void {
 
 export function startSpieler(l: Level): Spieler {
   const p = l.plattformen[0];
-  return { x: p.x + 1, y: p.y, vy: 0, auf: 0, coyote: 0, richtung: 1, cp: 0, t: 0, vx: 0, puffer: 0, sprungVorher: false, pogo: false, landung: 0, luftSprung: false, durch: -1, durchT: 0, runterVorher: false, luftSprunge: 0 };
+  return { x: l.eingang ? l.eingang.x + 1.4 : p.x + 1, y: p.y, vy: 0, auf: 0, coyote: 0, richtung: 1, cp: 0, t: 0, vx: 0, puffer: 0, sprungVorher: false, pogo: false, landung: 0, luftSprung: false, durch: -1, durchT: 0, runterVorher: false, luftSprunge: 0 };
 }
 
 /** Zurück zum letzten Kontrollpunkt, ohne Folgen. */
@@ -387,14 +416,14 @@ export const nahePogo = (s: Spieler, p: { x: number; y: number }) => Math.abs(s.
 export const sterne = (n: number, max: number) => (max <= 0 ? 0 : n >= max * 0.9 ? 3 : n >= max * 0.6 ? 2 : n >= max * 0.25 ? 1 : 0);
 
 /**
- * Abschnitte einer Etappe: Abschnitt 0 mit allen Schlüsseln und dem ersten Tor, jedes weitere Tor in einem eigenen frischen Abschnitt,
- * danach ein Zielabschnitt. Durch ein offenes Tor geht es in den nächsten Abschnitt (Abschnitt k gehört zu Challenge k).
+ * Abschnitte einer Etappe: Abschnitt 0 mit allen Schlüsseln, jeder Abschnitt endet an seinem Tor, danach ein Zielabschnitt.
+ * Durch ein offenes Tor geht es dahinter weiter: der nächste Abschnitt beginnt an dieser (offenen) Tür (Abschnitt k gehört zu Challenge k).
  */
 export function baueAbschnitte(etappe: number, nFakten: number, nTueren: number, seed = 1): Level[] {
   if (nTueren <= 0) return [baueLevel(etappe, nFakten, 0, seed)];
   const l: Level[] = [];
-  for (let k = 0; k < nTueren; k++) l.push(baueLevel(etappe, k === 0 ? nFakten : 0, 1, seed + k * 7919));
-  l.push(baueLevel(etappe, 0, 0, seed + nTueren * 7919));
+  for (let k = 0; k < nTueren; k++) l.push(baueLevel(etappe, k === 0 ? nFakten : 0, 1, seed + k * 7919, undefined, { torAmEnde: true, eingang: k > 0 }));
+  l.push(baueLevel(etappe, 0, 0, seed + nTueren * 7919, undefined, { eingang: true }));
   return l;
 }
 

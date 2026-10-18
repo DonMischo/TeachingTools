@@ -31,6 +31,7 @@ const PAL_OFFEN = { b: "#5b3a1a", k: "#241508" };
 
 const PAL_EDEL = { c: "#35c9e8", w: "#e8fbff", d: "#1a8fb0" };
 const PAL_EDEL_SCHWER = { c: "#f5a623", w: "#fff3c4", d: "#c46a00" };
+const PAL_EDEL_GEHEIM = { c: "#c86bfa", w: "#ffe6ff", d: "#7b2cbf" };
 const PAL_SCHLEIM = { g: "#7ac943", w: "#ffffff", k: "#222222" };
 
 const POGO = [".rrrr...", ".rrrr...", "..gg....", "..gg....", "..gg....", "..gg....", ".gggg...", "..ss....", "..ss....", ".kkkk..."];
@@ -122,7 +123,7 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
   const offene = brett.challenges.filter((c) => !c.erledigt);
   const challenge = brett.challenges.find((c) => c.id === tuer);
   const sp = theme.spieler;
-  const figH = sp.stehen.h * SK;
+  const figH = (sp.stehen.h - (sp.fuss ?? 0)) * SK; // Füße auf die Bodenkante, nicht die leeren Bildzeilen darunter
   const edelMax = levels.reduce((a, l) => a + edelsteineGesamt(l), 0);
   useSpielwert(lauf, "huepfen", brett.etappe, edel, Math.max(edel, edelMax)); // Edelsteine
 
@@ -326,7 +327,7 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
           <button className="btn-secondary" onClick={zurKarte}>Karte</button>
         </div>
       </div>
-      <style>{`@keyframes hpstaub{from{opacity:.9;transform:scale(.4)}to{opacity:0;transform:scale(2) translateY(-4px)}}@media (prefers-reduced-motion: reduce){[style*="hpstaub"]{animation:none!important;opacity:0}}`}</style>
+      <style>{`@keyframes hpstaub{from{opacity:.9;transform:scale(.4)}to{opacity:0;transform:scale(2) translateY(-4px)}}@keyframes hpschimmer{0%,100%{opacity:.35}50%{opacity:.8}}.hp-geheim{animation:hpschimmer 2.4s ease-in-out infinite}@media (prefers-reduced-motion: reduce){[style*="hpstaub"]{animation:none!important;opacity:0}.hp-geheim{animation:none}}`}</style>
       <Treffermeldung antwort={antwort} />
 
       <div ref={bildRef} className="relative overflow-hidden rounded-lg border-2 border-line" onBlur={loesche} onPointerLeave={(e) => { if (e.pointerType !== "mouse") loesche(); }} style={{ height: VIEW_H * KACHEL, background: himmel }}
@@ -338,9 +339,17 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
         </div>
         <div ref={weltRef} className="absolute left-0 top-0" style={{ width: level.breite * KACHEL, height: level.hoehe * KACHEL }}>
           <Plattformen plattformen={level.plattformen} tile={tile} bodenFarbe={theme.farben.boden} cp={cp} reduziert={reduziert} />
-          {level.leisten.map((p, i) => (
+          {level.leisten.map((p, i) => p.geheim ? (
+            // Geheimleiste: nur ein Schimmer, erreichbar vom Beweger darunter per Doppelsprung
+            <div key={`l${i}`} className="absolute rounded-sm hp-geheim" data-geheim aria-hidden style={{ left: p.x * KACHEL, top: p.y * KACHEL, width: p.w * KACHEL, height: 10, border: "2px dashed rgba(255,255,255,.55)", background: "rgba(180,200,255,.18)" }} />
+          ) : (
             <div key={`l${i}`} className="absolute rounded-sm" style={{ left: p.x * KACHEL, top: p.y * KACHEL, width: p.w * KACHEL, height: 10, background: "#8b5a2b", borderTop: "4px solid #4c8a2b" }} />
           ))}
+          {level.eingang && (
+            <div className="absolute pointer-events-none" style={{ left: level.eingang.x * KACHEL - 40, top: level.eingang.y * KACHEL - 80 }} role="img" aria-label="Tür, durch die du gekommen bist" data-tor="eingang">
+              <PixelMatrix bild={TUER_OFFEN} palette={PAL_OFFEN} scale={8} />
+            </div>
+          )}
           {level.beweger.map((m, i) => (
             <div key={`m${i}`} ref={(el) => { bewegerEl.current[i] = el; }} className="absolute left-0 top-0 rounded-sm" style={{ width: m.w * KACHEL, height: 10, background: "#6b7bb3", borderTop: "4px solid #aab6e6" }} />
           ))}
@@ -349,7 +358,7 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
           ))}
           {level.edelsteine.map((g) => !edelRef.current.has(g.id + off) && (
             <div key={`e${g.id}`} className="absolute" style={{ left: g.x * KACHEL - 12, top: g.y * KACHEL - 12 }}>
-              <PixelMatrix bild={EDEL} palette={g.schwer ? PAL_EDEL_SCHWER : PAL_EDEL} scale={3} label="Edelstein" />
+              <PixelMatrix bild={EDEL} palette={g.geheim ? PAL_EDEL_GEHEIM : g.schwer ? PAL_EDEL_SCHWER : PAL_EDEL} scale={3} label={g.geheim ? "Geheimer Kristall" : "Edelstein"} />
             </div>
           ))}
           {level.pogo && !pogo && (
