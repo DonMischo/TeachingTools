@@ -3,6 +3,7 @@
   name: Fünf-Schritt-Lesemethode (SQ3R)
   aliase: [Überfliegen – Fragen – Lesen – Wiedergeben – Wiederholen]
   kategorie: didaktik
+  unterkategorie: lesen_schreiben
   phasen: [hauptteil]
   setting: [einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -30,6 +31,7 @@
   name: Lesestrategietraining (Textdetektive)
   aliase: [Lesestrategien vermitteln]
   kategorie: didaktik
+  unterkategorie: lesen_schreiben
   phasen: [hauptteil]
   setting: [plenum, einzel, partner]
   zielgruppen: [kinder, jugendliche]
@@ -56,6 +58,7 @@
   name: Markieren mit Regeln
   aliase: [Unterstreichen, Textmarker]
   kategorie: didaktik
+  unterkategorie: lesen_schreiben
   phasen: [hauptteil]
   setting: [einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -80,6 +83,7 @@
   name: Lesetheater (Readers' Theatre)
   aliase: [Szenisches Vorlesen]
   kategorie: didaktik
+  unterkategorie: lesen_schreiben
   phasen: [hauptteil, abschluss]
   setting: [kleingruppe]
   zielgruppen: [kinder, jugendliche]
@@ -105,6 +109,7 @@
   name: Robuste Wortschatzarbeit
   aliase: [Tier-2-Wörter, Bildungssprache aufbauen]
   kategorie: didaktik
+  unterkategorie: lesen_schreiben
   phasen: [hauptteil]
   setting: [plenum, partner]
   zielgruppen: [kinder, jugendliche]
@@ -131,6 +136,7 @@
   name: Sprachsensible Hilfen (Wortgeländer, Satzbausteine)
   aliase: [Sprachgerüst, Wortspeicher, Textprozeduren]
   kategorie: didaktik
+  unterkategorie: lesen_schreiben
   phasen: [hauptteil]
   setting: [einzel, partner]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -156,6 +162,7 @@
   name: Textlupe
   aliase: [Schriftliche Textrückmeldung im Kreis]
   kategorie: didaktik
+  unterkategorie: lesen_schreiben
   phasen: [hauptteil]
   setting: [kleingruppe]
   zielgruppen: [kinder, jugendliche]
@@ -181,6 +188,7 @@
   name: Schreibkonferenz
   aliase: [Autorenrunde]
   kategorie: didaktik
+  unterkategorie: lesen_schreiben
   phasen: [hauptteil]
   setting: [kleingruppe]
   zielgruppen: [kinder, jugendliche]
@@ -207,6 +215,7 @@
   name: Freewriting / Schnellschreiben
   aliase: [Écriture automatique, Morgenseiten]
   kategorie: didaktik
+  unterkategorie: lesen_schreiben
   phasen: [einstieg, hauptteil]
   setting: [einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -232,6 +241,7 @@
   name: Clustering (nach Rico)
   aliase: [Assoziationsnetz zum Schreiben]
   kategorie: didaktik
+  unterkategorie: kreativ
   phasen: [einstieg, hauptteil]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -257,6 +267,7 @@
   name: Kreative Schreibformen (Elfchen, Akrostichon, Rondell)
   aliase: [Lyrische Kurzformen]
   kategorie: didaktik
+  unterkategorie: lesen_schreiben
   phasen: [einstieg, abschluss]
   setting: [einzel, partner]
   zielgruppen: [kinder, jugendliche]
@@ -282,6 +293,7 @@
   name: Szenisches Interpretieren
   aliase: [Szenische Interpretation]
   kategorie: didaktik
+  unterkategorie: handlung
   phasen: [hauptteil]
   setting: [kleingruppe, plenum]
   zielgruppen: [jugendliche, erwachsene]
@@ -308,6 +320,7 @@
   name: Standbild / Statuentheater
   aliase: [Tableau vivant, Freeze Frame]
   kategorie: didaktik
+  unterkategorie: handlung
   phasen: [hauptteil, abschluss]
   setting: [kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -334,6 +347,7 @@
   name: Heißer Stuhl (Hot Seating)
   aliase: [Figurenbefragung]
   kategorie: didaktik
+  unterkategorie: handlung
   phasen: [hauptteil]
   setting: [plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -360,6 +374,7 @@
   name: Leittextmethode
   aliase: [Leitfragen-Methode, Vollständige Handlung]
   kategorie: didaktik
+  unterkategorie: selbststaendig
   phasen: [hauptteil]
   setting: [einzel, kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -386,6 +401,7 @@
   name: Werkstattunterricht
   aliase: [Lernwerkstatt]
   kategorie: didaktik
+  unterkategorie: selbststaendig
   phasen: [hauptteil]
   setting: [einzel, partner]
   zielgruppen: [kinder, jugendliche]
@@ -412,6 +428,7 @@
   name: WebQuest
   aliase: [Strukturierte Internetrecherche]
   kategorie: didaktik
+  unterkategorie: selbststaendig
   phasen: [hauptteil]
   setting: [kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -438,6 +455,7 @@
   name: Quellen prüfen durch Querlesen (Lateral Reading)
   aliase: [Faktencheck, Informationskompetenz, SIFT]
   kategorie: didaktik
+  unterkategorie: lesen_schreiben
   phasen: [hauptteil]
   setting: [einzel, partner]
   zielgruppen: [jugendliche, erwachsene]
@@ -464,6 +482,7 @@
   name: Quellenarbeit wie Historiker
   aliase: [Reading Like a Historian, Quellenkritik]
   kategorie: didaktik
+  unterkategorie: lesen_schreiben
   phasen: [hauptteil]
   setting: [einzel, kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -490,6 +509,7 @@
   name: Exkursion / Unterrichtsgang
   aliase: [Lernort außerhalb, Erkundung]
   kategorie: didaktik
+  unterkategorie: handlung
   phasen: [hauptteil]
   setting: [kleingruppe, plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -514,6 +534,7 @@
   name: Virtuelles Labor / Simulation
   aliase: [Interaktive Simulation, PhET]
   kategorie: didaktik
+  unterkategorie: mathe_nawi
   phasen: [hauptteil]
   setting: [einzel, partner]
   zielgruppen: [jugendliche, erwachsene]
@@ -540,6 +561,7 @@
   name: Mathematisches Modellieren (Modellierungskreislauf)
   aliase: [Sachaufgaben modellieren]
   kategorie: didaktik
+  unterkategorie: mathe_nawi
   phasen: [hauptteil]
   setting: [kleingruppe, einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -566,6 +588,7 @@
   name: Problemlösen in vier Schritten (Pólya)
   aliase: [Heuristiken, Verstehen – Planen – Durchführen – Rückschau]
   kategorie: didaktik
+  unterkategorie: mathe_nawi
   phasen: [hauptteil]
   setting: [einzel, partner]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -592,6 +615,7 @@
   name: Fehlerhafte Beispiele analysieren
   aliase: [Erroneous Examples, Fehlerdetektiv]
   kategorie: didaktik
+  unterkategorie: mathe_nawi
   phasen: [hauptteil]
   setting: [einzel, partner]
   zielgruppen: [jugendliche, erwachsene]
@@ -617,6 +641,7 @@
   name: Lösungswege vergleichen
   aliase: [Compare and Contrast, Nebeneinanderstellen]
   kategorie: didaktik
+  unterkategorie: mathe_nawi
   phasen: [hauptteil]
   setting: [partner, plenum]
   zielgruppen: [jugendliche, erwachsene]
@@ -641,6 +666,7 @@
   name: Kontrastierende Fälle
   aliase: [Contrasting Cases]
   kategorie: didaktik
+  unterkategorie: instruktion
   phasen: [einstieg, hauptteil]
   setting: [partner, kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -666,6 +692,7 @@
   name: Mit Analogien erklären
   aliase: [Vergleiche, Modelle aus dem Alltag]
   kategorie: didaktik
+  unterkategorie: instruktion
   phasen: [hauptteil]
   setting: [plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -691,6 +718,7 @@
   name: Produktives Üben (Zahlenmauern, Rechendreiecke)
   aliase: [Strukturierte Übungsformate, Entdeckendes Üben]
   kategorie: didaktik
+  unterkategorie: mathe_nawi
   phasen: [hauptteil]
   setting: [einzel, partner]
   zielgruppen: [kinder, jugendliche]
@@ -716,6 +744,7 @@
   name: Lernjournal mit Kernidee (Reisetagebuch)
   aliase: [Dialogisches Lernen nach Gallin & Ruf]
   kategorie: didaktik
+  unterkategorie: reflexion
   phasen: [hauptteil, abschluss]
   setting: [einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -742,6 +771,7 @@
   name: Generieren statt Lesen
   aliase: [Generation Effect, Lückentext, Vorhersagen ergänzen]
   kategorie: didaktik
+  unterkategorie: ueben
   phasen: [hauptteil]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -767,6 +797,7 @@
   name: Zeichnen zum Lernen
   aliase: [Drawing to Learn, Sketchnotes, Skizzieren]
   kategorie: didaktik
+  unterkategorie: ueben
   phasen: [hauptteil, abschluss]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -792,6 +823,7 @@
   name: Erklärvideo erstellen
   aliase: [Lernvideo produzieren, Erklär-Podcast]
   kategorie: didaktik
+  unterkategorie: visualisierung
   phasen: [hauptteil, abschluss]
   setting: [einzel, partner, kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -818,6 +850,7 @@
   name: Strukturiertes Mitschreiben (Cornell)
   aliase: [Cornell-Notizen, Mitschrift]
   kategorie: didaktik
+  unterkategorie: lesen_schreiben
   phasen: [hauptteil]
   setting: [einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -843,6 +876,7 @@
   name: Lückenskript (Guided Notes)
   aliase: [Gelenkte Mitschrift]
   kategorie: didaktik
+  unterkategorie: lesen_schreiben
   phasen: [hauptteil]
   setting: [einzel, plenum]
   zielgruppen: [jugendliche, erwachsene]
@@ -868,6 +902,7 @@
   name: Grafische Organizer (Venn, T-Tabelle, Fischgräte, Zeitleiste)
   aliase: [Strukturdiagramme, Graphic Organizers, Ishikawa-Diagramm]
   kategorie: didaktik
+  unterkategorie: visualisierung
   phasen: [hauptteil, abschluss]
   setting: [einzel, partner]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -893,6 +928,7 @@
   name: Morphologischer Kasten
   aliase: [Zwicky-Box, Kombinationsmatrix]
   kategorie: didaktik
+  unterkategorie: kreativ
   phasen: [hauptteil]
   setting: [kleingruppe, einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -918,6 +954,7 @@
   name: Kopfstand-Methode
   aliase: [Umkehrmethode, Reverse Brainstorming]
   kategorie: didaktik
+  unterkategorie: kreativ
   phasen: [hauptteil]
   setting: [kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -943,6 +980,7 @@
   name: Walt-Disney-Methode
   aliase: [Träumer – Realist – Kritiker]
   kategorie: didaktik
+  unterkategorie: kreativ
   phasen: [hauptteil]
   setting: [kleingruppe, einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -968,6 +1006,7 @@
   name: SCAMPER-Checkliste
   aliase: [Osborn-Checkliste, Ideenfragen]
   kategorie: didaktik
+  unterkategorie: kreativ
   phasen: [hauptteil]
   setting: [einzel, kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -993,6 +1032,7 @@
   name: Design Thinking
   aliase: [Verstehen – Beobachten – Sichtweise – Ideen – Prototyp – Testen]
   kategorie: didaktik
+  unterkategorie: kreativ
   phasen: [hauptteil]
   setting: [kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -1019,6 +1059,7 @@
   name: Adaptive Übungs- und Tutorensysteme
   aliase: [Intelligente Tutorensysteme, adaptive Lernsoftware]
   kategorie: didaktik
+  unterkategorie: differenzierung
   phasen: [hauptteil]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -1044,6 +1085,7 @@
   name: Blended Learning
   aliase: [Hybrides Lernen, Präsenz + Online]
   kategorie: didaktik
+  unterkategorie: planung
   phasen: [uebergreifend]
   setting: [einzel, kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -1069,6 +1111,7 @@
   name: Portfolio
   aliase: [Lernportfolio, Entwicklungsportfolio]
   kategorie: didaktik
+  unterkategorie: reflexion
   phasen: [abschluss, uebergreifend]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -1095,6 +1138,7 @@
   name: Kriteriengeleitete Präsentation
   aliase: [Referat, Kurzvortrag]
   kategorie: didaktik
+  unterkategorie: visualisierung
   phasen: [hauptteil, abschluss]
   setting: [einzel, kleingruppe, plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -1120,6 +1164,7 @@
   name: Postersession
   aliase: [Wissenschaftliche Posterpräsentation]
   kategorie: didaktik
+  unterkategorie: visualisierung
   phasen: [abschluss]
   setting: [kleingruppe, grossgruppe]
   zielgruppen: [jugendliche, erwachsene]

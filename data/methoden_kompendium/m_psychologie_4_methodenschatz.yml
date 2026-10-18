@@ -3,6 +3,7 @@
   name: Hypnotherapie und Trance-Arbeit
   aliase: [Klinische Hypnose, Ericksonsche Hypnotherapie, Medizinische Hypnose]
   kategorie: psychologie
+  unterkategorie: imaginativ
   phasen: [hauptteil]
   setting: [einzel, kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -28,6 +29,7 @@
   name: Hypnosystemische Gesprächsführung
   aliase: [Fokussierung der Aufmerksamkeit, Problem- und Lösungstrance]
   kategorie: psychologie
+  unterkategorie: imaginativ
   phasen: [hauptteil]
   setting: [einzel, kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -53,6 +55,7 @@
   name: Therapeutische Metaphern und Geschichten
   aliase: [Metaphernarbeit, Heilsame Geschichten]
   kategorie: psychologie
+  unterkategorie: imaginativ
   phasen: [hauptteil, abschluss]
   setting: [einzel, kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -77,6 +80,7 @@
   name: Impact-Techniken
   aliase: [Mehrsinnliche Interventionen, Die starke Tanne, Gegenstände im Gespräch]
   kategorie: psychologie
+  unterkategorie: imaginativ
   phasen: [hauptteil]
   setting: [einzel, kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -102,6 +106,7 @@
   name: Arbeit mit inneren Anteilen (Ego-State)
   aliase: [Ego-State-Therapie, Anteilearbeit, Innere-Kind-Arbeit]
   kategorie: psychologie
+  unterkategorie: imaginativ
   phasen: [hauptteil]
   setting: [einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -127,6 +132,7 @@
   name: Umgang mit dem inneren Kritiker
   aliase: [Selbstkritik bearbeiten, Mitgefühlsfokussierte Arbeit, Compassion-Focused Therapy]
   kategorie: psychologie
+  unterkategorie: positiv
   phasen: [hauptteil]
   setting: [einzel, kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -152,6 +158,7 @@
   name: Selbstwertblatt
   aliase: [Kreative Selbstwertarbeit]
   kategorie: psychologie
+  unterkategorie: positiv
   phasen: [hauptteil]
   setting: [einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -177,6 +184,7 @@
   name: Therapeutische Bilderbücher und Geschichten (kreative Bibliotherapie)
   aliase: [Bilderbücher zu Gefühlen, Geschichten für Kinder in Krisen]
   kategorie: psychologie
+  unterkategorie: imaginativ
   phasen: [hauptteil]
   setting: [einzel, kleingruppe, plenum]
   zielgruppen: [kinder]
@@ -202,6 +210,7 @@
   name: Therapeutische Spiele
   aliase: [Gefühlespiele, Brettspiele in der Beratung]
   kategorie: psychologie
+  unterkategorie: imaginativ
   phasen: [einstieg, hauptteil]
   setting: [einzel, kleingruppe]
   zielgruppen: [kinder, jugendliche]
@@ -226,6 +235,7 @@
   name: Humor in Beratung und Unterricht
   aliase: [Therapeutischer Humor, Provokative Leichtigkeit]
   kategorie: psychologie
+  unterkategorie: positiv
   phasen: [uebergreifend]
   setting: [einzel, kleingruppe, plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -250,6 +260,7 @@
   name: Selbstfürsorge für Fachleute
   aliase: [Burnout-Prävention, Psychohygiene, Supervision]
   kategorie: psychologie
+  unterkategorie: krise
   phasen: [uebergreifend]
   setting: [einzel, kleingruppe]
   zielgruppen: [erwachsene]
@@ -275,6 +286,7 @@
   name: Brainspotting
   aliase: [Blickpunkt-Verfahren]
   kategorie: psychologie
+  unterkategorie: imaginativ
   phasen: [hauptteil]
   setting: [einzel]
   zielgruppen: [jugendliche, erwachsene]

@@ -3,6 +3,7 @@
   name: Partnerinterview
   aliase: [Drei-Schritt-Interview, Three-Step Interview]
   kategorie: didaktik
+  unterkategorie: kooperativ
   phasen: [einstieg, hauptteil]
   setting: [partner, kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -28,6 +29,7 @@
   name: Lerntempoduett
   aliase: [Bushaltestelle, Lerntempo-Partner]
   kategorie: didaktik
+  unterkategorie: differenzierung
   phasen: [hauptteil]
   setting: [einzel, partner]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -54,6 +56,7 @@
   name: Partnerpuzzle
   aliase: [Paar-Jigsaw]
   kategorie: didaktik
+  unterkategorie: kooperativ
   phasen: [hauptteil]
   setting: [partner]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -80,6 +83,7 @@
   name: Partnercheck (Rally Coach)
   aliase: [Trainer und Spieler, Tandembogen]
   kategorie: didaktik
+  unterkategorie: kooperativ
   phasen: [hauptteil]
   setting: [partner]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -105,6 +109,7 @@
   name: Nummerierte Köpfe (Numbered Heads Together)
   aliase: [Kopfnummern]
   kategorie: didaktik
+  unterkategorie: kooperativ
   phasen: [hauptteil]
   setting: [kleingruppe]
   zielgruppen: [kinder, jugendliche]
@@ -130,6 +135,7 @@
   name: Reihum-Runde (Round Robin)
   aliase: [Rally Robin, Rundgespräch]
   kategorie: didaktik
+  unterkategorie: kooperativ
   phasen: [einstieg, hauptteil]
   setting: [partner, kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -155,6 +161,7 @@
   name: Redechips (Talking Chips)
   aliase: [Gesprächsmarken]
   kategorie: didaktik
+  unterkategorie: kooperativ
   phasen: [hauptteil]
   setting: [kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -180,6 +187,7 @@
   name: Mix – Pair – Share
   aliase: [Musik-Stopp-Austausch, Stand Up Hand Up Pair Up]
   kategorie: didaktik
+  unterkategorie: kooperativ
   phasen: [einstieg, hauptteil, abschluss]
   setting: [partner, plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -205,6 +213,7 @@
   name: Quiz – Quiz – Tausch
   aliase: [Quiz-Quiz-Trade, Frage-Karten-Tausch]
   kategorie: didaktik
+  unterkategorie: kooperativ
   phasen: [hauptteil, abschluss]
   setting: [partner, plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -230,6 +239,7 @@
   name: Showdown
   aliase: [Gruppen-Abfrage mit Tafeln]
   kategorie: didaktik
+  unterkategorie: kooperativ
   phasen: [hauptteil]
   setting: [kleingruppe]
   zielgruppen: [kinder, jugendliche]
@@ -255,6 +265,7 @@
   name: Teamturnier (TGT)
   aliase: [Teams-Games-Tournament]
   kategorie: didaktik
+  unterkategorie: handlung
   phasen: [hauptteil, abschluss]
   setting: [kleingruppe]
   zielgruppen: [kinder, jugendliche]
@@ -281,6 +292,7 @@
   name: Gruppenrecherche (Group Investigation)
   aliase: [Gruppenuntersuchung]
   kategorie: didaktik
+  unterkategorie: selbststaendig
   phasen: [hauptteil]
   setting: [kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -307,6 +319,7 @@
   name: Rollenkarten für Gruppenarbeit
   aliase: [Complex Instruction, Zeitwächter–Schreiber–Sprecher]
   kategorie: didaktik
+  unterkategorie: kooperativ
   phasen: [hauptteil]
   setting: [kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -332,6 +345,7 @@
   name: Schneeball / Pyramide
   aliase: [1-2-4-8, Snowball]
   kategorie: didaktik
+  unterkategorie: kooperativ
   phasen: [hauptteil]
   setting: [einzel, partner, kleingruppe, plenum]
   zielgruppen: [jugendliche, erwachsene]
@@ -358,6 +372,7 @@
   name: Karussell-Brainstorming / Graffiti
   aliase: [Carousel Brainstorming, Rotierende Plakate]
   kategorie: didaktik
+  unterkategorie: kreativ
   phasen: [einstieg, hauptteil]
   setting: [kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -384,6 +399,7 @@
   name: Problem weitersenden
   aliase: [Send-a-Problem]
   kategorie: didaktik
+  unterkategorie: kreativ
   phasen: [hauptteil]
   setting: [kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -410,6 +426,7 @@
   name: Feste Lernteams (Stammgruppen)
   aliase: [Base Groups, Tischgruppen]
   kategorie: didaktik
+  unterkategorie: kooperativ
   phasen: [uebergreifend]
   setting: [kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -435,6 +452,7 @@
   name: Gruppenbildungsmethoden
   aliase: [Zufallsgruppen, Puzzlekarten, Losverfahren]
   kategorie: didaktik
+  unterkategorie: kooperativ
   phasen: [einstieg, hauptteil]
   setting: [plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -459,6 +477,7 @@
   name: Sokratisches Gespräch (nach Nelson/Heckmann)
   aliase: [Neosokratisches Gespräch]
   kategorie: didaktik
+  unterkategorie: gespraech
   phasen: [hauptteil]
   setting: [kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -485,6 +504,7 @@
   name: Talkshow / Podiumsdiskussion
   aliase: [Expertenrunde, Hearing]
   kategorie: didaktik
+  unterkategorie: gespraech
   phasen: [hauptteil, abschluss]
   setting: [kleingruppe, plenum]
   zielgruppen: [jugendliche, erwachsene]
@@ -511,6 +531,7 @@
   name: Tribunal / Gerichtsverhandlung
   aliase: [Mock Trial, Schauprozess (didaktisch)]
   kategorie: didaktik
+  unterkategorie: handlung
   phasen: [hauptteil]
   setting: [kleingruppe, plenum]
   zielgruppen: [jugendliche, erwachsene]
@@ -537,6 +558,7 @@
   name: Laufdiktat / Partnerdiktat
   aliase: [Wanderdiktat]
   kategorie: didaktik
+  unterkategorie: lesen_schreiben
   phasen: [hauptteil]
   setting: [partner]
   zielgruppen: [kinder, jugendliche]
@@ -563,6 +585,7 @@
   name: Rundbrief / Schreib-Rundlauf
   aliase: [Write-Around, Round Table]
   kategorie: didaktik
+  unterkategorie: lesen_schreiben
   phasen: [hauptteil]
   setting: [kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -588,6 +611,7 @@
   name: Team – Paar – Solo
   aliase: [Team-Pair-Solo, Wir-Du-Ich]
   kategorie: didaktik
+  unterkategorie: kooperativ
   phasen: [hauptteil]
   setting: [kleingruppe, partner, einzel]
   zielgruppen: [kinder, jugendliche]
@@ -614,6 +638,7 @@
   name: Walk & Talk
   aliase: [Gesprächsspaziergang]
   kategorie: didaktik
+  unterkategorie: gespraech
   phasen: [hauptteil, abschluss]
   setting: [partner]
   zielgruppen: [jugendliche, erwachsene]
@@ -639,6 +664,7 @@
   name: Mathe-/Rechenkonferenz
   aliase: [Lösungskonferenz, Strategiekonferenz]
   kategorie: didaktik
+  unterkategorie: mathe_nawi
   phasen: [hauptteil]
   setting: [kleingruppe]
   zielgruppen: [kinder, jugendliche]

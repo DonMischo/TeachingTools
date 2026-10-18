@@ -3,6 +3,7 @@
   name: Gefühls-Check-in (Mood Meter, Gefühlsuhr)
   aliase: [Stimmungsbarometer, Emotionsthermometer, Zones of Regulation]
   kategorie: psychologie
+  unterkategorie: emotion_stress
   phasen: [einstieg, abschluss]
   setting: [einzel, plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -27,6 +28,7 @@
   name: Atemübung zum Ankommen
   aliase: [Langsames Atmen, 4-6-Atmung, Box Breathing, Bauchatmung]
   kategorie: psychologie
+  unterkategorie: emotion_stress
   phasen: [einstieg, abschluss]
   setting: [plenum, einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -51,6 +53,7 @@
   name: Werte-Bekräftigung (Values Affirmation)
   aliase: [Self-Affirmation-Schreibübung]
   kategorie: psychologie
+  unterkategorie: motivation
   phasen: [einstieg]
   setting: [einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -75,6 +78,7 @@
   name: Zugehörigkeits-Intervention (Social Belonging)
   aliase: [Belonging-Geschichten, Übergangsintervention]
   kategorie: psychologie
+  unterkategorie: motivation
   phasen: [einstieg]
   setting: [einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -100,6 +104,7 @@
   name: Neubewertung von Aufregung (Arousal Reappraisal)
   aliase: [Aufregung ist Energie, Stress-Mindset]
   kategorie: psychologie
+  unterkategorie: emotion_stress
   phasen: [einstieg]
   setting: [plenum, einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -123,6 +128,7 @@
   name: Sorgen aufschreiben vor Prüfungen
   aliase: [Expressive Writing vor Tests]
   kategorie: psychologie
+  unterkategorie: emotion_stress
   phasen: [einstieg]
   setting: [einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -148,6 +154,7 @@
   name: Zielsetzung (spezifisch, herausfordernd)
   aliase: [SMART-Ziele, Goal Setting, Lernziele für sich selbst]
   kategorie: psychologie
+  unterkategorie: motivation
   phasen: [einstieg, abschluss]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -172,6 +179,7 @@
   name: WOOP / Mentales Kontrastieren mit Wenn-dann-Plänen
   aliase: [Wish – Outcome – Obstacle – Plan, MCII, Implementierungsintentionen]
   kategorie: psychologie
+  unterkategorie: motivation
   phasen: [einstieg, abschluss]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -197,6 +205,7 @@
   name: Autonomie, Kompetenz und Eingebundenheit unterstützen
   aliase: [Selbstbestimmungstheorie im Unterricht, Autonomieunterstützung]
   kategorie: psychologie
+  unterkategorie: motivation
   phasen: [uebergreifend]
   setting: [plenum, einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -222,6 +231,7 @@
   name: Selbstwirksamkeit stärken
   aliase: [Erfolgserlebnisse, Modelllernen, Verbal persuasion]
   kategorie: psychologie
+  unterkategorie: motivation
   phasen: [uebergreifend]
   setting: [einzel, plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -246,6 +256,7 @@
   name: Wachstumsorientierte Denkweise (Growth Mindset)
   aliase: [Mindset-Intervention, Fähigkeiten sind entwickelbar]
   kategorie: psychologie
+  unterkategorie: motivation
   phasen: [einstieg, uebergreifend]
   setting: [einzel, plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -270,6 +281,7 @@
   name: Weises Feedback (Wise Feedback)
   aliase: [Hohe Standards + Zutrauen]
   kategorie: psychologie
+  unterkategorie: motivation
   phasen: [hauptteil, abschluss]
   setting: [einzel]
   zielgruppen: [jugendliche]
@@ -294,6 +306,7 @@
   name: Lernförderliches Feedback (vier Ebenen)
   aliase: [Hattie-Timperley-Modell, Feed Up – Feed Back – Feed Forward]
   kategorie: psychologie
+  unterkategorie: kognition
   phasen: [hauptteil, abschluss]
   setting: [einzel, plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -320,6 +333,7 @@
   name: Selbstreguliertes Lernen (Planen – Überwachen – Bewerten)
   aliase: [Metakognitive Strategien, Zimmerman-Zyklus]
   kategorie: psychologie
+  unterkategorie: kognition
   phasen: [einstieg, hauptteil, abschluss]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -345,6 +359,7 @@
   name: Selbstinstruktionstraining (Stopp – Denk – Handle)
   aliase: [Meichenbaum-Training, Schildkröten-Technik, Stopp-Schild]
   kategorie: psychologie
+  unterkategorie: verhalten
   phasen: [hauptteil]
   setting: [einzel, kleingruppe]
   zielgruppen: [kinder, jugendliche]
@@ -371,6 +386,7 @@
   name: Soziales Problemlösetraining
   aliase: [Problemlöseschritte, IDEAL]
   kategorie: psychologie
+  unterkategorie: sozial
   phasen: [hauptteil]
   setting: [einzel, kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -396,6 +412,7 @@
   name: Psychoedukation
   aliase: ["Aufklärung über Stress, Angst, Schlaf, Lernen"]
   kategorie: psychologie
+  unterkategorie: beratung
   phasen: [hauptteil]
   setting: [plenum, kleingruppe, einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -421,6 +438,7 @@
   name: ABC-Modell und Gedankenprüfung
   aliase: [Kognitive Umstrukturierung, Gedankenprotokoll, Gedankendetektiv]
   kategorie: psychologie
+  unterkategorie: therapie
   phasen: [hauptteil]
   setting: [einzel, kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -443,6 +461,7 @@
   name: Progressive Muskelentspannung (PMR)
   aliase: [Jacobson-Entspannung]
   kategorie: psychologie
+  unterkategorie: emotion_stress
   phasen: [hauptteil, abschluss]
   setting: [plenum, einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -467,6 +486,7 @@
   name: Fantasiereise / Imaginationsübung
   aliase: [Kapitän-Nemo-Geschichten, Geführte Imagination]
   kategorie: psychologie
+  unterkategorie: emotion_stress
   phasen: [abschluss, hauptteil]
   setting: [plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -492,6 +512,7 @@
   name: Achtsamkeitsübungen
   aliase: [Mindfulness, Body Scan, MBSR, MBCT]
   kategorie: psychologie
+  unterkategorie: emotion_stress
   phasen: [einstieg, hauptteil, abschluss]
   setting: [plenum, einzel, kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -517,6 +538,7 @@
   name: Stressbewältigungstraining (Gruppe)
   aliase: [Gelassen und sicher im Stress, Stress Inoculation Training]
   kategorie: psychologie
+  unterkategorie: emotion_stress
   phasen: [hauptteil]
   setting: [kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -543,6 +565,7 @@
   name: Programme sozial-emotionalen Lernens (SEL)
   aliase: [Faustlos, Papilio, Klasse2000, Lions Quest, PATHS]
   kategorie: psychologie
+  unterkategorie: praevention
   phasen: [uebergreifend]
   setting: [plenum, kleingruppe]
   zielgruppen: [kinder, jugendliche]
@@ -567,6 +590,7 @@
   name: Soziales Kompetenztraining (Gruppe)
   aliase: [GSK, Selbstsicherheitstraining, Social Skills Training]
   kategorie: psychologie
+  unterkategorie: sozial
   phasen: [hauptteil]
   setting: [kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -593,6 +617,7 @@
   name: Angst- und Depressionsprävention (FRIENDS, Coping Cat, PRP)
   aliase: [Resilienzprogramme, kognitiv-behaviorale Prävention]
   kategorie: psychologie
+  unterkategorie: praevention
   phasen: [uebergreifend]
   setting: [kleingruppe, plenum]
   zielgruppen: [kinder, jugendliche]
@@ -618,6 +643,7 @@
   name: Motivierende Gesprächsführung (MI)
   aliase: [Motivational Interviewing, OARS]
   kategorie: psychologie
+  unterkategorie: beratung
   phasen: [hauptteil]
   setting: [einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -643,6 +669,7 @@
   name: Lösungsfokussierte Gesprächsführung
   aliase: [Skalierungsfrage, Wunderfrage, Ausnahmen finden, SFBT]
   kategorie: psychologie
+  unterkategorie: beratung
   phasen: [einstieg, hauptteil, abschluss]
   setting: [einzel, kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -668,6 +695,7 @@
   name: Coaching nach GROW
   aliase: [Goal – Reality – Options – Will]
   kategorie: psychologie
+  unterkategorie: beratung
   phasen: [hauptteil]
   setting: [einzel, partner]
   zielgruppen: [jugendliche, erwachsene]
@@ -694,6 +722,7 @@
   name: Systemische Fragetechniken
   aliase: [Zirkuläre Fragen, Hypothetische Fragen, Reframing]
   kategorie: psychologie
+  unterkategorie: beratung
   phasen: [hauptteil]
   setting: [einzel, kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -718,6 +747,7 @@
   name: Reflektierendes Team
   aliase: [Reflecting Team]
   kategorie: psychologie
+  unterkategorie: beratung
   phasen: [hauptteil]
   setting: [kleingruppe]
   zielgruppen: [erwachsene, jugendliche]
@@ -743,6 +773,7 @@
   name: Genogramm / Netzwerkkarte
   aliase: [Familienstammbaum, Ecomap, VIP-Karte]
   kategorie: psychologie
+  unterkategorie: diagnostik
   phasen: [hauptteil]
   setting: [einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -767,6 +798,7 @@
   name: Verstärkerplan / Token-System
   aliase: [Punkteplan, Token Economy]
   kategorie: psychologie
+  unterkategorie: verhalten
   phasen: [hauptteil]
   setting: [einzel, plenum]
   zielgruppen: [kinder, jugendliche]
@@ -793,6 +825,7 @@
   name: Tagesbeurteilungsbogen (Daily Report Card)
   aliase: [Verhaltensbogen, Schule-Eltern-Karte]
   kategorie: psychologie
+  unterkategorie: verhalten
   phasen: [abschluss]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche]
@@ -818,6 +851,7 @@
   name: Verhaltensanalyse (A-B-C / SORKC)
   aliase: [Funktionale Verhaltensanalyse, Antecedent – Behavior – Consequence]
   kategorie: psychologie
+  unterkategorie: verhalten
   phasen: [uebergreifend]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche]
@@ -844,6 +878,7 @@
   name: Drei gute Dinge / Dankbarkeitstagebuch
   aliase: [Three Good Things, Gratitude Journal, Dankbarkeitsbrief]
   kategorie: psychologie
+  unterkategorie: positiv
   phasen: [abschluss]
   setting: [einzel, plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -868,6 +903,7 @@
   name: Stärkenarbeit (Charakterstärken)
   aliase: [VIA-Stärken, Stärkenbrille, Ressourcenorientierung]
   kategorie: psychologie
+  unterkategorie: positiv
   phasen: [hauptteil, abschluss]
   setting: [einzel, kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -893,6 +929,7 @@
   name: Selbstmitgefühl
   aliase: [Self-Compassion-Übung, Freundlicher Brief an sich selbst]
   kategorie: psychologie
+  unterkategorie: positiv
   phasen: [hauptteil, abschluss]
   setting: [einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -917,6 +954,7 @@
   name: Expressives Schreiben
   aliase: [Pennebaker-Schreiben, Schreiben über belastende Erfahrungen]
   kategorie: psychologie
+  unterkategorie: therapie
   phasen: [hauptteil]
   setting: [einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -941,6 +979,7 @@
   name: Aktivitätenplanung (Verhaltensaktivierung)
   aliase: [Behavioral Activation, Wochenplan mit angenehmen Aktivitäten]
   kategorie: psychologie
+  unterkategorie: therapie
   phasen: [hauptteil, abschluss]
   setting: [einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -966,6 +1005,7 @@
   name: Werte und Akzeptanz (ACT-Übungen)
   aliase: [Acceptance and Commitment, Gedanken-Defusion, Werte-Kompass]
   kategorie: psychologie
+  unterkategorie: therapie
   phasen: [hauptteil]
   setting: [einzel, kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -990,6 +1030,7 @@
   name: Skills-Training (DBT)
   aliase: [Notfallkoffer, Spannungskurve, Stresstoleranz-Skills]
   kategorie: psychologie
+  unterkategorie: therapie
   phasen: [hauptteil]
   setting: [kleingruppe, einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -1014,6 +1055,7 @@
   name: Psychologische Erste Hilfe
   aliase: [Psychological First Aid, Look – Listen – Link]
   kategorie: psychologie
+  unterkategorie: krise
   phasen: [uebergreifend]
   setting: [einzel, kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -1039,6 +1081,7 @@
   name: Screening mit Fragebögen (SDQ, WHO-5)
   aliase: [Stärken-und-Schwächen-Fragebogen, Wohlbefindens-Index]
   kategorie: psychologie
+  unterkategorie: diagnostik
   phasen: [uebergreifend]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -1063,6 +1106,7 @@
   name: Psychologische Sicherheit im Team
   aliase: [Psychological Safety, Fehlerkultur]
   kategorie: psychologie
+  unterkategorie: gruppe
   phasen: [uebergreifend]
   setting: [kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -1088,6 +1132,7 @@
   name: Gruppenphasen begleiten (Tuckman)
   aliase: [Forming – Storming – Norming – Performing – Adjourning]
   kategorie: psychologie
+  unterkategorie: gruppe
   phasen: [uebergreifend]
   setting: [kleingruppe, plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -1114,6 +1159,7 @@
   name: Johari-Fenster (Feedback in Gruppen)
   aliase: [Selbst- und Fremdbild]
   kategorie: psychologie
+  unterkategorie: gruppe
   phasen: [hauptteil, abschluss]
   setting: [kleingruppe, partner]
   zielgruppen: [jugendliche, erwachsene]
@@ -1138,6 +1184,7 @@
   name: Wirkfaktoren der Gruppe nutzen
   aliase: [Yaloms Wirkfaktoren, Universalität, Hoffnung, Kohäsion]
   kategorie: psychologie
+  unterkategorie: gruppe
   phasen: [uebergreifend]
   setting: [kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -1164,6 +1211,7 @@
   name: Elterntraining (Triple P u. a.)
   aliase: [Positive Erziehung, Elternkurs]
   kategorie: psychologie
+  unterkategorie: praevention
   phasen: [uebergreifend]
   setting: [kleingruppe, einzel]
   zielgruppen: [erwachsene]
@@ -1189,6 +1237,7 @@
   name: Erwartungseffekte bewusst steuern
   aliase: [Pygmalion-Effekt, Lehrererwartungen, High Expectations]
   kategorie: psychologie
+  unterkategorie: motivation
   phasen: [uebergreifend]
   setting: [plenum, einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]

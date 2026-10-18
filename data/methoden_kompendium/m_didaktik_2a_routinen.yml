@@ -3,6 +3,7 @@
   name: Sehen – Denken – Fragen (See-Think-Wonder)
   aliase: [Denkroutine Bildanalyse]
   kategorie: didaktik
+  unterkategorie: aktivierung
   phasen: [einstieg]
   setting: [einzel, partner, plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -29,6 +30,7 @@
   name: Denken – Rätseln – Erkunden
   aliase: [Think-Puzzle-Explore]
   kategorie: didaktik
+  unterkategorie: aktivierung
   phasen: [einstieg]
   setting: [einzel, kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -54,6 +56,7 @@
   name: Zoom-In (Bild schrittweise aufdecken)
   aliase: [Puzzle-Bild, Ausschnitt-Einstieg]
   kategorie: didaktik
+  unterkategorie: aktivierung
   phasen: [einstieg]
   setting: [plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -80,6 +83,7 @@
   name: Kompasspunkte (Compass Points)
   aliase: [Begeistert – Sorgen – Brauchen – Vorschlag]
   kategorie: didaktik
+  unterkategorie: aktivierung
   phasen: [einstieg, hauptteil]
   setting: [einzel, kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -105,6 +109,7 @@
   name: Behauptung – Beleg – Frage
   aliase: [Claim-Support-Question]
   kategorie: didaktik
+  unterkategorie: aktivierung
   phasen: [hauptteil]
   setting: [einzel, partner, kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -131,6 +136,7 @@
   name: Früher dachte ich – jetzt denke ich
   aliase: [I used to think … now I think]
   kategorie: didaktik
+  unterkategorie: reflexion
   phasen: [abschluss]
   setting: [einzel, plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -156,6 +162,7 @@
   name: Verbinden – Erweitern – Herausfordern
   aliase: [Connect-Extend-Challenge]
   kategorie: didaktik
+  unterkategorie: aktivierung
   phasen: [abschluss, hauptteil]
   setting: [einzel, partner]
   zielgruppen: [jugendliche, erwachsene]
@@ -181,6 +188,7 @@
   name: 3-2-1-Brücke
   aliase: [3-2-1 Bridge]
   kategorie: didaktik
+  unterkategorie: aktivierung
   phasen: [einstieg, abschluss]
   setting: [einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -206,6 +214,7 @@
   name: ABC-Liste
   aliase: [ABC-Darium, Wissens-ABC]
   kategorie: didaktik
+  unterkategorie: aktivierung
   phasen: [einstieg, abschluss]
   setting: [einzel, partner]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -231,6 +240,7 @@
   name: Antizipations-Leitfaden
   aliase: [Anticipation Guide, Thesen vor dem Lesen]
   kategorie: didaktik
+  unterkategorie: aktivierung
   phasen: [einstieg]
   setting: [einzel, partner]
   zielgruppen: [jugendliche, erwachsene]
@@ -257,6 +267,7 @@
   name: Geschichte als Einstieg (narrativer Einstieg)
   aliase: [Storytelling, Fallgeschichte]
   kategorie: didaktik
+  unterkategorie: aktivierung
   phasen: [einstieg]
   setting: [plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -281,6 +292,7 @@
   name: Live-Abstimmung (Audience Response)
   aliase: [Clicker, Online-Umfrage, Antwortsystem]
   kategorie: didaktik
+  unterkategorie: diagnose
   phasen: [einstieg, hauptteil, abschluss]
   setting: [plenum, grossgruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -306,6 +318,7 @@
   name: Begriffswolke
   aliase: [Wortwolke, Word Cloud]
   kategorie: didaktik
+  unterkategorie: aktivierung
   phasen: [einstieg, abschluss]
   setting: [plenum, grossgruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -330,6 +343,7 @@
   name: Musterarbeiten analysieren
   aliase: [Exemplars, Beispielarbeiten bewerten]
   kategorie: didaktik
+  unterkategorie: diagnose
   phasen: [einstieg, hauptteil]
   setting: [partner, kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -356,6 +370,7 @@
   name: Themenspeicher / Parkplatz
   aliase: [Fragenparkplatz, Parking Lot]
   kategorie: didaktik
+  unterkategorie: planung
   phasen: [einstieg, hauptteil, abschluss]
   setting: [plenum, grossgruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -381,6 +396,7 @@
   name: Erfahrungsrunde zum Thema
   aliase: [Lernbiografischer Einstieg, Erfahrungsaustausch]
   kategorie: didaktik
+  unterkategorie: aktivierung
   phasen: [einstieg]
   setting: [partner, kleingruppe]
   zielgruppen: [erwachsene, jugendliche]
@@ -406,6 +422,7 @@
   name: Expertenbefragung
   aliase: [Gast im Unterricht, Interview mit Fachperson]
   kategorie: didaktik
+  unterkategorie: gespraech
   phasen: [hauptteil]
   setting: [plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -432,6 +449,7 @@
   name: Frayer-Modell (Begriffskarte)
   aliase: [Begriffsquadrat, Definition – Merkmale – Beispiele – Gegenbeispiele]
   kategorie: didaktik
+  unterkategorie: visualisierung
   phasen: [hauptteil]
   setting: [einzel, partner]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -457,6 +475,7 @@
   name: Fist to Five / Daumenprobe
   aliase: [Fingerabfrage, Selbsteinschätzung per Hand]
   kategorie: didaktik
+  unterkategorie: diagnose
   phasen: [hauptteil, abschluss]
   setting: [plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -480,6 +499,7 @@
   name: Ampelkarten / Ampelbecher
   aliase: [Traffic Lights, Hilfe-Signal]
   kategorie: didaktik
+  unterkategorie: diagnose
   phasen: [hauptteil]
   setting: [einzel, partner]
   zielgruppen: [kinder, jugendliche]

@@ -3,6 +3,7 @@
   name: Verhaltensformung (Shaping)
   aliase: [Schrittweise Annäherung, Successive Approximation]
   kategorie: psychologie
+  unterkategorie: verhalten
   phasen: [hauptteil]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -29,6 +30,7 @@
   name: Verhaltensketten und Aufgabenanalyse (Chaining)
   aliase: [Task Analysis, Vorwärts- und Rückwärtsverkettung]
   kategorie: psychologie
+  unterkategorie: verhalten
   phasen: [hauptteil]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -55,6 +57,7 @@
   name: Hilfestellungen geben und ausblenden (Prompting & Fading)
   aliase: [Hilfenhierarchie, Least-to-Most, Most-to-Least]
   kategorie: psychologie
+  unterkategorie: verhalten
   phasen: [hauptteil]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -80,6 +83,7 @@
   name: Fehlerfreies Lernen (Errorless Learning)
   aliase: [Fehlerarme Instruktion]
   kategorie: psychologie
+  unterkategorie: verhalten
   phasen: [hauptteil]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -104,6 +108,7 @@
   name: Differenzielle Verstärkung (DRA, DRO, DRI)
   aliase: [Alternativverhalten verstärken, Verstärkung von Nicht-Auftreten]
   kategorie: psychologie
+  unterkategorie: verhalten
   phasen: [hauptteil]
   setting: [einzel, plenum]
   zielgruppen: [kinder, jugendliche]
@@ -129,6 +134,7 @@
   name: Geplantes Ignorieren (Löschung)
   aliase: [Extinktion, Aufmerksamkeit entziehen]
   kategorie: psychologie
+  unterkategorie: verhalten
   phasen: [hauptteil]
   setting: [einzel, plenum]
   zielgruppen: [kinder]
@@ -155,6 +161,7 @@
   name: Premack-Prinzip (Erst – dann)
   aliase: [Großmutterregel, First-Then-Board]
   kategorie: psychologie
+  unterkategorie: verhalten
   phasen: [hauptteil]
   setting: [einzel, plenum]
   zielgruppen: [kinder, jugendliche]
@@ -179,6 +186,7 @@
   name: Verhaltensvertrag (Kontingenzvertrag)
   aliase: [Schüler-Lehrer-Vertrag, Behavior Contract]
   kategorie: psychologie
+  unterkategorie: verhalten
   phasen: [hauptteil]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche]
@@ -204,6 +212,7 @@
   name: Verstärkerentzug (Response Cost)
   aliase: [Punkteabzug, Kostenkontingenz]
   kategorie: psychologie
+  unterkategorie: verhalten
   phasen: [hauptteil]
   setting: [einzel, plenum]
   zielgruppen: [kinder, jugendliche]
@@ -229,6 +238,7 @@
   name: Auszeit (Time-out von positiver Verstärkung)
   aliase: [Time-out, Ruhepause, Auszeitplatz]
   kategorie: psychologie
+  unterkategorie: verhalten
   phasen: [hauptteil]
   setting: [einzel]
   zielgruppen: [kinder]
@@ -254,6 +264,7 @@
   name: Selbstbeobachtung (Self-Monitoring)
   aliase: [Selbstprotokoll, Selbstregistrierung]
   kategorie: psychologie
+  unterkategorie: selbststeuerung
   phasen: [hauptteil]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -279,6 +290,7 @@
   name: Check-In/Check-Out (CICO)
   aliase: [Tägliche Begleitung, Behavior Education Program]
   kategorie: psychologie
+  unterkategorie: verhalten
   phasen: [einstieg, abschluss]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche]
@@ -304,6 +316,7 @@
   name: Gruppenkontingenz (Klassenbelohnung, Mystery Motivator)
   aliase: [Interdependente Gruppenkontingenz, Murmelglas]
   kategorie: psychologie
+  unterkategorie: verhalten
   phasen: [hauptteil]
   setting: [plenum]
   zielgruppen: [kinder, jugendliche]
@@ -328,6 +341,7 @@
   name: Direkte Verhaltensbeurteilung (DBR)
   aliase: [Direct Behavior Rating, Verhaltensbeobachtungsbogen]
   kategorie: psychologie
+  unterkategorie: verhalten
   phasen: [uebergreifend]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche]
@@ -352,6 +366,7 @@
   name: Lernen am Modell / Videomodellierung
   aliase: [Modelllernen, Video Self-Modeling]
   kategorie: psychologie
+  unterkategorie: sozial
   phasen: [hauptteil]
   setting: [einzel, kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -377,6 +392,7 @@
   name: Soziale Geschichten (Social Stories)
   aliase: [Sozialgeschichten nach Gray]
   kategorie: psychologie
+  unterkategorie: sozial
   phasen: [hauptteil]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche]
@@ -401,6 +417,7 @@
   name: Flüssigkeitstraining (Precision Teaching)
   aliase: [Fluency Training, Sprint-Übungen, SAFMEDS]
   kategorie: psychologie
+  unterkategorie: verhalten
   phasen: [hauptteil]
   setting: [einzel, partner]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -425,6 +442,7 @@
   name: Gewohnheitsumkehr (Habit Reversal)
   aliase: [HRT, Gegenreaktionstraining]
   kategorie: psychologie
+  unterkategorie: verhalten
   phasen: [hauptteil]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -451,6 +469,7 @@
   name: Gestufte Konfrontation (Exposition)
   aliase: [Angsthierarchie, Systematische Desensibilisierung, Mut-Leiter]
   kategorie: psychologie
+  unterkategorie: therapie
   phasen: [hauptteil]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -476,6 +495,7 @@
   name: Gewohnheiten aufbauen (Habit Formation)
   aliase: [Routinen etablieren, Habit Stacking]
   kategorie: psychologie
+  unterkategorie: selbststeuerung
   phasen: [abschluss, uebergreifend]
   setting: [einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -501,6 +521,7 @@
   name: Ich kann Probleme lösen (ICPS)
   aliase: [I Can Problem Solve, Interpersonales Problemlösen für Kinder]
   kategorie: psychologie
+  unterkategorie: sozial
   phasen: [hauptteil]
   setting: [plenum, kleingruppe]
   zielgruppen: [kinder]
@@ -526,6 +547,7 @@
   name: Ärgerbewältigungstraining
   aliase: [Anti-Aggressions-Training, Coping Power, Aggression Replacement Training]
   kategorie: psychologie
+  unterkategorie: sozial
   phasen: [hauptteil]
   setting: [kleingruppe, einzel]
   zielgruppen: [kinder, jugendliche]
@@ -552,6 +574,7 @@
   name: Emotionscoaching (Gottman)
   aliase: [Gefühle begleiten, Emotion Coaching]
   kategorie: psychologie
+  unterkategorie: emotion_stress
   phasen: [hauptteil]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche]
@@ -577,6 +600,7 @@
   name: Selbstbehauptungstraining
   aliase: [Assertiveness Training, Nein sagen lernen]
   kategorie: psychologie
+  unterkategorie: sozial
   phasen: [hauptteil]
   setting: [kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -602,6 +626,7 @@
   name: Freundeskreis-Methode (Circle of Friends)
   aliase: [Unterstützerkreis für ausgegrenzte Kinder]
   kategorie: psychologie
+  unterkategorie: sozial
   phasen: [hauptteil]
   setting: [kleingruppe, plenum]
   zielgruppen: [kinder, jugendliche]
@@ -628,6 +653,7 @@
   name: Empathie- und Perspektivübernahmetraining
   aliase: [Theory-of-Mind-Training, Perspektivwechsel üben]
   kategorie: psychologie
+  unterkategorie: sozial
   phasen: [hauptteil]
   setting: [kleingruppe, plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -652,6 +678,7 @@
   name: Teamtraining
   aliase: [Crew Resource Management, Teamkompetenztraining]
   kategorie: psychologie
+  unterkategorie: sozial
   phasen: [hauptteil]
   setting: [kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -677,6 +704,7 @@
   name: Kontakt unter Gruppen gestalten (Kontakthypothese)
   aliase: [Vorurteilsabbau durch Kooperation, Intergruppenkontakt]
   kategorie: psychologie
+  unterkategorie: sozial
   phasen: [uebergreifend]
   setting: [kleingruppe, plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -702,6 +730,7 @@
   name: Zivilcourage- und Bystander-Training
   aliase: [Eingreifen lernen, Zuschauer aktivieren]
   kategorie: psychologie
+  unterkategorie: sozial
   phasen: [hauptteil]
   setting: [kleingruppe, plenum]
   zielgruppen: [jugendliche, erwachsene]
@@ -727,6 +756,7 @@
   name: Training von Arbeits- und Sozialverhalten (Jugendliche)
   aliase: [Petermann-Training, JUSO]
   kategorie: psychologie
+  unterkategorie: sozial
   phasen: [hauptteil]
   setting: [kleingruppe, einzel]
   zielgruppen: [jugendliche]

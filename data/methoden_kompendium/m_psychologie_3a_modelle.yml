@@ -3,6 +3,7 @@
   name: Balancemodell (Positive Psychotherapie)
   aliase: [Vier Qualitäten des Lebens, Peseschkian-Modell]
   kategorie: psychologie
+  unterkategorie: beratung
   phasen: [einstieg, hauptteil]
   setting: [einzel, kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -28,6 +29,7 @@
   name: Lebensrad
   aliase: [Wheel of Life, Zufriedenheitsrad]
   kategorie: psychologie
+  unterkategorie: beratung
   phasen: [einstieg, abschluss]
   setting: [einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -52,6 +54,7 @@
   name: Inneres Team
   aliase: [Innere Stimmen, Ego-States (pädagogisch)]
   kategorie: psychologie
+  unterkategorie: beratung
   phasen: [hauptteil]
   setting: [einzel, kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -77,6 +80,7 @@
   name: Wertekarten sortieren
   aliase: [Personal Values Card Sort, Werte-Ranking]
   kategorie: psychologie
+  unterkategorie: beratung
   phasen: [einstieg, hauptteil]
   setting: [einzel, partner]
   zielgruppen: [jugendliche, erwachsene]
@@ -102,6 +106,7 @@
   name: Lebenslinie / Zeitlinie
   aliase: [Lebenskurve, Biografiearbeit, Timeline]
   kategorie: psychologie
+  unterkategorie: therapie
   phasen: [hauptteil]
   setting: [einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -126,6 +131,7 @@
   name: Ressourcenaktivierung
   aliase: [Ressourceninterview, Stärkeninventar, Ressourcenkoffer]
   kategorie: psychologie
+  unterkategorie: positiv
   phasen: [einstieg, hauptteil]
   setting: [einzel, kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -150,6 +156,7 @@
   name: Entscheidungswaage (Vier-Felder-Tafel)
   aliase: [Decisional Balance, Pro und Contra für Veränderung]
   kategorie: psychologie
+  unterkategorie: beratung
   phasen: [hauptteil]
   setting: [einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -174,6 +181,7 @@
   name: Teufelskreismodell (Psychoedukation)
   aliase: [Angstkreislauf, Panik-Teufelskreis]
   kategorie: psychologie
+  unterkategorie: beratung
   phasen: [hauptteil]
   setting: [einzel, kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -198,6 +206,7 @@
   name: Vulnerabilitäts-Stress-Modell (Fass-Modell)
   aliase: [Stress-Fass, Diathese-Stress-Modell]
   kategorie: psychologie
+  unterkategorie: beratung
   phasen: [hauptteil]
   setting: [einzel, kleingruppe, plenum]
   zielgruppen: [jugendliche, erwachsene]
@@ -222,6 +231,7 @@
   name: Externalisieren (Dem Problem einen Namen geben)
   aliase: [Narrative Arbeit, Problem als Figur]
   kategorie: psychologie
+  unterkategorie: therapie
   phasen: [hauptteil]
   setting: [einzel, kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -247,6 +257,7 @@
   name: Erdungstechniken (5-4-3-2-1)
   aliase: [Grounding, Achtsam im Hier und Jetzt, Skills bei Überflutung]
   kategorie: psychologie
+  unterkategorie: emotion_stress
   phasen: [hauptteil]
   setting: [einzel, plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -271,6 +282,7 @@
   name: Imaginationsübungen »Sicherer Ort« und »Tresor«
   aliase: [Ressourcenimagination, Stabilisierungsübungen]
   kategorie: psychologie
+  unterkategorie: imaginativ
   phasen: [hauptteil, abschluss]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -295,6 +307,7 @@
   name: Stuhlarbeit (Zwei-Stühle-Technik)
   aliase: [Leerer Stuhl, Dialog mit Anteilen]
   kategorie: psychologie
+  unterkategorie: therapie
   phasen: [hauptteil]
   setting: [einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -320,6 +333,7 @@
   name: Familienbrett / Skulptur
   aliase: [Systembrett, Figurenaufstellung auf dem Tisch]
   kategorie: psychologie
+  unterkategorie: diagnostik
   phasen: [hauptteil]
   setting: [einzel, kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -344,6 +358,7 @@
   name: Rollentausch und Doppeln (Psychodrama)
   aliase: [Psychodrama-Techniken, Spiegeln]
   kategorie: psychologie
+  unterkategorie: therapie
   phasen: [hauptteil]
   setting: [kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -369,6 +384,7 @@
   name: Genusstraining (Kleine Schule des Genießens)
   aliase: [Euthyme Therapie, Sinnesübungen]
   kategorie: psychologie
+  unterkategorie: positiv
   phasen: [hauptteil, abschluss]
   setting: [kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -393,6 +409,7 @@
   name: Wohlbefindenstherapie (Well-Being Therapy)
   aliase: [Wohlbefindens-Tagebuch]
   kategorie: psychologie
+  unterkategorie: positiv
   phasen: [hauptteil]
   setting: [einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -417,6 +434,7 @@
   name: Bewegung als Intervention
   aliase: [Sport bei Depression, Aktivitätsprogramme]
   kategorie: psychologie
+  unterkategorie: emotion_stress
   phasen: [hauptteil]
   setting: [einzel, kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -441,6 +459,7 @@
   name: Biofeedback (HRV)
   aliase: [Herzratenvariabilitäts-Training, Atem-Biofeedback]
   kategorie: psychologie
+  unterkategorie: emotion_stress
   phasen: [hauptteil]
   setting: [einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -465,6 +484,7 @@
   name: Selbsthilfe mit Büchern und Online-Programmen
   aliase: [Bibliotherapie, Internetbasierte KVT, digitale Gesundheitsanwendungen]
   kategorie: psychologie
+  unterkategorie: therapie
   phasen: [hauptteil]
   setting: [einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -489,6 +509,7 @@
   name: Spieltherapie
   aliase: [Kindzentrierte Spieltherapie, Play Therapy]
   kategorie: psychologie
+  unterkategorie: therapie
   phasen: [hauptteil]
   setting: [einzel, kleingruppe]
   zielgruppen: [kinder]
@@ -514,6 +535,7 @@
   name: Musik- und Kunsttherapie
   aliase: [Kreativtherapien, künstlerische Therapien]
   kategorie: psychologie
+  unterkategorie: therapie
   phasen: [hauptteil]
   setting: [einzel, kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]

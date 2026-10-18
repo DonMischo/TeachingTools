@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAvailability } from "@/hooks/useAvailability";
 import { useAuth } from "@/contexts/AuthContext";
@@ -17,7 +17,7 @@ import HelpButton from "@/components/HelpButton";
 
 type Evidenz = "stark" | "mittel" | "begrenzt" | "praxis" | "umstritten";
 type Methode = {
-  id: string; name: string; aliase?: string[]; kategorie: string; phasen: string[];
+  id: string; name: string; aliase?: string[]; kategorie: string; unterkategorie?: string; phasen: string[];
   setting: string[]; zielgruppen: string[]; anwendung: string[]; dauer?: string; kurz: string;
   ablauf?: string[]; varianten?: string[]; stolpersteine?: string[];
   evidenz: { stufe: Evidenz; text: string }; qualifikation: string; quellen: string[];
@@ -28,7 +28,7 @@ type Quelle = { id: string; autor: string; jahr: number; titel: string; erschien
 type Mythos = { id: string; behauptung: string; befund: string; quellen: string[] };
 type Kompendium = {
   meta: { total_methoden: number; total_kapitel: number; total_quellen: number; total_mythen: number; generated: string };
-  legende: Record<string, Record<string, string>>;
+  legende: Record<string, Record<string, string>> & { unterkategorien: Record<string, Record<string, string>> };
   kapitel: Kapitel[]; methoden: Methode[]; mythen: Mythos[]; quellen: Quelle[];
   svg_assets: { filename: string; title: string; abschnitt: string }[];
 };
@@ -80,6 +80,7 @@ export default function KompendiumPage() {
   });
   const marken = markenDaten ? { werte: markenDaten as Record<string, Marke> } : null;
   const [markenFilter, setMarkenFilter] = useState("");
+  const [unterkategorie, setUnterkategorie] = useState("");
   // Gewählter Eintrag je Lesereiter (Seitenleiste links, Inhalt rechts)
   const [auswahl, setAuswahl] = useState<Record<string, string>>({});
   function waehle(reiterId: string, id: string) {
@@ -130,11 +131,12 @@ export default function KompendiumPage() {
     const q = suche.trim().toLowerCase();
     return daten.methoden.filter(m =>
       FILTER.every(f => !filter[f] || WERTE[f](m).includes(filter[f]))
+      && (!unterkategorie || m.unterkategorie === unterkategorie)
       && (markenFilter === "ohne" ? !marken?.werte[m.id]
         : markenFilter ? marken?.werte[m.id] === markenFilter
         : marken?.werte[m.id] !== "unnoetig")
       && (!q || [m.name, m.kurz, ...(m.aliase ?? [])].join(" ").toLowerCase().includes(q)));
-  }, [daten, suche, filter, markenFilter, marken]);
+  }, [daten, suche, filter, markenFilter, marken, unterkategorie]);
 
   if (fehler) return <div className="page"><p className="text-bad">Das Kompendium konnte nicht geladen werden.</p></div>;
   if (!daten) return <div className="page"><p className="text-muted">Lade Kompendium …</p></div>;
@@ -207,15 +209,33 @@ export default function KompendiumPage() {
                 <option value="ohne">ohne Markierung</option>
               </select>
             </label>
-            {FILTER.map(f => (
-              <label key={f}>
+            {FILTER.map(f => (<Fragment key={f}>
+              <label>
                 <span className="label">{FILTER_NAME[f]}</span>
-                <select className="input" value={filter[f]} onChange={e => setFilter({ ...filter, [f]: e.target.value })}>
+                <select className="input" value={filter[f]} onChange={e => {
+                  setFilter({ ...filter, [f]: e.target.value });
+                  if (f === "kategorien") setUnterkategorie("");
+                }}>
                   <option value="">alle</option>
                   {Object.entries(daten.legende[f]).map(([wert, name]) => <option key={wert} value={wert}>{name}</option>)}
                 </select>
               </label>
-            ))}
+              {f === "kategorien" && (
+                <label>
+                  <span className="label">Unterkategorie</span>
+                  <select className="input" value={unterkategorie} onChange={e => setUnterkategorie(e.target.value)}>
+                    <option value="">alle</option>
+                    {Object.entries(daten.legende.unterkategorien ?? {})
+                      .filter(([kat]) => !filter.kategorien || kat === filter.kategorien)
+                      .map(([kat, unter]) => (
+                        <optgroup key={kat} label={KAT_NAME[kat]}>
+                          {Object.entries(unter).map(([wert, name]) => <option key={wert} value={wert}>{name}</option>)}
+                        </optgroup>
+                      ))}
+                  </select>
+                </label>
+              )}
+            </Fragment>))}
           </div>
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
             {Object.entries(daten.legende.evidenz).map(([stufe, text]) => (
@@ -238,7 +258,8 @@ export default function KompendiumPage() {
                 <summary className="cursor-pointer list-none p-4 flex flex-col gap-2">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex gap-1.5 items-center overflow-hidden whitespace-nowrap min-w-0">
-                      <span className="text-xs font-semibold" style={{ color: KAT_FARBE[m.kategorie] }}>{KAT_NAME[m.kategorie]}</span>
+                      <span className="text-xs font-semibold" style={{ color: KAT_FARBE[m.kategorie] }}
+                        title={m.unterkategorie ? daten.legende.unterkategorien?.[m.kategorie]?.[m.unterkategorie] : undefined}>{KAT_NAME[m.kategorie]}</span>
                       {m.phasen.map(p => <span key={p} className="chip !py-0">{L("phasen", p).split(" /")[0]}</span>)}
                       <EvidenzMarke stufe={m.evidenz.stufe} />
                     </div>

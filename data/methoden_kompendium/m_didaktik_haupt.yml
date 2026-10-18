@@ -3,6 +3,7 @@
   name: Explizite Instruktion (Ich – Wir – Du)
   aliase: [Direkte Instruktion, I do – We do – You do, Gradual Release of Responsibility]
   kategorie: didaktik
+  unterkategorie: instruktion
   phasen: [hauptteil]
   setting: [plenum, einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -28,6 +29,7 @@
   name: Lösungsbeispiele mit Ausblenden (Worked Examples & Fading)
   aliase: [Ausgearbeitete Beispiele, Beispiel-Aufgabe-Paare]
   kategorie: didaktik
+  unterkategorie: instruktion
   phasen: [hauptteil]
   setting: [einzel, partner]
   zielgruppen: [jugendliche, erwachsene]
@@ -54,6 +56,7 @@
   name: Modellieren durch lautes Denken
   aliase: [Think-Aloud, Cognitive Modelling]
   kategorie: didaktik
+  unterkategorie: instruktion
   phasen: [hauptteil]
   setting: [plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -80,6 +83,7 @@
   name: Scaffolding (Lerngerüste)
   aliase: [Gerüst bauen, Hilfekarten, gestufte Hilfen]
   kategorie: didaktik
+  unterkategorie: instruktion
   phasen: [hauptteil]
   setting: [einzel, partner, kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -104,6 +108,7 @@
   name: Think-Pair-Share
   aliase: [Ich-Du-Wir, Denken – Austauschen – Vorstellen]
   kategorie: didaktik
+  unterkategorie: kooperativ
   phasen: [hauptteil]
   setting: [einzel, partner, plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -128,6 +133,7 @@
   name: Gruppenpuzzle (Jigsaw)
   aliase: [Expertenmethode, Stammgruppe–Expertengruppe]
   kategorie: didaktik
+  unterkategorie: kooperativ
   phasen: [hauptteil]
   setting: [kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -153,6 +159,7 @@
   name: Placemat (Platzdeckchen)
   aliase: [Tischset-Methode]
   kategorie: didaktik
+  unterkategorie: kooperativ
   phasen: [einstieg, hauptteil]
   setting: [kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -179,6 +186,7 @@
   name: Gruppenrallye (STAD)
   aliase: [Student Teams-Achievement Divisions, Teamwettbewerb mit Lernzuwachs]
   kategorie: didaktik
+  unterkategorie: kooperativ
   phasen: [hauptteil]
   setting: [kleingruppe]
   zielgruppen: [kinder, jugendliche]
@@ -204,6 +212,7 @@
   name: Peer Instruction (Mazur)
   aliase: [ConcepTests, Abstimmen–Diskutieren–Neu abstimmen]
   kategorie: didaktik
+  unterkategorie: kooperativ
   phasen: [hauptteil]
   setting: [einzel, partner, plenum]
   zielgruppen: [jugendliche, erwachsene]
@@ -229,6 +238,7 @@
   name: Reziprokes Lehren
   aliase: [Reciprocal Teaching, Lesekonferenz mit Rollen]
   kategorie: didaktik
+  unterkategorie: lesen_schreiben
   phasen: [hauptteil]
   setting: [kleingruppe]
   zielgruppen: [kinder, jugendliche]
@@ -255,6 +265,7 @@
   name: Peer-Tutoring / Lernen durch Lehren
   aliase: [Tutorensystem, LdL, Schüler helfen Schülern, Cross-Age-Tutoring]
   kategorie: didaktik
+  unterkategorie: kooperativ
   phasen: [hauptteil]
   setting: [partner, kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -279,6 +290,7 @@
   name: Stationenlernen / Lernzirkel
   aliase: [Lernstraße, Lernbuffet]
   kategorie: didaktik
+  unterkategorie: selbststaendig
   phasen: [hauptteil]
   setting: [einzel, partner, kleingruppe]
   zielgruppen: [kinder, jugendliche]
@@ -305,6 +317,7 @@
   name: Wochenplan / Freiarbeit / Lerntheke
   aliase: [Planarbeit, Lernbüro]
   kategorie: didaktik
+  unterkategorie: selbststaendig
   phasen: [hauptteil]
   setting: [einzel, partner]
   zielgruppen: [kinder, jugendliche]
@@ -330,6 +343,7 @@
   name: Projektunterricht / Projektbasiertes Lernen
   aliase: [Projektmethode, PBL (project-based)]
   kategorie: didaktik
+  unterkategorie: selbststaendig
   phasen: [hauptteil]
   setting: [kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -356,6 +370,7 @@
   name: Problembasiertes Lernen (POL)
   aliase: [Problem-based Learning, Siebensprung]
   kategorie: didaktik
+  unterkategorie: selbststaendig
   phasen: [hauptteil]
   setting: [kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -382,6 +397,7 @@
   name: Gelenktes Entdecken / Forschendes Lernen
   aliase: [Guided Inquiry, Forschungskreislauf]
   kategorie: didaktik
+  unterkategorie: selbststaendig
   phasen: [hauptteil]
   setting: [partner, kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -408,6 +424,7 @@
   name: Produktives Scheitern (Problem zuerst)
   aliase: [Productive Failure, "Erst knobeln, dann erklären"]
   kategorie: didaktik
+  unterkategorie: mathe_nawi
   phasen: [hauptteil]
   setting: [kleingruppe, einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -432,6 +449,7 @@
   name: Mystery
   aliase: [Rätselkarten-Methode]
   kategorie: didaktik
+  unterkategorie: selbststaendig
   phasen: [hauptteil]
   setting: [kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -458,6 +476,7 @@
   name: Planspiel / Simulation
   aliase: [Rollensimulation, Serious Game]
   kategorie: didaktik
+  unterkategorie: handlung
   phasen: [hauptteil]
   setting: [kleingruppe, plenum]
   zielgruppen: [jugendliche, erwachsene]
@@ -482,6 +501,7 @@
   name: Rollenspiel
   aliase: [Szenisches Spiel, Standbild]
   kategorie: didaktik
+  unterkategorie: handlung
   phasen: [hauptteil]
   setting: [kleingruppe, plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -506,6 +526,7 @@
   name: Strukturierte Kontroverse / Pro-Contra-Debatte
   aliase: [Constructive Controversy, Debatte, Jugend debattiert-Format]
   kategorie: didaktik
+  unterkategorie: gespraech
   phasen: [hauptteil]
   setting: [partner, kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -529,6 +550,7 @@
   name: Fishbowl (Innenkreis–Außenkreis-Diskussion)
   aliase: [Aquarium]
   kategorie: didaktik
+  unterkategorie: gespraech
   phasen: [hauptteil]
   setting: [plenum, grossgruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -555,6 +577,7 @@
   name: Dialogisches Unterrichtsgespräch / Accountable Talk
   aliase: [Dialogic Teaching, Sokratisches Gespräch, Talk Moves]
   kategorie: didaktik
+  unterkategorie: gespraech
   phasen: [hauptteil]
   setting: [plenum, kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -580,6 +603,7 @@
   name: Philosophieren mit Kindern (P4C)
   aliase: [Philosophy for Children, Community of Inquiry]
   kategorie: didaktik
+  unterkategorie: gespraech
   phasen: [hauptteil]
   setting: [plenum]
   zielgruppen: [kinder, jugendliche]
@@ -606,6 +630,7 @@
   name: Galeriegang / Museumsgang
   aliase: [Gallery Walk, Marktplatz]
   kategorie: didaktik
+  unterkategorie: visualisierung
   phasen: [hauptteil, abschluss]
   setting: [kleingruppe, plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -632,6 +657,7 @@
   name: Concept Map / Begriffsnetz
   aliase: [Strukturlegetechnik, Wissenslandkarte]
   kategorie: didaktik
+  unterkategorie: visualisierung
   phasen: [hauptteil, abschluss]
   setting: [einzel, partner]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -657,6 +683,7 @@
   name: Mindmap
   aliase: [Gedankenlandkarte]
   kategorie: didaktik
+  unterkategorie: kreativ
   phasen: [einstieg, hauptteil, abschluss]
   setting: [einzel, kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -681,6 +708,7 @@
   name: Verteiltes Üben (Spacing)
   aliase: [Spaced Practice, Spiralwiederholung]
   kategorie: didaktik
+  unterkategorie: ueben
   phasen: [hauptteil, einstieg]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -705,6 +733,7 @@
   name: Verschachteltes Üben (Interleaving)
   aliase: [Gemischte Übung]
   kategorie: didaktik
+  unterkategorie: ueben
   phasen: [hauptteil]
   setting: [einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -729,6 +758,7 @@
   name: Elaboratives Fragen und Selbsterklären
   aliase: [Warum-Fragen, Self-Explanation]
   kategorie: didaktik
+  unterkategorie: ueben
   phasen: [hauptteil]
   setting: [einzel, partner]
   zielgruppen: [jugendliche, erwachsene]
@@ -754,6 +784,7 @@
   name: Doppelte Kodierung (Text + Bild)
   aliase: [Dual Coding, Multimedia-Prinzip]
   kategorie: didaktik
+  unterkategorie: instruktion
   phasen: [hauptteil]
   setting: [plenum, einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -779,6 +810,7 @@
   name: Lernkartei (Leitner-System)
   aliase: [Karteikasten, Spaced-Repetition-App]
   kategorie: didaktik
+  unterkategorie: ueben
   phasen: [hauptteil]
   setting: [einzel, partner]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -804,6 +836,7 @@
   name: Gezieltes Üben (Deliberate Practice)
   aliase: [Fokussiertes Training]
   kategorie: didaktik
+  unterkategorie: ueben
   phasen: [hauptteil]
   setting: [einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -829,6 +862,7 @@
   name: Mastery Learning (zielerreichendes Lernen)
   aliase: [Lernen bis zur Beherrschung]
   kategorie: didaktik
+  unterkategorie: ueben
   phasen: [hauptteil]
   setting: [plenum, einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -855,6 +889,7 @@
   name: Flipped Classroom
   aliase: [Umgedrehter Unterricht, Inverted Classroom]
   kategorie: didaktik
+  unterkategorie: selbststaendig
   phasen: [hauptteil]
   setting: [einzel, kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -879,6 +914,7 @@
   name: Stilles Schreibgespräch
   aliase: [Silent Discussion, Chalk Talk]
   kategorie: didaktik
+  unterkategorie: gespraech
   phasen: [hauptteil, einstieg]
   setting: [kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -905,6 +941,7 @@
   name: Lautlese-Tandem / Wiederholtes Lesen
   aliase: [Repeated Reading, Paired Reading]
   kategorie: didaktik
+  unterkategorie: lesen_schreiben
   phasen: [hauptteil]
   setting: [partner]
   zielgruppen: [kinder, jugendliche]
@@ -931,6 +968,7 @@
   name: Dialogisches Vorlesen
   aliase: [Dialogic Reading, PEER-Sequenz]
   kategorie: didaktik
+  unterkategorie: lesen_schreiben
   phasen: [hauptteil]
   setting: [kleingruppe, partner]
   zielgruppen: [kinder]
@@ -957,6 +995,7 @@
   name: Strategieorientierte Schreibförderung (SRSD)
   aliase: [Self-Regulated Strategy Development, Schreibstrategien mit Merkwort]
   kategorie: didaktik
+  unterkategorie: lesen_schreiben
   phasen: [hauptteil]
   setting: [plenum, einzel]
   zielgruppen: [kinder, jugendliche]
@@ -985,6 +1024,7 @@
   name: Gamification / Lernspiele / Quiz-Tools
   aliase: [Spielbasiertes Lernen, Kahoot!-Quiz, Punkte und Abzeichen]
   kategorie: didaktik
+  unterkategorie: handlung
   phasen: [hauptteil, abschluss]
   setting: [einzel, kleingruppe, plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -1009,6 +1049,7 @@
   name: Educational Escape Room
   aliase: [Breakout, Rätselraum, Exitgame]
   kategorie: didaktik
+  unterkategorie: handlung
   phasen: [hauptteil, abschluss]
   setting: [kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -1034,6 +1075,7 @@
   name: Differenzierung / Gestufte Aufgaben
   aliase: [Tiered Tasks, Niveaustufen, Binnendifferenzierung, UDL]
   kategorie: didaktik
+  unterkategorie: differenzierung
   phasen: [hauptteil]
   setting: [einzel, kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -1060,6 +1102,7 @@
   name: Bewegtes Lernen / Aktive Pausen
   aliase: [Bewegungspausen, Physically Active Lessons, Energizer]
   kategorie: didaktik
+  unterkategorie: differenzierung
   phasen: [hauptteil, einstieg]
   setting: [plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -1084,6 +1127,7 @@
   name: Fallmethode / Fallarbeit
   aliase: [Case Method, Fallstudie]
   kategorie: didaktik
+  unterkategorie: selbststaendig
   phasen: [hauptteil]
   setting: [kleingruppe, plenum]
   zielgruppen: [jugendliche, erwachsene]
@@ -1110,6 +1154,7 @@
   name: Alle antworten (Mini-Whiteboards, ABCD-Karten)
   aliase: [Show-me Boards, All-Student Response, Antwortkarten]
   kategorie: didaktik
+  unterkategorie: diagnose
   phasen: [hauptteil, einstieg, abschluss]
   setting: [plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -1133,6 +1178,7 @@
   name: Zufallsaufruf mit Wartezeit (Cold Call)
   aliase: [No Hands Up, Losstäbchen, Wait Time]
   kategorie: didaktik
+  unterkategorie: gespraech
   phasen: [hauptteil]
   setting: [plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -1158,6 +1204,7 @@
   name: Bienenkorb (Murmelgruppe)
   aliase: [Buzz Group, Nachbarschaftsgespräch]
   kategorie: didaktik
+  unterkategorie: kooperativ
   phasen: [hauptteil]
   setting: [partner, kleingruppe, grossgruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -1183,6 +1230,7 @@
   name: Sandwich-Prinzip
   aliase: [Wechsel von kollektiven und individuellen Lernphasen]
   kategorie: didaktik
+  unterkategorie: planung
   phasen: [uebergreifend, hauptteil]
   setting: [plenum, einzel, kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -1208,6 +1256,7 @@
   name: Sechs Denkhüte
   aliase: [Six Thinking Hats, Perspektivwechsel nach de Bono]
   kategorie: didaktik
+  unterkategorie: kreativ
   phasen: [hauptteil]
   setting: [kleingruppe, plenum]
   zielgruppen: [jugendliche, erwachsene]
@@ -1233,6 +1282,7 @@
   name: Pecha Kucha / Kurzvortrag mit festem Takt
   aliase: [20×20-Präsentation, Ignite-Talk, Lightning Talk]
   kategorie: didaktik
+  unterkategorie: visualisierung
   phasen: [hauptteil, abschluss]
   setting: [einzel, plenum]
   zielgruppen: [jugendliche, erwachsene]

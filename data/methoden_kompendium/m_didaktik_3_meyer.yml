@@ -3,6 +3,7 @@
   name: Frontalunterricht / Klassenunterricht
   aliase: [Plenumsunterricht, Lehrerzentrierter Unterricht]
   kategorie: didaktik
+  unterkategorie: instruktion
   phasen: [einstieg, hauptteil, abschluss]
   setting: [plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -27,6 +28,7 @@
   name: Einzelarbeit / Stillarbeit
   aliase: [Stillbeschäftigung, Individuelle Arbeitsphase]
   kategorie: didaktik
+  unterkategorie: selbststaendig
   phasen: [hauptteil]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -52,6 +54,7 @@
   name: Partnerarbeit
   aliase: [Tandemarbeit, Arbeit zu zweit]
   kategorie: didaktik
+  unterkategorie: kooperativ
   phasen: [hauptteil]
   setting: [partner]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -77,6 +80,7 @@
   name: Gruppenunterricht (arbeitsgleich und arbeitsteilig)
   aliase: [Gruppenarbeit, Kleingruppenarbeit]
   kategorie: didaktik
+  unterkategorie: kooperativ
   phasen: [hauptteil]
   setting: [kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -103,6 +107,7 @@
   name: Lehrgang
   aliase: [Methodische Großform, Fachsystematischer Kurs]
   kategorie: didaktik
+  unterkategorie: planung
   phasen: [uebergreifend]
   setting: [plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -128,6 +133,7 @@
   name: Kreisgespräch / Sitzkreis
   aliase: [Stuhlkreis, Gesprächskreis]
   kategorie: didaktik
+  unterkategorie: gespraech
   phasen: [einstieg, hauptteil, abschluss]
   setting: [plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -153,6 +159,7 @@
   name: Textarbeit (Arbeit mit Sachtexten)
   aliase: [Texterschließung, Textanalyse]
   kategorie: didaktik
+  unterkategorie: lesen_schreiben
   phasen: [hauptteil]
   setting: [einzel, partner]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -179,6 +186,7 @@
   name: Arbeitsblattarbeit
   aliase: [Arbeitsbogen, Worksheet]
   kategorie: didaktik
+  unterkategorie: ueben
   phasen: [hauptteil, abschluss]
   setting: [einzel, partner]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -203,6 +211,7 @@
   name: Brainstorming (Osborn)
   aliase: [Ideensammlung, Gedankensturm]
   kategorie: didaktik
+  unterkategorie: kreativ
   phasen: [einstieg, hauptteil]
   setting: [plenum, kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -227,6 +236,7 @@
   name: Informierender Unterrichtseinstieg
   aliase: [Grell-Einstieg, Transparenter Einstieg]
   kategorie: didaktik
+  unterkategorie: aktivierung
   phasen: [einstieg]
   setting: [plenum]
   zielgruppen: [jugendliche, erwachsene]

@@ -3,6 +3,7 @@
   name: Begrüßung an der Tür
   aliase: [Positive Greetings at the Door]
   kategorie: paedagogik
+  unterkategorie: beziehung
   phasen: [einstieg]
   setting: [einzel, plenum]
   zielgruppen: [kinder, jugendliche]
@@ -29,6 +30,7 @@
   name: Morgenkreis / Check-in-Runde
   aliase: [Erzählkreis, Montagskreis, Check-in]
   kategorie: paedagogik
+  unterkategorie: beziehung
   phasen: [einstieg]
   setting: [plenum, kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -52,6 +54,7 @@
   name: Kennenlern- und Namensspiele
   aliase: [Icebreaker, Menschen-Bingo, Find someone who, Steckbrief]
   kategorie: paedagogik
+  unterkategorie: beziehung
   phasen: [einstieg]
   setting: [plenum, grossgruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -77,6 +80,7 @@
   name: Erwartungen, Befürchtungen, Beiträge
   aliase: [Erwartungsabfrage, Hopes & Fears]
   kategorie: paedagogik
+  unterkategorie: moderation
   phasen: [einstieg]
   setting: [einzel, plenum]
   zielgruppen: [jugendliche, erwachsene]
@@ -102,6 +106,7 @@
   name: Regeln und Routinen gemeinsam erarbeiten
   aliase: [Klassenvertrag, Gruppenvereinbarung, Working Agreements]
   kategorie: paedagogik
+  unterkategorie: fuehrung
   phasen: [uebergreifend, einstieg]
   setting: [plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -128,6 +133,7 @@
   name: Klassenführung nach Kounin
   aliase: [Allgegenwärtigkeit, Überlappung, Schwung, Gruppenmobilisierung]
   kategorie: paedagogik
+  unterkategorie: fuehrung
   phasen: [uebergreifend, hauptteil]
   setting: [plenum]
   zielgruppen: [kinder, jugendliche]
@@ -154,6 +160,7 @@
   name: Verhaltensspezifisches Lob
   aliase: [Behavior-Specific Praise, Positive Verstärkung im Unterricht]
   kategorie: paedagogik
+  unterkategorie: fuehrung
   phasen: [hauptteil]
   setting: [einzel, plenum]
   zielgruppen: [kinder, jugendliche]
@@ -179,6 +186,7 @@
   name: Good Behavior Game
   aliase: [Gutes-Verhalten-Spiel, KlasseKinderSpiel]
   kategorie: paedagogik
+  unterkategorie: fuehrung
   phasen: [hauptteil]
   setting: [kleingruppe, plenum]
   zielgruppen: [kinder]
@@ -204,6 +212,7 @@
   name: Klassenrat
   aliase: [Klassenversammlung, Schülerparlament (Klassenebene)]
   kategorie: paedagogik
+  unterkategorie: partizipation
   phasen: [hauptteil]
   setting: [plenum]
   zielgruppen: [kinder, jugendliche]
@@ -229,6 +238,7 @@
   name: Streitschlichtung / Peer-Mediation
   aliase: [Schülermediation, Konfliktlotsen]
   kategorie: paedagogik
+  unterkategorie: konflikt
   phasen: [hauptteil]
   setting: [partner, kleingruppe]
   zielgruppen: [kinder, jugendliche]
@@ -255,6 +265,7 @@
   name: No Blame Approach (Mobbing-Intervention)
   aliase: [Support Group Method, Unterstützungsgruppe]
   kategorie: paedagogik
+  unterkategorie: konflikt
   phasen: [hauptteil]
   setting: [einzel, kleingruppe]
   zielgruppen: [kinder, jugendliche]
@@ -279,6 +290,7 @@
   name: Schulweite Mobbingprävention (Olweus, KiVa)
   aliase: [Anti-Bullying-Programm]
   kategorie: paedagogik
+  unterkategorie: konflikt
   phasen: [uebergreifend]
   setting: [plenum, grossgruppe]
   zielgruppen: [kinder, jugendliche]
@@ -305,6 +317,7 @@
   name: Wiedergutmachung / Restorative Practices
   aliase: [Restorative Circle, Wiedergutmachungsgespräch, Täter-Opfer-Ausgleich (schulisch)]
   kategorie: paedagogik
+  unterkategorie: konflikt
   phasen: [hauptteil]
   setting: [kleingruppe, plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -329,6 +342,7 @@
   name: Aktives Zuhören und Ich-Botschaften
   aliase: [Gordon-Modell, Lehrer-Schüler-Konferenz]
   kategorie: paedagogik
+  unterkategorie: kommunikation
   phasen: [hauptteil, uebergreifend]
   setting: [einzel, partner]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -353,6 +367,7 @@
   name: Gewaltfreie Kommunikation (GFK)
   aliase: [Wertschätzende Kommunikation, Giraffensprache]
   kategorie: paedagogik
+  unterkategorie: kommunikation
   phasen: [hauptteil]
   setting: [einzel, partner, kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -378,6 +393,7 @@
   name: Kommunikationsquadrat (Vier-Ohren-Modell)
   aliase: [Schulz von Thun, "Sach-, Beziehungs-, Selbstkundgabe-, Appellebene"]
   kategorie: paedagogik
+  unterkategorie: kommunikation
   phasen: [hauptteil]
   setting: [kleingruppe, plenum]
   zielgruppen: [jugendliche, erwachsene]
@@ -402,6 +418,7 @@
   name: Themenzentrierte Interaktion (TZI)
   aliase: [Ruth-Cohn-Modell, Ich-Wir-Es-Globe]
   kategorie: paedagogik
+  unterkategorie: kommunikation
   phasen: [uebergreifend]
   setting: [kleingruppe, plenum]
   zielgruppen: [jugendliche, erwachsene]
@@ -426,6 +443,7 @@
   name: Erlebnispädagogik / Kooperationsübungen
   aliase: [Outdoor-Training, Abenteuerpädagogik, Kooperative Abenteuerspiele]
   kategorie: paedagogik
+  unterkategorie: partizipation
   phasen: [hauptteil]
   setting: [kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -451,6 +469,7 @@
   name: Service Learning (Lernen durch Engagement)
   aliase: [Lernen durch gesellschaftliches Engagement]
   kategorie: paedagogik
+  unterkategorie: partizipation
   phasen: [hauptteil]
   setting: [kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -477,6 +496,7 @@
   name: Mentoring
   aliase: [Patenschaften, Big Brothers Big Sisters, Lesepaten]
   kategorie: paedagogik
+  unterkategorie: eltern
   phasen: [uebergreifend]
   setting: [partner]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -502,6 +522,7 @@
   name: Montessori-Freiarbeit (vorbereitete Umgebung)
   aliase: ["Hilf mir, es selbst zu tun"]
   kategorie: paedagogik
+  unterkategorie: reform
   phasen: [hauptteil, uebergreifend]
   setting: [einzel, partner]
   zielgruppen: [kinder]
@@ -527,6 +548,7 @@
   name: Angeleitetes Spiel (Guided Play)
   aliase: [Spielbasiertes Lernen im Kindergarten]
   kategorie: paedagogik
+  unterkategorie: reform
   phasen: [hauptteil]
   setting: [kleingruppe, einzel]
   zielgruppen: [kinder]
@@ -551,6 +573,7 @@
   name: Spiele zur Förderung exekutiver Funktionen
   aliase: [Stopp-Spiele, Tools of the Mind, Selbstregulationsspiele]
   kategorie: paedagogik
+  unterkategorie: reform
   phasen: [einstieg, hauptteil]
   setting: [plenum, kleingruppe]
   zielgruppen: [kinder]
@@ -575,6 +598,7 @@
   name: Lernentwicklungsgespräch mit Eltern
   aliase: [Elterngespräch, Schüler-Eltern-Lehrkraft-Gespräch, Elternarbeit]
   kategorie: paedagogik
+  unterkategorie: eltern
   phasen: [uebergreifend]
   setting: [kleingruppe]
   zielgruppen: [kinder, jugendliche]
@@ -600,6 +624,7 @@
   name: Blitzlicht
   aliase: [Schlussrunde, One-Word-Check-out]
   kategorie: paedagogik
+  unterkategorie: beziehung
   phasen: [abschluss, einstieg]
   setting: [plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -624,6 +649,7 @@
   name: Zielscheibe / Feedback-Barometer
   aliase: [Punktabfrage zur Bewertung, Daumenprobe, Ampelfeedback]
   kategorie: paedagogik
+  unterkategorie: moderation
   phasen: [abschluss]
   setting: [plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -648,6 +674,7 @@
   name: Wertschätzungsrunde (Warme Dusche)
   aliase: [Kompliment-Runde, Rücken stärken, Appreciation Round]
   kategorie: paedagogik
+  unterkategorie: beziehung
   phasen: [abschluss]
   setting: [plenum, kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -672,6 +699,7 @@
   name: Kollegiale Fallberatung
   aliase: [Intervision, Kollegiale Beratung]
   kategorie: paedagogik
+  unterkategorie: profession
   phasen: [hauptteil]
   setting: [kleingruppe]
   zielgruppen: [erwachsene]
@@ -698,6 +726,7 @@
   name: Lesson Study
   aliase: [Unterrichtsforschung im Team, Jugyou Kenkyuu]
   kategorie: paedagogik
+  unterkategorie: profession
   phasen: [uebergreifend]
   setting: [kleingruppe]
   zielgruppen: [erwachsene]
@@ -723,6 +752,7 @@
   name: Microteaching
   aliase: [Mikrounterricht mit Videofeedback]
   kategorie: paedagogik
+  unterkategorie: profession
   phasen: [hauptteil]
   setting: [kleingruppe]
   zielgruppen: [erwachsene]
@@ -748,6 +778,7 @@
   name: World Café
   aliase: [Gesprächscafé]
   kategorie: paedagogik
+  unterkategorie: moderation
   phasen: [hauptteil]
   setting: [kleingruppe, grossgruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -773,6 +804,7 @@
   name: Open Space
   aliase: [Open Space Technology, Barcamp (verwandt)]
   kategorie: paedagogik
+  unterkategorie: moderation
   phasen: [hauptteil]
   setting: [grossgruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -798,6 +830,7 @@
   name: Appreciative Inquiry (wertschätzende Erkundung)
   aliase: [4D-Zyklus]
   kategorie: paedagogik
+  unterkategorie: moderation
   phasen: [hauptteil]
   setting: [kleingruppe, grossgruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -823,6 +856,7 @@
   name: Liberating Structures (1-2-4-Alle, Troika Consulting u. a.)
   aliase: [1-2-4-All, Troika, TRIZ, What So What Now What]
   kategorie: paedagogik
+  unterkategorie: moderation
   phasen: [einstieg, hauptteil, abschluss]
   setting: [einzel, partner, kleingruppe, grossgruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -847,6 +881,7 @@
   name: Nominale Gruppentechnik
   aliase: [NGT, Strukturierte Ideenpriorisierung]
   kategorie: paedagogik
+  unterkategorie: moderation
   phasen: [hauptteil]
   setting: [kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -872,6 +907,7 @@
   name: Pre-Mortem
   aliase: [Vorab-Obduktion, Prospektive Fehleranalyse]
   kategorie: paedagogik
+  unterkategorie: moderation
   phasen: [hauptteil]
   setting: [kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -896,6 +932,7 @@
   name: Retrospektive (Start – Stop – Continue)
   aliase: [Agile Retro, Plus/Delta]
   kategorie: paedagogik
+  unterkategorie: profession
   phasen: [abschluss]
   setting: [kleingruppe, plenum]
   zielgruppen: [jugendliche, erwachsene]
@@ -922,6 +959,7 @@
   name: After-Action Review / Debriefing
   aliase: [Nachbesprechung, Einsatznachbesprechung]
   kategorie: paedagogik
+  unterkategorie: profession
   phasen: [abschluss]
   setting: [kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -946,6 +984,7 @@
   name: Reflexionsmodelle (Gibbs, What–So what–Now what)
   aliase: [Reflective Cycle, Kolb-Zyklus]
   kategorie: paedagogik
+  unterkategorie: profession
   phasen: [abschluss]
   setting: [einzel, kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -971,6 +1010,7 @@
   name: Transfervereinbarung / Brief an mich selbst
   aliase: [Transferplan, Lernvertrag]
   kategorie: paedagogik
+  unterkategorie: profession
   phasen: [abschluss]
   setting: [einzel, partner]
   zielgruppen: [jugendliche, erwachsene]
@@ -995,6 +1035,7 @@
   name: Abschlussritual
   aliase: [Gemeinsamer Kreis, Abschiedslied, Klatschkreis]
   kategorie: paedagogik
+  unterkategorie: beziehung
   phasen: [abschluss]
   setting: [plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -1019,6 +1060,7 @@
   name: Soziogramm
   aliase: [Soziometrie, Beziehungsnetz der Klasse]
   kategorie: paedagogik
+  unterkategorie: profession
   phasen: [uebergreifend]
   setting: [plenum]
   zielgruppen: [kinder, jugendliche]
@@ -1043,6 +1085,7 @@
   name: Schülerfeedback zum Unterricht
   aliase: [EMU, Feedbackbogen, Unterrichtsevaluation]
   kategorie: paedagogik
+  unterkategorie: profession
   phasen: [abschluss, uebergreifend]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -1068,6 +1111,7 @@
   name: Zukunftswerkstatt
   aliase: [Kritik – Fantasie – Verwirklichung]
   kategorie: paedagogik
+  unterkategorie: partizipation
   phasen: [hauptteil]
   setting: [kleingruppe, grossgruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -1092,6 +1136,7 @@
   name: Balintgruppe / Fallsupervision in der Gruppe
   aliase: [Balint-Arbeit, Beziehungsorientierte Fallbesprechung]
   kategorie: paedagogik
+  unterkategorie: profession
   phasen: [hauptteil]
   setting: [kleingruppe]
   zielgruppen: [erwachsene]

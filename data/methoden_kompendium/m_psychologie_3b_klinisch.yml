@@ -3,6 +3,7 @@
   name: Therapeutische Beziehung (Arbeitsbündnis) gestalten
   aliase: [Working Alliance, Allgemeine Wirkfaktoren]
   kategorie: psychologie
+  unterkategorie: therapie
   phasen: [uebergreifend]
   setting: [einzel, kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -27,6 +28,7 @@
   name: Klientenzentrierte Gesprächshaltung (Empathie, Wertschätzung, Echtheit)
   aliase: [Rogers-Variablen, Personzentrierte Gesprächsführung]
   kategorie: psychologie
+  unterkategorie: beratung
   phasen: [uebergreifend]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -51,6 +53,7 @@
   name: Validieren
   aliase: [Validierungsstufen, Verständnis ausdrücken (DBT)]
   kategorie: psychologie
+  unterkategorie: beratung
   phasen: [hauptteil]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -76,6 +79,7 @@
   name: Erstgespräch und Auftragsklärung
   aliase: [Anamnese, Kontraktgestaltung]
   kategorie: psychologie
+  unterkategorie: therapie
   phasen: [einstieg]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -101,6 +105,7 @@
   name: Strukturiertes klinisches Interview
   aliase: [DIPS, Kinder-DIPS, standardisierte Diagnostik]
   kategorie: psychologie
+  unterkategorie: diagnostik
   phasen: [einstieg]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -125,6 +130,7 @@
   name: Fallkonzeption und Plananalyse
   aliase: [Case Formulation, Bedingungsmodell]
   kategorie: psychologie
+  unterkategorie: diagnostik
   phasen: [uebergreifend]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -150,6 +156,7 @@
   name: Gemeinsame Therapieziele vereinbaren
   aliase: [Zielkonsens, Goal Attainment]
   kategorie: psychologie
+  unterkategorie: therapie
   phasen: [einstieg, uebergreifend]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -174,6 +181,7 @@
   name: Strukturierte Sitzung (KVT-Sitzungsablauf)
   aliase: [Agenda-Setting, Brückenschlag]
   kategorie: psychologie
+  unterkategorie: therapie
   phasen: [einstieg, hauptteil, abschluss]
   setting: [einzel, kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -200,6 +208,7 @@
   name: Übungsaufgaben zwischen den Sitzungen
   aliase: [Therapeutische Hausaufgaben, Transferaufgaben]
   kategorie: psychologie
+  unterkategorie: therapie
   phasen: [abschluss]
   setting: [einzel, kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -225,6 +234,7 @@
   name: Verlaufsmessung mit Rückmeldung (ROM)
   aliase: [Routine Outcome Monitoring, Feedback-informierte Therapie]
   kategorie: psychologie
+  unterkategorie: diagnostik
   phasen: [einstieg, uebergreifend]
   setting: [einzel, kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -249,6 +259,7 @@
   name: Brüche in der Beziehung reparieren
   aliase: [Rupture Repair, Metakommunikation]
   kategorie: psychologie
+  unterkategorie: therapie
   phasen: [hauptteil]
   setting: [einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -274,6 +285,7 @@
   name: Partizipative Entscheidungsfindung
   aliase: [Shared Decision Making, Optionen-Gespräch]
   kategorie: psychologie
+  unterkategorie: beratung
   phasen: [hauptteil]
   setting: [einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -299,6 +311,7 @@
   name: Teach-back (Rückerklären lassen)
   aliase: [Verständnis sichern, Chunk and Check]
   kategorie: psychologie
+  unterkategorie: beratung
   phasen: [abschluss]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -323,6 +336,7 @@
   name: Schwierige Nachrichten überbringen (SPIKES)
   aliase: [Breaking Bad News, Sechs-Schritte-Protokoll]
   kategorie: psychologie
+  unterkategorie: beratung
   phasen: [hauptteil]
   setting: [einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -348,6 +362,7 @@
   name: Auf Emotionen antworten (NURSE)
   aliase: [Empathische Antworten, Naming – Understanding – Respecting – Supporting – Exploring]
   kategorie: psychologie
+  unterkategorie: beratung
   phasen: [hauptteil]
   setting: [einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -372,6 +387,7 @@
   name: Krisen- und Sicherheitsplan bei Suizidgedanken
   aliase: [Safety Planning, Notfallplan]
   kategorie: psychologie
+  unterkategorie: krise
   phasen: [hauptteil]
   setting: [einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -397,6 +413,7 @@
   name: Erste Hilfe für psychische Gesundheit
   aliase: [Mental Health First Aid, MHFA, ALGEE]
   kategorie: psychologie
+  unterkategorie: praevention
   phasen: [uebergreifend]
   setting: [einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -421,6 +438,7 @@
   name: Rückfallprävention
   aliase: [Relapse Prevention, Frühwarnplan]
   kategorie: psychologie
+  unterkategorie: therapie
   phasen: [abschluss]
   setting: [einzel, kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -446,6 +464,7 @@
   name: Stadien der Veränderung (Transtheoretisches Modell)
   aliase: [Absichtslosigkeit – Absichtsbildung – Vorbereitung – Handlung – Aufrechterhaltung]
   kategorie: psychologie
+  unterkategorie: beratung
   phasen: [einstieg]
   setting: [einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -470,6 +489,7 @@
   name: Interpersonelle Psychotherapie (IPT)
   aliase: [Interpersonelle Therapie]
   kategorie: psychologie
+  unterkategorie: therapie
   phasen: [hauptteil]
   setting: [einzel, kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -495,6 +515,7 @@
   name: Traumafokussierte Psychotherapie
   aliase: [TF-KVT, Kognitive Therapie der PTBS, EMDR, Narrative Expositionstherapie]
   kategorie: psychologie
+  unterkategorie: therapie
   phasen: [hauptteil]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -520,6 +541,7 @@
   name: Schematherapie (Modusarbeit)
   aliase: [Schemamodi, Imaginatives Überschreiben]
   kategorie: psychologie
+  unterkategorie: therapie
   phasen: [hauptteil]
   setting: [einzel, kleingruppe]
   zielgruppen: [erwachsene, jugendliche]
@@ -545,6 +567,7 @@
   name: CBASP bei chronischer Depression
   aliase: [Situationsanalyse, Interpersonelle Diskriminationsübung]
   kategorie: psychologie
+  unterkategorie: therapie
   phasen: [hauptteil]
   setting: [einzel]
   zielgruppen: [erwachsene]
@@ -569,6 +592,7 @@
   name: Abschluss einer Behandlung oder Beratung gestalten
   aliase: [Beendigungsphase, Booster-Sitzungen]
   kategorie: psychologie
+  unterkategorie: therapie
   phasen: [abschluss]
   setting: [einzel, kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]

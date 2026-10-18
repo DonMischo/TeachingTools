@@ -3,6 +3,7 @@
   name: Lehrervortrag / Kurzinput
   aliase: [Darbietender Unterricht, Mini-Lecture]
   kategorie: didaktik
+  unterkategorie: instruktion
   phasen: [hauptteil]
   setting: [plenum, grossgruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -28,6 +29,7 @@
   name: Demonstration / Vorführexperiment mit Vorhersage
   aliase: [Lehrerexperiment, Vorführung]
   kategorie: didaktik
+  unterkategorie: instruktion
   phasen: [einstieg, hauptteil]
   setting: [plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -54,6 +56,7 @@
   name: Fragend-entwickelndes Unterrichtsgespräch
   aliase: [Lehrgespräch, Frage-Antwort-Unterricht]
   kategorie: didaktik
+  unterkategorie: gespraech
   phasen: [hauptteil]
   setting: [plenum]
   zielgruppen: [kinder, jugendliche]
@@ -79,6 +82,7 @@
   name: Schülerexperiment mit Versuchsprotokoll
   aliase: [Praktikum, Laborübung]
   kategorie: didaktik
+  unterkategorie: handlung
   phasen: [hauptteil]
   setting: [partner, kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -104,6 +108,7 @@
   name: Tafelbild / Hefteintrag als Sicherung
   aliase: [Ergebnissicherung, Merkeintrag]
   kategorie: didaktik
+  unterkategorie: visualisierung
   phasen: [abschluss]
   setting: [plenum, einzel]
   zielgruppen: [kinder, jugendliche]
@@ -129,6 +134,7 @@
   name: Regel oder Merksatz selbst formulieren
   aliase: [Induktive Regelbildung]
   kategorie: didaktik
+  unterkategorie: instruktion
   phasen: [abschluss, hauptteil]
   setting: [einzel, partner]
   zielgruppen: [kinder, jugendliche]
@@ -155,6 +161,7 @@
   name: Feynman-Methode (Erklären wie für ein Kind)
   aliase: [Explain it simply, Erklär-Test]
   kategorie: didaktik
+  unterkategorie: ueben
   phasen: [abschluss, hauptteil]
   setting: [einzel, partner]
   zielgruppen: [jugendliche, erwachsene]
@@ -180,6 +187,7 @@
   name: Lernmenü / Wahlaufgaben (Choice Board)
   aliase: [Tic-Tac-Toe-Aufgaben, Pflicht- und Wahlaufgaben]
   kategorie: didaktik
+  unterkategorie: selbststaendig
   phasen: [hauptteil]
   setting: [einzel, partner]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -205,6 +213,7 @@
   name: Spiralcurriculum
   aliase: [Wiederkehrende Vertiefung]
   kategorie: didaktik
+  unterkategorie: planung
   phasen: [uebergreifend]
   setting: [plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -230,6 +239,7 @@
   name: Scharnierfrage (Hinge Question)
   aliase: [Diagnostische Mehrfachwahlfrage]
   kategorie: didaktik
+  unterkategorie: diagnose
   phasen: [hauptteil]
   setting: [plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -255,6 +265,7 @@
   name: Bewertungsraster (Rubric)
   aliase: [Kriterienraster, Kompetenzraster für Produkte]
   kategorie: didaktik
+  unterkategorie: diagnose
   phasen: [einstieg, abschluss]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -280,6 +291,7 @@
   name: Kommentare statt Noten
   aliase: [Comment-only Marking, Feedback vor Note]
   kategorie: didaktik
+  unterkategorie: diagnose
   phasen: [abschluss]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -305,6 +317,7 @@
   name: Lernverlaufsdiagnostik (CBM)
   aliase: [Curriculum-Based Measurement, Lernfortschrittsmessung]
   kategorie: didaktik
+  unterkategorie: diagnose
   phasen: [uebergreifend]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche]
@@ -330,6 +343,7 @@
   name: Prüfungsnachbereitung (Exam Wrapper)
   aliase: [Fehleranalyse nach Klassenarbeit, Berichtigung mit Reflexion]
   kategorie: didaktik
+  unterkategorie: diagnose
   phasen: [abschluss]
   setting: [einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -356,6 +370,7 @@
   name: Zwei-Phasen-Test (kooperative Prüfung)
   aliase: [Two-Stage Exam, Gruppentest]
   kategorie: didaktik
+  unterkategorie: diagnose
   phasen: [abschluss]
   setting: [einzel, kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -381,6 +396,7 @@
   name: Begriffsspiele (Tabu, Activity, Domino, Memory)
   aliase: [Wiederholungsspiele, Lernspiele analog]
   kategorie: didaktik
+  unterkategorie: handlung
   phasen: [abschluss, hauptteil]
   setting: [partner, kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -406,6 +422,7 @@
   name: Quizshow im Team (Jeopardy-Format)
   aliase: [Wissensquiz, Der große Preis]
   kategorie: didaktik
+  unterkategorie: handlung
   phasen: [abschluss]
   setting: [kleingruppe, plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -431,6 +448,7 @@
   name: Elevator Pitch
   aliase: [60-Sekunden-Statement]
   kategorie: didaktik
+  unterkategorie: visualisierung
   phasen: [abschluss]
   setting: [einzel, partner]
   zielgruppen: [jugendliche, erwachsene]
@@ -455,6 +473,7 @@
   name: Brief an die nächste Klasse
   aliase: [Tipps für Nachfolgende]
   kategorie: didaktik
+  unterkategorie: reflexion
   phasen: [abschluss]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -479,6 +498,7 @@
   name: Selbstkontrollmaterial
   aliase: [Lösungsblatt, Kontrollkarte, Rückseite mit Lösung]
   kategorie: didaktik
+  unterkategorie: differenzierung
   phasen: [hauptteil]
   setting: [einzel, partner]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -503,6 +523,7 @@
   name: Szenariotechnik
   aliase: [Zukunftsszenarien, Trichtermodell]
   kategorie: didaktik
+  unterkategorie: kreativ
   phasen: [hauptteil]
   setting: [kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -529,6 +550,7 @@
   name: Lernende stellen Fragen zum Stoff
   aliase: [Question Generation, Fragen-an-den-Text]
   kategorie: didaktik
+  unterkategorie: ueben
   phasen: [hauptteil, abschluss]
   setting: [einzel, partner]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -553,6 +575,7 @@
   name: Lernberatungsgespräch (Schüler–Lehrkraft)
   aliase: [Lernentwicklungsgespräch, Conferencing]
   kategorie: didaktik
+  unterkategorie: diagnose
   phasen: [hauptteil, abschluss]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]

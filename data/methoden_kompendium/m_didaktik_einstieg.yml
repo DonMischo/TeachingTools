@@ -3,6 +3,7 @@
   name: Do Now / Startaufgabe
   aliase: [Bell Ringer, Warm-up-Aufgabe]
   kategorie: didaktik
+  unterkategorie: aktivierung
   phasen: [einstieg]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -28,6 +29,7 @@
   name: Abruf-Einstieg (Retrieval Starter)
   aliase: [Brain Dump, 3-2-1-Rückblick, Quiz zum Stundenbeginn]
   kategorie: didaktik
+  unterkategorie: ueben
   phasen: [einstieg]
   setting: [einzel, partner]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -54,6 +56,7 @@
   name: Advance Organizer
   aliase: [Vorstrukturierung, Lernlandkarte]
   kategorie: didaktik
+  unterkategorie: instruktion
   phasen: [einstieg]
   setting: [plenum]
   zielgruppen: [jugendliche, erwachsene]
@@ -78,6 +81,7 @@
   name: KWL / Wissen–Wollen–Gelernt
   aliase: [K-W-L-Tabelle, Was ich weiß – was ich wissen will – was ich gelernt habe]
   kategorie: didaktik
+  unterkategorie: aktivierung
   phasen: [einstieg, abschluss]
   setting: [einzel, plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -102,6 +106,7 @@
   name: Vortest / Vorab-Fragen
   aliase: [Pretesting, Prequestions]
   kategorie: didaktik
+  unterkategorie: diagnose
   phasen: [einstieg]
   setting: [einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -127,6 +132,7 @@
   name: Kognitiver Konflikt / Überraschendes Phänomen
   aliase: [Diskrepanz-Einstieg, Discrepant Event]
   kategorie: didaktik
+  unterkategorie: aktivierung
   phasen: [einstieg]
   setting: [plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -153,6 +159,7 @@
   name: Concept Cartoon
   aliase: [Meinungsbild-Karikatur]
   kategorie: didaktik
+  unterkategorie: aktivierung
   phasen: [einstieg, hauptteil]
   setting: [partner, kleingruppe, plenum]
   zielgruppen: [kinder, jugendliche]
@@ -178,6 +185,7 @@
   name: Vorhersagen – Beobachten – Erklären (POE)
   aliase: [Predict-Observe-Explain]
   kategorie: didaktik
+  unterkategorie: mathe_nawi
   phasen: [einstieg, hauptteil]
   setting: [einzel, partner, plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -200,6 +208,7 @@
   name: Stummer Impuls
   aliase: [Bildimpuls, Gegenstand in die Mitte]
   kategorie: didaktik
+  unterkategorie: aktivierung
   phasen: [einstieg]
   setting: [plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -224,6 +233,7 @@
   name: Lernziel- und Ablauftransparenz
   aliase: [Learning Intentions & Success Criteria, Stundenfahrplan]
   kategorie: didaktik
+  unterkategorie: aktivierung
   phasen: [einstieg]
   setting: [plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -250,6 +260,7 @@
   name: Think-Pair-Share als Einstieg
   aliase: [Ich-Du-Wir, Denken-Austauschen-Vorstellen]
   kategorie: didaktik
+  unterkategorie: kooperativ
   phasen: [einstieg, hauptteil]
   setting: [einzel, partner, plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -276,6 +287,7 @@
   name: Positionslinie / Meinungslinie
   aliase: [Soziometrische Aufstellung zur Sache, Barometer, Four Corners]
   kategorie: didaktik
+  unterkategorie: aktivierung
   phasen: [einstieg, abschluss]
   setting: [plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -301,6 +313,7 @@
   name: Kartenabfrage (Metaplan)
   aliase: [Clustern, Moderationskarten]
   kategorie: didaktik
+  unterkategorie: kreativ
   phasen: [einstieg, hauptteil]
   setting: [einzel, plenum]
   zielgruppen: [jugendliche, erwachsene]
@@ -326,6 +339,7 @@
   name: Brainwriting / Methode 6-3-5
   aliase: [Ideenkarussell auf Papier]
   kategorie: didaktik
+  unterkategorie: kreativ
   phasen: [einstieg, hauptteil]
   setting: [kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -349,6 +363,7 @@
   name: Fragen an das Thema (Question Formulation)
   aliase: [Fragensturm, Wonder Wall]
   kategorie: didaktik
+  unterkategorie: aktivierung
   phasen: [einstieg]
   setting: [einzel, kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -375,6 +390,7 @@
   name: Lebenswelt- und Nutzenbezug herstellen
   aliase: [Utility-Value-Einstieg, Relevanz-Reflexion]
   kategorie: didaktik
+  unterkategorie: aktivierung
   phasen: [einstieg]
   setting: [einzel, plenum]
   zielgruppen: [jugendliche, erwachsene]
@@ -399,6 +415,7 @@
   name: Aufmerksamkeit gewinnen (Gagné/ARCS)
   aliase: [Hook, Gain attention]
   kategorie: didaktik
+  unterkategorie: aktivierung
   phasen: [einstieg]
   setting: [plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -423,6 +440,7 @@
   name: Kompetenzraster / Selbsteinschätzung zu Beginn
   aliase: [Ich-kann-Liste, Lernlandkarte]
   kategorie: didaktik
+  unterkategorie: diagnose
   phasen: [einstieg, abschluss]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -448,6 +466,7 @@
   name: Kugellager / Doppelkreis
   aliase: [Inside-Outside Circle, Speed-Dating-Gespräch]
   kategorie: didaktik
+  unterkategorie: kooperativ
   phasen: [einstieg, hauptteil, abschluss]
   setting: [partner, plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -471,6 +490,7 @@
   name: Schätzfrage / Fermi-Frage
   aliase: [Fermi-Problem, Größenordnung schätzen]
   kategorie: didaktik
+  unterkategorie: mathe_nawi
   phasen: [einstieg]
   setting: [einzel, kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]

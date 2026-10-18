@@ -63,6 +63,52 @@
       "krise": "Krise & Belastung",
       "therapie": "Therapie & klinische Arbeit"
     },
+    "unterkategorien": {
+      "didaktik": {
+        "planung": "Planung, Struktur, Großformen",
+        "instruktion": "Instruktion und Erklären",
+        "aktivierung": "Einstiege und Denkroutinen",
+        "kooperativ": "Kooperative Lernformen",
+        "gespraech": "Gespräch, Diskussion, Argumentation",
+        "handlung": "Handlungs-, Simulations- und Spielformen",
+        "selbststaendig": "Offene und selbstständige Lernformen",
+        "lesen_schreiben": "Lesen, Schreiben, Sprache",
+        "mathe_nawi": "Mathematik und Naturwissenschaften",
+        "ueben": "Üben, Wiederholen, Gedächtnis",
+        "kreativ": "Ideenfindung und Kreativität",
+        "visualisierung": "Visualisieren und Präsentieren",
+        "diagnose": "Diagnose, Feedback, Bewertung",
+        "reflexion": "Abschluss und Reflexion",
+        "differenzierung": "Differenzierung und Inklusion"
+      },
+      "paedagogik": {
+        "beziehung": "Beziehung und Klima",
+        "fuehrung": "Klassenführung und Regeln",
+        "konflikt": "Konflikt und Mobbing",
+        "kommunikation": "Kommunikation",
+        "partizipation": "Partizipation und Engagement",
+        "reform": "Reform- und Frühpädagogik",
+        "moderation": "Moderation und Großgruppen",
+        "profession": "Professionalisierung und Kollegium",
+        "eltern": "Eltern und Mentoring"
+      },
+      "psychologie": {
+        "motivation": "Motivation und Ziele",
+        "kognition": "Kognition, Gedächtnis, Metakognition",
+        "selbststeuerung": "Selbststeuerung und Gewohnheiten",
+        "verhalten": "Verhaltenspsychologie (ABA)",
+        "sozial": "Soziale Kompetenz",
+        "emotion_stress": "Emotion, Stress, Entspannung",
+        "positiv": "Positive Psychologie und Ressourcen",
+        "praevention": "Präventionsprogramme",
+        "beratung": "Beratung und Gesprächsführung",
+        "diagnostik": "Diagnostik",
+        "gruppe": "Gruppen und Teams",
+        "therapie": "Therapieverfahren und klinische Arbeit",
+        "imaginativ": "Imaginative und hypnosystemische Methoden",
+        "krise": "Krise und Notfall"
+      }
+    },
     "evidenz": {
       "stark": "Mehrere Metaanalysen oder große RCTs mit konsistentem Befund",
       "mittel": "Positive Befunde mit Einschränkungen (Studienzahl, Heterogenität, Umsetzung)",
@@ -989,6 +1035,7 @@
         "3-2-1 Bridge"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "aktivierung",
       "phasen": [
         "einstieg",
         "abschluss"
@@ -1037,6 +1084,7 @@
         "Wissens-ABC"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "aktivierung",
       "phasen": [
         "einstieg",
         "abschluss"
@@ -1090,6 +1138,7 @@
         "Quiz zum Stundenbeginn"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "ueben",
       "phasen": [
         "einstieg"
       ],
@@ -1144,6 +1193,7 @@
         "Lernlandkarte"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "instruktion",
       "phasen": [
         "einstieg"
       ],
@@ -1193,6 +1243,7 @@
         "Thesen vor dem Lesen"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "aktivierung",
       "phasen": [
         "einstieg"
       ],
@@ -1244,6 +1295,7 @@
         "Gain attention"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "aktivierung",
       "phasen": [
         "einstieg"
       ],
@@ -1292,6 +1344,7 @@
         "Word Cloud"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "aktivierung",
       "phasen": [
         "einstieg",
         "abschluss"
@@ -1340,6 +1393,7 @@
         "Kompetenzraster für Produkte"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "diagnose",
       "phasen": [
         "einstieg",
         "abschluss"
@@ -1390,6 +1444,7 @@
         "Gedankensturm"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "kreativ",
       "phasen": [
         "einstieg",
         "hauptteil"
@@ -1439,6 +1494,7 @@
         "Ideenkarussell auf Papier"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "kreativ",
       "phasen": [
         "einstieg",
         "hauptteil"
@@ -1485,6 +1541,7 @@
         "Assoziationsnetz zum Schreiben"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "kreativ",
       "phasen": [
         "einstieg",
         "hauptteil"
@@ -1533,6 +1590,7 @@
         "Meinungsbild-Karikatur"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "aktivierung",
       "phasen": [
         "einstieg",
         "hauptteil"
@@ -1584,6 +1642,7 @@
         "Vorführung"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "instruktion",
       "phasen": [
         "einstieg",
         "hauptteil"
@@ -1634,6 +1693,7 @@
         "Think-Puzzle-Explore"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "aktivierung",
       "phasen": [
         "einstieg"
       ],
@@ -1684,6 +1744,7 @@
         "Warm-up-Aufgabe"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "aktivierung",
       "phasen": [
         "einstieg"
       ],
@@ -1735,6 +1796,7 @@
         "Erfahrungsaustausch"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "aktivierung",
       "phasen": [
         "einstieg"
       ],
@@ -1784,6 +1846,7 @@
         "Wonder Wall"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "aktivierung",
       "phasen": [
         "einstieg"
       ],
@@ -1835,6 +1898,7 @@
         "Morgenseiten"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "lesen_schreiben",
       "phasen": [
         "einstieg",
         "hauptteil"
@@ -1884,6 +1948,7 @@
         "Lehrerzentrierter Unterricht"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "instruktion",
       "phasen": [
         "einstieg",
         "hauptteil",
@@ -1935,6 +2000,7 @@
         "Fallgeschichte"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "aktivierung",
       "phasen": [
         "einstieg"
       ],
@@ -1983,6 +2049,7 @@
         "Losverfahren"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "kooperativ",
       "phasen": [
         "einstieg",
         "hauptteil"
@@ -2033,6 +2100,7 @@
         "Transparenter Einstieg"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "aktivierung",
       "phasen": [
         "einstieg"
       ],
@@ -2083,6 +2151,7 @@
         "Moderationskarten"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "kreativ",
       "phasen": [
         "einstieg",
         "hauptteil"
@@ -2134,6 +2203,7 @@
         "Rotierende Plakate"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "kreativ",
       "phasen": [
         "einstieg",
         "hauptteil"
@@ -2186,6 +2256,7 @@
         "Discrepant Event"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "aktivierung",
       "phasen": [
         "einstieg"
       ],
@@ -2236,6 +2307,7 @@
         "Begeistert – Sorgen – Brauchen – Vorschlag"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "aktivierung",
       "phasen": [
         "einstieg",
         "hauptteil"
@@ -2286,6 +2358,7 @@
         "Lernlandkarte"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "diagnose",
       "phasen": [
         "einstieg",
         "abschluss"
@@ -2336,6 +2409,7 @@
         "Contrasting Cases"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "instruktion",
       "phasen": [
         "einstieg",
         "hauptteil"
@@ -2384,6 +2458,7 @@
         "Lyrische Kurzformen"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "lesen_schreiben",
       "phasen": [
         "einstieg",
         "abschluss"
@@ -2434,6 +2509,7 @@
         "Gesprächskreis"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "gespraech",
       "phasen": [
         "einstieg",
         "hauptteil",
@@ -2486,6 +2562,7 @@
         "Speed-Dating-Gespräch"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "kooperativ",
       "phasen": [
         "einstieg",
         "hauptteil",
@@ -2537,6 +2614,7 @@
         "Was ich weiß – was ich wissen will – was ich gelernt habe"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "aktivierung",
       "phasen": [
         "einstieg",
         "abschluss"
@@ -2589,6 +2667,7 @@
         "Relevanz-Reflexion"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "aktivierung",
       "phasen": [
         "einstieg"
       ],
@@ -2636,6 +2715,7 @@
         "Stundenfahrplan"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "aktivierung",
       "phasen": [
         "einstieg"
       ],
@@ -2689,6 +2769,7 @@
         "Antwortsystem"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "diagnose",
       "phasen": [
         "einstieg",
         "hauptteil",
@@ -2740,6 +2821,7 @@
         "Gedankenlandkarte"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "kreativ",
       "phasen": [
         "einstieg",
         "hauptteil",
@@ -2792,6 +2874,7 @@
         "Stand Up Hand Up Pair Up"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "kooperativ",
       "phasen": [
         "einstieg",
         "hauptteil",
@@ -2845,6 +2928,7 @@
         "Beispielarbeiten bewerten"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "diagnose",
       "phasen": [
         "einstieg",
         "hauptteil"
@@ -2897,6 +2981,7 @@
         "Three-Step Interview"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "kooperativ",
       "phasen": [
         "einstieg",
         "hauptteil"
@@ -2948,6 +3033,7 @@
         "Tischset-Methode"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "kooperativ",
       "phasen": [
         "einstieg",
         "hauptteil"
@@ -3001,6 +3087,7 @@
         "Four Corners"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "aktivierung",
       "phasen": [
         "einstieg",
         "abschluss"
@@ -3052,6 +3139,7 @@
         "Rundgespräch"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "kooperativ",
       "phasen": [
         "einstieg",
         "hauptteil"
@@ -3103,6 +3191,7 @@
         "Größenordnung schätzen"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "mathe_nawi",
       "phasen": [
         "einstieg"
       ],
@@ -3151,6 +3240,7 @@
         "Denkroutine Bildanalyse"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "aktivierung",
       "phasen": [
         "einstieg"
       ],
@@ -3203,6 +3293,7 @@
         "Gegenstand in die Mitte"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "aktivierung",
       "phasen": [
         "einstieg"
       ],
@@ -3253,6 +3344,7 @@
         "Parking Lot"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "planung",
       "phasen": [
         "einstieg",
         "hauptteil",
@@ -3303,6 +3395,7 @@
         "Denken-Austauschen-Vorstellen"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "kooperativ",
       "phasen": [
         "einstieg",
         "hauptteil"
@@ -3357,6 +3450,7 @@
         "Predict-Observe-Explain"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "mathe_nawi",
       "phasen": [
         "einstieg",
         "hauptteil"
@@ -3408,6 +3502,7 @@
         "Prequestions"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "diagnose",
       "phasen": [
         "einstieg"
       ],
@@ -3457,6 +3552,7 @@
         "Ausschnitt-Einstieg"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "aktivierung",
       "phasen": [
         "einstieg"
       ],
@@ -3507,6 +3603,7 @@
         "adaptive Lernsoftware"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "differenzierung",
       "phasen": [
         "hauptteil"
       ],
@@ -3557,6 +3654,7 @@
         "Antwortkarten"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "diagnose",
       "phasen": [
         "hauptteil",
         "einstieg",
@@ -3608,6 +3706,7 @@
         "Hilfe-Signal"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "diagnose",
       "phasen": [
         "hauptteil"
       ],
@@ -3658,6 +3757,7 @@
         "Worksheet"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "ueben",
       "phasen": [
         "hauptteil",
         "abschluss"
@@ -3708,6 +3808,7 @@
         "Claim-Support-Question"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "aktivierung",
       "phasen": [
         "hauptteil"
       ],
@@ -3761,6 +3862,7 @@
         "Energizer"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "differenzierung",
       "phasen": [
         "hauptteil",
         "einstieg"
@@ -3811,6 +3913,7 @@
         "Nachbarschaftsgespräch"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "kooperativ",
       "phasen": [
         "hauptteil"
       ],
@@ -3861,6 +3964,7 @@
         "Wissenslandkarte"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "visualisierung",
       "phasen": [
         "hauptteil",
         "abschluss"
@@ -3912,6 +4016,7 @@
         "Verstehen – Beobachten – Sichtweise – Ideen – Prototyp – Testen"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "kreativ",
       "phasen": [
         "hauptteil"
       ],
@@ -3962,6 +4067,7 @@
         "Talk Moves"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "gespraech",
       "phasen": [
         "hauptteil"
       ],
@@ -4015,6 +4121,7 @@
         "PEER-Sequenz"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "lesen_schreiben",
       "phasen": [
         "hauptteil"
       ],
@@ -4066,6 +4173,7 @@
         "UDL"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "differenzierung",
       "phasen": [
         "hauptteil"
       ],
@@ -4118,6 +4226,7 @@
         "Multimedia-Prinzip"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "instruktion",
       "phasen": [
         "hauptteil"
       ],
@@ -4169,6 +4278,7 @@
         "Exitgame"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "handlung",
       "phasen": [
         "hauptteil",
         "abschluss"
@@ -4220,6 +4330,7 @@
         "Individuelle Arbeitsphase"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "selbststaendig",
       "phasen": [
         "hauptteil"
       ],
@@ -4270,6 +4381,7 @@
         "Self-Explanation"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "ueben",
       "phasen": [
         "hauptteil"
       ],
@@ -4320,6 +4432,7 @@
         "Erklär-Podcast"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "visualisierung",
       "phasen": [
         "hauptteil",
         "abschluss"
@@ -4373,6 +4486,7 @@
         "Erkundung"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "handlung",
       "phasen": [
         "hauptteil"
       ],
@@ -4421,6 +4535,7 @@
         "Interview mit Fachperson"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "gespraech",
       "phasen": [
         "hauptteil"
       ],
@@ -4473,6 +4588,7 @@
         "Gradual Release of Responsibility"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "instruktion",
       "phasen": [
         "hauptteil"
       ],
@@ -4526,6 +4642,7 @@
         "Fallstudie"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "selbststaendig",
       "phasen": [
         "hauptteil"
       ],
@@ -4577,6 +4694,7 @@
         "Fehlerdetektiv"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "mathe_nawi",
       "phasen": [
         "hauptteil"
       ],
@@ -4624,6 +4742,7 @@
         "Aquarium"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "gespraech",
       "phasen": [
         "hauptteil"
       ],
@@ -4674,6 +4793,7 @@
         "Selbsteinschätzung per Hand"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "diagnose",
       "phasen": [
         "hauptteil",
         "abschluss"
@@ -4722,6 +4842,7 @@
         "Inverted Classroom"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "selbststaendig",
       "phasen": [
         "hauptteil"
       ],
@@ -4770,6 +4891,7 @@
         "Frage-Antwort-Unterricht"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "gespraech",
       "phasen": [
         "hauptteil"
       ],
@@ -4819,6 +4941,7 @@
         "Definition – Merkmale – Beispiele – Gegenbeispiele"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "visualisierung",
       "phasen": [
         "hauptteil"
       ],
@@ -4869,6 +4992,7 @@
         "Überfliegen – Fragen – Lesen – Wiedergeben – Wiederholen"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "lesen_schreiben",
       "phasen": [
         "hauptteil"
       ],
@@ -4919,6 +5043,7 @@
         "Marktplatz"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "visualisierung",
       "phasen": [
         "hauptteil",
         "abschluss"
@@ -4972,6 +5097,7 @@
         "Punkte und Abzeichen"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "handlung",
       "phasen": [
         "hauptteil",
         "abschluss"
@@ -5023,6 +5149,7 @@
         "Forschungskreislauf"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "selbststaendig",
       "phasen": [
         "hauptteil"
       ],
@@ -5077,6 +5204,7 @@
         "Vorhersagen ergänzen"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "ueben",
       "phasen": [
         "hauptteil"
       ],
@@ -5125,6 +5253,7 @@
         "Fokussiertes Training"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "ueben",
       "phasen": [
         "hauptteil"
       ],
@@ -5172,6 +5301,7 @@
         "Ishikawa-Diagramm"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "visualisierung",
       "phasen": [
         "hauptteil",
         "abschluss"
@@ -5224,6 +5354,7 @@
         "Stammgruppe–Expertengruppe"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "kooperativ",
       "phasen": [
         "hauptteil"
       ],
@@ -5275,6 +5406,7 @@
         "Teamwettbewerb mit Lernzuwachs"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "kooperativ",
       "phasen": [
         "hauptteil"
       ],
@@ -5322,6 +5454,7 @@
         "Gruppenuntersuchung"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "selbststaendig",
       "phasen": [
         "hauptteil"
       ],
@@ -5372,6 +5505,7 @@
         "Kleingruppenarbeit"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "kooperativ",
       "phasen": [
         "hauptteil"
       ],
@@ -5424,6 +5558,7 @@
         "Figurenbefragung"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "handlung",
       "phasen": [
         "hauptteil"
       ],
@@ -5475,6 +5610,7 @@
         "Reverse Brainstorming"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "kreativ",
       "phasen": [
         "hauptteil"
       ],
@@ -5523,6 +5659,7 @@
         "Kurzvortrag"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "visualisierung",
       "phasen": [
         "hauptteil",
         "abschluss"
@@ -5574,6 +5711,7 @@
         "Wanderdiktat"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "lesen_schreiben",
       "phasen": [
         "hauptteil"
       ],
@@ -5622,6 +5760,7 @@
         "Paired Reading"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "lesen_schreiben",
       "phasen": [
         "hauptteil"
       ],
@@ -5671,6 +5810,7 @@
         "Mini-Lecture"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "instruktion",
       "phasen": [
         "hauptteil"
       ],
@@ -5721,6 +5861,7 @@
         "Vollständige Handlung"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "selbststaendig",
       "phasen": [
         "hauptteil"
       ],
@@ -5770,6 +5911,7 @@
         "Conferencing"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "diagnose",
       "phasen": [
         "hauptteil",
         "abschluss"
@@ -5821,6 +5963,7 @@
         "Fragen-an-den-Text"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "ueben",
       "phasen": [
         "hauptteil",
         "abschluss"
@@ -5870,6 +6013,7 @@
         "Dialogisches Lernen nach Gallin & Ruf"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "reflexion",
       "phasen": [
         "hauptteil",
         "abschluss"
@@ -5921,6 +6065,7 @@
         "Spaced-Repetition-App"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "ueben",
       "phasen": [
         "hauptteil"
       ],
@@ -5972,6 +6117,7 @@
         "Pflicht- und Wahlaufgaben"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "selbststaendig",
       "phasen": [
         "hauptteil"
       ],
@@ -6022,6 +6168,7 @@
         "Lerntempo-Partner"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "differenzierung",
       "phasen": [
         "hauptteil"
       ],
@@ -6073,6 +6220,7 @@
         "Lesestrategien vermitteln"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "lesen_schreiben",
       "phasen": [
         "hauptteil"
       ],
@@ -6123,6 +6271,7 @@
         "Szenisches Vorlesen"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "lesen_schreiben",
       "phasen": [
         "hauptteil",
         "abschluss"
@@ -6172,6 +6321,7 @@
         "Beispiel-Aufgabe-Paare"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "instruktion",
       "phasen": [
         "hauptteil"
       ],
@@ -6224,6 +6374,7 @@
         "Nebeneinanderstellen"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "mathe_nawi",
       "phasen": [
         "hauptteil"
       ],
@@ -6270,6 +6421,7 @@
         "Gelenkte Mitschrift"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "lesen_schreiben",
       "phasen": [
         "hauptteil"
       ],
@@ -6318,6 +6470,7 @@
         "Textmarker"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "lesen_schreiben",
       "phasen": [
         "hauptteil"
       ],
@@ -6364,6 +6517,7 @@
         "Lernen bis zur Beherrschung"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "ueben",
       "phasen": [
         "hauptteil"
       ],
@@ -6417,6 +6571,7 @@
         "Strategiekonferenz"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "mathe_nawi",
       "phasen": [
         "hauptteil"
       ],
@@ -6466,6 +6621,7 @@
         "Sachaufgaben modellieren"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "mathe_nawi",
       "phasen": [
         "hauptteil"
       ],
@@ -6514,6 +6670,7 @@
         "Modelle aus dem Alltag"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "instruktion",
       "phasen": [
         "hauptteil"
       ],
@@ -6561,6 +6718,7 @@
         "Cognitive Modelling"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "instruktion",
       "phasen": [
         "hauptteil"
       ],
@@ -6613,6 +6771,7 @@
         "Kombinationsmatrix"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "kreativ",
       "phasen": [
         "hauptteil"
       ],
@@ -6661,6 +6820,7 @@
         "Rätselkarten-Methode"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "selbststaendig",
       "phasen": [
         "hauptteil"
       ],
@@ -6709,6 +6869,7 @@
         "Kopfnummern"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "kooperativ",
       "phasen": [
         "hauptteil"
       ],
@@ -6758,6 +6919,7 @@
         "Arbeit zu zweit"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "kooperativ",
       "phasen": [
         "hauptteil"
       ],
@@ -6809,6 +6971,7 @@
         "Tandembogen"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "kooperativ",
       "phasen": [
         "hauptteil"
       ],
@@ -6858,6 +7021,7 @@
         "Paar-Jigsaw"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "kooperativ",
       "phasen": [
         "hauptteil"
       ],
@@ -6909,6 +7073,7 @@
         "Lightning Talk"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "visualisierung",
       "phasen": [
         "hauptteil",
         "abschluss"
@@ -6960,6 +7125,7 @@
         "Abstimmen–Diskutieren–Neu abstimmen"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "kooperativ",
       "phasen": [
         "hauptteil"
       ],
@@ -7013,6 +7179,7 @@
         "Cross-Age-Tutoring"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "kooperativ",
       "phasen": [
         "hauptteil"
       ],
@@ -7067,6 +7234,7 @@
         "Community of Inquiry"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "gespraech",
       "phasen": [
         "hauptteil"
       ],
@@ -7116,6 +7284,7 @@
         "Serious Game"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "handlung",
       "phasen": [
         "hauptteil"
       ],
@@ -7165,6 +7334,7 @@
         "Send-a-Problem"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "kreativ",
       "phasen": [
         "hauptteil"
       ],
@@ -7214,6 +7384,7 @@
         "Siebensprung"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "selbststaendig",
       "phasen": [
         "hauptteil"
       ],
@@ -7263,6 +7434,7 @@
         "Verstehen – Planen – Durchführen – Rückschau"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "mathe_nawi",
       "phasen": [
         "hauptteil"
       ],
@@ -7314,6 +7486,7 @@
         "Erst knobeln, dann erklären"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "mathe_nawi",
       "phasen": [
         "hauptteil"
       ],
@@ -7361,6 +7534,7 @@
         "Entdeckendes Üben"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "mathe_nawi",
       "phasen": [
         "hauptteil"
       ],
@@ -7409,6 +7583,7 @@
         "PBL (project-based)"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "selbststaendig",
       "phasen": [
         "hauptteil"
       ],
@@ -7463,6 +7638,7 @@
         "SIFT"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "lesen_schreiben",
       "phasen": [
         "hauptteil"
       ],
@@ -7512,6 +7688,7 @@
         "Quellenkritik"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "lesen_schreiben",
       "phasen": [
         "hauptteil"
       ],
@@ -7562,6 +7739,7 @@
         "Frage-Karten-Tausch"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "kooperativ",
       "phasen": [
         "hauptteil",
         "abschluss"
@@ -7611,6 +7789,7 @@
         "Gesprächsmarken"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "kooperativ",
       "phasen": [
         "hauptteil"
       ],
@@ -7660,6 +7839,7 @@
         "Lesekonferenz mit Rollen"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "lesen_schreiben",
       "phasen": [
         "hauptteil"
       ],
@@ -7710,6 +7890,7 @@
         "Bildungssprache aufbauen"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "lesen_schreiben",
       "phasen": [
         "hauptteil"
       ],
@@ -7761,6 +7942,7 @@
         "Zeitwächter–Schreiber–Sprecher"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "kooperativ",
       "phasen": [
         "hauptteil"
       ],
@@ -7810,6 +7992,7 @@
         "Standbild"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "handlung",
       "phasen": [
         "hauptteil"
       ],
@@ -7860,6 +8043,7 @@
         "Round Table"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "lesen_schreiben",
       "phasen": [
         "hauptteil"
       ],
@@ -7911,6 +8095,7 @@
         "gestufte Hilfen"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "instruktion",
       "phasen": [
         "hauptteil"
       ],
@@ -7963,6 +8148,7 @@
         "Ideenfragen"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "kreativ",
       "phasen": [
         "hauptteil"
       ],
@@ -8011,6 +8197,7 @@
         "Diagnostische Mehrfachwahlfrage"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "diagnose",
       "phasen": [
         "hauptteil"
       ],
@@ -8060,6 +8247,7 @@
         "Snowball"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "kooperativ",
       "phasen": [
         "hauptteil"
       ],
@@ -8111,6 +8299,7 @@
         "Autorenrunde"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "lesen_schreiben",
       "phasen": [
         "hauptteil"
       ],
@@ -8160,6 +8349,7 @@
         "Laborübung"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "handlung",
       "phasen": [
         "hauptteil"
       ],
@@ -8210,6 +8400,7 @@
         "Perspektivwechsel nach de Bono"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "kreativ",
       "phasen": [
         "hauptteil"
       ],
@@ -8260,6 +8451,7 @@
         "Rückseite mit Lösung"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "differenzierung",
       "phasen": [
         "hauptteil"
       ],
@@ -8309,6 +8501,7 @@
         "Gruppen-Abfrage mit Tafeln"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "kooperativ",
       "phasen": [
         "hauptteil"
       ],
@@ -8356,6 +8549,7 @@
         "Neosokratisches Gespräch"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "gespraech",
       "phasen": [
         "hauptteil"
       ],
@@ -8406,6 +8600,7 @@
         "Textprozeduren"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "lesen_schreiben",
       "phasen": [
         "hauptteil"
       ],
@@ -8456,6 +8651,7 @@
         "Freeze Frame"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "handlung",
       "phasen": [
         "hauptteil",
         "abschluss"
@@ -8507,6 +8703,7 @@
         "Lernbuffet"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "selbststaendig",
       "phasen": [
         "hauptteil"
       ],
@@ -8560,6 +8757,7 @@
         "Chalk Talk"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "gespraech",
       "phasen": [
         "hauptteil",
         "einstieg"
@@ -8611,6 +8809,7 @@
         "Schreibstrategien mit Merkwort"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "lesen_schreiben",
       "phasen": [
         "hauptteil"
       ],
@@ -8664,6 +8863,7 @@
         "Jugend debattiert-Format"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "gespraech",
       "phasen": [
         "hauptteil"
       ],
@@ -8711,6 +8911,7 @@
         "Mitschrift"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "lesen_schreiben",
       "phasen": [
         "hauptteil"
       ],
@@ -8760,6 +8961,7 @@
         "Trichtermodell"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "kreativ",
       "phasen": [
         "hauptteil"
       ],
@@ -8808,6 +9010,7 @@
         "Szenische Interpretation"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "handlung",
       "phasen": [
         "hauptteil"
       ],
@@ -8858,6 +9061,7 @@
         "Hearing"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "gespraech",
       "phasen": [
         "hauptteil",
         "abschluss"
@@ -8910,6 +9114,7 @@
         "Wir-Du-Ich"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "kooperativ",
       "phasen": [
         "hauptteil"
       ],
@@ -8961,6 +9166,7 @@
         "Teams-Games-Tournament"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "handlung",
       "phasen": [
         "hauptteil",
         "abschluss"
@@ -9010,6 +9216,7 @@
         "Textanalyse"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "lesen_schreiben",
       "phasen": [
         "hauptteil"
       ],
@@ -9061,6 +9268,7 @@
         "Schriftliche Textrückmeldung im Kreis"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "lesen_schreiben",
       "phasen": [
         "hauptteil"
       ],
@@ -9109,6 +9317,7 @@
         "Denken – Austauschen – Vorstellen"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "kooperativ",
       "phasen": [
         "hauptteil"
       ],
@@ -9162,6 +9371,7 @@
         "Schauprozess (didaktisch)"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "handlung",
       "phasen": [
         "hauptteil"
       ],
@@ -9212,6 +9422,7 @@
         "Gemischte Übung"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "ueben",
       "phasen": [
         "hauptteil"
       ],
@@ -9259,6 +9470,7 @@
         "Spiralwiederholung"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "ueben",
       "phasen": [
         "hauptteil",
         "einstieg"
@@ -9309,6 +9521,7 @@
         "PhET"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "mathe_nawi",
       "phasen": [
         "hauptteil"
       ],
@@ -9357,6 +9570,7 @@
         "Gesprächsspaziergang"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "gespraech",
       "phasen": [
         "hauptteil",
         "abschluss"
@@ -9406,6 +9620,7 @@
         "Träumer – Realist – Kritiker"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "kreativ",
       "phasen": [
         "hauptteil"
       ],
@@ -9453,6 +9668,7 @@
         "Strukturierte Internetrecherche"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "selbststaendig",
       "phasen": [
         "hauptteil"
       ],
@@ -9501,6 +9717,7 @@
         "Lernwerkstatt"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "selbststaendig",
       "phasen": [
         "hauptteil"
       ],
@@ -9552,6 +9769,7 @@
         "Lernbüro"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "selbststaendig",
       "phasen": [
         "hauptteil"
       ],
@@ -9604,6 +9822,7 @@
         "Skizzieren"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "ueben",
       "phasen": [
         "hauptteil",
         "abschluss"
@@ -9655,6 +9874,7 @@
         "Wait Time"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "gespraech",
       "phasen": [
         "hauptteil"
       ],
@@ -9704,6 +9924,7 @@
         "3 Dinge – 2 Fragen – 1 Meinung"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "reflexion",
       "phasen": [
         "abschluss"
       ],
@@ -9753,6 +9974,7 @@
         "Brain Dump zum Schluss"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "ueben",
       "phasen": [
         "abschluss"
       ],
@@ -9801,6 +10023,7 @@
         "Brücke zur nächsten Stunde"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "aktivierung",
       "phasen": [
         "abschluss"
       ],
@@ -9847,6 +10070,7 @@
         "Lernspiele analog"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "handlung",
       "phasen": [
         "abschluss",
         "hauptteil"
@@ -9897,6 +10121,7 @@
         "Tipps für Nachfolgende"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "reflexion",
       "phasen": [
         "abschluss"
       ],
@@ -9946,6 +10171,7 @@
         "Schlagzeile"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "reflexion",
       "phasen": [
         "abschluss"
       ],
@@ -9993,6 +10219,7 @@
         "60-Sekunden-Statement"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "visualisierung",
       "phasen": [
         "abschluss"
       ],
@@ -10040,6 +10267,7 @@
         "Ausgangskarte"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "diagnose",
       "phasen": [
         "abschluss"
       ],
@@ -10088,6 +10316,7 @@
         "Erklär-Test"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "ueben",
       "phasen": [
         "abschluss",
         "hauptteil"
@@ -10137,6 +10366,7 @@
         "I used to think … now I think"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "reflexion",
       "phasen": [
         "abschluss"
       ],
@@ -10186,6 +10416,7 @@
         "Handreflexion"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "reflexion",
       "phasen": [
         "abschluss"
       ],
@@ -10233,6 +10464,7 @@
         "Homework with Spacing"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "ueben",
       "phasen": [
         "abschluss"
       ],
@@ -10279,6 +10511,7 @@
         "Koffer-Methode"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "reflexion",
       "phasen": [
         "abschluss"
       ],
@@ -10326,6 +10559,7 @@
         "Feedback vor Note"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "diagnose",
       "phasen": [
         "abschluss"
       ],
@@ -10375,6 +10609,7 @@
         "Spickzettel-Methode"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "visualisierung",
       "phasen": [
         "abschluss"
       ],
@@ -10425,6 +10660,7 @@
         "Portfolio-Eintrag"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "reflexion",
       "phasen": [
         "abschluss"
       ],
@@ -10473,6 +10709,7 @@
         "Was war am unklarsten?"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "diagnose",
       "phasen": [
         "abschluss"
       ],
@@ -10517,6 +10754,7 @@
         "Minutenfrage"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "diagnose",
       "phasen": [
         "abschluss"
       ],
@@ -10565,6 +10803,7 @@
         "Feedback-Sandwich-Alternative"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "diagnose",
       "phasen": [
         "abschluss",
         "hauptteil"
@@ -10616,6 +10855,7 @@
         "Entwicklungsportfolio"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "reflexion",
       "phasen": [
         "abschluss",
         "uebergreifend"
@@ -10667,6 +10907,7 @@
         "Wissenschaftliche Posterpräsentation"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "visualisierung",
       "phasen": [
         "abschluss"
       ],
@@ -10715,6 +10956,7 @@
         "Berichtigung mit Reflexion"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "diagnose",
       "phasen": [
         "abschluss"
       ],
@@ -10765,6 +11007,7 @@
         "Der große Preis"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "handlung",
       "phasen": [
         "abschluss"
       ],
@@ -10814,6 +11057,7 @@
         "Induktive Regelbildung"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "instruktion",
       "phasen": [
         "abschluss",
         "hauptteil"
@@ -10866,6 +11110,7 @@
         "Selbsteinschätzung"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "diagnose",
       "phasen": [
         "abschluss"
       ],
@@ -10914,6 +11159,7 @@
         "Merkeintrag"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "visualisierung",
       "phasen": [
         "abschluss"
       ],
@@ -10962,6 +11208,7 @@
         "Connect-Extend-Challenge"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "aktivierung",
       "phasen": [
         "abschluss",
         "hauptteil"
@@ -11012,6 +11259,7 @@
         "Gruppentest"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "diagnose",
       "phasen": [
         "abschluss"
       ],
@@ -11061,6 +11309,7 @@
         "Präsenz + Online"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "planung",
       "phasen": [
         "uebergreifend"
       ],
@@ -11110,6 +11359,7 @@
         "Tischgruppen"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "kooperativ",
       "phasen": [
         "uebergreifend"
       ],
@@ -11160,6 +11410,7 @@
         "Fachsystematischer Kurs"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "planung",
       "phasen": [
         "uebergreifend"
       ],
@@ -11210,6 +11461,7 @@
         "Lernfortschrittsmessung"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "diagnose",
       "phasen": [
         "uebergreifend"
       ],
@@ -11256,6 +11508,7 @@
         "Wechsel von kollektiven und individuellen Lernphasen"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "planung",
       "phasen": [
         "uebergreifend",
         "hauptteil"
@@ -11306,6 +11559,7 @@
         "Wiederkehrende Vertiefung"
       ],
       "kategorie": "didaktik",
+      "unterkategorie": "planung",
       "phasen": [
         "uebergreifend"
       ],
@@ -11355,6 +11609,7 @@
         "Positive Greetings at the Door"
       ],
       "kategorie": "paedagogik",
+      "unterkategorie": "beziehung",
       "phasen": [
         "einstieg"
       ],
@@ -11405,6 +11660,7 @@
         "Hopes & Fears"
       ],
       "kategorie": "paedagogik",
+      "unterkategorie": "moderation",
       "phasen": [
         "einstieg"
       ],
@@ -11457,6 +11713,7 @@
         "Steckbrief"
       ],
       "kategorie": "paedagogik",
+      "unterkategorie": "beziehung",
       "phasen": [
         "einstieg"
       ],
@@ -11509,6 +11766,7 @@
         "What So What Now What"
       ],
       "kategorie": "paedagogik",
+      "unterkategorie": "moderation",
       "phasen": [
         "einstieg",
         "hauptteil",
@@ -11563,6 +11821,7 @@
         "Check-in"
       ],
       "kategorie": "paedagogik",
+      "unterkategorie": "beziehung",
       "phasen": [
         "einstieg"
       ],
@@ -11612,6 +11871,7 @@
         "Selbstregulationsspiele"
       ],
       "kategorie": "paedagogik",
+      "unterkategorie": "reform",
       "phasen": [
         "einstieg",
         "hauptteil"
@@ -11660,6 +11920,7 @@
         "Lehrer-Schüler-Konferenz"
       ],
       "kategorie": "paedagogik",
+      "unterkategorie": "kommunikation",
       "phasen": [
         "hauptteil",
         "uebergreifend"
@@ -11710,6 +11971,7 @@
         "Spielbasiertes Lernen im Kindergarten"
       ],
       "kategorie": "paedagogik",
+      "unterkategorie": "reform",
       "phasen": [
         "hauptteil"
       ],
@@ -11756,6 +12018,7 @@
         "4D-Zyklus"
       ],
       "kategorie": "paedagogik",
+      "unterkategorie": "moderation",
       "phasen": [
         "hauptteil"
       ],
@@ -11805,6 +12068,7 @@
         "Beziehungsorientierte Fallbesprechung"
       ],
       "kategorie": "paedagogik",
+      "unterkategorie": "profession",
       "phasen": [
         "hauptteil"
       ],
@@ -11853,6 +12117,7 @@
         "Kooperative Abenteuerspiele"
       ],
       "kategorie": "paedagogik",
+      "unterkategorie": "partizipation",
       "phasen": [
         "hauptteil"
       ],
@@ -11904,6 +12169,7 @@
         "Giraffensprache"
       ],
       "kategorie": "paedagogik",
+      "unterkategorie": "kommunikation",
       "phasen": [
         "hauptteil"
       ],
@@ -11956,6 +12222,7 @@
         "KlasseKinderSpiel"
       ],
       "kategorie": "paedagogik",
+      "unterkategorie": "fuehrung",
       "phasen": [
         "hauptteil"
       ],
@@ -12004,6 +12271,7 @@
         "Schülerparlament (Klassenebene)"
       ],
       "kategorie": "paedagogik",
+      "unterkategorie": "partizipation",
       "phasen": [
         "hauptteil"
       ],
@@ -12053,6 +12321,7 @@
         "Kollegiale Beratung"
       ],
       "kategorie": "paedagogik",
+      "unterkategorie": "profession",
       "phasen": [
         "hauptteil"
       ],
@@ -12101,6 +12370,7 @@
         "Sach-, Beziehungs-, Selbstkundgabe-, Appellebene"
       ],
       "kategorie": "paedagogik",
+      "unterkategorie": "kommunikation",
       "phasen": [
         "hauptteil"
       ],
@@ -12149,6 +12419,7 @@
         "Mikrounterricht mit Videofeedback"
       ],
       "kategorie": "paedagogik",
+      "unterkategorie": "profession",
       "phasen": [
         "hauptteil"
       ],
@@ -12195,6 +12466,7 @@
         "Hilf mir, es selbst zu tun"
       ],
       "kategorie": "paedagogik",
+      "unterkategorie": "reform",
       "phasen": [
         "hauptteil",
         "uebergreifend"
@@ -12245,6 +12517,7 @@
         "Unterstützungsgruppe"
       ],
       "kategorie": "paedagogik",
+      "unterkategorie": "konflikt",
       "phasen": [
         "hauptteil"
       ],
@@ -12293,6 +12566,7 @@
         "Strukturierte Ideenpriorisierung"
       ],
       "kategorie": "paedagogik",
+      "unterkategorie": "moderation",
       "phasen": [
         "hauptteil"
       ],
@@ -12341,6 +12615,7 @@
         "Barcamp (verwandt)"
       ],
       "kategorie": "paedagogik",
+      "unterkategorie": "moderation",
       "phasen": [
         "hauptteil"
       ],
@@ -12389,6 +12664,7 @@
         "Prospektive Fehleranalyse"
       ],
       "kategorie": "paedagogik",
+      "unterkategorie": "moderation",
       "phasen": [
         "hauptteil"
       ],
@@ -12434,6 +12710,7 @@
         "Lernen durch gesellschaftliches Engagement"
       ],
       "kategorie": "paedagogik",
+      "unterkategorie": "partizipation",
       "phasen": [
         "hauptteil"
       ],
@@ -12483,6 +12760,7 @@
         "Konfliktlotsen"
       ],
       "kategorie": "paedagogik",
+      "unterkategorie": "konflikt",
       "phasen": [
         "hauptteil"
       ],
@@ -12533,6 +12811,7 @@
         "Positive Verstärkung im Unterricht"
       ],
       "kategorie": "paedagogik",
+      "unterkategorie": "fuehrung",
       "phasen": [
         "hauptteil"
       ],
@@ -12584,6 +12863,7 @@
         "Täter-Opfer-Ausgleich (schulisch)"
       ],
       "kategorie": "paedagogik",
+      "unterkategorie": "konflikt",
       "phasen": [
         "hauptteil"
       ],
@@ -12631,6 +12911,7 @@
         "Gesprächscafé"
       ],
       "kategorie": "paedagogik",
+      "unterkategorie": "moderation",
       "phasen": [
         "hauptteil"
       ],
@@ -12679,6 +12960,7 @@
         "Kritik – Fantasie – Verwirklichung"
       ],
       "kategorie": "paedagogik",
+      "unterkategorie": "partizipation",
       "phasen": [
         "hauptteil"
       ],
@@ -12728,6 +13010,7 @@
         "Klatschkreis"
       ],
       "kategorie": "paedagogik",
+      "unterkategorie": "beziehung",
       "phasen": [
         "abschluss"
       ],
@@ -12776,6 +13059,7 @@
         "Einsatznachbesprechung"
       ],
       "kategorie": "paedagogik",
+      "unterkategorie": "profession",
       "phasen": [
         "abschluss"
       ],
@@ -12823,6 +13107,7 @@
         "One-Word-Check-out"
       ],
       "kategorie": "paedagogik",
+      "unterkategorie": "beziehung",
       "phasen": [
         "abschluss",
         "einstieg"
@@ -12872,6 +13157,7 @@
         "Kolb-Zyklus"
       ],
       "kategorie": "paedagogik",
+      "unterkategorie": "profession",
       "phasen": [
         "abschluss"
       ],
@@ -12921,6 +13207,7 @@
         "Plus/Delta"
       ],
       "kategorie": "paedagogik",
+      "unterkategorie": "profession",
       "phasen": [
         "abschluss"
       ],
@@ -12972,6 +13259,7 @@
         "Unterrichtsevaluation"
       ],
       "kategorie": "paedagogik",
+      "unterkategorie": "profession",
       "phasen": [
         "abschluss",
         "uebergreifend"
@@ -13022,6 +13310,7 @@
         "Lernvertrag"
       ],
       "kategorie": "paedagogik",
+      "unterkategorie": "profession",
       "phasen": [
         "abschluss"
       ],
@@ -13071,6 +13360,7 @@
         "Appreciation Round"
       ],
       "kategorie": "paedagogik",
+      "unterkategorie": "beziehung",
       "phasen": [
         "abschluss"
       ],
@@ -13122,6 +13412,7 @@
         "Ampelfeedback"
       ],
       "kategorie": "paedagogik",
+      "unterkategorie": "moderation",
       "phasen": [
         "abschluss"
       ],
@@ -13171,6 +13462,7 @@
         "Gruppenmobilisierung"
       ],
       "kategorie": "paedagogik",
+      "unterkategorie": "fuehrung",
       "phasen": [
         "uebergreifend",
         "hauptteil"
@@ -13221,6 +13513,7 @@
         "Elternarbeit"
       ],
       "kategorie": "paedagogik",
+      "unterkategorie": "eltern",
       "phasen": [
         "uebergreifend"
       ],
@@ -13268,6 +13561,7 @@
         "Jugyou Kenkyuu"
       ],
       "kategorie": "paedagogik",
+      "unterkategorie": "profession",
       "phasen": [
         "uebergreifend"
       ],
@@ -13314,6 +13608,7 @@
         "Lesepaten"
       ],
       "kategorie": "paedagogik",
+      "unterkategorie": "eltern",
       "phasen": [
         "uebergreifend"
       ],
@@ -13364,6 +13659,7 @@
         "Working Agreements"
       ],
       "kategorie": "paedagogik",
+      "unterkategorie": "fuehrung",
       "phasen": [
         "uebergreifend",
         "einstieg"
@@ -13416,6 +13712,7 @@
         "Anti-Bullying-Programm"
       ],
       "kategorie": "paedagogik",
+      "unterkategorie": "konflikt",
       "phasen": [
         "uebergreifend"
       ],
@@ -13468,6 +13765,7 @@
         "Beziehungsnetz der Klasse"
       ],
       "kategorie": "paedagogik",
+      "unterkategorie": "profession",
       "phasen": [
         "uebergreifend"
       ],
@@ -13516,6 +13814,7 @@
         "Ich-Wir-Es-Globe"
       ],
       "kategorie": "paedagogik",
+      "unterkategorie": "kommunikation",
       "phasen": [
         "uebergreifend"
       ],
@@ -13566,6 +13865,7 @@
         "MBCT"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "emotion_stress",
       "phasen": [
         "einstieg",
         "hauptteil",
@@ -13623,6 +13923,7 @@
         "Bauchatmung"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "emotion_stress",
       "phasen": [
         "einstieg",
         "abschluss"
@@ -13672,6 +13973,7 @@
         "Peseschkian-Modell"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "beratung",
       "phasen": [
         "einstieg",
         "hauptteil"
@@ -13723,6 +14025,7 @@
         "Behavior Education Program"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "verhalten",
       "phasen": [
         "einstieg",
         "abschluss"
@@ -13772,6 +14075,7 @@
         "Kontraktgestaltung"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "therapie",
       "phasen": [
         "einstieg"
       ],
@@ -13823,6 +14127,7 @@
         "Zones of Regulation"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "emotion_stress",
       "phasen": [
         "einstieg",
         "abschluss"
@@ -13875,6 +14180,7 @@
         "Goal Attainment"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "therapie",
       "phasen": [
         "einstieg",
         "uebergreifend"
@@ -13925,6 +14231,7 @@
         "Zufriedenheitsrad"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "beratung",
       "phasen": [
         "einstieg",
         "abschluss"
@@ -13976,6 +14283,7 @@
         "SFBT"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "beratung",
       "phasen": [
         "einstieg",
         "hauptteil",
@@ -14029,6 +14337,7 @@
         "Stress-Mindset"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "emotion_stress",
       "phasen": [
         "einstieg"
       ],
@@ -14077,6 +14386,7 @@
         "Ressourcenkoffer"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "positiv",
       "phasen": [
         "einstieg",
         "hauptteil"
@@ -14129,6 +14439,7 @@
         "Versuchungen entfernen"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "selbststeuerung",
       "phasen": [
         "einstieg",
         "hauptteil"
@@ -14179,6 +14490,7 @@
         "Zimmerman-Zyklus"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "kognition",
       "phasen": [
         "einstieg",
         "hauptteil",
@@ -14229,6 +14541,7 @@
         "Expressive Writing vor Tests"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "emotion_stress",
       "phasen": [
         "einstieg"
       ],
@@ -14274,6 +14587,7 @@
         "Absichtslosigkeit – Absichtsbildung – Vorbereitung – Handlung – Aufrechterhaltung"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "beratung",
       "phasen": [
         "einstieg"
       ],
@@ -14322,6 +14636,7 @@
         "Brückenschlag"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "therapie",
       "phasen": [
         "einstieg",
         "hauptteil",
@@ -14374,6 +14689,7 @@
         "standardisierte Diagnostik"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "diagnostik",
       "phasen": [
         "einstieg"
       ],
@@ -14421,6 +14737,7 @@
         "Brettspiele in der Beratung"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "imaginativ",
       "phasen": [
         "einstieg",
         "hauptteil"
@@ -14471,6 +14788,7 @@
         "Feedback-informierte Therapie"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "diagnostik",
       "phasen": [
         "einstieg",
         "uebergreifend"
@@ -14519,6 +14837,7 @@
         "Fähigkeiten sind entwickelbar"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "motivation",
       "phasen": [
         "einstieg",
         "uebergreifend"
@@ -14569,6 +14888,7 @@
         "Self-Affirmation-Schreibübung"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "motivation",
       "phasen": [
         "einstieg"
       ],
@@ -14616,6 +14936,7 @@
         "Werte-Ranking"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "beratung",
       "phasen": [
         "einstieg",
         "hauptteil"
@@ -14669,6 +14990,7 @@
         "Implementierungsintentionen"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "motivation",
       "phasen": [
         "einstieg",
         "abschluss"
@@ -14721,6 +15043,7 @@
         "Lernziele für sich selbst"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "motivation",
       "phasen": [
         "einstieg",
         "abschluss"
@@ -14769,6 +15092,7 @@
         "Übergangsintervention"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "motivation",
       "phasen": [
         "einstieg"
       ],
@@ -14818,6 +15142,7 @@
         "Gedankendetektiv"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "therapie",
       "phasen": [
         "hauptteil"
       ],
@@ -14866,6 +15191,7 @@
         "Wochenplan mit angenehmen Aktivitäten"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "therapie",
       "phasen": [
         "hauptteil",
         "abschluss"
@@ -14914,6 +15240,7 @@
         "Kurzentspannung in Alltagssituationen"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "emotion_stress",
       "phasen": [
         "hauptteil"
       ],
@@ -14963,6 +15290,7 @@
         "Innere-Kind-Arbeit"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "imaginativ",
       "phasen": [
         "hauptteil"
       ],
@@ -15011,6 +15339,7 @@
         "Fokuszeiten"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "selbststeuerung",
       "phasen": [
         "hauptteil"
       ],
@@ -15059,6 +15388,7 @@
         "Konzentrationsspiele"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "kognition",
       "phasen": [
         "hauptteil"
       ],
@@ -15103,6 +15433,7 @@
         "Naming – Understanding – Respecting – Supporting – Exploring"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "beratung",
       "phasen": [
         "hauptteil"
       ],
@@ -15150,6 +15481,7 @@
         "Startrituale"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "selbststeuerung",
       "phasen": [
         "hauptteil"
       ],
@@ -15201,6 +15533,7 @@
         "Auszeitplatz"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "verhalten",
       "phasen": [
         "hauptteil"
       ],
@@ -15247,6 +15580,7 @@
         "Selbsthypnose-Formeln"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "emotion_stress",
       "phasen": [
         "hauptteil",
         "abschluss"
@@ -15295,6 +15629,7 @@
         "Aktivitätsprogramme"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "emotion_stress",
       "phasen": [
         "hauptteil"
       ],
@@ -15343,6 +15678,7 @@
         "Atem-Biofeedback"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "emotion_stress",
       "phasen": [
         "hauptteil"
       ],
@@ -15389,6 +15725,7 @@
         "Blickpunkt-Verfahren"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "imaginativ",
       "phasen": [
         "hauptteil"
       ],
@@ -15436,6 +15773,7 @@
         "Metakommunikation"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "therapie",
       "phasen": [
         "hauptteil"
       ],
@@ -15483,6 +15821,7 @@
         "Informationseinheiten bilden"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "kognition",
       "phasen": [
         "hauptteil"
       ],
@@ -15532,6 +15871,7 @@
         "Interpersonelle Diskriminationsübung"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "therapie",
       "phasen": [
         "hauptteil"
       ],
@@ -15575,6 +15915,7 @@
         "Goal – Reality – Options – Will"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "beratung",
       "phasen": [
         "hauptteil"
       ],
@@ -15627,6 +15968,7 @@
         "Bias-Training"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "kognition",
       "phasen": [
         "hauptteil"
       ],
@@ -15677,6 +16019,7 @@
         "Verstärkung von Nicht-Auftreten"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "verhalten",
       "phasen": [
         "hauptteil"
       ],
@@ -15725,6 +16068,7 @@
         "Emotion Coaching"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "emotion_stress",
       "phasen": [
         "hauptteil"
       ],
@@ -15773,6 +16117,7 @@
         "Perspektivwechsel üben"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "sozial",
       "phasen": [
         "hauptteil"
       ],
@@ -15822,6 +16167,7 @@
         "Pro und Contra für Veränderung"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "beratung",
       "phasen": [
         "hauptteil"
       ],
@@ -15871,6 +16217,7 @@
         "Skills bei Überflutung"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "emotion_stress",
       "phasen": [
         "hauptteil"
       ],
@@ -15920,6 +16267,7 @@
         "Schreiben über belastende Erfahrungen"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "therapie",
       "phasen": [
         "hauptteil"
       ],
@@ -15967,6 +16315,7 @@
         "Problem als Figur"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "therapie",
       "phasen": [
         "hauptteil"
       ],
@@ -16017,6 +16366,7 @@
         "Figurenaufstellung auf dem Tisch"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "diagnostik",
       "phasen": [
         "hauptteil"
       ],
@@ -16066,6 +16416,7 @@
         "Fehlerarme Instruktion"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "verhalten",
       "phasen": [
         "hauptteil"
       ],
@@ -16115,6 +16466,7 @@
         "SAFMEDS"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "verhalten",
       "phasen": [
         "hauptteil"
       ],
@@ -16163,6 +16515,7 @@
         "Unterstützerkreis für ausgegrenzte Kinder"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "sozial",
       "phasen": [
         "hauptteil"
       ],
@@ -16213,6 +16566,7 @@
         "Routenmethode"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "kognition",
       "phasen": [
         "hauptteil"
       ],
@@ -16260,6 +16614,7 @@
         "VIP-Karte"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "diagnostik",
       "phasen": [
         "hauptteil"
       ],
@@ -16306,6 +16661,7 @@
         "Sinnesübungen"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "positiv",
       "phasen": [
         "hauptteil",
         "abschluss"
@@ -16353,6 +16709,7 @@
         "Aufmerksamkeit entziehen"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "verhalten",
       "phasen": [
         "hauptteil"
       ],
@@ -16402,6 +16759,7 @@
         "Mut-Leiter"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "therapie",
       "phasen": [
         "hauptteil"
       ],
@@ -16452,6 +16810,7 @@
         "Gegenreaktionstraining"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "verhalten",
       "phasen": [
         "hauptteil"
       ],
@@ -16500,6 +16859,7 @@
         "Murmelglas"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "verhalten",
       "phasen": [
         "hauptteil"
       ],
@@ -16548,6 +16908,7 @@
         "Most-to-Least"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "verhalten",
       "phasen": [
         "hauptteil"
       ],
@@ -16597,6 +16958,7 @@
         "Problem- und Lösungstrance"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "imaginativ",
       "phasen": [
         "hauptteil"
       ],
@@ -16649,6 +17011,7 @@
         "Medizinische Hypnose"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "imaginativ",
       "phasen": [
         "hauptteil"
       ],
@@ -16701,6 +17064,7 @@
         "Interpersonales Problemlösen für Kinder"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "sozial",
       "phasen": [
         "hauptteil"
       ],
@@ -16748,6 +17112,7 @@
         "Stabilisierungsübungen"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "imaginativ",
       "phasen": [
         "hauptteil",
         "abschluss"
@@ -16797,6 +17162,7 @@
         "Gegenstände im Gespräch"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "imaginativ",
       "phasen": [
         "hauptteil"
       ],
@@ -16848,6 +17214,7 @@
         "Ego-States (pädagogisch)"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "beratung",
       "phasen": [
         "hauptteil"
       ],
@@ -16896,6 +17263,7 @@
         "Interpersonelle Therapie"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "therapie",
       "phasen": [
         "hauptteil"
       ],
@@ -16942,6 +17310,7 @@
         "Selbst- und Fremdbild"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "gruppe",
       "phasen": [
         "hauptteil",
         "abschluss"
@@ -16990,6 +17359,7 @@
         "Selbstinstruktion bei Aufgaben"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "kognition",
       "phasen": [
         "hauptteil"
       ],
@@ -17037,6 +17407,7 @@
         "Notfallplan"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "krise",
       "phasen": [
         "hauptteil"
       ],
@@ -17087,6 +17458,7 @@
         "Timeline"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "therapie",
       "phasen": [
         "hauptteil"
       ],
@@ -17134,6 +17506,7 @@
         "Video Self-Modeling"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "sozial",
       "phasen": [
         "hauptteil"
       ],
@@ -17184,6 +17557,7 @@
         "Feed Up – Feed Back – Feed Forward"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "kognition",
       "phasen": [
         "hauptteil",
         "abschluss"
@@ -17239,6 +17613,7 @@
         "Wie lerne ich am besten?"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "kognition",
       "phasen": [
         "hauptteil"
       ],
@@ -17289,6 +17664,7 @@
         "Keyword-Methode"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "kognition",
       "phasen": [
         "hauptteil"
       ],
@@ -17337,6 +17713,7 @@
         "OARS"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "beratung",
       "phasen": [
         "hauptteil"
       ],
@@ -17385,6 +17762,7 @@
         "künstlerische Therapien"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "therapie",
       "phasen": [
         "hauptteil"
       ],
@@ -17434,6 +17812,7 @@
         "Perspektive wechseln"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "emotion_stress",
       "phasen": [
         "hauptteil",
         "abschluss"
@@ -17483,6 +17862,7 @@
         "Optionen-Gespräch"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "beratung",
       "phasen": [
         "hauptteil"
       ],
@@ -17531,6 +17911,7 @@
         "First-Then-Board"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "verhalten",
       "phasen": [
         "hauptteil"
       ],
@@ -17578,6 +17959,7 @@
         "Jacobson-Entspannung"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "emotion_stress",
       "phasen": [
         "hauptteil",
         "abschluss"
@@ -17626,6 +18008,7 @@
         "Test Anxiety Intervention"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "selbststeuerung",
       "phasen": [
         "hauptteil"
       ],
@@ -17674,6 +18057,7 @@
         "Aufklärung über Stress, Angst, Schlaf, Lernen"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "beratung",
       "phasen": [
         "hauptteil"
       ],
@@ -17725,6 +18109,7 @@
         "Attributional Retraining"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "kognition",
       "phasen": [
         "hauptteil"
       ],
@@ -17775,6 +18160,7 @@
         "Reflecting Team"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "beratung",
       "phasen": [
         "hauptteil"
       ],
@@ -17822,6 +18208,7 @@
         "Spiegeln"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "therapie",
       "phasen": [
         "hauptteil"
       ],
@@ -17871,6 +18258,7 @@
         "Imaginatives Überschreiben"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "therapie",
       "phasen": [
         "hauptteil"
       ],
@@ -17918,6 +18306,7 @@
         "CBT-I-Elemente"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "selbststeuerung",
       "phasen": [
         "hauptteil"
       ],
@@ -17966,6 +18355,7 @@
         "Sechs-Schritte-Protokoll"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "beratung",
       "phasen": [
         "hauptteil"
       ],
@@ -18014,6 +18404,7 @@
         "Nein sagen lernen"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "sozial",
       "phasen": [
         "hauptteil"
       ],
@@ -18063,6 +18454,7 @@
         "Selbstregistrierung"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "selbststeuerung",
       "phasen": [
         "hauptteil"
       ],
@@ -18112,6 +18504,7 @@
         "digitale Gesundheitsanwendungen"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "therapie",
       "phasen": [
         "hauptteil"
       ],
@@ -18160,6 +18553,7 @@
         "Stopp-Schild"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "verhalten",
       "phasen": [
         "hauptteil"
       ],
@@ -18212,6 +18606,7 @@
         "Freundlicher Brief an sich selbst"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "positiv",
       "phasen": [
         "hauptteil",
         "abschluss"
@@ -18258,6 +18653,7 @@
         "Kreative Selbstwertarbeit"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "positiv",
       "phasen": [
         "hauptteil"
       ],
@@ -18306,6 +18702,7 @@
         "Stresstoleranz-Skills"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "therapie",
       "phasen": [
         "hauptteil"
       ],
@@ -18354,6 +18751,7 @@
         "Guided Discovery"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "therapie",
       "phasen": [
         "hauptteil"
       ],
@@ -18402,6 +18800,7 @@
         "Stimuluskontrolle für Sorgen"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "therapie",
       "phasen": [
         "hauptteil",
         "abschluss"
@@ -18447,6 +18846,7 @@
         "Sozialgeschichten nach Gray"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "sozial",
       "phasen": [
         "hauptteil"
       ],
@@ -18494,6 +18894,7 @@
         "Social Skills Training"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "sozial",
       "phasen": [
         "hauptteil"
       ],
@@ -18544,6 +18945,7 @@
         "IDEAL"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "sozial",
       "phasen": [
         "hauptteil"
       ],
@@ -18595,6 +18997,7 @@
         "Play Therapy"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "therapie",
       "phasen": [
         "hauptteil"
       ],
@@ -18642,6 +19045,7 @@
         "Stress Inoculation Training"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "emotion_stress",
       "phasen": [
         "hauptteil"
       ],
@@ -18690,6 +19094,7 @@
         "Dialog mit Anteilen"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "therapie",
       "phasen": [
         "hauptteil"
       ],
@@ -18739,6 +19144,7 @@
         "Ressourcenorientierung"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "positiv",
       "phasen": [
         "hauptteil",
         "abschluss"
@@ -18792,6 +19198,7 @@
         "Reframing"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "beratung",
       "phasen": [
         "hauptteil"
       ],
@@ -18841,6 +19248,7 @@
         "Teamkompetenztraining"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "sozial",
       "phasen": [
         "hauptteil"
       ],
@@ -18889,6 +19297,7 @@
         "Panik-Teufelskreis"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "beratung",
       "phasen": [
         "hauptteil"
       ],
@@ -18937,6 +19346,7 @@
         "Geschichten für Kinder in Krisen"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "imaginativ",
       "phasen": [
         "hauptteil"
       ],
@@ -18988,6 +19398,7 @@
         "Heilsame Geschichten"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "imaginativ",
       "phasen": [
         "hauptteil",
         "abschluss"
@@ -19040,6 +19451,7 @@
         "Emotionsregulationstraining"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "emotion_stress",
       "phasen": [
         "hauptteil"
       ],
@@ -19088,6 +19500,7 @@
         "JUSO"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "sozial",
       "phasen": [
         "hauptteil"
       ],
@@ -19140,6 +19553,7 @@
         "Narrative Expositionstherapie"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "therapie",
       "phasen": [
         "hauptteil"
       ],
@@ -19192,6 +19606,7 @@
         "Compassion-Focused Therapy"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "positiv",
       "phasen": [
         "hauptteil"
       ],
@@ -19243,6 +19658,7 @@
         "Verständnis ausdrücken (DBT)"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "beratung",
       "phasen": [
         "hauptteil"
       ],
@@ -19292,6 +19708,7 @@
         "Annahme im Alltag testen"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "therapie",
       "phasen": [
         "hauptteil"
       ],
@@ -19339,6 +19756,7 @@
         "Successive Approximation"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "verhalten",
       "phasen": [
         "hauptteil"
       ],
@@ -19390,6 +19808,7 @@
         "Vorwärts- und Rückwärtsverkettung"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "verhalten",
       "phasen": [
         "hauptteil"
       ],
@@ -19440,6 +19859,7 @@
         "Behavior Contract"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "verhalten",
       "phasen": [
         "hauptteil"
       ],
@@ -19489,6 +19909,7 @@
         "Kostenkontingenz"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "verhalten",
       "phasen": [
         "hauptteil"
       ],
@@ -19537,6 +19958,7 @@
         "Token Economy"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "verhalten",
       "phasen": [
         "hauptteil"
       ],
@@ -19586,6 +20008,7 @@
         "Diathese-Stress-Modell"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "beratung",
       "phasen": [
         "hauptteil"
       ],
@@ -19634,6 +20057,7 @@
         "Hohe Standards + Zutrauen"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "motivation",
       "phasen": [
         "hauptteil",
         "abschluss"
@@ -19682,6 +20106,7 @@
         "Werte-Kompass"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "therapie",
       "phasen": [
         "hauptteil"
       ],
@@ -19728,6 +20153,7 @@
         "Wohlbefindens-Tagebuch"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "positiv",
       "phasen": [
         "hauptteil"
       ],
@@ -19774,6 +20200,7 @@
         "Zuschauer aktivieren"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "sozial",
       "phasen": [
         "hauptteil"
       ],
@@ -19824,6 +20251,7 @@
         "Aggression Replacement Training"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "sozial",
       "phasen": [
         "hauptteil"
       ],
@@ -19876,6 +20304,7 @@
         "Booster-Sitzungen"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "therapie",
       "phasen": [
         "abschluss"
       ],
@@ -19927,6 +20356,7 @@
         "Dankbarkeitsbrief"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "positiv",
       "phasen": [
         "abschluss"
       ],
@@ -19977,6 +20407,7 @@
         "Geführte Imagination"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "emotion_stress",
       "phasen": [
         "abschluss",
         "hauptteil"
@@ -20025,6 +20456,7 @@
         "Habit Stacking"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "selbststeuerung",
       "phasen": [
         "abschluss",
         "uebergreifend"
@@ -20074,6 +20506,7 @@
         "Frühwarnplan"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "therapie",
       "phasen": [
         "abschluss"
       ],
@@ -20122,6 +20555,7 @@
         "Schule-Eltern-Karte"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "verhalten",
       "phasen": [
         "abschluss"
       ],
@@ -20170,6 +20604,7 @@
         "Chunk and Check"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "beratung",
       "phasen": [
         "abschluss"
       ],
@@ -20218,6 +20653,7 @@
         "Kann ich das wirklich?"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "kognition",
       "phasen": [
         "abschluss",
         "hauptteil"
@@ -20268,6 +20704,7 @@
         "Transferaufgaben"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "therapie",
       "phasen": [
         "abschluss"
       ],
@@ -20317,6 +20754,7 @@
         "kognitiv-behaviorale Prävention"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "praevention",
       "phasen": [
         "uebergreifend"
       ],
@@ -20368,6 +20806,7 @@
         "Autonomieunterstützung"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "motivation",
       "phasen": [
         "uebergreifend"
       ],
@@ -20417,6 +20856,7 @@
         "Verhaltensbeobachtungsbogen"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "verhalten",
       "phasen": [
         "uebergreifend"
       ],
@@ -20463,6 +20903,7 @@
         "Elternkurs"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "praevention",
       "phasen": [
         "uebergreifend"
       ],
@@ -20512,6 +20953,7 @@
         "ALGEE"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "praevention",
       "phasen": [
         "uebergreifend"
       ],
@@ -20560,6 +21002,7 @@
         "High Expectations"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "motivation",
       "phasen": [
         "uebergreifend"
       ],
@@ -20609,6 +21052,7 @@
         "Bedingungsmodell"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "diagnostik",
       "phasen": [
         "uebergreifend"
       ],
@@ -20659,6 +21103,7 @@
         "Video-Feedback zur Feinfühligkeit"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "praevention",
       "phasen": [
         "uebergreifend"
       ],
@@ -20705,6 +21150,7 @@
         "Forming – Storming – Norming – Performing – Adjourning"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "gruppe",
       "phasen": [
         "uebergreifend"
       ],
@@ -20756,6 +21202,7 @@
         "Provokative Leichtigkeit"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "positiv",
       "phasen": [
         "uebergreifend"
       ],
@@ -20806,6 +21253,7 @@
         "Personzentrierte Gesprächsführung"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "beratung",
       "phasen": [
         "uebergreifend"
       ],
@@ -20855,6 +21303,7 @@
         "Intergruppenkontakt"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "sozial",
       "phasen": [
         "uebergreifend"
       ],
@@ -20906,6 +21355,7 @@
         "Innere Zustände verstehen"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "praevention",
       "phasen": [
         "uebergreifend"
       ],
@@ -20958,6 +21408,7 @@
         "PATHS"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "praevention",
       "phasen": [
         "uebergreifend"
       ],
@@ -21012,6 +21463,7 @@
         "Look – Listen – Link"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "krise",
       "phasen": [
         "uebergreifend"
       ],
@@ -21060,6 +21512,7 @@
         "Fehlerkultur"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "gruppe",
       "phasen": [
         "uebergreifend"
       ],
@@ -21108,6 +21561,7 @@
         "Wohlbefindens-Index"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "diagnostik",
       "phasen": [
         "uebergreifend"
       ],
@@ -21157,6 +21611,7 @@
         "Supervision"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "krise",
       "phasen": [
         "uebergreifend"
       ],
@@ -21207,6 +21662,7 @@
         "Verbal persuasion"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "motivation",
       "phasen": [
         "uebergreifend"
       ],
@@ -21255,6 +21711,7 @@
         "Allgemeine Wirkfaktoren"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "therapie",
       "phasen": [
         "uebergreifend"
       ],
@@ -21305,6 +21762,7 @@
         "Antecedent – Behavior – Consequence"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "verhalten",
       "phasen": [
         "uebergreifend"
       ],
@@ -21356,6 +21814,7 @@
         "Kohäsion"
       ],
       "kategorie": "psychologie",
+      "unterkategorie": "gruppe",
       "phasen": [
         "uebergreifend"
       ],

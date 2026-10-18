@@ -3,6 +3,7 @@
   name: Gedächtnispalast (Loci-Methode)
   aliase: [Methode der Orte, Routenmethode]
   kategorie: psychologie
+  unterkategorie: kognition
   phasen: [hauptteil]
   setting: [einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -27,6 +28,7 @@
   name: Merkhilfen (Akronyme, Schlüsselwort, Reime)
   aliase: [Mnemotechniken, Eselsbrücken, Keyword-Methode]
   kategorie: psychologie
+  unterkategorie: kognition
   phasen: [hauptteil]
   setting: [einzel, plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -52,6 +54,7 @@
   name: Bündeln (Chunking)
   aliase: [Informationseinheiten bilden]
   kategorie: psychologie
+  unterkategorie: kognition
   phasen: [hauptteil]
   setting: [einzel, plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -76,6 +79,7 @@
   name: Verzögerte Lernstandsurteile (Kalibrierung)
   aliase: [Judgments of Learning, "Kann ich das wirklich?"]
   kategorie: psychologie
+  unterkategorie: kognition
   phasen: [abschluss, hauptteil]
   setting: [einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -101,6 +105,7 @@
   name: Reattributionstraining
   aliase: [Ursachenzuschreibung ändern, Attributional Retraining]
   kategorie: psychologie
+  unterkategorie: kognition
   phasen: [hauptteil]
   setting: [einzel, kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -126,6 +131,7 @@
   name: Denkfehler erkennen (Debiasing)
   aliase: [Kognitive Verzerrungen, Kritisches Denken, Bias-Training]
   kategorie: psychologie
+  unterkategorie: kognition
   phasen: [hauptteil]
   setting: [einzel, kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -151,6 +157,7 @@
   name: Arbeitsgedächtnis- und Gehirntraining
   aliase: [Cogmed, Brain Training, Konzentrationsspiele]
   kategorie: psychologie
+  unterkategorie: kognition
   phasen: [hauptteil]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -173,6 +180,7 @@
   name: Konzentrationstraining (Marburger Konzentrationstraining)
   aliase: [MKT, Selbstinstruktion bei Aufgaben]
   kategorie: psychologie
+  unterkategorie: kognition
   phasen: [hauptteil]
   setting: [kleingruppe]
   zielgruppen: [kinder]
@@ -198,6 +206,7 @@
   name: Selbstkontrolle über die Umgebung
   aliase: [Situative Strategien, Handy weglegen, Versuchungen entfernen]
   kategorie: psychologie
+  unterkategorie: selbststeuerung
   phasen: [einstieg, hauptteil]
   setting: [einzel, plenum]
   zielgruppen: [jugendliche, erwachsene]
@@ -222,6 +231,7 @@
   name: Arbeiten in Zeitblöcken (Pomodoro)
   aliase: [Zeitboxing, Fokuszeiten]
   kategorie: psychologie
+  unterkategorie: selbststeuerung
   phasen: [hauptteil]
   setting: [einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -246,6 +256,7 @@
   name: Aufschieben überwinden
   aliase: [Prokrastinationstraining, Startrituale]
   kategorie: psychologie
+  unterkategorie: selbststeuerung
   phasen: [hauptteil]
   setting: [einzel, kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -271,6 +282,7 @@
   name: Prüfungsangst-Training
   aliase: [Test Anxiety Intervention]
   kategorie: psychologie
+  unterkategorie: selbststeuerung
   phasen: [hauptteil]
   setting: [kleingruppe, einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -296,6 +308,7 @@
   name: Schlaf und Lernen (Psychoedukation, Schlafhygiene)
   aliase: [Schlafregeln, CBT-I-Elemente]
   kategorie: psychologie
+  unterkategorie: selbststeuerung
   phasen: [hauptteil]
   setting: [plenum, einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -320,6 +333,7 @@
   name: Sokratischer Dialog (kognitive Therapie)
   aliase: [Geleitetes Entdecken, Guided Discovery]
   kategorie: psychologie
+  unterkategorie: therapie
   phasen: [hauptteil]
   setting: [einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -345,6 +359,7 @@
   name: Verhaltensexperiment
   aliase: [Behavioural Experiment, Annahme im Alltag testen]
   kategorie: psychologie
+  unterkategorie: therapie
   phasen: [hauptteil]
   setting: [einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -370,6 +385,7 @@
   name: Sorgenzeit (Grübeln verschieben)
   aliase: [Worry Time, Stimuluskontrolle für Sorgen]
   kategorie: psychologie
+  unterkategorie: therapie
   phasen: [hauptteil, abschluss]
   setting: [einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -394,6 +410,7 @@
   name: Autogenes Training
   aliase: [Schultz-Entspannung, Selbsthypnose-Formeln]
   kategorie: psychologie
+  unterkategorie: emotion_stress
   phasen: [hauptteil, abschluss]
   setting: [kleingruppe, einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -418,6 +435,7 @@
   name: Angewandte Entspannung (Applied Relaxation)
   aliase: [Öst-Entspannung, Kurzentspannung in Alltagssituationen]
   kategorie: psychologie
+  unterkategorie: emotion_stress
   phasen: [hauptteil]
   setting: [einzel, kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -443,6 +461,7 @@
   name: Training emotionaler Kompetenzen (TEK)
   aliase: [Affect Regulation Training, Emotionsregulationstraining]
   kategorie: psychologie
+  unterkategorie: emotion_stress
   phasen: [hauptteil]
   setting: [kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -467,6 +486,7 @@
   name: Neubewerten im Alltag (Reappraisal)
   aliase: [Umdeuten, Perspektive wechseln]
   kategorie: psychologie
+  unterkategorie: emotion_stress
   phasen: [hauptteil, abschluss]
   setting: [einzel, kleingruppe]
   zielgruppen: [jugendliche, erwachsene]
@@ -491,6 +511,7 @@
   name: Feinfühligkeit und sichere Basis
   aliase: [Bindungsorientierte Begleitung, Video-Feedback zur Feinfühligkeit]
   kategorie: psychologie
+  unterkategorie: praevention
   phasen: [uebergreifend]
   setting: [einzel]
   zielgruppen: [kinder, erwachsene]
@@ -515,6 +536,7 @@
   name: Mentalisieren fördern
   aliase: [Mentalisierungsbasierte Pädagogik, Innere Zustände verstehen]
   kategorie: psychologie
+  unterkategorie: praevention
   phasen: [uebergreifend]
   setting: [einzel, kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -539,6 +561,7 @@
   name: Lernstrategiewissen vermitteln
   aliase: [Lernen lernen, "Wie lerne ich am besten?"]
   kategorie: psychologie
+  unterkategorie: kognition
   phasen: [hauptteil]
   setting: [plenum, kleingruppe]
   zielgruppen: [jugendliche, erwachsene]

@@ -45,6 +45,33 @@ LEGENDE = {
         'krise': 'Krise & Belastung',
         'therapie': 'Therapie & klinische Arbeit',
     },
+    'unterkategorien': {
+        'didaktik': {
+            'planung': 'Planung, Struktur, Großformen', 'instruktion': 'Instruktion und Erklären',
+            'aktivierung': 'Einstiege und Denkroutinen', 'kooperativ': 'Kooperative Lernformen',
+            'gespraech': 'Gespräch, Diskussion, Argumentation', 'handlung': 'Handlungs-, Simulations- und Spielformen',
+            'selbststaendig': 'Offene und selbstständige Lernformen', 'lesen_schreiben': 'Lesen, Schreiben, Sprache',
+            'mathe_nawi': 'Mathematik und Naturwissenschaften', 'ueben': 'Üben, Wiederholen, Gedächtnis',
+            'kreativ': 'Ideenfindung und Kreativität', 'visualisierung': 'Visualisieren und Präsentieren',
+            'diagnose': 'Diagnose, Feedback, Bewertung', 'reflexion': 'Abschluss und Reflexion',
+            'differenzierung': 'Differenzierung und Inklusion',
+        },
+        'paedagogik': {
+            'beziehung': 'Beziehung und Klima', 'fuehrung': 'Klassenführung und Regeln', 'konflikt': 'Konflikt und Mobbing',
+            'kommunikation': 'Kommunikation', 'partizipation': 'Partizipation und Engagement',
+            'reform': 'Reform- und Frühpädagogik', 'moderation': 'Moderation und Großgruppen',
+            'profession': 'Professionalisierung und Kollegium', 'eltern': 'Eltern und Mentoring',
+        },
+        'psychologie': {
+            'motivation': 'Motivation und Ziele', 'kognition': 'Kognition, Gedächtnis, Metakognition',
+            'selbststeuerung': 'Selbststeuerung und Gewohnheiten', 'verhalten': 'Verhaltenspsychologie (ABA)',
+            'sozial': 'Soziale Kompetenz', 'emotion_stress': 'Emotion, Stress, Entspannung',
+            'positiv': 'Positive Psychologie und Ressourcen', 'praevention': 'Präventionsprogramme',
+            'beratung': 'Beratung und Gesprächsführung', 'diagnostik': 'Diagnostik', 'gruppe': 'Gruppen und Teams',
+            'therapie': 'Therapieverfahren und klinische Arbeit', 'imaginativ': 'Imaginative und hypnosystemische Methoden',
+            'krise': 'Krise und Notfall',
+        },
+    },
     'evidenz': {
         'stark': 'Mehrere Metaanalysen oder große RCTs mit konsistentem Befund',
         'mittel': 'Positive Befunde mit Einschränkungen (Studienzahl, Heterogenität, Umsetzung)',
@@ -113,6 +140,8 @@ for m in methoden:
     check_list(m, 'anwendung', LEGENDE['anwendung'])
     if m['evidenz']['stufe'] not in LEGENDE['evidenz']: errors.append(f"{m['id']}: evidenz {m['evidenz']['stufe']}")
     if m['qualifikation'] not in LEGENDE['qualifikation']: errors.append(f"{m['id']}: qualifikation")
+    if m.get('unterkategorie') not in LEGENDE['unterkategorien'][m['kategorie']]:
+        errors.append(f"{m['id']}: unterkategorie '{m['unterkategorie']}' passt nicht zu {m['kategorie']}")
     for q in m['quellen']:
         used[q] += 1
         if q not in qids: errors.append(f"{m['id']}: quelle {q} fehlt")

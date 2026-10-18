@@ -3,6 +3,7 @@
   name: Exit Ticket (Austrittskarte)
   aliase: [Lernzettel zum Schluss, Ausgangskarte]
   kategorie: didaktik
+  unterkategorie: diagnose
   phasen: [abschluss]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -27,6 +28,7 @@
   name: One-Minute-Paper
   aliase: [Minutenfrage]
   kategorie: didaktik
+  unterkategorie: diagnose
   phasen: [abschluss]
   setting: [einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -52,6 +54,7 @@
   name: Muddiest Point (Unklarster Punkt)
   aliase: ["Was war am unklarsten?"]
   kategorie: didaktik
+  unterkategorie: diagnose
   phasen: [abschluss]
   setting: [einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -76,6 +79,7 @@
   name: 3-2-1-Methode
   aliase: [3 Dinge – 2 Fragen – 1 Meinung]
   kategorie: didaktik
+  unterkategorie: reflexion
   phasen: [abschluss]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -100,6 +104,7 @@
   name: Ein-Satz-Zusammenfassung / Tweet
   aliase: [One-Sentence Summary, Schlagzeile]
   kategorie: didaktik
+  unterkategorie: reflexion
   phasen: [abschluss]
   setting: [einzel, partner]
   zielgruppen: [jugendliche, erwachsene]
@@ -124,6 +129,7 @@
   name: Lerntagebuch / Lernprotokoll
   aliase: [Learning Journal, Reflexionsjournal, Portfolio-Eintrag]
   kategorie: didaktik
+  unterkategorie: reflexion
   phasen: [abschluss]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -148,6 +154,7 @@
   name: Selbstüberprüfung an Erfolgskriterien
   aliase: [Checkliste, Rubric, Selbsteinschätzung]
   kategorie: didaktik
+  unterkategorie: diagnose
   phasen: [abschluss]
   setting: [einzel]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -172,6 +179,7 @@
   name: Peer-Feedback (Zwei Sterne und ein Wunsch)
   aliase: [Peer Assessment, Schreibkonferenz, Feedback-Sandwich-Alternative]
   kategorie: didaktik
+  unterkategorie: diagnose
   phasen: [abschluss, hauptteil]
   setting: [partner, kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -196,6 +204,7 @@
   name: Abschlussquiz (low stakes)
   aliase: [Wiederholungsquiz, Brain Dump zum Schluss]
   kategorie: didaktik
+  unterkategorie: ueben
   phasen: [abschluss]
   setting: [einzel, kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -220,6 +229,7 @@
   name: Ausblick / Cliffhanger
   aliase: [Brücke zur nächsten Stunde]
   kategorie: didaktik
+  unterkategorie: aktivierung
   phasen: [abschluss]
   setting: [plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -244,6 +254,7 @@
   name: Koffer – Papierkorb – Wäschekorb
   aliase: ["Was nehme ich mit?", Koffer-Methode]
   kategorie: didaktik
+  unterkategorie: reflexion
   phasen: [abschluss]
   setting: [einzel, plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -268,6 +279,7 @@
   name: Lernplakat / Merkblatt erstellen
   aliase: [Cheat Sheet, Spickzettel-Methode]
   kategorie: didaktik
+  unterkategorie: visualisierung
   phasen: [abschluss]
   setting: [einzel, kleingruppe]
   zielgruppen: [kinder, jugendliche, erwachsene]
@@ -293,6 +305,7 @@
   name: Hausaufgabe als verteilte Übung
   aliase: [Homework with Spacing]
   kategorie: didaktik
+  unterkategorie: ueben
   phasen: [abschluss]
   setting: [einzel]
   zielgruppen: [jugendliche, erwachsene]
@@ -317,6 +330,7 @@
   name: Fünf-Finger-Reflexion
   aliase: [Handreflexion]
   kategorie: didaktik
+  unterkategorie: reflexion
   phasen: [abschluss]
   setting: [einzel, plenum]
   zielgruppen: [kinder, jugendliche, erwachsene]
