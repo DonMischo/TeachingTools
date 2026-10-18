@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" font-family="Arial, Helvetica, sans-serif" role="img" aria-label="PHASENMODELLE IM VERGLEICH">
+<rect x="0" y="0" width="960" height="600" fill="#0F1E2E" rx="12"/>
+<text x="480.0" y="38.0" font-size="20" fill="#FFFFFF" text-anchor="middle" font-weight="bold">PHASENMODELLE IM VERGLEICH</text>
+<line x1="60" y1="50" x2="900" y2="50" stroke="#C9A227" stroke-width="2"/>
+<text x="480.0" y="70.0" font-size="12" fill="#8AADCC" text-anchor="middle" font-weight="normal">Alle Modelle teilen die Grundstruktur Einstieg – Hauptteil – Abschluss, setzen aber unterschiedliche Schwerpunkte</text>
+<rect x="210.0" y="88" width="173.5" height="486" fill="#24425F" rx="6"/>
+<text x="298.75" y="108.0" font-size="12" fill="#FFFFFF" text-anchor="middle" font-weight="bold">EINSTIEG</text>
+<rect x="387.5" y="88" width="372.30000000000007" height="486" fill="#1F3A2E" rx="6"/>
+<text x="575.6500000000001" y="108.0" font-size="12" fill="#FFFFFF" text-anchor="middle" font-weight="bold">HAUPTTEIL</text>
+<rect x="763.8000000000001" y="88" width="152.19999999999993" height="486" fill="#4A2E1E" rx="6"/>
+<text x="841.9000000000001" y="108.0" font-size="12" fill="#FFFFFF" text-anchor="middle" font-weight="bold">ABSCHLUSS</text>
+<rect x="30" y="124" width="170" height="44" fill="#1A2A3A" rx="4"/>
+<text x="40" y="151.0" font-size="12" fill="#FFFFFF" text-anchor="start" font-weight="bold">Meyer (klassisch)</text>
+<rect x="212" y="130" width="169.5" height="32" fill="#3D7DCA" rx="4"/>
+<text x="296.75" y="150.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Einstieg</text>
+<rect x="389.5" y="130" width="368.30000000000007" height="32" fill="#2E9466" rx="4"/>
+<text x="573.6500000000001" y="150.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Erarbeitung</text>
+<rect x="765.8000000000001" y="130" width="148.19999999999993" height="32" fill="#C2652E" rx="4"/>
+<text x="839.9000000000001" y="150.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Ergebnissicherung</text>
+<rect x="30" y="174" width="170" height="44" fill="#1A2A3A" rx="4"/>
+<text x="40" y="201.0" font-size="12" fill="#FFFFFF" text-anchor="start" font-weight="bold">Roth (1957)</text>
+<rect x="212" y="180" width="77.19999999999999" height="32" fill="#3D7DCA" rx="4"/>
+<text x="250.6" y="200.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Motivation</text>
+<rect x="297.2" y="180" width="84.30000000000001" height="32" fill="#2E9466" rx="4"/>
+<text x="339.35" y="200.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Schwierigkeit</text>
+<rect x="389.5" y="180" width="112.69999999999999" height="32" fill="#C2652E" rx="4"/>
+<text x="445.85" y="200.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Lösung</text>
+<rect x="510.2" y="180" width="119.80000000000001" height="32" fill="#7E57C2" rx="4"/>
+<text x="570.1" y="200.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Tun &amp; Ausführen</text>
+<rect x="638.0" y="180" width="119.80000000000007" height="32" fill="#B8860B" rx="4"/>
+<text x="697.9000000000001" y="200.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Behalten &amp; Einüben</text>
+<rect x="765.8000000000001" y="180" width="148.19999999999993" height="32" fill="#2A9DB0" rx="4"/>
+<text x="839.9000000000001" y="200.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Übertragung</text>
+<rect x="30" y="224" width="170" height="44" fill="#1A2A3A" rx="4"/>
+<text x="40" y="251.0" font-size="12" fill="#FFFFFF" text-anchor="start" font-weight="bold">Aebli – PADUA</text>
+<rect x="212" y="230" width="205.0" height="32" fill="#3D7DCA" rx="4"/>
+<text x="314.5" y="250.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Problemlösend aufbauen</text>
+<rect x="425.0" y="230" width="169.5" height="32" fill="#2E9466" rx="4"/>
+<text x="509.75" y="250.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Durcharbeiten</text>
+<rect x="602.5" y="230" width="155.30000000000007" height="32" fill="#C2652E" rx="4"/>
+<text x="680.1500000000001" y="250.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Üben</text>
+<rect x="765.8000000000001" y="230" width="148.19999999999993" height="32" fill="#7E57C2" rx="4"/>
+<text x="839.9000000000001" y="250.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Anwenden</text>
+<rect x="30" y="274" width="170" height="44" fill="#1A2A3A" rx="4"/>
+<text x="40" y="301.0" font-size="12" fill="#FFFFFF" text-anchor="start" font-weight="bold">Gagné – 9 Lernereignisse</text>
+<rect x="212" y="280" width="169.5" height="32" fill="#3D7DCA" rx="4"/>
+<text x="296.75" y="293.0" font-size="9.5" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Aufmerksamkeit · Ziel ·</text>
+<text x="296.75" y="303.9" font-size="9.5" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Vorwissen</text>
+<rect x="389.5" y="280" width="169.5" height="32" fill="#2E9466" rx="4"/>
+<text x="474.25" y="300.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Inhalt · Anleitung</text>
+<rect x="567.0" y="280" width="190.80000000000007" height="32" fill="#C2652E" rx="4"/>
+<text x="662.4000000000001" y="300.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Ausführen · Feedback</text>
+<rect x="765.8000000000001" y="280" width="148.19999999999993" height="32" fill="#7E57C2" rx="4"/>
+<text x="839.9000000000001" y="300.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Prüfen · Transfer</text>
+<rect x="30" y="324" width="170" height="44" fill="#1A2A3A" rx="4"/>
+<text x="40" y="351.0" font-size="12" fill="#FFFFFF" text-anchor="start" font-weight="bold">AVIVA</text>
+<rect x="212" y="330" width="77.19999999999999" height="32" fill="#3D7DCA" rx="4"/>
+<text x="250.6" y="350.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Ankommen</text>
+<rect x="297.2" y="330" width="84.30000000000001" height="32" fill="#2E9466" rx="4"/>
+<text x="339.35" y="350.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Vorwissen</text>
+<rect x="389.5" y="330" width="169.5" height="32" fill="#C2652E" rx="4"/>
+<text x="474.25" y="350.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Informieren</text>
+<rect x="567.0" y="330" width="190.80000000000007" height="32" fill="#7E57C2" rx="4"/>
+<text x="662.4000000000001" y="350.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Verarbeiten</text>
+<rect x="765.8000000000001" y="330" width="148.19999999999993" height="32" fill="#B8860B" rx="4"/>
+<text x="839.9000000000001" y="350.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Auswerten</text>
+<rect x="30" y="374" width="170" height="44" fill="#1A2A3A" rx="4"/>
+<text x="40" y="401.0" font-size="12" fill="#FFFFFF" text-anchor="start" font-weight="bold">5E (BSCS)</text>
+<rect x="212" y="380" width="169.5" height="32" fill="#3D7DCA" rx="4"/>
+<text x="296.75" y="400.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Engage</text>
+<rect x="389.5" y="380" width="119.79999999999995" height="32" fill="#2E9466" rx="4"/>
+<text x="449.4" y="400.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Explore</text>
+<rect x="517.3" y="380" width="112.70000000000005" height="32" fill="#C2652E" rx="4"/>
+<text x="573.65" y="400.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Explain</text>
+<rect x="638.0" y="380" width="119.80000000000007" height="32" fill="#7E57C2" rx="4"/>
+<text x="697.9000000000001" y="400.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Elaborate</text>
+<rect x="765.8000000000001" y="380" width="148.19999999999993" height="32" fill="#B8860B" rx="4"/>
+<text x="839.9000000000001" y="400.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Evaluate</text>
+<rect x="30" y="424" width="170" height="44" fill="#1A2A3A" rx="4"/>
+<text x="40" y="443.0" font-size="12" fill="#FFFFFF" text-anchor="start" font-weight="bold">Merrill – First</text>
+<text x="40" y="457.4" font-size="12" fill="#FFFFFF" text-anchor="start" font-weight="bold">Principles</text>
+<rect x="212" y="430" width="169.5" height="32" fill="#3D7DCA" rx="4"/>
+<text x="296.75" y="450.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Aktivieren</text>
+<rect x="389.5" y="430" width="169.5" height="32" fill="#2E9466" rx="4"/>
+<text x="474.25" y="450.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Demonstrieren</text>
+<rect x="567.0" y="430" width="190.80000000000007" height="32" fill="#C2652E" rx="4"/>
+<text x="662.4000000000001" y="450.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Anwenden</text>
+<rect x="765.8000000000001" y="430" width="148.19999999999993" height="32" fill="#7E57C2" rx="4"/>
+<text x="839.9000000000001" y="450.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Integrieren</text>
+<rect x="30" y="474" width="170" height="44" fill="#1A2A3A" rx="4"/>
+<text x="40" y="501.0" font-size="12" fill="#FFFFFF" text-anchor="start" font-weight="bold">Wahl – Sandwich</text>
+<rect x="212" y="480" width="169.5" height="32" fill="#3D7DCA" rx="4"/>
+<text x="296.75" y="500.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Orientierung</text>
+<rect x="389.5" y="480" width="70.10000000000002" height="32" fill="#2E9466" rx="4"/>
+<text x="424.55" y="500.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Input</text>
+<rect x="467.6" y="480" width="91.39999999999998" height="32" fill="#C2652E" rx="4"/>
+<text x="513.3" y="500.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Verarbeitung</text>
+<rect x="567.0" y="480" width="77.20000000000005" height="32" fill="#7E57C2" rx="4"/>
+<text x="605.6" y="500.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Input</text>
+<rect x="652.2" y="480" width="105.60000000000002" height="32" fill="#B8860B" rx="4"/>
+<text x="705.0" y="500.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Verarbeitung</text>
+<rect x="765.8000000000001" y="480" width="148.19999999999993" height="32" fill="#2A9DB0" rx="4"/>
+<text x="839.9000000000001" y="500.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Transferplanung</text>
+<rect x="30" y="524" width="170" height="44" fill="#1A2A3A" rx="4"/>
+<text x="40" y="551.0" font-size="12" fill="#FFFFFF" text-anchor="start" font-weight="bold">Rosenshine (Prinzipien)</text>
+<rect x="212" y="530" width="169.5" height="32" fill="#3D7DCA" rx="4"/>
+<text x="296.75" y="550.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Tägliche Wiederholung</text>
+<rect x="389.5" y="530" width="368.30000000000007" height="32" fill="#2E9466" rx="4"/>
+<text x="573.6500000000001" y="550.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Kleine Schritte · Modelle · angeleitete Übung</text>
+<rect x="765.8000000000001" y="530" width="148.19999999999993" height="32" fill="#C2652E" rx="4"/>
+<text x="839.9000000000001" y="543.0" font-size="9.5" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Verständnis prüfen ·</text>
+<text x="839.9000000000001" y="553.9" font-size="9.5" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Wiederholen</text>
+<text x="480.0" y="590.0" font-size="10.5" fill="#8AADCC" text-anchor="middle" font-weight="normal">Quellen: Meyer 1987 · Roth 1957 · Aebli 1983 · Gagné 1985 · Städeli et al. 2010 · Bybee et al. 2006 · Merrill 2002 · Wahl 2013 · Rosenshine 2012</text>
+</svg>

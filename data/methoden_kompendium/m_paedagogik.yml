@@ -1,0 +1,1113 @@
+# Pädagogik – Beziehung, Gemeinschaft, Führung, Konflikt, Partizipation, Erwachsenen- und Teamarbeit
+- id: p_begruessung_tuer
+  name: Begrüßung an der Tür
+  aliase: [Positive Greetings at the Door]
+  kategorie: paedagogik
+  phasen: [einstieg]
+  setting: [einzel, plenum]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [beziehung, klassenfuehrung]
+  dauer: 2–4 Min.
+  kurz: Die Lehrkraft steht an der Tür und begrüßt jede Person einzeln mit Namen, Blickkontakt und einem kurzen persönlichen Wort; Störungen der letzten Stunde werden dabei freundlich »zurückgesetzt«.
+  ablauf:
+    - Vor Stundenbeginn an der Tür stehen.
+    - Jede Person mit Namen begrüßen (Handschlag, Faust, Winken – Wahl lassen).
+    - Kurze, positive Vorkorrektur bei Bedarf (»Heute starten wir neu«).
+    - Startaufgabe (Do Now) bereitliegen haben.
+  varianten:
+    - "Kinder: Begrüßung mit einem Handzeichen oder Gruß, den alle Kinder kennen."
+    - "Jugendliche: kurzer persönlicher Satz statt Floskel, z. B. »Schön, dass du da bist.«"
+    - "Digital: Begrüßung im Videoraum beim Einlass mit Namen im Chat."
+  stolpersteine:
+    - "Die Begrüßung wird zur Kontrolle, wenn nur Verspätete angesprochen werden; alle gleich behandeln."
+    - "Lange Schlangen an der Tür stören den Start; Begrüßung kurz halten oder am Platz wiederholen."
+  evidenz: {stufe: mittel, text: "Randomisierte Studie (Cook et al. 2018): +20 Prozentpunkte aktive Lernzeit, weniger Störverhalten; konsistent mit Befunden zu Lehrer-Schüler-Beziehungen (Cornelius-White 2007)."}
+  qualifikation: alle
+  quellen: [q_cook2018, q_cornelius2007]
+
+- id: p_morgenkreis
+  name: Morgenkreis / Check-in-Runde
+  aliase: [Erzählkreis, Montagskreis, Check-in]
+  kategorie: paedagogik
+  phasen: [einstieg]
+  setting: [plenum, kleingruppe]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [beziehung, sozial_emotional]
+  dauer: 5–20 Min.
+  kurz: Die Gruppe beginnt im Kreis mit einer kurzen Runde, in der jede Person zu einer Frage etwas sagen kann (»Was beschäftigt dich heute?«, »Eine Sache, die gut war«).
+  ablauf:
+    - Kreis bilden; Redegegenstand (Talking Piece) einführen.
+    - Einfache, ungefährliche Frage stellen; Weitergeben ohne Sprechen ist erlaubt.
+    - Kurz halten, nicht kommentieren oder diskutieren.
+  varianten:
+    - "Erwachsene: Check-in »Mit welchem Gedanken bin ich hier?« in einem Satz."
+    - "Restorative Circles nutzen dieselbe Struktur für Konflikte."
+  stolpersteine:
+    - Persönliche Fragen ohne Vertrauensbasis überfordern; Tiefe langsam steigern.
+  evidenz: {stufe: begrenzt, text: "Bestandteil vieler SEL- und Restorative-Practices-Programme (RAND-Studie zu Restorative Practices: besseres Klima, weniger Suspendierungen, aber keine Leistungsgewinne)."}
+  qualifikation: alle
+  quellen: [q_augustine2018, q_casel]
+
+- id: p_kennenlernen
+  name: Kennenlern- und Namensspiele
+  aliase: [Icebreaker, Menschen-Bingo, Find someone who, Steckbrief]
+  kategorie: paedagogik
+  phasen: [einstieg]
+  setting: [plenum, grossgruppe]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [beziehung, teamentwicklung]
+  dauer: 10–30 Min.
+  kurz: Strukturierte Spiele helfen, Namen zu lernen und erste Gemeinsamkeiten zu entdecken (z. B. Bingo mit Eigenschaften, die man bei anderen finden muss).
+  ablauf:
+    - Ziel klären (Namen, Gemeinsamkeiten, Bewegung).
+    - Spiel mit niedriger Selbstoffenbarung beginnen.
+    - Kurze Auswertung – Was hat dich überrascht?
+  varianten:
+    - "Kinder: Namensspiel im Kreis mit Bewegung und Namenskarte."
+    - "Jugendliche: Steckbrief-Bingo mit Eigenschaften, die man bei anderen finden muss."
+    - "Erwachsene: Kennenlernen mit fachlichem Bezug, z. B. Berufserfahrung oder Lernwünsche."
+  stolpersteine:
+    - Peinliche oder körpernahe Spiele schließen Menschen aus; immer Ausstiegsmöglichkeit lassen.
+    - Bei Erwachsenen inhaltlichen Bezug herstellen, sonst wirkt es kindisch.
+  evidenz: {stufe: praxis, text: "Entspricht der Formierungsphase der Gruppenentwicklung (Tuckman 1965); als Einzelmethode nicht untersucht."}
+  qualifikation: alle
+  quellen: [q_tuckman1965, q_kagan2009]
+
+- id: p_erwartungsabfrage
+  name: Erwartungen, Befürchtungen, Beiträge
+  aliase: [Erwartungsabfrage, Hopes & Fears]
+  kategorie: paedagogik
+  phasen: [einstieg]
+  setting: [einzel, plenum]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [beziehung, partizipation, teamentwicklung]
+  dauer: 15–20 Min.
+  kurz: "Teilnehmende notieren auf Karten: Was erwarte ich? Was befürchte ich? Was bringe ich ein? Die Leitung bezieht die Ergebnisse auf das Programm."
+  ablauf:
+    - Drei Fragen auf Pinnwand; farbige Karten.
+    - Einzeln schreiben, anpinnen, kurz clustern.
+    - Abgleich mit Programm – Was wird erfüllt, was nicht?
+    - Am Ende darauf zurückkommen.
+  varianten:
+    - "Jugendliche: drei Fragen auf farbige Zettel, am Ende die Antworten abhaken."
+    - "Erwachsene: Erwartungen im Team mit Klebepunkten gewichten."
+    - "Digital: Erwartungen in einem Online-Board oder Umfrage vor der Sitzung sammeln."
+  stolpersteine:
+    - "Befürchtungen werden nicht ernst genommen; Antworten ausdrücklich aufgreifen oder begründen, warum sie nicht passen."
+  evidenz: {stufe: praxis, text: "Standardelement der Moderationsmethode und Erwachsenenbildung; entspricht andragogischem Prinzip der Beteiligung an der Planung (Knowles)."}
+  qualifikation: alle
+  quellen: [q_klebert2006, q_knowles2015]
+
+- id: p_regeln
+  name: Regeln und Routinen gemeinsam erarbeiten
+  aliase: [Klassenvertrag, Gruppenvereinbarung, Working Agreements]
+  kategorie: paedagogik
+  phasen: [uebergreifend, einstieg]
+  setting: [plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [klassenfuehrung, partizipation, beziehung]
+  dauer: 45 Min. + Pflege
+  kurz: Wenige, positiv formulierte Regeln und klar eingeübte Abläufe (Ankommen, Materialausgabe, Gruppenwechsel, Ruhesignal) werden gemeinsam entwickelt, sichtbar gemacht und konsequent geübt.
+  ablauf:
+    - Gemeinsam sammeln – Was brauchen wir, um gut zu lernen?
+    - 3–5 positiv formulierte Regeln auswählen.
+    - Routinen konkret vormachen und üben (wie eine Fertigkeit).
+    - Regelmäßig überprüfen und anpassen.
+  varianten:
+    - "Kinder: Regeln als Bildkarten mit Symbolen, Routinen mit Bewegung üben."
+    - "Jugendliche: Gruppenvereinbarung mit Begründung je Regel, gemeinsam unterschrieben."
+    - "Erwachsene: Working Agreements im Team, regelmäßig in der Retrospektive überprüft."
+  stolpersteine:
+    - "Zu viele Regeln verwässern das Ziel; 3 bis 5 positiv formulierte Regeln reichen."
+    - "Routinen werden nicht geübt, sondern nur besprochen; mit konkreten Übungsdurchläufen einführen."
+  evidenz: {stufe: stark, text: "Klassenführung mit klaren Regeln und Routinen ist einer der stärksten Prädiktoren für Lernzeit (Korpershoek et al. 2016; EEF Behaviour Guidance)."}
+  qualifikation: alle
+  quellen: [q_korpershoek2016, q_eef_behaviour, q_kounin1970]
+
+- id: p_kounin
+  name: Klassenführung nach Kounin
+  aliase: [Allgegenwärtigkeit, Überlappung, Schwung, Gruppenmobilisierung]
+  kategorie: paedagogik
+  phasen: [uebergreifend, hauptteil]
+  setting: [plenum]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [klassenfuehrung]
+  dauer: Haltung / begleitend
+  kurz: Präventive Klassenführung – die Lehrkraft zeigt, dass sie alles mitbekommt (Allgegenwärtigkeit), kann mehrere Dinge gleichzeitig steuern (Überlappung), hält den Unterrichtsfluss (Reibungslosigkeit, Schwung) und hält alle beschäftigt (Gruppenmobilisierung).
+  ablauf:
+    - Raum so einrichten, dass alle sichtbar sind; herumgehen.
+    - Kleine Störungen nonverbal und früh stoppen, ohne den Unterricht anzuhalten.
+    - Übergänge vorbereiten (Material bereit, klare Anweisungen).
+    - Fragen an alle richten, bevor jemand aufgerufen wird.
+  varianten:
+    - "Kinder: Übergänge mit klaren Signalen und festen Abläufen, z. B. Aufräumlied."
+    - "Jugendliche: Blickkontakt und Nähe nutzen, Störungen früh nonverbal stoppen."
+    - "Digital: klare Regeln zum Stummschalten und Melden, Aufmerksamkeit über sichtbare Gesten."
+  stolpersteine:
+    - "Allgegenwärtigkeit wird zur Überwachung, wenn sie als Kontrolle erlebt wird; Ziel ist Präsenz, nicht Misstrauen."
+    - "Überlappung gelingt nur mit klaren Routinen; zuerst Routinen einüben, dann Mehrfachaufgaben."
+  evidenz: {stufe: stark, text: "Kounins Videoanalysen (1970) prägten die präventive Klassenführung; Metaanalyse Korpershoek et al. (2016) bestätigt Wirkung präventiver Strategien."}
+  qualifikation: alle
+  quellen: [q_kounin1970, q_korpershoek2016]
+
+- id: p_lob_spezifisch
+  name: Verhaltensspezifisches Lob
+  aliase: [Behavior-Specific Praise, Positive Verstärkung im Unterricht]
+  kategorie: paedagogik
+  phasen: [hauptteil]
+  setting: [einzel, plenum]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [klassenfuehrung, motivation, beziehung]
+  dauer: begleitend
+  kurz: Erwünschtes Verhalten wird konkret benannt (»Du hast sofort begonnen und deine Rechnung überprüft«) statt pauschal gelobt; Verhältnis positiver zu korrigierenden Rückmeldungen mindestens 3:1.
+  ablauf:
+    - Verhalten benennen, nicht Person bewerten.
+    - Zeitnah und ehrlich loben; Anstrengung und Strategie, nicht Intelligenz.
+    - Bei Jugendlichen oft lieber leise/privat statt vor der Klasse.
+  varianten:
+    - "Kinder: konkretes Lob mit Name und Verhalten, z. B. »Du hast Papier zuerst weggeräumt.«"
+    - "Jugendliche: leises, persönliches Lob statt vor der Klasse."
+    - "Digital: Lob als kurze Nachricht im Chat oder Kommentar zum Arbeitsergebnis."
+  stolpersteine:
+    - "Pauschales Lob (»Super!«) wirkt beliebig; Verhalten und Strategie konkret benennen."
+    - "Lob vor der Klasse kann Peinlichkeit auslösen; bei Jugendlichen eher privat."
+  evidenz: {stufe: mittel, text: "Systematisches Review Royer et al. (2019): positive Effekte auf Engagement und Verhalten; Feedback zur Person (»Du bist schlau«) wirkt dagegen kaum (Hattie & Timperley 2007)."}
+  qualifikation: alle
+  quellen: [q_royer2019, q_hattie2007]
+
+- id: p_good_behavior_game
+  name: Good Behavior Game
+  aliase: [Gutes-Verhalten-Spiel, KlasseKinderSpiel]
+  kategorie: paedagogik
+  phasen: [hauptteil]
+  setting: [kleingruppe, plenum]
+  zielgruppen: [kinder]
+  anwendung: [klassenfuehrung, sozial_emotional]
+  dauer: anfangs 10 Min., steigernd
+  kurz: Die Klasse wird in Teams geteilt; Regelverstöße während der Spielzeit kosten das Team Punkte. Teams unter einer Schwelle erhalten eine kleine Belohnung. Alle Teams können gewinnen.
+  ablauf:
+    - 3–4 klare Regeln festlegen und üben.
+    - Teams bilden (gemischt).
+    - Spielzeiten von 10 Min. allmählich verlängern; Verstöße neutral markieren.
+    - Belohnung für alle Teams unter der Schwelle (z. B. Spielminuten).
+  varianten:
+    - "Kinder: Teamnamen und Punkte als Sterne auf einem Plakat, Belohnung als Spielzeit."
+    - "Digital: Teams in Videoräumen mit Punktzählung im Chat und fester Spielzeit."
+    - "Kinder mit Unruhe: kürzere Spielrunden und sichtbare Zwischenpunkte."
+  stolpersteine:
+    - Bloßstellen einzelner Kinder vermeiden; bei wiederholten Verstößen individuelle Lösung.
+  evidenz: {stufe: stark, text: "Seit 1969 (Barrish et al.) vielfach repliziert; Langzeitstudien (Kellam et al. 2008) zeigen weniger Drogenmissbrauch und Gewalt im jungen Erwachsenenalter."}
+  qualifikation: fortbildung
+  quellen: [q_barrish1969, q_kellam2008]
+
+- id: p_klassenrat
+  name: Klassenrat
+  aliase: [Klassenversammlung, Schülerparlament (Klassenebene)]
+  kategorie: paedagogik
+  phasen: [hauptteil]
+  setting: [plenum]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [partizipation, konflikt, sozial_emotional]
+  dauer: 30–45 Min. wöchentlich
+  kurz: Regelmäßige, von Lernenden geleitete Versammlung, in der Anliegen der Klasse (Lob, Probleme, Vorhaben) besprochen und demokratisch entschieden werden.
+  ablauf:
+    - Wandzeitung oder Briefkasten für Anliegen.
+    - Feste Rollen (Vorsitz, Protokoll, Zeitwache, Regelwache) rotieren.
+    - Ablauf – Eröffnung, Positivrunde, Protokoll der letzten Sitzung, Anliegen, Beschlüsse.
+    - Lehrkraft ist gleichberechtigtes Mitglied mit Vetorecht für Rahmenbedingungen.
+  varianten:
+    - "Kinder: Klassenrat mit Bildkarten und Redegegenstand, Vorsitz mit Hilfe der Lehrkraft."
+    - "Jugendliche: Klassenrat mit wechselnden Rollen, Protokoll und Beschlussbuch."
+    - "Digital: Klassenrat im Videoraum mit geteiltem Protokoll und Anliegen-Formular."
+  stolpersteine:
+    - Klassenrat darf kein Tribunal für Einzelne werden; persönliche Konflikte lieber im Einzelgespräch.
+  evidenz: {stufe: begrenzt, text: "Wurzeln bei Freinet; Praxisliteratur (Friedrichs 2009) und Demokratiepädagogik; kaum kontrollierte Wirksamkeitsstudien, aber gut begründet durch Partizipations- und SEL-Forschung."}
+  qualifikation: alle
+  quellen: [q_freinet1946, q_friedrichs2009]
+
+- id: p_streitschlichtung
+  name: Streitschlichtung / Peer-Mediation
+  aliase: [Schülermediation, Konfliktlotsen]
+  kategorie: paedagogik
+  phasen: [hauptteil]
+  setting: [partner, kleingruppe]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [konflikt, partizipation, sozial_emotional]
+  dauer: 20–40 Min. je Fall
+  kurz: Geschulte Schüler·innen helfen Gleichaltrigen, einen Konflikt in einem festen Ablauf selbst zu lösen; die Streitenden finden die Lösung, nicht die Schlichtenden.
+  ablauf:
+    - Einleitung – Regeln (ausreden lassen, keine Beleidigungen, Vertraulichkeit).
+    - Sichtweisen beider Seiten schildern; Schlichtende fassen zusammen.
+    - Gefühle und Bedürfnisse klären.
+    - Lösungen sammeln und bewerten.
+    - Vereinbarung schriftlich festhalten; Nachtreffen.
+  varianten:
+    - "Kinder: Streitschlichtung mit Bildkarten für Gefühle und Wünsche, Regeln im Schulflur."
+    - "Jugendliche: geschulte Peer-Mediator·innen mit festem Ablauf und Vertraulichkeit."
+    - "Erwachsene: kollegiale Mediation im Team mit externer Begleitung."
+  stolpersteine:
+    - Nicht geeignet bei Mobbing (Machtungleichgewicht) oder Gewalt – dort andere Verfahren.
+  evidenz: {stufe: mittel, text: "Review Johnson & Johnson (1996): trainierte Lernende wenden Verfahren an, Konflikte werden häufiger konstruktiv gelöst."}
+  qualifikation: fortbildung
+  quellen: [q_johnson1996]
+
+- id: p_no_blame
+  name: No Blame Approach (Mobbing-Intervention)
+  aliase: [Support Group Method, Unterstützungsgruppe]
+  kategorie: paedagogik
+  phasen: [hauptteil]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [konflikt, sozial_emotional]
+  dauer: 3 Schritte über ca. 2 Wochen
+  kurz: Ohne Schuldzuweisung wird eine Unterstützungsgruppe aus Mobbenden, Mitläufern und positiv eingestellten Mitschüler·innen gebildet, die eigene Ideen zur Verbesserung der Lage des betroffenen Kindes umsetzt.
+  ablauf:
+    - Gespräch mit dem betroffenen Kind (Gefühle, Beteiligte – keine Details der Vorfälle).
+    - Unterstützungsgruppe (6–8) treffen; Problem schildern, Verantwortung teilen, Ideen sammeln.
+    - Nachgespräche einzeln nach 1–2 Wochen.
+  varianten:
+    - "Jugendliche: Unterstützungsgruppe aus Klassenmitgliedern mit klarer Aufgabe, z. B. Hilfe für die betroffene Person im Alltag."
+    - "Digital: Gespräche einzeln per Videoschalte, Gruppe nur in Präsenz."
+    - "Erwachsene: Anwendung im Kollegium bei Konflikten mit Begleitung durch Fachkraft."
+  stolpersteine:
+    - Bei massiver Gewalt oder Straftaten nicht ausreichend; ggf. mit Schutzmaßnahmen kombinieren.
+  evidenz: {stufe: begrenzt, text: "Evaluation im deutschen Bundesmodellprojekt mit hohen Erfolgsquoten laut Anwenderberichten; kontrollierte Studien fehlen. Metaanalyse Gaffney et al. (2019): schulweite Anti-Mobbing-Programme senken Mobbing um ca. 19–20 %."}
+  qualifikation: fortbildung
+  quellen: [q_noblame, q_gaffney2019]
+
+- id: p_kiva_olweus
+  name: Schulweite Mobbingprävention (Olweus, KiVa)
+  aliase: [Anti-Bullying-Programm]
+  kategorie: paedagogik
+  phasen: [uebergreifend]
+  setting: [plenum, grossgruppe]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [konflikt, sozial_emotional, beziehung]
+  dauer: Schuljahr
+  kurz: Mehrebenen-Programme auf Schul-, Klassen- und Individualebene – Regeln gegen Mobbing, Unterrichtseinheiten zur Rolle von Zuschauenden, Pausenaufsicht, Interventionsteams.
+  ablauf:
+    - Bestandsaufnahme (anonyme Befragung).
+    - Schulweite Regeln und Konsequenzen; Elterninformation.
+    - Unterrichtseinheiten zu Empathie und Zivilcourage der Zuschauenden.
+    - Interventionsteam für konkrete Fälle.
+  varianten:
+    - "Kinder: Unterrichtseinheiten zur Rolle von Zuschauenden mit Rollenspielen."
+    - "Jugendliche: Projekte zu Zivilcourage und Online-Verhalten, von Schüler·innen gestaltet."
+    - "Digital: Schulweite Regeln für Chats und soziale Medien mit klaren Konsequenzen."
+  stolpersteine:
+    - "Programme wirken nur mit Umsetzung und Konsequenz; Kollegium und Eltern einbeziehen."
+    - "Anonyme Befragungen müssen zu Maßnahmen führen, sonst sinkt die Bereitschaft zur Mitarbeit."
+  evidenz: {stufe: stark, text: "KiVa in finnischen RCTs wirksam (Salmivalli et al. 2011); Metaanalyse Gaffney et al. (2019) bestätigt Wirkung von Anti-Mobbing-Programmen insgesamt."}
+  qualifikation: fortbildung
+  quellen: [q_olweus1993, q_salmivalli2011, q_gaffney2019]
+
+- id: p_restorative
+  name: Wiedergutmachung / Restorative Practices
+  aliase: [Restorative Circle, Wiedergutmachungsgespräch, Täter-Opfer-Ausgleich (schulisch)]
+  kategorie: paedagogik
+  phasen: [hauptteil]
+  setting: [kleingruppe, plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [konflikt, beziehung]
+  dauer: 20–60 Min.
+  kurz: "Statt Strafe steht die Frage im Mittelpunkt: Was ist passiert? Wer wurde wie geschädigt? Was braucht es zur Wiedergutmachung? Beteiligte suchen gemeinsam eine Lösung."
+  ablauf:
+    - "Restorative Fragen an Verursachende: Was ist passiert? Was hast du gedacht? Wer ist betroffen? Was musst du tun, um es wieder gut zu machen?"
+    - "An Betroffene: Was hast du gedacht/gefühlt? Was war das Schlimmste? Was brauchst du?"
+    - Vereinbarung und Nachkontrolle.
+  varianten:
+    - "Kinder: Gespräch mit Bildkarten für Gefühle und Wiedergutmachung in kleiner Runde."
+    - "Jugendliche: restorative Runde mit Beteiligten und Vereinbarung, Nachtreffen nach zwei Wochen."
+    - "Erwachsene: Restorative Runde in Teams nach Konflikten, moderiert durch Geschulte."
+  stolpersteine:
+    - "Gespräche werden erzwungen; Teilnahme freiwillig halten und Betroffene nicht drängen."
+  evidenz: {stufe: mittel, text: "RAND-RCT (Augustine et al. 2018): weniger Suspendierungen und besseres Klima laut Lehrkräften, aber keine Leistungsverbesserung und uneinheitliche Effekte in höheren Klassen."}
+  qualifikation: fortbildung
+  quellen: [q_augustine2018]
+
+- id: p_aktives_zuhoeren
+  name: Aktives Zuhören und Ich-Botschaften
+  aliase: [Gordon-Modell, Lehrer-Schüler-Konferenz]
+  kategorie: paedagogik
+  phasen: [hauptteil, uebergreifend]
+  setting: [einzel, partner]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [beziehung, konflikt, beratung]
+  dauer: Gesprächshaltung
+  kurz: Zuhören, das den Inhalt und das Gefühl des Gegenübers in eigenen Worten spiegelt, sowie Ich-Botschaften (»Wenn …, dann …, weil …«), die das eigene Erleben ausdrücken statt das Gegenüber zu bewerten.
+  ablauf:
+    - "Zuhören – paraphrasieren (»Du meinst also …«), Gefühl verbalisieren (»Das ärgert dich«)."
+    - "Ich-Botschaft – Verhalten beschreiben, Wirkung auf mich, mein Gefühl."
+    - Bei Bedürfniskonflikten »niederlagelose Methode« – gemeinsam Lösungen suchen.
+  varianten:
+    - "Kinder: Gefühle benennen mit Gesichtskarten, Ich-Botschaften mit einem Satz üben."
+    - "Jugendliche: Paraphrasieren im Partnergespräch bei Streit oder Stress."
+    - "Erwachsene: Ich-Botschaften im Elterngespräch oder Teamkonflikt üben."
+  stolpersteine:
+    - "Paraphrasieren klingt schnell künstlich; Inhalt im eigenen Wortlaut wiedergeben, nicht wörtlich nachplappern."
+  evidenz: {stufe: begrenzt, text: "Klassiker der Gesprächsführung (Gordon 1974); Elemente (Empathie, Spiegeln) sind Teil gut belegter Beratungsansätze wie MI, das Gesamtmodell ist wenig experimentell geprüft."}
+  qualifikation: alle
+  quellen: [q_gordon1974, q_miller2013]
+
+- id: p_gfk
+  name: Gewaltfreie Kommunikation (GFK)
+  aliase: [Wertschätzende Kommunikation, Giraffensprache]
+  kategorie: paedagogik
+  phasen: [hauptteil]
+  setting: [einzel, partner, kleingruppe]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [konflikt, sozial_emotional, beziehung]
+  dauer: Training über Wochen
+  kurz: "Vier Schritte: Beobachtung (ohne Bewertung) – Gefühl – Bedürfnis – Bitte. Mit Kindern oft mit Giraffe (Herzenssprache) und Wolf (Vorwurfssprache) vermittelt."
+  ablauf:
+    - Beobachtung von Bewertung unterscheiden üben.
+    - Gefühls- und Bedürfniswortschatz aufbauen.
+    - Konkrete, erfüllbare Bitten formulieren.
+    - Rollenspiele mit Alltagskonflikten.
+  varianten:
+    - "Kinder: Gefühle und Bedürfnisse auf Bildkarten benennen, Bitten mit Giraffe und Wolf spielen."
+    - "Jugendliche: Konfliktsituationen aus dem Alltag mit Rollenspiel bearbeiten."
+    - "Digital: Übung in Partnerarbeit per Chat mit vorgegebenen Gefühlskarten."
+  stolpersteine:
+    - Mechanisch angewendet wirkt GFK manipulativ; Haltung vor Formel.
+  evidenz: {stufe: begrenzt, text: "Weit verbreitet, aber wenige hochwertige Studien; Elemente (Gefühle benennen, Perspektivübernahme) sind in SEL-Programmen gut belegt."}
+  qualifikation: alle
+  quellen: [q_rosenberg2003, q_durlak2011]
+
+- id: p_vier_ohren
+  name: Kommunikationsquadrat (Vier-Ohren-Modell)
+  aliase: [Schulz von Thun, "Sach-, Beziehungs-, Selbstkundgabe-, Appellebene"]
+  kategorie: paedagogik
+  phasen: [hauptteil]
+  setting: [kleingruppe, plenum]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [konflikt, reflexion, beziehung]
+  dauer: 45–90 Min.
+  kurz: Jede Nachricht hat vier Seiten (Sache, Selbstkundgabe, Beziehung, Appell), und Empfangende hören mit unterschiedlich »großen Ohren«. Hilft, Missverständnisse zu analysieren.
+  ablauf:
+    - Modell an Alltagsbeispiel erklären (»Die Ampel ist grün«).
+    - Eigene Konfliktsituationen auf vier Ebenen analysieren.
+    - Alternative Formulierungen üben.
+  varianten:
+    - "Jugendliche: Alltagssätze aus dem Schulalltag auf vier Ebenen analysieren."
+    - "Erwachsene: Nachrichten aus Konflikten im Team auf vier Seiten untersuchen."
+    - "Digital: Chat-Nachrichten zur Analyse nutzen, Umformulierungen im Dokument."
+  stolpersteine:
+    - "Das Modell wird als Deutungsmonopol genutzt (»Du meinst doch nur …«); Analyse als Hypothese formulieren."
+  evidenz: {stufe: praxis, text: "Im deutschsprachigen Raum Standard in Kommunikationstrainings, baut auf Watzlawicks Axiomen auf; als Analysemodell nützlich, empirisch kaum geprüft."}
+  qualifikation: alle
+  quellen: [q_schulzvonthun1981, q_watzlawick1967]
+
+- id: p_tzi
+  name: Themenzentrierte Interaktion (TZI)
+  aliase: [Ruth-Cohn-Modell, Ich-Wir-Es-Globe]
+  kategorie: paedagogik
+  phasen: [uebergreifend]
+  setting: [kleingruppe, plenum]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [teamentwicklung, beziehung, reflexion]
+  dauer: Leitungshaltung
+  kurz: Gruppenleitung balanciert dynamisch zwischen Ich (Einzelne), Wir (Gruppe), Es (Thema/Aufgabe) und Globe (Umfeld). Hilfsregeln wie »Sei deine eigene Chairperson« und »Störungen haben Vorrang«.
+  ablauf:
+    - Thema als einladende Formulierung (»Wie wir … können«) setzen.
+    - Beobachten, welcher Pol vernachlässigt ist, und ausgleichen.
+    - Hilfsregeln einführen (per »ich« sprechen, Seitengespräche haben Vorrang).
+  varianten:
+    - "Jugendliche: Themenformulierung als Frage an die Gruppe, z. B. »Wie können wir gut zusammenarbeiten?«"
+    - "Erwachsene: TZI-Leitung in Fortbildungen mit Achtsamkeit auf Ich, Wir und Es."
+    - "Digital: Hilfsregeln für Videositzungen, z. B. Mikrofon und Redezeit klar regeln."
+  stolpersteine:
+    - "Die Hilfsregeln werden als Dogma verstanden; situativ anwenden und begründen."
+  evidenz: {stufe: praxis, text: "Im deutschsprachigen Raum einflussreiches Modell für Gruppenleitung (Cohn 1975); empirische Wirksamkeitsforschung gering."}
+  qualifikation: fortbildung
+  quellen: [q_cohn1975]
+
+- id: p_erlebnispaedagogik
+  name: Erlebnispädagogik / Kooperationsübungen
+  aliase: [Outdoor-Training, Abenteuerpädagogik, Kooperative Abenteuerspiele]
+  kategorie: paedagogik
+  phasen: [hauptteil]
+  setting: [kleingruppe]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [teamentwicklung, sozial_emotional, motivation]
+  dauer: 1 Std. bis mehrere Tage
+  kurz: Gruppen lösen herausfordernde Aufgaben (Seilaufbau, Floß, Kooperationsspiele wie »Säureteich«), die nur gemeinsam zu schaffen sind; das Erlebte wird anschließend reflektiert und auf den Alltag übertragen.
+  ablauf:
+    - Aufgabe mit echter Herausforderung, physischer und psychischer Sicherheit.
+    - Durchführung ohne Eingreifen (außer Sicherheit).
+    - Reflexion – Was ist passiert? Was hat geholfen? Was nehmen wir in den Alltag mit?
+  varianten:
+    - "Kinder: Kooperationsspiel auf dem Schulhof mit einfachen Aufgaben und Reflexion."
+    - "Jugendliche: Kooperationsübung mit Wahlfreiheit, z. B. nur Beobachtung möglich."
+    - "Erwachsene: Teamübungen im Kurs, durchgeführt von geschulten Leitungen."
+  stolpersteine:
+    - Ohne Transferreflexion bleibt es Freizeit.
+    - Sicherheit und Freiwilligkeit (»challenge by choice«) sind Pflicht.
+  evidenz: {stufe: mittel, text: "Metaanalyse Hattie et al. (1997): mittlere Effekte auf Selbstkonzept und Führung, die nachhaltig sind; EEF: Outdoor Adventure Learning ca. +4 Monate (schwache Evidenzlage)."}
+  qualifikation: fortbildung
+  quellen: [q_hahn1958, q_hattie1997, q_eef_outdoor]
+
+- id: p_service_learning
+  name: Service Learning (Lernen durch Engagement)
+  aliase: [Lernen durch gesellschaftliches Engagement]
+  kategorie: paedagogik
+  phasen: [hauptteil]
+  setting: [kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [partizipation, motivation, sozial_emotional]
+  dauer: Projekt über Wochen
+  kurz: Lernende engagieren sich für einen echten Bedarf in ihrem Umfeld und verbinden dies systematisch mit Unterrichtsinhalten und Reflexion.
+  ablauf:
+    - Bedarf im Umfeld ermitteln (mit Partnern).
+    - Engagement planen und mit Lernzielen verknüpfen.
+    - Durchführen.
+    - Reflektieren und Ergebnisse öffentlich würdigen.
+  varianten:
+    - "Jugendliche: Projekt für den Schulhof oder ein Seniorenheim mit Lerneinheit zur Reflexion."
+    - "Erwachsene: Engagement im Stadtteil mit Bezug zum Fachthema, z. B. Umwelt oder Gesundheit."
+    - "Digital: Online-Unterstützung für Vereine oder Initiativen mit Reflexionsbericht."
+  stolpersteine:
+    - "Der Dienst wird zur Pflichtübung ohne eigene Entscheidung; Mitsprache bei Auswahl sichern."
+    - "Ohne Reflexion bleibt es Engagement ohne Lerneffekt; feste Reflexionszeiten einplanen."
+  evidenz: {stufe: mittel, text: "Metaanalyse Celio et al. (2011): positive Effekte auf Einstellungen, soziale Fertigkeiten, bürgerschaftliches Engagement und Leistung – besonders mit Reflexion und Mitsprache."}
+  qualifikation: alle
+  quellen: [q_celio2011]
+
+- id: p_mentoring
+  name: Mentoring
+  aliase: [Patenschaften, Big Brothers Big Sisters, Lesepaten]
+  kategorie: paedagogik
+  phasen: [uebergreifend]
+  setting: [partner]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [beziehung, motivation]
+  dauer: Monate bis Jahre
+  kurz: Eine erfahrenere Person begleitet eine jüngere über längere Zeit regelmäßig als Vertrauensperson und Vorbild.
+  ablauf:
+    - Passendes Matching (Interessen, Verfügbarkeit).
+    - Schulung und Begleitung der Mentor·innen.
+    - Regelmäßige Treffen über mind. ein Jahr.
+    - Bewusstes Abschließen der Beziehung.
+  varianten:
+    - "Kinder: Lesepatenschaft mit festen Terminen in der Bibliothek oder Schule."
+    - "Jugendliche: Mentoring durch ältere Schüler·innen oder Ausbildende mit Zielvereinbarung."
+    - "Digital: Mentoring per Videoschalte mit festem Termin im Monat."
+  stolpersteine:
+    - Frühe Abbrüche können schaden; Verlässlichkeit ist wichtiger als Intensität.
+  evidenz: {stufe: mittel, text: "Metaanalyse DuBois et al. (2011): kleine, aber konsistente Effekte auf Verhalten, Sozialentwicklung und Schule; EEF: geringe Leistungseffekte."}
+  qualifikation: fortbildung
+  quellen: [q_dubois2011, q_eef_mentoring]
+
+- id: p_montessori
+  name: Montessori-Freiarbeit (vorbereitete Umgebung)
+  aliase: ["Hilf mir, es selbst zu tun"]
+  kategorie: paedagogik
+  phasen: [hauptteil, uebergreifend]
+  setting: [einzel, partner]
+  zielgruppen: [kinder]
+  anwendung: [lernstrategien, heterogenitaet]
+  dauer: tägliche Arbeitszeit (2–3 Std.)
+  kurz: Kinder wählen selbst aus didaktischem Material mit Fehlerkontrolle, arbeiten in eigenem Tempo und in altersgemischten Gruppen; die Lehrkraft führt Material in Einzeldarbietungen ein.
+  ablauf:
+    - Umgebung mit geordnetem, selbstkontrollierendem Material vorbereiten.
+    - Darbietung (Vorführen) einzeln oder in Kleingruppen.
+    - Freie Wahl; Lehrkraft beobachtet und dokumentiert.
+  varianten:
+    - "Kinder: vorbereitete Lernecke mit selbstkontrollierendem Material, Lehrkraft zeigt eine Übung einzeln."
+    - "Digital: Lernprogramme mit Selbstkontrolle als Ergänzung zur Freiarbeit."
+    - "Kinder mit Unruhe: kürzere Arbeitsphasen und feste Materialplätze."
+  stolpersteine:
+    - "Material wird nicht eingeführt und bleibt ungenutzt; Einführung jedes Materials als Einzeldarbietung planen."
+    - "Freie Wahl kann Vermeidung begünstigen; Wochenziel mit Kindern gemeinsam festlegen."
+  evidenz: {stufe: mittel, text: "Campbell-Review Randolph et al. (2023): positive Effekte auf Leistung und nicht-akademische Ergebnisse, Studienqualität gemischt; Lillard et al. (2017) mit Lotteriedesign."}
+  qualifikation: fortbildung
+  quellen: [q_montessori1912, q_randolph2023, q_lillard2017]
+
+- id: p_spiel_angeleitet
+  name: Angeleitetes Spiel (Guided Play)
+  aliase: [Spielbasiertes Lernen im Kindergarten]
+  kategorie: paedagogik
+  phasen: [hauptteil]
+  setting: [kleingruppe, einzel]
+  zielgruppen: [kinder]
+  anwendung: [wissensaufbau, sozial_emotional, motivation]
+  dauer: 15–45 Min.
+  kurz: Kinder spielen frei, aber Erwachsene gestalten die Umgebung mit Lernziel und begleiten durch Fragen, Kommentare und Impulse (z. B. Formen erkunden mit »Was ist das Geheimnis dieser Formen?«).
+  ablauf:
+    - Spielumgebung mit Lernpotenzial vorbereiten.
+    - Kind führen lassen; Erwachsene folgen und erweitern.
+    - Offene Fragen und Sprachvorbilder einbringen.
+  varianten:
+    - "Kinder: Bauecke mit Formen und Impulsfragen, Erwachsene folgen dem Spiel des Kindes."
+    - "Digital: Bildschirmspiel mit Impulsen, die gemeinsam im Gespräch besprochen werden."
+    - "Kinder im Vorschulalter: Spielmaterial mit Zahlen oder Formen gezielt auslegen."
+  stolpersteine:
+    - "Erwachsene führen zu stark und nehmen dem Spiel die Freiheit; mehr fragen als zeigen."
+  evidenz: {stufe: mittel, text: "Metaanalyse Skene et al. (2022): angeleitetes Spiel übertrifft freies Spiel bei frühen Mathekompetenzen und Formenwissen, vergleichbar mit direkter Instruktion in anderen Bereichen."}
+  qualifikation: alle
+  quellen: [q_skene2022]
+
+- id: p_exekutive_spiele
+  name: Spiele zur Förderung exekutiver Funktionen
+  aliase: [Stopp-Spiele, Tools of the Mind, Selbstregulationsspiele]
+  kategorie: paedagogik
+  phasen: [einstieg, hauptteil]
+  setting: [plenum, kleingruppe]
+  zielgruppen: [kinder]
+  anwendung: [lernstrategien, sozial_emotional]
+  dauer: 5–15 Min.
+  kurz: Spiele, die Arbeitsgedächtnis, Hemmung und kognitive Flexibilität trainieren – z. B. Kopf-Schulter-Knie-Zehen mit vertauschten Regeln, Stopptanz, Simon sagt, Memory-Varianten.
+  ablauf:
+    - Spiel mit einfacher Regel beginnen.
+    - Regeln umkehren oder ergänzen (Hemmung, Flexibilität).
+    - Schwierigkeit schrittweise steigern.
+  varianten:
+    - "Kinder: Stopptanz oder Simon sagt mit Bewegung im Stuhlkreis."
+    - "Kinder im Vorschulalter: Kopf-Schulter-Knie-Zehen mit vertauschten Regeln."
+    - "Digital: kurze Stopp-Spiele am Bildschirm mit Bewegungsaufgabe."
+  stolpersteine:
+    - "Spiele werden zum Wettbewerb, bei dem Kinder ausscheiden; Teamlösungen oder Punkte für alle nutzen."
+  evidenz: {stufe: mittel, text: "Diamond & Lee (2011): Programme mit wiederholter, zunehmend anspruchsvoller Übung exekutiver Funktionen zeigen Wirkung – am stärksten bei Kindern mit den größten Schwierigkeiten; Transfer auf andere Bereiche begrenzt."}
+  qualifikation: alle
+  quellen: [q_diamond2011, q_diamond2013]
+
+- id: p_elternarbeit
+  name: Lernentwicklungsgespräch mit Eltern
+  aliase: [Elterngespräch, Schüler-Eltern-Lehrkraft-Gespräch, Elternarbeit]
+  kategorie: paedagogik
+  phasen: [uebergreifend]
+  setting: [kleingruppe]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [beziehung, beratung]
+  dauer: 20–30 Min.
+  kurz: Gespräch mit Lernenden und Eltern über Stärken, Lernstand und konkrete nächste Schritte; das Kind spricht zuerst über sich selbst.
+  ablauf:
+    - Vorbereitung mit Selbsteinschätzung des Kindes und Beispielarbeiten.
+    - Positiver Einstieg; Kind präsentiert.
+    - Zwei bis drei konkrete Ziele und wer was beiträgt.
+    - Schriftliche Vereinbarung; Folgekontakt.
+  varianten:
+    - "Kinder: Gespräch mit Bildkarten und Lernfortschritt, Eltern beteiligen sich mit einer Aufgabe zu Hause."
+    - "Jugendliche: Gespräch mit Lernenden im Mittelpunkt, Lernplan für zu Hause."
+    - "Digital: Elterngespräch per Videoschalte mit geteiltem Dokument der Ziele."
+  stolpersteine:
+    - Nur bei Problemen anzurufen belastet die Beziehung; positive Nachrichten früh senden.
+  evidenz: {stufe: mittel, text: "EEF: Elternbeteiligung ca. +4 Monate, besonders wirksam, wenn konkrete Unterstützung für das Lernen zu Hause vermittelt wird."}
+  qualifikation: alle
+  quellen: [q_eef_parental]
+
+- id: p_blitzlicht
+  name: Blitzlicht
+  aliase: [Schlussrunde, One-Word-Check-out]
+  kategorie: paedagogik
+  phasen: [abschluss, einstieg]
+  setting: [plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [reflexion, beziehung]
+  dauer: 3–10 Min.
+  kurz: Jede Person sagt reihum in einem Satz oder Wort, wie es ihr geht oder was sie mitnimmt – ohne Kommentar oder Diskussion.
+  ablauf:
+    - Frage klar stellen (»Ein Wort zur heutigen Sitzung«).
+    - Reihum, ohne Unterbrechung; Weitergeben erlaubt.
+    - Leitung bedankt sich, kommentiert nicht einzeln.
+  varianten:
+    - "Kinder: Blitzlicht mit einem Wort auf einem Gefühlsbild."
+    - "Jugendliche: Blitzlicht mit einem Satz zur Stunde, freiwillig und reihum."
+    - "Digital: Blitzlicht im Chat mit einem Wort oder Emoji."
+  stolpersteine:
+    - "Kommentare während der Runde verlängern sie; Leitung schweigt, bis alle dran waren."
+  evidenz: {stufe: praxis, text: "Standardmethode der Gruppenarbeit und TZI-Praxis; gibt allen eine Stimme, keine eigene Wirksamkeitsforschung."}
+  qualifikation: alle
+  quellen: [q_cohn1975, q_mattes2011]
+
+- id: p_zielscheibe
+  name: Zielscheibe / Feedback-Barometer
+  aliase: [Punktabfrage zur Bewertung, Daumenprobe, Ampelfeedback]
+  kategorie: paedagogik
+  phasen: [abschluss]
+  setting: [plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [reflexion, diagnose]
+  dauer: 5 Min.
+  kurz: Teilnehmende kleben Punkte auf eine Zielscheibe mit mehreren Sektoren (z. B. Inhalt, Methode, Atmosphäre, eigener Lernerfolg) – je näher an der Mitte, desto besser.
+  ablauf:
+    - Zielscheibe mit 4–6 Sektoren vorbereiten.
+    - Anonym (Rücken zur Gruppe) Punkte kleben.
+    - Bild gemeinsam betrachten; auffällige Sektoren nachfragen.
+  varianten:
+    - "Kinder: Zielscheibe mit Smileys oder Sternen in Sektoren, gemeinsam geklebt."
+    - "Jugendliche: Zielscheibe mit Sektoren wie Inhalt, Methode und Atmosphäre."
+    - "Digital: Abstimmung mit Skala oder Umfrage im Videoraum, Ergebnis als Diagramm."
+  stolpersteine:
+    - "Sektoren sind zu unklar; Begriffe kurz erklären, damit die Bewertung vergleichbar bleibt."
+  evidenz: {stufe: praxis, text: "Visuelles Feedbackverfahren der Moderationsmethode; als schnelles Stimmungsbild nützlich, nicht als Wirksamkeitsmessung."}
+  qualifikation: alle
+  quellen: [q_klebert2006]
+
+- id: p_wertschaetzung
+  name: Wertschätzungsrunde (Warme Dusche)
+  aliase: [Kompliment-Runde, Rücken stärken, Appreciation Round]
+  kategorie: paedagogik
+  phasen: [abschluss]
+  setting: [plenum, kleingruppe]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [beziehung, sozial_emotional, teamentwicklung]
+  dauer: 10–20 Min.
+  kurz: Teilnehmende sagen oder schreiben einander konkrete, positive Rückmeldungen (z. B. Blatt auf dem Rücken, auf das andere schreiben).
+  ablauf:
+    - Regeln – nur ehrliche, konkrete, positive Aussagen.
+    - Blatt auf den Rücken kleben, herumgehen und schreiben.
+    - Blätter still lesen; freiwillig teilen.
+  varianten:
+    - "Kinder: Blatt mit Namen auf dem Rücken, nur Ich-Sätze und kurze Wörter."
+    - "Jugendliche: Wertschätzung mit Nachricht in einem Briefkasten am Ende des Kurses."
+    - "Digital: Wertschätzung im Chat oder in einem Dokument mit Kommentaren pro Person."
+  stolpersteine:
+    - Sicherstellen, dass niemand ein leeres Blatt bekommt (Leitung schreibt mit).
+  evidenz: {stufe: praxis, text: "Verbreitete Abschlussübung; Bezug zu Zugehörigkeit und positiver Beziehungsgestaltung (Walton & Cohen 2011; Seligman 2011), aber keine eigene Studie."}
+  qualifikation: alle
+  quellen: [q_walton2011, q_seligman2011]
+
+- id: p_kollegiale_fallberatung
+  name: Kollegiale Fallberatung
+  aliase: [Intervision, Kollegiale Beratung]
+  kategorie: paedagogik
+  phasen: [hauptteil]
+  setting: [kleingruppe]
+  zielgruppen: [erwachsene]
+  anwendung: [beratung, reflexion, teamentwicklung]
+  dauer: 45–60 Min. je Fall
+  kurz: Eine kleine Gruppe Gleichrangiger berät einen Fall eines Mitglieds in festen Phasen und Rollen – ohne Vorgesetzte und ohne externe Leitung.
+  ablauf:
+    - Rollen – Fallgeber·in, Moderation, Beratende, ggf. Protokoll.
+    - Spontanerzählung (5–10 Min.), Verständnisfragen.
+    - Schlüsselfrage formulieren.
+    - Methodenwahl (z. B. Brainstorming, Kopfstand, Resonanzrunde); Beratende sprechen untereinander.
+    - Fallgeber·in nimmt Stellung und entscheidet über Ideen.
+  varianten:
+    - "Erwachsene: Fallberatung im Kollegium mit festen Phasen und Zeitvorgabe."
+    - "Erwachsene: Fallberatung in Fortbildungen mit wechselnden Rollen."
+    - "Digital: Fallberatung im Videoraum mit geteiltem Protokoll und festen Rollen."
+  stolpersteine:
+    - "Beratende geben sofort Ratschläge; zuerst Fragen stellen lassen und Lösungen dem Fallgeber überlassen."
+  evidenz: {stufe: mittel, text: "Tietze (2003, 2010) belegt Wirkungen auf Reflexionsfähigkeit, Entlastung und Handlungsoptionen in Feldstudien; keine RCTs."}
+  qualifikation: alle
+  quellen: [q_tietze2003]
+
+- id: p_lesson_study
+  name: Lesson Study
+  aliase: [Unterrichtsforschung im Team, Jugyou Kenkyuu]
+  kategorie: paedagogik
+  phasen: [uebergreifend]
+  setting: [kleingruppe]
+  zielgruppen: [erwachsene]
+  anwendung: [reflexion]
+  dauer: Zyklus über Wochen
+  kurz: Lehrkräfte planen gemeinsam eine Forschungsstunde, eine Person unterrichtet, die anderen beobachten das Lernen ausgewählter Schüler·innen, danach wird die Stunde überarbeitet.
+  ablauf:
+    - Forschungsfrage zum Lernen festlegen.
+    - Stunde gemeinsam detailliert planen.
+    - Durchführung mit Beobachtung von Fallschüler·innen.
+    - Nachbesprechung und Überarbeitung, ggf. erneute Durchführung.
+  varianten:
+    - "Erwachsene: Lesson Study im Fachteam mit einer Forschungsstunde pro Halbjahr."
+    - "Erwachsene: Stunde im Kollegium mit Fokus auf drei beobachtete Lernende."
+    - "Digital: Planung über gemeinsames Dokument, Beobachtung per Videoaufnahme mit Einwilligung."
+  stolpersteine:
+    - "Beobachtung wird zur Bewertung der Lehrperson; Fokus auf das Lernen der Schüler·innen setzen."
+  evidenz: {stufe: mittel, text: "Lewis et al. (2009) beschreiben Wirkmechanismen; Studienlage gemischt (u. a. EEF-Studie ohne Leistungseffekt), aber gut für Professionalisierung begründet."}
+  qualifikation: alle
+  quellen: [q_lewis2009]
+
+- id: p_microteaching
+  name: Microteaching
+  aliase: [Mikrounterricht mit Videofeedback]
+  kategorie: paedagogik
+  phasen: [hauptteil]
+  setting: [kleingruppe]
+  zielgruppen: [erwachsene]
+  anwendung: [reflexion, ueben]
+  dauer: 5–20 Min. Sequenz + Feedback
+  kurz: Lehrende üben eine einzelne Fertigkeit (z. B. Fragen stellen) in einer kurzen Unterrichtssequenz vor einer kleinen Gruppe, werden gefilmt und erhalten Feedback, dann folgt ein zweiter Durchgang.
+  ablauf:
+    - Teilfertigkeit auswählen.
+    - Sequenz planen und durchführen (Video).
+    - Feedback anhand von Kriterien.
+    - Überarbeiten und erneut unterrichten.
+  varianten:
+    - "Erwachsene: Fragetechnik in fünf Minuten mit zwei Lehrenden vor einer Kleingruppe."
+    - "Erwachsene: Kurzsequenz mit Kamera im Lehramtsstudium, Feedback mit Kriterien."
+    - "Digital: Mikrolehrprobe per Videoschalte mit Aufnahme und Selbstreflexion."
+  stolpersteine:
+    - "Video-Aufnahmen verunsichern stark; zuerst Probelauf ohne Aufnahme und freie Entscheidung über Aufzeichnung."
+  evidenz: {stufe: stark, text: "Hattie (2009) listet Microteaching mit einem der höchsten Effekte (d ≈ 0,88), basierend auf älteren Studien; Grundprinzip deliberate practice mit Feedback."}
+  qualifikation: alle
+  quellen: [q_allen1969, q_hattie2009]
+
+- id: p_world_cafe
+  name: World Café
+  aliase: [Gesprächscafé]
+  kategorie: paedagogik
+  phasen: [hauptteil]
+  setting: [kleingruppe, grossgruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [diskussion, partizipation, kreativitaet]
+  dauer: 60–120 Min.
+  kurz: An Tischen mit Papiertischdecken diskutieren Kleingruppen eine Frage; nach jeder Runde wechseln alle bis auf die Gastgeberin den Tisch und vernetzen so die Ideen.
+  ablauf:
+    - 3–5 Tische, je eine Frage, Gastgeber·in pro Tisch.
+    - Runden à 15–20 Min., Notizen auf Tischdecke.
+    - Wechsel; Gastgeber·in fasst für Neue zusammen.
+    - Ernte im Plenum (Gallery Walk über Tischdecken).
+  varianten:
+    - "Jugendliche: vier Tische mit Schülerfragen, Notizen auf Papiertischdecken."
+    - "Erwachsene: Zukunftsfragen für Kollegium oder Elternschaft mit Ernte im Plenum."
+    - "Digital: Breakout-Räume als Tische, Notizen im geteilten Board."
+  stolpersteine:
+    - "Gastgeber·innen fassen nicht zusammen; klare Rolle und Zeit für die Zusammenfassung vorgeben."
+  evidenz: {stufe: praxis, text: "Großgruppenverfahren für Beteiligungsprozesse (Brown & Isaacs 2005); Fallberichte, keine experimentelle Evidenz."}
+  qualifikation: alle
+  quellen: [q_brown2005]
+
+- id: p_open_space
+  name: Open Space
+  aliase: [Open Space Technology, Barcamp (verwandt)]
+  kategorie: paedagogik
+  phasen: [hauptteil]
+  setting: [grossgruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [partizipation, kreativitaet, teamentwicklung]
+  dauer: halber Tag bis 3 Tage
+  kurz: Teilnehmende bringen selbst Themen ein und bilden Workshops dazu; »Gesetz der zwei Füße« – wer nichts lernt oder beiträgt, geht zu einer anderen Gruppe.
+  ablauf:
+    - Leitthema, Kreis, Prinzipien vorstellen.
+    - Marktplatz – Themen an die Wand, Zeit/Ort zuordnen.
+    - Parallele Sessions mit Dokumentation.
+    - Abschlussrunde und ggf. Priorisierung für Maßnahmen.
+  varianten:
+    - "Jugendliche: Schulkonferenz mit Themen aus der Schülerschaft und Workshops am Vormittag."
+    - "Erwachsene: Kollegiums-Open-Space zu Schulentwicklung mit Priorisierung am Ende."
+    - "Digital: Open Space in Videoräumen mit Themenwand im Online-Board."
+  stolpersteine:
+    - "Themen bleiben unbesetzt und Ergebnisse versanden; Dokumentation und Verantwortliche am Ende festlegen."
+  evidenz: {stufe: praxis, text: "Von Harrison Owen entwickelt; verbreitet in Organisationsentwicklung; Belege überwiegend aus Fallstudien."}
+  qualifikation: alle
+  quellen: [q_owen2008]
+
+- id: p_appreciative_inquiry
+  name: Appreciative Inquiry (wertschätzende Erkundung)
+  aliase: [4D-Zyklus]
+  kategorie: paedagogik
+  phasen: [hauptteil]
+  setting: [kleingruppe, grossgruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [teamentwicklung, entscheidung, partizipation]
+  dauer: 2 Std. bis mehrere Tage
+  kurz: "Veränderung beginnt bei dem, was schon gelingt: Discover (Erfolgsgeschichten), Dream (Zukunftsbild), Design (Strukturen), Destiny (Umsetzung)."
+  ablauf:
+    - Paarinterviews zu Höhepunkterlebnissen.
+    - Gemeinsamkeiten sammeln.
+    - Zukunftsbilder entwickeln.
+    - Konkrete Vorhaben und Verantwortliche festlegen.
+  varianten:
+    - "Jugendliche: Erfolgsgeschichten aus der Klasse sammeln, Zukunftsbild für das Miteinander entwickeln."
+    - "Erwachsene: Teamentwicklung über gelungene Momente und gewünschte Zukunft."
+    - "Digital: Paarinterviews per Videoschalte, Zukunftsbilder im Dokument."
+  stolpersteine:
+    - "Probleme werden ganz ausgeblendet; Schwierigkeiten bewusst als Lernimpuls aufnehmen."
+  evidenz: {stufe: begrenzt, text: "Organisationsentwicklungsansatz (Cooperrider & Whitney 2005), überwiegend Fallberichte."}
+  qualifikation: fortbildung
+  quellen: [q_cooperrider2005]
+
+- id: p_liberating_structures
+  name: Liberating Structures (1-2-4-Alle, Troika Consulting u. a.)
+  aliase: [1-2-4-All, Troika, TRIZ, What So What Now What]
+  kategorie: paedagogik
+  phasen: [einstieg, hauptteil, abschluss]
+  setting: [einzel, partner, kleingruppe, grossgruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [partizipation, entscheidung, beratung, reflexion]
+  dauer: 10–30 Min. je Struktur
+  kurz: "Sammlung von 33 kleinen Interaktionsstrukturen, die alle Anwesenden beteiligen. Beispiele: 1-2-4-Alle (allein, zu zweit, zu viert, Plenum); Troika (zwei beraten eine Person, die sich umdreht und zuhört); TRIZ (»Wie erreichen wir garantiert das Schlechteste?« – dann aufhören damit)."
+  ablauf:
+    - Passende Struktur nach Ziel wählen (Ideen, Beratung, Entscheidung, Reflexion).
+    - Einladung (Frage) präzise formulieren.
+    - Zeitrahmen strikt einhalten.
+  varianten:
+    - "Kinder: 1-2-4-Alle mit Bildkarten und Stuhlkreis."
+    - "Erwachsene: Troika zur Beratung zwischen Kolleg·innen mit klarer Zeitvorgabe."
+    - "Digital: 1-2-4-Alle mit Breakout-Räumen und gemeinsamer Ergebnisliste."
+  stolpersteine:
+    - "Die Strukturen werden als Rezept ohne Ziel eingesetzt; Einladung und Zweck vorher klären."
+  evidenz: {stufe: praxis, text: "Frei verfügbare Sammlung (Lipmanowicz & McCandless 2013), Strukturprinzipien ähneln kooperativen Lernformen; keine Wirksamkeitsforschung zum Gesamtrepertoire."}
+  qualifikation: alle
+  quellen: [q_lipmanowicz2013]
+
+- id: p_nominal_group
+  name: Nominale Gruppentechnik
+  aliase: [NGT, Strukturierte Ideenpriorisierung]
+  kategorie: paedagogik
+  phasen: [hauptteil]
+  setting: [kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [entscheidung, kreativitaet]
+  dauer: 45–90 Min.
+  kurz: Ideen werden still einzeln generiert, reihum ohne Diskussion gesammelt, dann geklärt und anonym priorisiert. Verhindert Dominanz einzelner Stimmen.
+  ablauf:
+    - Einzeln Ideen notieren (10 Min.).
+    - Reihum je eine Idee nennen, bis alle gesammelt sind.
+    - Klärung (keine Kritik).
+    - Anonyme Rangfolge/Punkte, Ergebnis berechnen.
+  varianten:
+    - "Jugendliche: Ideen zu einem Schulprojekt still sammeln, anonym mit Punkten gewichten."
+    - "Erwachsene: Priorisierung von Maßnahmen im Team mit Stimmzetteln."
+    - "Digital: Ideen im Formular sammeln, Priorisierung über Umfrage."
+  stolpersteine:
+    - "Die Klärung kippt in Kritik; nur Verständnisfragen erlauben, Bewertung erst bei der Abstimmung."
+  evidenz: {stufe: mittel, text: "Delbecq & Van de Ven (1971); stilles Einzeldenken vermeidet Produktionsblockaden des Gruppen-Brainstormings (Diehl & Stroebe 1987)."}
+  qualifikation: alle
+  quellen: [q_delbecq1971, q_diehl1987]
+
+- id: p_premortem
+  name: Pre-Mortem
+  aliase: [Vorab-Obduktion, Prospektive Fehleranalyse]
+  kategorie: paedagogik
+  phasen: [hauptteil]
+  setting: [kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [entscheidung, teamentwicklung]
+  dauer: 20–30 Min.
+  kurz: "Vor einem Projekt stellt sich das Team vor, es sei grandios gescheitert, und schreibt einzeln Gründe dafür auf. Daraus entstehen Vorsorgemaßnahmen."
+  ablauf:
+    - "»Stellt euch vor, es ist ein Jahr später und das Projekt ist gescheitert. Warum?«"
+    - Einzeln 3–5 Gründe notieren.
+    - Reihum sammeln, priorisieren, Gegenmaßnahmen planen.
+  varianten:
+    - "Jugendliche: Vorstellung eines Schulprojekts, das gescheitert ist, mit Gründen auf Karten."
+    - "Erwachsene: Pre-Mortem für Projekte im Team mit Gegenmaßnahmen."
+    - "Digital: Gründe im geteilten Dokument sammeln und priorisieren."
+  stolpersteine:
+    - "Die Übung wird zur Schuldzuweisung; Gründe als Systemfaktoren formulieren."
+  evidenz: {stufe: begrenzt, text: "Von Gary Klein beschrieben; nutzt die Erkenntnis, dass vorgestelltes Scheitern mehr Risiken sichtbar macht; begrenzte experimentelle Prüfung."}
+  qualifikation: alle
+  quellen: [q_klein2007]
+
+- id: p_retrospektive
+  name: Retrospektive (Start – Stop – Continue)
+  aliase: [Agile Retro, Plus/Delta]
+  kategorie: paedagogik
+  phasen: [abschluss]
+  setting: [kleingruppe, plenum]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [reflexion, teamentwicklung]
+  dauer: 30–60 Min.
+  kurz: "Ein Team blickt regelmäßig strukturiert zurück: Was sollten wir neu anfangen, lassen, beibehalten? Fünf Phasen: Rahmen setzen – Daten sammeln – Einsichten – Entscheiden – Abschließen."
+  ablauf:
+    - Rahmen und Vertraulichkeit klären.
+    - Ereignisse sammeln (Zeitstrahl, Karten).
+    - Muster und Ursachen diskutieren.
+    - 1–3 konkrete Experimente beschließen.
+    - Kurze Abschlussrunde.
+  varianten:
+    - "Jugendliche: Rückblick auf ein Projekt mit Karten für Start, Stop und Weiter."
+    - "Erwachsene: Retrospektive im Team nach einem Projekt oder Quartal."
+    - "Digital: Retro im Online-Board mit Spalten und Abstimmung über Maßnahmen."
+  stolpersteine:
+    - "Gespräche bleiben bei Symptomen; zu jeder Beobachtung nach Ursache fragen."
+  evidenz: {stufe: mittel, text: "Derby & Larsen (2006) beschreiben das Format; strukturierte Team-Debriefings verbessern Leistung metaanalytisch um ca. 20–25 % (Tannenbaum & Cerasoli 2013)."}
+  qualifikation: alle
+  quellen: [q_derby2006, q_tannenbaum2013]
+
+- id: p_aar
+  name: After-Action Review / Debriefing
+  aliase: [Nachbesprechung, Einsatznachbesprechung]
+  kategorie: paedagogik
+  phasen: [abschluss]
+  setting: [kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [reflexion, teamentwicklung]
+  dauer: 15–45 Min.
+  kurz: "Vier Fragen nach einer Aktivität: Was war geplant? Was ist tatsächlich passiert? Warum gab es Unterschiede? Was machen wir beim nächsten Mal anders?"
+  ablauf:
+    - Kurz nach der Aktivität, alle Beteiligten, keine Schuldsuche.
+    - Vier Fragen nacheinander.
+    - Lernpunkte konkret und verantwortlich festhalten.
+  varianten:
+    - "Jugendliche: Nachbesprechung nach Klassenfahrt oder Sportturnier mit den vier Fragen."
+    - "Erwachsene: After-Action Review nach Übungen oder Einsätzen im Team."
+    - "Digital: Vier Fragen im Dokument oder Chat nach einem Projekt."
+  stolpersteine:
+    - "Die Runde wird zur Schuldzuweisung; Fokus auf Prozess statt Personen setzen."
+  evidenz: {stufe: stark, text: "Metaanalysen Tannenbaum & Cerasoli (2013) und Keiser & Arthur (2021): Debriefings verbessern Leistung substanziell, besonders strukturiert und mit Moderation."}
+  qualifikation: alle
+  quellen: [q_keiser2021, q_tannenbaum2013]
+
+- id: p_reflexionszyklus
+  name: Reflexionsmodelle (Gibbs, What–So what–Now what)
+  aliase: [Reflective Cycle, Kolb-Zyklus]
+  kategorie: paedagogik
+  phasen: [abschluss]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [reflexion]
+  dauer: 15–30 Min.
+  kurz: "Strukturierte Reflexion einer Erfahrung: Was ist passiert? (Beschreibung) – Was bedeutet das? (Analyse, Gefühle, Bewertung) – Was folgt daraus? (Handlungsplan)."
+  ablauf:
+    - Erfahrung beschreiben (ohne Bewertung).
+    - Gefühle und Bewertung.
+    - Analyse mit Theorie.
+    - Schlussfolgerung und Aktionsplan.
+  varianten:
+    - "Jugendliche: Reflexion einer Gruppenaufgabe mit den vier Fragen auf einem Blatt."
+    - "Erwachsene: Reflexion einer Unterrichtsstunde oder Praxissituation mit Theoriebezug."
+    - "Digital: Reflexionsvorlage im Lernportfolio mit Kommentar der Begleitung."
+  stolpersteine:
+    - "Die Beschreibung springt zu schnell zur Bewertung; erst Fakten notieren, dann Gefühle und Deutung."
+  evidenz: {stufe: praxis, text: "Gibbs (1988) und Rolfe et al. (2001) bauen auf Kolbs Erfahrungslernzyklus auf; in Pflege, Lehrkräftebildung und Sozialarbeit Standard, wenig vergleichende Forschung."}
+  qualifikation: alle
+  quellen: [q_gibbs1988, q_rolfe2001, q_kolb1984]
+
+- id: p_transfervereinbarung
+  name: Transfervereinbarung / Brief an mich selbst
+  aliase: [Transferplan, Lernvertrag]
+  kategorie: paedagogik
+  phasen: [abschluss]
+  setting: [einzel, partner]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [reflexion, motivation]
+  dauer: 10–15 Min.
+  kurz: Teilnehmende schreiben am Ende einer Fortbildung oder Einheit auf, was sie konkret wann umsetzen werden; der Brief wird nach einigen Wochen zugeschickt oder ein Lernpartner fragt nach.
+  ablauf:
+    - "Konkretes Vorhaben mit Wenn-dann-Plan formulieren (»Wenn ich am Montag … , dann …«)."
+    - Mögliche Hindernisse und Gegenmaßnahmen notieren.
+    - Brief verschließen, Rücksendetermin; Lernpartnerschaft vereinbaren.
+  varianten:
+    - "Jugendliche: Brief an sich selbst über ein Lernvorhaben, Versand per Schulpost nach vier Wochen."
+    - "Erwachsene: Transferplan nach einer Fortbildung mit Lernpartnerschaft."
+    - "Digital: Vereinbarung als Erinnerung per E-Mail nach einigen Wochen."
+  stolpersteine:
+    - "Vorhaben bleiben vage; ein konkreter Zeitpunkt und ein erster Schritt sind Pflicht."
+  evidenz: {stufe: mittel, text: "Implementierungsintentionen haben in Metaanalysen mittlere bis große Effekte auf Zielerreichung (Gollwitzer & Sheeran 2006)."}
+  qualifikation: alle
+  quellen: [q_gollwitzer2006, q_wahl2013]
+
+- id: p_abschlussritual
+  name: Abschlussritual
+  aliase: [Gemeinsamer Kreis, Abschiedslied, Klatschkreis]
+  kategorie: paedagogik
+  phasen: [abschluss]
+  setting: [plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [beziehung, klassenfuehrung]
+  dauer: 2–5 Min.
+  kurz: Eine wiederkehrende Form beendet Stunde, Woche oder Kurs (Kreis, Lied, Satz, Händedruck). Rituale geben Struktur und Zugehörigkeit.
+  ablauf:
+    - Ritual gemeinsam auswählen.
+    - Konsequent beibehalten.
+    - Bei Gruppenende ein besonderes Abschlussritual (z. B. Erinnerungsbuch).
+  varianten:
+    - "Kinder: Abschlusslied oder Klatschrhythmus, bei dem jede Person einen Satz sagt."
+    - "Jugendliche: Händedruck oder Gruß im Kreis, Gestaltung durch die Gruppe."
+    - "Digital: Abschluss mit Emoji-Runde im Chat und gemeinsamer Verabschiedung."
+  stolpersteine:
+    - "Ritual wird zur Pflichtübung, die alle stört; mit der Gruppe auswählen und bei Bedarf anpassen."
+  evidenz: {stufe: praxis, text: "Strukturierende Rituale gehören zu effektiver Klassenführung (Kounin; EEF Behaviour Guidance); Wirkung als Einzelelement nicht isoliert untersucht."}
+  qualifikation: alle
+  quellen: [q_eef_behaviour, q_kounin1970]
+
+- id: p_soziogramm
+  name: Soziogramm
+  aliase: [Soziometrie, Beziehungsnetz der Klasse]
+  kategorie: paedagogik
+  phasen: [uebergreifend]
+  setting: [plenum]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [beziehung, diagnose, konflikt]
+  dauer: 15 Min. Erhebung + Auswertung
+  kurz: Mit einer vertraulichen Befragung (»Neben wem möchtest du gern sitzen/arbeiten?«) werden Beziehungen in einer Gruppe als Netz sichtbar – Hinweise auf isolierte Kinder und Cliquen.
+  ablauf:
+    - Nur positive Wahlfragen (keine Ablehnungsfragen) stellen.
+    - Vertraulich auswerten, Netzwerk zeichnen.
+    - Für Gruppenbildung und Förderung von Isolierten nutzen; Ergebnis nie veröffentlichen.
+  varianten:
+    - "Kinder: Sitzplatzwahl mit Bildkarten, nur positive Wahlfragen."
+    - "Jugendliche: Wahl für Gruppenarbeit oder Projektpartnerschaften, vertraulich ausgewertet."
+    - "Digital: Vertrauliche Abfrage im Formular, Auswertung nur durch die Lehrkraft."
+  stolpersteine:
+    - Ablehnungswahlen können verletzen und sind in Schulen ethisch problematisch.
+  evidenz: {stufe: begrenzt, text: "Methode von Moreno (1934); als Diagnostik verbreitet; Aussagekraft stark von Formulierung und Vertraulichkeit abhängig."}
+  qualifikation: fortbildung
+  quellen: [q_moreno1934, q_hollstein2006]
+
+- id: p_unterrichtsfeedback
+  name: Schülerfeedback zum Unterricht
+  aliase: [EMU, Feedbackbogen, Unterrichtsevaluation]
+  kategorie: paedagogik
+  phasen: [abschluss, uebergreifend]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [reflexion, diagnose, beziehung]
+  dauer: 10–15 Min.
+  kurz: Lernende beurteilen anhand eines kurzen, validierten Fragebogens Merkmale des Unterrichts (Klarheit, Klassenführung, Aktivierung, Klima); die Lehrkraft vergleicht mit ihrer Selbsteinschätzung und bespricht Ergebnisse mit der Klasse.
+  ablauf:
+    - Fragebogen auswählen (z. B. EMU nach Helmke).
+    - Anonym ausfüllen lassen; Lehrkraft schätzt parallel ein.
+    - Ergebnisse auswerten und mit Klasse besprechen; ein Veränderungsziel vereinbaren.
+  varianten:
+    - "Kinder: Smiley-Bogen zu Klarheit und Spaß am Unterricht, vorgelesen mit Symbolen."
+    - "Jugendliche: kurzer Fragebogen mit Skalen, anonym ausgefüllt und in der Klasse besprochen."
+    - "Digital: anonymes Online-Formular mit Ergebnisdarstellung im nächsten Termin."
+  stolpersteine:
+    - "Ergebnisse werden ohne Rückmeldung an die Klasse vergessen; Veränderungsziel gemeinsam festhalten."
+    - "Anonymität ist bei kleinen Gruppen gefährdet; Auswertung so gestalten, dass Einzelne nicht erkennbar sind."
+  evidenz: {stufe: mittel, text: "Helmke (2009) begründet Unterrichtsdiagnostik mit Schülerperspektive; Schülerurteile über Klassenführung und Klarheit sind recht reliabel und prädiktiv."}
+  qualifikation: alle
+  quellen: [q_helmke2009]
+
+- id: p_zukunftswerkstatt
+  name: Zukunftswerkstatt
+  aliase: [Kritik – Fantasie – Verwirklichung]
+  kategorie: paedagogik
+  phasen: [hauptteil]
+  setting: [kleingruppe, grossgruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [partizipation, kreativitaet, entscheidung]
+  dauer: 3 Std. bis 2 Tage
+  kurz: "Drei Phasen: Kritikphase (Was stört?), Fantasiephase (Was wäre ideal – ohne Grenzen?), Verwirklichungsphase (Was davon setzen wir wie um?)."
+  ablauf:
+    - Kritik sammeln und clustern.
+    - Kritik positiv umformulieren; utopische Entwürfe entwickeln.
+    - Realisierbare Projekte mit Verantwortlichen planen.
+  varianten:
+    - "Jugendliche: Kritik am Schulalltag, Fantasie für eine Idealschule, Umsetzung in einem Projekt."
+    - "Erwachsene: Zukunftswerkstatt für Stadtteil oder Organisation mit Bürgerbeteiligung."
+    - "Digital: Phasen auf Online-Board mit Abstimmung zur Umsetzung."
+  stolpersteine:
+    - "Die Kritikphase wird zum Frustabladen; Kritik mit der Frage nach dem Wunsch verbinden."
+  evidenz: {stufe: praxis, text: "Von Robert Jungk für Bürgerbeteiligung entwickelt; in Schule für Partizipationsprojekte verbreitet; keine Wirksamkeitsstudien."}
+  qualifikation: alle
+  quellen: [q_jungk1981]
+
+- id: p_balint
+  name: Balintgruppe / Fallsupervision in der Gruppe
+  aliase: [Balint-Arbeit, Beziehungsorientierte Fallbesprechung]
+  kategorie: paedagogik
+  phasen: [hauptteil]
+  setting: [kleingruppe]
+  zielgruppen: [erwachsene]
+  anwendung: [reflexion, beratung, stress_gesundheit]
+  dauer: 90 Min., regelmäßig
+  kurz: Eine feste Gruppe aus helfenden Berufen bespricht unter qualifizierter Leitung Beziehungserfahrungen mit Klient·innen, Patient·innen oder Schüler·innen. Im Mittelpunkt steht die Beziehung und die eigenen Gefühle, nicht die Lösung.
+  ablauf:
+    - Ein Mitglied schildert eine belastende Beziehungssituation frei.
+    - Die Gruppe äußert Einfälle, Bilder, Gefühle; die Fallgeberin hört zurückgelehnt zu.
+    - Fallgeber·in kehrt zurück und nimmt Stellung.
+  varianten:
+    - "Erwachsene: Balintgruppe im Kollegium nur mit ausgebildeter Leitung und fester Gruppe."
+    - "Erwachsene: Fallbesprechung in Teams helfender Berufe mit klaren Gesprächsregeln und Verschwiegenheit."
+  stolpersteine:
+    - "Bei belastenden Beziehungsfragen oder Krisen an qualifizierte Fachkräfte oder Beratungsstellen verweisen; die Gruppe ersetzt keine Therapie."
+    - "Ohne qualifizierte Leitung entstehen schnell Ratschläge oder Bewertungen; Leitung für die Gruppe sichern."
+  evidenz: {stufe: begrenzt, text: "Von Michael Balint für Ärzt·innen entwickelt; auf Lehrkräfte übertragen; Studien berichten Entlastung und mehr Verständnis, meist ohne Kontrollgruppe."}
+  qualifikation: fachkraft
+  quellen: [q_balint1957, q_tietze2003]

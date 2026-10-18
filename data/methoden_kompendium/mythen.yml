@@ -1,0 +1,75 @@
+- id: my_lernstile
+  behauptung: Menschen lernen besser, wenn der Unterricht zu ihrem Lernstil (visuell, auditiv, kinästhetisch) passt.
+  befund: Es gibt keine belastbaren Belege für die »Passungshypothese«. Sinnvoll ist, Inhalte so darzustellen, wie es der Inhalt verlangt (z. B. Landkarten visuell), und Wort und Bild zu kombinieren – für alle.
+  kategorie: didaktik
+  quellen: [q_pashler2008, q_howardjones2014]
+- id: my_lernpyramide
+  behauptung: Man behält 10 % von dem, was man liest, 20 % von dem, was man hört … und 90 % von dem, was man selbst tut (Lernpyramide).
+  befund: Die Prozentzahlen haben keine empirische Grundlage und wurden fälschlich Edgar Dales »Erfahrungskegel« zugeschrieben, der keine Zahlen enthielt.
+  kategorie: didaktik
+  quellen: [q_letrud2018]
+- id: my_braingym
+  behauptung: Überkreuzbewegungen (Brain Gym) verbinden die Gehirnhälften und verbessern so das Lernen.
+  befund: Die neurologischen Erklärungen sind falsch, Wirksamkeitsbelege fehlen. Bewegungspausen an sich sind sinnvoll – aus anderen Gründen.
+  kategorie: didaktik
+  quellen: [q_hyatt2007, q_watson2017]
+- id: my_hirnhaelften
+  behauptung: Es gibt »linkshirnige« (logische) und »rechtshirnige« (kreative) Menschen, und Unterricht sollte beide Hälften gezielt ansprechen.
+  befund: Beide Hirnhälften arbeiten bei nahezu allen Aufgaben eng zusammen; eine Typeneinteilung ist nicht haltbar.
+  kategorie: psychologie
+  quellen: [q_howardjones2014]
+- id: my_zehnprozent
+  behauptung: Wir nutzen nur 10 % unseres Gehirns.
+  befund: Bildgebende Verfahren zeigen Aktivität im gesamten Gehirn; der Mythos hat keine wissenschaftliche Quelle.
+  kategorie: psychologie
+  quellen: [q_howardjones2014]
+- id: my_zucker
+  behauptung: Zucker macht Kinder hyperaktiv.
+  befund: Eine Metaanalyse doppelblinder Studien fand keinen Effekt von Zucker auf Verhalten oder Kognition; Erwartungen der Erwachsenen beeinflussen aber deren Wahrnehmung.
+  kategorie: psychologie
+  quellen: [q_wolraich1995]
+- id: my_mozart
+  behauptung: Mozart hören macht Kinder klüger (Mozart-Effekt).
+  befund: Metaanalyse – kein spezifischer Effekt; kurzfristige Leistungsunterschiede lassen sich durch Erregung/Stimmung erklären.
+  kategorie: psychologie
+  quellen: [q_pietschnig2010]
+- id: my_digital_natives
+  behauptung: Junge Menschen sind »Digital Natives« und können problemlos multitasken; deshalb brauchen sie ganz anderen Unterricht.
+  befund: Weder eine besondere digitale Kompetenz der Generation noch Multitasking-Fähigkeit sind belegt; Multitasking verschlechtert Lernen bei allen.
+  kategorie: didaktik
+  quellen: [q_kirschner2017]
+- id: my_entdecken
+  behauptung: Selbst entdecktes Wissen ist immer besser als erklärtes.
+  befund: Unangeleitetes Entdecken ist im Mittel explizitem Unterricht unterlegen; angeleitetes Entdecken kann wirksam sein. Es kommt auf Vorwissen, Ziel und Unterstützung an.
+  kategorie: didaktik
+  quellen: [q_alfieri2011, q_kirschner2006]
+- id: my_mindset
+  behauptung: Eine kurze Mindset-Intervention steigert die Leistungen aller Lernenden deutlich.
+  befund: Im Mittel sind die Effekte sehr klein bis null, mit kleinen Effekten für bestimmte Gruppen in unterstützenden Umgebungen. Plakate und Slogans allein bewirken nichts.
+  kategorie: psychologie
+  quellen: [q_sisk2018, q_macnamara2023, q_yeager2019]
+- id: my_belbin_mbti
+  behauptung: Persönlichkeitstypen-Tests wie MBTI oder Teamrollen-Modelle wie Belbin zeigen zuverlässig, wer wie arbeitet und wie Teams zusammengesetzt sein sollten.
+  befund: Der MBTI hat geringe Retest-Reliabilität und zwingt kontinuierliche Merkmale in Typen; Belbins Modell hat schwache psychometrische Belege. Als Gesprächsanlass nutzbar, nicht als Diagnose. Für Persönlichkeit sind die Big Five besser belegt.
+  kategorie: psychologie
+  quellen: [q_pittenger2005, q_aritzeta2007]
+- id: my_aufstellungen
+  behauptung: In Familienaufstellungen zeigt ein »wissendes Feld«, was in fremden Familien wirklich los ist.
+  befund: Für ein »wissendes Feld« gibt es keine wissenschaftliche Grundlage. Studien zu systemischen Aufstellungsseminaren berichten zwar subjektive Verbesserungen, Methoden und Haltungen einzelner Anbieter (insbesondere nach Hellinger) sind aber fachlich umstritten und können schaden.
+  kategorie: psychologie
+  quellen: [q_hunger2015, q_schweitzer2007]
+- id: my_hattie_ranking
+  behauptung: Hatties Rangliste sagt, welche Methode man nehmen soll – alles über d = 0,40 wirkt, alles darunter nicht.
+  befund: Die Effektstärken stammen aus sehr unterschiedlichen Metaanalysen und Messinstrumenten; die Umsetzung entscheidet. Die Liste ist ein Ausgangspunkt für Fragen, kein Rezept.
+  kategorie: didaktik
+  quellen: [q_hattie2009, q_eef_toolkit]
+- id: my_hypnose_erinnerung
+  behauptung: Unter Hypnose oder in »Rückführungen« lassen sich verdrängte Erinnerungen zuverlässig zurückholen.
+  befund: Hypnose erhöht vor allem die Sicherheit, mit der Erinnerungen berichtet werden, nicht ihre Richtigkeit; suggestive Rückführungen können falsche Erinnerungen erzeugen. Für Entspannung, Schmerz und als Ergänzung zur KVT ist Hypnose dagegen hilfreich.
+  kategorie: psychologie
+  quellen: [q_lynn1997, q_kirsch1995]
+- id: my_power_posing
+  behauptung: Zwei Minuten »Power Posing« verändern Hormone und machen mutiger.
+  befund: Große Replikationen fanden keine hormonellen Effekte und keine Veränderung der Risikobereitschaft; allenfalls ein kleiner Effekt auf das subjektive Gefühl.
+  kategorie: psychologie
+  quellen: [q_ranehill2015]

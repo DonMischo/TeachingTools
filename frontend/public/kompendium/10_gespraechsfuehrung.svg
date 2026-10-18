@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 580" font-family="Arial, Helvetica, sans-serif" role="img" aria-label="GESPRÄCHSANSÄTZE IM VERGLEICH">
+<rect x="0" y="0" width="960" height="580" fill="#0F1E2E" rx="12"/>
+<text x="480.0" y="38.0" font-size="20" fill="#FFFFFF" text-anchor="middle" font-weight="bold">GESPRÄCHSANSÄTZE IM VERGLEICH</text>
+<line x1="60" y1="50" x2="900" y2="50" stroke="#C9A227" stroke-width="2"/>
+<text x="480.0" y="70.0" font-size="12" fill="#8AADCC" text-anchor="middle" font-weight="normal">Fünf Ansätze für Beratung, Coaching und Konfliktgespräche</text>
+<text x="36" y="102.0" font-size="11" fill="#8AADCC" text-anchor="start" font-weight="bold">ANSATZ</text>
+<text x="216" y="102.0" font-size="11" fill="#8AADCC" text-anchor="start" font-weight="bold">KERNIDEE</text>
+<text x="456" y="102.0" font-size="11" fill="#8AADCC" text-anchor="start" font-weight="bold">TYPISCHE FRAGE</text>
+<text x="726" y="102.0" font-size="11" fill="#8AADCC" text-anchor="start" font-weight="bold">GUT, WENN …</text>
+<rect x="30" y="112" width="900" height="72" fill="#1A2A3A" rx="4"/>
+<rect x="30" y="112" width="6" height="72" fill="#2A9DB0" rx="2"/>
+<text x="44" y="138.0" font-size="12.5" fill="#FFFFFF" text-anchor="start" font-weight="bold">Aktives Zuhören</text>
+<text x="216" y="136.0" font-size="11.5" fill="#E0E8F0" text-anchor="start" font-weight="normal">Inhalt und Gefühl spiegeln, nicht</text>
+<text x="216" y="150.9" font-size="11.5" fill="#E0E8F0" text-anchor="start" font-weight="normal">bewerten</text>
+<text x="456" y="136.0" font-size="11.5" fill="#F3D27A" text-anchor="start" font-weight="normal" font-style="italic">»Du bist also enttäuscht, weil …?«</text>
+<text x="726" y="136.0" font-size="11.5" fill="#E0E8F0" text-anchor="start" font-weight="normal">jemand sich verstanden fühlen muss</text>
+<rect x="30" y="190" width="900" height="72" fill="#162030" rx="4"/>
+<rect x="30" y="190" width="6" height="72" fill="#3D7DCA" rx="2"/>
+<text x="44" y="216.0" font-size="12.5" fill="#FFFFFF" text-anchor="start" font-weight="bold">Motivierende</text>
+<text x="44" y="232.2" font-size="12.5" fill="#FFFFFF" text-anchor="start" font-weight="bold">Gesprächsführung</text>
+<text x="216" y="214.0" font-size="11.5" fill="#E0E8F0" text-anchor="start" font-weight="normal">Ambivalenz klären, eigene Gründe für</text>
+<text x="216" y="228.9" font-size="11.5" fill="#E0E8F0" text-anchor="start" font-weight="normal">Veränderung stärken</text>
+<text x="456" y="214.0" font-size="11.5" fill="#F3D27A" text-anchor="start" font-weight="normal" font-style="italic">»Was spricht für dich dafür, es zu ändern?«</text>
+<text x="726" y="214.0" font-size="11.5" fill="#E0E8F0" text-anchor="start" font-weight="normal">jemand zwischen Wollen und</text>
+<text x="726" y="228.9" font-size="11.5" fill="#E0E8F0" text-anchor="start" font-weight="normal">Nicht-Wollen schwankt</text>
+<rect x="30" y="268" width="900" height="72" fill="#1A2A3A" rx="4"/>
+<rect x="30" y="268" width="6" height="72" fill="#2E9466" rx="2"/>
+<text x="44" y="294.0" font-size="12.5" fill="#FFFFFF" text-anchor="start" font-weight="bold">Lösungsfokussiert</text>
+<text x="216" y="292.0" font-size="11.5" fill="#E0E8F0" text-anchor="start" font-weight="normal">Ziele, Ressourcen und Ausnahmen statt</text>
+<text x="216" y="306.9" font-size="11.5" fill="#E0E8F0" text-anchor="start" font-weight="normal">Ursachen</text>
+<text x="456" y="292.0" font-size="11.5" fill="#F3D27A" text-anchor="start" font-weight="normal" font-style="italic">»Wann war es schon etwas besser? Was war da</text>
+<text x="456" y="306.9" font-size="11.5" fill="#F3D27A" text-anchor="start" font-weight="normal" font-style="italic">anders?«</text>
+<text x="726" y="292.0" font-size="11.5" fill="#E0E8F0" text-anchor="start" font-weight="normal">schnell kleine Schritte gefunden</text>
+<text x="726" y="306.9" font-size="11.5" fill="#E0E8F0" text-anchor="start" font-weight="normal">werden sollen</text>
+<rect x="30" y="346" width="900" height="72" fill="#162030" rx="4"/>
+<rect x="30" y="346" width="6" height="72" fill="#7E57C2" rx="2"/>
+<text x="44" y="372.0" font-size="12.5" fill="#FFFFFF" text-anchor="start" font-weight="bold">Systemisch</text>
+<text x="216" y="370.0" font-size="11.5" fill="#E0E8F0" text-anchor="start" font-weight="normal">Wechselwirkungen und Perspektiven</text>
+<text x="216" y="384.9" font-size="11.5" fill="#E0E8F0" text-anchor="start" font-weight="normal">sichtbar machen</text>
+<text x="456" y="370.0" font-size="11.5" fill="#F3D27A" text-anchor="start" font-weight="normal" font-style="italic">»Was glaubst du, würde deine Mutter dazu</text>
+<text x="456" y="384.9" font-size="11.5" fill="#F3D27A" text-anchor="start" font-weight="normal" font-style="italic">sagen?«</text>
+<text x="726" y="370.0" font-size="11.5" fill="#E0E8F0" text-anchor="start" font-weight="normal">Konflikte mehrere Beteiligte</text>
+<text x="726" y="384.9" font-size="11.5" fill="#E0E8F0" text-anchor="start" font-weight="normal">betreffen</text>
+<rect x="30" y="424" width="900" height="72" fill="#1A2A3A" rx="4"/>
+<rect x="30" y="424" width="6" height="72" fill="#C2652E" rx="2"/>
+<text x="44" y="450.0" font-size="12.5" fill="#FFFFFF" text-anchor="start" font-weight="bold">Coaching (GROW)</text>
+<text x="216" y="448.0" font-size="11.5" fill="#E0E8F0" text-anchor="start" font-weight="normal">Ziel – Realität – Optionen – Wille</text>
+<text x="456" y="448.0" font-size="11.5" fill="#F3D27A" text-anchor="start" font-weight="normal" font-style="italic">»Was genau wirst du bis wann tun?«</text>
+<text x="726" y="448.0" font-size="11.5" fill="#E0E8F0" text-anchor="start" font-weight="normal">Ziele klar und Personen</text>
+<text x="726" y="462.9" font-size="11.5" fill="#E0E8F0" text-anchor="start" font-weight="normal">handlungsfähig sind</text>
+<text x="480.0" y="525.0" font-size="11.5" fill="#C9A227" text-anchor="middle" font-weight="normal" font-style="italic">Gemeinsame Haltung: Die Person ist Expertin für ihr Leben, die Gesprächsleitung für den Prozess. Ratschläge sparsam und nach Erlaubnis.</text>
+<text x="480.0" y="555.0" font-size="10.5" fill="#8AADCC" text-anchor="middle" font-weight="normal">Quellen: Gordon 1974 · Miller &amp; Rollnick 2013 · de Shazer 1985 · Selvini Palazzoli et al. 1980 · Whitmore 1992</text>
+</svg>

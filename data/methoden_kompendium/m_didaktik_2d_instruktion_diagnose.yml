@@ -1,0 +1,575 @@
+# Didaktik – Erweiterung: Lehrerzentrierte Formen, Sicherung, Diagnose und Bewertung
+- id: d_lehrervortrag
+  name: Lehrervortrag / Kurzinput
+  aliase: [Darbietender Unterricht, Mini-Lecture]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [plenum, grossgruppe]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [wissensaufbau]
+  dauer: 5–20 Min.
+  kurz: Ein kurzer, klar strukturierter Vortrag vermittelt neues Wissen effizient – mit Advance Organizer, Beispielen, Visualisierung und eingestreuten Verständnisfragen.
+  ablauf:
+    - Ziel und Gliederung zeigen.
+    - In Abschnitten von 5–10 Min. sprechen, dazwischen eine Verarbeitungsfrage.
+    - Konkrete Beispiele und Bilder neben die Worte stellen, keine Textfolien vorlesen.
+    - Mit Zusammenfassung und Abruffrage schließen.
+  varianten:
+    - "Kinder: kurze Erzählung mit Bildkarten, nach jedem Abschnitt Zeigen oder Daumenabfrage."
+    - "Jugendliche: Input von max. 10 Min., danach Partnerfrage zum Gehörten."
+    - "Erwachsene: Impuls mit Praxisbeispiel und zwei Diskussionsfragen zur Anwendung im Team."
+  stolpersteine:
+    - Lange Vorträge ohne Aktivierung führen zu Aufmerksamkeitsverlust.
+  evidenz: {stufe: mittel, text: "Gut strukturierte Erklärungen sind Kern effektiver Instruktion (Rosenshine 2012); reine Vorlesung schneidet schlechter ab als Vorträge mit aktiven Elementen (Freeman et al. 2014)."}
+  qualifikation: alle
+  quellen: [q_rosenshine2012, q_freeman2014, q_mayer2021]
+
+- id: d_demonstration
+  name: Demonstration / Vorführexperiment mit Vorhersage
+  aliase: [Lehrerexperiment, Vorführung]
+  kategorie: didaktik
+  phasen: [einstieg, hauptteil]
+  setting: [plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [verstehen, motivation]
+  dauer: 5–15 Min.
+  kurz: Die Lehrkraft führt ein Experiment oder eine Fertigkeit vor. Lernende sagen das Ergebnis vorher und diskutieren es, statt nur zuzuschauen.
+  ablauf:
+    - Aufbau zeigen, Frage stellen.
+    - Vorhersage notieren (und mit Nachbar besprechen).
+    - Vorführen.
+    - Ergebnis mit Vorhersage vergleichen, erklären.
+  varianten:
+    - "Kinder: Vorhersage per Zeigen (wird es größer, kleiner, bleibt es gleich?)."
+    - "Jugendliche: Vorhersage schriftlich mit Begründung, danach Vergleich mit Messwerten."
+    - "Digital: Vorführung per Video oder Simulation mit Pausen für Vorhersagen im Chat."
+  stolpersteine:
+    - "Vorhersagen werden nach dem Vorführen gesammelt; erst notieren, dann zeigen."
+    - "Gefährliche Experimente nur mit Schutzausrüstung und Sicherheitsregeln vorführen."
+  evidenz: {stufe: mittel, text: "Crouch et al. (2004): Demonstrationen mit Vorhersage verbesserten das Verständnis deutlich; bloßes Zuschauen kaum besser als keine Demonstration."}
+  qualifikation: alle
+  quellen: [q_crouch2004, q_white1992]
+
+- id: d_fragend_entwickelnd
+  name: Fragend-entwickelndes Unterrichtsgespräch
+  aliase: [Lehrgespräch, Frage-Antwort-Unterricht]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [plenum]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [wissensaufbau, diskussion]
+  dauer: 10–30 Min.
+  kurz: Die Lehrkraft führt die Klasse durch eine Kette von Fragen zu einem Ergebnis. In Deutschland sehr verbreitet – wirksam nur mit echten Denkfragen, Wartezeit und Beteiligung aller.
+  ablauf:
+    - Zielführende, offene Denkfragen vorbereiten.
+    - Wartezeit, Partnerabsprache vor dem Aufrufen.
+    - Antworten aufgreifen und weiterführen statt nur zu bewerten.
+    - Ergebnis festhalten.
+  varianten:
+    - "Kinder: Denkfragen mit Handzeichen und kurzer Partnerabsprache vor der Antwort."
+    - "Jugendliche: Zufallsaufruf mit Kärtchen, Antworten von anderen aufgreifen lassen."
+    - "Digital: Fragen im Chat stellen und Antworten gleichzeitig eingeben lassen."
+  stolpersteine:
+    - Kleinschrittige »Lehrer-will-hören«-Fragen erzeugen Ratespiele, und nur wenige Lernende denken mit (Meyer).
+  evidenz: {stufe: begrenzt, text: "Von Meyer (1987) kritisch beschrieben; durch Wartezeit (Rowe 1986), Zufallsaufruf und dialogische Gesprächsführung deutlich verbesserbar."}
+  qualifikation: alle
+  quellen: [q_meyer1987, q_rowe1986, q_alexander2020]
+
+- id: d_schuelerexperiment
+  name: Schülerexperiment mit Versuchsprotokoll
+  aliase: [Praktikum, Laborübung]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [partner, kleingruppe]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [verstehen, problemloesen]
+  dauer: 30–90 Min.
+  kurz: "Lernende führen selbst Experimente durch und protokollieren: Frage, Vermutung, Material, Durchführung, Beobachtung, Auswertung, Fehlerbetrachtung."
+  ablauf:
+    - Forschungsfrage und Vermutung.
+    - Durchführung nach Anleitung oder selbst geplant.
+    - Beobachtungen und Messwerte notieren.
+    - Auswertung und Diskussion im Plenum.
+  varianten:
+    - "Kinder: Experiment mit Bildanleitung und Protokoll per Zeichnung."
+    - "Jugendliche: Fragestellung und Versuchsplan selbst entwickeln lassen."
+    - "Digital: Simulation als Ersatz, wenn Material fehlt, mit eigenem Protokoll."
+  stolpersteine:
+    - »Kochrezept«-Experimente ohne Denkanteil führen zu Hands-on ohne Minds-on.
+  evidenz: {stufe: mittel, text: "Hofstein & Lunetta (2004): Laborarbeit kann Verständnis und Einstellungen fördern, wenn sie mit klaren Zielen und Reflexion verbunden ist."}
+  qualifikation: alle
+  quellen: [q_hofstein2004, q_dejong2013]
+
+- id: d_tafelbild
+  name: Tafelbild / Hefteintrag als Sicherung
+  aliase: [Ergebnissicherung, Merkeintrag]
+  kategorie: didaktik
+  phasen: [abschluss]
+  setting: [plenum, einzel]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [wissensaufbau, verstehen]
+  dauer: 5–15 Min.
+  kurz: Die Kernergebnisse werden in einer klar strukturierten, möglichst grafischen Form an der Tafel entwickelt und ins Heft übernommen – als Grundlage für spätere Wiederholung.
+  ablauf:
+    - Struktur vorab planen (Pfeile, Vergleichstabelle, Schema).
+    - Gemeinsam mit der Klasse entwickeln.
+    - Übernehmen lassen; später als Abruf-Grundlage (Abdecken, Erklären) nutzen.
+  varianten:
+    - "Kinder: einfaches Bild mit wenigen Pfeilen und Schlüsselwörtern, gemeinsam gezeichnet."
+    - "Jugendliche: Vergleichstabelle oder Schema, das die Klasse selbst entwickelt."
+    - "Digital: Tafelbild als Foto oder Folie, das Lernende ins Heft oder Dokument übertragen."
+  stolpersteine:
+    - "Eine fertig vorbereitete Tafel wird nur abgeschrieben; Lernende beim Entwickeln beteiligen."
+    - "Ein überladenes Tafelbild ist schwer zu merken; auf drei bis fünf Kernpunkte begrenzen."
+  evidenz: {stufe: begrenzt, text: "Bewährte Sicherungsform (Meyer); wirkt über Struktur und Wort-Bild-Kombination; Abschreiben allein ist eine schwache Lernaktivität."}
+  qualifikation: alle
+  quellen: [q_meyer1987, q_mayer2021]
+
+- id: d_merksatz
+  name: Regel oder Merksatz selbst formulieren
+  aliase: [Induktive Regelbildung]
+  kategorie: didaktik
+  phasen: [abschluss, hauptteil]
+  setting: [einzel, partner]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [verstehen, lesen_schreiben]
+  dauer: 5–10 Min.
+  kurz: Nach Beispielen formulieren Lernende die Regel in eigenen Worten, vergleichen ihre Formulierungen und einigen sich auf eine Fassung.
+  ablauf:
+    - Mehrere Beispiele bearbeiten.
+    - Regel einzeln formulieren.
+    - Im Paar vergleichen und verbessern.
+    - Beste Fassung prüfen (an neuem Beispiel).
+  varianten:
+    - "Kinder: Regel mit Bildbeispiel formulieren und an der Wand als Merkbild aufhängen."
+    - "Jugendliche: Regel in eigenen Worten formulieren und an einem neuen Fall prüfen."
+    - "Digital: Formulierungen gemeinsam in einem Dokument vergleichen und abstimmen."
+  stolpersteine:
+    - "Regeln werden zu ungenau; an einem Gegenbeispiel prüfen lassen, ob die Formulierung trägt."
+    - "Lernende übernehmen die Lehrkraftformulierung ohne Nachdenken; eigene Fassung zuerst verlangen."
+  evidenz: {stufe: mittel, text: "Generieren und Selbsterklären verbessern Verstehen (Slamecka & Graf 1978; Chi et al. 1994)."}
+  qualifikation: alle
+  quellen: [q_slamecka1978, q_chi1994]
+
+- id: d_feynman
+  name: Feynman-Methode (Erklären wie für ein Kind)
+  aliase: [Explain it simply, Erklär-Test]
+  kategorie: didaktik
+  phasen: [abschluss, hauptteil]
+  setting: [einzel, partner]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [verstehen, lernstrategien]
+  dauer: 10–15 Min.
+  kurz: Man erklärt ein Konzept schriftlich oder mündlich so, dass es eine 12-jährige Person verstehen würde. Wo Fachwörter oder Lücken nötig werden, zeigt sich, was noch nicht verstanden ist.
+  ablauf:
+    - Konzept wählen.
+    - Einfach erklären, ohne Fachjargon.
+    - Lücken markieren und nachlernen.
+    - Erklärung vereinfachen und Beispiel ergänzen.
+  varianten:
+    - "Jugendliche: Konzept aus dem Fach für eine jüngere Mitschülerin oder einen jüngeren Mitschüler erklären."
+    - "Erwachsene: Fachbegriff für Kolleg·innen oder Kund·innen ohne Fachjargon erklären."
+    - "Digital: Erklärung als kurze Sprachnachricht oder Video aufnehmen und vergleichen."
+  stolpersteine:
+    - "Vereinfachung wird zur Verfälschung; nach der Erklärung auf Richtigkeit prüfen lassen."
+  evidenz: {stufe: mittel, text: "Bündelt Selbsterklären und Lernen durch Erklären, beide belegt (Chi et al. 1994; Fiorella & Mayer 2013); als benannte Methode nicht eigens untersucht."}
+  qualifikation: alle
+  quellen: [q_chi1994, q_fiorella2013]
+
+- id: d_lernmenue
+  name: Lernmenü / Wahlaufgaben (Choice Board)
+  aliase: [Tic-Tac-Toe-Aufgaben, Pflicht- und Wahlaufgaben]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [einzel, partner]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [heterogenitaet, motivation]
+  dauer: 1 Stunde bis Wochen
+  kurz: Aufgaben werden als Menü (Vorspeise = Pflicht, Hauptgang = Auswahl, Dessert = Zusatz) oder Raster angeboten; Lernende wählen innerhalb fester Ziele.
+  ablauf:
+    - Ziele festlegen, Aufgaben unterschiedlicher Zugänge erstellen.
+    - Pflicht- und Wahlbereich markieren.
+    - Wahl begründen lassen, Fortschritt dokumentieren.
+  varianten:
+    - "Kinder: Menü mit Bildsymbolen, z. B. Pflicht als Stern und Wahl als Bild."
+    - "Jugendliche: Wahlaufgaben mit unterschiedlichen Zugängen zum gleichen Thema."
+    - "Erwachsene: Wahlmodule in Fortbildungen mit festen Lernzielen und Nachweis."
+  stolpersteine:
+    - "Lernende wählen nur die leichten Aufgaben; Mindestanzahl oder Pflichtfeld festlegen."
+    - "Zu viele Wahlmöglichkeiten überfordern; drei bis vier Optionen pro Bereich anbieten."
+  evidenz: {stufe: begrenzt, text: "Differenzierungsansatz (Tomlinson 2014); Wahlmöglichkeiten unterstützen Autonomie (Ryan & Deci 2000), Lerneffekt abhängig von Aufgabenqualität."}
+  qualifikation: alle
+  quellen: [q_tomlinson2014, q_ryan2000]
+
+- id: d_spiralcurriculum
+  name: Spiralcurriculum
+  aliase: [Wiederkehrende Vertiefung]
+  kategorie: didaktik
+  phasen: [uebergreifend]
+  setting: [plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [ueben, verstehen]
+  dauer: Jahresplanung
+  kurz: Zentrale Ideen werden über Jahre hinweg mehrfach und auf wachsendem Niveau aufgegriffen, statt einmalig »abgehakt« zu werden.
+  ablauf:
+    - Schlüsselideen des Fachs bestimmen.
+    - Planen, wann sie wieder auftauchen und vertieft werden.
+    - Bei jeder Wiederkehr Vorwissen abrufen.
+  varianten:
+    - "Kinder: Grundidee im Schuljahr immer wieder in Alltagskontexten aufgreifen."
+    - "Jugendliche: Schlüsselkonzept in mehreren Fächern und Jahrgängen mit steigendem Anspruch."
+    - "Erwachsene: Kernkompetenzen in Fortbildungsreihen über Monate wiederholen."
+  stolpersteine:
+    - "Wiederkehr ohne Vertiefung wirkt wie Wiederholung; jedes Mal ein neues Anwendungsniveau planen."
+    - "Lehrpläne sind oft nicht abgestimmt; Absprache im Kollegium einplanen."
+  evidenz: {stufe: mittel, text: "Konzept nach Bruner (1960); gestützt durch den Spacing-Effekt, dessen Nichtnutzung in Lehrplänen Dempster (1988) kritisiert."}
+  qualifikation: alle
+  quellen: [q_bruner1960, q_dempster1988, q_cepeda2006]
+
+- id: d_scharnierfrage
+  name: Scharnierfrage (Hinge Question)
+  aliase: [Diagnostische Mehrfachwahlfrage]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [diagnose, verstehen]
+  dauer: 2 Min.
+  kurz: An der Gelenkstelle einer Stunde stellt die Lehrkraft eine Mehrfachwahlfrage, deren falsche Optionen je eine typische Fehlvorstellung verraten. In 30 Sekunden ist klar, ob es weitergehen kann.
+  ablauf:
+    - Frage mit diagnostischen Distraktoren vorbereiten.
+    - Alle antworten gleichzeitig (Karten, Finger).
+    - Entscheidung – weiter, nochmal erklären oder gruppieren.
+  varianten:
+    - "Kinder: Bildauswahl mit drei Bildern als Antwortmöglichkeit, Antwort per Zeigen."
+    - "Jugendliche: Mehrfachwahl mit typischen Fehlvorstellungen als falsche Optionen."
+    - "Digital: Abstimmung im Lernmanagementsystem mit sofortiger Auswertung der Verteilung."
+  stolpersteine:
+    - "Falsche Optionen sind beliebig; jede Option sollte einer konkreten Fehlvorstellung entsprechen."
+    - "Ergebnis wird ignoriert und es geht trotzdem weiter; Entscheidungsregel vorab festlegen."
+  evidenz: {stufe: mittel, text: "Technik formativer Beurteilung (Wiliam 2011; Wiliam & Leahy 2015)."}
+  qualifikation: alle
+  quellen: [q_wiliam2011, q_wiliam2015]
+
+- id: d_rubric
+  name: Bewertungsraster (Rubric)
+  aliase: [Kriterienraster, Kompetenzraster für Produkte]
+  kategorie: didaktik
+  phasen: [einstieg, abschluss]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [diagnose, lernstrategien]
+  dauer: Vorbereitung + 10 Min.
+  kurz: Ein Raster beschreibt für jedes Kriterium mehrere Qualitätsstufen in Worten. Vorab ausgegeben, zeigt es Lernenden, was erwartet wird; danach dient es Selbst-, Peer- und Lehrkraftbewertung.
+  ablauf:
+    - 3–5 Kriterien, je 3–4 beschriebene Stufen.
+    - Mit Beispielarbeiten erklären.
+    - Selbst- und Peerbewertung vor Abgabe.
+  varianten:
+    - "Kinder: Raster mit Smileys oder Symbolen statt langer Beschreibungen."
+    - "Jugendliche: Raster mit drei Kriterien und klaren Stufenbeschreibungen für Präsentationen."
+    - "Erwachsene: Raster für Berichte oder Projektarbeiten im Team mit Selbsteinschätzung."
+  stolpersteine:
+    - "Stufenbeschreibungen bleiben vage (»gut«, »sehr gut«); Merkmale beobachtbar formulieren."
+    - "Das Raster wird erst nach der Arbeit ausgegeben; vorher zeigen, damit es als Orientierung dient."
+  evidenz: {stufe: mittel, text: "Review Jonsson & Svingby (2007): Raster erhöhen Bewertungsreliabilität und können Lernen fördern, besonders kombiniert mit Selbstbeurteilung."}
+  qualifikation: alle
+  quellen: [q_jonsson2007, q_panadero2017]
+
+- id: d_kommentare
+  name: Kommentare statt Noten
+  aliase: [Comment-only Marking, Feedback vor Note]
+  kategorie: didaktik
+  phasen: [abschluss]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [diagnose, motivation]
+  dauer: begleitend
+  kurz: Arbeiten erhalten zunächst nur schriftliche, aufgabenbezogene Kommentare; Noten kommen später oder gar nicht. So werden Kommentare gelesen und genutzt.
+  ablauf:
+    - Kommentar mit Stand und nächstem Schritt.
+    - Zeit im Unterricht zum Umsetzen.
+    - Note erst nach Überarbeitung (falls nötig).
+  varianten:
+    - "Kinder: kurze Kommentare mit einem Lob und einem Tipp für den nächsten Schritt."
+    - "Jugendliche: Kommentare mit Stand, Ziel und konkretem nächsten Schritt."
+    - "Digital: Kommentare direkt im Dokument mit Überarbeitungsfrist."
+  stolpersteine:
+    - "Lernende fragen trotzdem nach der Note; Zeitpunkt der Noten vorab kommunizieren."
+    - "Kommentare werden zu allgemein; an einer konkreten Stelle der Arbeit ansetzen."
+  evidenz: {stufe: mittel, text: "Butler (1988): Kommentare allein steigerten Interesse und Leistung, Noten (mit oder ohne Kommentar) nicht; von Black & Wiliam (1998) aufgegriffen."}
+  qualifikation: alle
+  quellen: [q_butler1988, q_black1998]
+
+- id: d_lernverlauf
+  name: Lernverlaufsdiagnostik (CBM)
+  aliase: [Curriculum-Based Measurement, Lernfortschrittsmessung]
+  kategorie: didaktik
+  phasen: [uebergreifend]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [diagnose, heterogenitaet]
+  dauer: 1–5 Min. pro Woche
+  kurz: Mit kurzen, gleichwertigen Tests (z. B. 1 Minute lautes Lesen, 2 Minuten Rechnen) wird der Lernfortschritt wöchentlich gemessen und als Kurve dargestellt. Flacht die Kurve ab, wird die Förderung angepasst.
+  ablauf:
+    - Standardisierte Kurztests wählen.
+    - Regelmäßig messen, Werte grafisch darstellen.
+    - Ziellinie einzeichnen; bei Abweichung Förderung ändern.
+  varianten:
+    - "Kinder: Lesen einer Minute mit Vorlesen am Tisch, Kurve mit Stickern."
+    - "Jugendliche: Wöchentliche Kurztests zu Rechnen oder Lesen mit eigener Fortschrittskurve."
+    - "Digital: Testergebnisse in einer Tabelle erfassen und Trends automatisch darstellen."
+  stolpersteine:
+    - "Testwerte werden als Leistungsbewertung missverstanden; klar als Lernmessung kommunizieren."
+    - "Gleichwertigkeit der Tests ist entscheidend; Testreihen nicht selbst zusammenstellen, sondern geprüfte nutzen."
+  evidenz: {stufe: stark, text: "Von Deno (1985) begründet; Datennutzung mit Förderanpassung verbessert Leistungen besonders bei Förderbedarf (Teil des RTI-Ansatzes)."}
+  qualifikation: fortbildung
+  quellen: [q_deno1985]
+
+- id: d_pruefungsnachbereitung
+  name: Prüfungsnachbereitung (Exam Wrapper)
+  aliase: [Fehleranalyse nach Klassenarbeit, Berichtigung mit Reflexion]
+  kategorie: didaktik
+  phasen: [abschluss]
+  setting: [einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [lernstrategien, reflexion, diagnose]
+  dauer: 15–20 Min.
+  kurz: "Mit der korrigierten Arbeit füllen Lernende einen Bogen aus: Wie habe ich gelernt? Welche Fehlerarten (Flüchtigkeit, Konzept, Zeit)? Was ändere ich beim nächsten Mal?"
+  ablauf:
+    - Bogen mit der Rückgabe austeilen.
+    - Fehler kategorisieren, Lernverhalten reflektieren.
+    - Konkreten Plan für die nächste Prüfung notieren.
+    - Vor der nächsten Prüfung den Plan wieder vorlegen.
+  varianten:
+    - "Jugendliche: Bogen mit drei Fragen zu Vorbereitung, Fehlern und Vorsatz nach jeder Klassenarbeit."
+    - "Erwachsene: Reflexionsbogen nach Prüfungen oder Zertifizierungen mit Lernplan."
+    - "Digital: Bogen als Formular, Ergebnis im persönlichen Lernportfolio speichern."
+  stolpersteine:
+    - "Der Bogen wird nur ausgefüllt, aber nie besprochen; Plan vor der nächsten Prüfung erneut vorlegen."
+    - "Fehler werden moralisch statt sachlich bewertet; Fehlerarten als Lernanlass benennen."
+  evidenz: {stufe: begrenzt, text: "Lovett (2013) beschreibt verbesserte Metakognition und Lernplanung; kleine Studien, theoretisch gut begründet (Zimmerman 2002)."}
+  qualifikation: alle
+  quellen: [q_lovett2013, q_zimmerman2002]
+
+- id: d_kollaborativer_test
+  name: Zwei-Phasen-Test (kooperative Prüfung)
+  aliase: [Two-Stage Exam, Gruppentest]
+  kategorie: didaktik
+  phasen: [abschluss]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [diagnose, ueben, diskussion]
+  dauer: 30–60 Min.
+  kurz: Erst schreiben alle einzeln den Test, direkt danach löst eine Kleingruppe dieselben (oder ähnliche) Aufgaben gemeinsam. Die Gruppenphase ist Lernzeit mit sofortigem Peer-Feedback.
+  ablauf:
+    - Einzelphase (z. B. 70 % der Zeit).
+    - Gruppenphase mit denselben Aufgaben.
+    - Note aus beiden Teilen gewichten (z. B. 85/15).
+  varianten:
+    - "Jugendliche: Erst Einzeltest, dann Gruppenbearbeitung derselben Aufgaben zur Nachbesprechung."
+    - "Erwachsene: Zertifizierungsprüfung mit Gruppenphase für Fallaufgaben im Kurs."
+    - "Digital: Gruppenphase im Videoraum mit gemeinsamem Antwortdokument."
+  stolpersteine:
+    - "Eine starke Person löst alles; Gruppenphase mit Rollen und Begründungspflicht strukturieren."
+    - "Die Gewichtung der Teilnoten ist umstritten; vorher transparent festlegen und begründen."
+  evidenz: {stufe: mittel, text: "Zipp (2007): bessere Behaltensleistung der Gruppenaufgaben Wochen später; weitere Hochschulstudien zeigen ähnliche Effekte."}
+  qualifikation: alle
+  quellen: [q_zipp2007]
+
+- id: d_begriffsspiele
+  name: Begriffsspiele (Tabu, Activity, Domino, Memory)
+  aliase: [Wiederholungsspiele, Lernspiele analog]
+  kategorie: didaktik
+  phasen: [abschluss, hauptteil]
+  setting: [partner, kleingruppe]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [ueben, motivation]
+  dauer: 10–20 Min.
+  kurz: Fachbegriffe werden spielerisch wiederholt – umschreiben ohne Tabuwörter, zeichnen oder pantomimisch darstellen (Activity), Begriff–Definition-Domino oder Memory.
+  ablauf:
+    - Begriffskarten erstellen (gern von Lernenden selbst).
+    - Spielregeln kurz erklären, Teams bilden.
+    - Spiel, anschließend schwierige Begriffe klären.
+  varianten:
+    - "Kinder: Memory mit Bildern und Wortkarten zu einem Sachthema."
+    - "Jugendliche: Tabu oder Activity mit Fachbegriffen aus dem Unterricht."
+    - "Digital: Begriffsspiel als Quiz-Tool oder Online-Memory mit Teams."
+  stolpersteine:
+    - "Spiele werden zum Wettbewerb ohne Lerngewinn; schwierige Begriffe nach der Runde gemeinsam klären."
+    - "Wer verliert, bleibt außen vor; Teams wechseln lassen oder kooperative Spielformen wählen."
+  evidenz: {stufe: mittel, text: "Spielformen sind Abrufübung (testing effect) mit Motivationsbonus; Gamification zeigt kleine positive Effekte (Sailer & Homner 2020)."}
+  qualifikation: alle
+  quellen: [q_sailer2020, q_roediger2006]
+
+- id: d_quizshow
+  name: Quizshow im Team (Jeopardy-Format)
+  aliase: [Wissensquiz, Der große Preis]
+  kategorie: didaktik
+  phasen: [abschluss]
+  setting: [kleingruppe, plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [ueben, motivation]
+  dauer: 20–40 Min.
+  kurz: Kategorien mit Fragen steigender Schwierigkeit; Teams wählen Feld und Punktwert, beraten und antworten. Alle Teams schreiben jede Antwort auf (sonst denken nur wenige mit).
+  ablauf:
+    - Raster mit Kategorien und Punktwerten.
+    - Team wählt Feld; alle Teams antworten schriftlich.
+    - Punkte für richtige Antworten aller Teams.
+  varianten:
+    - "Kinder: einfache Quizrunde mit Bildfragen und Punkten in Form von Sternen."
+    - "Jugendliche: Jeopardy-Raster mit Fragen aus dem Fachstoff und Team-Punkten."
+    - "Digital: Quiz im Lernmanagementsystem oder Quiz-Tool mit Teams im Videoraum."
+  stolpersteine:
+    - "Schnelle Teams antworten zuerst; alle Teams schreiben jede Antwort auf."
+    - "Fragen zu schwer oder zu leicht sind frustrierend; Schwierigkeit gestaffelt und vorab geprüft wählen."
+  evidenz: {stufe: mittel, text: "Abrufübung mit Feedback; Gamification mit Teamwertung kann Motivation erhöhen (Sailer & Homner 2020)."}
+  qualifikation: alle
+  quellen: [q_sailer2020, q_adesope2017]
+
+- id: d_elevator_pitch
+  name: Elevator Pitch
+  aliase: [60-Sekunden-Statement]
+  kategorie: didaktik
+  phasen: [abschluss]
+  setting: [einzel, partner]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [verstehen, lesen_schreiben]
+  dauer: 10 Min.
+  kurz: Lernende fassen ein Ergebnis, eine Idee oder ein Projekt so zusammen, dass es in einer Aufzugfahrt (ca. 60 Sekunden) überzeugt.
+  ablauf:
+    - Kernbotschaft, Nutzen, Beleg notieren.
+    - Im Paar üben, Zeit messen.
+    - Ausgewählte Pitches vortragen.
+  varianten:
+    - "Jugendliche: 60-Sekunden-Vorstellung eines Referatsthemas vor der Klasse."
+    - "Erwachsene: Kurze Zusammenfassung einer Projektidee für Vorgesetzte oder Team."
+    - "Digital: Pitch als Sprachnachricht oder Videoclip mit fester Länge."
+  stolpersteine:
+    - "Pitches werden zu lang; Zeitmessung und einen Satz pro Kernbotschaft festlegen."
+  evidenz: {stufe: praxis, text: "Verdichtungsübung aus der Wirtschaft; generative Aktivität ohne eigene Studien."}
+  qualifikation: alle
+  quellen: [q_fiorella2016]
+
+- id: d_brief_naechste
+  name: Brief an die nächste Klasse
+  aliase: [Tipps für Nachfolgende]
+  kategorie: didaktik
+  phasen: [abschluss]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [reflexion, lernstrategien, motivation]
+  dauer: 15 Min.
+  kurz: Am Ende einer Einheit oder eines Kurses schreiben Lernende Ratschläge für den nächsten Jahrgang – Was ist wichtig? Was war schwer? Wie lernt man es am besten?
+  ablauf:
+    - Brief schreiben (Inhalt, Strategien, Mutmacher).
+    - Lehrkraft wählt Auszüge für den nächsten Jahrgang.
+  varianten:
+    - "Jugendliche: Brief mit drei Tipps für Mitschüler·innen des nächsten Jahrgangs."
+    - "Erwachsene: Kurzbrief mit Erfahrungen für neue Teilnehmende einer Fortbildung."
+    - "Digital: Briefe in einem geteilten Dokument sammeln, Auswahl anonym."
+  stolpersteine:
+    - "Die Briefe werden zu Lob oder Witzen; konkrete Fragen vorgeben (»Was hat dir geholfen?«)."
+    - "Auszüge ohne Zustimmung weiterzugeben verletzt Privatsphäre; Einverständnis einholen."
+  evidenz: {stufe: begrenzt, text: "Nutzt Mechanismen des »saying is believing« aus Zugehörigkeits- und Mindset-Interventionen (Walton & Cohen 2011) und der Lernreflexion."}
+  qualifikation: alle
+  quellen: [q_walton2011, q_nueckles2009]
+
+- id: d_selbstkontrolle
+  name: Selbstkontrollmaterial
+  aliase: [Lösungsblatt, Kontrollkarte, Rückseite mit Lösung]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [einzel, partner]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [ueben, lernstrategien, heterogenitaet]
+  dauer: begleitend
+  kurz: Übungsmaterial enthält Lösungen zur sofortigen Selbstkontrolle (Lösungsblatt, Kontrollstreifen, Klappkarten). Fehler werden direkt bemerkt und korrigiert.
+  ablauf:
+    - Material mit verdeckter Lösung erstellen.
+    - Regel – erst vollständig lösen, dann vergleichen.
+    - Fehler markieren und Ursache notieren.
+  varianten:
+    - "Kinder: Lösungsstreifen auf der Rückseite oder Klappkarten mit Bildern."
+    - "Jugendliche: Lösungsblatt pro Übungsblock, Fehler mit Ursache notieren."
+    - "Digital: Lösung erst nach Abgabe im Lernprogramm sichtbar machen."
+  stolpersteine:
+    - "Lösungen werden vorab angesehen; Lösungsteil getrennt ausgeben oder erst nach Versuch freigeben."
+  evidenz: {stufe: mittel, text: "Sofortige Rückmeldung nach Abruf verstärkt den Testing-Effekt (Roediger & Karpicke 2006); Selbstkontrolle ist Grundprinzip der Montessori-Materialien."}
+  qualifikation: alle
+  quellen: [q_roediger2006, q_montessori1912]
+
+- id: d_szenariotechnik
+  name: Szenariotechnik
+  aliase: [Zukunftsszenarien, Trichtermodell]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [problemloesen, entscheidung, diskussion]
+  dauer: 2–4 Std.
+  kurz: Für eine Zukunftsfrage werden Einflussfaktoren bestimmt und daraus ein positives Extrem-, ein negatives Extrem- und ein Trendszenario entwickelt; danach Strategien abgeleitet.
+  ablauf:
+    - Problem und Einflussfaktoren analysieren.
+    - Annahmen für die Zukunft treffen.
+    - Drei Szenarien ausarbeiten.
+    - Handlungsstrategien formulieren.
+  varianten:
+    - "Jugendliche: Szenarien zu einer Zukunftsfrage der Klasse, z. B. Schulweg 2040."
+    - "Erwachsene: Szenarien für Organisationsentwicklung oder Planungsthemen im Team."
+    - "Digital: Szenarien in einem gemeinsamen Dokument oder Online-Board entwickeln."
+  stolpersteine:
+    - "Das Trendszenario wird als wahrscheinlich gesetzt; Annahmen offen begründen lassen."
+    - "Die Gruppe verliert sich in Details; Einflussfaktoren auf wenige begrenzen."
+  evidenz: {stufe: praxis, text: "Aus der Zukunftsforschung in politische Bildung übertragen (Mattes 2011); keine Wirksamkeitsstudien."}
+  qualifikation: alle
+  quellen: [q_mattes2011]
+
+- id: d_fragen_generieren
+  name: Lernende stellen Fragen zum Stoff
+  aliase: [Question Generation, Fragen-an-den-Text]
+  kategorie: didaktik
+  phasen: [hauptteil, abschluss]
+  setting: [einzel, partner]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [verstehen, lesen_schreiben, lernstrategien]
+  dauer: 10–15 Min.
+  kurz: Lernende formulieren selbst Fragen zu einem Text oder Input – mithilfe von Fragewörtern oder Fragestämmen (»Was ist der Unterschied zwischen …?«) – und beantworten sie gegenseitig.
+  ablauf:
+    - Fragestämme anbieten und modellieren.
+    - Einzeln Fragen formulieren.
+    - Fragen tauschen und beantworten.
+  varianten:
+    - "Kinder: Fragenkarten mit Fragewörtern (wer, was, wo, warum) als Hilfe."
+    - "Jugendliche: Fragestämme wie »Was ist der Unterschied zwischen …?« für Fachtexte."
+    - "Digital: Fragen in einem Formular sammeln und im Plenum beantworten."
+  stolpersteine:
+    - "Fragen bleiben reine Wissensabfrage; Denkfragen wie »Warum« und »Was wäre, wenn« anbieten."
+  evidenz: {stufe: stark, text: "Review Rosenshine et al. (1996): Training im Fragenstellen verbessert Leseverständnis deutlich (Median-Effekt ca. 0,36 bei standardisierten, 0,86 bei selbst erstellten Tests)."}
+  qualifikation: alle
+  quellen: [q_rosenshine1996]
+
+- id: d_lernberatung
+  name: Lernberatungsgespräch (Schüler–Lehrkraft)
+  aliase: [Lernentwicklungsgespräch, Conferencing]
+  kategorie: didaktik
+  phasen: [hauptteil, abschluss]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [diagnose, lernstrategien, beziehung]
+  dauer: 5–15 Min.
+  kurz: Kurzes Einzelgespräch während der Arbeitsphase über eine konkrete Arbeit – Stand, Schwierigkeit, nächster Schritt –, das mit einer Vereinbarung endet.
+  ablauf:
+    - Lernende zeigen ihre Arbeit und schätzen sie ein.
+    - Lehrkraft fragt nach Strategie und gibt einen gezielten Hinweis.
+    - Nächsten Schritt vereinbaren und notieren.
+  varianten:
+    - "Kinder: kurzer Austausch mit Bildkarte für den nächsten Schritt."
+    - "Jugendliche: Gespräch mit Lernplan und vereinbartem Ziel für die nächste Woche."
+    - "Digital: Beratungsgespräch per Videoschalte mit Notiz im geteilten Dokument."
+  stolpersteine:
+    - "Gespräche werden zur Kontrolle; Beratungsfokus auf Strategie und Lernweg legen."
+    - "Stille Lernende werden übergangen; gezielt Einstiegsfragen stellen."
+  evidenz: {stufe: mittel, text: "Einzelrückmeldung zum Prozess gehört zu den wirksamsten Feedbackformen (Hattie & Timperley 2007); Tutoring-Effekte (Bloom 1984)."}
+  qualifikation: alle
+  quellen: [q_hattie2007, q_bloom1984]

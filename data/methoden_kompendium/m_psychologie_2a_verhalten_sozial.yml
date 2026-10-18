@@ -1,0 +1,750 @@
+# Psychologie – Erweiterung: Verhaltenspsychologie (angewandte Verhaltensanalyse) und soziale Kompetenz
+- id: y_shaping
+  name: Verhaltensformung (Shaping)
+  aliase: [Schrittweise Annäherung, Successive Approximation]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [klassenfuehrung, ueben, motivation]
+  dauer: Tage bis Wochen
+  kurz: Ein Zielverhalten, das noch nicht gezeigt wird, wird aufgebaut, indem man zunächst grobe Annäherungen verstärkt und die Anforderung dann schrittweise erhöht (z. B. erst 2 Min. sitzen bleiben, dann 5, dann 10).
+  ablauf:
+    - Zielverhalten und aktuelles Ausgangsverhalten genau beschreiben.
+    - Zwischenschritte festlegen.
+    - Jeden Schritt konsequent verstärken, bis er sicher ist.
+    - Kriterium anheben; bei Rückschritten eine Stufe zurück.
+  varianten:
+    - "Kinder: Sitzen bleiben in Schritten, z. B. zuerst 2 Minuten, dann 5, mit Stickerkarte."
+    - "Jugendliche: Pünktlich-Ankommen über Wochen durch kleine Zwischenziele aufbauen."
+    - "Digital: Stufenweise Aufgabenlänge im Lernprogramm mit Fortschrittsanzeige."
+  stolpersteine:
+    - "Zu große Schritte führen zu Misserfolg; Zwischenschritte so klein wählen, dass sie sicher gelingen."
+    - "Verstärkung bleibt aus, weil Fortschritte übersehen werden; jeden Schritt sichtbar benennen."
+  evidenz: {stufe: stark, text: "Grundverfahren der operanten Verhaltensanalyse (Skinner 1953; Cooper et al. 2020) mit umfangreicher Einzelfallforschung."}
+  qualifikation: fortbildung
+  quellen: [q_skinner1953, q_cooper2020]
+
+- id: y_chaining
+  name: Verhaltensketten und Aufgabenanalyse (Chaining)
+  aliase: [Task Analysis, Vorwärts- und Rückwärtsverkettung]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [ueben, heterogenitaet]
+  dauer: Wochen
+  kurz: Komplexe Abläufe (Hände waschen, Arbeitsplatz einrichten, Gleichung lösen) werden in Einzelschritte zerlegt und nacheinander aufgebaut – vorwärts vom ersten oder rückwärts vom letzten Schritt.
+  ablauf:
+    - Aufgabe in beobachtbare Schritte zerlegen (Aufgabenanalyse).
+    - Schritte mit Hilfen üben; bei Rückwärtsverkettung zuerst den letzten Schritt selbstständig.
+    - Hilfen schrittweise ausblenden.
+    - Bildkarten oder Checklisten als Gedächtnisstütze.
+  varianten:
+    - "Kinder: Händewaschen in Bildkarten zerlegt, Schritt für Schritt eingeführt."
+    - "Jugendliche: Laborablauf oder Arbeitsplatzroutine als Checkliste mit Teilschritten."
+    - "Digital: Aufgabe als Schrittliste im Dokument mit Abhakfeld."
+  stolpersteine:
+    - "Zu feine Zerlegung verlangsamt; Schritte nur so klein wählen, wie es der Lernstand verlangt."
+    - "Ohne Ausblenden der Hilfen bleibt die Kette abhängig von Erinnerungen; Hilfen schrittweise abbauen."
+  evidenz: {stufe: stark, text: "Etabliertes Verfahren der angewandten Verhaltensanalyse, besonders in Förderpädagogik und Autismus-Förderung (Cooper et al. 2020)."}
+  qualifikation: fortbildung
+  quellen: [q_cooper2020, q_alberto2013]
+
+- id: y_prompting
+  name: Hilfestellungen geben und ausblenden (Prompting & Fading)
+  aliase: [Hilfenhierarchie, Least-to-Most, Most-to-Least]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [heterogenitaet, ueben]
+  dauer: begleitend
+  kurz: Hilfen werden systematisch gestuft – Geste, verbaler Hinweis, Modell, körperliche Führung – und so schnell wie möglich ausgeblendet, damit das Verhalten selbstständig auftritt.
+  ablauf:
+    - Hilfenhierarchie festlegen.
+    - Wenig-zu-viel (erst kleinste Hilfe) oder viel-zu-wenig (fehlerfrei starten) wählen.
+    - Hilfe zeitlich verzögern (Wartezeit) und abschwächen.
+    - Selbstständige Ausführung besonders verstärken.
+  varianten:
+    - "Kinder: Hilfenkarten mit Bild, Wort und Vormachen, Stufen klar abgestimmt."
+    - "Jugendliche: gestufte Hinweise bei Aufgaben, z. B. Frage, Hinweis, Teillösung."
+    - "Digital: Hilfen im Lernprogramm nur auf Anforderung, mit Zeitverzögerung."
+  stolpersteine:
+    - "Hilfen werden zu früh oder nie ausgeblendet; feste Zeitpunkte für den Abbau festlegen."
+  evidenz: {stufe: stark, text: "Kernverfahren der angewandten Verhaltensanalyse (Cooper et al. 2020); verwandt mit Scaffolding."}
+  qualifikation: fortbildung
+  quellen: [q_cooper2020, q_wood1976]
+
+- id: y_fehlerfrei
+  name: Fehlerfreies Lernen (Errorless Learning)
+  aliase: [Fehlerarme Instruktion]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [ueben, heterogenitaet]
+  dauer: begleitend
+  kurz: Lernsituationen werden so gestaltet, dass kaum Fehler möglich sind (z. B. sofortige Hilfe, leichte Unterscheidungen zuerst). Nützlich bei Lernenden mit Gedächtnisbeeinträchtigungen oder hoher Frustration.
+  ablauf:
+    - Mit sehr leichten Unterscheidungen beginnen.
+    - Richtige Antwort vorgeben, dann zeitverzögert abfragen.
+    - Schwierigkeit langsam erhöhen.
+  varianten:
+    - "Kinder: Vokabeln mit Bildkarte zuerst zeigen, erst dann abfragen."
+    - "Jugendliche: Fachbegriffe mit Lösung im Blick abschreiben, später abrufen lassen."
+    - "Digital: Lernprogramm mit gestaffelter Hilfe und späterer Abfrage."
+  stolpersteine:
+    - Für typische Lernende sind produktive Fehler und Abrufanstrengung oft lernförderlich; Methode gezielt einsetzen.
+  evidenz: {stufe: mittel, text: "Terrace (1963) zeigte fehlerfreies Diskriminationslernen; in der Neuropsychologie (Gedächtnisstörungen) und Sonderpädagogik etabliert."}
+  qualifikation: fortbildung
+  quellen: [q_terrace1963, q_cooper2020]
+
+- id: y_diff_verstaerkung
+  name: Differenzielle Verstärkung (DRA, DRO, DRI)
+  aliase: [Alternativverhalten verstärken, Verstärkung von Nicht-Auftreten]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel, plenum]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [klassenfuehrung]
+  dauer: Wochen
+  kurz: Statt Problemverhalten zu bestrafen, wird ein erwünschtes Alternativverhalten (DRA), ein unvereinbares Verhalten (DRI) oder ein Zeitraum ohne Problemverhalten (DRO) verstärkt.
+  ablauf:
+    - Funktion des Problemverhaltens klären.
+    - Alternativverhalten mit gleicher Funktion wählen (z. B. Hilfekarte statt Herumrufen).
+    - Alternative sofort und häufig verstärken; Problemverhalten nicht mehr verstärken.
+    - Verstärkung allmählich ausdünnen.
+  varianten:
+    - "Kinder: Handzeichen für Hilfe statt Dazwischenrufen, Hilfezeichen sofort beantworten."
+    - "Jugendliche: Alternatives Verhalten benennen und bei Gelegenheit anerkennen."
+    - "Digital: Meldefunktion im Videoraum statt Chat-Unterbrechung, sofort aufrufen."
+  stolpersteine:
+    - "Die Alternative muss mindestens so schnell zum Erfolg führen wie das Problemverhalten; sonst bleibt das alte Verhalten attraktiver."
+  evidenz: {stufe: stark, text: "Gut belegte Standardverfahren der angewandten Verhaltensanalyse (Cooper et al. 2020; Alberto & Troutman 2013)."}
+  qualifikation: fortbildung
+  quellen: [q_cooper2020, q_alberto2013]
+
+- id: y_ignorieren
+  name: Geplantes Ignorieren (Löschung)
+  aliase: [Extinktion, Aufmerksamkeit entziehen]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel, plenum]
+  zielgruppen: [kinder]
+  anwendung: [klassenfuehrung]
+  dauer: Tage bis Wochen
+  kurz: Ein Verhalten, das durch Aufmerksamkeit aufrechterhalten wird (z. B. Clownerie), wird nicht mehr beachtet, während erwünschtes Verhalten sofort Aufmerksamkeit erhält.
+  ablauf:
+    - Sicherstellen, dass Aufmerksamkeit die Funktion ist (sonst wirkungslos).
+    - Nur ungefährliches, leicht störendes Verhalten ignorieren.
+    - Erwünschtes Verhalten derselben Person sofort beachten.
+    - Mit vorübergehender Zunahme rechnen (Löschungstrotz) und konsequent bleiben.
+  varianten:
+    - "Kinder: Clownerie für wenige Minuten übersehen, sofort bei erwünschtem Verhalten loben."
+    - "Jugendliche: Zwischenrufe nicht kommentieren und ruhig zum Thema zurückkehren."
+    - "Digital: Störende Nachrichten im Chat nicht beantworten, erwünschte Beiträge sofort aufgreifen."
+  stolpersteine:
+    - Gefährliches oder verletzendes Verhalten nie ignorieren.
+    - Wenn Mitschüler·innen weiter lachen, bleibt das Verhalten verstärkt.
+  evidenz: {stufe: mittel, text: "Löschung ist ein belegtes operantes Prinzip; in Klassen meist nur in Kombination mit differenzieller Verstärkung wirksam (Cooper et al. 2020)."}
+  qualifikation: fortbildung
+  quellen: [q_cooper2020, q_skinner1953]
+
+- id: y_premack
+  name: Premack-Prinzip (Erst – dann)
+  aliase: [Großmutterregel, First-Then-Board]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel, plenum]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [klassenfuehrung, motivation]
+  dauer: begleitend
+  kurz: Eine wahrscheinlichere, beliebte Tätigkeit folgt auf eine weniger beliebte (»Erst die drei Aufgaben, dann fünf Minuten Lesecke«). Bei Kindern oft als Erst-dann-Tafel visualisiert.
+  ablauf:
+    - Beliebte Aktivität ermitteln.
+    - Klare Erst-dann-Abfolge vereinbaren und visualisieren.
+    - Konsequent einhalten.
+  varianten:
+    - "Kinder: Erst-dann-Tafel mit Bildkarten für Aufgabe und Lieblingsaktivität."
+    - "Jugendliche: Erst eine Aufgabe, dann Pause oder Handyzeit im Rahmen der Schulregeln."
+    - "Digital: Erst Übungsblock, dann freie Wahl eines Lernspiels."
+  stolpersteine:
+    - "Die Belohnung wird vorab verhandelt und verliert ihren Wert; Abfolge konsequent einhalten."
+  evidenz: {stufe: mittel, text: "Premack (1959) zeigte, dass häufiges Verhalten als Verstärker für seltenes dient; breit in Erziehungs- und Klassenmanagementprogrammen genutzt."}
+  qualifikation: alle
+  quellen: [q_premack1959, q_alberto2013]
+
+- id: y_verhaltensvertrag
+  name: Verhaltensvertrag (Kontingenzvertrag)
+  aliase: [Schüler-Lehrer-Vertrag, Behavior Contract]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [klassenfuehrung, motivation, beratung]
+  dauer: Wochen
+  kurz: Lernende und Lehrkraft (ggf. Eltern) vereinbaren schriftlich ein konkretes Zielverhalten, wie es gemessen wird und welche Konsequenzen bei Erfüllung folgen.
+  ablauf:
+    - Ziel positiv und messbar formulieren.
+    - Verstärker gemeinsam wählen; Laufzeit festlegen.
+    - Unterschreiben, regelmäßig überprüfen.
+    - Nach Ablauf anpassen oder ausschleichen.
+  varianten:
+    - "Kinder: Vertrag mit Bildern und Sternen-Kontrolle, von Kind und Lehrkraft unterschrieben."
+    - "Jugendliche: schriftliche Vereinbarung mit eigenen Zielen und Wochenüberprüfung."
+    - "Digital: Vertrag als Dokument mit Kontrollfeld im Lernmanagementsystem."
+  stolpersteine:
+    - "Verträge werden zu Machtdokumenten; gemeinsam formulieren und beide Seiten verpflichten."
+  evidenz: {stufe: mittel, text: "Bestandteil verhaltenstherapeutischer Schulprogramme (Alberto & Troutman 2013; THOP); Einzelfallstudien zeigen Wirksamkeit, besonders mit Selbstbeobachtung."}
+  qualifikation: fortbildung
+  quellen: [q_alberto2013, q_doepfner2019]
+
+- id: y_response_cost
+  name: Verstärkerentzug (Response Cost)
+  aliase: [Punkteabzug, Kostenkontingenz]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel, plenum]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [klassenfuehrung]
+  dauer: Wochen
+  kurz: Innerhalb eines Verstärkersystems kostet vereinbartes Problemverhalten einen Teil bereits erworbener Punkte oder Marken.
+  ablauf:
+    - Nur innerhalb eines bestehenden, überwiegend positiven Punktesystems.
+    - Kosten vorab klar und klein festlegen.
+    - Ruhig und ohne Diskussion vollziehen.
+  varianten:
+    - "Kinder: Punkteabzug nur bei vorher vereinbartem Verhalten, Punkte in einer Liste gut sichtbar."
+    - "Jugendliche: kleine Punktabzüge in einem Punktesystem mit Wochenbilanz."
+    - "Digital: Punktestand im Lernmanagementsystem mit klar definiertem Abzug."
+  stolpersteine:
+    - Darf nie zu »Bankrott« führen, sonst bricht die Motivation zusammen.
+    - Ohne gleichzeitige positive Verstärkung kontraproduktiv.
+  evidenz: {stufe: mittel, text: "Bei ADHS in Kombination mit Token-Systemen wirksam (Döpfner et al. 2019); Kazdin (1982) zur Token-Ökonomie."}
+  qualifikation: fortbildung
+  quellen: [q_kazdin1982, q_doepfner2019]
+
+- id: y_auszeit
+  name: Auszeit (Time-out von positiver Verstärkung)
+  aliase: [Time-out, Ruhepause, Auszeitplatz]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel]
+  zielgruppen: [kinder]
+  anwendung: [klassenfuehrung]
+  dauer: 1–5 Min. pro Einsatz
+  kurz: Bei vereinbartem schwerem Problemverhalten verbringt das Kind kurze Zeit ohne Zugang zu Verstärkern (z. B. Stuhl am Rand), dann kehrt es ohne Vorwurf zurück.
+  ablauf:
+    - Nur für vorher vereinbartes Verhalten; Ablauf mit dem Kind üben.
+    - Kurz (Faustregel ca. 1 Min. pro Lebensjahr, max. 5).
+    - Ruhige Rückkehr, sofort Gelegenheit für erwünschtes Verhalten.
+  varianten:
+    - "Kinder: kurzer Auszeitplatz im Klassenraum mit Sanduhr und klarer Rückkehrregel."
+    - "Kinder mit Unruhe: Ruheecke mit Material statt Ausschluss aus der Klasse."
+    - "Digital: kurze Pause vom Videoraum mit vereinbartem Rückkehrsignal, nur nach Absprache."
+  stolpersteine:
+    - Wirkt nur, wenn die Situation, aus der das Kind herausgenommen wird, verstärkend ist – sonst ist sie eine Belohnung (Flucht).
+    - Kein Einschließen, keine Isolation; rechtliche Vorgaben beachten.
+  evidenz: {stufe: mittel, text: "Bestandteil evidenzbasierter Elterntrainings (Triple P) und Verhaltensprogramme; korrekt angewandt wirksam, falsch angewandt schädlich (Cooper et al. 2020)."}
+  qualifikation: fortbildung
+  quellen: [q_cooper2020, q_sanders1999]
+
+- id: y_selbstbeobachtung
+  name: Selbstbeobachtung (Self-Monitoring)
+  aliase: [Selbstprotokoll, Selbstregistrierung]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [klassenfuehrung, lernstrategien]
+  dauer: begleitend
+  kurz: Lernende notieren in festen Abständen (z. B. bei einem Signalton) selbst, ob sie ein Zielverhalten zeigen (»Arbeite ich gerade?«). Allein das Beobachten verändert das Verhalten.
+  ablauf:
+    - Zielverhalten und Bogen gemeinsam festlegen.
+    - Signal (Timer, Vibrationsuhr) in festen Intervallen.
+    - Ankreuzen; anfangs mit Lehrkraft-Abgleich.
+    - Mit Ziel und Verstärkung kombinieren.
+  varianten:
+    - "Kinder: Smiley-Karte mit Timer-Signal, Ankreuzen am Platz."
+    - "Jugendliche: Selbstprotokoll mit Vibrationsuhr für Arbeitsphasen."
+    - "Digital: Timer und Protokollformular im Dokument, gegebenenfalls Erinnerungs-App."
+  stolpersteine:
+    - "Selbsteinschätzung wird als Kontrolle erlebt; gemeinsam auswerten und Ehrlichkeit würdigen."
+  evidenz: {stufe: stark, text: "Systematisches Review Bruhn et al. (2015): Selbstbeobachtung verbessert Aufgabenverhalten bei Schüler·innen mit Verhaltensproblemen zuverlässig."}
+  qualifikation: alle
+  quellen: [q_bruhn2015]
+
+- id: y_check_in_out
+  name: Check-In/Check-Out (CICO)
+  aliase: [Tägliche Begleitung, Behavior Education Program]
+  kategorie: psychologie
+  phasen: [einstieg, abschluss]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [klassenfuehrung, beziehung]
+  dauer: 2–5 Min. morgens und nachmittags
+  kurz: Ausgewählte Lernende melden sich morgens bei einer Vertrauensperson an (Ziele besprechen), erhalten über den Tag Punkte auf einem Bogen und besprechen am Ende das Ergebnis. Eltern unterschreiben.
+  ablauf:
+    - Morgendliches Check-In mit positiver Ansprache.
+    - Lehrkräfte bewerten Ziele nach jeder Stunde.
+    - Nachmittags Check-Out, Würdigung, ggf. Verstärker.
+    - Bogen nach Hause; Daten für Anpassung nutzen.
+  varianten:
+    - "Kinder: morgens Begrüßung bei einer Vertrauensperson, Bogen mit Sternen über den Tag."
+    - "Jugendliche: Check-in mit Zielsetzung, Check-out mit Rückblick am Nachmittag."
+    - "Digital: Check-in per Nachricht und Check-out per Formular."
+  stolpersteine:
+    - "Die Teilnahme wird als Stigma erlebt; Programm als Unterstützung für viele anbieten."
+  evidenz: {stufe: mittel, text: "Systematisches Review Wolfe et al. (2016): CICO erfüllt Kriterien einer evidenzbasierten Praxis für viele, nicht alle Lernenden (besonders bei aufmerksamkeitsmotiviertem Verhalten)."}
+  qualifikation: fortbildung
+  quellen: [q_wolfe2016, q_fabiano2010]
+
+- id: y_gruppenkontingenz
+  name: Gruppenkontingenz (Klassenbelohnung, Mystery Motivator)
+  aliase: [Interdependente Gruppenkontingenz, Murmelglas]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [plenum]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [klassenfuehrung, sozial_emotional]
+  dauer: Wochen
+  kurz: Die ganze Klasse erhält eine Belohnung, wenn sie gemeinsam ein Ziel erreicht (z. B. Murmelglas füllt sich bei ruhigen Übergängen). Beim Mystery Motivator ist die Belohnung verdeckt.
+  ablauf:
+    - Konkretes Gruppenziel festlegen.
+    - Fortschritt sichtbar machen.
+    - Belohnung bei Erreichen (gemeinsame Aktivität).
+  varianten:
+    - "Kinder: Murmelglas im Klassenraum, bei ruhigen Übergängen eine Murmel mehr."
+    - "Jugendliche: gemeinsames Ziel für Arbeitsklima mit Belohnung als Klassenaktivität."
+    - "Digital: Gruppenpunkte im Videoraum mit sichtbarer Anzeige."
+  stolpersteine:
+    - Einzelne dürfen nicht zum Sündenbock werden, wenn das Ziel verfehlt wird.
+  evidenz: {stufe: stark, text: "Review Maggin et al. (2012): Gruppenkontingenzen sind eine evidenzbasierte Praxis zur Reduktion störenden Verhaltens; Good Behavior Game ist eine Variante."}
+  qualifikation: alle
+  quellen: [q_maggin2012, q_barrish1969]
+
+- id: y_verhaltensbeobachtung
+  name: Direkte Verhaltensbeurteilung (DBR)
+  aliase: [Direct Behavior Rating, Verhaltensbeobachtungsbogen]
+  kategorie: psychologie
+  phasen: [uebergreifend]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [diagnose, klassenfuehrung]
+  dauer: 1 Min. pro Stunde
+  kurz: Lehrkräfte schätzen am Ende jeder Stunde auf einer Skala (0–10) ein, wie stark ein Zielverhalten auftrat. Die Werte ergeben eine Verlaufskurve zur Wirksamkeitsprüfung von Maßnahmen.
+  ablauf:
+    - Zielverhalten eindeutig definieren.
+    - Nach jedem Zeitraum einschätzen.
+    - Verlauf grafisch darstellen, Maßnahmen anhand der Daten anpassen.
+  varianten:
+    - "Kinder: Einschätzung mit Smiley-Skala am Stundenende."
+    - "Jugendliche: Skala 0–10 zu Mitarbeit oder Konzentration mit Selbstvergleich."
+    - "Digital: Einschätzung als kurzes Formular am Tagesende."
+  stolpersteine:
+    - "Einschätzungen sind subjektiv; Zielverhalten eindeutig definieren und zwei Beobachtende vergleichen, wenn möglich."
+  evidenz: {stufe: mittel, text: "Chafouleas (2011): DBR ist bei guter Definition reliabel, sensitiv für Veränderung und praktikabel."}
+  qualifikation: fortbildung
+  quellen: [q_chafouleas2011]
+
+- id: y_modelllernen
+  name: Lernen am Modell / Videomodellierung
+  aliase: [Modelllernen, Video Self-Modeling]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [sozial_emotional, ueben]
+  dauer: 5–15 Min.
+  kurz: Ein Zielverhalten wird an einem Modell (Person, Peer, Video) beobachtet und dann nachgeahmt. Bei der Selbstmodellierung sieht man sich selbst im Video erfolgreich handeln.
+  ablauf:
+    - Modell mit Ähnlichkeit zur Zielgruppe wählen.
+    - Verhalten klar und in Schritten zeigen, Konsequenzen sichtbar machen.
+    - Nachahmen und Feedback.
+    - Im Alltag üben.
+  varianten:
+    - "Kinder: Videoausschnitt mit Gleichaltrigen, wie man eine Gruppenaufgabe beginnt."
+    - "Jugendliche: Kurzvideo mit Modell für eine Präsentation oder einen Konflikt."
+    - "Digital: Modellvideo im Lernmanagementsystem mit Nachahmungsaufgabe."
+  stolpersteine:
+    - "Modelle müssen vergleichbar und nicht zu perfekt sein, sonst entsteht Entmutigung."
+  evidenz: {stufe: stark, text: "Klassische Forschung zu Modelllernen (Bandura et al. 1961); Metaanalyse Bellini & Akullian (2007): Videomodellierung wirksam für soziale und funktionale Fertigkeiten bei Autismus."}
+  qualifikation: fortbildung
+  quellen: [q_bandura1961, q_bellini2007]
+
+- id: y_social_stories
+  name: Soziale Geschichten (Social Stories)
+  aliase: [Sozialgeschichten nach Gray]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [sozial_emotional, heterogenitaet]
+  dauer: 5–10 Min. täglich
+  kurz: Kurze, individuell geschriebene Geschichten beschreiben eine soziale Situation aus Sicht des Kindes (Was passiert? Was denken andere? Was kann ich tun?) und werden vor der Situation gelesen.
+  ablauf:
+    - Problematische Situation beobachten.
+    - Geschichte in Ich-Form, beschreibend und positiv formuliert.
+    - Vor der Situation regelmäßig lesen.
+  varianten:
+    - "Kinder: kurze Geschichte mit Bildern vor dem Pausenhof, gemeinsam gelesen."
+    - "Jugendliche: Text in Ich-Form zu einer Situation im Klassenraum, mit dem Jugendlichen erarbeitet."
+    - "Digital: Geschichte als Bildfolge oder Audio vor dem Unterrichtsbeginn."
+  stolpersteine:
+    - "Geschichten wirken belehrend, wenn sie Vorwürfe enthalten; beschreibend und positiv formulieren."
+  evidenz: {stufe: umstritten, text: "Metaanalyse Kokina & Kern (2010): gemischte, eher geringe Wirksamkeit; besser, wenn sie mit anderen Verfahren kombiniert und auf funktionales Verhalten gerichtet sind."}
+  qualifikation: fortbildung
+  quellen: [q_kokina2010]
+
+- id: y_praezisionslernen
+  name: Flüssigkeitstraining (Precision Teaching)
+  aliase: [Fluency Training, Sprint-Übungen, SAFMEDS]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel, partner]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [ueben, diagnose]
+  dauer: 1–5 Min. täglich
+  kurz: Grundfertigkeiten (Einmaleins, Vokabeln, Leseflüssigkeit) werden in kurzen, zeitgemessenen Sprints geübt; die Anzahl richtiger Antworten pro Minute wird täglich in einer Kurve festgehalten, bis ein Flüssigkeitsziel erreicht ist.
+  ablauf:
+    - Flüssigkeitsziel festlegen (z. B. 40 Aufgaben/Min.).
+    - Täglich 1-Minuten-Sprint, Ergebnis eintragen.
+    - Bei Stagnation Übungsform ändern.
+  varianten:
+    - "Kinder: Einmaleins-Sprint mit Zeitmessung und Strichliste am Platz."
+    - "Jugendliche: Vokabel-Sprint mit Karteikarten und Tabelle der Fortschritte."
+    - "Digital: Übungsprogramm mit automatischer Zeitmessung und Auswertung."
+  stolpersteine:
+    - "Sprints erzeugen Druck und Angst; Ergebnisse privat halten und auf Fortschritt statt Vergleich achten."
+  evidenz: {stufe: mittel, text: "Binder (1996) beschreibt Flüssigkeit als Voraussetzung für Behalten und Anwendung; zahlreiche Einzelfallstudien, wenige große RCTs."}
+  qualifikation: fortbildung
+  quellen: [q_binder1996, q_deno1985]
+
+- id: y_habit_reversal
+  name: Gewohnheitsumkehr (Habit Reversal)
+  aliase: [HRT, Gegenreaktionstraining]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [stress_gesundheit]
+  dauer: mehrere Sitzungen
+  kurz: Bei unerwünschten Gewohnheiten (Nägelkauen, Haare ziehen, Tics) lernt man, die Vorboten wahrzunehmen und eine unvereinbare Gegenreaktion auszuführen (z. B. Faust ballen).
+  ablauf:
+    - Bewusstheitstraining – wann, wo, Vorboten?
+    - Gegenreaktion einüben (1–3 Min.).
+    - Soziale Unterstützung (Erinnern, Loben).
+    - Generalisierung in Alltag.
+  varianten:
+    - "Jugendliche: Gegenreaktion zum Nägelkauen (z. B. Hände falten) mit Erinnerungskarte, Fachkraft begleitet."
+    - "Erwachsene: Selbstbeobachtung und Gegenreaktion im Rahmen einer fachlichen Beratung."
+    - "Digital: Protokoll im Dokument für Vorboten und Gegenreaktion, Auswertung mit Fachkraft."
+  stolpersteine:
+    - "Bei Tics oder Haarausreißen gehört die Behandlung in fachliche Hände; Lehrkräfte nur unterstützend erinnern."
+    - "Erinnern und Loben ohne Druck; Scham vermeiden, Rückfälle normalisieren."
+  evidenz: {stufe: stark, text: "Von Azrin & Nunn (1973) entwickelt; bei Tics (CBIT) und Trichotillomanie in RCTs wirksam – gehört in fachliche Begleitung."}
+  qualifikation: fachkraft
+  quellen: [q_azrin1973]
+
+- id: y_exposition
+  name: Gestufte Konfrontation (Exposition)
+  aliase: [Angsthierarchie, Systematische Desensibilisierung, Mut-Leiter]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [stress_gesundheit, krise]
+  dauer: mehrere Sitzungen
+  kurz: Angstauslösende Situationen werden in einer Hierarchie geordnet und schrittweise aufgesucht, bis die Erwartung »Es passiert etwas Schlimmes« widerlegt ist. Kernstück der Angstbehandlung.
+  ablauf:
+    - Angsthierarchie (Mut-Leiter) erstellen.
+    - Mit mittelschwerem Schritt beginnen, Erwartung vorher notieren.
+    - In der Situation bleiben, ohne Sicherheitsverhalten.
+    - Erwartung mit Erfahrung vergleichen; nächste Stufe.
+  varianten:
+    - "Jugendliche: Mut-Leiter bei Schulangst in Absprache mit Schulpsychologie und Eltern."
+    - "Erwachsene: Stufenplan bei Prüfungsangst im Rahmen einer fachlichen Begleitung."
+    - "Digital: Stufenplan als Dokument, nur mit Fachkraft umsetzen."
+  stolpersteine:
+    - Bei Angststörungen gehört Exposition in therapeutische Hand; Lehrkräfte können gestufte Schritte (z. B. bei Schulangst) im Rahmen eines Plans unterstützen.
+  evidenz: {stufe: stark, text: "Expositionsverfahren sind die am besten belegte Behandlung von Angststörungen (Wolpe 1958; Craske et al. 2014 zum inhibitorischen Lernen)."}
+  qualifikation: fachkraft
+  quellen: [q_wolpe1958, q_craske2014, q_kendall1994]
+
+- id: y_gewohnheit
+  name: Gewohnheiten aufbauen (Habit Formation)
+  aliase: [Routinen etablieren, Habit Stacking]
+  kategorie: psychologie
+  phasen: [abschluss, uebergreifend]
+  setting: [einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [lernstrategien, stress_gesundheit]
+  dauer: Wochen bis Monate
+  kurz: Ein neues Verhalten (z. B. täglich 10 Min. Vokabeln) wird an einen stabilen Auslöser gekoppelt (»nach dem Abendessen«) und im gleichen Kontext wiederholt, bis es automatisch abläuft.
+  ablauf:
+    - Kleines, konkretes Verhalten wählen.
+    - Festen Auslöser im Alltag bestimmen.
+    - Täglich im selben Kontext wiederholen, abhaken.
+    - Ausrutscher einplanen statt aufgeben.
+  varianten:
+    - "Jugendliche: Vokabeln direkt nach dem Abendessen wiederholen, Häkchen auf Karte."
+    - "Erwachsene: neue Routine an den Kaffee am Morgen koppeln."
+    - "Digital: Erinnerung an festen Zeitpunkt im Kalender mit Abhakliste."
+  stolpersteine:
+    - "Zu viele Gewohnheiten gleichzeitig überfordern; mit einer kleinen Routine beginnen."
+  evidenz: {stufe: mittel, text: "Lally et al. (2010): Automatisierung dauerte im Median 66 Tage (Spanne 18–254); Wood & Rünger (2016) zur Rolle stabiler Kontexte."}
+  qualifikation: alle
+  quellen: [q_lally2010, q_wood2016]
+
+- id: y_icps
+  name: Ich kann Probleme lösen (ICPS)
+  aliase: [I Can Problem Solve, Interpersonales Problemlösen für Kinder]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [plenum, kleingruppe]
+  zielgruppen: [kinder]
+  anwendung: [sozial_emotional, konflikt]
+  dauer: kurze Einheiten über Monate
+  kurz: Kinder lernen über Spiele und Dialoge Vorstufen sozialen Problemlösens – Gefühle erkennen, Alternativen finden (»Was könntest du noch tun?«) und Folgen bedenken.
+  ablauf:
+    - Begriffe üben (gleich/anders, wenn/dann, fair).
+    - Gefühle erkennen und benennen.
+    - Alternativen sammeln, Folgen bedenken.
+    - Im Alltag als »Problemlöse-Dialog« der Erwachsenen weiterführen.
+  varianten:
+    - "Kinder: Problemlösefiguren mit Puppen oder Handpuppen durch Dialoge."
+    - "Kinder: Gefühlskarten im Morgenkreis mit Frage »Was könntest du noch tun?«."
+    - "Digital: Gesprächskarten im Lernmanagementsystem für Kleingruppen."
+  stolpersteine:
+    - "Die Dialoge werden zum Ratespiel; echte Alltagssituationen einbeziehen."
+  evidenz: {stufe: mittel, text: "Shure & Spivack (1982) zeigten präventive Effekte auf Verhaltensanpassung bei Vorschulkindern; spätere Replikationen gemischt."}
+  qualifikation: fortbildung
+  quellen: [q_shure1982]
+
+- id: y_anti_aggression
+  name: Ärgerbewältigungstraining
+  aliase: [Anti-Aggressions-Training, Coping Power, Aggression Replacement Training]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [kleingruppe, einzel]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [konflikt, sozial_emotional]
+  dauer: 10–30 Sitzungen
+  kurz: Kognitiv-behaviorale Gruppenprogramme lehren, Ärger-Auslöser und Körpersignale zu erkennen, sich zu beruhigen, feindselige Deutungen zu prüfen und soziale Alternativen zu nutzen.
+  ablauf:
+    - Ärgerauslöser und -signale (Ärgerthermometer).
+    - Beruhigungstechniken (Atmen, Selbstinstruktion).
+    - Deutungen prüfen (»Hat er das absichtlich gemacht?«).
+    - Alternativen im Rollenspiel üben, Hausaufgaben.
+  varianten:
+    - "Jugendliche: Ärgerthermometer und Beruhigungsübungen im Gruppenkurs unter Leitung einer Fachkraft."
+    - "Jugendliche: Konfliktstationen im Schulalltag mit Schulsozialarbeit abgestimmt."
+    - "Digital: Übungsblätter für Ärgersituationen zur Vorbereitung in der Gruppe."
+  stolpersteine:
+    - "Gruppenprogramme gehören in fachliche Leitung; Lehrkräfte sollten nicht selbst einen Kurs als Trainer:in durchführen ohne Schulung."
+    - "Bei Gewalt oder Bedrohung sofort Schutzmaßnahmen und Fachkräfte einbeziehen."
+  evidenz: {stufe: stark, text: "Metaanalyse Sukhodolsky et al. (2004): mittlere Effekte kognitiv-behavioraler Ärgerbehandlung bei Kindern und Jugendlichen; Coping Power mit Langzeiteffekten (Lochman & Wells 2004); deutsche Manuale von Petermann."}
+  qualifikation: fachkraft
+  quellen: [q_sukhodolsky2004, q_lochman2004, q_goldstein1998, q_petermann2012]
+
+- id: y_emotionscoaching
+  name: Emotionscoaching (Gottman)
+  aliase: [Gefühle begleiten, Emotion Coaching]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [sozial_emotional, beziehung, konflikt]
+  dauer: situativ
+  kurz: "Erwachsene nutzen emotionale Momente als Lernchance in fünf Schritten: Gefühl wahrnehmen, als Nähe-Gelegenheit sehen, einfühlsam zuhören, Gefühl benennen helfen, Grenzen setzen und gemeinsam Lösungen suchen."
+  ablauf:
+    - Gefühl des Kindes bemerken (auch leise Signale).
+    - Zuwenden statt abwiegeln.
+    - Zuhören und Gefühl benennen (»Du bist enttäuscht«).
+    - Grenzen für Verhalten, nicht für Gefühle; gemeinsam Lösung suchen.
+  varianten:
+    - "Kinder: Gefühlskarten im Alltag, Enttäuschung benennen und gemeinsam eine Lösung suchen."
+    - "Jugendliche: Gespräch nach einem Streit mit Gefühlswörtern und klaren Grenzen."
+    - "Erwachsene: Emotionscoaching im Elternabend als Beispiel für Gesprächsführung."
+  stolpersteine:
+    - "Gefühle werden abgewertet (»Stell dich nicht so an«); zuerst zuhören, dann Grenzen setzen."
+  evidenz: {stufe: mittel, text: "Gottman et al. (1996): Emotionscoaching der Eltern hängt mit besserer Emotionsregulation und Sozialentwicklung der Kinder zusammen; Interventionsstudien in Schulen und Familien zeigen positive Effekte."}
+  qualifikation: alle
+  quellen: [q_gottman1996]
+
+- id: y_selbstbehauptung
+  name: Selbstbehauptungstraining
+  aliase: [Assertiveness Training, Nein sagen lernen]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [sozial_emotional, konflikt, stress_gesundheit]
+  dauer: 4–10 Sitzungen
+  kurz: Man lernt, eigene Bedürfnisse und Grenzen klar und respektvoll zu äußern – zwischen passivem Nachgeben und aggressivem Durchsetzen. Geübt werden Situationen wie Nein sagen, Kritik äußern, Forderungen stellen.
+  ablauf:
+    - Unterschied selbstsicher – unsicher – aggressiv (Stimme, Blick, Worte).
+    - Situationen sammeln und im Rollenspiel üben.
+    - Video- oder Peer-Feedback.
+    - Übungen im Alltag mit Protokoll.
+  varianten:
+    - "Jugendliche: Rollenspiel zu Nein-Sagen im Gruppenkurs mit Feedback der Gruppe."
+    - "Erwachsene: Übung zu Kritik äußern in einem Teamtraining mit Fachleitung."
+    - "Digital: Rollenspiel per Videoschalte mit Video-Feedback."
+  stolpersteine:
+    - "Rollenspiele können bei sensiblen Erfahrungen belasten; Themen freiwillig wählen lassen."
+  evidenz: {stufe: mittel, text: "Speed et al. (2018) fassen Wirksamkeit bei Angst, Depression und sozialen Problemen zusammen; in deutschen Gruppenprogrammen (GSK) etabliert."}
+  qualifikation: fortbildung
+  quellen: [q_speed2018, q_hinsch2015]
+
+- id: y_circle_of_friends
+  name: Freundeskreis-Methode (Circle of Friends)
+  aliase: [Unterstützerkreis für ausgegrenzte Kinder]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [kleingruppe, plenum]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [sozial_emotional, beziehung, heterogenitaet]
+  dauer: 6–8 Wochen
+  kurz: Mit Einverständnis des betroffenen Kindes sprechen Fachkräfte mit der Klasse über Freundschaft; ein kleiner Kreis Freiwilliger trifft sich dann wöchentlich mit dem Kind, um Ziele für mehr Teilhabe umzusetzen.
+  ablauf:
+    - Einverständnis von Kind und Eltern.
+    - Klassengespräch über Freundschaft und Zugehörigkeit (ohne das Kind).
+    - Kreis aus 6–8 Freiwilligen, wöchentliche Treffen.
+    - Ziele, Strategien, Rückblick.
+  varianten:
+    - "Kinder: Klassengespräch über Freundschaft mit Bildern, ohne das betroffene Kind zu nennen."
+    - "Jugendliche: Kreis aus Freiwilligen, die gemeinsam Aktivitäten planen."
+    - "Digital: Absprache im Kreis per Gruppenchat mit Zustimmung aller Beteiligten."
+  stolpersteine:
+    - "Das Kind darf nicht zum Projekt gemacht werden; Einverständnis von Kind und Eltern ist Pflicht."
+    - "Die Freiwilligen brauchen Begleitung durch Fachkräfte; sonst entsteht Überforderung."
+  evidenz: {stufe: begrenzt, text: "Frederickson & Turner (2003): bessere soziale Akzeptanz durch die Klasse, aber keine Veränderung des Verhaltens des Kindes selbst."}
+  qualifikation: fortbildung
+  quellen: [q_frederickson2003]
+
+- id: y_empathietraining
+  name: Empathie- und Perspektivübernahmetraining
+  aliase: [Theory-of-Mind-Training, Perspektivwechsel üben]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [kleingruppe, plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [sozial_emotional, konflikt]
+  dauer: mehrere Sitzungen
+  kurz: Übungen zu Gefühlen, Gedanken und Absichten anderer – Gesichter deuten, Geschichten aus verschiedenen Perspektiven erzählen, »Was denkt Person X, was Person Y glaubt?«.
+  ablauf:
+    - Gefühle und Gedanken in Bildern/Geschichten benennen.
+    - Perspektivwechsel in Rollenspielen.
+    - Gespräche über unterschiedliche Sichtweisen (»Was wusste sie, was er nicht wusste?«).
+  varianten:
+    - "Kinder: Gesichter-Karten deuten und fragen, was die Person gerade denkt."
+    - "Jugendliche: Perspektivwechsel in kurzen Szenen aus Schulalltag oder Medien."
+    - "Digital: Fallgeschichten aus verschiedenen Blickwinkeln im Dokument kommentieren."
+  stolpersteine:
+    - "Gespräche über Perspektiven werden zu Bewertungen einzelner Personen; sachlich bleiben."
+  evidenz: {stufe: mittel, text: "Metaanalysen: Empathietrainings wirken mit mittleren Effekten (Teding van Berkhout & Malouff 2016); Theory-of-Mind-Training bei Kindern wirksam (Hofmann et al. 2016)."}
+  qualifikation: alle
+  quellen: [q_teding2016, q_hofmann2016]
+
+- id: y_teamtraining
+  name: Teamtraining
+  aliase: [Crew Resource Management, Teamkompetenztraining]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [teamentwicklung, sozial_emotional]
+  dauer: Stunden bis Tage
+  kurz: Teams trainieren gezielt Teamfertigkeiten – Kommunikation (geschlossene Kommunikationsschleife), Koordination, gegenseitige Überwachung, Unterstützung – mit Simulation und Debriefing.
+  ablauf:
+    - Teamkompetenzen benennen.
+    - Simulation oder realistische Aufgabe.
+    - Debriefing mit Fokus auf Teamprozesse.
+    - Wiederholen mit neuen Szenarien.
+  varianten:
+    - "Jugendliche: Teamaufgabe mit Rollen, z. B. Bauprojekt in Gruppen, mit anschließender Reflexion."
+    - "Erwachsene: Simulation im Team mit Debriefing zu Kommunikation und Verantwortung."
+    - "Digital: Teamaufgabe im Videoraum mit geteilter Rollenkarte."
+  stolpersteine:
+    - "Debriefing ohne Fokus auf Prozesse verliert den Lerneffekt; Teamabläufe konkret besprechen."
+  evidenz: {stufe: stark, text: "Metaanalyse Salas et al. (2008): Teamtraining verbessert Teamprozesse und Leistung mit mittleren Effekten."}
+  qualifikation: fortbildung
+  quellen: [q_salas2008, q_tannenbaum2013]
+
+- id: y_kontakt
+  name: Kontakt unter Gruppen gestalten (Kontakthypothese)
+  aliase: [Vorurteilsabbau durch Kooperation, Intergruppenkontakt]
+  kategorie: psychologie
+  phasen: [uebergreifend]
+  setting: [kleingruppe, plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [sozial_emotional, heterogenitaet, konflikt]
+  dauer: über Wochen
+  kurz: "Vorurteile nehmen ab, wenn Mitglieder verschiedener Gruppen unter günstigen Bedingungen Kontakt haben: gleicher Status, gemeinsame Ziele, Kooperation statt Konkurrenz, Unterstützung durch Autoritäten."
+  ablauf:
+    - Gemischte Teams mit echtem gemeinsamem Ziel bilden.
+    - Gleichen Status sichern (Rollen, Expertise aller).
+    - Schulleitung und Lehrkräfte unterstützen sichtbar.
+    - Wiederholter, persönlicher Kontakt statt Einmalbegegnung.
+  varianten:
+    - "Kinder: Gruppenaufgabe mit wechselnden Teams, damit alle Kinder einander kennenlernen."
+    - "Jugendliche: Projektgruppen aus verschiedenen Klassen mit gemeinsamem Ziel."
+    - "Digital: Gemeinsame Projektarbeit über Videoräume mit festen Partnerschaften."
+  stolpersteine:
+    - "Kontakt allein reicht nicht; ohne gemeinsamen Status und Ziel kann er Vorurteile sogar verstärken."
+  evidenz: {stufe: stark, text: "Metaanalyse Pettigrew & Tropp (2006, über 500 Studien): Kontakt verringert Vorurteile robust; Jigsaw ist eine schulische Umsetzung."}
+  qualifikation: alle
+  quellen: [q_pettigrew2006, q_aronson1978]
+
+- id: y_zivilcourage
+  name: Zivilcourage- und Bystander-Training
+  aliase: [Eingreifen lernen, Zuschauer aktivieren]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [kleingruppe, plenum]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [sozial_emotional, konflikt]
+  dauer: 2–6 Std.
+  kurz: "Teilnehmende lernen die Schritte zum Eingreifen kennen (bemerken, als Notfall deuten, Verantwortung übernehmen, wissen wie, handeln) und üben sichere Handlungsoptionen wie direkt ansprechen, Hilfe holen, ablenken."
+  ablauf:
+    - Bystander-Effekt erklären (Verantwortungsdiffusion).
+    - Handlungsoptionen ohne Selbstgefährdung sammeln.
+    - Szenarien im Rollenspiel üben.
+    - Transfer – Was mache ich in meiner Schule konkret?
+  varianten:
+    - "Jugendliche: Rollenspiel zu Ausgrenzung auf dem Schulhof mit sicheren Handlungsoptionen."
+    - "Erwachsene: Schulung zu Eingreifen bei Diskriminierung im Betrieb oder Verein."
+    - "Digital: Szenarien mit Antwortwahl im Lernmanagementsystem."
+  stolpersteine:
+    - "Zum Eingreifen gehört Selbstschutz; Hilfe holen ist eine gleichwertige Handlung."
+  evidenz: {stufe: mittel, text: "Metaanalyse Fischer et al. (2011) zum Bystander-Effekt; Anti-Mobbing-Programme wie KiVa setzen gezielt bei Zuschauenden an (Salmivalli et al. 2011)."}
+  qualifikation: fortbildung
+  quellen: [q_fischer2011, q_salmivalli2011]
+
+- id: y_training_jugendliche
+  name: Training von Arbeits- und Sozialverhalten (Jugendliche)
+  aliase: [Petermann-Training, JUSO]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [kleingruppe, einzel]
+  zielgruppen: [jugendliche]
+  anwendung: [sozial_emotional, klassenfuehrung, motivation]
+  dauer: Gruppen- und Einzelsitzungen über Wochen
+  kurz: Manualisiertes deutsches Programm für Jugendliche mit sozialen und Arbeitsproblemen – Selbstwahrnehmung, Selbstkontrolle, Kooperation, Berufsorientierung – mit Rollenspiel, Video-Feedback und Verstärkersystem.
+  ablauf:
+    - Diagnostik und Zielvereinbarung.
+    - Gruppensitzungen mit Rollenspielen und Videofeedback.
+    - Einzelsitzungen und Transferaufgaben.
+    - Eltern- und Schulkontakte.
+  varianten:
+    - "Jugendliche: Gruppentraining in der Schule oder Jugendhilfe mit fachlicher Leitung."
+    - "Jugendliche: Einzelsitzungen mit Schulsozialarbeit und Rollenspielen zu Arbeitsverhalten."
+    - "Digital: Übungsaufgaben und Videofeedback in Abstimmung mit der begleitenden Fachkraft."
+  stolpersteine:
+    - "Das Programm erfordert ausgebildete Fachkräfte; Lehrkräfte sollten es nur organisatorisch oder ergänzend unterstützen."
+    - "Ohne Eltern- und Schulkontakt bleibt die Wirkung im Alltag aus."
+  evidenz: {stufe: mittel, text: "Evaluiert im deutschsprachigen Raum (Petermann & Petermann 2017); kognitiv-behaviorale Jugendtherapien zeigen insgesamt mittlere Effekte (Weisz et al. 2017)."}
+  qualifikation: fachkraft
+  quellen: [q_petermann2017, q_weisz2017]

@@ -1,0 +1,490 @@
+- nummer: 1
+  kategorie: uebergreifend
+  titel: Orientierung – Aufbau, Kontexte und Evidenz
+  abschnitte:
+    - id: "1.1"
+      titel: Drei Perspektiven auf Lehren, Lernen und Begleiten
+      zusammenfassung: Didaktik fragt, WAS und WIE gelernt wird (Ziele, Inhalte, Methoden, Medien). Pädagogik fragt nach Erziehung, Beziehung, Gemeinschaft und Bildung der ganzen Person. Psychologie liefert Wissen über Lernen, Motivation, Emotion und Verhalten sowie beratende und präventive Verfahren. Viele Methoden liegen an den Grenzen – das Kompendium ordnet jede Methode ihrer Hauptperspektive zu.
+      kernpunkte:
+        - "Didaktik: Unterrichtsplanung, Lehr-Lern-Methoden, Sozialformen, Übung, Diagnose und Feedback zur Sache"
+        - "Pädagogik: Beziehung, Klassenführung, Gemeinschaft, Konflikt, Partizipation, Erwachsenen- und Teamarbeit"
+        - "Psychologie: Motivation, Selbstregulation, Emotionen, Stress, Gesprächsführung, Prävention, Diagnostik, Gruppenprozesse"
+      quellen: [q_kunter2013, q_meyer2004]
+    - id: "1.2"
+      titel: Kontexte – Setting und Zielgruppe
+      zusammenfassung: Jede Methode ist nach Setting (Einzel, Partner, Kleingruppe, Plenum, Großgruppe) und Zielgruppe (Kinder ca. 3–10, Jugendliche ca. 11–18, Erwachsene) markiert. Die Markierung bedeutet »gut geeignet«, nicht »ausschließlich«. Anwendungsgebiete beschreiben, wofür eine Methode eingesetzt wird.
+      kernpunkte:
+        - Einzelsetting erlaubt maximale Passung (Tutoring-Effekt nach Bloom), Gruppen nutzen gegenseitiges Erklären, Modelle und Zugehörigkeit
+        - Altersangaben sind Orientierung – Entwicklungsstand, Vorwissen und Sprachstand zählen mehr als das Alter
+      quellen: [q_bloom1984, q_johnson2009]
+      svg: 02_kontexte_alter.svg
+    - id: "1.3"
+      titel: Evidenzstufen – wie belastbar ist eine Methode?
+      zusammenfassung: Jede Methode trägt eine Evidenzstufe. STARK – mehrere Metaanalysen oder große RCTs mit konsistentem Befund. MITTEL – positive Befunde mit Einschränkungen (kleine Studien, heterogene Effekte, Abhängigkeit von Umsetzung). BEGRENZT – theoretisch plausibel, wenige direkte Studien. PRAXIS – bewährtes Praxisformat ohne eigene Wirksamkeitsforschung. UMSTRITTEN – widersprüchliche oder schwindende Befunde, Replikationsprobleme.
+      kernpunkte:
+        - Effektstärken (d, g) sind Durchschnitte – die Umsetzung entscheidet über Wirkung im Einzelfall
+        - Hatties Rangliste mischt sehr unterschiedliche Studien; Zahlen nicht als Kochrezept lesen
+        - Die EEF rechnet Effekte in »Monate zusätzlichen Fortschritt« um und bewertet Kosten und Evidenzsicherheit
+        - Praxisformate (z. B. Blitzlicht) sind nicht »schlecht«, sondern dienen Struktur und Klima statt messbarer Leistung
+      quellen: [q_hattie2009, q_eef_toolkit]
+      svg: 03_evidenzlandkarte.svg
+    - id: "1.4"
+      titel: Grenzen der eigenen Rolle – Präventionsstufen und Qualifikation
+      zusammenfassung: Psychologische Methoden reichen von universellen Angeboten für alle (z. B. Atemübung, SEL-Unterricht) über selektive Angebote für Risikogruppen bis zu indizierten Maßnahmen für Personen mit Symptomen. Das Kompendium kennzeichnet, ob eine Methode von jeder Lehr- und Leitungsperson, nach Fortbildung oder nur von psychologisch/therapeutisch qualifizierten Fachkräften durchgeführt werden sollte.
+      kernpunkte:
+        - "»alle« – ohne spezielle Ausbildung einsetzbar"
+        - "»fortbildung« – Schulung oder Manualkenntnis empfohlen"
+        - "»fachkraft« – gehört in die Hand von Schulpsychologie, Psychotherapie oder Beratungsfachkräften; Lehrkräfte können vermitteln und unterstützen"
+        - Bei Hinweisen auf Selbst- oder Fremdgefährdung, Missbrauch oder psychische Erkrankung immer an Fachstellen weitergeben
+      quellen: [q_mrazek1994, q_who2011]
+      svg: 09_praeventionsstufen.svg
+
+- nummer: 2
+  kategorie: didaktik
+  titel: Didaktik I – Planung und Struktur von Lerneinheiten
+  abschnitte:
+    - id: "2.1"
+      titel: Phasenmodelle – Einstieg, Hauptteil, Abschluss
+      zusammenfassung: Fast alle Phasenmodelle teilen eine Grundstruktur – Ankommen und Aktivieren, Erarbeiten und Üben, Sichern und Reflektieren. Sie unterscheiden sich darin, wie viel Raum sie für Vorwissen, Erkunden oder Transfer vorsehen. Phasen sind Denkhilfen für die Planung, keine Pflichtschablonen.
+      kernpunkte:
+        - "Klassisch (Meyer): Einstieg – Erarbeitung – Ergebnissicherung"
+        - "Roth (1957): Motivation – Schwierigkeit – Lösung – Tun und Ausführen – Behalten und Einüben – Bereitstellung/Übertragung"
+        - "Gagné: neun Lernereignisse von »Aufmerksamkeit gewinnen« bis »Behalten und Transfer fördern«"
+        - "AVIVA: Ankommen/Einstimmen – Vorwissen aktivieren – Informieren – Verarbeiten – Auswerten"
+        - "5E (BSCS): Engage – Explore – Explain – Elaborate – Evaluate"
+        - "Sandwich (Wahl): kollektive Inputs und individuelle Verarbeitungsphasen im Wechsel"
+        - "Merrill: Lernen gelingt problemzentriert über Aktivieren – Demonstrieren – Anwenden – Integrieren"
+        - "Aebli: Lernprozess als Problemlösen – Durcharbeiten – Üben – Anwenden (PADUA)"
+      quellen: [q_meyer1987, q_roth1957, q_aebli1983, q_gagne1985, q_merrill2002, q_staedeli2010, q_bybee2006, q_wahl2013]
+      svg: 01_phasenmodelle.svg
+    - id: "2.2"
+      titel: Didaktische Analyse und lerntheoretische Planung
+      zusammenfassung: Klafkis didaktische Analyse fragt nach Gegenwarts- und Zukunftsbedeutung, exemplarischer Bedeutung, Struktur und Zugänglichkeit eines Inhalts. Das Berliner Modell (Heimann, Otto, Schulz) analysiert Intention, Thematik, Methodik und Medien sowie die anthropogenen und soziokulturellen Voraussetzungen der Lernenden.
+      kernpunkte:
+        - Inhalte begründen, bevor Methoden gewählt werden
+        - Voraussetzungen der Lerngruppe (Alter, Vorwissen, Sprache, Interessen) bestimmen die Methodenwahl
+        - Entscheidungsfelder hängen voneinander ab (Interdependenz)
+      quellen: [q_klafki1958, q_heimann1965]
+    - id: "2.3"
+      titel: Vom Ziel her planen – Constructive Alignment und Backward Design
+      zusammenfassung: Lernziele, Lernaktivitäten und Prüfungen sollen aufeinander abgestimmt sein. Backward Design plant in drei Schritten – gewünschte Ergebnisse festlegen, Belege für Erreichen bestimmen, dann erst Lernaktivitäten planen.
+      kernpunkte:
+        - Ziele als beobachtbare Kann-Sätze formulieren
+        - Prüfungen prüfen das, was geübt wurde – und umgekehrt
+        - Lernaktivität = das Verb im Lernziel (»erklären« üben, nicht nur »zuhören«)
+      quellen: [q_biggs1996, q_wiggins2005]
+    - id: "2.4"
+      titel: Lernzieltaxonomie
+      zusammenfassung: Die revidierte Bloom-Taxonomie unterscheidet sechs kognitive Prozesse (Erinnern, Verstehen, Anwenden, Analysieren, Bewerten, Erschaffen) und vier Wissensarten (Fakten, Konzepte, Prozeduren, Metakognition). Sie hilft, Aufgaben bewusst auf unterschiedlichen Anspruchsniveaus zu stellen.
+      kernpunkte:
+        - Höhere Stufen bauen auf solidem Faktenwissen auf – Erinnern ist kein »niederes« Ziel
+        - Operatoren (nennen, erklären, beurteilen) machen Anspruchsniveau sichtbar
+      quellen: [q_anderson2001]
+    - id: "2.5"
+      titel: Merkmale guten Unterrichts
+      zusammenfassung: Empirische Unterrichtsforschung bündelt Qualitätsmerkmale zu drei Tiefenstrukturen – effiziente Klassenführung, kognitive Aktivierung und konstruktive Unterstützung. Meyer (10 Merkmale) und Rosenshine (10 Prinzipien) bieten praxisnahe Checklisten.
+      kernpunkte:
+        - "Klassenführung: Regeln, Routinen, Allgegenwärtigkeit, echte Lernzeit"
+        - "Kognitive Aktivierung: herausfordernde Aufgaben, Denkanstöße, Begründungen einfordern"
+        - "Konstruktive Unterstützung: Scaffolding, Feedback, wertschätzendes Klima"
+        - "Rosenshine: tägliche Wiederholung, kleine Schritte, viele Fragen, Modelle, angeleitete Übung, Verständnis prüfen, hohe Erfolgsquote, Gerüste, selbstständige Übung, wöchentliche und monatliche Wiederholung"
+      quellen: [q_kunter2013, q_meyer2004, q_rosenshine2012, q_helmke2009]
+    - id: "2.6"
+      titel: Meyers Methodenmodell – Sozialformen, Handlungsmuster, Verlaufsformen
+      zusammenfassung: Meyer (UnterrichtsMethoden I + II) ordnet Unterrichtsmethoden auf drei Ebenen – Sozialformen (Frontal-, Einzel-, Partner-, Gruppenunterricht) regeln die Beziehungsstruktur, Handlungsmuster (Vortrag, Gespräch, Tafelarbeit, Textarbeit, Experiment, Rollenspiel …) die konkreten Lehr- und Lerntätigkeiten, Unterrichtsschritte (Einstieg, Erarbeitung, Ergebnissicherung) die zeitliche Abfolge. Darüber stehen methodische Großformen wie Lehrgang, Projekt und Freiarbeit. Gute Methodik heißt bei Meyer Methodenvielfalt im Dienst der Ziele, nicht Methodenwechsel um seiner selbst willen.
+      kernpunkte:
+        - Sozialform, Handlungsmuster und Phase bewusst kombinieren
+        - Großformen – Lehrgang für Systematik, Projekt für Handlungsorientierung, Freiarbeit für Selbstständigkeit
+        - »Methodenvielfalt« ist ein Merkmal guten Unterrichts (Meyer 2004)
+      quellen: [q_meyer1987, q_meyer1987b, q_meyer2004, q_meyer2021]
+
+- nummer: 3
+  kategorie: didaktik
+  titel: Didaktik II – Lernpsychologische Grundlagen der Methodenwahl
+  abschnitte:
+    - id: "3.1"
+      titel: Kognitive Belastung
+      zusammenfassung: Das Arbeitsgedächtnis ist eng begrenzt; Neues muss dort verarbeitet werden, bevor es im Langzeitgedächtnis verankert wird. Anfänger·innen profitieren von klarer Anleitung, Lösungsbeispielen und schrittweiser Komplexität; Fortgeschrittene von Problemlösen (Expertise-Umkehr-Effekt).
+      kernpunkte:
+        - Unnötige Belastung vermeiden (geteilte Aufmerksamkeit, Redundanz, ablenkende Details)
+        - Lösungsbeispiele vor Problemlösen bei Neuem
+        - Anleitung zurücknehmen, wenn Expertise wächst
+      quellen: [q_sweller1988, q_sweller2019, q_kirschner2006]
+    - id: "3.2"
+      titel: Erwünschte Erschwernisse
+      zusammenfassung: Bedingungen, die sich beim Lernen schwerer anfühlen – Abrufen statt Wiederlesen, Verteilen statt Massieren, Mischen statt Blocken – führen zu besserem langfristigem Behalten. Lernende (und Lehrende) unterschätzen diese Strategien oft, weil sie während des Lernens weniger flüssig wirken.
+      kernpunkte:
+        - Abrufübung und verteiltes Üben haben den höchsten Nutzen unter den Lerntechniken
+        - Wiederlesen und Markieren fühlen sich gut an, bringen aber wenig
+        - Gefühlte Leichtigkeit ist kein guter Indikator für Lernen
+      quellen: [q_bjork2011, q_dunlosky2013, q_brown2014]
+      svg: 04_lerntechniken_dunlosky.svg
+    - id: "3.3"
+      titel: Aktiv ist nicht gleich aktiv – ICAP und generatives Lernen
+      zusammenfassung: Das ICAP-Modell ordnet Lernaktivitäten nach kognitivem Engagement – passiv (zuhören) < aktiv (markieren, abschreiben) < konstruktiv (erklären, eigene Fragen, Concept Map) < interaktiv (gemeinsam konstruieren). Generative Strategien (zusammenfassen, kartieren, zeichnen, sich selbst erklären, anderen erklären) helfen, wenn sie gut angeleitet werden.
+      kernpunkte:
+        - Körperliche Aktivität oder Gruppenarbeit ist nicht automatisch kognitive Aktivität
+        - Konstruktive und interaktive Aufgaben in jede Phase einbauen
+      quellen: [q_chi2014, q_fiorella2016]
+    - id: "3.4"
+      titel: Kooperatives Lernen – was es wirksam macht
+      zusammenfassung: Gruppenarbeit wirkt, wenn fünf Grundelemente gegeben sind – positive Abhängigkeit, individuelle Verantwortlichkeit, unterstützende Interaktion, soziale Fertigkeiten und Gruppenreflexion. Ohne individuelle Verantwortlichkeit drohen Trittbrettfahren und soziales Faulenzen.
+      kernpunkte:
+        - Gruppenziel UND individuelle Überprüfung (Slavin)
+        - Zufällige Auswahl, wer präsentiert
+        - Rollen und Strukturen (Ich-Du-Wir) statt »Arbeitet mal zusammen«
+      quellen: [q_johnson2009, q_slavin1996, q_karau1993, q_cohen2014]
+      svg: 05_kooperative_strukturen.svg
+    - id: "3.5"
+      titel: Entdecken oder Anleiten?
+      zusammenfassung: Die Forschung zeigt kein Entweder-Oder. Unangeleitetes Entdecken ist meist unterlegen; angeleitetes Entdecken mit Gerüsten und Feedback sowie »Problem zuerst, dann Erklärung« können für Verständnis und Transfer Vorteile haben. Die Wahl hängt vom Vorwissen und vom Lernziel ab.
+      kernpunkte:
+        - Neue Fertigkeiten und Fakten – explizite Instruktion
+        - Konzeptverständnis bei vorhandenem Grundwissen – angeleitetes Erkunden oder produktives Scheitern mit anschließender Erklärung
+        - Komplexe Anwendung – Fälle, Projekte, Simulationen mit Scaffolding
+      quellen: [q_alfieri2011, q_hmelosilver2007, q_kapur2016, q_stockard2018]
+
+- nummer: 4
+  kategorie: didaktik
+  titel: Didaktik III – Funktionen von Einstieg, Hauptteil und Abschluss
+  abschnitte:
+    - id: "4.1"
+      titel: Was ein Einstieg leisten soll
+      zusammenfassung: Ein Einstieg orientiert (Wohin geht es?), aktiviert Vorwissen, weckt Neugier und schafft einen ruhigen, gemeinsamen Arbeitsbeginn. Gute Einstiege sind kurz, inhaltlich auf das Ziel bezogen und beziehen alle ein.
+      kernpunkte:
+        - "Struktur und Ruhe: Begrüßung, Do Now, Ritual"
+        - "Vorwissen: Abruf-Einstieg, KWL, Concept Map, Vortest"
+        - "Neugier: kognitiver Konflikt, POE, Schätzfrage, stummer Impuls"
+        - "Orientierung: Lernziel, Advance Organizer, Stundenfahrplan"
+        - "Beziehung und Befinden: Check-in, Gefühls-Check, Atemübung"
+      quellen: [q_meyer1987, q_gagne1985, q_ausubel1960, q_loewenstein1994]
+    - id: "4.2"
+      titel: Der Hauptteil – erarbeiten, verstehen, üben
+      zusammenfassung: Im Hauptteil wechseln Phasen der Instruktion, des aktiven Verarbeitens, der Kooperation und der Übung. Die Sozialform folgt der Funktion – Einzelarbeit für Denken und Üben, Partner für Erklären und Prüfen, Gruppe für komplexe Aufgaben und Perspektiven, Plenum für Modellieren, Systematisieren und Klären.
+      kernpunkte:
+        - Verständnis regelmäßig mit allen prüfen (Mini-Whiteboards, Peer Instruction)
+        - Übung verteilt und gemischt anlegen
+        - Hilfen gestuft anbieten; Differenzierung über Zugang und Unterstützung
+        - Methodenkompetenz (Markieren, Visualisieren, Präsentieren) selbst zum Lerngegenstand machen (Klippert)
+        - Lernvideos kurz halten, mit Aufgaben verbinden (Fiorella & Mayer)
+      quellen: [q_rosenshine2012, q_wiliam2011, q_chi2014, q_klippert1994, q_fiorella2018]
+    - id: "4.3"
+      titel: Abschlüsse – sichern, prüfen, reflektieren
+      zusammenfassung: Der Abschluss sichert das Gelernte (Abruf, Zusammenfassung), gibt der Lehrkraft Diagnoseinformation (Exit Ticket) und Lernenden Gelegenheit zur Reflexion von Lernprozess und Gruppenprozess. Er verbindet die Stunde mit der nächsten.
+      kernpunkte:
+        - Abruf ohne Unterlagen schlägt Zusammenfassen durch die Lehrkraft
+        - Diagnose nur sinnvoll, wenn sie die nächste Stunde verändert
+        - Prozessreflexion (Blitzlicht, Retrospektive) stärkt Klima und Selbstregulation
+      quellen: [q_roediger2006, q_black1998, q_nueckles2009]
+    - id: "4.4"
+      titel: Formative Beurteilung als roter Faden
+      zusammenfassung: Wiliam beschreibt fünf Schlüsselstrategien – Ziele und Kriterien klären, Lernstand sichtbar machen, Feedback, das weiterbringt, Lernende als Ressourcen füreinander aktivieren, Lernende als Eigentümer ihres Lernens aktivieren. Sie ziehen sich durch alle drei Phasen.
+      kernpunkte:
+        - Klare Ziele (Einstieg) – Belege sammeln (Hauptteil) – Feedback und Selbsteinschätzung (Abschluss)
+      quellen: [q_wiliam2011, q_black1998, q_hattie2007]
+      svg: 08_feedback_ebenen.svg
+
+- nummer: 5
+  kategorie: paedagogik
+  titel: Pädagogik I – Beziehung, Klassenführung und Klima
+  abschnitte:
+    - id: "5.1"
+      titel: Beziehung als Grundlage
+      zusammenfassung: Lernerzentrierte Lehrer-Schüler-Beziehungen – Empathie, Wärme, Echtheit, Zutrauen – hängen deutlich mit Engagement, Motivation und Leistung zusammen. Beziehung entsteht in vielen kleinen Momenten (Begrüßung, Namen, Interesse, verlässliche Reaktionen).
+      kernpunkte:
+        - Jede Person namentlich wahrnehmen
+        - Hohe Erwartungen mit Unterstützung verbinden
+        - Fehler als Lerngelegenheit behandeln
+      quellen: [q_cornelius2007, q_yeager2014, q_ryan2000]
+    - id: "5.2"
+      titel: Präventive Klassenführung
+      zusammenfassung: Die wirksamste Klassenführung verhindert Störungen, statt auf sie zu reagieren – durch klare Regeln und Routinen, gute Vorbereitung, Allgegenwärtigkeit, flüssige Übergänge und aktivierende Aufgaben. Auf Störungen wird gestuft reagiert (nonverbal – kurz verbal – Konsequenz – Gespräch).
+      kernpunkte:
+        - Routinen wie Fertigkeiten einüben
+        - Positives Verhalten konkret benennen (mind. 3:1)
+        - Gestufte, ruhige, vorhersehbare Reaktion auf Störungen
+        - Bei wiederholten Problemen Funktion des Verhaltens analysieren
+      quellen: [q_kounin1970, q_korpershoek2016, q_eef_behaviour, q_royer2019]
+
+- nummer: 6
+  kategorie: paedagogik
+  titel: Pädagogik II – Gemeinschaft, Kommunikation und Konflikt
+  abschnitte:
+    - id: "6.1"
+      titel: Partizipation und Demokratiebildung
+      zusammenfassung: Mitbestimmung (Klassenrat, Projekte, Service Learning, Zukunftswerkstatt) stärkt Zugehörigkeit, Verantwortung und demokratische Kompetenzen. Partizipation braucht echte Entscheidungsspielräume und klare Grenzen.
+      kernpunkte:
+        - Echte statt Schein-Beteiligung – offen sagen, was entschieden werden kann
+        - Rollen rotieren, damit alle Verantwortung übernehmen
+      quellen: [q_freinet1946, q_friedrichs2009, q_celio2011]
+    - id: "6.2"
+      titel: Kommunikationsmodelle
+      zusammenfassung: Watzlawicks Axiome, Schulz von Thuns Kommunikationsquadrat, Gordons Ich-Botschaften und Rosenbergs Gewaltfreie Kommunikation bieten Analyse- und Handlungswerkzeuge für Gespräche. Sie sind in der Praxis bewährt, aber überwiegend nicht experimentell geprüft.
+      kernpunkte:
+        - Sach- und Beziehungsebene unterscheiden
+        - Beobachtung von Bewertung trennen
+        - Bedürfnisse benennen statt Vorwürfe machen
+      quellen: [q_watzlawick1967, q_schulzvonthun1981, q_gordon1974, q_rosenberg2003]
+    - id: "6.3"
+      titel: Konflikt ist nicht gleich Mobbing
+      zusammenfassung: Bei Konflikten zwischen etwa Gleichstarken helfen Mediation und Wiedergutmachung. Mobbing ist wiederholte, absichtliche Schädigung bei Machtungleichgewicht – hier sind Mediationsverfahren ungeeignet; nötig sind Schutz der Betroffenen, klare Haltung der Erwachsenen und Verfahren wie No Blame Approach oder schulweite Programme.
+      kernpunkte:
+        - "Konflikt: Streitschlichtung, Restorative Gespräch, Problemlösen"
+        - "Mobbing: Schutz, Unterstützungsgruppe, schulweite Prävention, ggf. Konsequenzen"
+        - Zuschauende sind der wichtigste Hebel (KiVa)
+      quellen: [q_olweus1993, q_salmivalli2011, q_johnson1996, q_gaffney2019]
+
+- nummer: 7
+  kategorie: paedagogik
+  titel: Pädagogik III – Erwachsenenbildung, Teams und Professionalisierung
+  abschnitte:
+    - id: "7.1"
+      titel: Wie Erwachsene lernen (Andragogik)
+      zusammenfassung: Knowles beschreibt Annahmen zum Lernen Erwachsener – Bedürfnis zu wissen, warum; Selbstkonzept als selbstbestimmte Person; Erfahrung als Ressource; Lernbereitschaft aus Lebensaufgaben; Problemorientierung; innere Motivation. Mezirow ergänzt transformatives Lernen durch kritische Reflexion von Annahmen.
+      kernpunkte:
+        - Erfahrungen der Teilnehmenden einbeziehen (Fallarbeit, kollegiale Beratung)
+        - Nutzen und Anwendung explizit machen; Transfer planen
+        - Mitsprache bei Zielen und Ablauf
+        - Kognitive Lernprinzipien (Abruf, Verteilung, Beispiele) gelten auch für Erwachsene
+      quellen: [q_knowles2015, q_mezirow1991, q_wahl2013]
+    - id: "7.2"
+      titel: Großgruppen und Beteiligungsformate
+      zusammenfassung: World Café, Open Space, Appreciative Inquiry, Zukunftswerkstatt und Liberating Structures ermöglichen Beteiligung vieler Menschen. Sie sind praxiserprobt, ihre Wirksamkeit ist überwiegend durch Fallberichte dokumentiert.
+      kernpunkte:
+        - Klare, einladende Leitfrage ist der wichtigste Erfolgsfaktor
+        - Ergebnisse sichern und Umsetzung verabreden, sonst Beteiligungsfrust
+      quellen: [q_brown2005, q_owen2008, q_cooperrider2005, q_lipmanowicz2013, q_jungk1981]
+    - id: "7.3"
+      titel: Reflexion und Weiterentwicklung im Beruf
+      zusammenfassung: Strukturierte Reflexion (Gibbs, After-Action Review, Retrospektive), kollegiale Fallberatung, Lesson Study und Microteaching sind Formate für die professionelle Entwicklung. Debriefings sind metaanalytisch gut belegt.
+      kernpunkte:
+        - Regelmäßig statt anlassbezogen reflektieren
+        - Ohne Schuldsuche, mit konkreten nächsten Schritten
+      quellen: [q_keiser2021, q_tannenbaum2013, q_tietze2003, q_lewis2009]
+
+- nummer: 8
+  kategorie: psychologie
+  titel: Psychologie I – Motivation und Selbstregulation
+  abschnitte:
+    - id: "8.1"
+      titel: Was Menschen antreibt
+      zusammenfassung: Die Selbstbestimmungstheorie nennt drei Grundbedürfnisse (Autonomie, Kompetenz, Eingebundenheit). Die Erwartungs-Wert-Theorie erklärt Motivation aus »Kann ich das?« und »Ist es mir das wert?« (Interesse, Nützlichkeit, Bedeutung, Kosten). Selbstwirksamkeit entsteht vor allem aus eigenen Erfolgserlebnissen.
+      kernpunkte:
+        - Wahlmöglichkeiten und Begründungen statt Druck
+        - Erfolgserlebnisse planen, Fortschritt sichtbar machen
+        - Nutzen von Lernenden selbst formulieren lassen
+        - Engagement ist am höchsten, wenn Herausforderung und Können beide hoch sind (Flow)
+      quellen: [q_ryan2000, q_wigfield2000, q_bandura1977, q_hulleman2009, q_shernoff2003]
+    - id: "8.2"
+      titel: Ziele, Pläne, Selbststeuerung
+      zusammenfassung: Spezifische, herausfordernde Ziele, mentales Kontrastieren und Wenn-dann-Pläne gehören zu den wirksamsten Selbststeuerungsstrategien. Selbstreguliertes Lernen folgt einem Zyklus aus Planen, Überwachen und Bewerten und muss explizit gelehrt werden.
+      kernpunkte:
+        - Ziel + Hindernis + Wenn-dann-Plan (WOOP)
+        - Strategien modellieren und üben, nicht nur nennen
+      quellen: [q_locke2002, q_gollwitzer2006, q_zimmerman2002, q_eef_meta]
+    - id: "8.3"
+      titel: Feedback psychologisch verstehen
+      zusammenfassung: Feedback wirkt über die Aufmerksamkeit – auf Aufgabe und Prozess gerichtet hilft es, auf die Person gerichtet (Lob oder Tadel der Person) kann es schaden. Glaubwürdigkeit, Zutrauen und die Gelegenheit zur Umsetzung entscheiden mit.
+      kernpunkte:
+        - Weises Feedback – hohe Standards + Zutrauen
+        - Nach Feedback Zeit zum Überarbeiten geben
+      quellen: [q_kluger1996, q_hattie2007, q_yeager2014]
+
+- nummer: 9
+  kategorie: psychologie
+  titel: Psychologie II – Emotion, Stress und seelische Gesundheit
+  abschnitte:
+    - id: "9.1"
+      titel: Stress und Bewältigung
+      zusammenfassung: Nach dem transaktionalen Modell entsteht Stress aus der Bewertung einer Situation als bedrohlich und der eigenen Ressourcen als unzureichend. Bewältigung kann problembezogen (Situation ändern), emotionsbezogen (Gefühle regulieren) oder bewertungsbezogen (neu bewerten) sein.
+      kernpunkte:
+        - Neubewertung von Aufregung als Energie
+        - Entspannungsverfahren regelmäßig üben, nicht erst in der Krise
+        - Problemlösen für veränderbare, Akzeptanz für unveränderbare Stressoren
+      quellen: [q_lazarus1984, q_kaluza2018, q_jamieson2010]
+    - id: "9.2"
+      titel: Emotionsregulation
+      zusammenfassung: Emotionen können an verschiedenen Punkten reguliert werden – Situation wählen oder verändern, Aufmerksamkeit lenken, Bewertung ändern, Reaktion modulieren. Neubewertung ist meist günstiger als Unterdrückung. Gefühle zu benennen ist bereits ein Regulationsschritt.
+      kernpunkte:
+        - Gefühlswortschatz aufbauen (Mood Meter)
+        - Kinder brauchen Co-Regulation durch Erwachsene, bevor sie sich selbst regulieren
+      quellen: [q_gross2015, q_lieberman2007, q_brackett2012]
+    - id: "9.3"
+      titel: Resilienz und soziale-emotionale Kompetenzen
+      zusammenfassung: Resilienz ist »gewöhnliche Magie« – sie entsteht aus alltäglichen Schutzfaktoren wie verlässlichen Beziehungen, Selbstwirksamkeit, Problemlösefähigkeit und Zugehörigkeit. SEL-Programme stärken die fünf CASEL-Kompetenzen und verbessern nachweislich Verhalten und Leistung.
+      kernpunkte:
+        - "CASEL: Selbstwahrnehmung, Selbstmanagement, soziale Wahrnehmung, Beziehungsfähigkeit, verantwortungsvolle Entscheidungen"
+        - Programme SAFE umsetzen – sequenziert, aktiv, fokussiert, explizit
+      quellen: [q_masten2001, q_durlak2011, q_casel]
+      svg: 07_casel_kompetenzen.svg
+
+- nummer: 10
+  kategorie: psychologie
+  titel: Psychologie III – Beratung und Gesprächsführung
+  abschnitte:
+    - id: "10.1"
+      titel: Gesprächsansätze im Überblick
+      zusammenfassung: Motivierende Gesprächsführung (Ambivalenz klären, Veränderungssprache stärken), lösungsfokussierte Ansätze (Ziele, Ausnahmen, Skalen), systemische Fragen (Wechselwirkungen, Perspektiven) und Coaching-Modelle (GROW) teilen eine Haltung – die Person ist Expertin für ihr Leben, die beratende Person für den Gesprächsprozess.
+      kernpunkte:
+        - Offene Fragen, Spiegeln, Zusammenfassen als Grundfertigkeiten
+        - Ratschläge sparsam und erst nach Erlaubnis
+        - Kleine nächste Schritte statt großer Pläne
+      quellen: [q_miller2013, q_deshazer1985, q_selvini1980, q_whitmore1992]
+      svg: 10_gespraechsfuehrung.svg
+    - id: "10.2"
+      titel: Grenzen pädagogischer Beratung
+      zusammenfassung: Lehrkräfte und Leitungspersonen beraten zu Lernen, Verhalten und Schullaufbahn. Bei Verdacht auf psychische Erkrankung, Krisen, Gewalt oder Kindeswohlgefährdung ist Weitervermittlung an Schulpsychologie, Beratungsstellen, Ärzt·innen oder Jugendamt Pflicht. Klinische Methoden (z. B. kognitive Umstrukturierung bei Depression) gehören in therapeutische Hände.
+      kernpunkte:
+        - Eigene Rolle transparent machen
+        - Netzwerk kennen (Schulpsychologie, Beratungsstellen, Krisendienste)
+        - Dokumentieren, Vertraulichkeit und ihre Grenzen klären
+      quellen: [q_who2011, q_mrazek1994]
+
+- nummer: 11
+  kategorie: psychologie
+  titel: Psychologie IV – Gruppenprozesse
+  abschnitte:
+    - id: "11.1"
+      titel: Gruppen entwickeln sich
+      zusammenfassung: Gruppen durchlaufen typischerweise Phasen der Orientierung, Auseinandersetzung, Normbildung, Arbeit und Auflösung. Leitung passt ihr Verhalten an – anfangs strukturierend, später zurücknehmend.
+      kernpunkte:
+        - Konflikte in der Storming-Phase sind normal und notwendig
+        - Abschluss bewusst gestalten
+      quellen: [q_tuckman1965, q_tuckman1977, q_lewin1947]
+      svg: 06_gruppenphasen.svg
+    - id: "11.2"
+      titel: Was Gruppen leistungsfähig und sicher macht
+      zusammenfassung: Psychologische Sicherheit, klare Ziele, individuelle Verantwortlichkeit und regelmäßige Reflexion machen Gruppen leistungsfähig. Soziales Faulenzen tritt auf, wenn Einzelbeiträge nicht sichtbar sind. In Beratungs- und Selbsthilfegruppen wirken Universalität, Hoffnung und Kohäsion.
+      kernpunkte:
+        - Einzelbeiträge sichtbar machen
+        - Fehler und Fragen willkommen heißen
+        - Gruppen-Debriefing regelmäßig
+      quellen: [q_edmondson1999, q_karau1993, q_yalom2005, q_tannenbaum2013]
+
+- nummer: 12
+  kategorie: uebergreifend
+  titel: Kontexte – Kinder, Jugendliche, Erwachsene
+  abschnitte:
+    - id: "12.1"
+      titel: Kinder (ca. 3–10 Jahre)
+      zusammenfassung: Exekutive Funktionen (Arbeitsgedächtnis, Hemmung, Flexibilität) entwickeln sich noch stark; Kinder lernen viel über Spiel, Bewegung, Sprache und Beziehung. Kurze Phasen, konkrete Materialien, Rituale und Co-Regulation durch Erwachsene sind zentral.
+      kernpunkte:
+        - Aufgaben kurz, konkret, handelnd; häufige Wechsel
+        - Angeleitetes Spiel, dialogisches Vorlesen, Bewegungspausen
+        - Gefühle benennen lernen; klare, freundliche Struktur
+      quellen: [q_diamond2013, q_diamond2011, q_skene2022, q_mol2009]
+    - id: "12.2"
+      titel: Jugendliche (ca. 11–18 Jahre)
+      zusammenfassung: Die Adoleszenz ist eine sensible Phase für soziale Bewertung – Gleichaltrige, Status und Autonomie werden besonders wichtig. Methoden, die Respekt, Mitsprache und Zugehörigkeit vermitteln, wirken besser als kontrollierende oder bloßstellende.
+      kernpunkte:
+        - Autonomie und Begründungen statt Kontrolle
+        - Kein öffentliches Bloßstellen; Lob oft privat
+        - Peer-Formate (Tutoring, Debatte, Projekte) nutzen
+        - Identitätsfragen (Erikson) ernst nehmen – Werte, Zukunft, Zugehörigkeit
+      quellen: [q_blakemore2014, q_erikson1950, q_yeager2019, q_ryan2000]
+    - id: "12.3"
+      titel: Erwachsene
+      zusammenfassung: Erwachsene bringen umfangreiche Erfahrungen und Rollen mit, lernen meist zielgerichtet und problemorientiert und erwarten Mitsprache. Kognitive Lernprinzipien gelten unverändert; Sandwich-Struktur, Fallarbeit, kollegiale Formate und Transferplanung sind besonders passend.
+      kernpunkte:
+        - Erfahrung als Ressource, nicht als Hindernis
+        - Kindliche Spielformen vermeiden oder klar inhaltlich begründen
+        - Transfer in den Alltag fest einplanen
+      quellen: [q_knowles2015, q_wahl2013, q_gollwitzer2006]
+    - id: "12.4"
+      titel: Einzel- und Gruppensetting
+      zusammenfassung: Einzelbetreuung (Tutoring, Coaching, Beratung) ermöglicht maximale Anpassung und ist sehr wirksam, aber teuer. Gruppensettings nutzen Erklären, Modelle, Perspektivenvielfalt und Zugehörigkeit; sie brauchen Strukturen, die alle beteiligen. Viele Methoden lassen sich skalieren – etwa Think-Pair-Share als Gruppenversion des Einzelgesprächs.
+      kernpunkte:
+        - Einzel – Diagnose, Feedback, Beratung, gezieltes Üben
+        - Partner – Erklären, Prüfen, Tutoring
+        - Kleingruppe – komplexe Aufgaben, Perspektiven, Rollen
+        - Plenum/Großgruppe – Modellieren, Systematisieren, Beteiligung durch Strukturen
+      quellen: [q_bloom1984, q_eef_peer, q_johnson2009, q_lipmanowicz2013]
+
+- nummer: 13
+  kategorie: psychologie
+  titel: Psychologie V – Verhaltenspsychologie im pädagogischen Alltag
+  abschnitte:
+    - id: "13.1"
+      titel: Lernen durch Konsequenzen und Modelle
+      zusammenfassung: Verhalten wird durch das beeinflusst, was ihm folgt (operante Konditionierung) und was andere vormachen (Modelllernen). Positive Verstärkung baut Verhalten auf, Löschung baut aufmerksamkeitsgesteuertes Verhalten ab, Bestrafung unterdrückt meist nur kurzfristig. Angewandte Verhaltensanalyse (ABA) übersetzt diese Prinzipien in genau beschriebene, messbare Interventionen.
+      kernpunkte:
+        - Verstärkung wirkt sofort, konsequent und passend zur Person am besten
+        - Erst die Funktion des Verhaltens verstehen (A-B-C), dann eingreifen
+        - Alternativverhalten aufbauen statt nur Problemverhalten abzubauen
+        - Verstärkung ausdünnen und auf soziale, natürliche Verstärker übertragen
+        - Strafen und Auszeiten nur eingebettet, kurz und ethisch begründet
+      quellen: [q_skinner1953, q_bandura1961, q_cooper2020, q_alberto2013]
+    - id: "13.2"
+      titel: Gestufte Unterstützung – von der Schule bis zur Einzelförderung
+      zusammenfassung: Schulweite positive Verhaltensunterstützung arbeitet auf drei Ebenen – universell für alle (Regeln, Lob, Gruppenkontingenzen), gezielt für Gruppen (Check-In/Check-Out, Tagesbögen) und intensiv für Einzelne (funktionale Verhaltensanalyse, individueller Plan). Daten aus Verhaltensbeobachtung steuern den Wechsel zwischen den Ebenen.
+      kernpunkte:
+        - Ebene 1 – Klassenführung, Good Behavior Game, verhaltensspezifisches Lob
+        - Ebene 2 – CICO, Daily Report Card, Selbstbeobachtung
+        - Ebene 3 – Verhaltensanalyse, Verstärkerplan, Fachkräfte einbeziehen
+      quellen: [q_bradshaw2010, q_wolfe2016, q_maggin2012, q_chafouleas2011]
+
+- nummer: 14
+  kategorie: psychologie
+  titel: Psychologie VI – Kognition, Metakognition und Selbststeuerung
+  abschnitte:
+    - id: "14.1"
+      titel: Gedächtnis und Arbeitsgedächtnis
+      zusammenfassung: Das Arbeitsgedächtnis hält nur wenige Einheiten gleichzeitig; Bündeln (Chunking) und Vorwissen erweitern, was gleichzeitig verarbeitet werden kann. Langfristiges Behalten entsteht durch Abruf, Verteilung, Elaboration und Schlaf. Allgemeines »Gehirntraining« überträgt sich kaum auf Schulleistungen; fachliches Wissen ist der beste Kapazitätserweiterer.
+      kernpunkte:
+        - Neues in kleinen Portionen, Vorwissen aktivieren
+        - Expertise-Umkehr – was Anfängern hilft, kann Fortgeschrittene bremsen
+        - Schlaf festigt Gelerntes
+      quellen: [q_miller1956, q_paas2003, q_kalyuga2003, q_melby2013, q_diekelmann2010]
+    - id: "14.2"
+      titel: Metakognition – über das eigene Lernen nachdenken
+      zusammenfassung: Metakognition umfasst Wissen über Lernen und Aufgaben sowie die Überwachung und Steuerung des eigenen Lernens. Lernende überschätzen ihr Können oft, weil sich flüssiges Wiederlesen wie Können anfühlt. Verzögerte Selbsttests, Fragen an sich selbst und Planungs-Überwachungs-Bewertungs-Zyklen machen das Lernen steuerbar.
+      kernpunkte:
+        - Gefühlte Sicherheit ist kein guter Maßstab – testen statt schätzen
+        - Lernstrategien explizit vermitteln und ausprobieren lassen
+        - Ursachen für Erfolg und Misserfolg in veränderbaren Faktoren suchen
+      quellen: [q_flavell1979, q_cpq_brown, q_bjork2013, q_rhodes2011, q_pintrich1991, q_weiner1985]
+    - id: "14.3"
+      titel: Selbststeuerung im Alltag
+      zusammenfassung: Selbstkontrolle gelingt besser über die Gestaltung von Situationen, Gewohnheiten und Plänen als über reine Willenskraft. Wenn-dann-Pläne, situative Strategien (Ablenkungen entfernen), feste Routinen und kleine Startschritte gehören zu den wirksamsten Werkzeugen gegen Aufschieben.
+      kernpunkte:
+        - Versuchungen vorab aus dem Weg räumen
+        - Neues Verhalten an feste Auslöser koppeln
+        - Aufgaben in Startschritte zerlegen
+      quellen: [q_duckworth2016, q_gollwitzer2006, q_lally2010, q_vaneerde2018]
+
+- nummer: 15
+  kategorie: psychologie
+  titel: Psychologie VII – Arbeitsweisen mit Patient·innen und Klient·innen
+  abschnitte:
+    - id: "15.1"
+      titel: Der Behandlungsbogen
+      zusammenfassung: Beratung und Psychotherapie folgen einem wiederkehrenden Bogen – Kontakt und Auftragsklärung, Diagnostik und Fallkonzeption, gemeinsame Ziele, Interventionsphase mit strukturierten Sitzungen und Übungsaufgaben, Verlaufsmessung, Rückfallprävention und bewusster Abschluss. Über alle Verfahren hinweg tragen Beziehung, Zielkonsens, Empathie und Ressourcenaktivierung wesentlich zum Erfolg bei.
+      kernpunkte:
+        - Beziehung ist Wirkfaktor, nicht nur Voraussetzung
+        - Diagnostik strukturiert, Fallverständnis individuell
+        - Fortschritt messen und zurückmelden statt nur einschätzen
+        - Ende und Rückfallschutz von Anfang an mitdenken
+      quellen: [q_wampold2015, q_flueckiger2018, q_tryon2018, q_lambert2018, q_grawe2004]
+    - id: "15.2"
+      titel: Kleine Modelle mit großer Wirkung im Gespräch
+      zusammenfassung: Anschauliche Modelle helfen, Erleben zu ordnen und Schuldgefühle zu entlasten – Balancemodell und Lebensrad für die Lebensbereiche, Vulnerabilitäts-Stress-Modell und Teufelskreis für die Entstehung von Beschwerden, Inneres Team und Externalisieren für innere Konflikte. Sie sind meist Reflexionswerkzeuge mit begrenzter eigener Evidenz und wirken über gute Psychoedukation und Gesprächsführung.
+      kernpunkte:
+        - Modell gemeinsam mit der Person füllen, nicht überstülpen
+        - Immer zu einem nächsten kleinen Schritt führen
+      quellen: [q_peseschkian1977, q_zubin1977, q_margraf1990, q_schulzvonthun1998, q_white1990]
+    - id: "15.3"
+      titel: Krisen und Kommunikation in schwierigen Lagen
+      zusammenfassung: Bei Suizidgedanken ist direktes Nachfragen sicher und notwendig; ein gemeinsam erstellter Sicherheitsplan und Nachkontakt senken das Risiko. Schwierige Nachrichten werden strukturiert überbracht (SPIKES), auf Gefühle wird empathisch geantwortet (NURSE), und Verständnis wird durch Rückerklären gesichert (Teach-back).
+      kernpunkte:
+        - Fragen schützt – Schweigen nicht
+        - Akute Gefahr – nicht allein lassen, Notruf 112
+        - Gefühle zuerst, Informationen danach
+      quellen: [q_dazzi2014, q_stanley2018, q_baile2000, q_back2005, q_talevski2020]
+    - id: "15.4"
+      titel: Imaginative, hypnosystemische und erlebnisaktivierende Methoden
+      zusammenfassung: Viele Praxissammlungen wie der MethodenSchatz von Frauke Niehues bündeln Trance-, Imaginations-, Metaphern-, Impact- und Anteilemethoden. Sie sprechen Erleben und Körper direkt an und sind bei Fachleuten beliebt. Die Evidenz reicht von gut (Hypnose als Ergänzung, Selbstmitgefühl, emotionsfokussierte Stuhlarbeit) über begrenzt (Metaphern, Impact-Techniken, Ego-State) bis umstritten (Brainspotting). Sie gehören überwiegend in qualifizierte Hände und ersetzen keine leitliniengerechte Behandlung.
+      kernpunkte:
+        - Erst Beziehung und Sicherheit, dann erlebnisaktivierende Methoden
+        - Bei Trauma und Dissoziation nur mit Fachausbildung
+        - Evidenzstufe jeder Methode im Blick behalten
+      quellen: [q_niehues, q_kirsch1995, q_schmidt2005, q_beaulieu2005, q_gilbert2009]

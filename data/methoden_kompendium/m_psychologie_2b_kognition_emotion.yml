@@ -1,0 +1,561 @@
+# Psychologie – Erweiterung: Kognition, Metakognition, Selbststeuerung, Emotion und kognitiv-behaviorale Verfahren
+- id: y_loci
+  name: Gedächtnispalast (Loci-Methode)
+  aliase: [Methode der Orte, Routenmethode]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [ueben, lernstrategien]
+  dauer: 15–30 Min. Einführung
+  kurz: Zu merkende Begriffe werden als lebhafte Bilder an Orten eines bekannten Weges (Wohnung, Schulweg) abgelegt und beim Erinnern »abgegangen«.
+  ablauf:
+    - Bekannte Route mit 10 festen Stationen festlegen.
+    - Jeden Begriff in ein ungewöhnliches Bild umwandeln und an eine Station setzen.
+    - Route im Kopf abgehen und abrufen.
+  varianten:
+    - "Jugendliche: Vokabeln oder Liste aus dem Fach auf den Schulweg legen."
+    - "Erwachsene: Route durch das eigene Büro oder die Wohnung für Reihenfolgen nutzen."
+    - "Digital: Bilderkette im Dokument, Stationen als Nummern anlegen."
+  stolpersteine:
+    - Für Listen und Reihenfolgen stark, für Verständnis von Zusammenhängen ungeeignet.
+  evidenz: {stufe: stark, text: "Metaanalyse Twomey & Kroneisen (2021): großer Effekt auf Behalten von Listen; Training nötig."}
+  qualifikation: alle
+  quellen: [q_twomey2021]
+
+- id: y_eselsbruecken
+  name: Merkhilfen (Akronyme, Schlüsselwort, Reime)
+  aliase: [Mnemotechniken, Eselsbrücken, Keyword-Methode]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel, plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [ueben]
+  dauer: 5–10 Min.
+  kurz: Willkürliche Informationen werden über Hilfsstrukturen merkbar – Akronyme (»Mein Vater erklärt mir …«), Reime oder die Schlüsselwortmethode für Vokabeln (klangähnliches Wort + Bild).
+  ablauf:
+    - Nur für schwer verknüpfbares Material einsetzen.
+    - Merkhilfe gemeinsam bilden (selbst erzeugt wirkt besser).
+    - Danach mit Abrufübung festigen.
+  varianten:
+    - "Kinder: Reim oder Bewegung zu einer Zahlen- oder Buchstabenreihe, gemeinsam gebildet."
+    - "Jugendliche: Akronym für Reihenfolgen im Fach, selbst erfunden."
+    - "Digital: Merkhilfe als Karteikarte mit Bild und Schlüsselwort."
+  stolpersteine:
+    - "Merkhilfen ohne Sinnbezug sind schnell vergessen; Verständnis bleibt wichtiger als Eselsbrücke."
+    - "Schlüsselwörter müssen klangähnlich sein; sonst bleibt die Brücke aus."
+  evidenz: {stufe: begrenzt, text: "Dunlosky et al. (2013): Schlüsselwortmethode mit geringem Nutzen für langfristiges, flexibles Lernen; für Begriffslisten kurzfristig hilfreich."}
+  qualifikation: alle
+  quellen: [q_dunlosky2013]
+
+- id: y_chunking
+  name: Bündeln (Chunking)
+  aliase: [Informationseinheiten bilden]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel, plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [wissensaufbau, verstehen]
+  dauer: begleitend
+  kurz: Viele Einzelelemente werden zu sinnvollen größeren Einheiten zusammengefasst (Telefonnummer in Blöcken, Wörter statt Buchstaben, Muster statt Einzelzüge). Entlastet das Arbeitsgedächtnis.
+  ablauf:
+    - Inhalte nach Bedeutung gruppieren.
+    - Gruppen benennen und visuell abgrenzen.
+    - Über Wiederholung zu automatisierten Einheiten machen.
+  varianten:
+    - "Kinder: Zahlen in Dreiergruppen oder Wörter in Silben schreiben lassen."
+    - "Jugendliche: Formeln oder Fachbegriffe nach Bedeutung in Gruppen ordnen."
+    - "Digital: Inhalte in Kacheln oder Abschnitten auf der Folie strukturieren."
+  stolpersteine:
+    - "Gruppen, die nach Oberflächenmerkmalen gebildet werden, helfen nicht; nach Bedeutung bündeln."
+  evidenz: {stufe: stark, text: "Grundbefund der Gedächtnispsychologie (Miller 1956); Grundlage der Cognitive-Load-Theorie."}
+  qualifikation: alle
+  quellen: [q_miller1956, q_sweller2019]
+
+- id: y_metakognitives_monitoring
+  name: Verzögerte Lernstandsurteile (Kalibrierung)
+  aliase: [Judgments of Learning, "Kann ich das wirklich?"]
+  kategorie: psychologie
+  phasen: [abschluss, hauptteil]
+  setting: [einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [lernstrategien, diagnose]
+  dauer: 5 Min.
+  kurz: Lernende schätzen nicht direkt nach dem Lernen, sondern mit Abstand und nach einem Abrufversuch ein, wie gut sie etwas können. Das macht die Einschätzung viel genauer und lenkt Wiederholungszeit auf die echten Lücken.
+  ablauf:
+    - Lernen; danach Pause oder anderes Thema.
+    - Begriff zeigen, Antwort versuchen, dann einschätzen (0–100 %).
+    - Mit tatsächlichem Ergebnis vergleichen.
+    - Lernzeit auf schlecht eingeschätzte Inhalte legen.
+  varianten:
+    - "Jugendliche: Verzögerte Abfrage am nächsten Tag mit Einschätzung in Prozent."
+    - "Erwachsene: Kurze Selbsttests nach einer Pause vor dem nächsten Fortbildungsmodul."
+    - "Digital: Lernprogramm mit Einschätzungsfeld vor der Antwort."
+  stolpersteine:
+    - "Sofort nach dem Lernen wirkt die Einschätzung zu sicher; bewusst Abstand halten."
+  evidenz: {stufe: stark, text: "Metaanalyse Rhodes & Tauber (2011): verzögerte Urteile sind deutlich genauer als unmittelbare; Lernillusionen beschreiben Bjork et al. (2013)."}
+  qualifikation: alle
+  quellen: [q_rhodes2011, q_bjork2013, q_flavell1979]
+
+- id: y_attributionstraining
+  name: Reattributionstraining
+  aliase: [Ursachenzuschreibung ändern, Attributional Retraining]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [motivation, stress_gesundheit]
+  dauer: 1–3 Sitzungen + Alltagsfeedback
+  kurz: Misserfolge werden statt auf stabile, unkontrollierbare Ursachen (»Ich bin zu dumm«) auf veränderbare Ursachen (Anstrengung, Strategie) zurückgeführt; Erfolge auf eigene Fähigkeit und Strategie.
+  ablauf:
+    - Psychoedukation über Ursachenzuschreibungen.
+    - Beispiele Studierender mit veränderter Sichtweise.
+    - Eigene Erfahrungen umdeuten (schriftlich).
+    - Lehrkräfte geben passendes attributionales Feedback.
+  varianten:
+    - "Jugendliche: Schriftliche Umdeutung einer schlechten Note mit Frage nach veränderbaren Ursachen."
+    - "Erwachsene: Reflexion über Misserfolge im Beruf oder Studium mit Blick auf Strategien."
+    - "Digital: Reflexionsbogen im Lernportfolio mit Kommentar der Lehrkraft."
+  stolpersteine:
+    - "Positives Umdeuten ohne Prüfung der Fakten wirkt unglaubwürdig; konkrete Belege nennen lassen."
+  evidenz: {stufe: mittel, text: "Theorie nach Weiner (1985); Review Haynes et al. (2009): Verbesserungen von Leistung und Ausdauer besonders bei gefährdeten Studierenden."}
+  qualifikation: fortbildung
+  quellen: [q_weiner1985, q_haynes2009, q_seligman1975]
+
+- id: y_debiasing
+  name: Denkfehler erkennen (Debiasing)
+  aliase: [Kognitive Verzerrungen, Kritisches Denken, Bias-Training]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [problemloesen, entscheidung]
+  dauer: 1–2 Std.
+  kurz: Typische Denkfehler (Bestätigungsfehler, Ankereffekt, Rückschaufehler, Basisratenfehler) werden an Beispielen erlebt, benannt und mit Gegenstrategien (»Was spräche dagegen?«, Außensicht) geübt.
+  ablauf:
+    - Verzerrung im eigenen Urteil erleben lassen (Aufgabe).
+    - Benennen und erklären.
+    - Gegenstrategie üben an neuen Fällen.
+    - Rückmeldung zur eigenen Verzerrung.
+  varianten:
+    - "Jugendliche: Denkfallen-Spiel mit Beispielen aus Werbung und Nachrichten."
+    - "Erwachsene: Fallbeispiele aus der Entscheidungspraxis mit Gegenstrategien."
+    - "Digital: Quiz zu Denkfehlern im Lernmanagementsystem mit Erklärungen."
+  stolpersteine:
+    - "Die Erkenntnis, dass andere verzerrt denken, ersetzt nicht die Prüfung der eigenen Urteile."
+  evidenz: {stufe: mittel, text: "Morewedge et al. (2015): bereits ein einmaliges Training (Spiel oder Video) reduzierte Verzerrungen langfristig; Abrami et al. (2015) zu kritischem Denken."}
+  qualifikation: alle
+  quellen: [q_morewedge2015, q_kahneman2011, q_abrami2015]
+
+- id: y_arbeitsgedaechtnis
+  name: Arbeitsgedächtnis- und Gehirntraining
+  aliase: [Cogmed, Brain Training, Konzentrationsspiele]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [lernstrategien]
+  dauer: Wochen
+  kurz: Computerprogramme trainieren Arbeitsgedächtnis- oder Aufmerksamkeitsaufgaben in steigender Schwierigkeit, mit dem Ziel, Lernen und Schulleistung allgemein zu verbessern.
+  ablauf:
+    - Programm täglich 20–40 Min. über Wochen.
+  varianten:
+    - "Kinder: kurze Konzentrationsspiele im Morgenkreis statt Computerprogramm."
+    - "Jugendliche: Lernstrategien im Fachunterricht statt isolierter Gehirntrainings."
+    - "Digital: Trainingsprogramm nur als Ergänzung, Ergebnisse nicht als Leistungsnachweis."
+  stolpersteine:
+    - Verbesserungen bleiben weitgehend auf die trainierten Aufgaben beschränkt; die Lernzeit ist im Fachunterricht meist besser angelegt.
+  evidenz: {stufe: umstritten, text: "Metaanalyse Melby-Lervåg & Hulme (2013): kurzfristige, aufgabenspezifische Effekte ohne Transfer auf Lesen, Rechnen oder Aufmerksamkeit im Alltag."}
+  qualifikation: alle
+  quellen: [q_melby2013]
+
+- id: y_konzentrationstraining
+  name: Konzentrationstraining (Marburger Konzentrationstraining)
+  aliase: [MKT, Selbstinstruktion bei Aufgaben]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [kleingruppe]
+  zielgruppen: [kinder]
+  anwendung: [lernstrategien, klassenfuehrung]
+  dauer: 6–8 Sitzungen
+  kurz: Kinder lernen in Gruppen mit Entspannung, Selbstinstruktion (»Was ist meine Aufgabe? Langsam und genau«), Verstärkerplan und Elternarbeit, Aufgaben planvoll und ruhig zu bearbeiten.
+  ablauf:
+    - Entspannungsritual.
+    - Selbstinstruktionen an Arbeitsblättern üben.
+    - Punktesystem und Reflexion.
+    - Elternabende und Hausübungen.
+  varianten:
+    - "Kinder: Ruhe-Ritual und Selbstgespräch »Langsam und genau« vor Arbeitsblättern."
+    - "Kinder: Kurzes Konzentrationsspiel mit Punkteliste in kleiner Gruppe."
+    - "Digital: Ruhe-Übung vor der Arbeitsphase im Videoraum."
+  stolpersteine:
+    - "Das Programm verlangt geschulte Leitung; ohne Schulung nur einzelne Elemente nutzen."
+  evidenz: {stufe: begrenzt, text: "In Deutschland verbreitet (Krowatschek et al. 2011), Evaluationen meist ohne Kontrollgruppe; beruht auf belegtem Selbstinstruktionstraining (Meichenbaum & Goodman 1971)."}
+  qualifikation: fortbildung
+  quellen: [q_krowatschek2011, q_meichenbaum1971]
+
+- id: y_situationsstrategien
+  name: Selbstkontrolle über die Umgebung
+  aliase: [Situative Strategien, Handy weglegen, Versuchungen entfernen]
+  kategorie: psychologie
+  phasen: [einstieg, hauptteil]
+  setting: [einzel, plenum]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [lernstrategien, motivation]
+  dauer: begleitend
+  kurz: Statt auf Willenskraft im Moment zu setzen, wird die Situation vorab verändert – Handy in einen anderen Raum, Lernplatz ohne Ablenkung, Verabredung zum Lernen. Situative Strategien wirken stärker als »Zusammenreißen«.
+  ablauf:
+    - Typische Versuchungen beim Lernen identifizieren.
+    - Situation wählen oder verändern (Ort, Zeit, Gegenstände).
+    - Feste Regeln für digitale Geräte vereinbaren.
+  varianten:
+    - "Jugendliche: Handy vor dem Lernen in ein anderes Zimmer legen, Lernplatz vorbereiten."
+    - "Erwachsene: Lernzeit im Kalender blocken, Benachrichtigungen während des Lernens ausschalten."
+    - "Digital: Fokusmodus am Gerät und feste Lernzeiten mit Lerngruppe."
+  stolpersteine:
+    - "Regeln werden verhandelt statt festgelegt; Vereinbarung vorab mit allen Beteiligten."
+  evidenz: {stufe: mittel, text: "Duckworth et al. (2016): situative Strategien sind früher im Prozess wirksamer als Unterdrückung; Medien-Multitasking hängt mit schlechterer kognitiver Kontrolle zusammen (Ophir et al. 2009)."}
+  qualifikation: alle
+  quellen: [q_duckworth2016, q_ophir2009, q_hoffmann2014]
+
+- id: y_pomodoro
+  name: Arbeiten in Zeitblöcken (Pomodoro)
+  aliase: [Zeitboxing, Fokuszeiten]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [lernstrategien, stress_gesundheit]
+  dauer: 25 + 5 Min.
+  kurz: Gearbeitet wird in festen Blöcken (z. B. 25 Min.) mit einem klaren Teilziel, danach eine kurze Pause; nach vier Blöcken eine längere Pause.
+  ablauf:
+    - Teilziel für den Block notieren.
+    - Timer stellen, Ablenkungen notieren statt verfolgen.
+    - Pause wirklich machen (aufstehen).
+  varianten:
+    - "Jugendliche: 15-Minuten-Blöcke für Vokabeln, danach kurze Bewegungspause."
+    - "Erwachsene: 25-Minuten-Blöcke für Berichte mit fester Teilaufgabe pro Block."
+    - "Digital: Timer-App mit Blockplan und Notizfeld für Ablenkungen."
+  stolpersteine:
+    - "Pausen werden zum Surfen genutzt; echte Pause ohne Bildschirm vereinbaren."
+  evidenz: {stufe: begrenzt, text: "Populäre Technik (Cirillo 2006) ohne eigene RCTs; kombiniert konkrete Ziele, Pausen und Ablenkungskontrolle, die einzeln belegt sind."}
+  qualifikation: alle
+  quellen: [q_cirillo2006, q_locke2002]
+
+- id: y_prokrastination
+  name: Aufschieben überwinden
+  aliase: [Prokrastinationstraining, Startrituale]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [lernstrategien, stress_gesundheit, motivation]
+  dauer: mehrere Sitzungen
+  kurz: Kombination aus kleinsten Startschritten, Wenn-dann-Plänen, realistischer Zeitplanung, Selbstbeobachtung und dem Prüfen aufschiebender Gedanken (»Ich arbeite nur unter Druck«).
+  ablauf:
+    - Aufschiebe-Muster protokollieren.
+    - Aufgaben in 10-Minuten-Startschritte zerlegen.
+    - Wenn-dann-Pläne und feste Arbeitszeiten.
+    - Ausreden-Gedanken prüfen; Fortschritt belohnen.
+  varianten:
+    - "Jugendliche: Startschritt von zehn Minuten vor einer Hausaufgabe festlegen."
+    - "Erwachsene: Aufgabe in kleinste Schritte zerlegen und Startzeit im Kalender festlegen."
+    - "Digital: Aufgabenliste mit Zehn-Minuten-Startblock im Dokument."
+  stolpersteine:
+    - "Aufschieben hat oft tiefere Ursachen (Angst, Überforderung); bei anhaltenden Schwierigkeiten Beratung empfehlen."
+  evidenz: {stufe: mittel, text: "Metaanalyse van Eerde & Klingsieck (2018): Interventionen wirken mittel, am stärksten kognitiv-behaviorale Ansätze."}
+  qualifikation: fortbildung
+  quellen: [q_vaneerde2018, q_gollwitzer2006]
+
+- id: y_pruefungsangst
+  name: Prüfungsangst-Training
+  aliase: [Test Anxiety Intervention]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [kleingruppe, einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [stress_gesundheit, lernstrategien]
+  dauer: 4–8 Sitzungen
+  kurz: Kombiniert Psychoedukation, Entspannung, Umgang mit sorgenvollen Gedanken, Lern- und Prüfungsstrategien sowie gestufte Annäherung an Prüfungssituationen (Probeklausuren).
+  ablauf:
+    - Angstkreislauf erklären (Körper – Gedanken – Verhalten).
+    - Entspannung und Atemtechnik.
+    - Gedanken prüfen, hilfreiche Selbstgespräche.
+    - Lernplanung und Probeprüfungen unter realistischen Bedingungen.
+  varianten:
+    - "Jugendliche: Probeklausur unter Zeitdruck mit anschließender Reflexion."
+    - "Erwachsene: Prüfungssimulation im Kurs mit Rückmeldung und Entspannungsübung."
+    - "Digital: Online-Probeprüfung mit festem Zeitlimit und Auswertung."
+  stolpersteine:
+    - "Bei starker Angst gehört das Training in qualifizierte Hände; Lehrkräfte sollten an Beratung verweisen."
+  evidenz: {stufe: mittel, text: "Review von der Embse et al. (2013): kognitiv-behaviorale und Fertigkeitstrainings reduzieren Prüfungsangst; Leistungseffekte bei Kombination mit Lernstrategien."}
+  qualifikation: fortbildung
+  quellen: [q_vonderembse2013, q_ramirez2011]
+
+- id: y_schlaf
+  name: Schlaf und Lernen (Psychoedukation, Schlafhygiene)
+  aliase: [Schlafregeln, CBT-I-Elemente]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [plenum, einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [stress_gesundheit, lernstrategien]
+  dauer: 30–45 Min.
+  kurz: Lernende erfahren, dass Schlaf Gedächtnisinhalte festigt, und erarbeiten Schlafregeln (feste Zeiten, Bildschirme weg, Bett nur zum Schlafen, nicht wach liegen bleiben).
+  ablauf:
+    - Befunde zu Schlaf und Gedächtnis erklären.
+    - Eigenes Schlafprotokoll (1 Woche).
+    - Zwei konkrete Veränderungen vereinbaren.
+  varianten:
+    - "Jugendliche: Schlafprotokoll und Vereinbarung zu festen Bildschirmzeiten am Abend."
+    - "Erwachsene: Schlafhygiene-Infoblatt für Lernphasen und Prüfungszeiten."
+    - "Digital: Erinnerung an Bildschirm-Stopp am Abend über das Handy."
+  stolpersteine:
+    - Bei anhaltender Schlaflosigkeit ist kognitive Verhaltenstherapie für Insomnie (CBT-I) die empfohlene Behandlung – an Fachleute verweisen.
+  evidenz: {stufe: mittel, text: "Diekelmann & Born (2010) zur Gedächtnisfunktion des Schlafs; CBT-I ist bei chronischer Insomnie gut belegt (Trauer et al. 2015)."}
+  qualifikation: alle
+  quellen: [q_diekelmann2010, q_trauer2015]
+
+- id: y_sokratischer_dialog
+  name: Sokratischer Dialog (kognitive Therapie)
+  aliase: [Geleitetes Entdecken, Guided Discovery]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [beratung, stress_gesundheit]
+  dauer: Gesprächstechnik
+  kurz: Die beratende Person stellt Fragen, mit denen das Gegenüber eigene Annahmen prüft und selbst zu neuen Sichtweisen kommt – statt Gegenargumente zu liefern (informative Fragen, Zuhören, Zusammenfassen, synthetisierende Frage).
+  ablauf:
+    - Konkrete Information erfragen.
+    - Empathisch zuhören.
+    - Zusammenfassen.
+    - Synthetisierende Frage (»Wie passt das zu Ihrer Annahme, dass …?«).
+  varianten:
+    - "Jugendliche: Fragen zu einer selbst formulierten Annahme, z. B. »Woher weißt du das?«."
+    - "Fachkraft: Sokratischer Dialog in Beratungsgesprächen nach Ausbildung."
+    - "Digital: Fragenkatalog für Beratungsgespräche per Videoschalte, nur mit Fachbegleitung."
+  stolpersteine:
+    - "Fragen wirken wie Verhör, wenn sie zu schnell kommen; Zuhören und Zusammenfassen zuerst."
+  evidenz: {stufe: mittel, text: "Kerntechnik der kognitiven Therapie (Beck 2020; Padesky 1993); als Bestandteil von KVT gut belegt, isoliert wenig untersucht."}
+  qualifikation: fachkraft
+  quellen: [q_padesky1993, q_beck2020]
+
+- id: y_verhaltensexperiment
+  name: Verhaltensexperiment
+  aliase: [Behavioural Experiment, Annahme im Alltag testen]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [stress_gesundheit, beratung]
+  dauer: geplant über Tage
+  kurz: Eine belastende Vorhersage (»Wenn ich im Unterricht etwas frage, lachen alle«) wird als Hypothese formuliert und in einem geplanten Experiment überprüft.
+  ablauf:
+    - Vorhersage und Überzeugungsgrad notieren.
+    - Experiment planen (wann, wo, was).
+    - Durchführen ohne Sicherheitsverhalten.
+    - Ergebnis auswerten, Überzeugung neu einschätzen.
+  varianten:
+    - "Jugendliche: Vorhersage zu einer Meldung im Unterricht testen, Ergebnis notieren."
+    - "Fachkraft: Verhaltensexperiment im Rahmen einer Beratung oder Therapie."
+    - "Digital: Protokoll im Dokument für Vorhersage und tatsächliches Ergebnis."
+  stolpersteine:
+    - "Experimente ohne Fachbegleitung können stark belasten; Lehrkräfte sollten nur allgemein anregen und verweisen."
+  evidenz: {stufe: mittel, text: "Bestandteil kognitiver Therapie mit guter Evidenz (Bennett-Levy et al. 2004); verwandt mit Exposition."}
+  qualifikation: fachkraft
+  quellen: [q_bennettlevy2004]
+
+- id: y_sorgenzeit
+  name: Sorgenzeit (Grübeln verschieben)
+  aliase: [Worry Time, Stimuluskontrolle für Sorgen]
+  kategorie: psychologie
+  phasen: [hauptteil, abschluss]
+  setting: [einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [stress_gesundheit]
+  dauer: täglich 15–30 Min.
+  kurz: Sorgen werden tagsüber kurz notiert und auf eine feste tägliche »Sorgenzeit« an einem festen Ort verschoben; außerhalb davon lenkt man die Aufmerksamkeit bewusst zurück.
+  ablauf:
+    - Feste Zeit und Ort festlegen (nicht im Bett).
+    - Sorgen tagsüber stichwortartig notieren und vertagen.
+    - In der Sorgenzeit durchgehen, ggf. Problemlösen anwenden.
+  varianten:
+    - "Jugendliche: Sorgenliste am Schreibtisch, Sorgenzeit im Lernbereich festlegen."
+    - "Erwachsene: Sorgenzeit am frühen Abend außerhalb des Schlafzimmers."
+    - "Digital: Notizfeld für Sorgen im Handy, Sorgenzeit im Kalender."
+  stolpersteine:
+    - "Sorgenzeit darf nicht im Bett stattfinden; sonst verstärkt sie das Grübeln."
+  evidenz: {stufe: begrenzt, text: "McGowan & Behar (2013): Verringerung von Sorgen, Angst und Schlafproblemen in einer randomisierten Pilotstudie; Element der KVT bei generalisierter Angst."}
+  qualifikation: fortbildung
+  quellen: [q_mcgowan2013]
+
+- id: y_autogenes_training
+  name: Autogenes Training
+  aliase: [Schultz-Entspannung, Selbsthypnose-Formeln]
+  kategorie: psychologie
+  phasen: [hauptteil, abschluss]
+  setting: [kleingruppe, einzel]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [stress_gesundheit]
+  dauer: Kurs über 6–8 Wochen
+  kurz: Mit formelhaften Vorstellungen (»Der rechte Arm ist ganz schwer … ganz warm«) wird schrittweise eine körperliche Entspannung herbeigeführt; regelmäßig geübt, wird sie zur Kurzentspannung.
+  ablauf:
+    - Ruhetönung und Schwereübung.
+    - Wärme, Atmung, Herz, Bauch, Stirn nacheinander ergänzen.
+    - Täglich üben; Zurücknehmen nicht vergessen.
+  varianten:
+    - "Jugendliche: Kurze Schwereübung vor einer Prüfung in Stillarbeit."
+    - "Erwachsene: Formelhafte Entspannung im Kurs mit täglicher Übung zu Hause."
+    - "Digital: Audio-Anleitung im Lernmanagementsystem mit Übungsplan."
+  stolpersteine:
+    - "Fremdes Gefühl oder Unruhe kann auftreten; Abbruch und Rückmeldung an die Leitung erlauben."
+  evidenz: {stufe: mittel, text: "Metaanalyse Stetter & Kupper (2002): mittlere Effekte bei verschiedenen psychosomatischen Beschwerden und Angst."}
+  qualifikation: fortbildung
+  quellen: [q_stetter2002]
+
+- id: y_angewandte_entspannung
+  name: Angewandte Entspannung (Applied Relaxation)
+  aliase: [Öst-Entspannung, Kurzentspannung in Alltagssituationen]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [stress_gesundheit]
+  dauer: 8–12 Sitzungen
+  kurz: Eine schrittweise verkürzte Muskelentspannung (von 15 Min. bis zu 30 Sekunden auf ein Stichwort) wird geübt und dann gezielt in Stresssituationen angewandt.
+  ablauf:
+    - Progressive Muskelentspannung lernen.
+    - Verkürzte Formen (Nur-Lösen, Signalwort).
+    - Schnellentspannung in Alltagssituationen üben.
+    - Frühe Angstsignale erkennen und reagieren.
+  varianten:
+    - "Jugendliche: Stichwort-Entspannung vor Präsentationen mit kurzer Atemübung."
+    - "Erwachsene: Schnellentspannung in Besprechungen oder Telefonaten."
+    - "Digital: Stichwort-Entspannung nach Anleitung im Kurs, Übung als Erinnerung."
+  stolpersteine:
+    - "Die Technik wirkt nur mit Übung über Wochen; zu kurzes Üben enttäuscht."
+  evidenz: {stufe: mittel, text: "Öst (1987) mit kontrollierten Studien bei Angst- und Panikstörungen."}
+  qualifikation: fortbildung
+  quellen: [q_ost1987, q_jacobson1938]
+
+- id: y_emotionsregulation_training
+  name: Training emotionaler Kompetenzen (TEK)
+  aliase: [Affect Regulation Training, Emotionsregulationstraining]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [stress_gesundheit, sozial_emotional]
+  dauer: 6 Sitzungen
+  kurz: "Gruppentraining zu sieben Kompetenzen: Muskel- und Atementspannung, nicht bewertende Wahrnehmung, Akzeptieren und Tolerieren, effektive Selbstunterstützung, Analysieren und Regulieren von Emotionen."
+  ablauf:
+    - Kompetenzen nacheinander erklären und üben.
+    - Tägliche Übungen zu Hause.
+    - Anwendung auf eigene Belastungssituationen.
+  varianten:
+    - "Jugendliche: Gruppenkurs zu Emotionsregulation mit Übungsblättern im Alltag."
+    - "Erwachsene: Kursangebot für Lehrkräfte oder Fachkräfte mit Übungen zu Stressmomenten."
+    - "Digital: Kurs mit Videoeinheiten und Übungsaufgaben, begleitet durch Kursleitung."
+  stolpersteine:
+    - "Gruppentrainings sind für Menschen mit schweren Belastungen nur mit fachlicher Leitung geeignet."
+  evidenz: {stufe: mittel, text: "Manual von Berking & Whitley (2014) mit RCTs; Neubewertung erweist sich in Metaanalysen als wirksame Regulationsstrategie (Webb et al. 2012)."}
+  qualifikation: fortbildung
+  quellen: [q_berking2014, q_webb2012, q_gross2015]
+
+- id: y_neubewertung_alltag
+  name: Neubewerten im Alltag (Reappraisal)
+  aliase: [Umdeuten, Perspektive wechseln]
+  kategorie: psychologie
+  phasen: [hauptteil, abschluss]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [stress_gesundheit, sozial_emotional]
+  dauer: 5–15 Min.
+  kurz: "Bei belastenden Ereignissen werden alternative Deutungen gesucht: Wie würde eine Außenstehende das sehen? Wird das in einem Jahr noch wichtig sein? Was könnte ich daraus lernen?"
+  ablauf:
+    - Situation und erste Deutung notieren.
+    - Mindestens zwei alternative Deutungen finden (Distanz, Zeitperspektive).
+    - Gefühl vorher und nachher einschätzen.
+  varianten:
+    - "Jugendliche: Alternative Deutung nach einer schlechten Note oder einem Streit suchen."
+    - "Erwachsene: Perspektivwechsel bei Konflikten im Team mit der Frage »Wie sieht das Außenstehende?«."
+    - "Digital: Notizen mit zwei Deutungen im Dokument, Austausch im Lernpartner-Chat."
+  stolpersteine:
+    - "Neubewertung wird als Schönreden erlebt; belastende Gefühle zuerst anerkennen."
+  evidenz: {stufe: mittel, text: "Metaanalyse Webb et al. (2012): Neubewertung verändert Emotionen mit kleinen bis mittleren Effekten, Unterdrücken des Ausdrucks dagegen kaum."}
+  qualifikation: alle
+  quellen: [q_webb2012, q_gross2015]
+
+- id: y_feinfuehligkeit
+  name: Feinfühligkeit und sichere Basis
+  aliase: [Bindungsorientierte Begleitung, Video-Feedback zur Feinfühligkeit]
+  kategorie: psychologie
+  phasen: [uebergreifend]
+  setting: [einzel]
+  zielgruppen: [kinder, erwachsene]
+  anwendung: [beziehung, sozial_emotional]
+  dauer: Haltung / kurze Interventionen
+  kurz: Bezugspersonen nehmen Signale des Kindes wahr, deuten sie richtig und reagieren prompt und angemessen. Kurze, fokussierte Programme (oft mit Video-Feedback) stärken Feinfühligkeit bei Eltern und Fachkräften.
+  ablauf:
+    - Interaktionen beobachten (ggf. Video).
+    - Gelungene Momente gemeinsam anschauen und benennen.
+    - Konkrete Signale und passende Reaktionen üben.
+  varianten:
+    - "Erwachsene: Kurze Videoanalyse eigener Interaktionen im Kollegium mit Fokus auf gelungene Momente."
+    - "Eltern: Gemeinsame Beobachtung von Spielsituationen im Elternkurs mit Rückmeldung."
+    - "Digital: Fragenliste zu Signalen im Alltag mit Reflexion im Dokument."
+  stolpersteine:
+    - "Video-Feedback kann verunsichern; Fokus auf gelungene Momente richten und freiwillig gestalten."
+  evidenz: {stufe: stark, text: "Ainsworth et al. (1978); Metaanalyse Bakermans-Kranenburg et al. (2003): kurze, verhaltensfokussierte Feinfühligkeitsinterventionen sind am wirksamsten (»less is more«)."}
+  qualifikation: fortbildung
+  quellen: [q_ainsworth1978, q_bakermans2003]
+
+- id: y_mentalisieren
+  name: Mentalisieren fördern
+  aliase: [Mentalisierungsbasierte Pädagogik, Innere Zustände verstehen]
+  kategorie: psychologie
+  phasen: [uebergreifend]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [beziehung, konflikt, sozial_emotional]
+  dauer: Haltung
+  kurz: Erwachsene zeigen neugieriges Interesse an inneren Zuständen (»Ich frage mich, was in dir vorging, als …«) statt Verhalten nur zu bewerten, und helfen so, Verhalten als Ausdruck von Gefühlen und Absichten zu verstehen.
+  ablauf:
+    - Bei Konflikten Tempo herausnehmen.
+    - Nicht-wissende, neugierige Haltung (»Hilf mir zu verstehen …«).
+    - Unterschiedliche Sichtweisen der Beteiligten erkunden.
+  varianten:
+    - "Kinder: Nachfragen »Was hast du dabei gefühlt?« nach einem Streit auf dem Schulhof."
+    - "Jugendliche: Neugierige Gespräche über Verhalten, ohne Vorwurf."
+    - "Digital: Fragen im Chat, die Gefühle und Absichten erkunden."
+  stolpersteine:
+    - "Neugier wirkt schnell wie Verhör; Tempo herausnehmen und Antworten nicht erzwingen."
+  evidenz: {stufe: begrenzt, text: "Theoretisch fundiert (Fonagy et al. 2002); mentalisierungsbasierte Therapie bei Persönlichkeitsstörungen belegt, schulische Programme mit ersten Studien."}
+  qualifikation: fortbildung
+  quellen: [q_fonagy2002]
+
+- id: y_metakognitives_wissen
+  name: Lernstrategiewissen vermitteln
+  aliase: [Lernen lernen, "Wie lerne ich am besten?"]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [plenum, kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [lernstrategien]
+  dauer: 2–4 Std. + Anwendung
+  kurz: Lernende erfahren, welche Strategien wirklich wirken (Abrufen, Verteilen, Mischen, Erklären) und warum sich unwirksame (Wiederlesen, Markieren) besser anfühlen. Sie probieren die Strategien in einem eigenen Lernexperiment aus.
+  ablauf:
+    - Kleines Experiment – Wiederlesen vs. Abrufen, Test nach einer Woche.
+    - Ergebnisse besprechen, Lernillusionen erklären.
+    - Eigenen Lernplan mit wirksamen Strategien erstellen.
+    - Nach der nächsten Prüfung auswerten.
+  varianten:
+    - "Jugendliche: Lernexperiment mit zwei Gruppen, Wiederlesen gegen Abrufen, Ergebnis besprechen."
+    - "Erwachsene: Strategiewissen als Einstieg in einen Lernkurs oder Fortbildungsreihe."
+    - "Digital: Vergleich der Lernmethoden im Dokument mit eigenem Testergebnis."
+  stolpersteine:
+    - "Lernende glauben den Befunden nicht, wenn sie das Ergebnis nicht selbst erfahren; eigene Experimente einplanen."
+  evidenz: {stufe: mittel, text: "Lernende nutzen wirksame Strategien selten (Bjork et al. 2013); Strategievermittlung mit Metakognition wirkt (EEF Metakognition; Dignath & Büttner 2008)."}
+  qualifikation: alle
+  quellen: [q_bjork2013, q_dunlosky2013, q_dignath2008]

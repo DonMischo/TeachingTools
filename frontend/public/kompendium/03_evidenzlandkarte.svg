@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" font-family="Arial, Helvetica, sans-serif" role="img" aria-label="METHODENLANDKARTE">
+<rect x="0" y="0" width="960" height="540" fill="#0F1E2E" rx="12"/>
+<text x="480.0" y="38.0" font-size="20" fill="#FFFFFF" text-anchor="middle" font-weight="bold">METHODENLANDKARTE</text>
+<line x1="60" y1="50" x2="900" y2="50" stroke="#C9A227" stroke-width="2"/>
+<text x="480.0" y="70.0" font-size="12" fill="#8AADCC" text-anchor="middle" font-weight="normal">Wie viele Methoden es je Kategorie und Phase gibt – und wie gut sie belegt sind</text>
+<text x="280.0" y="94.0" font-size="12" fill="#FFFFFF" text-anchor="middle" font-weight="bold">EINSTIEG</text>
+<text x="460.0" y="94.0" font-size="12" fill="#FFFFFF" text-anchor="middle" font-weight="bold">HAUPTTEIL</text>
+<text x="640.0" y="94.0" font-size="12" fill="#FFFFFF" text-anchor="middle" font-weight="bold">ABSCHLUSS</text>
+<text x="820.0" y="94.0" font-size="12" fill="#FFFFFF" text-anchor="middle" font-weight="bold">ÜBERGREIFEND</text>
+<rect x="30" y="104" width="150" height="104" fill="#3D7DCA" rx="6"/>
+<text x="105" y="156.0" font-size="14" fill="#FFFFFF" text-anchor="middle" font-weight="bold">DIDAKTIK</text>
+<text x="105" y="174.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">208 Methoden</text>
+<rect x="194" y="104" width="172" height="104" fill="#1A2A3A" rx="6"/>
+<text x="206" y="134.0" font-size="26" fill="#FFFFFF" text-anchor="start" font-weight="bold">54</text>
+<rect x="206.0" y="150" width="1.9" height="16" fill="#2E9466"/>
+<rect x="207.9" y="150" width="20.2" height="16" fill="#3D7DCA"/>
+<rect x="228.1" y="150" width="7.7" height="16" fill="#B8860B"/>
+<rect x="235.8" y="150" width="21.1" height="16" fill="#6B7B8C"/>
+<rect x="256.9" y="150" width="1.0" height="16" fill="#B03A2E"/>
+<text x="206" y="188.0" font-size="10.5" fill="#8AADCC" text-anchor="start" font-weight="normal">davon 2 stark belegt</text>
+<rect x="374" y="104" width="172" height="104" fill="#1A2A3A" rx="6"/>
+<text x="386" y="134.0" font-size="26" fill="#FFFFFF" text-anchor="start" font-weight="bold">154</text>
+<rect x="386.0" y="150" width="16.3" height="16" fill="#2E9466"/>
+<rect x="402.3" y="150" width="75.0" height="16" fill="#3D7DCA"/>
+<rect x="477.3" y="150" width="23.1" height="16" fill="#B8860B"/>
+<rect x="500.4" y="150" width="32.7" height="16" fill="#6B7B8C"/>
+<rect x="533.0" y="150" width="1.0" height="16" fill="#B03A2E"/>
+<text x="386" y="188.0" font-size="10.5" fill="#8AADCC" text-anchor="start" font-weight="normal">davon 17 stark belegt</text>
+<rect x="554" y="104" width="172" height="104" fill="#1A2A3A" rx="6"/>
+<text x="566" y="134.0" font-size="26" fill="#FFFFFF" text-anchor="start" font-weight="bold">64</text>
+<rect x="566.0" y="150" width="1.9" height="16" fill="#2E9466"/>
+<rect x="567.9" y="150" width="25.9" height="16" fill="#3D7DCA"/>
+<rect x="593.9" y="150" width="14.4" height="16" fill="#B8860B"/>
+<rect x="608.3" y="150" width="19.2" height="16" fill="#6B7B8C"/>
+<text x="566" y="188.0" font-size="10.5" fill="#8AADCC" text-anchor="start" font-weight="normal">davon 2 stark belegt</text>
+<rect x="734" y="104" width="172" height="104" fill="#1A2A3A" rx="6"/>
+<text x="746" y="134.0" font-size="26" fill="#FFFFFF" text-anchor="start" font-weight="bold">7</text>
+<rect x="746.0" y="150" width="1.0" height="16" fill="#2E9466"/>
+<rect x="747.0" y="150" width="4.8" height="16" fill="#3D7DCA"/>
+<rect x="751.8" y="150" width="1.0" height="16" fill="#B8860B"/>
+<text x="746" y="188.0" font-size="10.5" fill="#8AADCC" text-anchor="start" font-weight="normal">davon 1 stark belegt</text>
+<rect x="30" y="216" width="150" height="104" fill="#2E9466" rx="6"/>
+<text x="105" y="268.0" font-size="14" fill="#FFFFFF" text-anchor="middle" font-weight="bold">PÄDAGOGIK</text>
+<text x="105" y="286.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">45 Methoden</text>
+<rect x="194" y="216" width="172" height="104" fill="#1A2A3A" rx="6"/>
+<text x="206" y="246.0" font-size="26" fill="#FFFFFF" text-anchor="start" font-weight="bold">8</text>
+<rect x="206.0" y="262" width="1.0" height="16" fill="#2E9466"/>
+<rect x="207.0" y="262" width="1.9" height="16" fill="#3D7DCA"/>
+<rect x="208.9" y="262" width="1.0" height="16" fill="#B8860B"/>
+<rect x="209.8" y="262" width="3.8" height="16" fill="#6B7B8C"/>
+<text x="206" y="300.0" font-size="10.5" fill="#8AADCC" text-anchor="start" font-weight="normal">davon 1 stark belegt</text>
+<rect x="374" y="216" width="172" height="104" fill="#1A2A3A" rx="6"/>
+<text x="386" y="246.0" font-size="26" fill="#FFFFFF" text-anchor="start" font-weight="bold">25</text>
+<rect x="386.0" y="262" width="2.9" height="16" fill="#2E9466"/>
+<rect x="388.9" y="262" width="9.6" height="16" fill="#3D7DCA"/>
+<rect x="398.5" y="262" width="6.7" height="16" fill="#B8860B"/>
+<rect x="405.2" y="262" width="4.8" height="16" fill="#6B7B8C"/>
+<text x="386" y="300.0" font-size="10.5" fill="#8AADCC" text-anchor="start" font-weight="normal">davon 3 stark belegt</text>
+<rect x="554" y="216" width="172" height="104" fill="#1A2A3A" rx="6"/>
+<text x="566" y="246.0" font-size="26" fill="#FFFFFF" text-anchor="start" font-weight="bold">10</text>
+<rect x="566.0" y="262" width="1.0" height="16" fill="#2E9466"/>
+<rect x="567.0" y="262" width="2.9" height="16" fill="#3D7DCA"/>
+<rect x="569.8" y="262" width="5.8" height="16" fill="#6B7B8C"/>
+<text x="566" y="300.0" font-size="10.5" fill="#8AADCC" text-anchor="start" font-weight="normal">davon 1 stark belegt</text>
+<rect x="734" y="216" width="172" height="104" fill="#1A2A3A" rx="6"/>
+<text x="746" y="246.0" font-size="26" fill="#FFFFFF" text-anchor="start" font-weight="bold">11</text>
+<rect x="746.0" y="262" width="2.9" height="16" fill="#2E9466"/>
+<rect x="748.9" y="262" width="4.8" height="16" fill="#3D7DCA"/>
+<rect x="753.7" y="262" width="1.9" height="16" fill="#B8860B"/>
+<rect x="755.6" y="262" width="1.0" height="16" fill="#6B7B8C"/>
+<text x="746" y="300.0" font-size="10.5" fill="#8AADCC" text-anchor="start" font-weight="normal">davon 3 stark belegt</text>
+<rect x="30" y="328" width="150" height="104" fill="#C2652E" rx="6"/>
+<text x="105" y="380.0" font-size="14" fill="#FFFFFF" text-anchor="middle" font-weight="bold">PSYCHOLOGIE</text>
+<text x="105" y="398.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">160 Methoden</text>
+<rect x="194" y="328" width="172" height="104" fill="#1A2A3A" rx="6"/>
+<text x="206" y="358.0" font-size="26" fill="#FFFFFF" text-anchor="start" font-weight="bold">25</text>
+<rect x="206.0" y="374" width="5.8" height="16" fill="#2E9466"/>
+<rect x="211.8" y="374" width="10.6" height="16" fill="#3D7DCA"/>
+<rect x="222.3" y="374" width="2.9" height="16" fill="#B8860B"/>
+<rect x="225.2" y="374" width="1.0" height="16" fill="#6B7B8C"/>
+<rect x="226.2" y="374" width="3.8" height="16" fill="#B03A2E"/>
+<text x="206" y="412.0" font-size="10.5" fill="#8AADCC" text-anchor="start" font-weight="normal">davon 6 stark belegt</text>
+<rect x="374" y="328" width="172" height="104" fill="#1A2A3A" rx="6"/>
+<text x="386" y="358.0" font-size="26" fill="#FFFFFF" text-anchor="start" font-weight="bold">115</text>
+<rect x="386.0" y="374" width="25.9" height="16" fill="#2E9466"/>
+<rect x="411.9" y="374" width="55.7" height="16" fill="#3D7DCA"/>
+<rect x="467.7" y="374" width="20.2" height="16" fill="#B8860B"/>
+<rect x="487.9" y="374" width="4.8" height="16" fill="#6B7B8C"/>
+<rect x="492.7" y="374" width="3.8" height="16" fill="#B03A2E"/>
+<text x="386" y="412.0" font-size="10.5" fill="#8AADCC" text-anchor="start" font-weight="normal">davon 27 stark belegt</text>
+<rect x="554" y="328" width="172" height="104" fill="#1A2A3A" rx="6"/>
+<text x="566" y="358.0" font-size="26" fill="#FFFFFF" text-anchor="start" font-weight="bold">32</text>
+<rect x="566.0" y="374" width="6.7" height="16" fill="#2E9466"/>
+<rect x="572.7" y="374" width="15.4" height="16" fill="#3D7DCA"/>
+<rect x="588.1" y="374" width="5.8" height="16" fill="#B8860B"/>
+<rect x="593.9" y="374" width="1.9" height="16" fill="#6B7B8C"/>
+<rect x="595.8" y="374" width="1.0" height="16" fill="#B03A2E"/>
+<text x="566" y="412.0" font-size="10.5" fill="#8AADCC" text-anchor="start" font-weight="normal">davon 7 stark belegt</text>
+<rect x="734" y="328" width="172" height="104" fill="#1A2A3A" rx="6"/>
+<text x="746" y="358.0" font-size="26" fill="#FFFFFF" text-anchor="start" font-weight="bold">26</text>
+<rect x="746.0" y="374" width="11.5" height="16" fill="#2E9466"/>
+<rect x="757.5" y="374" width="9.6" height="16" fill="#3D7DCA"/>
+<rect x="767.1" y="374" width="2.9" height="16" fill="#B8860B"/>
+<rect x="770.0" y="374" width="1.0" height="16" fill="#B03A2E"/>
+<text x="746" y="412.0" font-size="10.5" fill="#8AADCC" text-anchor="start" font-weight="normal">davon 12 stark belegt</text>
+<text x="30" y="470.0" font-size="11" fill="#FFFFFF" text-anchor="start" font-weight="bold">EVIDENZ:</text>
+<rect x="98" y="460" width="14" height="14" fill="#2E9466" rx="2"/>
+<text x="118" y="471.0" font-size="11" fill="#E0E8F0" text-anchor="start" font-weight="normal">Stark</text>
+<rect x="218" y="460" width="14" height="14" fill="#3D7DCA" rx="2"/>
+<text x="238" y="471.0" font-size="11" fill="#E0E8F0" text-anchor="start" font-weight="normal">Mittel</text>
+<rect x="338" y="460" width="14" height="14" fill="#B8860B" rx="2"/>
+<text x="358" y="471.0" font-size="11" fill="#E0E8F0" text-anchor="start" font-weight="normal">Begrenzt</text>
+<rect x="458" y="460" width="14" height="14" fill="#6B7B8C" rx="2"/>
+<text x="478" y="471.0" font-size="11" fill="#E0E8F0" text-anchor="start" font-weight="normal">Praxis</text>
+<rect x="578" y="460" width="14" height="14" fill="#B03A2E" rx="2"/>
+<text x="598" y="471.0" font-size="11" fill="#E0E8F0" text-anchor="start" font-weight="normal">Umstritten</text>
+<text x="480.0" y="505.0" font-size="11" fill="#8AADCC" text-anchor="middle" font-weight="normal">Methoden mit mehreren Phasen zählen in jeder Phase. Balkenlänge ∝ Anzahl, Farbanteile = Evidenzstufen.</text>
+<text x="480.0" y="525.0" font-size="10.5" fill="#8AADCC" text-anchor="middle" font-weight="normal">Stand 2026-10-18 · 413 Methoden · 487 Quellen</text>
+</svg>

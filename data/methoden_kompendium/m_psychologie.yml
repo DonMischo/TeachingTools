@@ -1,0 +1,1210 @@
+# Psychologie – Motivation, Selbstregulation, Emotion, Stress, Beratung, Prävention, Diagnostik, Gruppenpsychologie
+- id: y_gefuehls_checkin
+  name: Gefühls-Check-in (Mood Meter, Gefühlsuhr)
+  aliase: [Stimmungsbarometer, Emotionsthermometer, Zones of Regulation]
+  kategorie: psychologie
+  phasen: [einstieg, abschluss]
+  setting: [einzel, plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [sozial_emotional, beziehung, stress_gesundheit]
+  dauer: 2–5 Min.
+  kurz: Lernende ordnen ihre aktuelle Stimmung auf einer Skala oder in einem Raster (z. B. Mood Meter – angenehm/unangenehm × viel/wenig Energie) ein und benennen das Gefühl möglichst genau.
+  ablauf:
+    - Raster oder Skala sichtbar aufhängen; Gefühlswortschatz aufbauen.
+    - Einzeln (Klammer, Magnet, Zettel) einordnen – anonyme Variante anbieten.
+    - Optional – Was hilft mir, um in einen lernbereiten Zustand zu kommen?
+  varianten:
+    - "Kinder: Gefühlsuhr mit Gesichtern; Ampel- oder Wetterbild."
+    - "Erwachsene: Energie-/Stimmungsbarometer 1–10 am Workshopbeginn."
+  stolpersteine:
+    - Öffentliche Einordnung kann Kinder bloßstellen; Lehrkraft muss bei auffälligen Rückmeldungen reagieren können.
+    - »Zones of Regulation« ist populär, aber wenig evaluiert.
+  evidenz: {stufe: mittel, text: "Gefühle zu benennen dämpft emotionale Reaktionen (Lieberman et al. 2007); RULER-Studien zeigen Verbesserungen in Sozial- und Leistungsmaßen (Brackett et al. 2012)."}
+  qualifikation: alle
+  quellen: [q_brackett2012, q_lieberman2007, q_kuypers2011]
+
+- id: y_atemuebung
+  name: Atemübung zum Ankommen
+  aliase: [Langsames Atmen, 4-6-Atmung, Box Breathing, Bauchatmung]
+  kategorie: psychologie
+  phasen: [einstieg, abschluss]
+  setting: [plenum, einzel]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [stress_gesundheit, klassenfuehrung]
+  dauer: 1–3 Min.
+  kurz: Eine kurze Phase langsamen Atmens (ca. 6 Atemzüge pro Minute, längeres Aus- als Einatmen) beruhigt und schafft einen gemeinsamen Startpunkt.
+  ablauf:
+    - Aufrecht sitzen, Augen schließen oder Blick senken.
+    - 4 Sek. einatmen, 6 Sek. ausatmen, 5–10 Durchgänge.
+    - Kinder – »Kerze auspusten«, Hand auf dem Bauch heben und senken.
+  varianten:
+    - "Kinder: Kerze auspusten mit Bildkarte, Hand auf dem Bauch als Hilfe."
+    - "Jugendliche: kurze Atemrunde vor einer Klassenarbeit, Augen offen lassen möglich."
+    - "Digital: Atemübung mit Animation oder Sprechanleitung im Videoraum."
+  stolpersteine:
+    - Für Menschen mit Panik- oder Traumaerfahrung kann Fokus auf Atmung unangenehm sein; Augen offen lassen erlauben.
+  evidenz: {stufe: mittel, text: "Systematisches Review Zaccaro et al. (2018): langsames Atmen erhöht Herzratenvariabilität und Entspannung und verringert Angst; Studien überwiegend klein."}
+  qualifikation: alle
+  quellen: [q_zaccaro2018]
+
+- id: y_werte_affirmation
+  name: Werte-Bekräftigung (Values Affirmation)
+  aliase: [Self-Affirmation-Schreibübung]
+  kategorie: psychologie
+  phasen: [einstieg]
+  setting: [einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [motivation, stress_gesundheit, heterogenitaet]
+  dauer: 10–15 Min.
+  kurz: Vor belastenden Situationen (z. B. Schuljahresbeginn, Prüfung) wählen Lernende aus einer Liste ihre wichtigsten Werte und schreiben, warum diese ihnen wichtig sind. Kann Bedrohungserleben durch Stereotype puffern.
+  ablauf:
+    - Liste von Werten (Familie, Freundschaft, Humor, Kreativität …).
+    - 2–3 auswählen und einige Sätze dazu schreiben.
+    - Nicht einsammeln oder bewerten; als normale Schreibübung rahmen.
+  varianten:
+    - "Jugendliche: Werteliste mit zwei bis drei Werten und kurzer Schreibübung zu Schuljahresbeginn."
+    - "Erwachsene: Werte-Schreibübung vor einer Prüfung oder Weiterbildung, nicht einsammeln."
+    - "Digital: Werteliste als Formular mit privatem Schreibfeld."
+  stolpersteine:
+    - Wirkung stark kontextabhängig; großangelegte Replikationen fanden teils keine Effekte.
+  evidenz: {stufe: umstritten, text: "Cohen et al. (2006) fanden deutliche Effekte für Schwarze Schüler·innen in den USA; spätere Replikationen fielen heterogen bis null aus. Nur als ergänzende, kostengünstige Maßnahme einsetzen."}
+  qualifikation: alle
+  quellen: [q_cohen2006]
+
+- id: y_belonging
+  name: Zugehörigkeits-Intervention (Social Belonging)
+  aliase: [Belonging-Geschichten, Übergangsintervention]
+  kategorie: psychologie
+  phasen: [einstieg]
+  setting: [einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [motivation, beziehung, stress_gesundheit]
+  dauer: 30–60 Min. einmalig
+  kurz: Neue Lernende (z. B. Studienbeginn, Schulwechsel) lesen Berichte älterer, die Zweifel an ihrer Zugehörigkeit hatten, und erfahren, dass diese normal und vorübergehend sind. Dann schreiben sie selbst einen Text für künftige Neue.
+  ablauf:
+    - Berichte älterer Lernender lesen (Zweifel → Verbesserung über Zeit).
+    - Eigene Erfahrung reflektieren.
+    - Brief/Rede an zukünftige Neue verfassen (»saying is believing«).
+  varianten:
+    - "Jugendliche: Berichte älterer Schüler·innen zum Schulwechsel mit anschließender Schreibaufgabe."
+    - "Erwachsene: Erfahrungsberichte von Studierenden oder Kolleg·innen zum Einstieg in neue Teams."
+    - "Digital: Berichte als Video oder Text im Lernmanagementsystem vor dem Semesterstart."
+  stolpersteine:
+    - "Die Berichte müssen glaubwürdig und vielfältig sein; nicht nur Erfolgsgeschichten auswählen."
+    - "Die Intervention ersetzt keine echte Integration; Gemeinschaftsangebote im Alltag zusätzlich schaffen."
+  evidenz: {stufe: mittel, text: "RCT Walton & Cohen (2011) mit Langzeiteffekten; großangelegte Replikationen zeigen kleinere, kontextabhängige Effekte, am ehesten bei benachteiligten Gruppen."}
+  qualifikation: fortbildung
+  quellen: [q_walton2011]
+
+- id: y_neubewertung
+  name: Neubewertung von Aufregung (Arousal Reappraisal)
+  aliase: [Aufregung ist Energie, Stress-Mindset]
+  kategorie: psychologie
+  phasen: [einstieg]
+  setting: [plenum, einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [stress_gesundheit, motivation]
+  dauer: 2–5 Min.
+  kurz: Vor Prüfungen oder Auftritten wird erklärt, dass körperliche Aufregung (Herzklopfen, Anspannung) den Körper auf Leistung vorbereitet und hilfreich sein kann – statt sie zu bekämpfen.
+  ablauf:
+    - Kurze Erklärung der Stressreaktion als Leistungsvorbereitung.
+    - Lernende formulieren innerlich »Ich bin aufgeregt – mein Körper macht sich bereit«.
+  varianten:
+    - "Jugendliche: Erklärung vor Klassenarbeiten, dass Herzklopfen den Körper auf Leistung vorbereitet."
+    - "Erwachsene: Vor einem Vortrag als Satz im Kopf formulieren, statt Aufregung zu bekämpfen."
+    - "Digital: Kurze Erklärung im Chat vor einer Präsentation."
+  stolpersteine:
+    - "Bei ausgeprägter Angst reicht Umdeuten nicht; dann an Beratung oder Fachkräfte verweisen."
+  evidenz: {stufe: mittel, text: "Experimente von Jamieson et al. (2010) zeigen bessere Leistungen nach Neubewertung; Grundlage ist das transaktionale Stressmodell (Lazarus & Folkman)."}
+  qualifikation: alle
+  quellen: [q_jamieson2010, q_lazarus1984]
+
+- id: y_expressives_schreiben_pruefung
+  name: Sorgen aufschreiben vor Prüfungen
+  aliase: [Expressive Writing vor Tests]
+  kategorie: psychologie
+  phasen: [einstieg]
+  setting: [einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [stress_gesundheit]
+  dauer: 10 Min.
+  kurz: Unmittelbar vor einer Prüfung schreiben Lernende 10 Minuten frei über ihre Gefühle und Sorgen zur Prüfung. Entlastet das Arbeitsgedächtnis bei prüfungsängstlichen Lernenden.
+  ablauf:
+    - Vor Prüfungsbeginn Blatt austeilen.
+    - Frei und ehrlich über Gedanken und Gefühle zur Prüfung schreiben.
+    - Blatt wird nicht gelesen (kann weggeworfen werden).
+  varianten:
+    - "Jugendliche: 10 Minuten freies Schreiben vor einer Klassenarbeit, Blatt danach behalten oder entsorgen."
+    - "Erwachsene: Kurze Schreibphase vor einer Prüfung oder Zertifizierung, unbeobachtet."
+    - "Digital: Schreiben in einem privaten Dokument, das nicht geteilt wird."
+  stolpersteine:
+    - "Das Schreiben darf nicht als Pflichtaufgabe oder Kontrolle wirken; Freiwilligkeit betonen."
+    - "Wer stark belastet ist, braucht mehr als eine Schreibübung; Hinweise auf Unterstützung geben."
+  evidenz: {stufe: mittel, text: "Ramirez & Beilock (2011): bessere Leistungen bei Prüfungsängstlichen in Labor- und Klassenzimmerstudien; Replikationen fallen gemischt aus."}
+  qualifikation: alle
+  quellen: [q_ramirez2011]
+
+- id: y_ziele_smart
+  name: Zielsetzung (spezifisch, herausfordernd)
+  aliase: [SMART-Ziele, Goal Setting, Lernziele für sich selbst]
+  kategorie: psychologie
+  phasen: [einstieg, abschluss]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [motivation, lernstrategien]
+  dauer: 10 Min.
+  kurz: Lernende setzen sich spezifische, herausfordernde, aber erreichbare Ziele mit Zeitrahmen und überprüfen regelmäßig den Fortschritt.
+  ablauf:
+    - Ziel konkret und messbar formulieren (statt »besser werden«).
+    - Teilziele und Zeitpunkt festlegen.
+    - Fortschritt sichtbar machen (Lernkurve, Tabelle) und regelmäßig rückmelden.
+  varianten:
+    - "Kinder: Ziel mit Sternen-Karte, z. B. drei Wörter richtig schreiben bis Freitag."
+    - "Jugendliche: Lernziel mit Tabelle für Teilziele und wöchentlicher Kontrolle."
+    - "Erwachsene: persönliches Entwicklungsziel mit Zeitrahmen und Lernpartner."
+  stolpersteine:
+    - Bei komplexen neuen Aufgaben sind Lernziele (»drei Strategien ausprobieren«) besser als Leistungsziele.
+  evidenz: {stufe: stark, text: "Zielsetzungstheorie mit über 35 Jahren Forschung (Locke & Latham 2002): spezifische, schwierige Ziele führen zu höherer Leistung als »Gib dein Bestes«."}
+  qualifikation: alle
+  quellen: [q_locke2002]
+
+- id: y_woop
+  name: WOOP / Mentales Kontrastieren mit Wenn-dann-Plänen
+  aliase: [Wish – Outcome – Obstacle – Plan, MCII, Implementierungsintentionen]
+  kategorie: psychologie
+  phasen: [einstieg, abschluss]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [motivation, lernstrategien]
+  dauer: 5–15 Min.
+  kurz: "Wunsch benennen – bestes Ergebnis ausmalen – das innere Hindernis erkennen – Wenn-dann-Plan formulieren (»Wenn [Hindernis], dann [Handlung]«)."
+  ablauf:
+    - "Wish: Was möchte ich in dieser Woche erreichen?"
+    - "Outcome: Wie fühlt es sich an, wenn es klappt? (vorstellen)"
+    - "Obstacle: Was in mir hält mich davon ab?"
+    - "Plan: Wenn …, dann … (aufschreiben)."
+  varianten:
+    - "Jugendliche: WOOP-Blatt für die nächste Klassenarbeit mit einem eigenen Hindernis."
+    - "Erwachsene: WOOP-Übung für ein Vorhaben im Beruf oder Studium."
+    - "Digital: WOOP-Vorlage als Formular mit Erinnerung an den Wenn-dann-Plan."
+  stolpersteine:
+    - "Die Fantasie allein ohne Hindernis-Analyse macht passiv; immer den inneren Widerstand benennen lassen."
+  evidenz: {stufe: stark, text: "Metaanalyse Gollwitzer & Sheeran (2006): Implementierungsintentionen mit mittlerem bis großem Effekt (d ≈ 0,65); MCII bei Jugendlichen wirksam (Duckworth et al. 2011)."}
+  qualifikation: alle
+  quellen: [q_oettingen2014, q_gollwitzer2006, q_duckworth2011]
+
+- id: y_selbstbestimmung
+  name: Autonomie, Kompetenz und Eingebundenheit unterstützen
+  aliase: [Selbstbestimmungstheorie im Unterricht, Autonomieunterstützung]
+  kategorie: psychologie
+  phasen: [uebergreifend]
+  setting: [plenum, einzel]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [motivation, beziehung]
+  dauer: Haltung
+  kurz: Motivation wächst, wenn drei Grundbedürfnisse erfüllt sind – Autonomie (Wahlmöglichkeiten, Begründungen statt Befehle), Kompetenz (passende Herausforderung, informatives Feedback), Eingebundenheit (Wärme, Zugehörigkeit).
+  ablauf:
+    - Wahlmöglichkeiten bei Aufgaben, Reihenfolge oder Produktform anbieten.
+    - Begründen, warum etwas wichtig ist; kontrollierende Sprache (»du musst«) vermeiden.
+    - Herausforderungen knapp über dem Können; Fortschritte sichtbar machen.
+    - Persönliches Interesse an jeder Person zeigen.
+  varianten:
+    - "Kinder: Wahl zwischen zwei Aufgabenwegen oder Reihenfolgen, begründete Regeln."
+    - "Jugendliche: Mitsprache bei Themen und Produktformen, begründete Anforderungen."
+    - "Erwachsene: Wahl von Lernformen in Fortbildungen mit klarem Rahmen."
+  stolpersteine:
+    - Belohnungen für bereits interessante Tätigkeiten können intrinsische Motivation untergraben (Korrumpierungseffekt).
+  evidenz: {stufe: stark, text: "Selbstbestimmungstheorie (Ryan & Deci 2000) mit breiter empirischer Basis zu Autonomieunterstützung im Unterricht."}
+  qualifikation: alle
+  quellen: [q_ryan2000]
+
+- id: y_selbstwirksamkeit
+  name: Selbstwirksamkeit stärken
+  aliase: [Erfolgserlebnisse, Modelllernen, Verbal persuasion]
+  kategorie: psychologie
+  phasen: [uebergreifend]
+  setting: [einzel, plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [motivation, stress_gesundheit]
+  dauer: begleitend
+  kurz: "Vier Quellen nach Bandura: eigene Erfolgserlebnisse (stärkste Quelle), stellvertretende Erfahrung (ähnliche Personen schaffen es), Zuspruch und ein günstiger Umgang mit körperlicher Erregung."
+  ablauf:
+    - Aufgaben so stufen, dass Erfolge wahrscheinlich und selbst verursacht sind.
+    - Erfolge auf Anstrengung und Strategie zurückführen.
+    - Peers als Modelle nutzen (»Coping-Modelle«, die anfangs auch kämpfen).
+  varianten:
+    - "Kinder: Aufgaben in kleinen Schritten stufen, Fortschritte auf einer Leiter sichtbar machen."
+    - "Jugendliche: Peer-Modelle zeigen, die anfangs auch kämpfen mussten."
+    - "Erwachsene: Erfolgsberichte aus dem eigenen Berufsfeld als Modelle nutzen."
+  stolpersteine:
+    - "Erfolge werden zu leicht gemacht und wirken nicht; Aufgaben knapp über dem Können wählen."
+  evidenz: {stufe: stark, text: "Banduras Theorie (1977) gehört zu den am besten belegten motivationspsychologischen Konzepten; Selbstwirksamkeit sagt Leistung und Ausdauer vorher."}
+  qualifikation: alle
+  quellen: [q_bandura1977]
+
+- id: y_growth_mindset
+  name: Wachstumsorientierte Denkweise (Growth Mindset)
+  aliase: [Mindset-Intervention, Fähigkeiten sind entwickelbar]
+  kategorie: psychologie
+  phasen: [einstieg, uebergreifend]
+  setting: [einzel, plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [motivation]
+  dauer: 2 × 25 Min. (Online-Module) oder begleitend
+  kurz: Lernende erfahren, dass Fähigkeiten durch Anstrengung, gute Strategien und Hilfe wachsen; Fehler gelten als Lernchancen.
+  ablauf:
+    - Kurzer Text über Neuroplastizität und Lernen.
+    - Lernende schreiben einem jüngeren Kind einen Rat.
+    - Im Alltag Prozesslob statt Fähigkeitslob nutzen.
+  varianten:
+    - "Kinder: Gehirnbild und Übungsbeispiele, Fehler als Lernschritte benennen."
+    - "Jugendliche: Rat an ein jüngeres Kind schreiben und im Alltag Prozesslob nutzen."
+    - "Digital: kurzes Online-Modul mit Reflexionsfragen im Lernmanagementsystem."
+  stolpersteine:
+    - Plakate und Slogans allein wirken nicht; »Anstrengung loben« ohne Strategie-Feedback ist eine falsche Übersetzung.
+  evidenz: {stufe: umstritten, text: "Großes RCT (Yeager et al. 2019): kleine Effekte für leistungsschwächere Lernende in unterstützenden Kontexten; Metaanalysen (Sisk et al. 2018; Macnamara & Burgoyne 2023) finden im Mittel sehr kleine bis keine Effekte und Hinweise auf Verzerrungen."}
+  qualifikation: alle
+  quellen: [q_dweck2006, q_yeager2019, q_sisk2018, q_macnamara2023]
+
+- id: y_wise_feedback
+  name: Weises Feedback (Wise Feedback)
+  aliase: [Hohe Standards + Zutrauen]
+  kategorie: psychologie
+  phasen: [hauptteil, abschluss]
+  setting: [einzel]
+  zielgruppen: [jugendliche]
+  anwendung: [motivation, beziehung, diagnose]
+  dauer: 1 Satz
+  kurz: "Kritisches Feedback wird mit einer Notiz eingeleitet, die hohe Standards und Zutrauen verbindet: »Ich gebe dir diese Hinweise, weil ich hohe Ansprüche habe und weiß, dass du sie erreichen kannst.«"
+  ablauf:
+    - Konkrete, kritische Rückmeldung zur Arbeit.
+    - Rahmen mit hohem Standard und Vertrauen in die Person.
+    - Gelegenheit zur Überarbeitung geben.
+  varianten:
+    - "Jugendliche: Notiz mit hohem Standard und Vertrauen am Rand einer Arbeit."
+    - "Erwachsene: Rückmeldung im Team mit Erwartung und Zutrauen verbinden."
+    - "Digital: Kommentar im Dokument mit kurzem Vertrauenssatz."
+  stolpersteine:
+    - "Die Formel wird als Floskel erlebt, wenn der Standard nicht ernst gemeint ist; konkret und ehrlich bleiben."
+  evidenz: {stufe: mittel, text: "Yeager et al. (2014): mehr Überarbeitungen und bessere Ergebnisse, besonders bei Schüler·innen, die Misstrauen gegenüber Institutionen erlebt hatten."}
+  qualifikation: alle
+  quellen: [q_yeager2014]
+
+- id: y_feedback_ebenen
+  name: Lernförderliches Feedback (vier Ebenen)
+  aliase: [Hattie-Timperley-Modell, Feed Up – Feed Back – Feed Forward]
+  kategorie: psychologie
+  phasen: [hauptteil, abschluss]
+  setting: [einzel, plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [diagnose, lernstrategien, motivation]
+  dauer: begleitend
+  kurz: "Feedback beantwortet drei Fragen (Wohin gehe ich? Wo stehe ich? Was ist der nächste Schritt?) auf vier Ebenen: Aufgabe, Prozess, Selbstregulation, Person. Wirksam sind vor allem Prozess- und Selbstregulationsfeedback; Personenlob bringt wenig."
+  ablauf:
+    - Ziel und Kriterien klären (Feed Up).
+    - Stand bezogen auf Kriterien beschreiben (Feed Back).
+    - Konkreten nächsten Schritt geben (Feed Forward).
+    - Zeit zum Umsetzen einplanen.
+  varianten:
+    - "Kinder: Smiley-Rückmeldung mit einem Ziel und einem nächsten Schritt."
+    - "Jugendliche: Feedback auf Kriterien mit Prozess- und Selbstregulationsfragen."
+    - "Digital: Feedback im Dokument mit Kriterienliste und Überarbeitungsfrist."
+  stolpersteine:
+    - Über ein Drittel der Feedbackinterventionen verschlechtert Leistung, besonders wenn sie die Aufmerksamkeit auf die Person lenkt (Kluger & DeNisi 1996).
+    - Noten zusammen mit Kommentaren führen dazu, dass Kommentare ignoriert werden.
+  evidenz: {stufe: stark, text: "Metaanalysen Hattie & Timperley (2007), Wisniewski et al. (2020, d ≈ 0,48) und EEF (+6 Monate); hohe Variabilität je nach Art des Feedbacks."}
+  qualifikation: alle
+  quellen: [q_hattie2007, q_wisniewski2020, q_kluger1996, q_eef_feedback]
+
+- id: y_selbstregulation_zyklus
+  name: Selbstreguliertes Lernen (Planen – Überwachen – Bewerten)
+  aliase: [Metakognitive Strategien, Zimmerman-Zyklus]
+  kategorie: psychologie
+  phasen: [einstieg, hauptteil, abschluss]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [lernstrategien]
+  dauer: begleitend
+  kurz: Lernende werden angeleitet, vor der Aufgabe zu planen (Ziel, Strategie), währenddessen zu überwachen (Verstehe ich es? Hilft die Strategie?) und danach zu bewerten (Was lief gut? Was ändere ich?).
+  ablauf:
+    - Planungsfragen vor der Aufgabe.
+    - Überwachungsfragen in der Mitte (Selbstcheck).
+    - Bewertungsfragen am Ende.
+    - Strategie explizit modellieren und üben.
+  varianten:
+    - "Jugendliche: Planungsbogen vor einer Hausaufgabe mit Überwachungsfragen in der Mitte."
+    - "Erwachsene: Selbstreflexion nach Fortbildungsmodulen mit Plan, Überwachung und Bewertung."
+    - "Digital: Dreiteiliger Lernbogen im Lernportfolio mit Datum."
+  stolpersteine:
+    - "Die Fragen werden mechanisch abgehakt; Strategiewahl begründen lassen."
+  evidenz: {stufe: stark, text: "EEF: Metakognition und Selbstregulation ca. +7 Monate; Metaanalyse Dignath & Büttner (2008) mit mittleren Effekten in Grund- und Sekundarschule; Zimmerman (2002) als Modell."}
+  qualifikation: alle
+  quellen: [q_zimmerman2002, q_dignath2008, q_eef_meta]
+
+- id: y_selbstinstruktion
+  name: Selbstinstruktionstraining (Stopp – Denk – Handle)
+  aliase: [Meichenbaum-Training, Schildkröten-Technik, Stopp-Schild]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [lernstrategien, klassenfuehrung, sozial_emotional]
+  dauer: mehrere Sitzungen
+  kurz: Kinder lernen, ihr Handeln durch innere Sprache zu steuern – erst modelliert die Lehrkraft laut, dann spricht das Kind laut, dann flüsternd, dann innerlich. Bei der Schildkröten-Technik zieht sich das Kind bei Wut kurz »in den Panzer« zurück.
+  ablauf:
+    - "Modell – Erwachsene löst Aufgabe mit lauten Selbstanweisungen (Was ist meine Aufgabe? Wie gehe ich vor? Schritt für Schritt. Prüfen. Gut gemacht!)."
+    - Kind wiederholt laut mit Anleitung.
+    - Kind spricht laut allein, dann flüsternd, dann innerlich.
+    - "Bildkarten (Stopp-Schild, Ampel) als Erinnerung."
+  varianten:
+    - "Kinder: Stopp-Schild und Ampelkarten zum Erinnern an die drei Schritte."
+    - "Jugendliche: innere Sprache für Prüfungsangst oder Konfliktsituationen einüben."
+    - "Digital: Selbstinstruktion als Bildkarte im Lernmanagementsystem."
+  stolpersteine:
+    - "Das Training verlangt Geduld und Wiederholung; ohne Übung verpufft es."
+    - "Bei aggressivem Verhalten reicht die Methode allein nicht; Fachkraft einbeziehen."
+  evidenz: {stufe: mittel, text: "Meichenbaum & Goodman (1971) zeigten Verbesserungen bei impulsiven Kindern; Bestandteil wirksamer Programme wie SRSD und THOP; Schneider (1974) beschreibt die Schildkröten-Technik."}
+  qualifikation: fortbildung
+  quellen: [q_meichenbaum1971, q_schneider1974, q_doepfner2019]
+
+- id: y_problemloesetraining
+  name: Soziales Problemlösetraining
+  aliase: [Problemlöseschritte, IDEAL]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [konflikt, sozial_emotional, beratung]
+  dauer: 20–45 Min.
+  kurz: "Feste Schritte für Probleme im Alltag: Problem genau beschreiben – Ziel festlegen – viele Lösungen sammeln – Vor- und Nachteile bewerten – eine auswählen und planen – ausprobieren und auswerten."
+  ablauf:
+    - Problem konkret und ohne Schuldzuweisung beschreiben.
+    - Lösungen brainstormen (ohne Bewertung).
+    - Konsequenzen abwägen; beste Lösung wählen.
+    - Umsetzung planen, später bewerten.
+  varianten:
+    - "Kinder: Problemkarten mit Bildern und sechs Schritten auf dem Stuhlkreis."
+    - "Jugendliche: Konflikt aus dem Schulalltag mit allen Schritten durchspielen."
+    - "Digital: Schritte als Vorlage im Dokument für Konfliktfälle."
+  stolpersteine:
+    - "Lösungen werden zu schnell bewertet; Brainstorming ohne Kritik zuerst zulassen."
+  evidenz: {stufe: stark, text: "Problemlösetraining nach D'Zurilla & Goldfried (1971) ist Bestandteil wirksamer Sozialkompetenz- und KVT-Programme (Beelmann et al. 1994)."}
+  qualifikation: alle
+  quellen: [q_dzurilla1971, q_beelmann1994]
+
+- id: y_psychoedukation
+  name: Psychoedukation
+  aliase: ["Aufklärung über Stress, Angst, Schlaf, Lernen"]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [plenum, kleingruppe, einzel]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [stress_gesundheit, lernstrategien, krise]
+  dauer: 20–60 Min.
+  kurz: Verständliche Vermittlung psychologischen Wissens (z. B. wie Angst entsteht, was im Körper bei Stress passiert, warum Schlaf fürs Lernen wichtig ist), damit Betroffene ihr Erleben einordnen und Strategien nutzen können.
+  ablauf:
+    - Erleben der Gruppe aufgreifen (Normalisieren).
+    - Modell anschaulich erklären (z. B. Angstkurve, Stressampel).
+    - Hilfreiche und nicht hilfreiche Strategien besprechen.
+    - Hinweise auf weiterführende Hilfe geben.
+  varianten:
+    - "Jugendliche: kurze Erklärung der Stressampel mit Beispielen aus dem Schulalltag."
+    - "Erwachsene: Vortrag zu Stress und Erholung für Kollegium oder Teams mit Fragen."
+    - "Digital: Erklärvideo oder Infoblatt mit Hinweisen auf Beratungsangebote."
+  stolpersteine:
+    - Psychoedukation ersetzt keine Behandlung; bei Hinweisen auf Erkrankung weiterverweisen.
+  evidenz: {stufe: mittel, text: "Als evidenzbasierte Komponente vieler Behandlungs- und Präventionsprogramme anerkannt (Lukens & McFarlane 2004)."}
+  qualifikation: fortbildung
+  quellen: [q_lukens2004]
+
+- id: y_abc_modell
+  name: ABC-Modell und Gedankenprüfung
+  aliase: [Kognitive Umstrukturierung, Gedankenprotokoll, Gedankendetektiv]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [stress_gesundheit, sozial_emotional, beratung]
+  dauer: 20–45 Min.
+  kurz: "Nicht das Ereignis (A) selbst, sondern die Bewertung (B) bestimmt die Gefühle und Reaktionen (C). Belastende Gedanken werden erkannt, auf Belege geprüft und durch hilfreichere ersetzt."
+  ablauf:
+    - Situation (A), Gedanken (B), Gefühle/Verhalten (C) notieren.
+    - "Gedanken prüfen – Was spricht dafür, was dagegen? Was würde ich einer Freundin sagen?"
+    - Alternativen Gedanken formulieren und Gefühl neu einschätzen.
+  varianten:
+    - "Jugendliche: »Gedankendetektiv« mit Denkfallen-Karten (Schwarzweißdenken, Gedankenlesen)."
+  stolpersteine:
+    - Im pädagogischen Kontext nur als allgemeine Bewältigungsstrategie; bei Depression, Angststörung o. Ä. gehört es in therapeutische Hände.
+  evidenz: {stufe: stark, text: "Kernelement der kognitiven Verhaltenstherapie; Überblick über Metaanalysen (Hofmann et al. 2012) zeigt starke Wirksamkeit bei Angst, Depression und Stress."}
+  qualifikation: fachkraft
+  quellen: [q_ellis1962, q_beck2020, q_hofmann2012]
+
+- id: y_pmr
+  name: Progressive Muskelentspannung (PMR)
+  aliase: [Jacobson-Entspannung]
+  kategorie: psychologie
+  phasen: [hauptteil, abschluss]
+  setting: [plenum, einzel]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [stress_gesundheit]
+  dauer: 10–25 Min.
+  kurz: Muskelgruppen werden nacheinander bewusst angespannt (5–7 Sek.) und wieder gelöst (20–30 Sek.); dabei wird der Unterschied wahrgenommen.
+  ablauf:
+    - Bequeme Haltung; Ablauf erklären.
+    - Hände, Arme, Gesicht, Schultern, Bauch, Beine nacheinander anspannen und lösen.
+    - Langsam zurückkommen (Recken, Strecken, Augen öffnen).
+    - Regelmäßig üben, dann Kurzformen nutzen.
+  stolpersteine:
+    - "Bei Anspannung oder Krampfgefühlen die Übung stoppen und locker auslaufen lassen; nicht gegen den Körper arbeiten."
+    - "Mit Kindern kurz üben, sonst wird die Anleitung zum Spiel ohne Entspannungseffekt."
+  varianten:
+    - "Kinder: bildhafte Anleitungen (Zitrone auspressen, Schildkröte zieht Kopf ein)."
+  evidenz: {stufe: mittel, text: "Jacobson (1938); Standardverfahren in Stressbewältigungsprogrammen (z. B. Kaluza) und KVT, gut belegt zur Reduktion von Anspannung."}
+  qualifikation: alle
+  quellen: [q_jacobson1938, q_kaluza2018]
+
+- id: y_fantasiereise
+  name: Fantasiereise / Imaginationsübung
+  aliase: [Kapitän-Nemo-Geschichten, Geführte Imagination]
+  kategorie: psychologie
+  phasen: [abschluss, hauptteil]
+  setting: [plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [stress_gesundheit]
+  dauer: 5–15 Min.
+  kurz: Eine ruhig vorgelesene Geschichte führt in einen entspannten, sicheren Vorstellungsort; bei Kindern oft verbunden mit Selbstinstruktion (»Ich bin ruhig und mutig«).
+  ablauf:
+    - Ruhige Haltung, Augen schließen freiwillig.
+    - Geschichte langsam vorlesen.
+    - Achtsame Rückführung (bewegen, Augen öffnen).
+    - Kurze Austauschrunde (freiwillig).
+  varianten:
+    - "Kinder: Geschichte mit Tieren oder Abenteuer, Rückführung über Zählen und Bewegen."
+    - "Jugendliche: kurze Imagination als Ruhephase zwischen zwei Lernblöcken."
+    - "Digital: Geführte Imagination als Audio im Lernmanagementsystem zum Abspielen zu Hause."
+  stolpersteine:
+    - Inhalte neutral halten (kein Wasser bei Ängsten etc.); bei traumatisierten Kindern vorsichtig.
+  evidenz: {stufe: begrenzt, text: "Kapitän-Nemo-Geschichten (Petermann) im Rahmen kinderverhaltenstherapeutischer Entspannungsverfahren; begrenzte kontrollierte Studienlage."}
+  qualifikation: alle
+  quellen: [q_petermann2014]
+
+- id: y_achtsamkeit
+  name: Achtsamkeitsübungen
+  aliase: [Mindfulness, Body Scan, MBSR, MBCT]
+  kategorie: psychologie
+  phasen: [einstieg, hauptteil, abschluss]
+  setting: [plenum, einzel, kleingruppe]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [stress_gesundheit, sozial_emotional]
+  dauer: 3 Min. bis 8-Wochen-Kurs
+  kurz: Aufmerksamkeit wird absichtsvoll und nicht wertend auf den gegenwärtigen Moment gelenkt (Atem, Körper, Geräusche). Für Erwachsene als 8-Wochen-Programm (MBSR, MBCT).
+  ablauf:
+    - Kurze Übung (z. B. 3-Minuten-Atemraum, Geräusche wahrnehmen).
+    - Abschweifen bemerken und freundlich zurückkehren.
+    - Erfahrungen kurz austauschen.
+  varianten:
+    - "Kinder: 1-Minute-Geräuschereise im Klassenraum mit Augen offen."
+    - "Jugendliche: drei Minuten Atemraum vor einer Klassenarbeit oder Präsentation."
+    - "Erwachsene: Kurzübung zu Beginn einer Teamsitzung, Teilnahme freiwillig."
+  stolpersteine:
+    - Schulweite Achtsamkeitsprogramme für Jugendliche zeigten in großem RCT (MYRIAD) keine Vorteile gegenüber regulärem Unterricht.
+    - Kann bei Traumafolgestörungen belasten; Freiwilligkeit.
+  evidenz: {stufe: umstritten, text: "Bei Erwachsenen gut belegt (MBCT verringert Rückfälle bei Depression, Kuyken et al. 2016); bei Kindern/Jugendlichen kleine Effekte, die gegenüber aktiven Kontrollgruppen oft verschwinden (Dunning et al. 2019; Kuyken et al. 2022)."}
+  qualifikation: fortbildung
+  quellen: [q_kabatzinn1990, q_kuyken2016, q_dunning2019, q_kuyken2022]
+
+- id: y_stressbewaeltigung
+  name: Stressbewältigungstraining (Gruppe)
+  aliase: [Gelassen und sicher im Stress, Stress Inoculation Training]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [stress_gesundheit]
+  dauer: 8–12 Sitzungen à 90–120 Min.
+  kurz: "Manualisierte Gruppenkurse vermitteln drei Säulen: instrumentell (Probleme lösen, Zeitmanagement), mental (stressverschärfende Gedanken prüfen) und regenerativ (Entspannung, Genuss, Bewegung)."
+  ablauf:
+    - Psychoedukation über Stress.
+    - Entspannungsverfahren üben (PMR).
+    - Problemlösen und Gedanken prüfen.
+    - Erholung und soziale Unterstützung planen.
+  varianten:
+    - "Jugendliche: Kurs in Kooperation mit Schulpsychologie oder Beratungsstelle, Lehrkraft nur organisatorisch."
+    - "Erwachsene: Stressbewältigungskurs über die Krankenkasse oder Betriebsgesundheit, ohne Eigenleitung durch Laien."
+    - "Digital: Online-Kurs mit Begleitung einer qualifizierten Fachkraft."
+  stolpersteine:
+    - "Manualisierte Kurse sind Fachkräften vorbehalten; Lehrkräfte sollten Elemente nur allgemein nutzen und bei Belastung weiterverweisen."
+    - "Ohne Nachbereitung im Alltag verpufft der Kurs; Transfer planen."
+  evidenz: {stufe: mittel, text: "Kaluza-Programm evaluiert und in Deutschland krankenkassenzertifiziert; Stressimpfungstraining (Meichenbaum 1985) mit breiter Evidenz bei Angst und Stress."}
+  qualifikation: fachkraft
+  quellen: [q_kaluza2018, q_meichenbaum1985]
+
+- id: y_sel_programme
+  name: Programme sozial-emotionalen Lernens (SEL)
+  aliase: [Faustlos, Papilio, Klasse2000, Lions Quest, PATHS]
+  kategorie: psychologie
+  phasen: [uebergreifend]
+  setting: [plenum, kleingruppe]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [sozial_emotional, konflikt, stress_gesundheit]
+  dauer: Schuljahr(e), wöchentliche Einheiten
+  kurz: Strukturierte Curricula fördern Selbstwahrnehmung, Selbstregulation, soziale Wahrnehmung, Beziehungsfähigkeit und verantwortliche Entscheidungen (CASEL-Kompetenzen). Deutsche Beispiele – Papilio (Kita), Klasse2000 und Faustlos (Grundschule), Lions Quest (Sek I).
+  ablauf:
+    - Programm passend zu Alter und Bedarf wählen; Lehrkräfte fortbilden.
+    - Regelmäßige Einheiten (SAFE – sequenziert, aktiv, fokussiert, explizit).
+    - Gelerntes im Alltag aufgreifen (Klassenrat, Konflikte).
+  varianten:
+    - "Kinder: Papilio oder Faustlos mit festen Wochenstunden in der Grundschule."
+    - "Jugendliche: Lions Quest mit Klassenlehrkraft und Fortbildung im Kollegium."
+    - "Digital: Ergänzende Lernmodule zu sozialen Kompetenzen im Lernmanagementsystem."
+  stolpersteine:
+    - Wirkung hängt stark von Umsetzungstreue ab; vereinzelte Stunden bringen wenig.
+  evidenz: {stufe: stark, text: "Metaanalyse Durlak et al. (2011, 213 Programme): bessere soziale Kompetenzen, Einstellungen, Verhalten und +11 Perzentilränge Leistung, besonders bei SAFE-Programmen; EEF ca. +4 Monate."}
+  qualifikation: fortbildung
+  quellen: [q_durlak2011, q_casel, q_eef_sel, q_faustlos, q_papilio, q_klasse2000, q_lionsquest]
+
+- id: y_sozialkompetenz
+  name: Soziales Kompetenztraining (Gruppe)
+  aliase: [GSK, Selbstsicherheitstraining, Social Skills Training]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [kleingruppe]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [sozial_emotional, konflikt]
+  dauer: 6–10 Sitzungen
+  kurz: In Kleingruppen werden konkrete soziale Fertigkeiten (Nein sagen, Kontakt aufnehmen, Kritik äußern, Gefühle zeigen) erklärt, modelliert, im Rollenspiel geübt, mit Feedback verfeinert und als Hausaufgabe im Alltag angewendet.
+  ablauf:
+    - Fertigkeit erklären und begründen.
+    - Modell vormachen (Video oder Leitung).
+    - Rollenspiele mit Feedback.
+    - Übertragungsaufgaben in den Alltag und Nachbesprechung.
+  varianten:
+    - "Kinder: Rollenspiel zu Nein-Sagen oder Kontakt aufnehmen mit Bildkarten in Kleingruppen."
+    - "Jugendliche: Training zu Kritik äußern oder Gefühle zeigen in Kursform mit Fachleitung."
+    - "Digital: Übungsaufgaben in Partnerarbeit mit Video-Modell und Feedback durch die Gruppe."
+  stolpersteine:
+    - "Rollenspiele können bloßstellen; Freiwilligkeit und Ausstiegsmöglichkeit sichern."
+    - "Die Gruppenleitung sollte qualifiziert sein; bei tieferen Problemen an Fachkräfte verweisen."
+  evidenz: {stufe: stark, text: "Metaanalyse Beelmann et al. (1994): mittlere Effekte, am stärksten bei kombinierten, kognitiv-behavioralen Programmen; GSK (Hinsch & Pfingsten) als deutsches Standardmanual."}
+  qualifikation: fachkraft
+  quellen: [q_beelmann1994, q_hinsch2015]
+
+- id: y_angstpraevention
+  name: Angst- und Depressionsprävention (FRIENDS, Coping Cat, PRP)
+  aliase: [Resilienzprogramme, kognitiv-behaviorale Prävention]
+  kategorie: psychologie
+  phasen: [uebergreifend]
+  setting: [kleingruppe, plenum]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [stress_gesundheit, sozial_emotional, krise]
+  dauer: 10–12 Sitzungen
+  kurz: Manualisierte kognitiv-behaviorale Programme lehren Gefühle erkennen, Entspannung, hilfreiche Gedanken, Problemlösen und schrittweise Konfrontation mit Ängsten.
+  ablauf:
+    - Gefühle und Körpersignale erkennen.
+    - Entspannung und Atemtechniken.
+    - Hilfreiche Selbstgespräche üben.
+    - Problemlösen; gestufte Mut-Schritte; Belohnung.
+  varianten:
+    - "Kinder: Gefühlskarten und Mut-Leiter mit kleinen Schritten, Umsetzung durch Fachkraft in der Schule."
+    - "Jugendliche: Präventionsreihe im Klassenverband in Absprache mit der Schulpsychologie."
+    - "Eltern: Information über Programmelemente wie Entspannung zu Hause, ohne Übernahme klinischer Techniken."
+  stolpersteine:
+    - Universelle Prävention zeigt kleinere Effekte als gezielte Programme für belastete Kinder.
+  evidenz: {stufe: mittel, text: "Coping Cat in RCTs wirksam (Kendall 1994); FRIENDS universell mit Präventionseffekten (Barrett & Turner 2001); Penn Resiliency Program metaanalytisch kleine Effekte, die nachlassen (Brunwasser et al. 2009)."}
+  qualifikation: fachkraft
+  quellen: [q_kendall1994, q_barrett2001, q_brunwasser2009]
+
+- id: y_mi
+  name: Motivierende Gesprächsführung (MI)
+  aliase: [Motivational Interviewing, OARS]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [beratung, motivation]
+  dauer: 15–50 Min.
+  kurz: Partnerschaftlicher Gesprächsstil, der die eigenen Gründe einer Person für Veränderung hervorlockt und Ambivalenz auflöst, statt zu überreden. Kernfertigkeiten OARS – offene Fragen, Würdigung, reflektierendes Zuhören, Zusammenfassen.
+  ablauf:
+    - Beziehung aufbauen (Engaging).
+    - Fokus finden (Focusing).
+    - Veränderungssprache hervorlocken (Evoking), z. B. Skalenfrage »Wie wichtig ist es dir, 0–10? Warum nicht niedriger?«.
+    - Planen (Planning), wenn Bereitschaft da ist.
+  varianten:
+    - "Jugendliche: Skalenfrage im Einzelgespräch zu einem selbst gewählten Ziel, z. B. Lernroutine."
+    - "Erwachsene: OARS-Gesprächsführung in Beratungsgesprächen mit Kolleg·innen nach Schulung."
+    - "Digital: Gesprächsfragen als Vorlage für Videogespräche mit Lernbegleitung."
+  stolpersteine:
+    - »Righting reflex« – der Drang, sofort Lösungen zu liefern – erzeugt Widerstand.
+  evidenz: {stufe: stark, text: "Metaanalyse Lundahl et al. (2010, 119 Studien): kleine bis mittlere, robuste Effekte über viele Problembereiche; im Schulkontext zunehmend erprobt."}
+  qualifikation: fortbildung
+  quellen: [q_miller2013, q_lundahl2010]
+
+- id: y_loesungsfokus
+  name: Lösungsfokussierte Gesprächsführung
+  aliase: [Skalierungsfrage, Wunderfrage, Ausnahmen finden, SFBT]
+  kategorie: psychologie
+  phasen: [einstieg, hauptteil, abschluss]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [beratung, motivation, konflikt]
+  dauer: 10–45 Min.
+  kurz: Statt Problemursachen zu analysieren, richtet sich das Gespräch auf Ziele, vorhandene Ressourcen und Ausnahmen (»Wann war es schon einmal etwas besser?«).
+  ablauf:
+    - "Skalierungsfrage – »Auf 0–10, wo stehst du? Was macht es zu einer 4 statt einer 3? Was wäre ein kleiner Schritt zu 5?«"
+    - "Wunderfrage – »Angenommen, über Nacht wäre das Problem gelöst – woran würdest du es morgen als Erstes merken?«"
+    - Ausnahmen erfragen und verstärken.
+    - Komplimente und eine kleine Beobachtungs- oder Handlungsaufgabe.
+  varianten:
+    - "Jugendliche: Wunderfrage zu einem Konflikt im Klassenzimmer, Ausnahmen gemeinsam suchen."
+    - "Erwachsene: Skalenfragen in Coaching- oder Beratungsgesprächen im Team."
+    - "Digital: Fragenkarten für Kurzgespräche per Videoschalte."
+  stolpersteine:
+    - "Probleme werden kleingeredet, wenn Ausnahmen zu schnell gesucht werden; Belastung ernst nehmen."
+  evidenz: {stufe: mittel, text: "Review Kim & Franklin (2009): positive Effekte in Schulen auf Verhalten und Emotionen; Studienqualität gemischt; im Schulalltag als Kurzgesprächstechnik gut einsetzbar."}
+  qualifikation: fortbildung
+  quellen: [q_deshazer1985, q_kim2009]
+
+- id: y_coaching_grow
+  name: Coaching nach GROW
+  aliase: [Goal – Reality – Options – Will]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel, partner]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [beratung, motivation, reflexion]
+  dauer: 30–60 Min.
+  kurz: "Gesprächsstruktur in vier Phasen: Ziel (Was willst du erreichen?), Realität (Wo stehst du?), Optionen (Was könntest du tun?), Wille (Was wirst du wann tun?)."
+  ablauf:
+    - Ziel für das Gespräch und langfristig klären.
+    - Ist-Situation ohne Bewertung erkunden.
+    - Möglichst viele Optionen sammeln.
+    - Konkrete Verpflichtung mit Termin; Hindernisse vorwegnehmen.
+  varianten:
+    - "Jugendliche: GROW-Gespräch zur Vorbereitung auf eine Prüfung oder Bewerbung."
+    - "Erwachsene: GROW-Coaching für Entwicklungsziele im Berufsalltag mit Lernpartner."
+    - "Digital: GROW-Gespräch per Videoschalte mit Vorlage im Dokument."
+  stolpersteine:
+    - "Ziele werden von der Begleitung vorgegeben statt erfragt; Ziel immer von der Person formulieren lassen."
+    - "Ohne verbindlichen Schritt bleibt das Gespräch folgenlos; Termin und Schritt notieren."
+  evidenz: {stufe: mittel, text: "Metaanalyse Theeboom et al. (2014): Coaching im Organisationskontext verbessert Leistung, Wohlbefinden, Bewältigung und Zielerreichung (mittlere Effekte)."}
+  qualifikation: fortbildung
+  quellen: [q_whitmore1992, q_theeboom2014]
+
+- id: y_systemisch_fragen
+  name: Systemische Fragetechniken
+  aliase: [Zirkuläre Fragen, Hypothetische Fragen, Reframing]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [beratung, konflikt, teamentwicklung]
+  dauer: Gesprächstechnik
+  kurz: "Fragen, die Perspektiven verflüssigen: zirkulär (»Was glaubst du, denkt deine Mutter, wenn du …?«), hypothetisch (»Was wäre, wenn …?«), Unterschiede (»Wer leidet am meisten?«) und Umdeutungen (Reframing)."
+  ablauf:
+    - Hypothesen über Wechselwirkungen bilden.
+    - Zirkulär und unterschiedsorientiert fragen.
+    - Neue Sichtweisen anbieten, nicht verordnen.
+  varianten:
+    - "Jugendliche: zirkuläre Frage zu einem Konflikt, z. B. »Was denkt deine Schwester dazu?«."
+    - "Erwachsene: hypothetische Fragen in Teamkonflikten zur Perspektivübernahme."
+    - "Digital: Fragenkarten als Hilfe für Gespräche im Videoraum."
+  stolpersteine:
+    - "Fragen wirken konfrontierend, wenn sie zu schnell kommen; Tempo und Beziehung beachten."
+  evidenz: {stufe: mittel, text: "Grundlagen bei Selvini Palazzoli et al. (1980); systemische Therapie ist in Deutschland als wissenschaftlich anerkanntes Verfahren eingestuft; einzelne Techniken im pädagogischen Kontext kaum isoliert untersucht."}
+  qualifikation: fortbildung
+  quellen: [q_selvini1980, q_schweitzer2007]
+
+- id: y_reflecting_team
+  name: Reflektierendes Team
+  aliase: [Reflecting Team]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [kleingruppe]
+  zielgruppen: [erwachsene, jugendliche]
+  anwendung: [beratung, reflexion]
+  dauer: 30–60 Min.
+  kurz: Eine Beratungsgruppe spricht in Anwesenheit der Ratsuchenden über deren Anliegen, als wären sie nicht da; die Ratsuchenden hören zu und nehmen danach Stellung.
+  ablauf:
+    - Gespräch Berater·in – Ratsuchende (Team hört zu).
+    - Team reflektiert untereinander wertschätzend und tentativ (»Ich frage mich, ob …«).
+    - Ratsuchende kommentieren, was hilfreich war.
+  varianten:
+    - "Erwachsene: Reflektierendes Team in der Supervision mit klarer Rollenverteilung."
+    - "Jugendliche: Kleines Format in Projektgruppen mit Beobachtenden und anschließender Antwort."
+    - "Digital: Reflektierendes Team im Videoraum mit getrennten Gruppen."
+  stolpersteine:
+    - "Die Ratsuchenden werden zum Objekt; Rückmeldung und Stellungnahme aktiv einfordern."
+    - "Das Team spricht zu wertend; tentative Formulierungen einüben."
+  evidenz: {stufe: begrenzt, text: "Von Tom Andersen (1987) eingeführt; in Fallberatung und Supervision verbreitet, wenige Wirksamkeitsstudien."}
+  qualifikation: fortbildung
+  quellen: [q_andersen1987]
+
+- id: y_genogramm
+  name: Genogramm / Netzwerkkarte
+  aliase: [Familienstammbaum, Ecomap, VIP-Karte]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [beratung, beziehung]
+  dauer: 30–60 Min.
+  kurz: Familienbeziehungen bzw. das soziale Netz einer Person werden grafisch dargestellt, um Muster und Ressourcen sichtbar zu machen.
+  ablauf:
+    - Symbole erklären; Person in die Mitte.
+    - Beziehungen und Nähe einzeichnen.
+    - Ressourcen und Belastungen markieren.
+  varianten:
+    - "Jugendliche: Netzwerkkarte mit Freund·innen, Familie und Schule in geschütztem Einzelgespräch."
+    - "Erwachsene: Netzwerkkarte in Beratungen, Fachkraft leitet an."
+    - "Digital: Netzkarte im Whiteboard, nur für die Beratungsperson sichtbar."
+  stolpersteine:
+    - Kann belastende Themen öffnen; nur in geschütztem Beratungsrahmen.
+  evidenz: {stufe: praxis, text: "Diagnostisches Standardwerkzeug systemischer Beratung (McGoldrick & Gerson 1985)."}
+  qualifikation: fachkraft
+  quellen: [q_mcgoldrick1985]
+
+- id: y_verstaerkerplan
+  name: Verstärkerplan / Token-System
+  aliase: [Punkteplan, Token Economy]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel, plenum]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [klassenfuehrung]
+  dauer: Wochen
+  kurz: Für genau definiertes Zielverhalten gibt es sofort Punkte/Marken, die später gegen vereinbarte Verstärker eingetauscht werden; der Plan wird schrittweise ausgeschlichen.
+  ablauf:
+    - 1–3 Zielverhalten positiv und beobachtbar definieren.
+    - Verstärker mit dem Kind auswählen.
+    - Sofort und konsequent Punkte vergeben; Eintausch regelmäßig.
+    - Kriterien steigern, dann ausschleichen und durch soziale Verstärkung ersetzen.
+  varianten:
+    - "Kinder: Punktekarte mit Sticker, Eintausch gegen eine kleine Belohnung am Freitag."
+    - "Jugendliche: Punkteplan mit selbstgewählten Verstärkern und Wochenauswertung."
+    - "Digital: Punktestand im Lernmanagementsystem als Fortschrittsanzeige."
+  stolpersteine:
+    - Belohnung bereits intrinsisch motivierter Tätigkeiten kann Motivation senken.
+    - Punkteabzug (response cost) nur gezielt und gut begründet.
+  evidenz: {stufe: mittel, text: "Systematisches Review Maggin et al. (2011): Token-Systeme gelten als vielversprechend, aber die Studienqualität ist uneinheitlich; Bestandteil wirksamer ADHS-Programme (THOP)."}
+  qualifikation: fortbildung
+  quellen: [q_maggin2011, q_doepfner2019]
+
+- id: y_daily_report_card
+  name: Tagesbeurteilungsbogen (Daily Report Card)
+  aliase: [Verhaltensbogen, Schule-Eltern-Karte]
+  kategorie: psychologie
+  phasen: [abschluss]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [klassenfuehrung, beziehung]
+  dauer: 2 Min. täglich
+  kurz: Lehrkraft bewertet täglich 2–4 individuell vereinbarte Verhaltensziele; der Bogen geht nach Hause, und Eltern verstärken erreichte Ziele.
+  ablauf:
+    - Ziele mit Kind, Eltern und Lehrkraft festlegen.
+    - Täglich am Stundenende ankreuzen.
+    - Eltern belohnen nach vereinbarter Regel.
+    - Ziele anpassen, sobald erreicht.
+  varianten:
+    - "Kinder: Tagesbogen mit drei Symbolen für Ziele, Abhaken am Stundenende."
+    - "Jugendliche: Bogen mit eigenen Zielen, Selbsteinschätzung und Lehrkraftbewertung."
+    - "Digital: Bogen als Formular, das Eltern am Abend sehen."
+  stolpersteine:
+    - "Der Bogen wird als Strafe erlebt, wenn er nur Defizite zeigt; positive Ziele zuerst wählen."
+  evidenz: {stufe: mittel, text: "Fabiano et al. (2010): Verbesserungen bei Kindern mit ADHS im RCT; Bestandteil der Leitlinienempfehlungen zu ADHS in der Schule."}
+  qualifikation: fortbildung
+  quellen: [q_fabiano2010, q_doepfner2019]
+
+- id: y_funktionale_analyse
+  name: Verhaltensanalyse (A-B-C / SORKC)
+  aliase: [Funktionale Verhaltensanalyse, Antecedent – Behavior – Consequence]
+  kategorie: psychologie
+  phasen: [uebergreifend]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [klassenfuehrung, diagnose]
+  dauer: Beobachtung über 1–2 Wochen
+  kurz: Problemverhalten wird mit seinen Auslösern (A) und Folgen (C) beobachtet, um seine Funktion zu verstehen (z. B. Aufmerksamkeit bekommen, Aufgabe vermeiden). Darauf baut eine Intervention, die dieselbe Funktion mit angemessenem Verhalten erfüllt.
+  ablauf:
+    - Verhalten konkret beschreiben.
+    - Beobachtungsbogen – Wann, wo, was vorher, was danach?
+    - Hypothese zur Funktion bilden.
+    - Auslöser verändern, Ersatzverhalten lehren, Konsequenzen anpassen.
+  varianten:
+    - "Kinder: Beobachtungsbogen im Klassenzimmer zu Auslösern und Folgen eines Problemverhaltens."
+    - "Jugendliche: Gespräch mit Lernenden über Muster, gemeinsam Hypothesen bilden."
+    - "Digital: Beobachtungsprotokoll im Dokument mit Datum und Zeit."
+  stolpersteine:
+    - "Die Hypothese wird vorschnell als Wahrheit genommen; mit Kolleg·innen prüfen."
+    - "Eine Verhaltensanalyse braucht Zeit und Beobachtung; nicht aus einer Momentaufnahme schließen."
+  evidenz: {stufe: mittel, text: "Grundlage verhaltenstherapeutischer und PBIS-Interventionen; schulweite PBIS-Programme zeigen weniger Verweise und Suspendierungen (Bradshaw et al. 2010)."}
+  qualifikation: fortbildung
+  quellen: [q_bradshaw2010, q_doepfner2019]
+
+- id: y_drei_gute_dinge
+  name: Drei gute Dinge / Dankbarkeitstagebuch
+  aliase: [Three Good Things, Gratitude Journal, Dankbarkeitsbrief]
+  kategorie: psychologie
+  phasen: [abschluss]
+  setting: [einzel, plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [stress_gesundheit, sozial_emotional]
+  dauer: 5 Min.
+  kurz: Am Ende des Tages oder der Woche notieren Teilnehmende drei Dinge, die gut gelaufen sind, und warum.
+  ablauf:
+    - Drei konkrete positive Ereignisse notieren.
+    - Zu jedem – Warum ist das passiert? Was war mein Anteil?
+    - Regelmäßig (z. B. eine Woche täglich oder wöchentlich).
+  varianten:
+    - "Kinder: drei Sonnen-Sticker am Tagesende statt Schreiben."
+    - "Jugendliche: Dankbarkeitsnotiz im Heft, freiwillig und ohne Kontrolle."
+    - "Digital: kurze Notiz in einer App oder Dokument, privat."
+  stolpersteine:
+    - Verordnete Dankbarkeit wirkt hohl; freiwillig und ohne Bewertung.
+  evidenz: {stufe: mittel, text: "Seligman et al. (2005) mit Effekten auf Wohlbefinden über Monate; Metaanalyse Davis et al. (2016): Dankbarkeitsinterventionen wirken kleiner als erhofft, ähnlich wie andere positive Aktivitäten."}
+  qualifikation: alle
+  quellen: [q_seligman2005, q_emmons2003, q_davis2016]
+
+- id: y_staerken
+  name: Stärkenarbeit (Charakterstärken)
+  aliase: [VIA-Stärken, Stärkenbrille, Ressourcenorientierung]
+  kategorie: psychologie
+  phasen: [hauptteil, abschluss]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [sozial_emotional, motivation, beziehung]
+  dauer: 20–45 Min.
+  kurz: Teilnehmende identifizieren ihre Signaturstärken (z. B. Neugier, Humor, Fairness) und planen, sie bewusst auf neue Weise einzusetzen; Gruppen benennen einander gegenseitig Stärken.
+  ablauf:
+    - Stärkenliste/Bildkarten vorstellen.
+    - Eigene Top-3 wählen (oder Fragebogen).
+    - Mitschüler·innen bestätigen mit konkreten Beispielen.
+    - Eine Stärke diese Woche neu einsetzen.
+  varianten:
+    - "Kinder: Stärkenkarten mit Bildern, Mitschüler·innen benennen eine Stärke des anderen."
+    - "Jugendliche: Stärken-Fragebogen mit Gespräch, Stärke im Schulalltag bewusst einsetzen."
+    - "Digital: Stärken-Abfrage mit Rückmeldung im Chat."
+  stolpersteine:
+    - "Stärkenrückmeldungen werden zur Pflicht und wirken gezwungen; Freiwilligkeit achten."
+  evidenz: {stufe: mittel, text: "Klassifikation nach Peterson & Seligman (2004); Metaanalyse Bolier et al. (2013): positive-psychologische Interventionen mit kleinen Effekten auf Wohlbefinden und Depression."}
+  qualifikation: alle
+  quellen: [q_peterson2004, q_bolier2013]
+
+- id: y_selbstmitgefuehl
+  name: Selbstmitgefühl
+  aliase: [Self-Compassion-Übung, Freundlicher Brief an sich selbst]
+  kategorie: psychologie
+  phasen: [hauptteil, abschluss]
+  setting: [einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [stress_gesundheit, sozial_emotional]
+  dauer: 5–15 Min.
+  kurz: "Bei Fehlern oder Belastung behandelt man sich wie eine gute Freundin: Achtsamkeit (Das ist gerade schwer), gemeinsames Menschsein (Anderen geht es auch so), Freundlichkeit (Was brauche ich jetzt?)."
+  ablauf:
+    - Schwierige Situation erinnern.
+    - Drei Sätze für die drei Komponenten formulieren.
+    - Brief an sich selbst aus Sicht einer wohlwollenden Freundin.
+  varianten:
+    - "Jugendliche: Brief an sich selbst nach einer schlechten Note oder Streit."
+    - "Erwachsene: Selbstmitgefühls-Sätze nach einem Fehler im Berufsalltag."
+    - "Digital: Brief als privates Dokument oder Audionachricht."
+  stolpersteine:
+    - "Die Übung kann Schuld verstärken, wenn Selbstkritik stark ist; bei starker Belastung Fachkraft einbeziehen."
+  evidenz: {stufe: mittel, text: "Konzept nach Neff (2003); Interventionsstudien zeigen weniger Selbstkritik, Angst und Depressivität (überwiegend Erwachsene)."}
+  qualifikation: alle
+  quellen: [q_neff2003]
+
+- id: y_expressives_schreiben
+  name: Expressives Schreiben
+  aliase: [Pennebaker-Schreiben, Schreiben über belastende Erfahrungen]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [stress_gesundheit, krise]
+  dauer: 3–4 Tage × 15–20 Min.
+  kurz: An mehreren aufeinanderfolgenden Tagen schreibt man 15–20 Minuten über tiefste Gedanken und Gefühle zu einer belastenden Erfahrung, ohne auf Form zu achten.
+  ablauf:
+    - Ruhiger Ort, private Texte (werden nicht gelesen).
+    - An 3–4 Tagen schreiben.
+    - Kurz danach können Gefühle stärker sein; das ist normal.
+  varianten:
+    - "Jugendliche: Schreiben über belastende Erfahrung nur auf freiwilliger Basis und ohne Verpflichtung."
+    - "Erwachsene: Schreibübung als Ergänzung zu Beratung, eigenständig zu Hause."
+    - "Digital: Schreibjournal in privatem Dokument ohne Lesen durch andere."
+  stolpersteine:
+    - Nicht unmittelbar nach akuten Traumata; nicht im Klassenverband verpflichtend.
+  evidenz: {stufe: mittel, text: "Pennebaker & Beall (1986); Metaanalyse Frattaroli (2006): kleine, aber signifikante Effekte auf Gesundheit und Wohlbefinden."}
+  qualifikation: fortbildung
+  quellen: [q_pennebaker1986, q_frattaroli2006]
+
+- id: y_verhaltensaktivierung
+  name: Aktivitätenplanung (Verhaltensaktivierung)
+  aliase: [Behavioral Activation, Wochenplan mit angenehmen Aktivitäten]
+  kategorie: psychologie
+  phasen: [hauptteil, abschluss]
+  setting: [einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [stress_gesundheit, motivation]
+  dauer: über Wochen
+  kurz: Aktivitäten, die Freude oder Bewältigungserleben bringen, werden geplant und durchgeführt; Stimmung und Aktivität werden protokolliert, um den Zusammenhang erfahrbar zu machen.
+  ablauf:
+    - Aktivitätenliste (angenehm, sinnstiftend).
+    - Wochenplan mit kleinen Schritten.
+    - Stimmung vor/nach notieren.
+    - Plan anpassen.
+  varianten:
+    - "Jugendliche: Wochenplan mit kleinen angenehmen Aktivitäten, gemeinsam mit Fachkraft erstellt."
+    - "Erwachsene: Aktivitätenplanung als Ergänzung in einer Beratung oder Therapie."
+    - "Digital: Aktivitätenliste als Dokument mit Stimmungsprotokoll."
+  stolpersteine:
+    - Bei Hinweisen auf Depression an Fachpersonen verweisen; im Schulkontext nur präventiv/allgemein.
+  evidenz: {stufe: stark, text: "Metaanalyse Cuijpers et al. (2007): Verhaltensaktivierung bei Depression so wirksam wie KVT."}
+  qualifikation: fachkraft
+  quellen: [q_cuijpers2007]
+
+- id: y_act
+  name: Werte und Akzeptanz (ACT-Übungen)
+  aliase: [Acceptance and Commitment, Gedanken-Defusion, Werte-Kompass]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [stress_gesundheit, motivation]
+  dauer: 15–30 Min.
+  kurz: "Unangenehme Gedanken werden nicht bekämpft, sondern mit Abstand betrachtet (»Ich habe den Gedanken, dass …«), und Handeln wird an persönlichen Werten ausgerichtet."
+  ablauf:
+    - Werte klären (Was ist mir wirklich wichtig?).
+    - Defusionsübung (Gedanken als Blätter auf einem Fluss).
+    - Kleine werteorientierte Handlung planen.
+  varianten:
+    - "Jugendliche: Werte-Kompass in einer Schreibübung, Gedanken als Wolken oder Blätter benennen."
+    - "Erwachsene: ACT-Übung im Coaching nach Schulung, Fokus auf persönliche Werte."
+    - "Digital: Defusionsübung mit Bildsprache per Audio in geschützter Begleitung."
+  stolpersteine:
+    - "Übungen gehören in fachliche Begleitung; Lehrkräfte sollten Werteübungen nur allgemein einsetzen."
+  evidenz: {stufe: mittel, text: "ACT (Hayes et al. 2012) mit zahlreichen RCTs bei Erwachsenen; bei Jugendlichen weniger Forschung."}
+  qualifikation: fachkraft
+  quellen: [q_hayes2012]
+
+- id: y_dbt_skills
+  name: Skills-Training (DBT)
+  aliase: [Notfallkoffer, Spannungskurve, Stresstoleranz-Skills]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [kleingruppe, einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [stress_gesundheit, sozial_emotional, krise]
+  dauer: Gruppe über Monate
+  kurz: Fertigkeiten in vier Modulen – Achtsamkeit, Stresstoleranz, Emotionsregulation, zwischenmenschliche Wirksamkeit. Ein »Skills-Koffer« mit starken Sinnesreizen (Eis, Igelball) hilft bei hoher Anspannung.
+  ablauf:
+    - Spannungskurve kennenlernen (0–100).
+    - Passende Skills für verschiedene Spannungsniveaus sammeln.
+    - Notfallkoffer zusammenstellen und üben.
+  varianten:
+    - "Jugendliche: Spannungskurve als Schaubild im Klassenraum, Einzelgespräch zur Auswahl von Skills."
+    - "Erwachsene: Stresstoleranz-Skills nach Kursbesuch in der Beratung."
+    - "Digital: Skills-Karten im Lernmanagementsystem als Ergänzung zur Therapie."
+  stolpersteine:
+    - Ursprünglich für Borderline-Störungen entwickelt; Gruppen gehören in therapeutische Hand. Einzelne Ideen (Spannungskurve) sind pädagogisch nutzbar.
+  evidenz: {stufe: stark, text: "DBT (Linehan 2015) bei Selbstverletzung und emotionaler Instabilität gut belegt; DBT-A für Jugendliche in RCTs wirksam."}
+  qualifikation: fachkraft
+  quellen: [q_linehan2015]
+
+- id: y_psych_erste_hilfe
+  name: Psychologische Erste Hilfe
+  aliase: [Psychological First Aid, Look – Listen – Link]
+  kategorie: psychologie
+  phasen: [uebergreifend]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [krise]
+  dauer: situativ
+  kurz: "Unterstützung unmittelbar nach belastenden Ereignissen: Sicherheit herstellen, Grundbedürfnisse sichern, zuhören ohne zu drängen, beruhigen, mit Hilfe vernetzen. Prinzipien: Schauen – Zuhören – Verbinden."
+  ablauf:
+    - "Look: Sicherheit prüfen, wer braucht dringend Hilfe?"
+    - "Listen: Kontakt aufnehmen, zuhören, nicht zum Erzählen drängen, beruhigen."
+    - "Link: Grundbedürfnisse, Informationen, Angehörige, Fachhilfe vermitteln."
+  varianten:
+    - "Jugendliche: Ansprechpersonen und Notrufnummern auf Karte in Klassenzimmer und Schultasche."
+    - "Erwachsene: Schulung im Kollegium zu ersten Schritten nach Krisen mit Krisenplan der Schule."
+    - "Digital: Kontaktliste der Beratungsstellen als Dokument für alle Beteiligten."
+  stolpersteine:
+    - Kein Debriefing mit Zwang zum detaillierten Erzählen (kann schaden).
+    - Schulen brauchen einen Krisenplan und Kontakte zum schulpsychologischen Dienst.
+  evidenz: {stufe: mittel, text: "Von WHO (2011) empfohlener Konsensansatz auf Basis von Expertenwissen und Forschung zu Risiko- und Schutzfaktoren; Wirksamkeitsstudien begrenzt."}
+  qualifikation: fortbildung
+  quellen: [q_who2011]
+
+- id: y_sdq
+  name: Screening mit Fragebögen (SDQ, WHO-5)
+  aliase: [Stärken-und-Schwächen-Fragebogen, Wohlbefindens-Index]
+  kategorie: psychologie
+  phasen: [uebergreifend]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [diagnose, stress_gesundheit]
+  dauer: 5–10 Min.
+  kurz: Kurze, validierte Fragebögen geben Hinweise auf emotionale und Verhaltensauffälligkeiten (SDQ, 25 Items, 4–17 Jahre, Eltern-, Lehrkraft- und Selbstversion) oder auf Wohlbefinden (WHO-5, 5 Items).
+  ablauf:
+    - Zweck, Einwilligung und Datenschutz klären.
+    - Fragebogen ausfüllen; mit Normwerten auswerten.
+    - Auffällige Werte nur als Anlass für Gespräch und Weitervermittlung nutzen – keine Diagnose.
+  varianten:
+    - "Kinder: Fragebogen nur durch geschulte Fachkraft ausgewertet, Eltern vorab informiert."
+    - "Jugendliche: Selbstversion im Rahmen der Schulberatung mit Einwilligung."
+    - "Digital: Online-Version nur mit Datenschutzkonzept und Zugang für Fachpersonen."
+  stolpersteine:
+    - Screenings ohne Unterstützungsangebot sind ethisch problematisch.
+  evidenz: {stufe: stark, text: "SDQ (Goodman 1997) und WHO-5 (Topp et al. 2015) sind international validiert und frei verfügbar."}
+  qualifikation: fachkraft
+  quellen: [q_goodman1997, q_topp2015]
+
+- id: y_psych_sicherheit
+  name: Psychologische Sicherheit im Team
+  aliase: [Psychological Safety, Fehlerkultur]
+  kategorie: psychologie
+  phasen: [uebergreifend]
+  setting: [kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [teamentwicklung, beziehung, reflexion]
+  dauer: Haltung
+  kurz: Teams lernen besser, wenn Mitglieder glauben, dass sie Fragen, Fehler und Bedenken ohne Bloßstellung äußern können. Leitende fördern das, indem sie eigene Unsicherheit zeigen, Fragen einladen und auf Fehler lernend reagieren.
+  ablauf:
+    - Arbeit als Lernproblem rahmen (»Wir wissen noch nicht alles«).
+    - Eigene Fehlbarkeit zeigen.
+    - Neugierig fragen; Beiträge würdigen.
+    - Auf Fehler und schlechte Nachrichten wertschätzend reagieren.
+  varianten:
+    - "Jugendliche: Projektgruppe mit festen Fragerunden und Fehlerreflexion nach Abgaben."
+    - "Erwachsene: Teamleitung zeigt eigene Unsicherheit in Sitzungen und lädt zu Fragen ein."
+    - "Digital: anonyme Fragekarte im Teamkanal für Bedenken."
+  stolpersteine:
+    - "Psychologische Sicherheit entsteht nicht durch Ankündigung; Verhalten der Leitung entscheidet."
+  evidenz: {stufe: stark, text: "Edmondson (1999) und zahlreiche Folgestudien: psychologische Sicherheit sagt Lernverhalten und Teamleistung vorher."}
+  qualifikation: alle
+  quellen: [q_edmondson1999]
+
+- id: y_gruppenphasen
+  name: Gruppenphasen begleiten (Tuckman)
+  aliase: [Forming – Storming – Norming – Performing – Adjourning]
+  kategorie: psychologie
+  phasen: [uebergreifend]
+  setting: [kleingruppe, plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [teamentwicklung, klassenfuehrung]
+  dauer: Prozessmodell
+  kurz: Gruppen durchlaufen typischerweise Orientierung, Konflikt, Normbildung, Arbeitsfähigkeit und Auflösung. Leitung passt ihr Verhalten an – anfangs Struktur geben, Konflikte zulassen und moderieren, später Verantwortung übergeben, am Ende bewusst abschließen.
+  ablauf:
+    - "Forming: Kennenlernen, Ziele, klare Struktur."
+    - "Storming: Konflikte als normal benennen, Regeln aushandeln."
+    - "Norming: Vereinbarungen festigen, Rollen klären."
+    - "Performing: Selbststeuerung ermöglichen, Leitung tritt zurück."
+    - "Adjourning: Abschluss und Würdigung."
+  varianten:
+    - "Kinder: Klassenstart mit Kennenlernen, Regeln im Storming-Moment besprechen."
+    - "Jugendliche: Projektgruppe mit Rollenklärung in der Normbildung."
+    - "Erwachsene: Teamentwicklung über Phasen mit bewusster Abschlussrunde."
+  stolpersteine:
+    - Phasen verlaufen nicht linear; das Modell ist eine Orientierungshilfe, kein Gesetz.
+  evidenz: {stufe: begrenzt, text: "Tuckman (1965) synthetisierte Literatur v. a. zu Therapie- und Laborgruppen; empirische Bestätigung der festen Abfolge ist begrenzt, als Heuristik nützlich."}
+  qualifikation: alle
+  quellen: [q_tuckman1965, q_tuckman1977]
+
+- id: y_johari
+  name: Johari-Fenster (Feedback in Gruppen)
+  aliase: [Selbst- und Fremdbild]
+  kategorie: psychologie
+  phasen: [hauptteil, abschluss]
+  setting: [kleingruppe, partner]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [reflexion, teamentwicklung]
+  dauer: 30–60 Min.
+  kurz: "Vier Felder: öffentlich (mir und anderen bekannt), blinder Fleck (nur anderen bekannt), verborgen (nur mir bekannt), unbekannt. Feedback verkleinert den blinden Fleck, Selbstöffnung das Verborgene."
+  ablauf:
+    - Modell erklären.
+    - Selbst- und Fremdeinschätzung mit Eigenschaftsliste.
+    - Vergleich in Paaren mit Feedbackregeln.
+  varianten:
+    - "Jugendliche: Johari-Fenster mit Eigenschaftswörtern in Partnerarbeit."
+    - "Erwachsene: Feedbackrunde im Team mit Eigenschaftsliste und Feedbackregeln."
+    - "Digital: Eigenschaftsliste als Formular mit Auswertung der Fremdeinschätzung."
+  stolpersteine:
+    - "Feedback wird verletzend, wenn es nicht auf beobachtbares Verhalten bezogen ist; Ich-Botschaften und Konkretheit einüben."
+  evidenz: {stufe: praxis, text: "Heuristisches Modell (Luft & Ingham 1955) für Feedback-Trainings; nicht als empirisches Messinstrument gedacht."}
+  qualifikation: alle
+  quellen: [q_luft1955]
+
+- id: y_yalom_wirkfaktoren
+  name: Wirkfaktoren der Gruppe nutzen
+  aliase: [Yaloms Wirkfaktoren, Universalität, Hoffnung, Kohäsion]
+  kategorie: psychologie
+  phasen: [uebergreifend]
+  setting: [kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [beratung, stress_gesundheit, teamentwicklung]
+  dauer: Leitungshaltung
+  kurz: Gruppen wirken u. a. durch Hoffnung, Universalität (»Ich bin nicht allein«), Informationsvermittlung, Altruismus, Kohäsion und soziales Lernen. Leitende in Selbsthilfe-, Eltern- oder Trainingsgruppen können diese Faktoren gezielt stärken.
+  ablauf:
+    - Gemeinsamkeiten sichtbar machen (Universalität).
+    - Teilnehmende einander helfen lassen (Altruismus).
+    - Erfolgsgeschichten teilen (Hoffnung).
+    - Zusammenhalt pflegen (Rituale, Regeln).
+  varianten:
+    - "Erwachsene: Elterngruppe oder Selbsthilfegruppe mit fachlicher Leitung, gegenseitige Unterstützung gezielt fördern."
+    - "Jugendliche: Trainingsgruppe mit Rückmeldungsrunden, Leitung durch Fachkraft."
+    - "Digital: Gruppe im Videoraum mit fester Moderation und Gesprächsregeln."
+  stolpersteine:
+    - "Gruppen mit psychischen Belastungen gehören in qualifizierte Leitung; Laienleitung kann schaden."
+    - "Die Gruppe darf nicht zur Bewertung einzelner Personen werden; Vertraulichkeit vereinbaren."
+  evidenz: {stufe: mittel, text: "Yalom & Leszcz (2005) systematisieren Wirkfaktoren; Gruppentherapien sind metaanalytisch ähnlich wirksam wie Einzeltherapien, Kohäsion ist ein robuster Prädiktor."}
+  qualifikation: fachkraft
+  quellen: [q_yalom2005]
+
+- id: y_elterntraining
+  name: Elterntraining (Triple P u. a.)
+  aliase: [Positive Erziehung, Elternkurs]
+  kategorie: psychologie
+  phasen: [uebergreifend]
+  setting: [kleingruppe, einzel]
+  zielgruppen: [erwachsene]
+  anwendung: [beratung, klassenfuehrung, beziehung]
+  dauer: 4–10 Sitzungen
+  kurz: Gruppenkurse vermitteln Eltern positive Erziehungsstrategien (Zuwendung, klare Regeln, Lob, ruhige Konsequenzen, Umgang mit Problemverhalten).
+  ablauf:
+    - Positive Beziehung und gemeinsame Zeit stärken.
+    - Erwünschtes Verhalten fördern (Lob, Aufmerksamkeit).
+    - Klare Anweisungen und ruhige Konsequenzen.
+    - Planung für Risikosituationen.
+  varianten:
+    - "Erwachsene: Elternkurs der Schule mit fachlicher Leitung zu Lob und klaren Regeln."
+    - "Erwachsene: Kurzelternabend mit Infoblatt zu positiven Erziehungsstrategien."
+    - "Digital: Elternkurs per Videoschalte mit Übungsaufgaben im Alltag."
+  stolpersteine:
+    - "Eltern fühlen sich beschuldigt, wenn Kurse als Erziehungsmangel-Maßnahme wirken; freiwillig und wertschätzend anbieten."
+  evidenz: {stufe: stark, text: "Mehrstufiges Programm Triple P (Sanders 1999) mit zahlreichen RCTs; Elterntrainings gehören zu den am besten belegten Interventionen bei kindlichem Problemverhalten."}
+  qualifikation: fachkraft
+  quellen: [q_sanders1999]
+
+- id: y_pygmalion
+  name: Erwartungseffekte bewusst steuern
+  aliase: [Pygmalion-Effekt, Lehrererwartungen, High Expectations]
+  kategorie: psychologie
+  phasen: [uebergreifend]
+  setting: [plenum, einzel]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [motivation, heterogenitaet, beziehung]
+  dauer: Haltung
+  kurz: Lehrkräfte prüfen, ob sie unterschiedliche Erwartungen an Lernende durch Wartezeit, Aufgabenschwierigkeit, Lob oder Nähe ungewollt signalisieren, und halten hohe Erwartungen an alle.
+  ablauf:
+    - Eigene Interaktionen beobachten (Wen rufe ich auf? Wem gebe ich schwierige Fragen?).
+    - Allen anspruchsvolle Aufgaben mit Unterstützung geben.
+    - Gruppierungen flexibel halten.
+  varianten:
+    - "Kinder: Aufgaben gleich anspruchsvoll stellen, Unterstützung gezielt verteilen."
+    - "Jugendliche: Wartezeit bei allen Lernenden gleich lang halten und Fragen gleichmäßig verteilen."
+    - "Digital: Aufrufe im Videoraum nach Liste abarbeiten statt nach Gewohnheit."
+  stolpersteine:
+    - "Erwartungseffekte lassen sich schwer selbst erkennen; Videoaufnahme oder kollegiale Beobachtung nutzen."
+  evidenz: {stufe: mittel, text: "Erwartungseffekte existieren, sind aber im Mittel kleiner als oft behauptet; stärker bei benachteiligten Gruppen (Jussim & Harber 2005)."}
+  qualifikation: alle
+  quellen: [q_jussim2005]

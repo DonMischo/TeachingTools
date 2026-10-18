@@ -1,0 +1,1142 @@
+# Didaktik – Erweiterung: Erarbeiten mit Texten, Mathematik, Kreativität, Medien
+- id: d_sq3r
+  name: Fünf-Schritt-Lesemethode (SQ3R)
+  aliase: [Überfliegen – Fragen – Lesen – Wiedergeben – Wiederholen]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [lesen_schreiben, lernstrategien]
+  dauer: 20–45 Min.
+  kurz: "Survey (Überblick), Question (Fragen an den Text), Read (abschnittsweise lesen), Recite (aus dem Gedächtnis wiedergeben), Review (wiederholen). Die Recite-Phase ist Abrufübung."
+  ablauf:
+    - Überschriften, Bilder, Zusammenfassung überfliegen.
+    - Fragen aus Überschriften bilden.
+    - Abschnitt lesen, Antwort suchen.
+    - Buch zu – Antwort aus dem Gedächtnis formulieren.
+    - Am Ende alles wiederholen.
+  varianten:
+    - "Jugendliche: Schritte an einem Schulbuchkapitel mit Fragekärtchen üben."
+    - "Erwachsene: Fachartikel oder Leitlinien mit selbst formulierten Fragen erschließen."
+    - "Digital: Text in einem Dokument mit Kommentarfeld für Fragen und Antworten bearbeiten."
+  stolpersteine:
+    - "Die Recite-Phase wird oft übersprungen; Abrufen ohne Blick ins Buch ausdrücklich einfordern."
+    - "Fragen bleiben oberflächlich; mit »Warum«- oder »Wie«-Fragen zu jeder Überschrift arbeiten."
+  evidenz: {stufe: mittel, text: "Klassiker (Robinson 1946); Wirksamkeit hängt vor allem an den Schritten Fragen und Wiedergeben, die Elaboration und Abruf auslösen (Dunlosky et al. 2013)."}
+  qualifikation: alle
+  quellen: [q_robinson1946, q_dunlosky2013]
+
+- id: d_textdetektive
+  name: Lesestrategietraining (Textdetektive)
+  aliase: [Lesestrategien vermitteln]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [plenum, einzel, partner]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [lesen_schreiben, lernstrategien]
+  dauer: Einheit über Wochen
+  kurz: Lernende üben als »Detektive« explizit Lesestrategien – Überschrift nutzen, Bildlich vorstellen, Unverstandenes klären, Wichtiges unterstreichen, Zusammenfassen – und deren Steuerung (Wann setze ich welche Methode ein?).
+  ablauf:
+    - Strategie einführen und modellieren.
+    - Angeleitet an Texten üben.
+    - Strategieauswahl reflektieren (»Detektivmethode«).
+    - Selbstständig anwenden.
+  varianten:
+    - "Kinder: Strategien mit Symbolkarten (Lupe, Glühbirne, Frage) am Plakat zeigen."
+    - "Jugendliche: Strategien an unterschiedlichen Textsorten einüben, z. B. Sachtext und Erzählung."
+    - "Digital: Strategiekarten als Lernkarte im Lernmanagementsystem bereitstellen."
+  stolpersteine:
+    - "Strategien werden als Checkliste abgehakt statt verstanden; Auswahl begründen lassen."
+    - "Ohne regelmäßige Anwendung über Wochen verblasst das Training; feste Lesezeiten einplanen."
+  evidenz: {stufe: mittel, text: "In deutschen Schulstudien evaluiert (Gold et al.); Lesestrategieprogramme mit metakognitiver Komponente zeigen positive Effekte auf Leseverständnis (EEF Metakognition)."}
+  qualifikation: fortbildung
+  quellen: [q_gold2004, q_eef_meta]
+
+- id: d_markieren
+  name: Markieren mit Regeln
+  aliase: [Unterstreichen, Textmarker]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [lesen_schreiben, lernstrategien]
+  dauer: begleitend
+  kurz: Markieren hilft nur, wenn es selektiv ist – höchstens ein Schlüsselwort pro Absatz, erst nach dem Lesen des Absatzes, mit Randnotiz in eigenen Worten.
+  ablauf:
+    - Absatz ganz lesen.
+    - Ein bis zwei Schlüsselwörter markieren.
+    - Randnotiz – Was ist die Kernaussage in meinen Worten?
+  varianten:
+    - "Jugendliche: Nur Schlüsselwörter im Schulbuch markieren, dann Randnotiz schreiben."
+    - "Erwachsene: Markierungen digital als Kommentar oder Notiz setzen, nicht flächig färben."
+    - "Digital: Hervorhebung nur mit einer Farbe und mit Kommentarfunktion nutzen."
+  stolpersteine:
+    - Flächiges Markieren erzeugt ein Gefühl von Arbeit, aber kaum Lernen.
+  evidenz: {stufe: begrenzt, text: "Dunlosky et al. (2013) bewerten Markieren als Technik mit geringem Nutzen; Randnotizen (Generieren, Elaborieren) sind wirksamer."}
+  qualifikation: alle
+  quellen: [q_dunlosky2013, q_slamecka1978]
+
+- id: d_lesetheater
+  name: Lesetheater (Readers' Theatre)
+  aliase: [Szenisches Vorlesen]
+  kategorie: didaktik
+  phasen: [hauptteil, abschluss]
+  setting: [kleingruppe]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [lesen_schreiben, motivation]
+  dauer: mehrere Tage à 15–20 Min.
+  kurz: Gruppen üben einen Text in Rollen mehrfach laut ein und tragen ihn ohne Kostüme oder Kulisse ausdrucksstark vor. Wiederholtes, sinnvolles Lesen fördert Flüssigkeit.
+  ablauf:
+    - Text in Rollen aufteilen.
+    - Täglich mehrfach üben, Betonung besprechen.
+    - Aufführung vor Publikum.
+  varianten:
+    - "Kinder: kurze Rollen mit Figurenkarten und Vorlesen im Stuhlkreis."
+    - "Jugendliche: Szenen aus Kinder- oder Jugendliteratur in Gruppen vorbereiten."
+    - "Digital: Aufnahme der Gruppe als Audiodatei für die Klasse teilen."
+  stolpersteine:
+    - "Zu lange Texte führen zu Ermüdung; Textpassagen kürzen und Rollen klar verteilen."
+    - "Vorführungen werden zum Wettbewerb; Fortschritt der Gruppe in den Mittelpunkt stellen."
+  evidenz: {stufe: mittel, text: "Young & Rasinski (2009) berichten Zuwächse in Leseflüssigkeit; wirkt über wiederholtes Lesen (Therrien 2004)."}
+  qualifikation: alle
+  quellen: [q_young2009, q_therrien2004]
+
+- id: d_wortschatz
+  name: Robuste Wortschatzarbeit
+  aliase: [Tier-2-Wörter, Bildungssprache aufbauen]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [plenum, partner]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [lesen_schreiben, heterogenitaet, wissensaufbau]
+  dauer: 10–15 Min. täglich
+  kurz: Wichtige bildungssprachliche Wörter (z. B. »vermuten«, »beeinflussen«) werden kindgerecht erklärt, in vielen Kontexten benutzt und über Tage immer wieder aufgegriffen.
+  ablauf:
+    - Wort im Kontext begegnen; schülergerechte Erklärung.
+    - Beispiele und Nicht-Beispiele.
+    - Lernende benutzen das Wort selbst (Satz, Situation).
+    - Wiederholt in den nächsten Tagen aufgreifen.
+  varianten:
+    - "Kinder: Wörter mit Bildern und Gestik einführen, kurze Alltagssätze bilden."
+    - "Jugendliche: Bildungssprachliche Wörter aus Fachtexten auswählen und im Heft sammeln."
+    - "Erwachsene: Fachbegriffe in Fortbildungen mit eigenen Beispielen aus der Praxis verknüpfen."
+  stolpersteine:
+    - "Erklärung bleibt bei Synonymen stehen; Beispiele und Nicht-Beispiele anbieten."
+    - "Die Wörter werden nach einer Stunde vergessen; wiederholte Nutzung über Tage einplanen."
+  evidenz: {stufe: mittel, text: "Beck et al. (2013) beschreiben das Konzept mit Studien zu Wortschatz und Leseverständnis; EEF sieht Sprachförderung als wirksam."}
+  qualifikation: alle
+  quellen: [q_beck2013, q_eef_oral]
+
+- id: d_sprachsensibel
+  name: Sprachsensible Hilfen (Wortgeländer, Satzbausteine)
+  aliase: [Sprachgerüst, Wortspeicher, Textprozeduren]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [einzel, partner]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [heterogenitaet, lesen_schreiben]
+  dauer: begleitend
+  kurz: Fachsprachliche Hilfen wie Wortspeicher, Satzanfänge (»Ich vermute, dass …, weil …«) und Wortgeländer (Schlüsselwörter in Reihenfolge) helfen, Fachinhalte sprachlich auszudrücken – besonders für Lernende mit Deutsch als Zweitsprache.
+  ablauf:
+    - Sprachliche Anforderung der Aufgabe analysieren.
+    - Passende Hilfe erstellen (Wortspeicher, Satzbausteine, Lückentext).
+    - Hilfen anbieten und schrittweise zurücknehmen.
+  varianten:
+    - "Kinder: Satzbausteine mit Bildhilfen und Vorgaben für erste Schreibversuche."
+    - "Jugendliche: Wortspeicher zu einem Fachthema gemeinsam erstellen und ergänzen."
+    - "Erwachsene: Formulierungshilfen für Protokolle oder Berichte im Team bereitstellen."
+  stolpersteine:
+    - "Hilfen werden nie abgebaut und machen selbstständiges Formulieren unmöglich; stufenweise zurücknehmen."
+    - "Hilfen nur für Lernende mit Sprachförderbedarf wirken stigmatisierend; für alle anbieten."
+  evidenz: {stufe: mittel, text: "Sprachsensibler Fachunterricht (Leisen 2013) und Scaffolding (Gibbons 2002); als Gesamtkonzept plausibel, einzelne Werkzeuge wenig isoliert untersucht."}
+  qualifikation: alle
+  quellen: [q_leisen2013, q_gibbons2002]
+
+- id: d_textlupe
+  name: Textlupe
+  aliase: [Schriftliche Textrückmeldung im Kreis]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [kleingruppe]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [lesen_schreiben, diagnose]
+  dauer: 20–30 Min.
+  kurz: Texte wandern in der Gruppe; jede Person notiert auf einem Rückmeldebogen (»Das gefällt mir«, »Hier stolpere ich«, »Mein Tipp«) Hinweise unter die Lupe genommener Kriterien.
+  ablauf:
+    - Kriterien vorab klären.
+    - Text mit Bogen weitergeben, jede Person schreibt eine Rückmeldung.
+    - Verfasser·in liest alle Rückmeldungen und überarbeitet.
+  varianten:
+    - "Kinder: Rückmeldung mit Symbolen (Daumen, Fragezeichen, Stern) statt Sätzen."
+    - "Jugendliche: Kriterienliste mit drei bis vier Punkten, z. B. Verständlichkeit und Aufbau."
+    - "Digital: Rückmeldungen als Kommentare im geteilten Dokument, anonym oder namentlich."
+  stolpersteine:
+    - "Rückmeldungen werden oberflächlich (»Gut!«); Kriterien und Beispielsätze vorgeben."
+    - "Kritik kann verletzen; Formulierung mit »Ich-Botschaften« und Wertschätzung vorher einüben."
+  evidenz: {stufe: mittel, text: "Strukturierte Form des Peer-Feedbacks; Metaanalyse Double et al. (2020) und Gielen et al. (2010) zur Wirksamkeit von Peer-Feedback."}
+  qualifikation: alle
+  quellen: [q_double2020, q_gielen2010]
+
+- id: d_schreibkonferenz
+  name: Schreibkonferenz
+  aliase: [Autorenrunde]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [kleingruppe]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [lesen_schreiben, reflexion]
+  dauer: 20–30 Min.
+  kurz: Die Autorin liest ihren Entwurf vor; die Gruppe sagt erst, was gelungen ist, stellt dann Fragen und gibt Vorschläge. Die Autorin entscheidet, was sie überarbeitet.
+  ablauf:
+    - Vorlesen.
+    - Positive Rückmeldung.
+    - Fragen und Vorschläge, notiert von einer Schreibhilfe.
+    - Überarbeitung, ggf. zweite Runde.
+  varianten:
+    - "Kinder: Vorlesen in Kleingruppen mit Lob-Karten und einer Frage pro Kind."
+    - "Jugendliche: Konferenzen mit klarer Rollenverteilung, Schreibhilfe notiert Vorschläge."
+    - "Digital: Entwürfe als Dokument teilen, Rückfragen als Kommentar."
+  stolpersteine:
+    - "Die Gruppe wird zum Korrekturdienst; Fragen nach Inhalt und Wirkung statt nach Fehlern stellen."
+    - "Die Autorin fühlt sich unter Druck; sie entscheidet ausdrücklich über Änderungen."
+  evidenz: {stufe: mittel, text: "Prozessorientierte Schreibdidaktik mit Peer-Feedback; Graham et al. (2012) zeigen Wirksamkeit von Peer-Unterstützung und Überarbeitung."}
+  qualifikation: alle
+  quellen: [q_graham2012, q_double2020]
+
+- id: d_freewriting
+  name: Freewriting / Schnellschreiben
+  aliase: [Écriture automatique, Morgenseiten]
+  kategorie: didaktik
+  phasen: [einstieg, hauptteil]
+  setting: [einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [lesen_schreiben, kreativitaet, reflexion]
+  dauer: 5–10 Min.
+  kurz: Eine festgelegte Zeit ohne Absetzen schreiben, ohne zu korrigieren oder zu bewerten. Löst Schreibblockaden und macht Gedanken sichtbar.
+  ablauf:
+    - Impuls oder Satzanfang geben.
+    - Zeit stoppen, ununterbrochen schreiben.
+    - Optional eine Kernidee markieren und weiterentwickeln.
+  varianten:
+    - "Jugendliche: Schreiben zu einer Fachfrage, Ergebnis wird nicht bewertet."
+    - "Erwachsene: Schreibzeit als Einstieg in Reflexionen oder Protokolle nutzen."
+    - "Digital: Schreiben in einem Dokument mit Zeitanzeige, Text nach Ende nur privat ablegen."
+  stolpersteine:
+    - "Lernende korrigieren während des Schreibens; Regel »Weiterschreiben, auch wenn es holpert« betonen."
+    - "Bei sensiblen Themen kann Schreiben belasten; Freiwilligkeit und Vertraulichkeit sichern."
+  evidenz: {stufe: praxis, text: "Von Elbow (1973) geprägte Schreibtechnik; verbreitet in Schreibdidaktik, kaum kontrollierte Studien."}
+  qualifikation: alle
+  quellen: [q_elbow1973]
+
+- id: d_clustering
+  name: Clustering (nach Rico)
+  aliase: [Assoziationsnetz zum Schreiben]
+  kategorie: didaktik
+  phasen: [einstieg, hauptteil]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [kreativitaet, lesen_schreiben]
+  dauer: 5–10 Min.
+  kurz: Um ein Kernwort werden spontane Assoziationen in Ketten notiert; aus dem entstehenden Netz entwickelt sich ein Schreibimpuls.
+  ablauf:
+    - Kernwort in die Mitte, einkreisen.
+    - Assoziationsketten zügig notieren.
+    - Wenn ein Gedanke »zündet«, einen Text beginnen.
+  varianten:
+    - "Kinder: Assoziationen mit Bildern oder Symbolen statt Wörtern."
+    - "Jugendliche: Kernwort aus dem Fachthema, anschließend Gedankennetz für einen Aufsatz nutzen."
+    - "Digital: Netz in einer Mindmap-App anlegen und per Link teilen."
+  stolpersteine:
+    - "Netze werden zu chaotisch und führen zu keinem Text; nach zwei Minuten einen Ast wählen."
+    - "Assoziationen bleiben beliebig; Kernwort so wählen, dass es zum Lernziel passt."
+  evidenz: {stufe: praxis, text: "Kreative Schreibmethode (Rico 1983); keine Wirksamkeitsstudien zum Lernen."}
+  qualifikation: alle
+  quellen: [q_rico1983]
+
+- id: d_kreative_formen
+  name: Kreative Schreibformen (Elfchen, Akrostichon, Rondell)
+  aliase: [Lyrische Kurzformen]
+  kategorie: didaktik
+  phasen: [einstieg, abschluss]
+  setting: [einzel, partner]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [kreativitaet, lesen_schreiben, reflexion]
+  dauer: 10–15 Min.
+  kurz: Feste Kurzformen bündeln Gedanken zu einem Thema – Elfchen (11 Wörter in 5 Zeilen), Akrostichon (Anfangsbuchstaben), Rondell (Zeilenwiederholung).
+  ablauf:
+    - Form mit Beispiel vorstellen.
+    - Schreiben zum Fachthema.
+    - Vorlesen, an der Wand ausstellen.
+  varianten:
+    - "Kinder: Elfchen zu Alltagsthemen, Akrostichon mit dem eigenen Namen als Einstieg."
+    - "Jugendliche: Kurzformen zu Fachbegriffen, z. B. Akrostichon mit Schlüsselwörtern."
+    - "Digital: Gedichte als Dokument oder Plakat digital gestalten und teilen."
+  stolpersteine:
+    - "Form wird zum Selbstzweck; Gedicht muss Fachinhalt wiedergeben, sonst bleibt es Spielerei."
+    - "Strenge Silbenzahlen blockieren; Regel bei Bedarf lockern."
+  evidenz: {stufe: praxis, text: "Im Deutschunterricht etabliert; als Verdichtung des Gelernten eine generative Aktivität, aber nicht als Lernstrategie untersucht."}
+  qualifikation: alle
+  quellen: [q_mattes2011]
+
+- id: d_szenisch
+  name: Szenisches Interpretieren
+  aliase: [Szenische Interpretation]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [kleingruppe, plenum]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [lesen_schreiben, verstehen, sozial_emotional]
+  dauer: 2–4 Std.
+  kurz: Literarische Texte werden über Rollenbiografien, Haltungen, Standbilder und Szenen erschlossen; Lernende erfahren Figuren von innen.
+  ablauf:
+    - Rollenbiografie in Ich-Form schreiben.
+    - Einfühlung über Haltung, Gang, Stimme.
+    - Schlüsselszenen spielen oder als Standbild stellen.
+    - Reflexion – Was habe ich über die Figur verstanden?
+  varianten:
+    - "Jugendliche: Standbilder und kurze Szenen mit Figurenbiografie, ohne Textvorgabe."
+    - "Erwachsene: Szenisches Lesen zu Fallgeschichten, z. B. aus Ausbildung oder Beratung."
+    - "Digital: Szenen als kurze Aufnahme oder Hörspiel vorbereiten."
+  stolpersteine:
+    - "Spielerische Phase dominiert und lässt den Text aus den Augen; jede Szene an eine Textstelle binden."
+    - "Peinlichkeit bei Körperübungen; Aufwärmen und freiwillige Rollen vorsehen."
+  evidenz: {stufe: begrenzt, text: "Von Scheller (2004) systematisiert; Erfahrungsberichte und einzelne Studien zu Textverständnis und Empathie."}
+  qualifikation: fortbildung
+  quellen: [q_scheller2004]
+
+- id: d_standbild
+  name: Standbild / Statuentheater
+  aliase: [Tableau vivant, Freeze Frame]
+  kategorie: didaktik
+  phasen: [hauptteil, abschluss]
+  setting: [kleingruppe]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [verstehen, sozial_emotional, diskussion]
+  dauer: 15–30 Min.
+  kurz: Eine Gruppe stellt eine Situation, Beziehung oder einen Begriff als eingefrorenes Bild mit Körpern dar; Zuschauende beschreiben und deuten es, Figuren können befragt werden.
+  ablauf:
+    - Gruppe baut Standbild (ohne Sprechen).
+    - Publikum beschreibt, dann deutet.
+    - Figuren »antippen« und Gedanken aussprechen lassen.
+    - Entrollen und Auswertung.
+  varianten:
+    - "Kinder: Standbild aus Alltagssituationen mit Gesichtsausdrücken, Figuren nur kurz antippen."
+    - "Jugendliche: Standbilder zu Begriffen oder historischen Situationen mit kurzer Erklärung."
+    - "Erwachsene: Standbilder zu Teamkonflikten oder Kundensituationen für die Reflexion nutzen."
+  stolpersteine:
+    - "Die Gruppe stellt nur das dar, was sie kennt; Hinweise auf wesentliche Merkmale vorher geben."
+    - "Körperliche Nähe kann unangenehm sein; Distanz und Freiwilligkeit beachten."
+  evidenz: {stufe: praxis, text: "Element szenischer Interpretation und Theaterpädagogik (Scheller 2004)."}
+  qualifikation: alle
+  quellen: [q_scheller2004]
+
+- id: d_heisser_stuhl
+  name: Heißer Stuhl (Hot Seating)
+  aliase: [Figurenbefragung]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [verstehen, diskussion, lesen_schreiben]
+  dauer: 15–20 Min.
+  kurz: Eine Person sitzt in der Rolle einer literarischen oder historischen Figur auf dem »heißen Stuhl« und beantwortet Fragen der Klasse aus deren Sicht.
+  ablauf:
+    - Figur vorbereiten (Fakten, Motive).
+    - Klasse bereitet Fragen vor.
+    - Befragung, Antworten in der Rolle.
+    - Auswertung – Was passt zu den Quellen, was nicht?
+  varianten:
+    - "Kinder: Figur mit Bildkarte und einfachen Fragen aus der Geschichte."
+    - "Jugendliche: Fragen der Klasse aus Quellen vorbereiten lassen, Figur mit Fakten ausstatten."
+    - "Digital: Befragung im Videoraum, Fragen über den Chat sammeln."
+  stolpersteine:
+    - "Fragen werden zu persönlich oder zu bloßstellend; Themen auf die Figur und die Quellen begrenzen."
+    - "Die Person auf dem Stuhl fühlt sich ausgeliefert; Rolle nach einigen Fragen wechseln."
+  evidenz: {stufe: praxis, text: "Theaterpädagogische Methode; fördert Perspektivübernahme, kaum eigene Wirksamkeitsforschung."}
+  qualifikation: alle
+  quellen: [q_scheller2004, q_mattes2011]
+
+- id: d_leittext
+  name: Leittextmethode
+  aliase: [Leitfragen-Methode, Vollständige Handlung]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [problemloesen, lernstrategien]
+  dauer: Stunden bis Tage
+  kurz: "Lernende bearbeiten eine berufliche oder praktische Aufgabe selbstständig entlang von Leitfragen in sechs Schritten: Informieren, Planen, Entscheiden, Ausführen, Kontrollieren, Bewerten."
+  ablauf:
+    - Leitfragen und Informationsmaterial bereitstellen.
+    - Plan erstellen, im Fachgespräch mit Ausbilder·in entscheiden.
+    - Ausführen und selbst kontrollieren.
+    - Bewertungsgespräch.
+  varianten:
+    - "Jugendliche: Leitfragen für ein Schulprojekt, Kontrolle in Partnerarbeit."
+    - "Erwachsene: Berufsnahe Aufgaben, Fachgespräch mit Ausbilder·in zum Plan."
+    - "Digital: Leitfragen in einem Dokument mit Abgabe- und Kontrollfeld."
+  stolpersteine:
+    - "Lernende springen zur Ausführung, ohne zu planen; Planungsgespräch vor Beginn verbindlich machen."
+    - "Ohne Fachgespräch fehlt die Rückkopplung; feste Termine für Bewertung einplanen."
+  evidenz: {stufe: begrenzt, text: "In der deutschen Berufsbildung entwickelt (Koch & Selka 1991); Modell der vollständigen Handlung, wenig vergleichende Forschung."}
+  qualifikation: alle
+  quellen: [q_koch1991]
+
+- id: d_werkstatt
+  name: Werkstattunterricht
+  aliase: [Lernwerkstatt]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [einzel, partner]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [heterogenitaet, lernstrategien, ueben]
+  dauer: 1–3 Wochen
+  kurz: Zu einem Thema stehen viele »Posten« bereit; Lernende arbeiten selbstständig, kontrollieren sich gegenseitig (»Chef·in« eines Postens) und dokumentieren ihren Fortschritt im Werkstattpass.
+  ablauf:
+    - Posten mit Pflicht- und Wahlangeboten erstellen.
+    - Chef·innen pro Posten einführen.
+    - Selbstständige Arbeit mit Pass.
+    - Abschluss und Sicherung.
+  varianten:
+    - "Kinder: Posten mit Bildkarten und Symbolen, Werkstattpass mit Stickern."
+    - "Jugendliche: Pflichtposten und Wahlposten mit Kontrollbögen für die Selbstkontrolle."
+    - "Digital: Posten als Aufgabenliste mit Links und Abgabe im Lernmanagementsystem."
+  stolpersteine:
+    - "Lernende wählen nur leichte Posten; Pflichtposten und Mindestanzahl festlegen."
+    - "Chef·innen kontrollieren zu streng oder gar nicht; Kontrollkriterien vorher schulen."
+  evidenz: {stufe: begrenzt, text: "Schweizer Konzept (Reichen 1991); wie andere offene Formen von Struktur und Sicherung abhängig (Giaconia & Hedges 1982)."}
+  qualifikation: alle
+  quellen: [q_reichen1991, q_giaconia1982]
+
+- id: d_webquest
+  name: WebQuest
+  aliase: [Strukturierte Internetrecherche]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [problemloesen, lesen_schreiben, wissensaufbau]
+  dauer: 2–6 Std.
+  kurz: "Eine Rechercheaufgabe mit festem Aufbau: Einleitung, Aufgabe, vorgegebene Quellen, Prozessbeschreibung, Bewertungskriterien, Abschluss. Verhindert zielloses Googeln."
+  ablauf:
+    - Authentische Aufgabe formulieren.
+    - Geprüfte Quellen vorauswählen.
+    - Rollen und Arbeitsschritte vorgeben.
+    - Produkt mit Raster bewerten.
+  varianten:
+    - "Jugendliche: kurze WebQuest mit drei vorgeprüften Quellen zu einem Schulthema."
+    - "Erwachsene: Rechercheauftrag zu einer Berufsfrage mit festen Quellen und Bewertungsraster."
+    - "Digital: Aufgabe als Lernpfad im Lernmanagementsystem mit Quellen und Abgabe."
+  stolpersteine:
+    - "Vorausgewählte Quellen sind veraltet oder einseitig; vor dem Einsatz selbst prüfen."
+    - "Lernende kopieren Textbausteine; eigene Zusammenfassung mit Quellenangabe verlangen."
+  evidenz: {stufe: begrenzt, text: "Von Dodge (1995) entwickelt; Studien überwiegend klein, Wirkung abhängig von Aufgabenqualität."}
+  qualifikation: alle
+  quellen: [q_dodge1995]
+
+- id: d_lateral_reading
+  name: Quellen prüfen durch Querlesen (Lateral Reading)
+  aliase: [Faktencheck, Informationskompetenz, SIFT]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [einzel, partner]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [lesen_schreiben, problemloesen]
+  dauer: 15–30 Min.
+  kurz: Statt eine Webseite selbst lange zu studieren, öffnen Lernende neue Tabs und prüfen, was andere Quellen über diese Seite und ihre Urheber sagen – wie professionelle Faktenprüfer.
+  ablauf:
+    - Unbekannte Quelle zeigen.
+    - Seite verlassen, nach Urheber und Ruf suchen.
+    - Behauptung über andere Quellen prüfen.
+    - Urteil begründen.
+  varianten:
+    - "Jugendliche: kurze Übung mit Werbung oder Social-Media-Beitrag, zwei Minuten Recherche."
+    - "Erwachsene: Prüfung einer Behauptung aus dem Berufsalltag oder den Nachrichten."
+    - "Digital: gemeinsame Recherche in Breakout-Räumen mit Ergebnis im Chat."
+  stolpersteine:
+    - "Lernende verlassen die Seite nicht und lesen weiter im Original; Suche nach Urheber ausdrücklich einfordern."
+    - "Zu allgemeine Suche ergibt keine Treffer; konkrete Suchbegriffe vorgeben."
+  evidenz: {stufe: mittel, text: "Wineburg & McGrew (2019): Faktenprüfer lesen quer und urteilen schneller und treffender als Historiker und Studierende; Trainingsstudien zeigen Verbesserungen."}
+  qualifikation: alle
+  quellen: [q_wineburg2019]
+
+- id: d_quellenarbeit
+  name: Quellenarbeit wie Historiker
+  aliase: [Reading Like a Historian, Quellenkritik]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [lesen_schreiben, verstehen, diskussion]
+  dauer: 45–90 Min.
+  kurz: "Eine historische Leitfrage wird mit mehreren widersprüchlichen Quellen untersucht. Lernende üben vier Fertigkeiten: Herkunft prüfen, Kontext einordnen, genau lesen, Quellen vergleichen."
+  ablauf:
+    - Leitfrage und 3–5 Quellen ausgeben.
+    - Herkunft (Wer, wann, warum?) klären.
+    - Quellen genau lesen und vergleichen.
+    - Begründete Antwort schreiben.
+  varianten:
+    - "Jugendliche: zwei Quellen mit einfacher Leitfrage und Lesehilfe vergleichen."
+    - "Erwachsene: Quellen aus Fachdebatten oder Dokumenten der Berufspraxis gegenüberstellen."
+    - "Digital: Quellen als Dokumente mit Kommentarfeld für Herkunft und Kontext."
+  stolpersteine:
+    - "Quellen sind ohne Kontext zu schwer; kurze Einführung und Glossar bereitstellen."
+    - "Antworten werden als Meinung formuliert; Belege aus den Quellen verlangen."
+  evidenz: {stufe: mittel, text: "Quasi-experimentelle Studie (Reisman 2012) mit Zuwächsen in historischem Denken, Leseverständnis und Faktenwissen."}
+  qualifikation: alle
+  quellen: [q_reisman2012]
+
+- id: d_exkursion
+  name: Exkursion / Unterrichtsgang
+  aliase: [Lernort außerhalb, Erkundung]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [kleingruppe, plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [motivation, wissensaufbau]
+  dauer: halber bis ganzer Tag
+  kurz: Lernende erkunden einen außerschulischen Lernort (Museum, Betrieb, Natur) mit vorbereiteten Aufträgen und werten die Erfahrungen im Unterricht aus.
+  ablauf:
+    - Vorbereitung – Vorwissen und Erkundungsfragen.
+    - Vor Ort mit Beobachtungs- oder Rechercheaufträgen.
+    - Nachbereitung – Ergebnisse sichern und mit dem Stoff verbinden.
+  varianten:
+    - "Kinder: kurze Erkundung auf dem Schulhof oder in Parknähe mit Beobachtungsbogen."
+    - "Jugendliche: Betriebs- oder Museumsbesuch mit konkreten Rechercheaufträgen."
+    - "Erwachsene: Praxisbesuch mit Fragenkatalog und Reflexion im Team."
+  stolpersteine:
+    - Ohne Vor- und Nachbereitung bleibt meist nur der Ausflug in Erinnerung.
+  evidenz: {stufe: begrenzt, text: "Review Behrendt & Franklin (2014): positive Effekte auf Interesse und Erinnerung, Lernzuwächse hängen von Vor- und Nachbereitung ab."}
+  qualifikation: alle
+  quellen: [q_behrendt2014]
+
+- id: d_virtuelles_labor
+  name: Virtuelles Labor / Simulation
+  aliase: [Interaktive Simulation, PhET]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [einzel, partner]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [verstehen, problemloesen]
+  dauer: 20–45 Min.
+  kurz: Lernende variieren in einer Computersimulation Größen (z. B. Masse, Temperatur) und beobachten Folgen. Unsichtbares (Teilchen, Felder) wird sichtbar.
+  ablauf:
+    - Forschungsfrage geben.
+    - Hypothese, gezielte Variation einer Größe.
+    - Daten notieren, Zusammenhang formulieren.
+    - Mit realem Experiment verknüpfen.
+  varianten:
+    - "Jugendliche: Simulation mit Arbeitsblatt, Messwerte selbst notieren lassen."
+    - "Erwachsene: Simulation für Modelle aus Technik oder Naturwissenschaft in Fortbildungen."
+    - "Digital: Simulation im Browser mit Partner-Vorhersage vor jedem Versuch."
+  stolpersteine:
+    - "Lernende probieren nur aus, ohne Hypothese; vor jedem Versuch eine Vermutung notieren lassen."
+    - "Simulation ersetzt reale Erfahrung nicht; Nachbereitung mit realem Material einplanen."
+  evidenz: {stufe: mittel, text: "de Jong et al. (2013): virtuelle und reale Labore sind ähnlich wirksam und ergänzen sich; Kombination oft am besten."}
+  qualifikation: alle
+  quellen: [q_dejong2013]
+
+- id: d_modellierung
+  name: Mathematisches Modellieren (Modellierungskreislauf)
+  aliase: [Sachaufgaben modellieren]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [kleingruppe, einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [problemloesen]
+  dauer: 45–90 Min.
+  kurz: "Eine reale Situation wird schrittweise mathematisiert: verstehen, vereinfachen, mathematisieren, rechnen, interpretieren, validieren."
+  ablauf:
+    - Situation verstehen und vereinfachen (Annahmen notieren).
+    - Mathematisches Modell aufstellen.
+    - Rechnen.
+    - Ergebnis zurückübersetzen und auf Plausibilität prüfen.
+  varianten:
+    - "Jugendliche: Alltagssituationen wie Einkauf oder Fahrplan mit Annahmen modellieren."
+    - "Erwachsene: Kalkulation oder Planung aus dem Berufsalltag als Sachaufgabe."
+    - "Digital: Berechnung in einer Tabelle mit sichtbaren Annahmen und Variation."
+  stolpersteine:
+    - "Lernende rechnen zu früh; Annahmen und Vereinfachungen zuerst notieren lassen."
+    - "Ergebnisse werden nicht auf Plausibilität geprüft; Rücküberführung in die Situation verlangen."
+  evidenz: {stufe: mittel, text: "Modellierungskreislauf nach Blum & Leiß (2007); Interventionsstudien zeigen Förderbarkeit, braucht Lehrkraftunterstützung."}
+  qualifikation: alle
+  quellen: [q_blum2007]
+
+- id: d_polya
+  name: Problemlösen in vier Schritten (Pólya)
+  aliase: [Heuristiken, Verstehen – Planen – Durchführen – Rückschau]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [einzel, partner]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [problemloesen, lernstrategien]
+  dauer: begleitend
+  kurz: "Vier Phasen: Aufgabe verstehen, Plan ausdenken (Heuristiken wie Rückwärtsarbeiten, Skizze, Sonderfall), Plan ausführen, Rückschau halten. Heuristiken werden explizit gelehrt."
+  ablauf:
+    - Was ist gesucht, was gegeben?
+    - Heuristik wählen (Skizze, Tabelle, Muster suchen, Rückwärts).
+    - Durchführen und prüfen.
+    - Rückschau – Geht es anders? Was nehme ich mit?
+  varianten:
+    - "Kinder: Vier Fragekarten mit Bildhilfen (Was ist gegeben? Was ist gesucht?)."
+    - "Jugendliche: Heuristiken an Aufgaben aus dem Fach einzeln vorführen und üben."
+    - "Digital: Vier-Schritt-Vorlage im Dokument mit Feld für Rückschau."
+  stolpersteine:
+    - "Die Rückschau wird ausgelassen; sie verlangen, bevor die Aufgabe als erledigt gilt."
+    - "Heuristiken werden mechanisch angewendet; bei jeder Aufgabe begründen lassen, warum sie passt."
+  evidenz: {stufe: mittel, text: "Klassische Problemlöseheuristik (Pólya 1945); explizite Strategievermittlung mit Metakognition ist wirksam (EEF Metakognition)."}
+  qualifikation: alle
+  quellen: [q_polya1945, q_eef_meta]
+
+- id: d_fehlerbeispiele
+  name: Fehlerhafte Beispiele analysieren
+  aliase: [Erroneous Examples, Fehlerdetektiv]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [einzel, partner]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [verstehen, diagnose]
+  dauer: 10–20 Min.
+  kurz: Lernende erhalten Lösungen mit typischen Fehlern, finden den Fehler, erklären, warum er falsch ist, und korrigieren ihn.
+  ablauf:
+    - Lösung mit typischem Fehler zeigen.
+    - Fehler finden und markieren.
+    - Erklären, warum er falsch ist.
+    - Korrekt lösen.
+  varianten:
+    - "Jugendliche: Fehlerhafte Rechnungen aus dem Unterricht mit Partner analysieren."
+    - "Erwachsene: Typische Fehler aus Fallberichten oder Berechnungen korrigieren lassen."
+    - "Digital: Fehlerbeispiele als Quiz mit Begründungsfeld."
+  stolpersteine:
+    - Erst sinnvoll, wenn Grundwissen vorhanden ist; sonst verwirrend.
+  evidenz: {stufe: mittel, text: "Adams et al. (2014): Arbeit mit fehlerhaften Beispielen verbesserte das verzögerte Behalten in Mathematik gegenüber Problemlösen."}
+  qualifikation: alle
+  quellen: [q_adams2014]
+
+- id: d_loesungswege_vergleichen
+  name: Lösungswege vergleichen
+  aliase: [Compare and Contrast, Nebeneinanderstellen]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [partner, plenum]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [verstehen, problemloesen]
+  dauer: 15–20 Min.
+  kurz: Zwei korrekte Lösungswege derselben Aufgabe werden nebeneinander gezeigt; Lernende erklären Gemeinsamkeiten, Unterschiede und wann welcher Weg effizienter ist.
+  ablauf:
+    - Zwei Wege nebeneinander präsentieren.
+    - Leitfragen – Was ist gleich? Was anders? Wann nutze ich welchen?
+    - Partnerdiskussion, dann Plenum.
+  varianten:
+    - "Jugendliche: zwei Lösungen aus einer Klassenarbeit anonymisiert nebeneinander legen."
+    - "Erwachsene: zwei Berechnungen oder Vorgehensweisen aus Fachbeispielen vergleichen."
+    - "Digital: beide Wege als Bild oder Dokument nebeneinander anzeigen."
+  stolpersteine:
+    - "Der Vergleich wird zur Bewertung, welche Lösung besser ist; Gleichheit und Unterschied im Vordergrund halten."
+  evidenz: {stufe: stark, text: "Rittle-Johnson & Star (2007) und Folgestudien: Vergleichen verbessert prozedurale Flexibilität und konzeptuelles Wissen gegenüber sequenziellem Betrachten."}
+  qualifikation: alle
+  quellen: [q_rittlejohnson2007]
+
+- id: d_kontrastfaelle
+  name: Kontrastierende Fälle
+  aliase: [Contrasting Cases]
+  kategorie: didaktik
+  phasen: [einstieg, hauptteil]
+  setting: [partner, kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [verstehen]
+  dauer: 15–30 Min.
+  kurz: Vor einer Erklärung analysieren Lernende sorgfältig ausgewählte Fälle, die sich nur in wichtigen Merkmalen unterscheiden. So bemerken sie Merkmale, auf die die anschließende Erklärung aufbauen kann (»a time for telling«).
+  ablauf:
+    - 3–4 Fälle mit gezielten Unterschieden auswählen.
+    - Unterschiede analysieren und beschreiben.
+    - Danach Vortrag oder Text zum Prinzip.
+  varianten:
+    - "Jugendliche: drei Fälle aus Alltag oder Fachbeispiel, die sich in einem Merkmal unterscheiden."
+    - "Erwachsene: Fälle aus Praxis oder Fallstudien für Entscheidungsübungen auswählen."
+    - "Digital: Fallkarten im Lernmanagementsystem mit Vergleichsfragen."
+  stolpersteine:
+    - "Fälle unterscheiden sich in zu vielen Merkmalen; nur ein bis zwei gezielte Unterschiede wählen."
+    - "Ohne anschließende Erklärung bleibt die Analyse offen; Erklärung im Anschluss fest einplanen."
+  evidenz: {stufe: mittel, text: "Schwartz & Bransford (1998): Analyse kontrastierender Fälle vor dem Vortrag verbesserte Transfer deutlich."}
+  qualifikation: alle
+  quellen: [q_schwartz1998, q_bransford2000]
+
+- id: d_analogien
+  name: Mit Analogien erklären
+  aliase: [Vergleiche, Modelle aus dem Alltag]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [verstehen]
+  dauer: 5–15 Min.
+  kurz: Ein neues Konzept wird über eine vertraute Struktur erklärt (Stromkreis als Wasserkreislauf). Wirksam, wenn Quelle und Ziel sichtbar nebeneinanderstehen und die Grenzen der Analogie benannt werden.
+  ablauf:
+    - Vertraute Analogie wählen, beide Bereiche gleichzeitig zeigen.
+    - Entsprechungen explizit zuordnen (Gesten, Farben).
+    - Grenzen der Analogie besprechen.
+  varianten:
+    - "Kinder: Analogie aus dem Alltag, z. B. Wasserkreislauf oder Schulweg mit Bildern."
+    - "Jugendliche: Analogien aus Sport oder Technik mit Gegenüberstellung an der Tafel."
+    - "Erwachsene: Analogien aus dem Berufsalltag, um neue Fachbegriffe einzuordnen."
+  stolpersteine:
+    - "Analogien werden für wahr gehalten; Grenzen ausdrücklich benennen."
+    - "Die Vertrautheit der Analogie ist nicht für alle gleich; zwei Analogien zum Vergleich anbieten."
+  evidenz: {stufe: mittel, text: "Richland et al. (2007): Analogien wirken, wenn Lehrkräfte kognitive Unterstützung (Gegenüberstellung, Gesten) bieten – in US-Klassen deutlich seltener als in Hongkong oder Japan."}
+  qualifikation: alle
+  quellen: [q_richland2007]
+
+- id: d_produktives_ueben
+  name: Produktives Üben (Zahlenmauern, Rechendreiecke)
+  aliase: [Strukturierte Übungsformate, Entdeckendes Üben]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [einzel, partner]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [ueben, problemloesen]
+  dauer: 15–30 Min.
+  kurz: Übungsaufgaben sind so strukturiert, dass beim Rechnen Muster entdeckt werden können (»Was passiert, wenn der linke Stein um 1 wächst?«). Üben und Problemlösen verbinden sich.
+  ablauf:
+    - Formatgebundene Aufgabenserie mit Struktur ausgeben.
+    - Rechnen, Muster suchen.
+    - Muster beschreiben und begründen.
+  varianten:
+    - "Kinder: Zahlenmauern mit Wendekarten, Muster zuerst am Bild erkennen."
+    - "Jugendliche: Rechendreiecke mit Variation einer Zahl und Beschreibung der Folge."
+    - "Digital: Aufgabenserie mit Zufallsvariation im Lernprogramm."
+  stolpersteine:
+    - "Lernende rechnen die Serie mechanisch durch; nach jedem Block Muster beschreiben lassen."
+    - "Zu schwere Struktur frustriert; mit kleiner Zahlenmauer beginnen."
+  evidenz: {stufe: begrenzt, text: "Mathematikdidaktisches Konzept (Wittmann & Müller 1994), weit verbreitet in der Grundschule; wenig vergleichende Studien."}
+  qualifikation: alle
+  quellen: [q_wittmann1994]
+
+- id: d_reisetagebuch
+  name: Lernjournal mit Kernidee (Reisetagebuch)
+  aliase: [Dialogisches Lernen nach Gallin & Ruf]
+  kategorie: didaktik
+  phasen: [hauptteil, abschluss]
+  setting: [einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [lernstrategien, lesen_schreiben, verstehen]
+  dauer: begleitend
+  kurz: Lernende bearbeiten offene Aufträge zu einer »Kernidee« im Reisetagebuch und beschreiben ihren Denkweg. Die Lehrkraft gibt schriftliche Rückmeldung und wählt Beiträge für die Klasse aus.
+  ablauf:
+    - Kernidee und offener Auftrag.
+    - Eigene Bearbeitung mit Denkspuren.
+    - Lehrkraft-Rückmeldung (Häkchen-System, Kommentar).
+    - Ausgewählte Beiträge als »Autographensammlung« besprechen.
+  varianten:
+    - "Jugendliche: Reisetagebuch für eine Kernfrage aus dem Fach mit wöchentlicher Rückmeldung."
+    - "Erwachsene: Lerntagebuch für Fortbildungsinhalte mit Reflexion über die Praxis."
+    - "Digital: Tagebuch als persönliches Dokument mit Kommentarfunktion für die Lehrkraft."
+  stolpersteine:
+    - "Rückmeldung kommt zu spät oder fehlt; feste Rückmeldezeiten vereinbaren."
+    - "Lernende schreiben nur Zusammenfassungen; Denkwege und Fragen ausdrücklich einfordern."
+  evidenz: {stufe: begrenzt, text: "Schweizer Konzept des dialogischen Lernens (Gallin & Ruf 1990); verwandt mit Lernprotokollen (Nückles et al. 2009)."}
+  qualifikation: alle
+  quellen: [q_gallin1990, q_nueckles2009]
+
+- id: d_generieren
+  name: Generieren statt Lesen
+  aliase: [Generation Effect, Lückentext, Vorhersagen ergänzen]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [ueben, wissensaufbau]
+  dauer: begleitend
+  kurz: Lernende erzeugen Informationen selbst (Wort ergänzen, Beispiel ausdenken, Antwort raten), statt sie nur zu lesen. Selbst Erzeugtes wird besser behalten.
+  ablauf:
+    - Material mit Lücken oder Prompts gestalten.
+    - Lernende ergänzen aus Vorwissen oder Kontext.
+    - Rückmeldung mit korrekter Lösung.
+  varianten:
+    - "Kinder: Lückentexte mit Bildern und Auswahl, dann eigene Ergänzung."
+    - "Jugendliche: Lücken in Fachtexten, Beispiel selbst ausdenken lassen."
+    - "Digital: Lückenaufgaben im Lernprogramm mit sofortiger Rückmeldung."
+  stolpersteine:
+    - "Lücken sind zu leicht und erzeugen kein Nachdenken; Lösungsspielraum einplanen."
+    - "Ohne Rückmeldung bleiben falsche Ergänzungen bestehen; Lösung immer zeigen."
+  evidenz: {stufe: mittel, text: "Generierungseffekt (Slamecka & Graf 1978) gut repliziert; im Unterricht wirkt er besonders, wenn das Generieren bedeutungsvoll statt mechanisch ist."}
+  qualifikation: alle
+  quellen: [q_slamecka1978, q_fiorella2016]
+
+- id: d_zeichnen
+  name: Zeichnen zum Lernen
+  aliase: [Drawing to Learn, Sketchnotes, Skizzieren]
+  kategorie: didaktik
+  phasen: [hauptteil, abschluss]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [verstehen, ueben]
+  dauer: 5–15 Min.
+  kurz: Lernende übersetzen Begriffe, Abläufe oder Texte in einfache eigene Zeichnungen. Zeichnen zwingt zur Verarbeitung von Bedeutung, Bewegung und Bild.
+  ablauf:
+    - Konzept oder Text auswählen.
+    - Einfache Skizze anfertigen (Kunst unwichtig).
+    - Skizze einem Partner erklären.
+  varianten:
+    - "Kinder: einfache Bildzeichnungen zu Wörtern, Erklärung mit Finger am Bild."
+    - "Jugendliche: Sketchnotes zu einem Vortrag oder Text anlegen."
+    - "Digital: Skizze mit Tablet oder Stift in einer Zeichen-App erstellen."
+  stolpersteine:
+    - "Lernende fühlen sich wegen ihres Zeichentalents gehemmt; betonen, dass Schematisches zählt."
+    - "Zeichnung wird reine Verzierung; Begründung der Bildwahl einfordern."
+  evidenz: {stufe: mittel, text: "Fernandes et al. (2018) fassen Experimente zusammen: Zeichnen verbessert Behalten gegenüber Schreiben; Teil generativer Lernstrategien (Fiorella & Mayer 2016)."}
+  qualifikation: alle
+  quellen: [q_fernandes2018, q_fiorella2016]
+
+- id: d_erklaervideo
+  name: Erklärvideo erstellen
+  aliase: [Lernvideo produzieren, Erklär-Podcast]
+  kategorie: didaktik
+  phasen: [hauptteil, abschluss]
+  setting: [einzel, partner, kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [verstehen, lesen_schreiben, motivation]
+  dauer: 1–3 Std.
+  kurz: Lernende erklären ein Thema in einem kurzen Video oder Audio für ein fiktives Publikum. Erklären vor (gedachten) anderen fördert Verstehen stärker als Aufschreiben.
+  ablauf:
+    - Zielgruppe und Kernbotschaft festlegen.
+    - Storyboard/Skript.
+    - Aufnehmen (Handy, Legetechnik, Screencast).
+    - Peer-Feedback mit Kriterien, Überarbeitung.
+  varianten:
+    - "Jugendliche: kurzes Erklärvideo mit Handy, Zielgruppe Mitschüler·innen der Vorstufe."
+    - "Erwachsene: Erklärung eines Verfahrens für Kolleg·innen oder Kund·innen als Lernvideo."
+    - "Digital: Screencast mit Stimme und Folien über ein freies Aufnahmetool."
+  stolpersteine:
+    - "Videos werden zu aufwendig; feste Länge und einfache Technik vorgeben."
+    - "Urheber- und Datenschutzfragen (Bilder, Stimmen) vorab klären."
+  evidenz: {stufe: mittel, text: "Hoogerheide et al. (2014, 2016): Erklären auf Video verbesserte Lernen und Transfer gegenüber Wiederlesen oder schriftlichem Erklären."}
+  qualifikation: alle
+  quellen: [q_hoogerheide2014, q_hoogerheide2016]
+
+- id: d_notizen
+  name: Strukturiertes Mitschreiben (Cornell)
+  aliase: [Cornell-Notizen, Mitschrift]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [lernstrategien, wissensaufbau]
+  dauer: begleitend
+  kurz: Die Seite wird geteilt in Notizen (rechts), Stichwörter/Fragen (links) und Zusammenfassung (unten). Danach deckt man die Notizen ab und beantwortet die linken Fragen aus dem Gedächtnis.
+  ablauf:
+    - Notizen in eigenen Worten rechts.
+    - Nach der Stunde Fragen/Stichwörter links ergänzen.
+    - Zusammenfassung unten.
+    - Abdecken und sich selbst abfragen.
+  varianten:
+    - "Jugendliche: Cornell-Schema im Heft mit Fragenspalte, Abdecktest vor Klassenarbeiten."
+    - "Erwachsene: Schema für Fortbildungsnotizen mit Fragen für die Selbstabfrage."
+    - "Digital: Notizvorlage im Dokument mit Feldern für Fragen und Zusammenfassung."
+  stolpersteine:
+    - Der angebliche große Vorteil der Handschrift gegenüber dem Laptop (Mueller & Oppenheimer 2014) ließ sich nur schwach replizieren.
+  evidenz: {stufe: mittel, text: "Mitschreiben plus Nachbearbeitung verbessert Lernen (Kiewra 1985); die Selbstabfrage macht es zur Abrufübung. Replikation zum Stiftvorteil: Morehead et al. (2019)."}
+  qualifikation: alle
+  quellen: [q_kiewra1985, q_mueller2014, q_morehead2019]
+
+- id: d_guided_notes
+  name: Lückenskript (Guided Notes)
+  aliase: [Gelenkte Mitschrift]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [einzel, plenum]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [wissensaufbau, heterogenitaet]
+  dauer: begleitend
+  kurz: Lernende erhalten ein Skript des Vortrags mit Lücken für Schlüsselbegriffe, Beispiele und Zusammenhänge, die sie während des Vortrags ausfüllen.
+  ablauf:
+    - Skript mit gezielten Lücken erstellen (nicht nur Einzelwörter).
+    - Während des Vortrags ausfüllen lassen.
+    - Am Ende kontrollieren.
+  varianten:
+    - "Jugendliche: Lückenskript zu einem Schulvortrag mit Schlüsselbegriffen und Lücken für Beispiele."
+    - "Erwachsene: Gelenkte Mitschrift für Fortbildungsvorträge mit Zusammenhangsfragen."
+    - "Digital: Skript als Dokument mit Lücken, Ergänzungen während eines Videos."
+  stolpersteine:
+    - "Lücken nur für Einzelwörter schwächen das Verstehen; Zusammenhänge und Beispiele mit einplanen."
+    - "Zu viele Lücken machen das Skript zur Ausfüllübung; Anteil auf etwa die Hälfte begrenzen."
+  evidenz: {stufe: mittel, text: "Metaanalyse Konrad et al. (2009): Guided Notes verbessern Testleistungen und Genauigkeit der Notizen, besonders bei Lernenden mit Förderbedarf."}
+  qualifikation: alle
+  quellen: [q_konrad2009]
+
+- id: d_organizer
+  name: Grafische Organizer (Venn, T-Tabelle, Fischgräte, Zeitleiste)
+  aliase: [Strukturdiagramme, Graphic Organizers, Ishikawa-Diagramm]
+  kategorie: didaktik
+  phasen: [hauptteil, abschluss]
+  setting: [einzel, partner]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [verstehen, lesen_schreiben, problemloesen]
+  dauer: 10–20 Min.
+  kurz: Die Struktur des Inhalts bestimmt die Form – Venn-Diagramm für Vergleiche, T-Tabelle für Pro/Contra, Fischgräte für Ursachen, Zeitleiste für Abfolgen, Flussdiagramm für Prozesse.
+  ablauf:
+    - Denkoperation bestimmen (vergleichen, ordnen, begründen).
+    - Passenden Organizer wählen.
+    - Ausfüllen, dann zu Text oder Vortrag ausarbeiten.
+  varianten:
+    - "Kinder: Venn-Diagramm mit zwei Bildkreisen für Gemeinsamkeiten."
+    - "Jugendliche: Zeitleiste für Geschichte oder Fischgräten-Diagramm für Ursachen."
+    - "Digital: Organizer als Vorlage in einem Whiteboard zum gemeinsamen Ausfüllen."
+  stolpersteine:
+    - "Der Organizer wird ausgefüllt, aber nicht zum Text ausgearbeitet; Abschluss als Erklärung verlangen."
+    - "Falsche Struktur macht Inhalte schwer lesbar; Auswahl kurz mit der Klasse begründen."
+  evidenz: {stufe: mittel, text: "Wie Concept Maps unterstützen grafische Organizer Verstehen und Behalten (Nesbit & Adesope 2006); Wort-Bild-Kombination (Mayer 2021)."}
+  qualifikation: alle
+  quellen: [q_nesbit2006, q_mayer2021]
+
+- id: d_morph_kasten
+  name: Morphologischer Kasten
+  aliase: [Zwicky-Box, Kombinationsmatrix]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [kleingruppe, einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [kreativitaet, problemloesen]
+  dauer: 20–40 Min.
+  kurz: Ein Problem wird in Merkmale zerlegt; für jedes Merkmal werden Ausprägungen gesammelt und dann neu kombiniert, um ungewöhnliche Lösungen zu finden.
+  ablauf:
+    - Merkmale des Problems als Zeilen.
+    - Ausprägungen als Spalten.
+    - Kombinationen durchspielen und bewerten.
+  varianten:
+    - "Jugendliche: Morphologischer Kasten zu einem Projekt mit drei Merkmalen und je drei Ausprägungen."
+    - "Erwachsene: Kombinationsmatrix für Produkt- oder Prozessideen im Team."
+    - "Digital: Matrix als Tabelle im Dokument, Kombinationen farbig markieren."
+  stolpersteine:
+    - "Zu viele Merkmale führen zu unübersichtlichen Kombinationen; vier bis fünf Merkmale begrenzen."
+    - "Kombinationen werden nicht bewertet; Kriterien für die Auswahl vorher festlegen."
+  evidenz: {stufe: begrenzt, text: "Von Zwicky entwickelte Kreativitätstechnik; Kreativitätstrainings zeigen insgesamt mittlere Effekte (Scott et al. 2004)."}
+  qualifikation: alle
+  quellen: [q_zwicky1969, q_scott2004]
+
+- id: d_kopfstand
+  name: Kopfstand-Methode
+  aliase: [Umkehrmethode, Reverse Brainstorming]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [kreativitaet, problemloesen]
+  dauer: 15–25 Min.
+  kurz: "Die Frage wird umgedreht (»Wie sorgen wir dafür, dass niemand zuhört?«); die gesammelten Antworten werden dann ins Positive gewendet."
+  ablauf:
+    - Frage umkehren.
+    - Möglichst viele »Verschlimmerungs«-Ideen sammeln.
+    - Jede Idee in eine Lösung umkehren.
+  varianten:
+    - "Jugendliche: Umgekehrte Frage zu Klassenregeln oder Schulprojekten."
+    - "Erwachsene: Umgekehrte Fragen zu Teamarbeit, Qualität oder Prozessen."
+    - "Digital: Ideen im Online-Board sammeln, Gegenmaßnahmen in zweiter Spalte."
+  stolpersteine:
+    - "Die Negativ-Ideen wirken für Beteiligte verletzend; Frage so formulieren, dass niemand angegriffen wird."
+    - "Die Umkehr bleibt bei Witzen stehen; jede negative Idee in eine konkrete Lösung überführen."
+  evidenz: {stufe: praxis, text: "Verbreitete Kreativitätstechnik, verwandt mit TRIZ aus Liberating Structures; kaum eigene Forschung."}
+  qualifikation: alle
+  quellen: [q_lipmanowicz2013, q_scott2004]
+
+- id: d_disney
+  name: Walt-Disney-Methode
+  aliase: [Träumer – Realist – Kritiker]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [kleingruppe, einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [kreativitaet, entscheidung]
+  dauer: 30–45 Min.
+  kurz: Eine Idee wird nacheinander aus drei Rollen betrachtet – Träumer (Was wäre ideal?), Realist (Wie setzen wir es um?), Kritiker (Was kann schiefgehen?) – oft mit Raumwechsel pro Rolle.
+  ablauf:
+    - Drei Bereiche im Raum markieren.
+    - In jeder Rolle konsequent bleiben.
+    - Mehrere Durchläufe, bis die Idee stabil ist.
+  varianten:
+    - "Jugendliche: drei Ecken im Klassenraum für Träumer, Realist und Kritiker."
+    - "Erwachsene: Ideen aus Projekten in Teamsitzungen durch alle drei Rollen prüfen."
+    - "Digital: drei Räume im Videoraum oder drei Abschnitte im Dokument nutzen."
+  stolpersteine:
+    - "Kritik schleicht sich in die Träumer-Phase; Rollen streng trennen und zeitlich begrenzen."
+    - "Die Realisten dominieren; jede Rolle mit eigener Zeit ausstatten."
+  evidenz: {stufe: praxis, text: "Von Dilts (1994) beschrieben; trennt Ideengenerierung und Kritik zeitlich, keine kontrollierten Studien."}
+  qualifikation: alle
+  quellen: [q_dilts1994]
+
+- id: d_scamper
+  name: SCAMPER-Checkliste
+  aliase: [Osborn-Checkliste, Ideenfragen]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [kreativitaet]
+  dauer: 15–30 Min.
+  kurz: "Ein Produkt oder eine Idee wird mit sieben Fragen verändert: Substitute (ersetzen), Combine (kombinieren), Adapt (anpassen), Modify (verändern), Put to other uses (anders nutzen), Eliminate (weglassen), Reverse (umkehren)."
+  ablauf:
+    - Ausgangsobjekt wählen.
+    - Jede Frage durchgehen und Ideen notieren.
+    - Beste Ideen auswählen und skizzieren.
+  varianten:
+    - "Kinder: Spielzeug oder Alltagsgegenstand mit sieben Bildkarten verändern."
+    - "Jugendliche: SCAMPER zu einem Schulprodukt oder Projekt anwenden."
+    - "Erwachsene: Checkliste für Verbesserungen in Produkten oder Prozessen im Team."
+  stolpersteine:
+    - "Ideen werden nicht umgesetzt; beste zwei Ideen mit einem ersten Schritt festhalten."
+    - "Zu viele Fragen gleichzeitig überfordern; einzeln durchgehen und Zeit je Frage begrenzen."
+  evidenz: {stufe: begrenzt, text: "Eberle (1971) nach Osborn; Kreativitätstrainings mit kognitiven Techniken wirken laut Scott et al. (2004)."}
+  qualifikation: alle
+  quellen: [q_eberle1971, q_scott2004]
+
+- id: d_design_thinking
+  name: Design Thinking
+  aliase: [Verstehen – Beobachten – Sichtweise – Ideen – Prototyp – Testen]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [kreativitaet, problemloesen, teamentwicklung]
+  dauer: 1 Tag bis mehrere Wochen
+  kurz: Teams lösen ein echtes Problem nutzerzentriert – Bedürfnisse durch Interviews verstehen, Problem neu definieren, viele Ideen entwickeln, schnelle Prototypen bauen und mit Nutzer·innen testen.
+  ablauf:
+    - Interviews und Beobachtung.
+    - Sichtweise formulieren (»Wie könnten wir …?«).
+    - Ideenfindung.
+    - Prototyp bauen, testen, verbessern.
+  varianten:
+    - "Jugendliche: Prototyp für ein Schulproblem, z. B. Pausenangebot, mit Mitschüler·innen testen."
+    - "Erwachsene: Design-Thinking-Prozess für ein Problem aus der Organisation mit Nutzerinterviews."
+    - "Digital: Interviews per Videoschalte und Prototyp als Mockup testen."
+  stolpersteine:
+    - "Teams springen zu schnell zur Lösung; Interviews und Problemdefinition ausreichend Zeit geben."
+    - "Prototypen werden zu aufwendig; bewusst einfache Modelle wie Papier oder Skizzen nutzen."
+  evidenz: {stufe: begrenzt, text: "Aus der Produktentwicklung (Plattner et al. 2009) in Schulen übertragen; Forschung überwiegend Fallstudien."}
+  qualifikation: fortbildung
+  quellen: [q_plattner2009]
+
+- id: d_tutorsystem
+  name: Adaptive Übungs- und Tutorensysteme
+  aliase: [Intelligente Tutorensysteme, adaptive Lernsoftware]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [ueben, heterogenitaet, diagnose]
+  dauer: 15–30 Min.
+  kurz: Software passt Aufgaben an den Lernstand an, gibt schrittweise Hinweise und Rückmeldung zu einzelnen Lösungsschritten.
+  ablauf:
+    - System passend zum Curriculum auswählen.
+    - Feste, kurze Übungszeiten.
+    - Lehrkraft nutzt Auswertungen für Gruppen und Gespräche.
+  varianten:
+    - "Jugendliche: adaptive Übung für Mathematik oder Sprache in festen Übungsblöcken."
+    - "Erwachsene: Lernsoftware für Berufsfertigkeiten mit Auswertung der Lernstände."
+    - "Digital: Übungsprogramm im Browser mit Lehrkraft-Dashboard zur Auswertung."
+  stolpersteine:
+    - "Software ersetzt Gespräch und Erklärung; Auswertungen für Lernberatung nutzen."
+    - "Lernende klicken sich durch Hinweise; Hinweise nach dem Versuch einsehen lassen."
+  evidenz: {stufe: stark, text: "Metaanalyse Kulik & Fletcher (2016): intelligente Tutorensysteme verbessern Leistungen im Mittel deutlich (Median ES ≈ 0,66), mit kleineren Effekten bei standardisierten Tests."}
+  qualifikation: alle
+  quellen: [q_kulik2016]
+
+- id: d_blended
+  name: Blended Learning
+  aliase: [Hybrides Lernen, Präsenz + Online]
+  kategorie: didaktik
+  phasen: [uebergreifend]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [heterogenitaet, lernstrategien]
+  dauer: Kursdesign
+  kurz: Präsenzphasen und Online-Phasen werden geplant verzahnt – Online für Input, Übung und Selbsttests, Präsenz für Anwendung, Diskussion und Feedback.
+  ablauf:
+    - Lernziele den Phasen zuordnen.
+    - Online-Material mit Selbsttests.
+    - Präsenz knüpft an Online-Ergebnisse an.
+  varianten:
+    - "Jugendliche: Erklärvideo vorab, Präsenz für Übung und Fragen."
+    - "Erwachsene: Online-Modul zur Vorbereitung, Präsenz für Fallarbeit und Feedback."
+    - "Digital: Kurs mit wöchentlichen Online-Aufgaben und Abschlusstreffen."
+  stolpersteine:
+    - "Online-Phasen werden nicht bearbeitet; Präsenz nur auf Ergebnisse aus Online-Phasen aufbauen."
+    - "Technische Hürden erschweren den Einstieg; Zugang und Anleitung vorab testen."
+  evidenz: {stufe: mittel, text: "Metaanalyse Means et al. (2013): Blended Learning schneidet etwas besser ab als reine Präsenz – auch, weil oft mehr Lernzeit und Material entstehen."}
+  qualifikation: alle
+  quellen: [q_means2013, q_lag2019]
+
+- id: d_portfolio
+  name: Portfolio
+  aliase: [Lernportfolio, Entwicklungsportfolio]
+  kategorie: didaktik
+  phasen: [abschluss, uebergreifend]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [reflexion, diagnose, lernstrategien]
+  dauer: Halbjahr
+  kurz: Eine kommentierte Sammlung ausgewählter Arbeiten zeigt Lernwege und -fortschritte. Lernende begründen ihre Auswahl und reflektieren ihre Entwicklung.
+  ablauf:
+    - Ziel und Kriterien festlegen.
+    - Arbeiten sammeln, auswählen.
+    - Reflexionstexte zu jeder Auswahl.
+    - Portfoliogespräch.
+  varianten:
+    - "Kinder: Mappe mit Bildern und Kurztexten, Auswahl gemeinsam mit der Lehrkraft."
+    - "Jugendliche: Portfolio für ein Schulhalbjahr mit Reflexionsbogen zu jeder Arbeit."
+    - "Digital: E-Portfolio als persönliche Webseite oder Dokument mit Kommentarfunktion."
+  stolpersteine:
+    - "Portfolio wird zur Sammelmappe ohne Reflexion; Begründung zu jeder Auswahl verlangen."
+    - "Datenschutz bei digitalen Portfolios klären, bevor Lernende Inhalte hochladen."
+  evidenz: {stufe: begrenzt, text: "Verbindet Selbstbeurteilung und Reflexion (Panadero et al. 2017); Portfolios als Ganzes sind schwer vergleichend zu untersuchen."}
+  qualifikation: alle
+  quellen: [q_panadero2017, q_nueckles2009]
+
+- id: d_praesentation
+  name: Kriteriengeleitete Präsentation
+  aliase: [Referat, Kurzvortrag]
+  kategorie: didaktik
+  phasen: [hauptteil, abschluss]
+  setting: [einzel, kleingruppe, plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [lesen_schreiben, verstehen]
+  dauer: 5–15 Min. pro Vortrag
+  kurz: Präsentationen werden mit klaren Kriterien (Struktur, Verständlichkeit, Belege, Medien) geplant, geübt und mit Peer-Feedback bewertet; Zuhörende haben Aufträge.
+  ablauf:
+    - Kriterien und Musterbeispiel besprechen.
+    - Planung mit Gliederung und Kernbotschaft.
+    - Probevortrag im Paar.
+    - Präsentation; Publikum notiert Kernaussage und eine Frage.
+  varianten:
+    - "Jugendliche: Kurzvortrag mit Folie oder Plakat, Kriterien auf einem Blatt."
+    - "Erwachsene: Fachvortrag im Team mit Feedbackbogen aus der Praxis."
+    - "Digital: Präsentation als Aufnahme oder Videokonferenz mit Chat-Feedback."
+  stolpersteine:
+    - Lange Referatsreihen ohne Auftrag für die Zuhörenden sind Lernzeitverlust.
+  evidenz: {stufe: begrenzt, text: "Wirkt über Erklären (Fiorella & Mayer 2013) und kriterienbasiertes Feedback; Präsentation selbst wenig untersucht."}
+  qualifikation: alle
+  quellen: [q_fiorella2013, q_jonsson2007]
+
+- id: d_postersession
+  name: Postersession
+  aliase: [Wissenschaftliche Posterpräsentation]
+  kategorie: didaktik
+  phasen: [abschluss]
+  setting: [kleingruppe, grossgruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [lesen_schreiben, diskussion]
+  dauer: 45–90 Min.
+  kurz: Ergebnisse werden wie auf einer Fachtagung als Poster präsentiert; die Hälfte der Gruppe steht am Poster, die andere besucht und fragt, dann Wechsel.
+  ablauf:
+    - Poster nach Vorlage erstellen.
+    - Zwei Präsentationsrunden mit Wechsel.
+    - Feedbackbögen oder Punkte für Poster.
+  varianten:
+    - "Jugendliche: Poster zu einem Projekt, Besucherfragen mit Klebepunkten bewerten."
+    - "Erwachsene: Posterausstellung zu Fortbildungsergebnissen mit Fachgespräch am Stand."
+    - "Digital: digitales Poster als Dokument mit Kommentarfunktion, Besuch in Breakout-Räumen."
+  stolpersteine:
+    - "Poster werden mit Text überladen; maximal eine Kernaussage und drei Abbildungen festlegen."
+    - "Der Rundgang wird hektisch; feste Zeitfenster und Wechselsignal vorgeben."
+  evidenz: {stufe: praxis, text: "Aus der Wissenschaftspraxis übernommen; verwandt mit Galeriegang."}
+  qualifikation: alle
+  quellen: [q_barkley2014]

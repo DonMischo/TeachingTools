@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="Arial, Helvetica, sans-serif" role="img" aria-label="ZEHN LERNTECHNIKEN NACH NUTZEN">
+<rect x="0" y="0" width="960" height="560" fill="#0F1E2E" rx="12"/>
+<text x="480.0" y="38.0" font-size="20" fill="#FFFFFF" text-anchor="middle" font-weight="bold">ZEHN LERNTECHNIKEN NACH NUTZEN</text>
+<line x1="60" y1="50" x2="900" y2="50" stroke="#C9A227" stroke-width="2"/>
+<text x="480.0" y="70.0" font-size="12" fill="#8AADCC" text-anchor="middle" font-weight="normal">Bewertung von zehn verbreiteten Lerntechniken über Alter, Fächer und Materialien hinweg</text>
+<text x="40" y="92.0" font-size="11" fill="#8AADCC" text-anchor="start" font-weight="bold">TECHNIK</text>
+<text x="360" y="92.0" font-size="11" fill="#8AADCC" text-anchor="start" font-weight="bold">NUTZEN</text>
+<text x="620" y="92.0" font-size="11" fill="#8AADCC" text-anchor="start" font-weight="bold">IN DER PRAXIS</text>
+<rect x="30" y="100" width="900" height="36" fill="#1A2A3A" rx="4"/>
+<text x="40" y="123.0" font-size="12.5" fill="#E0E8F0" text-anchor="start" font-weight="bold">Abrufübung (Practice Testing)</text>
+<rect x="360" y="109" width="210" height="18" fill="#2E9466" rx="3"/>
+<text x="576" y="123.0" font-size="11" fill="#2E9466" text-anchor="start" font-weight="bold">HOCH</text>
+<text x="620" y="123.0" font-size="11.5" fill="#8AADCC" text-anchor="start" font-weight="normal">Quiz, Karteikarten, Brain Dump ohne Unterlagen</text>
+<rect x="30" y="140" width="900" height="36" fill="#162030" rx="4"/>
+<text x="40" y="163.0" font-size="12.5" fill="#E0E8F0" text-anchor="start" font-weight="bold">Verteiltes Üben (Distributed Practice)</text>
+<rect x="360" y="149" width="210" height="18" fill="#2E9466" rx="3"/>
+<text x="576" y="163.0" font-size="11" fill="#2E9466" text-anchor="start" font-weight="bold">HOCH</text>
+<text x="620" y="163.0" font-size="11.5" fill="#8AADCC" text-anchor="start" font-weight="normal">Wiederholen nach Tagen und Wochen</text>
+<rect x="30" y="180" width="900" height="36" fill="#1A2A3A" rx="4"/>
+<text x="40" y="203.0" font-size="12.5" fill="#E0E8F0" text-anchor="start" font-weight="bold">Elaboratives Fragen</text>
+<rect x="360" y="189" width="140" height="18" fill="#3D7DCA" rx="3"/>
+<text x="506" y="203.0" font-size="11" fill="#7FB2EE" text-anchor="start" font-weight="bold">MITTEL</text>
+<text x="620" y="203.0" font-size="11.5" fill="#8AADCC" text-anchor="start" font-weight="normal">»Warum ist das so?« beantworten</text>
+<rect x="30" y="220" width="900" height="36" fill="#162030" rx="4"/>
+<text x="40" y="243.0" font-size="12.5" fill="#E0E8F0" text-anchor="start" font-weight="bold">Selbsterklären</text>
+<rect x="360" y="229" width="140" height="18" fill="#3D7DCA" rx="3"/>
+<text x="506" y="243.0" font-size="11" fill="#7FB2EE" text-anchor="start" font-weight="bold">MITTEL</text>
+<text x="620" y="243.0" font-size="11.5" fill="#8AADCC" text-anchor="start" font-weight="normal">Jeden Lösungsschritt sich selbst erklären</text>
+<rect x="30" y="260" width="900" height="36" fill="#1A2A3A" rx="4"/>
+<text x="40" y="283.0" font-size="12.5" fill="#E0E8F0" text-anchor="start" font-weight="bold">Verschachteltes Üben (Interleaving)</text>
+<rect x="360" y="269" width="140" height="18" fill="#3D7DCA" rx="3"/>
+<text x="506" y="283.0" font-size="11" fill="#7FB2EE" text-anchor="start" font-weight="bold">MITTEL</text>
+<text x="620" y="283.0" font-size="11.5" fill="#8AADCC" text-anchor="start" font-weight="normal">Aufgabentypen mischen</text>
+<rect x="30" y="300" width="900" height="36" fill="#162030" rx="4"/>
+<text x="40" y="323.0" font-size="12.5" fill="#E0E8F0" text-anchor="start" font-weight="bold">Zusammenfassen</text>
+<rect x="360" y="309" width="70" height="18" fill="#B03A2E" rx="3"/>
+<text x="436" y="323.0" font-size="11" fill="#B03A2E" text-anchor="start" font-weight="bold">GERING</text>
+<text x="620" y="323.0" font-size="11.5" fill="#8AADCC" text-anchor="start" font-weight="normal">Hilft nur, wenn es geübt wurde</text>
+<rect x="30" y="340" width="900" height="36" fill="#1A2A3A" rx="4"/>
+<text x="40" y="363.0" font-size="12.5" fill="#E0E8F0" text-anchor="start" font-weight="bold">Markieren / Unterstreichen</text>
+<rect x="360" y="349" width="70" height="18" fill="#B03A2E" rx="3"/>
+<text x="436" y="363.0" font-size="11" fill="#B03A2E" text-anchor="start" font-weight="bold">GERING</text>
+<text x="620" y="363.0" font-size="11.5" fill="#8AADCC" text-anchor="start" font-weight="normal">Fühlt sich gut an, bringt wenig</text>
+<rect x="30" y="380" width="900" height="36" fill="#162030" rx="4"/>
+<text x="40" y="403.0" font-size="12.5" fill="#E0E8F0" text-anchor="start" font-weight="bold">Schlüsselwort-Mnemonik</text>
+<rect x="360" y="389" width="70" height="18" fill="#B03A2E" rx="3"/>
+<text x="436" y="403.0" font-size="11" fill="#B03A2E" text-anchor="start" font-weight="bold">GERING</text>
+<text x="620" y="403.0" font-size="11.5" fill="#8AADCC" text-anchor="start" font-weight="normal">Nur für bestimmte Vokabeln</text>
+<rect x="30" y="420" width="900" height="36" fill="#1A2A3A" rx="4"/>
+<text x="40" y="443.0" font-size="12.5" fill="#E0E8F0" text-anchor="start" font-weight="bold">Bildhafte Vorstellung beim Lesen</text>
+<rect x="360" y="429" width="70" height="18" fill="#B03A2E" rx="3"/>
+<text x="436" y="443.0" font-size="11" fill="#B03A2E" text-anchor="start" font-weight="bold">GERING</text>
+<text x="620" y="443.0" font-size="11.5" fill="#8AADCC" text-anchor="start" font-weight="normal">Nur bei bildhaften Texten</text>
+<rect x="30" y="460" width="900" height="36" fill="#162030" rx="4"/>
+<text x="40" y="483.0" font-size="12.5" fill="#E0E8F0" text-anchor="start" font-weight="bold">Wiederlesen</text>
+<rect x="360" y="469" width="70" height="18" fill="#B03A2E" rx="3"/>
+<text x="436" y="483.0" font-size="11" fill="#B03A2E" text-anchor="start" font-weight="bold">GERING</text>
+<text x="620" y="483.0" font-size="11.5" fill="#8AADCC" text-anchor="start" font-weight="normal">Deutlich schwächer als Abrufen</text>
+<text x="480.0" y="520.0" font-size="12.5" fill="#C9A227" text-anchor="middle" font-weight="normal" font-style="italic">Die beliebtesten Techniken – Wiederlesen und Markieren – gehören zu den schwächsten.</text>
+<text x="480.0" y="545.0" font-size="10.5" fill="#8AADCC" text-anchor="middle" font-weight="normal">Quelle: Dunlosky, Rawson, Marsh, Nathan &amp; Willingham (2013), Psychological Science in the Public Interest, 14(1)</text>
+</svg>

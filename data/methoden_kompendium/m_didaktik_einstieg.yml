@@ -1,0 +1,492 @@
+# Didaktik – Einstiege
+- id: d_do_now
+  name: Do Now / Startaufgabe
+  aliase: [Bell Ringer, Warm-up-Aufgabe]
+  kategorie: didaktik
+  phasen: [einstieg]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [ueben, klassenfuehrung, vorwissen]
+  dauer: 3–7 Min.
+  kurz: Eine kurze, ohne Erklärung lösbare Aufgabe liegt beim Hereinkommen bereit; alle arbeiten sofort still und schriftlich.
+  ablauf:
+    - Aufgabe vor Stundenbeginn sichtbar machen (Tafel, Folie, Zettel am Platz).
+    - Inhalt wiederholt Stoff der letzten Stunden oder Wochen (nicht Neues).
+    - Lernende beginnen ohne Ansage; Lehrkraft begrüßt und geht herum.
+    - Kurze Besprechung (1–2 Min.), dann Übergang zum Stundenthema.
+  varianten:
+    - "Kinder: Bild- oder Rechenaufgabe mit festem Ritualplatz an der Tafel."
+    - "Erwachsene: Reflexionsfrage zum Vortag oder Fallvignette."
+  stolpersteine:
+    - Zu schwere Aufgaben erzeugen Wartezeit statt Ruhe.
+    - Wenn nie besprochen wird, nehmen Lernende das Ritual nicht ernst.
+  evidenz: {stufe: mittel, text: "Als Ritual praxisbasiert (Lemov); der Lerneffekt kommt aus Abrufübung und verteiltem Wiederholen, die stark belegt sind."}
+  qualifikation: alle
+  quellen: [q_lemov2015, q_rosenshine2012, q_agarwal2019]
+
+- id: d_retrieval_starter
+  name: Abruf-Einstieg (Retrieval Starter)
+  aliase: [Brain Dump, 3-2-1-Rückblick, Quiz zum Stundenbeginn]
+  kategorie: didaktik
+  phasen: [einstieg]
+  setting: [einzel, partner]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [ueben, diagnose, vorwissen]
+  dauer: 5–10 Min.
+  kurz: Lernende schreiben aus dem Gedächtnis auf, was sie zu einem früheren Thema wissen – ohne Unterlagen. Das Abrufen selbst festigt das Wissen.
+  ablauf:
+    - Thema oder 3–5 Fragen nennen (gemischt aus letzter Stunde, letzter Woche, letztem Monat).
+    - 2–4 Min. still schreiben, ohne Heft.
+    - Mit Partner ergänzen (andere Farbe), dann im Heft nachschlagen (dritte Farbe).
+    - Lehrkraft notiert häufige Lücken für die Planung.
+  varianten:
+    - "Brain Dump: leeres Blatt, alles aufschreiben, was einem einfällt."
+    - "Kinder: mündlich mit Bildkarten oder Daumen-hoch-Fragen."
+    - "Digital: Quiz-Tool ohne Bewertung (low stakes)."
+  stolpersteine:
+    - Benoten macht aus der Lernübung eine Prüfung und erhöht Angst.
+    - Nur die letzte Stunde abfragen verschenkt den Effekt verteilten Wiederholens.
+  evidenz: {stufe: stark, text: "Abrufübung (testing effect) gehört zu den am besten belegten Lerntechniken; Dunlosky et al. bewerten sie mit hohem Nutzen, Adesope et al. finden in einer Metaanalyse g ≈ 0,5–0,6."}
+  qualifikation: alle
+  quellen: [q_roediger2006, q_dunlosky2013, q_adesope2017, q_agarwal2019]
+
+- id: d_advance_organizer
+  name: Advance Organizer
+  aliase: [Vorstrukturierung, Lernlandkarte]
+  kategorie: didaktik
+  phasen: [einstieg]
+  setting: [plenum]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [wissensaufbau, verstehen, vorwissen]
+  dauer: 5–15 Min.
+  kurz: Vor dem eigentlichen Stoff wird eine übergeordnete Struktur gezeigt (Bild, Diagramm, Kernbegriffe), an die neues Wissen angedockt werden kann.
+  ablauf:
+    - Kernideen und ihre Beziehungen auf einem Plakat oder einer Folie anordnen (abstrakter als der Detailstoff).
+    - Bezug zum Vorwissen herstellen und die Struktur erzählend erläutern.
+    - Organizer während der Einheit sichtbar lassen und immer wieder darauf zeigen.
+    - Am Ende Lernende den Organizer selbst ergänzen lassen.
+  varianten:
+    - "Nach Wahl (2013) als großformatiges Plakat, das die ganze Einheit hängen bleibt."
+    - "Kinder: Bildgeschichte oder Lernweg mit Stationen."
+  stolpersteine:
+    - Eine reine Gliederung (Inhaltsverzeichnis) ist kein Organizer – es braucht Beziehungen zwischen Begriffen.
+  evidenz: {stufe: mittel, text: "Metaanalyse (Luiten et al. 1980) zeigt kleine bis mittlere positive Effekte auf Lernen und Behalten; Wirkung abhängig von Qualität und Vorwissen."}
+  qualifikation: alle
+  quellen: [q_ausubel1960, q_luiten1980, q_wahl2013]
+
+- id: d_kwl
+  name: KWL / Wissen–Wollen–Gelernt
+  aliase: [K-W-L-Tabelle, Was ich weiß – was ich wissen will – was ich gelernt habe]
+  kategorie: didaktik
+  phasen: [einstieg, abschluss]
+  setting: [einzel, plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [vorwissen, lesen_schreiben, motivation, lernstrategien]
+  dauer: 10 Min. Einstieg + 10 Min. Abschluss
+  kurz: Dreispaltige Tabelle, deren erste beiden Spalten zu Beginn, die dritte am Ende gefüllt werden. Macht Vorwissen und Fragen sichtbar.
+  ablauf:
+    - "Spalte K: Was weiß ich schon? (einzeln, dann sammeln)"
+    - "Spalte W: Was will ich wissen? (Fragen formulieren)"
+    - Lesen/Erarbeiten mit Blick auf die eigenen Fragen.
+    - "Spalte L: Was habe ich gelernt? Welche Fragen bleiben offen?"
+  varianten:
+    - "KWL+: Zusätzliche Spalte »Wie finde ich es heraus?«."
+    - "Grundschule: gemeinsam an der Tafel mit Symbolen."
+  stolpersteine:
+    - Falsches Vorwissen in Spalte K muss später korrigiert werden, sonst verfestigt es sich.
+  evidenz: {stufe: begrenzt, text: "Ursprünglich für Sachtexte entwickelt (Ogle 1986); als Strategie zur Aktivierung von Vorwissen plausibel, aber wenige kontrollierte Studien zum Gesamtformat."}
+  qualifikation: alle
+  quellen: [q_ogle1986, q_mattes2011]
+
+- id: d_pretest
+  name: Vortest / Vorab-Fragen
+  aliase: [Pretesting, Prequestions]
+  kategorie: didaktik
+  phasen: [einstieg]
+  setting: [einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [vorwissen, motivation, diagnose]
+  dauer: 5 Min.
+  kurz: Vor dem Unterricht werden Fragen zum noch unbekannten Stoff gestellt. Auch falsche Antworten verbessern das spätere Lernen der richtigen Antwort.
+  ablauf:
+    - 3–6 Fragen zu Kernaussagen der Stunde stellen.
+    - Lernende raten oder schätzen – ausdrücklich ohne Bewertung.
+    - Antworten nicht sofort auflösen; im Verlauf der Stunde aufgreifen.
+    - Am Ende dieselben Fragen erneut beantworten lassen.
+  varianten:
+    - "Jugendliche: drei Fragen als Karteikarten, Antworten am Ende der Stunde vergleichen."
+    - "Erwachsene: Vorab-Fragen per Formular vor der Fortbildung, Auflösung im Verlauf."
+    - "Digital: Umfrage mit anonymen Antworten zu Beginn der Videositzung."
+  stolpersteine:
+    - Bei Kindern oder ängstlichen Lernenden klar machen, dass Fehler erwartet sind.
+  evidenz: {stufe: mittel, text: "Pretesting-Effekt in Laborstudien gut repliziert (Richland et al. 2009); Übertragung auf Klassenräume mit kleineren, aber positiven Effekten."}
+  qualifikation: alle
+  quellen: [q_richland2009, q_brown2014]
+
+- id: d_kognitiver_konflikt
+  name: Kognitiver Konflikt / Überraschendes Phänomen
+  aliase: [Diskrepanz-Einstieg, Discrepant Event]
+  kategorie: didaktik
+  phasen: [einstieg]
+  setting: [plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [verstehen, motivation, vorwissen]
+  dauer: 5–15 Min.
+  kurz: Ein Experiment, Bild oder Fakt widerspricht der Alltagsvorstellung. Die entstehende Neugier treibt die Erarbeitung an.
+  ablauf:
+    - Typische Fehlvorstellung des Themas identifizieren.
+    - Phänomen zeigen, das ihr widerspricht (z. B. schwere und leichte Kugel fallen gleich schnell).
+    - Lernende erklären lassen und Erklärungen sammeln, ohne zu werten.
+    - Erarbeitung als Auflösung des Widerspruchs rahmen.
+  varianten:
+    - "Kinder: einfacher Versuch mit Alltagsmaterial, Vorhersage per Handzeichen."
+    - "Jugendliche: Phänomen aus Physik oder Chemie mit schriftlicher Erklärung vorab."
+    - "Digital: Simulation oder Video eines überraschenden Versuchs mit Pausen für Erklärungen."
+  stolpersteine:
+    - Ein Konflikt allein ändert Vorstellungen selten; es braucht danach eine klar erklärte Alternative.
+    - Zu große Verwirrung führt zu Abwehr statt Neugier.
+  evidenz: {stufe: mittel, text: "Wichtiges Element der Conceptual-Change-Forschung; Limón (2001) zeigt, dass die Wirkung stark von Vorwissen, Motivation und anschließender Erklärung abhängt."}
+  qualifikation: alle
+  quellen: [q_limon2001, q_loewenstein1994]
+
+- id: d_concept_cartoon
+  name: Concept Cartoon
+  aliase: [Meinungsbild-Karikatur]
+  kategorie: didaktik
+  phasen: [einstieg, hauptteil]
+  setting: [partner, kleingruppe, plenum]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [verstehen, diskussion, diagnose]
+  dauer: 10–20 Min.
+  kurz: Eine Zeichnung zeigt mehrere Figuren mit unterschiedlichen Aussagen zu einer Situation – richtige und typische falsche. Lernende entscheiden und begründen, wem sie zustimmen.
+  ablauf:
+    - Cartoon zeigen (3–4 Sprechblasen, eine richtig, andere als typische Fehlvorstellungen).
+    - Einzeln Position wählen und Begründung notieren.
+    - In Gruppen diskutieren, ggf. mit Experiment prüfen.
+    - Im Plenum klären, warum welche Aussage trägt.
+  varianten:
+    - "Kinder: Cartoon mit drei Figuren und Bildern statt Text, Position per Zeigen."
+    - "Jugendliche: Cartoon mit vier Sprechblasen, Begründung schriftlich vor der Diskussion."
+    - "Digital: Cartoon als Folie mit Abstimmung im Lernmanagementsystem."
+  stolpersteine:
+    - Die Lehrkraft sollte nicht zu früh auflösen, sonst entfällt das Argumentieren.
+  evidenz: {stufe: begrenzt, text: "Evaluation im naturwissenschaftlichen Unterricht zeigt höhere Beteiligung und Diskussionsqualität (Keogh & Naylor 1999); Lernleistungsstudien sind rar."}
+  qualifikation: alle
+  quellen: [q_keogh1999]
+
+- id: d_poe
+  name: Vorhersagen – Beobachten – Erklären (POE)
+  aliase: [Predict-Observe-Explain]
+  kategorie: didaktik
+  phasen: [einstieg, hauptteil]
+  setting: [einzel, partner, plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [verstehen, diagnose, problemloesen]
+  dauer: 10–20 Min.
+  kurz: Vor einem Versuch schreiben Lernende eine begründete Vorhersage auf, beobachten dann und erklären Abweichungen.
+  ablauf:
+    - "Vorhersagen: Was wird passieren und warum? (schriftlich, einzeln)"
+    - "Beobachten: Versuch durchführen oder zeigen, nur beschreiben."
+    - "Erklären: Vorhersage und Beobachtung vergleichen, Unterschied begründen."
+  varianten:
+    - "Mit Abstimmung per Handzeichen oder Karten vor dem Versuch."
+  stolpersteine:
+    - Die Begründung der Vorhersage ist wichtiger als ihre Richtigkeit – sonst wird geraten.
+  evidenz: {stufe: mittel, text: "Theoretisch gut begründet (Conceptual Change, Generatives Lernen) und in der Fachdidaktik etabliert; kombiniert Vorhersage (Pretesting) mit Selbsterklärung."}
+  qualifikation: alle
+  quellen: [q_white1992, q_chi1994, q_limon2001]
+
+- id: d_stummer_impuls
+  name: Stummer Impuls
+  aliase: [Bildimpuls, Gegenstand in die Mitte]
+  kategorie: didaktik
+  phasen: [einstieg]
+  setting: [plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [vorwissen, motivation, diskussion]
+  dauer: 3–10 Min.
+  kurz: Ein Bild, Gegenstand, Zitat oder Geräusch wird kommentarlos präsentiert; die Lernenden äußern sich frei, bevor die Lehrkraft spricht.
+  ablauf:
+    - Impuls wortlos zeigen und Wartezeit aushalten (mind. 5–10 Sek.).
+    - Äußerungen sammeln, ggf. an der Tafel clustern.
+    - Zur Leitfrage der Stunde überleiten.
+  varianten:
+    - "Kinder: Gegenstand aus dem Alltag oder Bildkarte ohne Kommentar in die Mitte legen."
+    - "Jugendliche: Zitat oder Foto auf die Folie, Äußerungen auf Karten sammeln."
+    - "Digital: Bild oder kurzes Geräusch im Videoraum zeigen, Antworten im Chat sammeln."
+  stolpersteine:
+    - Ein zu offener Impuls führt zu Ratespielen »Was will die Lehrkraft hören?«.
+  evidenz: {stufe: praxis, text: "Klassisches Element der deutschen Unterrichtsmethodik (Meyer, Mattes); unterstützt durch Befunde zur Wartezeit (Rowe 1986)."}
+  qualifikation: alle
+  quellen: [q_meyer1987, q_mattes2011, q_rowe1986]
+
+- id: d_lernziel_transparenz
+  name: Lernziel- und Ablauftransparenz
+  aliase: [Learning Intentions & Success Criteria, Stundenfahrplan]
+  kategorie: didaktik
+  phasen: [einstieg]
+  setting: [plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [lernstrategien, motivation, diagnose]
+  dauer: 2–5 Min.
+  kurz: Zu Beginn wird gesagt, was gelernt werden soll und woran man erkennt, dass es gelungen ist (Erfolgskriterien).
+  ablauf:
+    - Lernziel als Kann-Satz formulieren (»Ich kann … erklären«).
+    - 2–3 überprüfbare Erfolgskriterien nennen, ideal mit Beispiel.
+    - Ablauf der Stunde visualisieren (Fahrplan).
+    - Am Ende auf Ziel und Kriterien zurückkommen (Selbsteinschätzung).
+  varianten:
+    - "Kinder: Lernziel mit Bild oder Symbol an der Tafel und Stundenfahrplan als Bildkette."
+    - "Jugendliche: Erfolgskriterien als Checkliste im Heft und am Ende abhaken."
+    - "Digital: Lernziel und Fahrplan als erste Folie oder im geteilten Dokument."
+  stolpersteine:
+    - Bloß das Thema anschreiben ist keine Zieltransparenz.
+    - Bei entdeckendem Lernen das Ziel so formulieren, dass die Lösung nicht verraten wird.
+  evidenz: {stufe: mittel, text: "Bestandteil formativen Assessments (Black & Wiliam 1998; Wiliam 2011) und der Feedback-Frage »Where am I going?« (Hattie & Timperley 2007); Merkmal guten Unterrichts nach Meyer (2004)."}
+  qualifikation: alle
+  quellen: [q_wiliam2011, q_hattie2007, q_meyer2004]
+
+- id: d_ich_du_wir_einstieg
+  name: Think-Pair-Share als Einstieg
+  aliase: [Ich-Du-Wir, Denken-Austauschen-Vorstellen]
+  kategorie: didaktik
+  phasen: [einstieg, hauptteil]
+  setting: [einzel, partner, plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [vorwissen, diskussion]
+  dauer: 5–10 Min.
+  kurz: Eine Einstiegsfrage wird erst allein bedacht, dann mit Nachbar·in besprochen und erst danach im Plenum geteilt. So hat jede Person eine Antwort.
+  ablauf:
+    - Frage stellen, 1–2 Min. still nachdenken und notieren.
+    - 2–3 Min. Partneraustausch (beide sprechen).
+    - Zufällig einige Paare berichten lassen.
+  varianten:
+    - "Kinder: Partnergespräch mit Bildkarte und Nachbarn, dann Handzeichen im Plenum."
+    - "Jugendliche: Frage aus dem Alltag, Partneraustausch mit Stoppuhr."
+    - "Digital: Paarbildung in Breakout-Räumen mit kurzer Rückmeldung im Plenum."
+  stolpersteine:
+    - "Die Partnerphase wird zum Plaudern; Frage konkret stellen und Zeit begrenzen."
+    - "Paare reden aneinander vorbei; beide Rollen und Redezeit klar vorgeben."
+  verweise: [d_think_pair_share]
+  evidenz: {stufe: mittel, text: "Siehe Think-Pair-Share im Hauptteil; erhöht Beteiligung gegenüber reinen Meldeketten."}
+  qualifikation: alle
+  quellen: [q_lyman1981, q_bruening2009]
+
+- id: d_positionslinie
+  name: Positionslinie / Meinungslinie
+  aliase: [Soziometrische Aufstellung zur Sache, Barometer, Four Corners]
+  kategorie: didaktik
+  phasen: [einstieg, abschluss]
+  setting: [plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [diskussion, vorwissen, motivation]
+  dauer: 5–15 Min.
+  kurz: Lernende stellen sich entlang einer gedachten Linie (Zustimmung–Ablehnung) oder in Ecken auf und begründen ihre Position.
+  ablauf:
+    - Kontroverse These vorlesen; Pole im Raum markieren.
+    - Alle positionieren sich ohne Diskussion.
+    - Personen an verschiedenen Stellen begründen lassen; Wechsel ist erlaubt.
+    - Am Ende der Einheit wiederholen und Veränderung besprechen.
+  varianten:
+    - "Kinder: Ja-/Nein-Seiten im Klassenraum mit Symbolkarten, begründen mit einem Satz."
+    - "Jugendliche: Kontroverse These zum Thema, Position auf Linie und kurze Begründung."
+    - "Digital: Abstimmung auf einer Skala im Chat oder Umfragetool, Begründungen anschließend zeigen."
+  stolpersteine:
+    - Bei persönlichen oder heiklen Themen Gruppendruck beachten; anonyme Alternative (Punkte auf Plakat) anbieten.
+  evidenz: {stufe: praxis, text: "Verbreitete Aktivierungsmethode der politischen Bildung und Moderation; keine eigenständige Wirksamkeitsforschung."}
+  qualifikation: alle
+  quellen: [q_mattes2011, q_kagan2009]
+
+- id: d_kartenabfrage
+  name: Kartenabfrage (Metaplan)
+  aliase: [Clustern, Moderationskarten]
+  kategorie: didaktik
+  phasen: [einstieg, hauptteil]
+  setting: [einzel, plenum]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [vorwissen, kreativitaet, entscheidung]
+  dauer: 15–30 Min.
+  kurz: Zu einer Leitfrage schreibt jede Person Gedanken auf Karten (ein Gedanke pro Karte, groß, max. 3 Zeilen); die Karten werden gemeinsam an einer Pinnwand geordnet.
+  ablauf:
+    - Präzise Frage auf Pinnwand schreiben.
+    - Einzeln Karten schreiben (Zeit oder Kartenzahl begrenzen).
+    - Karten einsammeln, vorlesen und gemeinsam zu Clustern ordnen; Cluster benennen.
+    - Optional Punktabfrage zur Gewichtung anschließen.
+  varianten:
+    - "Jugendliche: Karten zu einer Schulfrage schreiben, Cluster an der Wand gemeinsam benennen."
+    - "Erwachsene: Team-Kartenabfrage zu Problemen oder Ideen mit Punktabfrage zur Gewichtung."
+    - "Digital: Karten als Notizen im Online-Board, Clustern per Verschieben."
+  stolpersteine:
+    - Clustern durch die Moderation statt durch die Gruppe nimmt Eigentum weg.
+  evidenz: {stufe: praxis, text: "Kern der Moderationsmethode (Klebert et al.); Einzelschreiben vor dem Austausch vermeidet Produktionsblockaden, die beim mündlichen Brainstorming belegt sind (Diehl & Stroebe 1987)."}
+  qualifikation: alle
+  quellen: [q_klebert2006, q_diehl1987]
+
+- id: d_brainwriting
+  name: Brainwriting / Methode 6-3-5
+  aliase: [Ideenkarussell auf Papier]
+  kategorie: didaktik
+  phasen: [einstieg, hauptteil]
+  setting: [kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [kreativitaet, problemloesen]
+  dauer: 20–30 Min.
+  kurz: Sechs Personen schreiben je drei Ideen in fünf Minuten auf ein Blatt und reichen es weiter; jede Runde baut auf den vorherigen Ideen auf.
+  ablauf:
+    - Problem klar formulieren; Formular mit 3 Spalten × 6 Zeilen austeilen.
+    - Runde 1 – 5 Min. – je 3 Ideen; dann Blatt im Uhrzeigersinn weitergeben.
+    - 6 Runden, dabei vorhandene Ideen aufgreifen und weiterentwickeln.
+    - Ideen auswerten (z. B. Punktabfrage).
+  varianten:
+    - "Kinder/Jugendliche: 4-2-3 (vier Personen, zwei Ideen, drei Minuten)."
+  stolpersteine:
+    - Zeitdruck kann bei langsam Schreibenden blockieren; Stichworte genügen.
+  evidenz: {stufe: mittel, text: "Gruppen-Brainstorming erzeugt nachweislich weniger Ideen als Einzelarbeit (Diehl & Stroebe 1987); schriftliche, parallele Formen umgehen diese Blockade."}
+  qualifikation: alle
+  quellen: [q_rohrbach1969, q_diehl1987]
+
+- id: d_bildimpuls_fragen
+  name: Fragen an das Thema (Question Formulation)
+  aliase: [Fragensturm, Wonder Wall]
+  kategorie: didaktik
+  phasen: [einstieg]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [motivation, vorwissen, lernstrategien]
+  dauer: 10–15 Min.
+  kurz: Statt Fragen zu beantworten, formulieren Lernende zu einem Impuls möglichst viele eigene Fragen, sortieren sie und wählen die wichtigsten für die Einheit.
+  ablauf:
+    - Impuls zeigen (Bild, Schlagzeile, Objekt).
+    - 5 Min. Fragen sammeln, ohne zu bewerten oder zu beantworten.
+    - Fragen sortieren (offen/geschlossen, wichtig/weniger wichtig).
+    - Drei Leitfragen für den Unterricht auswählen; Fragenwand sichtbar lassen.
+  varianten:
+    - "Kinder: Bild mit Fragezeichen, Fragen gemeinsam als Bild- oder Wortkarten sammeln."
+    - "Jugendliche: Schlagzeile oder Objekt als Impuls, Fragen in Kleingruppen sortieren."
+    - "Digital: Fragen anonym in einem Online-Board sammeln und gemeinsam sortieren."
+  stolpersteine:
+    - "Fragen werden sofort beantwortet statt gesammelt; Antwortpause bewusst einhalten."
+    - "Viele Fragen bleiben unbeantwortet; Fragenwand am Ende aufgreifen."
+  evidenz: {stufe: begrenzt, text: "Neugier entsteht aus bewusst wahrgenommenen Wissenslücken (Loewenstein 1994); direkte Wirksamkeitsstudien zum Format sind spärlich."}
+  qualifikation: alle
+  quellen: [q_loewenstein1994]
+
+- id: d_lebensweltbezug
+  name: Lebenswelt- und Nutzenbezug herstellen
+  aliase: [Utility-Value-Einstieg, Relevanz-Reflexion]
+  kategorie: didaktik
+  phasen: [einstieg]
+  setting: [einzel, plenum]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [motivation]
+  dauer: 5–15 Min.
+  kurz: Lernende schreiben selbst auf, wofür der Stoff in ihrem Leben nützlich sein könnte – statt dass die Lehrkraft es behauptet.
+  ablauf:
+    - Kurzen Text oder Beispiel zur Anwendung des Themas geben.
+    - Lernende schreiben 1–2 Absätze, wie das Thema mit ihrem Alltag, Hobby oder Berufswunsch zusammenhängt.
+    - Optional freiwillig teilen.
+  varianten:
+    - "Jugendliche: Bezug zu Hobby, Musik oder Sport statt abstrakter Anwendung schreiben."
+    - "Erwachsene: Bezug zum eigenen Berufsalltag oder zur Lebensplanung formulieren."
+    - "Digital: Kurztexte im Dokument teilen, freiwillig Beispiele im Chat ergänzen."
+  stolpersteine:
+    - Von der Lehrkraft verkündete Relevanz kann bei wenig zuversichtlichen Lernenden Druck erzeugen; selbst formulierte wirkt besser.
+  evidenz: {stufe: mittel, text: "Randomisierte Studie (Hulleman & Harackiewicz 2009): Selbst formulierte Nützlichkeit erhöhte Interesse und Noten besonders bei Lernenden mit niedriger Erfolgserwartung."}
+  qualifikation: alle
+  quellen: [q_hulleman2009, q_keller1987]
+
+- id: d_arcs_aufmerksamkeit
+  name: Aufmerksamkeit gewinnen (Gagné/ARCS)
+  aliase: [Hook, Gain attention]
+  kategorie: didaktik
+  phasen: [einstieg]
+  setting: [plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [motivation]
+  dauer: 1–5 Min.
+  kurz: Ein kurzer Reiz (Geschichte, Rätsel, Frage, Musik, Objekt) lenkt die Aufmerksamkeit auf das Thema. Erster Schritt bei Gagné und das »A« im ARCS-Modell.
+  ablauf:
+    - Reiz wählen, der inhaltlich zum Ziel führt (nicht nur unterhält).
+    - Kurz halten, dann Ziel nennen (Gagné-Schritt 2).
+    - Neugier im Verlauf wieder aufgreifen.
+  varianten:
+    - "Kinder: Rätsel oder Geschichte mit einem Gegenstand als Einstieg."
+    - "Jugendliche: Schlagzeile oder kurzes Video mit einer Frage zum Stoff."
+    - "Digital: Kurzer Reiz im Videoraum, z. B. Bild oder Umfrage, dann Ziel nennen."
+  stolpersteine:
+    - Bunte, aber themenfremde Einstiege (»seductive details«) lenken ab und verschlechtern das Lernen.
+  evidenz: {stufe: mittel, text: "Gagnés Lernereignisse und Kellers ARCS-Modell sind theoretisch anerkannte Gestaltungsmodelle; die Warnung vor ablenkenden Details ist in der Multimedia-Forschung belegt (Mayer)."}
+  qualifikation: alle
+  quellen: [q_gagne1985, q_keller1987, q_mayer2021]
+
+- id: d_lernlandkarte_selbsteinschaetzung
+  name: Kompetenzraster / Selbsteinschätzung zu Beginn
+  aliase: [Ich-kann-Liste, Lernlandkarte]
+  kategorie: didaktik
+  phasen: [einstieg, abschluss]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [lernstrategien, diagnose, heterogenitaet]
+  dauer: 5–10 Min.
+  kurz: Lernende schätzen anhand einer Liste von Kann-Sätzen ein, was sie schon können; am Ende der Einheit erneut. Basis für Differenzierung.
+  ablauf:
+    - 5–10 Kann-Sätze der Einheit austeilen.
+    - Einschätzen mit Symbolen (kann ich / teilweise / noch nicht).
+    - Lehrkraft nutzt die Ergebnisse für Gruppen oder Zusatzangebote.
+    - Am Ende wiederholen und mit Testergebnis vergleichen.
+  varianten:
+    - "Kinder: Ich-kann-Liste mit Bildern und Smileys zum Ankreuzen."
+    - "Jugendliche: Kann-Sätze als Tabelle mit Symbolen (kann ich / teilweise / noch nicht)."
+    - "Digital: Selbsteinschätzung als Formular, Ergebnisse für die Gruppenbildung auswerten."
+  stolpersteine:
+    - Selbsteinschätzungen sind ungenau, besonders bei schwächeren Lernenden; ergänzen, nicht ersetzen.
+  evidenz: {stufe: mittel, text: "Metaanalysen zur Selbstbeurteilung (Panadero et al. 2017) zeigen positive Effekte auf Selbstregulation und Selbstwirksamkeit, wenn mit Kriterien und Rückmeldung gearbeitet wird."}
+  qualifikation: alle
+  quellen: [q_panadero2017, q_zimmerman2002]
+
+- id: d_kugellager_einstieg
+  name: Kugellager / Doppelkreis
+  aliase: [Inside-Outside Circle, Speed-Dating-Gespräch]
+  kategorie: didaktik
+  phasen: [einstieg, hauptteil, abschluss]
+  setting: [partner, plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [vorwissen, ueben, diskussion]
+  dauer: 10–20 Min.
+  kurz: Zwei Kreise stehen sich gegenüber; Paare tauschen sich zu einer Frage aus, dann rückt ein Kreis weiter. Viele kurze Gespräche mit wechselnden Partnern.
+  ablauf:
+    - Innen- und Außenkreis bilden, Paare stehen sich gegenüber.
+    - Frage stellen, Innenkreis spricht 1 Min., Außenkreis hört zu (und umgekehrt).
+    - Außenkreis rückt 2 Plätze weiter, neue Frage oder gleiche Frage mit Verbesserung.
+  varianten:
+    - "Platzsparend: zwei gegenüberstehende Reihen (Kugelreihe)."
+    - "Erwachsene: als Kennenlernformat in Fortbildungen."
+  stolpersteine:
+    - Raum und Lautstärke planen; klare Signale für Wechsel.
+  evidenz: {stufe: praxis, text: "Kooperative Lernstruktur (Kagan; Brüning & Saum); Wirksamkeit über die allgemeinen Effekte kooperativen Lernens begründet."}
+  qualifikation: alle
+  quellen: [q_kagan2009, q_bruening2009]
+
+- id: d_schaetzfrage
+  name: Schätzfrage / Fermi-Frage
+  aliase: [Fermi-Problem, Größenordnung schätzen]
+  kategorie: didaktik
+  phasen: [einstieg]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [problemloesen, motivation, vorwissen]
+  dauer: 5–20 Min.
+  kurz: Eine offene Schätzfrage (»Wie viele Klavierstimmer gibt es in Erfurt?«) wird mit Alltagswissen und Überschlagsrechnung angegangen.
+  ablauf:
+    - Frage stellen, erste Bauchschätzung notieren.
+    - In Gruppen Teilgrößen sammeln und begründet schätzen.
+    - Rechenwege vergleichen, Ergebnis mit echten Daten abgleichen.
+  varianten:
+    - "Kinder: Schätzfrage aus dem Alltag, z. B. Wie viele Schritte bis zur Schule?"
+    - "Jugendliche: Fermi-Frage mit Teilgrößen aus dem Fach, Rechenweg auf Plakat."
+    - "Digital: Gemeinsame Schätzung über Umfrage, Rechenweg im Dokument."
+  stolpersteine:
+    - Es geht um den Weg; »richtige Zahl« zu belohnen untergräbt das Ziel.
+  evidenz: {stufe: praxis, text: "Mathematikdidaktisch etabliert für Modellierungskompetenz; als Einstieg nutzt es die Wissenslücken-Theorie der Neugier."}
+  qualifikation: alle
+  quellen: [q_loewenstein1994]

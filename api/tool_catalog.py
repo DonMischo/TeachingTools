@@ -242,6 +242,10 @@ CATALOG: list[CatalogTool] = [
         "use": _cap(True, False),
         "create": _cap(True, False),
     }),
+    # Nachschlagewerk (nur lesen): Methoden aus Didaktik, Pädagogik, Psychologie.
+    CatalogTool("kompendium", "📚 Methoden-Kompendium", "📚", "tools", {
+        "use": _cap(True, False),
+    }),
     # Fragmente: students may USE boards shared with their class (default on);
     # creating a collection is teacher-only. Per-collection access is further
     # governed by the collection's own ACL grants.

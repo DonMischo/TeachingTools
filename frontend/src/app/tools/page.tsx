@@ -56,6 +56,14 @@ const ALL_CARDS: Werkzeug[] = [
     color: "#60a5fa",
   },
   {
+    slug: "kompendium",
+    href: "/tools/kompendium",
+    icon: "📚",
+    title: "Methoden-Kompendium",
+    description: "Methoden aus Didaktik, Pädagogik und Psychologie für Einstieg, Hauptteil und Abschluss — mit Evidenz und Quellen.",
+    color: "#2a9db0",
+  },
+  {
     slug: "stundenplaner",
     href: "/stundenplaner",
     icon: "📋",

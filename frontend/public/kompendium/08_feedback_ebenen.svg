@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" font-family="Arial, Helvetica, sans-serif" role="img" aria-label="FEEDBACK – DREI FRAGEN, VIER EBENEN">
+<rect x="0" y="0" width="960" height="540" fill="#0F1E2E" rx="12"/>
+<text x="480.0" y="38.0" font-size="20" fill="#FFFFFF" text-anchor="middle" font-weight="bold">FEEDBACK – DREI FRAGEN, VIER EBENEN</text>
+<line x1="60" y1="50" x2="900" y2="50" stroke="#C9A227" stroke-width="2"/>
+<text x="480.0" y="70.0" font-size="12" fill="#8AADCC" text-anchor="middle" font-weight="normal">Lernförderliches Feedback beantwortet drei Fragen und zielt auf Aufgabe, Prozess und Selbstregulation</text>
+<rect x="40" y="92" width="280" height="74" fill="#3D7DCA" rx="8"/>
+<text x="180" y="116.0" font-size="15" fill="#FFFFFF" text-anchor="middle" font-weight="bold">FEED UP</text>
+<text x="180" y="136.0" font-size="12.5" fill="#FFFFFF" text-anchor="middle" font-weight="normal" font-style="italic">Wohin gehe ich?</text>
+<text x="180" y="155.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Ziele und Erfolgskriterien</text>
+<rect x="340" y="92" width="280" height="74" fill="#2E9466" rx="8"/>
+<text x="480" y="116.0" font-size="15" fill="#FFFFFF" text-anchor="middle" font-weight="bold">FEED BACK</text>
+<text x="480" y="136.0" font-size="12.5" fill="#FFFFFF" text-anchor="middle" font-weight="normal" font-style="italic">Wo stehe ich?</text>
+<text x="480" y="155.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Stand bezogen auf Kriterien</text>
+<rect x="640" y="92" width="280" height="74" fill="#C2652E" rx="8"/>
+<text x="780" y="116.0" font-size="15" fill="#FFFFFF" text-anchor="middle" font-weight="bold">FEED FORWARD</text>
+<text x="780" y="136.0" font-size="12.5" fill="#FFFFFF" text-anchor="middle" font-weight="normal" font-style="italic">Was ist der nächste Schritt?</text>
+<text x="780" y="155.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Konkreter Verbesserungsschritt</text>
+<text x="40" y="192.0" font-size="12" fill="#C9A227" text-anchor="start" font-weight="bold">VIER EBENEN</text>
+<text x="560" y="192.0" font-size="11" fill="#8AADCC" text-anchor="start" font-weight="bold">BEISPIEL</text>
+<rect x="30" y="202" width="900" height="62" fill="#1A2A3A" rx="4"/>
+<text x="44" y="226.0" font-size="13" fill="#FFFFFF" text-anchor="start" font-weight="bold">AUFGABE</text>
+<text x="44" y="246.0" font-size="11" fill="#8AADCC" text-anchor="start" font-weight="normal">Ist das richtig? Was fehlt?</text>
+<rect x="300" y="222" width="20" height="20" fill="#2E9466" rx="3"/>
+<rect x="326" y="222" width="20" height="20" fill="#2E9466" rx="3"/>
+<rect x="352" y="222" width="20" height="20" fill="#2E9466" rx="3"/>
+<rect x="378" y="222" width="20" height="20" fill="#2C4258" rx="3"/>
+<text x="410" y="237.0" font-size="11" fill="#E0E8F0" text-anchor="start" font-weight="normal">wirksam, v. a. bei</text>
+<text x="410" y="251.3" font-size="11" fill="#E0E8F0" text-anchor="start" font-weight="normal">Fehlern im Wissen</text>
+<text x="560" y="237.0" font-size="11.5" fill="#E0E8F0" text-anchor="start" font-weight="normal" font-style="italic">»Die Einleitung nennt noch keine These.«</text>
+<rect x="30" y="268" width="900" height="62" fill="#162030" rx="4"/>
+<text x="44" y="292.0" font-size="13" fill="#FFFFFF" text-anchor="start" font-weight="bold">PROZESS</text>
+<text x="44" y="312.0" font-size="11" fill="#8AADCC" text-anchor="start" font-weight="normal">Welche Strategie hilft?</text>
+<rect x="300" y="288" width="20" height="20" fill="#2E9466" rx="3"/>
+<rect x="326" y="288" width="20" height="20" fill="#2E9466" rx="3"/>
+<rect x="352" y="288" width="20" height="20" fill="#2E9466" rx="3"/>
+<rect x="378" y="288" width="20" height="20" fill="#2E9466" rx="3"/>
+<text x="410" y="303.0" font-size="11" fill="#E0E8F0" text-anchor="start" font-weight="normal">sehr wirksam für</text>
+<text x="410" y="317.3" font-size="11" fill="#E0E8F0" text-anchor="start" font-weight="normal">tieferes Verstehen</text>
+<text x="560" y="303.0" font-size="11.5" fill="#E0E8F0" text-anchor="start" font-weight="normal" font-style="italic">»Prüfe deine Lösung durch Einsetzen.«</text>
+<rect x="30" y="334" width="900" height="62" fill="#1A2A3A" rx="4"/>
+<text x="44" y="358.0" font-size="13" fill="#FFFFFF" text-anchor="start" font-weight="bold">SELBSTREGULATION</text>
+<text x="44" y="378.0" font-size="11" fill="#8AADCC" text-anchor="start" font-weight="normal">Wie überwache ich mich selbst?</text>
+<rect x="300" y="354" width="20" height="20" fill="#2E9466" rx="3"/>
+<rect x="326" y="354" width="20" height="20" fill="#2E9466" rx="3"/>
+<rect x="352" y="354" width="20" height="20" fill="#2E9466" rx="3"/>
+<rect x="378" y="354" width="20" height="20" fill="#2E9466" rx="3"/>
+<text x="410" y="369.0" font-size="11" fill="#E0E8F0" text-anchor="start" font-weight="normal">sehr wirksam, fördert</text>
+<text x="410" y="383.3" font-size="11" fill="#E0E8F0" text-anchor="start" font-weight="normal">Selbstständigkeit</text>
+<text x="560" y="369.0" font-size="11.5" fill="#E0E8F0" text-anchor="start" font-weight="normal" font-style="italic">»Woran kannst du selbst erkennen, ob es stimmt?«</text>
+<rect x="30" y="400" width="900" height="62" fill="#162030" rx="4"/>
+<text x="44" y="424.0" font-size="13" fill="#FFFFFF" text-anchor="start" font-weight="bold">PERSON</text>
+<text x="44" y="444.0" font-size="11" fill="#8AADCC" text-anchor="start" font-weight="normal">Lob oder Tadel der Person</text>
+<rect x="300" y="420" width="20" height="20" fill="#B03A2E" rx="3"/>
+<rect x="326" y="420" width="20" height="20" fill="#2C4258" rx="3"/>
+<rect x="352" y="420" width="20" height="20" fill="#2C4258" rx="3"/>
+<rect x="378" y="420" width="20" height="20" fill="#2C4258" rx="3"/>
+<text x="410" y="435.0" font-size="11" fill="#E0E8F0" text-anchor="start" font-weight="normal">kaum wirksam, kann</text>
+<text x="410" y="449.3" font-size="11" fill="#E0E8F0" text-anchor="start" font-weight="normal">schaden</text>
+<text x="560" y="435.0" font-size="11.5" fill="#E0E8F0" text-anchor="start" font-weight="normal" font-style="italic">»Du bist so klug!«</text>
+<text x="480.0" y="490.0" font-size="12" fill="#C9A227" text-anchor="middle" font-weight="normal" font-style="italic">Über ein Drittel der Feedback-Interventionen verschlechtert Leistung – besonders, wenn sie die Aufmerksamkeit auf die Person lenkt.</text>
+<text x="480.0" y="520.0" font-size="10.5" fill="#8AADCC" text-anchor="middle" font-weight="normal">Quellen: Hattie &amp; Timperley 2007 · Kluger &amp; DeNisi 1996 · Wisniewski, Zierer &amp; Hattie 2020</text>
+</svg>

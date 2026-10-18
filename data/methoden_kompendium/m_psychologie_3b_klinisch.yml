@@ -1,0 +1,591 @@
+# Psychologie – Erweiterung 3: Arbeitsweisen mit Patient·innen und Klient·innen
+- id: y_allianz
+  name: Therapeutische Beziehung (Arbeitsbündnis) gestalten
+  aliase: [Working Alliance, Allgemeine Wirkfaktoren]
+  kategorie: psychologie
+  phasen: [uebergreifend]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [therapie, beratung, beziehung]
+  dauer: Haltung
+  kurz: "Das Arbeitsbündnis besteht aus drei Teilen: emotionale Bindung, Einigkeit über Ziele und Einigkeit über die Aufgaben. Es sagt den Behandlungserfolg über alle Verfahren hinweg vorher."
+  ablauf:
+    - Anliegen ernst nehmen, Verständnis zeigen.
+    - Ziele gemeinsam aushandeln, Vorgehen erklären und begründen.
+    - Regelmäßig nachfragen, ob die Zusammenarbeit passt.
+  varianten:
+    - "Jugendliche: Ziele und Vorgehen im Beratungsgespräch gemeinsam festlegen und nachfragen, ob es passt."
+    - "Erwachsene: Teamgespräche mit klarer Zielabsprache und regelmäßiger Rückfrage zur Zusammenarbeit."
+    - "Digital: Zielvereinbarung im Dokument mit Abstimmung per Kommentar."
+  stolpersteine:
+    - "Nähe und Vertrauen müssen Grenzen haben; professionelle Distanz wahren und Grenzfragen mit Fachstellen klären."
+  evidenz: {stufe: stark, text: "Metaanalyse Flückiger et al. (2018, über 300 Studien): Allianz-Ergebnis-Zusammenhang r ≈ 0,28; Wampold (2015) zu allgemeinen Wirkfaktoren."}
+  qualifikation: alle
+  quellen: [q_flueckiger2018, q_wampold2015]
+
+- id: y_klientenzentriert
+  name: Klientenzentrierte Gesprächshaltung (Empathie, Wertschätzung, Echtheit)
+  aliase: [Rogers-Variablen, Personzentrierte Gesprächsführung]
+  kategorie: psychologie
+  phasen: [uebergreifend]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [beratung, therapie, beziehung]
+  dauer: Haltung
+  kurz: Die Gesprächsleitung bemüht sich, das Erleben des Gegenübers genau zu verstehen und es auszudrücken (Empathie), begegnet der Person ohne Bedingungen wertschätzend und ist selbst authentisch.
+  ablauf:
+    - Zuhören, ohne zu bewerten oder zu beraten.
+    - Gefühle und Bedeutungen verbalisieren.
+    - Eigene Reaktionen ehrlich und angemessen zeigen.
+  varianten:
+    - "Jugendliche: Zuhören ohne Ratschlag, Gefühle in eigenen Worten zurückspiegeln."
+    - "Erwachsene: Gesprächshaltung in Beratungen mit wertschätzenden, offenen Fragen."
+    - "Digital: Gesprächsleitfaden für Videogespräche mit Spiegelfragen."
+  stolpersteine:
+    - "Spiegeln wirkt schnell künstlich; Haltung wichtiger als Technik, Formulierungen eigenständig wählen."
+  evidenz: {stufe: stark, text: "Rogers (1957); Metaanalyse Elliott et al. (2018): Empathie der Therapeut·innen hängt mit dem Ergebnis zusammen (r ≈ 0,28)."}
+  qualifikation: alle
+  quellen: [q_rogers1957, q_elliott2018]
+
+- id: y_validierung
+  name: Validieren
+  aliase: [Validierungsstufen, Verständnis ausdrücken (DBT)]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [therapie, beziehung, krise]
+  dauer: Gesprächstechnik
+  kurz: Erleben und Verhalten werden als verständlich anerkannt – vom aufmerksamen Zuhören über das Benennen von Gefühlen bis zu »Angesichts dessen, was du erlebt hast, ist es nachvollziehbar, dass …«. Validieren heißt nicht, Verhalten gutzuheißen.
+  ablauf:
+    - Aufmerksam zuhören (Stufe 1).
+    - Genau zurückmelden (Stufe 2).
+    - Unausgesprochenes benennen (Stufe 3).
+    - In Lebensgeschichte und aktueller Lage verstehen (Stufen 4–5); echt begegnen (Stufe 6).
+  varianten:
+    - "Jugendliche: Gefühle nachvollziehbar benennen (»Das ärgert dich, weil …«), ohne Verhalten zu billigen."
+    - "Fachkraft: Validierung als Teil einer DBT-Behandlung oder Schulung."
+    - "Digital: Formulierungshilfen im Chat für schwierige Gespräche."
+  stolpersteine:
+    - "Validierung ist kein Zustimmen zu schädlichem Verhalten; bei Selbstgefährdung sofort Fachkräfte einbeziehen."
+  evidenz: {stufe: mittel, text: "Kernstrategie der DBT (Linehan 2015), die als Gesamtverfahren gut belegt ist; Validierung reduziert in Experimenten negative Emotionen."}
+  qualifikation: fortbildung
+  quellen: [q_linehan2015]
+
+- id: y_erstgespraech
+  name: Erstgespräch und Auftragsklärung
+  aliase: [Anamnese, Kontraktgestaltung]
+  kategorie: psychologie
+  phasen: [einstieg]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [therapie, beratung, diagnose]
+  dauer: 50–90 Min.
+  kurz: "Im ersten Kontakt werden Anlass, Anliegen und Erwartungen geklärt: Wer will was von wem? (Auftragsklärung), Beschwerden und Vorgeschichte, Ressourcen, Rahmen (Vertraulichkeit, Dauer, Kosten) und das weitere Vorgehen."
+  ablauf:
+    - Begrüßung, Rahmen und Schweigepflicht erklären.
+    - Offen fragen – Was führt Sie her? Warum jetzt?
+    - Erwartungen, Ziele, frühere Hilfe erfragen.
+    - Gemeinsames vorläufiges Verständnis und nächster Schritt.
+  varianten:
+    - "Fachkraft: Erstgespräch mit klarem Rahmen und Schweigepflicht in der Beratungsstelle."
+    - "Jugendliche: Lehrkraft klärt im Vorfeld nur Rahmen und Ansprechperson, nicht den Inhalt."
+    - "Digital: Vorab-Information zum Ablauf im Dokument."
+  stolpersteine:
+    - Unklarer Auftrag (z. B. Schüler·in wird »geschickt«) führt zu Widerstand; erst den eigenen Auftrag der Person finden.
+  evidenz: {stufe: mittel, text: "Gute Rollenvorbereitung und geklärte Erwartungen senken Abbrüche (Swift & Greenberg 2012); Auftragsklärung ist systemischer Standard."}
+  qualifikation: fachkraft
+  quellen: [q_swift2012, q_schweitzer2007]
+
+- id: y_klinisches_interview
+  name: Strukturiertes klinisches Interview
+  aliase: [DIPS, Kinder-DIPS, standardisierte Diagnostik]
+  kategorie: psychologie
+  phasen: [einstieg]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [therapie, diagnose]
+  dauer: 60–120 Min.
+  kurz: Psychische Störungen werden mit festen Fragen und Entscheidungsregeln nach DSM/ICD erfasst – zuverlässiger als freie Gespräche. Für Kinder gibt es Eltern- und Kinderversionen.
+  ablauf:
+    - Screening-Fragen zu allen Störungsbereichen.
+    - Bei positiven Antworten vertiefen.
+    - Diagnosen nach Regeln vergeben, mit Fragebögen ergänzen.
+  varianten:
+    - "Fachkraft: Strukturiertes Interview in der Diagnostik mit ausgebildeter Durchführung."
+    - "Eltern: Information über Ablauf und Zweck einer Diagnostik durch Fachstellen."
+    - "Digital: Fragebogenvorlage nur zur Information, keine Eigenauswertung."
+  stolpersteine:
+    - "Auffälligkeiten im Interview sind keine Diagnose durch Laien; Befunde an Fachstellen weitergeben."
+  evidenz: {stufe: stark, text: "Margraf et al. (2017): DIPS-Verfahren mit guter Reliabilität und Validität über die Lebensspanne."}
+  qualifikation: fachkraft
+  quellen: [q_margraf2017]
+
+- id: y_fallkonzeption
+  name: Fallkonzeption und Plananalyse
+  aliase: [Case Formulation, Bedingungsmodell]
+  kategorie: psychologie
+  phasen: [uebergreifend]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [therapie, beratung]
+  dauer: fortlaufend
+  kurz: Aus Anamnese, Verhaltensanalysen und Beobachtungen entsteht ein individuelles Modell, warum Probleme entstanden sind und weiter bestehen (prädisponierende, auslösende, aufrechterhaltende Faktoren; bei der Plananalyse die dahinterliegenden Bedürfnisse und Pläne). Daraus werden Ziele und Interventionen abgeleitet.
+  ablauf:
+    - Probleme und Ziele auflisten.
+    - Hypothesen zu Mechanismen bilden.
+    - Mit der Person teilen und überprüfen.
+    - Behandlungsplan ableiten, laufend anpassen.
+  varianten:
+    - "Fachkraft: Fallkonzept im Team der Beratungsstelle mit Supervision."
+    - "Erwachsene: Fallbesprechung im Kollegium, Hypothesen als Fragen formulieren."
+    - "Digital: Fallnotiz mit Hypothesen im geschützten Dokument."
+  stolpersteine:
+    - "Hypothesen werden zu Etiketten; mit der Person prüfen und offen halten."
+  evidenz: {stufe: mittel, text: "Persons (2008) und Caspar (2007) beschreiben den Ansatz; Hofmann & Hayes (2019) fordern prozessorientierte, individuelle Behandlung; direkte Vergleichsstudien sind begrenzt."}
+  qualifikation: fachkraft
+  quellen: [q_persons2008, q_caspar2007, q_hayes_cbt_process]
+
+- id: y_zielvereinbarung
+  name: Gemeinsame Therapieziele vereinbaren
+  aliase: [Zielkonsens, Goal Attainment]
+  kategorie: psychologie
+  phasen: [einstieg, uebergreifend]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [therapie, beratung, motivation]
+  dauer: 20–30 Min.
+  kurz: Ziele werden gemeinsam, konkret und positiv formuliert und regelmäßig überprüft. Einigkeit über Ziele und echte Zusammenarbeit sagen den Erfolg vorher.
+  ablauf:
+    - Anliegen in konkrete Ziele übersetzen (»Woran würden Sie merken …?«).
+    - Prioritäten setzen, Teilziele bestimmen.
+    - Fortschritt regelmäßig skalieren.
+  varianten:
+    - "Jugendliche: Ziel in einem Satz formulieren und mit Skala von 0 bis 10 überprüfen."
+    - "Erwachsene: Entwicklungsziel im Coaching mit konkreten Woran-merke-ich-es-Fragen."
+    - "Digital: Zielkarte im Dokument mit regelmäßigem Update."
+  stolpersteine:
+    - "Ziele werden von Fachkräften vorgegeben statt erarbeitet; Ziele immer von der Person formulieren lassen."
+  evidenz: {stufe: stark, text: "Metaanalysen Tryon et al. (2018): Zielkonsens (r ≈ 0,24) und Zusammenarbeit (r ≈ 0,29) hängen mit dem Ergebnis zusammen."}
+  qualifikation: alle
+  quellen: [q_tryon2018, q_locke2002]
+
+- id: y_sitzungsstruktur
+  name: Strukturierte Sitzung (KVT-Sitzungsablauf)
+  aliase: [Agenda-Setting, Brückenschlag]
+  kategorie: psychologie
+  phasen: [einstieg, hauptteil, abschluss]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [therapie, beratung]
+  dauer: 50 Min.
+  kurz: "Jede Sitzung folgt einem transparenten Ablauf: Befinden erfragen, Brücke zur letzten Sitzung, gemeinsame Agenda, Hausaufgabe besprechen, Hauptthema bearbeiten, Zusammenfassung, neue Übungsaufgabe, Rückmeldung zur Sitzung."
+  ablauf:
+    - Stimmungscheck und Brücke.
+    - Agenda gemeinsam festlegen.
+    - Hausaufgabe auswerten.
+    - Thema bearbeiten, regelmäßig zusammenfassen.
+    - Neue Aufgabe und Sitzungsfeedback.
+  varianten:
+    - "Jugendliche: Gesprächsablauf mit Stimmungscheck, Thema und Abschlussfrage für Beratungstermine."
+    - "Erwachsene: Strukturierter Ablauf für Coaching oder Beratung mit Agenda."
+    - "Digital: Agenda als Vorlage im Dokument für Videogespräche."
+  stolpersteine:
+    - "Ein starrer Ablauf verhindert Raum für Wichtiges; Agenda flexibel anpassen."
+  evidenz: {stufe: mittel, text: "Standard der kognitiven Verhaltenstherapie (Beck 2020); Struktur ist Teil der in vielen RCTs geprüften Manuale; Prinzip auch für Beratung und Coaching übertragbar."}
+  qualifikation: fortbildung
+  quellen: [q_beck2020]
+
+- id: y_uebungsaufgaben
+  name: Übungsaufgaben zwischen den Sitzungen
+  aliase: [Therapeutische Hausaufgaben, Transferaufgaben]
+  kategorie: psychologie
+  phasen: [abschluss]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [therapie, beratung]
+  dauer: 5–10 Min. Planung
+  kurz: Zwischen den Treffen werden Neues erprobt, Protokolle geführt oder Übungen gemacht. Die Aufgabe wird gemeinsam entwickelt, begründet und in der nächsten Sitzung immer besprochen.
+  ablauf:
+    - Aufgabe aus dem Sitzungsthema ableiten.
+    - Konkret planen (wann, wo, wie oft), Hindernisse vorwegnehmen.
+    - Schriftlich mitgeben.
+    - In der nächsten Sitzung würdigen und auswerten.
+  varianten:
+    - "Jugendliche: kleine Aufgabe zwischen zwei Terminen, z. B. ein Gefühlsprotokoll im Heft."
+    - "Erwachsene: Transferaufgabe aus dem Coaching mit Plan für Alltagssituationen."
+    - "Digital: Aufgabe im Dokument mit Rückmeldung zum nächsten Termin."
+  stolpersteine:
+    - "Aufgaben werden überfordernd oder ohne Besprechung vergeben; Umfang klein halten und nachfragen."
+  evidenz: {stufe: stark, text: "Metaanalyse Kazantzis et al. (2010): Behandlungen mit Hausaufgaben wirken besser; Erledigung hängt mit dem Ergebnis zusammen."}
+  qualifikation: alle
+  quellen: [q_kazantzis2010]
+
+- id: y_verlaufsmessung
+  name: Verlaufsmessung mit Rückmeldung (ROM)
+  aliase: [Routine Outcome Monitoring, Feedback-informierte Therapie]
+  kategorie: psychologie
+  phasen: [einstieg, uebergreifend]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [therapie, diagnose]
+  dauer: 2–5 Min. pro Sitzung
+  kurz: Vor jeder Sitzung füllen Patient·innen einen Kurzfragebogen aus; Therapeut·innen sehen den Verlauf und erhalten Warnsignale, wenn jemand nicht wie erwartet profitiert.
+  ablauf:
+    - Kurzen, validierten Fragebogen wählen.
+    - Vor jeder Sitzung ausfüllen, Verlaufskurve anschauen.
+    - Bei Verschlechterung Vorgehen und Beziehung gemeinsam besprechen.
+  varianten:
+    - "Fachkraft: Kurzfragebogen vor jeder Sitzung mit Verlaufsgrafik in der Beratungsstelle."
+    - "Jugendliche: Befinden auf einer Skala vor dem Gespräch, Auswertung mit Fachkraft."
+    - "Digital: Fragebogen im Online-Tool mit geschütztem Zugang."
+  stolpersteine:
+    - "Datenschutz und Einwilligung sind Pflicht; Ergebnisse nur mit Fachkraft besprechen."
+  evidenz: {stufe: stark, text: "Metaanalyse Lambert et al. (2018): Verlaufsrückmeldung verbessert Ergebnisse und senkt Verschlechterungen, besonders bei gefährdeten Fällen."}
+  qualifikation: fachkraft
+  quellen: [q_lambert2018]
+
+- id: y_brueche_reparieren
+  name: Brüche in der Beziehung reparieren
+  aliase: [Rupture Repair, Metakommunikation]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [therapie, beratung, beziehung]
+  dauer: situativ
+  kurz: Spannungen (Rückzug, Ärger, Ausweichen) werden nicht übergangen, sondern offen angesprochen (»Ich habe den Eindruck, das eben hat Sie verärgert – stimmt das?«). Die eigene Beteiligung wird anerkannt.
+  ablauf:
+    - Bruchsignale bemerken.
+    - Beobachtung behutsam ansprechen.
+    - Eigenen Anteil anerkennen, Erleben der Person erkunden.
+    - Gemeinsam das Vorgehen anpassen.
+  varianten:
+    - "Jugendliche: Ansprechen von Spannungen im Gespräch (»Ich merke, du bist gerade still – stimmt was nicht?«)."
+    - "Erwachsene: Klärung von Missverständnissen im Team oder Kurs offen ansprechen."
+    - "Digital: Rückfrage im Chat, wenn ein Gespräch abbricht."
+  stolpersteine:
+    - "Eigene Anteile offen benennen, ohne sich für alles verantwortlich zu machen; Grenzen der eigenen Rolle beachten."
+  evidenz: {stufe: mittel, text: "Metaanalyse Eubanks et al. (2018): Reparierte Brüche gehen mit besserem Ergebnis einher; Training in Reparatur verbessert die Allianz."}
+  qualifikation: fortbildung
+  quellen: [q_eubanks2018]
+
+- id: y_shared_decision
+  name: Partizipative Entscheidungsfindung
+  aliase: [Shared Decision Making, Optionen-Gespräch]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [therapie, entscheidung, beratung]
+  dauer: 15–30 Min.
+  kurz: "Fachperson und Patient·in entscheiden gemeinsam in drei Schritten: Team-Gespräch (Es gibt eine Wahl), Options-Gespräch (Optionen mit Vor- und Nachteilen), Entscheidungs-Gespräch (Präferenzen klären, entscheiden)."
+  ablauf:
+    - Deutlich machen, dass es mehrere Möglichkeiten gibt.
+    - Optionen neutral darstellen (ggf. Entscheidungshilfe).
+    - Werte und Präferenzen erfragen.
+    - Entscheidung treffen oder Bedenkzeit vereinbaren.
+  varianten:
+    - "Jugendliche: Optionen für Schulwahl oder Lernweg gemeinsam besprechen und entscheiden lassen."
+    - "Erwachsene: Optionen-Gespräch im Coaching mit Vor- und Nachteilen."
+    - "Digital: Entscheidungshilfe als Tabelle im Dokument."
+  stolpersteine:
+    - "Die Entscheidung wird faktisch vorgegeben; echte Wahlmöglichkeiten benennen."
+  evidenz: {stufe: mittel, text: "Modell von Elwyn et al. (2012); Entscheidungshilfen verbessern Wissen und Entscheidungsqualität in zahlreichen Studien."}
+  qualifikation: fortbildung
+  quellen: [q_elwyn2012]
+
+- id: y_teach_back
+  name: Teach-back (Rückerklären lassen)
+  aliase: [Verständnis sichern, Chunk and Check]
+  kategorie: psychologie
+  phasen: [abschluss]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [therapie, beratung, diagnose]
+  dauer: 2–5 Min.
+  kurz: Statt »Haben Sie alles verstanden?« bittet die Fachperson, das Wichtigste in eigenen Worten zu erklären (»Damit ich sicher bin, dass ich es gut erklärt habe …«), und ergänzt Lücken.
+  ablauf:
+    - Information in kleinen Portionen geben.
+    - Zurückerklären lassen, Verantwortung bei sich nehmen.
+    - Missverständnisse korrigieren und erneut prüfen.
+  varianten:
+    - "Kinder: Lernende erklären die Aufgabe in eigenen Worten, dann prüft die Lehrkraft."
+    - "Jugendliche: Zusammenfassung eines Themas am Stundenende mit Partner."
+    - "Digital: Kurze Rückerklärung als Sprachnachricht."
+  stolpersteine:
+    - "Die Frage »Hast du verstanden?« wird mit Ja beantwortet; konkrete Rückerklärung verlangen."
+  evidenz: {stufe: mittel, text: "Systematisches Review Talevski et al. (2020): Teach-back verbessert Verständnis, Selbstmanagement und teils Gesundheitsergebnisse."}
+  qualifikation: alle
+  quellen: [q_talevski2020]
+
+- id: y_spikes
+  name: Schwierige Nachrichten überbringen (SPIKES)
+  aliase: [Breaking Bad News, Sechs-Schritte-Protokoll]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [therapie, krise, beratung]
+  dauer: 15–45 Min.
+  kurz: "Sechs Schritte: Setting (Rahmen), Perception (Was weiß die Person?), Invitation (Wie viel will sie wissen?), Knowledge (Information in kleinen Portionen), Emotions (Gefühle empathisch aufgreifen), Strategy & Summary (Plan)."
+  ablauf:
+    - Ruhigen Raum, Zeit, ggf. Angehörige.
+    - Vorwissen und Informationswunsch erfragen.
+    - Ankündigen (»Ich habe leider keine guten Nachrichten«), klar und ohne Fachjargon informieren.
+    - Emotionen Raum geben, dann gemeinsam nächste Schritte.
+  varianten:
+    - "Erwachsene: Schwierige Mitteilungen (z. B. Nichtversetzung) im Gespräch mit Eltern strukturiert führen."
+    - "Erwachsene: Schulung im Kollegium für Gespräche mit Betroffenen."
+    - "Digital: Kurze Gesprächsvorlage für Nachrichten an Eltern mit Hinweis auf persönliches Gespräch."
+  stolpersteine:
+    - "Schlechte Nachrichten per Nachricht überbringen wirkt verletzend; persönlich oder im Gespräch mitteilen."
+  evidenz: {stufe: mittel, text: "Protokoll von Baile et al. (2000) aus der Onkologie; Trainings verbessern Kommunikationsfertigkeiten; auch auf Schule (z. B. Nichtversetzung) übertragbar."}
+  qualifikation: fortbildung
+  quellen: [q_baile2000]
+
+- id: y_nurse
+  name: Auf Emotionen antworten (NURSE)
+  aliase: [Empathische Antworten, Naming – Understanding – Respecting – Supporting – Exploring]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [therapie, beratung, beziehung]
+  dauer: Gesprächstechnik
+  kurz: "Fünf Arten, auf Gefühle zu reagieren: benennen (»Das klingt beängstigend«), verstehen, respektieren (»Sie haben viel getragen«), unterstützen (»Wir bleiben dran«), erkunden (»Erzählen Sie mehr«)."
+  ablauf:
+    - Emotionale Signale bemerken.
+    - Eine NURSE-Antwort geben, bevor neue Informationen folgen.
+    - Pausen zulassen.
+  varianten:
+    - "Jugendliche: Gefühl benennen (»Das klingt belastend«) und Raum für Erzählen geben."
+    - "Erwachsene: Empathische Antworten im Team bei Konflikten oder Belastung."
+    - "Digital: Antwortsätze als Vorlage im Chat für schwierige Nachrichten."
+  stolpersteine:
+    - "Formulierungen wirken als Floskeln, wenn sie nicht ehrlich gemeint sind; Haltung zuerst."
+  evidenz: {stufe: mittel, text: "Back et al. (2005); Kommunikationstrainings mit diesem Repertoire verbessern empathische Reaktionen von Ärzt·innen."}
+  qualifikation: fortbildung
+  quellen: [q_back2005]
+
+- id: y_sicherheitsplan
+  name: Krisen- und Sicherheitsplan bei Suizidgedanken
+  aliase: [Safety Planning, Notfallplan]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [krise, therapie]
+  dauer: 20–45 Min.
+  kurz: "Gemeinsam wird ein schriftlicher Plan erstellt: eigene Warnzeichen, eigene Bewältigungsstrategien, Menschen und Orte zur Ablenkung, Menschen, die man um Hilfe bitten kann, professionelle Kontakte und Krisendienste, Mittel zur Selbsttötung sichern."
+  ablauf:
+    - Suizidgedanken direkt und ruhig ansprechen.
+    - Plan Schritt für Schritt mit der Person formulieren.
+    - Nummern eintragen (Krisendienst, Telefonseelsorge, Notruf 112).
+    - Mittel sichern; Folgetermin vereinbaren.
+  varianten:
+    - "Jugendliche: Krisenkontakte und Notrufnummern vorab im Schulkrisenplan festhalten; Planerstellung bleibt Fachkräften vorbehalten."
+    - "Erwachsene: Kollegium kennt Ablauf für Krisenkontakt und Notruf 112."
+    - "Digital: Krisennummern als Übersicht im Lernmanagementsystem mit Hinweis auf Hilfe."
+  stolpersteine:
+    - Nach Suizidgedanken zu fragen erhöht das Risiko nicht (Dazzi et al. 2014). Bei akuter Gefahr nie allein lassen und Notruf wählen.
+  evidenz: {stufe: stark, text: "Stanley & Brown (2012); Studie in Notaufnahmen (Stanley et al. 2018): Sicherheitsplan mit Nachkontakt halbierte suizidales Verhalten in sechs Monaten fast."}
+  qualifikation: fachkraft
+  quellen: [q_stanley2012, q_stanley2018, q_dazzi2014]
+
+- id: y_mhfa
+  name: Erste Hilfe für psychische Gesundheit
+  aliase: [Mental Health First Aid, MHFA, ALGEE]
+  kategorie: psychologie
+  phasen: [uebergreifend]
+  setting: [einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [krise, stress_gesundheit]
+  dauer: Kurs 12 Std.
+  kurz: "Laien lernen in Kursen, psychische Krisen zu erkennen und zu reagieren: Auf Suizid- und Krisengefahr achten, ohne Wertung zuhören, informieren und unterstützen, zu professioneller Hilfe ermutigen, weitere Unterstützung fördern (ALGEE)."
+  ablauf:
+    - Warnzeichen kennen.
+    - Ansprechen, zuhören, Wertung vermeiden.
+    - Hilfe vermitteln, dranbleiben.
+  varianten:
+    - "Erwachsene: Kursangebot für Lehrkräfte oder Eltern zu Warnzeichen und Ansprechen."
+    - "Jugendliche: Peer-Info zu Hilfswegen, ohne Beratung durch Laien."
+    - "Digital: Infoseite mit Kontakten zu Beratungsstellen."
+  stolpersteine:
+    - "Ersthelfende sind keine Therapeut·innen; bei Krisen rasch an Fachkräfte und Notdienste vermitteln."
+  evidenz: {stufe: mittel, text: "Metaanalyse Morgan et al. (2018): mehr Wissen, weniger Stigma, mehr Zuversicht zu helfen; Wirkung auf Betroffene noch kaum untersucht."}
+  qualifikation: fortbildung
+  quellen: [q_morgan2018, q_who2011]
+
+- id: y_rueckfallpraevention
+  name: Rückfallprävention
+  aliase: [Relapse Prevention, Frühwarnplan]
+  kategorie: psychologie
+  phasen: [abschluss]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [therapie, stress_gesundheit]
+  dauer: 1–3 Sitzungen
+  kurz: Gegen Ende einer Behandlung werden Hochrisikosituationen, Frühwarnzeichen und Bewältigungsstrategien festgehalten; ein Ausrutscher gilt als Lerngelegenheit, nicht als Rückfall (Abstinenzverletzungseffekt vermeiden).
+  ablauf:
+    - Risikosituationen und Warnzeichen sammeln.
+    - Bewältigungsstrategien zuordnen.
+    - Notfallplan bei Ausrutschern.
+    - Auffrischungstermine vereinbaren.
+  varianten:
+    - "Jugendliche: Frühwarnkarte mit eigenen Auslösern und einem Hilfsweg."
+    - "Erwachsene: Rückfallplan nach einer Beratung mit festen Auffrischungsterminen."
+    - "Digital: Plan als Dokument mit Erinnerung zu Auffrischungsterminen."
+  stolpersteine:
+    - "Ein Ausrutscher wird als Scheitern erlebt; Ausrutscher als Lernpunkt festhalten."
+  evidenz: {stufe: mittel, text: "Modell nach Marlatt; Review Hendershot et al. (2011): wirksam in Suchtbehandlung, Prinzipien auf Depression und Angst übertragen."}
+  qualifikation: fortbildung
+  quellen: [q_hendershot2011]
+
+- id: y_stadien_veraenderung
+  name: Stadien der Veränderung (Transtheoretisches Modell)
+  aliase: [Absichtslosigkeit – Absichtsbildung – Vorbereitung – Handlung – Aufrechterhaltung]
+  kategorie: psychologie
+  phasen: [einstieg]
+  setting: [einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [beratung, motivation, therapie]
+  dauer: Orientierungsmodell
+  kurz: Menschen befinden sich in unterschiedlichen Stadien der Veränderungsbereitschaft; Interventionen sollen zum Stadium passen (Informieren bei Absichtslosigkeit, Planen bei Vorbereitung, Rückfallschutz bei Aufrechterhaltung).
+  ablauf:
+    - Bereitschaft erfragen (Skalierung).
+    - Passende Gesprächsstrategie wählen.
+    - Stadium ist nicht fest; regelmäßig neu einschätzen.
+  varianten:
+    - "Jugendliche: Bereitschaft zu einer Veränderung auf einer Skala einschätzen lassen."
+    - "Erwachsene: Veränderungsbereitschaft im Coaching klären, ohne Etikett."
+    - "Digital: Stufenfrage im Umfragetool zur Orientierung."
+  stolpersteine:
+    - Die Einteilung in klar getrennte Stadien ist empirisch umstritten; als grobe Orientierung, nicht als Diagnose nutzen.
+  evidenz: {stufe: umstritten, text: "Prochaska & DiClemente (1983); stadienangepasste Interventionen zeigen in Vergleichsstudien selten Vorteile, Kritik u. a. bei West (2005)."}
+  qualifikation: alle
+  quellen: [q_prochaska1983, q_west2005]
+
+- id: y_ipt
+  name: Interpersonelle Psychotherapie (IPT)
+  aliase: [Interpersonelle Therapie]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [therapie]
+  dauer: 12–16 Sitzungen
+  kurz: Depressive Beschwerden werden in Zusammenhang mit einem zwischenmenschlichen Problembereich bearbeitet – Trauer, Rollenkonflikt, Rollenwechsel oder soziale Isolation.
+  ablauf:
+    - Diagnose und Beziehungsinventar.
+    - Problembereich festlegen.
+    - Gezielte Arbeit an Beziehungen und Kommunikation.
+    - Abschlussphase mit Rückfallprävention.
+  varianten:
+    - "Fachkraft: IPT in der Psychotherapie mit ausgebildeter Therapeut·in."
+    - "Erwachsene: Information über soziale Auslöser von Niedergeschlagenheit für Beratung."
+    - "Digital: Infomaterial über Zusammenhänge von Beziehung und Stimmung."
+  stolpersteine:
+    - "Depressive Beschwerden gehören in fachliche Behandlung; bei Hinweisen an Hausärzt·innen oder Psychotherapie verweisen."
+  evidenz: {stufe: stark, text: "Metaanalyse Cuijpers et al. (2011): IPT bei Depression wirksam und vergleichbar mit anderen Psychotherapien; IPT-A für Jugendliche."}
+  qualifikation: fachkraft
+  quellen: [q_cuijpers2011]
+
+- id: y_traumatherapie
+  name: Traumafokussierte Psychotherapie
+  aliase: [TF-KVT, Kognitive Therapie der PTBS, EMDR, Narrative Expositionstherapie]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [therapie, krise]
+  dauer: 8–20 Sitzungen
+  kurz: Leitliniengerechte Verfahren bei Posttraumatischer Belastungsstörung verarbeiten das Trauma gezielt – über Psychoedukation, Stabilisierung, Konfrontation mit der Erinnerung und Bearbeitung belastender Bewertungen. Bei Kindern werden Bezugspersonen einbezogen (TF-KVT).
+  ablauf:
+    - Diagnostik und Psychoedukation.
+    - Stabilisierungs- und Bewältigungsfertigkeiten.
+    - Traumabezogene Arbeit (Erzählung, Exposition, kognitive Bearbeitung).
+    - Integration und Zukunftsorientierung.
+  varianten:
+    - "Fachkraft: Traumafokussierte Verfahren nur in der Therapie mit geschulter Fachkraft."
+    - "Pädagogische Fachkräfte: traumasensibler Umgang, z. B. Vorhersehbarkeit und feste Abläufe."
+    - "Digital: Infos zu Hilfen nach Traumaerfahrungen, keine Bearbeitung von Erinnerungen."
+  stolpersteine:
+    - Pädagogische Fachkräfte arbeiten traumasensibel (Sicherheit, Vorhersehbarkeit), aber nicht traumakonfrontativ.
+  evidenz: {stufe: stark, text: "Cochrane-Review Bisson et al. (2013): traumafokussierte KVT und EMDR sind bei chronischer PTBS wirksam; Modell nach Ehlers & Clark (2000); TF-KVT für Kinder (Cohen et al. 2006)."}
+  qualifikation: fachkraft
+  quellen: [q_bisson2013, q_ehlers2000, q_cohen2006b, q_schauer2011]
+
+- id: y_schematherapie
+  name: Schematherapie (Modusarbeit)
+  aliase: [Schemamodi, Imaginatives Überschreiben]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [erwachsene, jugendliche]
+  anwendung: [therapie]
+  dauer: 1–3 Jahre
+  kurz: Lebenslange Muster (Schemata) und aktuelle Zustände (Modi wie »verletzliches Kind«, »strafender Elternteil«) werden erkannt; mit Stuhldialogen, Imagination und begrenzter elterlicher Fürsorge werden unerfüllte Bedürfnisse bearbeitet.
+  ablauf:
+    - Schemata und Modi erfassen.
+    - Modusmodell gemeinsam erstellen.
+    - Erlebnisorientierte Techniken (Stühle, Imagination).
+    - Verhaltensmusterbrechen im Alltag.
+  varianten:
+    - "Fachkraft: Schematherapie in der Psychotherapie mit Ausbildung."
+    - "Erwachsene: Verständnis für wiederkehrende Muster im Coaching, ohne Modusarbeit."
+    - "Digital: Infos über Lebensmuster für Interessierte, keine Übungen."
+  stolpersteine:
+    - "Modusarbeit mit Stühlen und Imagination braucht therapeutische Begleitung; Lehrkräfte nicht selbst anleiten."
+  evidenz: {stufe: mittel, text: "Young et al. (2003); RCTs vor allem bei Borderline-Persönlichkeitsstörung mit guten Ergebnissen."}
+  qualifikation: fachkraft
+  quellen: [q_young2003]
+
+- id: y_cbasp
+  name: CBASP bei chronischer Depression
+  aliase: [Situationsanalyse, Interpersonelle Diskriminationsübung]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel]
+  zielgruppen: [erwachsene]
+  anwendung: [therapie]
+  dauer: 16–30 Sitzungen
+  kurz: Speziell für chronische Depression – in Situationsanalysen vergleicht die Person, was sie in einer zwischenmenschlichen Situation erreichen wollte, mit dem, was tatsächlich geschah, und lernt, wie das eigene Verhalten Folgen hat.
+  ablauf:
+    - Situation beschreiben, Interpretationen, Verhalten.
+    - Tatsächliches und erwünschtes Ergebnis vergleichen.
+    - Interpretationen und Verhalten revidieren.
+  varianten:
+    - "Fachkraft: CBASP in der Psychotherapie bei chronischer Depression."
+    - "Erwachsene: Information über Zusammenhang von Verhalten und Reaktionen anderer, ohne Durchführung."
+    - "Digital: Infomaterial zu chronischen Verläufen mit Hinweis auf Behandlung."
+  stolpersteine:
+    - "Chronische Depression braucht fachliche Behandlung; Betroffene frühzeitig an Psychotherapie oder Hausärzt·innen verweisen."
+  evidenz: {stufe: mittel, text: "McCullough (2003); RCTs zeigen Wirksamkeit bei chronischer Depression, besonders kombiniert mit Medikation."}
+  qualifikation: fachkraft
+  quellen: [q_cbasp2003]
+
+- id: y_therapieabschluss
+  name: Abschluss einer Behandlung oder Beratung gestalten
+  aliase: [Beendigungsphase, Booster-Sitzungen]
+  kategorie: psychologie
+  phasen: [abschluss]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [therapie, beratung]
+  dauer: 1–3 Sitzungen
+  kurz: Das Ende wird früh angekündigt; Fortschritte werden gemeinsam bilanziert, Gelerntes als »eigene Werkzeuge« zusammengefasst, Rückfallplan erstellt und ggf. Auffrischungstermine vereinbart.
+  ablauf:
+    - Ende ankündigen und Abstände strecken.
+    - Bilanz – Was hat sich verändert? Was hat geholfen?
+    - Werkzeugkoffer und Rückfallplan.
+    - Abschied würdigen; Wiederkommen ermöglichen.
+  varianten:
+    - "Jugendliche: Abschlussgespräch mit Rückblick auf gelungene Schritte und gemeinsamer Rückfallplan."
+    - "Erwachsene: Abschluss eines Coachings mit Bilanz und Ansprechpersonen für die Zukunft."
+    - "Digital: Bilanz im Dokument mit Option auf Auffrischungstermin."
+  stolpersteine:
+    - "Der Abschied kommt zu plötzlich; das Ende früh ankündigen und Abstände langsam strecken."
+  evidenz: {stufe: begrenzt, text: "Klinischer Standard (Beck 2020); Rückfallprävention und Booster sind belegt (Hendershot et al. 2011), die Abschlussgestaltung selbst wenig untersucht."}
+  qualifikation: fortbildung
+  quellen: [q_beck2020, q_hendershot2011]

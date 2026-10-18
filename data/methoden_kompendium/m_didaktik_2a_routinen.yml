@@ -1,0 +1,502 @@
+# Didaktik – Erweiterung: Einstiege und Denkroutinen
+- id: d_see_think_wonder
+  name: Sehen – Denken – Fragen (See-Think-Wonder)
+  aliase: [Denkroutine Bildanalyse]
+  kategorie: didaktik
+  phasen: [einstieg]
+  setting: [einzel, partner, plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [vorwissen, motivation, diskussion]
+  dauer: 10–15 Min.
+  kurz: "Zu einem Bild oder Objekt beantworten Lernende nacheinander: Was sehe ich? Was denke ich darüber? Was frage ich mich? Trennt Beobachtung von Deutung."
+  ablauf:
+    - Bild/Objekt zeigen, 1–2 Min. still betrachten.
+    - Nur Beobachtungen sammeln (ohne Deutung).
+    - Deutungen mit Begründung (»Ich denke …, weil ich … sehe«).
+    - Offene Fragen sammeln und als Leitfragen nutzen.
+  varianten:
+    - "Kinder: mit einem Bild im Kreis besprechen, Fragen mit Zeigegeste beantworten lassen."
+    - "Jugendliche: Bild aus dem Unterricht wählen und Deutungen mit Quellen belegen lassen."
+    - "Digital: Bild auf dem Bildschirm zeigen, Antworten im gemeinsamen Dokument oder Padlet sammeln."
+  stolpersteine:
+    - "Deutungen werden oft als Beobachtungen formuliert; die Trennung vorher mit Beispielen einüben."
+    - "Bei unbekannten Bildern hilft ein kurzer Kontext, sonst bleibt es beim Raten."
+  evidenz: {stufe: praxis, text: "Denkroutine des Harvard-Projekts Visible Thinking (Ritchhart et al. 2011); in Praxisstudien mit besserer Gesprächsqualität verbunden, kaum kontrollierte Leistungsstudien."}
+  qualifikation: alle
+  quellen: [q_ritchhart2011]
+
+- id: d_think_puzzle_explore
+  name: Denken – Rätseln – Erkunden
+  aliase: [Think-Puzzle-Explore]
+  kategorie: didaktik
+  phasen: [einstieg]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [vorwissen, motivation, lernstrategien]
+  dauer: 10–20 Min.
+  kurz: "Drei Fragen zum neuen Thema: Was glaube ich darüber zu wissen? Was verwirrt oder interessiert mich? Wie könnte ich es erkunden?"
+  ablauf:
+    - Thema nennen, drei Spalten anlegen.
+    - Einzeln ausfüllen, dann in Gruppen bündeln.
+    - Erkundungsideen als Arbeitsplan für die Einheit nutzen.
+  varianten:
+    - "Jugendliche: Puzzle-Spalte mit konkreten Fragen aus dem Lehrplan füllen lassen."
+    - "Erwachsene: Erkundungsideen mit eigener Praxis verknüpfen und als Lernplan notieren."
+    - "Digital: Drei Spalten als geteilte Tabelle anlegen, jede Gruppe ergänzt online."
+  stolpersteine:
+    - "Die Spalte »Was weiß ich?« wird oft leer gelassen; mit Vermutungen statt Wissen formulieren."
+    - "Ohne spätere Rückkehr zu den Fragen verpufft die Routine."
+  evidenz: {stufe: praxis, text: "Visible-Thinking-Routine (Ritchhart et al. 2011); verwandt mit KWL, wenige Wirksamkeitsstudien."}
+  qualifikation: alle
+  quellen: [q_ritchhart2011, q_ogle1986]
+
+- id: d_zoom_in
+  name: Zoom-In (Bild schrittweise aufdecken)
+  aliase: [Puzzle-Bild, Ausschnitt-Einstieg]
+  kategorie: didaktik
+  phasen: [einstieg]
+  setting: [plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [motivation, vorwissen]
+  dauer: 5–10 Min.
+  kurz: Von einem Bild wird zunächst nur ein kleiner Ausschnitt gezeigt; nach jeder Vergrößerung äußern Lernende Vermutungen und passen sie an.
+  ablauf:
+    - Bild mit überraschendem Gesamtzusammenhang wählen.
+    - Ausschnitt zeigen, Vermutungen sammeln.
+    - Schrittweise vergrößern und Vermutungen revidieren.
+    - Über das Revidieren sprechen (Wie hat sich dein Denken verändert?).
+  varianten:
+    - "Kinder: Ausschnitt mit Tierbildern oder Alltagsgegenständen, Vermutungen mit Gesten zeigen."
+    - "Jugendliche: Ausschnitte aus Fotos, Karten oder Diagrammen aus dem Fach nutzen."
+    - "Digital: Bild stufenweise über Folien mit Ausschnitten einblenden."
+  stolpersteine:
+    - "Wird das Bild zu schnell ganz gezeigt, fehlt die Spannung; Schritte bewusst klein halten."
+    - "Bilder ohne Bezug zum Stoff wecken Neugier, führen aber nicht zum Thema; Verbindung planen."
+  evidenz: {stufe: praxis, text: "Visible-Thinking-Routine; nutzt Neugier aus Wissenslücken (Loewenstein 1994)."}
+  qualifikation: alle
+  quellen: [q_ritchhart2011, q_loewenstein1994]
+
+- id: d_kompass
+  name: Kompasspunkte (Compass Points)
+  aliase: [Begeistert – Sorgen – Brauchen – Vorschlag]
+  kategorie: didaktik
+  phasen: [einstieg, hauptteil]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [entscheidung, diskussion, reflexion]
+  dauer: 15–20 Min.
+  kurz: "Zu einer Idee oder einem Vorhaben werden vier Himmelsrichtungen ausgefüllt: E (Excited – Was begeistert mich?), W (Worries – Was beunruhigt mich?), N (Needs – Was muss ich noch wissen?), S (Stance/Suggestion – Meine Haltung, mein Vorschlag)."
+  ablauf:
+    - Vorhaben vorstellen, Kompass auf Plakat zeichnen.
+    - Klebezettel zu jeder Richtung schreiben.
+    - Clustern und nächste Schritte ableiten.
+  varianten:
+    - "Jugendliche: Kompass für ein Schulprojekt oder einen Klassenvorschlag nutzen."
+    - "Erwachsene: Kompass für Veränderungsvorhaben im Team mit Stichworten statt Sätzen einsetzen."
+    - "Digital: vier Felder als Online-Whiteboard mit anonymen Zetteln anlegen."
+  stolpersteine:
+    - "Die Sorgen-Spalte kann die Stimmung drücken; Leitung sollte Sorgen in konkrete Bedingungen übersetzen."
+    - "Gleiche Meinungen werden oft mehrfach geschrieben; beim Clustern zusammenfassen, nicht gewichten."
+  evidenz: {stufe: praxis, text: "Visible-Thinking-Routine (Ritchhart et al. 2011); als Struktur für Entscheidungsdiskussionen nützlich."}
+  qualifikation: alle
+  quellen: [q_ritchhart2011]
+
+- id: d_claim_support_question
+  name: Behauptung – Beleg – Frage
+  aliase: [Claim-Support-Question]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [einzel, partner, kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [diskussion, verstehen, lesen_schreiben]
+  dauer: 10–20 Min.
+  kurz: "Zu einem Thema formulieren Lernende eine Behauptung, nennen Belege dafür und stellen eine kritische Frage dazu. Übt Argumentieren mit Evidenz."
+  ablauf:
+    - Behauptung formulieren.
+    - Belege sammeln (Text, Daten, Beobachtung).
+    - Gegenfrage oder Zweifel formulieren.
+    - Im Paar prüfen – Trägt der Beleg die Behauptung?
+  varianten:
+    - "Jugendliche: Behauptung aus einem kurzen Text oder Video als Ausgangspunkt nehmen."
+    - "Erwachsene: Behauptungen aus Fachartikeln oder Praxisberichten prüfen lassen."
+    - "Digital: Belege in einer Tabelle mit Quellenangabe sammeln."
+  stolpersteine:
+    - "Belege werden oft nicht geprüft; die Frage »Trägt der Beleg wirklich?« ausdrücklich stellen."
+    - "Zu allgemeine Behauptungen führen zu beliebigen Belegen; präzise Aussagen vorgeben."
+  evidenz: {stufe: mittel, text: "Routine aus Visible Thinking; explizites Argumentieren mit Belegen gehört zu den wirksameren Ansätzen zur Förderung kritischen Denkens (Abrami et al. 2015)."}
+  qualifikation: alle
+  quellen: [q_ritchhart2011, q_abrami2015]
+
+- id: d_frueher_jetzt
+  name: Früher dachte ich – jetzt denke ich
+  aliase: [I used to think … now I think]
+  kategorie: didaktik
+  phasen: [abschluss]
+  setting: [einzel, plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [reflexion, verstehen, lernstrategien]
+  dauer: 5–10 Min.
+  kurz: Lernende vervollständigen am Ende einer Einheit zwei Satzanfänge und machen so ihren eigenen Denkwandel sichtbar.
+  ablauf:
+    - "Satzanfänge geben: »Früher dachte ich …« – »Jetzt denke ich …«"
+    - Einzeln schreiben.
+    - Einige Beispiele vorlesen; Lehrkraft erkennt Fehlvorstellungen, die geblieben sind.
+  varianten:
+    - "Kinder: mit Zeichnung und einem Satz statt Schreiben."
+    - "Jugendliche: Satzanfänge auf Karten schreiben und anonym sammeln."
+    - "Digital: Satzanfänge in einem Formular abfragen und gebündelt anzeigen."
+  stolpersteine:
+    - "Gebt keine Bewertung dafür; sonst schreiben Lernende, was erwartet wird, nicht was sie denken."
+    - "Wenn alle »Jetzt weiß ich mehr« schreiben, fehlt der Gehalt; nach konkreten Einsichten fragen."
+  evidenz: {stufe: praxis, text: "Visible-Thinking-Routine zur Metakognition (Ritchhart et al. 2011)."}
+  qualifikation: alle
+  quellen: [q_ritchhart2011]
+
+- id: d_connect_extend_challenge
+  name: Verbinden – Erweitern – Herausfordern
+  aliase: [Connect-Extend-Challenge]
+  kategorie: didaktik
+  phasen: [abschluss, hauptteil]
+  setting: [einzel, partner]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [reflexion, verstehen]
+  dauer: 10 Min.
+  kurz: "Nach einem Input beantworten Lernende: Wie hängt das mit dem zusammen, was ich schon weiß? Wie erweitert es mein Denken? Was bleibt herausfordernd oder fraglich?"
+  ablauf:
+    - Drei Fragen notieren lassen.
+    - Partneraustausch.
+    - Herausforderungen sammeln und in der Folgestunde aufgreifen.
+  varianten:
+    - "Jugendliche: Verbindungen zu Themen aus anderen Fächern suchen lassen."
+    - "Erwachsene: Verbindungen zur eigenen Arbeitspraxis formulieren."
+    - "Digital: Drei Felder in einem Dokument pro Person ausfüllen und Partner per Kommentar antworten lassen."
+  stolpersteine:
+    - "Verbindungen bleiben oft oberflächlich; ein konkretes Beispiel pro Verbindung verlangen."
+    - "Herausforderungen ohne Folgeaufgabe bleiben liegen; im nächsten Termin wieder aufgreifen."
+  evidenz: {stufe: praxis, text: "Visible-Thinking-Routine; fördert Elaboration (Verknüpfung mit Vorwissen), die als Lernstrategie belegt ist."}
+  qualifikation: alle
+  quellen: [q_ritchhart2011, q_dunlosky2013]
+
+- id: d_bruecke_321
+  name: 3-2-1-Brücke
+  aliase: [3-2-1 Bridge]
+  kategorie: didaktik
+  phasen: [einstieg, abschluss]
+  setting: [einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [vorwissen, reflexion]
+  dauer: je 5 Min.
+  kurz: "Vor der Einheit notieren Lernende 3 Gedanken, 2 Fragen, 1 Bild/Vergleich zum Thema; nach der Einheit erneut. Die »Brücke« beschreibt, wie sich das Denken verändert hat."
+  ablauf:
+    - Vorher 3-2-1 notieren und aufbewahren.
+    - Nach der Einheit 3-2-1 erneut.
+    - Unterschied in 2–3 Sätzen beschreiben.
+  varianten:
+    - "Jugendliche: Brücke in einer Lernmappe aufbewahren und am Ende vergleichen."
+    - "Erwachsene: Brücke als Lernjournal für Fortbildungen nutzen."
+    - "Digital: beide Durchgänge in einem persönlichen Dokument speichern."
+  stolpersteine:
+    - "Vor-Notizen werden oft verloren; Aufbewahrung von Beginn an organisieren."
+    - "Der Vergleich braucht Zeit; mindestens fünf Minuten einplanen, sonst bleibt er ein Pflichtpunkt."
+  evidenz: {stufe: praxis, text: "Visible-Thinking-Routine (Ritchhart et al. 2011)."}
+  qualifikation: alle
+  quellen: [q_ritchhart2011]
+
+- id: d_abc_liste
+  name: ABC-Liste
+  aliase: [ABC-Darium, Wissens-ABC]
+  kategorie: didaktik
+  phasen: [einstieg, abschluss]
+  setting: [einzel, partner]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [vorwissen, ueben, diagnose]
+  dauer: 5–10 Min.
+  kurz: Zu jedem Buchstaben des Alphabets wird ein Begriff zum Thema notiert. Als Einstieg zeigt es Vorwissen, als Abschluss den Zuwachs.
+  ablauf:
+    - Alphabet untereinander schreiben.
+    - 3–5 Min. Begriffe eintragen (Lücken erlaubt).
+    - Partner ergänzen; ausgewählte Begriffe erklären lassen.
+  varianten:
+    - "Kinder: gemeinsam an der Tafel mit Bildern zu jedem Buchstaben."
+    - "Jugendliche: Begriffe aus dem Fachwortschatz in zwei Spalten sortieren."
+    - "Digital: gemeinsame Liste im Dokument, Begriffe per Kommentar erklären lassen."
+  stolpersteine:
+    - "Begriffe ohne Erklärung verführen zum bloßen Auflisten; Erklärung einfordern."
+    - "Schwierige Buchstaben bremsen; Lücken ausdrücklich erlauben."
+  evidenz: {stufe: begrenzt, text: "Von Birkenbihl popularisiert; als freie Abrufübung wirkt sie wie andere Abrufformen, die Begriffe sollten aber erklärt werden, um Verstehen zu prüfen."}
+  qualifikation: alle
+  quellen: [q_birkenbihl2002, q_agarwal2019]
+
+- id: d_antizipation
+  name: Antizipations-Leitfaden
+  aliase: [Anticipation Guide, Thesen vor dem Lesen]
+  kategorie: didaktik
+  phasen: [einstieg]
+  setting: [einzel, partner]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [vorwissen, lesen_schreiben, motivation]
+  dauer: 10 Min.
+  kurz: Vor dem Lesen eines Textes bewerten Lernende 5–8 Aussagen als richtig oder falsch und begründen. Nach dem Lesen prüfen sie ihre Einschätzungen am Text.
+  ablauf:
+    - Aussagen formulieren, auch typische Fehlvorstellungen.
+    - Einschätzung mit kurzer Begründung vor dem Lesen.
+    - Lesen mit Auftrag, die Aussagen zu prüfen.
+    - Abgleich mit Textstellen.
+  varianten:
+    - "Jugendliche: Aussagen mit Alltagsbezug formulieren, die typische Fehlvorstellungen treffen."
+    - "Erwachsene: Aussagen zu Fachartikeln oder Leitlinien vor dem Lesen bewerten."
+    - "Digital: Aussagen als Umfrage stellen und Ergebnisse vor dem Text zeigen."
+  stolpersteine:
+    - "Aussagen dürfen nicht trivial oder nur eindeutig sein; mischen, damit Nachdenken nötig ist."
+    - "Ohne Rückbezug auf den Text bleibt die Einschätzung folgenlos; Textstellen zur Prüfung zuordnen."
+  evidenz: {stufe: mittel, text: "Kombiniert Vorhersage (Pretesting-Effekt) und zielgerichtetes Lesen; gut begründet, als Gesamtformat wenig isoliert untersucht."}
+  qualifikation: alle
+  quellen: [q_richland2009, q_limon2001]
+
+- id: d_narrativ
+  name: Geschichte als Einstieg (narrativer Einstieg)
+  aliase: [Storytelling, Fallgeschichte]
+  kategorie: didaktik
+  phasen: [einstieg]
+  setting: [plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [motivation, verstehen]
+  dauer: 3–10 Min.
+  kurz: Der Stoff wird in eine Geschichte mit Figur, Konflikt und Auflösung gekleidet (z. B. wie eine Entdeckung zustande kam). Geschichten werden leichter verstanden und behalten.
+  ablauf:
+    - Konflikt identifizieren (Problem, das die Figur lösen muss).
+    - Geschichte erzählen, an der Spannungsstelle anhalten.
+    - Erarbeitung als Lösung des Konflikts.
+  varianten:
+    - "Kinder: Geschichte mit Tieren oder Figuren aus dem Alltag erzählen, Ende offen lassen."
+    - "Jugendliche: Fallgeschichte aus einem realen Kontext wählen, die zum Fach passt."
+    - "Erwachsene: Praxisfall mit Entscheidungspunkt erzählen und Lösungswege sammeln lassen."
+  stolpersteine:
+    - Die Geschichte muss zum Kerninhalt führen, sonst merkt man sich die Anekdote statt des Stoffs.
+  evidenz: {stufe: mittel, text: "Willingham (2009) fasst Befunde zusammen, nach denen Erzählungen besser verstanden und behalten werden als expositorische Texte."}
+  qualifikation: alle
+  quellen: [q_willingham2009]
+
+- id: d_live_abstimmung
+  name: Live-Abstimmung (Audience Response)
+  aliase: [Clicker, Online-Umfrage, Antwortsystem]
+  kategorie: didaktik
+  phasen: [einstieg, hauptteil, abschluss]
+  setting: [plenum, grossgruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [diagnose, motivation, diskussion]
+  dauer: 2–5 Min.
+  kurz: Alle beantworten eine Frage anonym über Handy, Clicker oder Karten; das Ergebnis erscheint sofort als Diagramm.
+  ablauf:
+    - Konzeptfrage oder Meinungsfrage vorbereiten.
+    - Abstimmen lassen, Ergebnis zeigen.
+    - Ergebnis diskutieren oder Peer Instruction anschließen.
+  varianten:
+    - "Jugendliche: Abstimmung per Handzeichen oder Karten, wenn keine Geräte verfügbar sind."
+    - "Erwachsene: Anonyme Abstimmung in Fortbildungen mit Diskussion der Verteilung."
+    - "Digital: Umfrage im Lernmanagementsystem oder Abstimmungstool nutzen, Ergebnis sofort zeigen."
+  stolpersteine:
+    - "Ein knappes Ergebnis wird oft vorschnell als richtig gedeutet; Begründungen erfragen."
+    - "Ohne klare Konzeptfrage entsteht nur Meinungsbild; Antwortoptionen sorgfältig formulieren."
+  evidenz: {stufe: mittel, text: "Metaanalyse Hunsu et al. (2016): kleine positive Effekte auf Leistung und Engagement, größere, wenn mit Peer-Diskussion verbunden."}
+  qualifikation: alle
+  quellen: [q_hunsu2016, q_crouch2001]
+
+- id: d_wortwolke
+  name: Begriffswolke
+  aliase: [Wortwolke, Word Cloud]
+  kategorie: didaktik
+  phasen: [einstieg, abschluss]
+  setting: [plenum, grossgruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [vorwissen, reflexion]
+  dauer: 3–5 Min.
+  kurz: Alle schicken 1–3 Begriffe zu einer Frage; häufige Begriffe erscheinen größer. Schnelles Stimmungs- oder Vorwissensbild.
+  ablauf:
+    - Präzise Frage stellen (»Woran denkst du bei …?«).
+    - Begriffe einsenden, Wolke zeigen.
+    - Auffälliges ansprechen.
+  varianten:
+    - "Kinder: Begriffe mündlich sammeln und an der Tafel groß notieren."
+    - "Jugendliche: Wolke mit Fachbegriffen als Vorwissenscheck nutzen."
+    - "Erwachsene: Stimmungsbild am Ende einer Fortbildung einholen."
+  stolpersteine:
+    - Zeigt nur Häufigkeiten, keine Zusammenhänge; als Startpunkt, nicht als Ergebnis nutzen.
+  evidenz: {stufe: praxis, text: "Digitale Variante der Kartenabfrage; keine eigene Wirksamkeitsforschung."}
+  qualifikation: alle
+  quellen: [q_klebert2006]
+
+- id: d_musterarbeiten
+  name: Musterarbeiten analysieren
+  aliase: [Exemplars, Beispielarbeiten bewerten]
+  kategorie: didaktik
+  phasen: [einstieg, hauptteil]
+  setting: [partner, kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [diagnose, lernstrategien, lesen_schreiben]
+  dauer: 15–25 Min.
+  kurz: Vor einer eigenen Aufgabe bewerten Lernende anonymisierte Beispielarbeiten verschiedener Qualität mit dem Bewertungsraster. So wird klar, wie »gut« konkret aussieht.
+  ablauf:
+    - 2–3 Beispielarbeiten unterschiedlicher Qualität auswählen.
+    - Mit Raster einzeln bewerten, dann vergleichen.
+    - Kriterien gemeinsam schärfen.
+    - Eigene Arbeit mit den Kriterien planen.
+  varianten:
+    - "Jugendliche: zwei Beispielarbeiten mit kurzer Begründung vergleichen lassen."
+    - "Erwachsene: Musterarbeiten aus Berufspraxis bewerten, z. B. Berichte oder Gutachten."
+    - "Digital: anonymisierte Beispiele als Dokument verteilen, Bewertung online notieren."
+  stolpersteine:
+    - "Beispiele müssen anonymisiert sein, sonst entsteht Bloßstellung."
+    - "Ein Raster allein genügt nicht; mit Beispielen und Rückmeldung kombinieren."
+  evidenz: {stufe: mittel, text: "Teil formativer Beurteilung (Wiliam 2011); Raster entfalten ihre Wirkung, wenn sie mit Beispielen und Selbstbeurteilung kombiniert werden (Jonsson & Svingby 2007)."}
+  qualifikation: alle
+  quellen: [q_wiliam2011, q_jonsson2007]
+
+- id: d_themenspeicher
+  name: Themenspeicher / Parkplatz
+  aliase: [Fragenparkplatz, Parking Lot]
+  kategorie: didaktik
+  phasen: [einstieg, hauptteil, abschluss]
+  setting: [plenum, grossgruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [partizipation, entscheidung]
+  dauer: begleitend
+  kurz: Fragen und Themen, die gerade nicht passen, werden sichtbar auf einem Plakat »geparkt« und am Ende gemeinsam abgearbeitet oder vertagt.
+  ablauf:
+    - Plakat zu Beginn einführen.
+    - Abweichende Beiträge würdigen und parken.
+    - Vor Schluss jeden Punkt klären, terminieren oder streichen.
+  varianten:
+    - "Kinder: Parkplatz als Zeichnung oder Bildkarten."
+    - "Jugendliche: Speicher als Liste an der Klassenpinnwand, am Ende gemeinsam bearbeiten."
+    - "Digital: Speicher als geteilte Notizliste mit Terminfeld."
+  stolpersteine:
+    - "Geparkte Punkte werden vergessen; am Ende jeden Punkt ausdrücklich klären oder terminieren."
+    - "Beiträge sollen gewürdigt werden, nicht nur abgelegt wirken."
+  evidenz: {stufe: praxis, text: "Standardwerkzeug der Moderationsmethode; hält den roten Faden, ohne Beiträge abzuwerten."}
+  qualifikation: alle
+  quellen: [q_klebert2006]
+
+- id: d_lernbiografie
+  name: Erfahrungsrunde zum Thema
+  aliase: [Lernbiografischer Einstieg, Erfahrungsaustausch]
+  kategorie: didaktik
+  phasen: [einstieg]
+  setting: [partner, kleingruppe]
+  zielgruppen: [erwachsene, jugendliche]
+  anwendung: [vorwissen, beziehung, reflexion]
+  dauer: 10–20 Min.
+  kurz: Teilnehmende erzählen sich in Paaren oder Trios kurz eigene Erfahrungen mit dem Thema (»Wann hattest du zuletzt mit … zu tun?«). Die Leitung sammelt Muster und knüpft daran an.
+  ablauf:
+    - Konkrete Erinnerungsfrage stellen.
+    - 3 Min. pro Person erzählen, andere hören zu.
+    - Gemeinsamkeiten und Fragen ins Plenum.
+  varianten:
+    - "Jugendliche: Erfahrung aus dem Alltag oder Hobby statt Berufserfahrung erfragen."
+    - "Erwachsene: Berufsbiografien in Trios mit klarer Zeitvorgabe austauschen."
+    - "Digital: Erzählrunde in Breakout-Räumen mit Stoppuhr durchführen."
+  stolpersteine:
+    - "Manche Erfahrungen sind belastend; Teilnahme freiwillig halten und Grenzen setzen."
+    - "Wenn einzelne Personen dominieren, Redezeit für alle klar begrenzen."
+  evidenz: {stufe: begrenzt, text: "Andragogisches Prinzip »Erfahrung als Ressource« (Knowles et al. 2015); aktiviert Vorwissen, wenig direkte Forschung."}
+  qualifikation: alle
+  quellen: [q_knowles2015]
+
+- id: d_expertenbefragung
+  name: Expertenbefragung
+  aliase: [Gast im Unterricht, Interview mit Fachperson]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [wissensaufbau, motivation, partizipation]
+  dauer: 45–90 Min.
+  kurz: Eine Fachperson (Handwerkerin, Zeitzeuge, Forscherin) wird eingeladen; Lernende bereiten Fragen vor, führen das Interview und werten es aus.
+  ablauf:
+    - Fragen in Gruppen vorbereiten und sortieren.
+    - Rollen verteilen (Moderation, Fragen, Protokoll).
+    - Interview durchführen.
+    - Ergebnisse auswerten und mit dem Unterrichtsstoff verknüpfen.
+  varianten:
+    - "Kinder: Gast mit einfachen Fragen aus Bildkarten vorbereiten."
+    - "Jugendliche: Interview selbst führen, Ergebnisse als Podcast oder Text festhalten."
+    - "Digital: Fachperson per Videoschalte einbinden, Fragen vorab im Chat sammeln."
+  stolpersteine:
+    - "Fragen zu allgemein führen zu ausweichenden Antworten; Beispielfragen vorbereiten."
+    - "Ohne Vorbereitung und Auswertung bleibt es ein Gespräch ohne Lerneffekt."
+  evidenz: {stufe: praxis, text: "Klassische Methode handlungsorientierten Unterrichts (Meyer; Mattes); keine eigenständige Wirksamkeitsforschung."}
+  qualifikation: alle
+  quellen: [q_meyer1987, q_mattes2011]
+
+- id: d_frayer
+  name: Frayer-Modell (Begriffskarte)
+  aliase: [Begriffsquadrat, Definition – Merkmale – Beispiele – Gegenbeispiele]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [einzel, partner]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [verstehen, wissensaufbau, lesen_schreiben]
+  dauer: 10–15 Min.
+  kurz: Ein Fachbegriff steht in der Mitte; vier Felder enthalten Definition, wesentliche Merkmale, Beispiele und Gegenbeispiele. Gegenbeispiele schärfen die Begriffsgrenzen.
+  ablauf:
+    - Begriff in die Mitte.
+    - Vier Felder ausfüllen (gemeinsam oder einzeln).
+    - Vergleichen und Grenzfälle diskutieren.
+  varianten:
+    - "Kinder: Begriff mit Bild und Beispiel im Vierfeld-Plakat festhalten."
+    - "Jugendliche: Begriffe aus dem Fach in Partnerarbeit mit Gegenbeispielen schärfen."
+    - "Digital: Vierfeld-Vorlage als Tabelle oder Begriffskarte im Lernmanagementsystem nutzen."
+  stolpersteine:
+    - "Gegenbeispiele fallen schwer; mit Grenzfällen beginnen, die Lernende selbst benennen."
+    - "Definitionen werden wörtlich aus dem Buch übernommen; eigene Formulierung einfordern."
+  evidenz: {stufe: mittel, text: "Auf Begriffslernforschung (Frayer et al. 1969) gegründet; Wortschatzarbeit mit Merkmalen und Beispielen ist gut belegt (Beck et al. 2013)."}
+  qualifikation: alle
+  quellen: [q_frayer1969, q_beck2013]
+
+- id: d_fist_to_five
+  name: Fist to Five / Daumenprobe
+  aliase: [Fingerabfrage, Selbsteinschätzung per Hand]
+  kategorie: didaktik
+  phasen: [hauptteil, abschluss]
+  setting: [plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [diagnose, entscheidung]
+  dauer: 1 Min.
+  kurz: Alle zeigen gleichzeitig mit 0–5 Fingern, wie sicher sie sich fühlen oder wie sehr sie einem Vorschlag zustimmen.
+  ablauf:
+    - Frage stellen, auf Kommando zeigen.
+    - Bei niedrigen Werten nachfragen oder Hilfe anbieten.
+  varianten:
+    - "Kinder: Daumen hoch, Daumen seitlich, Daumen runter als einfache Variante."
+    - "Erwachsene: Zustimmung zu Vorschlägen in Teamsitzungen schnell erheben."
+    - "Digital: Stimmungsabfrage per Emoji-Reaktion oder Umfragetool."
+  stolpersteine:
+    - Selbsteinschätzungen überschätzen oft das Können; bei Lernstandsfragen lieber eine Aufgabe stellen.
+  evidenz: {stufe: begrenzt, text: "Schnelle Rückmeldetechnik; Selbsteinschätzungen sind nur begrenzt genau (Bjork et al. 2013), daher eher für Befinden und Konsens."}
+  qualifikation: alle
+  quellen: [q_wiliam2011, q_bjork2013]
+
+- id: d_ampelkarten
+  name: Ampelkarten / Ampelbecher
+  aliase: [Traffic Lights, Hilfe-Signal]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [einzel, partner]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [diagnose, heterogenitaet, klassenfuehrung]
+  dauer: begleitend
+  kurz: "Während der Arbeitsphase zeigen Lernende mit Karten oder Bechern ihren Stand: grün (komme klar), gelb (unsicher), rot (brauche Hilfe). Gelbe helfen Roten, die Lehrkraft geht zuerst zu Roten."
+  ablauf:
+    - Drei Farben pro Tisch ausgeben.
+    - Regel – Bei Rot zuerst Gelb oder Grün in der Nähe fragen.
+    - Lehrkraft scannt Raum und priorisiert.
+  varianten:
+    - "Kinder: Ampelkarten in Grün, Gelb und Rot, Hilfe über Namenskarte anzeigen."
+    - "Jugendliche: Ampel über Becher am Tisch, Lehrkraft prüft Stichproben."
+    - "Digital: Ampel per Schaltfläche im Videoraum oder Chat-Symbol zeigen lassen."
+  stolpersteine:
+    - "Rot wird aus Scham oft verschwiegen; Hilfe als normal rahmen und Gruppen-Hilfe fest einplanen."
+    - "Wenn Gelbe nicht helfen dürfen oder können, entsteht Frust; Hilfe-Regel klar absprechen."
+  evidenz: {stufe: begrenzt, text: "Von Wiliam (2011) als Technik beschrieben, Lernende als Ressourcen füreinander zu aktivieren; kaum isoliert untersucht."}
+  qualifikation: alle
+  quellen: [q_wiliam2011, q_wiliam2015]

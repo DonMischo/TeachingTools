@@ -2827,6 +2827,11 @@ export const api = {
     order: (ids: number[]) => apiFetch<void>("slideshow/order", { method: "PUT", body: JSON.stringify({ ids }) }),
     remove: (ids: number[]) => apiFetch<{ deleted: number }>("slideshow/items/delete", { method: "POST", body: JSON.stringify({ ids }) }),
   },
+  kompendium: {
+    marken: () => apiFetch<Record<string, string>>("kompendium/marken"),
+    markieren: (methodeId: string, marke: string | null) =>
+      apiFetch<Record<string, string>>(`kompendium/marken/${encodeURIComponent(methodeId)}`, { method: "PUT", body: JSON.stringify({ marke }) }),
+  },
   snap: {
     list: () => apiFetch<SnapProjectOut[]>("snap"),
     get: (id: number) => apiFetch<SnapProjectDetail>(`snap/${id}`),

@@ -1,0 +1,535 @@
+# Psychologie – Erweiterung 3: kleinere Modelle und Werkzeuge für Beratung, Unterricht und Selbstreflexion
+- id: y_balancemodell
+  name: Balancemodell (Positive Psychotherapie)
+  aliase: [Vier Qualitäten des Lebens, Peseschkian-Modell]
+  kategorie: psychologie
+  phasen: [einstieg, hauptteil]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [beratung, stress_gesundheit, reflexion]
+  dauer: 15–30 Min.
+  kurz: "Das Leben wird in vier Bereiche geteilt: Körper/Gesundheit, Leistung/Beruf, Kontakt/Beziehungen, Sinn/Zukunft. Personen schätzen ein, wie viel Energie sie in welchen Bereich stecken. Einseitigkeit (z. B. »Flucht in die Arbeit«) wird sichtbar."
+  ablauf:
+    - Vier Bereiche als Raute zeichnen.
+    - Prozentuale Energieverteilung jetzt und gewünscht eintragen.
+    - Unterschiede besprechen – Was kommt zu kurz? Welche Ressourcen liegen wo?
+    - Einen kleinen Schritt für einen vernachlässigten Bereich planen.
+  varianten:
+    - "Jugendliche: Vier-Bereiche-Raute zu Schule, Freundschaft, Freizeit und Gesundheit ausfüllen."
+    - "Erwachsene: Energieverteilung im Berufs- und Privatleben für ein Coaching-Gespräch nutzen."
+    - "Digital: Raute als Vorlage im Dokument, Prozentwerte per Eingabe."
+  stolpersteine:
+    - "Prozentzahlen werden als Bewertung erlebt; Gespräch auf Veränderungswünsche richten, nicht auf »richtige« Verteilung."
+  evidenz: {stufe: begrenzt, text: "Modell der Positiven Psychotherapie nach Peseschkian (1977); Wirksamkeitsstudien zum Gesamtverfahren ohne Kontrollgruppe (Peseschkian & Tritt 1998), das Modell selbst ist ein Reflexionswerkzeug."}
+  qualifikation: alle
+  quellen: [q_peseschkian1977, q_peseschkian2000]
+
+- id: y_lebensrad
+  name: Lebensrad
+  aliase: [Wheel of Life, Zufriedenheitsrad]
+  kategorie: psychologie
+  phasen: [einstieg, abschluss]
+  setting: [einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [beratung, reflexion, motivation]
+  dauer: 10–20 Min.
+  kurz: Ein Kreis wird in 6–8 Lebensbereiche geteilt (Gesundheit, Freundschaft, Schule/Beruf, Freizeit, Familie, Finanzen …); für jeden Bereich wird die Zufriedenheit von 0–10 eingetragen. Die entstehende »Delle« zeigt Ansatzpunkte.
+  ablauf:
+    - Bereiche gemeinsam festlegen.
+    - Zufriedenheit eintragen und verbinden.
+    - Einen Bereich wählen und Skalierungsfrage stellen (»Was bräuchte es für +1?«).
+  varianten:
+    - "Jugendliche: Lebensrad mit Schulbereichen, Freizeit und Freundschaft als Einstiegsgespräch."
+    - "Erwachsene: Lebensrad mit beruflichen und privaten Bereichen in der Beratung."
+    - "Digital: Vorlage als Formular mit Werten von 0 bis 10 und Auswertung im Dokument."
+  stolpersteine:
+    - "Das Rad wird als Notenspiegel missverstanden; Bereiche gemeinsam wählen und Werte nicht kommentieren."
+  evidenz: {stufe: praxis, text: "Verbreitetes Coaching-Werkzeug ohne eigene Wirksamkeitsforschung; nützlich als Einstieg in zielorientierte Gespräche (GROW, lösungsfokussiert)."}
+  qualifikation: alle
+  quellen: [q_whitmore1992, q_deshazer1985]
+
+- id: y_inneres_team
+  name: Inneres Team
+  aliase: [Innere Stimmen, Ego-States (pädagogisch)]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [beratung, reflexion, entscheidung]
+  dauer: 20–45 Min.
+  kurz: Bei inneren Konflikten werden die verschiedenen »Stimmen« (die Pflichtbewusste, der Ängstliche, die Abenteuerlustige) benannt, gezeichnet und angehört. Das Oberhaupt (die Person) moderiert eine »Teamkonferenz« und trifft eine Entscheidung.
+  ablauf:
+    - Anliegen klären.
+    - Stimmen sammeln, benennen, mit Botschaft versehen.
+    - Teamaufstellung zeichnen (wer ist laut, wer leise?).
+    - Konferenz moderieren, Lösung aus der Sicht des Oberhaupts.
+  varianten:
+    - "Jugendliche: Stimmen wie »die Pflichtbewusste« oder »der Ängstliche« zeichnen, in Konferenz besprechen."
+    - "Erwachsene: Inneres Team zu einer Berufsentscheidung in der Beratung, Moderation durch Fachkraft."
+    - "Digital: Stimmen auf Karten im Dokument sortieren, Entscheidung im Chat notieren."
+  stolpersteine:
+    - "Die Stimmen werden zu Persönlichkeitsdiagnosen; Anteile als Teile des Denkens beschreiben, nicht als Störung."
+  evidenz: {stufe: praxis, text: "Kommunikationspsychologisches Modell (Schulz von Thun 1998); verwandt mit Stuhlarbeit und Schematherapie-Modi; kaum eigene Studien."}
+  qualifikation: fortbildung
+  quellen: [q_schulzvonthun1998]
+
+- id: y_wertekarten
+  name: Wertekarten sortieren
+  aliase: [Personal Values Card Sort, Werte-Ranking]
+  kategorie: psychologie
+  phasen: [einstieg, hauptteil]
+  setting: [einzel, partner]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [beratung, motivation, reflexion]
+  dauer: 15–30 Min.
+  kurz: Karten mit Werten (Abenteuer, Familie, Sicherheit, Gerechtigkeit …) werden in »sehr wichtig – wichtig – unwichtig« sortiert; die wichtigsten Werte werden besprochen und mit dem aktuellen Verhalten verglichen.
+  ablauf:
+    - Karten sortieren.
+    - Top 5 auswählen und erläutern.
+    - Diskrepanz – Wie passt mein Alltag zu diesen Werten?
+    - Kleinen wertebezogenen Schritt planen.
+  varianten:
+    - "Jugendliche: Wertekarten zu Berufsplanung oder Freundschaft mit Top-5-Auswahl."
+    - "Erwachsene: Wertekarten im Team oder Coaching zur Klärung von Prioritäten."
+    - "Digital: Karten als Online-Sortierliste mit Begründung im Kommentarfeld."
+  stolpersteine:
+    - "Werte werden als richtig oder falsch bewertet; Begründungen erfragen statt Ergebnisse zu vergleichen."
+  evidenz: {stufe: begrenzt, text: "Werkzeug aus der Motivierenden Gesprächsführung (Miller et al. 2001); Wertearbeit ist Bestandteil wirksamer Verfahren wie ACT und MI."}
+  qualifikation: alle
+  quellen: [q_miller2001, q_miller2013, q_hayes2012]
+
+- id: y_lebenslinie
+  name: Lebenslinie / Zeitlinie
+  aliase: [Lebenskurve, Biografiearbeit, Timeline]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [beratung, reflexion, therapie]
+  dauer: 30–60 Min.
+  kurz: Wichtige Lebensereignisse werden auf einer Linie eingetragen, positive oberhalb, belastende unterhalb (in der Traumatherapie als Steine und Blumen). Ressourcen und Wendepunkte werden sichtbar.
+  ablauf:
+    - Linie von Geburt bis heute (Seil, Papier).
+    - Ereignisse einordnen, Höhen und Tiefen markieren.
+    - Ressourcen in schweren Zeiten erfragen (»Was hat geholfen?«).
+  varianten:
+    - "Jugendliche: Lebenslinie mit positiven und belastenden Ereignissen, nur Ressourcenfragen am Ende."
+    - "Erwachsene: Berufsbiografie als Linie im Coaching mit Blick auf Wendepunkte."
+    - "Digital: Zeitstrahl im Dokument mit Ereignissen und Ressourcen."
+  stolpersteine:
+    - Kann belastende Erinnerungen aktivieren; im pädagogischen Rahmen nur Ressourcen-Version, Trauma-Arbeit gehört in therapeutische Hand (NET).
+  evidenz: {stufe: begrenzt, text: "Biografiearbeit ist verbreitet; als Bestandteil der Narrativen Expositionstherapie (Schauer et al. 2011) bei Traumafolgen wirksam."}
+  qualifikation: fortbildung
+  quellen: [q_schauer2011]
+
+- id: y_ressourcen
+  name: Ressourcenaktivierung
+  aliase: [Ressourceninterview, Stärkeninventar, Ressourcenkoffer]
+  kategorie: psychologie
+  phasen: [einstieg, hauptteil]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [beratung, motivation, therapie]
+  dauer: 15–30 Min.
+  kurz: Gezielt werden Stärken, Fähigkeiten, Interessen, Beziehungen und frühere Bewältigungserfahrungen erfragt und im Gespräch genutzt – nicht nur Probleme. Bei Kindern als »Ressourcenkoffer« oder »Kraftbaum« gestaltet.
+  ablauf:
+    - Fragen nach gelungenen Momenten, Hobbys, unterstützenden Menschen.
+    - Ressourcen sichtbar sammeln (Liste, Baum, Koffer).
+    - Bezug zum aktuellen Anliegen herstellen (»Was davon hilft jetzt?«).
+  varianten:
+    - "Kinder: Ressourcenkoffer mit Bildern von Hobbys, Freund·innen und Lieblingsorten."
+    - "Jugendliche: Stärkenliste aus gelungenen Momenten, Bezug zum aktuellen Anliegen."
+    - "Digital: Ressourcenliste als Dokument oder Stärkenkarte im Chat."
+  stolpersteine:
+    - "Ressourcen werden erzwungen (»Du musst doch etwas können«); Fragen offen stellen und Zeit lassen."
+  evidenz: {stufe: mittel, text: "Ressourcenaktivierung ist nach Grawe (2004) ein allgemeiner Wirkfaktor; Flückiger & Grosse Holtforth (2008): Fokus auf Stärken zu Beginn verbesserte Allianz und Ergebnis."}
+  qualifikation: alle
+  quellen: [q_grawe2004, q_flueckiger2008]
+
+- id: y_entscheidungswaage
+  name: Entscheidungswaage (Vier-Felder-Tafel)
+  aliase: [Decisional Balance, Pro und Contra für Veränderung]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [beratung, entscheidung, motivation]
+  dauer: 15–20 Min.
+  kurz: Vor- und Nachteile von Beibehalten und Verändern eines Verhaltens werden in vier Felder geschrieben. Macht Ambivalenz verständlich und Gewichtungen sichtbar.
+  ablauf:
+    - Vier Felder – Vorteile/Nachteile von Beibehalten und Verändern.
+    - Gemeinsam ausfüllen, Gewichtung erfragen.
+    - Zusammenfassen und Bereitschaft skalieren.
+  varianten:
+    - "Jugendliche: Vier-Felder-Tafel zu Lernroutinen oder Freizeitverhalten."
+    - "Erwachsene: Entscheidungswaage bei beruflicher Veränderung im Coaching."
+    - "Digital: Vier Felder als Tabelle im Dokument mit Gewichtungsspalte."
+  stolpersteine:
+    - In der MI-Praxis kann ausführliches Sammeln von Vorteilen des Problemverhaltens die Bindung an das alte Verhalten stärken; bei geringer Veränderungsbereitschaft vorsichtig einsetzen.
+  evidenz: {stufe: begrenzt, text: "Nach Janis & Mann (1977); im Transtheoretischen Modell und in MI verbreitet, Miller & Rollnick (2013) mahnen zum differenzierten Einsatz."}
+  qualifikation: fortbildung
+  quellen: [q_janis1977, q_miller2013]
+
+- id: y_teufelskreis
+  name: Teufelskreismodell (Psychoedukation)
+  aliase: [Angstkreislauf, Panik-Teufelskreis]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [stress_gesundheit, therapie]
+  dauer: 20–30 Min.
+  kurz: Anhand eines persönlichen Beispiels wird der Kreislauf gezeichnet – Körperempfindung → Wahrnehmung → bedrohliche Deutung → Angst → noch stärkere Körperreaktion. Wer den Kreislauf versteht, kann an mehreren Stellen ansetzen.
+  ablauf:
+    - Letzte Angstsituation detailliert erfragen.
+    - Kreislauf gemeinsam zeichnen.
+    - Ausstiegspunkte markieren (Deutung prüfen, Atmung, Vermeidung aufgeben).
+  varianten:
+    - "Jugendliche: Kreislauf bei Prüfungsstress mit einem eigenen Beispiel zeichnen."
+    - "Erwachsene: Teufelskreis bei Überforderung im Beruf mit Ausstiegspunkten."
+    - "Digital: Kreislaufgrafik im Dokument mit Ausstiegsfeldern."
+  stolpersteine:
+    - "Zeichnen eines Kreislaufs bei akuter Panik kann überfordern; erst in ruhigen Momenten nutzen."
+  evidenz: {stufe: mittel, text: "Kern des psychophysiologischen Panikmodells (Margraf & Schneider 1990); Psychoedukation ist Bestandteil wirksamer KVT bei Angst."}
+  qualifikation: fortbildung
+  quellen: [q_margraf1990, q_lukens2004]
+
+- id: y_vulnerabilitaet_stress
+  name: Vulnerabilitäts-Stress-Modell (Fass-Modell)
+  aliase: [Stress-Fass, Diathese-Stress-Modell]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel, kleingruppe, plenum]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [stress_gesundheit, therapie]
+  dauer: 15–30 Min.
+  kurz: Psychische Erkrankung entsteht im Zusammenspiel von Verletzlichkeit (Fassgröße) und Belastungen (Wasser); Schutzfaktoren sind der Abfluss. Entlastet von Schuld und zeigt Ansatzpunkte.
+  ablauf:
+    - Fass zeichnen; Belastungen als Zuflüsse.
+    - Verletzlichkeiten benennen (ohne Wertung).
+    - Abflüsse (Ressourcen, Bewältigung) sammeln und ausbauen.
+  varianten:
+    - "Jugendliche: Fass-Bild mit Belastungen und Schutzfaktoren für Prüfungsphasen."
+    - "Erwachsene: Fass-Modell in Teamgesprächen über Belastungsgrenzen."
+    - "Digital: Fass-Grafik im Dokument mit Feldern für Zuflüsse und Abflüsse."
+  stolpersteine:
+    - "Das Fass darf nicht als Schuldzuweisung für Verletzlichkeit verstanden werden; Ressourcen betonen."
+  evidenz: {stufe: mittel, text: "Klassisches Modell (Zubin & Spring 1977); in der Psychoedukation fast aller Störungsbilder genutzt."}
+  qualifikation: alle
+  quellen: [q_zubin1977, q_lukens2004]
+
+- id: y_externalisieren
+  name: Externalisieren (Dem Problem einen Namen geben)
+  aliase: [Narrative Arbeit, Problem als Figur]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [beratung, therapie, sozial_emotional]
+  dauer: 15–30 Min.
+  kurz: Das Problem wird als eigenständige Figur behandelt (»der Wutvulkan«, »das Sorgenmonster«) – die Person ist nicht das Problem. Gemeinsam wird erkundet, wann die Figur stark ist und wann das Kind sie austrickst.
+  ablauf:
+    - Problem benennen und malen.
+    - Erkunden – Wann taucht es auf? Was sagt es?
+    - Ausnahmen finden – Wann hast du es schon besiegt?
+    - Strategien als »Tricks gegen das Monster«.
+  varianten:
+    - "Kinder: Problem als Monster malen und Tricks dagegen sammeln."
+    - "Jugendliche: Problem als Figur benennen, Ausnahmen gemeinsam finden."
+    - "Digital: Figur als Zeichnung im Dokument mit Strategiekarten."
+  stolpersteine:
+    - "Die Figur wird zur Abwertung der Person; betonen, dass die Person nicht das Problem ist."
+  evidenz: {stufe: begrenzt, text: "Aus der narrativen Therapie (White & Epston 1990); in der Kinder-KVT verbreitet (z. B. bei Zwang, Angst), als Einzeltechnik wenig untersucht."}
+  qualifikation: fortbildung
+  quellen: [q_white1990]
+
+- id: y_erdung
+  name: Erdungstechniken (5-4-3-2-1)
+  aliase: [Grounding, Achtsam im Hier und Jetzt, Skills bei Überflutung]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel, plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [stress_gesundheit, krise]
+  dauer: 1–5 Min.
+  kurz: "Bei starker Anspannung, Panik oder Flashback wird die Aufmerksamkeit über die Sinne in die Gegenwart geholt: 5 Dinge sehen, 4 hören, 3 spüren, 2 riechen, 1 schmecken – oder Füße fest auf den Boden, kaltes Wasser."
+  ablauf:
+    - Ruhig ansprechen, Blickkontakt anbieten.
+    - Sinneswahrnehmungen laut benennen lassen.
+    - Ort, Datum, Sicherheit betonen.
+  varianten:
+    - "Kinder: 5-4-3-2-1 mit Gegenständen im Raum, laut gemeinsam gesprochen."
+    - "Jugendliche: Füße auf den Boden und Sinneswahrnehmungen vor einer Prüfung benennen."
+    - "Digital: Erdungsübung mit Stimme oder Text im Videoraum."
+  stolpersteine:
+    - "Bei Flashbacks oder Dissoziation Ruhe bewahren und Fachhilfe holen; nicht eigenständig vertiefen."
+  evidenz: {stufe: begrenzt, text: "Fester Bestandteil von Seeking Safety (Najavits 2002) und traumainformierter Praxis; als Einzeltechnik wenig untersucht."}
+  qualifikation: alle
+  quellen: [q_najavits2002, q_linehan2015]
+
+- id: y_sicherer_ort
+  name: Imaginationsübungen »Sicherer Ort« und »Tresor«
+  aliase: [Ressourcenimagination, Stabilisierungsübungen]
+  kategorie: psychologie
+  phasen: [hauptteil, abschluss]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [stress_gesundheit, therapie]
+  dauer: 10–20 Min.
+  kurz: Stabilisierende Imaginationen aus der Traumatherapie – ein innerer Ort, an dem man sich vollkommen sicher fühlt; ein innerer Tresor, in dem Belastendes vorübergehend weggeschlossen wird.
+  ablauf:
+    - Ort mit allen Sinnen gestalten lassen.
+    - Anker (Geste, Wort) verknüpfen.
+    - Üben in ruhigen Zeiten, bevor man es in Krisen nutzt.
+  varianten:
+    - "Jugendliche: innerer Ort in ruhigen Zeiten üben, bevor er in Stress gebraucht wird."
+    - "Fachkraft: Stabilisierende Imagination im Rahmen einer traumainformierten Begleitung."
+    - "Digital: Audio-Anleitung nur für Übungen unter fachlicher Begleitung."
+  stolpersteine:
+    - Bei manchen Betroffenen tauchen belastende Bilder auf; nur mit Erfahrung und Möglichkeit zur Stabilisierung anleiten.
+  evidenz: {stufe: begrenzt, text: "Ressourcenorientierte Verfahren nach Reddemann (2001); verbreitet, aber Stabilisierungsphasen selbst sind wenig kontrolliert untersucht."}
+  qualifikation: fachkraft
+  quellen: [q_reddemann2001]
+
+- id: y_stuhlarbeit
+  name: Stuhlarbeit (Zwei-Stühle-Technik)
+  aliase: [Leerer Stuhl, Dialog mit Anteilen]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [therapie, beratung]
+  dauer: 20–40 Min.
+  kurz: Innere Anteile oder abwesende Personen werden auf leere Stühle gesetzt; die Person spricht zu ihnen und wechselt ggf. den Platz. Ungelöste Gefühle und Selbstkritik werden erlebbar und bearbeitbar.
+  ablauf:
+    - Anliegen klären, Stühle positionieren.
+    - Zum Stuhl sprechen, Gefühl vertiefen.
+    - Perspektivwechsel durch Platztausch.
+    - Nachbesprechung und Integration.
+  varianten:
+    - "Fachkraft: Zwei-Stühle-Technik in Therapie oder Beratung mit fachlicher Ausbildung."
+    - "Jugendliche: Nur als Gespräch mit zwei Stühlen zu einem Konflikt, ohne Vertiefung."
+    - "Digital: Keine Anwendung ohne Begleitung im Videoraum."
+  stolpersteine:
+    - "Stuhlarbeit kann starke Emotionen auslösen; Lehrkräfte sollten sie nicht allein anleiten."
+  evidenz: {stufe: mittel, text: "Kernintervention der emotionsfokussierten Therapie (Greenberg 2002) und der Schematherapie, mit RCTs zu ungelösten Beziehungen und Selbstkritik."}
+  qualifikation: fachkraft
+  quellen: [q_greenberg2002, q_young2003]
+
+- id: y_familienbrett
+  name: Familienbrett / Skulptur
+  aliase: [Systembrett, Figurenaufstellung auf dem Tisch]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [beratung, beziehung, therapie]
+  dauer: 20–45 Min.
+  kurz: Mit Holzfiguren auf einem Brett stellt eine Person ihre Familie oder Klasse auf – Nähe, Distanz, Blickrichtung zeigen Beziehungen. Änderungen werden ausprobiert (»Wie wäre es, wenn …?«).
+  ablauf:
+    - Figuren für Personen wählen und stellen.
+    - Beschreiben lassen (Wer steht wo, warum?).
+    - Wunschbild stellen; Unterschiede besprechen.
+  varianten:
+    - "Jugendliche: Figuren für die Klasse oder Freundesgruppe in Beratung aufstellen lassen."
+    - "Erwachsene: Teamaufstellung für Organisationsfragen in Supervision."
+    - "Digital: Aufstellung mit Symbolen im Whiteboard mit Begründung im Kommentar."
+  stolpersteine:
+    - Nicht zu verwechseln mit esoterischen Familienaufstellungen; die Person deutet selbst, die Beratung interpretiert nicht.
+  evidenz: {stufe: begrenzt, text: "Systemisches Diagnose- und Beratungswerkzeug (Ludewig & Wilken 2000) mit Forschung zur Reliabilität; Wirksamkeitsstudien fehlen."}
+  qualifikation: fortbildung
+  quellen: [q_ludewig2000, q_schweitzer2007]
+
+- id: y_rollentausch
+  name: Rollentausch und Doppeln (Psychodrama)
+  aliase: [Psychodrama-Techniken, Spiegeln]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [therapie, sozial_emotional, konflikt]
+  dauer: 30–90 Min.
+  kurz: Szenen aus dem Leben werden gespielt; im Rollentausch erlebt die Person die Situation aus Sicht des Gegenübers, beim Doppeln spricht ein Mitspieler unausgesprochene Gefühle aus.
+  ablauf:
+    - Erwärmung der Gruppe.
+    - Szene mit Protagonist·in aufbauen.
+    - Techniken (Rollentausch, Doppeln, Spiegeln) einsetzen.
+    - Sharing – Gruppe teilt eigene Erfahrungen.
+  varianten:
+    - "Jugendliche: Rollentausch in Konfliktszene mit Partner, Rollen danach besprechen."
+    - "Fachkraft: Psychodrama-Techniken in Gruppen mit ausgebildeter Leitung."
+    - "Digital: Rollenspiel per Videoschalte, nur mit Fachleitung."
+  stolpersteine:
+    - "Rollenspiele in Gruppen können tief berühren; ohne ausgebildete Leitung keine Psychodrama-Szenen."
+  evidenz: {stufe: mittel, text: "Metaanalyse Kipper & Ritchie (2003): mittlere bis große Effekte psychodramatischer Techniken, vor allem Rollentausch und Doppeln; Studienqualität heterogen."}
+  qualifikation: fachkraft
+  quellen: [q_kipper2003, q_moreno1934]
+
+- id: y_genusstraining
+  name: Genusstraining (Kleine Schule des Genießens)
+  aliase: [Euthyme Therapie, Sinnesübungen]
+  kategorie: psychologie
+  phasen: [hauptteil, abschluss]
+  setting: [kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [stress_gesundheit, therapie]
+  dauer: mehrere Sitzungen à 60 Min.
+  kurz: Mit Genussregeln (Genuss braucht Zeit, ist erlaubt, geht nicht nebenbei, weniger ist mehr) wird über einzelne Sinne geübt, Angenehmes bewusst wahrzunehmen.
+  ablauf:
+    - Genussregeln besprechen.
+    - Sinnesübung (z. B. Gerüche, Schokolade langsam essen).
+    - Austausch und Übertragung in den Alltag.
+  varianten:
+    - "Jugendliche: Genussübung mit einem Lebensmittel, langsam und bewusst genießen."
+    - "Erwachsene: Genussregeln im Kurs als Ausgleich zu Stress."
+    - "Digital: Genusstagebuch im Dokument mit angenehmen Momenten."
+  stolpersteine:
+    - "Als Programm gegen Depression gehört es in fachliche Begleitung; bei Stimmungstiefs an Fachpersonen verweisen."
+  evidenz: {stufe: begrenzt, text: "Verhaltenstherapeutisches Gruppenprogramm (Koppenhöfer 2004), besonders bei Depression eingesetzt; wenige kontrollierte Studien."}
+  qualifikation: fortbildung
+  quellen: [q_koppenhoefer2004]
+
+- id: y_wohlbefinden
+  name: Wohlbefindenstherapie (Well-Being Therapy)
+  aliase: [Wohlbefindens-Tagebuch]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [therapie, stress_gesundheit]
+  dauer: 8 Sitzungen
+  kurz: Patient·innen notieren Episoden von Wohlbefinden und die Gedanken, die sie unterbrechen. Ziel ist der Ausbau von Autonomie, Wachstum, Sinn, Beziehungen, Umweltbewältigung und Selbstakzeptanz – oft zur Rückfallprophylaxe.
+  ablauf:
+    - Wohlbefindens-Episoden protokollieren.
+    - Unterbrechende Gedanken erkennen.
+    - Bereiche des Wohlbefindens gezielt stärken.
+  varianten:
+    - "Jugendliche: Wohlbefindenstagebuch mit Notizen zu schönen Momenten, nur auf freiwilliger Basis."
+    - "Fachkraft: Wohlbefindenstherapie in Einzelbegleitung nach Ausbildung."
+    - "Digital: Tagebuch im privaten Dokument ohne Kontrolle."
+  stolpersteine:
+    - "Bei depressiven Symptomen ist ein Programm mit fachlicher Begleitung nötig; Lehrkräfte verweisen weiter."
+  evidenz: {stufe: mittel, text: "Fava et al. (1998) und Folgestudien: Verringerung von Restsymptomen und Rückfällen bei affektiven Störungen."}
+  qualifikation: fachkraft
+  quellen: [q_fava1998]
+
+- id: y_bewegung
+  name: Bewegung als Intervention
+  aliase: [Sport bei Depression, Aktivitätsprogramme]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [stress_gesundheit, therapie]
+  dauer: 3× pro Woche 30–45 Min.
+  kurz: Regelmäßige, moderate körperliche Aktivität (Gehen, Laufen, Krafttraining) wird gezielt geplant – als Ergänzung bei depressiven Beschwerden und zur Stressreduktion.
+  ablauf:
+    - Realistische Aktivität wählen, die Freude macht.
+    - Wochenplan mit festen Zeiten, gern in Gesellschaft.
+    - Stimmung vor/nach notieren.
+  varianten:
+    - "Jugendliche: Gemeinsame Pausenbewegung oder Sportgruppe als Ausgleich zum Schulstress."
+    - "Erwachsene: Wochenplan mit regelmäßigem Spaziergang oder Kurs im Betrieb."
+    - "Digital: Bewegungskalender im Dokument mit Erinnerungen."
+  stolpersteine:
+    - "Bei Verletzungen oder gesundheitlichen Problemen vorher ärztlich abklären lassen."
+  evidenz: {stufe: stark, text: "Metaanalyse Schuch et al. (2016): großer Effekt auf depressive Symptome, auch nach Korrektur für Publikationsbias."}
+  qualifikation: alle
+  quellen: [q_schuch2016]
+
+- id: y_biofeedback
+  name: Biofeedback (HRV)
+  aliase: [Herzratenvariabilitäts-Training, Atem-Biofeedback]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [stress_gesundheit, therapie]
+  dauer: mehrere Sitzungen
+  kurz: Körpersignale (Herzrhythmus, Hautleitfähigkeit) werden in Echtzeit angezeigt; Personen lernen, z. B. über langsames Atmen die Herzratenvariabilität zu erhöhen und sich gezielt zu beruhigen.
+  ablauf:
+    - Sensor anlegen, Ausgangswerte zeigen.
+    - Resonanzatmung (ca. 6 Atemzüge/Min.) üben mit Feedback.
+    - Übertragen auf Alltag ohne Gerät.
+  varianten:
+    - "Jugendliche: Langsames Atmen mit einer Atem-App, Übungsdauer festlegen."
+    - "Erwachsene: Resonanzatmung mit Feedback im Kurs, danach selbst ohne Gerät üben."
+    - "Digital: Biofeedback-App mit Atemanimation und Fortschrittsanzeige."
+  stolpersteine:
+    - "Gerätewerte können verunsichern; Fokus auf das Gefühl beim Atmen legen, nicht auf Zahlen."
+  evidenz: {stufe: mittel, text: "Metaanalyse Goessl et al. (2017): HRV-Biofeedback reduziert Stress und Angst mit großem Effekt; Studien eher klein."}
+  qualifikation: fortbildung
+  quellen: [q_goessl2017, q_zaccaro2018]
+
+- id: y_bibliotherapie
+  name: Selbsthilfe mit Büchern und Online-Programmen
+  aliase: [Bibliotherapie, Internetbasierte KVT, digitale Gesundheitsanwendungen]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [stress_gesundheit, therapie]
+  dauer: Wochen
+  kurz: Strukturierte Selbsthilfe nach KVT-Prinzipien – als Buch oder Online-Programm, idealerweise mit kurzer Begleitung durch eine Fachperson. Überbrückt Wartezeiten und ergänzt Behandlung.
+  ablauf:
+    - Passendes, geprüftes Programm wählen.
+    - Feste Bearbeitungszeiten vereinbaren.
+    - Kurze Rückmeldungen (Telefon, Nachricht) durch Begleitung.
+  varianten:
+    - "Jugendliche: geprüftes Selbsthilfeprogramm mit Lernbegleitung durch Schulpsychologie."
+    - "Erwachsene: begleitetes Online-Programm mit wöchentlicher Rückmeldung."
+    - "Digital: Empfehlungsliste geprüfter Programme im Lernmanagementsystem."
+  stolpersteine:
+    - "Selbsthilfe ohne Begleitung kann bei schweren Beschwerden überfordern; Hinweise auf Hilfe geben."
+  evidenz: {stufe: stark, text: "Metaanalysen: Bibliotherapie bei Depression wirksam (Cuijpers 1997); begleitete Internet-KVT etwa gleich wirksam wie Präsenz-KVT (Carlbring et al. 2018)."}
+  qualifikation: fortbildung
+  quellen: [q_cuijpers1997, q_carlbring2018]
+
+- id: y_spieltherapie
+  name: Spieltherapie
+  aliase: [Kindzentrierte Spieltherapie, Play Therapy]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [kinder]
+  anwendung: [therapie, sozial_emotional]
+  dauer: wöchentlich über Monate
+  kurz: Kinder drücken Gefühle und Erfahrungen im Spiel aus; die Therapeutin begleitet nicht-wertend, verbalisiert Gefühle und setzt wenige klare Grenzen. Varianten beziehen Eltern ein (Filialtherapie).
+  ablauf:
+    - Spielzimmer mit ausgewähltem Material.
+    - Kind führt, Therapeutin spiegelt und benennt Gefühle.
+    - Grenzen nur für Sicherheit.
+    - Elterngespräche begleitend.
+  varianten:
+    - "Kinder: Spielzimmer nur durch Fachkraft, Lehrkräfte bieten Freispielzeit ohne Deutung an."
+    - "Kinder: Fachkraft begleitet Gruppen-Spielangebot in der Schule."
+    - "Eltern: Spielmöglichkeiten zu Hause ohne therapeutische Deutung."
+  stolpersteine:
+    - "Lehrkräfte sollten Kinder nicht deuten oder therapeutisch anleiten; Auffälligkeiten an Fachkräfte weitergeben."
+  evidenz: {stufe: mittel, text: "Metaanalyse Bratton et al. (2005): mittlere bis große Effekte; stärker mit Elternbeteiligung."}
+  qualifikation: fachkraft
+  quellen: [q_bratton2005]
+
+- id: y_musiktherapie
+  name: Musik- und Kunsttherapie
+  aliase: [Kreativtherapien, künstlerische Therapien]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [therapie, stress_gesundheit, sozial_emotional]
+  dauer: wöchentlich
+  kurz: Musik (aktiv spielen, improvisieren, hören) oder Gestalten wird als Ausdrucks- und Beziehungsmedium genutzt – besonders hilfreich, wenn Worte schwerfallen.
+  ablauf:
+    - Ziel und Medium klären.
+    - Aktives Gestalten oder Improvisieren.
+    - Reflexion über Erleben und Produkt.
+  varianten:
+    - "Kinder: Musizieren im Klassenraum ohne therapeutischen Anspruch."
+    - "Jugendliche: Gemeinsames Gestalten im Kunstunterricht mit freier Themenwahl."
+    - "Digital: Musik- oder Kunstübungen als Ergänzung im Lernmanagementsystem."
+  stolpersteine:
+    - "Musik- und Kunsttherapie gehört in ausgebildete Hände; Lehrkräfte bieten nur kreative Angebote ohne Deutung."
+  evidenz: {stufe: mittel, text: "Cochrane-Review Aalbers et al. (2017): Musiktherapie zusätzlich zur Standardbehandlung reduziert depressive Symptome kurzfristig; für Kunsttherapie ist die Evidenz schwächer."}
+  qualifikation: fachkraft
+  quellen: [q_aalbers2017]

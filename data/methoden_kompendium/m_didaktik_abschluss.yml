@@ -1,0 +1,338 @@
+# Didaktik – Abschluss (Sicherung, Diagnose, Reflexion)
+- id: d_exit_ticket
+  name: Exit Ticket (Austrittskarte)
+  aliase: [Lernzettel zum Schluss, Ausgangskarte]
+  kategorie: didaktik
+  phasen: [abschluss]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [diagnose, ueben]
+  dauer: 3–5 Min.
+  kurz: Vor dem Verlassen beantwortet jede Person auf einem Zettel 1–3 Fragen zum Kernziel der Stunde. Die Lehrkraft sortiert die Zettel und plant danach die nächste Stunde.
+  ablauf:
+    - 1–2 Fragen, die das Lernziel direkt prüfen (plus optional »Was ist noch unklar?«).
+    - Einzeln, ohne Hilfe beantworten; Abgabe an der Tür.
+    - "Nach der Stunde in drei Stapel sortieren: verstanden / teilweise / nicht verstanden."
+    - Nächste Stunde mit Gruppen oder gezielter Wiederholung beginnen.
+  varianten:
+    - "Kinder: Smiley ankreuzen plus eine Aufgabe."
+    - "Digital: Formular oder Quiz-Tool."
+  stolpersteine:
+    - Ohne Konsequenz für die nächste Stunde verliert das Ticket seinen Sinn.
+  evidenz: {stufe: mittel, text: "Formative Beurteilung mit anschließender Unterrichtsanpassung ist gut belegt (Black & Wiliam 1998); das Ticket selbst ist ein Werkzeug dafür (Wiliam 2011)."}
+  qualifikation: alle
+  quellen: [q_wiliam2011, q_black1998]
+
+- id: d_minute_paper
+  name: One-Minute-Paper
+  aliase: [Minutenfrage]
+  kategorie: didaktik
+  phasen: [abschluss]
+  setting: [einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [diagnose, reflexion]
+  dauer: 1–3 Min.
+  kurz: "Zwei Fragen in einer Minute: »Was war heute das Wichtigste, das Sie gelernt haben?« und »Welche Frage ist noch offen?«"
+  ablauf:
+    - Fragen stellen, eine Minute schreiben lassen, anonym einsammeln.
+    - Antworten überfliegen, Muster erkennen.
+    - Zu Beginn der nächsten Sitzung offene Fragen aufgreifen.
+  varianten:
+    - "Jugendliche: Fragen auf eine Karte schreiben und am Ausgang abgeben."
+    - "Erwachsene: Zwei Fragen in der letzten Viertelstunde eines Workshops, anonym im Umschlag."
+    - "Digital: Fragen in einem Online-Formular oder Chat-Abfrage stellen."
+  stolpersteine:
+    - "Antworten werden nicht gelesen oder besprochen; zu Beginn der nächsten Stunde Ergebnisse zurückmelden."
+    - "Die Frage »Was war am wichtigsten?« wird zu allgemein beantwortet; konkrete Stichworte verlangen."
+  evidenz: {stufe: mittel, text: "Klassische Classroom Assessment Technique (Angelo & Cross 1993); Teil formativer Beurteilung."}
+  qualifikation: alle
+  quellen: [q_angelo1993]
+
+- id: d_muddiest_point
+  name: Muddiest Point (Unklarster Punkt)
+  aliase: ["Was war am unklarsten?"]
+  kategorie: didaktik
+  phasen: [abschluss]
+  setting: [einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [diagnose]
+  dauer: 2 Min.
+  kurz: Lernende notieren anonym den Punkt der Stunde, der ihnen am unklarsten geblieben ist.
+  ablauf:
+    - Am Stundenende eine Frage – Was war heute am unklarsten?
+    - Einsammeln, häufigste Punkte zählen.
+    - In der Folgestunde gezielt nachklären.
+  varianten:
+    - "Jugendliche: Zettel mit einer Zeile, anonym am Stundenende einsammeln."
+    - "Erwachsene: Anonyme Abfrage in Fortbildungen per Umschlag oder Formular."
+    - "Digital: Eingabefeld im Lernmanagementsystem, Antworten gebündelt anzeigen."
+  stolpersteine:
+    - "Wenn die Lehrkraft nicht nachklärt, sinkt die Bereitschaft zur ehrlichen Antwort."
+  evidenz: {stufe: mittel, text: "Von Mosteller in Harvard-Statistikvorlesungen entwickelt und bei Angelo & Cross (1993) beschrieben."}
+  qualifikation: alle
+  quellen: [q_angelo1993]
+
+- id: d_321
+  name: 3-2-1-Methode
+  aliase: [3 Dinge – 2 Fragen – 1 Meinung]
+  kategorie: didaktik
+  phasen: [abschluss]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [reflexion, diagnose, ueben]
+  dauer: 5 Min.
+  kurz: "Lernende notieren 3 Dinge, die sie gelernt haben, 2 Fragen oder interessante Aspekte und 1 Sache, die sie anwenden oder weiter verfolgen wollen."
+  ablauf:
+    - Vorlage mit drei Feldern ausgeben.
+    - Einzeln ausfüllen (ohne Unterlagen = zusätzlich Abrufübung).
+    - Freiwillig teilen oder einsammeln.
+  varianten:
+    - "Kinder: drei Felder mit Symbolen (Stern, Fragezeichen, Daumen) und Bildern."
+    - "Jugendliche: Vorlage im Heft mit festen Feldern, Austausch mit dem Sitznachbarn."
+    - "Digital: Vorlage als Formular, Antworten gebündelt auswerten."
+  stolpersteine:
+    - "Die Fragen bleiben oberflächlich; Antwortformate konkret vorgeben (z. B. »Ein Beispiel für …«)."
+  evidenz: {stufe: praxis, text: "Praxisformat; wirksam vor allem, wenn ohne Unterlagen (Abruf) und mit Auswertung durch die Lehrkraft."}
+  qualifikation: alle
+  quellen: [q_agarwal2019, q_wiliam2011]
+
+- id: d_zusammenfassung_satz
+  name: Ein-Satz-Zusammenfassung / Tweet
+  aliase: [One-Sentence Summary, Schlagzeile]
+  kategorie: didaktik
+  phasen: [abschluss]
+  setting: [einzel, partner]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [verstehen, diagnose]
+  dauer: 3–5 Min.
+  kurz: Der Kern der Stunde wird in einem Satz, einer Schlagzeile oder einem 280-Zeichen-Post zusammengefasst. Zwingt zur Verdichtung.
+  ablauf:
+    - Vorgabe (z. B. Wer tut was wann wie warum?).
+    - Einzeln formulieren, mit Partner vergleichen und verbessern.
+    - Besten Satz an der Tafel festhalten.
+  varianten:
+    - "Kinder: Satz mit Lückenwörtern (Wer? Was? Wo?) vorgeben und ergänzen lassen."
+    - "Jugendliche: Schlagzeile zum Thema in maximal zehn Wörtern formulieren."
+    - "Digital: Kurzbeitrag mit 280 Zeichen im Lernmanagementsystem posten lassen."
+  stolpersteine:
+    - Zusammenfassen muss geübt werden; ungeübte Lernende kopieren Sätze aus dem Text.
+  evidenz: {stufe: begrenzt, text: "Angelo & Cross (1993) beschreiben die Technik; Dunlosky et al. (2013) bewerten Zusammenfassen als Lernstrategie mit geringem Nutzen, außer wenn es geübt wurde."}
+  qualifikation: alle
+  quellen: [q_angelo1993, q_dunlosky2013]
+
+- id: d_lerntagebuch
+  name: Lerntagebuch / Lernprotokoll
+  aliase: [Learning Journal, Reflexionsjournal, Portfolio-Eintrag]
+  kategorie: didaktik
+  phasen: [abschluss]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [lernstrategien, reflexion, verstehen]
+  dauer: 10–15 Min.
+  kurz: Nach einer Lerneinheit schreiben Lernende ein strukturiertes Protokoll mit Leitfragen zu Inhalt (Organisation, Elaboration) und Lernprozess (Monitoring, Planung).
+  ablauf:
+    - "Prompts geben, z. B.: Was sind die Hauptpunkte? Wie hängen sie zusammen? Welches Beispiel fällt mir ein? Was habe ich nicht verstanden? Was tue ich dagegen?"
+    - Regelmäßig schreiben (wöchentlich).
+    - Lehrkraft gibt gelegentlich Rückmeldung.
+  varianten:
+    - "Kinder: Tagebuchseite mit Bildkarten und einem Satz zu »Was habe ich gelernt?«."
+    - "Jugendliche: Wöchentliches Lernprotokoll mit festen Leitfragen im Heft."
+    - "Digital: Lernjournal als persönliches Dokument mit Kommentarfunktion der Lehrkraft."
+  stolpersteine:
+    - Ohne Prompts entstehen oberflächliche Inhaltswiedergaben.
+  evidenz: {stufe: mittel, text: "Nückles et al. (2009) zeigen, dass kognitive und metakognitive Prompts in Lernprotokollen das Lernen deutlich verbessern."}
+  qualifikation: alle
+  quellen: [q_nueckles2009, q_zimmerman2002]
+
+- id: d_selbstueberpruefung
+  name: Selbstüberprüfung an Erfolgskriterien
+  aliase: [Checkliste, Rubric, Selbsteinschätzung]
+  kategorie: didaktik
+  phasen: [abschluss]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [lernstrategien, diagnose]
+  dauer: 5–10 Min.
+  kurz: Lernende prüfen ihr Produkt oder ihr Können mithilfe der zu Beginn genannten Erfolgskriterien oder eines Bewertungsrasters und legen einen nächsten Schritt fest.
+  ablauf:
+    - Kriterien (oder Rubric mit Stufen) vorlegen.
+    - Eigenes Produkt markieren – wo erfüllt, wo nicht?
+    - Einen konkreten nächsten Schritt notieren.
+  varianten:
+    - "Kinder: Checkliste mit Bildern und Smileys für »geschafft« und »noch nicht«."
+    - "Jugendliche: Rubric mit drei Kriterien, eigene Arbeit markieren und Begründung schreiben."
+    - "Erwachsene: Checkliste für Präsentationen oder Berichte vor der Abgabe."
+  stolpersteine:
+    - "Lernende kreuzen alles als erfüllt an; Belege aus dem eigenen Produkt verlangen."
+  evidenz: {stufe: mittel, text: "Metaanalysen zur Selbstbeurteilung (Panadero et al. 2017): positive Effekte auf Selbstregulation und Selbstwirksamkeit."}
+  qualifikation: alle
+  quellen: [q_panadero2017, q_hattie2007]
+
+- id: d_peer_feedback
+  name: Peer-Feedback (Zwei Sterne und ein Wunsch)
+  aliase: [Peer Assessment, Schreibkonferenz, Feedback-Sandwich-Alternative]
+  kategorie: didaktik
+  phasen: [abschluss, hauptteil]
+  setting: [partner, kleingruppe]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [diagnose, lesen_schreiben, reflexion]
+  dauer: 10–20 Min.
+  kurz: Lernende geben einander anhand von Kriterien Rückmeldung – zwei Stärken (Sterne) und einen konkreten Verbesserungsvorschlag (Wunsch).
+  ablauf:
+    - Kriterien klären und Beispielrückmeldungen modellieren.
+    - Produkte tauschen; Rückmeldung schriftlich anhand der Kriterien.
+    - Überarbeitung mit Begründung, welche Hinweise übernommen wurden.
+  varianten:
+    - "Kinder: Rückmeldung mit zwei Sternen und einem Wunsch auf Kärtchen, mit Satzanfängen."
+    - "Jugendliche: Feedbackbogen mit Kriterienliste zu Text oder Präsentation."
+    - "Digital: Peer-Kommentare im geteilten Dokument mit Kriterienliste im Kopf."
+  stolpersteine:
+    - Unspezifisches Lob (»Gut gemacht!«) hilft nicht; Satzanfänge vorgeben.
+  evidenz: {stufe: mittel, text: "Metaanalyse Double et al. (2020): Peer Assessment verbessert Leistungen gegenüber keinem oder Lehrkraft-Feedback leicht bis mittel (g ≈ 0,3)."}
+  qualifikation: alle
+  quellen: [q_double2020, q_hattie2007]
+
+- id: d_abschlussquiz
+  name: Abschlussquiz (low stakes)
+  aliase: [Wiederholungsquiz, Brain Dump zum Schluss]
+  kategorie: didaktik
+  phasen: [abschluss]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [ueben, diagnose]
+  dauer: 5–10 Min.
+  kurz: Ein kurzes, unbenotetes Quiz am Ende der Stunde wiederholt die Kerninhalte aus dem Gedächtnis.
+  ablauf:
+    - 3–5 Fragen zu den Kernzielen.
+    - Ohne Unterlagen beantworten.
+    - Sofort Lösung und kurze Besprechung (Feedback).
+  varianten:
+    - "Kinder: drei Bildfragen auf Karten, Lösung mit Daumen zeigen."
+    - "Jugendliche: kurzes Quiz mit Zahlen, Ergebnis im Heft notieren lassen."
+    - "Digital: Quiz im Lernmanagementsystem, Lösungen sofort anzeigen."
+  stolpersteine:
+    - "Ein Quiz ohne Besprechung der Lösungen wird zur Benotung; Fehler direkt klären."
+  evidenz: {stufe: stark, text: "Abrufübung mit Rückmeldung (Roediger & Karpicke 2006; Adesope et al. 2017)."}
+  qualifikation: alle
+  quellen: [q_roediger2006, q_adesope2017]
+
+- id: d_ausblick
+  name: Ausblick / Cliffhanger
+  aliase: [Brücke zur nächsten Stunde]
+  kategorie: didaktik
+  phasen: [abschluss]
+  setting: [plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [motivation]
+  dauer: 1–3 Min.
+  kurz: Die Stunde endet mit einer offenen Frage, einem Rätsel oder einer Vorschau, die an die nächste Stunde anschließt.
+  ablauf:
+    - Offene Frage oder Phänomen nennen, das erst in der nächsten Stunde geklärt wird.
+    - Optional Vermutungen notieren lassen.
+    - Zu Beginn der nächsten Stunde aufgreifen.
+  varianten:
+    - "Kinder: Rätselbild oder geheimnisvolle Kiste für die nächste Stunde zeigen."
+    - "Jugendliche: offene Frage als Hausaufgabe oder Vermutung für die nächste Stunde notieren."
+    - "Digital: Vorschau-Video oder Frage im Lernmanagementsystem hinterlassen."
+  stolpersteine:
+    - "Der Cliffhanger wird vergessen; zu Beginn der nächsten Stunde ausdrücklich aufgreifen."
+  evidenz: {stufe: begrenzt, text: "Nutzt Wissenslücken-Neugier (Loewenstein 1994); als eigenständige Technik kaum untersucht."}
+  qualifikation: alle
+  quellen: [q_loewenstein1994]
+
+- id: d_koffer
+  name: Koffer – Papierkorb – Wäschekorb
+  aliase: ["Was nehme ich mit?", Koffer-Methode]
+  kategorie: didaktik
+  phasen: [abschluss]
+  setting: [einzel, plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [reflexion]
+  dauer: 5–10 Min.
+  kurz: "Teilnehmende ordnen Karten drei Symbolen zu: Koffer (nehme ich mit), Papierkorb (brauche ich nicht), Wäschekorb (muss ich noch einmal durchwaschen)."
+  ablauf:
+    - Drei Symbole auf Plakat oder Boden.
+    - Je 1–3 Karten schreiben und zuordnen.
+    - Kurze Auswertung; Wäschekorb-Themen für Folgetermin notieren.
+  varianten:
+    - "Kinder: drei Körbe aus Pappe mit Bildern, Karten mit Zeichnungen legen."
+    - "Jugendliche: Karten mit Schlagworten, Begründung kurz im Plenum nennen."
+    - "Digital: Karten in einem Online-Board ziehen und in Spalten verschieben."
+  stolpersteine:
+    - "Wäschekorb-Themen werden vergessen; sie direkt auf einen Termin oder Plan übertragen."
+  evidenz: {stufe: praxis, text: "Verbreitete Abschlussmethode in Erwachsenenbildung und Schule; dient Reflexion und Prozessfeedback."}
+  qualifikation: alle
+  quellen: [q_mattes2011]
+
+- id: d_lernplakat
+  name: Lernplakat / Merkblatt erstellen
+  aliase: [Cheat Sheet, Spickzettel-Methode]
+  kategorie: didaktik
+  phasen: [abschluss]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [verstehen, ueben]
+  dauer: 15–30 Min.
+  kurz: Am Ende einer Einheit verdichten Lernende das Wichtigste auf einem begrenzten Format (DIN-A4, Plakat) – Auswahl und Strukturierung sind die eigentliche Lernleistung.
+  ablauf:
+    - Format begrenzen (z. B. eine Seite, max. 10 Begriffe).
+    - Inhalte auswählen, strukturieren, mit Skizzen versehen.
+    - Mit anderen vergleichen; ggf. im Test erlaubt.
+  varianten:
+    - "Kinder: Bildplakat mit drei Symbolen zu einem Sachthema, gemeinsam gestaltet."
+    - "Jugendliche: DIN-A4-Merkblatt mit maximal zehn Begriffen und Skizze."
+    - "Digital: Merkblatt als Dokument oder Infografik mit Quellen teilen."
+  stolpersteine:
+    - "Das Blatt wird abgeschrieben statt verdichtet; Auswahl und Begründung als Lernleistung hervorheben."
+    - "Zu große Blätter laden zum Abschreiben ein; Format knapp begrenzen."
+  evidenz: {stufe: begrenzt, text: "Generative Lernaktivität (Zusammenfassen, Mapping, Zeichnen) nach Fiorella & Mayer (2016); Wirkung abhängig von Qualität der Verarbeitung."}
+  qualifikation: alle
+  quellen: [q_fiorella2016]
+
+- id: d_hausaufgabe_verteilt
+  name: Hausaufgabe als verteilte Übung
+  aliase: [Homework with Spacing]
+  kategorie: didaktik
+  phasen: [abschluss]
+  setting: [einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [ueben]
+  dauer: 10–30 Min.
+  kurz: Hausaufgaben enthalten neben dem neuen Stoff gezielt Aufgaben zu älteren Themen und werden kurz mit Rückmeldung besprochen.
+  ablauf:
+    - Neuer Stoff + 1–2 Aufgaben aus früheren Einheiten.
+    - Kurz, mit klarem Zweck.
+    - Rückmeldung in der nächsten Stunde (nicht nur Kontrolle der Erledigung).
+  varianten:
+    - "Jugendliche: eine Aufgabe aus der Vorwoche neben dem neuen Stoff, Lösung in der Stunde besprechen."
+    - "Erwachsene: kurze Übung zu einem früheren Modul als Vorbereitung auf den nächsten Termin."
+    - "Digital: Aufgaben im Lernmanagementsystem mit Abgabe und kurzer Rückmeldung."
+  stolpersteine:
+    - In der Grundschule sind Effekte von Hausaufgaben gering; Qualität vor Menge.
+  evidenz: {stufe: mittel, text: "EEF: Hausaufgaben in der Sekundarstufe ca. +5 Monate, in der Grundschule deutlich weniger; Spacing-Befunde stützen die Mischung."}
+  qualifikation: alle
+  quellen: [q_eef_homework, q_cepeda2006]
+
+- id: d_fuenf_finger
+  name: Fünf-Finger-Reflexion
+  aliase: [Handreflexion]
+  kategorie: didaktik
+  phasen: [abschluss]
+  setting: [einzel, plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [reflexion, diagnose]
+  dauer: 5–10 Min.
+  kurz: "Jeder Finger steht für eine Reflexionsfrage: Daumen – Das war gut; Zeigefinger – Das habe ich gelernt; Mittelfinger – Das hat mir nicht gefallen; Ringfinger – Das nehme ich mit; kleiner Finger – Das kam zu kurz."
+  ablauf:
+    - Hand an die Tafel zeichnen oder Handkarte verteilen.
+    - Einzeln Stichpunkte notieren.
+    - Reihum je einen Finger nennen (Blitzlicht) oder einsammeln.
+  varianten:
+    - "Kinder: Handabdruck malen und jeden Finger mit einem Bild oder Wort füllen."
+    - "Jugendliche: Handkarte ausfüllen und am Ende reihum je einen Finger nennen."
+    - "Digital: Handvorlage als Formular, Antworten im Chat teilen."
+  stolpersteine:
+    - "Der kleine Finger (»Das kam zu kurz«) wird oft ausgelassen; vor allem ehrlich abfragen."
+  evidenz: {stufe: praxis, text: "Verbreitetes Reflexionsformat; keine eigenständige Wirksamkeitsforschung."}
+  qualifikation: alle
+  quellen: [q_mattes2011]

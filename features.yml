@@ -578,6 +578,14 @@ tools:
       - Verlaufsplanungen mit Phasen (Inhalt, Methode, Material)
       - Materialien anhängen, Office-Dateien zusätzlich als PDF
       - JSON-Import, teilen
+  - id: kompendium
+    name: Methoden-Kompendium
+    faehigkeiten: {use: [true, false]}
+    kann:
+      - Methoden aus Didaktik, Pädagogik, Psychologie für Einstieg, Hauptteil, Abschluss
+      - Filter nach Setting, Zielgruppe, Anwendungsgebiet, Evidenz, Qualifikation
+      - Grundlagenkapitel, Grafiken, Mythen-Check, Quellen mit DOI
+      - Markieren als Favorit, Einarbeiten, Brauch ich nicht (im Konto gespeichert)
   - id: snap
     name: Snap!
     faehigkeiten: {use: [true, false], create: [true, false]}

@@ -224,6 +224,12 @@ Das Lehrkraft-Werkzeugset. Standardmäßig nur für Lehrkräfte sichtbar.
 - Materialien anhängen; Office-Dateien werden per LibreOffice zusätzlich als PDF abgelegt
 - JSON-Import, Planungen mit Kolleginnen und Kollegen teilen
 
+### 📚 Methoden-Kompendium
+- Nachschlagewerk mit Methoden aus Didaktik, Pädagogik und Psychologie für Einstieg, Hauptteil und Abschluss, für Einzel- und Gruppensettings mit Kindern, Jugendlichen und Erwachsenen
+- Je Methode Ablauf, Varianten, Stolpersteine, Evidenzstufe, nötige Qualifikation und Quellen (DOIs geprüft); dazu Grundlagenkapitel, Grafiken und ein Mythen-Check
+- Persönliche Markierungen je Methode (Favorit, Einarbeiten, Brauch ich nicht) mit eigenem Filter; gespeichert im Konto
+- Inhalte liegen als YAML in `data/methoden_kompendium/`; `python build.py` und `python svgs.py` dort erzeugen JSON und Grafiken in `frontend/public/kompendium/`
+
 ### 🧱 Snap!
 - Blockbasiertes Programmieren (Snap!, Berkeley) direkt in der Seite, komplett lokal, ohne Internet und ohne Konto
 - Programme werden in TT gespeichert; Lehrkraft-Programme mit Klasse werden zu Vorlagen, die die Klasse als eigene Kopie speichert

@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="Arial, Helvetica, sans-serif" role="img" aria-label="FÜNF SOZIAL-EMOTIONALE KOMPETENZEN">
+<rect x="0" y="0" width="960" height="560" fill="#0F1E2E" rx="12"/>
+<text x="480.0" y="38.0" font-size="20" fill="#FFFFFF" text-anchor="middle" font-weight="bold">FÜNF SOZIAL-EMOTIONALE KOMPETENZEN</text>
+<line x1="60" y1="50" x2="900" y2="50" stroke="#C9A227" stroke-width="2"/>
+<text x="480.0" y="70.0" font-size="12" fill="#8AADCC" text-anchor="middle" font-weight="normal">Das CASEL-Rahmenmodell mit passenden Methoden aus diesem Kompendium</text>
+<circle cx="480" cy="318" r="78" fill="#1A2A3A" stroke="#C9A227" stroke-width="2"/>
+<text x="480" y="312.0" font-size="15" fill="#FFFFFF" text-anchor="middle" font-weight="bold">SOZIAL-</text>
+<text x="480" y="332.0" font-size="15" fill="#FFFFFF" text-anchor="middle" font-weight="bold">EMOTIONALES</text>
+<text x="480" y="352.0" font-size="15" fill="#FFFFFF" text-anchor="middle" font-weight="bold">LERNEN</text>
+<line x1="480" y1="238" x2="480" y2="140" stroke="#3D7DCA" stroke-width="2"/>
+<rect x="350.0" y="100.0" width="260" height="82" fill="#3D7DCA" rx="8"/>
+<text x="480.0" y="122.0" font-size="13" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Selbstwahrnehmung</text>
+<text x="480.0" y="142.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Gefühle, Stärken, Werte erkennen</text>
+<text x="480.0" y="162.0" font-size="10.5" fill="#F0F4F8" text-anchor="middle" font-weight="normal" font-style="italic">Gefühls-Check-in · Stärkenarbeit</text>
+<line x1="556" y1="293" x2="718" y2="263" stroke="#2E9466" stroke-width="2"/>
+<rect x="587.7641290737884" y="222.99497500125938" width="260" height="82" fill="#2E9466" rx="8"/>
+<text x="717.7641290737884" y="245.0" font-size="13" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Selbstmanagement</text>
+<text x="717.7641290737884" y="265.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Emotionen, Impulse, Ziele steuern</text>
+<text x="717.7641290737884" y="285.0" font-size="10.5" fill="#F0F4F8" text-anchor="middle" font-weight="normal" font-style="italic">Atemübung · WOOP · Selbstinstruktion</text>
+<line x1="527" y1="383" x2="627" y2="462" stroke="#C2652E" stroke-width="2"/>
+<rect x="496.9463130731183" y="422.0050249987406" width="260" height="82" fill="#C2652E" rx="8"/>
+<text x="626.9463130731183" y="444.0" font-size="13" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Verantwortungsvolle Entscheidungen</text>
+<text x="626.9463130731183" y="464.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Folgen abwägen, ethisch handeln</text>
+<text x="626.9463130731183" y="484.0" font-size="10.5" fill="#F0F4F8" text-anchor="middle" font-weight="normal" font-style="italic">Problemlösetraining · Klassenrat</text>
+<line x1="433" y1="383" x2="333" y2="462" stroke="#7E57C2" stroke-width="2"/>
+<rect x="203.0536869268817" y="422.0050249987406" width="260" height="82" fill="#7E57C2" rx="8"/>
+<text x="333.0536869268817" y="444.0" font-size="13" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Beziehungsfähigkeit</text>
+<text x="333.0536869268817" y="464.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Kommunizieren, kooperieren, Konflikte lösen</text>
+<text x="333.0536869268817" y="484.0" font-size="10.5" fill="#F0F4F8" text-anchor="middle" font-weight="normal" font-style="italic">Streitschlichtung · Ich-Botschaften</text>
+<line x1="404" y1="293" x2="242" y2="263" stroke="#2A9DB0" stroke-width="2"/>
+<rect x="112.23587092621159" y="222.99497500125938" width="260" height="82" fill="#2A9DB0" rx="8"/>
+<text x="242.2358709262116" y="245.0" font-size="13" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Soziale Wahrnehmung</text>
+<text x="242.2358709262116" y="265.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="normal">Perspektiven übernehmen, Empathie</text>
+<text x="242.2358709262116" y="285.0" font-size="10.5" fill="#F0F4F8" text-anchor="middle" font-weight="normal" font-style="italic">Rollenspiel · Gruppenpuzzle</text>
+<text x="480.0" y="548.0" font-size="10.5" fill="#8AADCC" text-anchor="middle" font-weight="normal">SEL-Programme: +11 Perzentilränge Leistung, bessere Sozialkompetenz (Durlak et al. 2011, 213 Studien) · Rahmenmodell: CASEL</text>
+</svg>

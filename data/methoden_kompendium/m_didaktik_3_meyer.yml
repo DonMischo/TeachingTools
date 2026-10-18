@@ -1,0 +1,250 @@
+# Didaktik – Erweiterung 4: Sozialformen und Handlungsmuster nach Meyer (UnterrichtsMethoden I + II)
+- id: d_frontalunterricht
+  name: Frontalunterricht / Klassenunterricht
+  aliase: [Plenumsunterricht, Lehrerzentrierter Unterricht]
+  kategorie: didaktik
+  phasen: [einstieg, hauptteil, abschluss]
+  setting: [plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [wissensaufbau, klassenfuehrung]
+  dauer: phasenweise
+  kurz: Sozialform, in der die Lehrkraft die ganze Klasse gemeinsam unterrichtet und den Lernprozess steuert – durch Vortrag, Gespräch, Demonstration oder Tafelarbeit. Meyer plädiert für ihn als einen Baustein im Methodenwechsel, nicht als Dauerform.
+  ablauf:
+    - Für Orientierung, Informieren, Modellieren und gemeinsame Auswertung nutzen.
+    - Mit kurzen Aktivierungsphasen (Murmelgruppe, Alle antworten) durchsetzen.
+    - Mit Einzel-, Partner- und Gruppenarbeit abwechseln.
+  varianten:
+    - "Kinder: kurze Erklärphasen von wenigen Minuten, danach Handzeichen oder Mitsprechen."
+    - "Jugendliche: Klassenunterricht mit Fragen an die Klasse und kurzer Murmelphase."
+    - "Erwachsene: Input im Plenum in Vortrags- oder Workshopform mit Praxisfragen."
+  stolpersteine:
+    - Lange Phasen ohne Schüleraktivität; ein kleiner Teil der Klasse trägt das Gespräch.
+  evidenz: {stufe: mittel, text: "Meyer (1987) beschreibt Stärken und Grenzen; gut gestalteter, aktivierender Klassenunterricht (explizite Instruktion) ist wirksam (Rosenshine 2012), reine Vorlesung weniger (Freeman et al. 2014)."}
+  qualifikation: alle
+  quellen: [q_meyer1987, q_meyer1987b, q_rosenshine2012]
+
+- id: d_einzelarbeit
+  name: Einzelarbeit / Stillarbeit
+  aliase: [Stillbeschäftigung, Individuelle Arbeitsphase]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [einzel]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [ueben, lernstrategien, heterogenitaet]
+  dauer: 5–30 Min.
+  kurz: Jede Person bearbeitet eine Aufgabe allein. Wirksam, wenn die Aufgabe klar ist, eine hohe Erfolgsquote erlaubt und die Lehrkraft währenddessen herumgeht, Rückmeldung gibt und Ergebnisse später aufgreift.
+  ablauf:
+    - Aufgabe und Ziel eindeutig formulieren, Beispiel vorrechnen.
+    - Zeit und Hilfemöglichkeiten nennen (Hilfekarten, Ampel).
+    - Herumgehen, kurz rückmelden.
+    - Ergebnisse vergleichen oder kontrollieren.
+  varianten:
+    - "Kinder: Aufgabe mit Bildhilfen und Ampelkarten, Lehrkraft geht zu Roten zuerst."
+    - "Jugendliche: Stillarbeit mit gestufter Hilfe und Selbstkontrolle am Lösungsblatt."
+    - "Digital: Einzelaufgabe im Lernprogramm mit Abgabe und Rückmeldung im Dokument."
+  stolpersteine:
+    - »Beschäftigungs«-Stillarbeit ohne Lernziel und ohne Besprechung.
+  evidenz: {stufe: mittel, text: "Rosenshine (2012): angeleitete Übung vor selbstständiger Übung und Überwachung während der Stillarbeit; Meyer beschreibt Einzelarbeit als zentrale Sozialform."}
+  qualifikation: alle
+  quellen: [q_meyer1987b, q_rosenshine2012]
+
+- id: d_partnerarbeit
+  name: Partnerarbeit
+  aliase: [Tandemarbeit, Arbeit zu zweit]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [partner]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [ueben, verstehen, diskussion]
+  dauer: 5–30 Min.
+  kurz: Zwei Lernende bearbeiten gemeinsam eine Aufgabe – die einfachste kooperative Sozialform, ohne Umräumen jederzeit möglich. Strukturen wie Ich-Du-Wir oder Partnercheck sichern, dass beide denken.
+  ablauf:
+    - Paarbildung festlegen (Sitznachbar, Zufall, Lernpartner).
+    - Aufgabe mit klarer Rollenverteilung oder Struktur.
+    - Ergebnis, das beide erklären können.
+  varianten:
+    - "Kinder: Partnerarbeit mit Rollenkarten »Erklärer« und »Prüfer«."
+    - "Jugendliche: Partnerarbeit mit Aufgabe, die beide Lösungen erklären lassen."
+    - "Digital: Paar bearbeitet ein gemeinsames Dokument in Breakout-Räumen."
+  stolpersteine:
+    - "Ein Partner macht die Arbeit allein; Rollen wechseln und beide Lösungen erklären lassen."
+    - "Ungeeignete Paare (großes Leistungsgefälle) bremsen; Partner bewusst wählen oder wechseln."
+  evidenz: {stufe: mittel, text: "Sozialform nach Meyer; strukturierte Partnerformen wie Peer-Tutoring und Think-Pair-Share sind gut belegt (EEF Peer Tutoring; Johnson & Johnson 2009)."}
+  qualifikation: alle
+  quellen: [q_meyer1987b, q_eef_peer, q_johnson2009]
+
+- id: d_gruppenunterricht
+  name: Gruppenunterricht (arbeitsgleich und arbeitsteilig)
+  aliase: [Gruppenarbeit, Kleingruppenarbeit]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [kleingruppe]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [problemloesen, teamentwicklung, diskussion]
+  dauer: 20–90 Min.
+  kurz: Die Klasse arbeitet in Gruppen von 3–5 Personen – entweder alle an derselben Aufgabe (arbeitsgleich) oder an Teilaufgaben, die anschließend zusammengeführt werden (arbeitsteilig).
+  ablauf:
+    - Aufgabe, die Gruppenarbeit wirklich braucht (komplex, mehrere Perspektiven).
+    - Gruppen bilden, Rollen und Zeit festlegen.
+    - Arbeitsphase mit Beratung durch die Lehrkraft.
+    - Präsentation oder Austausch (Galeriegang statt Vortragskette).
+    - Reflexion der Zusammenarbeit.
+  varianten:
+    - "Kinder: Gruppen von drei mit festen Rollen (Sprecher, Schreiber, Zeit) und Bildkarte."
+    - "Jugendliche: arbeitsteilige Gruppen mit Zusammenführung im Galeriegang."
+    - "Erwachsene: Teamarbeit an einem realen Fall mit Moderation und Ergebnisdokument."
+  stolpersteine:
+    - Ohne individuelle Verantwortlichkeit arbeitet oft nur ein Teil der Gruppe (soziales Faulenzen).
+  evidenz: {stufe: mittel, text: "Meyer (1987) beschreibt Gruppenunterricht ausführlich; wirksam, wenn die Grundelemente kooperativen Lernens erfüllt sind (Johnson & Johnson 2009; Slavin 1996)."}
+  qualifikation: alle
+  quellen: [q_meyer1987b, q_johnson2009, q_slavin1996, q_karau1993]
+
+- id: d_lehrgang
+  name: Lehrgang
+  aliase: [Methodische Großform, Fachsystematischer Kurs]
+  kategorie: didaktik
+  phasen: [uebergreifend]
+  setting: [plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [wissensaufbau, ueben]
+  dauer: Wochen
+  kurz: Methodische Großform, in der ein Fachgebiet in sachlogischer Reihenfolge Schritt für Schritt aufgebaut wird – Grundlage für systematisches Wissen, ergänzt durch Projekte und Freiarbeit.
+  ablauf:
+    - Sachstruktur und Abfolge planen.
+    - Jede Stunde baut auf der vorigen auf, mit täglicher Wiederholung.
+    - Regelmäßige Lernstandsüberprüfung.
+  varianten:
+    - "Kinder: Lehrgang im Schuljahr mit kurzen täglichen Wiederholungen in Ritualform."
+    - "Jugendliche: Fachlich aufbauende Einheiten mit wöchentlichem Lernstandscheck."
+    - "Erwachsene: Kurs mit aufbauenden Modulen und Abschlussprüfung."
+  stolpersteine:
+    - "Der Lehrgang wird starr durchgezogen; Lernstand regelmäßig prüfen und Tempo anpassen."
+    - "Lücken aus früheren Stunden bleiben unbemerkt; Vorwissenskontrolle am Anfang einplanen."
+  evidenz: {stufe: mittel, text: "Meyer (1987) unterscheidet Lehrgang, Projekt und Freiarbeit als Großformen; systematisch aufgebaute Instruktion ist gut belegt (Stockard et al. 2018)."}
+  qualifikation: alle
+  quellen: [q_meyer1987, q_meyer2021, q_stockard2018]
+
+- id: d_kreisgespraech
+  name: Kreisgespräch / Sitzkreis
+  aliase: [Stuhlkreis, Gesprächskreis]
+  kategorie: didaktik
+  phasen: [einstieg, hauptteil, abschluss]
+  setting: [plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [diskussion, beziehung, reflexion]
+  dauer: 10–30 Min.
+  kurz: Die Gruppe sitzt im Kreis, alle sehen sich; Lernende sprechen zueinander statt nur zur Lehrkraft. Für Erzählrunden, Sachgespräche, Planungen und Reflexion.
+  ablauf:
+    - Kreis schnell und geübt bilden (Routine).
+    - Gesprächsregeln und ggf. Redegegenstand.
+    - Lehrkraft moderiert zurückhaltend.
+  varianten:
+    - "Kinder: Erzählrunde mit Redegegenstand (Kuscheltier oder Stein) und festen Kreisregeln."
+    - "Jugendliche: Sachgespräch im Kreis mit Gesprächsleitung durch wechselnde Schüler·innen."
+    - "Digital: Gesprächskreis im Videoraum mit fester Reihenfolge und Handzeichen."
+  stolpersteine:
+    - "Bei großen Gruppen dauert der Kreis zu lang; Gesprächsrunden kürzen oder in Teilkreise teilen."
+    - "Zurückhaltende Lernende kommen nicht dran; Reihum-Runden mit Passen-Option nutzen."
+  evidenz: {stufe: praxis, text: "Handlungsmuster bei Meyer; Kreisformen sind Bestandteil von Klassenrat und Restorative Practices."}
+  qualifikation: alle
+  quellen: [q_meyer1987b, q_augustine2018]
+
+- id: d_textarbeit
+  name: Textarbeit (Arbeit mit Sachtexten)
+  aliase: [Texterschließung, Textanalyse]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [einzel, partner]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [lesen_schreiben, wissensaufbau]
+  dauer: 15–45 Min.
+  kurz: Lernende erschließen einen Text mit klarem Leseauftrag – Überblick verschaffen, Fragen klären, Kernaussagen herausarbeiten, in eigene Form (Tabelle, Skizze, Zusammenfassung) übertragen und besprechen.
+  ablauf:
+    - Leseauftrag mit Ziel (»Finde drei Gründe für …«).
+    - Strategien vorgeben (Überblick, Fragen, Abschnitte, Randnotizen).
+    - Ergebnisse in neue Form übertragen.
+    - Gemeinsam prüfen und offene Fragen klären.
+  varianten:
+    - "Kinder: kurzer Sachtext mit Bildern und einem klaren Leseauftrag."
+    - "Jugendliche: Sachtext mit Strategien wie Überblick und Randnotizen, Ergebnis als Tabelle."
+    - "Erwachsene: Fachtext mit Leitfragen für die Arbeit im Team."
+  stolpersteine:
+    - "Leseauftrag ist zu offen; konkretes Ziel vorgeben, z. B. drei Gründe nennen."
+    - "Lernende lesen nur oberflächlich; Abschnitt für Abschnitt mit Zwischenfragen erarbeiten."
+  evidenz: {stufe: mittel, text: "Handlungsmuster bei Meyer; Lesestrategien und Fragen an den Text wirken (Rosenshine et al. 1996; Dunlosky 2013b)."}
+  qualifikation: alle
+  quellen: [q_meyer1987b, q_rosenshine1996, q_dunlosky2013b]
+
+- id: d_arbeitsblatt
+  name: Arbeitsblattarbeit
+  aliase: [Arbeitsbogen, Worksheet]
+  kategorie: didaktik
+  phasen: [hauptteil, abschluss]
+  setting: [einzel, partner]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [ueben, wissensaufbau]
+  dauer: 10–30 Min.
+  kurz: Ein strukturiertes Blatt führt durch Aufgaben. Gute Arbeitsblätter fordern Denken (erklären, vergleichen, anwenden), statt nur Lücken mit abgeschriebenen Wörtern zu füllen.
+  ablauf:
+    - Ziel des Blatts klären (üben, erarbeiten, sichern).
+    - Aufgaben steigern, Selbstkontrolle anbieten.
+    - Lösungen besprechen oder kontrollieren.
+  varianten:
+    - "Kinder: Arbeitsblatt mit Bildern und einer Aufgabe pro Zeile, Lösung auf der Rückseite."
+    - "Jugendliche: Blatt mit steigender Aufgabenstufe und Aufgaben zum Erklären und Vergleichen."
+    - "Digital: Arbeitsblatt als Formular mit Selbstkontrolle und Abgabe."
+  stolpersteine:
+    - Lückentexte, die durch bloßes Abschreiben lösbar sind, erzeugen kaum Lernen.
+  evidenz: {stufe: begrenzt, text: "Klassisches Handlungsmuster (Meyer); Wirkung hängt von der kognitiven Aktivierung der Aufgaben ab (Generieren, Abruf, Erklären)."}
+  qualifikation: alle
+  quellen: [q_meyer1987b, q_slamecka1978, q_chi2014]
+
+- id: d_brainstorming
+  name: Brainstorming (Osborn)
+  aliase: [Ideensammlung, Gedankensturm]
+  kategorie: didaktik
+  phasen: [einstieg, hauptteil]
+  setting: [plenum, kleingruppe]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [kreativitaet, vorwissen]
+  dauer: 5–15 Min.
+  kurz: "Zu einer Frage werden ohne Bewertung möglichst viele Ideen genannt und notiert. Regeln: Quantität vor Qualität, keine Kritik, Ideen anderer aufgreifen, auch Ungewöhnliches äußern."
+  ablauf:
+    - Frage präzise stellen, Regeln nennen.
+    - Ideen zügig sammeln (Protokoll an der Tafel).
+    - Erst danach ordnen und bewerten.
+  varianten:
+    - "Kinder: Ideen mit Bildkarten und Handzeichen sammeln, Zeit kurz halten."
+    - "Jugendliche: Erst Einzelnotizen, dann Sammlung an der Tafel."
+    - "Erwachsene: Brainwriting mit Kärtchen im Team statt mündlichem Sammeln."
+  stolpersteine:
+    - Mündliches Gruppen-Brainstorming erzeugt weniger Ideen als Einzelarbeit (Produktionsblockaden); vorher kurz still allein notieren lassen.
+  evidenz: {stufe: umstritten, text: "Von Osborn (1953) eingeführt; Diehl & Stroebe (1987) zeigten Produktivitätsverluste in Gruppen – schriftliche Varianten (Brainwriting) schneiden besser ab."}
+  qualifikation: alle
+  quellen: [q_osborn1953, q_diehl1987]
+
+- id: d_informierender_einstieg
+  name: Informierender Unterrichtseinstieg
+  aliase: [Grell-Einstieg, Transparenter Einstieg]
+  kategorie: didaktik
+  phasen: [einstieg]
+  setting: [plenum]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [vorwissen, lernstrategien, motivation]
+  dauer: 5–10 Min.
+  kurz: Statt eines Überraschungs-Einstiegs informiert die Lehrkraft zu Beginn offen über Thema, Ziele, Ablauf und Bedeutung der Stunde, aktiviert Vorwissen und lädt zu Rückfragen und Mitplanung ein.
+  ablauf:
+    - Thema und Ziel nennen.
+    - Ablauf visualisieren.
+    - Bezug zu Vorwissen und Nutzen.
+    - Rückfragen und Vorschläge der Lernenden aufnehmen.
+  varianten:
+    - "Jugendliche: Stundenziel und Ablauf auf einer Folie zeigen, Rückfragen am Anfang."
+    - "Erwachsene: Kurzer Überblick zu Lernzielen und Nutzen für die Praxis, Mitplanung erfragen."
+    - "Digital: Ablauf im Chat oder Dokument vorab teilen, Rückfragen im Videoraum."
+  stolpersteine:
+    - "Die Information wird zur Pflichtlesung; Vorwissen aktivieren statt nur vortragen."
+    - "Lernende sehen keinen Nutzen; Bezug zu ihrer Lebenswelt ausdrücklich herstellen."
+  evidenz: {stufe: begrenzt, text: "Von Grell & Grell beschrieben und bei Meyer (Praxisband) als Einstiegsform aufgegriffen; deckt sich mit Zieltransparenz in formativer Beurteilung (Wiliam 2011)."}
+  qualifikation: alle
+  quellen: [q_meyer1987b, q_wiliam2011]

@@ -2630,3 +2630,23 @@ class KartenBrett(Base):
     schluessel: Mapped[str] = mapped_column(String(32), primary_key=True)
     geheim: Mapped[str] = mapped_column(String(64), nullable=False)
     ebenen: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+
+
+class KompendiumMarke(Base):
+    """Persönliche Markierung einer Methode im Methoden-Kompendium.
+
+    Die Methoden selbst liegen als JSON in frontend/public/kompendium; hier steht
+    nur, was eine Person dazu markiert hat (favorit | einarbeiten | unnoetig).
+    Genau eines von teacher_id / student_id ist gesetzt.
+    """
+    __tablename__ = "kompendium_marken"
+    __table_args__ = (
+        UniqueConstraint("teacher_id", "methode_id", name="uq_kompendium_marke_teacher"),
+        UniqueConstraint("student_id", "methode_id", name="uq_kompendium_marke_student"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    teacher_id: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="CASCADE"), nullable=True, index=True)
+    student_id: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"), nullable=True, index=True)
+    methode_id: Mapped[str] = mapped_column(String(80), nullable=False)
+    marke: Mapped[str] = mapped_column(String(20), nullable=False)

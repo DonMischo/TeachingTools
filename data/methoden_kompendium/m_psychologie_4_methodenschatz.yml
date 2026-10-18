@@ -1,0 +1,296 @@
+# Psychologie – Erweiterung 4: hypnosystemische, imaginative und erlebnisaktivierende Methoden (vgl. MethodenSchatz, Niehues)
+- id: y_hypnotherapie
+  name: Hypnotherapie und Trance-Arbeit
+  aliase: [Klinische Hypnose, Ericksonsche Hypnotherapie, Medizinische Hypnose]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [therapie, stress_gesundheit]
+  dauer: 20–50 Min. pro Sitzung
+  kurz: In einem Zustand fokussierter Aufmerksamkeit (Trance) werden Vorstellungen, Suggestionen und Metaphern genutzt, um Entspannung, Schmerzlinderung, Ressourcenzugang oder Verhaltensänderung zu unterstützen. Die Ericksonsche Richtung arbeitet indirekt, mit Geschichten und Nutzung dessen, was die Person mitbringt.
+  ablauf:
+    - Vorgespräch – Ziel, Erwartungen, Mythen klären.
+    - Induktion (z. B. Fokussieren auf Atem, Bild).
+    - Arbeit mit Suggestionen, Bildern, Ressourcen.
+    - Rückorientierung und Nachbesprechung; Selbsthypnose üben.
+  varianten:
+    - "Erwachsene: Information über Hypnotherapie durch zertifizierte Fachleute, ohne Eigenversuche im Unterricht."
+    - "Erwachsene: Entspannungsübung mit Fokus auf Atem, ausdrücklich ohne Hypnose-Suggestionen."
+    - "Digital: Hinweis auf geprüfte Angebote und Fachstellen statt Eigenanleitung."
+  stolpersteine:
+    - Hypnose ist kein Weg, »verdrängte Erinnerungen« zuverlässig zurückzuholen; Rückführungen können falsche Erinnerungen erzeugen (Lynn et al. 1997).
+  evidenz: {stufe: mittel, text: "Metaanalyse Kirsch et al. (1995): Hypnose als Ergänzung zu KVT verbessert Ergebnisse deutlich; bei Schmerz und medizinischen Eingriffen gut belegt, bei anderen Störungen gemischt."}
+  qualifikation: fachkraft
+  quellen: [q_erickson1979, q_kirsch1995, q_lynn1997, q_niehues]
+
+- id: y_hypnosystemisch
+  name: Hypnosystemische Gesprächsführung
+  aliase: [Fokussierung der Aufmerksamkeit, Problem- und Lösungstrance]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [beratung, therapie, motivation]
+  dauer: Gesprächshaltung
+  kurz: Verbindet systemische Beratung mit Ericksonscher Hypnotherapie – Erleben gilt als Ergebnis gelenkter Aufmerksamkeit. Fragen lenken weg von der »Problemtrance« hin zu Ressourcen, Unterschieden und gewünschtem Erleben, oft auch über Körperhaltung und Bilder.
+  ablauf:
+    - Problemerleben genau beschreiben lassen (Muster, Körper, Bilder).
+    - Unterschiede zum Lösungserleben erfragen.
+    - Gewünschtes Erleben körperlich und bildhaft verankern.
+    - Kleine Experimente für den Alltag.
+  varianten:
+    - "Jugendliche: Lösungsfragen im Beratungsgespräch zu Unterschieden zwischen guten und schwierigen Tagen."
+    - "Erwachsene: Fragen zu gewünschtem Erleben im Coaching, mit Körperbildern als Ergänzung."
+    - "Digital: Fragenkarten für Gespräche per Videoschalte."
+  stolpersteine:
+    - "Gesprächsführung in die Tiefe kann Belastung auslösen; bei starkem Leiden an Fachstellen verweisen."
+  evidenz: {stufe: begrenzt, text: "Von Gunther Schmidt (2005) entwickelt und im deutschsprachigen Raum verbreitet; Elemente aus lösungsfokussierter Beratung und Hypnose sind belegt, das Gesamtkonzept kaum."}
+  qualifikation: fortbildung
+  quellen: [q_schmidt2005, q_kim2009, q_niehues]
+
+- id: y_metaphern
+  name: Therapeutische Metaphern und Geschichten
+  aliase: [Metaphernarbeit, Heilsame Geschichten]
+  kategorie: psychologie
+  phasen: [hauptteil, abschluss]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [beratung, therapie, motivation]
+  dauer: 5–15 Min.
+  kurz: Eine Geschichte oder ein Bild, das strukturell zum Anliegen passt (z. B. ein Baum, der sich im Sturm biegt), eröffnet neue Sichtweisen, ohne direkt zu belehren. Klientenbilder werden aufgegriffen und weiterentwickelt.
+  ablauf:
+    - Bilder und Sprache der Person aufgreifen.
+    - Passende Metapher wählen oder gemeinsam entwickeln.
+    - Erzählen, ohne zu deuten; Wirkung nachfragen.
+  varianten:
+    - "Kinder: Geschichte über einen Baum im Sturm, der sich biegt und nicht bricht, zur Stärkung von Resilienz."
+    - "Jugendliche: Bilder aus dem eigenen Alltag aufgreifen und in einer kurzen Geschichte weiterdenken."
+    - "Digital: Bildvorlage als Gesprächsanstoß im Videoraum."
+  stolpersteine:
+    - "Metaphern werden zu belehrenden Geschichten; Deutung der Person überlassen und nachfragen, was sie davon hält."
+  evidenz: {stufe: begrenzt, text: "Zentral in der Ericksonschen Hypnotherapie (Erickson & Rossi 1979) und in ACT; als Einzeltechnik wenig untersucht, Studien zeigen bessere Erinnerbarkeit von Metaphern."}
+  qualifikation: fortbildung
+  quellen: [q_erickson1979, q_hayes2012, q_niehues]
+
+- id: y_impact
+  name: Impact-Techniken
+  aliase: [Mehrsinnliche Interventionen, Die starke Tanne, Gegenstände im Gespräch]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [beratung, therapie]
+  dauer: 5–15 Min.
+  kurz: Abstrakte Botschaften werden mit Gegenständen, Bildern oder Bewegungen anschaulich gemacht – z. B. ein schwerer Rucksack für Belastungen, zwei Baumbilder (»Die starke Tanne«) für Fähigkeiten, die durch Schwierigkeiten gewachsen sind, oder ein Glas trübes Wasser, das sich beruhigt.
+  ablauf:
+    - Kernbotschaft festlegen.
+    - Gegenstand oder Handlung auswählen.
+    - Erleben lassen, dann gemeinsam auswerten.
+    - Gegenstand als Erinnerungsanker mitgeben.
+  varianten:
+    - "Kinder: Schwerer Rucksack mit Steinen für Sorgen, Erleichterung beim Ausleeren besprechen."
+    - "Jugendliche: Glas mit trübem Wasser, das sich beruhigt, als Bild für Anspannung und Pausen."
+    - "Digital: Bildkarten mit Gegenständen als Anker im Chat."
+  stolpersteine:
+    - "Der Gegenstand wird nur gezeigt, nicht ausgewertet; jede Übung mit einer Frage zur Wirkung abschließen."
+  evidenz: {stufe: praxis, text: "Von Beaulieu (2005) gesammelt; Methoden wie »Die starke Tanne« im MethodenSchatz (Niehues); wirkt über Anschaulichkeit und Erinnerbarkeit, kaum Wirksamkeitsstudien."}
+  qualifikation: fortbildung
+  quellen: [q_beaulieu2005, q_niehues_selbstwert, q_niehues]
+
+- id: y_ego_state
+  name: Arbeit mit inneren Anteilen (Ego-State)
+  aliase: [Ego-State-Therapie, Anteilearbeit, Innere-Kind-Arbeit]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [therapie]
+  dauer: mehrere Sitzungen
+  kurz: Die Persönlichkeit wird als System von Anteilen verstanden (z. B. ängstlicher Anteil, Beschützer, Kritiker); Anteile werden – oft in Trance – angesprochen, gewürdigt und in ihrer Zusammenarbeit gestärkt.
+  ablauf:
+    - Anteile identifizieren und benennen.
+    - Kontakt aufnehmen, Absicht des Anteils würdigen.
+    - Konflikte zwischen Anteilen moderieren.
+    - Ressourcen-Anteile stärken.
+  varianten:
+    - "Fachkraft: Anteilearbeit im Rahmen einer Psychotherapie oder Traumatherapie."
+    - "Jugendliche: Nur als Gespräch über verschiedene Stimmen im Kopf, ohne vertiefte Anteilearbeit."
+    - "Digital: keine Anwendung ohne Fachbegleitung."
+  stolpersteine:
+    - Bei Dissoziation und Traumafolgen nur durch erfahrene Fachpersonen.
+  evidenz: {stufe: begrenzt, text: "Watkins & Watkins (1997); verbreitet in Trauma- und Hypnotherapie, kaum kontrollierte Studien; verwandt mit Schematherapie-Modi (dort besser belegt)."}
+  qualifikation: fachkraft
+  quellen: [q_watkins1997, q_young2003, q_niehues]
+
+- id: y_innerer_kritiker
+  name: Umgang mit dem inneren Kritiker
+  aliase: [Selbstkritik bearbeiten, Mitgefühlsfokussierte Arbeit, Compassion-Focused Therapy]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [stress_gesundheit, therapie]
+  dauer: 20–45 Min.
+  kurz: Harte Selbstkritik wird als innere Stimme bemerkt, benannt und auf ihre (oft schützende) Absicht befragt; ihr wird eine mitfühlende innere Stimme gegenübergestellt, die mit Wärme und Klarheit spricht.
+  ablauf:
+    - Typische Sätze des Kritikers notieren.
+    - Absicht erfragen (»Wovor will er dich schützen?«).
+    - Mitfühlende Antwort formulieren (Haltung, Stimme, Körper).
+    - Im Alltag üben, wenn der Kritiker laut wird.
+  varianten:
+    - "Jugendliche: Den inneren Kritiker benennen und fragen, was er schützen will; mitfühlende Antwort aufschreiben."
+    - "Erwachsene: Selbstkritik im Coaching erkennen und in einen unterstützenden Satz übersetzen."
+    - "Digital: Notizfeld im Dokument für Selbstkritik und mitfühlende Antwort."
+  stolpersteine:
+    - "Selbstkritik wird verboten statt verstanden; Absicht des Kritikers ernst nehmen."
+  evidenz: {stufe: mittel, text: "Compassion-Focused Therapy (Gilbert 2009) mit wachsender Evidenz bei Selbstkritik und Scham; verwandt mit Selbstmitgefühl (Neff 2003) und Stuhlarbeit (Greenberg 2002)."}
+  qualifikation: fortbildung
+  quellen: [q_gilbert2009, q_neff2003, q_greenberg2002, q_niehues]
+
+- id: y_selbstwertblatt
+  name: Selbstwertblatt
+  aliase: [Kreative Selbstwertarbeit]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [beratung, sozial_emotional]
+  dauer: 20–40 Min.
+  kurz: Das eigene Grundgefühl von Selbstwert wird kreativ auf ein Blatt gebracht (Farben, Formen, Bilder) und anschließend verändert – Was müsste hinzukommen, damit es sich stimmiger anfühlt? Veränderungen werden im Alltag erprobt.
+  ablauf:
+    - Selbstwertgefühl ohne Worte gestalten.
+    - Betrachten und beschreiben.
+    - Wunschbild gestalten, Unterschied benennen.
+    - Kleinen Schritt für den Alltag ableiten.
+  varianten:
+    - "Jugendliche: Selbstwertgefühl mit Farben und Formen auf einem Blatt gestalten, Wunschbild daneben malen."
+    - "Erwachsene: Gestaltungsübung im Coaching mit anschließender Reflexion."
+    - "Digital: Digitales Zeichenblatt mit Wunsch- und Ist-Zustand."
+  stolpersteine:
+    - "Bilder werden bewertet; Gestaltung ist privat, nicht Gegenstand von Kritik."
+  evidenz: {stufe: praxis, text: "Methode von Frauke Niehues (Selbstwert-Akademie, MethodenSchatz); gestalterische Methoden ohne eigene Wirksamkeitsstudien."}
+  qualifikation: fortbildung
+  quellen: [q_niehues_selbstwert]
+
+- id: y_bilderbuecher
+  name: Therapeutische Bilderbücher und Geschichten (kreative Bibliotherapie)
+  aliase: [Bilderbücher zu Gefühlen, Geschichten für Kinder in Krisen]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel, kleingruppe, plenum]
+  zielgruppen: [kinder]
+  anwendung: [sozial_emotional, krise, therapie]
+  dauer: 15–30 Min.
+  kurz: Bilderbücher zu Themen wie Angst, Trennung, Trauer oder Wut werden gemeinsam gelesen und besprochen; Kinder erkennen sich in Figuren wieder und finden Worte und Lösungsideen.
+  ablauf:
+    - Buch passend zu Alter und Thema auswählen.
+    - Dialogisch vorlesen, an Figuren anknüpfen.
+    - Gefühle und Lösungen der Figur besprechen.
+    - Übertrag ins eigene Leben (freiwillig), malen oder spielen.
+  varianten:
+    - "Kinder: Bilderbuch zu Angst oder Wut in Kleingruppe lesen, Figuren gemeinsam besprechen."
+    - "Kinder: Buch zu Trennung im Morgenkreis mit Angebot zum Malen."
+    - "Digital: Vorlesevideo mit Fragen für Eltern zu Hause."
+  stolpersteine:
+    - "Bücher über schwere Themen können Kinder aufwühlen; vorher lesen und bei Bedarf Gespräch anbieten."
+  evidenz: {stufe: begrenzt, text: "Systematisches Review Montgomery & Maunders (2015): kleine bis mittlere Effekte auf internalisierende, externalisierende und prosoziale Verhaltensweisen, Studienlage heterogen."}
+  qualifikation: alle
+  quellen: [q_montgomery2015, q_mol2009, q_niehues]
+
+- id: y_therapeutische_spiele
+  name: Therapeutische Spiele
+  aliase: [Gefühlespiele, Brettspiele in der Beratung]
+  kategorie: psychologie
+  phasen: [einstieg, hauptteil]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [sozial_emotional, beratung, therapie]
+  dauer: 15–30 Min.
+  kurz: Spiele mit Frage- und Aktionskarten (Gefühle benennen, Situationen lösen, Stärken nennen) erleichtern Gespräche mit Kindern und Jugendlichen, die über direktes Fragen schwer erreichbar sind.
+  ablauf:
+    - Spiel passend zum Ziel wählen.
+    - Spielerisch beginnen, Druck vermeiden.
+    - Aussagen aufgreifen und vertiefen.
+  varianten:
+    - "Kinder: Gefühlekarten-Spiel in der Klasse, Gefühle benennen und Situationen lösen."
+    - "Jugendliche: Brettspiel mit Stärkenkarten für Gespräche in Kleingruppen."
+    - "Digital: Quizkarten zu Gefühlen im Lernmanagementsystem."
+  stolpersteine:
+    - "Spiele werden zu Verhören; Antworten nicht einfordern und Spielspaß in den Vordergrund stellen."
+  evidenz: {stufe: begrenzt, text: "Teil spieltherapeutischer und kognitiv-behavioraler Kinderprogramme; Spieltherapie insgesamt wirksam (Bratton et al. 2005), einzelne Spiele kaum untersucht."}
+  qualifikation: fortbildung
+  quellen: [q_bratton2005, q_niehues]
+
+- id: y_humor
+  name: Humor in Beratung und Unterricht
+  aliase: [Therapeutischer Humor, Provokative Leichtigkeit]
+  kategorie: psychologie
+  phasen: [uebergreifend]
+  setting: [einzel, kleingruppe, plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [beziehung, stress_gesundheit]
+  dauer: Haltung
+  kurz: Wohlwollender, verbindender Humor kann Spannung lösen, Distanz zu Problemen schaffen und Beziehung stärken. Herabsetzender Humor schadet.
+  ablauf:
+    - Humor nur auf Basis einer tragfähigen Beziehung.
+    - Über Situationen lachen, nicht über Personen.
+    - Reaktion beobachten; im Zweifel weglassen.
+  varianten:
+    - "Kinder: Witz über eine Situation im Klassenraum, nicht über ein Kind."
+    - "Jugendliche: Leichtigkeit im Gespräch über Stress, ohne Spott über Personen."
+    - "Erwachsene: Humorvolle Bemerkungen in Teamsitzungen, die verbinden statt ausschließen."
+  stolpersteine:
+    - "Humor auf Kosten Einzelner verletzt; im Zweifel weglassen."
+  evidenz: {stufe: begrenzt, text: "Martin & Ford (2018) unterscheiden förderliche (verbindende, selbstaufbauende) von schädlichen Humorstilen; Interventionsstudien sind klein."}
+  qualifikation: alle
+  quellen: [q_martin2018, q_niehues]
+
+- id: y_selbstfuersorge_fachleute
+  name: Selbstfürsorge für Fachleute
+  aliase: [Burnout-Prävention, Psychohygiene, Supervision]
+  kategorie: psychologie
+  phasen: [uebergreifend]
+  setting: [einzel, kleingruppe]
+  zielgruppen: [erwachsene]
+  anwendung: [stress_gesundheit, reflexion]
+  dauer: fortlaufend
+  kurz: Lehrkräfte, Therapeut·innen und Beratende planen gezielt Erholung, Grenzen, kollegiale Unterstützung und Supervision ein. Burnout entsteht vor allem aus Missverhältnissen von Arbeitslast, Kontrolle, Anerkennung, Gemeinschaft, Fairness und Werten.
+  ablauf:
+    - Belastungen und Ressourcen bilanzieren (z. B. Balancemodell).
+    - Grenzen definieren (Erreichbarkeit, Pausen).
+    - Kollegiale Beratung oder Supervision regelmäßig nutzen.
+    - Erholungs- und Genussaktivitäten planen.
+  varianten:
+    - "Erwachsene: Kollegiale Beratung im Kollegium mit festen Terminen."
+    - "Erwachsene: Balancemodell im Team zur Standortbestimmung nutzen."
+    - "Digital: Gemeinsamer Kalender für Pausen und Supervisionstermine."
+  stolpersteine:
+    - "Selbstfürsorge darf nicht als individuelle Pflicht abgeschoben werden; Schulleitung und Träger in die Verantwortung nehmen."
+  evidenz: {stufe: mittel, text: "Maslach & Leiter (2016) zu Ursachen und Prävention von Burnout; organisationale Maßnahmen wirken stärker als rein individuelle."}
+  qualifikation: alle
+  quellen: [q_maslach2016, q_tietze2003, q_niehues]
+
+- id: y_brainspotting
+  name: Brainspotting
+  aliase: [Blickpunkt-Verfahren]
+  kategorie: psychologie
+  phasen: [hauptteil]
+  setting: [einzel]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [therapie]
+  dauer: 50–90 Min.
+  kurz: Aus EMDR abgeleitetes Verfahren – die Therapeutin sucht Augenpositionen, bei denen eine Person starke körperliche Reaktionen auf ein belastendes Thema zeigt, und begleitet achtsam die Verarbeitung.
+  ablauf:
+    - Thema und Körperempfindung aktivieren.
+    - Blickpunkt mit Zeigestab suchen.
+    - Achtsam beobachten und begleiten.
+  varianten:
+    - "Fachkraft: Brainspotting ausschließlich in der Psychotherapie mit spezieller Ausbildung."
+    - "Erwachsene: Information über Verfahren bei Traumafolgen durch geprüfte Fachstellen."
+    - "Digital: Hinweisliste zu leitliniengerechten Behandlungen."
+  stolpersteine:
+    - Keine belastbare Evidenz; bei Traumafolgen leitliniengerechte Verfahren bevorzugen.
+  evidenz: {stufe: umstritten, text: "Von Grand (2013) entwickelt; bislang kaum kontrollierte Studien, neurobiologische Erklärungen nicht belegt."}
+  qualifikation: fachkraft
+  quellen: [q_grand2013, q_bisson2013, q_niehues]

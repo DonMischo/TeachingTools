@@ -1,0 +1,662 @@
+# Didaktik – Erweiterung: Kooperative Strukturen und Gesprächsformate
+- id: d_partnerinterview
+  name: Partnerinterview
+  aliase: [Drei-Schritt-Interview, Three-Step Interview]
+  kategorie: didaktik
+  phasen: [einstieg, hauptteil]
+  setting: [partner, kleingruppe]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [vorwissen, diskussion, beziehung]
+  dauer: 10–15 Min.
+  kurz: A interviewt B, dann umgekehrt; anschließend stellt jede Person in der Vierergruppe vor, was ihr Partner gesagt hat. Fördert genaues Zuhören.
+  ablauf:
+    - Interviewfragen vorgeben.
+    - A fragt, B antwortet (3 Min.); Wechsel.
+    - In Vierergruppe die Antworten des Partners vorstellen.
+  varianten:
+    - "Kinder: Fragen auf Bildkarten vorgeben, Antworten mit Zeichnung oder einem Wort."
+    - "Jugendliche: Interviewfragen selbst aus dem Thema ableiten lassen."
+    - "Erwachsene: Fragen auf Praxisfälle beziehen, Antworten in Stichworten festhalten."
+  stolpersteine:
+    - "Interviewende stellen Ja-/Nein-Fragen; Fragekarten mit offenen Formulierungen vorgeben."
+    - "Wer den Partner nicht zuhören lässt, verliert die Pointe; die Vorstellung in der Vierergruppe konkret einfordern."
+  evidenz: {stufe: praxis, text: "Kagan-Struktur; individuelle Verantwortlichkeit entsteht, weil man die Aussagen des anderen wiedergeben muss."}
+  qualifikation: alle
+  quellen: [q_kagan2009, q_bruening2009]
+
+- id: d_lerntempoduett
+  name: Lerntempoduett
+  aliase: [Bushaltestelle, Lerntempo-Partner]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [einzel, partner]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [heterogenitaet, ueben, verstehen]
+  dauer: 15–30 Min.
+  kurz: Lernende bearbeiten eine Aufgabe in eigenem Tempo; wer fertig ist, geht zu einem Treffpunkt (»Bushaltestelle«) und tauscht sich mit der nächsten fertigen Person aus. Niemand wartet, niemand wird gehetzt.
+  ablauf:
+    - Einzelaufgabe A ausgeben.
+    - Fertige stehen auf oder gehen zur Haltestelle, bilden Paare.
+    - Paare vergleichen und bearbeiten gemeinsam Aufgabe B.
+    - Zusatzaufgaben für Schnelle bereithalten.
+  varianten:
+    - "Kinder: Aufgaben in Stufen mit Materialkarten anbieten, Haltestelle im Klassenraum markieren."
+    - "Jugendliche: Zusatzaufgaben mit Transferbezug für schnelle Lernende bereitlegen."
+    - "Erwachsene: Bearbeitungstempo offen lassen, Abschlussfragen im Plenum bündeln."
+  stolpersteine:
+    - "Schnelle Lernende werden zum Helfer ohne Auftrag; Rolle und Zusatzaufgabe klar benennen."
+    - "Wenn die Haltestelle chaotisch wird, Paare mit Zeitvorgabe und Zettel strukturieren."
+  evidenz: {stufe: praxis, text: "Struktur aus dem kooperativen Lernen (Brüning & Saum; Wahl), berücksichtigt unterschiedliche Lerntempi."}
+  qualifikation: alle
+  quellen: [q_bruening2009, q_wahl2013]
+
+- id: d_partnerpuzzle
+  name: Partnerpuzzle
+  aliase: [Paar-Jigsaw]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [partner]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [wissensaufbau, ueben]
+  dauer: 20–40 Min.
+  kurz: Kleinform des Gruppenpuzzles – zwei Personen erarbeiten je einen Teil, besprechen ihn mit einer Expertin des gleichen Teils und unterrichten sich dann gegenseitig.
+  ablauf:
+    - Material A und B verteilen.
+    - Einzeln erarbeiten.
+    - Mit einer Person gleichen Materials abgleichen.
+    - Zurück zum Partner, gegenseitig erklären, gemeinsame Aufgabe lösen.
+  varianten:
+    - "Kinder: Materialteile als Bilder oder kurze Texte, Erklärung mit Fingern oder Zeichnung."
+    - "Jugendliche: zwei Texte mit gleicher Struktur, damit Vergleich gelingt."
+    - "Erwachsene: Fachtexte oder Fallbeschreibungen aufteilen, Ergebnisse in Stichworten sichern."
+  stolpersteine:
+    - "Beide Teile müssen gleich wichtig wirken, sonst lernen Partner unterschiedlich viel."
+    - "Ohne Abgleich mit der Expertin des gleichen Teils sind Erklärungen oft fehlerhaft; diesen Schritt nicht auslassen."
+  evidenz: {stufe: mittel, text: "Variante des Jigsaw (Aronson); positive Abhängigkeit und individuelle Verantwortlichkeit nach Johnson & Johnson."}
+  qualifikation: alle
+  quellen: [q_aronson1978, q_bruening2009]
+
+- id: d_partnercheck
+  name: Partnercheck (Rally Coach)
+  aliase: [Trainer und Spieler, Tandembogen]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [partner]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [ueben, diagnose]
+  dauer: 10–20 Min.
+  kurz: Eine Person löst laut denkend eine Aufgabe, die andere coacht und lobt; bei der nächsten Aufgabe wird getauscht. Auf dem Tandembogen hat der Coach die Lösung.
+  ablauf:
+    - Aufgabenblatt mit Lösungen für die jeweils andere Person.
+    - A löst laut, B prüft, gibt Hinweise statt Lösung.
+    - Rollen tauschen nach jeder Aufgabe.
+  varianten:
+    - "Kinder: Aufgaben mit Bildhinweisen und Lösungsbild für den Coach."
+    - "Jugendliche: Coach gibt nur Fragen als Hinweis, keine Lösungsschritte."
+    - "Digital: Aufgabe im Dokument, Coach kommentiert den Lösungsweg."
+  stolpersteine:
+    - "Coaches verraten schnell die Lösung; feste Hinweisstufen (Frage, Tipp, Lösung) vorgeben."
+    - "Lob ohne Inhalt wirkt beliebig; Coaches sollen eine konkrete Stärke benennen."
+  evidenz: {stufe: mittel, text: "Strukturiertes Peer-Tutoring; EEF und Metaanalysen (Cohen et al. 1982) zeigen Vorteile für beide Seiten."}
+  qualifikation: alle
+  quellen: [q_kagan2009, q_cohen1982, q_eef_peer]
+
+- id: d_numbered_heads
+  name: Nummerierte Köpfe (Numbered Heads Together)
+  aliase: [Kopfnummern]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [kleingruppe]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [ueben, verstehen, diagnose]
+  dauer: 10–20 Min.
+  kurz: In jeder Gruppe hat jede Person eine Nummer. Die Gruppe bespricht eine Frage, bis alle die Antwort können; dann wird eine Nummer gezogen, und diese Person antwortet für die Gruppe.
+  ablauf:
+    - Gruppen à 4, Nummern 1–4.
+    - Frage stellen, »Köpfe zusammen«.
+    - Nummer würfeln, aufgerufene Personen antworten (z. B. auf Tafeln).
+  varianten:
+    - "Kinder: Nummern auf Kärtchen am Tisch, Antworten auf Tafeln schreiben oder zeigen."
+    - "Jugendliche: Nummer per Würfel oder Zufallsgenerator ziehen, Antwort in Stichworten begründen."
+    - "Digital: Gruppen im Videoraum mit Nummernschild, Antwort per Chat."
+  stolpersteine:
+    - "Wenn die Nummer vorab bekannt ist, arbeitet nur eine Person; die Ziehung erst nach der Gruppenphase machen."
+    - "Schwache Lernende werden ungern aufgerufen; Antwort in der Gruppe vorab gemeinsam absichern lassen."
+  evidenz: {stufe: mittel, text: "Kagan-Struktur; kombiniert Gruppenziel mit individueller Verantwortlichkeit – die nach Slavin (1996) wirksamste Kombination."}
+  qualifikation: alle
+  quellen: [q_kagan2009, q_slavin1996]
+
+- id: d_round_robin
+  name: Reihum-Runde (Round Robin)
+  aliase: [Rally Robin, Rundgespräch]
+  kategorie: didaktik
+  phasen: [einstieg, hauptteil]
+  setting: [partner, kleingruppe]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [vorwissen, ueben, diskussion]
+  dauer: 3–10 Min.
+  kurz: In der Gruppe nennt reihum jede Person eine Antwort (z. B. ein Beispiel, ein Merkmal), bis die Zeit um ist. Alle kommen gleich oft zu Wort.
+  ablauf:
+    - Offene Frage mit vielen möglichen Antworten.
+    - Reihum je eine Antwort, Passen erlaubt.
+    - Optional Antworten auf Zettel sammeln (Round Table).
+  varianten:
+    - "Kinder: Reihum mit Bildkarten oder Handzeichen, kurze Antworten erlaubt."
+    - "Jugendliche: Liste mit Beispielen oder Merkmalen an der Tafel mitschreiben."
+    - "Erwachsene: Reihum Erfahrungsbeispiele, Redezeit mit Stoppuhr begrenzen."
+  stolpersteine:
+    - "Wer als Letzte dran ist, wiederholt nur; Passen erlauben und nicht jede Antwort neu verlangen."
+    - "Ohne zeitliche Grenze dauert die Runde zu lang; Länge vorher festlegen."
+  evidenz: {stufe: praxis, text: "Kagan-Struktur zur gleichmäßigen Beteiligung."}
+  qualifikation: alle
+  quellen: [q_kagan2009]
+
+- id: d_redechips
+  name: Redechips (Talking Chips)
+  aliase: [Gesprächsmarken]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [kleingruppe]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [diskussion, sozial_emotional]
+  dauer: 10–20 Min.
+  kurz: Jede Person erhält z. B. drei Chips; für jeden Redebeitrag legt sie einen in die Mitte. Wer keine Chips mehr hat, hört zu, bis alle verbraucht sind.
+  ablauf:
+    - Chips verteilen, Regel erklären.
+    - Diskussion führen.
+    - Kurze Reflexion über Gesprächsverteilung.
+  varianten:
+    - "Kinder: Chips als Holzsteine oder Bohnen, Regel mit Bild an der Wand zeigen."
+    - "Jugendliche: Zahl der Chips an die Gruppengröße und Redezeit anpassen."
+    - "Erwachsene: Chips für Fortbildungen oder Teamsitzungen einsetzen, um Vielredner zu bremsen."
+  stolpersteine:
+    - "Zu wenige Chips führen zu Schweigen; Anzahl so wählen, dass jede Person mehrmals sprechen kann."
+    - "Wer keine Chips mehr hat, verliert oft die Lust; abschließende Runde für alle einplanen."
+  evidenz: {stufe: praxis, text: "Kagan-Struktur zur Steuerung von Gesprächsanteilen; adressiert Statusunterschiede in Gruppen (Cohen & Lotan 2014)."}
+  qualifikation: alle
+  quellen: [q_kagan2009, q_cohen2014]
+
+- id: d_mix_pair_share
+  name: Mix – Pair – Share
+  aliase: [Musik-Stopp-Austausch, Stand Up Hand Up Pair Up]
+  kategorie: didaktik
+  phasen: [einstieg, hauptteil, abschluss]
+  setting: [partner, plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [ueben, beziehung, motivation]
+  dauer: 5–15 Min.
+  kurz: Alle bewegen sich durch den Raum (z. B. zu Musik); beim Stopp bildet man ein Paar mit der nächsten Person und bespricht eine Frage. Mehrere Runden mit wechselnden Partnern.
+  ablauf:
+    - Frage ankündigen.
+    - Bewegen, Stopp-Signal, Paar bilden.
+    - 1–2 Min. Austausch, dann nächste Runde.
+  varianten:
+    - "Kinder: Bewegung zu Musik mit festen Bewegungsanweisungen, Partner per Handschlag finden."
+    - "Jugendliche: Fragen mit klarem Austauschziel, Ergebnis per Stichwort festhalten."
+    - "Erwachsene: Stehend im Raum mit Kurzfragen aus dem Thema, kurz im Plenum auswerten."
+  stolpersteine:
+    - "Ohne klare Frage wird geplaudert; jede Runde mit eigenem Auftrag versehen."
+    - "Gedränge bei den Paaren entsteht schnell; Raum und Bewegungsregeln vorher klären."
+  evidenz: {stufe: praxis, text: "Kagan-Struktur, verbindet Bewegung mit Austausch; Bewegung im Unterricht verbessert Aufmerksamkeit (Watson et al. 2017)."}
+  qualifikation: alle
+  quellen: [q_kagan2009, q_watson2017]
+
+- id: d_quiz_tausch
+  name: Quiz – Quiz – Tausch
+  aliase: [Quiz-Quiz-Trade, Frage-Karten-Tausch]
+  kategorie: didaktik
+  phasen: [hauptteil, abschluss]
+  setting: [partner, plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [ueben]
+  dauer: 10–15 Min.
+  kurz: Jede Person hat eine Karte mit Frage und Lösung. Paare fragen sich gegenseitig ab, tauschen die Karten und suchen sich einen neuen Partner.
+  ablauf:
+    - Karten (Frage vorne, Antwort hinten) austeilen.
+    - Paar – A fragt, B antwortet, A hilft; dann umgekehrt.
+    - Karten tauschen, neuen Partner suchen.
+  varianten:
+    - "Kinder: Karten mit Bildern oder Zahlen statt Text, Abfrage mit Hilfestellung."
+    - "Jugendliche: Karten mit Fachbegriffen und Definition, Lösung erst nach Versuch lesen."
+    - "Digital: Karten als Kärtchen-App oder Formular, Partner per Chat zuweisen."
+  stolpersteine:
+    - "Karten mit Antwort auf der Rückseite werden vorab angesehen; Rückseite nur kurz zur Prüfung nutzen."
+    - "Ungleiche Paare mit unterschiedlichem Wissen; leistungsähnliche oder gemischte Paare bewusst bilden."
+  evidenz: {stufe: mittel, text: "Kagan-Struktur, die Abrufübung mit Rückmeldung verbindet (testing effect)."}
+  qualifikation: alle
+  quellen: [q_kagan2009, q_roediger2006]
+
+- id: d_showdown
+  name: Showdown
+  aliase: [Gruppen-Abfrage mit Tafeln]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [kleingruppe]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [ueben, diagnose]
+  dauer: 10–20 Min.
+  kurz: Ein·e Teamleiter·in liest eine Frage vor; alle schreiben ihre Antwort verdeckt, auf »Showdown« zeigen alle gleichzeitig. Die Gruppe vergleicht, korrigiert und lobt.
+  ablauf:
+    - Fragenkarten in die Mitte, Leitung rotiert.
+    - Einzeln verdeckt antworten.
+    - Gleichzeitig aufdecken, vergleichen, klären.
+  varianten:
+    - "Kinder: Antworten auf kleine Tafeln oder Wendekarten, gemeinsam aufdecken."
+    - "Jugendliche: Gruppenleitung wechselt, Antworten mit kurzer Begründung vergleichen."
+    - "Digital: Antworten in einer Umfrage verdeckt abgeben und gleichzeitig anzeigen."
+  stolpersteine:
+    - "Verdeckte Antworten werden vorab abgeschaut; Antwortkarten erst auf Kommando umdrehen."
+    - "Wer falsch liegt, schämt sich schnell; Korrektur sachlich und ohne Bewertung der Person."
+  evidenz: {stufe: mittel, text: "Kagan-Struktur, die Abruf aller Lernenden mit Peer-Feedback verbindet."}
+  qualifikation: alle
+  quellen: [q_kagan2009, q_roediger2006]
+
+- id: d_team_turnier
+  name: Teamturnier (TGT)
+  aliase: [Teams-Games-Tournament]
+  kategorie: didaktik
+  phasen: [hauptteil, abschluss]
+  setting: [kleingruppe]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [ueben, motivation]
+  dauer: 30–45 Min.
+  kurz: Teams üben gemeinsam; danach treten Lernende an Turniertischen gegen gleich starke Mitglieder anderer Teams an und holen Punkte für ihr Team. Jede Person kann gleich viel beitragen.
+  ablauf:
+    - Teams heterogen bilden und üben lassen.
+    - Turniertische mit leistungsähnlichen Personen bilden.
+    - Quizrunden; Punkte zählen fürs Team.
+    - Tische nach Ergebnis anpassen.
+  varianten:
+    - "Kinder: Turnierfragen mit Bildern oder Zahlen, Punkte als Bausteine sammeln."
+    - "Jugendliche: Turnierfragen aus dem Fach, Team-Punkte auf Tafel sichtbar machen."
+    - "Digital: Turnier in Breakout-Räumen mit Punkteliste im Dokument."
+  stolpersteine:
+    - "Gleich starke Turniertische müssen wirklich gleich stark sein; Einstufung mit Vorprüfung sichern."
+    - "Verlierer-Teams dürfen nicht dauerhaft benachteiligt werden; Tische nach jeder Runde neu einteilen."
+  evidenz: {stufe: mittel, text: "Von Slavin entwickelt und vielfach untersucht; Gruppenziel mit individueller Verantwortlichkeit (Slavin 1996)."}
+  qualifikation: alle
+  quellen: [q_slavin1996]
+
+- id: d_gruppenrecherche
+  name: Gruppenrecherche (Group Investigation)
+  aliase: [Gruppenuntersuchung]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [problemloesen, partizipation, wissensaufbau]
+  dauer: mehrere Stunden
+  kurz: Die Klasse zerlegt ein Rahmenthema in Unterfragen; Interessengruppen planen und führen eine Untersuchung durch und präsentieren sie so, dass alle lernen.
+  ablauf:
+    - Fragen zum Rahmenthema sammeln und clustern.
+    - Interessengruppen bilden, Untersuchung planen.
+    - Recherche durchführen.
+    - Präsentation planen und durchführen; gemeinsame Bewertung.
+  varianten:
+    - "Jugendliche: Unterfragen in kürzere Teilaufgaben mit festem Ergebnis zerlegen."
+    - "Erwachsene: Rechercheauftrag an reale Fragen aus dem Berufsalltag koppeln."
+    - "Digital: Gemeinsames Projektboard mit Aufgaben, Quellen und Zwischenständen."
+  stolpersteine:
+    - "Gruppen verlieren sich im Thema; Zwischenziele mit Abgabeterminen festlegen."
+    - "Präsentationen werden zur Show statt Lernprozess; Bewertung nach Beiträgen zum Verständnis."
+  evidenz: {stufe: mittel, text: "Modell von Sharan & Sharan (1992), in Israel evaluiert; Wirkung an Strukturierung und Begleitung gebunden."}
+  qualifikation: alle
+  quellen: [q_sharan1992, q_slavin1996]
+
+- id: d_gruppenrollen
+  name: Rollenkarten für Gruppenarbeit
+  aliase: [Complex Instruction, Zeitwächter–Schreiber–Sprecher]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [kleingruppe]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [teamentwicklung, heterogenitaet, sozial_emotional]
+  dauer: begleitend
+  kurz: Jede Person übernimmt eine Rolle (Moderation, Zeit, Material, Protokoll, Nachfrage) mit klaren Aufgaben. Rollen rotieren. Cohen & Lotan nutzen Rollen und »Kompetenzzuschreibung«, um Statusunterschiede abzubauen.
+  ablauf:
+    - Rollen und Aufgaben auf Karten.
+    - Rollen zufällig oder rotierend verteilen.
+    - Lehrkraft lobt öffentlich konkrete Beiträge statusniedriger Lernender (Kompetenz zuschreiben).
+  varianten:
+    - "Kinder: Rollen mit Bildkarten und einfachen Aufgaben (z. B. Materialwart)."
+    - "Jugendliche: Rollenkarten mit konkreten Handlungsschritten und Rotation nach jeder Aufgabe."
+    - "Erwachsene: Rollen wie Moderation, Zeit und Protokoll in Teamsitzungen wechselnd besetzen."
+  stolpersteine:
+    - "Rollen werden ohne Aufgabe verteilt und verpuffen; Rollenkarten mit klarem Auftrag ausgeben."
+    - "Die gleichen Personen übernehmen immer die starke Rolle; rotieren und Wechsel dokumentieren."
+  evidenz: {stufe: mittel, text: "Complex Instruction (Cohen & Lotan 2014) zeigt in Studien mehr Gleichbeteiligung und Lernzuwächse."}
+  qualifikation: alle
+  quellen: [q_cohen2014]
+
+- id: d_schneeball
+  name: Schneeball / Pyramide
+  aliase: [1-2-4-8, Snowball]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [einzel, partner, kleingruppe, plenum]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [entscheidung, diskussion]
+  dauer: 20–30 Min.
+  kurz: Erst allein drei Punkte notieren, im Paar auf drei gemeinsame einigen, zu viert erneut, dann zu acht – bis die Klasse eine priorisierte Liste hat.
+  ablauf:
+    - Einzeln Ideen notieren.
+    - Paarweise auf die besten einigen.
+    - Gruppen verdoppeln und erneut einigen.
+    - Plenum präsentiert die Endauswahl.
+  varianten:
+    - "Jugendliche: Ideen zu einer Schulfrage sammeln, Endliste im Klassenraum aushängen."
+    - "Erwachsene: Priorisierung von Projekten oder Themen im Team mit Stimmpunkten."
+    - "Digital: Ideen in einem Online-Board sammeln, Paare und Vierer per Breakout-Räume bilden."
+  stolpersteine:
+    - "Gruppen werden zu groß; bei acht Personen Mitte bilden, damit alle zu Wort kommen."
+    - "Ohne klare Auswahlkriterien wird jede Idee verteidigt; Kriterien zu Beginn festlegen."
+  evidenz: {stufe: praxis, text: "Struktur ähnlich 1-2-4-Alle (Liberating Structures); verbindet Einzeldenken mit Konsensbildung."}
+  qualifikation: alle
+  quellen: [q_lipmanowicz2013, q_barkley2014]
+
+- id: d_karussell
+  name: Karussell-Brainstorming / Graffiti
+  aliase: [Carousel Brainstorming, Rotierende Plakate]
+  kategorie: didaktik
+  phasen: [einstieg, hauptteil]
+  setting: [kleingruppe]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [vorwissen, kreativitaet, diskussion]
+  dauer: 15–25 Min.
+  kurz: An mehreren Plakaten mit je einer Frage notieren Gruppen ihre Ideen und wandern im Takt weiter; jede Gruppe ergänzt, was schon da steht. Die letzte Gruppe fasst zusammen.
+  ablauf:
+    - 4–6 Plakate mit Teilfragen.
+    - Gruppen mit eigener Stiftfarbe, 3–4 Min. pro Plakat.
+    - Rotieren, ergänzen, kommentieren.
+    - Zurück am Startplakat zusammenfassen.
+  varianten:
+    - "Kinder: Plakate mit Bildern und Symbolen, Gruppen mit Farbstiften markieren."
+    - "Jugendliche: Teilfragen aus dem Fach, Ergebnisse am Ende vorstellen."
+    - "Digital: Gruppen tauschen Ideen im Online-Board, Zeitfenster per Timer setzen."
+  stolpersteine:
+    - "Gruppen schreiben nur Wiederholungen; bei jedem Plakat bewusst neue Aspekte fordern."
+    - "Schnelles Rotieren stört; feste Zeitabstände und ein Signal einplanen."
+  evidenz: {stufe: praxis, text: "Verbreitete kooperative Struktur (Kagan; Barkley et al. 2014)."}
+  qualifikation: alle
+  quellen: [q_kagan2009, q_barkley2014]
+
+- id: d_send_a_problem
+  name: Problem weitersenden
+  aliase: [Send-a-Problem]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [problemloesen, diskussion]
+  dauer: 30–45 Min.
+  kurz: Jede Gruppe erhält ein Problem in einem Umschlag, notiert einen Lösungsansatz und schickt den Umschlag weiter, ohne dass die nächste Gruppe die Lösung sieht. Die letzte Gruppe vergleicht alle Ansätze.
+  ablauf:
+    - Probleme in Umschläge, Lösungsbögen dazu.
+    - Runde 1 lösen, Lösung in den Umschlag.
+    - Weitersenden, neu lösen (ohne Vorlösungen zu lesen).
+    - Letzte Gruppe vergleicht und bewertet alle Lösungen.
+  varianten:
+    - "Jugendliche: Probleme aus Mathe oder Naturwissenschaften, Lösungen auf Karten festhalten."
+    - "Erwachsene: Praxisprobleme aus dem Berufsalltag in Umschlägen weiterreichen."
+    - "Digital: Dokumente mit Problem und Lösungsfeld in fester Reihenfolge weiterleiten."
+  stolpersteine:
+    - "Gruppen schauen in vorherige Lösungen; Umschläge zukleben oder Lösungsfelder verdecken."
+    - "Probleme sind zu einfach oder zu schwer; vorher an einer Gruppe testen."
+  evidenz: {stufe: praxis, text: "Collaborative Learning Technique (Barkley et al. 2014); Vergleich mehrerer Lösungswege fördert Verständnis (Rittle-Johnson & Star 2007)."}
+  qualifikation: alle
+  quellen: [q_barkley2014, q_rittlejohnson2007]
+
+- id: d_stammgruppen
+  name: Feste Lernteams (Stammgruppen)
+  aliase: [Base Groups, Tischgruppen]
+  kategorie: didaktik
+  phasen: [uebergreifend]
+  setting: [kleingruppe]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [teamentwicklung, beziehung, lernstrategien]
+  dauer: Halbjahr
+  kurz: Langfristige heterogene Teams von 3–4 Personen unterstützen sich über Wochen – Hausaufgaben vergleichen, Abwesende informieren, gemeinsam für Prüfungen üben.
+  ablauf:
+    - Teams bewusst zusammenstellen.
+    - Team-Rituale (Wochenstart, Check-in, Lernplan).
+    - Regelmäßige Team-Reflexion.
+  varianten:
+    - "Kinder: Stammgruppen mit Namenskarten und einfachem Check-in am Morgen."
+    - "Jugendliche: Lernteams mit gemeinsamem Lernplan und Abgleich von Hausaufgaben."
+    - "Erwachsene: feste Lerngruppen in Fortbildungen mit regelmäßigen Austauschterminen."
+  stolpersteine:
+    - "Teams zerfallen, wenn Konflikte nicht bearbeitet werden; Teamregeln gemeinsam festlegen."
+    - "Zu viele Abwesenheiten bremsen; Verantwortung für Informationsweitergabe festlegen."
+  evidenz: {stufe: mittel, text: "Teil des Johnson-&-Johnson-Modells kooperativen Lernens; Zugehörigkeit und gegenseitige Unterstützung wirken auf Motivation und Leistung."}
+  qualifikation: alle
+  quellen: [q_johnson2009, q_green2005]
+
+- id: d_gruppenbildung
+  name: Gruppenbildungsmethoden
+  aliase: [Zufallsgruppen, Puzzlekarten, Losverfahren]
+  kategorie: didaktik
+  phasen: [einstieg, hauptteil]
+  setting: [plenum]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [klassenfuehrung, beziehung, heterogenitaet]
+  dauer: 1–3 Min.
+  kurz: Gruppen werden zufällig (Karten, Puzzleteile, Zufallsgenerator) oder bewusst heterogen gebildet statt nach Freundschaft. Zufall wirkt fair und mischt soziale Gruppen.
+  ablauf:
+    - Ziel klären – Zufall (Mischung) oder gezielt (Leistung, Sprache, Rollen).
+    - Methode wählen (Spielkarten, Bildpuzzle, Begriff–Definition-Paare).
+    - Gruppen und Tische schnell zuweisen.
+  varianten:
+    - "Kinder: Zufallsgruppen über Bildkarten mit gleichen Motiven bilden."
+    - "Jugendliche: Gruppen per Losverfahren oder bewusst nach Fähigkeiten zusammenstellen."
+    - "Erwachsene: Gruppen nach Arbeitsbereichen oder Erfahrung mischen."
+  stolpersteine:
+    - Freie Wahl lässt immer dieselben Kinder übrig; das verletzt.
+  evidenz: {stufe: begrenzt, text: "Heterogene Gruppen sind Grundlage kooperativen Lernens; Kontakt über Gruppengrenzen verringert Vorurteile (Pettigrew & Tropp 2006)."}
+  qualifikation: alle
+  quellen: [q_bruening2009, q_pettigrew2006]
+
+- id: d_sokratisch_nelson
+  name: Sokratisches Gespräch (nach Nelson/Heckmann)
+  aliase: [Neosokratisches Gespräch]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [kleingruppe]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [diskussion, reflexion, verstehen]
+  dauer: 2–6 Std.
+  kurz: Eine Gruppe untersucht eine grundlegende Frage (»Was ist Gerechtigkeit?«) streng an einem selbst erlebten Beispiel und sucht im Konsens nach allgemeinen Einsichten. Die Leitung achtet nur auf Methode, nicht auf Inhalt.
+  ablauf:
+    - Frage wählen, Beispiele sammeln, ein Beispiel auswählen.
+    - Beispiel genau beschreiben.
+    - Urteile herausarbeiten und begründen.
+    - Allgemeine Prinzipien formulieren und prüfen.
+  varianten:
+    - "Jugendliche: Frage aus dem Alltag wählen, z. B. »Was ist fair?«, Beispiel aus eigener Erfahrung."
+    - "Erwachsene: Berufsethische Frage an einem Fall aus der Praxis untersuchen."
+    - "Digital: Gespräch im Videoraum mit Moderation und klaren Gesprächsregeln."
+  stolpersteine:
+    - "Gruppen springen zu schnell zu Theorie; beim konkreten Beispiel bleiben und Urteile begründen lassen."
+    - "Die Leitung darf keine eigene Lösung vorgeben, sonst entsteht Belehrung statt Denkens."
+  evidenz: {stufe: praxis, text: "Philosophisch-didaktisches Verfahren (Heckmann 1981) in Hochschule und Erwachsenenbildung; wenig empirische Forschung."}
+  qualifikation: fortbildung
+  quellen: [q_heckmann1981]
+
+- id: d_talkshow
+  name: Talkshow / Podiumsdiskussion
+  aliase: [Expertenrunde, Hearing]
+  kategorie: didaktik
+  phasen: [hauptteil, abschluss]
+  setting: [kleingruppe, plenum]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [diskussion, partizipation, verstehen]
+  dauer: 45–90 Min.
+  kurz: Lernende verkörpern Personen mit unterschiedlichen Positionen in einer moderierten Gesprächsrunde vor Publikum; das Publikum stellt Fragen und bewertet Argumente.
+  ablauf:
+    - Rollenprofile recherchieren.
+    - Moderation bereitet Leitfragen vor.
+    - Show durchführen, Publikum beteiligt sich.
+    - Auswertung – Welche Argumente überzeugten? Rollen verlassen.
+  varianten:
+    - "Jugendliche: Rollen aus Schulpolitik oder Geschichte, Moderation durch Lehrkraft."
+    - "Erwachsene: Podium mit Positionen aus Fachdebatten, Publikum mit eigenen Fragen."
+    - "Digital: Talkrunde im Videoraum mit Chat-Fragen aus dem Publikum."
+  stolpersteine:
+    - "Rollen werden nicht ernst genommen; Rollenprofile mit Begründung und Belegen vorbereiten."
+    - "Die Show ohne Auswertung bleibt Unterhaltung; Argumente sachlich nachbesprechen."
+  evidenz: {stufe: praxis, text: "Simulative Gesprächsform der politischen Bildung (Mattes 2011); verwandt mit Rollenspiel und Planspiel."}
+  qualifikation: alle
+  quellen: [q_mattes2011, q_chernikova2020]
+
+- id: d_tribunal
+  name: Tribunal / Gerichtsverhandlung
+  aliase: [Mock Trial, Schauprozess (didaktisch)]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [kleingruppe, plenum]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [diskussion, verstehen, entscheidung]
+  dauer: 1–3 Std.
+  kurz: Eine historische Figur, eine Entscheidung oder ein Konzept wird »angeklagt«; Anklage, Verteidigung, Zeugen und Jury argumentieren nach festen Regeln mit Belegen.
+  ablauf:
+    - Anklagepunkte festlegen, Rollen verteilen.
+    - Belege recherchieren, Plädoyers vorbereiten.
+    - Verhandlung mit Zeugenbefragung.
+    - Urteil der Jury mit Begründung; Auswertung.
+  varianten:
+    - "Jugendliche: Verfahren mit kürzeren Zeiten und klarer Rollenverteilung."
+    - "Erwachsene: Tribunal zu einem Fall aus Politik, Recht oder Berufsethik mit Entscheidungsbegründung."
+    - "Digital: Verhandlung im Videoraum mit getrennten Vorbereitungsgruppen."
+  stolpersteine:
+    - "Verhandlung wird persönlich; Anklage gegen Positionen, nicht gegen Personen richten."
+    - "Ohne Belege werden Plädoyers zu Meinung; Quellenpflicht für jede Behauptung festlegen."
+  evidenz: {stufe: praxis, text: "Simulationsform mit Argumentation aus Quellen; Simulationen wirken bei guter Strukturierung (Chernikova et al. 2020)."}
+  qualifikation: alle
+  quellen: [q_mattes2011, q_chernikova2020]
+
+- id: d_laufdiktat
+  name: Laufdiktat / Partnerdiktat
+  aliase: [Wanderdiktat]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [partner]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [lesen_schreiben, ueben]
+  dauer: 15–20 Min.
+  kurz: Der Text hängt entfernt; eine Person läuft hin, merkt sich einen Satzteil, läuft zurück und diktiert. Danach wird getauscht und mit dem Original verglichen.
+  ablauf:
+    - Text an die Wand, Paare bilden.
+    - Läufer·in merkt sich Wörter, diktiert, Schreiber·in schreibt.
+    - Rollen tauschen.
+    - Selbst korrigieren mit Originaltext.
+  varianten:
+    - "Kinder: kurze Sätze mit Bildern, Läufer·in merkt sich nur ein Wort."
+    - "Jugendliche: Fremdsprachenvokabeln oder Fachbegriffe in Partnerarbeit üben."
+    - "Digital: Text als Karte an einer Pinnwand, Lauf im Klassenraum mit Zeitvorgabe."
+  stolpersteine:
+    - "Zu lange Textteile überfordern das Gedächtnis; kurze Abschnitte wählen."
+    - "Läufen führt zu Lärm und Unfällen; feste Laufwege und Regeln festlegen."
+  evidenz: {stufe: praxis, text: "Verbreitete Übungsform im Rechtschreib- und Fremdsprachenunterricht; verbindet Merken, Bewegung und Selbstkorrektur."}
+  qualifikation: alle
+  quellen: [q_mattes2011]
+
+- id: d_schreibrunde
+  name: Rundbrief / Schreib-Rundlauf
+  aliase: [Write-Around, Round Table]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [kleingruppe]
+  zielgruppen: [kinder, jugendliche, erwachsene]
+  anwendung: [kreativitaet, lesen_schreiben, diskussion]
+  dauer: 15–20 Min.
+  kurz: Jede Person beginnt einen Text oder eine Antwort, gibt das Blatt nach 2–3 Minuten weiter und setzt den Text der Nachbarin fort.
+  ablauf:
+    - Satzanfang oder Frage auf jedes Blatt.
+    - Schreiben, Signal, weitergeben.
+    - Nach einer Runde lesen alle die entstandenen Texte vor.
+  varianten:
+    - "Kinder: Bilder mit Satzanfang auf dem Blatt, Weitergabe zeichnen und schreiben."
+    - "Jugendliche: Fachfragen als Startzeile, Texte als Ergebnis präsentieren."
+    - "Digital: gemeinsames Dokument mit Abschnitten pro Person, Weitergabe im Dokument."
+  stolpersteine:
+    - "Vorhergehende Texte werden nicht gelesen; vor dem Weiterschreiben kurz lesen lassen."
+    - "Gute Anfänge dominieren, schwache Blätter bleiben leer; Satzanfänge bewusst vorgeben."
+  evidenz: {stufe: praxis, text: "Kooperatives Schreibformat (Kagan; Mattes)."}
+  qualifikation: alle
+  quellen: [q_kagan2009, q_mattes2011]
+
+- id: d_team_pair_solo
+  name: Team – Paar – Solo
+  aliase: [Team-Pair-Solo, Wir-Du-Ich]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [kleingruppe, partner, einzel]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [ueben, problemloesen, heterogenitaet]
+  dauer: 20–30 Min.
+  kurz: Umgekehrte Reihenfolge zu Ich-Du-Wir – erst löst das Team ähnliche Aufgaben gemeinsam, dann ein Paar, dann jede Person allein. So wächst die Selbstständigkeit schrittweise.
+  ablauf:
+    - Drei ähnliche Aufgaben vorbereiten.
+    - Team löst Aufgabe 1 zusammen.
+    - Paar löst Aufgabe 2.
+    - Einzeln Aufgabe 3.
+  varianten:
+    - "Kinder: drei Aufgaben mit steigendem Schwierigkeitsgrad und Bildhilfen."
+    - "Jugendliche: Aufgaben mit gleicher Struktur und unterschiedlichen Zahlen oder Beispielen."
+    - "Digital: Aufgaben in Stufen mit Team-Chat und Lösungskarte pro Stufe."
+  stolpersteine:
+    - "Das Team löst die ersten Aufgaben allein; Rolle der Einzelnen in der Teamphase festlegen."
+    - "Die Einzelaufgabe kommt zu früh; Verantwortung nur schrittweise abgeben."
+  evidenz: {stufe: mittel, text: "Kagan-Struktur; entspricht dem schrittweisen Zurücknehmen der Unterstützung (Gradual Release, Rosenshine)."}
+  qualifikation: alle
+  quellen: [q_kagan2009, q_rosenshine2012]
+
+- id: d_walk_talk
+  name: Walk & Talk
+  aliase: [Gesprächsspaziergang]
+  kategorie: didaktik
+  phasen: [hauptteil, abschluss]
+  setting: [partner]
+  zielgruppen: [jugendliche, erwachsene]
+  anwendung: [reflexion, diskussion, beratung]
+  dauer: 10–20 Min.
+  kurz: Paare gehen mit einer Reflexions- oder Diskussionsfrage spazieren (Flur, Schulhof). Bewegung und Seite-an-Seite-Gespräch senken Hemmungen.
+  ablauf:
+    - Frage(n) mitgeben, Rückkehrzeit festlegen.
+    - Paare gehen und sprechen.
+    - Kurze Ergebnisrunde.
+  varianten:
+    - "Jugendliche: Gesprächsspaziergang mit klarer Frage im Schulhof, Rückkehr nach Zeitsignal."
+    - "Erwachsene: Spaziergang zu Themen aus Beratung oder Teamarbeit mit Notizbogen."
+    - "Digital: Telefonspaziergang zu zweit mit Fragenkarte im Gepäck."
+  stolpersteine:
+    - "Paare gehen zu weit oder kommen zu spät zurück; Wegstrecke und Rückkehrzeit vorher festlegen."
+    - "Bei unangenehmen Themen fällt der Gang schwer; Themenwahl nicht persönlich zuspitzen."
+  evidenz: {stufe: praxis, text: "Verbreitetes Format in Erwachsenenbildung und Coaching; Bewegung unterstützt Aufmerksamkeit."}
+  qualifikation: alle
+  quellen: [q_lipmanowicz2013, q_watson2017]
+
+- id: d_lehrkraft_konferenz
+  name: Mathe-/Rechenkonferenz
+  aliase: [Lösungskonferenz, Strategiekonferenz]
+  kategorie: didaktik
+  phasen: [hauptteil]
+  setting: [kleingruppe]
+  zielgruppen: [kinder, jugendliche]
+  anwendung: [problemloesen, verstehen, diskussion]
+  dauer: 15–30 Min.
+  kurz: Nach individueller Bearbeitung einer Aufgabe stellen sich Lernende in Kleingruppen ihre Lösungswege vor, vergleichen sie und einigen sich auf eine besonders geschickte oder verständliche Darstellung.
+  ablauf:
+    - Einzeln lösen, Weg dokumentieren.
+    - In der Konferenz alle Wege vorstellen.
+    - Vergleichen – Was ist gleich, was anders, was effizient?
+    - Ausgewählten Weg der Klasse präsentieren.
+  varianten:
+    - "Kinder: Lösungswege mit Zeichnung oder Material zeigen, Vergleich mit Bildkarten."
+    - "Jugendliche: Lösungen auf Plakaten vorstellen, Kriterien für Klarheit und Effizienz festlegen."
+    - "Digital: Lösungswege als Fotos oder Schreibvideo teilen und gemeinsam kommentieren."
+  stolpersteine:
+    - "Konferenz wird zum Vorführen besonders schneller Wege; Vielfalt und Verständlichkeit als Kriterium festhalten."
+    - "Falsche Wege bleiben unbesprochen; Fehler als Lernanlass einplanen."
+  evidenz: {stufe: mittel, text: "Vergleich von Lösungswegen verbessert konzeptuelles und prozedurales Wissen (Rittle-Johnson & Star 2007)."}
+  qualifikation: alle
+  quellen: [q_rittlejohnson2007, q_gallin1990]

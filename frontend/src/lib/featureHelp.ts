@@ -586,6 +586,17 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "💾 Layout", text: "Die Anordnung wird lokal im Browser gespeichert." },
     ],
   },
+  kompendium: {
+    title: "Methoden-Kompendium",
+    intro: "Nachschlagewerk mit Methoden aus Didaktik, Pädagogik und Psychologie — jede mit Ablauf, Stolpersteinen, Evidenzstufe und Quellen.",
+    sections: [
+      { label: "🔎 Finden", text: "Unter »Methoden« nach Kategorie, Phase (Einstieg, Hauptteil, Abschluss), Setting, Zielgruppe, Anwendungsgebiet, Evidenz oder Qualifikation filtern; eine Karte aufklappen zeigt den Ablauf." },
+      { label: "📊 Evidenz", text: "Stark = mehrere Metaanalysen; mittel = positive Befunde mit Einschränkungen; begrenzt = wenig Forschung; Praxis = bewährtes Format ohne eigene Studien; umstritten = widersprüchliche Befunde." },
+      { label: "★ Markieren", text: "Jede Karte lässt sich als ★ Favorit, 📌 Einarbeiten oder 🚫 Brauch ich nicht markieren (erneut klicken hebt auf). »Brauch ich nicht« wird ausgeblendet; der Filter »Meine Markierung« zeigt sie wieder. Markierungen werden im Konto gespeichert und sind auf jedem Gerät gleich." },
+      { label: "⚠️ Qualifikation", text: "Methoden mit »Fachkraft« gehören in die Hand von Schulpsychologie oder Therapie; Lehrkräfte unterstützen und vermitteln." },
+      { label: "📖 Mehr", text: "»Grundlagen« erklärt Planungsmodelle und Theorie, »Grafiken« zeigt die Übersichten, »Mythen-Check« räumt mit Lernstilen & Co. auf, »Quellen« listet alle Belege mit DOI." },
+    ],
+  },
   stundenplaner: {
     title: "Stundenplaner",
     intro: "Verlaufsplanungen erstellen, Phasen strukturieren und mit Kolleg·innen teilen.",
