@@ -13,9 +13,9 @@ def load(name):
 
 LEGENDE = {
     'kategorien': {
-        'didaktik': 'Didaktik – Planung, Lehr-Lern-Methoden, Übung, Diagnose',
-        'paedagogik': 'Pädagogik – Beziehung, Führung, Gemeinschaft, Konflikt, Erwachsenen- und Teamarbeit',
-        'psychologie': 'Psychologie – Motivation, Selbstregulation, Emotion, Stress, Beratung, Prävention, Gruppen',
+        'didaktik': 'Didaktik',
+        'paedagogik': 'Pädagogik',
+        'psychologie': 'Psychologie',
     },
     'phasen': {
         'einstieg': 'Einstieg / Opener',
