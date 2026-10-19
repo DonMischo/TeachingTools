@@ -13,9 +13,14 @@ import { MODI } from "./modi";
 import { Kachelfeld, Sprite } from "./pixel/Sprite";
 import { wenigerBewegung } from "@/lib/challenge/bewegung";
 import { BestenlisteKnopf } from "./Bestenliste";
+import { Jubel } from "./Konfetti";
 
 /** So lange bleibt das Ergebnis einer Antwort sichtbar, bevor der Rahmen zur Karte oder zum Ende umschaltet. */
 const UMSCHALT_MS = 1600;
+/** Belohnungsmoment nach einer geschafften Etappe bzw. dem Sieg: Konfetti und Banner, dann erst die Karte. */
+const JUBEL_MS = 2600;
+/** Spielarten mit einer Schlussanimation (Brückenbau: der Karren fährt erst hinüber) feiern erst danach. */
+const NACHLAUF_MS: Record<string, number> = { bruecke: 3400 };
 
 type Props = {
   code?: string; token?: string | null;
@@ -34,6 +39,7 @@ export default function ChallengeSpiel({ code = "", token, quelle, onAntwort, on
   const [waehlen, setWaehlen] = useState(false);
   const [wechselFehler, setWechselFehler] = useState("");
   const [wartet, setWartet] = useState(false);
+  const [jubel, setJubel] = useState<{ text: string; unter?: string } | null>(null);
   const uhr = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => () => clearTimeout(uhr.current), []);
 
@@ -75,20 +81,26 @@ export default function ChallengeSpiel({ code = "", token, quelle, onAntwort, on
   const mitListe = info.settings.spiele.includes("huepfen");
 
   // Der Rahmen schaltet nach besonderen Ergebnissen selbst um, nachdem die Spielart ihr Ergebnis gezeigt hat
-  const schalteUm = (text: string, ziel: "karte" | "ende") => {
+  const schalteUm = (text: string, ziel: "karte" | "ende", feier?: { text: string; unter?: string }) => {
     clearTimeout(uhr.current);
-    const los = () => { setWartet(false); setHinweis(text); setAnsicht(ziel); };
+    const los = () => { setWartet(false); setJubel(null); setHinweis(text); setAnsicht(ziel); };
     if (wenigerBewegung()) los();
-    else { setWartet(true); uhr.current = setTimeout(los, UMSCHALT_MS); }
+    else if (!feier) { setWartet(true); uhr.current = setTimeout(los, UMSCHALT_MS); }
+    else {
+      setWartet(true);
+      const feiere = () => { setJubel(feier); uhr.current = setTimeout(los, JUBEL_MS); };
+      const vorher = NACHLAUF_MS[lauf.brett?.spiel ?? ""] ?? 0;
+      if (vorher) uhr.current = setTimeout(feiere, vorher); else feiere();
+    }
   };
   const rahmenLauf: ChallengeLauf = {
     ...lauf,
     antworte: async (...a) => {
       const r = await lauf.antworte(...a);
       onAntwort?.(r);
-      if (r.fertig) schalteUm("", "ende");
+      if (r.fertig) schalteUm("", "ende", { text: "🏆 Alles geschafft!" });
       else if (r.zurueck_zur_karte) schalteUm("Drei Fehlversuche – lies noch einmal nach.", "karte");
-      else if (r.etappe_geschafft) schalteUm("🎉 Etappe geschafft!", "karte");
+      else if (r.etappe_geschafft) schalteUm("🎉 Etappe geschafft!", "karte", { text: "🎉 Etappe geschafft!", unter: "Weiter geht's auf der Karte." });
       return r;
     },
   };
@@ -169,10 +181,11 @@ export default function ChallengeSpiel({ code = "", token, quelle, onAntwort, on
         </>
       )}
 
+      {jubel && <Jubel text={jubel.text} unter={jubel.unter} />}
       {ansicht === "kampf" && (
         <Suspense fallback={<p className="text-muted">Lade…</p>}>
           <Modus brett={brett} theme={theme} skin={info.settings.skin ?? "monster"} lauf={rahmenLauf}
-            zurKarte={() => { clearTimeout(uhr.current); setWartet(false); setHinweis(""); setAnsicht("karte"); }} />
+            zurKarte={() => { clearTimeout(uhr.current); setWartet(false); setJubel(null); setHinweis(""); setAnsicht("karte"); }} />
         </Suspense>
       )}
     </div>

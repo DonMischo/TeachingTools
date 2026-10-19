@@ -1,4 +1,5 @@
-/** Geometrie und Ablauf des Brückenbaus (rein): Seitenansicht, Lücken hintereinander, Testfahrt. */
+/** Geometrie und Ablauf des Brückenbaus (rein): Seitenansicht, Lücken hintereinander, Testfahrt, Baumaterial. */
+import { hashText } from "./zufall";
 
 export const MAX_SEGMENTE = 10;
 export const SEG = 5;
@@ -8,6 +9,17 @@ export const HOEHE = 50;
 export const SICHT = 70;
 
 export type Ausgang = "haelt" | "biegt" | "bricht";
+
+/** Baumaterial eines Fakts: nur Aussehen, fest aus der Id (verrät nichts über die Lösung). */
+export type Material = "holz" | "stein" | "stahl" | "seil" | "stahlseil";
+export const MATERIALIEN: Record<Material, { name: string; icon: string }> = {
+  holz: { name: "Holzbrett", icon: "🪵" }, stein: { name: "Steinquader", icon: "🧱" }, stahl: { name: "Stahlträger", icon: "🔩" },
+  seil: { name: "Hanfseil", icon: "🪢" }, stahlseil: { name: "Stahlseil", icon: "⛓️" },
+};
+const ARTEN = Object.keys(MATERIALIEN) as Material[];
+export const materialVon = (id: string): Material => ARTEN[hashText(id) % ARTEN.length];
+/** Fahrstrecke über die ganze Brücke b bis aufs andere Ufer. */
+export const ueberfahrt = (b: number, teile: number[]) => teile[b] * SEG + UFER * 0.6;
 
 /** Segmente je Brücke: bis 10 eine Brücke, darüber min(3, ceil(n/10)) Brücken, gleichmäßig verteilt (größere zuerst). */
 export function teileBruecken(n: number): number[] {

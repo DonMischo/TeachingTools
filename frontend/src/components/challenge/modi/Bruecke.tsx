@@ -1,11 +1,11 @@
 "use client";
 /**
- * Brückenbau (nach Poly Bridge / Bridge Constructor): Bretter (Fakten) im Wald-Labyrinth suchen, dann eine Brücke Segment für Segment (je Challenge eins;
+ * Brückenbau (nach Poly Bridge / Bridge Constructor): Baumaterial (Fakten: Holz, Stein, Stahl, Seile) im Wald-Labyrinth suchen, dann eine Brücke Segment für Segment (je Challenge eins;
  * über 10 Segmente bis zu drei Brücken) bauen: Bretter auf beliebige Segmente legen, dann »Testfahrt«. Der Karren fährt vom Ufer über alle belegten
  * Segmente der Brücke und prüft sie der Reihe nach (je eins = antworte): am ersten falschen bricht die Brücke (Fallschirm, kommt zurück),
  * ein Teiltreffer biegt sich; dahinter liegende Segmente werden dann nicht geprüft.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ChallengeAntwort } from "@/lib/api";
 import type { ModusProps } from "./typen";
 import { BestenlisteKnopf } from "../Bestenliste";
@@ -14,7 +14,12 @@ import Papierkorb, { WegKnopf } from "@/components/challenge/Papierkorb";
 import { Ablage, FaktKarte, Herzen, Inhalt, Treffermeldung } from "./teile";
 import Holz from "./bruecke/Holz";
 import Schlucht, { type Fahrt } from "./bruecke/Schlucht";
-import { ausgang, segmentOrt, sterne, strecke, teileBruecken } from "@/lib/challenge/brueckeSpiel";
+import { ausgang, materialVon, MATERIALIEN, segmentOrt, sterne, strecke, teileBruecken } from "@/lib/challenge/brueckeSpiel";
+import { wenigerBewegung } from "@/lib/challenge/bewegung";
+import { Konfetti } from "../Konfetti";
+
+/** So lange feiert eine fertige Brücke, bevor es zur nächsten geht. */
+export const FEIER_MS = 2000;
 
 export default function Bruecke({ brett, theme, lauf, zurKarte }: ModusProps) {
   const korb = useAblage(brett.etappe);
@@ -31,6 +36,10 @@ export default function Bruecke({ brett, theme, lauf, zurKarte }: ModusProps) {
   const [sende, setSende] = useState(false);
   const [verschwendet, setVerschwendet] = useState(0);
   const [bericht, setBericht] = useState<string | null>(null);
+  const [feier, setFeier] = useState<number | null>(null); // Nummer der gerade fertigen Brücke
+  const feierUhr = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const feiernNach = useRef<number | null>(null); // diese Brücke feiern, sobald der Karren drüben ist
+  useEffect(() => () => clearTimeout(feierUhr.current), []);
 
   const fakten = new Map(brett.fakten.map((f) => [f.id, f]));
   const offeneIdx = luecken.map((c, i) => i).filter((i) => !fertig.includes(luecken[i].id));
@@ -57,7 +66,7 @@ export default function Bruecke({ brett, theme, lauf, zurKarte }: ModusProps) {
     return (
       <>
         {kopf}
-        <h2 className="font-bold">Holz sammeln</h2>
+        <h2 className="font-bold">Baumaterial sammeln</h2>
         <Holz fakten={brett.fakten} theme={theme} seed={seed} gefunden={gesammelt}
           setGefunden={(f) => setGesammelt(f)} weiter={() => setBau(true)} onWegwerfen={korb.wegwerfen} />
       </>
@@ -84,7 +93,7 @@ export default function Bruecke({ brett, theme, lauf, zurKarte }: ModusProps) {
     setBericht(null);
     let verlust = verschwendet, gehalten = 0;
     const neuFertig = [...fertig];
-    let letzte: { i: number; r: ChallengeAntwort; bretter: number } | null = null;
+    let letzte: { i: number; r: ChallengeAntwort; teile: string[] } | null = null;
     let jetzt = -1;
     try {
       for (const i of offenAufBruecke) {
@@ -93,7 +102,7 @@ export default function Bruecke({ brett, theme, lauf, zurKarte }: ModusProps) {
         if (!a.length) break; // Lücke: hier endet die Fahrt
         jetzt = i;
         const r = await lauf.antworte(l.id, a, false);
-        letzte = { i, r, bretter: a.length };
+        letzte = { i, r, teile: a };
         if (ausgang(r) === "bricht") verlust += a.length;
         if (r.komplett) { neuFertig.push(l.id); gehalten++; }
         if (!r.komplett || r.zurueck_zur_karte || r.etappe_geschafft || r.fertig) break;
@@ -108,7 +117,11 @@ export default function Bruecke({ brett, theme, lauf, zurKarte }: ModusProps) {
     setFertig(neuFertig);
     setAntwort(letzte.r);
     setVerschwendet(verlust);
-    setFahrt({ idx: letzte.i, art, bretter: letzte.bretter });
+    // Fertige Brücke: der Karren fährt bis aufs andere Ufer, dann wird gefeiert (das Etappenende feiert der Rahmen)
+    const b = segmentOrt(letzte.i, teile).bruecke;
+    const ueber = art === "haelt" && strecke(b, teile).every((i) => neuFertig.includes(luecken[i].id));
+    setFahrt({ idx: letzte.i, art, teile: letzte.teile.map(materialVon), ueber: ueber || undefined });
+    feiernNach.current = ueber && !letzte.r.etappe_geschafft && !letzte.r.fertig ? b : null;
     const nr = letzte.i + 1;
     setBericht(gehalten + (art === "haelt" ? 0 : 1) > 1
       ? `Testfahrt: ${gehalten} ${gehalten === 1 ? "Segment hält" : "Segmente halten"}${art === "bricht" ? `, Segment ${nr} bricht` : art === "biegt" ? `, Segment ${nr} biegt sich` : ""}.`
@@ -116,16 +129,20 @@ export default function Bruecke({ brett, theme, lauf, zurKarte }: ModusProps) {
     if (neuFertig.length >= luecken.length || letzte.r.etappe_geschafft || letzte.r.fertig) void lauf.spielwert("bruecke", brett.etappe, sterne(verlust), 3);
   };
   const fahrtEnde = () => {
-    // gebrochene Bretter sind weg; die Fakten kommen zurück ins Inventar
+    // gebrochene Teile sind weg; die Fakten kommen zurück ins Inventar
     if (fahrt?.art === "bricht") { const id = luecken[fahrt.idx].id; setAblagen((m) => ({ ...m, [id]: [] })); }
-    if (fahrt?.art === "haelt") setSel(null);
-    setFahrt(null);
+    const weiter = () => { setFeier(null); if (fahrt?.art === "haelt") setSel(null); setFahrt(null); };
+    // Brücke fertig: kurz feiern, erst dann schwenkt die Kamera zur nächsten
+    const b = feiernNach.current;
+    feiernNach.current = null;
+    if (b !== null && !wenigerBewegung()) { setFeier(b); clearTimeout(feierUhr.current); feierUhr.current = setTimeout(weiter, FEIER_MS); }
+    else weiter();
   };
 
   const inventar = brett.fakten.filter((f) => gesammelt.includes(f.id) && !verbaut.has(f.id) && !korb.istWeg(f.id));
   const alleFertig = luecken.length > 0 && fertig.length >= luecken.length;
   const ort = segmentOrt(idx, teile);
-  const schlucht = luecken.map((l) => ({ id: l.id, bretter: (fahrt && luecken[fahrt.idx]?.id === l.id) ? fahrt.bretter : (ablagen[l.id]?.length ?? 0), fertig: fertig.includes(l.id) }));
+  const schlucht = luecken.map((l) => ({ id: l.id, teile: (fahrt && luecken[fahrt.idx]?.id === l.id) ? fahrt.teile : (ablagen[l.id] ?? []).map(materialVon), fertig: fertig.includes(l.id) }));
 
   return (
     <>
@@ -133,7 +150,15 @@ export default function Bruecke({ brett, theme, lauf, zurKarte }: ModusProps) {
       <Treffermeldung antwort={antwort} />
       {bericht && <p className="text-muted" role="status">{bericht}</p>}
       {alleFertig && <p className="card p-3 font-bold text-good" role="status">Alle Brücken stehen! {"★".repeat(sterne(verschwendet))}</p>}
-      <Schlucht luecken={schlucht} teile={teile} aktiv={idx} fahrt={fahrt} onEnde={fahrtEnde} />
+      <div className="relative">
+        <Schlucht luecken={schlucht} teile={teile} aktiv={idx} fahrt={fahrt} onEnde={fahrtEnde} />
+        {feier !== null && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none" role="status">
+            <Konfetti anzahl={40} seed={feier + 1} />
+            <span className="card px-3 py-2 font-black text-lg">🎉 Brücke {feier + 1} steht!</span>
+          </div>
+        )}
+      </div>
 
       <p className="text-muted" role="status">Segment {idx + 1} von {luecken.length} · Brücke {ort.bruecke + 1} von {teile.length}</p>
 
@@ -151,13 +176,13 @@ export default function Bruecke({ brett, theme, lauf, zurKarte }: ModusProps) {
         <div className="card p-3 flex flex-col gap-2" aria-label="Segment bauen">
           <div className="font-bold"><Inhalt x={c} /></div>
           <Ablage karten={ablage.map((id) => fakten.get(id)!)} onLege={lege} onNimm={(id) => setAblage(ablage.filter((x) => x !== id))}
-            leer="Lege Bretter auf das Segment." />
+            leer="Lege Baumaterial auf das Segment." />
           <div className="flex flex-wrap gap-2">
             <button className="btn-primary" disabled={!ersteBelegt || sende || !!fahrt} onClick={testfahrt}>Testfahrt</button>
             {c.tip && <span className="text-muted self-center">💡 {c.tip}</span>}
           </div>
           {!ersteBelegt && erste !== undefined && erste !== idx && (
-            <p className="text-muted text-sm">Die Testfahrt startet am Ufer: lege zuerst Bretter auf Segment {erste + 1}.</p>
+            <p className="text-muted text-sm">Die Testfahrt startet am Ufer: lege zuerst Baumaterial auf Segment {erste + 1}.</p>
           )}
         </div>
       )}
@@ -166,6 +191,7 @@ export default function Bruecke({ brett, theme, lauf, zurKarte }: ModusProps) {
         <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,180px),1fr))] gap-2">
           {inventar.map((f) => (
             <div key={f.id} className="flex flex-col gap-1">
+              <span className="text-xs text-muted">{MATERIALIEN[materialVon(f.id)].icon} {MATERIALIEN[materialVon(f.id)].name}</span>
               <FaktKarte fakt={f} disabled={!c || !!fahrt} onClick={() => lege(f.id)} />
               <WegKnopf fakt={f} onClick={() => korb.wegwerfen(f.id)} />
             </div>

@@ -86,7 +86,7 @@ describe("Bruecke", () => {
   it("findet Bretter im Wald-Labyrinth", async () => {
     const lauf = mk(); const u = userEvent.setup();
     zeige(lauf);
-    await u.click(screen.getAllByRole("button", { name: "Brett aufheben" })[0]);
+    await u.click(screen.getAllByRole("button", { name: / aufheben$/ })[0]);
     expect(await screen.findByText("Gefunden!", {}, { timeout: 15000 })).toBeTruthy();
   }, 20000);
 
@@ -178,7 +178,7 @@ describe("Bruecke", () => {
       await u.click(within(screen.getByRole("group", { name: "Segmente" })).getAllByRole("button")[1]);
       await u.click(screen.getByText("Fakt 2"));
       expect((screen.getByRole("button", { name: "Testfahrt" }) as HTMLButtonElement).disabled).toBe(true);
-      expect(screen.getByText(/lege zuerst Bretter auf Segment 1/)).toBeTruthy();
+      expect(screen.getByText(/lege zuerst Baumaterial auf Segment 1/)).toBeTruthy();
     });
   });
 });
