@@ -15,6 +15,8 @@ import { X, Z, himmel, schilder, trefferZeigen, type Bild, type QuizTreffer } fr
 import type { Begriff } from "@/lib/kueste/begriffe";
 
 interface Teilchen { x: number; z: number; vx: number; vz: number; t: number; r: number }
+/** Schaum auf der Wasseroberfläche: läuft mit der gebrochenen Welle zum Ufer */
+interface Schaum { x: number; t: number; dauer: number }
 
 interface Speicher {
   version: number;
@@ -22,13 +24,14 @@ interface Speicher {
   bild: HTMLCanvasElement | null;
   massen: Map<number, HTMLCanvasElement>;
   gischt: Teilchen[];
+  schaum: Schaum[];
 }
 
 const speicher = new WeakMap<Kliff, Speicher>();
 
 function holen(k: Kliff): Speicher {
   let s = speicher.get(k);
-  if (!s) { s = { version: -1, sat: -1, bild: null, massen: new Map(), gischt: [] }; speicher.set(k, s); }
+  if (!s) { s = { version: -1, sat: -1, bild: null, massen: new Map(), gischt: [], schaum: [] }; speicher.set(k, s); }
   return s;
 }
 
@@ -154,7 +157,29 @@ export interface KliffSzene {
   quizTreffer: QuizTreffer | null;
 }
 
-function wasser(b: Bild, s: KliffSzene) {
+/** Wasseroberfläche je Spalte und was die Welle dort gerade tut */
+interface Wasserbild {
+  ober: number[];
+  /** Phase der Welle je Spalte (rad) und Brechgrad 0…1 (1 = gebrochen) */
+  phase: number[];
+  brech: number[];
+  tiefe: number[];
+  omega: number;
+  pfad: () => void;
+}
+
+/**
+ * Form einer Welle: im tiefen Wasser fast ein Sinus, zum Ufer hin spitze
+ * Kämme und flache, lange Täler (wie echte Flachwasserwellen).
+ * Liefert die Auslenkung in Anteilen der Wellenhöhe (Kamm bis Tal = 1).
+ */
+function wellenForm(theta: number, brech: number) {
+  const n = 1 + 3 * brech;
+  const e = ((1 + Math.sin(theta)) / 2) ** n;
+  return e - Math.min(0.5, 1 / Math.sqrt(Math.PI * n));
+}
+
+function wasser(b: Bild, s: KliffSzene): Wasserbild {
   const { ctx } = b;
   const { k, W, wl } = s;
   const g = geometrie(k);
@@ -163,13 +188,16 @@ function wasser(b: Bild, s: KliffSzene) {
   const rW = Math.max(0, Math.min(k.nz - 1, zeileVon(k, W)));
   const ufer = Math.min(k.nx, wl.ufer);
   // Oberfläche mit laufenden Wellen
-  const ober: number[] = [];
+  const ober: number[] = [], phasen: number[] = [], brech: number[] = [], tiefen: number[] = [];
   let phase = 0;
   for (let c = 0; c < ufer; c++) {
     const tiefe = Math.max(0.2, W - wl.boden[c]);
     const lambda = Math.min(1.56 * T * T, T * Math.sqrt(9.81 * tiefe));
     phase += (2 * Math.PI * k.dx) / lambda;
-    ober[c] = W + (wl.H[c] / 2) * Math.sin(phase - omega * s.t);
+    const th = phase - omega * s.t;
+    const br = Math.min(1, wl.H[c] / (0.78 * tiefe));
+    phasen[c] = th; brech[c] = br; tiefen[c] = tiefe;
+    ober[c] = W + wl.H[c] * wellenForm(th, br);
   }
   // Seewärts des Modellgebiets läuft das Meer im Bild weiter
   const links = Math.min(0, b.a.x0);
@@ -192,35 +220,91 @@ function wasser(b: Bild, s: KliffSzene) {
   gr.addColorStop(1, "rgba(16,58,108,0.96)");
   ctx.fillStyle = gr;
   ctx.fill();
-  return { ober, omega, pfad };
+  return { ober, phase: phasen, brech, tiefe: tiefen, omega, pfad };
 }
 
-function oberflaeche(b: Bild, s: KliffSzene, ober: number[], omega: number) {
+/** Schaumgewicht an einer Stelle der Welle: am Kamm und vorn hinab (Walze) */
+function walze(theta: number) {
+  const m = ((theta % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+  return Math.exp(-(((m - Math.PI / 2 - 0.35) / 0.55) ** 2));
+}
+
+function oberflaeche(b: Bild, s: KliffSzene, wb: Wasserbild) {
   const { ctx } = b;
   const { k, W, wl } = s;
+  const { ober, omega } = wb;
   const ufer = Math.min(k.nx, wl.ufer);
+  const px = (X(b, 1) - X(b, 0));
+  const sp = holen(k);
+  const Hs = wl.amUfer;
+  // Trübe Brandungszone: die gebrochenen Wellen wirbeln Sand und Schlamm auf
+  if (Hs > 0.2 && ufer > 0) {
+    const c0 = Math.max(0, wl.brecher >= 0 ? wl.brecher : ufer - Math.round(15 / k.dx));
+    ctx.save();
+    wb.pfad();
+    ctx.clip();
+    const gr = ctx.createLinearGradient(X(b, c0 * k.dx), 0, X(b, ufer * k.dx), 0);
+    gr.addColorStop(0, "rgba(176,150,104,0)");
+    gr.addColorStop(1, `rgba(176,150,104,${Math.min(0.45, 0.25 * Hs)})`);
+    ctx.fillStyle = gr;
+    ctx.fillRect(X(b, c0 * k.dx), Z(b, W + Hs + 1), X(b, (ufer + 1) * k.dx) - X(b, c0 * k.dx), b.h);
+    ctx.restore();
+  }
   ctx.beginPath();
   ctx.moveTo(X(b, Math.min(0, b.a.x0)), Z(b, ober[0] ?? W));
   for (let c = 0; c < ufer; c++) ctx.lineTo(X(b, xVon(k, c)), Z(b, ober[c]));
   ctx.strokeStyle = "rgba(170,215,240,0.95)";
   ctx.lineWidth = 1.5;
   ctx.stroke();
-  // Schaum, wo die Wellen brechen und Kraft verlieren
-  const px = (X(b, 1) - X(b, 0));
-  for (let c = 1; c < ufer; c++) {
-    const verlust = wl.H[c - 1] - wl.H[c];
-    if (verlust <= 0.002) continue;
-    if (ober[c] - W < wl.H[c] * 0.1) continue;
-    const st = Math.min(1, verlust * 40);
-    ctx.fillStyle = `rgba(255,255,255,${0.35 + st * 0.6})`;
-    ctx.beginPath(); ctx.arc(X(b, xVon(k, c)), Z(b, ober[c]), Math.max(1.2, px * (0.3 + st)), 0, Math.PI * 2); ctx.fill();
+  // Weißwasser: die Walze auf dem Kamm gebrochener Wellen
+  for (let c = 0; c < ufer; c++) {
+    const br = wb.brech[c];
+    if (br < 0.75 || wl.H[c] < 0.08) continue;
+    const st = (walze(wb.phase[c]) * (br - 0.6)) / 0.4;
+    if (st < 0.08) continue;
+    // ein schäumender Streifen auf dem Kamm, darüber zerstiebende Flocken
+    const h = Math.max(1.5, px * 0.35 * wl.H[c] * st);
+    const x = X(b, c * k.dx), y = Z(b, ober[c]);
+    ctx.fillStyle = `rgba(255,255,255,${Math.min(0.9, 0.2 + st * 0.7)})`;
+    ctx.fillRect(x, y - h * 0.3, X(b, (c + 1) * k.dx) - x + 0.5, h);
+    if (Math.random() < st * 0.5) {
+      const d = Math.max(1, Math.min(3, px * 0.04));
+      ctx.fillRect(x + Math.random() * px * k.dx, y - h * 0.3 - Math.random() * px * 0.3 * wl.H[c], d, d);
+    }
+    // hinter der Walze bleibt Schaum zurück
+    if (sp.schaum.length < 500 && Math.random() < st * s.dt * 6) sp.schaum.push({ x: xVon(k, c), t: 0, dauer: 2 + Math.random() * 3 });
+  }
+  // Schaumflocken treiben mit dem Schwall zum Ufer und zerfallen
+  const xUfer = ufer * k.dx;
+  const spalte = (x: number) => Math.min(ufer - 1, Math.max(0, Math.floor(x / k.dx)));
+  sp.schaum = sp.schaum.filter(f => {
+    const schub = f.t < 1.2 ? 0.8 : 0.15;
+    f.x = Math.min(xUfer - 0.05, f.x + schub * Math.sqrt(9.81 * (wb.tiefe[spalte(f.x)] ?? 0.2)) * s.dt);
+    f.t += s.dt;
+    return f.t < f.dauer && ufer > 0;
+  });
+  const rs = Math.max(0.8, Math.min(3, px * 0.06));
+  for (const f of sp.schaum) {
+    ctx.fillStyle = `rgba(250,252,255,${0.8 * (1 - f.t / f.dauer)})`;
+    ctx.fillRect(X(b, f.x) - rs, Z(b, ober[spalte(f.x)] ?? W) - rs * 0.5, 2 * rs, rs);
+  }
+  // Auflauf: nach jeder Welle schießt ein Wasserfilm den Hang bzw. die Wand hinauf
+  if (ufer > 0 && ufer < k.nx && Hs > 0.1) {
+    const g = geometrie(k);
+    const oben = W + 1.4 * Hs * Math.max(0, Math.sin(wb.phase[ufer - 1])) ** 1.5;
+    const film = Math.max(1.5, Math.min(px * 0.15, 6));
+    ctx.fillStyle = "rgba(64,146,196,0.92)";
+    for (let r = Math.max(0, zeileVon(k, W)) + 1; r < Math.min(k.nz, zeileVon(k, oben) + 1); r++) {
+      const c = g.front[r];
+      if (c >= k.nx) continue;
+      const zo = Math.min(oben, zVon(k, r) + k.dx / 2), zu = zVon(k, r) - k.dx / 2;
+      ctx.fillRect(X(b, c * k.dx) - film, Z(b, zo), film + 1, Z(b, zu) - Z(b, zo) + 0.5);
+    }
   }
   // Gischt: am Kliff schlägt jede Welle hoch
-  const sp = holen(k);
-  const Hs = wl.amUfer;
   if (ufer < k.nx && Hs > 0.15) {
     const puls = Math.max(0, Math.sin(omega * s.t));
-    const n = Math.round(puls * Hs * 25 * s.dt * 10);
+    const n = Math.round(puls * Hs * 60 * s.dt * 10);
     const x0 = ufer * k.dx;
     for (let i = 0; i < n; i++) {
       sp.gischt.push({
@@ -240,10 +324,11 @@ function oberflaeche(b: Bild, s: KliffSzene, ober: number[], omega: number) {
   sp.gischt = sp.gischt.filter(p => {
     p.t += s.dt; p.vz -= g * s.dt; p.x += p.vx * s.dt; p.z += p.vz * s.dt;
     return p.t < 1.6 && p.z > W - 0.5;
-  }).slice(-600);
+  }).slice(-900);
+  // Tropfen in echter Größe (Zentimeter), aber immer mindestens ein Pixel
   for (const p of sp.gischt) {
     ctx.fillStyle = `rgba(255,255,255,${0.85 * (1 - p.t / 1.6)})`;
-    ctx.beginPath(); ctx.arc(X(b, p.x), Z(b, p.z), Math.max(1, p.r * px * 0.25 + 0.8), 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(X(b, p.x), Z(b, p.z), Math.max(0.9, Math.min(4, p.r * px * 0.05)), 0, Math.PI * 2); ctx.fill();
   }
 }
 
@@ -389,7 +474,7 @@ export function zeichneKliff(b: Bild, s: KliffSzene) {
   const { k } = s;
   ctx.clearRect(0, 0, b.w, b.h);
   himmel(b, { wetter: s.wetter, t: s.t });
-  const { ober, omega, pfad } = wasser(b, s);
+  const wb = wasser(b, s);
   // Gestein
   const bild = gesteinBild(k);
   const px = X(b, 1) - X(b, 0);
@@ -404,12 +489,12 @@ export function zeichneKliff(b: Bild, s: KliffSzene) {
   ctx.restore();
   // Tiefenabdunklung nur im Wasser selbst — der Meeresboden bleibt Gestein
   ctx.save();
-  pfad();
+  wb.pfad();
   ctx.clip();
   ctx.fillStyle = "rgba(30,90,150,0.35)";
   ctx.fillRect(0, Z(b, s.W + 3), b.w, b.h);
   ctx.restore();
-  oberflaeche(b, s, ober, omega);
+  oberflaeche(b, s, wb);
   // Bewuchs und Bäume
   const g = geometrie(k);
   ctx.fillStyle = "#5f9a3e";

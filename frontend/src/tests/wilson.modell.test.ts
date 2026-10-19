@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   AUFBRUCH, GIPFEL, KOLLISION, SUBDUKTION, ZYKLUS, PHASEN,
   kanteA, kanteB, ozeanBreite, ozeanTiefe, phaseBei, streifen, zustand, plattenBahn, bogenAbstand,
+  abtauchendePlatte, plattenOberseite,
 } from "@/lib/wilson/modell";
+import { spalten } from "@/components/wilson/zeichnen";
 
 describe("Wilson-Zyklus", () => {
   it("die Phasen decken den Zyklus lückenlos ab", () => {
@@ -66,6 +68,30 @@ describe("Wilson-Zyklus", () => {
         const luecke = ab[i].abgetaucht - ab[i].breite / 2 - (ab[i - 1].abgetaucht + ab[i - 1].breite / 2);
         // Fugen von der Streifenbreite (≤ 10 km) sind Rundung; vorher klaffte bis zu 1800 km.
         expect(luecke).toBeLessThan(15);
+      }
+    }
+  });
+
+  it("die hängende Platte bleibt über 720 km, ihr Ende läuft spitz aus", () => {
+    for (const t of [280, 330, 399]) {
+      const p = abtauchendePlatte(t)!;
+      expect(p.sinkt.length).toBe(0);
+      for (const q of p.haengt) expect(q.z + Math.cos(q.winkel) * q.dick).toBeLessThan(720);
+      expect(p.haengt[p.haengt.length - 1].dick).toBeLessThan(1);
+    }
+    // nach der Kollision reißt sie ab: der Stumpf schrumpft, der Rest sinkt
+    const spaet = abtauchendePlatte(KOLLISION + 40)!;
+    expect(spaet.haengt.length).toBe(0);
+    expect(spaet.sinkt.length).toBeGreaterThan(0);
+  });
+
+  it("vor der Kollision reicht Kontinent B nicht unter die Oberseite der Platte", () => {
+    for (const t of [280, 360]) {
+      const p = abtauchendePlatte(t)!.haengt;
+      for (const s of spalten(t)) {
+        if (s.art !== "B") continue;
+        const dach = plattenOberseite(p, s.x);
+        if (dach < Infinity) expect(s.litho).toBeLessThanOrEqual(Math.max(dach, s.oben + s.sediment + 0.5) + 1e-6);
       }
     }
   });

@@ -135,6 +135,50 @@ describe("Steilküste im Zellmodell", () => {
     // keine Stufe steiler als 45° (eine Zelle je Zelle)
     for (let q = c - 20; q < c + 20; q++) expect(Math.abs(g.top[q + 1] - g.top[q])).toBeLessThanOrEqual(2);
   });
+  it("Schutt fällt mit Erdbeschleunigung, im Wasser sinkt er langsam", () => {
+    const k = neuesKliff("kreide");
+    k.wasser = -100;
+    const c = spalteVon(k, 30), r = zeileVon(k, 20);
+    k.mat[r * k.nx + c] = MAT.SCHUTT; k.herk[r * k.nx + c] = MAT.KREIDE;
+    k.aktiv = { c0: 0, c1: k.nx - 1, r0: 1, r1: k.nz - 1 };
+    const hoehe = () => { for (let q = k.nz - 1; q >= 0; q--) if (k.mat[q * k.nx + c] === MAT.SCHUTT) return zVon(k, q); return NaN; };
+    for (let s = 0; s < 20; s++) rieseln(k, 0.05);
+    // nach 1 s: ½·g·t² ≈ 4,9 m
+    expect(20 - hoehe()).toBeGreaterThan(3.5);
+    expect(20 - hoehe()).toBeLessThan(6.5);
+    // dasselbe unter Wasser: höchstens 1,5 m/s
+    const n = neuesKliff("kreide");
+    n.wasser = 30;
+    n.mat[r * n.nx + c] = MAT.SCHUTT; n.herk[r * n.nx + c] = MAT.KREIDE;
+    n.aktiv = { c0: 0, c1: n.nx - 1, r0: 1, r1: n.nz - 1 };
+    for (let s = 0; s < 20; s++) rieseln(n, 0.05);
+    let z = NaN;
+    for (let q = n.nz - 1; q >= 0; q--) if (n.mat[q * n.nx + c] === MAT.SCHUTT) { z = zVon(n, q); break; }
+    expect(20 - z).toBeLessThan(2);
+  });
+
+  it("je tiefer der Schutt fällt, desto weiter läuft er aus", () => {
+    const weite = (z0: number) => {
+      const k = neuesKliff("kreide");
+      k.wasser = -100;
+      const c = spalteVon(k, 30);
+      for (let q = 0; q < 12; q++) {
+        const i = (zeileVon(k, z0) + q) * k.nx + c;
+        // Limonit gibt es im Kreidekliff nicht: so bleibt der Testschutt erkennbar
+        k.mat[i] = MAT.SCHUTT; k.herk[i] = MAT.LIMONIT;
+      }
+      k.version++;
+      k.aktiv = { c0: 0, c1: k.nx - 1, r0: 1, r1: k.nz - 1 };
+      for (let s = 0; s < 2000 && rieseln(k) > 0; s++);
+      let w = 0;
+      for (let i = 0; i < k.mat.length; i++) if (k.mat[i] === MAT.SCHUTT && k.herk[i] === MAT.LIMONIT) w = Math.max(w, Math.abs((i % k.nx) - c));
+      return w * k.dx;
+    };
+    const k = neuesKliff("kreide");
+    const grund = zVon(k, geometrie(k).top[spalteVon(k, 30)]);
+    expect(weite(35)).toBeGreaterThan(weite(grund + 0.3) + 1);
+  });
+
   it("nach einer Rutschung hängt kein verrutschtes Gestein in der Luft", () => {
     for (const typ of ["kreide", "moen", "mergel", "sand"] as const) {
       const k = neuesKliff(typ);

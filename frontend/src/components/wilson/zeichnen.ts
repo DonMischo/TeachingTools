@@ -5,18 +5,22 @@
  * unsichtbar neben 700 km Mantel) — die Tiefenskala links zeigt das ehrlich.
  */
 import {
-  ANFANG_RIFT, AUFBRUCH, KOLLISION, RUECKEN_WEG, SUBDUKTION, GIPFEL,
-  bogenAbstand, gebirge, randAusduennung, geschwindigkeit, kanteA, kanteB, kontinentHoehe, krustenDicke,
-  lithoDicke, ozeanTiefe, plattenBahn, riftGrad, rinneAktiv, rueckenAktiv, rueckenX, streifen, type Streifen,
+  ANFANG_RIFT, AUFBRUCH, KOLLISION, SUBDUKTION, GIPFEL,
+  abtauchendePlatte, bogenAbstand, gebirge, randAusduennung, geschwindigkeit, kanteA, kanteB, kontinentHoehe, krustenDicke,
+  lithoDicke, ozeanTiefe, plattenBahn, plattenOberseite, riftGrad, rinneAktiv, rueckenAktiv, rueckenX, streifen,
+  type PlattenPunkt, type Streifen,
 } from "@/lib/wilson/modell";
+import type { WilsonMantel } from "./mantel";
 
 export interface ZeichenOptionen {
   beschriftung: boolean;
   konvektion: boolean;
   magnet: boolean;
   beben: boolean;
-  /** Echtzeit in Sekunden, für Flimmern und Strömung. */
+  /** Echtzeit in Sekunden, fürs Flimmern der Beben. */
   uhr: number;
+  /** Strömungslöser für den Mantel (nur mit `konvektion`). */
+  mantel?: WilsonMantel;
 }
 
 export const X_MIN = -4800, X_MAX = 4800;
@@ -27,10 +31,12 @@ const Y_STUETZEN: [number, number][] = [[-10, 0.02], [0, 0.2], [15, 0.37], [160,
 export function yAnteil(z: number): number {
   const s = Y_STUETZEN;
   if (z <= s[0][0]) return s[0][1] + (z - s[0][0]) * ((s[1][1] - s[0][1]) / (s[1][0] - s[0][0]));
-  for (let i = 1; i < s.length; i++) {
+  for (let i = 1; i < s.length - 1; i++) {
     if (z <= s[i][0]) return s[i - 1][1] + ((z - s[i - 1][0]) / (s[i][0] - s[i - 1][0])) * (s[i][1] - s[i - 1][1]);
   }
-  return s[s.length - 1][1];
+  // Unter 720 km geht es aus dem Bild hinaus, statt am Rand zusammengedrückt zu werden.
+  const [a, b] = [s[s.length - 2], s[s.length - 1]];
+  return a[1] + ((z - a[0]) / (b[0] - a[0])) * (b[1] - a[1]);
 }
 
 interface Spalte {
@@ -62,6 +68,10 @@ export function spalten(t: number): Spalte[] {
   const bogen = rinne != null ? rinne + bogenAbstand() : null;
   const bogenAn = t >= SUBDUKTION + 8 && t < KOLLISION;
   const rift = t < AUFBRUCH ? riftGrad(t) : 0;
+  // Bis zur Kollision reicht Kontinent B nur bis zur Oberseite der Platte
+  // (vor der Rinne entsteht so der Keil). Danach bleibt der Kontinent heil
+  // und die Platte wird unter seiner Kruste gezeichnet.
+  const platte = abtauchendePlatte(t)?.haengt ?? [];
   for (let x = X_MIN; x <= X_MAX; x += SCHRITT) {
     const imOzean = offen && x > xA && x < xB;
     if (!imOzean) {
@@ -82,7 +92,13 @@ export function spalten(t: number): Spalte[] {
       const litho = 150 - (t < AUFBRUCH + 30 ? 90 * Math.max(rift, t >= AUFBRUCH ? 1 - (t - AUFBRUCH) / 30 : 0) * Math.exp(-(((t < AUFBRUCH ? x : d) / 260) ** 2)) : 0);
       // Am Kontinentrand dünnt die Lithosphäre aus und geht in die ozeanische über.
       const randLitho = t >= AUFBRUCH ? 75 * randAusduennung(t) * Math.exp(-Math.max(0, d) / 300) : 0;
-      aus.push({ x, art, oben: oben - sediment, kruste: oben + dicke, litho: litho - randLitho, sediment, see: rift > 0.4 && Math.abs(x) < 200 && oben > 0 });
+      let kruste = oben + dicke, unten = litho - randLitho;
+      if (art === "B" && platte.length && t < KOLLISION) {
+        const dach = plattenOberseite(platte, x);
+        kruste = Math.max(oben + 0.5, Math.min(kruste, dach));
+        unten = Math.max(kruste, Math.min(unten, dach));
+      }
+      aus.push({ x, art, oben: oben - sediment, kruste, litho: unten, sediment, see: rift > 0.4 && Math.abs(x) < 200 && oben > 0 });
       continue;
     }
     // Ozean: welcher Streifen liegt hier?
@@ -127,13 +143,12 @@ export function zeichne(ctx: CanvasRenderingContext2D, W: number, H: number, t: 
   mantel.addColorStop(1, "#8f2c17");
   ctx.fillStyle = mantel;
   ctx.fillRect(0, Y(0), W, H - Y(0));
+  if (o.konvektion && o.mantel) o.mantel.zeichne(ctx, X, Y);
   // 410/660-km-Grenzen.
   ctx.strokeStyle = "rgba(255,255,255,0.2)";
   ctx.setLineDash([6, 6]);
   for (const z of [410, 660]) { ctx.beginPath(); ctx.moveTo(0, Y(z)); ctx.lineTo(W, Y(z)); ctx.stroke(); }
   ctx.setLineDash([]);
-
-  if (o.konvektion) zeichneStroemung(ctx, t, X, Y, o.uhr);
 
   // Wasser.
   for (const s of sp) {
@@ -187,7 +202,7 @@ export function zeichne(ctx: CanvasRenderingContext2D, W: number, H: number, t: 
     }
   }
 
-  zeichnePlatte(ctx, t, X, Y);
+  zeichnePlatte(ctx, t, X, Y, sp);
   zeichneRiftUndRuecken(ctx, t, X, Y);
   if (o.beben) zeichneBeben(ctx, t, X, Y, o.uhr);
   zeichnePfeile(ctx, t, X, Y);
@@ -195,34 +210,53 @@ export function zeichne(ctx: CanvasRenderingContext2D, W: number, H: number, t: 
   zeichneSkala(ctx, W, H, Y);
 }
 
-/** Die abtauchende Platte, Streifen für Streifen entlang ihrer Bahn. */
-function zeichnePlatte(ctx: CanvasRenderingContext2D, t: number, X: (x: number) => number, Y: (z: number) => number) {
-  if (t < SUBDUKTION) return;
+/**
+ * Die abtauchende Platte als ein durchgehendes Band (Lithosphäre, oben die
+ * Kruste). Die Dicke steht senkrecht zur Platte in km — in der gestauchten
+ * Tiefenachse wird die steile Platte darum schmaler als die flache.
+ */
+function zeichnePlatte(ctx: CanvasRenderingContext2D, t: number, X: (x: number) => number, Y: (z: number) => number, sp: Spalte[]) {
+  const pl = abtauchendePlatte(t);
+  if (!pl) return;
   const rinne = kanteB(Math.min(t, KOLLISION));
-  const abriss = t > KOLLISION + 15 ? (t - KOLLISION - 15) * 4 : 0;
-  if (abriss > 700) return;
-  const alle = streifen(t).filter(s => s.abgetaucht > 0 && s.abgetaucht < 1500);
-  const zRinne = 8;
-  for (const s of alle) {
-    const a = plattenBahn(s.abgetaucht - s.breite / 2);
-    const b = plattenBahn(s.abgetaucht + s.breite / 2);
-    const dick = lithoDicke(s.alter - s.abgetaucht / 40);
-    const oben = (p: { dx: number; z: number }) => [rinne + p.dx, zRinne + p.z + abriss] as const;
-    const unten = (p: { dx: number; z: number; winkel: number }) =>
-      [rinne + p.dx - Math.sin(p.winkel) * dick, zRinne + p.z + Math.cos(p.winkel) * dick + abriss] as const;
-    const pa = oben(a), pb = oben(b), qa = unten(a), qb = unten(b);
-    const verblassen = Math.max(0.15, 1 - s.abgetaucht / 1600 - abriss / 700);
-    ctx.globalAlpha = verblassen;
-    ctx.fillStyle = "#4a3b31";
+  ctx.save();
+  if (t >= KOLLISION) {
+    // Nach der Kollision liegt die Platte unter der Kruste mit ihrer Gebirgswurzel.
     ctx.beginPath();
-    ctx.moveTo(X(pa[0]), Y(pa[1])); ctx.lineTo(X(pb[0]), Y(pb[1])); ctx.lineTo(X(qb[0]), Y(qb[1])); ctx.lineTo(X(qa[0]), Y(qa[1]));
-    ctx.closePath(); ctx.fill();
-    ctx.strokeStyle = "#3f5a55";
-    ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.moveTo(X(pa[0]), Y(pa[1])); ctx.lineTo(X(pb[0]), Y(pb[1])); ctx.stroke();
+    ctx.moveTo(X(sp[0].x), Y(sp[0].kruste));
+    for (const s of sp) ctx.lineTo(X(s.x), Y(s.kruste));
+    ctx.lineTo(X(X_MAX + SCHRITT), Y(3000));
+    ctx.lineTo(X(X_MIN - SCHRITT), Y(3000));
+    ctx.closePath();
+    ctx.clip();
   }
-  ctx.globalAlpha = 1;
-  ctx.lineWidth = 1;
+  const band = (punkte: PlattenPunkt[], dicke: (p: PlattenPunkt) => number) => {
+    ctx.beginPath();
+    punkte.forEach((p, i) => (i ? ctx.lineTo(X(p.x), Y(p.z)) : ctx.moveTo(X(p.x), Y(p.z))));
+    for (let i = punkte.length - 1; i >= 0; i--) {
+      const p = punkte[i], d = dicke(p);
+      ctx.lineTo(X(p.x - Math.sin(p.winkel) * d), Y(p.z + Math.cos(p.winkel) * d));
+    }
+    ctx.closePath();
+  };
+  for (const teil of [pl.haengt, pl.sinkt]) {
+    if (teil.length < 2) continue;
+    const blass = teil === pl.sinkt ? Math.max(0.15, 1 - pl.abriss / 700) : 1;
+    const a = teil[0], b = teil[teil.length - 1];
+    const farbe = (rgb: string) => {
+      const g = ctx.createLinearGradient(X(a.x), Y(a.z), X(b.x), Y(b.z));
+      g.addColorStop(0, `rgba(${rgb},${blass})`);
+      g.addColorStop(1, `rgba(${rgb},${0.3 * blass})`);
+      return g;
+    };
+    band(teil, p => p.dick);
+    ctx.fillStyle = farbe("91,74,60");
+    ctx.fill();
+    band(teil, p => Math.min(7, p.dick * 0.3));
+    ctx.fillStyle = farbe("63,90,85");
+    ctx.fill();
+  }
+  ctx.restore();
   // Magma zum Vulkanbogen.
   if (t >= SUBDUKTION + 8 && t < KOLLISION) {
     const xb = rinne + bogenAbstand();
@@ -288,43 +322,6 @@ function vulkan(ctx: CanvasRenderingContext2D, x: number, y: number, g: number) 
   ctx.beginPath(); ctx.arc(x, y - g, 2.5, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = "rgba(120,120,120,0.5)";
   ctx.beginPath(); ctx.arc(x + 4, y - g - 7, 4, 0, Math.PI * 2); ctx.arc(x + 9, y - g - 13, 5, 0, Math.PI * 2); ctx.fill();
-}
-
-/** Strömung im Mantel: gebogene Pfeile, die sich bewegen. */
-function zeichneStroemung(ctx: CanvasRenderingContext2D, t: number, X: (x: number) => number, Y: (z: number) => number, uhr: number) {
-  const zellen: { mitte: number; breite: number; dreh: 1 | -1 }[] = [];
-  if (t >= AUFBRUCH && t < RUECKEN_WEG) {
-    const xr = rueckenAktiv(t) ? rueckenX(t) : 0;
-    zellen.push({ mitte: xr - 1500, breite: 1400, dreh: -1 });
-    // Nach Subduktionsbeginn übernimmt die Zelle an der Platte die rechte Seite.
-    if (t < SUBDUKTION) zellen.push({ mitte: xr + 1500, breite: 1400, dreh: 1 });
-  } else if (t < AUFBRUCH) {
-    zellen.push({ mitte: -1300, breite: 1200, dreh: -1 }, { mitte: 1300, breite: 1200, dreh: 1 });
-  }
-  if (t >= SUBDUKTION && t < KOLLISION + 20) {
-    const xr = kanteB(Math.min(t, KOLLISION));
-    zellen.push({ mitte: xr + 1300, breite: 1200, dreh: -1 });
-  }
-  ctx.strokeStyle = "rgba(255,240,210,0.55)";
-  ctx.lineWidth = 2;
-  ctx.setLineDash([10, 12]);
-  ctx.lineDashOffset = -uhr * 30;
-  for (const z of zellen) {
-    // Ellipse zwischen 200 und 650 km Tiefe; dreh = +1 heißt im Uhrzeigersinn.
-    const cx = X(z.mitte), cy = Y(420), rx = X(z.mitte + z.breite / 2) - cx, ry = (Y(660) - Y(200)) / 2;
-    ctx.beginPath();
-    ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2, z.dreh < 0);
-    ctx.stroke();
-    // Pfeilspitze oben: Strömung zeigt vom Aufstieg weg.
-    const ax = cx, ay = cy - ry, r = z.dreh;
-    ctx.setLineDash([]);
-    ctx.beginPath();
-    ctx.moveTo(ax + 8 * r, ay); ctx.lineTo(ax - 4 * r, ay - 6); ctx.moveTo(ax + 8 * r, ay); ctx.lineTo(ax - 4 * r, ay + 6);
-    ctx.stroke();
-    ctx.setLineDash([10, 12]);
-  }
-  ctx.setLineDash([]);
-  ctx.lineWidth = 1;
 }
 
 function zeichneBeben(ctx: CanvasRenderingContext2D, t: number, X: (x: number) => number, Y: (z: number) => number, uhr: number) {

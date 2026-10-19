@@ -284,6 +284,8 @@ simulationen:
       - Steilküste als unverzerrtes 2D-Zellmodell mit vier Kliffen (Kreide/Jasmund, Møns Klint, Geschiebemergel/Brodtener Ufer, Sand/Rotes Kliff)
       - Hohlkehle aus dem Brandungsband, Abbruch des Überhangs nach Biegespannung, Rutschungen und Gleitungen nach Standsicherheit (Gleitkreise, frei ausstreichende Schichtflächen, Grundwasserdruck), Ablauf als Gleitklotz mit Restreibung und Auslauf; Überhängendes bricht danach ab; Kreide (Jasmund, Møn) bricht an fast senkrechten Klüften ab und zerfällt zu Schutt; verrutschtes Gestein verwittert schnell
       - Frost, Regen, gerundete Abbruchkante, Quellhorizont, Schlammstrom, Abrieseln, Wind; Kliffhalde, Blockstrand, Abrasionsplattform; Physik-Tafel
+      - Schutt fällt mit Erdbeschleunigung, sinkt im Wasser langsam und läuft nach dem Aufprall hangabwärts aus (Fallsand-Prinzip)
+      - Wellen mit spitzen Flachwasserkämmen, Schaumwalze und treibendem Schaum, Auflauf an Hang und Wand, trübe Brandungszone
       - Bäume sterben an der Kante oder auf abgerutschten Schollen ab, stürzen seewärts und verrotten oder treiben als Treibholz fort
       - Zoom (Mausrad, Ziehen, Wasserlinie) und ovale Trefferzonen im Beschriften-Quiz
       - Deichüberlauf und Deichbruch (alter, innen steiler Deich), Überflutung des Koogs
@@ -313,9 +315,9 @@ simulationen:
       - Querschnitt eines ganzen Zyklus (560 Mio. Jahre) im Zeitraffer oder per Schieber, Phasenleiste zum Springen
       - Superkontinent mit Plume, Grabenbruch mit Abschiebungen und Grabensee, junges Meer, Ozean mit Rücken, Subduktion, Schließen, Kollision, Abtragung
       - Meeresbodenstreifen mit Magnetrichtung, Alter, Tiefe und Lithosphärendicke nach Alter; passive Ränder mit Schelf und Sedimenten
-      - Abtauchende Platte bis 660 km, Tiefseerinne, Vulkanbogen mit Magma, Abriss nach der Kollision
+      - Abtauchende Platte als durchgehendes Band bis 660 km, Kontinent endet an ihrer Oberseite (Keil vor der Rinne), Tiefseerinne, Vulkanbogen mit Magma, Abriss nach der Kollision (Stumpf schrumpft, Rest sinkt aus dem Bild)
       - Gebirge und Gebirgswurzel nach Isostasie, Sutur, Rumpfgebirge
-      - Mantelströmung, Erdbeben (Graben, Rücken, Benioff-Zone, Kollision), Plattengeschwindigkeiten
+      - Mantelströmung mit dem Stokes-Löser aus »Aufbau der Erde«, angetrieben von abtauchender Platte, Rücken und Plume; Erdbeben (Graben, Rücken, Benioff-Zone, Kollision), Plattengeschwindigkeiten
       - Phasenkarten mit heutigem Beispiel, Plattengrenzen und Begriffen; Quiz »Welche Phase?«
       - Wissensteil: Tuzo Wilson, Superkontinente, Wilson-Zyklen in Deutschland, Antrieb der Platten, Beweise, Quellen
   - id: schichten
