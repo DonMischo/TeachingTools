@@ -31,6 +31,7 @@ import { Kepler } from "./Kepler";
 import { Galerie } from "./Galerie";
 import { Kodex, type KodexBereich } from "./Kodex";
 import { useForschung } from "./fortschritt";
+import { useFlugLive, type Zugang } from "./useFlugLive";
 
 const Uebersicht = lazy(() => import("./Uebersicht"));
 const Flug = lazy(() => import("./Flug"));
@@ -51,8 +52,10 @@ const REITER: { id: Reiter; name: string }[] = [
  * `vorgabe` (TaskCrawler-Station): `{ reiter: "uebersicht" | "flug" | "groessen" | "entfernungen"
  * | "kepler" | "galerie" | "kodex" }` legt den Reiter fest und blendet die Reiterleiste aus.
  */
-export default function Sonnensystem({ action, speicherSchluessel = "geraet", lehrkraft = false, vorgabe }: {
+export default function Sonnensystem({ action, speicherSchluessel = "geraet", lehrkraft = false, vorgabe, zugang = null }: {
   action?: ReactNode;
+  /** Live-Raum des Flugs: alle mit demselben Code fliegen im selben All. */
+  zugang?: Zugang | null;
   vorgabe?: Vorgabe;
   /** Wo der Forschungsstand abgelegt wird — je Konto oder Sitzungscode. */
   speicherSchluessel?: string;
@@ -71,6 +74,8 @@ export default function Sonnensystem({ action, speicherSchluessel = "geraet", le
   const [vollbildMoeglich, setVollbildMoeglich] = useState(false);
   const rahmenRef = useRef<HTMLDivElement>(null);
   const forschung = useForschung(speicherSchluessel);
+  // Verbunden wird nur im Flug; sonst wäre man ein unsichtbares Schiff.
+  const live = useFlugLive(reiter === "flug" ? zugang : null);
   const { fortschritt } = forschung;
   const zeigeAlles = lehrkraft && alleZeigen;
 
@@ -220,6 +225,9 @@ export default function Sonnensystem({ action, speicherSchluessel = "geraet", le
                 vollbild={vollbild}
                 onKodex={setKodexUeberFlug}
                 angehalten={kodexUeberFlug !== null || steckbrief !== null}
+                netz={live.netz}
+                mitspieler={live.liste}
+                schiffSeed={live.du ?? speicherSchluessel}
               />
             </Suspense>
           </div>

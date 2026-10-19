@@ -26,11 +26,13 @@ export interface Statistik {
   verglueht: number;
   abstuerze: number;
   abgestuerztAuf: string[];
+  /** Zusammenstöße mit dem Schiff eines Mitspielers (Live-Raum) */
+  zusammenstoesse: number;
 }
 
 export const LEERE_STATISTIK: Statistik = {
   flugzeit: 0, strecke: 0, overdrives: 0, vollgas: 0, hoechstC: 0,
-  orbitzeit: 0, umrundungen: 0, umrundet: [], verglueht: 0, abstuerze: 0, abgestuerztAuf: [],
+  orbitzeit: 0, umrundungen: 0, umrundet: [], verglueht: 0, abstuerze: 0, abgestuerztAuf: [], zusammenstoesse: 0,
 };
 
 export interface ErfolgsDaten {
@@ -111,6 +113,7 @@ export const ERFOLGE: Erfolg[] = [
   { id: "bruchlandung", gruppe: "Missgeschicke", icon: "💢", name: "Bruchlandung", text: "Schlag zu schnell auf einem Himmelskörper auf.", ziel: 1, wert: d => d.statistik.abstuerze },
   { id: "crashtest", gruppe: "Missgeschicke", icon: "🧯", name: "Crashtest-Tournee", text: "Stürze auf fünf verschiedenen Himmelskörpern ab.", ziel: 5, wert: d => d.statistik.abgestuerztAuf.length },
   { id: "pechvogel", gruppe: "Missgeschicke", icon: "🐦", name: "Pechvogel", text: "Stürze fünfmal ab.", ziel: 5, wert: d => d.statistik.abstuerze },
+  { id: "blechschaden", gruppe: "Missgeschicke", icon: "💥", name: "Blechschaden", text: "Stoß im gemeinsamen Flug mit dem Raumschiff eines Mitspielers zusammen.", ziel: 1, wert: d => d.statistik.zusammenstoesse },
 ];
 
 export const erreicht = (e: Erfolg, d: ErfolgsDaten) => e.wert(d) >= e.ziel;

@@ -182,7 +182,8 @@ export default function SimulationJoinPage() {
           ? <Sonnensystem speicherSchluessel={auth
               ? `konto-${auth.user_type}-${auth.student?.id ?? auth.teacher?.id ?? 0}`
               : `gast-${code}`}
-              lehrkraft={auth?.role === "teacher" || auth?.role === "admin"} />
+              lehrkraft={auth?.role === "teacher" || auth?.role === "admin"}
+              zugang={{ code, token: guest.token }} />
         : session.tool_slug === "verkehr"
           ? <Verkehr zugang={{ code, token: guest.token }}
               // Wie beim Maus-Führerschein: Angemeldete je Konto, Gäste je Code und Gast-Id.

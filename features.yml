@@ -225,7 +225,9 @@ simulationen:
     kann:
       - 3D-Modell mit echten Bahnen (JPL Horizons), Satelliten und Lagrangepunkten
       - Flugmodus mit Pulsantrieb, Overdrive, Autopilot und Scanner
-      - 31 Forschungsaufträge, 34 Erfolge, Kodex als PDF
+      - Mehrspieler-Flug je Sitzungscode (Live-Raum /api/sonnensystem/{code}/ws) — Mitspieler als Autopilot-Ziel, Zusammenstöße
+      - Prozedurale Raumschiffe je Spieler (Port von SpaceshipGenerator, MIT), erkennbare Modelle der echten Raumfahrzeuge
+      - 31 Forschungsaufträge, 35 Erfolge, Kodex als PDF
       - Größen, Entfernungen mit Lichtlauf, Kepler-Gesetze
       - Erdmagnetfeld mit Sonnensturm
       - Galerie mit rund 90 Bildern zum Freischalten
