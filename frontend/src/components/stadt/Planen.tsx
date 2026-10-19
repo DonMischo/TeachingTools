@@ -5,6 +5,7 @@
  * des Stils und erklärt jede Regel. »💡 Beispiel« zeigt, wie die Stadt im
  * Wachstum-Reiter auf demselben Gelände aussieht.
  */
+import type { GelaendeBilder } from "@/components/gelaende/leinwand";
 import { useEffect, useMemo, useState } from "react";
 import { istWasser, type Gelaende } from "@/lib/gelaende/gelaende";
 import { abstand, flaeche, geschlossen, inPoly, schwerpunkt, zurLinie, type P } from "@/lib/stadt/geometrie";
@@ -42,7 +43,7 @@ const SANDKASTEN_BAUTEN: Record<Stil, BauTyp[]> = {
 };
 const ALLE_WERKZEUGE: Werkzeug[] = ["fernstrasse", "haupt", "neben", "gasse", "ring", "autobahn", "bahn", "aquaedukt", "mauer", "rechteckmauer", "raster", "zone"];
 
-export default function Planen({ g, bild, sandkasten, aktiv = true }: { g: Gelaende; bild: HTMLCanvasElement; sandkasten?: boolean; aktiv?: boolean }) {
+export default function Planen({ g, bild, sandkasten, aktiv = true }: { g: Gelaende; bild: GelaendeBilder; sandkasten?: boolean; aktiv?: boolean }) {
   const [auftragId, setAuftragId] = useState<string>(AUFTRAEGE[0].id);
   const [stilFrei, setStilFrei] = useState<Stil>("europaeisch");
   const [regelsatz, setRegelsatz] = useState<string>("");

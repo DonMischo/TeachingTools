@@ -37,7 +37,7 @@ export interface Gelaende {
   breite: number;
   /** Höhe über NN in Metern */
   hoehe: Float32Array;
-  /** 0 Land, 1 Fluss, 2 Meer */
+  /** 0 Land, 1 Fluss, 2 Meer, 3 See */
   wasser: Uint8Array;
   /** 1 = Aue (überschwemmt bei Hochwasser) */
   aue: Uint8Array;
@@ -53,8 +53,8 @@ export interface Gelaende {
   meer: number | null;
 }
 
-export const STANDARD_N = 256;
-export const STANDARD_ZELLE = 12;
+export const STANDARD_N = 512;
+export const STANDARD_ZELLE = 6;
 
 /** Würfelt eine Landschaft aus — für den Knopf »🎲 Zufall« */
 export function wuerfle(seed = Math.floor(Math.random() * 1e9)): GelaendeWahl {
@@ -141,16 +141,31 @@ export function erzeuge(wahl: GelaendeWahl, n = STANDARD_N, zelle = STANDARD_ZEL
     const pegel = (t: number) => tiefstes + (meer !== null ? 18 : 14) * (1 - t);
     const tFurt = 0.42 + z() * 0.16;
     const segs = flussLinie.length - 1;
+    // Abstand zur Mittellinie: erst auf einem groben Gitter (24 m), dann fein
+    // nur in Flussnähe nachrechnen — sonst kostet das bei 512² über eine Sekunde
+    const rand = form.talBreite + 40;
+    const G = 24, m = Math.ceil(breite / G) + 1;
+    const grobD = new Float32Array(m * m).fill(Infinity), grobS = new Int32Array(m * m).fill(-1);
+    for (let j = 0; j < m; j++) for (let i = 0; i < m; i++) {
+      const x = i * G, y = j * G;
+      let best = Infinity, sb = -1;
+      for (let q = 0; q < segs; q++) {
+        const a = flussLinie[q], b = flussLinie[q + 1];
+        if ((Math.abs(a.x - x) > rand && Math.abs(b.x - x) > rand) || (Math.abs(a.y - y) > rand && Math.abs(b.y - y) > rand)) continue;
+        const [d] = zurStrecke(x, y, a, b);
+        if (d < best) { best = d; sb = q; }
+      }
+      grobD[j * m + i] = best; grobS[j * m + i] = sb;
+    }
     for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
       const x = (i + 0.5) * zelle, y = (j + 0.5) * zelle;
+      const gi = Math.min(m - 1, Math.round(x / G)), gj = Math.min(m - 1, Math.round(y / G));
+      const s0 = grobS[gj * m + gi];
+      if (s0 < 0 || grobD[gj * m + gi] > rand + G) continue;
       let best = Infinity, tb = 0;
-      for (let s = 0; s < segs; s++) {
-        const a = flussLinie[s], b = flussLinie[s + 1];
-        // grobe Vorauswahl
-        const rand = form.talBreite + 40;
-        if ((Math.abs(a.x - x) > rand && Math.abs(b.x - x) > rand) || (Math.abs(a.y - y) > rand && Math.abs(b.y - y) > rand)) continue;
-        const [d, t] = zurStrecke(x, y, a, b);
-        if (d < best) { best = d; tb = (s + t) / segs; }
+      for (let q = Math.max(0, s0 - 6); q <= Math.min(segs - 1, s0 + 6); q++) {
+        const [d, t] = zurStrecke(x, y, flussLinie[q], flussLinie[q + 1]);
+        if (d < best) { best = d; tb = (q + t) / segs; }
       }
       if (best === Infinity) continue;
       const k = j * n + i;

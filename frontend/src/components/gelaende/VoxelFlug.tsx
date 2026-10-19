@@ -7,7 +7,7 @@
 import { useEffect, useRef, useState } from "react";
 import { bodenHoehe, voxelBild, type Kamera, type VoxelKarte } from "@/lib/gelaende/voxel";
 
-const W = 800, H = 450;
+const W = 960, H = 540;
 
 export default function VoxelFlug({ karte, mitte }: { karte: VoxelKarte; mitte?: { x: number; y: number } }) {
   const ref = useRef<HTMLCanvasElement>(null);

@@ -3,6 +3,7 @@
  * Reiter »Wachstum«: Die Stadt wächst Epoche für Epoche auf dem gewählten
  * Gelände. Daneben Erklärung, was neu ist, und ein Quiz zum Prüfen.
  */
+import type { GelaendeBilder } from "@/components/gelaende/leinwand";
 import { useEffect, useMemo, useState } from "react";
 import type { Gelaende } from "@/lib/gelaende/gelaende";
 import { schwerpunkt } from "@/lib/stadt/geometrie";
@@ -15,7 +16,7 @@ import Stadt3D from "./Stadt3D";
 
 const chip = (an: boolean) => `px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${an ? "bg-accent text-accent-fg" : "text-muted hover:text-fg"}`;
 
-export default function WachstumAnsicht({ g, bild, stil, setStil }: { g: Gelaende; bild: HTMLCanvasElement; stil: Stil; setStil: (s: Stil) => void }) {
+export default function WachstumAnsicht({ g, bild, stil, setStil }: { g: Gelaende; bild: GelaendeBilder; stil: Stil; setStil: (s: Stil) => void }) {
   const [epochen, setEpochen] = useState<Epoche[] | null>(null);
   const [idx, setIdx] = useState(0);
   const [zonen, setZonen] = useState(false);

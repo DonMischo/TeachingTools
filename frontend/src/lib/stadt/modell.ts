@@ -26,30 +26,30 @@ export const STRASSEN = {
 export type StrassenArt = keyof typeof STRASSEN;
 
 /** Häuser eines Viertels: Breite an der Straße, Tiefe, Lücke, Höhe in m */
-export interface HausArt { breite: [number, number]; tiefe: [number, number]; luecke: number; hoehe: [number, number]; dach: string; abseits?: number }
+export interface HausArt { breite: [number, number]; tiefe: [number, number]; luecke: number; hoehe: [number, number]; dach: string; abseits?: number; /** Wandfarbe im 3D-Flug */ fassade?: string; /** Flachdach statt Satteldach */ flach?: boolean }
 
 export const ZONEN = {
   // Römisch
-  insulae: { label: "Insulae (Wohnblöcke)", farbe: "#d9a066", haus: { breite: [14, 22], tiefe: [14, 22], luecke: 1, hoehe: [8, 14], dach: "#c2703d" } },
-  suburbium: { label: "Suburbium (Vorstadt)", farbe: "#e2b98a", haus: { breite: [10, 16], tiefe: [10, 14], luecke: 6, hoehe: [5, 7], dach: "#c27a4d" } },
-  verlassen: { label: "Aufgegeben", farbe: "#b9b2a4", haus: { breite: [8, 12], tiefe: [6, 10], luecke: 18, hoehe: [2, 3], dach: "#9d968a" } },
+  insulae: { label: "Insulae (Wohnblöcke)", farbe: "#d9a066", haus: { breite: [14, 22], tiefe: [14, 22], luecke: 1, hoehe: [8, 14], dach: "#c2703d", fassade: "#eadcc2" } },
+  suburbium: { label: "Suburbium (Vorstadt)", farbe: "#e2b98a", haus: { breite: [10, 16], tiefe: [10, 14], luecke: 6, hoehe: [5, 7], dach: "#c27a4d", fassade: "#e3d3b5" } },
+  verlassen: { label: "Aufgegeben", farbe: "#b9b2a4", haus: { breite: [8, 12], tiefe: [6, 10], luecke: 18, hoehe: [2, 3], dach: "#9d968a", fassade: "#b9b2a4" } },
   // Europäisch
-  dorf: { label: "Siedlung", farbe: "#d8c39a", haus: { breite: [10, 14], tiefe: [8, 12], luecke: 14, hoehe: [5, 7], dach: "#a8643c" } },
-  altstadt: { label: "Altstadt", farbe: "#d7a072", haus: { breite: [6, 10], tiefe: [12, 18], luecke: 0, hoehe: [9, 15], dach: "#b4532a" } },
-  vorstadt: { label: "Vorstadt", farbe: "#dcb48a", haus: { breite: [8, 12], tiefe: [10, 14], luecke: 4, hoehe: [6, 9], dach: "#b7653a" } },
-  gruenderzeit: { label: "Gründerzeitviertel", farbe: "#c9a58b", haus: { breite: [16, 22], tiefe: [14, 18], luecke: 0, hoehe: [16, 20], dach: "#8f5a46" } },
-  industrie: { label: "Industrie", farbe: "#a9a29b", haus: { breite: [30, 60], tiefe: [24, 40], luecke: 10, hoehe: [10, 18], dach: "#77706a" } },
-  grosssiedlung: { label: "Großwohnsiedlung", farbe: "#c0c4ca", haus: { breite: [60, 90], tiefe: [12, 14], luecke: 30, hoehe: [30, 45], dach: "#9aa0a8", abseits: 14 } },
-  einfamilienhaus: { label: "Einfamilienhäuser", farbe: "#d6dcb6", haus: { breite: [10, 12], tiefe: [9, 11], luecke: 12, hoehe: [6, 8], dach: "#b2503a", abseits: 8 } },
-  gewerbe: { label: "Gewerbegebiet", farbe: "#c8bfd6", haus: { breite: [40, 80], tiefe: [30, 50], luecke: 30, hoehe: [8, 12], dach: "#8e88a0", abseits: 12 } },
+  dorf: { label: "Siedlung", farbe: "#d8c39a", haus: { breite: [10, 14], tiefe: [8, 12], luecke: 14, hoehe: [5, 7], dach: "#a8643c", fassade: "#dccaa8" } },
+  altstadt: { label: "Altstadt", farbe: "#d7a072", haus: { breite: [6, 10], tiefe: [12, 18], luecke: 0, hoehe: [9, 15], dach: "#b4532a", fassade: "#efe2c8" } },
+  vorstadt: { label: "Vorstadt", farbe: "#dcb48a", haus: { breite: [8, 12], tiefe: [10, 14], luecke: 4, hoehe: [6, 9], dach: "#b7653a", fassade: "#e6d6ba" } },
+  gruenderzeit: { label: "Gründerzeitviertel", farbe: "#c9a58b", haus: { breite: [16, 22], tiefe: [14, 18], luecke: 0, hoehe: [16, 20], dach: "#8f5a46", fassade: "#dccbb2" } },
+  industrie: { label: "Industrie", farbe: "#a9a29b", haus: { breite: [30, 60], tiefe: [24, 40], luecke: 10, hoehe: [10, 18], dach: "#77706a", fassade: "#a8572f", flach: true } },
+  grosssiedlung: { label: "Großwohnsiedlung", farbe: "#c0c4ca", haus: { breite: [60, 90], tiefe: [12, 14], luecke: 30, hoehe: [30, 45], dach: "#9aa0a8", abseits: 14, fassade: "#d9dbde", flach: true } },
+  einfamilienhaus: { label: "Einfamilienhäuser", farbe: "#d6dcb6", haus: { breite: [10, 12], tiefe: [9, 11], luecke: 12, hoehe: [6, 8], dach: "#b2503a", abseits: 8, fassade: "#f1ece0" } },
+  gewerbe: { label: "Gewerbegebiet", farbe: "#c8bfd6", haus: { breite: [40, 80], tiefe: [30, 50], luecke: 30, hoehe: [8, 12], dach: "#8e88a0", abseits: 12, fassade: "#cfd4dc", flach: true } },
   park: { label: "Grünanlage", farbe: "#9cc47c", haus: null },
   // Amerikanisch
-  kleinstadt: { label: "Kleinstadt (Main Street)", farbe: "#d8bc8e", haus: { breite: [8, 12], tiefe: [16, 22], luecke: 2, hoehe: [6, 9], dach: "#a16a46" } },
-  cbd: { label: "Innenstadt (CBD)", farbe: "#a9b6c6", haus: { breite: [24, 36], tiefe: [24, 36], luecke: 4, hoehe: [40, 160], dach: "#7f8fa3" } },
-  uebergang: { label: "Übergangszone", farbe: "#bfae9d", haus: { breite: [14, 22], tiefe: [14, 20], luecke: 10, hoehe: [8, 14], dach: "#8d7664" } },
-  arbeiter: { label: "Arbeiterviertel", farbe: "#d1b48f", haus: { breite: [8, 10], tiefe: [12, 16], luecke: 3, hoehe: [7, 9], dach: "#9c5f3e" } },
-  vorort: { label: "Wohnviertel (Streetcar Suburb)", farbe: "#d8d0a4", haus: { breite: [10, 14], tiefe: [10, 14], luecke: 8, hoehe: [7, 9], dach: "#8c5442", abseits: 6 } },
-  pendler: { label: "Vororte (Suburbs)", farbe: "#dbe3b4", haus: { breite: [14, 18], tiefe: [12, 16], luecke: 14, hoehe: [5, 7], dach: "#7b6a5a", abseits: 10 } },
+  kleinstadt: { label: "Kleinstadt (Main Street)", farbe: "#d8bc8e", haus: { breite: [8, 12], tiefe: [16, 22], luecke: 2, hoehe: [6, 9], dach: "#a16a46", fassade: "#c9a27a" } },
+  cbd: { label: "Innenstadt (CBD)", farbe: "#a9b6c6", haus: { breite: [24, 36], tiefe: [24, 36], luecke: 4, hoehe: [40, 160], dach: "#7f8fa3", fassade: "#9fb7cc", flach: true } },
+  uebergang: { label: "Übergangszone", farbe: "#bfae9d", haus: { breite: [14, 22], tiefe: [14, 20], luecke: 10, hoehe: [8, 14], dach: "#8d7664", fassade: "#b39a82", flach: true } },
+  arbeiter: { label: "Arbeiterviertel", farbe: "#d1b48f", haus: { breite: [8, 10], tiefe: [12, 16], luecke: 3, hoehe: [7, 9], dach: "#9c5f3e", fassade: "#a65c3e" } },
+  vorort: { label: "Wohnviertel (Streetcar Suburb)", farbe: "#d8d0a4", haus: { breite: [10, 14], tiefe: [10, 14], luecke: 8, hoehe: [7, 9], dach: "#8c5442", abseits: 6, fassade: "#e8e1cf" } },
+  pendler: { label: "Vororte (Suburbs)", farbe: "#dbe3b4", haus: { breite: [14, 18], tiefe: [12, 16], luecke: 14, hoehe: [5, 7], dach: "#7b6a5a", abseits: 10, fassade: "#efe9dc" } },
   parkplatz: { label: "Parkplätze", farbe: "#b8b8b8", haus: null },
 } as const satisfies Record<string, { label: string; farbe: string; haus: HausArt | null }>;
 export type ZonenTyp = keyof typeof ZONEN;

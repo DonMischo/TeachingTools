@@ -4,6 +4,7 @@
  * Zoom (Mausrad, Knöpfe) und Werkzeug-Ereignissen. Unten links steht,
  * was unter dem Mauszeiger liegt: Höhe, Neigung, Aue, Abstand zum Wasser.
  */
+import type { GelaendeBilder } from "@/components/gelaende/leinwand";
 import { useEffect, useRef, useState } from "react";
 import { hoeheBei, inAue, istWasser, neigungBei, wasserAbstand, type Gelaende } from "@/lib/gelaende/gelaende";
 import type { P } from "@/lib/stadt/geometrie";
@@ -13,7 +14,7 @@ import { zeichneKarte, zuWelt, type Ansicht, type ZeichenOptionen } from "@/lib/
 
 export interface KartenProps {
   g: Gelaende;
-  bild: HTMLCanvasElement;
+  bild: GelaendeBilder;
   stadt: Stadt;
   haeuser: Haus[];
   zonen?: boolean;
@@ -70,7 +71,7 @@ export default function Karte(p: KartenProps) {
     c.height = H * dpr;
     const ctx = c.getContext("2d")!;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    zeichneKarte(ctx, breite, H, ansicht, p.g, p.stadt, { gelaende: p.bild, haeuser: p.haeuser, zonen: p.zonen, vorschau: p.vorschau, marken: p.marken });
+    zeichneKarte(ctx, breite, H, ansicht, p.g, p.stadt, { gelaende: p.bild.land, wasser: p.bild.wasser, haeuser: p.haeuser, zonen: p.zonen, vorschau: p.vorschau, marken: p.marken });
   }, [breite, H, ansicht, p.g, p.bild, p.stadt, p.haeuser, p.zonen, p.vorschau, p.marken]);
 
   const welt = (e: { clientX: number; clientY: number }): P => {

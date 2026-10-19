@@ -7,6 +7,10 @@
  *   (thermische Erosion) → Verdunstung.
  * Ränder sind offen: Wasser fließt hinaus. Meer schluckt Wasser, Schlamm
  * setzt sich dort ab (Delta).
+ *
+ * Eigene Ergänzungen: Jahreszeiten (Regenzeit lässt Flüsse anschwellen),
+ * Zufluss von außen am Oberlauf des Flusses (gräbt sein Bett weiter), und
+ * neue Flüsse, wo sich dauerhaft Wasser sammelt (gleitendes Mittel).
  */
 import { zufallsquelle } from "./rauschen";
 import type { Gelaende } from "./gelaende";
@@ -20,9 +24,16 @@ export interface ErosionsParameter {
   boeschung: number;
   /** Verdunstung, 1 = Vorbild */
   verdunstung: number;
+  /** Stärke der Jahreszeiten 0..1 (0 = immer gleich viel Regen) */
+  jahreszeiten: number;
+  /** Zufluss am Oberlauf des Flusses, 0 = keiner */
+  zufluss: number;
 }
 
-export const STANDARD_EROSION: ErosionsParameter = { regen: 1, loesen: 1, boeschung: 1, verdunstung: 1 };
+export const STANDARD_EROSION: ErosionsParameter = { regen: 1, loesen: 1, boeschung: 1, verdunstung: 1, jahreszeiten: 0.8, zufluss: 1 };
+
+/** Schritte je Jahr (Regenzeit + Trockenzeit) */
+export const JAHR = 80;
 
 export interface Erosion {
   n: number;
@@ -42,6 +53,10 @@ export interface Erosion {
   start: Float32Array;
   schritte: number;
   zufall: () => number;
+  /** Zellen, an denen der Fluss von außen in die Karte kommt */
+  quellen: number[];
+  /** gleitendes Mittel der Wassermenge — zeigt, wo dauerhaft Wasser fließt */
+  abfluss: Float64Array;
   // Arbeitsfelder
   gx: Float64Array; gy: Float64Array; dh: Float64Array; tmp: Float64Array; tmp2: Float64Array;
 }
@@ -59,8 +74,28 @@ export function erosionStart(g: Gelaende, seed = g.wahl.seed): Erosion {
     n, h, wasser: new Float64Array(N), schlamm: new Float64Array(N), tempo: new Float64Array(N),
     einheit, null: lo, meer: g.meer === null ? null : (g.meer - lo) / einheit, start: Float32Array.from(g.hoehe), schritte: 0,
     zufall: zufallsquelle(seed ^ 0x5eed),
+    quellen: quellZellen(g), abfluss: new Float64Array(N),
     gx: new Float64Array(N), gy: new Float64Array(N), dh: new Float64Array(N), tmp: new Float64Array(N), tmp2: new Float64Array(N),
   };
+}
+
+/** Oberlauf: der erste Punkt der Flusslinie in der Karte, 3×3 Zellen */
+function quellZellen(g: Gelaende): number[] {
+  const p = g.flussLinie.find(q => q.x > g.zelle && q.y > g.zelle && q.x < g.breite - g.zelle && q.y < g.breite - g.zelle);
+  if (!p) return [];
+  const i = Math.floor(p.x / g.zelle), j = Math.floor(p.y / g.zelle), aus: number[] = [];
+  for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) {
+    const ii = i + a, jj = j + b;
+    if (ii >= 0 && jj >= 0 && ii < g.n && jj < g.n) aus.push(jj * g.n + ii);
+  }
+  return aus;
+}
+
+/** Regen-Faktor der Jahreszeit (1 = Mittel) und ob gerade Regenzeit ist */
+export function jahreszeit(e: Pick<Erosion, "schritte">, p: Pick<ErosionsParameter, "jahreszeiten"> = STANDARD_EROSION) {
+  const phase = (e.schritte % JAHR) / JAHR;
+  const faktor = Math.max(0.15, 1 + p.jahreszeiten * Math.sin(phase * Math.PI * 2));
+  return { phase, faktor, regenzeit: phase < 0.5 && p.jahreszeiten > 0 };
 }
 
 /** zentrale Differenz mit festgeklemmtem Rand */
@@ -135,7 +170,13 @@ export function erosionSchritt(e: Erosion, p: ErosionsParameter = STANDARD_EROSI
   const loesen = 0.25 * p.loesen;
   const ablagern = 0.001;
 
-  for (let k = 0; k < N; k++) wasser[k] += zufall() * regen;
+  const jz = jahreszeit(e, p).faktor;
+  for (let k = 0; k < N; k++) wasser[k] += zufall() * regen * jz;
+  // Zufluss von außen: so viel wie der Regen auf ein Zwanzigstel der Karte
+  if (e.quellen.length && p.zufluss > 0) {
+    const q = (N * regen * 0.5 * 0.05 * p.zufluss * jz) / e.quellen.length;
+    for (const k of e.quellen) wasser[k] += q;
+  }
 
   // Richtung des steilsten Anstiegs, normiert; auf flachem Grund zufällig
   gefaelle(h, n, gx, gy);
@@ -175,6 +216,7 @@ export function erosionSchritt(e: Erosion, p: ErosionsParameter = STANDARD_EROSI
   for (let k = 0; k < N; k++) {
     tempo[k] = schwere * dh[k] / zw;
     wasser[k] *= 1 - verdunstung;
+    e.abfluss[k] = e.abfluss[k] * 0.985 + wasser[k] * 0.015;
   }
   if (e.meer !== null) for (let k = 0; k < N; k++) if (h[k] < e.meer) {
     wasser[k] = 0;
@@ -188,11 +230,125 @@ export function erosionSchritt(e: Erosion, p: ErosionsParameter = STANDARD_EROSI
 /** Schritte für ein »fertiges« Gelände, wie im Vorbild 1,4 × Kantenlänge */
 export const erosionsSchritte = (n: number) => Math.round(1.4 * n);
 
-/** schreibt die erodierten Höhen in ein (kopiertes) Gelände zurück */
-export function aufGelaende(e: Erosion, g: Gelaende): Gelaende {
+/**
+ * Zellen, in denen dauerhaft viel Wasser fließt (neue Flüsse): das
+ * gleitende Mittel liegt weit über dem Mittel der Karte.
+ */
+export function neueFluesse(e: Erosion, schwelle = 10): Uint8Array {
+  const N = e.n * e.n, aus = new Uint8Array(N);
+  if (e.schritte < JAHR / 2) return aus;
+  let mittel = 0;
+  for (let k = 0; k < N; k++) mittel += e.abfluss[k];
+  mittel /= N;
+  if (!(mittel > 0)) return aus;
+  for (let k = 0; k < N; k++) if (e.abfluss[k] > mittel * schwelle && (e.meer === null || e.h[k] >= e.meer)) aus[k] = 1;
+  return aus;
+}
+
+/**
+ * Senken füllen (Priority-Flood, Barnes et al. 2014): Wie hoch stünde
+ * Wasser, das nirgends abfließen kann? Rand und Meer sind Abflüsse.
+ * Gibt den Wasserspiegel je Zelle zurück (≥ Höhe).
+ */
+export function spiegel(h: ArrayLike<number>, n: number, meer: number | null): Float64Array {
+  const N = n * n, F = new Float64Array(N), zu = new Uint8Array(N);
+  const heap: number[] = [];
+  const kleiner = (a: number, b: number) => F[a] < F[b];
+  const push = (k: number) => {
+    heap.push(k);
+    let c = heap.length - 1;
+    while (c > 0) { const q = (c - 1) >> 1; if (!kleiner(heap[c], heap[q])) break; [heap[c], heap[q]] = [heap[q], heap[c]]; c = q; }
+  };
+  const pop = () => {
+    const top = heap[0], last = heap.pop()!;
+    if (heap.length) {
+      heap[0] = last;
+      let c = 0;
+      for (;;) {
+        const l = 2 * c + 1, r = l + 1;
+        let m = c;
+        if (l < heap.length && kleiner(heap[l], heap[m])) m = l;
+        if (r < heap.length && kleiner(heap[r], heap[m])) m = r;
+        if (m === c) break;
+        [heap[m], heap[c]] = [heap[c], heap[m]]; c = m;
+      }
+    }
+    return top;
+  };
+  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
+    const k = j * n + i;
+    F[k] = h[k];
+    if (i === 0 || j === 0 || i === n - 1 || j === n - 1 || (meer !== null && h[k] < meer)) { zu[k] = 1; push(k); }
+  }
+  while (heap.length) {
+    const k = pop(), i = k % n, j = (k - i) / n;
+    for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const ii = i + di, jj = j + dj;
+      if (ii < 0 || jj < 0 || ii >= n || jj >= n) continue;
+      const q = jj * n + ii;
+      if (zu[q]) continue;
+      zu[q] = 1;
+      F[q] = Math.max(h[q], F[k]);
+      push(q);
+    }
+  }
+  return F;
+}
+
+/**
+ * Gewässer nach der Erosion: 1 = Fluss (dauerhaft viel Wasser), 3 = See
+ * (Senke, in der sich Wasser sammelt — läuft sie über, geht der Fluss weiter).
+ */
+export function gewaesser(e: Erosion): Uint8Array {
+  const N = e.n * e.n, aus = neueFluesse(e);
+  if (e.schritte < JAHR / 2) return aus;
+  const F = spiegel(e.h, e.n, e.meer);
+  let mittel = 0;
+  for (let k = 0; k < N; k++) mittel += e.abfluss[k];
+  mittel /= N;
+  // Senke tiefer als 1,5 m und viel Zufluss: ein See
+  const tief = 1.5 / e.einheit;
+  const nass = new Uint8Array(N);
+  for (let k = 0; k < N; k++) if (F[k] - e.h[k] > tief && e.abfluss[k] > mittel * 4) nass[k] = 1;
+  // ganze Senke füllen, wenn ein Teil davon nass ist (Flutfüllung über gleichen Spiegel)
+  const st: number[] = [];
+  for (let k = 0; k < N; k++) if (nass[k]) st.push(k);
+  while (st.length) {
+    const k = st.pop()!, i = k % e.n, j = (k - i) / e.n;
+    aus[k] = 3;
+    for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const ii = i + di, jj = j + dj;
+      if (ii < 0 || jj < 0 || ii >= e.n || jj >= e.n) continue;
+      const q = jj * e.n + ii;
+      if (aus[q] !== 3 && !nass[q] && F[q] - e.h[q] > tief * 0.3 && Math.abs(F[q] - F[k]) < 1e-9) { nass[q] = 1; st.push(q); }
+    }
+  }
+  // Pfützen unter 20 Zellen sind keine Seen
+  const gesehen = new Uint8Array(N);
+  for (let k = 0; k < N; k++) {
+    if (aus[k] !== 3 || gesehen[k]) continue;
+    const teil: number[] = [k];
+    gesehen[k] = 1;
+    for (let t = 0; t < teil.length; t++) {
+      const q = teil[t], i = q % e.n, j = (q - i) / e.n;
+      for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const ii = i + di, jj = j + dj;
+        if (ii < 0 || jj < 0 || ii >= e.n || jj >= e.n) continue;
+        const r = jj * e.n + ii;
+        if (aus[r] === 3 && !gesehen[r]) { gesehen[r] = 1; teil.push(r); }
+      }
+    }
+    if (teil.length < 20) for (const q of teil) aus[q] = 0;
+  }
+  return aus;
+}
+
+/** schreibt die erodierten Höhen (und neue Flüsse) in ein (kopiertes) Gelände zurück */
+export function aufGelaende(e: Erosion, g: Gelaende, mitFluessen = true): Gelaende {
   const hoehe = new Float32Array(e.h.length);
   for (let k = 0; k < hoehe.length; k++) hoehe[k] = e.null + e.h[k] * e.einheit;
   const wasser = Uint8Array.from(g.wasser);
+  if (mitFluessen) { const f = gewaesser(e); for (let k = 0; k < f.length; k++) if (f[k] && !wasser[k]) wasser[k] = f[k]; }
   if (g.meer !== null) for (let k = 0; k < hoehe.length; k++) wasser[k] = hoehe[k] < g.meer ? 2 : wasser[k] === 2 ? 0 : wasser[k];
   return { ...g, hoehe, wasser };
 }

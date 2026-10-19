@@ -19,6 +19,8 @@ export const zuWelt = (a: Ansicht, p: P): P => ({ x: p.x / a.m + a.x0, y: p.y / 
 export interface ZeichenOptionen {
   /** Geländebild n×n (aus gelaendeFarben) */
   gelaende: CanvasImageSource;
+  /** nur das Wasser des Geländebilds (Rest durchsichtig) — kommt über die Viertel */
+  wasser?: CanvasImageSource;
   haeuser: Haus[];
   /** Viertel farbig zeigen */
   zonen?: boolean;
@@ -55,6 +57,10 @@ export function zeichneKarte(ctx: Ctx, W: number, H: number, a: Ansicht, g: Gela
   ctx.lineJoin = "round";
   ctx.lineCap = "round";
 
+  // Lichtung: In Vierteln steht kein Wald, dort sind Gärten und Wiesen
+  ctx.fillStyle = "rgba(170,190,128,0.75)";
+  for (const z of s.zonen) if (z.typ !== "parkplatz") { poly(ctx, a, z.poly); ctx.fill(); }
+
   // Viertel
   for (const z of s.zonen) {
     const art = ZONEN[z.typ];
@@ -65,6 +71,8 @@ export function zeichneKarte(ctx: Ctx, W: number, H: number, a: Ansicht, g: Gela
     if (o.zonen) { ctx.globalAlpha = 0.8; ctx.strokeStyle = art.farbe; ctx.lineWidth = 1.5; ctx.stroke(); }
     ctx.globalAlpha = 1;
   }
+
+  if (o.wasser) ctx.drawImage(o.wasser, o0.x, o0.y, g.breite * a.m, g.breite * a.m);
 
   // Brücken: unter den Straßen, wo sie Wasser queren
   ctx.strokeStyle = "#5b4630";
@@ -224,13 +232,26 @@ export function zeichneKarte(ctx: Ctx, W: number, H: number, a: Ansicht, g: Gela
   ctx.restore();
 }
 
-/** Höhe der Bauten je Pixel einer N×N-Karte (Meter) — für den Voxel-Flug */
+/** Höhe der Bauten je Pixel einer N×N-Karte (Meter, als Grauwert) — für den Voxel-Flug; Satteldächer als Verlauf */
 export function zeichneHoehen(ctx: Ctx, N: number, g: Gelaende, s: Stadt, haeuser: Haus[]) {
   const a: Ansicht = { x0: 0, y0: 0, m: N / g.breite };
   ctx.fillStyle = "#000";
   ctx.fillRect(0, 0, N, N);
   const grau = (h: number) => { const v = Math.max(0, Math.min(255, Math.round(h))); return `rgb(${v},${v},${v})`; };
-  for (const h of haeuser) { poly(ctx, a, h.ecken); ctx.fillStyle = grau(h.hoehe); ctx.fill(); }
+  for (const h of haeuser) {
+    poly(ctx, a, h.ecken);
+    if (h.flach) ctx.fillStyle = grau(h.hoehe);
+    else {
+      // First parallel zur Straße: quer dazu fällt das Dach zu beiden Seiten ab
+      const nx = -Math.sin(h.dreh), ny = Math.cos(h.dreh);
+      const p0 = zuBild(a, { x: h.c.x - nx * h.t / 2, y: h.c.y - ny * h.t / 2 }), p1 = zuBild(a, { x: h.c.x + nx * h.t / 2, y: h.c.y + ny * h.t / 2 });
+      const v = ctx.createLinearGradient(p0.x, p0.y, p1.x, p1.y);
+      const r = Math.min(5, h.t * 0.4);
+      v.addColorStop(0, grau(h.hoehe - r)); v.addColorStop(0.5, grau(h.hoehe)); v.addColorStop(1, grau(h.hoehe - r));
+      ctx.fillStyle = v;
+    }
+    ctx.fill();
+  }
   for (const b of s.bauten) {
     const art = BAUTEN[b.typ];
     if (!art.hoehe) continue;
@@ -243,4 +264,28 @@ export function zeichneHoehen(ctx: Ctx, N: number, g: Gelaende, s: Stadt, haeuse
   for (const m of s.mauern) { linie(ctx, a, geschlossen(m)); ctx.stroke(); }
   ctx.strokeStyle = grau(14);
   for (const st of s.strassen) if (st.art === "aquaedukt") { linie(ctx, a, st.punkte); ctx.lineWidth = Math.max(1, 5 * a.m); ctx.stroke(); }
+}
+
+/** Wandfarben (Fassaden) und bebaute Fläche: Alpha > 0 = Stadt, keine Bäume */
+export function zeichneWaende(ctx: Ctx, N: number, g: Gelaende, s: Stadt, haeuser: Haus[]) {
+  const a: Ansicht = { x0: 0, y0: 0, m: N / g.breite };
+  ctx.clearRect(0, 0, N, N);
+  // bebaut, aber ohne eigene Wand: Viertel und Straßen (fast durchsichtig, nur als Maske)
+  ctx.fillStyle = "rgba(0,0,0,0.02)";
+  for (const z of s.zonen) if (z.typ !== "park") { poly(ctx, a, z.poly); ctx.fill(); }
+  ctx.strokeStyle = "rgba(0,0,0,0.02)";
+  ctx.lineCap = "round";
+  for (const st of s.strassen) { linie(ctx, a, st.punkte); ctx.lineWidth = (STRASSEN[st.art].breite + 10) * a.m; ctx.stroke(); }
+  for (const h of haeuser) { poly(ctx, a, h.ecken); ctx.fillStyle = h.fassade; ctx.fill(); }
+  for (const b of s.bauten) {
+    const art = BAUTEN[b.typ];
+    poly(ctx, a, rechteck(b, art.b + 8, art.h + 8, b.dreh ?? 0));
+    ctx.fillStyle = "rgba(0,0,0,0.02)"; ctx.fill();
+    if (!art.hoehe) continue;
+    poly(ctx, a, rechteck(b, art.b, art.h, b.dreh ?? 0));
+    ctx.fillStyle = art.farbe; ctx.fill();
+  }
+  ctx.strokeStyle = "#9b9286";
+  ctx.lineWidth = Math.max(1, 5 * a.m);
+  for (const m of s.mauern) { linie(ctx, a, geschlossen(m)); ctx.stroke(); }
 }

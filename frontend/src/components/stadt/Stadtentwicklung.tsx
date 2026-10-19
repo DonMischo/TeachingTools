@@ -16,7 +16,8 @@ import { wahl as vorgabeWahl, type Vorgabe } from "@/lib/vorgabe";
 import { erzeuge, type Gelaende, type GelaendeWahl } from "@/lib/gelaende/gelaende";
 import type { Stil } from "@/lib/stadt/modell";
 import GelaendeLeiste from "@/components/gelaende/GelaendeLeiste";
-import { erodiereNebenbei, gelaendeLeinwand } from "@/components/gelaende/leinwand";
+import { erodiereNebenbei, gelaendeLeinwand, wasserLeinwand, type GelaendeBilder } from "@/components/gelaende/leinwand";
+import { waldMaske } from "@/lib/gelaende/wald";
 import WachstumAnsicht from "./WachstumAnsicht";
 import Planen from "./Planen";
 import Erklaerung from "./Erklaerung";
@@ -45,8 +46,8 @@ export default function Stadtentwicklung({ action, vorgabe }: { action?: ReactNo
   useEffect(() => { abbruch.current?.(); setErodiert(null); setFortschritt(null); }, [roh]);
   useEffect(() => () => abbruch.current?.(), []);
   const g = erodiert ?? roh;
-  const [bild, setBild] = useState<HTMLCanvasElement | null>(null);
-  useEffect(() => { setBild(gelaendeLeinwand(g, { aue: true })); }, [g]);
+  const [bild, setBild] = useState<GelaendeBilder | null>(null);
+  useEffect(() => { const land = gelaendeLeinwand(g, { aue: true, wald: waldMaske(g) }); setBild({ land, wasser: wasserLeinwand(g, land) }); }, [g]);
 
   const erosion = () => {
     setFortschritt(0);

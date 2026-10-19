@@ -9,7 +9,7 @@ import { istWasser, type Gelaende } from "@/lib/gelaende/gelaende";
 import { abstand, inPoly, rechteck, type P } from "./geometrie";
 import { BAUTEN, STRASSEN, ZONEN, type HausArt, type Stadt, type ZonenTyp } from "./modell";
 
-export interface Haus { ecken: P[]; c: P; hoehe: number; dach: string; zone: ZonenTyp }
+export interface Haus { ecken: P[]; c: P; hoehe: number; dach: string; zone: ZonenTyp; fassade: string; flach: boolean; /** Breite an der Straße, Tiefe */ b: number; t: number; dreh: number }
 
 /** welches Viertel an p gilt (das zuletzt eingetragene gewinnt) */
 export function zoneBei(s: Stadt, p: P): ZonenTyp | null {
@@ -105,7 +105,7 @@ export function haeuser(s: Stadt, g: Gelaende, seed = 1): Haus[] {
           const ecken = rechteck(mitte, hb, ht, w);
           if (!ecken.some(e => istWasser(g, e.x, e.y)) && mitte.x > 0 && mitte.y > 0 && mitte.x < g.breite && mitte.y < g.breite && beleg.frei(ecken)) {
             beleg.add(ecken);
-            aus.push({ ecken, c: mitte, hoehe: zwischen(z, art.hoehe), dach: art.dach, zone: zt });
+            aus.push({ ecken, c: mitte, hoehe: zwischen(z, art.hoehe), dach: art.dach, zone: zt, fassade: art.fassade ?? "#e6dccb", flach: !!art.flach, b: hb, t: ht, dreh: w });
           }
           t += hb + art.luecke + 0.5;
         }
