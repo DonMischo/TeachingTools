@@ -184,6 +184,15 @@ CATALOG: list[CatalogTool] = [
     CatalogTool("dla", "🪸 Fraktales Wachstum", "🪸", "simulationen", {
         "use": _cap(True, True),
     }),
+    # Stadtentwicklung: roemische, europaeische und amerikanische Staedte auf
+    # Zufallsgelaende wachsen lassen, selbst planen und pruefen.
+    CatalogTool("stadt", "🏘️ Stadtentwicklung", "🏘️", "simulationen", {
+        "use": _cap(True, True),
+    }),
+    # Erosion: Regen formt Zufallsgelaende (Wassererosion + Rutschungen).
+    CatalogTool("erosion", "🌧️ Erosion", "🌧️", "simulationen", {
+        "use": _cap(True, True),
+    }),
     # Periodensystem: Elemente nachschlagen, typische Reaktionen fuehren in die
     # Gleichungswaage.
     CatalogTool("pse", "🧪 Periodensystem", "🧪", "simulationen", {

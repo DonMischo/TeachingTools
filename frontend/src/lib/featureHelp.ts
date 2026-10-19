@@ -310,6 +310,32 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet)." },
     ],
   },
+  stadt: {
+    title: "Stadtentwicklung",
+    intro: "Warum liegt eine Stadt, wo sie liegt, und warum sieht sie so aus? Auf einem Zufallsgelände (Flusstal, Küste, Hügelland, Ebene, Gebirgstal) wachsen eine römische, eine europäische und eine amerikanische Stadt Epoche für Epoche. In Aufträgen gründen Schüler·innen selbst eine Stadt, und ein Regelwerk prüft und erklärt den Plan. Rechnet ganz im Browser. Vorbilder: MapGenerator (Straßen aus Tensorfeldern), Voxel Space (3D-Flug), terrain-erosion-3-ways (Erosion) — alles neu geschrieben.",
+    sections: [
+      { label: "🕰️ Wachstum", text: "Stil wählen, dann mit dem Regler oder den Jahreszahlen durch die Epochen blättern. Römisch: Kolonie mit Cardo, Decumanus und Forum → Blütezeit (Thermen, Aquädukt, Amphitheater, Gräber vor der Stadt) → Spätantike → römisches Erbe heute. Europäisch: Burg und Furt → Marktstadt mit Mauer → Vorstädte → Industrialisierung (Ring, Bahnhof, Gründerzeit) → Moderne (Großsiedlung, Einfamilienhäuser, Einkaufszentrum). Amerikanisch: Eisenbahnstadt → Straßenbahnstadt → Autostadt → Sprawl und Edge City. Rechts steht, was neu ist; »Viertel farbig« zeigt die Zonen." },
+      { label: "❓ Quiz", text: "»Quiz zu dieser Karte« fragt zur gezeigten Epoche: auf Bauwerke, Viertel und Straßen klicken, Wissensfragen mit Begründung, und »Aus welcher Zeit stammt diese Karte?«. Nach jeder Antwort folgt die Erklärung; ein Kreis zeigt, wo das Gesuchte lag." },
+      { label: "📐 Planen", text: "Fünf Aufträge: römische Kolonie, mittelalterliche Marktstadt, Eisenbahnstadt im Westen der USA, Altstadt ins Industriezeitalter bringen, Straßenbahnstadt zur Autostadt machen. Links Werkzeuge (Straßenarten, Mauer, Rechteck-Mauer, Straßenraster, Bauwerke, Entfernen). »✔ Prüfen« bewertet jede Regel mit ✅/❌, Hinweis und »Warum?« — aufklappen markiert die Stelle in der Karte. »💡 Beispiel« zeigt die gewachsene Stadt auf demselben Gelände." },
+      { label: "🧱 Sandkasten", text: "Frei bauen mit allen Werkzeugen und Bauwerken des gewählten Stils, auch Viertel malen (Altstadt, Gründerzeit, CBD, Suburbs …) — die Häuser entstehen passend dazu. »Prüfen als …« vergleicht den Plan mit einem Regelsatz." },
+      { label: "✏️ Zeichnen", text: "Klicken setzt Punkte, Doppelklick oder Enter beendet die Straße, Umschalt hält sie gerade (0°/90°), Rücktaste nimmt den letzten Punkt zurück, Esc bricht ab. Neue Punkte rasten an vorhandenen Straßen ein. Strg+Z macht rückgängig. Rechte Maustaste verschiebt die Karte, Mausrad zoomt." },
+      { label: "🗺️ Gelände", text: "🎲 würfelt eine neue Landschaft aus, 🔁 formt dieselbe Art neu, »Fluss« und »Relief« ändern sie. 🌧️ lässt Regen das Gelände über Jahrtausende formen (wie in der Simulation »Erosion«). Beim Darüberfahren steht unten links Höhe, Neigung, Aue und Abstand zum Wasser — die Grundlage jeder Standortwahl." },
+      { label: "🛩️ 3D-Flug", text: "Die Stadt als Voxel-Landschaft: W/A/S/D fliegen, Q/E Höhe, Maus ziehen schaut, »Rundflug« kreist von selbst. Häuser, Kirchen und Hochhäuser haben ihre Höhe." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet)." },
+    ],
+  },
+  erosion: {
+    title: "Erosion",
+    intro: "Regen formt Gelände: Wasser sammelt sich, fließt bergab, löst Boden und lagert ihn ab, zu steile Hänge rutschen. Aus glattem Rauschen werden Täler, Grate und Schwemmfächer. Nach der »Simulation« aus terrain-erosion-3-ways von Daniel Andrino (MIT), neu geschrieben; rechnet ganz im Browser.",
+    sections: [
+      { label: "▶ Regnen lassen", text: "Startet die Simulation; ⏭ rechnet 20 Schritte, ↺ setzt zurück. Der Balken zeigt, wie weit es ist — ab etwa 360 Schritten sieht das Gelände »fertig« aus. ⏩ Tempo = Schritte je Bild." },
+      { label: "🎚️ Regler", text: "Regen (Wassermenge), Lösekraft (wie schnell Wasser Boden mitnimmt), Standfestigkeit (ab welcher Neigung Hänge rutschen) und Verdunstung (trockenes oder feuchtes Klima) — jeweils als Vielfaches des Vorbilds, auch während es läuft." },
+      { label: "👀 Ansichten", text: "Gelände mit Schummerung, Wasser (wo es sich sammelt: Bäche und Seen), Abtrag/Ablagerung (rot = abgetragen, blau = abgelagert) und »Vorher« zum Vergleich. Unten zeigen zwei Zahlen den stärksten Abtrag und die stärkste Ablagerung in Metern." },
+      { label: "🗺️ Gelände", text: "Dieselben Landschaften wie in der Stadtentwicklung: 🎲 Zufall, 🔁 neu formen, Fluss und Relief. An der Küste setzt sich Schlamm im Meer ab — ein Delta entsteht." },
+      { label: "🛩️ 3D-Flug", text: "W/A/S/D fliegen, Q/E Höhe, Maus ziehen schaut, »Rundflug« kreist. Läuft die Erosion, verändert sich das Gelände im Flug." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet)." },
+    ],
+  },
   dla: {
     title: "Fraktales Wachstum",
     intro: "Diffusionsbegrenzte Aggregation (DLA): Ein Teilchen irrt zufällig umher, bis es den Haufen berührt, und bleibt dort hängen. Weil die Spitzen die ankommenden Teilchen zuerst abfangen, wachsen verzweigte Äste mit luftigem Innern — wie Korallen, Kupferbäumchen, Eisblumen oder Lichtenberg-Figuren. Rechnet ganz im Browser; Vorbild ist dlaf von Michael Fogleman (MIT).",

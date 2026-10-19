@@ -38,6 +38,8 @@ export const STANDARD_FAECHER: Record<string, string[]> = {
   algo: ["Informatik"],
   regeln: ["Informatik", "Mathematik"],
   wfc: ["Informatik", "Mathematik"],
+  stadt: ["Geografie", "Geschichte"],
+  erosion: ["Geografie", "Physik"],
   dla: ["Physik", "Chemie", "Mathematik", "Biologie", "Informatik"],
   schichten: ["Informatik"],
   pse: ["Chemie"],

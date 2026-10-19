@@ -345,6 +345,27 @@ simulationen:
       - Fraktale Dimension per Masse-Radius-Methode live im log-log-Diagramm mit Vergleichsgeraden
       - Zeitlupe eines einzelnen Wanderers mit Spur und Fangkreis, Erklärung mit Beispielen aus Natur und Technik
       - Als TaskCrawler-Werkzeug mit festem Reiter
+  - id: stadt
+    name: Stadtentwicklung
+    kann:
+      - Römische, europäische und amerikanische Stadt auf demselben Zufallsgelände (5 Landschaften, Fluss mit Aue und Furt, Burgberg, Relief, Erosion auf Knopfdruck)
+      - Wachstum Epoche für Epoche mit Erklärung, »Neu in dieser Epoche« und Viertel-Legende
+      - Quiz zur Karte — Bauwerke, Viertel und Straßen anklicken, Wissensfragen mit Begründung, Epoche erkennen
+      - Fünf Planungsaufträge mit Regelprüfung (✅/❌, Hinweis, Warum, Stelle in der Karte) und Beispiel-Lösung auf demselben Gelände
+      - Sandkasten mit allen Werkzeugen, Viertel-Pinsel und optionaler Prüfung
+      - Häuser entlang der Straßen je Viertel, Gassen und Vororte aus Tensorfeldern (Idee MapGenerator), alte Straßen per günstigstem Weg übers Gelände
+      - Geländeinfo unter dem Mauszeiger (Höhe, Neigung, Aue, Abstand zum Wasser)
+      - 3D-Flug im Stil von Voxel Space
+      - Als TaskCrawler-Werkzeug mit festem Reiter und Stil
+  - id: erosion
+    name: Erosion
+    kann:
+      - Gitterbasierte Wassererosion mit Rutschungen nach terrain-erosion-3-ways (MIT), live Schritt für Schritt
+      - Regler für Regen, Lösekraft, Standfestigkeit und Verdunstung
+      - Ansichten Gelände, Wasser, Abtrag/Ablagerung, Vorher; stärkster Abtrag und Ablagerung in Metern
+      - Gleiches Zufallsgelände wie die Stadtentwicklung, Delta an der Küste
+      - 3D-Flug im Stil von Voxel Space
+      - Als TaskCrawler-Werkzeug mit fester Ansicht
   - id: erfolge
     name: Erfolge (Übersicht)
     kann:

@@ -161,6 +161,8 @@ WERKZEUGE = {
         "config": {"reiter": "reise|weg|pakete|wissen|mission|fehler", "modell?": "osi|tcpip"},
     },
     "dla": {"name": "Fraktales Wachstum", "config": {"reiter": "flaeche|raum|erklaerung"}},
+    "stadt": {"name": "Stadtentwicklung", "config": {"reiter": "wachstum|planen|sandkasten|erklaerung", "stil?": "roemisch|europaeisch|amerikanisch"}},
+    "erosion": {"name": "Erosion", "config": {"ansicht?": "gelaende|wasser|aenderung|vorher"}},
     "pse": {"name": "Periodensystem", "config": {"element?": "Symbol oder Name, z. B. Fe oder Eisen"}},
     "atommodelle": {"name": "Atommodelle", "config": {"element?": "Symbol oder Name, z. B. B oder Bor"}},
     "strukturformeln": {"name": "Strukturformeln", "config": {"name?": "IUPAC-Name, z. B. Ethanol"}},
