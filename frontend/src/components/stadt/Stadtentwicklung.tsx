@@ -14,7 +14,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { wahl as vorgabeWahl, type Vorgabe } from "@/lib/vorgabe";
 import { erzeuge, type Gelaende, type GelaendeWahl } from "@/lib/gelaende/gelaende";
-import type { Stil } from "@/lib/stadt/modell";
+import { STILE, type Stil } from "@/lib/stadt/modell";
 import GelaendeLeiste from "@/components/gelaende/GelaendeLeiste";
 import { erodiereNebenbei, gelaendeLeinwand, wasserLeinwand, type GelaendeBilder } from "@/components/gelaende/leinwand";
 import { waldMaske } from "@/lib/gelaende/wald";
@@ -37,7 +37,7 @@ const chip = (an: boolean) =>
 export default function Stadtentwicklung({ action, vorgabe }: { action?: ReactNode; vorgabe?: Vorgabe }) {
   const fest = vorgabeWahl(vorgabe, "reiter", REITER.map(r => r.id));
   const [reiter, setReiter] = useState<Reiter>(fest ?? "wachstum");
-  const [stil, setStil] = useState<Stil>(vorgabeWahl(vorgabe, "stil", ["roemisch", "europaeisch", "amerikanisch"] as const) ?? "europaeisch");
+  const [stil, setStil] = useState<Stil>(vorgabeWahl(vorgabe, "stil", STILE.map(x => x.id)) ?? "europaeisch");
   const [wahl, setWahl] = useState<GelaendeWahl>({ art: "flusstal", seed: 12, fluss: true, relief: 1 });
   const roh = useMemo(() => erzeuge(wahl), [wahl]);
   const [erodiert, setErodiert] = useState<Gelaende | null>(null);

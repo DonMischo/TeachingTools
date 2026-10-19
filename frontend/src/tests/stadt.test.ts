@@ -14,11 +14,11 @@ describe("Wachstum", () => {
   it("jeder Stil wächst über mehrere Epochen, mit Häusern", () => {
     for (const s of STILE) {
       const e = epochen[s.id];
-      expect(e.length).toBeGreaterThanOrEqual(4);
+      expect(e.length).toBeGreaterThanOrEqual(3);
       expect(e.every(x => x.stadt.stil === s.id && x.neu.length > 0)).toBe(true);
       // die Stadt wird größer
       expect(e[e.length - 1].stadt.strassen.length).toBeGreaterThan(e[0].stadt.strassen.length);
-      expect(haeuser(e[1].stadt, g, 1).length).toBeGreaterThan(50);
+      expect(haeuser(e[1].stadt, g, 1).length, s.id).toBeGreaterThan(50);
     }
   });
 
@@ -41,7 +41,7 @@ describe("Wachstum", () => {
 
 describe("Regeln", () => {
   it("die gewachsenen Städte erfüllen die Regeln ihres Stils fast alle", () => {
-    const fall: [string, number, string][] = [["roemisch", 1, "roemisch"], ["europaeisch", 1, "mittelalter"], ["amerikanisch", 0, "eisenbahn"]];
+    const fall: [string, number, string][] = [["roemisch", 1, "roemisch"], ["europaeisch", 1, "mittelalter"], ["amerikanisch", 0, "eisenbahn"], ["residenz", 1, "residenz"], ["festung", 0, "festung"]];
     for (const [stil, i, rs] of fall) {
       const r = pruefe(REGELSAETZE.find(x => x.id === rs)!.regeln, epochen[stil][i].stadt, g, null);
       expect(r.filter(x => x.ok).length / r.length, `${stil}: ${r.filter(x => !x.ok).map(x => x.id)}`).toBeGreaterThanOrEqual(0.85);

@@ -22,6 +22,11 @@ export function standardZone(s: Stadt, p: P): ZonenTyp {
   const inMauer = s.mauern.some(m => inPoly(p, m));
   if (s.stil === "roemisch") return inMauer ? "insulae" : "suburbium";
   if (s.stil === "europaeisch") return inMauer ? "altstadt" : "vorstadt";
+  if (s.stil === "residenz") return "residenz";
+  if (s.stil === "festung") return inMauer ? "festung" : "vorstadt";
+  if (s.stil === "sozialistisch") return "platte";
+  if (s.stil === "lateinamerika") return "kolonial";
+  if (s.stil === "orientalisch") return inMauer ? "medina" : "ville";
   return "kleinstadt";
 }
 

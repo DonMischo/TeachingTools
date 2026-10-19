@@ -9,167 +9,21 @@
 import { hoeheBei, inAue, istWasser, neigungBei, wasserAbstand, type Gelaende } from "@/lib/gelaende/gelaende";
 import { perlin, zufallsquelle } from "@/lib/gelaende/rauschen";
 import {
-  abstand, geschlossen, inPoly, laenge, punktBei, rechteck, schnitte, skaliere, zurLinie, type P,
+  abstand, geschlossen, inPoly, laenge, rechteck, schnitte, skaliere, zurLinie, type P,
 } from "./geometrie";
-import { BAUTEN, kopie, leereStadt, type Bau, type BauTyp, type Epoche, type Stadt, type Stil, type Strasse, type StrassenArt, type ZonenTyp } from "./modell";
+import { kopie, leereStadt, type Epoche, type Stadt, type Stil, type ZonenTyp } from "./modell";
+import { auslauf, band, bau, baubar, baubarNahe, besterPunkt, fernstrasse, flussRichtung, freiraeumen, nebenStrasse, raster, rechteckPoly, zerschneiden, type Z } from "./hilfen";
 import { stromlinien, type Feld } from "./tensor";
-import { glaetten, randPunkt, weg } from "./wege";
+import { industrialisierung, industrieUndModerne, moderne } from "./moderne";
+import { randPunkt, weg } from "./wege";
+import { residenz } from "./stile/residenz";
+import { festung } from "./stile/festung";
+import { sozialistisch } from "./stile/sozialistisch";
+import { lateinamerika } from "./stile/lateinamerika";
+import { orientalisch } from "./stile/orientalisch";
 
-type Z = () => number;
-
-// ---------------------------------------------------------------- Hilfen
-
-/** Band um einen Linienzug als Polygon */
-export function band(l: P[], breite: number): P[] {
-  if (l.length < 2) return [];
-  const links: P[] = [], rechts: P[] = [];
-  for (let i = 0; i < l.length; i++) {
-    const a = l[Math.max(0, i - 1)], b = l[Math.min(l.length - 1, i + 1)];
-    const d = abstand(a, b) || 1;
-    const nx = -(b.y - a.y) / d, ny = (b.x - a.x) / d;
-    links.push({ x: l[i].x + nx * breite / 2, y: l[i].y + ny * breite / 2 });
-    rechts.push({ x: l[i].x - nx * breite / 2, y: l[i].y - ny * breite / 2 });
-  }
-  return [...links, ...rechts.reverse()];
-}
-
-/** Linienzug fein abtasten und an Wasser (bzw. Meer) zerschneiden */
-export function zerschneiden(l: P[], g: Gelaende, nurMeer = false): P[][] {
-  const aus: P[][] = [];
-  let cur: P[] = [];
-  const nass = (p: P) => (nurMeer ? g.wasser[Math.floor(Math.max(0, Math.min(g.n - 1, p.y / g.zelle))) * g.n + Math.floor(Math.max(0, Math.min(g.n - 1, p.x / g.zelle)))] === 2 : istWasser(g, p.x, p.y));
-  for (let i = 0; i + 1 < l.length; i++) {
-    const a = l[i], b = l[i + 1], d = abstand(a, b);
-    const k = Math.max(1, Math.ceil(d / 6));
-    for (let s = 0; s <= k; s++) {
-      if (s === 0 && i > 0) continue;
-      const p = { x: a.x + (b.x - a.x) * s / k, y: a.y + (b.y - a.y) * s / k };
-      const draussen = p.x < 0 || p.y < 0 || p.x > g.breite || p.y > g.breite;
-      if (nass(p) || draussen) { if (cur.length > 1) aus.push(cur); cur = []; }
-      else if (!cur.length || s === k || s === 0) cur.push(p);
-      else { cur.push(p); }
-    }
-  }
-  if (cur.length > 1) aus.push(cur);
-  return aus.map(c => c.length > 2 ? [c[0], ...c.slice(1, -1).filter((_, i) => i % 4 === 3), c[c.length - 1]] : c);
-}
-
-/** Bauwerke mit Platz (Forum, Markt …) schneiden Neben­straßen und Gassen weg */
-const PLATZ: BauTyp[] = ["forum", "markt", "thermen", "theater", "kloster", "burg", "gericht", "einkauf", "bahnhof", "buero", "amphitheater", "kirche", "fabrik", "schule", "friedhof"];
-export function freiraeumen(s: Stadt): void {
-  const flaechen = s.bauten.filter(b => PLATZ.includes(b.typ)).map(b => rechteck(b, BAUTEN[b.typ].b + 6, BAUTEN[b.typ].h + 6, b.dreh ?? 0));
-  if (!flaechen.length) return;
-  const neu: Strasse[] = [];
-  for (const st of s.strassen) {
-    if (st.art !== "neben" && st.art !== "gasse") { neu.push(st); continue; }
-    let cur: P[] = [];
-    for (let i = 0; i + 1 < st.punkte.length; i++) {
-      const a = st.punkte[i], b = st.punkte[i + 1];
-      const k = Math.max(1, Math.ceil(abstand(a, b) / 4));
-      for (let q = i ? 1 : 0; q <= k; q++) {
-        const p = { x: a.x + (b.x - a.x) * q / k, y: a.y + (b.y - a.y) * q / k };
-        if (flaechen.some(f => inPoly(p, f))) { if (cur.length > 1) neu.push({ ...st, punkte: duenn(cur) }); cur = []; }
-        else cur.push(p);
-      }
-    }
-    if (cur.length > 1) neu.push({ ...st, punkte: duenn(cur) });
-  }
-  s.strassen = neu;
-}
-const duenn = (c: P[]) => (c.length > 2 ? [c[0], ...c.slice(1, -1).filter((_, i) => i % 3 === 2), c[c.length - 1]] : c);
-
-/** gerades Straßenraster in einem Rechteck, am Wasser unterbrochen */
-function raster(g: Gelaende, x0: number, y0: number, x1: number, y1: number, bx: number, by: number, ox: number, oy: number, art: StrassenArt = "neben", drin?: (p: P) => boolean): Strasse[] {
-  const aus: Strasse[] = [];
-  const zu = (l: P[]) => {
-    for (const st of zerschneiden(l, g)) {
-      if (!drin) { aus.push({ art, punkte: st }); continue; }
-      // nur Teile innerhalb des Gebiets
-      let cur: P[] = [];
-      const feinst: P[] = [];
-      for (let i = 0; i + 1 < st.length; i++) {
-        const a = st[i], b = st[i + 1], k = Math.max(1, Math.ceil(abstand(a, b) / 8));
-        for (let q = i ? 1 : 0; q <= k; q++) feinst.push({ x: a.x + (b.x - a.x) * q / k, y: a.y + (b.y - a.y) * q / k });
-      }
-      for (const p of feinst) {
-        if (drin(p)) cur.push(p);
-        else { if (cur.length > 1) aus.push({ art, punkte: [cur[0], cur[cur.length - 1]] }); cur = []; }
-      }
-      if (cur.length > 1) aus.push({ art, punkte: [cur[0], cur[cur.length - 1]] });
-    }
-  };
-  for (let x = ox + Math.ceil((x0 - ox) / bx) * bx; x <= x1 + 0.01; x += bx) zu([{ x, y: y0 }, { x, y: y1 }]);
-  for (let y = oy + Math.ceil((y0 - oy) / by) * by; y <= y1 + 0.01; y += by) zu([{ x: x0, y }, { x: x1, y }]);
-  return aus;
-}
-
-const rechteckPoly = (x0: number, y0: number, x1: number, y1: number): P[] => [{ x: x0, y: y0 }, { x: x1, y: y0 }, { x: x1, y: y1 }, { x: x0, y: y1 }];
-
-/** bester Punkt nach einer Bewertung über ein grobes Gitter */
-function besterPunkt(g: Gelaende, rand: number, wert: (p: P) => number): P | null {
-  let best: P | null = null, bw = -Infinity;
-  for (let y = rand; y <= g.breite - rand; y += 48) for (let x = rand; x <= g.breite - rand; x += 48) {
-    const p = { x, y };
-    const w = wert(p);
-    if (w > bw) { bw = w; best = p; }
-  }
-  return bw > -1e8 ? best : null;
-}
-
-/** Kann hier gebaut werden? kein Wasser, keine Aue, nicht zu steil */
-const baubar = (g: Gelaende, p: P, maxNeigung = 12) =>
-  p.x > 0 && p.y > 0 && p.x < g.breite && p.y < g.breite && !istWasser(g, p.x, p.y) && !inAue(g, p.x, p.y) && neigungBei(g, p.x, p.y) < maxNeigung;
-
-/** Punkt in der Nähe von p, der baubar ist (spiralförmig suchen) */
-function baubarNahe(g: Gelaende, p: P, z: Z, max = 300, neigung = 12): P | null {
-  if (baubar(g, p, neigung)) return p;
-  for (let r = 16; r <= max; r += 16) for (let k = 0; k < 12; k++) {
-    const w = (k / 12) * Math.PI * 2 + z() * 0.3;
-    const q = { x: p.x + Math.cos(w) * r, y: p.y + Math.sin(w) * r };
-    if (baubar(g, q, neigung)) return q;
-  }
-  return null;
-}
-
-/** Richtung des Flusses nahe p (Bogenmaß), sonst null */
-function flussRichtung(g: Gelaende, p: P): number | null {
-  if (g.flussLinie.length < 2) return null;
-  const r = zurLinie(p, g.flussLinie);
-  const a = g.flussLinie[r.seg], b = g.flussLinie[r.seg + 1];
-  return Math.atan2(b.y - a.y, b.x - a.x);
-}
-
-/** Fernstraße von Kartenrand zu Kartenrand durch p, dem Gelände folgend */
-function fernstrasse(g: Gelaende, p: P, w: number, steigung = 0.6, wasser = 30): P[] {
-  const a = randPunkt(p, w + Math.PI, g.breite), b = randPunkt(p, w, g.breite);
-  const k = { steigung, wasser };
-  const l1 = weg(g, a, p, k), l2 = weg(g, p, b, k);
-  return [...l1, ...l2.slice(1)];
-}
-
-function bau(s: Stadt, typ: BauTyp, p: P | null, dreh = 0): Bau | null {
-  if (!p) return null;
-  const b = { typ, x: p.x, y: p.y, dreh };
-  s.bauten.push(b);
-  return b;
-}
-
-/** Punkt neben einer Straße, Abstand d von ihr, auf der Seite s */
-function nebenStrasse(l: P[], weg: number, d: number, seite: 1 | -1): P {
-  const { p, dx, dy } = punktBei(l, weg);
-  return { x: p.x - dy * d * seite, y: p.y + dx * d * seite };
-}
-
-/** Teil des Linienzugs von Punkt q aus (nahe daran) in Richtung weg vom Zentrum c, Länge L */
-function auslauf(l: P[], q: P, c: P, L: number): P[] {
-  const r = zurLinie(q, l);
-  const vorwaerts = abstand(l[Math.min(l.length - 1, r.seg + 1)], c) > abstand(l[r.seg], c);
-  const aus: P[] = [r.q];
-  let s = 0;
-  if (vorwaerts) for (let i = r.seg + 1; i < l.length && s < L; i++) { s += abstand(aus[aus.length - 1], l[i]); aus.push(l[i]); }
-  else for (let i = r.seg; i >= 0 && s < L; i--) { s += abstand(aus[aus.length - 1], l[i]); aus.push(l[i]); }
-  return aus;
-}
+// für Planen und Tests
+export { band, zerschneiden, freiraeumen } from "./hilfen";
 
 // ---------------------------------------------------------------- Römisch
 
@@ -323,16 +177,6 @@ export function roemisch(g: Gelaende, seed: number): Epoche[] {
 
 // ---------------------------------------------------------------- Europäisch
 
-/** Ring: Industrialisierung (Bahnhof, Ring, Gründerzeit, Fabriken) und Moderne in einem Schritt */
-function industrieUndModerne(g: Gelaende, s: Stadt, kern: P[], c: P, z: Z, ring: boolean): string[] {
-  const neu: string[] = [];
-  industrialisierung(g, s, kern, c, z, ring);
-  neu.push("Bahnhof vor der Altstadt", "Gründerzeitviertel und Industrie an der Bahn");
-  moderne(g, s, kern, c, z);
-  neu.push("Großwohnsiedlung, Einfamilienhäuser, Umgehungsstraße");
-  return neu;
-}
-
 export interface EuropaeischerPlan { markt: P; R: number; burg: P | null }
 
 export function europaeischerStandort(g: Gelaende, z: Z): EuropaeischerPlan {
@@ -376,144 +220,6 @@ function mittelalterlicheMauer(g: Gelaende, m: P, R: number, seed: number): P[] 
     poly.push(p);
   }
   return poly;
-}
-
-function industrialisierung(g: Gelaende, s: Stadt, kern: P[], m: P, z: Z, ring: boolean) {
-  const R = Math.sqrt(kern.reduce((a, p) => Math.max(a, abstand(p, m) ** 2), 0));
-  if (ring) {
-    s.mauern = [];
-    s.strassen.push({ art: "ring", name: "Ring", punkte: geschlossen(kern) });
-    s.zonen.push({ typ: "park", poly: band(geschlossen(skaliere(kern, (R + 22) / R, m)), 26) });
-  }
-  // Bahn: flach, an der Altstadt vorbei, gern im Tal
-  const w = flussRichtung(g, m) ?? z() * Math.PI;
-  const nx = -Math.sin(w), ny = Math.cos(w);
-  let best: P[] | null = null, bk = Infinity;
-  for (const seite of [1, -1]) {
-    const mitte = { x: m.x + nx * (R + 330) * seite, y: m.y + ny * (R + 330) * seite };
-    if (mitte.x < 100 || mitte.y < 100 || mitte.x > g.breite - 100 || mitte.y > g.breite - 100) continue;
-    if (istWasser(g, mitte.x, mitte.y)) continue;
-    const kosten = neigungBei(g, mitte.x, mitte.y) + (inAue(g, mitte.x, mitte.y) ? 3 : 0);
-    if (kosten < bk) {
-      bk = kosten;
-      const extra = (p: P) => (abstand(p, m) < R + 140 ? 60 : 0);
-      const a = randPunkt(mitte, w + Math.PI, g.breite), b = randPunkt(mitte, w, g.breite);
-      best = [...weg(g, a, mitte, { steigung: 4, wasser: 8, extra }), ...weg(g, mitte, b, { steigung: 4, wasser: 8, extra }).slice(1)];
-    }
-  }
-  if (!best) {
-    const mitte = { x: m.x + nx * (R + 330), y: m.y + ny * (R + 330) };
-    best = [randPunkt(mitte, w + Math.PI, g.breite), randPunkt(mitte, w, g.breite)];
-  }
-  const bahn = glaetten(best, 2);
-  s.strassen.push({ art: "bahn", name: "Eisenbahn", punkte: bahn });
-  const rb = zurLinie(m, bahn);
-  const ra = bahn[rb.seg], rbb = bahn[rb.seg + 1];
-  const bw = Math.atan2(rbb.y - ra.y, rbb.x - ra.x);
-  const zuM = { x: m.x - rb.q.x, y: m.y - rb.q.y }, zl = Math.hypot(zuM.x, zuM.y) || 1;
-  const bhf = { x: rb.q.x + (zuM.x / zl) * 28, y: rb.q.y + (zuM.y / zl) * 28 };
-  bau(s, "bahnhof", bhf, bw);
-  // Bahnhofstraße zum nächsten Punkt der Altstadt
-  const zielAlt = zurLinie(bhf, geschlossen(kern)).q;
-  const bhfStr = [{ x: bhf.x + (zuM.x / zl) * 20, y: bhf.y + (zuM.y / zl) * 20 }, zielAlt];
-  s.strassen.push({ art: "haupt", name: "Bahnhofstraße", punkte: bhfStr });
-  // Gründerzeit zwischen Altstadt und Bahn (und etwas darüber hinaus)
-  const gz = skaliere(kern, (R + 430) / R, m);
-  const bwinkel = Math.atan2(bhfStr[1].y - bhfStr[0].y, bhfStr[1].x - bhfStr[0].x);
-  const feld: Feld = { basen: [{ art: "raster", c: bhf, winkel: bwinkel, groesse: 3000 }, { art: "radial", c: m, groesse: R * 0.9 }] };
-  const drin = (p: P) => inPoly(p, gz) && !inPoly(p, skaliere(kern, (R + 30) / R, m)) && !istWasser(g, p.x, p.y) && zurLinie(p, bahn).d > 22 && neigungBei(g, p.x, p.y) < 14;
-  const linien = stromlinien(feld, drin, {
-    dsep: 95, dtest: 40, schritt: 8, maxLaenge: 1400, minLaenge: 60, verbinden: 45, zufall: z,
-    keime: [...bhfStr, ...kern.filter((_, i) => i % 3 === 0)], rahmen: { x0: m.x - R - 430, y0: m.y - R - 430, x1: m.x + R + 430, y1: m.y + R + 430 }, max: 40,
-  });
-  s.strassen.push(...linien.map(punkte => ({ art: "neben" as const, punkte })));
-  s.zonen.splice(Math.max(0, s.zonen.findIndex(zz => zz.typ === "altstadt")), 0, { typ: "gruenderzeit", poly: gz });
-  // Industrie an der Bahn
-  const um = auslauf(bahn, rb.q, { x: rb.q.x - Math.cos(bw) * 9999, y: rb.q.y - Math.sin(bw) * 9999 }, 700);
-  const um2 = auslauf(bahn, rb.q, { x: rb.q.x + Math.cos(bw) * 9999, y: rb.q.y + Math.sin(bw) * 9999 }, 700);
-  for (const st of [um, um2]) {
-    if (st.length < 2) continue;
-    const L = laenge(st);
-    s.zonen.push({ typ: "industrie", poly: band(st.slice(1), 170) });
-    for (let d = 160; d < L - 40; d += 170) {
-      const seite = (z() > 0.5 ? 1 : -1) as 1 | -1;
-      const p = nebenStrasse(st, d, 52, seite);
-      const { dx, dy } = punktBei(st, d);
-      if (baubar(g, p, 12) && !inPoly(p, kern)) bau(s, "fabrik", p, Math.atan2(dy, dx));
-    }
-  }
-  const fl = s.bauten.find(b => b.typ === "fabrik");
-  if (fl) s.namen = [...(s.namen ?? []), { text: "Industrie", x: fl.x, y: fl.y - 40 }];
-  const mh = linien.filter(l => l.length > 3).slice(0, 2);
-  for (const l of mh) bau(s, "mietshaus", nebenStrasse(l, Math.min(60, laenge(l) / 2), 34, 1));
-  freiraeumen(s);
-}
-
-function moderne(g: Gelaende, s: Stadt, kern: P[], m: P, z: Z) {
-  const R = Math.sqrt(kern.reduce((a, p) => Math.max(a, abstand(p, m) ** 2), 0));
-  const bahn = s.strassen.find(st => st.art === "bahn")?.punkte ?? [];
-  const frei = (p: P, r: number) => {
-    for (let i = 0; i < 9; i++) {
-      const q = { x: p.x + Math.cos(i * 0.7) * r * (i % 3) / 2, y: p.y + Math.sin(i * 0.7) * r * (i % 3) / 2 };
-      if (!baubar(g, q, 10)) return false;
-    }
-    return !s.zonen.some(zz => zz.typ !== "industrie" && inPoly(p, zz.poly));
-  };
-  const plaetze: P[] = [];
-  for (let d = R + 650; d < R + 1250 && plaetze.length < 12; d += 80) for (let k = 0; k < 16; k++) {
-    const w = (k / 16) * Math.PI * 2;
-    const p = { x: m.x + Math.cos(w) * d, y: m.y + Math.sin(w) * d };
-    if (p.x > 240 && p.y > 240 && p.x < g.breite - 240 && p.y < g.breite - 240 && frei(p, 200) && (!bahn.length || zurLinie(p, bahn).d > 200)) plaetze.push(p);
-  }
-  const verbinde = (von: P) => {
-    // Zufahrt zur nächsten Hauptstraße
-    let best: P | null = null, bd = Infinity;
-    for (const st of s.strassen) if (st.art === "haupt" || st.art === "fernstrasse" || st.art === "ring") {
-      const r = zurLinie(von, st.punkte);
-      if (r.d < bd) { bd = r.d; best = r.q; }
-    }
-    if (best) s.strassen.push({ art: "haupt", punkte: weg(g, von, best, { steigung: 0.8, wasser: 20, raster: 20 }) });
-  };
-  // Großwohnsiedlung: Plattenbauten an einer Ringstraße
-  const gw = plaetze[0];
-  if (gw) {
-    const dreh = z() * Math.PI;
-    const poly = rechteck(gw, 380, 280, dreh);
-    s.zonen.push({ typ: "grosssiedlung", poly });
-    s.strassen.push({ art: "neben", punkte: geschlossen(rechteck(gw, 300, 200, dreh)) });
-    s.strassen.push({ art: "neben", punkte: [rechteck(gw, 300, 0, dreh)[0], rechteck(gw, 300, 0, dreh)[1]] });
-    bau(s, "schule", gw, dreh);
-    verbinde(rechteck(gw, 300, 200, dreh)[0]);
-  }
-  // Einfamilienhäuser: geschwungene Straßen, Sackgassen
-  const ef = plaetze.find(p => !gw || abstand(p, gw) > 650);
-  if (ef) {
-    const poly = rechteck(ef, 520, 420, z() * Math.PI);
-    s.zonen.push({ typ: "einfamilienhaus", poly });
-    const feld: Feld = { basen: [{ art: "radial", c: ef, groesse: 260 }, { art: "raster", c: ef, winkel: z() * 3, groesse: 300 }], rauschen: { r: perlin(Math.floor(z() * 1e6)), staerke: 0.6, skala: 260 } };
-    const l = stromlinien(feld, p => inPoly(p, skaliere(poly, 0.92, ef)) && baubar(g, p, 18), {
-      dsep: 62, dtest: 26, schritt: 6, maxLaenge: 600, minLaenge: 40, verbinden: 20, zufall: z, keime: [ef], rahmen: { x0: ef.x - 270, y0: ef.y - 220, x1: ef.x + 270, y1: ef.y + 220 }, max: 16,
-    });
-    s.strassen.push(...l.map(punkte => ({ art: "neben" as const, punkte })));
-    verbinde(ef);
-  }
-  // Umgehungsstraße mit Gewerbegebiet an der Ausfahrt
-  const w = (flussRichtung(g, m) ?? 0) + Math.PI / 2 * (z() > 0.5 ? 0 : 1) + (z() - 0.5) * 0.4;
-  const off = { x: m.x + Math.cos(w + Math.PI / 2) * (R + 1050), y: m.y + Math.sin(w + Math.PI / 2) * (R + 1050) };
-  const umg = [...weg(g, randPunkt(off, w + Math.PI, g.breite), off, { steigung: 1, wasser: 4, raster: 32 }), ...weg(g, off, randPunkt(off, w, g.breite), { steigung: 1, wasser: 4, raster: 32 }).slice(1)];
-  if (umg.length > 1) {
-    s.strassen.push({ art: "autobahn", name: "Umgehung", punkte: glaetten(umg, 2) });
-    const r = zurLinie(m, umg);
-    const zu = { x: m.x - r.q.x, y: m.y - r.q.y }, zl = Math.hypot(zu.x, zu.y) || 1;
-    const ge = { x: r.q.x + zu.x / zl * 170, y: r.q.y + zu.y / zl * 170 };
-    if (baubar(g, ge, 10)) {
-      s.zonen.push({ typ: "gewerbe", poly: rechteck(ge, 380, 240, Math.atan2(zu.y, zu.x)) });
-      bau(s, "einkauf", ge, Math.atan2(zu.y, zu.x) + Math.PI / 2);
-      s.strassen.push({ art: "haupt", punkte: [{ x: r.q.x, y: r.q.y }, { x: ge.x - zu.x / zl * 70, y: ge.y - zu.y / zl * 70 }] });
-      verbinde({ x: ge.x + zu.x / zl * 70, y: ge.y + zu.y / zl * 70 });
-    }
-  }
-  freiraeumen(s);
 }
 
 export function europaeisch(g: Gelaende, seed: number): Epoche[] {
@@ -627,7 +333,22 @@ export function europaeisch(g: Gelaende, seed: number): Epoche[] {
     neu: ["Großwohnsiedlung (Plattenbau)", "Einfamilienhausgebiet mit Sackgassen", "Umgehungsstraße", "Einkaufszentrum an der Ausfahrt", "Fußgängerzone in der Altstadt"],
     stadt: kopie(s),
   };
-  return [e1, e2, e3, e4, e5];
+
+  // um 2020: Umbau der Stadt — Brachen, Gentrifizierung, Reurbanisierung
+  s.zonen = s.zonen.map(x => (x.typ === "industrie" ? { ...x, typ: "konversion" as const } : x));
+  s.bauten = s.bauten.filter((b, i) => b.typ !== "fabrik" || i % 3 === 0);
+  if (g.flussLinie.length) {
+    const ufer = auslauf(g.flussLinie, zurLinie(M, g.flussLinie).q, { x: M.x + 9999, y: M.y }, 500);
+    if (ufer.length > 1) s.zonen.push({ typ: "park", poly: band(ufer, 90) });
+  }
+  s.namen = [{ text: "Fußgängerzone", x: M.x + 20, y: M.y + 50 }, { text: "Gentrifizierung", x: M.x + R + 120, y: M.y - R - 60 }];
+  const e6: Epoche = {
+    jahr: "um 2020", titel: "Umbau der Stadt",
+    text: "Viele Fabriken haben geschlossen. Auf den Industriebrachen entstehen neue Quartiere mit Wohnungen, Büros und Parks (Konversion); alte Fabrikhallen werden zu Lofts und Kulturorten. Die Gründerzeitviertel sind wieder beliebt: Sanierte Altbauten ziehen Studierende, Kreative und Besserverdienende an — die Mieten steigen, Alteingesessene müssen wegziehen (Gentrifizierung). Junge Menschen ziehen zurück in die Innenstadt (Reurbanisierung), am Fluss entsteht ein Uferpark.",
+    neu: ["Neue Quartiere auf Industriebrachen", "Gentrifizierung der Gründerzeitviertel", "Reurbanisierung", "Uferpark am Fluss"],
+    stadt: kopie(s),
+  };
+  return [e1, e2, e3, e4, e5, e6];
 }
 
 // ---------------------------------------------------------------- Amerikanisch
@@ -776,9 +497,16 @@ export function amerikanisch(g: Gelaende, seed: number): Epoche[] {
 }
 
 export function wachse(stil: Stil, g: Gelaende, seed: number): Epoche[] {
-  if (stil === "roemisch") return roemisch(g, seed);
-  if (stil === "europaeisch") return europaeisch(g, seed);
-  return amerikanisch(g, seed);
+  switch (stil) {
+    case "roemisch": return roemisch(g, seed);
+    case "europaeisch": return europaeisch(g, seed);
+    case "amerikanisch": return amerikanisch(g, seed);
+    case "residenz": return residenz(g, seed);
+    case "festung": return festung(g, seed);
+    case "sozialistisch": return sozialistisch(g, seed);
+    case "lateinamerika": return lateinamerika(g, seed);
+    case "orientalisch": return orientalisch(g, seed);
+  }
 }
 
 /** Zonentypen, die in einer Stadt vorkommen (für Quiz und Legende) */

@@ -40,6 +40,11 @@ const SANDKASTEN_BAUTEN: Record<Stil, BauTyp[]> = {
   roemisch: ["forum", "tempel", "thermen", "theater", "amphitheater", "nekropole", "castellum", "hafen", "villa", "tor"],
   europaeisch: ["markt", "kirche", "rathaus", "burg", "kloster", "muehle", "spital", "friedhof", "tor", "bahnhof", "fabrik", "mietshaus", "schule", "einkauf"],
   amerikanisch: ["depot", "gericht", "silo", "kirche", "schule", "fabrik", "hochhaus", "einkauf", "buero"],
+  residenz: ["schloss", "kirche", "rathaus", "markt", "theater", "kaserne", "tor", "bahnhof"],
+  festung: ["paradeplatz", "kirche", "kaserne", "zitadelle", "tor", "rathaus", "markt", "bahnhof"],
+  sozialistisch: ["werk", "aufmarschplatz", "kulturhaus", "schule", "kaufhalle", "poliklinik", "einkauf", "bahnhof"],
+  lateinamerika: ["plaza", "kathedrale", "cabildo", "kirche", "fabrik", "einkauf", "hochhaus", "schule"],
+  orientalisch: ["moschee", "kasbah", "hammam", "karawanserei", "tor", "friedhof", "bahnhof", "einkauf"],
 };
 const ALLE_WERKZEUGE: Werkzeug[] = ["fernstrasse", "haupt", "neben", "gasse", "ring", "autobahn", "bahn", "aquaedukt", "mauer", "rechteckmauer", "raster", "zone"];
 

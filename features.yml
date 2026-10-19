@@ -348,14 +348,16 @@ simulationen:
   - id: stadt
     name: Stadtentwicklung
     kann:
-      - Römische, europäische und amerikanische Stadt auf demselben Zufallsgelände (5 Landschaften, Fluss mit Aue und Furt, Burgberg, Relief, Erosion auf Knopfdruck)
+      - Acht Stadttypen auf demselben Zufallsgelände (5 Landschaften, Fluss mit Aue und Furt, Burgberg, Relief, Erosion auf Knopfdruck) - römisch, europäisch, amerikanisch, Residenzstadt, Festungsstadt, sozialistisch, lateinamerikanisch, orientalisch
+      - Europäische Stadt bis um 2020 (Konversion, Gentrifizierung, Reurbanisierung); sozialistische Stadt mit Schrumpfung und Rückbau
+      - Stadtstrukturmodelle als Schema (Burgess, Hoyt, Harris-Ullman, Lateinamerika, Orient)
       - Wachstum Epoche für Epoche mit Erklärung, »Neu in dieser Epoche« und Viertel-Legende
       - Quiz zur Karte — Bauwerke, Viertel und Straßen anklicken, Wissensfragen mit Begründung, Epoche erkennen
-      - Fünf Planungsaufträge mit Regelprüfung (✅/❌, Hinweis, Warum, Stelle in der Karte) und Beispiel-Lösung auf demselben Gelände
+      - Sieben Planungsaufträge (auch Residenz- und Festungsstadt) mit Regelprüfung (✅/❌, Hinweis, Warum, Stelle in der Karte) und Beispiel-Lösung auf demselben Gelände
       - Sandkasten mit allen Werkzeugen, Viertel-Pinsel und optionaler Prüfung
       - Häuser entlang der Straßen je Viertel, Gassen und Vororte aus Tensorfeldern (Idee MapGenerator), alte Straßen per günstigstem Weg übers Gelände
       - Geländeinfo unter dem Mauszeiger (Höhe, Neigung, Aue, Abstand zum Wasser)
-      - 3D-Flug im Stil von Voxel Space
+      - 3D-Flug im Stil von Voxel Space mit Fassaden, Fenstern, Satteldächern, Wäldern und eingebackenem Licht
       - Als TaskCrawler-Werkzeug mit festem Reiter und Stil
   - id: erosion
     name: Erosion
@@ -364,6 +366,8 @@ simulationen:
       - Regler für Regen, Lösekraft, Standfestigkeit und Verdunstung
       - Ansichten Gelände, Wasser, Abtrag/Ablagerung, Vorher; stärkster Abtrag und Ablagerung in Metern
       - Gleiches Zufallsgelände wie die Stadtentwicklung, Delta an der Küste
+      - Regen- und Trockenzeit, Zufluss am Oberlauf, neue Flüsse und Seen; feste Höhenskala, wahlweise 512²
+      - Reiter Küste - Steilküste, Flachküste, Marsch mit Deich; Sturmflut, Meeresspiegelanstieg, Deichbruch, Querprofil; Verweis zur Küstendynamik und zurück
       - 3D-Flug im Stil von Voxel Space
       - Als TaskCrawler-Werkzeug mit fester Ansicht
   - id: erfolge

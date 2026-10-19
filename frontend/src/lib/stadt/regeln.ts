@@ -5,6 +5,7 @@
 import { hoeheBei, inAue, istWasser, neigungBei, wasserAbstand, type Gelaende } from "@/lib/gelaende/gelaende";
 import { abstand, flaeche, geschlossen, inPoly, laenge, richtung, schnitte, schwerpunkt, winkelAbstand, zurLinie, type P } from "./geometrie";
 import { zoneBei } from "./haeuser";
+import { BAUTEN } from "./modell";
 import type { BauTyp, Stadt, Stil, StrassenArt } from "./modell";
 
 export interface Pruefung { ok: boolean; hinweis: string; ort?: P }
@@ -609,6 +610,202 @@ const AUTOSTADT: Regel[] = [
   },
 ];
 
+// ---------------------------------------------------------------- Residenzstadt
+
+/** Straßen, deren Verlängerung genau auf p zielt und deren eines Ende nahe p liegt */
+function strahlenAuf(s: Stadt, p: P): { winkel: number; laenge: number }[] {
+  const aus: { winkel: number; laenge: number }[] = [];
+  for (const st of strassen(s, "haupt", "neben", "gasse", "fernstrasse")) {
+    const a = st.punkte[0], b = st.punkte[st.punkte.length - 1];
+    const [nah, fern] = abstand(a, p) < abstand(b, p) ? [a, b] : [b, a];
+    if (abstand(nah, p) > 260 || abstand(fern, p) < 150) continue;
+    // Abstand der Geraden durch nah→fern vom Punkt p
+    const dx = fern.x - nah.x, dy = fern.y - nah.y, l = Math.hypot(dx, dy);
+    const d = Math.abs((p.x - nah.x) * dy - (p.y - nah.y) * dx) / l;
+    if (d < 35) aus.push({ winkel: Math.atan2(fern.y - p.y, fern.x - p.x), laenge: l });
+  }
+  // zerschnittene Strahlen (Bauwerk dazwischen) nur einmal zählen
+  return aus.filter((x, i) => !aus.some((y, j) => j < i && Math.abs(Math.atan2(Math.sin(x.winkel - y.winkel), Math.cos(x.winkel - y.winkel))) < 0.03));
+}
+
+/** Länge der Achse in Richtung w: weitester Punkt einer Hauptstraße nahe der Geraden ab p */
+function achsenLaenge(s: Stadt, p: P, w: number): number {
+  let l = 0;
+  const ux = Math.cos(w), uy = Math.sin(w);
+  for (const st of strassen(s, "haupt", "ring")) for (const q of st.punkte) {
+    const t = (q.x - p.x) * ux + (q.y - p.y) * uy;
+    const d = Math.abs(-(q.x - p.x) * uy + (q.y - p.y) * ux);
+    if (t > 0 && d < 35) l = Math.max(l, t);
+  }
+  return l;
+}
+
+const RESIDENZ: Regel[] = [
+  {
+    id: "schloss", text: "Ein Schloss ist gesetzt", warum: "Das Schloss des Fürsten ist der Ausgangspunkt der ganzen Planung.",
+    pruefe: s => (eins(s, "schloss") ? { ok: true, hinweis: "Schloss vorhanden." } : fehlt("Schloss")),
+  },
+  {
+    id: "eben", text: "Das Schloss steht auf ebenem, trockenem Grund", warum: "Für Achsen, Gärten und einen regelmäßigen Grundriss braucht es weites, flaches Land — Residenzen entstanden oft »auf der grünen Wiese«.",
+    pruefe: (s, g) => {
+      const b = eins(s, "schloss");
+      if (!b) return fehlt("Schloss");
+      const n = neigungBei(g, b.x, b.y);
+      if (inAue(g, b.x, b.y) || istWasser(g, b.x, b.y)) return { ok: false, hinweis: "Das Schloss steht in der Aue.", ort: b };
+      return n < 6 ? { ok: true, hinweis: `${n.toFixed(1)} % Neigung.` } : { ok: false, hinweis: `${n.toFixed(1)} % Neigung — zu steil für einen Barockgarten.`, ort: b };
+    },
+  },
+  {
+    id: "strahlen", text: "Mindestens fünf Straßen laufen strahlenförmig aufs Schloss zu", warum: "Alle Wege führen zum Herrscher: Der Grundriss macht die absolute Macht sichtbar (Karlsruhe: 32 Strahlen).",
+    pruefe: s => {
+      const b = eins(s, "schloss");
+      if (!b) return fehlt("Schloss");
+      const n = strahlenAuf(s, b).length;
+      return n >= 5 ? { ok: true, hinweis: `${n} Straßen zielen aufs Schloss.` } : { ok: false, hinweis: `Erst ${n} Straßen zielen genau aufs Schloss.`, ort: b };
+    },
+  },
+  {
+    id: "achse", text: "Eine lange Hauptachse vom Schloss (über 700 m)", warum: "Die Mittelachse ist die Bühne für Auftritte des Fürsten — Paraden, Einzüge, Feste.",
+    pruefe: s => {
+      const b = eins(s, "schloss");
+      if (!b) return fehlt("Schloss");
+      const l = Math.max(0, ...strahlenAuf({ ...s, strassen: strassen(s, "haupt") }, b).map(x => achsenLaenge(s, b, x.winkel)));
+      return l > 700 ? { ok: true, hinweis: `Hauptachse ${m0(l)}.` } : { ok: false, hinweis: l ? `Die Hauptachse ist nur ${m0(l)} lang.` : "Keine Hauptstraße zielt aufs Schloss.", ort: b };
+    },
+  },
+  {
+    id: "symmetrie", text: "Die Strahlen liegen symmetrisch zur Achse", warum: "Symmetrie ist das Ordnungsprinzip des Barock: links wie rechts.",
+    pruefe: s => {
+      const b = eins(s, "schloss");
+      if (!b) return fehlt("Schloss");
+      const st = strahlenAuf(s, b);
+      const h = strahlenAuf({ ...s, strassen: strassen(s, "haupt") }, b).sort((x, y) => y.laenge - x.laenge)[0];
+      if (!h || st.length < 3) return { ok: false, hinweis: "Erst Hauptachse und Strahlen zeichnen." };
+      let links = 0, rechts = 0;
+      for (const x of st) {
+        const d = Math.atan2(Math.sin(x.winkel - h.winkel), Math.cos(x.winkel - h.winkel));
+        if (Math.abs(d) < 0.05 || Math.abs(d) > Math.PI - 0.05) continue;
+        if (d > 0) links++; else rechts++;
+      }
+      return Math.abs(links - rechts) <= 2 && links > 0 ? { ok: true, hinweis: `${links} links, ${rechts} rechts.` } : { ok: false, hinweis: `${links} Strahlen links, ${rechts} rechts der Achse.` };
+    },
+  },
+  {
+    id: "garten", text: "Ein Schlossgarten liegt am Schloss", warum: "Der Barockgarten setzt die Ordnung in der Natur fort — geometrische Beete, Alleen, Sichtachsen.",
+    pruefe: s => {
+      const b = eins(s, "schloss");
+      if (!b) return fehlt("Schloss");
+      const z = s.zonen.find(x => (x.typ === "schlossgarten" || x.typ === "park") && x.poly.some(q => abstand(q, b) < 450));
+      return z ? { ok: true, hinweis: "Garten vorhanden." } : { ok: false, hinweis: "Male mit 🎨 ein Viertel »Schlossgarten« ans Schloss.", ort: b };
+    },
+  },
+  {
+    id: "markt", text: "Markt und Kirche liegen auf oder an der Hauptachse", warum: "Auch Bürger und Kirche ordnen sich der Achse des Fürsten unter.",
+    pruefe: s => {
+      const b = eins(s, "schloss"), m = eins(s, "markt"), k = alle(s, "kirche");
+      if (!b) return fehlt("Schloss");
+      if (!m) return fehlt("Marktplatz");
+      // Achse = der Strahl einer Hauptstraße, der am weitesten reicht
+      const h = strahlenAuf({ ...s, strassen: strassen(s, "haupt") }, b).sort((x, y) => achsenLaenge(s, b, y.winkel) - achsenLaenge(s, b, x.winkel))[0];
+      if (!h) return { ok: false, hinweis: "Keine Hauptachse." };
+      const achse = [b, { x: b.x + Math.cos(h.winkel) * 5000, y: b.y + Math.sin(h.winkel) * 5000 }];
+      const ok = zurLinie(m, achse).d < 70 && k.some(x => zurLinie(x, achse).d < 140);
+      return ok ? { ok: true, hinweis: "Auf der Achse." } : { ok: false, hinweis: "Markt oder Kirche liegen abseits der Achse.", ort: m };
+    },
+  },
+];
+
+// ---------------------------------------------------------------- Festungsstadt
+
+/** Spitzen eines Walls: Ecken, die deutlich weiter außen liegen als ihre Nachbarn */
+function spitzen(m: P[]): number {
+  const c = schwerpunkt(m);
+  const r = m.map(p => abstand(p, c));
+  let n = 0;
+  for (let i = 0; i < m.length; i++) {
+    const a = r[(i - 1 + m.length) % m.length], b = r[(i + 1) % m.length];
+    if (r[i] > a * 1.06 && r[i] > b * 1.06) n++;
+  }
+  return n;
+}
+
+const FESTUNG: Regel[] = [
+  {
+    id: "bastionen", text: "Der Wall hat mindestens vier Bastionen (Spitzen)", warum: "Aus den Bastionen beschießen Verteidiger die Flanken der Nachbarn — es gibt keinen toten Winkel, an dem sich Angreifer verstecken können.",
+    pruefe: s => {
+      const m = mauerUm(s, eins(s, "paradeplatz"));
+      if (!m) return fehlt("Wall");
+      const n = spitzen(m);
+      return n >= 4 ? { ok: true, hinweis: `${n} Bastionen.` } : { ok: false, hinweis: `Erst ${n} Spitzen — zeichne den Wall sternförmig.`, ort: schwerpunkt(m) };
+    },
+  },
+  {
+    id: "platz", text: "Der Paradeplatz liegt in der Mitte", warum: "Von der Mitte aus erreicht die Garnison alle Bastionen gleich schnell.",
+    pruefe: s => {
+      const p = eins(s, "paradeplatz"), m = mauerUm(s, p);
+      if (!p) return fehlt("Paradeplatz");
+      if (!m) return fehlt("Wall");
+      const d = abstand(p, schwerpunkt(m));
+      return d < 90 ? { ok: true, hinweis: "Genau in der Mitte." } : { ok: false, hinweis: `${m0(d)} neben der Mitte.`, ort: p };
+    },
+  },
+  {
+    id: "tore", text: "Vier Straßen führen durch Tore hinaus", warum: "Wenige Tore sind leichter zu verteidigen — aber Handel und Truppen müssen hinein und hinaus.",
+    pruefe: s => {
+      const m = mauerUm(s, eins(s, "paradeplatz"));
+      if (!m) return fehlt("Wall");
+      const n = toreZahl(s, m, ["haupt", "fernstrasse"]);
+      return n >= 4 && n <= 6 ? { ok: true, hinweis: `${n} Tore.` } : { ok: false, hinweis: n < 4 ? `Erst ${n} Tore.` : `${n} Tore — zu viele Schwachstellen.` };
+    },
+  },
+  {
+    id: "raster", text: "Innen ein regelmäßiges Raster", warum: "Gerade Straßen erlauben schnelle Truppenbewegungen zu jeder Bastion.",
+    pruefe: s => {
+      const m = mauerUm(s, eins(s, "paradeplatz"));
+      if (!m) return fehlt("Wall");
+      const l = strassen(s, "neben", "haupt").filter(st => st.punkte.some(p => inPoly(p, m))).map(st => st.punkte);
+      if (l.length < 4) return { ok: false, hinweis: `Erst ${l.length} Straßen im Wall.` };
+      let best = 0;
+      for (let a = 0; a < 90; a += 5) best = Math.max(best, anteilAusgerichtet(l, [a, a + 90], 8).anteil);
+      return best > 0.8 ? { ok: true, hinweis: "Regelmäßiges Raster." } : { ok: false, hinweis: "Die Straßen laufen kreuz und quer." };
+    },
+  },
+  {
+    id: "glacis", text: "Vor dem Wall bleibt ein freies Glacis (150 m)", warum: "Kein Haus, kein Baum: Angreifer finden auf dem Glacis keine Deckung.",
+    pruefe: s => {
+      const m = mauerUm(s, eins(s, "paradeplatz"));
+      if (!m) return fehlt("Wall");
+      const ring = geschlossen(m);
+      const imWeg = s.bauten.find(b => !inPoly(b, m) && b.typ !== "tor" && b.typ !== "zitadelle" && zurLinie(b, ring).d < 150);
+      if (imWeg) return { ok: false, hinweis: `${BAUTEN[imWeg.typ].label} steht auf dem Glacis.`, ort: imWeg };
+      for (const st of strassen(s, "neben", "gasse")) for (const p of st.punkte) if (!inPoly(p, m) && zurLinie(p, ring).d < 150) return { ok: false, hinweis: "Eine Wohnstraße liegt auf dem Glacis.", ort: p };
+      return { ok: true, hinweis: "Freies Schussfeld." };
+    },
+  },
+  {
+    id: "graben", text: "Ein Graben umgibt den Wall", warum: "Der Graben hält Angreifer und Belagerungstürme vom Wall fern.",
+    pruefe: s => {
+      const m = mauerUm(s, eins(s, "paradeplatz"));
+      const gr = s.zonen.find(z => z.typ === "graben");
+      if (!gr) return { ok: false, hinweis: "Male mit 🎨 ein Viertel »Festungsgraben« um den Wall." };
+      return m && m.every(p => inPoly(p, skaliereUm(gr.poly, 1.02))) ? { ok: true, hinweis: "Graben rundum." } : { ok: false, hinweis: "Der Graben umschließt den Wall nicht ganz." };
+    },
+  },
+  {
+    id: "kaserne", text: "Kasernen stehen innen nahe am Wall", warum: "Die Soldaten müssen im Alarmfall schnell auf den Wällen sein.",
+    pruefe: s => {
+      const m = mauerUm(s, eins(s, "paradeplatz"));
+      if (!m) return fehlt("Wall");
+      const k = alle(s, "kaserne");
+      if (!k.length) return fehlt("Kaserne");
+      const gut = k.filter(b => inPoly(b, m) && zurLinie(b, geschlossen(m)).d < 120).length;
+      return gut ? { ok: true, hinweis: `${gut} Kaserne(n) am Wall.` } : { ok: false, hinweis: "Die Kasernen liegen nicht innen am Wall.", ort: k[0] };
+    },
+  },
+];
+
+const skaliereUm = (poly: P[], f: number) => { const c = schwerpunkt(poly); return poly.map(p => ({ x: c.x + (p.x - c.x) * f, y: c.y + (p.y - c.y) * f })); };
+
 export const AUFTRAEGE: Auftrag[] = [
   {
     id: "kolonie", stil: "roemisch", icon: "🏛️", titel: "Gründe eine römische Kolonie",
@@ -650,6 +847,22 @@ export const AUFTRAEGE: Auftrag[] = [
     bauten: ["einkauf", "schule", "hochhaus", "buero"],
     regeln: AUTOSTADT,
   },
+  {
+    id: "residenz", stil: "residenz", icon: "👑", titel: "Plane eine Residenzstadt",
+    auftrag: "1715: Der Fürst will eine neue Hauptstadt. Setze das Schloss auf ebenes Land, lass Straßen strahlenförmig darauf zulaufen, zieh eine lange Hauptachse, male einen Schlossgarten und lege Markt und Kirche auf die Achse.",
+    start: null,
+    werkzeuge: ["haupt", "neben", "gasse", "zone", "raster"],
+    bauten: ["schloss", "markt", "kirche", "rathaus", "theater", "kaserne"],
+    regeln: RESIDENZ,
+  },
+  {
+    id: "festung", stil: "festung", icon: "⭐", titel: "Baue eine Festungsstadt",
+    auftrag: "1690: Die Grenze muss gesichert werden. Zieh einen sternförmigen Wall mit Bastionen, setze den Paradeplatz in die Mitte, lege ein Raster und vier Tore an, male Graben und halte das Glacis frei. Kasernen gehören an den Wall.",
+    start: null,
+    werkzeuge: ["mauer", "haupt", "raster", "neben", "fernstrasse", "zone"],
+    bauten: ["paradeplatz", "kirche", "kaserne", "zitadelle", "markt"],
+    regeln: FESTUNG,
+  },
 ];
 
 /** Regelsätze zum freien Prüfen im Sandkasten */
@@ -657,6 +870,8 @@ export const REGELSAETZE: { id: string; label: string; regeln: Regel[] }[] = [
   { id: "roemisch", label: "Römische Kolonie", regeln: ROEMISCH },
   { id: "mittelalter", label: "Mittelalterliche Marktstadt", regeln: MITTELALTER },
   { id: "eisenbahn", label: "Eisenbahnstadt (USA)", regeln: EISENBAHNSTADT },
+  { id: "residenz", label: "Residenzstadt", regeln: RESIDENZ },
+  { id: "festung", label: "Festungsstadt", regeln: FESTUNG },
 ];
 
 export function pruefe(regeln: Regel[], s: Stadt, g: Gelaende, start: Stadt | null) {

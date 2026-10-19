@@ -10,6 +10,11 @@ export const STILE = [
   { id: "roemisch", icon: "🏛️", label: "Römische Stadt", kurz: "Römisch" },
   { id: "europaeisch", icon: "⛪", label: "Europäische Stadt", kurz: "Europäisch" },
   { id: "amerikanisch", icon: "🏙️", label: "Amerikanische Stadt", kurz: "Amerikanisch" },
+  { id: "residenz", icon: "👑", label: "Residenzstadt (Absolutismus)", kurz: "Residenz" },
+  { id: "festung", icon: "⭐", label: "Festungsstadt", kurz: "Festung" },
+  { id: "sozialistisch", icon: "🏭", label: "Sozialistische Stadt (DDR)", kurz: "Sozialistisch" },
+  { id: "lateinamerika", icon: "⛪", label: "Lateinamerikanische Stadt", kurz: "Lateinamerika" },
+  { id: "orientalisch", icon: "🕌", label: "Orientalische Stadt", kurz: "Orientalisch" },
 ] as const;
 export type Stil = (typeof STILE)[number]["id"];
 
@@ -51,6 +56,30 @@ export const ZONEN = {
   vorort: { label: "Wohnviertel (Streetcar Suburb)", farbe: "#d8d0a4", haus: { breite: [10, 14], tiefe: [10, 14], luecke: 8, hoehe: [7, 9], dach: "#8c5442", abseits: 6, fassade: "#e8e1cf" } },
   pendler: { label: "Vororte (Suburbs)", farbe: "#dbe3b4", haus: { breite: [14, 18], tiefe: [12, 16], luecke: 14, hoehe: [5, 7], dach: "#7b6a5a", abseits: 10, fassade: "#efe9dc" } },
   parkplatz: { label: "Parkplätze", farbe: "#b8b8b8", haus: null },
+  konversion: { label: "Neues Quartier auf Industriebrache", farbe: "#cbd5c0", haus: { breite: [26, 40], tiefe: [14, 18], luecke: 12, hoehe: [14, 22], dach: "#7d8b80", abseits: 6, fassade: "#e9ece6", flach: true } },
+  gated: { label: "Gated Community", farbe: "#e6dcc0", haus: { breite: [16, 22], tiefe: [14, 18], luecke: 12, hoehe: [6, 8], dach: "#9c5b44", abseits: 10, fassade: "#f4efe4" } },
+  // Residenzstadt
+  residenz: { label: "Residenzstadt (Modellhäuser)", farbe: "#dcc7a8", haus: { breite: [14, 18], tiefe: [12, 14], luecke: 0, hoehe: [10, 13], dach: "#5a616d", fassade: "#efe4cc" } },
+  schlossgarten: { label: "Schlossgarten", farbe: "#8fbf6a", haus: null },
+  // Festungsstadt
+  festung: { label: "Festungsstadt", farbe: "#d4b48c", haus: { breite: [10, 14], tiefe: [12, 16], luecke: 0, hoehe: [9, 13], dach: "#a0522d", fassade: "#e9dcc4" } },
+  glacis: { label: "Glacis (freies Schussfeld)", farbe: "#c8d6a0", haus: null },
+  graben: { label: "Festungsgraben", farbe: "#7fb3d5", haus: null },
+  // Sozialistische Stadt
+  tradition: { label: "Wohnkomplex »Nationale Tradition«", farbe: "#d9c3a0", haus: { breite: [40, 60], tiefe: [12, 14], luecke: 4, hoehe: [15, 19], dach: "#9c6b4e", fassade: "#e8d5b0" } },
+  platte: { label: "Plattenbau (WBS 70)", farbe: "#c9ccd0", haus: { breite: [60, 100], tiefe: [12, 13], luecke: 24, hoehe: [15, 33], dach: "#9aa0a6", abseits: 16, fassade: "#d8dbd2", flach: true } },
+  rueckbau: { label: "Rückbaufläche (nach 1990)", farbe: "#b9d29a", haus: null },
+  kombinat: { label: "Kombinat", farbe: "#a49a8f", haus: { breite: [80, 140], tiefe: [40, 70], luecke: 16, hoehe: [18, 28], dach: "#6d675f", fassade: "#8a7f74", flach: true } },
+  // Lateinamerikanische Stadt
+  kolonial: { label: "Kolonialer Kern (Casco)", farbe: "#e0bf8f", haus: { breite: [12, 18], tiefe: [16, 24], luecke: 0, hoehe: [6, 9], dach: "#c0643a", fassade: "#f0d9a8" } },
+  verfall: { label: "Verfallene Altbauten (Conventillos)", farbe: "#b9a48a", haus: { breite: [10, 14], tiefe: [14, 20], luecke: 1, hoehe: [6, 9], dach: "#8f6a52", fassade: "#c9b496" } },
+  oberschicht: { label: "Oberschicht-Sektor (Barrio alto)", farbe: "#e9e1cf", haus: { breite: [18, 26], tiefe: [16, 22], luecke: 10, hoehe: [10, 45], dach: "#b8b2a6", fassade: "#f3efe6", flach: true } },
+  marginal: { label: "Marginalsiedlung (Favela, Barriada)", farbe: "#c7a585", haus: { breite: [4, 7], tiefe: [4, 7], luecke: 0.5, hoehe: [3, 6], dach: "#8d8d8d", fassade: "#c99a6e", flach: true } },
+  sozialbau: { label: "Sozialer Wohnungsbau", farbe: "#d6ccb8", haus: { breite: [30, 40], tiefe: [10, 12], luecke: 10, hoehe: [10, 14], dach: "#a39c90", fassade: "#e2d6c0", flach: true } },
+  // Orientalische Stadt
+  medina: { label: "Medina (Wohnquartiere)", farbe: "#e7dcc6", haus: { breite: [12, 18], tiefe: [12, 18], luecke: 0, hoehe: [6, 10], dach: "#e2d8c4", fassade: "#efe7d6", flach: true } },
+  bazar: { label: "Bazar (Suq)", farbe: "#d9b98a", haus: { breite: [4, 6], tiefe: [6, 8], luecke: 0, hoehe: [4, 5], dach: "#c9a77c", fassade: "#dcc29a", flach: true } },
+  ville: { label: "Ville nouvelle (Kolonialstadt)", farbe: "#e6e2d6", haus: { breite: [18, 26], tiefe: [14, 20], luecke: 6, hoehe: [12, 18], dach: "#d9d4c8", fassade: "#f4f1ea", flach: true } },
 } as const satisfies Record<string, { label: string; farbe: string; haus: HausArt | null }>;
 export type ZonenTyp = keyof typeof ZONEN;
 
@@ -85,6 +114,27 @@ export const BAUTEN = {
   hochhaus: { label: "Hochhaus", icon: "🏙️", b: 40, h: 40, hoehe: 180, farbe: "#8ea1b8", text: "Wolkenkratzer im CBD: Wo der Boden am teuersten ist, baut man in die Höhe." },
   buero: { label: "Bürostadt (Edge City)", icon: "🏢", b: 120, h: 80, hoehe: 40, farbe: "#a6b1c4", text: "Bürotürme und Parkplätze am Autobahnring, weit weg vom alten Zentrum." },
   tor: { label: "Stadttor", icon: "🚪", b: 16, h: 16, hoehe: 16, farbe: "#8f8478", text: "Durchlass in der Mauer, wo eine Straße die Stadt verlässt." },
+  // Residenzstadt
+  schloss: { label: "Schloss", icon: "👑", b: 190, h: 60, hoehe: 26, farbe: "#efe6d2", text: "Sitz des absoluten Fürsten — Mittelpunkt, auf den alle Achsen zulaufen: »L'État, c'est moi.«" },
+  kaserne: { label: "Kaserne", icon: "💂", b: 90, h: 26, hoehe: 14, farbe: "#c9b59a", text: "Stehendes Heer: Soldaten wohnten in Kasernen, nicht mehr bei den Bürgern einquartiert." },
+  // Festungsstadt
+  zitadelle: { label: "Zitadelle", icon: "🏯", b: 130, h: 130, hoehe: 14, farbe: "#a39b8f", text: "Festung in der Festung — letzte Zuflucht der Besatzung, wie der Petersberg in Erfurt." },
+  paradeplatz: { label: "Paradeplatz", icon: "🎖️", b: 110, h: 110, hoehe: 0, farbe: "#e8e0c8", text: "Großer Platz in der Mitte für Appelle und Aufmärsche der Garnison; von hier sind alle Bastionen schnell erreichbar." },
+  // Sozialistische Stadt
+  kulturhaus: { label: "Kulturhaus / Rathaus", icon: "🎭", b: 70, h: 50, hoehe: 24, farbe: "#e9e2d0", text: "Dominante am zentralen Platz: Kultur, Feiern und Verwaltung der »sozialistischen Gemeinschaft«." },
+  aufmarschplatz: { label: "Zentraler Platz", icon: "🚩", b: 160, h: 110, hoehe: 0, farbe: "#ddd6c8", text: "Für Demonstrationen und Feiertage — am Ende der Magistrale, gegenüber dem Werk." },
+  werk: { label: "Kombinat (Werk)", icon: "🏭", b: 320, h: 160, hoehe: 28, farbe: "#8f877d", text: "Der Grund für die Stadt: ein Großbetrieb (z. B. Eisenhüttenkombinat Ost). Die Stadt wurde für seine Arbeiter gebaut." },
+  kaufhalle: { label: "Kaufhalle", icon: "🛒", b: 50, h: 36, hoehe: 6, farbe: "#d0d4d8", text: "Jeder Wohnkomplex bekam Kaufhalle, Schule, Kindergarten und Poliklinik in Fußnähe." },
+  poliklinik: { label: "Poliklinik", icon: "🩺", b: 60, h: 30, hoehe: 14, farbe: "#e4e7ea", text: "Ärztehaus mit vielen Fachrichtungen unter einem Dach." },
+  // Lateinamerikanische Stadt
+  plaza: { label: "Plaza Mayor", icon: "🟫", b: 110, h: 110, hoehe: 0, farbe: "#eadfc4", text: "Nach den spanischen »Leyes de Indias« (1573) Mittelpunkt des Schachbretts: Kirche, Rathaus und Palast stehen am Platz." },
+  kathedrale: { label: "Kathedrale", icon: "⛪", b: 50, h: 90, hoehe: 45, farbe: "#e8dcc2", text: "Hauptkirche an der Plaza — Zeichen der Kolonialmacht und der Kirche." },
+  cabildo: { label: "Cabildo (Rathaus)", icon: "🏛️", b: 50, h: 30, hoehe: 12, farbe: "#f1e3c2", text: "Stadtverwaltung der Kolonie, an der Plaza gegenüber der Kathedrale." },
+  // Orientalische Stadt
+  moschee: { label: "Freitagsmoschee", icon: "🕌", b: 80, h: 80, hoehe: 18, farbe: "#f2ece0", text: "Mittelpunkt der Medina: Um sie herum liegen die wertvollsten Läden des Bazars." },
+  kasbah: { label: "Kasbah (Zitadelle)", icon: "🏰", b: 160, h: 120, hoehe: 16, farbe: "#c8a57a", text: "Sitz des Herrschers, am Rand der Medina an der Mauer — oft auf höherem Gelände." },
+  hammam: { label: "Hammam", icon: "♨️", b: 30, h: 24, hoehe: 7, farbe: "#efe5d3", text: "Öffentliches Bad, oft neben der Moschee (Waschungen vor dem Gebet)." },
+  karawanserei: { label: "Karawanserei (Funduq)", icon: "🐪", b: 60, h: 60, hoehe: 9, farbe: "#d8c2a0", text: "Herberge und Lager für Fernhändler — nahe den Toren an den Karawanenwegen." },
 } as const satisfies Record<string, Bauart>;
 export type BauTyp = keyof typeof BAUTEN;
 

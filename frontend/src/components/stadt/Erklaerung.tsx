@@ -1,5 +1,6 @@
 "use client";
-/** Reiter »So geht's«: drei Stadttypen im Vergleich, Standortfaktoren, Quellen */
+/** Reiter »So geht's«: Stadttypen im Vergleich, Stadtmodelle, Standortfaktoren, Quellen */
+import Modelle from "./Modelle";
 
 const TYPEN = [
   {
@@ -35,12 +36,57 @@ const TYPEN = [
       ["Modell", "Ringmodell nach Burgess (1925): CBD, Übergangszone, Arbeiter, Wohnen, Pendler."],
     ],
   },
+  {
+    icon: "👑", titel: "Residenzstadt", zeit: "17./18. Jh. (Absolutismus)",
+    punkte: [
+      ["Entstehung", "Auf einmal geplant nach dem Willen des Fürsten, oft auf freiem Land."],
+      ["Grundriss", "Achsen und Strahlen laufen auf das Schloss zu (Fächer), streng symmetrisch."],
+      ["Typisch", "Schlossgarten, Hoftheater, Kasernen, einheitliche Modellhäuser."],
+      ["Beispiele", "Karlsruhe (1715), Mannheim, Ludwigsburg; Residenzen in Thüringen: Weimar, Gotha, Meiningen."],
+    ],
+  },
+  {
+    icon: "⭐", titel: "Festungsstadt", zeit: "17./18. Jh.",
+    punkte: [
+      ["Entstehung", "Gegen Artillerie: niedrige Wälle mit Bastionen (Vauban)."],
+      ["Grundriss", "Sternförmiger Wall, Graben, Glacis; innen Raster um den Paradeplatz."],
+      ["Wandel", "Entfestigung im 19. Jh.: Ringe und Parks auf den Wällen."],
+      ["Beispiele", "Neuf-Brisach, Saarlouis; Zitadelle Petersberg in Erfurt."],
+    ],
+  },
+  {
+    icon: "🏭", titel: "Sozialistische Stadt", zeit: "DDR, 1950–1990",
+    punkte: [
+      ["Entstehung", "Für einen Großbetrieb geplant, nach den »16 Grundsätzen des Städtebaus« (1950)."],
+      ["Grundriss", "Magistrale zum zentralen Platz mit Kulturhaus, Wohnkomplexe mit eigener Versorgung."],
+      ["Wandel", "Plattenbau (WBS 70) → nach 1990 Schrumpfung, Leerstand, Rückbau (Stadtumbau Ost)."],
+      ["Beispiele", "Eisenhüttenstadt, Halle-Neustadt, Schwedt; in Erfurt der Herrenberg und der Roter Berg."],
+    ],
+  },
+  {
+    icon: "⛪", titel: "Lateinamerikanische Stadt", zeit: "ab dem 16. Jh.",
+    punkte: [
+      ["Entstehung", "Kolonialstadt nach den Leyes de Indias (1573): Schachbrett um die Plaza Mayor."],
+      ["Phasen", "kompakt → sektoral → polarisiert → fragmentiert (Borsdorf, Bähr, Janoschka 2002)."],
+      ["Typisch", "Marginalsiedlungen in Ungunstlagen, Gated Communities, Malls — Segregation."],
+      ["Beispiele", "Lima, Santiago de Chile, Mexiko-Stadt, São Paulo."],
+    ],
+  },
+  {
+    icon: "🕌", titel: "Orientalische Stadt", zeit: "ab dem 7. Jh.",
+    punkte: [
+      ["Zentrum", "Freitagsmoschee mit Bazar (Suq), nach Waren geordnet."],
+      ["Wohnen", "Quartiere mit Sackgassen und Innenhofhäusern — Privatsphäre."],
+      ["Wandel", "Kolonialzeit: Ville nouvelle daneben (dualistische Stadt); heute Wachstum und Tourismus."],
+      ["Beispiele", "Fès, Marrakesch, Tunis, Damaskus."],
+    ],
+  },
 ];
 
 export default function Erklaerung() {
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         {TYPEN.map(t => (
           <section key={t.titel} className="card p-4">
             <h2 className="text-lg font-black">{t.icon} {t.titel}</h2>
@@ -51,6 +97,7 @@ export default function Erklaerung() {
           </section>
         ))}
       </div>
+      <Modelle />
       <section className="card p-4 text-sm">
         <h2 className="mb-2 text-lg font-black">📍 Standortfaktoren — worauf es ankommt</h2>
         <ul className="grid gap-1 md:grid-cols-2">
