@@ -162,7 +162,7 @@ WERKZEUGE = {
     },
     "dla": {"name": "Fraktales Wachstum", "config": {"reiter": "flaeche|raum|erklaerung"}},
     "stadt": {"name": "Stadtentwicklung", "config": {"reiter": "wachstum|planen|sandkasten|erklaerung", "stil?": "roemisch|europaeisch|amerikanisch|residenz|festung|sozialistisch|lateinamerika|orientalisch"}},
-    "erosion": {"name": "Erosion", "config": {"modus?": "fluss|kueste", "ansicht?": "gelaende|wasser|aenderung|vorher", "kueste?": "steil|flach|deich"}},
+    "erosion": {"name": "Erosion", "config": {"modus?": "fluss|kueste|gestein", "ansicht?": "gelaende|wasser|aenderung|vorher", "kueste?": "steil|flach|deich", "gestein?": "granit|sandstein|kalk|gips|schiefer|basalt|loess|ton|sand"}},
     "pse": {"name": "Periodensystem", "config": {"element?": "Symbol oder Name, z. B. Fe oder Eisen"}},
     "atommodelle": {"name": "Atommodelle", "config": {"element?": "Symbol oder Name, z. B. B oder Bor"}},
     "strukturformeln": {"name": "Strukturformeln", "config": {"name?": "IUPAC-Name, z. B. Ethanol"}},

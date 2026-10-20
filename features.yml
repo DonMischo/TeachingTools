@@ -368,6 +368,9 @@ simulationen:
       - Gleiches Zufallsgelände wie die Stadtentwicklung, Delta an der Küste
       - Regen- und Trockenzeit, Zufluss am Oberlauf, neue Flüsse und Seen; feste Höhenskala, wahlweise 512²
       - Reiter Küste - Steilküste, Flachküste, Marsch mit Deich; Sturmflut, Meeresspiegelanstieg, Deichbruch, Querprofil; Verweis zur Küstendynamik und zurück
+      - Reiter Gesteine & Verwitterung - Querschnitte von neun Gesteinen mit Klüften und Schichten, Steckbriefe mit Beispielen aus Thüringen und Deutschland
+      - Sechs Kräfte einzeln oder als Klima - Temperatur, Wind (Deflation, Dünen, Korrasion), Wasser (Abspülung, Versickern, Rutschung), Frostsprengung, Lösung und Hydrolyse (Karst, Höhlen, Tropfsteine, Grus), Pflanzen
+      - Wirkungsbalken zeigen, welche Kraft gerade am meisten verändert; Sonne, Wind, Regen, Schnee und Eis in Rissen sichtbar
       - 3D-Flug im Stil von Voxel Space
       - Als TaskCrawler-Werkzeug mit fester Ansicht
   - id: erfolge

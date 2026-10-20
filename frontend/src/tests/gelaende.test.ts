@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { erzeuge, LANDSCHAFTEN, wuerfle, hoeheBei, neigungBei, wasserAbstand, inAue } from "@/lib/gelaende/gelaende";
 import { erosionStart, erosionSchritt, aenderung, aufGelaende, gewaesser, jahreszeit, JAHR, spiegel, STANDARD_EROSION } from "@/lib/gelaende/erosion";
+import { GESTEINE, GRUS, KLIMATE, KRAEFTE, LUFT as VLUFT, querschnitt, schritt as vschritt, hoehlen, type Klima } from "@/lib/gelaende/verwitterung";
+import { STECKBRIEFE } from "@/lib/gelaende/gesteine";
 import { kuesteErzeugen, kuestenSchritt, rueckgang, ueberflutet, STANDARD_KUESTE } from "@/lib/gelaende/kuestenErosion";
 
 describe("Gelände", () => {
@@ -99,5 +101,50 @@ describe("Küste", () => {
     expect(ueberflutet(k)).toBeLessThan(1);
     for (let i = 0; i < 6; i++) kuestenSchritt(k, { ...STANDARD_KUESTE, sturm: true, anstieg: 3 });
     expect(ueberflutet(k)).toBeGreaterThan(5);
+  });
+});
+
+describe("Verwitterung im Querschnitt", () => {
+  const nur = (f: keyof Omit<Klima, "richtung">, wert = 1): Klima => ({ sonne: 0, wind: 0, wasser: 0, frost: 0, chemie: 0, pflanzen: 0, richtung: 1, [f]: wert });
+  const lauf = (g: (typeof GESTEINE)[number]["id"], k: Klima, n = 150) => {
+    const q = querschnitt(g, 2);
+    let summe = { sonne: 0, wind: 0, wasser: 0, frost: 0, chemie: 0, pflanzen: 0 };
+    for (let i = 0; i < n; i++) { vschritt(q, k); for (const f of KRAEFTE) summe[f.id] += q.wirkung[f.id]; }
+    return { q, summe };
+  };
+
+  it("jedes Gestein hat einen Steckbrief und ein gültiges Klima", () => {
+    for (const g of GESTEINE) {
+      const q = querschnitt(g.id, 1);
+      expect(q.stoff.some(m => m === VLUFT)).toBe(true);
+      expect(q.stoff.some(m => m === g.stoff)).toBe(true);
+      expect(KLIMATE.some(k => k.id === STECKBRIEFE[g.id].klima)).toBe(true);
+    }
+  });
+
+  it("ohne jede Kraft passiert nichts", () => {
+    const { q, summe } = lauf("granit", { sonne: 0, wind: 0, wasser: 0, frost: 0, chemie: 0, pflanzen: 0, richtung: 1 }, 60);
+    expect(Object.values(summe).every(v => v === 0)).toBe(true);
+    expect(Array.from(q.stoff)).toEqual(Array.from(q.start));
+  });
+
+  it("jede Kraft wirkt nur, wenn sie an ist", () => {
+    expect(lauf("basalt", nur("sonne")).summe.sonne).toBeGreaterThan(0);
+    expect(lauf("sand", nur("wind")).summe.wind).toBeGreaterThan(0);
+    const frost = lauf("schiefer", { ...nur("frost"), wasser: 0.5 });
+    expect(frost.summe.frost).toBeGreaterThan(0);
+    expect(frost.summe.chemie).toBe(0);
+  });
+
+  it("Karst: Kohlensäure löst Kalk, es entstehen Hohlräume", () => {
+    const mit = lauf("gips", { ...nur("wasser", 0.6), chemie: 1 }, 300);
+    const ohne = lauf("gips", nur("wasser", 0.6), 300);
+    expect(mit.summe.chemie).toBeGreaterThan(0);
+    expect(hoehlen(mit.q)).toBeGreaterThan(hoehlen(ohne.q));
+  });
+
+  it("Granit wird in den Tropen zu Grus", () => {
+    const { q } = lauf("granit", KLIMATE.find(k => k.id === "tropen")!.k, 300);
+    expect(q.stoff.some(m => m === GRUS)).toBe(true);
   });
 });
