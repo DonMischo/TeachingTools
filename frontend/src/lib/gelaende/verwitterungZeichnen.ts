@@ -30,7 +30,8 @@ export function felsBild(ctx: Ctx, q: Querschnitt, k: Klima, px: number) {
   for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
     const c = j * W + i, m = stoff[c];
     if (m === LUFT) {
-      if (j > top[i]) for (let b = 0; b < px; b++) for (let a = 0; a < px; a++) { const o = ((j * px + b) * BW + i * px + a) * 4; d[o] = 30; d[o + 1] = 27; d[o + 2] = 26; d[o + 3] = 255; }
+      const hoehle = q.draussen ? !q.draussen[c] : j > top[i];
+      if (hoehle) for (let b = 0; b < px; b++) for (let a = 0; a < px; a++) { const o = ((j * px + b) * BW + i * px + a) * 4; d[o] = 30; d[o + 1] = 27; d[o + 2] = 26; d[o + 3] = 255; }
       continue;
     }
     let [r, gg, bb] = m === SCHUTT ? STOFFE[eltern[c] && eltern[c] !== SCHUTT ? eltern[c] : SCHUTT].farbe : STOFFE[m].farbe;
@@ -48,7 +49,7 @@ export function felsBild(ctx: Ctx, q: Querschnitt, k: Klima, px: number) {
       if (m === SCHUTT && (a === 0 || b === 0) && hash(i, j) > 0.35) f *= 0.68;
       if ((randL && a === 0) || (randO && b === 0)) f *= 1.12;
       let cr = false;
-      if (ri > 0.25) {
+      if (ri > 0.38) {
         const kante = hash(i, j) > 0.5 ? a === Math.floor(hash(j, i) * px) : b === Math.floor(hash(j + 3, i) * px);
         if (kante) { f *= 1 - 0.6 * Math.min(1, ri); cr = true; }
       }

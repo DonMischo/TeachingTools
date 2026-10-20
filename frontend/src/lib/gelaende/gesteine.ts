@@ -20,8 +20,8 @@ export const STECKBRIEFE: Record<Gestein, Steckbrief> = {
     eigenschaften: "Sehr hart, kaum porös, aber von Klüften durchzogen (beim Abkühlen und Heben entstanden).",
     formen: "Wollsackverwitterung: Wasser dringt in die Klüfte, die Ecken der Blöcke werden von mehreren Seiten zersetzt und runden sich. Der Feldspat zerfällt zu Ton, übrig bleibt Grus. Felsburgen, Blockmeere.",
     beispiele: "Brocken (Harz), Luisenburg im Fichtelgebirge, Greifensteine (Erzgebirge).",
-    stark: ["chemie", "frost", "sonne"],
-    klima: "tropen",
+    stark: ["chemie", "frost", "wasser"],
+    klima: "harz",
   },
   sandstein: {
     gruppe: "Sediment (fest)",

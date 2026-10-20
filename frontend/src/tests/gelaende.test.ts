@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { erzeuge, LANDSCHAFTEN, wuerfle, hoeheBei, neigungBei, wasserAbstand, inAue } from "@/lib/gelaende/gelaende";
 import { erosionStart, erosionSchritt, aenderung, aufGelaende, gewaesser, jahreszeit, JAHR, spiegel, STANDARD_EROSION } from "@/lib/gelaende/erosion";
-import { GESTEINE, GRUS, KLIMATE, KRAEFTE, LUFT as VLUFT, schritt as vschritt, hoehlen, verwittert, abgetragen, type Klima } from "@/lib/gelaende/verwitterung";
+import { GESTEINE, GRUS, KLIMATE, KRAEFTE, LUFT as VLUFT, WASSER, schritt as vschritt, hoehlen, verwittert, abgetragen, type Klima } from "@/lib/gelaende/verwitterung";
 import { STECKBRIEFE } from "@/lib/gelaende/gesteine";
 import { PHASEN, querschnitt } from "@/lib/gelaende/querschnitte";
 import { kuesteErzeugen, kuestenSchritt, rueckgang, ueberflutet, STANDARD_KUESTE } from "@/lib/gelaende/kuestenErosion";
@@ -156,6 +156,15 @@ describe("Verwitterung im Querschnitt", () => {
     const top = (i: number) => { let j = 0; while (j < q.H && q.stoff[j * q.W + i] === VLUFT) j++; return j; };
     expect(q.tropfen.some(t => !t.unter && t.y > top(t.x) + 20)).toBe(true);
     expect(hoehlen(q)).toBeGreaterThan(50);
+  });
+
+  it("Karst: Tropfsteinhöhle und Höhlenbach-Gang bleiben stabil", () => {
+    const q = querschnitt("kalk", 2);
+    const k = KLIMATE.find(x => x.id === "mittel")!.k;
+    const luft = (fx: number, fy: number) => q.stoff[Math.round(fy * q.H) * q.W + Math.round(fx * q.W)];
+    for (let i = 0; i < 300; i++) vschritt(q, k);
+    expect([VLUFT, WASSER]).toContain(luft(0.54, 0.53)); // neben der Säule in der Mitte
+    expect([VLUFT, WASSER]).toContain(luft(0.6, 0.755));
   });
 
   it("Granit: Entstehung abspielen lässt Grus und freiliegende Blöcke zurück", () => {

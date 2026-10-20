@@ -104,12 +104,13 @@ export function querschnitt(g: Gestein, seed = 1, W = 400, H = 220): Querschnitt
     case "kalk": {
       const tal = 0.84;
       fuellen(x => {
-        if (x < 0.22) return H * (0.15 + (0.22 - x) * 0.25) + 2 * r(x * 9, 1);
+        if (x < 0.22) return H * (0.1 + x * 0.45); // Bachbett: gleichmäßiges Gefälle zum Ponor
         if (x > tal + 0.03) return H * 0.86;
         if (x > tal) return H * (0.25 + (x - tal) / 0.03 * 0.61);
         let o = H * 0.25 + 2 * r(x * 7, 2);
         o += H * 0.045 * Math.exp(-(((x - 0.36) / 0.06) ** 2)); // Trockental
         o += H * 0.05 * Math.exp(-(((x - 0.47) / 0.025) ** 2)); // Lösungsdoline
+        o += H * 0.03 * Math.exp(-(((x - 0.71) / 0.03) ** 2)); // Senke über der Höhle: hier versickert das Wasser
         return o;
       }, (i, j) => {
         const x = i / W;
@@ -125,13 +126,13 @@ export function querschnitt(g: Gestein, seed = 1, W = 400, H = 220): Querschnitt
       const px = X(0.245);
       gang(b, [[px, Y(0.24)], [px + 2, Y(0.5)], [px + 1, Y(0.73)]], 3, 5);
       // Höhlenbach bis zur Karstquelle am Talhang, knapp über dem Ton
-      gang(b, [[px, Y(0.735)], [X(0.38), Y(0.75)], [X(0.52), Y(0.745)], [X(0.66), Y(0.77)], [X(tal + 0.012), Y(0.79)]], 9, 7);
+      gang(b, [[px, Y(0.735)], [X(0.38), Y(0.745)], [X(0.52), Y(0.755)], [X(0.66), Y(0.77)], [X(tal + 0.012), Y(0.79)]], 9, 7);
       // Tropfsteinhöhle über dem Gang, mit Verbindung nach unten
       const hx = X(0.57), hy = Y(0.53);
-      ellipse(b, hx, hy, W * 0.075, H * 0.085, LUFT, 0.25, seed + 3);
-      gang(b, [[hx + 6, hy + Math.round(H * 0.08)], [hx + 8, Y(0.74)]], 3, 9);
+      ellipse(b, hx, hy, W * 0.06, H * 0.07, LUFT, 0.2, seed + 3);
+      gang(b, [[hx + 6, hy + Math.round(H * 0.065)], [hx + 8, Y(0.74)]], 3, 9);
       for (let s = 0; s < 9; s++) {
-        const x = hx - Math.round(W * 0.06) + Math.round((s / 8) * W * 0.12) + Math.round(z() * 3);
+        const x = hx - Math.round(W * 0.05) + Math.round((s / 8) * W * 0.1) + Math.round(z() * 3);
         let jo = hy; while (jo > 0 && b.stoff[(jo - 1) * W + x] === LUFT) jo--;
         let ju = hy; while (ju < H - 1 && b.stoff[(ju + 1) * W + x] === LUFT) ju++;
         if (s === 4) for (let j = jo; j <= ju; j++) b.stoff[j * W + x] = SINTER; // Säule
@@ -139,16 +140,16 @@ export function querschnitt(g: Gestein, seed = 1, W = 400, H = 220): Querschnitt
       }
       // Höhle dicht unter der Oberfläche, deren Decke bald bricht
       const ex = X(0.71), ey = Y(0.35);
-      ellipse(b, ex, ey, W * 0.045, H * 0.055, LUFT, 0.2, seed + 4);
-      for (let j = ober[ex] ; j < ey; j++) for (let i = ex - 16; i <= ex + 16; i++) kluft(b, i, j, 0.4);
+      ellipse(b, ex, ey, 9, 6, LUFT, 0.15, seed + 4);
+      for (let j = ober[ex]; j < ey; j++) for (let i = ex - 12; i <= ex + 12; i++) kluft(b, i, j, 0.3);
       bodendecke(2, m => m === KALK || m === SCHIEFER);
       b.quellen.push({ x: 2, y: ober[2] - 2, staerke: 1 });
       marke("Bach", X(0.06), ober[X(0.06)] - 8);
       marke("Ponor (Schluckloch)", px, ober[px] - 10);
       marke("Trockental", X(0.36), ober[X(0.36)] - 8);
       marke("Lösungsdoline", X(0.47), ober[X(0.47)] - 8);
-      marke("Höhle → Einsturzdoline", ex, ober[ex] - 8);
-      marke("Tropfsteinhöhle", hx, hy - H * 0.11);
+      marke("Doline über Höhle → Einsturz?", ex, ober[ex] - 8);
+      marke("Tropfsteinhöhle (stabil)", hx, hy - H * 0.095);
       marke("Höhlenbach", X(0.43), Y(0.69));
       marke("Karstquelle", X(tal + 0.01), Y(0.75));
       marke("Ton (undurchlässig)", X(0.5), Y(0.9));
@@ -156,7 +157,7 @@ export function querschnitt(g: Gestein, seed = 1, W = 400, H = 220): Querschnitt
       break;
     }
     case "gips": {
-      fuellen(x => (x < 0.18 ? H * (0.18 + (0.18 - x) * 0.3) : H * 0.27 + 2 * r(x * 6, 3) + H * 0.04 * Math.exp(-(((x - 0.62) / 0.05) ** 2))),
+      fuellen(x => (x < 0.18 ? H * (0.12 + x * 0.75) : H * 0.27 + 2 * r(x * 6, 3) + H * 0.04 * Math.exp(-(((x - 0.62) / 0.05) ** 2))),
         (i, j) => (j > H * 0.78 ? TON : i / W < 0.16 && j < H * 0.5 ? TON : GIPS));
       for (let i = 20; i < W; i += 18 + Math.floor(z() * 10)) for (let j = 0; j < H * 0.78; j++) kluft(b, i, j, 0.45);
       // Bachschwinde, Schlotten, Gipshöhle mit flacher Laugdecke, Erdfall-Hohlraum
@@ -164,8 +165,8 @@ export function querschnitt(g: Gestein, seed = 1, W = 400, H = 220): Querschnitt
       gang(b, [[sx, Y(0.26)], [sx + 3, Y(0.62)]], 3, 4);
       for (const x of [0.32, 0.41, 0.83]) gang(b, [[X(x), Y(0.38)], [X(x) + 1, Y(0.62)]], 2, 6 + x * 10);
       for (let j = Y(0.56); j <= Y(0.64); j++) for (let i = sx; i < X(0.78); i++) { b.stoff[j * W + i] = LUFT; b.riss[j * W + i] = 0; }
-      const ex = X(0.62), ey = Y(0.4);
-      ellipse(b, ex, ey, W * 0.05, H * 0.06, LUFT, 0.2, seed + 6);
+      const ex = X(0.62), ey = Y(0.44);
+      ellipse(b, ex, ey, 7, 6, LUFT, 0.15, seed + 6);
       for (let j = ober[ex]; j < ey; j++) for (let i = ex - 18; i <= ex + 18; i++) kluft(b, i, j, 0.36);
       bodendecke(2, m => m === GIPS || m === TON);
       b.quellen.push({ x: 2, y: ober[2] - 2, staerke: 0.8 });
