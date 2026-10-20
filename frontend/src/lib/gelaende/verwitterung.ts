@@ -95,6 +95,8 @@ export interface Tropfen {
   alter: number;
   /** Fließrichtung (Schwung), 0 = noch keine */
   dir: number;
+  /** Mischungskorrosion: so viele Schritte noch besonders aggressiv (nach seitlichem Fließen) */
+  misch?: number;
   /** wie oft schon in einer Senke angestiegen */
   stau?: number;
   /** gehört zu einem Bach (abgedichtetes Bachbett: versickert nur in löslichem oder durchlässigem Gestein) */
@@ -135,6 +137,14 @@ export interface Querschnitt {
   gestein: Gestein;
   /** Luft mit kurzem Weg zum Himmel (1) — alles andere ist Höhle */
   draussen?: Uint8Array;
+  /** wie viel Wasser zuletzt durch jede Zelle floss (gleitend) — zeigt die Wasserwege */
+  fluss?: Float32Array;
+  /** vom Grundwasser gelöst und fortgetragen (Zellen) */
+  geloest?: number;
+  /** 1 = Teil eines losgelösten Blocks (kann fallen und rollen) */
+  lose?: Uint8Array;
+  /** Karstwasser-Netz: Durchfluss je Zelle in diesem Schritt (Sickerwasser bis zur Quelle) */
+  karst?: Float32Array;
 }
 
 export const GESTEINE = [
@@ -194,7 +204,7 @@ export function schritt(q: Querschnitt, k: Klima): Querschnitt {
     let p = produkt(m, ursache, z);
     if (m === SCHUTT) {
       const e = eltern[c];
-      p = e === GRANIT ? GRUS : e === SANDSTEIN ? SAND : e === SCHIEFER || e === BASALT ? TON : e === KALK || e === GIPS ? (ursache === "chemie" ? LUFT : TON) : SAND;
+      p = e === GRANIT ? GRUS : e === SANDSTEIN ? SAND : e === SCHIEFER || e === BASALT ? TON : e === KALK || e === GIPS ? (ursache === "chemie" ? LUFT : BODEN) : SAND;
     }
     stoff[c] = p;
     riss[c] = 0;
@@ -234,7 +244,7 @@ export function schritt(q: Querschnitt, k: Klima): Querschnitt {
       riss[c] += (k.sonne * k.sonne * st.sonne * 0.025 * schutz * ecke) / h;
       if (riss[c] >= 1) { zerfall(i, j, "sonne"); continue; }
     }
-    if (nah && (frei || j - top[i] < 6) && q.winter && k.frost && st.frost && nass[c] + riss[c] > 0.35) {
+    if (nah && (frei || j - top[i] < 6 || (riss[c] > 0.3 && j - top[i] < 14)) && q.winter && k.frost && st.frost && nass[c] + riss[c] > 0.35) {
       riss[c] += (k.frost * st.frost * (nass[c] + 0.5 * riss[c]) * 0.15 * ecke) / h;
       if (riss[c] >= 1) { zerfall(i, j, "frost"); continue; }
     }
@@ -253,11 +263,11 @@ export function schritt(q: Querschnitt, k: Klima): Querschnitt {
 
   // 💧 Regen
   const regen = Math.round(k.wasser * W * 0.16 * (q.winter && k.frost > 0.6 ? 0.4 : 1));
-  for (let n = 0; n < regen && q.tropfen.length < 3500; n++) q.tropfen.push({ x: Math.floor(z() * W), y: 0, unter: false, last: 0, saett: 0, alter: 0, dir: 0 });
+  for (let n = 0; n < regen && q.tropfen.length < 6000; n++) q.tropfen.push({ x: Math.floor(z() * W), y: 0, unter: false, last: 0, saett: 0, alter: 0, dir: 0 });
   // Bäche von außen: führen auch in der Trockenzeit Wasser (schwächer)
   for (const qu of q.quellen) {
     const n = Math.round((6 + 14 * k.wasser) * qu.staerke);
-    for (let i = 0; i < n && q.tropfen.length < 3500; i++) q.tropfen.push({ x: qu.x, y: qu.y, unter: false, last: 0, saett: 0, alter: 0, dir: 1, fluss: true });
+    for (let i = 0; i < n && q.tropfen.length < 6000; i++) q.tropfen.push({ x: qu.x, y: qu.y, unter: false, last: 0, saett: 0, alter: 0, dir: 1, fluss: true });
   }
   for (let sub = 0; sub < 16; sub++) bewegeTropfen(q, k, top, bewuchs, E, draussen);
 
@@ -353,7 +363,9 @@ export function schritt(q: Querschnitt, k: Klima): Querschnitt {
     }
   }
 
-  if (q.stand % 4 === 0) bloeckeFallen(q);
+  if (q.stand % 2 === 0) bloeckeFallen(q, top);
+  // Karstwasser: Wege von jeder Versickerungsstelle bis zur Quelle; Lösung entlang der Wege
+  if (k.wasser > 0) karstNetz(q, k, top, draussen, bewuchs, E);
   // Höhlendecken: tragen wie ein Gewölbe, bis die Spannweite zu groß wird
   let durchbruch = false;
   if (q.stand % 3 === 0) { const g = gewoelbe(q, draussen); einsturz += g.brueche; durchbruch = g.durch; }
@@ -398,7 +410,7 @@ export function schritt(q: Querschnitt, k: Klima): Querschnitt {
         const p = Math.min(0.9, (su.durch * (1 - nass[u] * 0.5) + Math.min(1, riss[u]) * (su.loes ? 1.5 : 0.7)) * 0.3);
         if (z() < p) {
           stoff[c] = LUFT; nass[u] = Math.min(1, nass[u] + 0.3);
-          if (q.tropfen.length < 3500) q.tropfen.push({ x: i, y: j + 1, unter: true, last: 0, saett: 0, alter: 0, dir: 0 });
+          if (q.tropfen.length < 6000) q.tropfen.push({ x: i, y: j + 1, unter: true, last: 0, saett: 0, alter: 0, dir: 0 });
           continue;
         }
       }
@@ -419,7 +431,7 @@ export function schritt(q: Querschnitt, k: Klima): Querschnitt {
   for (let j = 1; j < H - 1; j++) for (let i = 1; i < W - 1; i++) {
     const c = j * W + i;
     if (riss[c] < 0.3 || !fest(stoff[c])) continue;
-    for (const n of [c - 1, c + 1, c - W, c + W]) if (riss[n] >= 0.3 && fest(stoff[n]) && nass[n] < nass[c]) { const f = (nass[c] - nass[n]) * 0.25; nass[c] -= f; nass[n] += f; }
+    for (const n of [c - 1, c + 1, c - W, c + W]) if (riss[n] >= 0.3 && fest(stoff[n]) && nass[n] < nass[c]) { const f = (nass[c] - nass[n]) * 0.4; nass[c] -= f; nass[n] += f; }
   }
   for (let c = 0; c < W * H; c++) {
     if (!fest(stoff[c])) { nass[c] = 0; continue; }
@@ -436,6 +448,7 @@ export function schritt(q: Querschnitt, k: Klima): Querschnitt {
   q.wirkung = E;
   q.jahr += 100;
   q.stand++;
+  if (q.fluss) for (let c = 0; c < W * H; c++) q.fluss[c] *= 0.97;
   return q;
 }
 
@@ -455,7 +468,7 @@ function bewegeTropfen(q: Querschnitt, k: Klima, top: Int16Array, bewuchs: Float
   const frei = (i: number, j: number) => i >= 0 && i < W && j >= 0 && j < H && stoff[j * W + i] === LUFT;
   for (const t of q.tropfen) {
     t.alter++;
-    if (t.alter > 700) { if (t.y < H && t.x >= 0 && t.x < W && t.y >= 0) nass[t.y * W + t.x] = Math.min(1, nass[t.y * W + t.x] + 0.3); continue; }
+    if (t.alter > (t.unter ? 3000 : 900)) { if (t.y < H && t.x >= 0 && t.x < W && t.y >= 0) nass[t.y * W + t.x] = Math.min(1, nass[t.y * W + t.x] + 0.3); continue; }
     if (!t.unter) {
       // in der Luft: fallen
       if (frei(t.x, t.y + 1)) {
@@ -511,9 +524,10 @@ function bewegeTropfen(q: Querschnitt, k: Klima, top: Int16Array, bewuchs: Float
           const mm = stoff[kk];
           if (kk < 0 || kk >= W * H || !fest(mm) || !STOFFE[mm].loes) continue;
           riss[kk] += k.chemie * STOFFE[mm].loes * 0.06 * (1 - t.saett);
-          if (riss[kk] >= 1) { stoff[kk] = LUFT; riss[kk] = 0; E.chemie++; }
+          if (riss[kk] >= 1) { stoff[kk] = LUFT; riss[kk] = 0; E.chemie++; q.geloest = (q.geloest ?? 0) + 1; }
         }
         t.saett = Math.min(1, t.saett + 0.008);
+        if (q.fluss) q.fluss[c] += 1;
       }
       // Abspülung: das fließende Wasser nimmt lockeres Korn unter sich mit
       const menge = t.menge ?? (t.last ? 1 : 0);
@@ -538,25 +552,36 @@ function bewegeTropfen(q: Querschnitt, k: Klima, top: Int16Array, bewuchs: Float
     }
     const st = STOFFE[m];
     nass[c] = Math.min(1, nass[c] + 0.04);
+    if (q.fluss) q.fluss[c] += 1;
     // Lösung: Kohlensäure frisst Kalk und Gips, vor allem entlang der Klüfte
     if (st.loes && k.chemie && t.saett < 1) {
-      riss[c] += (k.chemie * st.loes * 0.09 * (0.3 + riss[c]) * (1 - t.saett)) / q.haerte[c];
+      const mischung = (t.misch ?? 0) > 0 ? 3 : 1;
+      if (t.misch) t.misch--;
+      // viel Durchfluss = schnelle, turbulente Strömung: Wasser bleibt aggressiv, löst mehr (Röhren wachsen sich selbst groß)
+      const durchfluss = q.fluss ? Math.min(3, q.fluss[c] / 15) : 0;
+      riss[c] += (k.chemie * st.loes * 0.09 * mischung * (0.3 + riss[c] + durchfluss) * (1 - t.saett) * (q.karst ? 0.15 : 1)) / q.haerte[c];
       // an Höhlendecken löst Kondenswasser zusätzlich (Kondenskorrosion)
       if (c + W < W * H && !fest(stoff[c + W]) && !draussen[c + W]) riss[c] += k.chemie * st.loes * 0.05 * (1 - t.saett) / q.haerte[c];
-      t.saett = Math.min(1, t.saett + 0.1 / Math.max(1, st.loes / 2));
-      if (riss[c] >= 1) { stoff[c] = LUFT; riss[c] = 0; nass[c] = 0; E.chemie++; t.unter = false; neu.push(t); continue; }
+      // nahe der Sättigung löst Wasser nur noch langsam — darum bleibt es bis in die Tiefe etwas aggressiv
+      t.saett = Math.min(1, t.saett + 0.035 / Math.max(1, st.loes / 2) / (1 + durchfluss));
+      if (riss[c] >= 1) { stoff[c] = LUFT; riss[c] = 0; nass[c] = 0; E.chemie++; q.geloest = (q.geloest ?? 0) + 1; t.unter = false; neu.push(t); continue; }
     }
     const durch = (i: number, j: number) => {
       if (i < 0 || i >= W || j >= H) return -1;
       const cc = j * W + i, mm = stoff[cc];
       if (!fest(mm)) return 2;
+      if (mm === TON) return 0; // Stauer: darauf fließt das Wasser seitlich ab
       return STOFFE[mm].durch * (1 - nass[cc] * 0.5) + riss[cc] * 0.8;
     };
     const runter = durch(t.x, t.y + 1);
     if (t.y + 1 >= H) continue;
     if (z() < runter) { t.y++; neu.push(t); continue; }
-    // seitwärts in einer Kluft oder über einer undurchlässigen Schicht (→ Quelle am Hang)
-    const d = z() < 0.5 ? -1 : 1;
+    // seitwärts in einer Kluft oder über einer undurchlässigen Schicht (→ Quelle am Hang):
+    // bevorzugt hangab, dorthin wo das Gelände tiefer liegt
+    const tl = top[Math.max(0, t.x - 4)], tr = top[Math.min(W - 1, t.x + 4)];
+    // schon geweitete Wege ziehen Wasser an (positive Rückkopplung: so entstehen Karströhren)
+    const pl = durch(t.x - 1, t.y), pr = durch(t.x + 1, t.y);
+    const d = Math.abs(pl - pr) > 0.15 && z() < 0.7 ? (pl > pr ? -1 : 1) : tl > tr + 1 ? -1 : tr > tl + 1 ? 1 : z() < 0.5 ? -1 : 1;
     let bewegt = false;
     for (const dd of [d, -d]) {
       const pd = durch(t.x + dd, t.y);
@@ -564,6 +589,7 @@ function bewegeTropfen(q: Querschnitt, k: Klima, top: Int16Array, bewuchs: Float
         t.x += dd;
         // Karstwasser fließt seitlich und mischt sich: Mischungskorrosion macht es wieder aggressiv
         t.saett *= 0.6;
+        t.misch = 6;
         if (pd === 2) t.unter = false; // tritt am Hang aus (Quelle)
         bewegt = true;
         break;
@@ -571,7 +597,7 @@ function bewegeTropfen(q: Querschnitt, k: Klima, top: Int16Array, bewuchs: Float
     }
     if (t.x < 0 || t.x >= W) continue;
     // festgesteckt: wird nach langer Zeit zu Bodenfeuchte (Grundwasser)
-    if (bewegt || t.alter < 300) neu.push(t);
+    if (bewegt || t.alter < 2000) neu.push(t);
     else nass[c] = Math.min(1, nass[c] + 0.2);
   }
   q.tropfen = neu;
@@ -582,10 +608,14 @@ function bewegeTropfen(q: Querschnitt, k: Klima, top: Int16Array, bewuchs: Float
  * Gesteinsblöcke ohne Verbindung zum Untergrund (z. B. Wollsäcke, aus denen
  * der Grus gespült wurde) fallen eine Zelle tiefer, wenn darunter Platz ist.
  */
-function bloeckeFallen(q: Querschnitt) {
+function bloeckeFallen(q: Querschnitt, top: Int16Array) {
   const { W, H, stoff } = q;
   const N = W * H;
-  const fels = (k: number) => istFels(stoff[k]);
+  if (!q.lose) q.lose = new Uint8Array(N);
+  const lose = q.lose;
+  for (let k = 0; k < N; k++) if (lose[k] && !istFels(stoff[k])) lose[k] = 0;
+  // fester Untergrund: Fels, der über Fels mit dem Rand verbunden ist — lose Blöcke zählen nicht
+  const fels = (k: number) => istFels(stoff[k]) && !lose[k];
   const halt = new Uint8Array(N);
   const st: number[] = [];
   for (let i = 0; i < W; i++) { const k = (H - 1) * W + i; if (fels(k)) { halt[k] = 1; st.push(k); } }
@@ -599,11 +629,12 @@ function bloeckeFallen(q: Querschnitt) {
       if (!halt[kk] && fels(kk)) { halt[kk] = 1; st.push(kk); }
     }
   }
-  // lose Blöcke: jedes Teil für sich; es fällt nur als Ganzes und nur, wenn unter ihm überall Luft ist
+  // was nicht hält, wird zum losen Block
+  for (let k = 0; k < N; k++) if (istFels(stoff[k]) && !halt[k]) lose[k] = 1;
   const teil = new Int32Array(N).fill(-1);
   let nr = 0;
   for (let k0 = 0; k0 < N; k0++) {
-    if (!fels(k0) || halt[k0] || teil[k0] >= 0) continue;
+    if (!lose[k0] || teil[k0] >= 0) continue;
     const zellen: number[] = [k0];
     teil[k0] = nr;
     for (let t = 0; t < zellen.length; t++) {
@@ -612,22 +643,147 @@ function bloeckeFallen(q: Querschnitt) {
         const ii = i + a, jj = j + b;
         if (ii < 0 || jj < 0 || ii >= W || jj >= H) continue;
         const kk = jj * W + ii;
-        if (teil[kk] < 0 && fels(kk) && !halt[kk]) { teil[kk] = nr; zellen.push(kk); }
+        if (teil[kk] < 0 && lose[kk]) { teil[kk] = nr; zellen.push(kk); }
       }
     }
-    let frei = true;
-    for (const k of zellen) {
-      const u = k + W;
-      if (u >= N) { frei = false; break; }
-      if (teil[u] === nr) continue;
-      if (fest(stoff[u])) { frei = false; break; }
+    // große Massen (ganze Bergteile) rutschen hier nicht — dafür ist der Schnitt zu grob
+    if (zellen.length > 4000) { for (const k of zellen) lose[k] = 0; nr++; continue; }
+    // erst fallen, sonst hangab rollen (eine Zelle schräg nach unten)
+    let mx = 0, my = 0, links = 0, rechts = 0;
+    for (const k of zellen) { const i = k % W; if (i > 0) links += top[i - 1]; if (i < W - 1) rechts += top[i + 1]; }
+    const hangab = links > rechts ? -1 : 1;
+    for (const [dx, dy] of [[0, 1], [hangab, 1], [-hangab, 1]]) {
+      let ok = true;
+      for (const k of zellen) {
+        const i = k % W, j = (k - i) / W, ii = i + dx, jj = j + dy;
+        if (ii < 0 || ii >= W || jj >= H) { ok = false; break; }
+        const kk = jj * W + ii;
+        if (teil[kk] === nr) continue;
+        if (fest(stoff[kk])) { ok = false; break; }
+      }
+      if (ok) { mx = dx; my = dy; break; }
     }
-    if (frei) {
-      zellen.sort((x, y) => y - x); // unten zuerst
-      for (const k of zellen) { tausche(q, k, k + W); teil[k + W] = nr; teil[k] = -1; }
+    if (my) {
+      // Zellen in Bewegungsrichtung zuerst verschieben
+      zellen.sort((x, y) => { const jx = Math.floor(x / W), jy = Math.floor(y / W); return jy - jx || (mx ? (y % W - x % W) * mx : 0); });
+      for (const k of zellen) {
+        const ziel = k + my * W + mx;
+        tausche(q, k, ziel);
+        lose[ziel] = 1; lose[k] = 0;
+        teil[ziel] = nr; teil[k] = -1;
+      }
     }
     nr++;
   }
+}
+
+/**
+ * Karstwasser-Netz. Jeder Schritt:
+ *   1. Quellen: Stellen im löslichen Gestein, die direkt über dem Stauer (Ton)
+ *      oder am Grund an die freie Luft grenzen.
+ *   2. Kürzeste Wege (Dijkstra) von den Quellen ins Gestein; ein Schritt kostet
+ *      umso weniger, je weiter die Kluft schon ist (Höhlen fast nichts), bergauf
+ *      fließt Wasser nur ungern (gespannt).
+ *   3. Jede Versickerungsstelle oben schickt Regen den Weg entlang zur Quelle;
+ *      der Durchfluss summiert sich auf.
+ *   4. Lösung ∝ Durchfluss × Aggressivität; die Aggressivität sinkt mit dem
+ *      gelösten Kalk, in schnellen, großen Röhren langsamer. Geweitete Wege
+ *      kosten weniger und ziehen mehr Wasser an — so wachsen Röhren und Höhlen.
+ *   5. Wenig Wasser, das gesättigt aus der Decke in eine Höhle tropft, baut
+ *      Tropfsteine; im Höhlenbach mit viel Durchfluss wachsen keine.
+ */
+function karstNetz(q: Querschnitt, k: Klima, top: Int16Array, draussen: Uint8Array, bewuchs: Float32Array, E: Record<Kraft, number>) {
+  const { W, H, stoff, riss, haerte } = q;
+  const N = W * H;
+  const loeslich = (m: number) => fest(m) && STOFFE[m].loes > 0 && m !== SINTER;
+  const hohl = (c: number) => !fest(stoff[c]) && !draussen[c];
+  const netz = (c: number) => loeslich(stoff[c]) || hohl(c) || stoff[c] === SINTER;
+  let gibt = false;
+  for (let c = 0; c < N; c++) if (loeslich(stoff[c])) { gibt = true; break; }
+  if (!gibt) { q.karst = undefined; return; }
+  if (!q.karst) q.karst = new Float32Array(N);
+  const fl = q.karst;
+  fl.fill(0);
+  // Float64: mit Float32 rundet der gespeicherte Wert auf und »verbessert« sich endlos
+  const kosten = new Float64Array(N).fill(Infinity);
+  const nach = new Int32Array(N).fill(-1);
+  const heap: number[] = [];
+  const kl = (a: number, b: number) => kosten[a] < kosten[b];
+  const push = (x: number) => { heap.push(x); let i = heap.length - 1; while (i > 0) { const p = (i - 1) >> 1; if (!kl(heap[i], heap[p])) break; [heap[i], heap[p]] = [heap[p], heap[i]]; i = p; } };
+  const pop = () => { const t = heap[0], l = heap.pop()!; if (heap.length) { heap[0] = l; let i = 0; for (;;) { const a = 2 * i + 1, b = a + 1; let m = i; if (a < heap.length && kl(heap[a], heap[m])) m = a; if (b < heap.length && kl(heap[b], heap[m])) m = b; if (m === i) break; [heap[m], heap[i]] = [heap[i], heap[m]]; i = m; } } return t; };
+  // 1. Quellen
+  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
+    const c = j * W + i;
+    if (!netz(c)) continue;
+    const unten = j + 1 < H ? stoff[c + W] : TON;
+    const amStauer = unten === TON || unten === SCHIEFER || j === H - 1;
+    const anLuft = (i > 0 && draussen[c - 1]) || (i < W - 1 && draussen[c + 1]) || (j + 1 < H && draussen[c + W]);
+    if (amStauer && anLuft) { kosten[c] = 0; push(c); }
+  }
+  if (!heap.length) return;
+  // 2. Wege
+  const durch = (c: number) => (hohl(c) ? 25 : 0.03 + riss[c] * 1.2 + (stoff[c] === SINTER ? 0 : 0));
+  while (heap.length) {
+    const c = pop(), i = c % W, j = (c - i) / W;
+    for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const ii = i + a, jj = j + b;
+      if (ii < 0 || jj < 0 || ii >= W || jj >= H) continue;
+      const n = jj * W + ii;
+      if (!netz(n)) continue;
+      // Wasser fließt von n nach c: von oben nach unten leicht, von unten nach oben schwer
+      const richtung = b === 1 ? 4 : b === -1 ? 0.6 : 1;
+      const kk = kosten[c] + richtung / durch(n);
+      if (kk < kosten[n]) { kosten[n] = kk; nach[n] = c; push(n); }
+    }
+  }
+  // 3. Versickerung oben: in jeder Spalte die oberste lösliche Zelle
+  const regen = k.wasser * (q.winter && k.frost > 0.6 ? 0.4 : 1);
+  for (let i = 0; i < W; i++) {
+    const j = top[i];
+    if (j >= H) continue;
+    const c = j * W + i;
+    if (!netz(c) || nach[c] < 0 && kosten[c] !== 0) continue;
+    // Zufluss von der Seite: Wasser, das an Hängen abläuft, sammelt sich in Mulden
+    const mulde = (top[Math.max(0, i - 3)] < j ? 1 : 0) + (top[Math.min(W - 1, i + 3)] < j ? 1 : 0);
+    let menge = regen * (1 - 0.4 * bewuchs[i]) * (1 + mulde);
+    let aggr = 1; // Kohlensäure aus dem Boden
+    let x = c, schritte = 0;
+    while (x >= 0 && schritte < 3000) {
+      fl[x] += menge;
+      if (loeslich(stoff[x])) {
+        const st = STOFFE[stoff[x]];
+        const groesse = Math.min(4, (q.fluss ? q.fluss[x] : 0) / 40);
+        riss[x] += (k.chemie * st.loes * 0.0025 * menge * aggr * (0.3 + riss[x])) / haerte[x];
+        aggr *= 1 - 0.02 / (1 + groesse);
+        if (riss[x] >= 1) { stoff[x] = LUFT; riss[x] = 0; q.nass[x] = 0; E.chemie++; q.geloest = (q.geloest ?? 0) + 1; }
+      }
+      // Wasser, das als dünnes Rinnsal gesättigt in eine Höhle tropft: Tropfstein
+      const n = nach[x];
+      if (n >= 0 && hohl(n) && loeslich(stoff[x]) && n === x + W && aggr < 0.6 && menge < 1.5 && q.zufall() < 0.04) {
+        // Stalagmit am Boden darunter, sonst Stalaktit an der Decke
+        let y = n;
+        while (y + W < N && hohl(y + W)) y += W;
+        if (q.zufall() < 0.6 && y !== n) stoff[y] = SINTER; else stoff[n] = SINTER;
+        E.chemie++;
+        break;
+      }
+      if (n >= 0 && hohl(n)) aggr = Math.max(aggr, Math.min(0.6, aggr + 0.01)); // Mischung im Gang hält das Wasser etwas aggressiv
+      // Wasser in einem offenen Gang löst die Wände: Boden und Seiten stark (Canyon), Decke wenig
+      if (hohl(x) && aggr > 0.05) {
+        const i0 = x % W;
+        for (const [nb, f] of [[x + W, 1], [x - 1, 0.6], [x + 1, 0.6], [x - W, 0.15]] as const) {
+          if (nb < 0 || nb >= N || (nb === x - 1 && i0 === 0) || (nb === x + 1 && i0 === W - 1)) continue;
+          const mm = stoff[nb];
+          if (!loeslich(mm)) continue;
+          riss[nb] += (k.chemie * STOFFE[mm].loes * 0.003 * Math.min(fl[x], 80) * aggr * f) / haerte[nb];
+          if (riss[nb] >= 1) { stoff[nb] = LUFT; riss[nb] = 0; q.nass[nb] = 0; E.chemie++; q.geloest = (q.geloest ?? 0) + 1; }
+        }
+      }
+      x = n;
+      schritte++;
+    }
+  }
+  if (q.fluss) for (let c = 0; c < N; c++) q.fluss[c] += fl[c] * 0.5;
 }
 
 /** Tragfähigkeit (relativ) der Decke je Stoff */

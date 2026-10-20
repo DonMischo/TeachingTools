@@ -26,7 +26,7 @@ export const PHASEN: Partial<Record<Gestein, Phase[]>> = {
     { klima: "mittel", schritte: 150, titel: "Heute", text: "Wald wächst auf dem Grus, die Wollsäcke liegen frei — so sieht es am Brocken, im Fichtelgebirge (Luisenburg) oder an den Greifensteinen aus." },
   ],
   kalk: [
-    { klima: "mittel", schritte: 600, titel: "Kohlensäure löst Kalk", text: "Der Bach verschwindet im Ponor und fließt unterirdisch zur Karstquelle. Sickerwasser weitet Klüfte, Höhlen wachsen, eine Höhlendecke bricht ein." },
+    { klima: "mittel", schritte: 1500, titel: "Verkarstung des gehobenen Rückens", text: "Regenwasser mit Kohlensäure sickert in die Klüfte und löst Kalk. Wo mehr Wasser fließt, wird mehr gelöst — die Wege weiten sich und ziehen noch mehr Wasser an. Über dem Ton fließt das Karstwasser seitlich zu Quellen am Hang; dort wachsen Röhren und Höhlen. Gesättigtes Sickerwasser bildet in den Höhlen Tropfsteine, zu weite Decken brechen ein — Dolinen entstehen." },
   ],
 };
 
@@ -77,7 +77,8 @@ const tropfstein = (b: Bau, x: number, y: number, l: number, d: 1 | -1) => {
   }
 };
 
-export function querschnitt(g: Gestein, seed = 1, W = 400, H = 220): Querschnitt {
+/** `beispiel`: beim Kalk die fertige Karstlandschaft statt des unberührten Rückens */
+export function querschnitt(g: Gestein, seed = 1, W = 400, H = 220, beispiel = false): Querschnitt {
   const z = zufallsquelle(seed);
   const r = perlin(seed);
   const N = W * H;
@@ -102,6 +103,31 @@ export function querschnitt(g: Gestein, seed = 1, W = 400, H = 220): Querschnitt
 
   switch (g) {
     case "kalk": {
+      if (!beispiel) {
+        // Gehobener Kalkrücken auf aufgewölbtem Ton/Mergel (Antiklinale): fast unberührt, nur Klüfte und Schichtfugen.
+        // Höhlen, Dolinen, Quellen und Tropfsteine sollen erst durch das Wasser entstehen.
+        const basis = (x: number) => H * (0.74 - 0.16 * (1 - ((x - 0.5) / 0.5) ** 2));
+        fuellen(x => {
+          const f = Math.abs(x - 0.5) / 0.5;
+          if (f > 0.9) return H * 0.72; // Täler am Fuß: hier fließen die Flüsse (Vorfluter)
+          return H * (0.12 + 0.56 * f ** 1.7) + 1.5 * r(x * 8, 2);
+        }, (i, j) => (j > basis(i / W) ? TON : KALK));
+        for (let k = 0; k < N; k++) if (b.stoff[k] === KALK) {
+          const i = k % W, j = Math.floor(k / W);
+          // Bänke parallel zur Aufwölbung, verschieden fest
+          b.haerte[k] = 0.8 + 0.4 * (Math.sin((basis(i / W) - j) * 0.33) > 0 ? 1 : 0);
+        }
+        // Klüfte nur im Kalk; der Ton darunter ist plastisch und dicht
+        for (let i = 6 + Math.floor(z() * 8); i < W; i += 12 + Math.floor(z() * 12)) for (let j = 0; j < H; j++) { const ii = i + Math.round(r(j / 30, i) * 2); if (j < basis(ii / W)) kluft(b, ii, j, 0.42 + 0.1 * z()); }
+        for (let i = 0; i < W; i++) for (let n = 1; n < 14; n++) kluft(b, i, Math.round(basis(i / W) - n * 9), 0.3);
+        bodendecke(2, m => m === KALK);
+        marke("Gehobener Kalkrücken", X(0.5), ober[X(0.5)] - 10);
+        marke("Klüfte und Schichtfugen", X(0.36), ober[X(0.36)] + 22);
+        marke("Ton/Mergel (undurchlässig, aufgewölbt)", X(0.5), Y(0.86));
+        marke("Tal", X(0.04), Y(0.66));
+        marke("Tal", X(0.96), Y(0.66));
+        break;
+      }
       const tal = 0.84;
       fuellen(x => {
         if (x < 0.22) return H * (0.1 + x * 0.45); // Bachbett: gleichmäßiges Gefälle zum Ponor
@@ -294,6 +320,6 @@ export function querschnitt(g: Gestein, seed = 1, W = 400, H = 220): Querschnitt
   return {
     W, H, zelle: 0.25, stoff, eltern: b.eltern, riss, nass, haerte, tropfen: [], jahr: 0, winter: false,
     wirkung: leereWirkung(), wirkungMittel: leereWirkung(), start: Uint8Array.from(stoff), zufall: z,
-    marken: b.marken, quellen: b.quellen, ereignisse: [], stand: 0, gestein: g,
+    marken: b.marken, quellen: b.quellen, ereignisse: [], stand: 0, gestein: g, fluss: new Float32Array(N), geloest: 0,
   };
 }

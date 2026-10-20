@@ -21,7 +21,7 @@ export default function VerwitterungModus({ startGestein }: { startGestein?: Ges
   const [seed, setSeed] = useState(3);
   const [klimaId, setKlimaId] = useState<string>(STECKBRIEFE[startGestein ?? "granit"].klima);
   const [k, setK] = useState<Klima>(KLIMATE.find(x => x.id === STECKBRIEFE[startGestein ?? "granit"].klima)!.k);
-  const q = useRef<Querschnitt>(querschnitt(gestein, seed));
+  const q = useRef<Querschnitt>(querschnitt(gestein, seed, 400, 220, false));
   const [laeuft, setLaeuft] = useState(false);
   const [tempo, setTempo] = useState(2);
   const [version, setVersion] = useState(0);
@@ -31,6 +31,10 @@ export default function VerwitterungModus({ startGestein }: { startGestein?: Ges
   const tempoRef = useRef(tempo); tempoRef.current = tempo;
   const laeuftRef = useRef(laeuft); laeuftRef.current = laeuft;
   const [marken, setMarken] = useState(true);
+  const [wege, setWege] = useState(false);
+  const wegeRef = useRef(wege); wegeRef.current = wege;
+  const [beispiel, setBeispiel] = useState(false);
+  const neuerSchnitt = () => querschnitt(gestein, seed, 400, 220, beispiel);
   const markenRef = useRef(marken); markenRef.current = marken;
   // Erdgeschichte abspielen: Phase und verbleibende Schritte
   const [film, setFilm] = useState<{ nr: number; rest: number } | null>(null);
@@ -39,7 +43,9 @@ export default function VerwitterungModus({ startGestein }: { startGestein?: Ges
   const fels = useRef<HTMLCanvasElement | null>(null);
   const felsStand = useRef("");
 
-  useEffect(() => { q.current = querschnitt(gestein, seed); felsStand.current = ""; setFilm(null); setVersion(v => v + 1); }, [gestein, seed]);
+  useEffect(() => { q.current = neuerSchnitt(); felsStand.current = ""; setFilm(null); setVersion(v => v + 1); },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [gestein, seed, beispiel]);
 
   // eine Schleife: rechnen (wenn es läuft) und zeichnen (immer, für Sonne/Wind/Regen)
   useEffect(() => {
@@ -71,11 +77,11 @@ export default function VerwitterungModus({ startGestein }: { startGestein?: Ges
       if (c) {
         const z = q.current, kk = kRef.current;
         // Gesteinsebene nur neu zeichnen, wenn sich etwas geändert hat
-        const stand = `${z.stand}|${z.winter && kk.frost > 0.2}|${kk.chemie > 0.5}`;
+        const stand = `${z.stand}|${z.winter && kk.frost > 0.2}|${kk.chemie > 0.5}|${wegeRef.current}`;
         if (!fels.current) fels.current = document.createElement("canvas");
         if (stand !== felsStand.current) {
           fels.current.width = z.W * PX; fels.current.height = z.H * PX;
-          felsBild(fels.current.getContext("2d", { willReadFrequently: true })!, z, kk, PX);
+          felsBild(fels.current.getContext("2d", { willReadFrequently: true })!, z, kk, PX, wegeRef.current);
           felsStand.current = stand;
         }
         zeichneQuerschnitt(c.getContext("2d")!, z, kk, (t - t0) / 1000, PX, fels.current, { marken: markenRef.current });
@@ -91,7 +97,7 @@ export default function VerwitterungModus({ startGestein }: { startGestein?: Ges
   const phasen = PHASEN[gestein];
   const starteFilm = () => {
     if (!phasen) return;
-    q.current = querschnitt(gestein, seed); felsStand.current = "";
+    q.current = neuerSchnitt(); felsStand.current = "";
     const f = { nr: 0, rest: phasen[0].schritte };
     setFilm(f); filmRef.current = f;
     waehleKlima(phasen[0].klima);
@@ -157,6 +163,10 @@ export default function VerwitterungModus({ startGestein }: { startGestein?: Ges
           </div>
           {phasen && <button className="btn-primary" onClick={starteFilm}>📜 Entstehung abspielen ({phasen.length} {phasen.length === 1 ? "Phase" : "Phasen"})</button>}
           <label className="flex items-center gap-2 text-xs text-muted"><input type="checkbox" checked={marken} onChange={e => setMarken(e.target.checked)} /> Formen beschriften</label>
+          <label className="flex items-center gap-2 text-xs text-muted" title="Blau: wo in letzter Zeit viel Wasser durch das Gestein floss"><input type="checkbox" checked={wege} onChange={e => setWege(e.target.checked)} /> 💧 Wasserwege im Gestein zeigen</label>
+          {gestein === "kalk" && (
+            <label className="flex items-center gap-2 text-xs text-muted" title="Statt des unberührten Rückens: eine fertige Karstlandschaft mit Ponor, Höhlenbach, Tropfsteinhöhle und Karstquelle"><input type="checkbox" checked={beispiel} onChange={e => { setLaeuft(false); setBeispiel(e.target.checked); }} /> Fertige Karstlandschaft als Beispiel</label>
+          )}
           <div className="rounded-lg bg-accent/10 px-3 py-1.5 font-bold">
             {z.jahr.toLocaleString("de-DE")} Jahre {z.winter && k.frost > 0.2 ? "· ❄️ Winter" : ""}
           </div>
@@ -193,6 +203,7 @@ export default function VerwitterungModus({ startGestein }: { startGestein?: Ges
             <div className="rounded-lg bg-bad/10 p-2"><div className="text-lg font-black">{Math.round(verwittert(z) * 100)} %</div><div className="text-xs text-muted">Fels verwittert</div></div>
             <div className="rounded-lg bg-bad/10 p-2"><div className="text-lg font-black">{Math.round(abgetragen(z))} m²</div><div className="text-xs text-muted">abgetragen</div></div>
             <div className="rounded-lg bg-accent/10 p-2"><div className="text-lg font-black">{hoehlen(z).toFixed(1)} m²</div><div className="text-xs text-muted">Hohlräume</div></div>
+            {(z.geloest ?? 0) > 0 && <div className="col-span-3 rounded-lg bg-accent/10 p-2 text-xs"><b>{((z.geloest ?? 0) * z.zelle * z.zelle).toFixed(1)} m²</b> Gestein gelöst und vom Grundwasser fortgetragen (je Meter Rückenlänge ≈ {((z.geloest ?? 0) * z.zelle * z.zelle * 2.7).toFixed(1)} t Kalk)</div>}
           </div>
           <details className="rounded-lg border border-line p-2">
             <summary className="cursor-pointer font-bold">📘 Verwitterung — Abtragung</summary>

@@ -149,7 +149,7 @@ describe("Verwitterung im Querschnitt", () => {
   });
 
   it("Karst: der Bach verschwindet im Ponor und fließt unterirdisch", () => {
-    const q = querschnitt("kalk", 2);
+    const q = querschnitt("kalk", 2, 400, 220, true);
     const k = KLIMATE.find(x => x.id === "mittel")!.k;
     for (let i = 0; i < 40; i++) vschritt(q, k);
     // Wasser im Höhlenbach: unter der Oberfläche, aber in der Luft eines Gangs
@@ -159,12 +159,31 @@ describe("Verwitterung im Querschnitt", () => {
   });
 
   it("Karst: Tropfsteinhöhle und Höhlenbach-Gang bleiben stabil", () => {
-    const q = querschnitt("kalk", 2);
+    const q = querschnitt("kalk", 2, 400, 220, true);
     const k = KLIMATE.find(x => x.id === "mittel")!.k;
     const luft = (fx: number, fy: number) => q.stoff[Math.round(fy * q.H) * q.W + Math.round(fx * q.W)];
     for (let i = 0; i < 300; i++) vschritt(q, k);
     expect([VLUFT, WASSER]).toContain(luft(0.54, 0.53)); // neben der Säule in der Mitte
     expect([VLUFT, WASSER]).toContain(luft(0.6, 0.755));
+  });
+
+  it("Karstrücken: aus unberührtem Kalk entstehen Wasserwege und Hohlräume", () => {
+    const q = querschnitt("kalk", 2);
+    expect(hoehlen(q)).toBe(0);
+    const k = KLIMATE.find(x => x.id === "mittel")!.k;
+    for (let i = 0; i < 400; i++) vschritt(q, k);
+    expect(q.geloest ?? 0).toBeGreaterThan(50);
+    expect(q.karst!.some(f => f > 5)).toBe(true);
+  });
+
+  it("Granit: lose Blöcke rollen den Hang hinab, statt zu schweben", () => {
+    const q = querschnitt("granit", 2);
+    const k = KLIMATE.find(x => x.id === "harz")!.k;
+    for (let i = 0; i < 200; i++) vschritt(q, k);
+    // kein loser Block hat Luft direkt unter sich
+    let schwebt = 0;
+    for (let c = 0; c < q.W * (q.H - 1); c++) if (q.lose?.[c] && q.stoff[c + q.W] === VLUFT && q.lose[c + q.W] !== 1) schwebt++;
+    expect(schwebt).toBeLessThan(20);
   });
 
   it("Granit: Entstehung abspielen lässt Grus und freiliegende Blöcke zurück", () => {

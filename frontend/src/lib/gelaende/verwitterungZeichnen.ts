@@ -20,7 +20,8 @@ function oberkanten(q: Querschnitt): Int16Array {
 }
 
 /** Gesteinsebene in ctx (Größe W·px × H·px); Luft über der Oberfläche bleibt durchsichtig */
-export function felsBild(ctx: Ctx, q: Querschnitt, k: Klima, px: number) {
+/** `wege`: Zellen, durch die viel Wasser fließt, blau tönen (Wasserwege im Gestein) */
+export function felsBild(ctx: Ctx, q: Querschnitt, k: Klima, px: number, wege = false) {
   const { W, H, stoff, riss, nass, haerte, eltern } = q;
   const BW = W * px, BH = H * px;
   const winter = q.winter && k.frost > 0.2;
@@ -31,7 +32,9 @@ export function felsBild(ctx: Ctx, q: Querschnitt, k: Klima, px: number) {
     const c = j * W + i, m = stoff[c];
     if (m === LUFT) {
       const hoehle = q.draussen ? !q.draussen[c] : j > top[i];
-      if (hoehle) for (let b = 0; b < px; b++) for (let a = 0; a < px; a++) { const o = ((j * px + b) * BW + i * px + a) * 4; d[o] = 30; d[o + 1] = 27; d[o + 2] = 26; d[o + 3] = 255; }
+      // Höhlenbach: Gänge mit viel Karstwasser blau, Rest dunkel
+      const bach = hoehle && q.karst && q.karst[c] > 2 && j + 1 < H && stoff[c + W] !== LUFT;
+      if (hoehle) for (let b = 0; b < px; b++) for (let a = 0; a < px; a++) { const o = ((j * px + b) * BW + i * px + a) * 4; if (bach && b >= px / 3) { d[o] = 50; d[o + 1] = 120; d[o + 2] = 210; } else { d[o] = 30; d[o + 1] = 27; d[o + 2] = 26; } d[o + 3] = 255; }
       continue;
     }
     let [r, gg, bb] = m === SCHUTT ? STOFFE[eltern[c] && eltern[c] !== SCHUTT ? eltern[c] : SCHUTT].farbe : STOFFE[m].farbe;
@@ -54,6 +57,7 @@ export function felsBild(ctx: Ctx, q: Querschnitt, k: Klima, px: number) {
         if (kante) { f *= 1 - 0.6 * Math.min(1, ri); cr = true; }
       }
       const o = (y * BW + x) * 4;
+      if (wege && q.fluss && q.fluss[c] > 0.3) { const w = Math.min(0.85, Math.log1p(q.fluss[c]) / 3.5); d[o] = r * f * (1 - w) + 30 * w; d[o + 1] = gg * f * (1 - w) + 110 * w; d[o + 2] = bb * f * (1 - w) + 240 * w; d[o + 3] = 255; continue; }
       if (cr && eis) { d[o] = 190; d[o + 1] = 232; d[o + 2] = 250; }
       else if (m === SINTER) { d[o] = 236 * f; d[o + 1] = 214 * f; d[o + 2] = 170 * f; }
       else { d[o] = r * f; d[o + 1] = gg * f; d[o + 2] = bb * f; }
