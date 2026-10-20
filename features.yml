@@ -373,9 +373,18 @@ simulationen:
       - Granit - Wollsackverwitterung als abspielbare Erdgeschichte (Tertiär, Eiszeit, heute), Frost und Wasser auch in den Bankungsfugen, lose Blöcke rollen hangab
       - Karst aus einem unberührten, gehobenen Kalkrücken - Karstwasser-Netz (kürzeste Wege zu den Quellen, Lösung ∝ Durchfluss, Rückkopplung) lässt Röhren, Höhlen, Tropfsteine, Lösungsdolinen und Deckeneinbrüche entstehen; Wasserwege einblendbar, gelöste Menge als Zähler
       - Sechs Kräfte einzeln oder als Klima - Temperatur, Wind (Deflation, Dünen, Korrasion), Wasser (Abspülung, Versickern, Rutschung), Frostsprengung, Lösung und Hydrolyse (Karst, Höhlen, Tropfsteine, Grus), Pflanzen
+      - Formen erkennen - entstandene Formen werden laufend gefunden und beschriftet (Höhle, Tropfsteinhöhle, Höhlenbach, Karstquelle, Schluckloch, Dolinen, Wollsack, Felsburg, Schutthalde, Düne; Küste - Kliff, Brandungsplatte, Anlandung, Deichbruch; Flüsse - See, neuer Fluss, Kerbtal, Schwemmfächer)
       - Wirkungsbalken zeigen, welche Kraft gerade am meisten verändert; Sonne, Wind, Regen, Schnee und Eis in Rissen sichtbar
       - 3D-Flug im Stil von Voxel Space
       - Als TaskCrawler-Werkzeug mit fester Ansicht
+  - id: diagramme
+    name: Diagramm-Werkstatt
+    kann:
+      - Ablaufdiagramme und Mindmaps in D2 (d2lang, MPL-2.0), gesetzt im Browser per WebAssembly
+      - Bausteine-Modus - Knoten hinzufügen (Schritt, Start/Ende, Entscheidung, Ein-/Ausgabe), am gewählten Knoten weiterbauen, per Klick verbinden, Text, Form, Füll-/Rahmen-/Schriftfarbe, gestrichelt, fett, Pfeilart und Beschriftung
+      - Code-Modus mit Zeilennummern, Fehlern mit Zeilenangabe und Spickzettel; Bausteine und Code bearbeiten denselben Text, unbekannte D2-Teile bleiben unverändert
+      - 20 Farbthemen, Richtung, Anordnung (dagre oder ELK), Handzeichnungs-Stil - im Code unter vars.d2-config
+      - Vorlagen (Mindmap, Ablaufdiagramm, Gruppen), Ablage im Browser, Rückgängig/Wiederholen, Export als PNG, SVG und .d2, .d2 öffnen
   - id: erfolge
     name: Erfolge (Übersicht)
     kann:

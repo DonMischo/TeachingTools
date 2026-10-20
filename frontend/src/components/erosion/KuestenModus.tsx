@@ -7,13 +7,14 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  KUESTEN, kuesteErzeugen, kuestenFarben, kuestenSchritt, rueckgang, STANDARD_KUESTE, ueberflutet, wasserstand,
+  KUESTEN, kuesteErzeugen, kuestenFormen, kuestenFarben, kuestenSchritt, rueckgang, STANDARD_KUESTE, ueberflutet, wasserstand,
   type Kueste, type KuestenParameter, type KuestenTyp,
 } from "@/lib/gelaende/kuestenErosion";
 import type { VoxelKarte } from "@/lib/gelaende/voxel";
 import VoxelFlug from "@/components/gelaende/VoxelFlug";
 import { voxelAusGitter } from "@/components/gelaende/voxelGitter";
 import SimVerweis from "@/components/gelaende/SimVerweis";
+import Formschilder from "@/components/gelaende/Formschilder";
 
 const chip = (an: boolean) => `px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${an ? "bg-accent text-accent-fg" : "text-muted hover:text-fg"}`;
 
@@ -30,6 +31,7 @@ export default function KuestenModus({ startTyp }: { startTyp?: KuestenTyp }) {
   const [sturmAlle, setSturmAlle] = useState(10);
   const [spalte, setSpalte] = useState(0.5);
   const [drei, setDrei] = useState(false);
+  const [schilder, setSchilder] = useState(true);
   const cv = useRef<HTMLCanvasElement>(null);
   const profil = useRef<HTMLCanvasElement>(null);
   const [letzterSturm, setLetzterSturm] = useState<number | null>(null);
@@ -105,6 +107,9 @@ export default function KuestenModus({ startTyp }: { startTyp?: KuestenTyp }) {
   }, [drei, voxelStand, typ, seed, fein]);
 
   const z = k.current;
+  const marken = useMemo(() => (schilder && z.jahr > 0 ? kuestenFormen(z, anzeigeP) : []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [Math.floor(version / 5), schilder, typ, seed]);
   const info = KUESTEN.find(x => x.id === typ)!;
 
   return (
@@ -121,12 +126,16 @@ export default function KuestenModus({ startTyp }: { startTyp?: KuestenTyp }) {
       <div className="grid gap-3 lg:grid-cols-[1fr_340px]">
         <div className="min-w-0">
           {drei && karte ? <VoxelFlug karte={karte} /> : (
-            <canvas ref={cv} className="aspect-square w-full max-w-[760px] cursor-crosshair rounded-xl border border-line" aria-label="Küste von oben"
-              onClick={x => { const r = (x.target as HTMLElement).getBoundingClientRect(); setSpalte(Math.max(0, Math.min(0.999, (x.clientX - r.left) / r.width))); }} />
+            <div className="relative w-full max-w-[760px]">
+              <canvas ref={cv} className="aspect-square w-full cursor-crosshair rounded-xl border border-line" aria-label="Küste von oben"
+                onClick={x => { const r = (x.target as HTMLElement).getBoundingClientRect(); setSpalte(Math.max(0, Math.min(0.999, (x.clientX - r.left) / r.width))); }} />
+              {schilder && <Formschilder marken={marken} n={z.n} />}
+            </div>
           )}
           <canvas ref={profil} className="mt-2 h-auto w-full max-w-[760px] rounded-lg border border-line" aria-label="Querprofil" />
           <div className="mt-1 flex flex-wrap gap-1">
             <button className={`chip ${drei ? "chip-on" : ""}`} onClick={() => setDrei(x => !x)}>🛩️ 3D-Flug</button>
+            <button className={`chip ${schilder ? "chip-on" : ""}`} onClick={() => setSchilder(x => !x)}>✨ Formen erkennen</button>
             <span className="text-xs text-muted">Klick in die Karte wählt das Querprofil.</span>
           </div>
         </div>

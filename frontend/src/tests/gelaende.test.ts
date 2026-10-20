@@ -173,7 +173,7 @@ describe("Verwitterung im Querschnitt", () => {
     const k = KLIMATE.find(x => x.id === "mittel")!.k;
     for (let i = 0; i < 400; i++) vschritt(q, k);
     expect(q.geloest ?? 0).toBeGreaterThan(50);
-    expect(q.karst!.some(f => f > 5)).toBe(true);
+    expect(q.fluss!.some(f => f > 20)).toBe(true);
   });
 
   it("Granit: lose Blöcke rollen den Hang hinab, statt zu schweben", () => {

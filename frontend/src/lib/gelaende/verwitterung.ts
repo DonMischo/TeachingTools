@@ -143,6 +143,10 @@ export interface Querschnitt {
   geloest?: number;
   /** 1 = Teil eines losgelösten Blocks (kann fallen und rollen) */
   lose?: Uint8Array;
+  /** Zellen eines Blocks, der schon gefallen oder gerollt ist */
+  gerollt?: Uint8Array;
+  /** Orte, an denen eine Höhlendecke bis zur Oberfläche durchbrach (für »Einsturzdoline«) */
+  einstuerze?: { x: number; jahr: number }[];
   /** Karstwasser-Netz: Durchfluss je Zelle in diesem Schritt (Sickerwasser bis zur Quelle) */
   karst?: Float32Array;
 }
@@ -374,10 +378,12 @@ export function schritt(q: Querschnitt, k: Klima): Querschnitt {
     const c = j * W + i;
     if (STOFFE[stoff[c]].locker) nass[c] = Math.max(nass[c], 0.5 * k.frost);
   }
-  // Am Hangfuß am Kartenrand trägt ein Fluss Lockermaterial fort
+  // Am Hangfuß am Kartenrand trägt ein Fluss Lockermaterial fort — nur, was sich über der alten Oberfläche abgelagert hat
   for (const i of [0, 1, W - 2, W - 1]) {
     const j = top[i];
-    if (j < H && STOFFE[stoff[j * W + i]].locker && z() < 0.6) { stoff[j * W + i] = LUFT; riss[j * W + i] = 0; nass[j * W + i] = 0; }
+    if (j >= H || !STOFFE[stoff[j * W + i]].locker || z() > 0.6) continue;
+    let alt = 0; while (alt < H && !fest(q.start[alt * W + i])) alt++;
+    if (j < alt) { stoff[j * W + i] = LUFT; riss[j * W + i] = 0; nass[j * W + i] = 0; }
   }
   q.ereignisse = [];
   if (durchbruch) q.ereignisse.push(q.gestein === "gips" ? "💥 Erdfall! Die Decke eines Hohlraums ist bis zur Oberfläche eingebrochen." : "💥 Höhlendecke bis zur Oberfläche eingebrochen — eine Einsturzdoline entsteht.");
@@ -670,6 +676,7 @@ function bloeckeFallen(q: Querschnitt, top: Int16Array) {
         const ziel = k + my * W + mx;
         tausche(q, k, ziel);
         lose[ziel] = 1; lose[k] = 0;
+        (q.gerollt ??= new Uint8Array(N))[ziel] = 1; q.gerollt[k] = 0;
         teil[ziel] = nr; teil[k] = -1;
       }
     }
@@ -715,9 +722,22 @@ function karstNetz(q: Querschnitt, k: Klima, top: Int16Array, draussen: Uint8Arr
   for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
     const c = j * W + i;
     if (!netz(c)) continue;
-    const unten = j + 1 < H ? stoff[c + W] : TON;
-    const amStauer = unten === TON || unten === SCHIEFER || j === H - 1;
-    const anLuft = (i > 0 && draussen[c - 1]) || (i < W - 1 && draussen[c + 1]) || (j + 1 < H && draussen[c + W]);
+    // Stauer direkt darunter oder unter einer dünnen Decke aus Boden/Schutt (Quelle am Hangfuß)
+    let amStauer = j === H - 1;
+    for (let d = 1; d <= 5 && !amStauer && j + d < H; d++) {
+      const m = stoff[c + d * W];
+      if (m === TON || m === SCHIEFER) amStauer = true;
+      else if (!(STOFFE[m].locker || !fest(m))) break;
+    }
+    // an der Luft — oder unter einer dünnen, lockeren Decke am Hang
+    let anLuft = (i > 0 && draussen[c - 1] === 1) || (i < W - 1 && draussen[c + 1] === 1) || (j + 1 < H && draussen[c + W] === 1);
+    for (const dx of [-1, 1]) for (let d = 1; d <= 4 && !anLuft; d++) {
+      const ii = i + dx * d;
+      if (ii < 0 || ii >= W) break;
+      const m = stoff[j * W + ii];
+      if (draussen[j * W + ii]) anLuft = true;
+      else if (!STOFFE[m].locker) break;
+    }
     if (amStauer && anLuft) { kosten[c] = 0; push(c); }
   }
   if (!heap.length) return;
@@ -841,6 +861,7 @@ function gewoelbe(q: Querschnitt, draussen: Uint8Array): { brueche: number; durc
           // bis oben durchgebrochen: Trichter bis zur Oberfläche
           durch = true;
           vorher = brueche;
+          (q.einstuerze ??= []).push({ x: c, jahr: q.jahr });
           for (let xx = Math.max(0, c - (L >> 2)); xx <= Math.min(W - 1, c + (L >> 2)); xx++) for (let yy = y - 1; yy >= 0; yy--) { if (!fest(stoff[yy * W + xx])) break; brich(xx, yy); }
         }
       }

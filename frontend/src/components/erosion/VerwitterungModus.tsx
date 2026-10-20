@@ -12,6 +12,7 @@ import {
 import { felsBild, zeichneQuerschnitt } from "@/lib/gelaende/verwitterungZeichnen";
 import { PHASEN, querschnitt } from "@/lib/gelaende/querschnitte";
 import { STECKBRIEFE } from "@/lib/gelaende/gesteine";
+import { formenErkennen, FORM_INFO, type Form } from "@/lib/gelaende/formen";
 
 const PX = 3;
 const chip = (an: boolean) => `px-2.5 py-1.5 rounded-lg text-sm font-bold transition-colors ${an ? "bg-accent text-accent-fg" : "text-muted hover:text-fg"}`;
@@ -31,6 +32,8 @@ export default function VerwitterungModus({ startGestein }: { startGestein?: Ges
   const tempoRef = useRef(tempo); tempoRef.current = tempo;
   const laeuftRef = useRef(laeuft); laeuftRef.current = laeuft;
   const [marken, setMarken] = useState(true);
+  // erkannte Formen: alle 10 Schritte neu
+  const formen = useRef<{ stand: number; liste: Form[] }>({ stand: -99, liste: [] });
   const [wege, setWege] = useState(false);
   const wegeRef = useRef(wege); wegeRef.current = wege;
   const [beispiel, setBeispiel] = useState(false);
@@ -84,7 +87,9 @@ export default function VerwitterungModus({ startGestein }: { startGestein?: Ges
           felsBild(fels.current.getContext("2d", { willReadFrequently: true })!, z, kk, PX, wegeRef.current);
           felsStand.current = stand;
         }
-        zeichneQuerschnitt(c.getContext("2d")!, z, kk, (t - t0) / 1000, PX, fels.current, { marken: markenRef.current });
+        if (z.stand === 0) formen.current = { stand: 0, liste: [] };
+        else if (z.stand - formen.current.stand >= 10 || z.stand < formen.current.stand) formen.current = { stand: z.stand, liste: formenErkennen(z) };
+        zeichneQuerschnitt(c.getContext("2d")!, z, kk, (t - t0) / 1000, PX, fels.current, { marken: markenRef.current, formen: formen.current.liste });
       }
       raf = requestAnimationFrame(lauf);
     };
@@ -204,6 +209,21 @@ export default function VerwitterungModus({ startGestein }: { startGestein?: Ges
             <div className="rounded-lg bg-bad/10 p-2"><div className="text-lg font-black">{Math.round(abgetragen(z))} m²</div><div className="text-xs text-muted">abgetragen</div></div>
             <div className="rounded-lg bg-accent/10 p-2"><div className="text-lg font-black">{hoehlen(z).toFixed(1)} m²</div><div className="text-xs text-muted">Hohlräume</div></div>
             {(z.geloest ?? 0) > 0 && <div className="col-span-3 rounded-lg bg-accent/10 p-2 text-xs"><b>{((z.geloest ?? 0) * z.zelle * z.zelle).toFixed(1)} m²</b> Gestein gelöst und vom Grundwasser fortgetragen (je Meter Rückenlänge ≈ {((z.geloest ?? 0) * z.zelle * z.zelle * 2.7).toFixed(1)} t Kalk)</div>}
+          </div>
+          <div className="rounded-lg border border-line p-2">
+            <div className="text-xs font-bold text-muted">✨ Erkannte Formen</div>
+            {formen.current.liste.length === 0 ? <p className="text-xs text-muted">Noch nichts — lass die Zeit laufen.</p> : (
+              <ul className="mt-1 flex flex-col gap-1">
+                {Object.entries(formen.current.liste.reduce<Record<string, number>>((a, f) => { a[f.art] = (a[f.art] ?? 0) + (f.x < 0 ? 0 : 1); return a; }, {})).map(([art, n]) => (
+                  <li key={art}>
+                    <details className="text-xs">
+                      <summary className="cursor-pointer">{FORM_INFO[art].icon} {art}{n > 1 ? ` (${n})` : ""}</summary>
+                      <p className="mt-0.5 text-muted">{FORM_INFO[art].erklaerung}</p>
+                    </details>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
           <details className="rounded-lg border border-line p-2">
             <summary className="cursor-pointer font-bold">📘 Verwitterung — Abtragung</summary>

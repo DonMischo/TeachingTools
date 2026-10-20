@@ -17,6 +17,7 @@
  * ≈ 0,3–1 m/Jahr Rückgang, Sturmflut ≈ +3 m.
  */
 import { fbm, perlin, zufallsquelle } from "./rauschen";
+import { haufen, type Marke } from "./formen";
 
 export const KUESTEN = [
   { id: "steil", icon: "🪨", label: "Steilküste", text: "Hohes Kliff aus Kreide und Mergel mit Kaps und Buchten (wie Rügen oder Møn)." },
@@ -47,6 +48,8 @@ export interface Kueste {
   flut: Uint8Array;
   /** 1 = bei Mittelwasser zu Beginn Meer */
   startFlut: Uint8Array;
+  /** Deich zu Beginn */
+  startDeich: Uint8Array;
   jahr: number;
   zufall: () => number;
   /** Bilanz seit Start in m³ */
@@ -101,7 +104,7 @@ export function kuesteErzeugen(wahl: KuestenWahl, n = 256, zelle = 6): Kueste {
   }
   const k: Kueste = {
     wahl, n, zelle, h, start: Float32Array.from(h), haerte, deich, kerbe: new Float32Array(N), sand: new Float32Array(N),
-    flut: new Uint8Array(N), startFlut: new Uint8Array(N), jahr: 0, zufall: z, abgetragen: 0, angelandet: 0,
+    flut: new Uint8Array(N), startFlut: new Uint8Array(N), startDeich: Uint8Array.from(deich), jahr: 0, zufall: z, abgetragen: 0, angelandet: 0,
   };
   fluten(k, 0);
   k.startFlut.set(k.flut);
@@ -293,4 +296,35 @@ export function kuestenFarben(k: Kueste, p: KuestenParameter): Uint8ClampedArray
     px[q * 4] = c[0]; px[q * 4 + 1] = c[1]; px[q * 4 + 2] = c[2]; px[q * 4 + 3] = 255;
   }
   return px;
+}
+
+/** Formen der Küste erkennen: Kliff, Brandungsplatte, Anlandung (Haken, Nehrung), Dünen, Deichbruch, überflutetes Land */
+export function kuestenFormen(k: Kueste, p: KuestenParameter): Marke[] {
+  const { n, h, haerte, flut, startFlut, start, deich, startDeich } = k;
+  const N = n * n, W = wasserstand(p);
+  const aus: Marke[] = [];
+  const maske = () => new Uint8Array(N);
+  const kliff = maske(), platte = maske(), an = maske(), duene = maske(), bruch = maske(), unter = maske();
+  for (let j = 1; j < n - 1; j++) for (let i = 1; i < n - 1; i++) {
+    const q = j * n + i;
+    const land = h[q] >= W;
+    // Kliff: hohe Landzelle, nach Süden (Meer) fällt es binnen 6 Zellen bis fast auf den Wasserspiegel
+    if (land && h[q] - W > 6) { for (let d = 1; d <= 6 && j + d < n; d++) if (h[q + d * n] < W + 1.5) { kliff[q] = 1; break; } }
+    if (k.wahl.typ === "steil" && !land && W - h[q] < 2.5 && haerte[q] > SAND + 0.01 && start[q] >= 0) platte[q] = 1;
+    if (land && startFlut[q] && haerte[q] <= SAND + 0.01) an[q] = 1;
+    if (land && haerte[q] <= SAND + 0.01 && h[q] - W > 5 && !deich[q]) duene[q] = 1;
+    if (startDeich[q] && !deich[q] && h[q] < W + 1) bruch[q] = 1;
+    if (flut[q] && !startFlut[q]) unter[q] = 1;
+  }
+  const dazu = (m: Uint8Array, min: number, text: string, erklaerung: string, max = 2) => {
+    for (const g of haufen(m, n, min).slice(0, max)) aus.push({ text, erklaerung, x: g.x, y: g.y });
+  };
+  dazu(kliff, 12, "🪨 Kliff", "Steilwand: Die Brandung untergräbt den Fuß, die Wand bricht nach.");
+  dazu(platte, 25, "🟫 Brandungsplatte", "Flacher Felssockel unter Wasser — hier stand früher das Kliff.");
+  dazu(an, 15, "🏖️ Anlandung (Haken/Nehrung)", "Der Strandversatz hat Sand abgelagert, wo vorher Wasser war.");
+  dazu(duene, 15, "🏜️ Düne", "Vom Wind aufgewehter Sand hinter dem Strand.", 1);
+  dazu(bruch, 3, "💥 Deichbruch", "Das Wasser lief über den Deich und spülte ihn aus.");
+  if (k.wahl.typ === "steil") dazu(unter, 40, "↩️ Küstenrückgang", "Hier war früher Land — die Brandung hat das Kliff zurückverlegt.", 1);
+  else dazu(unter, 40, "🌊 überflutetes Land", "Land, das zu Beginn trocken war, steht unter Wasser.", 1);
+  return aus;
 }

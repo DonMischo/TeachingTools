@@ -72,7 +72,12 @@ export function felsBild(ctx: Ctx, q: Querschnitt, k: Klima, px: number, wege = 
   ctx.putImageData(bild, 0, 0);
 }
 
-export interface ZeichenOptionen { marken?: boolean }
+import type { Form } from "./formen";
+
+export interface ZeichenOptionen { marken?: boolean; formen?: Form[] }
+
+/** Beschriftungen der Ausgangslandschaft, die auch später stimmen (Schichten, Gesteine) */
+const BLEIBT = /Ton|Schiefer|darunter|undurchlässig|Bankung|Klüfte|Schieferung|Buntsandstein|Sandstein \(|Basaltdecke|Tal$/;
 
 export function zeichneQuerschnitt(ctx: Ctx, q: Querschnitt, k: Klima, t: number, px: number, fels: CanvasImageSource, o: ZeichenOptionen = {}) {
   const { W, H, stoff } = q;
@@ -160,7 +165,8 @@ export function zeichneQuerschnitt(ctx: Ctx, q: Querschnitt, k: Klima, t: number
     const fs = Math.max(12, Math.round(BW / 72));
     ctx.font = `bold ${fs}px system-ui,sans-serif`;
     ctx.textBaseline = "middle";
-    for (const mk of q.marken) {
+    // Ausgangsbeschriftung: anfangs alle, später nur die Schichten — die Formen erkennt die Simulation selbst
+    for (const mk of q.marken.filter(m => q.jahr === 0 || BLEIBT.test(m.text))) {
       const x = mk.x * px, y = mk.y * px;
       const w = ctx.measureText(mk.text).width + fs * 0.7;
       const bx = Math.max(2, Math.min(BW - w - 2, x - w / 2));
@@ -168,6 +174,30 @@ export function zeichneQuerschnitt(ctx: Ctx, q: Querschnitt, k: Klima, t: number
       ctx.fillRect(bx, y - fs * 0.7, w, fs * 1.4);
       ctx.fillStyle = "#1f2937";
       ctx.fillText(mk.text, bx + fs * 0.35, y);
+    }
+  }
+  // erkannte Formen: gelbe Schilder mit Punkt am Ort
+  if (o.marken !== false && o.formen) {
+    const fs = Math.max(12, Math.round(BW / 75));
+    ctx.font = `bold ${fs}px system-ui,sans-serif`;
+    ctx.textBaseline = "middle";
+    const belegt: { x0: number; x1: number; y: number }[] = [];
+    for (const f of o.formen) {
+      if (f.x < 0) continue;
+      const x = f.x * px, y = f.y * px;
+      const w = ctx.measureText(f.text).width + fs * 0.7;
+      let by = y - fs * 2.2;
+      // nicht übereinander schreiben
+      for (let n = 0; n < 6 && belegt.some(b => Math.abs(b.y - by) < fs * 1.5 && b.x0 < x + w / 2 && b.x1 > x - w / 2); n++) by -= fs * 1.6;
+      by = Math.max(fs, by);
+      const bx = Math.max(2, Math.min(BW - w - 2, x - w / 2));
+      belegt.push({ x0: bx, x1: bx + w, y: by });
+      ctx.strokeStyle = "rgba(250,204,21,.95)"; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(Math.max(bx + 4, Math.min(bx + w - 4, x)), by + fs * 0.7); ctx.stroke();
+      ctx.fillStyle = "rgba(250,204,21,.95)"; ctx.beginPath(); ctx.arc(x, y, 3.5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "rgba(254,249,195,.95)"; ctx.fillRect(bx, by - fs * 0.7, w, fs * 1.4);
+      ctx.strokeRect(bx, by - fs * 0.7, w, fs * 1.4);
+      ctx.fillStyle = "#422006"; ctx.fillText(f.text, bx + fs * 0.35, by);
     }
   }
   const zehn = (10 / q.zelle) * px;

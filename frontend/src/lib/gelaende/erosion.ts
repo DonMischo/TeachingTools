@@ -14,6 +14,7 @@
  */
 import { zufallsquelle } from "./rauschen";
 import type { Gelaende } from "./gelaende";
+import { haufen, type Marke } from "./formen";
 
 export interface ErosionsParameter {
   /** Regen je Schritt, 1 = Vorbild */
@@ -358,4 +359,26 @@ export function aenderung(e: Erosion): Float32Array {
   const d = new Float32Array(e.h.length);
   for (let k = 0; k < d.length; k++) d[k] = e.null + e.h[k] * e.einheit - e.start[k];
   return d;
+}
+
+/** Formen der Flusslandschaft: Seen, neue Flüsse, Täler (starker Abtrag), Schwemmfächer (starke Ablagerung) */
+export function flussFormen(e: Erosion, g: Gelaende): Marke[] {
+  const n = e.n, N = n * n;
+  const gw = gewaesser(e);
+  const d = aenderung(e);
+  const see = new Uint8Array(N), fl = new Uint8Array(N), tal = new Uint8Array(N), faecher = new Uint8Array(N);
+  let m = 0;
+  for (let k = 0; k < N; k++) m = Math.max(m, Math.abs(d[k]));
+  for (let k = 0; k < N; k++) {
+    if (gw[k] === 3) see[k] = 1;
+    if (gw[k] === 1 && !g.wasser[k]) fl[k] = 1;
+    if (d[k] < -m * 0.35) tal[k] = 1;
+    if (d[k] > m * 0.35 && !gw[k]) faecher[k] = 1;
+  }
+  const aus: Marke[] = [];
+  for (const h of haufen(see, n, 20).slice(0, 3)) aus.push({ text: "🫧 See", erklaerung: "In einer Senke sammelt sich Wasser, bis es überläuft.", x: h.x, y: h.y });
+  for (const h of haufen(fl, n, 25).slice(0, 2)) aus.push({ text: "🌊 neuer Fluss", erklaerung: "Hier fließt dauerhaft viel Wasser — der Fluss gräbt sich ein.", x: h.x, y: h.y });
+  for (const h of haufen(tal, n, 30).slice(0, 2)) aus.push({ text: "⛏️ Kerbtal", erklaerung: "Starker Abtrag: Das Wasser hat sich tief eingeschnitten.", x: h.x, y: h.y });
+  for (const h of haufen(faecher, n, 30).slice(0, 2)) aus.push({ text: "🔺 Schwemmfächer", erklaerung: "Wo das Wasser langsamer wird, lagert es Schlamm und Sand ab.", x: h.x, y: h.y });
+  return aus;
 }

@@ -7,13 +7,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { erzeuge, type GelaendeWahl } from "@/lib/gelaende/gelaende";
 import { gelaendeFarben, hoehenSpanne } from "@/lib/gelaende/farbe";
 import {
-  aenderung, aufGelaende, erosionSchritt, erosionsSchritte, erosionStart, gewaesser, jahreszeit, JAHR, STANDARD_EROSION,
+  aenderung, aufGelaende, erosionSchritt, flussFormen, erosionsSchritte, erosionStart, gewaesser, jahreszeit, JAHR, STANDARD_EROSION,
   type Erosion as ErosionsZustand, type ErosionsParameter,
 } from "@/lib/gelaende/erosion";
 import type { VoxelKarte } from "@/lib/gelaende/voxel";
 import GelaendeLeiste from "@/components/gelaende/GelaendeLeiste";
 import VoxelFlug from "@/components/gelaende/VoxelFlug";
 import { voxelAusGitter } from "@/components/gelaende/voxelGitter";
+import Formschilder from "@/components/gelaende/Formschilder";
 
 export const ANSICHTEN = [
   { id: "gelaende", label: "⛰️ Gelände" },
@@ -44,6 +45,7 @@ export default function FlussErosion({ startAnsicht }: { startAnsicht?: Ansicht 
   const [param, setParam] = useState<ErosionsParameter>(STANDARD_EROSION);
   const [ansicht, setAnsicht] = useState<Ansicht>(startAnsicht ?? "gelaende");
   const [drei, setDrei] = useState(false);
+  const [schilder, setSchilder] = useState(true);
   const cv = useRef<HTMLCanvasElement>(null);
   const ziel = erosionsSchritte(g.n);
 
@@ -116,6 +118,9 @@ export default function FlussErosion({ startAnsicht }: { startAnsicht?: Ansicht 
     [gwStand, g]);
   let fluss = 0, see = 0;
   if (gw) for (let k = 0; k < gw.length; k++) { if (gw[k] === 1 && !g.wasser[k]) fluss++; if (gw[k] === 3) see++; }
+  const marken = useMemo(() => (schilder && e && e.schritte > 30 ? flussFormen(e, g) : []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [gwStand, schilder, g]);
   const ha = (z: number) => ((z * g.zelle * g.zelle) / 10000).toFixed(1);
   const jz = e ? jahreszeit(e, param) : null;
 
@@ -130,11 +135,15 @@ export default function FlussErosion({ startAnsicht }: { startAnsicht?: Ansicht 
       <div className="grid gap-3 lg:grid-cols-[1fr_340px]">
         <div className="min-w-0">
           {drei && karte ? <VoxelFlug karte={karte} /> : (
-            <canvas ref={cv} className="aspect-square w-full max-w-[760px] rounded-xl border border-line" aria-label="Gelände von oben" />
+            <div className="relative w-full max-w-[760px]">
+              <canvas ref={cv} className="aspect-square w-full rounded-xl border border-line" aria-label="Gelände von oben" />
+              {schilder && <Formschilder marken={marken} n={g.n} />}
+            </div>
           )}
           <div className="mt-2 flex flex-wrap gap-1">
             {ANSICHTEN.map(a => <button key={a.id} className={`chip ${ansicht === a.id && !drei ? "chip-on" : ""}`} onClick={() => { setAnsicht(a.id); setDrei(false); }}>{a.label}</button>)}
             <button className={`chip ${drei ? "chip-on" : ""}`} onClick={() => setDrei(x => !x)}>🛩️ 3D-Flug</button>
+            <button className={`chip ${schilder ? "chip-on" : ""}`} onClick={() => setSchilder(x => !x)}>✨ Formen erkennen</button>
           </div>
         </div>
         <aside className="card flex flex-col gap-3 p-4 text-sm">
