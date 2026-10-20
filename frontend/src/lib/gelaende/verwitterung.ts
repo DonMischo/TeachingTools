@@ -17,7 +17,6 @@
  * Eigenes, stark vereinfachtes Modell für den Unterricht — qualitativ, nicht
  * maßstäblich. Ein Schritt ≈ 100 Jahre.
  */
-import { perlin, zufallsquelle } from "./rauschen";
 
 export const LUFT = 0, WASSER = 1, SAND = 2, TON = 3, LOESS = 4, SANDSTEIN = 5, KALK = 6, GRANIT = 7, SCHIEFER = 8, GIPS = 9, SCHUTT = 10, GRUS = 11, BODEN = 12, SINTER = 13, BASALT = 14;
 
@@ -52,7 +51,7 @@ s(SAND, { name: "Sand", farbe: [226, 200, 140], locker: true, durch: 0.9, sonne:
 s(TON, { name: "Ton", farbe: [150, 128, 110], locker: true, durch: 0.04, sonne: 0, frost: 0, loes: 0, hydro: 0, wind: 0.1, spuel: 0.25, rutsch: 0.05 });
 s(LOESS, { name: "Löss", farbe: [214, 182, 120], locker: true, durch: 0.5, sonne: 0, frost: 0, loes: 0.05, hydro: 0, wind: 0.8, spuel: 0.7, rutsch: 0.02 });
 s(SANDSTEIN, { name: "Sandstein", farbe: [196, 132, 98], locker: false, durch: 0.35, sonne: 0.6, frost: 0.8, loes: 0, hydro: 0.08, wind: 0, spuel: 0, rutsch: 0 });
-s(KALK, { name: "Kalkstein", farbe: [214, 210, 192], locker: false, durch: 0.05, sonne: 0.4, frost: 0.5, loes: 1, hydro: 0, wind: 0, spuel: 0, rutsch: 0 });
+s(KALK, { name: "Kalkstein", farbe: [214, 210, 192], locker: false, durch: 0.05, sonne: 0.4, frost: 0.25, loes: 1, hydro: 0, wind: 0, spuel: 0, rutsch: 0 });
 s(GRANIT, { name: "Granit", farbe: [168, 160, 158], locker: false, durch: 0.02, sonne: 0.8, frost: 0.3, loes: 0, hydro: 0.5, wind: 0, spuel: 0, rutsch: 0 });
 s(SCHIEFER, { name: "Schiefer", farbe: [86, 92, 104], locker: false, durch: 0.05, sonne: 0.5, frost: 0.9, loes: 0, hydro: 0.35, wind: 0, spuel: 0, rutsch: 0 });
 s(GIPS, { name: "Gips", farbe: [236, 232, 226], locker: false, durch: 0.05, sonne: 0.3, frost: 0.4, loes: 8, hydro: 0, wind: 0, spuel: 0, rutsch: 0 });
@@ -78,6 +77,7 @@ export const KLIMATE: { id: string; icon: string; label: string; text: string; k
   { id: "wueste", icon: "🏜️", label: "Wüste", text: "Heiße Tage, kalte Nächte, kaum Regen, starker Wind, kein Bewuchs: Temperaturverwitterung und Wind.", k: { sonne: 1, wind: 1, wasser: 0.05, frost: 0, chemie: 0.05, pflanzen: 0, richtung: -1 } },
   { id: "gebirge", icon: "🏔️", label: "Hochgebirge", text: "Täglicher Frostwechsel, wenig Bewuchs: Frostsprengung und Schutthalden.", k: { sonne: 0.5, wind: 0.4, wasser: 0.4, frost: 1, chemie: 0.1, pflanzen: 0.1, richtung: 1 } },
   { id: "tropen", icon: "🌴", label: "Tropen", text: "Warm und sehr feucht: chemische Verwitterung reicht tief, dicke Verwitterungsdecke.", k: { sonne: 0.3, wind: 0.1, wasser: 1, frost: 0, chemie: 1, pflanzen: 1, richtung: 1 } },
+  { id: "eiszeit", icon: "🥶", label: "Eiszeit", text: "Kaltzeit vor dem Eis: Frostwechsel, Schmelzwasser im Sommer, kaum Pflanzen — Bodenfließen und Abspülung räumen Lockermaterial ab.", k: { sonne: 0.25, wind: 0.6, wasser: 0.7, frost: 1, chemie: 0.05, pflanzen: 0.03, richtung: 1 } },
   { id: "tundra", icon: "🧊", label: "Tundra", text: "Lange Winter, kurzer Sommer, Dauerfrost: Frostsprengung und Bodenfließen.", k: { sonne: 0.2, wind: 0.5, wasser: 0.3, frost: 0.9, chemie: 0.05, pflanzen: 0.25, richtung: 1 } },
 ];
 
@@ -87,9 +87,13 @@ export interface Tropfen {
   unter: boolean;
   /** mitgeführtes Korn (Stoff) oder 0 */
   last: number;
+  /** wie viele Körner (bis 3) */
+  menge?: number;
   /** Sättigung mit gelöstem Kalk 0..1: gesättigtes Wasser löst nichts mehr, bildet aber Tropfsteine */
   saett: number;
   alter: number;
+  /** Fließrichtung (Schwung), 0 = noch keine */
+  dir: number;
 }
 
 export interface Querschnitt {
@@ -115,6 +119,15 @@ export interface Querschnitt {
   wirkungMittel: Record<Kraft, number>;
   start: Uint8Array;
   zufall: () => number;
+  /** Beschriftungen der Formen (Zellkoordinaten) */
+  marken: { text: string; x: number; y: number }[];
+  /** Bäche, die von außen hereinfließen */
+  quellen: { x: number; y: number; staerke: number }[];
+  /** Meldungen dieses Schritts (z. B. Einsturz) */
+  ereignisse: string[];
+  /** zählt jeden Schritt hoch (für Zwischenspeicher beim Zeichnen) */
+  stand: number;
+  gestein: Gestein;
 }
 
 export const GESTEINE = [
@@ -130,89 +143,13 @@ export const GESTEINE = [
 ] as const;
 export type Gestein = (typeof GESTEINE)[number]["id"];
 
-const leer = (): Record<Kraft, number> => ({ sonne: 0, wind: 0, wasser: 0, frost: 0, chemie: 0, pflanzen: 0 });
-
-/** Querschnitt aufbauen: Oberfläche, Schichten, Klüfte je nach Gestein */
-export function querschnitt(g: Gestein, seed = 1, W = 200, H = 110): Querschnitt {
-  const z = zufallsquelle(seed);
-  const r = perlin(seed);
-  const N = W * H;
-  const stoff = new Uint8Array(N), riss = new Float32Array(N), nass = new Float32Array(N), haerte = new Float32Array(N).fill(1);
-  // Oberfläche (Zellen von oben bis zum Boden)
-  const ober = (i: number): number => {
-    const x = i / W;
-    switch (g) {
-      case "granit": return 40 + 10 * r(x * 3, 0.5) - 16 * Math.exp(-(((x - 0.45) / 0.09) ** 2)) - 8 * Math.exp(-(((x - 0.78) / 0.06) ** 2)); // Felsburgen
-      case "sandstein": return x < 0.55 ? 30 + 2 * r(x * 6, 1) : x < 0.6 ? 30 + (x - 0.55) * 900 : Math.abs(x - 0.8) < 0.022 ? 42 : 75 + 2 * r(x * 6, 1); // Tafelberg, Steilwand, Felsnadel davor
-      case "kalk": case "gips": return 34 + 5 * r(x * 4, 2);
-      case "schiefer": return 20 + x * 55 + 3 * r(x * 8, 3); // Hang
-      case "basalt": return 26 + 6 * r(x * 3, 4) + (x > 0.7 ? (x - 0.7) * 90 : 0);
-      case "loess": return 34 + 3 * r(x * 3, 5) + 22 * Math.exp(-(((x - 0.5) / 0.035) ** 2)); // Hohlweg
-      case "ton": return x < 0.2 ? 20 + 3 * r(x * 5, 6) : x < 0.75 ? 20 + (x - 0.2) * 110 + 3 * r(x * 5, 6) : 80 + 2 * r(x * 5, 6); // steiler Hang
-      case "sand": return 42 + 12 * Math.sin(x * Math.PI * 3 + 0.5) * (0.6 + 0.4 * r(x * 2, 7));
-    }
-  };
-  for (let i = 0; i < W; i++) {
-    const o = Math.max(4, Math.min(H - 6, Math.round(ober(i))));
-    for (let j = o; j < H; j++) {
-      const k = j * W + i;
-      const tief = j - o;
-      let m: number;
-      switch (g) {
-        case "granit": m = GRANIT; break;
-        case "sandstein": {
-          // harte und weiche Bänke wechseln
-          m = SANDSTEIN;
-          haerte[k] = 0.6 + 0.9 * (Math.sin(j * 0.55) > 0.2 ? 1 : 0.35);
-          break;
-        }
-        case "kalk": m = j > H - 22 ? TON : KALK; haerte[k] = 0.8 + 0.4 * (Math.sin(j * 0.4) > 0 ? 1 : 0); break; // Kalk auf undurchlässigem Ton → Karstquelle
-        case "gips": m = j > H - 22 ? TON : GIPS; break;
-        case "schiefer": m = SCHIEFER; break;
-        case "basalt": m = j > H - 40 ? SANDSTEIN : BASALT; break; // Basaltdecke über Sandstein
-        case "loess": m = j > 72 ? KALK : LOESS; break;
-        case "ton": m = j > H - 25 ? SANDSTEIN : TON; break;
-        case "sand": m = j > H - 20 ? TON : SAND; break;
-      }
-      // dünne Bodendecke, wo Pflanzen wachsen können
-      if (tief < 2 && (g === "kalk" || g === "gips" || g === "loess" || g === "ton" || g === "schiefer" || g === "basalt") && z() < 0.85) m = BODEN;
-      if (tief < 2 && g === "granit" && z() < 0.3) m = GRUS;
-      if (tief < 3 && g === "sandstein" && o > 70) m = SAND; // Sandebene vor der Wand
-      stoff[k] = m;
-      nass[k] = STOFFE[m].durch > 0.3 ? 0.2 : 0.05;
-    }
-  }
-  // Klüfte und Schichtfugen: Schwächezonen mit Anfangsrissen
-  const kluft = (i: number, j: number, v: number) => { const k = j * W + i; if (i >= 0 && j >= 0 && i < W && j < H && stoff[k] !== LUFT) riss[k] = Math.max(riss[k], v); };
-  if (g === "granit") {
-    // Wollsack-Klüftung: senkrecht und waagerecht, gegen die Tiefe weiter auseinander
-    for (let i = 6 + Math.floor(z() * 8); i < W; i += 12 + Math.floor(z() * 8)) for (let j = 0; j < H; j++) kluft(i + Math.round(r(j / 20, i) * 2), j, 0.45);
-    let j = 32;
-    while (j < H) { for (let i = 0; i < W; i++) kluft(i, j + Math.round(r(i / 30, j) * 2), 0.45); j += 6 + Math.floor((j - 30) * 0.15) + Math.floor(z() * 3); }
-  }
-  if (g === "sandstein") for (let i = 10 + Math.floor(z() * 10); i < W; i += 16 + Math.floor(z() * 10)) for (let j = 0; j < H; j++) kluft(i, j, 0.4);
-  if (g === "kalk" || g === "gips") {
-    for (let i = 8 + Math.floor(z() * 6); i < W; i += 14 + Math.floor(z() * 9)) for (let j = 0; j < H - 22; j++) kluft(i, j, 0.5);
-    for (let j = 40; j < H - 22; j += 8) for (let i = 0; i < W; i++) kluft(i, j, 0.3);
-  }
-  if (g === "schiefer") {
-    // steil gestellte Schieferung: schräge Fugen
-    for (let i0 = -H; i0 < W; i0 += 4) for (let j = 0; j < H; j++) kluft(i0 + Math.round(j * 0.6), j, 0.35);
-  }
-  if (g === "basalt") {
-    // Säulen: senkrechte Fugen dicht an dicht
-    for (let i = 0; i < W; i += 4 + Math.floor(z() * 2)) for (let j = 0; j < H - 40; j++) kluft(i, j, 0.4);
-  }
-  for (let k = 0; k < N; k++) if (stoff[k] === LUFT) { nass[k] = 0; riss[k] = 0; }
-  return {
-    W, H, zelle: 0.25, stoff, eltern: Uint8Array.from(stoff), riss, nass, haerte, tropfen: [], jahr: 0, winter: false,
-    wirkung: leer(), wirkungMittel: leer(), start: Uint8Array.from(stoff), zufall: z,
-  };
-}
+export const leereWirkung = (): Record<Kraft, number> => ({ sonne: 0, wind: 0, wasser: 0, frost: 0, chemie: 0, pflanzen: 0 });
+const leer = leereWirkung;
 
 // ---------------------------------------------------------------- Hilfen
 
 const fest = (m: number) => m !== LUFT && m !== WASSER;
+const NACHBARN8 = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
 const istFels = (m: number) => fest(m) && !STOFFE[m].locker;
 
 /** Zerfallsprodukt eines Felses je nach Ursache */
@@ -282,7 +219,10 @@ export function schritt(q: Querschnitt, k: Klima): Querschnitt {
       if (riss[c] >= 1) { zerfall(i, j, "frost"); continue; }
     }
     if (k.chemie && st.hydro && nass[c] > 0.08) {
-      riss[c] += (k.chemie * k.chemie * st.hydro * nass[c] * 0.08 * (frei ? 1.5 : 1) * (0.5 + riss[c])) / h;
+      // Wollsack: je mehr Nachbarn schon zersetzt oder offen sind, desto schneller (Ecken runden sich)
+      let offen = 0;
+      for (const [a, bb] of NACHBARN8) { const m2 = at(i + a, j + bb); if (!istFels(m2) || riss[Math.max(0, Math.min(W * H - 1, (j + bb) * W + i + a))] > 0.4) offen++; }
+      riss[c] += (0.08 + 0.06 * offen * offen) * (k.chemie * k.chemie * st.hydro * nass[c] * 0.06 * (frei ? 1.5 : 1) * (0.5 + riss[c])) / h;
       if (riss[c] >= 1) { zerfall(i, j, "chemie"); continue; }
     }
     if (k.pflanzen && frei && bewuchs[i] > 0.2 && j - top[i] < 3 && istFels(m)) {
@@ -294,8 +234,13 @@ export function schritt(q: Querschnitt, k: Klima): Querschnitt {
   }
 
   // 💧 Regen
-  const regen = Math.round(k.wasser * W * 0.12 * (q.winter && k.frost > 0.6 ? 0.4 : 1));
-  for (let n = 0; n < regen && q.tropfen.length < 1600; n++) q.tropfen.push({ x: Math.floor(z() * W), y: 0, unter: false, last: 0, saett: 0, alter: 0 });
+  const regen = Math.round(k.wasser * W * 0.16 * (q.winter && k.frost > 0.6 ? 0.4 : 1));
+  for (let n = 0; n < regen && q.tropfen.length < 3500; n++) q.tropfen.push({ x: Math.floor(z() * W), y: 0, unter: false, last: 0, saett: 0, alter: 0, dir: 0 });
+  // Bäche von außen: führen auch in der Trockenzeit Wasser (schwächer)
+  for (const qu of q.quellen) {
+    const n = Math.round((2 + 6 * k.wasser) * qu.staerke);
+    for (let i = 0; i < n && q.tropfen.length < 3500; i++) q.tropfen.push({ x: qu.x, y: qu.y, unter: false, last: 0, saett: 0, alter: 0, dir: 1 });
+  }
   for (let sub = 0; sub < 16; sub++) bewegeTropfen(q, k, top, bewuchs, E);
 
   // 💨 Wind: Deflation und Dünen, Korrasion
@@ -350,6 +295,7 @@ export function schritt(q: Querschnitt, k: Klima): Querschnitt {
   }
 
   // Schwerkraft: Lockermaterial rieselt, Fels mit Luft darunter und Rissen bricht
+  let einsturz = 0;
   for (let j = H - 2; j >= 0; j--) {
     const links = z() < 0.5;
     for (let n = 0; n < W; n++) {
@@ -364,14 +310,14 @@ export function schritt(q: Querschnitt, k: Klima): Querschnitt {
         let p = st.rutsch;
         if (m === LOESS) p = nass[c] > 0.5 ? 0.6 : 0.01;
         if (m === TON) p = nass[c] > 0.45 ? 0.5 : 0.03;
-        if (k.frost && q.winter && nass[c] > 0.3) { p += 0.15 * k.frost; }
+        if (k.frost && (q.winter || k.frost > 0.6) && nass[c] > 0.3) { p += 0.35 * k.frost; }
         if (z() > p) continue;
         const d = z() < 0.5 ? -1 : 1;
         for (const dd of [d, -d]) {
           const ni = i + dd;
           if (ni < 0 || ni >= W) continue;
           // nasser Ton und auftauender Boden fließen auch über flachere Hänge (Rutschung, Solifluktion)
-          const fliesst = (m === TON || m === BODEN || m === LOESS) && p > 0.3 && ni + dd >= 0 && ni + dd < W && !fest(stoff[j * W + ni]) && !fest(stoff[(j + 1) * W + ni + dd]);
+          const fliesst = (m === TON || m === BODEN || m === LOESS || m === GRUS || m === SAND) && p > 0.3 && ni + dd >= 0 && ni + dd < W && !fest(stoff[j * W + ni]) && !fest(stoff[(j + 1) * W + ni + dd]);
           if (fliesst) { tausche(q, c, j * W + ni); E[k.frost && q.winter ? "frost" : "wasser"]++; break; }
           if (!fest(stoff[j * W + ni]) && !fest(stoff[(j + 1) * W + ni])) {
             // Schutt braucht steileres Gefälle (bleibt als Halde liegen)
@@ -384,10 +330,24 @@ export function schritt(q: Querschnitt, k: Klima): Querschnitt {
       } else if (!fest(unten) && j + 1 < H) {
         // Fels über Hohlraum: bricht, wenn rissig (Felssturz, Höhlendecke → Doline)
         const halt = (fest(at(i - 1, j)) && fest(at(i - 1, j + 1)) ? 1 : 0) + (fest(at(i + 1, j)) && fest(at(i + 1, j + 1)) ? 1 : 0);
-        if (riss[c] > 0.55 && (halt < 2 || riss[c] > 0.85)) { eltern[c] = m; stoff[c] = SCHUTT; riss[c] = 0.2; }
+        if (riss[c] > 0.55 && (halt < 2 || riss[c] > 0.85)) { eltern[c] = m; stoff[c] = SCHUTT; riss[c] = 0.2; if (j - top[i] < 40) einsturz++; }
       }
     }
   }
+
+  if (q.stand % 4 === 0) bloeckeFallen(q);
+  // Auftauboden über Dauerfrost: die obersten Zellen sind im Sommer wassergesättigt (→ Bodenfließen)
+  if (k.frost > 0.6 && !q.winter) for (let i = 0; i < W; i++) for (let j = top[i]; j < top[i] + 4 && j < H; j++) {
+    const c = j * W + i;
+    if (STOFFE[stoff[c]].locker) nass[c] = Math.max(nass[c], 0.5 * k.frost);
+  }
+  // Am Hangfuß am Kartenrand trägt ein Fluss Lockermaterial fort
+  for (const i of [0, 1, W - 2, W - 1]) {
+    const j = top[i];
+    if (j < H && STOFFE[stoff[j * W + i]].locker && z() < 0.6) { stoff[j * W + i] = LUFT; riss[j * W + i] = 0; nass[j * W + i] = 0; }
+  }
+  q.ereignisse = [];
+  if (einsturz >= 10) q.ereignisse.push(q.gestein === "gips" ? "💥 Erdfall! Die Decke eines Hohlraums ist eingebrochen." : q.gestein === "kalk" ? "💥 Höhlendecke eingestürzt — eine Einsturzdoline entsteht." : "💥 Felssturz!");
 
   // 🌱 Bodenbildung und Austrocknen
   for (let i = 0; i < W; i++) {
@@ -395,6 +355,12 @@ export function schritt(q: Querschnitt, k: Klima): Querschnitt {
     if (j >= H) continue;
     const c = j * W + i, m = stoff[c];
     if (bewuchs[i] > 0.3 && (m === GRUS || m === LOESS || m === TON || m === SAND || m === SCHUTT) && z() < bewuchs[i] * 0.01) { stoff[c] = BODEN; E.pflanzen++; }
+  }
+  // Kluftwasser verteilt sich im ganzen Kluftnetz (auch in waagerechten Fugen)
+  for (let j = 1; j < H - 1; j++) for (let i = 1; i < W - 1; i++) {
+    const c = j * W + i;
+    if (riss[c] < 0.3 || !fest(stoff[c])) continue;
+    for (const n of [c - 1, c + 1, c - W, c + W]) if (riss[n] >= 0.3 && fest(stoff[n]) && nass[n] < nass[c]) { const f = (nass[c] - nass[n]) * 0.25; nass[c] -= f; nass[n] += f; }
   }
   for (let c = 0; c < W * H; c++) {
     if (!fest(stoff[c])) { nass[c] = 0; continue; }
@@ -410,6 +376,7 @@ export function schritt(q: Querschnitt, k: Klima): Querschnitt {
   for (const kk of KRAEFTE) q.wirkungMittel[kk.id] = q.wirkungMittel[kk.id] * 0.9 + E[kk.id] * 0.1;
   q.wirkung = E;
   q.jahr += 100;
+  q.stand++;
   return q;
 }
 
@@ -444,27 +411,39 @@ function bewegeTropfen(q: Querschnitt, k: Klima, top: Int16Array, bewuchs: Float
         if (frei(t.x, t.y)) { stoff[t.y * W + t.x] = SINTER; E.chemie++; }
         continue;
       }
-      // versickern
-      const p = Math.min(0.95, st.durch * (1 - nass[c]) + riss[c] * 0.7);
+      // versickern — gefrorener Boden (Permafrost) lässt kaum Wasser hinein: es fließt oberflächlich ab
+      const gefroren = q.winter ? 1 - 0.9 * k.frost : 1 - 0.6 * Math.max(0, k.frost - 0.6) / 0.4;
+      const p = Math.min(0.95, st.durch * (1 - nass[c]) + riss[c] * 0.7) * gefroren;
       if (z() < p) { t.unter = true; t.y++; nass[c] = Math.min(1, nass[c] + 0.15); neu.push(t); continue; }
-      // abfließen: dorthin, wo es tiefer geht
-      const l = frei(t.x - 1, t.y), r = frei(t.x + 1, t.y);
+      // abfließen: dorthin, wo der Boden tiefer liegt — auch in Höhlen; mit Schwung
+      const tiefe = (x: number) => { if (!frei(x, t.y)) return -1; let y = t.y; while (y + 1 < H && frei(x, y + 1) && y - t.y < 30) y++; return y - t.y; };
+      const tl = tiefe(t.x - 1), tr = tiefe(t.x + 1);
       let d = 0;
-      if (l && r) d = top[t.x - 1] > top[t.x + 1] ? -1 : top[t.x + 1] > top[t.x - 1] ? 1 : z() < 0.5 ? -1 : 1;
-      else if (l) d = -1; else if (r) d = 1;
+      if (tl < 0 && tr < 0) d = 0;
+      else if (tl < 0) d = 1;
+      else if (tr < 0) d = -1;
+      else if (tl !== tr) d = tl > tr ? -1 : 1;
+      else d = t.dir || (z() < 0.5 ? -1 : 1);
       if (d === 0) {
         // Senke: Wasser bleibt stehen, sickert langsam ein
         nass[c] = Math.min(1, nass[c] + 0.25);
-        if (t.last && frei(t.x, t.y)) { stoff[t.y * W + t.x] = t.last; t.last = 0; }
+        if (t.last && frei(t.x, t.y)) { stoff[t.y * W + t.x] = t.last; t.last = 0; t.menge = 0; }
         continue;
       }
-      nass[c] = Math.min(1, nass[c] + 0.08 * (1 - st.durch));
+      t.dir = d;
+      // Höhlenbach: ungesättigtes Wasser löst den Kalk am Boden (Korrosion)
+      if (st.loes && k.chemie && t.saett < 1 && t.y > top[t.x]) {
+        riss[c] += k.chemie * st.loes * 0.02 * (1 - t.saett);
+        t.saett = Math.min(1, t.saett + 0.02);
+        if (riss[c] >= 1) { stoff[c] = LUFT; riss[c] = 0; E.chemie++; }
+      }
       // Abspülung: das fließende Wasser nimmt lockeres Korn unter sich mit
-      if (!t.last && st.locker && st.spuel && z() < k.wasser * st.spuel * 0.35 * (1 - 0.85 * bewuchs[t.x])) {
-        t.last = m; stoff[c] = LUFT; eltern[c] = LUFT; riss[c] = 0; nass[c] = 0; E.wasser++;
-      } else if (t.last && z() < 0.04) {
+      const menge = t.menge ?? (t.last ? 1 : 0);
+      if ((!t.last || (t.last === m && menge < 3)) && st.locker && st.spuel && z() < k.wasser * st.spuel * 0.35 * (1 - 0.85 * bewuchs[t.x])) {
+        t.last = m; t.menge = menge + 1; stoff[c] = LUFT; eltern[c] = LUFT; riss[c] = 0; nass[c] = 0; E.wasser++;
+      } else if (t.last && z() < 0.012 * (tl === tr ? 3 : 1)) {
         // Ablagerung, wo es flacher wird
-        if (frei(t.x, t.y)) { stoff[t.y * W + t.x] = t.last; t.last = 0; }
+        if (frei(t.x, t.y)) { stoff[t.y * W + t.x] = t.last; t.menge = menge - 1; if (!t.menge) t.last = 0; }
       }
       t.x += d;
       if (t.x < 0 || t.x >= W) continue;
@@ -474,7 +453,11 @@ function bewegeTropfen(q: Querschnitt, k: Klima, top: Int16Array, bewuchs: Float
     // im Untergrund
     if (t.y >= H || t.y < 0) continue;
     const c = t.y * W + t.x, m = stoff[c];
-    if (!fest(m)) { t.unter = false; neu.push(t); continue; } // in eine Höhle getropft
+    if (!fest(m)) {
+      // aus der Decke in einen Hohlraum: gesättigtes Wasser lässt einen Tropfstein wachsen (Stalaktit)
+      if (t.saett > 0.35 && t.y > 0 && fest(stoff[c - W]) && z() < 0.35 * t.saett) { stoff[c] = SINTER; E.chemie++; t.saett *= 0.5; t.y++; }
+      t.unter = false; neu.push(t); continue;
+    }
     const st = STOFFE[m];
     nass[c] = Math.min(1, nass[c] + 0.04);
     // Lösung: Kohlensäure frisst Kalk und Gips, vor allem entlang der Klüfte
@@ -515,6 +498,36 @@ function bewegeTropfen(q: Querschnitt, k: Klima, top: Int16Array, bewuchs: Float
 }
 
 /** Wie viel Gestein ist schon verwittert/abgetragen? (Anteil der Ausgangs-Felszellen, die kein Fels mehr sind) */
+/**
+ * Gesteinsblöcke ohne Verbindung zum Untergrund (z. B. Wollsäcke, aus denen
+ * der Grus gespült wurde) fallen eine Zelle tiefer, wenn darunter Platz ist.
+ */
+function bloeckeFallen(q: Querschnitt) {
+  const { W, H, stoff } = q;
+  const N = W * H;
+  const fels = (k: number) => istFels(stoff[k]) && stoff[k] !== SINTER;
+  const halt = new Uint8Array(N);
+  const st: number[] = [];
+  for (let i = 0; i < W; i++) { const k = (H - 1) * W + i; if (fels(k)) { halt[k] = 1; st.push(k); } }
+  for (let j = 0; j < H; j++) for (const i of [0, W - 1]) { const k = j * W + i; if (fels(k) && !halt[k]) { halt[k] = 1; st.push(k); } }
+  while (st.length) {
+    const k = st.pop()!, i = k % W, j = (k - i) / W;
+    for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const ii = i + a, jj = j + b;
+      if (ii < 0 || jj < 0 || ii >= W || jj >= H) continue;
+      const kk = jj * W + ii;
+      if (!halt[kk] && fels(kk)) { halt[kk] = 1; st.push(kk); }
+    }
+  }
+  // lose Blöcke: von unten nach oben verschieben, wenn die Zelle darunter frei oder locker ist
+  for (let j = H - 2; j >= 0; j--) for (let i = 0; i < W; i++) {
+    const k = j * W + i;
+    if (!fels(k) || halt[k]) continue;
+    const u = k + W;
+    if (!fest(stoff[u]) || STOFFE[stoff[u]].locker) tausche(q, k, u);
+  }
+}
+
 export function verwittert(q: Querschnitt): number {
   let fels = 0, weg = 0;
   for (let c = 0; c < q.stoff.length; c++) {

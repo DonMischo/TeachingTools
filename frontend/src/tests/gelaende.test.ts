@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { erzeuge, LANDSCHAFTEN, wuerfle, hoeheBei, neigungBei, wasserAbstand, inAue } from "@/lib/gelaende/gelaende";
 import { erosionStart, erosionSchritt, aenderung, aufGelaende, gewaesser, jahreszeit, JAHR, spiegel, STANDARD_EROSION } from "@/lib/gelaende/erosion";
-import { GESTEINE, GRUS, KLIMATE, KRAEFTE, LUFT as VLUFT, querschnitt, schritt as vschritt, hoehlen, type Klima } from "@/lib/gelaende/verwitterung";
+import { GESTEINE, GRUS, KLIMATE, KRAEFTE, LUFT as VLUFT, schritt as vschritt, hoehlen, verwittert, abgetragen, type Klima } from "@/lib/gelaende/verwitterung";
 import { STECKBRIEFE } from "@/lib/gelaende/gesteine";
+import { PHASEN, querschnitt } from "@/lib/gelaende/querschnitte";
 import { kuesteErzeugen, kuestenSchritt, rueckgang, ueberflutet, STANDARD_KUESTE } from "@/lib/gelaende/kuestenErosion";
 
 describe("Gelände", () => {
@@ -140,7 +141,28 @@ describe("Verwitterung im Querschnitt", () => {
     const mit = lauf("gips", { ...nur("wasser", 0.6), chemie: 1 }, 300);
     const ohne = lauf("gips", nur("wasser", 0.6), 300);
     expect(mit.summe.chemie).toBeGreaterThan(0);
-    expect(hoehlen(mit.q)).toBeGreaterThan(hoehlen(ohne.q));
+    expect(verwittert(mit.q)).toBeGreaterThan(verwittert(ohne.q));
+  });
+
+  it("jeder Querschnitt beschriftet seine Formen", () => {
+    for (const g of GESTEINE) expect(querschnitt(g.id, 1).marken.length, g.id).toBeGreaterThanOrEqual(3);
+  });
+
+  it("Karst: der Bach verschwindet im Ponor und fließt unterirdisch", () => {
+    const q = querschnitt("kalk", 2);
+    const k = KLIMATE.find(x => x.id === "mittel")!.k;
+    for (let i = 0; i < 40; i++) vschritt(q, k);
+    // Wasser im Höhlenbach: unter der Oberfläche, aber in der Luft eines Gangs
+    const top = (i: number) => { let j = 0; while (j < q.H && q.stoff[j * q.W + i] === VLUFT) j++; return j; };
+    expect(q.tropfen.some(t => !t.unter && t.y > top(t.x) + 20)).toBe(true);
+    expect(hoehlen(q)).toBeGreaterThan(50);
+  });
+
+  it("Granit: Entstehung abspielen lässt Grus und freiliegende Blöcke zurück", () => {
+    const q = querschnitt("granit", 2);
+    for (const p of PHASEN.granit!) { const k = KLIMATE.find(x => x.id === p.klima)!.k; for (let i = 0; i < p.schritte / 3; i++) vschritt(q, k); }
+    expect(q.stoff.some(m => m === GRUS)).toBe(true);
+    expect(abgetragen(q)).toBeGreaterThan(20);
   });
 
   it("Granit wird in den Tropen zu Grus", () => {

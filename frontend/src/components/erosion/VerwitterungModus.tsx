@@ -6,13 +6,14 @@
  */
 import { useEffect, useRef, useState } from "react";
 import {
-  abgetragen, GESTEINE, hoehlen, KLIMATE, KRAEFTE, querschnitt, schritt, STOFFE, verwittert, LUFT, SCHUTT,
+  abgetragen, GESTEINE, hoehlen, KLIMATE, KRAEFTE, schritt, STOFFE, verwittert, LUFT, SCHUTT,
   type Gestein, type Klima, type Querschnitt,
 } from "@/lib/gelaende/verwitterung";
-import { zeichneQuerschnitt } from "@/lib/gelaende/verwitterungZeichnen";
+import { felsBild, zeichneQuerschnitt } from "@/lib/gelaende/verwitterungZeichnen";
+import { PHASEN, querschnitt } from "@/lib/gelaende/querschnitte";
 import { STECKBRIEFE } from "@/lib/gelaende/gesteine";
 
-const PX = 4;
+const PX = 3;
 const chip = (an: boolean) => `px-2.5 py-1.5 rounded-lg text-sm font-bold transition-colors ${an ? "bg-accent text-accent-fg" : "text-muted hover:text-fg"}`;
 
 export default function VerwitterungModus({ startGestein }: { startGestein?: Gestein }) {
@@ -29,26 +30,74 @@ export default function VerwitterungModus({ startGestein }: { startGestein?: Ges
   const kRef = useRef(k); kRef.current = k;
   const tempoRef = useRef(tempo); tempoRef.current = tempo;
   const laeuftRef = useRef(laeuft); laeuftRef.current = laeuft;
+  const [marken, setMarken] = useState(true);
+  const markenRef = useRef(marken); markenRef.current = marken;
+  // Erdgeschichte abspielen: Phase und verbleibende Schritte
+  const [film, setFilm] = useState<{ nr: number; rest: number } | null>(null);
+  const filmRef = useRef(film); filmRef.current = film;
+  const [meldung, setMeldung] = useState<string | null>(null);
+  const fels = useRef<HTMLCanvasElement | null>(null);
+  const felsStand = useRef("");
 
-  useEffect(() => { q.current = querschnitt(gestein, seed); setVersion(v => v + 1); }, [gestein, seed]);
+  useEffect(() => { q.current = querschnitt(gestein, seed); felsStand.current = ""; setFilm(null); setVersion(v => v + 1); }, [gestein, seed]);
 
   // eine Schleife: rechnen (wenn es läuft) und zeichnen (immer, für Sonne/Wind/Regen)
   useEffect(() => {
     let raf = 0, t0 = performance.now();
     const lauf = (t: number) => {
       if (laeuftRef.current) {
-        for (let i = 0; i < tempoRef.current; i++) schritt(q.current, kRef.current);
+        for (let i = 0; i < tempoRef.current; i++) {
+          const f = filmRef.current;
+          if (f) {
+            if (f.rest <= 0) {
+              const nr = f.nr + 1;
+              const naechste = PHASEN[q.current.gestein]![nr];
+              if (!naechste) { setFilm(null); filmRef.current = null; setLaeuft(false); laeuftRef.current = false; break; }
+              filmRef.current = { nr, rest: naechste.schritte };
+              setFilm(filmRef.current);
+              const kk = KLIMATE.find(x => x.id === naechste.klima)!;
+              setKlimaId(kk.id); setK(kk.k); kRef.current = kk.k;
+              continue;
+            }
+            filmRef.current = { nr: f.nr, rest: f.rest - 1 };
+            if (f.rest % 20 === 0) setFilm(filmRef.current);
+          }
+          schritt(q.current, kRef.current);
+          if (q.current.ereignisse.length) setMeldung(q.current.ereignisse[0]);
+        }
         setVersion(v => v + 1);
       }
       const c = cv.current;
-      if (c) zeichneQuerschnitt(c.getContext("2d", { willReadFrequently: true })!, q.current, kRef.current, (t - t0) / 1000, PX);
+      if (c) {
+        const z = q.current, kk = kRef.current;
+        // Gesteinsebene nur neu zeichnen, wenn sich etwas geändert hat
+        const stand = `${z.stand}|${z.winter && kk.frost > 0.2}|${kk.chemie > 0.5}`;
+        if (!fels.current) fels.current = document.createElement("canvas");
+        if (stand !== felsStand.current) {
+          fels.current.width = z.W * PX; fels.current.height = z.H * PX;
+          felsBild(fels.current.getContext("2d", { willReadFrequently: true })!, z, kk, PX);
+          felsStand.current = stand;
+        }
+        zeichneQuerschnitt(c.getContext("2d")!, z, kk, (t - t0) / 1000, PX, fels.current, { marken: markenRef.current });
+      }
       raf = requestAnimationFrame(lauf);
     };
     raf = requestAnimationFrame(lauf);
     return () => cancelAnimationFrame(raf);
   }, []);
 
+  useEffect(() => { if (!meldung) return; const t = setTimeout(() => setMeldung(null), 4500); return () => clearTimeout(t); }, [meldung]);
   const waehleKlima = (id: string) => { setKlimaId(id); setK(KLIMATE.find(x => x.id === id)!.k); };
+  const phasen = PHASEN[gestein];
+  const starteFilm = () => {
+    if (!phasen) return;
+    q.current = querschnitt(gestein, seed); felsStand.current = "";
+    const f = { nr: 0, rest: phasen[0].schritte };
+    setFilm(f); filmRef.current = f;
+    waehleKlima(phasen[0].klima);
+    setTempo(t => Math.max(t, 4));
+    setLaeuft(true);
+  };
   const waehleGestein = (g: Gestein) => { setGestein(g); setLaeuft(false); waehleKlima(STECKBRIEFE[g].klima); };
   const z = q.current;
   const sb = STECKBRIEFE[gestein];
@@ -61,7 +110,14 @@ export default function VerwitterungModus({ startGestein }: { startGestein?: Ges
         {GESTEINE.map(g => <button key={g.id} onClick={() => waehleGestein(g.id)} className={chip(gestein === g.id)}>{g.icon} {g.label}</button>)}
       </div>
       <div className="grid gap-3 lg:grid-cols-[1fr_340px]">
-        <div className="min-w-0">
+        <div className="relative min-w-0">
+          {meldung && <div className="pointer-events-none absolute left-1/2 top-3 z-10 -translate-x-1/2 rounded-lg bg-black/75 px-3 py-1.5 text-sm font-bold text-white">{meldung}</div>}
+          {film && phasen && (
+            <div className="mb-2 rounded-lg border border-accent bg-accent/10 p-2 text-sm">
+              <b>📜 {film.nr + 1}/{phasen.length}: {phasen[film.nr].titel}</b> <span className="text-muted">(noch {film.rest * 100} Jahre)</span>
+              <p className="mt-0.5">{phasen[film.nr].text}</p>
+            </div>
+          )}
           <canvas
             ref={cv} width={z.W * PX} height={z.H * PX} className="h-auto w-full rounded-xl border border-line" style={{ imageRendering: "pixelated" }}
             aria-label={`Querschnitt durch ${GESTEINE.find(x => x.id === gestein)!.label}`}
@@ -77,7 +133,7 @@ export default function VerwitterungModus({ startGestein }: { startGestein?: Ges
           />
           <div className="mt-1 flex min-h-5 flex-wrap justify-between gap-2 text-xs text-muted">
             <span>{info || "Mit der Maus über das Gestein fahren: Stoff, Risse, Nässe."}</span>
-            <span>Querschnitt 50 m × 27 m · 1 Schritt ≈ 100 Jahre (stark vereinfacht)</span>
+            <span>Querschnitt {z.W * z.zelle} m × {z.H * z.zelle} m · 1 Schritt ≈ 100 Jahre (stark vereinfacht)</span>
           </div>
           <div className="mt-2 grid gap-2 sm:grid-cols-2">
             <section className="card p-3 text-sm">
@@ -99,6 +155,8 @@ export default function VerwitterungModus({ startGestein }: { startGestein?: Ges
             <button className="btn-secondary" disabled={laeuft} onClick={() => { for (let i = 0; i < 50; i++) schritt(q.current, k); setVersion(v => v + 1); }}>⏭ 5000 Jahre</button>
             <button className="btn-secondary" onClick={() => { setLaeuft(false); setSeed(s => s + 1); }} title="Neuer Querschnitt">↺</button>
           </div>
+          {phasen && <button className="btn-primary" onClick={starteFilm}>📜 Entstehung abspielen ({phasen.length} {phasen.length === 1 ? "Phase" : "Phasen"})</button>}
+          <label className="flex items-center gap-2 text-xs text-muted"><input type="checkbox" checked={marken} onChange={e => setMarken(e.target.checked)} /> Formen beschriften</label>
           <div className="rounded-lg bg-accent/10 px-3 py-1.5 font-bold">
             {z.jahr.toLocaleString("de-DE")} Jahre {z.winter && k.frost > 0.2 ? "· ❄️ Winter" : ""}
           </div>
