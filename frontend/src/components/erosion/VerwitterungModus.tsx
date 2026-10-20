@@ -10,7 +10,7 @@ import {
   type Gestein, type Klima, type Querschnitt,
 } from "@/lib/gelaende/verwitterung";
 import { felsBild, zeichneQuerschnitt } from "@/lib/gelaende/verwitterungZeichnen";
-import { PHASEN, querschnitt } from "@/lib/gelaende/querschnitte";
+import { ausschnitt, PHASEN, querschnitt } from "@/lib/gelaende/querschnitte";
 import { STECKBRIEFE } from "@/lib/gelaende/gesteine";
 import { formenErkennen, FORM_INFO, type Form } from "@/lib/gelaende/formen";
 
@@ -45,8 +45,27 @@ export default function VerwitterungModus({ startGestein }: { startGestein?: Ges
   const [meldung, setMeldung] = useState<string | null>(null);
   const fels = useRef<HTMLCanvasElement | null>(null);
   const felsStand = useRef("");
+  // Lupe: übersicht = der grobe Querschnitt, solange q.current der Ausschnitt ist
+  const uebersicht = useRef<Querschnitt | null>(null);
+  const [lupeWahl, setLupeWahl] = useState(false);
+  const [faktor, setFaktor] = useState(4);
+  const [maus, setMaus] = useState<{ x: number; y: number } | null>(null);
+  const oeffneLupe = (x: number, y: number) => {
+    const basis = uebersicht.current ?? q.current;
+    uebersicht.current = basis;
+    q.current = ausschnitt(basis, x, y, faktor);
+    felsStand.current = ""; formen.current = { stand: -99, liste: [] };
+    setLupeWahl(false); setFilm(null); filmRef.current = null;
+    setVersion(v => v + 1);
+  };
+  const schliesseLupe = () => {
+    if (!uebersicht.current) return;
+    q.current = uebersicht.current; uebersicht.current = null;
+    felsStand.current = ""; formen.current = { stand: -99, liste: [] };
+    setLaeuft(false); setVersion(v => v + 1);
+  };
 
-  useEffect(() => { q.current = neuerSchnitt(); felsStand.current = ""; setFilm(null); setVersion(v => v + 1); },
+  useEffect(() => { q.current = neuerSchnitt(); uebersicht.current = null; felsStand.current = ""; setFilm(null); setVersion(v => v + 1); },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [gestein, seed, beispiel]);
 
@@ -88,7 +107,7 @@ export default function VerwitterungModus({ startGestein }: { startGestein?: Ges
           felsStand.current = stand;
         }
         if (z.stand === 0) formen.current = { stand: 0, liste: [] };
-        else if (z.stand - formen.current.stand >= 10 || z.stand < formen.current.stand) formen.current = { stand: z.stand, liste: formenErkennen(z) };
+        else if (z.stand - formen.current.stand >= 10 || z.stand < formen.current.stand || formen.current.stand < 0) formen.current = { stand: z.stand, liste: formenErkennen(z) };
         zeichneQuerschnitt(c.getContext("2d")!, z, kk, (t - t0) / 1000, PX, fels.current, { marken: markenRef.current, formen: formen.current.liste });
       }
       raf = requestAnimationFrame(lauf);
@@ -102,7 +121,7 @@ export default function VerwitterungModus({ startGestein }: { startGestein?: Ges
   const phasen = PHASEN[gestein];
   const starteFilm = () => {
     if (!phasen) return;
-    q.current = neuerSchnitt(); felsStand.current = "";
+    q.current = neuerSchnitt(); uebersicht.current = null; felsStand.current = "";
     const f = { nr: 0, rest: phasen[0].schritte };
     setFilm(f); filmRef.current = f;
     waehleKlima(phasen[0].klima);
@@ -111,6 +130,8 @@ export default function VerwitterungModus({ startGestein }: { startGestein?: Ges
   };
   const waehleGestein = (g: Gestein) => { setGestein(g); setLaeuft(false); waehleKlima(STECKBRIEFE[g].klima); };
   const z = q.current;
+  // Formen auch ohne Zeichenschleife aktuell halten (z. B. nach »⏭«)
+  if (z.stand > 0 && (z.stand - formen.current.stand >= 10 || z.stand < formen.current.stand || formen.current.stand < 0)) formen.current = { stand: z.stand, liste: formenErkennen(z) };
   const sb = STECKBRIEFE[gestein];
   const max = Math.max(0.5, ...KRAEFTE.map(x => z.wirkungMittel[x.id]));
   void version;
@@ -129,22 +150,42 @@ export default function VerwitterungModus({ startGestein }: { startGestein?: Ges
               <p className="mt-0.5">{phasen[film.nr].text}</p>
             </div>
           )}
+          <div className="relative">
           <canvas
-            ref={cv} width={z.W * PX} height={z.H * PX} className="h-auto w-full rounded-xl border border-line" style={{ imageRendering: "pixelated" }}
+            ref={cv} width={z.W * PX} height={z.H * PX} className={`h-auto w-full rounded-xl border border-line ${lupeWahl ? "cursor-zoom-in" : ""}`} style={{ imageRendering: "pixelated" }}
+            onClick={e => {
+              if (!lupeWahl) return;
+              const r = (e.target as HTMLElement).getBoundingClientRect();
+              oeffneLupe(((e.clientX - r.left) / r.width) * z.W, ((e.clientY - r.top) / r.height) * z.H);
+            }}
             aria-label={`Querschnitt durch ${GESTEINE.find(x => x.id === gestein)!.label}`}
             onMouseMove={e => {
               const r = (e.target as HTMLElement).getBoundingClientRect();
               const i = Math.floor(((e.clientX - r.left) / r.width) * z.W), j = Math.floor(((e.clientY - r.top) / r.height) * z.H);
+              if (lupeWahl) setMaus({ x: (e.clientX - r.left) / r.width, y: (e.clientY - r.top) / r.height });
               if (i < 0 || j < 0 || i >= z.W || j >= z.H) return setInfo("");
               const c = j * z.W + i, m = z.stoff[c];
               if (m === LUFT) return setInfo("");
               setInfo(`${STOFFE[m].name}${m === SCHUTT ? ` (aus ${STOFFE[z.eltern[c]]?.name ?? "?"})` : ""} · Risse ${Math.round(Math.min(1, z.riss[c]) * 100)} % · Nässe ${Math.round(z.nass[c] * 100)} % · ${((j * z.zelle)).toFixed(1)} m unter Bildoberkante`);
             }}
-            onMouseLeave={() => setInfo("")}
+            onMouseLeave={() => { setInfo(""); setMaus(null); }}
           />
+          {lupeWahl && maus && (
+            <div className="pointer-events-none absolute rounded border-2 border-yellow-400 bg-yellow-200/10"
+              style={{ width: `${100 / faktor}%`, height: `${100 / faktor}%`, left: `${Math.max(0, Math.min(1 - 1 / faktor, maus.x - 0.5 / faktor)) * 100}%`, top: `${Math.max(0, Math.min(1 - 1 / faktor, maus.y - 0.5 / faktor)) * 100}%` }} />
+          )}
+          <div className="absolute right-2 top-2 flex gap-1">
+            <button className={`chip bg-surface/90 ${marken ? "chip-on" : ""}`} onClick={() => setMarken(m => !m)} title="Namen und Beschriftungen ein/aus">🏷️ Namen</button>
+            {!z.lupe && <button className={`chip bg-surface/90 ${lupeWahl ? "chip-on" : ""}`} onClick={() => setLupeWahl(l => !l)} title="In die Karte klicken: Ausschnitt fein weiterrechnen">🔍 Lupe</button>}
+            {!z.lupe && lupeWahl && [4, 8].map(f => <button key={f} className={`chip bg-surface/90 ${faktor === f ? "chip-on" : ""}`} onClick={() => setFaktor(f)}>{f}×</button>)}
+            {z.lupe && <button className="chip chip-on bg-surface/90" onClick={schliesseLupe}>↩ Übersicht</button>}
+          </div>
+          {z.lupe && <div className="pointer-events-none absolute left-2 top-2 rounded bg-black/65 px-2 py-0.5 text-xs font-bold text-white">🔍 Lupe {z.lupe.faktor}× · Ausschnitt {(z.lupe.x0 * (uebersicht.current?.zelle ?? 0.25)).toFixed(0)}–{((z.lupe.x0 + z.W / z.lupe.faktor) * (uebersicht.current?.zelle ?? 0.25)).toFixed(0)} m · 1 Schritt ≈ {Math.round(100 / z.lupe.faktor)} Jahre</div>}
+          {lupeWahl && <div className="pointer-events-none absolute bottom-2 left-1/2 -translate-x-1/2 rounded bg-black/70 px-2 py-0.5 text-xs text-white">Klick in die Karte oder auf eine erkannte Form: dort fein weiterrechnen</div>}
+          </div>
           <div className="mt-1 flex min-h-5 flex-wrap justify-between gap-2 text-xs text-muted">
             <span>{info || "Mit der Maus über das Gestein fahren: Stoff, Risse, Nässe."}</span>
-            <span>Querschnitt {z.W * z.zelle} m × {z.H * z.zelle} m · 1 Schritt ≈ 100 Jahre (stark vereinfacht)</span>
+            <span>Querschnitt {(z.W * z.zelle).toFixed(z.lupe ? 1 : 0)} m × {(z.H * z.zelle).toFixed(z.lupe ? 1 : 0)} m · 1 Schritt ≈ {Math.round(100 / (z.lupe?.faktor ?? 1))} Jahre (stark vereinfacht)</span>
           </div>
           <div className="mt-2 grid gap-2 sm:grid-cols-2">
             <section className="card p-3 text-sm">
@@ -163,8 +204,8 @@ export default function VerwitterungModus({ startGestein }: { startGestein?: Ges
         <aside className="card flex flex-col gap-3 p-4 text-sm">
           <div className="flex flex-wrap gap-2">
             <button className="btn-primary" onClick={() => setLaeuft(l => !l)}>{laeuft ? "⏸ Anhalten" : "▶ Verwittern lassen"}</button>
-            <button className="btn-secondary" disabled={laeuft} onClick={() => { for (let i = 0; i < 50; i++) schritt(q.current, k); setVersion(v => v + 1); }}>⏭ 5000 Jahre</button>
-            <button className="btn-secondary" onClick={() => { setLaeuft(false); setSeed(s => s + 1); }} title="Neuer Querschnitt">↺</button>
+            <button className="btn-secondary" disabled={laeuft} onClick={() => { for (let i = 0; i < 50; i++) schritt(q.current, k); setVersion(v => v + 1); }}>⏭ {Math.round(5000 / (z.lupe?.faktor ?? 1))} Jahre</button>
+            <button className="btn-secondary" onClick={() => { setLaeuft(false); if (z.lupe) schliesseLupe(); else setSeed(s => s + 1); }} title={z.lupe ? "Zurück zur Übersicht" : "Neuer Querschnitt"}>↺</button>
           </div>
           {phasen && <button className="btn-primary" onClick={starteFilm}>📜 Entstehung abspielen ({phasen.length} {phasen.length === 1 ? "Phase" : "Phasen"})</button>}
           <label className="flex items-center gap-2 text-xs text-muted"><input type="checkbox" checked={marken} onChange={e => setMarken(e.target.checked)} /> Formen beschriften</label>
@@ -219,6 +260,9 @@ export default function VerwitterungModus({ startGestein }: { startGestein?: Ges
                     <details className="text-xs">
                       <summary className="cursor-pointer">{FORM_INFO[art].icon} {art}{n > 1 ? ` (${n})` : ""}</summary>
                       <p className="mt-0.5 text-muted">{FORM_INFO[art].erklaerung}</p>
+                      {!z.lupe && formen.current.liste.filter(f => f.art === art && f.x >= 0).map((f, i) => (
+                        <button key={i} className="chip mr-1 mt-1" onClick={() => oeffneLupe(f.x, f.y)}>🔍 {art}{n > 1 ? ` ${i + 1}` : ""} genauer ansehen</button>
+                      ))}
                     </details>
                   </li>
                 ))}

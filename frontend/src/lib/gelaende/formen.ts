@@ -24,6 +24,7 @@ export const FORM_INFO: Record<string, { icon: string; erklaerung: string }> = {
   "Grusdecke": { icon: "🟫", erklaerung: "Zerfallener Granit: Feldspat ist zu Ton geworden, die Quarzkörner liegen lose." },
   "Schutthalde": { icon: "⛰️", erklaerung: "Gesteinsschutt sammelt sich am Hangfuß — vor allem durch Frostsprengung." },
   "Düne": { icon: "🏜️", erklaerung: "Vom Wind angehäufter Sand: flacher Luvhang, steiler Leehang." },
+  "Hangrutschung": { icon: "🟫", erklaerung: "Durchnässtes Lockermaterial hat seinen Halt verloren und ist als Scholle hangab geglitten — typisch für Ton nach langem Regen." },
   "Tümpel": { icon: "🫧", erklaerung: "In einer Senke sammelt sich Wasser, bis es versickert oder überläuft." },
 };
 
@@ -52,9 +53,9 @@ export function formenErkennen(q: Querschnitt): Form[] {
   for (let i = 0; i < W; i++) { let j = 0; while (j < H && !fest(stoff[j * W + i])) j++; top[i] = j; }
   const startTop = new Int16Array(W);
   for (let i = 0; i < W; i++) { let j = 0; while (j < H && !fest(start[j * W + i])) j++; startTop[i] = j; }
+
   const loeslich = (m: number) => fest(m) && STOFFE[m].loes > 0 && m !== SINTER;
   const karstig = start.some(m => loeslich(m));
-
   // Hohlräume (Luft oder Wasser, die nicht zum Himmel gehören)
   if (draussen) {
     const seen = new Uint8Array(N);
@@ -74,9 +75,9 @@ export function formenErkennen(q: Querschnitt): Form[] {
         }
       }
       const g = zell.length, cx = sx / g, cy = sy / g;
-      if (g >= 30 && sinter >= 6 && flussMax < 8) neu("Tropfsteinhöhle", cx, cy, g);
+      if (karstig && g >= 30 && sinter >= 6 && flussMax < 8) neu("Tropfsteinhöhle", cx, cy, g);
       else if (g >= 15 && flussMax >= 3) neu("Höhlenbach", cx, cy, g);
-      else if (g >= 30) neu("Höhle", cx, cy, g);
+      else if (g >= (karstig ? 30 : 80)) neu("Höhle", cx, cy, g);
       else if (g >= 6 && flussMax >= 4) neu("Karströhre", cx, cy, g);
     }
   }
@@ -124,14 +125,15 @@ export function formenErkennen(q: Querschnitt): Form[] {
     for (let c0 = 0; c0 < N; c0++) {
       if (seen[c0] || stoff[c0] !== GRANIT) continue;
       const i0 = c0 % W, j0 = (c0 - i0) / W;
-      if (j0 - top[i0] > 45) continue; // nur oberflächennah
+      if ((j0 - top[i0]) * q.zelle > 11) continue; // nur oberflächennah
       const zell = [c0];
       seen[c0] = 1;
       let rand = 0, grus = 0, sx = 0, sy = 0, tief = false;
-      for (let t = 0; t < zell.length && zell.length < 3000; t++) {
+      const grenze = 3000 * 0.0625 / (q.zelle * q.zelle);
+      for (let t = 0; t < zell.length && zell.length < grenze; t++) {
         const c = zell[t], i = c % W, j = (c - i) / W;
         sx += i; sy += j;
-        if (j - top[i] > 60 || j === H - 1) tief = true;
+        if ((j - top[i]) * q.zelle > 15 || j === H - 1) tief = true;
         // Zellen mit offenen Rissen trennen Blöcke ebenso wie Grus
         for (const n of [c - 1, c + 1, c - W, c + W]) {
           if (n < 0 || n >= N) continue;
@@ -141,7 +143,8 @@ export function formenErkennen(q: Querschnitt): Form[] {
         }
       }
       const g = zell.length;
-      if (tief || g < 25 || g >= 3000 || grus < rand * 0.4) continue;
+      const fl = 0.0625 / (q.zelle * q.zelle); // Zellen je m² (Lupe: mehr Zellen)
+      if (tief || g < 25 * fl || g >= 3000 * fl || grus < rand * 0.4) continue;
       const cx = sx / g, cy = sy / g;
       const lose = q.lose?.[c0] === 1;
       const ixc = Math.round(cx);
@@ -149,6 +152,10 @@ export function formenErkennen(q: Querschnitt): Form[] {
       let bewegt = 0;
       if (q.gerollt) for (const c of zell) bewegt += q.gerollt[c];
       const gerollt = lose && bewegt > g * 0.5;
+      // Wollsäcke nur an der Oberfläche beschriften (die Oberkante des Blocks höchstens ~2 m unter Gelände)
+      let oben = H;
+      for (const c of zell) oben = Math.min(oben, Math.floor(c / W) - top[c % W]);
+      if (!gerollt && !frei && oben * q.zelle > 2) continue;
       bloecke.push({ art: gerollt ? "Gerollter Block" : frei ? "Felsburg" : "Wollsack", text: "", erklaerung: "", x: cx, y: cy, groesse: g });
     }
     bloecke.sort((a, b) => b.groesse - a.groesse);
@@ -176,8 +183,10 @@ export function formenErkennen(q: Querschnitt): Form[] {
     const tal = Math.max(top[Math.max(0, i - 40)], top[Math.min(W - 1, i + 40)]);
     if (gipfel && tal - top[i] >= 8 && !formen.some(f => f.art === "Düne" && Math.abs(f.x - i) < 30)) neu("Düne", i, top[i] - 4, tal - top[i]);
   }
+  // Hangrutschungen der letzten ~2000 Jahre
+  for (const r of (q.rutschungen ?? []).slice(-2)) if (q.jahr - r.jahr < 2000) neu("Hangrutschung", r.x, Math.max(2, top[Math.max(0, Math.min(W - 1, r.x))] - 3), 50);
   // Tümpel
-  for (const [a, b] of laeufe(W, i => i < W && top[i] > 1 && stoff[(top[i] - 1) * W + i] === WASSER && stoff[(top[i] - 2) * W + i] === WASSER, 6)) {
+  for (const [a, b] of laeufe(W, i => i < W && top[i] > 2 && stoff[(top[i] - 1) * W + i] === WASSER && stoff[(top[i] - 2) * W + i] === WASSER && stoff[(top[i] - 3) * W + i] === WASSER, 8)) {
     const m = Math.round((a + b) / 2);
     neu("Tümpel", m, top[m] - 3, b - a + 1);
   }
@@ -185,10 +194,10 @@ export function formenErkennen(q: Querschnitt): Form[] {
   const aus: Form[] = [];
   for (const f of formen.slice().sort((a, b) => b.groesse - a.groesse)) {
     const gleiche = aus.filter(o => o.art === f.art);
-    if (f.x >= 0 && (gleiche.length >= 4 || gleiche.some(o => o.x >= 0 && Math.hypot(o.x - f.x, o.y - f.y) < 25))) continue;
+    if (f.x >= 0 && (gleiche.length >= 3 || gleiche.some(o => o.x >= 0 && Math.hypot(o.x - f.x, o.y - f.y) < 25))) continue;
     aus.push(f);
   }
-  return aus.slice(0, 18);
+  return aus.slice(0, 10);
 }
 
 /** Zusammenhängende Gebiete einer Maske (4er-Nachbarschaft) mit Mitte und Größe, größte zuerst */

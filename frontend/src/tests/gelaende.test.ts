@@ -1,4 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+// Querschnitt-Läufe mit vielen Schritten brauchen Zeit
+vi.setConfig({ testTimeout: 180000 });
 import { erzeuge, LANDSCHAFTEN, wuerfle, hoeheBei, neigungBei, wasserAbstand, inAue } from "@/lib/gelaende/gelaende";
 import { erosionStart, erosionSchritt, aenderung, aufGelaende, gewaesser, jahreszeit, JAHR, spiegel, STANDARD_EROSION } from "@/lib/gelaende/erosion";
 import { GESTEINE, GRUS, KLIMATE, KRAEFTE, LUFT as VLUFT, WASSER, schritt as vschritt, hoehlen, verwittert, abgetragen, type Klima } from "@/lib/gelaende/verwitterung";

@@ -323,3 +323,50 @@ export function querschnitt(g: Gestein, seed = 1, W = 400, H = 220, beispiel = f
     marken: b.marken, quellen: b.quellen, ereignisse: [], stand: 0, gestein: g, fluss: new Float32Array(N), geloest: 0,
   };
 }
+
+/**
+ * Lupe: ein Ausschnitt der Übersicht, `faktor`-fach feiner. Jede grobe Zelle
+ * wird zu faktor × faktor feinen; Klüfte bleiben dünn (nur eine feine Linie
+ * an der Stelle der groben Kluft), Gestein bekommt etwas Körnung. Sickerwasser,
+ * das in der Übersicht von oben in den Ausschnitt floss, kommt weiter an.
+ * Ein Schritt in der Lupe dauert 100 / faktor Jahre.
+ */
+export function ausschnitt(q: Querschnitt, cx: number, cy: number, faktor = 4, W = 400, H = 220): Querschnitt {
+  const w = Math.round(W / faktor), h = Math.round(H / faktor);
+  const x0 = Math.max(0, Math.min(q.W - w, Math.round(cx - w / 2)));
+  const y0 = Math.max(0, Math.min(q.H - h, Math.round(cy - h / 2)));
+  const N = W * H;
+  const z = zufallsquelle(Math.round(cx * 31 + cy * 17 + q.jahr));
+  const r = perlin(Math.round(cx + cy * 7));
+  const stoff = new Uint8Array(N), eltern = new Uint8Array(N), riss = new Float32Array(N), nass = new Float32Array(N), haerte = new Float32Array(N);
+  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
+    const gi = x0 + Math.floor(i / faktor), gj = y0 + Math.floor(j / faktor);
+    const g = gj * q.W + gi, k = j * W + i;
+    stoff[k] = q.stoff[g]; eltern[k] = q.eltern[g]; nass[k] = q.nass[g];
+    haerte[k] = q.haerte[g] * (0.9 + 0.2 * (0.5 + 0.5 * r(i / 9, j / 9)));
+    // Kluft nur als dünne Linie: an der Kante zur Nachbarzelle mit ebenfalls offener Kluft, sonst schwach
+    const ri = q.riss[g];
+    if (ri > 0.3) {
+      const li = i % faktor, lj = j % faktor;
+      const rechts = gi + 1 < q.W && q.riss[g + 1] > 0.3, unten = gj + 1 < q.H && q.riss[g + q.W] > 0.3;
+      const linie = (unten && li === faktor >> 1) || (rechts && lj === faktor >> 1) || (!rechts && !unten && li === faktor >> 1 && lj === faktor >> 1);
+      riss[k] = linie ? ri : ri * 0.25;
+    } else riss[k] = ri * (0.8 + 0.4 * z());
+  }
+  // Sickerwasser von oben: Durchfluss der Übersicht in der Zeile über dem Ausschnitt
+  const zufluss = new Float32Array(W), saettOben = new Float32Array(W);
+  if (y0 > 0) for (let i = 0; i < W; i++) {
+    const g = (y0 - 1) * q.W + x0 + Math.floor(i / faktor);
+    const fl = (q.karst?.[g] ?? 0) + (q.fluss?.[g] ?? 0) * 0.02;
+    zufluss[i] = Math.min(3, fl / faktor);
+    saettOben[i] = 0.5; // Wasser, das tief im Gestein ankommt, ist schon halb gesättigt
+  }
+  const zw = q.zelle / faktor;
+  const lupe: Querschnitt = {
+    W, H, zelle: zw, stoff, eltern, riss, nass, haerte, tropfen: [], jahr: q.jahr, winter: q.winter,
+    wirkung: leereWirkung(), wirkungMittel: leereWirkung(), start: Uint8Array.from(stoff), zufall: z,
+    marken: [], quellen: [], ereignisse: [], stand: q.stand, gestein: q.gestein, fluss: new Float32Array(N), geloest: 0,
+    lupe: { faktor, x0, y0, zufluss, saettOben },
+  };
+  return lupe;
+}

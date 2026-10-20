@@ -143,8 +143,12 @@ export interface Querschnitt {
   geloest?: number;
   /** 1 = Teil eines losgelösten Blocks (kann fallen und rollen) */
   lose?: Uint8Array;
+  /** Lupe: Vergrößerung gegenüber der Übersicht und Sickerwasser, das von oben in den Ausschnitt kommt */
+  lupe?: { faktor: number; x0: number; y0: number; zufluss: Float32Array; saettOben: Float32Array };
   /** Zellen eines Blocks, der schon gefallen oder gerollt ist */
   gerollt?: Uint8Array;
+  /** Hangrutschungen (Ort, Zeit) */
+  rutschungen?: { x: number; y: number; jahr: number }[];
   /** Orte, an denen eine Höhlendecke bis zur Oberfläche durchbrach (für »Einsturzdoline«) */
   einstuerze?: { x: number; jahr: number }[];
   /** Karstwasser-Netz: Durchfluss je Zelle in diesem Schritt (Sickerwasser bis zur Quelle) */
@@ -190,7 +194,8 @@ export function schritt(q: Querschnitt, k: Klima): Querschnitt {
   const z = q.zufall;
   const E = leer();
   const at = (i: number, j: number) => (i < 0 || i >= W || j >= H ? GRANIT : j < 0 ? LUFT : stoff[j * W + i]);
-  q.winter = Math.floor(q.jahr / 100) % 3 === 2;
+  q.winter = q.stand % 3 === 2;
+  const f = q.lupe?.faktor ?? 1;
 
   // Oberkante je Spalte und Bewuchs
   const top = new Int16Array(W);
@@ -266,9 +271,19 @@ export function schritt(q: Querschnitt, k: Klima): Querschnitt {
   }
 
   // 💧 Regen
-  const regen = Math.round(k.wasser * W * 0.16 * (q.winter && k.frost > 0.6 ? 0.4 : 1));
+  // in der Lupe nur dort Regen, wo der Ausschnitt oben an den Himmel grenzt
+  let offenOben = W;
+  if (q.lupe) { offenOben = 0; for (let i = 0; i < W; i++) if (!fest(stoff[i])) offenOben++; }
+  const regen = Math.round(k.wasser * offenOben * 0.16 * (q.winter && k.frost > 0.6 ? 0.4 : 1));
   for (let n = 0; n < regen && q.tropfen.length < 6000; n++) q.tropfen.push({ x: Math.floor(z() * W), y: 0, unter: false, last: 0, saett: 0, alter: 0, dir: 0 });
   // Bäche von außen: führen auch in der Trockenzeit Wasser (schwächer)
+  // Lupe: Sickerwasser aus dem Gestein darüber, so viel und so gesättigt wie in der Übersicht dort floss
+  if (q.lupe) for (let i = 0; i < W; i++) {
+    const w = q.lupe.zufluss[i] * k.wasser;
+    if (w <= 0 || !fest(stoff[i])) continue;
+    const n = Math.floor(w) + (z() < w % 1 ? 1 : 0);
+    for (let m = 0; m < n && q.tropfen.length < 6000; m++) q.tropfen.push({ x: i, y: 0, unter: true, last: 0, saett: q.lupe.saettOben[i], alter: 0, dir: 0 });
+  }
   for (const qu of q.quellen) {
     const n = Math.round((6 + 14 * k.wasser) * qu.staerke);
     for (let i = 0; i < n && q.tropfen.length < 6000; i++) q.tropfen.push({ x: qu.x, y: qu.y, unter: false, last: 0, saett: 0, alter: 0, dir: 1, fluss: true });
@@ -406,10 +421,21 @@ export function schritt(q: Querschnitt, k: Klima): Querschnitt {
         if (stoff[(j + 1) * W + ni] === LUFT) { stoff[(j + 1) * W + ni] = WASSER; stoff[c] = LUFT; bewegt = true; break; } // schräg bergab
       }
       if (bewegt) continue;
-      // auf gleicher Höhe verlaufen (ebener Spiegel)
-      const ni = i + d0;
-      if (ni >= 0 && ni < W && stoff[j * W + ni] === LUFT && z() < 0.5) { stoff[j * W + ni] = WASSER; stoff[c] = LUFT; continue; }
+      // auf gleicher Höhe verlaufen: zum tiefer liegenden Gelände hin; auf ebenem Talboden zum nächsten Rand (Vorfluter)
+      const tl = top[Math.max(0, i - 4)], tr = top[Math.min(W - 1, i + 4)];
+      const hang = tr > tl + 1 ? 1 : tl > tr + 1 ? -1 : 0;
+      const dz = hang || (z() < 0.6 ? (i < W / 2 ? -1 : 1) : d0);
+      const ni = i + dz;
+      if (ni >= 0 && ni < W && stoff[j * W + ni] === LUFT && z() < 0.85) { stoff[j * W + ni] = WASSER; stoff[c] = LUFT; continue; }
       if (runde > 0) continue;
+      // Wasser darüber durchfeuchtet den Boden (auch Ton quillt langsam auf)
+      if (fest(stoff[u])) nass[u] = Math.min(1, nass[u] + 0.05);
+      // in Höhlen versickert stehendes Wasser durch offene Klüfte im Boden (der Fels ist sonst gesättigt)
+      if (fest(stoff[u]) && !draussen[c] && riss[u] > 0.35 && z() < riss[u] * 0.15) {
+        stoff[c] = LUFT;
+        if (q.tropfen.length < 6000) q.tropfen.push({ x: i, y: j + 1, unter: true, last: 0, saett: 0.6, alter: 0, dir: 0 });
+        continue;
+      }
       if (fest(stoff[u]) && draussen[c]) {
         const su = STOFFE[stoff[u]];
         // in Klüften (Karst!) versickert ein Tümpel schnell, auf Ton bleibt er stehen
@@ -422,6 +448,24 @@ export function schritt(q: Querschnitt, k: Klima): Querschnitt {
       }
       if (j > 0 && stoff[c - W] === LUFT && draussen[c - W] && z() < 0.01 + 0.04 * k.sonne) stoff[c] = LUFT;
     }
+  }
+  // 🟫 Hangrutschungen: durchnässtes Lockermaterial an steilen Hängen rutscht als Ganzes ab
+  if (q.stand % 3 === 0) rutschungen(q, top, E);
+  // Gewässer, die bis an den Kartenrand reichen, fließen über den Talfluss ab:
+  // ihr Spiegel sinkt (oberste Wasserzellen verschwinden), bis sie nicht mehr über den Rand reichen
+  {
+    const imRand = new Uint8Array(W * H);
+    const st: number[] = [];
+    for (let j = 0; j < H; j++) for (const i of [0, W - 1]) { const c = j * W + i; if (stoff[c] === WASSER) { imRand[c] = 1; st.push(c); } }
+    while (st.length) {
+      const c = st.pop()!, i = c % W;
+      for (const n of [c - 1, c + 1, c - W, c + W]) {
+        if (n < 0 || n >= W * H || imRand[n] || stoff[n] !== WASSER) continue;
+        if ((n === c - 1 && i === 0) || (n === c + 1 && i === W - 1)) continue;
+        imRand[n] = 1; st.push(n);
+      }
+    }
+    for (let c = W; c < W * H; c++) if (imRand[c] && stoff[c - W] === LUFT && z() < 0.7) stoff[c] = LUFT;
   }
   // Wasser, das den Kartenrand erreicht, fließt ab
   for (let j = 0; j < H; j++) for (const i of [0, W - 1]) if (stoff[j * W + i] === WASSER) stoff[j * W + i] = LUFT;
@@ -446,13 +490,17 @@ export function schritt(q: Querschnitt, k: Klima): Querschnitt {
     if (below < W * H && fest(stoff[below]) && STOFFE[stoff[c]].durch > 0.3 && nass[c] > nass[below]) {
       const f = (nass[c] - nass[below]) * 0.3 * Math.min(STOFFE[stoff[below]].durch + riss[below], 1);
       nass[c] -= f; nass[below] += f;
+    } else if (below < W * H && stoff[below] === TON && fest(stoff[c]) && nass[c] > nass[below] + 0.1) {
+      // Ton nimmt Wasser nur langsam auf — aber er nimmt es auf (Quellen, Aufweichen)
+      const f = (nass[c] - nass[below]) * 0.06;
+      nass[c] -= f; nass[below] += f;
     }
     nass[c] *= 0.985 - 0.02 * k.sonne;
   }
 
   for (const kk of KRAEFTE) q.wirkungMittel[kk.id] = q.wirkungMittel[kk.id] * 0.9 + E[kk.id] * 0.1;
   q.wirkung = E;
-  q.jahr += 100;
+  q.jahr += 100 / f;
   q.stand++;
   if (q.fluss) for (let c = 0; c < W * H; c++) q.fluss[c] *= 0.97;
   return q;
@@ -464,6 +512,18 @@ function tausche(q: Querschnitt, a: number, b: number) {
   [eltern[a], eltern[b]] = [eltern[b], eltern[a]];
   [riss[a], riss[b]] = [riss[b], riss[a]];
   [nass[a], nass[b]] = [nass[b], nass[a]];
+}
+
+/** oberste feste Zelle der Ausgangslandschaft je Spalte (zwischengespeichert) */
+const startOberkante = new WeakMap<Uint8Array, Int16Array>();
+function startOben(q: Querschnitt, i: number): number {
+  let t = startOberkante.get(q.start);
+  if (!t) {
+    t = new Int16Array(q.W);
+    for (let x = 0; x < q.W; x++) { let j = 0; while (j < q.H && !fest(q.start[j * q.W + x])) j++; t[x] = j; }
+    startOberkante.set(q.start, t);
+  }
+  return t[Math.max(0, Math.min(q.W - 1, i))];
 }
 
 function bewegeTropfen(q: Querschnitt, k: Klima, top: Int16Array, bewuchs: Float32Array, E: Record<Kraft, number>, draussen: Uint8Array) {
@@ -537,7 +597,10 @@ function bewegeTropfen(q: Querschnitt, k: Klima, top: Int16Array, bewuchs: Float
       }
       // Abspülung: das fließende Wasser nimmt lockeres Korn unter sich mit
       const menge = t.menge ?? (t.last ? 1 : 0);
-      if ((!t.last || (t.last === m && menge < 3)) && st.locker && st.spuel && z() < k.wasser * st.spuel * 0.35 * (1 - 0.85 * bewuchs[t.x])) {
+      // Erosionsbasis: zum Kartenrand hin (Talfluss) kann sich das Wasser nicht unter die alte Oberfläche eintiefen
+      const randAbstand = Math.min(t.x, W - 1 - t.x);
+      const basis = randAbstand < 40 ? startOben(q, t.x) + randAbstand * 0.4 : H;
+      if (t.y + 1 < basis && (!t.last || (t.last === m && menge < 3)) && st.locker && st.spuel && z() < k.wasser * st.spuel * 0.35 * (1 - 0.85 * bewuchs[t.x])) {
         t.last = m; t.menge = menge + 1; stoff[c] = LUFT; eltern[c] = LUFT; riss[c] = 0; nass[c] = 0; E.wasser++;
       } else if (t.last && z() < 0.012 * (tl === tr ? 3 : 1)) {
         // Ablagerung, wo es flacher wird
@@ -804,6 +867,53 @@ function karstNetz(q: Querschnitt, k: Klima, top: Int16Array, draussen: Uint8Arr
     }
   }
   if (q.fluss) for (let c = 0; c < N; c++) q.fluss[c] += fl[c] * 0.5;
+}
+
+/**
+ * Hangrutschung: Wo Lockermaterial (Ton, Löss, Boden, Grus, Schutt) an einem
+ * steilen Hang so nass ist, dass es seinen Halt verliert, gleitet eine ganze
+ * Scholle ein Stück hangab. Je steiler und nasser, desto eher.
+ */
+function rutschungen(q: Querschnitt, top: Int16Array, E: Record<Kraft, number>) {
+  const { W, H, stoff, nass } = q;
+  const z = q.zufall;
+  const locker = (m: number) => fest(m) && STOFFE[m].locker;
+  for (let i0 = 8; i0 < W - 8; i0 += 5) {
+    const s = top[i0 + 6] - top[i0 - 6];
+    const steil = Math.abs(s) / 12; // Zellen je Zelle
+    if (steil < 0.3) continue;
+    const dir = s > 0 ? 1 : -1;
+    const D = 4;
+    const zellen: number[] = [];
+    let summe = 0;
+    for (let i = i0 - 6; i <= i0 + 6; i++) for (let j = top[i]; j < Math.min(H, top[i] + D); j++) {
+      const c = j * W + i;
+      if (!locker(stoff[c])) break;
+      zellen.push(c); summe += nass[c];
+    }
+    if (zellen.length < 30) continue;
+    const feucht = summe / zellen.length;
+    // Schwelle: steiler Hang rutscht schon bei weniger Wasser
+    const schwelle = 0.45 - 0.3 * Math.min(1, steil);
+    if (feucht < schwelle || z() > 0.35) continue;
+    // vorderste Zellen zuerst bewegen (in Rutschrichtung, dann nach unten)
+    zellen.sort((a, b) => ((b % W) - (a % W)) * dir || b - a);
+    let bewegt = 0;
+    for (const c of zellen) {
+      const i = c % W, j = (c - i) / W;
+      for (const [dx, dy] of [[dir, 1], [dir, 0]]) {
+        const ii = i + dx, jj = j + dy;
+        if (ii < 0 || ii >= W || jj >= H) continue;
+        const n = jj * W + ii;
+        if (!fest(stoff[n])) { tausche(q, c, n); bewegt++; break; }
+      }
+    }
+    if (bewegt > 20) {
+      E.wasser += bewegt;
+      (q.rutschungen ??= []).push({ x: i0, y: top[i0], jahr: q.jahr });
+      q.ereignisse.push("🟫 Hangrutschung! Der durchnässte Hang ist abgeglitten.");
+    }
+  }
 }
 
 /** Tragfähigkeit (relativ) der Decke je Stoff */

@@ -41,3 +41,18 @@ describe("Formen erkennen", () => {
     expect(flussFormen(e, g).length).toBeGreaterThan(0);
   });
 });
+
+import { ausschnitt } from "@/lib/gelaende/querschnitte";
+describe("Lupe", () => {
+  it("Ausschnitt ist feiner, zeigt dasselbe Gestein und rechnet mit kürzeren Schritten", () => {
+    const q = querschnitt("granit", 3);
+    const k = KLIMATE.find(x => x.id === "harz")!.k;
+    for (let i = 0; i < 100; i++) schritt(q, k);
+    const l = ausschnitt(q, 200, 40, 4);
+    expect(l.zelle).toBeCloseTo(q.zelle / 4);
+    expect(l.stoff[0]).toBe(q.stoff[l.lupe!.y0 * q.W + l.lupe!.x0]);
+    const j0 = l.jahr;
+    schritt(l, k);
+    expect(l.jahr - j0).toBe(25);
+  });
+});
