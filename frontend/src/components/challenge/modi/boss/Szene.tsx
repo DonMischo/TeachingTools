@@ -53,9 +53,10 @@ function Box({ name, hp, max, label, klasse, stil, kuerzel = "KP", farbe }: { na
   );
 }
 
-export function Szene({ held, gegner, heldName, gegnerName, hp, hpMax, himmel, boden, introText, heldAnim, gegnerAnim, zahlen = [], onGegnerClick, heldEp, children }: {
+export function Szene({ held, gegner, heldName, gegnerName, hp, hpMax, himmel, boden, introText, heldAnim, gegnerAnim, zahlen = [], onGegnerClick, heldEp, buehne, children }: {
   held: ReactNode; gegner: ReactNode; heldName: string; gegnerName: string; hp: number; hpMax: number;
-  himmel?: string; boden?: string; introText?: string; heldAnim?: Anim; gegnerAnim?: Anim; zahlen?: Zahl[]; onGegnerClick?(): void; /** EP-Balken des Helden (statt voller KP). */ heldEp?: { wert: number; max: number }; children: ReactNode;
+  himmel?: string; boden?: string; introText?: string; heldAnim?: Anim; gegnerAnim?: Anim; zahlen?: Zahl[]; onGegnerClick?(): void; /** EP-Balken des Helden (statt voller KP). */ heldEp?: { wert: number; max: number };
+  /** Eigene Bühne (3D-Arena) statt Boden und Pixelfiguren */ buehne?: ReactNode; children: ReactNode;
 }) {
   // 0 Blitz · 1 Streifen · 2 Figuren und Boxen gleiten ein, Text tippt · 3 fertig
   const [stufe, setStufe] = useState(() => (introText && !wenigerBewegung() ? 0 : 3));
@@ -73,18 +74,22 @@ export function Szene({ held, gegner, heldName, gegnerName, hp, hpMax, himmel, b
       <style>{CSS}</style>
       <Passend breite={B} hoehe={H}>
         <div className="relative overflow-hidden rounded-lg border-2 border-line" style={{ width: B, height: H, background: himmel || "#dbeafe" }}>
-          <div className="absolute rounded-[50%]" style={{ left: 0, right: 0, bottom: -60, height: 140, background: boden || "#6b7a5a" }} />
-          <div className="absolute rounded-[50%] opacity-40" style={{ right: 20, top: 120, width: 190, height: 36, background: boden || "#6b7a5a" }} />
-          <div className="absolute" style={{ right: 50, top: 14, visibility: sichtbar ? "visible" : "hidden" }}>
-            <div className={ein("r")}>
-              <div key={gegnerAnim?.n ?? 0} className={klasse(gegnerAnim, "gegner")} onClick={onGegnerClick} style={{ cursor: onGegnerClick ? "pointer" : undefined }}>{gegner}</div>
-            </div>
-          </div>
-          <div className="absolute" style={{ left: 40, bottom: 14, visibility: sichtbar ? "visible" : "hidden" }}>
-            <div className={ein("l")}>
-              <div key={heldAnim?.n ?? 0} className={klasse(heldAnim, "held")}>{held}</div>
-            </div>
-          </div>
+          {buehne ?? (
+            <>
+              <div className="absolute rounded-[50%]" style={{ left: 0, right: 0, bottom: -60, height: 140, background: boden || "#6b7a5a" }} />
+              <div className="absolute rounded-[50%] opacity-40" style={{ right: 20, top: 120, width: 190, height: 36, background: boden || "#6b7a5a" }} />
+              <div className="absolute" style={{ right: 50, top: 14, visibility: sichtbar ? "visible" : "hidden" }}>
+                <div className={ein("r")}>
+                  <div key={gegnerAnim?.n ?? 0} className={klasse(gegnerAnim, "gegner")} onClick={onGegnerClick} style={{ cursor: onGegnerClick ? "pointer" : undefined }}>{gegner}</div>
+                </div>
+              </div>
+              <div className="absolute" style={{ left: 40, bottom: 14, visibility: sichtbar ? "visible" : "hidden" }}>
+                <div className={ein("l")}>
+                  <div key={heldAnim?.n ?? 0} className={klasse(heldAnim, "held")}>{held}</div>
+                </div>
+              </div>
+            </>
+          )}
           {zahlen.map((z) => (
             <span key={z.id} className="bs-zahl absolute font-bold text-3xl pointer-events-none" aria-hidden
               style={{ right: 100 + (z.id % 3) * 24, top: 40 + (z.id % 2) * 16, color: "#ff3b30", textShadow: "0 0 3px #fff, 0 0 3px #fff, 0 0 3px #fff" }}>−{z.wert}</span>

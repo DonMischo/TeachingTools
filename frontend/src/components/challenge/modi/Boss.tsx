@@ -1,6 +1,6 @@
 "use client";
 /** Bosskampf: erst Fakten sammeln, dann das Gepäck wählen (= Deck), dann kontert die Figur die Angriffe des Bosses mit Fakten aus dem Inventar. */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { BestenlisteKnopf } from "@/components/challenge/Bestenliste";
 import { useSpielwert } from "@/lib/challenge/useSpielwert";
 import { useAblage } from "@/lib/challenge/useAblage";
@@ -12,13 +12,16 @@ import { Ablage, FaktKarte, Herzen, Inhalt, Treffermeldung } from "./teile";
 import { skinVon } from "./boss/figuren";
 import Sammeln from "./boss/Sammeln";
 import { Szene, type Anim, type Zahl } from "./boss/Szene";
+import Arena3D, { webglDa } from "./boss/Arena3D";
 import { EP_SIEG, anzahlMonster, bossSeed, epBalken } from "@/lib/challenge/bossKarte";
 
 type Ansicht = "menu" | "kontern" | "tasche";
 const FELDER = ["kontern", "tasche", "wechseln", "flucht"] as const;
+const nieAendern = () => () => {};
 
 export default function Boss({ brett, theme, skin, lauf, zurKarte }: ModusProps) {
   const sk = skinVon(skin);
+  const mitGL = useSyncExternalStore(nieAendern, webglDa, () => false); // 3D-Arena nur mit WebGL, sonst Pixelbühne
   const [phase, setPhase] = useState<"sammeln" | "arena">(brett.fakten.length && !brett.deck ? "sammeln" : "arena");
   const [deckLokal, setDeckLokal] = useState<string[] | null>(null);
   const [markiert, setMarkiert] = useState<string[]>([]);
@@ -101,7 +104,8 @@ export default function Boss({ brett, theme, skin, lauf, zurKarte }: ModusProps)
   const bg = theme.farben.himmel === "transparent" ? undefined : theme.farben.himmel;
   const boden = theme.farben.boden === "transparent" ? "#6b7a5a" : theme.farben.boden;
   const bal = epBalken(ep);
-  const zug = sk.zuege[(brett.etappe + (aktiv ? idx : 0)) % sk.zuege.length];
+  const zugNr = (brett.etappe + (aktiv ? idx : 0)) % sk.zuege.length;
+  const zug = sk.zuege[zugNr];
   const felder: { id: (typeof FELDER)[number]; text: string; icon: string; aus?: boolean }[] = [
     { id: "kontern", text: sk.kontern, icon: "⚔️" },
     { id: "tasche", text: "Tasche", icon: "🎒" },
@@ -162,7 +166,9 @@ export default function Boss({ brett, theme, skin, lauf, zurKarte }: ModusProps)
             held={<PixelMatrix bild={sk.held.bild} palette={sk.held.palette} scale={6} label={sk.held.name} />}
             gegner={<div style={{ transform: "scaleX(-1)" }}><PixelMatrix bild={sk.boss.bild} palette={sk.boss.palette} scale={7} label={sk.boss.name} /></div>}
             heldName={`${sk.held.name} Lv. ${bal.level}`} heldEp={ep > 0 ? { wert: bal.wert, max: bal.max } : undefined} gegnerName={sk.boss.name} hp={hp} hpMax={max}
-            heldAnim={heldAnim} gegnerAnim={offene.length === 0 ? { art: "weg", n: -1 } : gegnerAnim} zahlen={zahlen}>
+            heldAnim={heldAnim} gegnerAnim={offene.length === 0 ? { art: "weg", n: -1 } : gegnerAnim} zahlen={zahlen}
+            buehne={mitGL ? <Arena3D skin={skin} himmel={bg} boden={boden === "#6b7a5a" ? undefined : boden} gegnerAnim={gegnerAnim}
+              heldElement={sk.heldElement} bossElement={sk.zugElemente[zugNr]} weg={offene.length === 0} /> : undefined}>
             {aktiv ? (
               <div className="flex flex-col gap-2">
                 <div aria-live="polite">

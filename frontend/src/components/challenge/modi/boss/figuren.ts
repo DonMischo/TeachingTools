@@ -1,4 +1,6 @@
 /** Pixelfiguren der Boss-Skins. Halbbilder werden gespiegelt (gleiche Zeilenbreite garantiert). */
+import type { ElementId } from "@/lib/angriffe/effekte";
+
 export type Figur = { bild: string[]; palette: Record<string, string>; name: string };
 
 export const spiegel = (halb: string[]): string[] => halb.map((z) => z + [...z].reverse().join(""));
@@ -55,28 +57,34 @@ export type Skin = {
   angriff: string; kontern: string; sieg: string; intro: string;
   /** Texte der Gegnerzüge (wechseln mit dem Angriff). */
   zuege: string[];
+  /** 3D-Arena: Element des Helden und das Element zu jedem Gegnerzug (gleiche Reihenfolge wie zuege) */
+  heldElement: ElementId; zugElemente: ElementId[];
 };
 
 export const SKINS: Record<string, Skin> = {
   monster: {
     titel: "Drachenkampf", angriff: "Angriff", kontern: "Kontern", sieg: "Der Drache ist besiegt!", intro: "Der Drache fordert dich heraus!",
     zuege: ["Der Drache setzt Feueratem ein!", "Der Drache schwingt seinen Schwanz!", "Der Drache brüllt furchterregend!", "Der Drache setzt Klauenhieb ein!"],
+    heldElement: "eis", zugElemente: ["feuer", "erde", "wind", "blut"],
     held: { bild: HELD, palette: HELD_P, name: "Held" }, boss: { bild: DRACHE, palette: DRACHE_P, name: "Drache" },
   },
   rap: {
     titel: "Rap-Battle", angriff: "Diss", kontern: "Konter-Line", sieg: "Mic drop – du hast das Battle gewonnen!", intro: "Battle! Der Gegner greift zum Mikro!",
     zuege: ["Der Gegner droppt eine fiese Punchline!", "Der Gegner setzt Reimkette ein!", "Der Gegner rappt im Doppeltempo!", "Der Gegner wirft einen Disstrack raus!"],
+    heldElement: "blitz", zugElemente: ["feuer", "blitz", "wind", "dunkel"],
     held: { bild: RAPPER, palette: { k: "#15151f", c: "#2f6fe0", s: "#d9a273", m: "#7a2f2f", y: "#ffd84a", p: "#444a66", w: "#cfd6e0" }, name: "Rapper" },
     boss: { bild: RAPPER, palette: { k: "#15151f", c: "#d8352a", s: "#8a5a3a", m: "#3a1a1a", y: "#e8e8e8", p: "#2b2b2b", w: "#cfd6e0" }, name: "Gegner-Rapper" },
   },
   prinzessin: {
     titel: "Prinzessin gegen Monster", angriff: "Angriff", kontern: "Kontern", sieg: "Das Monster ist besiegt!", intro: "Ein wildes Monster versperrt der Prinzessin den Weg!",
     zuege: ["Das Monster setzt Schleimwelle ein!", "Das Monster stampft auf den Boden!", "Das Monster heult schaurig!", "Das Monster setzt Krallenschlag ein!"],
+    heldElement: "pflanzen", zugElemente: ["gift", "erde", "dunkel", "blut"],
     held: { bild: PRINZESSIN, palette: PRINZESSIN_P, name: "Prinzessin" }, boss: { bild: MONSTER, palette: MONSTER_P, name: "Monster" },
   },
   einhorn: {
     titel: "Einhorn gegen Bestie", angriff: "Angriff", kontern: "Kontern", sieg: "Die Bestie ist besiegt!", intro: "Eine wilde Bestie stellt sich dem Einhorn entgegen!",
     zuege: ["Die Bestie setzt Funkenregen ein!", "Die Bestie faucht bedrohlich!", "Die Bestie springt vor!", "Die Bestie setzt Schattenbiss ein!"],
+    heldElement: "fee", zugElemente: ["blitz", "wind", "erde", "schatten"],
     held: { bild: EINHORN, palette: EINHORN_P, name: "Einhorn" }, boss: { bild: BESTIE, palette: BESTIE_P, name: "Bestie" },
   },
 };
