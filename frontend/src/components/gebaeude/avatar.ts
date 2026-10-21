@@ -5,6 +5,7 @@
  * schaut nach +z (dorthin, wo sie hinläuft).
  */
 import * as THREE from "three";
+import { avatarDatei, ersetzeDurchModell } from "./avatarModell";
 
 export type Klasse = "normal" | "krieger" | "magier" | "priester" | "rapper" | "rocker";
 export type Form = "m" | "w";
@@ -520,5 +521,6 @@ export function baueAvatar(a: Avatar): THREE.Group {
   const g = new THREE.Group();
   if (a.tier && TIER_BAU[a.tier]) TIER_BAU[a.tier](g);
   else (BAU[a.klasse] ?? BAU.normal)(g, a);
+  ersetzeDurchModell(g, avatarDatei(a), HAUT[a.haut] ?? HAUT[0]); // neue Figur im Pokémon-Stil, sobald geladen
   return g;
 }

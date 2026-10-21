@@ -7,6 +7,7 @@ import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js"
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import { clone as skelettKlon } from "three/examples/jsm/utils/SkeletonUtils.js";
 import { monsterUrl, type MonsterId } from "./monster";
+import { toonStil } from "./toon";
 
 let lader: GLTFLoader | null = null;
 const cache = new Map<MonsterId, Promise<GLTF>>();
@@ -55,6 +56,7 @@ export async function ladeMonster(id: MonsterId, zielHoehe: number): Promise<Mon
   huelle.add(modell);
   modell.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(modell), h = Math.max(0.01, box.max.y - box.min.y);
+  toonStil(modell, h * 0.008); // Umriss etwa gleich dick wie bei den Avataren
   modell.scale.setScalar(zielHoehe / h);
   modell.position.y = -box.min.y * (zielHoehe / h);
   const mixer = new THREE.AnimationMixer(modell);
@@ -86,7 +88,7 @@ export async function ladeMonster(id: MonsterId, zielHoehe: number): Promise<Mon
     eigeneMaterialien() {
       modell.traverse((o) => {
         const m = o as THREE.Mesh;
-        if (m.isMesh) m.material = Array.isArray(m.material) ? m.material.map((x) => x.clone()) : m.material.clone();
+        if (m.isMesh && !o.userData.umriss) m.material = Array.isArray(m.material) ? m.material.map((x) => x.clone()) : m.material.clone();
       });
     },
     dispose() { mixer.stopAllAction(); laufend.delete(mixer); },

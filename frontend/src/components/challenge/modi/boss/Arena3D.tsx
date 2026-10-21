@@ -71,6 +71,7 @@ export default function Arena3D({ skin, himmel, boden, gegnerAnim, heldElement, 
     const wahl = ladeAvatar(), avatar = baueAvatar(wahl);
     avatar.scale.setScalar(1.4);
     held.setzeModell(avatar, 1.8);
+    avatar.userData.beiModell = () => held.setzeModell(avatar, 1.8); // neue Figur geladen: Materialien neu einsammeln
     const b = baueBoss(skin); // Platzhalter, bis das Monster-Modell geladen ist (und Rückfall ohne Netz)
     boss.setzeModell(b.modell, b.hoehe);
     let abgebaut = false;
