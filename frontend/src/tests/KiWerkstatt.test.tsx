@@ -50,10 +50,10 @@ describe("Weg durch die Werkstatt", () => {
     render(<KiWerkstatt />);
     fireEvent.click(screen.getByText("Los →"));
     fireEvent.click(screen.getByText("Prüfen"));
-    // »Schreibe« zerfällt in Stamm und Endung, »␣Katze« bleibt ein Stück.
+    // »Schreibe« zerfällt in Stamm und Endung, »Katze.« bleibt samt Punkt ein Stück.
     expect(screen.getByText("Schreib")).toBeTruthy();
-    expect(screen.getByText("␣Katze")).toBeTruthy();
-    expect(screen.getByText(/10 Zahlen/)).toBeTruthy();
+    expect(screen.getByText("Katze.")).toBeTruthy();
+    expect(screen.getByText(/9 Zahlen/)).toBeTruthy();
   });
 
   it("schreibt den Text Wort für Wort und lässt ihn zurücknehmen", () => {

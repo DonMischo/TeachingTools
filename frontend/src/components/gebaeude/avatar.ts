@@ -5,8 +5,9 @@
  * schaut nach +z (dorthin, wo sie hinläuft).
  */
 import * as THREE from "three";
+import { avatarDatei, ersetzeDurchModell } from "./avatarModell";
 
-export type Klasse = "normal" | "krieger" | "magier" | "priester" | "rapper" | "rocker";
+export type Klasse = "normal" | "krieger" | "magier" | "priester" | "rapper" | "rocker" | "metalhead";
 export type Form = "m" | "w";
 /** `tier` gesetzt: eines der Tiere (wie die Avatare beim Beitritt) statt eines Menschen */
 export interface Avatar { klasse: Klasse; form: Form; haut: number; tier?: string }
@@ -37,6 +38,7 @@ export const KLASSEN: { id: Klasse; name: string; icon: string }[] = [
   { id: "priester", name: "Priester", icon: "✨" },
   { id: "rapper", name: "Rapper", icon: "🎤" },
   { id: "rocker", name: "Rocker", icon: "🎸" },
+  { id: "metalhead", name: "Metalhead", icon: "🤘" },
 ];
 export const FORMEN: { id: Form; name: string }[] = [{ id: "m", name: "männlich" }, { id: "w", name: "weiblich" }];
 export const HAUT = [0xf6d5b8, 0xe0ac7e, 0xa86b3c, 0x5c3a21];
@@ -130,16 +132,17 @@ function koerper(g: THREE.Group, a: Avatar, k: Kleidung) {
 /**
  * Frisur: oben nur der Scheitelbereich (endet weit über den Augen), dazu der
  * Hinterkopf bis zum Nacken. Kurz (m) oder lang mit Zopf (w); `lang` erzwingt
- * lange Haare (Rocker). `oben: false` unter Hüten, damit nichts durchsticht.
+ * lange Haare (Rocker). `oben: false` unter Hüten: Hinterkopf erst ab Krempenhöhe, Dutt tiefer, damit nichts durchsticht.
  */
 function haare(g: THREE.Group, a: Avatar, farbe: number, lang = a.form === "w", oben = true) {
   const r = KOPF_R + 0.012;
   if (oben) kappe(g, farbe, r, 0, KOPF_Y, 0, 1.0);
   // Hinterkopf: hintere Hälfte (−z), vom Scheitel bis unter die Ohren
-  teil(g, new THREE.SphereGeometry(r, 16, 10, Math.PI, Math.PI, 0.5, 1.6), farbe, 0, KOPF_Y, 0);
+  const ab = oben ? 0.5 : 1.15;
+  teil(g, new THREE.SphereGeometry(r, 16, 10, Math.PI, Math.PI, ab, 2.1 - ab), farbe, 0, KOPF_Y, 0);
   if (lang) {
     quader(g, farbe, 0.34, 0.32, 0.1, 0, KOPF_Y - 0.28, -0.12);
-    if (a.form === "w") kugel(g, farbe, 0.07, 0, KOPF_Y + 0.05, -0.2);
+    if (a.form === "w") kugel(g, farbe, 0.07, 0, oben ? KOPF_Y + 0.05 : KOPF_Y - 0.08, -0.2);
   }
 }
 
@@ -176,9 +179,12 @@ const BAU: Record<Klasse, (g: THREE.Group, a: Avatar) => void> = {
     if (a.form === "m") kegel(g, 0xe5e7eb, 0.1, 0.25, 0, KOPF_Y - 0.37, 0.12).rotation.x = Math.PI; // Bart
     // Spitzhut mit Krempe und Sternen
     zyl(g, ROBE, 0.3, 0.3, 0.02, 0, KOPF_Y + 0.08);
-    const hut = kegel(g, ROBE, 0.17, 0.45, 0, KOPF_Y + 0.08);
-    hut.rotation.z = 0.15;
-    for (const [x, y] of [[0.08, KOPF_Y + 0.22], [-0.05, KOPF_Y + 0.35]]) kugel(g, 0xfacc15, 0.025, x, y, 0.1, true);
+    // geschert statt gedreht: die Spitze neigt sich, der Rand bleibt flach auf der Krempe (sonst klafft ein Spalt)
+    teil(g, new THREE.ConeGeometry(0.17, 0.45, 16).translate(0, 0.225, 0).applyMatrix4(new THREE.Matrix4().makeShear(0, 0, -0.33, 0, 0, 0)), ROBE, 0, KOPF_Y + 0.09, 0);
+    for (const [hy, w] of [[0.13, 0.6], [0.26, -0.5]]) { // Sterne auf der Hutfläche (Höhe hy über der Krempe, Winkel w)
+      const rr = 0.17 * (1 - hy / 0.45);
+      kugel(g, 0xfacc15, 0.025, -0.33 * hy + rr * Math.sin(w), KOPF_Y + 0.09 + hy, rr * Math.cos(w), true);
+    }
     for (const [x, y] of [[0.1, 0.35], [-0.12, 0.2], [0.05, 0.6]]) kugel(g, 0xfacc15, 0.02, x, y, 0.2, true);
     // Stab mit leuchtender Kugel
     zyl(g, 0x78350f, 0.025, 0.025, 1.3, 0.3, 0, 0.08);
@@ -227,6 +233,13 @@ const BAU: Record<Klasse, (g: THREE.Group, a: Avatar) => void> = {
     kugel(gitarre, 0xdc2626, 0.11, 0, 0.18, 0).scale.set(1, 1, 0.3);
     quader(gitarre, 0x78350f, 0.05, 0.5, 0.03, 0, 0.25, 0);
     quader(gitarre, 0x111827, 0.08, 0.1, 0.04, 0, 0.72, 0);
+  },
+  metalhead: (g, a) => {
+    koerper(g, a, { oben: 0x111111, unten: 0x1c1c22, schuhe: 0x0b0b0b, haar: 0x0f0f12 });
+    haare(g, a, 0x0f0f12, true);
+    quader(g, 0x34507a, 0.4, 0.3, 0.38, 0, 0.55); // Kutte
+    quader(g, 0xf1f1f1, 0.08, 0.08, 0.02, 0, 0.72, 0.2); // Totenkopf
+    for (const s of [-1, 1]) zyl(g, 0x111111, 0.065, 0.065, 0.05, s * (a.form === "w" ? 0.23 : 0.26), 0.5);
   },
 };
 
@@ -433,7 +446,14 @@ const TIER_BAU: Record<string, (g: THREE.Group) => void> = {
   },
   dino: g => {
     basis(g, 0x65a30d, 0xd9f99d);
-    for (let i = 0; i < 5; i++) kegel(g, 0xf97316, 0.06, 0.12, 0, KY + 0.22 - i * 0.18, -0.2 - i * 0.03).rotation.x = -0.4;
+    // Rückenzacken sitzen auf der Rundung von Kopf und Körper und zeigen senkrecht von ihr weg
+    const hoch = new THREE.Vector3(0, 1, 0);
+    for (const [cy, r, e, gross] of [[KY, KR, 1.1, 1], [KY, KR, 0.65, 1], [KY, KR, 0.2, 0.9], [0.38, 0.29, 0.55, 0.9], [0.38, 0.29, 0.1, 0.8], [0.38, 0.28, -0.35, 0.7]]) {
+      const normale = new THREE.Vector3(0, Math.sin(e), -Math.cos(e));
+      const z = teil(g, new THREE.ConeGeometry(0.06 * gross, 0.14 * gross, 8).translate(0, 0.07 * gross - 0.01, 0), 0xf97316, 0, cy, 0);
+      z.position.addScaledVector(normale, r);
+      z.quaternion.setFromUnitVectors(hoch, normale);
+    }
     schwanz(g, 0x65a30d, 0.55, 0.1); kugel(g, 0x3f6212, 0.02, 0.06, KY - 0.05, KR); kugel(g, 0x3f6212, 0.02, -0.06, KY - 0.05, KR);
   },
   whale: g => { schwimmer(g, 0x2563eb, 0xbfdbfe, 0.9); zyl(g, 0x7dd3fc, 0.02, 0.05, 0.25, 0, 0.8, 0.05); kugel(g, 0xbae6fd, 0.06, 0, 1.08, 0.05); },
@@ -509,5 +529,6 @@ export function baueAvatar(a: Avatar): THREE.Group {
   const g = new THREE.Group();
   if (a.tier && TIER_BAU[a.tier]) TIER_BAU[a.tier](g);
   else (BAU[a.klasse] ?? BAU.normal)(g, a);
+  ersetzeDurchModell(g, avatarDatei(a), HAUT[a.haut] ?? HAUT[0]); // neue Figur im Pokémon-Stil, sobald geladen
   return g;
 }

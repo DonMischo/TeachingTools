@@ -16,6 +16,7 @@
     "quellen:pakete": "node scripts/quellen-pakete.mjs"
   },
   "dependencies": {
+    "@d2lang/d2": "0.1.34",
     "@dnd-kit/core": "^6.3.1",
     "@tanstack/react-query": "^5.40.0",
     "@tiptap/core": "^3.31.4",

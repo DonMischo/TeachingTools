@@ -19,6 +19,7 @@ import ProfilAnsicht from "./ProfilAnsicht";
 import Draufsicht from "./Draufsicht";
 import Gezeiten from "./Gezeiten";
 import KuestenGalerie from "./KuestenGalerie";
+import SimVerweis from "@/components/gelaende/SimVerweis";
 
 type Reiter = "profil" | "draufsicht" | "gezeiten" | "galerie" | "wissen";
 
@@ -49,7 +50,7 @@ export default function Kueste({ action, vorgabe }: { action?: ReactNode; vorgab
         <div className="flex items-center gap-2">{action}</div>
       </div>
 
-      {!festerReiter && <div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface">
+      {!festerReiter && <div className="flex flex-wrap items-center gap-2"><div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface">
         {REITER.map(r => (
           <button key={r.id} onClick={() => setReiter(r.id)}
             className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${
@@ -57,6 +58,9 @@ export default function Kueste({ action, vorgabe }: { action?: ReactNode; vorgab
             {r.icon} {r.label}
           </button>
         ))}
+      </div>
+        {/* Gegenstück von oben: ganze Küste über Jahrhunderte in der Simulation »Erosion« */}
+        <SimVerweis href="/simulationen/erosion?modus=kueste&typ=steil" text="🌧️ Küste von oben: Erosion" />
       </div>}
 
       {reiter === "profil" && <ProfilAnsicht />}

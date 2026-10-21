@@ -106,6 +106,32 @@ export const REGISTER: WerkzeugQuellen[] = [
     ],
   },
   {
+    slug: "stadt", name: "🏘️ Stadtentwicklung",
+    eintraege: [
+      { quelle: "MapGenerator", urheber: "Keir (ProbableTrain)", lizenz: "LGPL-3.0", url: "https://github.com/ProbableTrain/MapGenerator", verwendung: "Idee: Straßen als Feldlinien eines Tensorfelds (Raster + Radial gemischt), Häuser entlang der Straßen; neu in TypeScript geschrieben, kein Code übernommen" },
+      { quelle: "VoxelSpace", urheber: "Sebastian Macke", lizenz: "MIT", url: "https://github.com/s-macke/VoxelSpace", verwendung: "Algorithmus für den 3D-Flug (Spalten von vorn nach hinten, Y-Puffer); neu geschrieben, die Comanche-Karten des Repos werden nicht benutzt" },
+      { quelle: "terrain-erosion-3-ways", urheber: "Daniel Andrino", lizenz: "MIT", url: "https://github.com/dandrino/terrain-erosion-3-ways", verwendung: "Erosions-Simulation (Konstanten und Ablauf je Schritt) für den Knopf »Erosion«; neu geschrieben" },
+    ],
+    literatur: [
+      "Chen, G., Esch, G., Wonka, P., Müller, P. & Zhang, E. (2008): Interactive Procedural Street Modeling. ACM Transactions on Graphics 27(3).",
+      "Burgess, E. W. (1925): The Growth of the City. In: Park, R. E. & Burgess, E. W.: The City. University of Chicago Press.",
+      "Heineberg, H. (2017): Stadtgeographie. 5. Aufl., Schöningh (UTB).",
+    ],
+  },
+  {
+    slug: "diagramme", name: "🔀 Diagramm-Werkstatt",
+    eintraege: [
+      { quelle: "D2 (d2lang)", urheber: "Terrastruct, Inc.", lizenz: "MPL-2.0", url: "https://github.com/d2lang/d2", verwendung: "Diagrammsprache, Layout und SVG-Ausgabe; unverändert als npm-Paket @d2lang/d2 (WASM) eingebunden" },
+    ],
+  },
+  {
+    slug: "erosion", name: "🌧️ Erosion",
+    eintraege: [
+      { quelle: "terrain-erosion-3-ways", urheber: "Daniel Andrino", lizenz: "MIT", url: "https://github.com/dandrino/terrain-erosion-3-ways", verwendung: "Vorbild der gitterbasierten Wassererosion mit Rutschungen (Ablauf und Konstanten); neu in TypeScript geschrieben" },
+      { quelle: "VoxelSpace", urheber: "Sebastian Macke", lizenz: "MIT", url: "https://github.com/s-macke/VoxelSpace", verwendung: "Algorithmus für den 3D-Flug; neu geschrieben" },
+    ],
+  },
+  {
     slug: "dla", name: "🪸 Fraktales Wachstum",
     eintraege: [
       { quelle: "dlaf (Diffusion-limited aggregation)", urheber: "Michael Fogleman", lizenz: "MIT", url: "https://github.com/fogleman/dlaf", verwendung: "Vorbild für Parameter (Abstand, Anziehung, Mindestschritt, Haftung) und den Sprung im leeren Raum; neu in TypeScript geschrieben, kein Code übernommen" },
@@ -121,6 +147,15 @@ export const REGISTER: WerkzeugQuellen[] = [
       "Parsons, B. & Sclater, J. G. (1977): JGR 82, 803–827.",
       "Frisch, W., Meschede, M. & Blakey, R.: Plattentektonik (Primus, 2009).",
       "Nance, R. D. et al. (2014): Gondwana Research 25, 4–29.",
+    ],
+  },
+  {
+    slug: "challenge", name: "🐉 Bosskampf und TaskCrawler-Monster",
+    eintraege: [
+      { quelle: "Ultimate Monsters", urheber: "Quaternius", lizenz: "CC0 1.0", url: "https://quaternius.com/packs/ultimatemonsters.html",
+        verwendung: "21 animierte Monster: Bosse der 3D-Arena, ein Gegner je Element, Verlies-Monster (public/modelle/monster)" },
+      { quelle: "Draco-Decoder (three.js)", urheber: "Google / three.js-Autoren", lizenz: "Apache-2.0", url: "https://github.com/google/draco",
+        verwendung: "Entpacken der komprimierten Monster-Modelle (public/draco)" },
     ],
   },
 ];

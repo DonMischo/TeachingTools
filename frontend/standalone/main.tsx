@@ -29,6 +29,8 @@ import RegelLabor from "@/components/regeln/RegelLabor";
 import Wellenkollaps from "@/components/wfc/Wellenkollaps";
 import Algorithmen from "@/components/algo/Algorithmen";
 import Wachstum from "@/components/dla/Wachstum";
+import Stadtentwicklung from "@/components/stadt/Stadtentwicklung";
+import Erosion from "@/components/erosion/Erosion";
 import Periodensystem from "@/components/pse/Periodensystem";
 import Strukturformeln from "@/components/struktur/Strukturformeln";
 import Schichtenmodell from "@/components/schichten/Schichtenmodell";
@@ -56,6 +58,8 @@ const TOOLS: { id: string; icon: string; label: string; node: ReactNode }[] = [
   { id: "wfc", icon: "🧩", label: "Wellenfunktionskollaps", node: <Wellenkollaps /> },
   { id: "algo", icon: "🔀", label: "Algorithmen", node: <Algorithmen /> },
   { id: "dla", icon: "🪸", label: "Fraktales Wachstum", node: <Wachstum /> },
+  { id: "stadt", icon: "🏘️", label: "Stadtentwicklung", node: <Stadtentwicklung /> },
+  { id: "erosion", icon: "🌧️", label: "Erosion", node: <Erosion /> },
   { id: "pse", icon: "🧪", label: "Periodensystem", node: <Periodensystem /> },
   { id: "atommodelle", icon: "⚛️", label: "Atommodelle", node: <Periodensystem nur="modelle" /> },
   { id: "strukturformeln", icon: "⬡", label: "Strukturformeln", node: <Strukturformeln /> },
