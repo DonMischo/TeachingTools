@@ -4,6 +4,7 @@ die Tiere stehen in tierbewegung.py.
 """
 import os
 import bpy
+from mathutils import Vector
 from rig import skelett, binden
 
 # Quaternius Universal Animation Library (CC0), liegt nicht im Repo: Pfad zur UAL1_Standard.glb
@@ -30,6 +31,7 @@ SPIEGEL_ANGRIFF = ("magier",)   # Stab in der linken Hand: mit der rechten zaube
 ANGRIFF = {"krieger": "Sword_Attack", "magier": "Spell_Simple_Shoot", "priester": "Spell_Simple_Shoot"}
 
 ROBE = ("magier", "priester")
+IN_DER_HAND = ("stab", "sonne", "klinge", "parier", "mikro", "schild")   # stab* trifft auch stabkugel, schild* den Buckel
 
 def robe_steif(kleidung):
     """Gewand: was an den Beinen hing, hängt am Becken – die Robe schwingt als Ganzes statt Beine abzuformen"""
@@ -49,6 +51,11 @@ def rigge_mensch(root):
         raise SystemExit("UAL_GLB muss auf UAL1_Standard.glb der Universal Animation Library zeigen")
     arm = skelett(root, MENSCH)
     starr = {o.name: "head" for o in root.children_recursive if o.name.startswith(("bart", "kinnbart", "mähne"))}
+    for o in root.children_recursive:   # Gehaltenes hängt an der Hand seiner Seite (die Mitte von Stabkugel oder Klinge liegt sonst näher an Kopf/Oberarm)
+        if o.type == "MESH" and o.name.startswith(IN_DER_HAND):
+            mitte = o.matrix_world @ (sum((v.co for v in o.data.vertices), Vector()) / max(1, len(o.data.vertices)))
+            if abs(mitte.x) > 0.15:   # nicht der Kappenschirm des Rappers (heißt auch schild, sitzt mittig am Kopf)
+                starr[o.name] = "hand_l" if mitte.x > 0 else "hand_r"
     binden(root, arm, starr)
     klasse = root.name.split("_")[1]
     if klasse in ROBE:
