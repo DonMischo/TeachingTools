@@ -1,4 +1,4 @@
-"""Die sechs Klassen (Normal, Krieger, Magier, Priester, Rapper, Rocker) je männlich/weiblich."""
+"""Die sieben Klassen (Normal, Krieger, Magier, Priester, Rapper, Rocker, Metalhead) je männlich/weiblich."""
 import bpy, math
 from mathutils import Vector, Quaternion
 from basis import (Blob, blob_mesh, material, kugel, kegel, stab, gesicht, wurzel, misch, stufe, auf_kopf)
@@ -21,7 +21,7 @@ def koerper(root, form, oben, unten, schuhe, robe=None, faerben=None, schuh_gros
     b = Blob()
     b.ellipse((0, 0, 0.69), 0.17, (0.95 if w else 1.05, 0.8, 1.15))                       # Oberkörper
     if robe is not None:
-        b.kapsel((0, 0, 0.62), (0, 0, 0.16), 0.15, 0.31)                                    # Gewand, unten weit
+        b.stumpf((0, 0, 0.005), (0, 0, 0.66), 0.32, 0.15)                                    # Gewand: Kegel mit geradem Saum
     else:
         if w:
             b.ellipse((0, 0, 0.5), 0.15, (1.12, 0.85, 0.7))                                  # Hüfte
@@ -74,6 +74,15 @@ def haare(root, farbe, stil, unter_hut=False, pony=4):
             kegel(f"spitze{k}", p, 0.08, l, n + Vector((0, 0.5, 0.3)), mat, segmente=8, stufe_=1, eltern=root)
     if stil == "zopf":
         kugel("zopfband", KOPF + Vector((0, 0.3, 0.04)), 0.05, material("Band", 0xef4444), eltern=root)
+
+HAND = Vector((0.305, -0.075, 0.48))
+
+def stab_in_hand(name, seite, laenge_unten, laenge_oben, mat, eltern, neigung=0.18):
+    """Stab, der durch die Hand läuft und leicht nach außen kippt (nichts schneidet Hut oder Krempe); gibt die Spitze zurück"""
+    hand = Vector((seite * HAND.x, HAND.y, HAND.z))
+    d = Vector((seite * neigung, -0.04, 1)).normalized()
+    stab(name, hand - d * laenge_unten, hand + d * laenge_oben, 0.022, mat, eltern=eltern)
+    return hand + d * laenge_oben
 
 def figur(name, form, iris, braue):
     root = wurzel(name)
@@ -135,8 +144,8 @@ def magier(form):
     kugel("krempe", KOPF + Vector((0, 0.04, 0.16)), 0.5, hut, groesse=(1, 1, 0.1), segmente=40, eltern=root)
     kegel("hut", KOPF + Vector((0, 0.04, 0.16)), 0.34, 0.72, Vector((0, 0, 1)), hut, biegung=(0, 0.32), segmente=16, eltern=root)
     kugel("hutband", KOPF + Vector((0, 0.04, 0.2)), 0.335, material("Saum", SAUM, rau=0.35, metall=0.3), groesse=(1, 1, 0.16), segmente=32, eltern=root)
-    stab("stab", (0.5, -0.06, 0.0), (0.5, -0.06, 1.0), 0.022, material("Holz", 0x6b3e1f), eltern=root)
-    kugel("stabkugel", (0.5, -0.06, 1.05), 0.085, material("Kristall", 0x6fe0ff, rau=0.1, leucht=3.0), eltern=root)
+    spitze = stab_in_hand("stab", 1, 0.45, 0.58, material("Holz", 0x6b3e1f), root)
+    kugel("stabkugel", spitze + Vector((0.01, 0, 0.06)), 0.085, material("Kristall", 0x6fe0ff, rau=0.1, leucht=3.0), eltern=root)
     return root
 
 def priester(form):
@@ -150,8 +159,8 @@ def priester(form):
     koerper(root, form, ROBE, ROBE, ROBE, robe=ROBE, faerben=zier)
     haare(root, 0x6b4423, "lang" if w else "kurz")
     ring("schein", KOPF + Vector((0, 0.05, 0.42)), 0.17, 0.02, material("Gold", GOLD, rau=0.3, metall=0.6, leucht=1.5), eltern=root)
-    stab("stab", (-0.42, -0.06, 0.0), (-0.42, -0.06, 1.1), 0.022, material("Gold", GOLD, rau=0.3, metall=0.6), eltern=root)
-    kugel("sonne", (-0.42, -0.06, 1.18), 0.11, material("Sonne", 0xfde047, leucht=2.0), groesse=(1, 0.25, 1), eltern=root)
+    spitze = stab_in_hand("stab", -1, 0.45, 0.62, material("Gold", GOLD, rau=0.3, metall=0.6), root)
+    kugel("sonne", spitze + Vector((-0.015, 0, 0.09)), 0.11, material("Sonne", 0xfde047, leucht=2.0), groesse=(1, 0.25, 1), eltern=root)
     return root
 
 def rapper(form):
@@ -189,5 +198,47 @@ def rocker(form):
     kugel("kopfplatte", (0, 0, 0.76), 0.05, material("Kopf", 0x111827), groesse=(1, 0.4, 1.4), eltern=g)
     return root
 
-KLASSEN = {"normal": normal, "krieger": krieger, "magier": magier, "priester": priester, "rapper": rapper, "rocker": rocker}
+def metalhead(form):
+    w = form == "w"
+    SHIRT, JEANS, KUTTE = 0x111111, 0x1c1c22, 0x34507a
+    root = figur(f"mensch_metalhead_{form}", form, (0x9fb8a0, 0x3a4a3a), 0x0a0a0a)
+    def kleidung(co, n):
+        # weißer Totenkopf vorn auf dem Bandshirt (zwischen den Westenhälften)
+        if co.y < -0.1 and abs(co.x) < 0.07:
+            kopf = (co.x / 0.05) ** 2 + ((co.z - 0.74) / 0.045) ** 2
+            augen = min(((co.x - s) / 0.016) ** 2 + ((co.z - 0.745) / 0.016) ** 2 for s in (-0.02, 0.02))
+            if kopf < 1 and augen > 1: return 0xf1f1f1
+            if 0.66 < co.z < 0.7 and abs(co.x) < 0.03 and (int(co.x * 120) % 2 == 0): return 0xf1f1f1   # Zähne
+            if co.z > 0.52: return SHIRT
+        # Kutte (Jeansweste) mit bunten Aufnähern
+        if 0.52 < co.z < 0.86 and abs(co.x) < 0.2:
+            if co.y > 0.08 and abs(co.x) < 0.11 and 0.6 < co.z < 0.78: return 0xb91c1c          # großer Rückenaufnäher
+            if co.y < -0.05 and -0.14 < co.x < -0.09 and 0.7 < co.z < 0.75: return 0xfacc15   # kleiner Aufnäher vorn links
+            if co.y < -0.05 and 0.09 < co.x < 0.13 and 0.62 < co.z < 0.66: return 0xdc2626     # und rechts
+            return KUTTE
+        if 0.47 < co.z < 0.53 and abs(co.x) < 0.2:
+            return 0x27272a                                                                       # Gürtel
+        if 0.26 < co.z < 0.29 and co.y < -0.06 and 0.05 < abs(co.x) < 0.13:
+            return 0x4b5563                                                                       # Risse an den Knien
+        return None
+    koerper(root, form, SHIRT, JEANS, 0x0b0b0b, faerben=kleidung, schuh_gross=1.3)
+    haare(root, 0x0f0f12, "lang", pony=3)
+    mat = material("Haar", 0x0f0f12, rau=0.6)
+    for x in (-1, 1):   # Mähne vorn über die Schultern bis zur Brust
+        b = Blob().kette([KOPF + Vector((x * 0.27, -0.04, -0.05)), KOPF + Vector((x * 0.25, -0.1, -0.32)), KOPF + Vector((x * 0.22, -0.13, -0.55))], [0.08, 0.075, 0.06])
+        blob_mesh(f"mähne{x}", b, mat=mat, glatt=6, ziel_flaechen=1500, eltern=root)
+    if not w:   # Kinnbart
+        b = Blob(); b.ellipse(KOPF + Vector((0, -0.25, -0.29)), 0.035, (0.9, 0.6, 1.4))
+        blob_mesh("kinnbart", b, mat=mat, glatt=4, ziel_flaechen=800, eltern=root)
+    nieten = material("Niete", 0xd1d5db, rau=0.2, metall=0.9)
+    for sx in (-1, 1):   # Nietenarmbänder
+        ring(f"armband{sx}", (sx * 0.292, -0.065, 0.53), 0.062, 0.022, material("Leder", 0x111111, rau=0.5), drehung=(0, sx * 0.45, 0), eltern=root)
+        for k in range(5):
+            a = k / 5 * 6.283
+            kegel(f"niete{sx}_{k}", (sx * 0.292 + 0.07 * math.cos(a) * 0.9, -0.065 + 0.07 * math.sin(a), 0.53), 0.012, 0.03,
+                  Vector((math.cos(a), math.sin(a), 0)), nieten, stufe_=0, segmente=6, eltern=root)
+    kugel("schnalle", (0, -0.16, 0.5), 0.035, material("Schnalle", 0xe5e7eb, rau=0.2, metall=0.9), groesse=(1.2, 0.4, 1), eltern=root)
+    return root
+
+KLASSEN = {"normal": normal, "krieger": krieger, "magier": magier, "priester": priester, "rapper": rapper, "rocker": rocker, "metalhead": metalhead}
 MENSCHEN = {f"mensch_{k}_{f}": (lambda k=k, f=f: KLASSEN[k](f)) for k in KLASSEN for f in ("m", "w")}

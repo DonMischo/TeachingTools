@@ -2,7 +2,7 @@
 import math
 from mathutils import Vector, Quaternion
 from basis import (Blob, blob_mesh, material, kugel, kegel, stab, ohr, auf_kopf, auge, augen, wangen, laecheln, nase,
-                   schnurrhaare, stacheln, wurzel, misch, stufe, flecken)
+                   schnurrhaare, stacheln, wurzel, misch, stufe, flecken, auf_ellipse, mund_ellipse, richtung_q)
 
 KOPF, KR = Vector((0, -0.02, 0.95)), 0.36
 WEISS, SCHWARZ = 0xf8fafc, 0x1f2937
@@ -133,6 +133,7 @@ def koala():
     wangen(KOPF, KR, 0.75, -0.2, root)
     p, _ = auf_kopf(KOPF, KR, 0, -0.08, tief=1.0)
     nase(p, root, farbe=0x374151, r=0.06, groesse=(1, 0.8, 1.35))
+    laecheln("mund", KOPF, KR * 1.01, 0.28, -0.36, root, tiefe=0.05, dicke=0.013)   # unter der großen Nase
     return root
 
 def tiger():
@@ -310,13 +311,18 @@ def owl():
     root = root_fuer("owl")
     BRAUN, HELL, DUNKEL = 0x92400e, 0xfde68a, 0x5a2a0a
     b = chibi(Blob(), arme=False)
-    for s in (-1, 1):
-        b.ellipse((s * 0.31, 0.06, 0.5), 0.2, (0.35, 0.75, 1.0), Quaternion((0, 1, 0), -s * 0.3))
     def farbe(co, n):
         scheibe = stufe(-(co.y - KOPF.y), 0.24, 0.3) * stufe(co.z, KOPF.z - 0.25, KOPF.z - 0.18)
-        fluegel = stufe(abs(co.x), 0.27, 0.32) * (1 - stufe(co.z, 0.7, 0.75))
-        return misch(misch(BRAUN, HELL, max(scheibe, bauch(co) * 0.7)), DUNKEL, fluegel)
+        return misch(BRAUN, HELL, max(scheibe, bauch(co) * 0.7))
     blob_mesh("koerper", b, farbe, eltern=root)
+    def fluegel_farbe(co, n):   # dunkle Schwungfedern unten, helle Bänder
+        return misch(misch(BRAUN, DUNKEL, 1 - stufe(co.z, 0.3, 0.5)), HELL, stufe(math.sin(co.z * 40), 0.8, 0.95) * 0.5)
+    for s in (-1, 1):   # Flügel: flache Schwinge mit drei Federspitzen, leicht abgespreizt
+        f = Blob()
+        f.ellipse((s * 0.33, 0.06, 0.55), 0.22, (0.22, 0.75, 1.0), Quaternion((0, 1, 0), -s * 0.45))
+        for k in range(3):
+            f.ellipse((s * (0.42 + k * 0.04), 0.0 + k * 0.08, 0.33 - k * 0.02), 0.09, (0.25, 0.55, 1.2), Quaternion((0, 1, 0), -s * (0.55 + k * 0.12)))
+        blob_mesh(f"fluegel{s}", f, fluegel_farbe, glatt=6, ziel_flaechen=2500, eltern=root)
     for s in (-1, 1):
         p, n = auf_kopf(KOPF, KR, s * 0.6, 0.75, tief=0.9)
         kegel(f"federohr{s}", p, 0.07, 0.2, n + Vector((s * 0.2, 0, 0.5)), material("Fell", BRAUN), flach=0.5, vorn=Vector((0, -1, 0)), eltern=root)
@@ -338,8 +344,11 @@ def parrot():
     blob_mesh("koerper", b, farbe, eltern=root)
     for k, (f, x) in enumerate(((ROT, -0.07), (BLAU, 0.0), (GELB, 0.07))):
         kugel(f"feder{k}", (x, 0.35, 0.22), 0.25, material("Feder", f), groesse=(0.2, 0.25, 1), drehung=Quaternion((1, 0, 0), 0.5), eltern=root)
-    p, n = auf_kopf(KOPF, KR, 0, -0.08, tief=0.92)
-    kegel("schnabel", p, 0.09, 0.2, Vector((0, -1, 0.1)), material("Schnabel", 0xfef3c7, rau=0.4), biegung=(0, 0.08), eltern=root)
+    # Hakenschnabel: oben kräftig und nach unten gebogen, darunter ein kleiner Unterschnabel
+    p, n = auf_kopf(KOPF, KR, 0, -0.02, tief=0.9)
+    kegel("schnabel", p, 0.1, 0.22, Vector((0, -1, -0.15)), material("Schnabel", 0xfef3c7, rau=0.4), biegung=(0, 0.12), flach=0.85, vorn=Vector((0, 0, 1)), eltern=root)
+    p2, _ = auf_kopf(KOPF, KR, 0, -0.2, tief=0.92)
+    kegel("unterschnabel", p2, 0.06, 0.09, Vector((0, -1, -0.3)), material("Unterschnabel", 0x78716c, rau=0.5), flach=0.8, vorn=Vector((0, 0, 1)), eltern=root)
     augen(KOPF, KR, 0.42, 0.12, 0.075, root)
     return root
 
@@ -384,49 +393,52 @@ def peacock():
     return root
 
 # ---------- Wassertiere (schweben) ----------
-def schwimmer(b, farbe_r=0.42, laenge=1.25, z=0.55):
-    b.ellipse((0, 0.05, z), farbe_r, (1.0, laenge, 0.9))
+def schwimmer(b, kopf, kr, z=0.55):
+    """Runder Kopf vorn (Gesicht sitzt darauf), Körper verjüngt nach hinten, Fluke und Seitenflossen"""
+    b.kugel(kopf, kr)
+    b.ellipse((0, kopf.y + kr * 0.8, z), kr * 0.85, (0.85, 1.3, 0.8))
+    b.kapsel((0, kopf.y + kr * 1.6, z + 0.02), (0, kopf.y + kr * 2.1, z + 0.06), kr * 0.3, kr * 0.18)
+    b.ellipse((0, kopf.y + kr * 2.25, z + 0.07), 0.2, (1.6, 0.45, 0.22))
     for s in (-1, 1):
-        b.ellipse((s * 0.38, -0.05, z - 0.12), 0.14, (1.0, 0.6, 0.22), Quaternion((0, 1, 0), s * 0.5))
-    b.ellipse((0, 0.62, z + 0.05), 0.22, (1.6, 0.5, 0.25))   # Fluke
+        b.ellipse((s * kr * 0.95, kopf.y + kr * 0.4, z - 0.15), 0.14, (1.0, 0.6, 0.22), Quaternion((0, 1, 0), s * 0.5))
     return b
 
 def whale():
     root = root_fuer("whale")
     BLAU, HELL = 0x3b82f6, 0xdbeafe
-    b = schwimmer(Blob(), 0.45)
-    blob_mesh("koerper", b, lambda co, n: misch(BLAU, HELL, stufe(-co.z, -0.42, -0.36) * stufe(-co.y, -0.1, 0.1)), eltern=root)
-    K = Vector((0, -0.15, 0.6))
-    augen(K, 0.42, 0.75, 0.15, 0.07, root)
-    laecheln("mund", K, 0.43, 1.1, -0.15, root, tiefe=0.08)
+    K, R = Vector((0, -0.2, 0.55)), 0.42
+    b = schwimmer(Blob(), K, R)
+    blob_mesh("koerper", b, lambda co, n: misch(BLAU, HELL, stufe(-(co.z - K.z), 0.12, 0.2)), eltern=root)
+    augen(K, R, 0.5, 0.15, 0.075, root)
+    wangen(K, R, 0.8, -0.05, root)
+    laecheln("mund", K, R * 1.01, 1.0, -0.12, root, tiefe=0.07, dicke=0.013)
     for k, z in enumerate((1.05, 1.18, 1.3)):   # Fontäne
-        kugel(f"fontaene{k}", (0, -0.05, z), 0.05 + k * 0.02, material("Wasser", 0x7dd3fc, rau=0.1, leucht=0.4), eltern=root)
+        kugel(f"fontaene{k}", (0, K.y + 0.05, z), 0.05 + k * 0.02, material("Wasser", 0x7dd3fc, rau=0.1, leucht=0.4), eltern=root)
     return root
 
 def shark():
     root = root_fuer("shark")
     GRAU, HELL = 0x64748b, 0xf1f5f9
-    b = schwimmer(Blob(), 0.4)
-    blob_mesh("koerper", b, lambda co, n: misch(GRAU, HELL, stufe(-co.z, -0.42, -0.36)), eltern=root)
-    kegel("rueckenflosse", (0, 0.05, 0.9), 0.14, 0.3, Vector((0, 0.5, 1)), material("Flosse", 0x475569), flach=0.3, vorn=Vector((1, 0, 0)), eltern=root)
-    K = Vector((0, -0.15, 0.6))
-    augen(K, 0.4, 0.7, 0.18, 0.065, root)
-    laecheln("mund", K, 0.41, 1.0, -0.18, root, tiefe=0.07)
-    for k in range(6):   # Zähnchen
-        p, n = auf_kopf(K, 0.41, (k - 2.5) * 0.16, -0.18 - (1 - ((k - 2.5) / 3) ** 2) * 0.07, tief=0.99)
-        kegel(f"zahn{k}", p, 0.018, 0.045, Vector((0, 0, -1)), material("Zahn", WEISS), stufe_=0, segmente=6, eltern=root)
+    K, R = Vector((0, -0.18, 0.55)), 0.38
+    b = schwimmer(Blob(), K, R)
+    blob_mesh("koerper", b, lambda co, n: misch(GRAU, HELL, stufe(-(co.z - K.z), 0.1, 0.18)), eltern=root)
+    kegel("rueckenflosse", (0, K.y + 0.3, K.z + 0.3), 0.14, 0.3, Vector((0, 0.5, 1)), material("Flosse", 0x475569), flach=0.3, vorn=Vector((1, 0, 0)), eltern=root)
+    augen(K, R, 0.5, 0.2, 0.068, root)
+    mund_ellipse("mund", K, R, (1, 1, 1), -0.1, 1.3, 0.05, root, dicke=0.013, zaehne=7, zahn_laenge=0.04)
     return root
 
 def dolphin():
     root = root_fuer("dolphin")
     BLAU, HELL = 0x60a5fa, 0xe0f2fe
-    b = schwimmer(Blob(), 0.38)
-    b.ellipse((0, -0.48, 0.5), 0.1, (0.9, 1.6, 0.7))   # Schnauze
-    blob_mesh("koerper", b, lambda co, n: misch(BLAU, HELL, stufe(-co.z, -0.4, -0.34)), eltern=root)
-    kegel("rueckenflosse", (0, 0.1, 0.85), 0.12, 0.25, Vector((0, 0.7, 1)), material("Flosse", 0x3b82f6), flach=0.3, biegung=(0, 0.08), vorn=Vector((1, 0, 0)), eltern=root)
-    K = Vector((0, -0.12, 0.6))
-    augen(K, 0.38, 0.65, 0.15, 0.065, root)
-    laecheln("mund", K + Vector((0, -0.08, -0.04)), 0.38, 0.9, -0.2, root, tiefe=0.05)
+    K, R = Vector((0, -0.15, 0.56)), 0.36
+    SCHNAUZE, SR, SFORM = K + Vector((0, -0.33, -0.08)), 0.11, (0.9, 1.5, 0.65)
+    b = schwimmer(Blob(), K, R)
+    b.ellipse(SCHNAUZE, SR, SFORM)
+    blob_mesh("koerper", b, lambda co, n: misch(BLAU, HELL, stufe(-(co.z - K.z), 0.06, 0.14)), eltern=root)
+    kegel("rueckenflosse", (0, K.y + 0.35, K.z + 0.26), 0.12, 0.25, Vector((0, 0.7, 1)), material("Flosse", 0x3b82f6), flach=0.3, biegung=(0, 0.08), vorn=Vector((1, 0, 0)), eltern=root)
+    augen(K, R, 0.5, 0.18, 0.068, root)
+    wangen(K, R, 0.78, -0.02, root, groesse=0.045)
+    mund_ellipse("mund", SCHNAUZE, SR, SFORM, -0.015, 2.2, 0.0, root, dicke=0.011)   # Lächeln an der Schnauze entlang
     return root
 
 def octopus():
@@ -558,9 +570,9 @@ def butterfly():
 def frog():
     root = root_fuer("frog")
     GRUEN, HELL = 0x4ade80, 0xd9f99d
-    K, R = Vector((0, -0.02, 0.82)), 0.35
+    K, R, FORM = Vector((0, -0.02, 0.82)), 0.35, (1.3, 1.0, 0.82)
     b = Blob()
-    b.ellipse(K, R, (1.3, 1.0, 0.82))
+    b.ellipse(K, R, FORM)
     b.ellipse((0, 0.05, 0.4), 0.28, (1.0, 1.0, 0.9))
     domes = [K + Vector((s * 0.2, -0.04, 0.25)) for s in (-1, 1)]
     for d in domes:
@@ -571,26 +583,35 @@ def frog():
         b.ellipse((s * 0.42, -0.16, 0.03), 0.09, (1.2, 1.3, 0.35))
     blob_mesh("koerper", b, lambda co, n: misch(GRUEN, HELL, max(bauch(co, oben=0.72), stufe(-co.y, 0.3, 0.36) * (1 - stufe(co.z, 0.78, 0.82)))), eltern=root)
     for s, d in zip((-1, 1), domes):
-        from basis import auge
         auge(f"auge{s}", d, 0.13, s * 0.2, 0.25, 0.075, eltern=root)
-    wangen(K, R * 1.25, 0.8, -0.2, root)
-    laecheln("mund", K, R * 1.2, 1.2, -0.25, root, tiefe=0.1)
+    for s in (-1, 1):   # Wangen genau auf dem breiten Kopf
+        p, n = auf_ellipse(K, R, FORM, s * 0.75, -0.06)
+        kugel(f"wange{s}", p, 0.055, material("Wange", 0xff8a9a, rau=0.8), groesse=(1, 0.3, 0.7), drehung=richtung_q(n), eltern=root)
+    mund_ellipse("mund", K, R, FORM, -0.06, 1.7, 0.06, root, dicke=0.014)
     return root
 
 def dino():
     root = root_fuer("dino")
     TUERKIS, HELL, ORANGE = 0x2dd4bf, 0xccfbf1, 0xfb923c
+    SCHNAUZE, SR, SFORM = KOPF + Vector((0, -0.27, -0.1)), 0.19, (1.15, 1.3, 0.78)   # lange Schnauze
     b = chibi(Blob())
-    b.ellipse(KOPF + Vector((0, -0.25, -0.08)), 0.18, (1.1, 1.0, 0.8))
+    b.ellipse(SCHNAUZE, SR, SFORM)
     b.kette([(0, 0.32, 0.32), (0, 0.5, 0.24), (0, 0.68, 0.16), (0, 0.82, 0.12)], [0.15, 0.11, 0.08, 0.05])
-    blob_mesh("koerper", b, lambda co, n: misch(TUERKIS, HELL, bauch(co)), eltern=root)
+    def farbe(co, n):
+        kinn = stufe(-(co.z - SCHNAUZE.z), 0.04, 0.1) * stufe(-co.y, 0.3, 0.36)
+        return misch(TUERKIS, HELL, max(bauch(co), kinn))
+    blob_mesh("koerper", b, farbe, eltern=root)
     zacken = material("Zacken", ORANGE, rau=0.5)
-    for k, (z0, r0, e, g) in enumerate([(KOPF, KR, 1.1, 1.0), (KOPF, KR, 0.65, 1.0), (KOPF, KR, 0.2, 0.9), (Vector((0, 0.05, 0.45)), 0.31, 0.55, 0.9),
-                                         (Vector((0, 0.05, 0.45)), 0.31, 0.1, 0.8), (Vector((0, 0.5, 0.24)), 0.11, 1.3, 0.6)]):
-        n = Vector((0, math.cos(e) if k < 5 else 0.2, math.sin(e)))
-        n = Vector((0, -math.cos(math.pi - e) if k < 5 else 0.2, math.sin(e))).normalized() if k < 5 else Vector((0, 0.3, 1)).normalized()
-        kegel(f"zacke{k}", Vector(z0) + Vector((0, abs(n.y), n.z)).normalized() * r0 * 0.95, 0.06 * g, 0.15 * g, Vector((0, abs(n.y), n.z)), zacken, segmente=8, stufe_=1, eltern=root)
-    gesicht_tier(root, iris=0xf97316, nick=0.12, mund_nick=-0.38)
+    for k, (z0, r0, e, g) in enumerate([(KOPF, KR, 1.35, 1.0), (KOPF, KR, 0.95, 1.0), (KOPF, KR, 0.5, 0.9),
+                                         (Vector((0, 0.05, 0.45)), 0.31, 0.6, 0.9), (Vector((0, 0.05, 0.45)), 0.31, 0.15, 0.8)]):
+        n = Vector((0, math.cos(e), math.sin(e)))
+        kegel(f"zacke{k}", Vector(z0) + n * r0 * 0.95, 0.06 * g, 0.15 * g, n, zacken, segmente=8, stufe_=1, eltern=root)
+    augen(KOPF, KR, 0.42, 0.2, 0.08, root, iris=0xf97316)
+    wangen(KOPF, KR, 0.78, -0.08, root)
+    # breites Grinsen entlang der Schnauze, mit spitzen Zähnchen oben
+    mund_ellipse("mund", SCHNAUZE, SR, SFORM, -0.05, 2.4, 0.02, root, dicke=0.013, zaehne=6, zahn_laenge=0.045)
+    for s in (-1, 1):
+        kugel(f"nuester{s}", SCHNAUZE + Vector((s * 0.05, -SR * SFORM[1] * 0.92, 0.07)), 0.016, material("Nase", 0x115e59), eltern=root)
     return root
 
 TIERE = {"tier_" + f.__name__: f for f in (cat, dog, fox, frog, panda, koala, tiger, lion, cow, pig, penguin, duck, owl, octopus, butterfly,

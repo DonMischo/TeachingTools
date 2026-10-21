@@ -115,6 +115,13 @@ class Blob:
         m = Matrix.Translation((a + b) / 2) @ q.to_matrix().to_4x4()
         self.teile.append(("kapsel", m, (r, r if r2 is None else r2, achse.length)))
         return self
+    def stumpf(self, a, b, r1, r2):
+        """Kegelstumpf mit flachen Enden (gerader Saum einer Robe)"""
+        a, b = Vector(a), Vector(b)
+        achse = b - a
+        q = Vector((0, 0, 1)).rotation_difference(achse.normalized())
+        self.teile.append(("stumpf", Matrix.Translation((a + b) / 2) @ q.to_matrix().to_4x4(), (r1, r2, achse.length)))
+        return self
     def kette(self, punkte, radien):
         for i, (p, r) in enumerate(zip(punkte, radien)):
             self.kugel(p, r)
@@ -128,6 +135,9 @@ def blob_mesh(name, blob, faerben=None, mat=None, voxel=0.011, glatt=12, ziel_fl
     for art, m, mass in blob.teile:
         if art == "kugel":
             bmesh.ops.create_uvsphere(bm, u_segments=32, v_segments=16, radius=mass, matrix=m)
+        elif art == "stumpf":
+            r1, r2, laenge = mass
+            bmesh.ops.create_cone(bm, cap_ends=True, segments=32, radius1=r1, radius2=r2, depth=laenge, matrix=m)
         else:
             r1, r2, laenge = mass
             bmesh.ops.create_cone(bm, cap_ends=True, segments=24, radius1=r1, radius2=r2, depth=laenge, matrix=m)
@@ -257,6 +267,27 @@ def auf_kopf(mitte, r, gier, nick, tief=0.97):
     """Punkt und Normale auf einer Kopfkugel: gier = seitlich (0 = vorn, + = links vom Betrachter rechts), nick = Höhe"""
     n = Vector((math.sin(gier) * math.cos(nick), -math.cos(gier) * math.cos(nick), math.sin(nick)))
     return Vector(mitte) + n * r * tief, n
+
+def auf_ellipse(c, r, groesse, gier, dz):
+    """Punkt und Normale auf einem Ellipsoid (Mitte c, Radius r, Achsfaktoren groesse) in Höhe c.z + dz, seitlich gier (0 = vorn)"""
+    rx, ry, rz = r * groesse[0], r * groesse[1], r * groesse[2]
+    k = math.sqrt(max(0.0, 1 - (dz / rz) ** 2))
+    p = Vector((c[0] + rx * k * math.sin(gier), c[1] - ry * k * math.cos(gier), c[2] + dz))
+    n = Vector(((p.x - c[0]) / rx ** 2, (p.y - c[1]) / ry ** 2, (p.z - c[2]) / rz ** 2)).normalized()
+    return p, n
+
+def mund_ellipse(name, c, r, groesse, dz, breite, durchhang, eltern, farbe=0x5a2030, dicke=0.012, zaehne=0, zahn_laenge=0.05):
+    """Mund als Bogen genau auf einem Ellipsoid (Schnauze, breiter Froschkopf); optional Zähne am Oberkiefer"""
+    pkt = []
+    for i in range(13):
+        t = i / 12 - 0.5
+        p, n = auf_ellipse(c, r * 1.01, groesse, t * breite, dz - (1 - (2 * t) ** 2) * durchhang)
+        pkt.append(tuple(p))
+    bogen(name, pkt, dicke, material("Mund", farbe, rau=0.5), eltern)
+    for k in range(zaehne):   # gleichmäßig verteilt, die Ecken frei
+        t = (k + 0.5) / zaehne * 0.8 + 0.1
+        p, n = auf_ellipse(c, r * 1.005, groesse, (t - 0.5) * breite, dz - (1 - (2 * t - 1) ** 2) * durchhang)
+        kegel(f"{name}_zahn{k}", p + Vector((0, 0, 0.004)), zahn_laenge * 0.32, zahn_laenge, Vector((n.x * 0.3, n.y * 0.3, -1)), material("Zahn", 0xfbfbf5, rau=0.3), stufe_=0, segmente=6, eltern=eltern)
 
 # ---------- Tiergesicht: glänzende 3D-Augen, Wangen, Mund ----------
 def auge(name, mitte, r_kopf, gier, nick, groesse, iris=None, eltern=None, hoch=1.3):

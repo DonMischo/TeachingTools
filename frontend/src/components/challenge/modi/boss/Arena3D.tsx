@@ -26,7 +26,7 @@ const farbe = (css: string | undefined, standard: number, dunkel: number) =>
   (css && /^#[0-9a-f]{3,8}$/i.test(css) ? new THREE.Color(css) : new THREE.Color(standard)).lerp(DUNKEL, dunkel);
 
 /** Die Klasse des Avatars bestimmt das Element des Helden; Normal und Tiere nehmen das des Skins */
-const KLASSEN_ELEMENT: Partial<Record<Klasse, ElementId>> = { krieger: "klingen", magier: "arkan", priester: "licht", rapper: "schall", rocker: "schall" };
+const KLASSEN_ELEMENT: Partial<Record<Klasse, ElementId>> = { krieger: "klingen", magier: "arkan", priester: "licht", rapper: "schall", rocker: "schall", metalhead: "feuer" };
 
 const HELD_POS = new THREE.Vector3(-2.2, 0, 1.6), BOSS_POS = new THREE.Vector3(2.3, 0, -2.0);
 

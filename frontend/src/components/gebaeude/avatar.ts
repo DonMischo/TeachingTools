@@ -7,7 +7,7 @@
 import * as THREE from "three";
 import { avatarDatei, ersetzeDurchModell } from "./avatarModell";
 
-export type Klasse = "normal" | "krieger" | "magier" | "priester" | "rapper" | "rocker";
+export type Klasse = "normal" | "krieger" | "magier" | "priester" | "rapper" | "rocker" | "metalhead";
 export type Form = "m" | "w";
 /** `tier` gesetzt: eines der Tiere (wie die Avatare beim Beitritt) statt eines Menschen */
 export interface Avatar { klasse: Klasse; form: Form; haut: number; tier?: string }
@@ -38,6 +38,7 @@ export const KLASSEN: { id: Klasse; name: string; icon: string }[] = [
   { id: "priester", name: "Priester", icon: "✨" },
   { id: "rapper", name: "Rapper", icon: "🎤" },
   { id: "rocker", name: "Rocker", icon: "🎸" },
+  { id: "metalhead", name: "Metalhead", icon: "🤘" },
 ];
 export const FORMEN: { id: Form; name: string }[] = [{ id: "m", name: "männlich" }, { id: "w", name: "weiblich" }];
 export const HAUT = [0xf6d5b8, 0xe0ac7e, 0xa86b3c, 0x5c3a21];
@@ -232,6 +233,13 @@ const BAU: Record<Klasse, (g: THREE.Group, a: Avatar) => void> = {
     kugel(gitarre, 0xdc2626, 0.11, 0, 0.18, 0).scale.set(1, 1, 0.3);
     quader(gitarre, 0x78350f, 0.05, 0.5, 0.03, 0, 0.25, 0);
     quader(gitarre, 0x111827, 0.08, 0.1, 0.04, 0, 0.72, 0);
+  },
+  metalhead: (g, a) => {
+    koerper(g, a, { oben: 0x111111, unten: 0x1c1c22, schuhe: 0x0b0b0b, haar: 0x0f0f12 });
+    haare(g, a, 0x0f0f12, true);
+    quader(g, 0x34507a, 0.4, 0.3, 0.38, 0, 0.55); // Kutte
+    quader(g, 0xf1f1f1, 0.08, 0.08, 0.02, 0, 0.72, 0.2); // Totenkopf
+    for (const s of [-1, 1]) zyl(g, 0x111111, 0.065, 0.065, 0.05, s * (a.form === "w" ? 0.23 : 0.26), 0.5);
   },
 };
 
