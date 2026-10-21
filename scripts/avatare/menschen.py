@@ -49,29 +49,49 @@ def koerper(root, form, oben, unten, schuhe, robe=None, faerben=None, schuh_gros
             h.ellipse(KOPF + Vector((s * 0.29, 0.02, -0.02)), 0.055, (0.5, 0.8, 1.15))         # Ohren
     blob_mesh("haut", h, mat=material("Haut", HAUT_STD, rau=0.7), ziel_flaechen=5000, eltern=root)
 
-def haare(root, farbe, stil, unter_hut=False, pony=4):
-    """stil: kurz (Stachelspitzen), lang, zopf, dutt; unter_hut: oben flach, keine Spitzen"""
+def haare(root, farbe, stil, unter_hut=False, pony=4, maennlich=False):
+    """stil: kurz (Männerschnitt: Tolle, kurze Seiten, Koteletten), lang, zopf, dutt;
+    unter_hut: oben flach, keine Tolle/Spitzen; maennlich bei langen Haaren: ohne Pony, Strähnen hinter den Ohren"""
     mat = material("Haar", farbe, rau=0.6)
     h = Blob()
-    h.ellipse(KOPF + Vector((0, 0.05, 0.04)), KR * 1.06, (1.0, 1.0, 0.86 if unter_hut else 1.0))
-    h.kugel(KOPF + Vector((0, 0.1, -0.08)), KR * 0.95)
-    xs = [(-0.15 + 0.3 * i / (pony - 1)) for i in range(pony)]
-    for x in xs:
-        h.ellipse(KOPF + Vector((x, -0.2, 0.17 - abs(x) * 0.3)), 0.085, (1.0, 0.6, 1.25), Quaternion((0, 1, 0), x * 1.5))
-    if stil in ("lang", "zopf", "dutt"):
+    if stil == "kurz":
+        # anliegende Kappe mit Volumen oben; Seiten enden über den Ohren, der Nacken ist kurz
+        h.ellipse(KOPF + Vector((0, 0.04, 0.09)), KR * 1.04, (1.0, 1.02, 0.86 if unter_hut else 0.95))
+        h.kugel(KOPF + Vector((0, 0.1, 0.0)), KR * 0.88)
+        for s in (-1, 1):   # Koteletten vor den Ohren
+            h.ellipse(KOPF + Vector((s * 0.275, -0.06, -0.01)), 0.032, (0.55, 0.8, 1.9))
+        if not unter_hut:   # Tolle: nach oben und hinten gestrichene Strähnen über der Stirn
+            for x in (-0.11, 0.0, 0.11):
+                h.ellipse(KOPF + Vector((x, -0.19, 0.25 - abs(x) * 0.35)), 0.085, (0.95, 0.75, 1.15), Quaternion((1, 0, 0), -0.7))
+    else:
+        h.ellipse(KOPF + Vector((0, 0.05, 0.04)), KR * 1.06, (1.0, 1.0, 0.86 if unter_hut else 1.0))
+        h.kugel(KOPF + Vector((0, 0.1, -0.08)), KR * 0.95)
+        if maennlich:
+            pony = 0
+        xs = [(-0.15 + 0.3 * i / (pony - 1)) for i in range(pony)] if pony > 1 else []
+        for x in xs:
+            h.ellipse(KOPF + Vector((x, -0.2, 0.17 - abs(x) * 0.3)), 0.085, (1.0, 0.6, 1.25), Quaternion((0, 1, 0), x * 1.5))
+        hinten = 0.06 if maennlich else 0.0   # Männer: Strähnen hinter den Ohren statt ums Gesicht
         for s in (-1, 1):
-            h.kette([KOPF + Vector((s * 0.26, -0.06, -0.04)), KOPF + Vector((s * 0.25, -0.08, -0.3))], [0.07, 0.055])
-    if stil == "lang":
-        h.kette([KOPF + Vector((0, 0.2, -0.05)), KOPF + Vector((0, 0.26, -0.3)), KOPF + Vector((0, 0.25, -0.52))], [0.17, 0.14, 0.1])
-    if stil == "zopf":
-        h.kette([KOPF + Vector((0, 0.28, 0.06)), KOPF + Vector((0, 0.38, -0.1)), KOPF + Vector((0, 0.4, -0.34))], [0.1, 0.09, 0.065])
-    if stil == "dutt":
-        h.kugel(KOPF + Vector((0, 0.18, 0.26)), 0.12)
+            h.kette([KOPF + Vector((s * 0.26, -0.06 + hinten, -0.04)), KOPF + Vector((s * 0.25, -0.08 + hinten, -0.3))], [0.07, 0.055])
+        if maennlich:   # gescheitelt und nach hinten gestrichen
+            for s in (-1, 1):
+                h.ellipse(KOPF + Vector((s * 0.1, -0.16, 0.24)), 0.1, (1.1, 0.8, 0.9), Quaternion((0, 1, 0), s * 0.5))
+        if stil == "lang":
+            h.kette([KOPF + Vector((0, 0.2, -0.05)), KOPF + Vector((0, 0.26, -0.3)), KOPF + Vector((0, 0.25, -0.52))], [0.17, 0.14, 0.1])
+        if stil == "zopf":
+            h.kette([KOPF + Vector((0, 0.28, 0.06)), KOPF + Vector((0, 0.38, -0.1)), KOPF + Vector((0, 0.4, -0.34))], [0.1, 0.09, 0.065])
+        if stil == "dutt":
+            h.kugel(KOPF + Vector((0, 0.18, 0.26)), 0.12)
     blob_mesh("haare", h, mat=mat, glatt=8, ziel_flaechen=5000, eltern=root)
-    if stil == "kurz" and not unter_hut:   # Anime-Spitzen nach oben/hinten
-        for k, (gier, nick, l) in enumerate(((0.0, 1.2, 0.2), (0.7, 0.9, 0.17), (-0.7, 0.9, 0.17), (2.6, 0.6, 0.16), (-2.6, 0.6, 0.16), (3.14, 0.9, 0.18))):
-            p, n = auf_kopf(KOPF + Vector((0, 0.05, 0.04)), KR * 1.02, gier, nick)
-            kegel(f"spitze{k}", p, 0.08, l, n + Vector((0, 0.5, 0.3)), mat, segmente=8, stufe_=1, eltern=root)
+    if stil == "kurz" and not unter_hut:
+        mitte = KOPF + Vector((0, 0.04, 0.09))
+        for k, gier in enumerate((-0.42, -0.14, 0.14, 0.42)):   # Stirnsträhnen: spitz, nach vorn oben gestellt
+            p, n = auf_kopf(mitte, KR * 1.0, gier, 0.6)
+            kegel(f"stirn{k}", p, 0.07, 0.15 - abs(gier) * 0.08, n + Vector((gier * 0.4, -0.25, 0.55)), mat, segmente=8, stufe_=1, eltern=root)
+        for k, (gier, nick, l) in enumerate(((2.5, 0.75, 0.13), (-2.5, 0.75, 0.13), (3.14, 0.95, 0.15))):   # Spitzen am Hinterkopf
+            p, n = auf_kopf(mitte, KR * 1.0, gier, nick)
+            kegel(f"spitze{k}", p, 0.07, l, n + Vector((0, 0.5, 0.2)), mat, segmente=8, stufe_=1, eltern=root)
     if stil == "zopf":
         kugel("zopfband", KOPF + Vector((0, 0.3, 0.04)), 0.05, material("Band", 0xef4444), eltern=root)
 
@@ -86,7 +106,7 @@ def stab_in_hand(name, seite, laenge_unten, laenge_oben, mat, eltern, neigung=0.
 
 def figur(name, form, iris, braue):
     root = wurzel(name)
-    gesicht(name + "_gesicht", KOPF, KR * 1.012, iris[0], iris[1], braue, wimpern_fluegel=form == "w", eltern=root)
+    gesicht(name + "_gesicht", KOPF, KR * 1.012, iris[0], iris[1], braue, form=form, eltern=root)
     return root
 
 # ---------- Klassen ----------
@@ -184,7 +204,7 @@ def rocker(form):
     w = form == "w"
     root = figur(f"mensch_rocker_{form}", form, (0xa8b8c8, 0x3a4a5a), 0x2a1010)
     koerper(root, form, 0x111827, 0x1e3a8a, 0x111827)
-    haare(root, 0x7f1d1d if w else 0x292524, "lang")
+    haare(root, 0x7f1d1d if w else 0x292524, "lang", maennlich=not w)
     ring("bandana", KOPF + Vector((0, 0.02, 0.1)), KR * 1.02, 0.03, material("Bandana", 0xdc2626, rau=0.7), groesse=(1, 1, 1), eltern=root)
     for x in (-0.1, 0.0, 0.1):   # Nieten
         kugel(f"niete{x}", (x, -0.15, 0.84), 0.018, material("Niete", 0xd1d5db, rau=0.2, metall=0.9), eltern=root)
@@ -222,7 +242,7 @@ def metalhead(form):
             return 0x4b5563                                                                       # Risse an den Knien
         return None
     koerper(root, form, SHIRT, JEANS, 0x0b0b0b, faerben=kleidung, schuh_gross=1.3)
-    haare(root, 0x0f0f12, "lang", pony=3)
+    haare(root, 0x0f0f12, "lang", pony=3, maennlich=not w)
     mat = material("Haar", 0x0f0f12, rau=0.6)
     for x in (-1, 1):   # Mähne vorn über die Schultern bis zur Brust
         b = Blob().kette([KOPF + Vector((x * 0.27, -0.04, -0.05)), KOPF + Vector((x * 0.25, -0.1, -0.32)), KOPF + Vector((x * 0.22, -0.13, -0.55))], [0.08, 0.075, 0.06])

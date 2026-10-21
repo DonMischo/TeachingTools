@@ -342,13 +342,25 @@ def stacheln(name, mitte, r, eltern, mat, reihen=4, je_reihe=7, laenge=0.16, dic
 # ---------- Menschengesicht: gemalte Anime-Textur auf einem Kugelstück ----------
 G_LON, G_LAT = (-62.0, 62.0), (-42.0, 30.0)   # Ausschnitt in Grad (seitlich, Höhe)
 
-def gesicht_textur(name, iris_hell, iris_dunkel, braue, wimpern_fluegel=True, aufl=512):
-    """Malt Augen, Brauen, Mund, Nase, Wangenröte in Grad-Koordinaten des Kopfausschnitts.
+# Stilwerte je Form: Augen (Breite/Höhe in Grad, Lidbogen, Neigung außen), Iris, Glanz, Brauen, Mund, Röte
+STIL = {
+    "w": dict(auge_b=11.0, auge_h=15.0, auge_y=-2.0, lid_bogen=0.2, lid_hoch=0.8, lid_neig=0.0, lid_dick=0.11, fluegel=True,
+              iris_b=8.2, iris_h=12.5, glanz=(2.9, 3.8, 1.3), braue_y=20.5, braue_bogen=2.2, braue_dick=0.95, braue_innen=-0.8,
+              mund="offen", roete=0.4),
+    "m": dict(auge_b=9.6, auge_h=10.8, auge_y=-3.5, lid_bogen=0.06, lid_hoch=0.8, lid_neig=0.03, lid_dick=0.15, fluegel=False,
+              iris_b=6.3, iris_h=8.2, glanz=(1.8, 2.2, 0.8), braue_y=13.8, braue_bogen=0.6, braue_dick=1.6, braue_innen=1.3,
+              mund="breit", roete=0.12),
+}
+
+def gesicht_textur(name, iris_hell, iris_dunkel, braue, form="w", aufl=512):
+    """Malt Augen, Brauen, Mund, Nase, Wangenröte in Grad-Koordinaten des Kopfausschnitts (Stil je Form).
     Die Haut selbst bleibt durchsichtig (wird zur Laufzeit gefärbt)."""
+    st = STIL[form]
     W = H = aufl
     px = [0.0] * (W * H * 4)
     ih, idk, br = rgb(iris_hell), rgb(iris_dunkel), rgb(braue)
-    lid = rgb(0x231626); weiss = rgb(0xfbfbff); mund = rgb(0x8a2a3a); zunge = rgb(0xf07a8a); rot = rgb(0xff7c96); schatten = rgb(0x5a3a30)
+    lid = rgb(0x231626); weiss = rgb(0xfbfbff); mund = rgb(0x8a2a3a); zunge = rgb(0xf07a8a); rot = rgb(0xff7c96)
+    schatten = rgb(0x5a3a30); lippe = rgb(0x5e3030)
 
     def ueber(i, farbe, a):
         if a <= 0: return
@@ -364,7 +376,8 @@ def gesicht_textur(name, iris_hell, iris_dunkel, braue, wimpern_fluegel=True, au
     def kante(d, weich=0.08):
         return max(0.0, min(1.0, (1 - d) / weich + 0.5))
 
-    AUGEN = ((-20.0, -2.0, -1), (20.0, -2.0, 1))
+    AUGEN = ((-20.0, st["auge_y"], -1), (20.0, st["auge_y"], 1))
+    gb, gh, gk = st["glanz"]
     for y in range(H):
         lat = G_LAT[0] + (y + 0.5) / H * (G_LAT[1] - G_LAT[0])
         for x in range(W):
@@ -372,57 +385,69 @@ def gesicht_textur(name, iris_hell, iris_dunkel, braue, wimpern_fluegel=True, au
             i = (y * W + x) * 4
             for s in (-1, 1):  # Wangenröte
                 d = ((lon - s * 27) / 7) ** 2 + ((lat + 12) / 3.4) ** 2
-                if d < 1.6: ueber(i, rot, 0.4 * math.exp(-d * 1.6))
-            d = (lon / 1.1) ** 2 + ((lat + 13) / 0.8) ** 2   # Nase: zarter Schattenpunkt
-            if d < 1.5: ueber(i, schatten, 0.35 * kante(d, 0.4))
-            if abs(lon) < 6.0 and -29.5 < lat < -22:        # Mund: kleines offenes D mit Zunge
-                oben = -23.0 + 0.3 * (lon / 5.4) ** 2
-                unten = -23.2 - 4.4 * math.sqrt(max(0.0, 1 - (lon / 5.4) ** 2))
-                if unten < lat < oben:
-                    ueber(i, zunge if lat < unten + 1.8 and abs(lon) < 3.2 else mund, 1.0)
-                if abs(lat - oben) < 0.5 and abs(lon) < 5.8:
-                    ueber(i, lid, 0.9)
+                if d < 1.6: ueber(i, rot, st["roete"] * math.exp(-d * 1.6))
+            if st["mund"] == "offen":
+                d = (lon / 1.1) ** 2 + ((lat + 13) / 0.8) ** 2   # Nase: zarter Schattenpunkt
+                if d < 1.5: ueber(i, schatten, 0.35 * kante(d, 0.4))
+                if abs(lon) < 6.0 and -29.5 < lat < -22:        # Mund: kleines offenes D mit Zunge
+                    oben = -23.0 + 0.3 * (lon / 5.4) ** 2
+                    unten = -23.2 - 4.4 * math.sqrt(max(0.0, 1 - (lon / 5.4) ** 2))
+                    if unten < lat < oben:
+                        ueber(i, zunge if lat < unten + 1.8 and abs(lon) < 3.2 else mund, 1.0)
+                    if abs(lat - oben) < 0.5 and abs(lon) < 5.8:
+                        ueber(i, lid, 0.9)
+            else:
+                if 0 < lon < 1.0 and -14.5 < lat < -9.5:          # Nase: kurzer Schattenstrich an der Seite
+                    ueber(i, schatten, 0.4 * (1 - abs(lat + 12) / 2.5))
+                if abs(lon) < 10.8:                              # Mund: breites, offenes Grinsen mit oberer Zahnreihe
+                    oben = -23.2 + 1.4 * (lon / 10.0) ** 2
+                    unten = oben - 4.8 * math.sqrt(max(0.0, 1 - (lon / 10.0) ** 2))
+                    if unten < lat < oben:
+                        ueber(i, weiss if lat > oben - 1.5 and abs(lon) < 8.0 else rgb(0x3a1a1a), 1.0)
+                    if abs(lat - oben) < 0.5 or (abs(lat - unten) < 0.45 and abs(lon) < 9.4):
+                        ueber(i, lippe, 0.95)
             for s in (-1, 1):  # Brauen
-                ex = (lon - s * 20) / 9
+                ex = (lon - s * 20) / 9.5
                 if abs(ex) < 1:
-                    bogen_y = 20.5 + 2.2 * (1 - ex * ex) - s * ex * 0.8
-                    if abs(lat - bogen_y) < 0.95 * (1 - 0.5 * abs(ex)): ueber(i, br, 0.95)
+                    innen = -s * ex   # > 0 zur Gesichtsmitte hin
+                    bogen_y = st["braue_y"] + st["braue_bogen"] * (1 - ex * ex) - st["braue_innen"] * innen
+                    if abs(lat - bogen_y) < st["braue_dick"] * (1 - 0.35 * abs(ex)): ueber(i, br, 0.95)
             for cx, cy, s in AUGEN:
-                ex, ey = (lon - cx) / 11.0, (lat - cy) / 15.0
-                if abs(ex) > 1.45 or abs(ey) > 1.3: continue
-                deckel = 0.8 - 0.2 * ex * ex
+                ex, ey = (lon - cx) / st["auge_b"], (lat - cy) / st["auge_h"]
+                if abs(ex) > 1.45 or abs(ey) > 1.4: continue
                 aussen = 1.0 if ex * s > 0 else 0.0
+                deckel = st["lid_hoch"] - st["lid_bogen"] * ex * ex - st["lid_neig"] * ex * s
                 if ey < deckel:
                     d = ex * ex + ey * ey
                     if d < 1.0: ueber(i, weiss, kante(d, 0.06))
-                    ix, iy = (lon - cx) / 8.2, (lat - (cy - 1.0)) / 12.5
+                    ix, iy = (lon - cx) / st["iris_b"], (lat - (cy - 1.0)) / st["iris_h"]
                     di = ix * ix + iy * iy
                     if di < 1.0:
                         t = max(0.0, min(1.0, 0.5 - iy * 0.6))
-                        c = tuple(a + (b - a) * t for a, b in zip(idk, ih))
+                        c = tuple(a_ + (b_ - a_) * t for a_, b_ in zip(idk, ih))
                         if di > 0.72: c = tuple(v * 0.55 for v in c)
                         ueber(i, c, kante(di, 0.05))
-                        dp = ((lon - cx) / 3.4) ** 2 + ((lat - (cy + 0.5)) / 5.6) ** 2
+                        dp = ((lon - cx) / (st["iris_b"] * 0.42)) ** 2 + ((lat - (cy + 0.5)) / (st["iris_h"] * 0.45)) ** 2
                         if dp < 1.0: ueber(i, tuple(v * 0.35 for v in idk), kante(dp, 0.1))
-                    for gx, gy, rx, ry in ((-3.2 * s, 5.0, 2.9, 3.8), (3.0 * s, -6.5, 1.3, 1.3)):
+                    for gx, gy, rx, ry in ((-3.0 * s, st["iris_h"] * 0.4, gb, gh), (2.8 * s, -st["iris_h"] * 0.5, gk, gk)):
                         dg = ((lon - cx - gx) / rx) ** 2 + ((lat - cy - gy) / ry) ** 2
                         if dg < 1.0: ueber(i, weiss, kante(dg, 0.12))
-                fluegel = aussen if wimpern_fluegel else 0.0
-                dick = (0.11 if wimpern_fluegel else 0.085) + 0.07 * fluegel * min(1.0, abs(ex))
+                fluegel = aussen if st["fluegel"] else 0.0
+                dick = st["lid_dick"] + 0.07 * fluegel * min(1.0, abs(ex))
                 if abs(ex) < 1.08 and abs(ey - deckel) < dick:
                     ueber(i, lid, 1.0)
                 elif fluegel and 1.0 <= abs(ex) < 1.35:
                     spitze = deckel + (abs(ex) - 1.0) * 0.9
                     if abs(ey - spitze) < 0.1 * (1.35 - abs(ex)) / 0.35: ueber(i, lid, 1.0)
-                if abs(ex) < 0.45 and abs(ey + 0.97) < 0.04: ueber(i, lid, 0.55)
+                if abs(ex) < 0.45 and abs(ey + 0.97) < 0.04: ueber(i, lid, 0.55 if st["fluegel"] else 0.3)
     img = bpy.data.images.new(name, W, H, alpha=True)
     img.pixels.foreach_set(px)
     img.pack()
     return img
 
-def gesicht(name, kopf, r, iris_hell, iris_dunkel, braue, wimpern_fluegel=True, eltern=None):
+def gesicht(name, kopf, r, iris_hell, iris_dunkel, braue, form="w", eltern=None):
     """Kugelstück knapp über der Kopfhaut mit der gemalten Gesichtstextur"""
-    img = gesicht_textur(name + "_tex", iris_hell, iris_dunkel, braue, wimpern_fluegel)
+    img = gesicht_textur(name + "_tex", iris_hell, iris_dunkel, braue, form)
     m = bpy.data.materials.new("Gesicht")
     nodes, links = m.node_tree.nodes, m.node_tree.links
     bsdf = nodes.get("Principled BSDF")
