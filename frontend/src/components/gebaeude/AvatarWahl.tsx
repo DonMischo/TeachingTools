@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { FORMEN, HAUT, KLASSEN, TIERE, baueAvatar, speichereAvatar, type Avatar } from "./avatar";
 import { entsorge } from "./szene";
+import { beendeAvatar, bewegeAvatar, tickAvatare } from "./avatarModell";
 
 function Vorschau({ avatar }: { avatar: Avatar }) {
   const huelle = useRef<HTMLDivElement>(null);
@@ -28,8 +29,10 @@ function Vorschau({ avatar }: { avatar: Avatar }) {
     kamera.lookAt(0, 0.72, 0);
     const figur = baueAvatar(avatar);
     szene.add(figur);
+    bewegeAvatar(figur, "jubel"); // neue Wahl: einmal jubeln, danach idle
     let bild = 0;
     const takt = (t: number) => {
+      tickAvatare();
       figur.rotation.y = Math.sin(t / 1400) * 0.9;
       renderer.render(szene, kamera);
       bild = requestAnimationFrame(takt);
@@ -37,6 +40,7 @@ function Vorschau({ avatar }: { avatar: Avatar }) {
     bild = requestAnimationFrame(takt);
     return () => {
       cancelAnimationFrame(bild);
+      beendeAvatar(figur);
       entsorge(figur);
       renderer.dispose();
       renderer.domElement.remove();

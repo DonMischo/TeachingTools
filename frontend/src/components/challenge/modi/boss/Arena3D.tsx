@@ -15,6 +15,7 @@ import { wenigerBewegung } from "@/lib/challenge/bewegung";
 import { baueBoss } from "./bosse3d";
 import { SKIN_BOSS } from "@/lib/angriffe/monster";
 import { ladeMonster, tickMonster, type MonsterFigur } from "@/lib/angriffe/monsterLader";
+import { beendeAvatar, bewegeAvatar, tickAvatare } from "@/components/gebaeude/avatarModell";
 import type { Anim } from "./Szene";
 
 /** Ob der Browser WebGL 2 kann (jsdom und alte Geräte nicht: dann bleibt die Pixel-Bühne) */
@@ -34,7 +35,7 @@ export default function Arena3D({ skin, himmel, boden, gegnerAnim, heldElement, 
   skin: string; himmel?: string; boden?: string; gegnerAnim?: Anim; /** Element des Skins (wenn die Avatar-Klasse keins mitbringt) */ heldElement: ElementId; bossElement: ElementId; /** Boss besiegt */ weg: boolean;
 }) {
   const huelle = useRef<HTMLDivElement>(null);
-  const drei = useRef<{ welt: EffektWelt; held: Figur; boss: Figur; klassenElement?: ElementId; monster?: MonsterFigur } | null>(null);
+  const drei = useRef<{ welt: EffektWelt; held: Figur; boss: Figur; avatar: THREE.Group; klassenElement?: ElementId; monster?: MonsterFigur } | null>(null);
   const elemente = useRef({ heldElement, bossElement });
   elemente.current = { heldElement, bossElement };
 
@@ -84,7 +85,7 @@ export default function Arena3D({ skin, himmel, boden, gegnerAnim, heldElement, 
     held.blick = Math.atan2(BOSS_POS.x - HELD_POS.x, BOSS_POS.z - HELD_POS.z);
     boss.blick = Math.atan2(HELD_POS.x - BOSS_POS.x, HELD_POS.z - BOSS_POS.z);
     szene.add(held.gruppe, boss.gruppe);
-    drei.current = { welt, held, boss, klassenElement: wahl.tier ? undefined : KLASSEN_ELEMENT[wahl.klasse] };
+    drei.current = { welt, held, boss, avatar, klassenElement: wahl.tier ? undefined : KLASSEN_ELEMENT[wahl.klasse] };
 
     const kamera = new THREE.PerspectiveCamera(40, 16 / 9, 0.1, 80);
     const KAMERA = new THREE.Vector3(-4.6, 3.8, 9.2), BLICK = new THREE.Vector3(0.5, 1.0, -1.2);
@@ -109,6 +110,7 @@ export default function Arena3D({ skin, himmel, boden, gegnerAnim, heldElement, 
     const bild = (dt: number) => {
       welt.update(dt);
       tickMonster(dt);
+      tickAvatare();
       held.update(dt); boss.update(dt);
       const d = welt.dunkel;
       licht.intensity = 1.8 * (1 - 0.65 * d);
@@ -125,6 +127,7 @@ export default function Arena3D({ skin, himmel, boden, gegnerAnim, heldElement, 
       renderer.setAnimationLoop(null);
       ro.disconnect();
       abgebaut = true;
+      beendeAvatar(avatar);
       drei.current?.monster?.dispose();
       drei.current = null;
       welt.dispose();
@@ -144,6 +147,7 @@ export default function Arena3D({ skin, himmel, boden, gegnerAnim, heldElement, 
     const d = drei.current;
     if (!d || !gegnerAnim || gegnerAnim.n < 0) return;
     if (gegnerAnim.art === "treffer") {
+      bewegeAvatar(d.avatar, "angriff");
       d.welt.angriff(d.klassenElement ?? elemente.current.heldElement, d.held, d.boss);
       const t = setTimeout(() => d.monster?.spiele("treffer"), 700); // wenn der Angriff ankommt
       return () => clearTimeout(t);
@@ -151,6 +155,8 @@ export default function Arena3D({ skin, himmel, boden, gegnerAnim, heldElement, 
     if (gegnerAnim.art === "wackel") {
       d.monster?.spiele("angriff");
       d.welt.angriff(elemente.current.bossElement, d.boss, d.held);
+      const t = setTimeout(() => bewegeAvatar(d.avatar, "treffer"), 700);
+      return () => clearTimeout(t);
     }
   }, [gegnerAnim]);
 
@@ -161,7 +167,8 @@ export default function Arena3D({ skin, himmel, boden, gegnerAnim, heldElement, 
     if (!weg) { d.boss.basis.copy(BOSS_POS); d.boss.gruppe.visible = true; d.monster?.spiele("idle"); return; }
     const tod = setTimeout(() => d.monster?.spiele("tod"), 1400);
     const t = setTimeout(() => d.welt.zerfall(d.boss), d.monster ? 3200 : 2200);
-    return () => { clearTimeout(tod); clearTimeout(t); };
+    const jubel = setTimeout(() => bewegeAvatar(d.avatar, "jubel"), 2400);
+    return () => { clearTimeout(tod); clearTimeout(t); clearTimeout(jubel); };
   }, [weg]);
 
   return <div ref={huelle} className="absolute inset-0" aria-hidden />;

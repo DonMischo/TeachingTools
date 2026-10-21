@@ -20,6 +20,7 @@ import { begehbar, weg, type Plan, type Punkt, type Stockwerk } from "@/lib/geba
 import type { Objekt } from "@/lib/gebaeude/objekte";
 import { tickMonster } from "@/lib/angriffe/monsterLader";
 import { STANDARD_AVATAR, baueAvatar, type Avatar } from "./avatar";
+import { beendeAvatar, bewegeAvatar, tickAvatare } from "./avatarModell";
 import {
   baueStock, entsorge, feldAus, hoeheVon, ortAmStrahl, versatzVon, welt as mitte,
   type KlickOrt, type RaumZustand, type Richtung, type Stil,
@@ -213,6 +214,7 @@ export default function Gebaeude({
       const dt = Math.min(0.1, (jetzt - zuletzt) / 1000);
       zuletzt = jetzt;
       tickMonster(dt);
+      tickAvatare();
       const l = lage.current;
       const boden = bodenHoehe();
       // Laufen
@@ -233,7 +235,10 @@ export default function Gebaeude({
       }
       l.pos.y += (boden - l.pos.y) * Math.min(1, dt * 8);
       spieler.position.copy(l.pos);
-      spieler.position.y += l.pfad.length ? Math.abs(Math.sin(jetzt / 90)) * 0.08 : 0;
+      const figur = spieler.children[0];
+      if (figur) bewegeAvatar(figur, l.pfad.length ? "lauf" : "idle");
+      // ohne Bewegungsclips (Modell lädt noch / kein WebGL2) hüpft die Figur beim Laufen
+      spieler.position.y += l.pfad.length && !figur?.userData.bewegung ? Math.abs(Math.sin(jetzt / 90)) * 0.08 : 0;
       // Die Fackel flackert ein wenig über dem Kopf
       fackel.position.set(l.pos.x, l.pos.y + 3.2, l.pos.z);
       if (fackel.intensity > 0) fackel.intensity = 38 + Math.sin(jetzt / 70) * 2.5 + Math.sin(jetzt / 23) * 1.5;
@@ -259,6 +264,7 @@ export default function Gebaeude({
       ro.disconnect();
       window.removeEventListener("keydown", tasten);
       renderer.domElement.removeEventListener("pointerdown", klick);
+      for (const k of spieler.children) beendeAvatar(k);
       entsorge(szene);
       renderer.dispose();
       el.removeChild(renderer.domElement);
@@ -281,7 +287,7 @@ export default function Gebaeude({
   useEffect(() => {
     const d = drei.current;
     if (!d) return;
-    for (const k of [...d.spieler.children]) { d.spieler.remove(k); entsorge(k); }
+    for (const k of [...d.spieler.children]) { d.spieler.remove(k); beendeAvatar(k); entsorge(k); }
     d.spieler.add(baueAvatar(avatar));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [avatarSchluessel]);

@@ -93,8 +93,9 @@ def wurzel(name):
 
 def export(root, pfad):
     for o in bpy.context.view_layer.objects:
-        o.select_set(o == root or o.parent == root)
+        o.select_set(o == root or o in root.children_recursive)
     bpy.ops.export_scene.gltf(filepath=pfad, export_format="GLB", use_selection=True, export_apply=True,
+                              export_animation_mode="NLA_TRACKS",
                               export_yup=True, export_vertex_color="ACTIVE",
                               export_draco_mesh_compression_enable=True, export_draco_mesh_compression_level=7)
 

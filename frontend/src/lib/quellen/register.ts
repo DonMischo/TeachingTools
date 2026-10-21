@@ -154,6 +154,8 @@ export const REGISTER: WerkzeugQuellen[] = [
     eintraege: [
       { quelle: "Ultimate Monsters", urheber: "Quaternius", lizenz: "CC0 1.0", url: "https://quaternius.com/packs/ultimatemonsters.html",
         verwendung: "21 animierte Monster: Bosse der 3D-Arena, ein Gegner je Element, Verlies-Monster (public/modelle/monster)" },
+      { quelle: "Universal Animation Library", urheber: "Quaternius", lizenz: "CC0 1.0", url: "https://quaternius.com/packs/universalanimationlibrary.html",
+        verwendung: "Bewegungen der 14 Menschen-Avatare (Idle, Gehen, Joggen, Schwert, Zauber, Schlag, Treffer, Tanz, Tod), auf die Chibi-Skelette übertragen (scripts/avatare/retarget.py)" },
       { quelle: "Draco-Decoder (three.js)", urheber: "Google / three.js-Autoren", lizenz: "Apache-2.0", url: "https://github.com/google/draco",
         verwendung: "Entpacken der komprimierten Monster-Modelle (public/draco)" },
     ],
