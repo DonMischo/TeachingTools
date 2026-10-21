@@ -4,6 +4,8 @@
  */
 import * as THREE from "three";
 import type { Objekt } from "@/lib/gebaeude/objekte";
+import { VERLIES_MONSTER, VERLIES_WAECHTER } from "@/lib/angriffe/monster";
+import { ladeMonster } from "@/lib/angriffe/monsterLader";
 
 const HOLZ = 0x8b5a2b, DUNKEL = 0x3f2a1d, METALL = 0x9ca3af, SCHWARZ = 0x1f2937;
 
@@ -518,9 +520,33 @@ BAU.boss = g => ungeheuer(g, 0x9f1239, true);
 
 /**
  * `besiegt`: Monster und Boss liegen grau am Boden — so sieht man im Verlies,
- * welche Aufgabe schon gelöst ist.
+ * welche Aufgabe schon gelöst ist. Monster und Bosse sind Quaternius-Modelle
+ * (`variante` wählt welches); bis sie geladen sind, steht das Kugel-Ungeheuer da.
  */
-export function baueObjekt(art: Objekt, besiegt = false): THREE.Group {
+export function baueObjekt(art: Objekt, besiegt = false, variante = 0): THREE.Group {
+  if (art !== "monster" && art !== "boss") return baueGebaut(art, besiegt);
+  const platz = new THREE.Group(), ersatz = baueGebaut(art, besiegt);
+  platz.add(ersatz);
+  if (besiegt) platz.userData.besiegt = true;
+  const liste = art === "boss" ? VERLIES_WAECHTER : VERLIES_MONSTER;
+  ladeMonster(liste[variante % liste.length], art === "boss" ? 1.9 : 1.0).then((m) => {
+    platz.remove(ersatz);
+    entsorgeGebaut(ersatz);
+    platz.add(m.modell);
+    if (besiegt) {
+      m.eigeneMaterialien();
+      m.modell.traverse((o) => { const mat = (o as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined; if (mat?.color) mat.color.lerp(new THREE.Color(0x6b7280), 0.7); });
+      m.spiele("tod");
+    }
+  }).catch(() => { /* ohne Modell bleibt das Kugel-Ungeheuer */ });
+  return platz;
+}
+
+function entsorgeGebaut(o: THREE.Object3D) {
+  o.traverse((k) => { const m = k as THREE.Mesh; if (m.isMesh) { m.geometry.dispose(); (m.material as THREE.Material).dispose(); } });
+}
+
+function baueGebaut(art: Objekt, besiegt: boolean): THREE.Group {
   const g = new THREE.Group();
   (BAU[art] ?? BAU.pult)(g);
   if (besiegt && (art === "monster" || art === "boss")) {

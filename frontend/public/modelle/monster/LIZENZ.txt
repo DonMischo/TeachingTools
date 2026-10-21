@@ -1,0 +1,3 @@
+Monster-Modelle: "Ultimate Monsters" von Quaternius (https://quaternius.com/packs/ultimatemonsters.html)
+Lizenz: CC0 1.0 Universal (Public Domain), https://creativecommons.org/publicdomain/zero/1.0/
+Aus den .blend-Quellen als Draco-komprimierte .glb exportiert (blender/monster_export.py im Arbeitsordner).

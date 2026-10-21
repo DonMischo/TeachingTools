@@ -413,7 +413,7 @@ export function baueStock(plan: Plan, i: number, bild: StockBild): THREE.Group {
     }
     if (bild.unten) return;
     // Das Objekt schaut zur Tür.
-    const ding = baueObjekt(bild.objekte?.[k] ?? "pult", z === "geloest");
+    const ding = baueObjekt(bild.objekte?.[k] ?? "pult", z === "geloest", k + i * 3);
     ding.position.set(rx, y0 + 0.3, rz);
     ding.rotation.y = Math.atan2(r.tuer[0] - r.x, r.tuer[1] - r.y);
     zg.add(ding);
@@ -457,12 +457,12 @@ export function baueStock(plan: Plan, i: number, bild: StockBild): THREE.Group {
     const vor = flach ? st.ziel : [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => [st.ziel[0] + dx, st.ziel[1] + dy] as Punkt)
       .find(([x, y]) => offen(x, y));
     if (vor && flach) {
-      const boss = baueObjekt("boss", bild.zielOffen);
+      const boss = baueObjekt("boss", bild.zielOffen, i);
       boss.position.set(zx + 0.2, y0 + 0.25, zy + (bild.zielOffen ? WEIT * 0.3 : 0));
       boss.rotation.y = -Math.PI / 2;
       zielG.add(boss);
     } else if (vor) {
-      const boss = baueObjekt("boss", bild.zielOffen);
+      const boss = baueObjekt("boss", bild.zielOffen, i);
       boss.position.set(welt(vor[0]) + (welt(vor[0]) - zx) * 0.3, y0 + 0.25, welt(vor[1]) + (welt(vor[1]) - zy) * 0.3);
       boss.rotation.y = Math.atan2(vor[0] - st.ziel[0], vor[1] - st.ziel[1]);
       zielG.add(boss);

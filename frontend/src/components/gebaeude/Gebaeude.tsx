@@ -18,6 +18,7 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { begehbar, weg, type Plan, type Punkt, type Stockwerk } from "@/lib/gebaeude/plan";
 import type { Objekt } from "@/lib/gebaeude/objekte";
+import { tickMonster } from "@/lib/angriffe/monsterLader";
 import { STANDARD_AVATAR, baueAvatar, type Avatar } from "./avatar";
 import {
   baueStock, entsorge, feldAus, hoeheVon, ortAmStrahl, versatzVon, welt as mitte,
@@ -211,6 +212,7 @@ export default function Gebaeude({
       id = requestAnimationFrame(bild);
       const dt = Math.min(0.1, (jetzt - zuletzt) / 1000);
       zuletzt = jetzt;
+      tickMonster(dt);
       const l = lage.current;
       const boden = bodenHoehe();
       // Laufen

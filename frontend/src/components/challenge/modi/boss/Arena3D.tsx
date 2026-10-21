@@ -13,6 +13,8 @@ import { baueAvatar, ladeAvatar, type Klasse } from "@/components/gebaeude/avata
 import { effektWelt, Figur, type EffektWelt, type ElementId } from "@/lib/angriffe/effekte";
 import { wenigerBewegung } from "@/lib/challenge/bewegung";
 import { baueBoss } from "./bosse3d";
+import { SKIN_BOSS } from "@/lib/angriffe/monster";
+import { ladeMonster, tickMonster, type MonsterFigur } from "@/lib/angriffe/monsterLader";
 import type { Anim } from "./Szene";
 
 /** Ob der Browser WebGL 2 kann (jsdom und alte Geräte nicht: dann bleibt die Pixel-Bühne) */
@@ -32,7 +34,7 @@ export default function Arena3D({ skin, himmel, boden, gegnerAnim, heldElement, 
   skin: string; himmel?: string; boden?: string; gegnerAnim?: Anim; /** Element des Skins (wenn die Avatar-Klasse keins mitbringt) */ heldElement: ElementId; bossElement: ElementId; /** Boss besiegt */ weg: boolean;
 }) {
   const huelle = useRef<HTMLDivElement>(null);
-  const drei = useRef<{ welt: EffektWelt; held: Figur; boss: Figur; klassenElement?: ElementId } | null>(null);
+  const drei = useRef<{ welt: EffektWelt; held: Figur; boss: Figur; klassenElement?: ElementId; monster?: MonsterFigur } | null>(null);
   const elemente = useRef({ heldElement, bossElement });
   elemente.current = { heldElement, bossElement };
 
@@ -69,8 +71,14 @@ export default function Arena3D({ skin, himmel, boden, gegnerAnim, heldElement, 
     const wahl = ladeAvatar(), avatar = baueAvatar(wahl);
     avatar.scale.setScalar(1.4);
     held.setzeModell(avatar, 1.8);
-    const b = baueBoss(skin);
+    const b = baueBoss(skin); // Platzhalter, bis das Monster-Modell geladen ist (und Rückfall ohne Netz)
     boss.setzeModell(b.modell, b.hoehe);
+    let abgebaut = false;
+    ladeMonster(SKIN_BOSS[skin] ?? "dragon_evolved", 2.7).then((m) => {
+      if (abgebaut) { m.dispose(); return; }
+      boss.setzeModell(m.modell, m.hoehe);
+      if (drei.current) drei.current.monster = m;
+    }).catch(() => { /* bleibt beim gebauten Boss */ });
     held.basis.copy(HELD_POS); boss.basis.copy(BOSS_POS);
     held.blick = Math.atan2(BOSS_POS.x - HELD_POS.x, BOSS_POS.z - HELD_POS.z);
     boss.blick = Math.atan2(HELD_POS.x - BOSS_POS.x, HELD_POS.z - BOSS_POS.z);
@@ -99,6 +107,7 @@ export default function Arena3D({ skin, himmel, boden, gegnerAnim, heldElement, 
     const uhr = new THREE.Clock();
     const bild = (dt: number) => {
       welt.update(dt);
+      tickMonster(dt);
       held.update(dt); boss.update(dt);
       const d = welt.dunkel;
       licht.intensity = 1.8 * (1 - 0.65 * d);
@@ -114,6 +123,8 @@ export default function Arena3D({ skin, himmel, boden, gegnerAnim, heldElement, 
     return () => {
       renderer.setAnimationLoop(null);
       ro.disconnect();
+      abgebaut = true;
+      drei.current?.monster?.dispose();
       drei.current = null;
       welt.dispose();
       szene.traverse((o) => {
@@ -131,17 +142,25 @@ export default function Arena3D({ skin, himmel, boden, gegnerAnim, heldElement, 
   useEffect(() => {
     const d = drei.current;
     if (!d || !gegnerAnim || gegnerAnim.n < 0) return;
-    if (gegnerAnim.art === "treffer") d.welt.angriff(d.klassenElement ?? elemente.current.heldElement, d.held, d.boss);
-    else if (gegnerAnim.art === "wackel") d.welt.angriff(elemente.current.bossElement, d.boss, d.held);
+    if (gegnerAnim.art === "treffer") {
+      d.welt.angriff(d.klassenElement ?? elemente.current.heldElement, d.held, d.boss);
+      const t = setTimeout(() => d.monster?.spiele("treffer"), 700); // wenn der Angriff ankommt
+      return () => clearTimeout(t);
+    }
+    if (gegnerAnim.art === "wackel") {
+      d.monster?.spiele("angriff");
+      d.welt.angriff(elemente.current.bossElement, d.boss, d.held);
+    }
   }, [gegnerAnim]);
 
   // Besiegt: erst den letzten Treffer ausspielen, dann zerfallen; neue Etappe: Boss steht wieder da
   useEffect(() => {
     const d = drei.current;
     if (!d) return;
-    if (!weg) { d.boss.basis.copy(BOSS_POS); d.boss.gruppe.visible = true; return; }
-    const t = setTimeout(() => d.welt.zerfall(d.boss), 2200);
-    return () => clearTimeout(t);
+    if (!weg) { d.boss.basis.copy(BOSS_POS); d.boss.gruppe.visible = true; d.monster?.spiele("idle"); return; }
+    const tod = setTimeout(() => d.monster?.spiele("tod"), 1400);
+    const t = setTimeout(() => d.welt.zerfall(d.boss), d.monster ? 3200 : 2200);
+    return () => { clearTimeout(tod); clearTimeout(t); };
   }, [weg]);
 
   return <div ref={huelle} className="absolute inset-0" aria-hidden />;

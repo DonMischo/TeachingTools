@@ -147,3 +147,12 @@ export const REGISTER: WerkzeugQuellen[] = [
 
 /** Lizenzen, die eine Namensnennung verlangen — Hinweis auf der Seite. */
 export const NENNUNG_PFLICHT = /CC BY|dl-de\/by|ODbL|ODC-BY|Attribution|Namensnennung/i;
+  {
+    slug: "challenge", name: "🐉 Bosskampf und TaskCrawler-Monster",
+    eintraege: [
+      { quelle: "Ultimate Monsters", urheber: "Quaternius", lizenz: "CC0 1.0", url: "https://quaternius.com/packs/ultimatemonsters.html",
+        verwendung: "21 animierte Monster: Bosse der 3D-Arena, ein Gegner je Element, Verlies-Monster (public/modelle/monster)" },
+      { quelle: "Draco-Decoder (three.js)", urheber: "Google / three.js-Autoren", lizenz: "Apache-2.0", url: "https://github.com/google/draco",
+        verwendung: "Entpacken der komprimierten Monster-Modelle (public/draco)" },
+    ],
+  },
