@@ -49,7 +49,7 @@
           {
             "wert": "mittelstadt",
             "text": "Mittelstädte (20 000 – 100 000)",
-            "standard": false
+            "standard": true
           },
           {
             "wert": "kleinstadt",
@@ -918,7 +918,7 @@
           {
             "wert": "mittelstadt",
             "text": "Mittelstädte (20 000 – 100 000)",
-            "standard": false
+            "standard": true
           },
           {
             "wert": "kleinstadt",

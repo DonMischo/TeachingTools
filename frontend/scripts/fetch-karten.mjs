@@ -194,12 +194,12 @@ async function laender(vg) {
 const LANDESHAUPTSTAEDTE = ["Kiel", "Hamburg", "Schwerin", "Bremen", "Hannover", "Magdeburg", "Potsdam", "Düsseldorf",
   "Wiesbaden", "Erfurt", "Dresden", "Mainz", "Saarbrücken", "Stuttgart", "München", "Berlin"];
 
-/** Größenklassen der Siedlungen; `standard` = beim Öffnen angehakt (nur die großen Städte). */
+/** Größenklassen der Siedlungen; `standard` = beim Öffnen angehakt (große und Mittelstädte). */
 export const SIEDLUNG_KLASSEN = [
   { wert: "hauptstadt", text: "Hauptstadt", standard: true },
   { wert: "landeshauptstadt", text: "Landeshauptstädte", standard: true },
   { wert: "grossstadt", text: "Großstädte (ab 100 000)", standard: true },
-  { wert: "mittelstadt", text: "Mittelstädte (20 000 – 100 000)", standard: false },
+  { wert: "mittelstadt", text: "Mittelstädte (20 000 – 100 000)", standard: true },
   { wert: "kleinstadt", text: "Kleinstädte und Gemeinden (5 000 – 20 000)", standard: false },
   { wert: "landgemeinde", text: "Gemeinden unter 5 000", standard: false },
   { wert: "ortsteil", text: "Ortsteile", standard: false },
