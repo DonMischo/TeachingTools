@@ -149,6 +149,14 @@ const ALL_CARDS: Werkzeug[] = [
     color: "#0284c7",
   },
   {
+    slug: "diagramme",
+    href: "/simulationen/diagramme",
+    icon: "🔀",
+    title: "Diagramm-Werkstatt",
+    description: "Ablaufdiagramme und Mindmaps: Knoten zusammenklicken, verbinden und einfärben — oder in D2 selbst schreiben. Farbthemen, Handzeichnungs-Stil, Export als PNG, SVG und .d2.",
+    color: "#7c3aed",
+  },
+  {
     slug: "pse",
     href: "/simulationen/pse",
     icon: "🧪",

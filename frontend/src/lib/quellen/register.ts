@@ -119,6 +119,12 @@ export const REGISTER: WerkzeugQuellen[] = [
     ],
   },
   {
+    slug: "diagramme", name: "🔀 Diagramm-Werkstatt",
+    eintraege: [
+      { quelle: "D2 (d2lang)", urheber: "Terrastruct, Inc.", lizenz: "MPL-2.0", url: "https://github.com/d2lang/d2", verwendung: "Diagrammsprache, Layout und SVG-Ausgabe; unverändert als npm-Paket @d2lang/d2 (WASM) eingebunden" },
+    ],
+  },
+  {
     slug: "erosion", name: "🌧️ Erosion",
     eintraege: [
       { quelle: "terrain-erosion-3-ways", urheber: "Daniel Andrino", lizenz: "MIT", url: "https://github.com/dandrino/terrain-erosion-3-ways", verwendung: "Vorbild der gitterbasierten Wassererosion mit Rutschungen (Ablauf und Konstanten); neu in TypeScript geschrieben" },
@@ -143,10 +149,6 @@ export const REGISTER: WerkzeugQuellen[] = [
       "Nance, R. D. et al. (2014): Gondwana Research 25, 4–29.",
     ],
   },
-];
-
-/** Lizenzen, die eine Namensnennung verlangen — Hinweis auf der Seite. */
-export const NENNUNG_PFLICHT = /CC BY|dl-de\/by|ODbL|ODC-BY|Attribution|Namensnennung/i;
   {
     slug: "challenge", name: "🐉 Bosskampf und TaskCrawler-Monster",
     eintraege: [
@@ -156,3 +158,7 @@ export const NENNUNG_PFLICHT = /CC BY|dl-de\/by|ODbL|ODC-BY|Attribution|Namensne
         verwendung: "Entpacken der komprimierten Monster-Modelle (public/draco)" },
     ],
   },
+];
+
+/** Lizenzen, die eine Namensnennung verlangen — Hinweis auf der Seite. */
+export const NENNUNG_PFLICHT = /CC BY|dl-de\/by|ODbL|ODC-BY|Attribution|Namensnennung/i;

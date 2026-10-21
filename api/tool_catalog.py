@@ -189,6 +189,10 @@ CATALOG: list[CatalogTool] = [
     CatalogTool("stadt", "🏘️ Stadtentwicklung", "🏘️", "simulationen", {
         "use": _cap(True, True),
     }),
+    # Diagramm-Werkstatt: Ablaufdiagramme und Mindmaps in D2 (Bausteine oder Code).
+    CatalogTool("diagramme", "🔀 Diagramm-Werkstatt", "🔀", "simulationen", {
+        "use": _cap(True, True),
+    }),
     # Erosion: Regen formt Zufallsgelaende (Wassererosion + Rutschungen).
     CatalogTool("erosion", "🌧️ Erosion", "🌧️", "simulationen", {
         "use": _cap(True, True),

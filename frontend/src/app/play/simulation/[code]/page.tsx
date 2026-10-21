@@ -38,6 +38,7 @@ import Wellenkollaps from "@/components/wfc/Wellenkollaps";
 import Wachstum from "@/components/dla/Wachstum";
 import Stadtentwicklung from "@/components/stadt/Stadtentwicklung";
 import Erosion from "@/components/erosion/Erosion";
+import DiagrammWerkstatt from "@/components/diagramme/DiagrammWerkstatt";
 import Schichtenmodell from "@/components/schichten/Schichtenmodell";
 import Tippen from "@/components/tippen/Tippen";
 import MausFuehrerschein, { schluesselFuerGast, schluesselFuerGastName } from "@/components/maus/MausFuehrerschein";
@@ -67,6 +68,7 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   dla: { title: "Fraktales Wachstum", icon: "🪸", node: <Wachstum /> },
   stadt: { title: "Stadtentwicklung", icon: "🏘️", node: <Stadtentwicklung /> },
   erosion: { title: "Erosion", icon: "🌧️", node: <Erosion /> },
+  diagramme: { title: "Diagramm-Werkstatt", icon: "🔀", node: <DiagrammWerkstatt /> },
   schichten: { title: "Schichtenmodell", icon: "📶", node: <Schichtenmodell /> },
   pse: { title: "Periodensystem", icon: "🧪", node: <Periodensystem /> },
   atommodelle: { title: "Atommodelle", icon: "⚛️", node: <Periodensystem nur="modelle" /> },
