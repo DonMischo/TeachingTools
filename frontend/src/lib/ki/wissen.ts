@@ -60,7 +60,7 @@ export const WISSEN: Record<string, Wissenstext> = {
       ],
       "8+": [
         "Die Stücke heißen »Token«, das Zerschneiden heißt Tokenisierung. Die Liste ist nicht ausgedacht, sondern aus riesigen Textmengen gelernt: Was oft zusammen vorkommt, wird ein eigenes Token.",
-        "Deshalb ist »Katze« ein Stück, »Kätzchen« aber zwei oder drei. Und deshalb gehört das Leerzeichen zum Wort dahinter: » Katze« am Satzanfang ist für das Modell etwas anderes als »Katze«.",
+        "Deshalb ist »Katze« ein Stück, »Kätzchen« aber zwei oder drei. Und deshalb hängen Leerzeichen und Satzzeichen am Wort davor: »Katze␣« mitten im Satz ist für das Modell ein anderes Stück als »Katze.« am Satzende.",
         "Ab hier gibt es keine Wörter mehr, nur noch Nummern. Alles Weitere ist Rechnen mit diesen Nummern.",
       ],
       "10+": [

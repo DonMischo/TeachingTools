@@ -22,24 +22,49 @@ describe("Zerlegen", () => {
 
   it("nimmt an jeder Stelle das längste passende Stück", () => {
     expect(text("Schreibe einen kurzen Text über eine Katze.")).toEqual([
-      "Schreib", "e", " einen", " kurz", "en", " Text", " über", " eine", " Katze", ".",
+      "Schreib", "e ", "einen ", "kurz", "en ", "Text ", "über ", "eine ", "Katze.",
     ]);
   });
 
-  it("hängt das Leerzeichen an das Wort dahinter", () => {
-    const tokens = zerlege("Die Katze");
-    expect(tokens.map(t => t.text)).toEqual(["Die", " Katze"]);
-    expect(tokens[1].text.startsWith(" ")).toBe(true);
+  it("lässt unbekannte Wörter ganz, statt sie in Buchstaben zu zerlegen", () => {
+    expect(text("Schreibe einen kurzen Text über ein Fußballspiel.").slice(-1))
+      .toEqual(["Fußballspiel."]);
+    expect(text("Teppich ")).toEqual(["Teppich "]);
+    expect(text("Kätzchen ")).toEqual(["Kätz", "chen "]);
+    expect(text("Fensterbank.")).toEqual(["Fenster", "bank."]);
+    expect(text("Xylophon-Ölfässer, 42 Stück!")).toEqual([
+      "Xylophon-", "Ölfässer, ", "42 ", "Stück!",
+    ]);
+  });
+
+  it("gibt demselben Wort je nach Anhang eine eigene, bekannte Nummer", () => {
+    const [mitte] = zerlege("Katze ");
+    const [ende] = zerlege("Katze.");
+    expect(mitte.bekannt && ende.bekannt).toBe(true);
+    expect(mitte.id).not.toBe(ende.id);
+  });
+
+  it("gibt einem unbekannten Wort immer dieselbe Nummer", () => {
+    const [a] = zerlege("Teppich ");
+    const [b] = zerlege("Teppich ");
+    expect(a.bekannt).toBe(false);
+    expect(a.id).toBe(b.id);
+    expect(a.id).toBeGreaterThanOrEqual(50000);
+  });
+
+  it("hängt Leerzeichen und Satzzeichen an das Wort davor", () => {
+    expect(text("Die Katze schläft.")).toEqual(["Die ", "Katze ", "schläf", "t."]);
+    expect(text("Ja, die Katze!")).toEqual(["Ja, ", "die ", "Katze!"]);
   });
 
   it("unterscheidet den Satzanfang vom selben Wort mitten im Satz", () => {
     const [gross] = zerlege("Die");
-    const [klein] = zerlege(" die");
+    const [klein] = zerlege("die");
     expect(gross.id).not.toBe(klein.id);
   });
 
   it("gibt bekannten Stücken eine Listennummer, unbekannten ihren Zeichencode", () => {
-    const [bekannt] = zerlege(" Katze");
+    const [bekannt] = zerlege("Katze");
     expect(bekannt.bekannt).toBe(true);
     expect(bekannt.id).toBeGreaterThanOrEqual(1000);
 
@@ -53,9 +78,9 @@ describe("Zerlegen", () => {
   });
 
   it("zählt den Anfang nicht als Schnittstelle", () => {
-    const s = schnitte(zerlege(" Katze schläft"));
+    const s = schnitte(zerlege("Katze schläft"));
     expect(s).not.toContain(0);
-    expect(s.length).toBe(zerlege(" Katze schläft").length - 1);
+    expect(s.length).toBe(zerlege("Katze schläft").length - 1);
   });
 });
 

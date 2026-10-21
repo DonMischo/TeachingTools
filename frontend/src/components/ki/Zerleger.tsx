@@ -4,8 +4,8 @@
  *
  * Erst schneidet die Klasse selbst (antippen zwischen den Buchstaben), dann
  * deckt die Maschine ihre eigenen Schnitte auf. Der Aha-Moment liegt im
- * Vergleich: häufige Wörter bleiben ganz, seltene zerfallen, und das
- * Leerzeichen gehört zum Wort *dahinter*. Danach steht da nur noch eine Reihe
+ * Vergleich: häufige Wörter bleiben ganz, seltene zerfallen, und Leerzeichen
+ * und Satzzeichen hängen am Wort *davor*. Danach steht da nur noch eine Reihe
  * von Zahlen — mehr bekommt das Modell nie zu sehen.
  */
 import { useMemo, useState } from "react";
@@ -151,8 +151,8 @@ export function Zerleger({ text, onWeiter }: { text: string; onWeiter: (quote: n
           <p className="text-xs text-muted leading-relaxed">
             🔢 Ab hier zählt nur noch die untere Zeile: <b>{tokens.length} Zahlen</b>. Buchstaben,
             Wörter und Sinn sind weg — das Modell rechnet nur mit Nummern.
-            Häufige Wörter (»␣Katze«) sind ein einziges Stück, seltenere zerfallen in Stamm und
-            Endung (»␣kurz« + »en«), und das Leerzeichen gehört immer zum Wort dahinter.
+            Häufige Wörter (»Text␣«) sind ein einziges Stück, seltenere zerfallen in Stamm und
+            Endung (»kurz« + »en␣«), und Leerzeichen und Satzzeichen hängen am Wort davor (»Katze.«).
             Echte Zerleger haben 50 000 bis 200 000 solcher Stücke und haben sie sich aus riesigen
             Textmengen selbst zusammengesucht; unsere Liste ist von Hand geschrieben und hat gut hundert.
           </p>
