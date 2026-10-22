@@ -14,6 +14,23 @@ const STUFEN: [number, RGB][] = [
   [1, [240, 240, 244]],
 ];
 
+/** Höhenschichten wie im Schulatlas: Obergrenze (m) und Farbe, stufig statt Verlauf */
+export const ATLAS_SCHICHTEN: [number, RGB][] = [
+  [100, [96, 158, 88]],
+  [200, [148, 190, 110]],
+  [500, [222, 222, 150]],
+  [1000, [232, 200, 130]],
+  [1500, [214, 164, 104]],
+  [2000, [190, 130, 80]],
+  [3000, [160, 100, 64]],
+  [Infinity, [130, 80, 60]],
+];
+
+function atlasFarbe(h: number): RGB {
+  for (const [bis, c] of ATLAS_SCHICHTEN) if (h < bis) return c;
+  return ATLAS_SCHICHTEN[ATLAS_SCHICHTEN.length - 1][1];
+}
+
 function verlauf(t: number): RGB {
   t = Math.max(0, Math.min(1, t));
   for (let s = 1; s < STUFEN.length; s++) {
@@ -33,6 +50,8 @@ export interface FarbOptionen {
   wasserMenge?: Float64Array;
   /** feste Höhenspanne für den Farbverlauf (m), sonst aus dem Gelände */
   spanne?: [number, number];
+  /** Höhenschichten in festen Metern wie im Atlas (ATLAS_SCHICHTEN), ersetzt `spanne` */
+  atlas?: boolean;
   /** Höhenlinien alle … Meter (0 = aus) */
   linien?: number;
   /** Waldanteil je Zelle (waldMaske) — dunkler, getupft */
@@ -79,7 +98,7 @@ export function gelaendeFarben(g: Pick<Gelaende, "n" | "zelle" | "hoehe" | "wass
       const tief = Math.min(1, Math.max(0, -hoehe[k] / 20));
       c = wasser[k] === 2 ? [70 - 30 * tief, 130 - 40 * tief, 190 - 30 * tief] : wasser[k] === 3 ? [62, 118, 178] : [80, 140, 200];
     } else {
-      c = verlauf((hoehe[k] - lo) / spanne);
+      c = o.atlas ? atlasFarbe(hoehe[k]) : verlauf((hoehe[k] - lo) / spanne);
       if (o.aue && aue[k]) c = [c[0] * 0.8, c[1] * 0.95 + 14, c[2] * 0.8];
       if (o.wald && o.wald[k] > 0) {
         // Baumkronen als Tupfen: Hash je Zelle

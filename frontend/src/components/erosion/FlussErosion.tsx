@@ -5,7 +5,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { erzeuge, type GelaendeWahl } from "@/lib/gelaende/gelaende";
-import { gelaendeFarben } from "@/lib/gelaende/farbe";
+import { ATLAS_SCHICHTEN, gelaendeFarben } from "@/lib/gelaende/farbe";
 import {
   aenderung, aufGelaende, erosionSchritt, flussFormen, erosionsSchritte, erosionStart, gewaesser, jahreszeit, JAHR, STANDARD_EROSION,
   type Erosion as ErosionsZustand, type ErosionsParameter,
@@ -23,9 +23,6 @@ export const ANSICHTEN = [
   { id: "vorher", label: "⏮ Vorher" },
 ] as const;
 export type Ansicht = (typeof ANSICHTEN)[number]["id"];
-
-// eine Höhenskala (m) für alle Landschaften: Schnee erst ab ~1300 m, Hügelland bleibt grün
-const SPANNE: [number, number] = [0, 1400];
 
 const REGLER: { k: keyof ErosionsParameter; label: string; text: string; max: number }[] = [
   { k: "regen", label: "🌧️ Regen", text: "Wie viel Wasser je Schritt fällt.", max: 3 },
@@ -82,10 +79,10 @@ export default function FlussErosion({ startAnsicht }: { startAnsicht?: Ansicht 
     for (let k = 0; k < hoehe.length; k++) hoehe[k] = e.null + e.h[k] * e.einheit;
     const aktuell = { ...jetzt, hoehe };
     let px: Uint8ClampedArray;
-    if (ansicht === "vorher") px = gelaendeFarben(g, { spanne: SPANNE });
+    if (ansicht === "vorher") px = gelaendeFarben(g, { atlas: true });
     else if (ansicht === "aenderung") {
       const d = aenderung(e);
-      px = gelaendeFarben(aktuell, { spanne: SPANNE });
+      px = gelaendeFarben(aktuell, { atlas: true });
       let m = 0.5;
       for (let k = 0; k < d.length; k++) m = Math.max(m, Math.abs(d[k]));
       for (let k = 0; k < d.length; k++) {
@@ -93,7 +90,7 @@ export default function FlussErosion({ startAnsicht }: { startAnsicht?: Ansicht 
         const f = d[k] < 0 ? [220, 40, 40] : [40, 90, 230];
         for (let q = 0; q < 3; q++) px[k * 4 + q] = px[k * 4 + q] * (1 - t * 0.85) + f[q] * t * 0.85;
       }
-    } else px = gelaendeFarben(aktuell, { spanne: SPANNE, wasserMenge: ansicht === "wasser" ? e.wasser : undefined });
+    } else px = gelaendeFarben(aktuell, { atlas: true, wasserMenge: ansicht === "wasser" ? e.wasser : undefined });
     c.width = g.n; c.height = g.n;
     const ctx = c.getContext("2d")!;
     const b = ctx.createImageData(g.n, g.n);
@@ -105,7 +102,7 @@ export default function FlussErosion({ startAnsicht }: { startAnsicht?: Ansicht 
   const karte = useMemo<VoxelKarte | null>(() => {
     const e = zustand.current;
     if (!drei || !e) return null;
-    const farbe = gelaendeFarben(jetzt, { spanne: SPANNE, wasserMenge: e.wasser });
+    const farbe = gelaendeFarben(jetzt, { atlas: true, wasserMenge: e.wasser });
     return voxelAusGitter(jetzt.hoehe, farbe, g.n, g.zelle, 1024);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [drei, voxelStand, g]);
@@ -140,6 +137,16 @@ export default function FlussErosion({ startAnsicht }: { startAnsicht?: Ansicht 
             <div className="relative w-full max-w-[760px]">
               <canvas ref={cv} className="aspect-square w-full rounded-xl border border-line" aria-label="Gelände von oben" />
               {schilder && <Formschilder marken={marken} n={g.n} />}
+            </div>
+          )}
+          {!drei && ansicht !== "aenderung" && (
+            <div className="mt-2 flex max-w-[760px] flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted" aria-label="Höhenschichten">
+              {ATLAS_SCHICHTEN.slice(0, 5).map(([bis, c], i) => (
+                <span key={bis} className="flex items-center gap-1">
+                  <span className="inline-block h-3 w-5 rounded-sm border border-line" style={{ background: `rgb(${c.join(",")})` }} />
+                  {i === 0 ? `bis ${bis}` : `${ATLAS_SCHICHTEN[i - 1][0]}–${bis}`} m
+                </span>
+              ))}
             </div>
           )}
           <div className="mt-2 flex flex-wrap gap-1">
