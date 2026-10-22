@@ -156,10 +156,8 @@ export interface Vulkan {
   locker: Float64Array;
   schichten: Schicht[];
   meer: number | null;
-  /** Hotspot bzw. Hauptschlot (fest) */
+  /** Hauptschlot — im Hotspot-Modus der ortsfeste Hotspot (nur die Platte wandert) */
   mitte: number;
-  /** Gipfel des jüngsten Vulkans — wandert im Hotspot-Modus mit der Platte */
-  zentrum: number;
   /** Richtungen der Spaltenzonen (rad) */
   rift: [number, number];
   ausbruch: Ausbruch | null;
@@ -194,28 +192,72 @@ export function vulkanStart(seed: number, meer = false, hotspot = false, n = N_G
       ? HOTSPOT_BODEN + fbm(r, i / 30, j / 30, 4) * 150
       : (meer ? -350 : 260) + fbm(r, i / 38, j / 38, 4) * 55 + (Math.cos(kippe) * x + Math.sin(kippe) * y) * 60;
   }
-  const mitte = Math.floor(n / 2) * n + Math.floor(n / 2);
+  // Hotspot im Osten, damit westlich davon Platz für die ältere Inselkette ist
+  const mitte = Math.floor(n / 2) * n + (hotspot ? Math.round(n * 0.75) : Math.floor(n / 2));
   const a = z() * Math.PI;
-  return {
+  const v: Vulkan = {
     n, zelle: hotspot ? HOTSPOT_ZELLE : ZELLE, seed, B, G: Float64Array.from(B), start: Float32Array.from(B),
     L: new Float64Array(N), T: new Float64Array(N), locker: new Float64Array(N),
-    schichten: [], meer: meer ? 0 : null, mitte, zentrum: mitte, rift: [a, a + Math.PI * (0.75 + z() * 0.3)],
+    schichten: [], meer: meer ? 0 : null, mitte, rift: [a, a + Math.PI * (0.75 + z() * 0.3)],
     ausbruch: null, nr: 0, schlote: [], calderen: [], wolke: null, zufall: z,
     gefoerdert: 0, verloren: 0, dL: new Float64Array(N), dW: new Float64Array(N), dIn: new Float64Array(N), box: Int32Array.from([n, -1, n, -1]),
     platte: hotspot ? { tempo: PLATTE_ZELLEN, versatz: 0 } : null,
   };
+  if (hotspot) alteKette(v, r);
+  return v;
 }
 
 // ---------- Hotspot: Platte wandert ----------
 
 /** Ozeanboden (m) und Zellgröße (m) im Hotspot-Ausschnitt */
 const HOTSPOT_BODEN = -3000, HOTSPOT_ZELLE = 2000;
-/** Plattenweg je Ausbruch in Zellen (4 km) — bei 9 cm/Jahr ≈ 44 000 Jahre */
-const PLATTE_ZELLEN = 2;
-/** so weit (Zellen) trägt die Platte einen Vulkan, bevor über dem Hotspot ein neuer entsteht */
-const HOTSPOT_REICHWEITE = 22;
-/** ein Ausbruch über dem Hotspot fördert so viel mehr (Ausbruchsphasen sind länger) */
-const HOTSPOT_MENGE = 3;
+/** Plattenweg je Ausbruch in Zellen (2 km) — bei 9 cm/Jahr ≈ 22 000 Jahre */
+const PLATTE_ZELLEN = 1;
+/** Der Nachschub aus dem Plume kommt in Schüben: alle so viele Ausbrüche ein neuer Vulkan */
+const HOTSPOT_PERIODE = 34;
+/** Fördermenge je Ausbruch über dem Hotspot (× V0 × Menge) im stärksten Schub */
+const HOTSPOT_MENGE = 0.3;
+
+/** Nachschub 0..1 im Schub-Zyklus des Plumes (beginnt mit einem jungen, wachsenden Seamount) */
+export function hotspotSchub(nr: number): number {
+  const phase = ((nr + HOTSPOT_PERIODE * 0.15) % HOTSPOT_PERIODE) / HOTSPOT_PERIODE;
+  const puls = 0.5 - 0.5 * Math.cos(phase * Math.PI * 2);
+  return 0.08 + 0.92 * puls * puls;
+}
+
+/** Zustand des jüngsten Vulkans über dem Hotspot: Gipfelhöhe und Entwicklungsstufe */
+export function hotspotPhase(v: Vulkan): { gipfel: number; phase: "seamount" | "flach" | "insel"; schub: number } {
+  const n = v.n, hi = v.mitte % n, hj = Math.floor(v.mitte / n);
+  let gipfel = -Infinity;
+  for (let j = hj - 8; j <= hj + 8; j++) for (let i = hi - 8; i <= hi + 3; i++) gipfel = Math.max(gipfel, v.G[j * n + i]);
+  const meer = v.meer ?? 0;
+  return { gipfel, phase: gipfel > meer ? "insel" : gipfel > meer - 500 ? "flach" : "seamount", schub: hotspotSchub(v.nr + 1) };
+}
+
+/**
+ * Ältere Inselkette westlich des Hotspots als Startzustand: je weiter weg,
+ * desto älter, tiefer abgesunken und stärker abgetragen — bis zum Seamount.
+ */
+function alteKette(v: Vulkan, rausch: (x: number, y: number) => number) {
+  const n = v.n, hi = v.mitte % n, hj = Math.floor(v.mitte / n);
+  const schicht = neueSchicht(v, "basalt");
+  // Abstand zum Hotspot (Zellen) und Gipfelhöhe (m über NN)
+  const inseln: [number, number][] = [[HOTSPOT_PERIODE, 1100], [HOTSPOT_PERIODE * 2, 600], [HOTSPOT_PERIODE * 3, 100]];
+  for (const [d, gipfel] of inseln) {
+    const ci = hi - d, R = 24;
+    for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
+      // entlang der Kette (W–O) etwas gestreckt, Ränder unregelmäßig
+      const dx = (i - ci) / 1.25, dy = j - hj, rr = Math.hypot(dx, dy) * (1 + 0.15 * rausch(i / 9, j / 9));
+      if (rr >= R) continue;
+      const k = j * n + i;
+      let h = HOTSPOT_BODEN + (gipfel - HOTSPOT_BODEN) * (1 - rr / R) ** 1.6;
+      // alte Inseln: Gipfel abgetragen (Brandungsplattform), Täler eingeschnitten
+      if (h > 0) h = Math.max(0, h - (d / HOTSPOT_PERIODE - 1) * 300 * (0.5 + 0.5 * rausch(i / 4, j / 4)));
+      const dicke = h - v.G[k];
+      if (dicke > 0) auftragen(v, k, dicke, schicht);
+    }
+  }
+}
 /** Pazifische Platte: 9 cm/Jahr = 90 km je Million Jahre */
 export const PLATTE_KM_JE_MIO = 90;
 
@@ -257,17 +299,15 @@ function platteBewegen(v: Vulkan) {
     v.schlote = v.schlote.filter(s => s.i >= 0);
     for (const c of v.calderen) c.i -= d;
     v.calderen = v.calderen.filter(c => c.i + c.r >= 0);
-    v.zentrum -= d;
   }
-  // zu weit weggetragen: der Vulkan erlischt, über dem Hotspot wächst ein neuer
-  if (hi - (v.zentrum % n) > HOTSPOT_REICHWEITE) v.zentrum = v.mitte;
   // Absinken (Auflast + abkühlende Platte) und Abtragung der erloschenen Vulkane (weiter als 15 Zellen vom Hotspot)
   for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
     const k = j * n + i, auf = v.G[k] - v.start[k];
     if (auf <= 1 || hi - i < 15) continue;
-    const senk = Math.min(auf, auf * 0.008 + 12);
+    // ≈ 0,5 km Absinken je Mio. Jahre, Abtragung ≈ 1 % der Höhe über dem Meer je Ausbruch (22 000 Jahre)
+    const senk = Math.min(auf, auf * 0.0025 + 3);
     v.B[k] -= senk; v.G[k] -= senk;
-    if (v.meer !== null && v.G[k] > v.meer) abtragen(v, k, (v.G[k] - v.meer) * 0.025);
+    if (v.meer !== null && v.G[k] > v.meer) abtragen(v, k, (v.G[k] - v.meer) * 0.01);
   }
 }
 
@@ -322,7 +362,7 @@ const NACHBARN = (n: number) => {
 };
 
 function schlotWaehlen(v: Vulkan, m: Magma): Schlot {
-  const n = v.n, z = v.zufall, ci = v.zentrum % n, cj = (v.zentrum - ci) / n;
+  const n = v.n, z = v.zufall, ci = v.mitte % n, cj = (v.mitte - ci) / n;
   // Abstände in Zellen bei 100 m — im Hotspot-Maßstab (große Schilde) gröber
   const mass = v.zelle > ZELLE ? 0.4 : 1;
   const zellenUm = (i: number, j: number, r: number) => {
@@ -339,7 +379,7 @@ function schlotWaehlen(v: Vulkan, m: Magma): Schlot {
         const i = Math.round(ci + Math.cos(a) * (d0 + t)), j = Math.round(cj + Math.sin(a) * (d0 + t));
         if (i > 2 && j > 2 && i < n - 3 && j < n - 3) zellen.push(j * n + i);
       }
-      const mi = zellen[Math.floor(zellen.length / 2)] ?? v.zentrum;
+      const mi = zellen[Math.floor(zellen.length / 2)] ?? v.mitte;
       if (zellen.length) return { art: "spalte", nr: v.nr, zellen, i: mi % n, j: Math.floor(mi / n) };
     } else {
       const a = z() * Math.PI * 2, d = (12 + z() * 22) * mass;
@@ -360,8 +400,8 @@ export function ausbrechen(v: Vulkan, m: Magma): Ausbruch {
   const schlot = schlotWaehlen(v, m);
   v.schlote.push(schlot);
   // Nebenausbrüche sind kleiner
-  // über dem Hotspot: je weiter der Vulkan schon weggewandert ist, desto weniger Magma kommt an
-  const versorgung = v.platte ? HOTSPOT_MENGE * Math.max(0.25, 1 - ((v.mitte - v.zentrum) % v.n) / HOTSPOT_REICHWEITE * 0.75) : 1;
+  // über dem Hotspot kommt der Nachschub in Schüben: dazwischen trägt die Platte den Vulkan fort
+  const versorgung = v.platte ? HOTSPOT_MENGE * hotspotSchub(v.nr) : 1;
   const menge = V0 * m.menge * versorgung * (schlot.art === "gipfel" ? 1 : 0.35) * (0.7 + z() * 0.6);
   // Schlot unter Wasser: flach (bis 500 m) verdampft das Meerwasser explosiv (surtseyanisch, auch bei Basalt);
   // tiefer unterdrückt der Wasserdruck Explosionen — es quillt Kissenlava, keine Aschesäule
@@ -370,7 +410,8 @@ export function ausbrechen(v: Vulkan, m: Magma): Ausbruch {
   let explosiv = explosivAnteil(m) * (0.7 + z() * 0.6);
   if (wasser === "flach") explosiv = Math.max(explosiv, 0.3 + 0.3 * (1 - tiefe / WASSER_TIEF));
   if (wasser === "tief") explosiv *= 0.15;
-  const tephra = menge * explosiv;
+  // im 320-km-Maßstab wäre ein Tuffkegel nur ein Bruchteil einer Zelle: Säule ja, Ablagerung klein
+  const tephra = menge * (v.platte ? Math.min(explosiv, 0.05) : explosiv);
   const a: Ausbruch = {
     nr: v.nr, schlot, rest: menge - tephra, proSchritt: (menge - tephra) / DAUER, explosiv, tephra,
     schritt: 0, lavaSchicht: -1, asche: null, wasser, t0: lw.t0, eta: lw.eta, tau: lw.tau, spanne: lw.spanne, stoff: lw.stoff,
@@ -484,6 +525,8 @@ export function schritt(v: Vulkan): boolean {
   if (v.wolke) { v.wolke.alter++; if (v.wolke.alter > 90) v.wolke = null; }
   if (!a) return false;
   const { n, L, T, G, dL, dW, dIn } = v, nb = NACHBARN(n);
+  // ein Schritt steht für mehr Zeit, wenn die Zellen größer sind (Hotspot: 2 km) — sonst liefe Lava viel zu weit
+  const dt = DT * (v.zelle / ZELLE);
   a.schritt++;
   if (a.asche) {
     // Aschephase: Tephra rieselt, lockeres Material rutscht nach; erst danach Lava
@@ -524,7 +567,7 @@ export function schritt(v: Vulkan): boolean {
       if (h <= hc) continue;
       const r = hc / h;
       const vel = ((RHO * G_ERD * s * h * h) / (3 * eta)) * (1 - 1.5 * r + 0.5 * r * r * r);
-      const f = Math.min(0.5, (vel * DT) / d);
+      const f = Math.min(0.5, (vel * dt) / d);
       qs[q] = f * Math.min(h - hc, delta * 0.5);
       summe += qs[q]; anz++;
     }
@@ -552,8 +595,9 @@ export function schritt(v: Vulkan): boolean {
     dL[k] = 0; dW[k] = 0; dIn[k] = 0;
     const tk = T[k] + 273;
     const wasser = v.meer !== null && G[k] + L[k] < v.meer;
-    let abk = (SIGMA * (tk ** 4 - 300 ** 4) * DT) / (RHO * 1100 * Math.max(0.3, L[k])) * 0.35 + 0.12;
-    if (wasser) abk *= 25;
+    let abk = ((SIGMA * (tk ** 4 - 300 ** 4) * dt) / (RHO * 1100 * Math.max(0.3, L[k])) * 0.35 + 0.12) * (dt / DT);
+    // im Wasser viel schneller kalt — bei großen Zellen steckt das schon im längeren Zeitschritt
+    if (wasser) abk *= Math.max(1.5, 25 / (dt / DT));
     if (zuEnde) abk *= 3;
     T[k] -= abk;
     if (T[k] < a.t0 - a.spanne || L[k] < 0.15) {
@@ -576,7 +620,7 @@ export function ausbruchBeenden(v: Vulkan) {
 export function caldera(v: Vulkan, m: Magma) {
   if (v.ausbruch) ausbruchBeenden(v);
   v.nr++;
-  const n = v.n, N = n * n, ci = v.zentrum % n, cj = (v.zentrum - ci) / n;
+  const n = v.n, N = n * n, ci = v.mitte % n, cj = (v.mitte - ci) / n;
   // Größe am Vulkan bemessen
   let hoch = -Infinity, rv = 0;
   for (let k = 0; k < N; k++) hoch = Math.max(hoch, v.G[k] - v.start[k]);
@@ -620,7 +664,7 @@ export function caldera(v: Vulkan, m: Magma) {
   v.gefoerdert += extra;
   v.calderen.push({ i: ci, j: cj, r: R, nr: v.nr });
   felsstuerze(v);
-  v.schlote.push({ art: "gipfel", nr: v.nr, zellen: [v.zentrum], i: ci, j: cj });
+  v.schlote.push({ art: "gipfel", nr: v.nr, zellen: [v.mitte], i: ci, j: cj });
   v.wolke = { x: ci, y: cj, richtung: ((m.windAus + 180) * Math.PI) / 180, laenge: 60, breite: 40, alter: 0, gross: true };
 }
 

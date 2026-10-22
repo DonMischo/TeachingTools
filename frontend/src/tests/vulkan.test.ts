@@ -114,16 +114,28 @@ describe("Ausbruch zum Zusehen (fallender Sand)", () => {
 });
 
 describe("Hotspot", () => {
-  it("die wandernde Platte baut eine Inselkette, die nach Westen älter und niedriger wird", () => {
+  it("startet mit einer älteren Inselkette: nach Westen älter und niedriger", () => {
+    const v = vulkanStart(7, true, true);
+    const k = kette(v);
+    expect(k.filter(g => g.insel).length).toBeGreaterThanOrEqual(2);
+    for (let a = 1; a < k.length; a++) expect(k[a - 1].alter).toBeGreaterThan(k[a].alter);
+    expect(k[k.length - 1].hoehe).toBeGreaterThan(k[0].hoehe);
+  });
+
+  it("der neue Vulkan wächst erst unter Wasser, der Schlot bleibt über dem Hotspot", () => {
     const v = vulkanStart(7, true, true), m = TYPEN[2].magma;
-    for (let e = 0; e < 100; e++) { ausbrechen(v, m); ausbruchBeenden(v); }
-    const k = kette(v), inseln = k.filter(g => g.insel);
-    expect(inseln.length).toBeGreaterThanOrEqual(3);
-    // Alter wächst nach Westen
-    for (let a = 1; a < k.length; a++) expect(k[a - 1].alter).toBeGreaterThanOrEqual(k[a].alter);
-    const juengste = inseln[inseln.length - 1], aelteste = inseln[0];
-    expect(juengste.hoehe).toBeGreaterThan(aelteste.hoehe + 300);
-    expect(aelteste.alter).toBeGreaterThan(0.8);
+    const n = v.n, hi = v.mitte % n, hj = Math.floor(v.mitte / n);
+    const gipfelNah = () => { let mx = -1e9; for (let j = hj - 12; j <= hj + 12; j++) for (let i = hi - 12; i <= hi + 3; i++) mx = Math.max(mx, v.G[j * n + i]); return mx; };
+    let aufgetaucht = 0;
+    for (let e = 1; e <= 40 && !aufgetaucht; e++) {
+      const a = ausbrechen(v, m);
+      // Gipfelschlot genau über dem Hotspot, Spalten nur in der Nähe
+      expect(Math.hypot(a.schlot.i - hi, a.schlot.j - hj), `Ausbruch ${e}`).toBeLessThan(a.schlot.art === "gipfel" ? 1 : 22);
+      ausbruchBeenden(v);
+      if (gipfelNah() > 0) aufgetaucht = e;
+    }
+    expect(aufgetaucht).toBeGreaterThanOrEqual(6);
+    expect(aufgetaucht).toBeLessThanOrEqual(30);
   }, 60000);
 });
 

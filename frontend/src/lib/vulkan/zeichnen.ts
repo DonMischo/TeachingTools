@@ -5,7 +5,7 @@
  */
 import { gelaendeFarben } from "@/lib/gelaende/farbe";
 import type { Marke } from "@/lib/gelaende/formen";
-import { kette, kraterseen, saeule, STOFFE, type Vulkan } from "./modell";
+import { hotspotPhase, kette, kraterseen, saeule, STOFFE, type Vulkan } from "./modell";
 
 type RGB = [number, number, number];
 
@@ -48,6 +48,16 @@ export function kartenFarben(v: Vulkan, seen?: Uint8Array): Uint8ClampedArray {
   const t0 = v.ausbruch?.t0 ?? 1100, sp = v.ausbruch?.spanne ?? 140;
   for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
     const k = j * n + i;
+    if (wasser[k] === 2) {
+      // Meer nach Tiefe: flach hell, tief dunkel — so sieht man Seamounts und Inselsockel wachsen
+      const t = Math.min(1, Math.max(0, ((v.meer ?? 0) - hoehe[k]) / 3200)) ** 0.7;
+      const hl = hoehe[j * n + Math.max(0, i - 1)], hr = hoehe[j * n + Math.min(n - 1, i + 1)];
+      const ho = hoehe[Math.max(0, j - 1) * n + i], hu = hoehe[Math.min(n - 1, j + 1) * n + i];
+      const nx = -(hr - hl) / (2 * zelle) * 4, ny = -(hu - ho) / (2 * zelle) * 4;
+      const sh = 0.75 + 0.35 * Math.max(0, (nx * Lx[0] + ny * Lx[1] + Lx[2]) / (Math.hypot(nx, ny, 1) * ll));
+      px[k * 4] = (120 - 95 * t) * sh; px[k * 4 + 1] = (185 - 125 * t) * sh; px[k * 4 + 2] = (220 - 105 * t) * sh;
+      continue;
+    }
     if (wasser[k]) continue;
     if (L[k] > 0.05) {
       const c = glut((t0 - T[k]) / sp);
@@ -77,10 +87,17 @@ export function kartenFarben(v: Vulkan, seen?: Uint8Array): Uint8ClampedArray {
 }
 
 /** Schnittlinie durch den Hauptschlot: Endpunkte in Zellkoordinaten */
+/** Schnittlinie durch den Hauptschlot (beim Hotspot nicht in der Kartenmitte) bis an den Kartenrand */
 export function schnittLinie(v: Vulkan, winkel: number): { a: { x: number; y: number }; b: { x: number; y: number }; laenge: number } {
-  const c = v.n / 2, dx = Math.cos(winkel), dy = Math.sin(winkel);
-  const r = (v.n / 2 - 0.5) / Math.max(Math.abs(dx), Math.abs(dy));
-  return { a: { x: c - dx * r, y: c - dy * r }, b: { x: c + dx * r, y: c + dy * r }, laenge: 2 * r };
+  const n = v.n, px = (v.mitte % n) + 0.5, py = Math.floor(v.mitte / n) + 0.5;
+  const dx = Math.cos(winkel), dy = Math.sin(winkel);
+  let t0 = -Infinity, t1 = Infinity;
+  for (const [p, d] of [[px, dx], [py, dy]]) {
+    if (Math.abs(d) < 1e-9) continue;
+    const u = (0.5 - p) / d, w = (n - 0.5 - p) / d;
+    t0 = Math.max(t0, Math.min(u, w)); t1 = Math.min(t1, Math.max(u, w));
+  }
+  return { a: { x: px + dx * t0, y: py + dy * t0 }, b: { x: px + dx * t1, y: py + dy * t1 }, laenge: t1 - t0 };
 }
 
 const GRUND: RGB = [122, 112, 104];
@@ -93,6 +110,8 @@ export interface SchnittGeometrie {
   oberflaeche: Float32Array;
   /** tätiger Schlot im Schnitt (Pixel) oder null */
   schlot: { x: number; y: number } | null;
+  /** Hauptschlot (Hotspot) im Schnitt, Pixel */
+  mitteX: number;
 }
 
 /** Querschnitt durch den Hauptschlot; gibt Überhöhung, Oberfläche und Schlot zurück (für die Ausbruchsteilchen) */
@@ -108,8 +127,8 @@ export function zeichneQuerschnitt(ctx: CanvasRenderingContext2D, v: Vulkan, o: 
   for (const c of cols) { hi = Math.max(hi, c.g + c.l); lo = Math.min(lo, c.b); }
   if (v.meer !== null) hi = Math.max(hi, v.meer);
   const sx = W / (laenge * v.zelle);
-  // höchstens 2,5-fach überhöht (bei 100-m-Zellen), sonst wirkt auch der Schild steil; große Ausschnitte mehr
-  const zmin = lo - 1500, zmax = Math.max(hi + 350, lo + 1600, zmin + H / (sx * 2.5 * (v.zelle / 100)));
+  // höchstens 2,5-fach überhöht, sonst wirkt auch der Schild steil; der 320-km-Hotspot-Ausschnitt 15-fach
+  const zmin = lo - 1500, zmax = Math.max(hi + 350, lo + 1600, zmin + H / (sx * (v.platte ? 15 : 2.5)));
   const sy = H / (zmax - zmin), y = (z: number) => H - (z - zmin) * sy;
   const ueberhoehung = sy / sx;
 
@@ -157,10 +176,16 @@ export function zeichneQuerschnitt(ctx: CanvasRenderingContext2D, v: Vulkan, o: 
   ctx.restore();
 
   // Magmakammer, Schlot und Gänge
-  const xc = W / 2, aktiv = v.ausbruch !== null;
+  const dx = Math.cos(o.winkel), dy = Math.sin(o.winkel);
+  /** Lage einer Kartenzelle auf dem Schnitt: x in Pixeln und Abstand quer dazu (Zellen) */
+  const projiziert = (i: number, j: number) => {
+    const px = i + 0.5 - a.x, py = j + 0.5 - a.y;
+    return { x: ((px * dx + py * dy) / laenge) * W, quer: Math.abs(-px * dy + py * dx) };
+  };
+  const mi = v.mitte % v.n, xc = projiziert(mi, Math.floor(v.mitte / v.n)).x, aktiv = v.ausbruch !== null;
   const heiss = `rgb(${glut(0.15).join(",")})`, kalt = "rgb(150,40,30)";
   const kammerY = H - 30, kammerRx = Math.max(40, 1600 * sx), kammerRy = Math.max(24, 500 * sy);
-  const mitteSaeule = cols[Math.round((M - 1) / 2)];
+  const mitteSaeule = cols[Math.max(0, Math.min(M - 1, Math.round(xc / 2)))];
   const gr = ctx.createRadialGradient(xc, kammerY, 4, xc, kammerY, kammerRx);
   gr.addColorStop(0, aktiv ? "#ffd56a" : "#e0703a"); gr.addColorStop(1, aktiv ? "#d8401c" : "#8a2a1c");
   ctx.fillStyle = gr;
@@ -172,24 +197,11 @@ export function zeichneQuerschnitt(ctx: CanvasRenderingContext2D, v: Vulkan, o: 
     ctx.beginPath(); ctx.moveTo(xc - 70, H); ctx.quadraticCurveTo(xc - 18, kammerY + 30, xc - 14, kammerY); ctx.lineTo(xc + 14, kammerY); ctx.quadraticCurveTo(xc + 18, kammerY + 30, xc + 70, H); ctx.fill();
   }
   ctx.beginPath(); ctx.ellipse(xc, kammerY, kammerRx, kammerRy, 0, 0, Math.PI * 2); ctx.fill();
-  const dx = Math.cos(o.winkel), dy = Math.sin(o.winkel), cz = v.n / 2;
-  /** Lage einer Kartenzelle auf dem Schnitt: x in Pixeln und Abstand quer dazu (Zellen) */
-  const projiziert = (i: number, j: number) => {
-    const px = i + 0.5 - cz, py = j + 0.5 - cz;
-    return { x: xc + ((px * dx + py * dy) / laenge) * W, quer: Math.abs(-px * dy + py * dx) };
-  };
-  // Schlot zum Gipfel des jüngsten Vulkans (beim Hotspot mit der Platte weggewandert)
-  const zi = v.zentrum % v.n, zp = projiziert(zi, (v.zentrum - zi) / v.n);
-  const zx = zp.quer < 3.5 ? zp.x : xc;
-  const gipfelSaeule = cols[Math.max(0, Math.min(M - 1, Math.round(zx / 2)))];
+  // Schlot senkrecht über der Kammer (beim Hotspot über dem ortsfesten Plume)
+  const zx = xc, gipfelSaeule = mitteSaeule;
   const schlotW = Math.max(4, 160 * sx);
   ctx.fillStyle = aktiv && v.ausbruch!.schlot.art === "gipfel" ? heiss : kalt;
-  const schlotFuss = Math.abs(zx - xc) < 2 ? kammerY - kammerRy * 0.6 : y(gipfelSaeule.b - 300);
-  ctx.fillRect(zx - schlotW / 2, y(gipfelSaeule.g), schlotW, schlotFuss - y(gipfelSaeule.g));
-  if (Math.abs(zx - xc) >= 2) {
-    ctx.strokeStyle = ctx.fillStyle; ctx.lineWidth = schlotW;
-    ctx.beginPath(); ctx.moveTo(xc, kammerY - kammerRy * 0.6); ctx.quadraticCurveTo(xc, schlotFuss, zx, schlotFuss); ctx.stroke();
-  }
+  ctx.fillRect(zx - schlotW / 2, y(gipfelSaeule.g), schlotW, kammerY - kammerRy * 0.6 - y(gipfelSaeule.g));
   // Gänge zu Flankenschloten nahe der Schnittlinie
   const gaenge: { x: number; yv: number; aktiv: boolean; art: string }[] = [];
   for (const s of v.schlote) {
@@ -210,8 +222,10 @@ export function zeichneQuerschnitt(ctx: CanvasRenderingContext2D, v: Vulkan, o: 
   }
   // Calderaränder (Ringbrüche)
   for (const cal of v.calderen) {
+    const cp = projiziert(cal.i, cal.j);
+    if (cp.quer > cal.r) continue;
     for (const sgn of [-1, 1]) {
-      const x = xc + sgn * cal.r * v.zelle * sx;
+      const x = cp.x + sgn * cal.r * v.zelle * sx;
       ctx.strokeStyle = "rgba(40,20,20,0.7)"; ctx.lineWidth = 1.5; ctx.setLineDash([5, 4]);
       ctx.beginPath(); ctx.moveTo(x, y(cols[Math.max(0, Math.min(M - 1, Math.round(x / 2)))].g)); ctx.lineTo(x, kammerY - kammerRy); ctx.stroke();
       ctx.setLineDash([]);
@@ -235,11 +249,11 @@ export function zeichneQuerschnitt(ctx: CanvasRenderingContext2D, v: Vulkan, o: 
     };
     schild("Magmakammer", xc, kammerY - 6);
     if (v.platte) {
-      schild("Mantelplume (Hotspot, ortsfest)", xc + 150, H - 14, [xc + 30, H - 14]);
+      schild("Mantelplume (Hotspot, ortsfest)", xc > W / 2 ? xc - 190 : xc + 150, H - 14, [xc > W / 2 ? xc - 30 : xc + 30, H - 14]);
       schild("← Pazifische Platte wandert nach Westen (9 cm/Jahr)", W * 0.3, y(lo - 700));
       for (const g of kette(v)) {
         const pp = projiziert(g.i, g.j);
-        if (pp.quer > 6 || g.alter < 0.05) continue;
+        if (pp.quer > 6 || g.i > mi - 13) continue;
         schild(`${g.insel ? "Insel" : "Seamount"} · ${g.alter.toFixed(1).replace(".", ",")} Mio. J.`, pp.x, y(g.hoehe) - 26, [pp.x, y(g.hoehe) - 2]);
       }
     }
@@ -281,7 +295,7 @@ export function zeichneQuerschnitt(ctx: CanvasRenderingContext2D, v: Vulkan, o: 
     if (v.ausbruch!.schlot.art === "gipfel") schlot = { x: zx, y: y(gipfelSaeule.g + gipfelSaeule.l) };
     else { const gg = gaenge.find(x => x.aktiv); if (gg) schlot = { x: gg.x, y: gg.yv }; }
   }
-  return { ueberhoehung, oberflaeche, schlot };
+  return { ueberhoehung, oberflaeche, schlot, mitteX: xc };
 }
 
 /** Formen auf der Karte beschriften (Zellkoordinaten) */
@@ -290,22 +304,26 @@ export function vulkanMarken(v: Vulkan, seen: Uint8Array): Marke[] {
   if (v.platte) {
     const hi = v.mitte % n, hj = Math.floor(v.mitte / n);
     aus.push({ text: "🔥 Hotspot", erklaerung: "Hier steigt ein Mantelplume auf und schmilzt die Platte von unten an. Er bleibt an Ort und Stelle — die Platte wandert darüber hinweg.", x: hi + 0.5, y: hj + 8 });
+    const jung = hotspotPhase(v);
+    if (v.nr > 0 && jung.gipfel > -2600) aus.push(jung.phase === "insel"
+      ? { text: `🌋 junge Insel ${Math.round(jung.gipfel)} m`, erklaerung: "Der jüngste Vulkan sitzt noch über dem Hotspot und wächst — bis die Platte ihn fortträgt.", x: hi - 3, y: hj - 6 }
+      : { text: `🌊 junger Seamount ${Math.round(jung.gipfel)} m`, erklaerung: "Ein neuer Vulkan wächst am Meeresboden über dem Hotspot. Erst nach vielen Ausbrüchen erreicht er die Wasseroberfläche (wie heute Kamaʻehuakanaloa vor Hawaii).", x: hi - 3, y: hj - 6 });
     for (const g of kette(v)) {
-      if (Math.abs(g.i - hi) < 4) continue;
+      if (g.i > hi - 13) continue;
       const alter = g.alter.toFixed(1).replace(".", ",");
       aus.push(g.insel
         ? { text: `🏝️ ${alter} Mio. J.`, erklaerung: `Vulkaninsel, ${Math.round(g.hoehe)} m hoch. Sie lag vor etwa ${alter} Mio. Jahren über dem Hotspot; seitdem ist sie erloschen, sinkt langsam und wird abgetragen.`, x: g.i + 0.5, y: g.j - 3 }
         : { text: `🌊 Seamount ${alter} Mio. J.`, erklaerung: `Ehemalige Vulkaninsel, heute ${Math.round(-g.hoehe)} m unter dem Meeresspiegel: abgetragen und abgesunken.`, x: g.i + 0.5, y: g.j - 3 });
     }
   }
-  const c = Math.floor(n / 2), k0 = c * n + c;
+  const ci = v.mitte % n, cj = Math.floor(v.mitte / n), k0 = v.mitte;
   let rand = -Infinity;
   for (let dj = -4; dj <= 4; dj++) for (let di = -4; di <= 4; di++) if (Math.hypot(di, dj) > 2.5) rand = Math.max(rand, G[k0 + dj * n + di]);
   const hoch = G[k0] - start[k0];
   if (v.calderen.length) {
     const cal = v.calderen[v.calderen.length - 1];
     aus.push({ text: "⭕ Caldera", erklaerung: "Die Magmakammer hat sich bei einem riesigen Ausbruch geleert, der Gipfel ist hineingesackt.", x: cal.i + 0.5, y: cal.j + 0.5 - cal.r });
-  } else if (hoch > 50 && rand - G[k0] > 15) aus.push({ text: "🕳️ Krater", erklaerung: "Explosionen haben die Mündung des Schlots aufgesprengt.", x: c + 0.5, y: c - 2 });
+  } else if (!v.platte && hoch > 50 && rand - G[k0] > 15) aus.push({ text: "🕳️ Krater", erklaerung: "Explosionen haben die Mündung des Schlots aufgesprengt.", x: ci + 0.5, y: cj - 2 });
   const gezeigt: { i: number; j: number }[] = [];
   for (const s of [...v.schlote].reverse()) {
     if (v.platte) break;
@@ -325,7 +343,7 @@ export function vulkanMarken(v: Vulkan, seen: Uint8Array): Marke[] {
   let sx = 0, sy = 0, sz = 0;
   for (let k = 0; k < n * n; k++) if (seen[k]) { sx += k % n; sy += Math.floor(k / n); sz++; }
   if (sz >= 4) aus.push({ text: "💧 Kratersee", erklaerung: "Regenwasser sammelt sich im Krater, der nirgends abfließen kann.", x: sx / sz + 0.5, y: sy / sz + 0.5 });
-  if (!v.platte && v.meer !== null && Math.max(...Array.from(G)) > v.meer + 20 && hoch > 0) aus.push({ text: "🏝️ Vulkaninsel", erklaerung: "Der Vulkan ist vom Meeresboden bis über den Meeresspiegel gewachsen — wie Hawaii.", x: c + 6, y: c + 10 });
+  if (!v.platte && v.meer !== null && Math.max(...Array.from(G)) > v.meer + 20 && hoch > 0) aus.push({ text: "🏝️ Vulkaninsel", erklaerung: "Der Vulkan ist vom Meeresboden bis über den Meeresspiegel gewachsen — wie Hawaii.", x: ci + 6, y: cj + 10 });
   return aus;
 }
 

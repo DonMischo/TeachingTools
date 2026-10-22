@@ -8,7 +8,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { wahl as vorgabeWahl, type Vorgabe } from "@/lib/vorgabe";
 import {
-  ausbrechen, caldera, explosivAnteil, jahreJeAusbruch, kennzahlen, lavaWerte, schritt, STOFFE, TYPEN, vulkanStart,
+  ausbrechen, caldera, explosivAnteil, hotspotPhase, jahreJeAusbruch, kennzahlen, lavaWerte, schritt, STOFFE, TYPEN, vulkanStart,
   type Magma, type Stoff, type TypId, type Vulkan as VulkanZustand,
 } from "@/lib/vulkan/modell";
 import { kartenFarben, kraterseen, schnittLinie, vulkanMarken, zeichneQuerschnitt, type SchnittGeometrie } from "@/lib/vulkan/zeichnen";
@@ -135,7 +135,7 @@ export default function Vulkan({ action, vorgabe }: { action?: ReactNode; vorgab
     let ort = geo?.schlot ?? null;
     // Schlot unter dem Meer: die Säule bricht an der Wasseroberfläche durch
     if (ort && geo) ort = { x: ort.x, y: Math.min(ort.y, geo.oberflaeche[Math.max(0, Math.min(geo.oberflaeche.length - 1, Math.round(ort.x / 2)))]) };
-    if (!ort && calderaJetzt && geo) ort = { x: SCHNITT_W / 2, y: geo.oberflaeche[Math.floor(geo.oberflaeche.length / 2)] };
+    if (!ort && calderaJetzt && geo) ort = { x: geo.mitteX, y: geo.oberflaeche[Math.max(0, Math.min(geo.oberflaeche.length - 1, Math.round(geo.mitteX / 2)))] };
     const aktiv = ort && (explosiv > 0 || lava > 0 || glut);
     quelleSetzen(s, aktiv ? { x: ort!.x / SAND_PX, y: ort!.y / SAND_PX, explosiv, lava, glut, dampf: a?.wasser === "flach" } : null, entlang);
     if (s.quelle || s.anzahl > 0) {
@@ -209,6 +209,7 @@ export default function Vulkan({ action, vorgabe }: { action?: ReactNode; vorgab
   const explosiv = explosivAnteil(magma);
   const linie = schnittLinie(v, (winkel * Math.PI) / 180);
   const a = v.ausbruch;
+  const hp = v.platte ? hotspotPhase(v) : null;
 
   const typWaehlen = (t: TypId) => { setTyp(t); setMagma({ ...TYPEN.find(x => x.id === t)!.magma }); setHotspot(t === "hotspot"); neu(seed, meer, t === "hotspot"); };
   const beschreibung = typ === "eigen" ? "Eigenes Magma: Schiebe Kieselsäure und Gas und schau, welche Form entsteht." : TYPEN.find(t => t.id === typ)!.text;
@@ -310,7 +311,10 @@ export default function Vulkan({ action, vorgabe }: { action?: ReactNode; vorgab
               <div className="font-bold">😴 Ruhe · {v.nr} Ausbrüche bisher{raffer > 0 ? ` · ⏩ noch ${raffer}` : ""}</div>
             )}
             {v.platte && (
-              <div className="text-xs text-muted mt-1">🌺 Hotspot: 1 Ausbruch ≈ {Math.round(jahreJeAusbruch(v) / 1000).toLocaleString("de-DE")} 000 Jahre · Platte bisher {((v.nr * jahreJeAusbruch(v)) / 1e6).toFixed(1).replace(".", ",")} Mio. Jahre gewandert</div>
+              <div className="text-xs mt-1 flex flex-col gap-0.5">
+                <span>{v.nr === 0 ? "🔥 Über dem Hotspot ist noch flacher Meeresboden, 3000 m tief. Westlich liegen ältere Inseln — starte die Ausbrüche!" : hp!.phase === "seamount" ? `🌊 Der junge Vulkan wächst unter Wasser — Gipfel ${Math.round(-hp!.gipfel)} m tief.` : hp!.phase === "flach" ? `💨 Gipfel nur ${Math.round(-hp!.gipfel)} m unter dem Meer: Dampfexplosionen (surtseyanisch).` : `🏝️ Die junge Insel ist ${Math.round(hp!.gipfel)} m hoch.`}</span>
+                <span className="text-muted">Nachschub aus dem Plume: {hp!.schub > 0.6 ? "stark" : hp!.schub > 0.25 ? "mittel" : "schwach — die Platte trägt den Vulkan fort, bis der nächste Schub kommt"} · 1 Ausbruch ≈ {Math.round(jahreJeAusbruch(v) / 1000)} 000 Jahre · Platte bisher {((v.nr * jahreJeAusbruch(v)) / 1e6).toFixed(1).replace(".", ",")} Mio. Jahre gewandert</span>
+              </div>
             )}
           </div>
           <label className="text-xs text-muted">⏱️ Tempo: {tempo} Schritte je Bild
