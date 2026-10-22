@@ -11,6 +11,7 @@ import { Sprite, type Frame } from "@/components/challenge/pixel/Sprite";
 import { Inhalt } from "../teile";
 import { wenigerBewegung } from "@/lib/challenge/bewegung";
 import { Szene, type Anim, type Zahl } from "./Szene";
+import { LebensBalken } from "@/components/challenge/LebensBalken";
 import { EP_SIEG, epBalken, levelVon } from "@/lib/challenge/bossKarte";
 
 const LOG = "/challenge/pixel/gfx/log.png";
@@ -111,9 +112,7 @@ export default function Kampf({ theme, fakten, ep = 0, stufe = 1, zaehe = 0, onS
       <p className="font-bold">{text}</p>
       <div className="flex items-center gap-2 text-sm">
         <span className="font-bold">KP</span>
-        <div role="progressbar" aria-label="Lebenspunkte des Helden" aria-valuemin={0} aria-valuemax={HELD_KP} aria-valuenow={kp} className="h-3 w-40 rounded bg-black/30 overflow-hidden border border-line">
-          <div className="h-full" style={{ width: `${(kp / HELD_KP) * 100}%`, background: kp > 15 ? "#4ade80" : kp > 5 ? "#facc15" : "#ef4444" }} />
-        </div>
+        <LebensBalken wert={kp} max={HELD_KP} label="Lebenspunkte des Helden" className="h-3 w-40 rounded" />
         <span>{kp}/{HELD_KP}</span>
         {ansage && <span className="font-bold text-bad" role="status">{langsam ? "Achtung: Angriff! Klicke jetzt, um zu parieren." : "⚠️"}</span>}
       </div>

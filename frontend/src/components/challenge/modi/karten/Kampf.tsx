@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react";
 import type { ChallengeAntwort } from "@/lib/api";
 import type { ModusProps } from "../typen";
 import { Herzen, Inhalt, Treffermeldung } from "../teile";
+import { LebensBalken } from "@/components/challenge/LebensBalken";
 import { PixelMatrix } from "../../pixel/Matrix";
 import { BestenlisteKnopf } from "../../Bestenliste";
 import { useSpielwert } from "@/lib/challenge/useSpielwert";
@@ -88,10 +89,7 @@ export default function Kampf({ brett, theme, lauf, zurKarte, seed, lagerKnopf, 
       <div className="card p-3 flex items-center gap-3" style={{ background: theme.farben.boden }}>
         <div key={`g${schlag}${wackel}`} className={`text-5xl ${schlag ? "kt-schlag" : ""} ${wackel ? "kt-wackel" : ""}`} aria-hidden>👹</div>
         <div className="flex-1 flex flex-col gap-1">
-          <div role="progressbar" aria-label="Lebensbalken des Gegners" aria-valuemin={0} aria-valuemax={gesamt} aria-valuenow={hp}
-            className="h-4 rounded-full overflow-hidden border-2 border-line bg-surface">
-            <div className="h-full bg-bad transition-all duration-500" style={{ width: `${gesamt ? (100 * hp) / gesamt : 0}%` }} />
-          </div>
+          <LebensBalken wert={hp} max={gesamt} label="Lebensbalken des Gegners" className="h-4 rounded-full border-2" />
           <div className="relative h-5 text-sm" aria-live="polite">
             {gegnerZug > 0 && <span key={gegnerZug} className="kt-wackel">Der Gegner holt aus … und stolpert. Nichts passiert.</span>}
             {zahl && <span key={zahl.n} className="kt-zahl absolute right-2 top-0 font-bold text-bad">−{zahl.wert}</span>}

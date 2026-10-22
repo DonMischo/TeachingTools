@@ -3,6 +3,7 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { Passend } from "@/components/challenge/pixel/Passend";
 import { wenigerBewegung } from "@/lib/challenge/bewegung";
+import { LebensBalken } from "@/components/challenge/LebensBalken";
 
 export type Anim = { art: "lunge" | "treffer" | "wackel" | "weg"; n: number } | null;
 export type Zahl = { id: number; wert: number };
@@ -38,16 +39,12 @@ function Tippe({ text }: { text: string }) {
 }
 
 function Box({ name, hp, max, label, klasse, stil, kuerzel = "KP", farbe }: { name: string; hp: number; max: number; label?: string; klasse?: string; stil: CSSProperties; kuerzel?: string; farbe?: string }) {
-  const p = max ? Math.max(0, Math.min(1, hp / max)) : 0;
   return (
     <div className={`absolute bg-surface border-2 border-line rounded-lg px-2 py-1 w-[200px] shadow ${klasse ?? ""}`} style={stil}>
       <div className="text-sm font-bold">{name}</div>
       <div className="flex items-center gap-1">
         <span className="text-xs font-bold text-muted">{kuerzel}</span>
-        <div role={label ? "progressbar" : undefined} aria-label={label} aria-valuemin={label ? 0 : undefined} aria-valuemax={label ? max : undefined} aria-valuenow={label ? hp : undefined}
-          aria-hidden={label ? undefined : true} className="h-3 flex-1 rounded bg-black/30 overflow-hidden border border-line">
-          <div className="h-full transition-[width] duration-300" style={{ width: `${p * 100}%`, background: farbe ?? (p > 0.5 ? "#4ade80" : p > 0.2 ? "#facc15" : "#ef4444") }} />
-        </div>
+        <LebensBalken wert={hp} max={max} label={label} farbe={farbe} warnen={!farbe} className="h-3 flex-1 rounded" />
       </div>
     </div>
   );
