@@ -35,7 +35,7 @@ export default function Stromkreis({ action, start }: { action?: ReactNode; star
   const schaltung = verlauf.liste[verlauf.pos];
   const [auswahl, setAuswahl] = useState<Auswahl | null>(null);
   const [werkzeug, setWerkzeug] = useState<Werkzeug>("auswahl");
-  const [anzeige, setAnzeige] = useState<Anzeige>({ laufend: true, tempo: 1, elektronen: false, farbig: true });
+  const [anzeige, setAnzeige] = useState<Anzeige>({ laufend: true, tempo: 1, elektronen: false, farbig: true, stil: "schaltplan" });
   const [einpassen, setEinpassen] = useState(0);
   const [neustart, setNeustart] = useState(0);
   const [osziId, setOsziId] = useState<string | null>(null);
@@ -138,6 +138,10 @@ export default function Stromkreis({ action, start }: { action?: ReactNode; star
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
+        <div className="inline-flex rounded-xl border border-line p-1 bg-surface">
+          <button className={chip(anzeige.stil === "schaltplan")} onClick={() => setAnzeige(a => ({ ...a, stil: "schaltplan" }))}>Schaltplan</button>
+          <button className={chip(anzeige.stil === "realistisch")} onClick={() => setAnzeige(a => ({ ...a, stil: "realistisch" }))}>Realistisch</button>
+        </div>
         <button className="btn btn-primary" onClick={() => setAnzeige(a => ({ ...a, laufend: !a.laufend }))}>
           {anzeige.laufend ? "⏸ Anhalten" : "▶ Weiter"}
         </button>
@@ -162,7 +166,7 @@ export default function Stromkreis({ action, start }: { action?: ReactNode; star
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[170px_minmax(0,1fr)_280px]">
-        <div className="order-2 lg:order-1"><Palette werkzeug={werkzeug} setWerkzeug={setWerkzeug} /></div>
+        <div className="order-2 lg:order-1"><Palette werkzeug={werkzeug} setWerkzeug={setWerkzeug} stil={anzeige.stil} /></div>
         <div className="order-1 lg:order-2 flex flex-col gap-3 min-w-0">
           <Zeichenflaeche
             schaltung={schaltung} sim={sim} auswahl={auswahl} setAuswahl={setAuswahl}

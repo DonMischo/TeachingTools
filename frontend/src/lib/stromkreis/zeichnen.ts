@@ -24,6 +24,8 @@ export interface Zeichenzustand {
   /** Farbe je Anschluss (Reihenfolge wie `anschluesse`). */
   pinFarben?: string[];
   ausgewaehlt?: boolean;
+  /** Messgeräte in der realistischen Ansicht: was im Display steht. */
+  anzeigeText?: string;
 }
 
 /** Leuchtfarben der LED, passend zu `LED_FARBEN`. */

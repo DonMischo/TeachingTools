@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Schaltung } from "@/lib/stromkreis/modell";
 import { drehe, fuegeBauteilHinzu, fuegeDrahtHinzu, LEER, loesche, normalisiere, treffer, verschiebe, verschiebeEnde } from "@/lib/stromkreis/editor";
+import { farbringe } from "@/lib/stromkreis/farbringe";
 import { formatiere } from "@/lib/stromkreis/format";
 import { schrittweite } from "@/lib/stromkreis/lauf";
 import { Simulation } from "@/lib/stromkreis/simulation";
@@ -93,5 +94,20 @@ describe("Anzeige", () => {
     const ac: Schaltung = { ...LEER, bauteile: [{ id: "q", art: "wechselquelle", a: P(0, 0), b: P(0, 4), werte: { frequenz: 50 } }] };
     expect(schrittweite(ac)).toBeCloseTo(2e-4, 10);
     expect(schrittweite(LEER)).toBe(1e-3);
+  });
+});
+
+describe("Farbringe", () => {
+  const namen = (ohm: number) => farbringe(ohm).map(r => r.name).join(" ");
+  it("liest Schulwerte richtig", () => {
+    expect(namen(100)).toBe("braun schwarz braun gold");
+    expect(namen(470)).toBe("gelb violett braun gold");
+    expect(namen(4700)).toBe("gelb violett rot gold");
+    expect(namen(10)).toBe("braun schwarz schwarz gold");
+    expect(namen(1)).toBe("braun schwarz gold gold");
+    expect(namen(2.2)).toBe("rot rot gold gold");
+    expect(namen(1e6)).toBe("braun schwarz grün gold");
+    // auf zwei Stellen gerundet, auch über die Stufe hinweg
+    expect(namen(996)).toBe("braun schwarz rot gold");
   });
 });

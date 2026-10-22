@@ -14,6 +14,7 @@ import { TEILE } from "@/lib/stromkreis/teile";
 import type { Simulation } from "@/lib/stromkreis/simulation";
 import { fuegeBauteilHinzu, fuegeDrahtHinzu, treffer, verschiebe, verschiebeEnde, type Auswahl } from "@/lib/stromkreis/editor";
 import { hatWechsel, hoechstspannung, schrittweite } from "@/lib/stromkreis/lauf";
+import { zeichneRealistisch } from "@/lib/stromkreis/realistisch";
 import { formatiere } from "@/lib/stromkreis/format";
 import {
   potenzialFarbe, strompfade, wertText, zeichneBauteil, zeichneBeschriftung, zeichnePunkte, type Farben,
@@ -31,6 +32,8 @@ export interface Anzeige {
   elektronen: boolean;
   /** Leitungen nach ihrem Potenzial einfärben. */
   farbig: boolean;
+  /** Schaltzeichen oder Bauteile wie im Experimentierkasten. */
+  stil: "schaltplan" | "realistisch";
 }
 
 /** Mittel der Quadrate; beim Trafo auch für die Sekundärseite. */
@@ -222,6 +225,9 @@ export default function Zeichenflaeche(props: Props) {
     const farbe = (q: Punkt) => (sim && p.anzeige.farbig ? potenzialFarbe(sim.potenzial(q), vmax, f.neutral) : f.linie);
     const ausw = p.auswahl;
 
+    const echt = p.anzeige.stil === "realistisch";
+    const male = echt ? zeichneRealistisch : zeichneBauteil;
+
     // Drähte
     ctx.lineCap = "round";
     for (const d of s.draehte) {
@@ -231,28 +237,36 @@ export default function Zeichenflaeche(props: Props) {
         ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
         ctx.globalAlpha = 1;
       }
-      ctx.strokeStyle = farbe(d.a); ctx.lineWidth = 3;
+      if (echt) {
+        // Kabel: dunkle Ummantelung, darin die Farbe
+        ctx.strokeStyle = "rgba(0,0,0,0.55)"; ctx.lineWidth = 7;
+        ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+      }
+      ctx.strokeStyle = echt && !p.anzeige.farbig ? "#cbd5e1" : farbe(d.a); ctx.lineWidth = echt ? 4.5 : 3;
       ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
     }
 
     // Bauteile mit Beschriftung
     for (const t of s.bauteile) {
       const m = sim?.messung(t.id);
-      const werte = { ...t.werte };
-      zeichneBauteil(ctx, t, px, rr, {
-        messung: m, werte: { ...werteMitStandard(t), ...werte },
-        pinFarben: anschluesse(t).map(farbe),
-        ausgewaehlt: ausw?.art === "bauteil" && ausw.id === t.id,
-      }, f);
+      const messer = t.art === "amperemeter" || t.art === "voltmeter";
       let text = wertText(t, werteMitStandard(t), formatiere);
-      if ((t.art === "amperemeter" || t.art === "voltmeter") && m) {
+      if (messer && m) {
         const einheit = t.art === "amperemeter" ? "A" : "V";
         const roh = t.art === "amperemeter" ? m.strom : m.spannung;
         const eff = p.mittel.current.get(t.id);
         const q = eff && (t.art === "amperemeter" ? eff.i : eff.u);
         text = wechsel && q !== undefined ? `${formatiere(Math.sqrt(q), einheit)} ~` : formatiere(roh, einheit);
       }
-      if (rr >= 12) zeichneBeschriftung(ctx, t, px, rr, text, f);
+      male(ctx, t, px, rr, {
+        messung: m, werte: werteMitStandard(t),
+        pinFarben: anschluesse(t).map(farbe),
+        ausgewaehlt: ausw?.art === "bauteil" && ausw.id === t.id,
+        anzeigeText: messer ? text : undefined,
+      }, f);
+      // Realistisch steht der Messwert im Display, die übrigen Werte stehen daneben
+      const daneben = echt ? (messer || t.art === "batterie" || t.art === "wechselquelle" ? "" : text) : text;
+      if (rr >= 12) zeichneBeschriftung(ctx, t, px, rr, daneben, f);
     }
 
     // Strompunkte
@@ -318,7 +332,7 @@ export default function Zeichenflaeche(props: Props) {
       } else {
         const neu = fuegeBauteilHinzu({ version: 1, bauteile: [], draehte: [] }, z.werkzeug, z.von, gleichAchse(z.werkzeug, z.von, z.bis));
         ctx.globalAlpha = 0.6;
-        zeichneBauteil(ctx, neu.schaltung.bauteile[0], px, rr, { werte: werteMitStandard(neu.schaltung.bauteile[0]) }, f);
+        male(ctx, neu.schaltung.bauteile[0], px, rr, { werte: werteMitStandard(neu.schaltung.bauteile[0]) }, f);
         ctx.globalAlpha = 1;
       }
     } else if (zg && p.werkzeug !== "auswahl" && !z) {
@@ -329,7 +343,7 @@ export default function Zeichenflaeche(props: Props) {
       if (p.werkzeug !== "draht") {
         const neu = fuegeBauteilHinzu({ version: 1, bauteile: [], draehte: [] }, p.werkzeug, q);
         ctx.globalAlpha = 0.35;
-        zeichneBauteil(ctx, neu.schaltung.bauteile[0], px, rr, { werte: werteMitStandard(neu.schaltung.bauteile[0]) }, f);
+        male(ctx, neu.schaltung.bauteile[0], px, rr, { werte: werteMitStandard(neu.schaltung.bauteile[0]) }, f);
         ctx.globalAlpha = 1;
       }
     }
