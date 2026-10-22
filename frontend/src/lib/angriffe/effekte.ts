@@ -1,6 +1,6 @@
 /**
  * Elementar-Angriffe für 3D-Kämpfe (Bosskampf): ein Baukasten aus Spitzen, Partikeln, Brocken,
- * Rissen, Bodenscheiben, Druckwellen, Lichtsäulen, Blitzen, Ranken und Flammen, dazu elf Elemente,
+ * Rissen, Bodenscheiben, Druckwellen, Lichtsäulen, Blitzen, Ranken und Flammen, dazu achtzehn Elemente (Heilung wirkt auf den Täter selbst),
  * die daraus jeweils Weg, Treffer und Finale zusammensetzen. Alles hängt an einer Szene;
  * effektWelt() erzeugt Texturen und Materialien erst im Browser.
  */
@@ -9,13 +9,14 @@ import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment
 import { mergeGeometries, mergeVertices } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 
 export type ElementId = "eis" | "feuer" | "erde" | "blitz" | "pflanzen" | "dunkel" | "gift" | "blut" | "schatten" | "fee" | "wind"
-  | "schall" | "licht" | "klingen" | "arkan";
+  | "schall" | "licht" | "klingen" | "arkan" | "wasser" | "sterne" | "heilung";
 export const ELEMENTE: { id: ElementId; name: string; icon: string }[] = [
   { id: "eis", name: "Eis", icon: "❄️" }, { id: "feuer", name: "Feuer", icon: "🔥" }, { id: "erde", name: "Erde", icon: "🪨" },
   { id: "blitz", name: "Blitz", icon: "⚡" }, { id: "pflanzen", name: "Pflanzen", icon: "🌿" }, { id: "dunkel", name: "Dunkelheit", icon: "🌑" },
   { id: "gift", name: "Gift", icon: "☠️" }, { id: "blut", name: "Blut", icon: "🩸" }, { id: "schatten", name: "Schatten", icon: "👤" },
   { id: "fee", name: "Fee", icon: "🧚" }, { id: "wind", name: "Wind", icon: "🌪️" }, { id: "schall", name: "Schall", icon: "🔊" },
   { id: "licht", name: "Licht", icon: "✨" }, { id: "klingen", name: "Klingen", icon: "⚔️" }, { id: "arkan", name: "Arkan", icon: "🔮" },
+  { id: "wasser", name: "Wasser", icon: "🌊" }, { id: "sterne", name: "Sterne", icon: "🌌" }, { id: "heilung", name: "Heilung", icon: "🍃" },
 ];
 
 type V3 = THREE.Vector3;
@@ -1650,6 +1651,243 @@ export function effektWelt(scene: THREE.Scene, renderer: THREE.WebGLRenderer) {
     a.ende = ankunft + 3.0;
   }
 
+  // 🌊 Wasser: eine Welle rollt heran und wächst, bricht über dem Opfer, sperrt es in eine wabernde Wasserblase; die platzt, ein Geysir schießt hoch
+  const WASSER = [0x1e78d8, 0x3aa0f0, 0x7fd0ff], GISCHT: Rgb = [0.8, 1.15, 1.5];
+  /** Wellenkamm als Band: hinten flach vom Boden, oben der Kamm, vorn überkippende Lippe (lokal: x quer, y oben, z vorwärts) */
+  const wellenGeo = (() => {
+    const profil = [[-1.3, 0], [-0.8, 0.12], [-0.35, 0.45], [0, 0.85], [0.25, 1.02], [0.5, 0.98], [0.66, 0.8], [0.62, 0.58], [0.48, 0.46]];
+    const nx = 24, pos: number[] = [], uv: number[] = [], idx: number[] = [];
+    for (let i = 0; i <= nx; i++) {
+      const u = i / nx, x = u - 0.5, rand = Math.sin(Math.PI * u) ** 0.6; // an den Enden flacher
+      profil.forEach(([z, y], j) => { pos.push(x, y * rand, z * (0.6 + 0.4 * rand)); uv.push(u, j / (profil.length - 1)); });
+    }
+    const n = profil.length;
+    for (let i = 0; i < nx; i++) for (let j = 0; j < n - 1; j++) { const a = i * n + j, b = a + n; idx.push(a, b, a + 1, b, b + 1, a + 1); }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+    g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
+    g.setIndex(idx);
+    g.computeVertexNormals();
+    return g;
+  })();
+  wegwerfen.push(wellenGeo);
+  const wellenMat = () => new THREE.ShaderMaterial({
+    uniforms: { uZeit: { value: 0 }, uA: { value: 0 } },
+    vertexShader: `varying vec2 vUv; varying vec3 vN; varying vec3 vV; uniform float uZeit;
+      void main() { vUv = uv; vec3 p = position; p.y += sin(p.x * 9.0 + uZeit * 7.0) * 0.04 * uv.y;
+        vec4 mv = modelViewMatrix * vec4(p, 1.0); vN = normalize(normalMatrix * normal); vV = -mv.xyz; gl_Position = projectionMatrix * mv; }`,
+    fragmentShader: `varying vec2 vUv; varying vec3 vN; varying vec3 vV; uniform float uZeit; uniform float uA;
+      void main() {
+        float f = 1.0 - abs(dot(normalize(vN), normalize(vV)));
+        vec3 tief = vec3(0.01, 0.1, 0.32), hell = vec3(0.1, 0.45, 0.85);
+        vec3 c = mix(tief, hell, smoothstep(0.1, 0.75, vUv.y)) + vec3(0.1, 0.25, 0.4) * pow(f, 2.0);
+        float streifen = sin(vUv.x * 46.0 + uZeit * 5.0 + sin(vUv.y * 12.0 - uZeit * 9.0) * 2.0);
+        float schaum = smoothstep(0.62, 0.86, vUv.y + 0.12 * streifen);
+        c = mix(c, vec3(0.85, 0.95, 1.05), schaum);
+        gl_FragColor = vec4(c, uA * (0.6 + 0.3 * vUv.y + 0.1 * schaum));
+      }`,
+    transparent: true, depthWrite: false, side: THREE.DoubleSide,
+  });
+  const wasserTropfen = (p: V3, vel: V3, g = 1) => tropfen.wurf(p, vel, zufall(0.6, 1.2) * g, zufall(0.8, 1.4), wahl(WASSER));
+  const gischt = (p: V3, staerke = 1) => leucht.wurf(p, P().randomDirection().multiplyScalar(zufall(0.5, 2) * staerke).setY(zufall(1, 3) * staerke),
+    { farbe: GISCHT, farbe2: [0.2, 0.5, 1.0], dauer: zufall(0.4, 0.9), g0: 0.18, g1: 0.05, alpha: 0.7, zug: 2, schwer: 3 });
+  const dunst = (p: V3, alpha = 0.3) => rauch.wurf(p, P(zufall(-0.4, 0.4), zufall(0.3, 0.9), zufall(-0.4, 0.4)), { farbe: [0.6, 0.8, 0.95], dauer: zufall(1, 1.8), g0: 0.5, g1: 1.8, alpha, zug: 1.2 });
+  const luftblase = (p: V3, g = 1) => blasen.wurf(p, P(zufall(-0.1, 0.1), zufall(0.6, 1.2), zufall(-0.1, 0.1)), zufall(0.5, 1.1) * g, zufall(0.6, 1.1), 0x9adfff, { schwer: -0.5, blase: true });
+  const blasenMat = () => new THREE.ShaderMaterial({
+    uniforms: { uZeit: { value: 0 }, uA: { value: 0 } },
+    vertexShader: `varying vec3 vN; varying vec3 vV; uniform float uZeit;
+      void main() { vec3 p = position * (1.0 + 0.05 * sin(position.y * 6.0 + uZeit * 6.0) + 0.04 * sin(position.x * 7.0 - uZeit * 5.0));
+        vec4 mv = modelViewMatrix * vec4(p, 1.0); vN = normalize(normalMatrix * normal); vV = -mv.xyz; gl_Position = projectionMatrix * mv; }`,
+    fragmentShader: `varying vec3 vN; varying vec3 vV; uniform float uA;
+      void main() { float f = 1.0 - abs(dot(normalize(vN), normalize(vV)));
+        gl_FragColor = vec4(mix(vec3(0.05, 0.3, 0.7), vec3(0.6, 1.4, 2.0), pow(f, 1.6)), uA * (0.25 + 0.7 * pow(f, 1.5))); }`,
+    transparent: true, depthWrite: false, side: THREE.DoubleSide,
+  });
+  function planWasser(a: Angriff) {
+    const H = a.opfer.hoehe, mat = wellenMat(), welleMesh = new THREE.Mesh(wellenGeo, mat);
+    welleMesh.quaternion.setFromRotationMatrix(_m.makeBasis(a.seite, OBEN, a.dir));
+    welleMesh.visible = false;
+    scene.add(welleMesh);
+    a.bei(0, () => {
+      welleMesh.visible = true;
+      ablauf(a.reise + 0.35, (t) => { // die Welle rollt an und wächst, am Ende kippt sie über das Opfer
+        const r = Math.min(1, t / a.reise), s = a.stopp * easeOutCubic(r) * 0.92 + 0.3, gross = 0.7 + 1.5 * r;
+        welleMesh.position.copy(a.punkt(s));
+        const brechen = Math.max(0, (t - a.reise) / 0.35);
+        welleMesh.scale.set(1.6 + 2.2 * r, gross * (1 - brechen * 0.6), gross * (1 + brechen * 0.8));
+        mat.uniforms.uZeit.value = t;
+        mat.uniforms.uA.value = Math.min(1, t * 5) * (1 - brechen);
+      }, () => entfernen(welleMesh, mat));
+    });
+    a.spur(0.22, (s, f, t, p) => { // Gischt am Kamm, Pfützen und Spritzer dahinter
+      scheibe(a.punkt(s, zufall(-0.25, 0.25)), { farbe: 0x0a3a6a, additiv: false, alpha: 0.55, groesse: 0.8 + f * 1.4, halten: a.finale + 1.4 - t, wachs: 0.2 });
+      for (let i = 0; i < 4; i++) gischt(a.punkt(s + 0.3, zufall(-0.6, 0.6) * (0.6 + f), 0.4 + f * 1.1), 0.8 + f);
+      for (let i = 0; i < 3; i++) wasserTropfen(a.punkt(s, zufall(-0.5, 0.5) * (0.6 + f), 0.3 + f), a.dir.clone().multiplyScalar(zufall(1, 3)).setY(zufall(2, 4)));
+      if (Math.random() < 0.5) dunst(p, 0.2);
+    });
+    a.bei(a.reise, () => { // die Welle bricht über dem Opfer
+      const m = a.mitte();
+      for (let i = 0; i < 120; i++) { v.randomDirection(); v.y = Math.abs(v.y) * 1.5 + 0.4; v.addScaledVector(a.dir, 0.8).normalize().multiplyScalar(zufall(2, 7)); wasserTropfen(m, v); }
+      for (let i = 0; i < 20; i++) gischt(m, 1.6);
+      scheibe(a.ziel, { farbe: 0x0a3a6a, additiv: false, alpha: 0.7, groesse: 4.5, halten: 2.6 });
+      scheibe(a.ziel, { farbe: 0x3aa0f0, alpha: 0.35, groesse: 3.6, halten: 2.6 });
+      a.treffer({ tint: 0x6ab8ff, staerke: 0.7, blitz: [0.5, 1.2, 2.2], stoss: 0.35, dir: a.dir });
+      ruetteln(0.35);
+    });
+    a.bei(a.reise + 0.15, () => { // Wasserblase schließt das Opfer ein
+      const bmat = blasenMat(), blase = new THREE.Mesh(schaleGeo, bmat), r = Math.max(0.9, H * 0.62);
+      blase.position.copy(a.mitte());
+      scene.add(blase);
+      ablauf(1.15, (t) => {
+        blase.scale.setScalar(r * easeOutBack(Math.min(1, t / 0.25)));
+        bmat.uniforms.uZeit.value = t;
+        bmat.uniforms.uA.value = Math.min(1, t * 6);
+      }, () => entfernen(blase, bmat));
+      strom(1.1, 30, () => luftblase(a.mitte(zufall(0.2, H * 0.9)).add(P(zufall(-0.5, 0.5), 0, zufall(-0.5, 0.5))), 0.8));
+    });
+    a.bei(a.reise + 1.3, () => { // sie platzt, ein Geysir schießt hoch
+      const m = a.mitte();
+      saeule(a.ziel, { farbe: [0.15, 0.5, 1.1], r: 1.0, h: 7, dauer: 1.0 });
+      strom(0.8, 90, () => wasserTropfen(a.ziel.clone().add(P(zufall(-0.4, 0.4), 0.2, zufall(-0.4, 0.4))), P(zufall(-1.5, 1.5), zufall(8, 13), zufall(-1.5, 1.5)), 1.2));
+      for (let i = 0; i < 160; i++) wasserTropfen(m, P().randomDirection().multiplyScalar(zufall(3, 8)).setY(zufall(1, 6)));
+      for (let i = 0; i < 25; i++) gischt(m.clone().add(P().randomDirection().multiplyScalar(H * 0.4)), 2);
+      for (let i = 0; i < 24; i++) dunst(a.ziel.clone().add(P(zufall(-1.2, 1.2), zufall(0.2, H), zufall(-1.2, 1.2))), 0.35);
+      for (let i = 0; i < 3; i++) welle(a.ziel, { farbe: [0.2, 0.6, 1.2], r: 3 + i * 1.6, dauer: 0.7 + i * 0.25 });
+      strom(1.0, 45, () => wasserTropfen(a.ziel.clone().add(P(zufall(-2.5, 2.5), zufall(3, 5), zufall(-2.5, 2.5))), P(0, -2, 0), 0.8), 0.5); // Regen fällt zurück
+      aufblitzen(m, 0x5ab8ff, 60);
+      a.opfer.blitz = 1;
+      a.opfer.stoss.copy(a.dir).multiplyScalar(0.45);
+      ruetteln(0.55);
+    });
+    a.bei(a.reise + 3.0, a.loesen);
+    a.ende = a.reise + 3.4;
+  }
+
+  // 🌌 Sterne: es wird Nacht, Sterne gehen auf, ein Komet zieht zum Opfer, über ihm dreht sich eine Galaxie; Sternschnuppen schlagen ein, Supernova
+  const STERNE: Rgb[] = [[2.2, 2.2, 2.6], [1.4, 1.7, 2.8], [2.6, 2.1, 1.2], [2.0, 1.2, 2.6]];
+  const GALAXIE = zeichne(512, (g, s) => {
+    const m = s / 2;
+    const kern = g.createRadialGradient(m, m, 0, m, m, s * 0.2);
+    kern.addColorStop(0, "rgba(255,245,230,1)"); kern.addColorStop(0.4, "rgba(220,170,255,0.6)"); kern.addColorStop(1, "rgba(120,80,255,0)");
+    g.fillStyle = kern; g.fillRect(0, 0, s, s);
+    for (let arm = 0; arm < 3; arm++) for (let i = 0; i < 900; i++) { // Spiralarme aus Sternstaub
+      const k = i / 900, w = arm * (Math.PI * 2 / 3) + k * 9 + (Math.random() - 0.5) * 0.5, r = k * s * 0.46 + (Math.random() - 0.5) * s * 0.03;
+      const a = (1 - k) * 0.55 + 0.1;
+      g.fillStyle = Math.random() < 0.5 ? `rgba(170,140,255,${a})` : Math.random() < 0.5 ? `rgba(120,200,255,${a})` : `rgba(255,220,240,${a})`;
+      g.beginPath(); g.arc(m + Math.cos(w) * r, m + Math.sin(w) * r, Math.random() * 2.6 + 0.6, 0, Math.PI * 2); g.fill();
+    }
+  });
+  const stern = (p: V3, dauer: number, g = 0.07) => leucht.wurf(p, P(), { farbe: wahl(STERNE), dauer, g0: g, g1: g * 0.6 });
+  function sternschnuppe(von: V3, nach: V3, dauer: number, verz: number) {
+    const farbe = wahl(STERNE), mat = glanz(farbe, 1), m = new THREE.Mesh(geschossGeo, mat);
+    m.visible = false;
+    scene.add(m);
+    let rest = 0;
+    ablauf(dauer, (t, k, dt) => {
+      m.visible = true;
+      m.position.lerpVectors(von, nach, k * k);
+      rest += dt * 90;
+      while (rest >= 1) { rest--; leucht.wurf(m.position, P().randomDirection().multiplyScalar(0.3), { farbe, farbe2: [0.3, 0.2, 1.0], dauer: 0.45, g0: 0.14, g1: 0.01 }); }
+    }, () => {
+      entfernen(m, mat);
+      for (let i = 0; i < 26; i++) leucht.wurf(nach, P().randomDirection().multiplyScalar(zufall(1.5, 4)).setY(zufall(0.5, 3)), { farbe, farbe2: [0.3, 0.2, 1.0], dauer: zufall(0.4, 0.8), g0: 0.1, g1: 0.02, zug: 2 });
+      welle(nach.clone().setY(0), { farbe, r: 1.4, dauer: 0.4 });
+    }, verz);
+  }
+  function planSterne(a: Angriff) {
+    const H = a.opfer.hoehe, gal = a.mitte(H + 0.9);
+    a.bei(0, () => {
+      dunkelZiel = 1;
+      for (let i = 0; i < 260; i++) { // Sternenhimmel geht auf
+        const w = Math.random() * Math.PI * 2, r = zufall(5, 13);
+        stern(P(a.ziel.x + Math.cos(w) * r, zufall(2.5, 9), a.ziel.z + Math.sin(w) * r - 3), a.ende + 0.5, zufall(0.04, 0.11));
+      }
+      // Komet vom Täter hinauf zur Galaxie
+      const mat = glanz(STERNE[0], 1), komet = new THREE.Mesh(geschossGeo, mat);
+      scene.add(komet);
+      const kurve = new THREE.QuadraticBezierCurve3(a.start.clone().setY(1.4), a.punkt(a.L * 0.5, 0, H + 3.2), gal);
+      let rest = 0;
+      ablauf(a.reise, (t, k, dt) => {
+        kurve.getPoint(k, komet.position);
+        komet.scale.setScalar(1.6 + Math.sin(t * 40) * 0.2);
+        rest += dt * 120;
+        while (rest >= 1) { rest--; leucht.wurf(komet.position, P().randomDirection().multiplyScalar(0.5), { farbe: wahl(STERNE), farbe2: [0.2, 0.1, 0.8], dauer: zufall(0.5, 1), g0: 0.16, g1: 0.02, zug: 1 }); }
+      }, () => entfernen(komet, mat));
+    });
+    a.spur(0.4, (s, f, t) => scheibe(a.punkt(s), { farbe: 0x2a1060, alpha: 0.35, groesse: 1 + f * 1.5, halten: a.finale + 1.6 - t, wachs: 0.3 }));
+    a.bei(a.reise, () => { // die Galaxie entfaltet sich über dem Opfer
+      for (const [neig, tempo, gross] of [[0, 1.6, 4.2], [0.35, -1.1, 2.8]] as const) {
+        const mat = glanz([1.6, 1.4, 2.2], 0, GALAXIE), scheib = new THREE.Mesh(scheibenGeo, mat);
+        scheib.position.copy(gal);
+        scheib.rotation.x = neig;
+        scene.add(scheib);
+        ablauf(2.2, (t) => {
+          scheib.rotation.y = t * tempo;
+          scheib.scale.setScalar(gross * easeOutBack(Math.min(1, t / 0.5)) * (t > 1.9 ? 1 - (t - 1.9) / 0.3 : 1));
+          mat.opacity = Math.min(1, t * 3) * (t > 1.9 ? 1 - (t - 1.9) / 0.3 : 1);
+        }, () => entfernen(scheib, mat));
+      }
+      strom(1.6, 50, () => { // Sternstaub rieselt aus der Galaxie
+        const w = Math.random() * 6.28, r = zufall(0.2, 1.8);
+        leucht.wurf(gal.clone().add(P(Math.cos(w) * r, 0, Math.sin(w) * r)), P(0, -zufall(0.6, 1.4), 0), { farbe: wahl(STERNE), dauer: zufall(0.8, 1.4), g0: 0.08, g1: 0.03 });
+      });
+      a.treffer({ tint: 0x8a70ff, staerke: 0.6, blitz: [1.2, 1.0, 2.4], stoss: 0.15, dir: a.dir });
+    });
+    a.bei(a.reise + 0.45, () => { // Sternschnuppen regnen herab
+      for (let i = 0; i < 16; i++) {
+        const w = Math.random() * 6.28, r = zufall(3, 6);
+        const von = gal.clone().add(P(Math.cos(w) * r, zufall(2, 4), Math.sin(w) * r)), nach = a.ziel.clone().add(P(zufall(-0.9, 0.9), zufall(0.1, H * 0.8), zufall(-0.9, 0.9)));
+        sternschnuppe(von, nach, zufall(0.35, 0.5), i * 0.06);
+      }
+      strom(1.1, 3, () => { a.opfer.blitz = 0.7; ruetteln(0.25); });
+    });
+    a.bei(a.reise + 1.75, () => { // Supernova
+      const m = a.mitte(), mat = schaleMat([1.6, 1.5, 2.6]), schale = new THREE.Mesh(schaleGeo, mat);
+      schale.position.copy(m);
+      scene.add(schale);
+      ablauf(0.7, (t, k) => { schale.scale.setScalar(0.3 + 4 * easeOutCubic(k)); mat.uniforms.uA.value = 1 - k; }, () => entfernen(schale, mat));
+      for (let i = 0; i < 260; i++) leucht.wurf(m, P().randomDirection().multiplyScalar(zufall(3, 10)), { farbe: wahl(STERNE), farbe2: [0.4, 0.1, 0.9], dauer: zufall(0.6, 1.3), g0: 0.15, g1: 0.02, zug: 2.2 });
+      welle(a.ziel, { farbe: [1.4, 1.2, 2.6], r: 7, dauer: 0.7 });
+      aufblitzen(m, 0xc0b0ff, 130);
+      a.treffer({ tint: 0xb8a8ff, staerke: 0.8, blitz: [2.0, 1.8, 2.8], stoss: 0.5, dir: a.dir });
+      ruetteln(0.65);
+    });
+    a.bei(a.reise + 2.6, () => { a.loesen(); dunkelZiel = 0; });
+    a.ende = a.reise + 3.2;
+  }
+
+  // 🍃 Heilung (Natur): wirkt auf den Täter selbst – Heilkreis, Blätterwirbel, Blüten, aufsteigende Lichter und Pluszeichen, die Figur leuchtet grüngolden
+  const HEIL: Rgb[] = [[0.45, 1.4, 0.45], [1.3, 1.4, 0.5], [0.8, 1.5, 0.9]];
+  const PLUS = zeichne(64, (g, s) => { g.lineWidth = s * 0.2; g.beginPath(); g.moveTo(s / 2, s * 0.15); g.lineTo(s / 2, s * 0.85); g.moveTo(s * 0.15, s / 2); g.lineTo(s * 0.85, s / 2); g.stroke(); });
+  function planHeilung(a: Angriff) {
+    const f = a.taeter, H = f.hoehe, fuss = a.start;
+    a.bei(0, () => {
+      runenkreis(fuss, { farbe: HEIL[0], r: 1.5, dauer: 2.6, dreh: 0.7 });
+      scheibe(fuss, { farbe: 0x2a6a18, alpha: 0.35, groesse: 3.2, halten: 2.4 });
+      for (let i = 0; i < 24; i++) blatt(fuss.clone().addScaledVector(kreis(Math.random() * 6.28), zufall(0.3, 1.2)).setY(0.05), P(zufall(-0.6, 0.6), zufall(1.5, 3), zufall(-0.6, 0.6)), 0.14);
+      let w0 = 0;
+      strom(2.2, 45, (t) => { // Blätterwirbel steigt um die Figur auf
+        w0 += 0.9;
+        const r = 0.9 + Math.sin(t * 3) * 0.15, p = fuss.clone().addScaledVector(kreis(w0), r).setY(zufall(0.05, 0.4));
+        blatt(p, P(-Math.sin(w0) * 2.2, zufall(1.2, 2.2), Math.cos(w0) * 2.2), 0.14);
+      });
+      strom(2.4, 40, () => leucht.wurf(fuss.clone().add(P(zufall(-0.8, 0.8), zufall(0, 0.3), zufall(-0.8, 0.8))), P(0, zufall(0.8, 1.8), 0),
+        { farbe: wahl(HEIL), dauer: zufall(1, 1.6), g0: 0.12, g1: 0.02, zug: 0.5 }));
+    });
+    a.bei(0.5, () => {
+      saeule(fuss, { farbe: [0.25, 0.7, 0.2], r: 0.9, h: 5, dauer: 1.6 });
+      f.treffer({ tint: 0xb0ff90, staerke: 0.3, blitz: [0.3, 0.8, 0.25], stoss: 0 });
+      aufblitzen(fuss.clone().setY(H * 0.6), 0x9aff7a, 35);
+      for (let i = 0; i < 8; i++) bildchen(PLUS, fuss.clone().add(P(zufall(-0.7, 0.7), zufall(H * 0.4, H), zufall(-0.7, 0.7))), { farbe: wahl(HEIL), groesse: zufall(0.25, 0.4), dauer: zufall(1.2, 1.8), vel: P(0, zufall(0.5, 1), 0) });
+    });
+    a.bei(1.2, () => { // Nachglühen: zweite Welle Pluszeichen, sanfter Ring
+      welle(fuss, { farbe: HEIL[1], r: 2.5, dauer: 0.8 });
+      for (let i = 0; i < 6; i++) bildchen(PLUS, fuss.clone().add(P(zufall(-0.6, 0.6), zufall(H * 0.5, H * 1.1), zufall(-0.6, 0.6))), { farbe: wahl(HEIL), groesse: zufall(0.2, 0.35), dauer: 1.4, vel: P(0, 0.8, 0) });
+    });
+    a.bei(2.4, () => f.loesen());
+    a.ende = 2.8;
+  }
+
   const PLAENE: Record<ElementId, Plan> = {
     eis: { licht: 0x5ab8ff, plan: planEis },
     feuer: { licht: 0xff7a20, plan: planFeuer },
@@ -1666,6 +1904,9 @@ export function effektWelt(scene: THREE.Scene, renderer: THREE.WebGLRenderer) {
     licht: { licht: 0xffe08a, tempo: 1.1, plan: planLicht },
     klingen: { licht: 0xdde8ff, plan: planKlingen },
     arkan: { licht: 0xa060ff, frontLicht: false, plan: planArkan },
+    wasser: { licht: 0x3aa0f0, tempo: 1.25, plan: planWasser },
+    sterne: { licht: 0xb0a0ff, tempo: 1.2, frontLicht: false, plan: planSterne },
+    heilung: { licht: 0x9aff7a, frontLicht: false, plan: planHeilung },
   };
 
   return {

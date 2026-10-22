@@ -1,6 +1,6 @@
 /**
  * Gegner-Monster aus Quaternius „Ultimate Monsters" (CC0, public/modelle/monster).
- * Jedes Monster greift mit einem Element an; für jedes der 15 Elemente gibt es mindestens eins.
+ * Jedes Monster greift mit einem Element an (Heilung: heilt sich selbst); für jedes der 18 Elemente gibt es mindestens eins.
  */
 import type { ElementId } from "./effekte";
 
@@ -18,7 +18,7 @@ export interface Monster {
 
 export const MONSTER: Record<MonsterId, Monster> = {
   dragon_evolved: { id: "dragon_evolved", name: "Drache", element: "feuer", groesse: "gross" },
-  alien_blob: { id: "alien_blob", name: "Tentakel-Blob", element: "arkan", groesse: "klein" },
+  alien_blob: { id: "alien_blob", name: "Tentakel-Blob", element: "sterne", groesse: "klein" },
   demon: { id: "demon", name: "Dämon", element: "blut", groesse: "gross" },
   orc: { id: "orc", name: "Ork", element: "schall", groesse: "gross" },
   yeti: { id: "yeti", name: "Yeti", element: "eis", groesse: "gross" },
@@ -35,16 +35,16 @@ export const MONSTER: Record<MonsterId, Monster> = {
   wizard_blob: { id: "wizard_blob", name: "Zauberblob", element: "arkan", groesse: "klein" },
   greenblob: { id: "greenblob", name: "Grünschleim", element: "gift", groesse: "klein" },
   pinkblob: { id: "pinkblob", name: "Rosaschleim", element: "fee", groesse: "klein" },
-  mushnub: { id: "mushnub", name: "Pilzling", element: "pflanzen", groesse: "klein" },
+  mushnub: { id: "mushnub", name: "Pilzling", element: "heilung", groesse: "klein" },
   ghost: { id: "ghost", name: "Geist", element: "dunkel", groesse: "klein" },
-  glub: { id: "glub", name: "Glub", element: "wind", groesse: "klein" },
+  glub: { id: "glub", name: "Glub", element: "wasser", groesse: "klein" },
 };
 
 /** Für jedes Element ein Gegner, der damit angreift */
 export const ELEMENT_MONSTER: Record<ElementId, MonsterId> = {
   eis: "yeti", feuer: "dragon_evolved", erde: "dino", blitz: "armabee_evolved", pflanzen: "cactoro", dunkel: "ghost_skull",
   gift: "greenspikyblob", blut: "demon", schatten: "ninja", fee: "hywirl", wind: "birb", schall: "orc",
-  licht: "alpaking_evolved", klingen: "orc_skull", arkan: "wizard_blob",
+  licht: "alpaking_evolved", klingen: "orc_skull", arkan: "wizard_blob", wasser: "glub", sterne: "alien_blob", heilung: "mushnub",
 };
 
 /** Boss der Bosskampf-Skins */
