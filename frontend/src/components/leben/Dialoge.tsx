@@ -54,7 +54,7 @@ export function MonatsbilanzDialog({ s, b, onZu }: { s: Spielstand; b: Monatsbil
 
 export type Ziel = "arbeit" | "laden" | "moebel" | "ausgehen" | "amt" | "arzt" | "eltern" | "sport" | "studio" | "termin" | "stil" | "friseur" | "minijob";
 
-export function WohinDialog({ s, onZiel, onZu, onSchwarz }: { s: Spielstand; onZiel: (z: Ziel, markt?: string) => void; onZu: () => void; onSchwarz: (an: boolean) => void }) {
+export function WohinDialog({ s, onZiel, onZu, onSchwarz, nurLaden = false }: { s: Spielstand; nurLaden?: boolean; onZiel: (z: Ziel, markt?: string) => void; onZu: () => void; onSchwarz: (an: boolean) => void }) {
   const [laden, setLaden] = useState(false);
   const job = arbeitHeute(s);
   const beruf = s.job ? BERUF.get(s.job.beruf) : null;
@@ -63,7 +63,8 @@ export function WohinDialog({ s, onZiel, onZu, onSchwarz }: { s: Spielstand; onZ
   const sonntag = wochentag(s.tag) === 6;
   const ausland = imAusland(s);
   const mj = minijob(s);
-  const eintrag = (z: Ziel, icon: string, titel: string, text: string, aus = false) => (
+  // In der Übung gibt es nur »Einkaufen«
+  const eintrag = (z: Ziel, icon: string, titel: string, text: string, aus = false) => (!nurLaden || z === "laden") && (
     <button key={z} type="button" disabled={aus} onClick={() => (z === "laden" ? setLaden(true) : onZiel(z))}
       className="flex items-center gap-3 rounded-xl bg-white/5 px-3 py-2 text-left hover:bg-amber-500/20 disabled:opacity-40">
       <span className="text-2xl">{icon}</span><span><b>{titel}</b><br /><span className="text-xs text-slate-400">{text}</span></span>
@@ -97,7 +98,7 @@ export function WohinDialog({ s, onZiel, onZu, onSchwarz }: { s: Spielstand; onZ
           <Knopf art="leise" onClick={() => setLaden(false)}>← zurück</Knopf>
         </div>
       )}
-      {!ticket && (
+      {!ticket && !nurLaden && (
         <label className="mt-3 flex items-center gap-2 text-xs text-slate-400">
           <input type="checkbox" checked={!!s.flags.schwarzfahren} onChange={(e) => onSchwarz(e.target.checked)} />
           Ohne Fahrschein fahren (spart 2,60 € je Fahrt — Kontrolle: 60 €)

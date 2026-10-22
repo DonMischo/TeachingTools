@@ -32,6 +32,7 @@ import { RechercheApp, WohnungApp } from "./WohnungApp";
 import { Wohnungsbild, type Platz } from "./Wohnungsbild";
 import { Checkliste } from "./Checkliste";
 import { MobilApp, Stil } from "./Stil";
+import { BLINKEN, frei, hervor, tutorialEnde, tutorialSchritt, tutorialWeiter, TutorialKarte, type Frei, type Tat } from "./Tutorial";
 import { Balken, euro, Fenster, Knopf } from "./ui";
 
 export type LebenZugang = { code: string; token: string | null } | null;
@@ -103,16 +104,22 @@ export default function RockYourLife({ speicherSchluessel = "geraet", zugang = n
   // der liefe in StrictMode doppelt und würde Meldungen verdoppeln.
   const aktuell = useRef<Spielstand | null>(null);
   aktuell.current = s;
-  const tu = useCallback((f: (x: Spielstand) => Ergebnis, p?: Platz) => {
+  const tu = useCallback((f: (x: Spielstand) => Ergebnis, p?: Platz, tat?: Tat) => {
     const alt = aktuell.current;
     if (!alt) return;
     const r = f(alt);
     if (r.fehler) { melde(r.fehler, true); return; }
-    aktuell.current = r.stand;
-    setS(r.stand);
+    const neu = (tat && tutorialWeiter(r.stand, tat)) || r.stand;
+    aktuell.current = neu;
+    setS(neu);
     if (r.meldung) melde(r.meldung);
     if (p) setPlatz(p);
   }, [melde]);
+  // Übungsschritte, die keine Spielaktion sind (App öffnen, »Weiter«)
+  const tutTat = useCallback((tat: Tat) => {
+    const neu = aktuell.current && tutorialWeiter(aktuell.current, tat);
+    if (neu) { aktuell.current = neu; setS(neu); }
+  }, []);
 
   if (!geladen) return <div className="p-6 text-center text-slate-400">Lädt …</div>;
 
@@ -132,7 +139,7 @@ export default function RockYourLife({ speicherSchluessel = "geraet", zugang = n
     return (
       <div className="p-2 sm:p-4">
         {kopf}
-        <Start name={name} onStart={(o: StartOptionen) => { const x = neuesSpiel(o); setS(x); setBilanzGesehen(0); }} onLaden={(x) => { setS(x); setBilanzGesehen(x.bilanzen.length); melde("Spielstand geladen."); }} />
+        <Start name={name} onStart={(o: StartOptionen, uebung?: boolean) => { const x = neuesSpiel(o); if (uebung) x.flags.tutorial = 0; setS(x); setBilanzGesehen(0); }} onLaden={(x) => { setS(x); setBilanzGesehen(x.bilanzen.length); melde("Spielstand geladen."); }} />
         {modal?.art === "lehrer" && zugang?.code && <LehrerUebersicht code={zugang.code} onZu={() => setModal(null)} />}
       </div>
     );
@@ -153,6 +160,7 @@ export default function RockYourLife({ speicherSchluessel = "geraet", zugang = n
   const neueBilanz = s.bilanzen.length > bilanzGesehen ? s.bilanzen[s.bilanzen.length - 1] : null;
   const fortschritt = s.tag / ENDE_TAG;
   const fehlt = String(s.flags.fehltZuhause ?? "");
+  const uebung = tutorialSchritt(s) !== null;
 
   const zu = () => setModal(null);
   const ziel = (z: Ziel, markt?: string) => {
@@ -180,9 +188,9 @@ export default function RockYourLife({ speicherSchluessel = "geraet", zugang = n
     else setModal({ art: "app", app: z as App });
   };
 
-  const aktion = (icon: string, text: string, f: (x: Spielstand) => Ergebnis, p: Platz, title?: string) => (
-    <button key={text} type="button" title={title ?? text} onClick={() => tu(f, p)}
-      className="flex min-w-18 flex-col items-center gap-0.5 rounded-xl bg-slate-800 px-2 py-1.5 text-xs font-bold text-white shadow-sm ring-1 ring-white/10 hover:bg-slate-700">
+  const aktion = (icon: string, text: string, f: (x: Spielstand) => Ergebnis, p: Platz, title?: string, was: Frei = "mehr", tat?: Tat) => frei(s, was) && (
+    <button key={text} type="button" title={title ?? text} onClick={() => tu(f, p, tat)}
+      className={`flex min-w-18 flex-col items-center gap-0.5 rounded-xl bg-slate-800 px-2 py-1.5 text-xs font-bold text-white shadow-sm ring-1 ring-white/10 hover:bg-slate-700 ${hervor(s, was) ? BLINKEN : ""}`}>
       <span className="text-xl">{icon}</span>{text}
     </button>
   );
@@ -190,6 +198,12 @@ export default function RockYourLife({ speicherSchluessel = "geraet", zugang = n
   return (
     <div className="p-2 sm:p-4">
       {kopf}
+      {uebung && (
+        <div className="mb-2">
+          <TutorialKarte s={s} onWeiter={() => tutTat("ok")} onEnde={() => setS(tutorialEnde(s))}
+            onNeu={() => { if (confirm("Die Übung ist vorbei. Jetzt ein echtes Leben anfangen?")) setS(null); }} />
+        </div>
+      )}
       <div className="flex flex-col gap-2 rounded-2xl bg-slate-950 p-2 text-slate-100 shadow-2xl ring-1 ring-black/30 lg:flex-row">
         {/* Links: Kopfleiste + Wohnung + Aktionen */}
         <div className="flex min-w-0 flex-1 flex-col gap-2">
@@ -212,12 +226,12 @@ export default function RockYourLife({ speicherSchluessel = "geraet", zugang = n
             <Balken icon="🍽️" label="Hunger (voll = satt)" wert={b.hunger} />
             <Balken icon="⚡" label="Energie" wert={b.energie} />
             <Balken icon="🚿" label="Hygiene" wert={b.hygiene} />
-            <Balken icon="💬" label="Soziales" wert={b.sozial} />
+            {!uebung && <Balken icon="💬" label="Soziales" wert={b.sozial} />}
             <Balken icon="🎮" label="Spaß" wert={b.spass} />
-            <Balken icon="❤️" label="Gesundheit" wert={b.gesundheit} />
-            <Balken icon="🧹" label="Ordnung" wert={b.ordnung} />
+            {!uebung && <Balken icon="❤️" label="Gesundheit" wert={b.gesundheit} />}
+            {!uebung && <Balken icon="🧹" label="Ordnung" wert={b.ordnung} />}
           </div>
-          <div className="flex flex-wrap gap-x-4 gap-y-1 rounded-xl bg-slate-900 px-3 py-1.5 text-xs text-slate-300">
+          {!uebung && <div className="flex flex-wrap gap-x-4 gap-y-1 rounded-xl bg-slate-900 px-3 py-1.5 text-xs text-slate-300">
             <button type="button" className="flex items-center gap-1.5 hover:text-white" onClick={() => setModal({ art: "stil", start: "kleidung" })} title="Kleidung (schlechtestes Teil)">
               👕 <Mini wert={Math.min(s.kleidung.alltag.zustand, s.kleidung.unterwaesche.zustand, s.kleidung.schuhe.zustand)} /></button>
             <button type="button" className="flex items-center gap-1.5 hover:text-white" onClick={() => setModal({ art: "stil", start: "friseur" })} title="Frisur">💇 <Mini wert={s.frisur} /></button>
@@ -225,7 +239,7 @@ export default function RockYourLife({ speicherSchluessel = "geraet", zugang = n
             {s.auto && <span title={s.auto.modell}>🚗 {Math.round(s.auto.zustand)} %</span>}
             {s.wohnung.form === "unterkunft" && <span>📍 {s.wohnung.titel}</span>}
             {minijob(s) && <span>🧾 Minijob samstags</span>}
-          </div>
+          </div>}
           <div className="relative h-[32vh] min-h-[220px] overflow-hidden rounded-xl bg-slate-800 sm:h-[46vh] sm:min-h-[300px]">
             <Wohnungsbild s={s} platz={platz} onVerschieben={(uid, x, y, drehen) => tu((alt) => {
               const neu = klon(alt); const m = neu.moebel.find((q) => q.uid === uid);
@@ -240,42 +254,45 @@ export default function RockYourLife({ speicherSchluessel = "geraet", zugang = n
             {fehlt && <div className="absolute bottom-2 right-2 rounded-lg bg-amber-500/90 px-2 py-1 text-xs font-bold text-black">Fehlt zu Hause: {fehlt}</div>}
           </div>
           <div className="flex flex-wrap gap-1.5">
-            {aktion("😴", "Schlafen", (x) => schlafen(x, arbeitHeute(x, x.stunde >= 12 ? x.tag + 1 : x.tag).muss ? Math.max(4, arbeitHeute(x, x.stunde >= 12 ? x.tag + 1 : x.tag).beginn - 1.5) : 8.5), "bett", "Schlafen bis zum Aufstehen")}
+            {aktion("😴", "Schlafen", (x) => schlafen(x, arbeitHeute(x, x.stunde >= 12 ? x.tag + 1 : x.tag).muss ? Math.max(4, arbeitHeute(x, x.stunde >= 12 ? x.tag + 1 : x.tag).beginn - 1.5) : 8.5), "bett", "Schlafen bis zum Aufstehen", "schlafen", "schlafen")}
             {aktion("😪", "Nickerchen", (x) => schlafen(x, (x.stunde + 1.5) % 24), "bett")}
-            {aktion("🍳", "Essen", (x) => mahlzeit(x, mahlzeitJetzt), "kueche", "Aus dem Vorrat essen")}
-            {aktion("🚿", "Duschen", duschen, "bad")}
+            {aktion("🍳", "Essen", (x) => mahlzeit(x, mahlzeitJetzt), "kueche", "Aus dem Vorrat essen", "essen", "essen")}
+            {aktion("🚿", "Duschen", duschen, "bad", undefined, "duschen", "duschen")}
             {aktion("🧹", "Putzen", putzen, "mitte")}
             {aktion("🧺", "Wäsche", waschen, "bad")}
             {(["serie", "zocken", "lesen", "telefonieren", "lernen", "sport"] as Freizeit[]).map((f) => aktion(
               { serie: "📺", zocken: "🎮", lesen: "📖", telefonieren: "📞", lernen: "📚", sport: "🤸", chillen: "🛋️" }[f],
               { serie: "Serie", zocken: "Zocken", lesen: "Lesen", telefonieren: "Anrufen", lernen: "Lernen", sport: "Workout", chillen: "Chillen" }[f],
-              (x) => freizeit(x, f, f === "sport" ? 1 : 2), f === "lernen" ? "tisch" : f === "sport" ? "mitte" : "sofa"))}
-            <button type="button" onClick={() => setModal({ art: "wohin" })}
-              className="flex min-w-20 flex-col items-center gap-0.5 rounded-xl bg-amber-500 px-3 py-1.5 text-xs font-black text-black shadow-sm hover:bg-amber-400">
+              (x) => freizeit(x, f, f === "sport" ? 1 : 2), f === "lernen" ? "tisch" : f === "sport" ? "mitte" : "sofa",
+              undefined, f === "serie" || f === "zocken" ? "spass" : "mehr", "spass"))}
+            {frei(s, "raus") && <button type="button" onClick={() => setModal({ art: "wohin" })}
+              className={`flex min-w-20 flex-col items-center gap-0.5 rounded-xl bg-amber-500 px-3 py-1.5 text-xs font-black text-black shadow-sm hover:bg-amber-400 ${hervor(s, "raus") ? BLINKEN : ""}`}>
               <span className="text-xl">🚪</span>Raus!
-            </button>
+            </button>}
           </div>
-          <div className="flex flex-wrap items-center gap-1.5 rounded-xl bg-slate-900 px-2 py-1.5">
+          {frei(s, "zeit") && <div className="flex flex-wrap items-center gap-1.5 rounded-xl bg-slate-900 px-2 py-1.5">
             <span className="text-xs font-bold text-slate-400">⏩ Zeit vergehen lassen:</span>
-            <Knopf klein onClick={() => tu((x) => routine(x, 1), "mitte")}>1 Tag</Knopf>
-            <Knopf klein onClick={() => tu((x) => routine(x, 7), "mitte")}>1 Woche</Knopf>
-            <Knopf klein onClick={() => tu((x) => routine(x, 31), "mitte")}>bis etwas passiert</Knopf>
-            <span className="text-xs text-slate-500">Routine: aufstehen, essen, duschen, arbeiten, schlafen — stoppt bei Post, Ereignissen, Hunger, Monatsende.</span>
-          </div>
+            <span className={`rounded-xl ${hervor(s, "zeit") ? BLINKEN : ""}`}><Knopf klein onClick={() => tu((x) => routine(x, 1), "mitte", "zeit")}>1 Tag</Knopf></span>
+            {!uebung && <>
+              <Knopf klein onClick={() => tu((x) => routine(x, 7), "mitte")}>1 Woche</Knopf>
+              <Knopf klein onClick={() => tu((x) => routine(x, 31), "mitte")}>bis etwas passiert</Knopf>
+              <span className="text-xs text-slate-500">Routine: aufstehen, essen, duschen, arbeiten, schlafen — stoppt bei Post, Ereignissen, Hunger, Monatsende.</span>
+            </>}
+          </div>}
         </div>
 
         {/* Rechts: Handy */}
         <div className="w-full shrink-0 rounded-4xl bg-black p-2 ring-4 ring-slate-700 lg:w-72">
           <div className="rounded-[1.6rem] bg-linear-to-b from-indigo-900 to-slate-900 p-3">
             <div className="mb-2 flex justify-between text-xs text-slate-300"><span>{uhrText(s.stunde)}</span><span>📶 🔋</span></div>
-            <div className="mb-3 rounded-xl bg-black/30 p-2">
+            {!uebung && <div className="mb-3 rounded-xl bg-black/30 p-2">
               <div className="mb-1 text-xs font-black text-white">📋 Nächste Schritte</div>
               <Checkliste s={s} onZiel={checklisteZiel} />
-            </div>
+            </div>}
             <div className="grid grid-cols-4 gap-2 lg:grid-cols-3">
-              {APPS.map((a) => (
-                <button key={a.id} type="button" onClick={() => setModal({ art: "app", app: a.id })} className="relative flex flex-col items-center gap-0.5 text-[11px] text-white">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 text-2xl shadow-sm ring-1 ring-white/10">{a.icon}</span>
+              {APPS.filter((a) => frei(s, appFrei(a.id))).map((a) => (
+                <button key={a.id} type="button" onClick={() => { setModal({ art: "app", app: a.id }); if (a.id === "bank" || a.id === "jobs") tutTat(a.id); }} className="relative flex flex-col items-center gap-0.5 text-[11px] text-white">
+                  <span className={`flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 text-2xl shadow-sm ring-1 ring-white/10 ${hervor(s, appFrei(a.id)) ? BLINKEN : ""}`}>{a.icon}</span>
                   {a.name}
                   {a.id === "post" && ungelesen > 0 && <span className="absolute -right-0.5 -top-1 rounded-full bg-rose-600 px-1.5 text-[10px] font-black">{ungelesen}</span>}
                   {a.id === "bank" && offeneRechnungen > 0 && <span className="absolute -right-0.5 -top-1 rounded-full bg-amber-500 px-1.5 text-[10px] font-black text-black">!</span>}
@@ -303,9 +320,9 @@ export default function RockYourLife({ speicherSchluessel = "geraet", zugang = n
       {/* Dialoge */}
       {s.offen.length > 0 && <EreignisDialog s={s} tu={tu} />}
       {s.offen.length === 0 && neueBilanz && <MonatsbilanzDialog s={s} b={neueBilanz} onZu={() => setBilanzGesehen(s.bilanzen.length)} />}
-      {modal?.art === "wohin" && <WohinDialog s={s} onZiel={ziel} onZu={zu} onSchwarz={(an) => tu((x) => { const y = klon(x); y.flags.schwarzfahren = an; if (an) log(y, "system", "Fährt ab jetzt ohne Fahrschein."); return { stand: y }; })} />}
-      {modal?.art === "laden" && <Laden s={s} marktId={modal.markt} onZu={zu}
-        onKaufen={(korb, bar) => { tu((x) => einkaufen(x, korb.length ? modal.markt : modal.markt, korb, bar), "kueche"); setModal(null); }}
+      {modal?.art === "wohin" && <WohinDialog s={s} nurLaden={uebung} onZiel={ziel} onZu={zu} onSchwarz={(an) => tu((x) => { const y = klon(x); y.flags.schwarzfahren = an; if (an) log(y, "system", "Fährt ab jetzt ohne Fahrschein."); return { stand: y }; })} />}
+      {modal?.art === "laden" && <Laden s={s} marktId={modal.markt} onZu={zu} uebung={uebung}
+        onKaufen={(korb, bar) => { tu((x) => einkaufen(x, korb.length ? modal.markt : modal.markt, korb, bar), "kueche", "kauf"); setModal(null); }}
         onRecherche={(produkt, preis, quelle) => tu((x) => { const y = klon(x); let r: Record<string, unknown> = {}; try { r = JSON.parse(String(x.flags.recherche ?? "{}")); } catch { r = {}; } r[produkt] = { preis, quelle }; y.flags.recherche = JSON.stringify(r); log(y, "system", `Recherche Preis ${produkt}: ${preis} € (${quelle})`); return { stand: y, meldung: "Recherche gespeichert." }; })} />}
       {modal?.art === "moebel" && <Moebel s={s} onZu={zu}
         onNeu={(id, liefern) => tu((x) => moebelKaufenNeu(x, id, liefern), "mitte")}
@@ -332,6 +349,8 @@ export default function RockYourLife({ speicherSchluessel = "geraet", zugang = n
     </div>
   );
 }
+
+const appFrei = (a: App): Frei => (a === "bank" || a === "jobs" ? a : "mehr");
 
 function Mini({ wert }: { wert: number }) {
   const f = wert > 60 ? "bg-emerald-500" : wert > 25 ? "bg-amber-400" : "bg-rose-500";

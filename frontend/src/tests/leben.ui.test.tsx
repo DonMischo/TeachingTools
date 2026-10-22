@@ -44,3 +44,24 @@ describe("Rock your Life: Start", () => {
     expect(localStorage.getItem("hp_leben_test")).toContain("\"name\":\"Kim\"");
   });
 });
+
+describe("Rock your Life: Übung", () => {
+  it("zeigt nur die Knöpfe der aktuellen Aufgabe und schaltet Schritt für Schritt frei", async () => {
+    render(<RockYourLife speicherSchluessel="uebung" />);
+    fireEvent.click(await screen.findByRole("button", { name: /Übung starten/ }));
+    expect(await screen.findByText("👋 Hallo!")).toBeInTheDocument();
+    expect(screen.getByText(/Danach kommt: 📊 Deine Balken/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Essen/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Raus/ })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Weiter/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Weiter/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Essen/ }));
+    expect(await screen.findByText("🚿 Duschen")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Putzen/ })).not.toBeInTheDocument();
+    // Übung beenden zeigt alles
+    fireEvent.click(screen.getByRole("button", { name: "Übung beenden" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: /Putzen/ })).toBeInTheDocument());
+    expect(screen.getByRole("button", { name: /Raus/ })).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Übung" })).not.toBeInTheDocument();
+  });
+});

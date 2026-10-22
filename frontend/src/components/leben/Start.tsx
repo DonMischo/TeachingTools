@@ -17,7 +17,7 @@ const FARBEN = ["#f59e0b", "#10b981", "#3b82f6", "#ec4899", "#8b5cf6", "#ef4444"
 
 const PFLICHT: Fach[] = ["Deutsch", "Mathematik", "Englisch", "Biologie", "Chemie", "Physik", "Geschichte", "Geografie", "Sozialkunde", "WRT", "Sport"];
 
-export function Start({ name: vorname, onStart, onLaden }: { name?: string; onStart: (o: StartOptionen) => void; onLaden: (s: Spielstand) => void }) {
+export function Start({ name: vorname, onStart, onLaden }: { name?: string; onStart: (o: StartOptionen, uebung?: boolean) => void; onLaden: (s: Spielstand) => void }) {
   const [name, setName] = useState(vorname ?? "");
   const [geburtstag, setGeburtstag] = useState("2010-05-12");
   const [avatar, setAvatar] = useState(AVATARE[0]);
@@ -52,6 +52,13 @@ export function Start({ name: vorname, onStart, onLaden }: { name?: string; onSt
     });
   };
 
+  // Übung: alles Schwierige (Zeugnis, Familie) wird für die Figur ausgefüllt
+  const ueben = () => onStart({
+    name: name.trim() || "Alex", geburtstag: "2010-05-12", avatar, farbe, kirche: false,
+    zeugnis: { abschluss: "RSA", noten: zeugnisErzeugen("mittel") },
+    herkunft: { eltern: "erfurt", elternEinkommen: "mittel", kindergeld: "halb" },
+  }, true);
+
   const laden = async (f: File | undefined) => {
     if (!f) return;
     const s = await hochladen(f);
@@ -66,6 +73,16 @@ export function Start({ name: vorname, onStart, onLaden }: { name?: string; onSt
         <h2 className="text-3xl font-black">Rock your Life</h2>
         <p className="mt-1 text-slate-300">Die 10. Klasse ist geschafft. Jetzt beginnen fünf Jahre echtes Leben in Erfurt — Job, Wohnung, Geld, Papierkram.</p>
       </div>
+
+      <section className="flex flex-wrap items-center gap-3 rounded-xl bg-amber-50 p-4 text-slate-900 ring-4 ring-amber-400">
+        <span className="text-5xl" aria-hidden>🐣</span>
+        <div className="min-w-0 flex-1 text-lg leading-snug">
+          <div className="text-xl font-black">Neu hier? Erst üben!</div>
+          <p>Du lernst Schritt für Schritt, wie das Spiel geht. Immer nur eine Sache.</p>
+          <p className="text-base text-slate-600">Wir füllen alles für dich aus. Wie du heißt, kannst du unten bei »1. Deine Figur« eintragen.</p>
+        </div>
+        <Knopf art="haupt" onClick={ueben}>🐣 Übung starten</Knopf>
+      </section>
 
       <div className="grid gap-4 md:grid-cols-2">
         <section className="rounded-xl bg-white/5 p-4">

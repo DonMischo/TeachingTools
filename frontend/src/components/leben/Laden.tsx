@@ -18,8 +18,8 @@ import { euro, Fenster, Hinweis, Knopf, Reiter, eingabe } from "./ui";
 
 type Recherche = Record<string, { preis: number; quelle: string }>;
 
-export function Laden({ s, marktId, onKaufen, onZu, onRecherche }: {
-  s: Spielstand; marktId: string;
+export function Laden({ s, marktId, onKaufen, onZu, onRecherche, uebung = false }: {
+  s: Spielstand; marktId: string; uebung?: boolean;
   onKaufen: (korb: Korbposten[], bar: boolean) => void;
   onZu: () => void;
   onRecherche: (produkt: string, preis: number, quelle: string) => void;
@@ -30,7 +30,7 @@ export function Laden({ s, marktId, onKaufen, onZu, onRecherche }: {
   const [suche, setSuche] = useState("");
   const [kat, setKat] = useState<Kategorie | "alle">("alle");
   const [korb, setKorb] = useState<Korbposten[]>([]);
-  const [bar, setBar] = useState(false);
+  const [bar, setBar] = useState(uebung);
   const [recherche, setRecherche] = useState<string | null>(null);
   const pi = preisindexFuer(s);
   const monat = monatVon(s.tag);
@@ -120,6 +120,7 @@ export function Laden({ s, marktId, onKaufen, onZu, onRecherche }: {
         ))}
       </div>
       <p className="mb-2 text-xs text-slate-400">{m.art}: {m.text} Eigenmarke hier: <b>{m.eigenmarke}</b>. Preise simuliert (Stand 2026, Angebote wechseln wöchentlich).</p>
+      {uebung && <Hinweis art="tipp">Drück bei einer Sache auf den gelben Knopf <b>+</b>. Dann drück unten auf <b>»Zur Kasse«</b>.</Hinweis>}
       <Reiter aktiv={ansicht} onWahl={setAnsicht} reiter={[
         { id: "prospekt", name: `🔥 Angebote (${angebote.length})` }, { id: "regal", name: "🛒 Sortiment" },
         { id: "liste", name: "📋 Wocheneinkauf" }, { id: "check", name: "✅ Was fehlt?" },
