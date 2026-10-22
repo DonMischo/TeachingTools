@@ -13,6 +13,8 @@ export const BEREICHE: FotoBereich[] = [
   { id: "schild", name: "Schildvulkane und Lava", icon: "🛡️" },
   { id: "hotspot", name: "Hotspots", icon: "🌺" },
   { id: "formen", name: "Caldera, Dom, Kegel, Säulen", icon: "⭕" },
+  { id: "tephra", name: "Asche, Bims und Tuff", icon: "🪨" },
+  { id: "gefahren", name: "Gefahren", icon: "⚠️" },
   { id: "deutschland", name: "Vulkane in Deutschland", icon: "🇩🇪" },
 ];
 
@@ -108,6 +110,43 @@ export const GALERIE: VulkanBild[] = [
     text: "Das größte zusammenhängende Basaltgebiet Mitteleuropas. Vor 15–19 Millionen Jahren flossen hier viele dünnflüssige Lavaströme übereinander — heute ein flaches, abgetragenes Bergland." },
   { id: "rhoen-basalt", bereich: "deutschland", typ: "schild", titel: "Basalt in der Rhön",
     text: "Die Kuppen der Rhön sind Reste von Basaltvulkanen; das harte Gestein blieb stehen, als die weichere Umgebung abgetragen wurde.", begriffe: ["Basaltblöcke", "Kuppe"] },
+  // ── weitere Ausbrüche ──
+  { id: "fuego", bereich: "ausbruch", typ: "schicht", titel: "Volcán de Fuego (Guatemala)",
+    text: "Kurze, heftige Explosionen zähen Magmas schleudern eine dunkle Aschewolke hoch — ein »vulkanianischer« Ausbruch. Der Fuego bricht seit Jahrzehnten fast ständig aus.", begriffe: ["Aschewolke", "vulkanianisch"] },
+  { id: "sakurajima", bereich: "ausbruch", typ: "schicht", titel: "Sakurajima (Japan)",
+    text: "Der Sakurajima explodiert oft mehrmals am Tag. Die Menschen in Kagoshima gegenüber fegen Asche von Straßen und Dächern und sammeln sie in eigenen Säcken.", begriffe: ["Aschesäule"] },
+  { id: "augustine", bereich: "ausbruch", typ: "schicht", titel: "Augustine (Alaska), Januar 2006",
+    text: "Ein Schichtvulkan als Insel. Der Wind biegt die Aschefahne zur Seite — genau so verteilt die Simulation die Asche: dick nah am Krater und in Windrichtung.", begriffe: ["Aschefahne", "Windrichtung", "Kegel"] },
+  { id: "hunga-tonga", bereich: "ausbruch", titel: "Hunga Tonga, 15. Januar 2022 (aus der ISS)",
+    text: "Ein Vulkan knapp unter dem Meeresspiegel: Meerwasser verdampfte explosionsartig, die Säule schoss bis in 57 km Höhe — höher als bei jedem anderen gemessenen Ausbruch.", begriffe: ["Schirmwolke", "surtseyanisch"] },
+  { id: "surtsey", bereich: "hotspot", typ: "hotspot", titel: "Surtsey (Island)",
+    text: "1963 brach der Vulkan am Meeresboden aus; die Dampfexplosionen im flachen Wasser gaben diesem Ausbruchstyp seinen Namen (surtseyanisch). In vier Jahren wuchs eine neue Insel.", begriffe: ["Vulkaninsel", "Tuffring"] },
+  { id: "schlackenkegel", bereich: "formen", titel: "Schlackenkegel (Cinder Cone, Lassen)",
+    text: "Ein kleiner, steiler Kegel aus loser Schlacke mit Krater oben. Er entsteht in wenigen Wochen bis Jahren aus gasreichem Basalt — die Hänge stehen im Schüttwinkel von etwa 30–35°.", begriffe: ["Schüttwinkel", "Krater"] },
+  // ── Asche, Bims und Tuff ──
+  { id: "bims", bereich: "tephra", titel: "Bims vom Mount St. Helens",
+    text: "Bims ist erstarrter Schaum aus zähem, gasreichem Magma — so voller Bläschen, dass er auf Wasser schwimmt.", begriffe: ["Bläschen"] },
+  { id: "ascheschichten", bereich: "tephra", typ: "schicht", titel: "Ascheschichten auf Izu-Ōshima (Japan)",
+    text: "Ein Straßenanschnitt zeigt über hundert Ascheschichten übereinander, jede von einem Ausbruch. Sie liegen wie Decken über der alten Oberfläche — genau so wie im Querschnitt der Simulation.", begriffe: ["Ascheschichten", "Schichtung"] },
+  { id: "tuffring", bereich: "tephra", titel: "Tuffschichten am Tuffring (Lanzarote)",
+    text: "Feine Asche aus Dampfexplosionen hat sich zu Tuff verfestigt. Die dünnen Lagen zeigen, dass der Ausbruch in vielen einzelnen Stößen kam.", begriffe: ["Tuff", "Schichten"] },
+  { id: "ignimbrit", bereich: "tephra", titel: "Bishop Tuff (Kalifornien)",
+    text: "Ablagerung riesiger Glutwolken vor 760 000 Jahren, als die Long-Valley-Caldera einbrach. Ignimbrite können Hunderte Meter dick sein.", begriffe: ["Ignimbrit"] },
+  { id: "vulkanstaub", bereich: "tephra", typ: "schicht", titel: "Asche vom Mount St. Helens, 500 km entfernt",
+    text: "Dieser feine Staub fiel 1980 in Idaho, rund 500 km vom Vulkan. Je feiner die Körner, desto weiter trägt sie der Wind.", begriffe: ["Asche"] },
+  { id: "hyaloklastit", bereich: "tephra", typ: "hotspot", titel: "Hyaloklastit (Island)",
+    text: "Glasbruch: Lava, die im Wasser oder unter Eis ausbrach, wurde abgeschreckt und zersplitterte in Glasscherben, die später verkittet wurden." },
+  { id: "weiberner-tuff", bereich: "tephra", titel: "Weiberner Tuff (Eifel)",
+    text: "Verfestigte Vulkanasche aus der Osteifel: weich, leicht zu bearbeiten — ein beliebter Baustein für Kirchen und Häuser im Rheinland. Die dunklen Körnchen sind Gesteinssplitter.", begriffe: ["Tuff", "Baustein"] },
+  // ── Gefahren ──
+  { id: "lahar", bereich: "gefahren", typ: "schicht", titel: "Lahar am Pinatubo",
+    text: "Regen spült lose Asche als Schlammstrom (Lahar) ins Tal. Nach dem Ausbruch 1991 füllten Lahare jahrelang in jeder Regenzeit Täler und begruben Dörfer.", begriffe: ["Lahar", "Schlammstrom"] },
+  { id: "pompeji", bereich: "gefahren", titel: "Gipsabgüsse in Pompeji",
+    text: "Die Menschen von Pompeji starben 79 n. Chr. in Glutwolken des Vesuvs. In der Asche blieben Hohlräume ihrer Körper; Archäologen gossen sie ab 1863 mit Gips aus." },
+  { id: "fumarole", bereich: "gefahren", titel: "Fumarole mit Schwefel",
+    text: "Aus Fumarolen entweichen heiße Gase — vor allem Wasserdampf, dazu Kohlenstoffdioxid und Schwefelgase; der Schwefel setzt sich gelb ab. Fachleute messen die Gase, um Ausbrüche vorherzusagen.", begriffe: ["Schwefel", "Gas"] },
+  { id: "nevado-del-ruiz", bereich: "gefahren", typ: "schicht", titel: "Nevado del Ruiz über Manizales (Kolumbien)",
+    text: "1985 schmolz ein kleiner Ausbruch Gletschereis am Gipfel; Lahare rasten die Täler hinab und zerstörten die Stadt Armero — rund 23 000 Menschen starben.", begriffe: ["Gletscher", "Lahar"] },
 ];
 
 const alle = nachweise as Record<string, Nachweis>;

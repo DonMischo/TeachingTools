@@ -19,6 +19,8 @@ import { voxelAusGitter } from "@/components/gelaende/voxelGitter";
 import Formschilder from "@/components/gelaende/Formschilder";
 import FotoGalerie, { BildStreifen } from "@/components/galerie/FotoGalerie";
 import { BEREICHE, bilderZuTyp, GALERIE, nachweisFuer } from "@/lib/vulkan/galerie";
+import { WISSEN_ZU_STOFF } from "@/lib/vulkan/wissen";
+import VulkanWissen from "./VulkanWissen";
 
 type Wahl = TypId | "eigen";
 const SCHNITT_W = 800, SCHNITT_H = 640;
@@ -62,7 +64,10 @@ export default function Vulkan({ action, vorgabe }: { action?: ReactNode; vorgab
   const [drei, setDrei] = useState(false);
   const [schilder, setSchilder] = useState(true);
   const [winkel, setWinkel] = useState(0);
-  const [galerie, setGalerie] = useState(false);
+  /** Simulation, Fotogalerie oder Wissen */
+  const [seite, setSeite] = useState<"sim" | "galerie" | "wissen">("sim");
+  const [wissenId, setWissenId] = useState("tephra");
+  const wissenZeigen = (id: string) => { setWissenId(id); setSeite("wissen"); };
   const karteRef = useRef<HTMLCanvasElement>(null);
   const schnittRef = useRef<HTMLCanvasElement>(null);
   const [ueberhoehung, setUeberhoehung] = useState(1);
@@ -229,13 +234,16 @@ export default function Vulkan({ action, vorgabe }: { action?: ReactNode; vorgab
           <button className={chip(meer || hotspot)} disabled={laeuft || hotspot} onClick={() => setMeer(true)}>🌊 Im Meer</button>
         </div>
         <button className="btn-secondary py-1.5" disabled={laeuft} onClick={() => setSeed(Math.floor(Math.random() * 1e9))} title="Neuer Untergrund">🎲 Neuer Untergrund</button>
-        <button className={`btn-secondary py-1.5 ${galerie ? "bg-accent text-accent-fg" : ""}`} onClick={() => setGalerie(g => !g)} title="Fotos echter Vulkane mit Erklärung">📷 Echte Vulkane</button>
+        <button className={`btn-secondary py-1.5 ${seite === "galerie" ? "bg-accent text-accent-fg" : ""}`} onClick={() => setSeite(x => (x === "galerie" ? "sim" : "galerie"))} title="Fotos echter Vulkane mit Erklärung">📷 Echte Vulkane</button>
+        <button className={`btn-secondary py-1.5 ${seite === "wissen" ? "bg-accent text-accent-fg" : ""}`} onClick={() => setSeite(x => (x === "wissen" ? "sim" : "wissen"))} title="Asche, Lapilli, Bomben, Ausbruchsarten, Lava, Gefahren">📚 Wissen</button>
+        {seite !== "sim" && <button className="btn-primary py-1.5" onClick={() => setSeite("sim")}>🌋 Zur Simulation</button>}
       </div>
-      {galerie && (
+      {seite === "wissen" && <VulkanWissen eintrag={wissenId} waehlen={setWissenId} />}
+      {seite === "galerie" && (
         <FotoGalerie bilder={GALERIE} bereiche={BEREICHE} nachweisFuer={nachweisFuer}
           einleitung="So sehen die Vulkane aus, die hier wachsen: steile Schichtvulkane, flache Schilde, Ausbrüche mit Aschesäule und Glutwolken, Hawaii über seinem Hotspot — und Vulkane in Deutschland. Antippen vergrößert; mit ← → blätterst du." />
       )}
-      <div className={galerie ? "hidden" : "contents"}>
+      <div className={seite !== "sim" ? "hidden" : "contents"}>
       <p className="text-sm text-muted -mt-2">{beschreibung}</p>
 
       <div className="grid gap-3 lg:grid-cols-[1fr_340px]">
@@ -273,9 +281,9 @@ export default function Vulkan({ action, vorgabe }: { action?: ReactNode; vorgab
             </div>
             <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted" aria-label="Legende">
               {LEGENDE.map(s => (
-                <span key={s} className="flex items-center gap-1" title={STOFFE[s].text}>
+                <button key={s} className="flex items-center gap-1 hover:text-fg hover:underline" title={`${STOFFE[s].text} — mehr im Wissen`} onClick={() => wissenZeigen(WISSEN_ZU_STOFF[s])}>
                   <span className="inline-block h-3 w-5 rounded-sm border border-line" style={{ background: `rgb(${STOFFE[s].farbe.join(",")})` }} />{STOFFE[s].label}
-                </span>
+                </button>
               ))}
               <span className="flex items-center gap-1"><span className="inline-block h-3 w-5 rounded-sm border border-line" style={{ background: "rgb(122,112,104)" }} />Grundgebirge</span>
             </div>

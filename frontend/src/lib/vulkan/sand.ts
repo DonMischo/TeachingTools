@@ -134,7 +134,7 @@ function ausstossen(s: Sand) {
 /** Wurfbahn: Teilchen fliegt mit seiner Geschwindigkeit, Schwerkraft zieht */
 function fliegen(s: Sand, k: number, i: number, j: number): boolean {
   const z = s.zufall;
-  s.vy[k] += 0.09;
+  s.vy[k] += 0.16;
   s.vx[k] += (s.wind * 0.3 - s.vx[k]) * 0.01;
   const dx = Math.floor(s.vx[k] + z()), dy = Math.floor(s.vy[k] + z());
   const schritte = Math.max(Math.abs(dx), Math.abs(dy));
@@ -165,6 +165,9 @@ export function sandSchritt(s: Sand) {
   const { W, H, art, hitze } = s, z = s.zufall, q = s.quelle;
   s.takt = (s.takt % 250) + 1;
   ausstossen(s);
+  // der Bildrand schluckt alles: Asche treibt mit dem Wind aus dem Bild, statt sich am Rand zu stauen
+  for (let j = 0; j < H; j++) for (const i of [0, W - 1]) if (art[j * W + i]) loeschen(s, j * W + i);
+  for (let i = 0; i < W; i++) if (art[i]) loeschen(s, i);
   const ax = q ? q.x : W / 2, ay = q ? q.y : H;
   const links = s.takt % 2 === 0;
   for (let j = 0; j < H; j++) {
@@ -183,7 +186,7 @@ export function sandSchritt(s: Sand) {
         if (ziehe(s, k, i, j - 1) < 0 && ziehe(s, k, i + r, j - 1) < 0) ziehe(s, k, i + r, j);
       } else if (a === ASCHE) {
         const heiss = hitze[k] > 70;
-        hitze[k] = Math.max(0, hitze[k] - (j < s.schirm + 3 ? 3 : 1));
+        hitze[k] = Math.max(0, hitze[k] - (j < s.schirm + 3 ? 5 : 1));
         const breite = 2 + (ay - j) * 0.22;
         if (heiss && j > s.schirm && Math.abs(i - ax) < breite + 2) {
           // in der Säule: steigt auf, quirlt seitwärts
@@ -193,13 +196,13 @@ export function sandSchritt(s: Sand) {
           // Schirmwolke: breitet sich von der Säule aus
           const r = Math.sign(i - ax) || 1;
           if (z() < 0.6) ziehe(s, k, i + r, j); else if (z() < 0.3) ziehe(s, k, i, j - 1);
-        } else if (z() < 0.22) rieseln(s, k, i, j, 12);
+        } else if (z() < 0.5) rieseln(s, k, i, j, 5);
         else if (z() < 0.2) ziehe(s, k, i + (z() < 0.5 ? -1 : 1), j);
       } else if (a === LAPILLI || a === LAVA) {
         if (s.liegt[k] === 0) fliegen(s, k, i, j);
         else {
           hitze[k] = Math.max(0, hitze[k] - (a === LAVA ? 6 : 3));
-          rieseln(s, k, i, j, a === LAVA ? 20 : 40);
+          rieseln(s, k, i, j, a === LAVA ? 10 : 12);
         }
       } else if (a === GLUT) {
         // Glutlawine: schwer, folgt dem Hang, wirbelt Asche auf

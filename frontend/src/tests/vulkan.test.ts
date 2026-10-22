@@ -142,3 +142,20 @@ describe("Ausbruch unter Wasser", () => {
     expect(land.wasser).toBeNull();
   });
 });
+
+describe("Sand am Bildrand", () => {
+  it("Asche treibt mit dem Wind aus dem Bild statt sich am Rand zu stauen", () => {
+    const s = sandStart(200, 160, 5);
+    setzeBoden(s, Array.from({ length: 200 }, () => 120));
+    for (let t = 0; t < 400; t++) { quelleSetzen(s, { x: 100, y: 120, explosiv: 0.8, lava: 0, glut: false }, 0.6); sandSchritt(s); }
+    let rand = 0;
+    for (let j = 0; j < 160; j++) for (let i = 190; i < 200; i++) if (s.art[j * 200 + i]) rand++;
+    // kein Stau: am rechten Rand höchstens so viel wie in einem gleich breiten Streifen mitten im Lee
+    let lee = 0;
+    for (let j = 0; j < 160; j++) for (let i = 150; i < 160; i++) if (s.art[j * 200 + i]) lee++;
+    expect(rand).toBeLessThanOrEqual(lee * 1.2 + 5);
+    quelleSetzen(s, null, 0.6);
+    for (let t = 0; t < 800 && s.anzahl > 0; t++) sandSchritt(s);
+    expect(s.anzahl).toBe(0);
+  });
+});

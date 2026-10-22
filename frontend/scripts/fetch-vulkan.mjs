@@ -56,6 +56,26 @@ export const BILDER = {
   "weinfelder-maar": "Weinfelder Maar, Bild 1.jpg",
   "vogelsberg": "Vogelsberg bei Lautertal im Vogelsberg, Hessen, von Osten betrachtet.jpg",
   "rhoen-basalt": "Gersfeld Gersfeld Simmelsberg Basaltformation NO.png",
+  // ── Asche, Bims und Tuff ──
+  "bims": "Dacitic pumice (Holocene, Mt. St Helens).jpg",
+  "ascheschichten": "Volcanic Ash-Fall Layers Izu Oshima Japan.jpg",
+  "tuffring": "Tuff layers on the flanks of tuff ring Caldera Blanca on Lanzarote, June 2013 (9).jpg",
+  "ignimbrit": "BishopTuff.jpg",
+  "vulkanstaub": "Dacitic volcanic dust (18 May 1980 eruption of Mt. St. Helens, Cascade Range, Washington State, USA; collected at Deary, Idaho, USA) 1.jpg",
+  "hyaloklastit": "Hyaloclastite rock in Iceland.JPG",
+  "weiberner-tuff": "Weiberner Tuff.jpg",
+  // ── weitere Ausbrüche ──
+  "fuego": "Eruption Volcan de Fuego 6-8-2010.jpg",
+  "sakurajima": "Sakurajima 20170221-2.jpg",
+  "augustine": "Augustine volcano Jan 24 2006 - Cyrus Read.jpg",
+  "hunga-tonga": "ISS-66 Atmospheric plume from 2022 Hunga Tonga eruption - edited.jpg",
+  "surtsey": "Surtsey from air by Bruce McAdam.jpg",
+  "schlackenkegel": "Cinder Cone at Lassen Volcanic National Park.jpg",
+  // ── Gefahren ──
+  "lahar": "Lahar Mount Pinatubo.JPG",
+  "pompeji": "-Plaster Casts of Bodies, Pompeii- MET DP262064.jpg",
+  "fumarole": "Sulfur Fumarole (23998018863).jpg",
+  "nevado-del-ruiz": "El ruiz volcano.jpg",
 };
 
 if (process.argv[1] && process.argv[1].endsWith("fetch-vulkan.mjs")) {

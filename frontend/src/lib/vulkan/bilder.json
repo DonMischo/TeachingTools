@@ -14,6 +14,21 @@
     "lizenz": "Public domain",
     "urheber": "NASA"
   },
+  "ascheschichten": {
+    "datei": "/vulkan/galerie/ascheschichten.webp",
+    "titel": "Volcanic Ash-Fall Layers Izu Oshima Japan.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Volcanic_Ash-Fall_Layers_Izu_Oshima_Japan.jpg",
+    "lizenz": "CC BY 2.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by/2.0",
+    "urheber": "Taiyo FUJII (taiyofj on Flickr) https://www.flickr.com/people/t_trace/"
+  },
+  "augustine": {
+    "datei": "/vulkan/galerie/augustine.webp",
+    "titel": "Augustine volcano Jan 24 2006 - Cyrus Read.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Augustine_volcano_Jan_24_2006_-_Cyrus_Read.jpg",
+    "lizenz": "Public domain",
+    "urheber": "Cyrus Read Geophysicist USGS, Alaska Volcano Observatory cread@usgs.gov"
+  },
   "basaltsaeulen": {
     "datei": "/vulkan/galerie/basaltsaeulen.webp",
     "titel": "Antrim Coast - Giant's Causeway - Port Granny - Basalt Columns - geograph.org.uk - 3719380.jpg",
@@ -21,6 +36,14 @@
     "lizenz": "CC BY-SA 2.0",
     "lizenzUrl": "https://creativecommons.org/licenses/by-sa/2.0",
     "urheber": "Joseph Mischyshyn"
+  },
+  "bims": {
+    "datei": "/vulkan/galerie/bims.webp",
+    "titel": "Dacitic pumice (Holocene, Mt. St Helens).jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Dacitic_pumice_(Holocene,_Mt._St_Helens).jpg",
+    "lizenz": "CC0",
+    "lizenzUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "urheber": "ScoriaPumice"
   },
   "bombe": {
     "datei": "/vulkan/galerie/bombe.webp",
@@ -53,6 +76,14 @@
     "lizenzUrl": "https://creativecommons.org/licenses/by/2.0",
     "urheber": "jthetzel"
   },
+  "fuego": {
+    "datei": "/vulkan/galerie/fuego.webp",
+    "titel": "Eruption Volcan de Fuego 6-8-2010.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Eruption_Volcan_de_Fuego_6-8-2010.jpg",
+    "lizenz": "CC BY 2.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by/2.0",
+    "urheber": "Mario Bollini"
+  },
   "fuji": {
     "datei": "/vulkan/galerie/fuji.webp",
     "titel": "Mount Fuji from Lake Kawaguchi 20170206.jpg",
@@ -60,6 +91,13 @@
     "lizenz": "CC BY-SA 4.0",
     "lizenzUrl": "https://creativecommons.org/licenses/by-sa/4.0",
     "urheber": "Suicasmo"
+  },
+  "fumarole": {
+    "datei": "/vulkan/galerie/fumarole.webp",
+    "titel": "Sulfur Fumarole (23998018863).jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Sulfur_Fumarole_(23998018863).jpg",
+    "lizenz": "Public domain",
+    "urheber": "U.S. Geological Survey from Reston, VA, USA"
   },
   "halemaumau": {
     "datei": "/vulkan/galerie/halemaumau.webp",
@@ -89,6 +127,29 @@
     "lizenz": "Public domain",
     "urheber": "NASA"
   },
+  "hunga-tonga": {
+    "datei": "/vulkan/galerie/hunga-tonga.webp",
+    "titel": "ISS-66 Atmospheric plume from 2022 Hunga Tonga eruption - edited.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:ISS-66_Atmospheric_plume_from_2022_Hunga_Tonga_eruption_-_edited.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA / Kayla Barron"
+  },
+  "hyaloklastit": {
+    "datei": "/vulkan/galerie/hyaloklastit.webp",
+    "titel": "Hyaloclastite rock in Iceland.JPG",
+    "seite": "https://commons.wikimedia.org/wiki/File:Hyaloclastite_rock_in_Iceland.JPG",
+    "lizenz": "CC BY-SA 3.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "urheber": "Aldzu86"
+  },
+  "ignimbrit": {
+    "datei": "/vulkan/galerie/ignimbrit.webp",
+    "titel": "BishopTuff.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:BishopTuff.jpg",
+    "lizenz": "CC BY-SA 3.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "urheber": "Qfl247 (talk)"
+  },
   "kissenlava": {
     "datei": "/vulkan/galerie/kissenlava.webp",
     "titel": "Nur05018-Pillow lavas off Hawaii.jpg",
@@ -103,6 +164,14 @@
     "lizenz": "CC BY-SA 4.0",
     "lizenzUrl": "https://creativecommons.org/licenses/by-sa/4.0",
     "urheber": "Df1paw"
+  },
+  "lahar": {
+    "datei": "/vulkan/galerie/lahar.webp",
+    "titel": "Lahar Mount Pinatubo.JPG",
+    "seite": "https://commons.wikimedia.org/wiki/File:Lahar_Mount_Pinatubo.JPG",
+    "lizenz": "CC BY 2.5",
+    "lizenzUrl": "https://creativecommons.org/licenses/by/2.5",
+    "urheber": "Neureiter"
   },
   "lapilli": {
     "datei": "/vulkan/galerie/lapilli.webp",
@@ -172,6 +241,13 @@
     "lizenzUrl": "https://creativecommons.org/licenses/by/4.0",
     "urheber": "Bien02"
   },
+  "nevado-del-ruiz": {
+    "datei": "/vulkan/galerie/nevado-del-ruiz.webp",
+    "titel": "El ruiz volcano.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:El_ruiz_volcano.jpg",
+    "lizenz": "Public domain",
+    "urheber": "Foj333"
+  },
   "pahoehoe": {
     "datei": "/vulkan/galerie/pahoehoe.webp",
     "titel": "Pāhoehoe Lava flow.JPG",
@@ -210,6 +286,14 @@
     "lizenz": "Public domain",
     "urheber": "United States Geological Survey"
   },
+  "pompeji": {
+    "datei": "/vulkan/galerie/pompeji.webp",
+    "titel": "-Plaster Casts of Bodies, Pompeii- MET DP262064.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:-Plaster_Casts_of_Bodies,_Pompeii-_MET_DP262064.jpg",
+    "lizenz": "CC0",
+    "lizenzUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "urheber": "Giorgio Sommer"
+  },
   "rhoen-basalt": {
     "datei": "/vulkan/galerie/rhoen-basalt.webp",
     "titel": "Gersfeld Gersfeld Simmelsberg Basaltformation NO.png",
@@ -218,6 +302,14 @@
     "lizenzUrl": "https://creativecommons.org/licenses/by-sa/3.0",
     "urheber": "UuMUfQ"
   },
+  "sakurajima": {
+    "datei": "/vulkan/galerie/sakurajima.webp",
+    "titel": "Sakurajima 20170221-2.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Sakurajima_20170221-2.jpg",
+    "lizenz": "CC BY-SA 4.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "urheber": "Suicasmo"
+  },
   "santorin": {
     "datei": "/vulkan/galerie/santorin.webp",
     "titel": "Caldera of Santorini - Nea Kameni - seen from Fira Thira.jpg",
@@ -225,6 +317,14 @@
     "lizenz": "CC BY-SA 3.0",
     "lizenzUrl": "https://creativecommons.org/licenses/by-sa/3.0",
     "urheber": "Norbert Nagel"
+  },
+  "schlackenkegel": {
+    "datei": "/vulkan/galerie/schlackenkegel.webp",
+    "titel": "Cinder Cone at Lassen Volcanic National Park.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Cinder_Cone_at_Lassen_Volcanic_National_Park.jpg",
+    "lizenz": "CC BY-SA 3.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "urheber": "DimiTalen"
   },
   "skjaldbreidur": {
     "datei": "/vulkan/galerie/skjaldbreidur.webp",
@@ -265,6 +365,14 @@
     "lizenzUrl": "https://creativecommons.org/licenses/by/3.0",
     "urheber": "Unukorno"
   },
+  "surtsey": {
+    "datei": "/vulkan/galerie/surtsey.webp",
+    "titel": "Surtsey from air by Bruce McAdam.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Surtsey_from_air_by_Bruce_McAdam.jpg",
+    "lizenz": "CC BY-SA 2.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "urheber": "Bruce McAdam from Reykjavik, Iceland"
+  },
   "teide": {
     "datei": "/vulkan/galerie/teide.webp",
     "titel": "El Teide and Pico Viejo.jpg",
@@ -272,6 +380,14 @@
     "lizenz": "CC BY-SA 4.0",
     "lizenzUrl": "https://creativecommons.org/licenses/by-sa/4.0",
     "urheber": "Mrgnr0"
+  },
+  "tuffring": {
+    "datei": "/vulkan/galerie/tuffring.webp",
+    "titel": "Tuff layers on the flanks of tuff ring Caldera Blanca on Lanzarote, June 2013 (9).jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Tuff_layers_on_the_flanks_of_tuff_ring_Caldera_Blanca_on_Lanzarote,_June_2013_(9).jpg",
+    "lizenz": "CC BY-SA 3.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "urheber": "Chmee2"
   },
   "vesuv": {
     "datei": "/vulkan/galerie/vesuv.webp",
@@ -288,6 +404,21 @@
     "lizenz": "CC BY-SA 3.0",
     "lizenzUrl": "https://creativecommons.org/licenses/by-sa/3.0",
     "urheber": "Neptuul"
+  },
+  "vulkanstaub": {
+    "datei": "/vulkan/galerie/vulkanstaub.webp",
+    "titel": "Dacitic volcanic dust (18 May 1980 eruption of Mt. St. Helens, Cascade Range, Washington State, USA; collected at Deary, Idaho, USA) 1.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Dacitic_volcanic_dust_(18_May_1980_eruption_of_Mt._St._Helens,_Cascade_Range,_Washington_State,_USA;_collected_at_Deary,_Idaho,_USA)_1.jpg",
+    "lizenz": "CC BY 2.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by/2.0",
+    "urheber": "James St. John"
+  },
+  "weiberner-tuff": {
+    "datei": "/vulkan/galerie/weiberner-tuff.webp",
+    "titel": "Weiberner Tuff.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Weiberner_Tuff.jpg",
+    "lizenz": "Public domain",
+    "urheber": "Roll-Stone"
   },
   "weinfelder-maar": {
     "datei": "/vulkan/galerie/weinfelder-maar.webp",
