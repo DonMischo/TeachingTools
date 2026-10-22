@@ -10,7 +10,7 @@
  */
 import { useState, type ReactNode } from "react";
 import {
-  HOCH, KATEGORIEN, bestEinheit, faktor, kategorie, kommaStellen, laengenSchritt, schritt, umrechnen, ungefaehr, zahl,
+  HOCH, KATEGORIEN, bestEinheit, faktor, kategorie, kommaStellen, laengenSchritt, ohneHohlmasse, schritt, umrechnen, ungefaehr, zahl,
   type Kategorie,
 } from "@/lib/groessen";
 
@@ -168,7 +168,11 @@ function Groessenleiter({ k, gewaehlt, zeige }: { k: Kategorie; gewaehlt: number
 
 export default function Umrechnen() {
   const [katId, setKatId] = useState("laenge");
-  const k = kategorie(katId);
+  // Volumen: Hohlmaße (hl, dl, cl) zeigen oder nur die Kubik-Leiter?
+  const [hohlmasse, setHohlmasse] = useState(true);
+  const voll = kategorie(katId);
+  const hatHohlmasse = voll.einheiten.some(e => e.hohlmass);
+  const k = hohlmasse ? voll : ohneHohlmasse(voll);
   const [gewaehlt, setGewaehlt] = useState<number | null>(null);
   const [eingabe, setEingabe] = useState("1");
   const [von, setVon] = useState(1);
@@ -179,6 +183,15 @@ export default function Umrechnen() {
     setKatId(id);
     setGewaehlt(null);
     setVon(Math.min(1, kategorie(id).einheiten.length - 1));
+  }
+  function schalteHohlmasse() {
+    // Indizes verschieben sich — die gewählte Einheit über ihre id mitnehmen.
+    const neu = hohlmasse ? ohneHohlmasse(voll) : voll;
+    const finde = (i: number | null) => (i === null ? -1 : neu.einheiten.findIndex(e => e.id === k.einheiten[i].id));
+    const g = finde(gewaehlt), w = finde(von);
+    setHohlmasse(!hohlmasse);
+    setGewaehlt(g >= 0 ? g : null);
+    setVon(w >= 0 ? w : neu.basis);
   }
   function waehle(i: number | null) {
     setGewaehlt(i);
@@ -219,11 +232,18 @@ export default function Umrechnen() {
                 {k.hoch === 2 ? "· 10²" : "· 10³"} — Länge {k.hoch === 2 ? "zum Quadrat" : "hoch drei (Kubik)"}
               </button>
             </div>
+            {hatHohlmasse && (
+              <label className="flex items-center gap-2 text-sm font-bold cursor-pointer">
+                <input type="checkbox" checked={hohlmasse} onChange={schalteHohlmasse} />
+                Hohlmaße (hl, dl, cl) zeigen
+              </label>
+            )}
             {alsLaenge && (
               <span className="text-xs text-muted">
                 {k.hoch === 2
                   ? "m → cm ist · 100, also m² → cm² · 100² — die Länge wird zweimal umgerechnet: in der Breite und in der Höhe."
-                  : "m → cm ist · 100, also m³ → cm³ · 100³ — Länge, Breite und Höhe werden je einmal umgerechnet. hl, dl und cl sind keine Längen hoch drei; dort bleibt die normale Zahl."}
+                  : "m → cm ist · 100, also m³ → cm³ · 100³ — Länge, Breite und Höhe werden je einmal umgerechnet."
+                    + (hohlmasse ? " hl, dl und cl sind keine Längen hoch drei; dort bleibt die normale Zahl." : "")}
               </span>
             )}
           </div>

@@ -2,7 +2,7 @@
  * Einheitenleitern und Umrechnung — wie auf dem Merkblatt Klasse 5.
  */
 import { describe, it, expect } from "vitest";
-import { KATEGORIEN, bestEinheit, faktor, kategorie, kommaStellen, laengenSchritt, schritt, umrechnen, zahl } from "@/lib/groessen";
+import { KATEGORIEN, bestEinheit, faktor, kategorie, kommaStellen, laengenSchritt, ohneHohlmasse, schritt, umrechnen, zahl } from "@/lib/groessen";
 
 const idx = (kat: string, id: string) => kategorie(kat).einheiten.findIndex(e => e.id === id);
 
@@ -93,5 +93,19 @@ describe("Umrechnungszahl als Länge hoch 2 bzw. 3", () => {
     expect(laengenSchritt(kategorie("volumen"), idx("volumen", "l"), idx("volumen", "dl"))).toBeNull();
     expect(laengenSchritt(kategorie("volumen"), idx("volumen", "m3"), idx("volumen", "hl"))).toBeNull();
     expect(laengenSchritt(kategorie("laenge"), idx("laenge", "m"), idx("laenge", "cm"))).toBeNull();
+  });
+});
+
+describe("Volumen ohne Hohlmaße", () => {
+  it("lässt hl, dl, cl weg und rechnet in Tausenderschritten", () => {
+    const V = ohneHohlmasse(kategorie("volumen"));
+    expect(V.einheiten.map(e => e.zeichen)).toEqual(["m³", "dm³", "cm³", "mm³"]);
+    expect(V.einheiten[1].auch).toBe("l");
+    expect(V.schritte).toEqual([1000, 1000, 1000]);
+    expect(V.einheiten[V.basis].id).toBe("l");
+    expect(laengenSchritt(V, 0, 2)).toEqual({ op: "·", basis: 100, hoch: 3 });
+  });
+  it("lässt andere Größen unverändert", () => {
+    expect(ohneHohlmasse(kategorie("laenge"))).toBe(kategorie("laenge"));
   });
 });

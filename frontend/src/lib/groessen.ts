@@ -19,6 +19,10 @@ export type Einheit = {
   eins: string;
   /** Fläche/Volumen: die Länge, deren Quadrat bzw. Würfel die Einheit ist (1 a = (10 m)²). */
   seite?: string;
+  /** Hohlmaß ohne Kubik-Gegenstück (hl, dl, cl) — lässt sich ausblenden. */
+  hohlmass?: boolean;
+  /** Name der Schreibweise in `auch`, z. B. »Kubikdezimeter« zu dm³. */
+  auchName?: string;
 };
 
 export type Beispiel = { emoji: string; text: string; /** in der Basiseinheit */ wert: number };
@@ -98,11 +102,11 @@ export const KATEGORIEN: Kategorie[] = [
     id: "volumen", name: "Volumen", icon: "🧊", farbe: "#06b6d4",
     einheiten: [
       { id: "m3", zeichen: "m³", name: "Kubikmeter", seite: "1 m", eins: "ein Würfel mit 1 m Kante — etwa 7 volle Badewannen" },
-      { id: "hl", zeichen: "hl", name: "Hektoliter", eins: "etwa zwei Drittel einer vollen Badewanne" },
-      { id: "l", zeichen: "l", name: "Liter", auch: "dm³", seite: "1 dm", eins: "eine Milchtüte" },
-      { id: "dl", zeichen: "dl", name: "Deziliter", eins: "eine halbe Tasse" },
-      { id: "cl", zeichen: "cl", name: "Zentiliter", eins: "zwei Teelöffel" },
-      { id: "ml", zeichen: "ml", name: "Milliliter", auch: "cm³", seite: "1 cm", eins: "etwa 20 Tropfen" },
+      { id: "hl", zeichen: "hl", name: "Hektoliter", hohlmass: true, eins: "etwa zwei Drittel einer vollen Badewanne" },
+      { id: "l", zeichen: "l", name: "Liter", auch: "dm³", auchName: "Kubikdezimeter", seite: "1 dm", eins: "eine Milchtüte" },
+      { id: "dl", zeichen: "dl", name: "Deziliter", hohlmass: true, eins: "eine halbe Tasse" },
+      { id: "cl", zeichen: "cl", name: "Zentiliter", hohlmass: true, eins: "zwei Teelöffel" },
+      { id: "ml", zeichen: "ml", name: "Milliliter", auch: "cm³", auchName: "Kubikzentimeter", seite: "1 cm", eins: "etwa 20 Tropfen" },
       { id: "mm3", zeichen: "mm³", name: "Kubikmillimeter", seite: "1 mm", eins: "ein winziges Sandkorn" },
     ],
     schritte: [10, 100, 10, 10, 10, 1000],
@@ -215,6 +219,23 @@ export const KATEGORIEN: Kategorie[] = [
 ];
 
 export const kategorie = (id: string) => KATEGORIEN.find(k => k.id === id) ?? KATEGORIEN[0];
+
+/**
+ * Die Leiter ohne Hohlmaße: hl, dl und cl fallen weg, l und ml heißen
+ * dm³ und cm³ (mit »= l« bzw. »= ml«) — übrig bleibt m³ → dm³ → cm³ → mm³.
+ */
+export function ohneHohlmasse(k: Kategorie): Kategorie {
+  if (!k.einheiten.some(e => e.hohlmass)) return k;
+  const einheiten: Einheit[] = [], schritte: number[] = [];
+  let basis = 0;
+  k.einheiten.forEach((e, i) => {
+    if (e.hohlmass) { schritte[schritte.length - 1] *= k.schritte[i]; return; }
+    if (i === k.basis) basis = einheiten.length;
+    einheiten.push(e.auch ? { ...e, zeichen: e.auch, auch: e.zeichen, name: e.auchName ?? e.name } : e);
+    if (i < k.schritte.length) schritte.push(k.schritte[i]);
+  });
+  return { ...k, einheiten, schritte, basis };
+}
 
 /** Umrechnungszahl von Einheit i nach j: zur kleineren mal, zur größeren geteilt. */
 export function schritt(k: Kategorie, i: number, j: number): { op: "·" | ":"; zahl: number } {
