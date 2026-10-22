@@ -149,6 +149,14 @@ const ALL_CARDS: Werkzeug[] = [
     color: "#0284c7",
   },
   {
+    slug: "vulkan",
+    href: "/simulationen/vulkan",
+    icon: "🌋",
+    title: "Vulkane",
+    description: "Schildvulkan, Schichtvulkan oder Hotspot wie Hawaii? Kieselsäure und Gas des Magmas einstellen und den Berg Ausbruch für Ausbruch wachsen sehen: Aschesäule, fließende Lava, Glutlawinen, Caldera, Inselkette — mit Querschnitt durch alle Schichten, 3D-Flug und Fotos echter Vulkane.",
+    color: "#b91c1c",
+  },
+  {
     slug: "diagramme",
     href: "/simulationen/diagramme",
     icon: "🔀",

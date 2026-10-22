@@ -31,6 +31,7 @@ import Algorithmen from "@/components/algo/Algorithmen";
 import Wachstum from "@/components/dla/Wachstum";
 import Stadtentwicklung from "@/components/stadt/Stadtentwicklung";
 import Erosion from "@/components/erosion/Erosion";
+import Vulkan from "@/components/vulkan/Vulkan";
 import Periodensystem from "@/components/pse/Periodensystem";
 import Strukturformeln from "@/components/struktur/Strukturformeln";
 import Schichtenmodell from "@/components/schichten/Schichtenmodell";
@@ -60,6 +61,7 @@ const TOOLS: { id: string; icon: string; label: string; node: ReactNode }[] = [
   { id: "dla", icon: "🪸", label: "Fraktales Wachstum", node: <Wachstum /> },
   { id: "stadt", icon: "🏘️", label: "Stadtentwicklung", node: <Stadtentwicklung /> },
   { id: "erosion", icon: "🌧️", label: "Erosion", node: <Erosion /> },
+  { id: "vulkan", icon: "🌋", label: "Vulkane", node: <Vulkan /> },
   { id: "pse", icon: "🧪", label: "Periodensystem", node: <Periodensystem /> },
   { id: "atommodelle", icon: "⚛️", label: "Atommodelle", node: <Periodensystem nur="modelle" /> },
   { id: "strukturformeln", icon: "⬡", label: "Strukturformeln", node: <Strukturformeln /> },

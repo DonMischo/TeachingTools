@@ -132,6 +132,18 @@ export const REGISTER: WerkzeugQuellen[] = [
     ],
   },
   {
+    slug: "vulkan", name: "🌋 Vulkane",
+    eintraege: [
+      { quelle: "VoxelSpace", urheber: "Sebastian Macke", lizenz: "MIT", url: "https://github.com/s-macke/VoxelSpace", verwendung: "Algorithmus für den 3D-Flug; neu geschrieben (geteilt mit der Erosion)" },
+      { quelle: "Sandspiel", urheber: "Max Bittker", lizenz: "MIT", url: "https://github.com/MaxBittker/sandspiel", verwendung: "Vorbild für die Ausbruchswolke als fallender Sand (Teilchenregeln, Farbstreuung je Teilchen); neu in TypeScript geschrieben, kein Code übernommen" },
+      { quelle: "Wikimedia Commons", urheber: "verschiedene (Nachweis an jedem Bild)", lizenz: "gemeinfrei, CC BY, CC BY-SA", url: "https://commons.wikimedia.org/", verwendung: "40 Fotos der Galerie »Echte Vulkane«, verkleinert; Urheber und Lizenz in src/lib/vulkan/bilder.json und unter jedem Bild" },
+    ],
+    literatur: [
+      "Miyamoto, H. & Sasaki, S. (1997): Simulating lava flows by an improved cellular automata method. Computers & Geosciences 23, 283–292.",
+      "Del Negro, C. et al. (2008): Lava flow simulations using discharge rates from thermal infrared satellite imagery during the 2006 Etna eruption (MAGFLOW). Natural Hazards 49, 43–58.",
+    ],
+  },
+  {
     slug: "dla", name: "🪸 Fraktales Wachstum",
     eintraege: [
       { quelle: "dlaf (Diffusion-limited aggregation)", urheber: "Michael Fogleman", lizenz: "MIT", url: "https://github.com/fogleman/dlaf", verwendung: "Vorbild für Parameter (Abstand, Anziehung, Mindestschritt, Haftung) und den Sprung im leeren Raum; neu in TypeScript geschrieben, kein Code übernommen" },

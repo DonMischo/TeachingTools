@@ -197,6 +197,10 @@ CATALOG: list[CatalogTool] = [
     CatalogTool("erosion", "🌧️ Erosion", "🌧️", "simulationen", {
         "use": _cap(True, True),
     }),
+    # Vulkane: Schild- und Schichtvulkan wachsen aus dem Magma (SiO2, Gas).
+    CatalogTool("vulkan", "🌋 Vulkane", "🌋", "simulationen", {
+        "use": _cap(True, True),
+    }),
     # Periodensystem: Elemente nachschlagen, typische Reaktionen fuehren in die
     # Gleichungswaage.
     CatalogTool("pse", "🧪 Periodensystem", "🧪", "simulationen", {

@@ -42,6 +42,7 @@ export const SIM_STATIONEN: Record<string, { name: string; icon: string; Kompone
   dla: { name: "Fraktales Wachstum", icon: "🪸", Komponente: laden(() => import("@/components/dla/Wachstum")) },
   stadt: { name: "Stadtentwicklung", icon: "🏘️", Komponente: laden(() => import("@/components/stadt/Stadtentwicklung")) },
   erosion: { name: "Erosion", icon: "🌧️", Komponente: laden(() => import("@/components/erosion/Erosion")) },
+  vulkan: { name: "Vulkane", icon: "🌋", Komponente: laden(() => import("@/components/vulkan/Vulkan")) },
   pse: { name: "Periodensystem", icon: "🧪", Komponente: laden(() => import("@/components/pse/Periodensystem")) },
   strukturformeln: { name: "Strukturformeln", icon: "⬡", Komponente: laden(() => import("@/components/struktur/Strukturformeln")) },
   schichten: { name: "Schichtenmodell", icon: "📶", Komponente: laden(() => import("@/components/schichten/Schichtenmodell")) },

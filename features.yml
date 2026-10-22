@@ -381,6 +381,20 @@ simulationen:
       - Wirkungsbalken zeigen, welche Kraft gerade am meisten verändert; Sonne, Wind, Regen, Schnee und Eis in Rissen sichtbar
       - 3D-Flug im Stil von Voxel Space
       - Als TaskCrawler-Werkzeug mit fester Ansicht
+  - id: vulkan
+    name: Vulkane
+    kann:
+      - Schildvulkan, Schichtvulkan und Hotspot (Hawaii) wachsen Ausbruch für Ausbruch; die Form entsteht aus SiO₂- und Gasgehalt des Magmas (auch Lavadom, Schlacken- und Aschekegel)
+      - Ausbruch zum Zusehen als fallender Sand nach dem Vorbild von Sandspiel (MIT, neu geschrieben) - Eruptionssäule, Schirmwolke im Wind, Lapilli, Glutlawinen, Lavafontänen; Aschewolke auf der Karte
+      - Hotspot - 320 km Ozean, Platte wandert über den ortsfesten Plume, Inselkette mit Altersangaben, Seamounts, Absinken und Abtragung
+      - Unter Wasser - surtseyanische Dampfexplosionen im flachen Meer, keine Säule in der Tiefe, Kissenlava
+      - Galerie »Echte Vulkane« - 40 Fotos von Wikimedia Commons (gemeinfrei, CC BY, CC BY-SA) mit Erklärung und Bildnachweis; Bildstreifen zum gewählten Typ
+      - Lava als Bingham-Zellautomat (kritische Dicke, Zähigkeit steigt beim Abkühlen, Abstrahlung, schnelles Abkühlen im Meer)
+      - Asche als Ring um den Krater und Windfahne, lockeres Material rutscht bis zum Schüttwinkel, Felsstürze an zu steilen Wänden
+      - Flanken- und Spaltenausbrüche, Caldera-Einbruch mit Ignimbrit, Kraterseen, Vulkaninsel aus dem Meer
+      - Querschnitt durch alle Schichten mit Schlot, Gängen, Magmakammer und Ringbrüchen, drehbar, höchstens 2,5-fach überhöht
+      - Kennzahlen Höhe, Durchmesser, Hangneigung, Volumen, Ascheanteil; Karte mit verwitternden Lavaströmen, Beschriftungen und 3D-Flug
+      - Als TaskCrawler-Werkzeug mit festem Typ (schild, schicht, hotspot) und Untergrund
   - id: diagramme
     name: Diagramm-Werkstatt
     kann:
