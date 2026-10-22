@@ -34,6 +34,8 @@ export interface Anzeige {
   farbig: boolean;
   /** Schaltzeichen oder Bauteile wie im Experimentierkasten. */
   stil: "schaltplan" | "realistisch";
+  /** Faktor auf das Tempo der Strompunkte (1 = normal). */
+  punktTempo: number;
 }
 
 /** Mittel der Quadrate; beim Trafo auch für die Sekundärseite. */
@@ -160,7 +162,9 @@ export default function Zeichenflaeche(props: Props) {
         const geschw = (strom: number) => {
           const b = Math.abs(strom);
           if (b < 1e-6) return 0;
-          return Math.sign(strom) * Math.min(400, 140 * Math.sqrt(b / 0.1)) * p.ansicht.current.zoom * (p.anzeige.elektronen ? -1 : 1);
+          // Ruhig genug, dass das Auge folgen kann: 0,1 A ≈ 45 px/s, gedeckelt bei 180 px/s
+          const v = Math.min(180, 45 * Math.sqrt(b / 0.1)) * p.anzeige.punktTempo;
+          return Math.sign(strom) * v * p.ansicht.current.zoom * (p.anzeige.elektronen ? -1 : 1);
         };
         for (const d of s.draehte) {
           const k = `d:${d.id}`;

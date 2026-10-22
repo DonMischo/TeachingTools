@@ -46,7 +46,7 @@ export default function Stromkreis({ action, start, code, lehrkraft = false }: P
   const schaltung = verlauf.liste[verlauf.pos];
   const [auswahl, setAuswahl] = useState<Auswahl | null>(null);
   const [werkzeug, setWerkzeug] = useState<Werkzeug>("auswahl");
-  const [anzeige, setAnzeige] = useState<Anzeige>({ laufend: true, tempo: 1, elektronen: false, farbig: true, stil: "schaltplan" });
+  const [anzeige, setAnzeige] = useState<Anzeige>({ laufend: true, tempo: 1, elektronen: false, farbig: true, stil: "schaltplan", punktTempo: 1 });
   const [einpassen, setEinpassen] = useState(0);
   const [neustart, setNeustart] = useState(0);
   const [osziId, setOsziId] = useState<string | null>(null);
@@ -230,6 +230,14 @@ export default function Stromkreis({ action, start, code, lehrkraft = false }: P
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={anzeige.farbig} onChange={e => setAnzeige(a => ({ ...a, farbig: e.target.checked }))} />
           Spannung farbig
+        </label>
+        <label className="flex items-center gap-2 text-sm" title="Wie schnell die Strompunkte laufen — nur die Anzeige, nicht der Strom">
+          Punkte
+          <input
+            type="range" min={-3} max={2} step={1} value={Math.log2(anzeige.punktTempo)}
+            onChange={e => setAnzeige(a => ({ ...a, punktTempo: 2 ** Number(e.target.value) }))}
+            aria-label="Tempo der Strompunkte"
+          />
         </label>
         <select
           className="input w-auto" value="" aria-label="Beispiel laden"
