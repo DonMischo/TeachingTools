@@ -29,7 +29,7 @@ from sqlalchemy.orm import Session
 from . import dda
 from .challenge_engine import STUFE_PARAMS
 from .doc_convert import convert_to_pdf
-from .models import ChallengeSet, ExitGame, LessonMaterial, LessonPlan, Quiz
+from .models import ChallengeSet, ExitGame, ExitTicketSession, LessonMaterial, LessonPlan, Quiz
 
 KOMPENDIUM_DIR = Path(__file__).parent.parent / "data" / "methoden_kompendium"
 MAX_METHODEN = 5
@@ -472,6 +472,10 @@ def build_html(plan: LessonPlan, db: Session, mit_verzeichnis: bool) -> tuple[st
                 ziel = (f'<a href="{html.escape(link["url"])}">{html.escape(link.get("label") or link["url"])}</a>'
                         if link.get("type") == "link" and link.get("url") else html.escape(link.get("label") or link.get("type", "")))
                 doc.add(_feld("Werkzeug", ziel))
+                if link.get("type") == "exit-ticket":
+                    ticket = db.query(ExitTicketSession).filter_by(code=link.get("ref_id")).first()
+                    if ticket:
+                        doc.add(_feld("Frage im Exit Ticket", _t(ticket.question)))
             for mid in p.get("methoden") or []:
                 if mid in methoden:
                     _methode(doc, methoden[mid], kq)

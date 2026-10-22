@@ -292,6 +292,17 @@ def _gleichungswaage_launch(db: Session, teacher: Teacher, ref_id: str | None, k
     return LaunchResult(host_url="/simulationen/gleichungswaage", join_url="/simulationen/gleichungswaage", code=None)
 
 
+# ── vierecke ──────────────────────────────────────────────────────────────────
+
+def _vierecke_refs(db: Session, teacher: Teacher) -> list[dict]:
+    return [{"ref_id": None, "label": "Vierecke (Formen, Umfang, Fläche)"}]
+
+
+def _vierecke_launch(db: Session, teacher: Teacher, ref_id: str | None, klasse: str | None) -> LaunchResult:
+    # Static tool: the join code for students comes from »Zum Mitmachen« on the page.
+    return LaunchResult(host_url="/simulationen/vierecke", join_url="/simulationen/vierecke", code=None)
+
+
 # ── registry ──────────────────────────────────────────────────────────────────
 
 REGISTRY: dict[str, ToolDescriptor] = {
@@ -309,5 +320,6 @@ REGISTRY: dict[str, ToolDescriptor] = {
         ToolDescriptor("classroom", "🖥️ Classroom", False, False, _classroom_refs, _classroom_launch),
         ToolDescriptor("bildformate", "🖼️ Bildformate", False, False, _bildformate_refs, _bildformate_launch),
         ToolDescriptor("gleichungswaage", "⚖️ Gleichungswaage", False, False, _gleichungswaage_refs, _gleichungswaage_launch),
+        ToolDescriptor("vierecke", "📐 Vierecke", False, False, _vierecke_refs, _vierecke_launch),
     ]
 }
