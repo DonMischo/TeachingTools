@@ -76,6 +76,8 @@ export type Darstellung = {
   groesse?: { feld: string; max: number };
   /** Einheit für die Legende, z. B. »Einw./km²« */
   einheit?: string;
+  /** Linien: Strichstärke relativ zur normalen (Kreisstraße dünn, Autobahn 1) */
+  breite?: number;
   /** Färbt die Landfläche darunter (Bodennutzung: Ackerland ist der Normalfall, keine eigenen Flächen) */
   grundfarbe?: string;
 };
@@ -470,7 +472,7 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
     }
     if (e.geometrie === "linie") {
       layers.push({ id: `${e.id}:linie`, type: "line", source: e.id, layout: linie,
-        paint: { "line-color": themaFarbe(d), "line-width": ["interpolate", ["linear"], ["zoom"], 4, 1.2, 9, 3] } });
+        paint: { "line-color": themaFarbe(d), "line-width": ["interpolate", ["linear"], ["zoom"], 4, 1.2 * (d.breite ?? 1), 9, 3 * (d.breite ?? 1)] } });
       if (text && e.quiz) {
         // Benannte Linien (Tiefseegräben, Rücken): Name entlang der Linie
         layers.push({ id: `${e.id}:name`, type: "symbol", source: namen(e),

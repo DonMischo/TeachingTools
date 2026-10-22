@@ -138,7 +138,8 @@ aktivitaeten:
       - Kartennetz Equal Earth (Standard), Robinson, Winkel-Tripel (beide über PROJ), Mercator oder Globus im ☰-Menü, je Kartensatz gespeichert; schwarz-weiße Maßstabsleiste, Quellen unter der Karte
       - Kinderatlas »Robinson Crusoe« - bunte Länder, wenig Einzelheiten, Tiere und Pflanzen nach Wahl als Illustration (Openclipart) oder Avatar-Kachel (Robinson-Netz)
       - Regionen Deutschland, Thüringen, Europa, Welt, Kontinente; Kartenarten politisch, topographisch, stumm, Wirtschaft, Physisch
-      - Ebenen aus offenen Daten (BKG, Natural Earth, OPSD, CORINE, Bird PB2002, Köppen-Geiger) mit Quellenangabe auf der Karte
+      - Ebenen aus offenen Daten (BKG, BGR, Natural Earth, OPSD, CORINE, Bird PB2002, Köppen-Geiger) mit Quellenangabe auf der Karte
+      - Deutschland - Bundes-, Landes- und Kreisstraßen, Bodennutzung einfach oder genau (CORINE), Bodenschätze (BGR-Lagerstätten und Abbaustellen)
       - Europa genauer - BIP pro Kopf und Bevölkerungsdichte je NUTS-2-Region, EU/Eurozone/EFTA, Kraftwerke, Verkehr
       - USA-Wirtschaft - Landwirtschaft und Viehhaltung je Bundesstaat, Manufacturing Belt und Sun Belt, Industriestandorte (schematisch)
       - Atlas-Signaturen für Kraftwerke, Bergbau, Flug- und Seehäfen, Industrie und Sonderkulturen (Karte und Legende)
@@ -367,7 +368,7 @@ simulationen:
       - Regler für Regen, Lösekraft, Standfestigkeit und Verdunstung
       - Ansichten Gelände, Wasser, Abtrag/Ablagerung, Vorher; stärkster Abtrag und Ablagerung in Metern
       - Gleiches Zufallsgelände wie die Stadtentwicklung, Delta an der Küste
-      - Regen- und Trockenzeit, Zufluss am Oberlauf, neue Flüsse und Seen; feste Höhenskala, wahlweise 512²
+      - Regen- und Trockenzeit, Zufluss am Oberlauf, neue Flüsse und Seen; Höhenschichten wie im Schulatlas (feste Meterstufen mit Legende), wahlweise 512²
       - Reiter Küste - Steilküste, Flachküste, Marsch mit Deich; Sturmflut, Meeresspiegelanstieg, Deichbruch, Querprofil; Verweis zur Küstendynamik und zurück
       - Reiter Gesteine & Verwitterung - Querschnitte (100 × 55 m) von neun Gesteinen mit Klüften und Schichten, Steckbriefe mit Beispielen aus Thüringen und Deutschland
       - Typische Formen je Gestein, beschriftet - Karst mit Ponor, Höhlenbach, Karstquelle, Trockental, Lösungs- und Einsturzdoline, Tropfsteinhöhle; Gipskarst mit Erdfall; Tafelberg, Schutthalden, Blockhalde, Hohlweg, Rutschung, Dünen

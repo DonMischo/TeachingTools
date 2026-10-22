@@ -961,8 +961,27 @@ async function sonderkulturen(dlm250) {
 
 }
 
-/** Verkehr: Autobahnen, Fernbahn (VKD 1000 = überregional), Flughäfen. */
+/** Verkehr: Straßen, Autobahnen, Fernbahn (VKD 1000 = überregional), Flughäfen. */
 async function verkehr(dlm, dlm250) {
+  // Vor den Autobahnen schreiben: der Katalog bestimmt die Zeichenreihenfolge (Kreisstraße unten)
+  const kreis = await lies(finde(dlm250, "ver01_l.shp"), `-filter "WDM=='1306'" -each "art='kreisstrasse'" -dissolve art -simplify 20%`);
+  schreibe("de-kreisstrassen", { name: "Kreisstraßen", gruppe: "wirtschaft", bereich: "de", geometrie: "linie", quiz: false, quelle: QUELLE_BKG,
+    darstellung: { feld: "art", art: "kategorie", breite: 0.4, werte: [{ wert: "kreisstrasse", text: "Kreisstraße", farbe: "#a89f91" }] } },
+    kreis.map((f) => feature(f.geometry, { id: "kreisstrassen", name: "", art: "kreisstrasse" })));
+
+  const land = await lies(finde(dlm, "ver01_l.shp"), `-filter "WDM=='1305'" -each "art='landesstrasse'" -dissolve art -simplify 30%`);
+  schreibe("de-landesstrassen", { name: "Landes- und Staatsstraßen", gruppe: "wirtschaft", bereich: "de", geometrie: "linie", quiz: false, quelle: QUELLE_BKG,
+    darstellung: { feld: "art", art: "kategorie", breite: 0.55, werte: [{ wert: "landesstrasse", text: "Landes-/Staatsstraße", farbe: "#e3c25a" }] } },
+    land.map((f) => feature(f.geometry, { id: "landesstrassen", name: "", art: "landesstrasse" })));
+
+  const bund = await lies(finde(dlm, "ver01_l.shp"), `-filter "WDM=='1303'" -each "nr=(BEZ||'').split('#').find(function(b){return /^B ?\\d/.test(b)})||''" -dissolve nr -simplify 30%`);
+  schreibe("de-bundesstrassen", { name: "Bundesstraßen", gruppe: "wirtschaft", bereich: "de", geometrie: "linie", quiz: true, quelle: QUELLE_BKG,
+    darstellung: { feld: "art", art: "kategorie", breite: 0.75, werte: [{ wert: "bundesstrasse", text: "Bundesstraße", farbe: "#f0a020" }] } },
+    bund.filter((f) => f.properties.nr).map((f) => {
+      const nr = f.properties.nr.replace(/\s+/g, "");
+      return feature(f.geometry, { id: slug(nr), name: nr, art: "bundesstrasse" });
+    }));
+
   const ab = await lies(finde(dlm, "ver01_l.shp"), `-filter "WDM=='1301'" -each "nr=(BEZ||'').split('#').find(function(b){return /^A/.test(b)})||''" -dissolve nr -simplify 30%`);
   schreibe("de-autobahnen", { name: "Autobahnen", gruppe: "wirtschaft", bereich: "de", geometrie: "linie", quiz: true, quelle: QUELLE_BKG,
     darstellung: { feld: "art", art: "kategorie", werte: [{ wert: "autobahn", text: "Autobahn", farbe: "#e6550d" }] } },
@@ -996,33 +1015,107 @@ export const BODEN_LEGENDE = [
   { wert: "industrie", text: "Industrie, Gewerbe, Verkehr", farbe: "#7a0177" }, { wert: "abbau", text: "Abbauflächen (Tagebau)", farbe: "#6a3d0a" },
 ];
 
+/** CORINE-Klassen → feinere Kategorien (Waldarten, Wein/Obst, Siedlungsdichte getrennt). */
+const CLC_FEIN = {
+  111: "stadtkern", 112: "siedlung", 121: "industrie", 122: "verkehr", 123: "verkehr", 124: "verkehr",
+  131: "abbau", 132: "abbau", 133: "abbau", 141: "gruenanlage", 142: "gruenanlage",
+  211: "ackerland", 242: "ackerland", 221: "wein", 222: "obst", 231: "gruenland", 243: "gruenland",
+  311: "laubwald", 312: "nadelwald", 313: "mischwald", 321: "heide", 322: "heide", 324: "gebuesch",
+  331: "kueste", 332: "fels", 333: "fels", 411: "sumpf", 412: "moor", 421: "kueste", 423: "watt",
+};
+const BODEN_FEIN_LEGENDE = [
+  { wert: "ackerland", text: "Ackerland", farbe: "#f3e08a" }, { wert: "gruenland", text: "Wiesen und Weiden", farbe: "#a6d96a" },
+  { wert: "wein", text: "Weinbau", farbe: "#8e3a7e" }, { wert: "obst", text: "Obstbau", farbe: "#e7298a" },
+  { wert: "laubwald", text: "Laubwald", farbe: "#5fb04a" }, { wert: "mischwald", text: "Mischwald", farbe: "#3c8f34" },
+  { wert: "nadelwald", text: "Nadelwald", farbe: "#1b6b2d" }, { wert: "gebuesch", text: "Wald-Strauch-Übergang", farbe: "#93c47d" },
+  { wert: "heide", text: "Heide, Magerrasen", farbe: "#c2a5cf" }, { wert: "fels", text: "Fels, spärliche Vegetation", farbe: "#bdbdbd" },
+  { wert: "moor", text: "Torfmoor", farbe: "#8073ac" }, { wert: "sumpf", text: "Sumpf", farbe: "#a6a1d1" },
+  { wert: "kueste", text: "Strand, Düne, Salzwiese", farbe: "#e0d3b8" }, { wert: "watt", text: "Watt", farbe: "#c9bfa6" },
+  { wert: "stadtkern", text: "Dichte Bebauung", farbe: "#b2182b" }, { wert: "siedlung", text: "Lockere Bebauung", farbe: "#f4787a" },
+  { wert: "gruenanlage", text: "Parks, Sport, Freizeit", farbe: "#c7e9a0" }, { wert: "industrie", text: "Industrie, Gewerbe", farbe: "#7a0177" },
+  { wert: "verkehr", text: "Verkehr, Häfen, Flughäfen", farbe: "#9e9ac8" }, { wert: "abbau", text: "Abbau, Deponien, Baustellen", farbe: "#6a3d0a" },
+];
+
 /**
  * Bodennutzung aus CORINE Land Cover 2018 (BKG, 5 ha). Die Rohdaten sind
- * 4,8 GB groß und nach Hauptklassen in fünf Dateien geteilt: jede zuerst auf
- * 1,2 km vereinfachen, dann nach Schulkategorie zusammenfassen, Flecken unter
- * 6 km² weglassen. Ackerland bleibt die Grundfarbe der Landfläche.
+ * 4,8 GB groß und nach Hauptklassen in fünf Dateien geteilt: jede zuerst
+ * vereinfachen, dann nach Kategorie zusammenfassen und kleine Flecken
+ * weglassen. Ackerland bleibt die Grundfarbe der Landfläche.
+ * Schulkarte: 1,2 km / ab 6 km²; genau: 400 m / ab 1 km².
  */
-async function bodennutzung(clc) {
+async function bodennutzung(clc, { id, kurz, name, klassen, legende, roh: rohMeter, fein: feinMeter, ab }) {
   const teile = [];
   for (const klasse of ["1xx", "2xx", "3xx", "4xx"]) {
     const shp = finde(clc, `clc5_class${klasse}.shp`).replace(/\\/g, "/");
     // Stufe 1 (UTM): vereinfachen, je CORINE-Code zusammenfassen
-    const roh = await mapshaper.applyCommands(`-i "${shp}" -simplify interval=1200 planar keep-shapes -dissolve2 CLC18 -o format=geojson out.json`);
+    const roh = await mapshaper.applyCommands(`-i "${shp}" -simplify interval=${rohMeter} planar keep-shapes -dissolve2 CLC18 -o format=geojson out.json`);
     // Ackerland nicht als Fläche: es ist die Grundfarbe (Darstellung.grundfarbe) — spart 2 MB
     const nachCode = JSON.parse(roh["out.json"].toString()).features
-      .map((f) => ({ ...f, properties: { art: CLC_SCHULE[f.properties.CLC18] ?? "" } }))
+      .map((f) => ({ ...f, properties: { art: klassen[f.properties.CLC18] ?? "" } }))
       .filter((f) => f.properties.art && f.properties.art !== "ackerland");
-    // Stufe 2: je Schulkategorie zusammenfassen, kleine Flecken weg, nach WGS84
+    // Stufe 2: je Kategorie zusammenfassen, kleine Flecken weg, nach WGS84
     const aus = await mapshaper.applyCommands(
-      `-i in.json -dissolve2 art -explode -filter "this.area > 6000000" -simplify interval=900 planar keep-shapes -proj wgs84 from="+proj=utm +zone=32 +ellps=GRS80 +units=m" ` +
+      `-i in.json -dissolve2 art -explode -filter "this.area > ${ab}" -simplify interval=${feinMeter} planar keep-shapes -proj wgs84 from="+proj=utm +zone=32 +ellps=GRS80 +units=m" ` +
       `-o format=geojson precision=0.001 out.json`, { "in.json": { type: "FeatureCollection", features: nachCode } });
     teile.push(...JSON.parse(aus["out.json"].toString()).features);
     console.log(`    CORINE ${klasse}: ${teile.length} Flächen`);
   }
-  schreibe("de-bodennutzung", { name: "Bodennutzung (CORINE 2018)", gruppe: "wirtschaft", bereich: "de", geometrie: "flaeche", quiz: false,
+  schreibe(id, { name, gruppe: "wirtschaft", bereich: "de", geometrie: "flaeche", quiz: false,
     quelle: { ...QUELLE_BKG, name: `${QUELLE_BKG.name}, CORINE Land Cover 2018` },
-    darstellung: { feld: "art", art: "kategorie", werte: BODEN_LEGENDE, grundfarbe: BODEN_LEGENDE[0].farbe } },
-    teile.map((f, i) => feature(f.geometry, { id: `bn-${i + 1}`, name: "", art: f.properties.art })));
+    darstellung: { feld: "art", art: "kategorie", werte: legende, grundfarbe: legende[0].farbe } },
+    teile.map((f, i) => feature(f.geometry, { id: `${kurz}-${i + 1}`, name: "", art: f.properties.art })));
+}
+
+const BSK = "https://services.bgr.de/arcgis/rest/services/rohstoffe/bsk1000/MapServer";
+const QUELLE_BGR = { name: "© BGR, Karte der Bodenschätze 1:1 000 000 (BSK1000, Stand 2010)", lizenz: "GeoNutzV",
+  url: "https://www.bgr.bund.de/DE/Themen/Sammlungen-Grundlagen/GG_geol_Info/Karten/Deutschland/Bodenschatzkarte/bodenschatzkarte_node.html" };
+const ENERGIEROHSTOFF_LEGENDE = [
+  { wert: "braunkohle", text: "Braunkohle", farbe: "#8b5a2b" }, { wert: "steinkohle", text: "Steinkohle", farbe: "#333333" },
+  { wert: "erdoel-erdgas", text: "Erdöl, Erdgas", farbe: "#7b3294" }, { wert: "oelschiefer", text: "Ölschiefer", farbe: "#c2a5cf" },
+  { wert: "torf", text: "Torf", farbe: "#c49a6c" },
+];
+const STEINE_LEGENDE = [
+  { wert: "kies-sand", text: "Kies und Sand", farbe: "#f6d47b" }, { wert: "ton", text: "Ton, Tonstein", farbe: "#d6604d" },
+  { wert: "kalk", text: "Kalk-, Dolomit-, Gipsstein", farbe: "#92c5de" }, { wert: "naturstein", text: "Naturwerk- und Hartgestein", farbe: "#878787" },
+  { wert: "sonstige", text: "Industrieminerale, Erz", farbe: "#542788" },
+];
+const ABBAU_LEGENDE = [
+  { wert: "braunkohle", text: "Braunkohle", farbe: "#8b5a2b" }, { wert: "steinkohle", text: "Steinkohle (Abbau bis 2018)", farbe: "#333333" },
+  { wert: "erdoel", text: "Erdöl", farbe: "#7b3294" }, { wert: "erdgas", text: "Erdgas", farbe: "#f2a33a" },
+  { wert: "kali", text: "Kalisalz", farbe: "#d6604d" }, { wert: "steinsalz", text: "Steinsalz", farbe: "#f4a582" },
+  { wert: "erz", text: "Erz, Spat, Graphit", farbe: "#2166ac" },
+];
+
+/** Bodenschätze der BGR (BSK1000): Energierohstoffe, Steine und Erden (Flächen), Abbaustellen (Punkte). */
+async function rohstoffe() {
+  const hole = async (nr) => {
+    const url = `${BSK}/${nr}/query?where=1%3D1&outFields=*&outSR=4326&returnGeometry=true&f=geojson`;
+    return JSON.parse(readFileSync(await ladeDatei(`bsk1000_${nr}.geojson`, url), "utf8")).features;
+  };
+  const glaette = async (fs, art) => {
+    const aus = await mapshaper.applyCommands(`-i in.json -simplify 40% keep-shapes -o format=geojson precision=0.001 out.json`,
+      { "in.json": { type: "FeatureCollection", features: fs.map((f) => feature(f.geometry, { art: art(f.properties.Rohstoff) })) } });
+    return JSON.parse(aus["out.json"].toString()).features.filter((f) => f.properties.art);
+  };
+
+  const energie = await glaette(await hole(3), (r) => ({ Braunkohle: "braunkohle", Steinkohle: "steinkohle", "Erdöl, Erdgas": "erdoel-erdgas",
+    "Ölschiefer": "oelschiefer", Torf: "torf" })[r] ?? "");
+  schreibe("de-energierohstoffe", { name: "Energierohstoffe (Lagerstätten)", gruppe: "wirtschaft", bereich: "de", geometrie: "flaeche", quiz: false,
+    quelle: QUELLE_BGR, darstellung: { feld: "art", art: "kategorie", werte: ENERGIEROHSTOFF_LEGENDE } },
+    energie.map((f, i) => feature(f.geometry, { id: `er-${i + 1}`, name: "", art: f.properties.art })));
+
+  const steine = await glaette(await hole(4), (r) => /kies|sand$/i.test(r) && !/sandstein/i.test(r) ? "kies-sand"
+    : /^ton/i.test(r) ? "ton" : /kalk|dolomit|gips|anhydrit/i.test(r) ? "kalk"
+    : /industrie|erz/i.test(r) ? "sonstige" : "naturstein");
+  schreibe("de-steine-erden", { name: "Steine und Erden (Lagerstätten)", gruppe: "wirtschaft", bereich: "de", geometrie: "flaeche", quiz: false,
+    quelle: QUELLE_BGR, darstellung: { feld: "art", art: "kategorie", werte: STEINE_LEGENDE } },
+    steine.map((f, i) => feature(f.geometry, { id: `se-${i + 1}`, name: "", art: f.properties.art })));
+
+  const SIGNATUR = { Braunkohle: "braunkohle", Steinkohle: "steinkohle", "Erdöl": "erdoel", Erdgas: "erdgas", Kalisalz: "kali", Steinsalz: "steinsalz" };
+  const abbau = (await hole(0)).map((f) => ({ ...f, properties: { name: f.properties.Name.trim(), art: SIGNATUR[f.properties.Signatur] ?? "erz" } }));
+  schreibe("de-abbaustellen", { name: "Abbaustellen (Bodenschätze)", gruppe: "wirtschaft", bereich: "de", geometrie: "punkt", quiz: true,
+    quelle: QUELLE_BGR, darstellung: { feld: "art", art: "kategorie", werte: ABBAU_LEGENDE } },
+    abbau.filter((f) => f.properties.name).map((f) => feature(f.geometry, { id: `ab-${slug(f.properties.name)}`, ...f.properties })));
 }
 
 /** Bevölkerungsdichte der Kreise (VG250-EW: Einwohner, Fläche in km²). */
@@ -1323,7 +1416,11 @@ await schritt("industrie", () => industrie(ordner.dlm250));
 await schritt("sonderkulturen", () => sonderkulturen(ordner.dlm250));
 await schritt("verkehr", () => verkehr(ordner.dlm1000, ordner.dlm250));
 await schritt("bevoelkerung", () => bevoelkerung(ordner.vg250ew));
-await schritt("boden", () => bodennutzung(ordner.clc5));
+await schritt("boden", () => bodennutzung(ordner.clc5, { id: "de-bodennutzung", kurz: "bn", name: "Bodennutzung (CORINE 2018)",
+  klassen: CLC_SCHULE, legende: BODEN_LEGENDE, roh: 1200, fein: 900, ab: 6000000 }));
+await schritt("bodenfein", () => bodennutzung(ordner.clc5, { id: "de-bodennutzung-fein", kurz: "bf", name: "Bodennutzung, genau (CORINE 2018)",
+  klassen: CLC_FEIN, legende: BODEN_FEIN_LEGENDE, roh: 400, fein: 400, ab: 1000000 }));
+await schritt("rohstoffe", () => rohstoffe());
 await schritt("platten", () => platten(ladeDatei));
 await schritt("wuesten", () => wuesten(ordner));
 await schritt("klima", () => klimazonen(ordner.koeppen));
@@ -1343,7 +1440,15 @@ let ebenen = KATALOG;
 if (nur) {
   const alt = JSON.parse(readFileSync(join(ZIEL, "ebenen.json"), "utf8")).ebenen;
   const neu = new Map(KATALOG.map((e) => [e.id, e]));
-  ebenen = [...alt.map((e) => neu.get(e.id) ?? e), ...KATALOG.filter((e) => !alt.some((a) => a.id === e.id))];
+  ebenen = alt.map((e) => neu.get(e.id) ?? e);
+  // Neue Ebenen hinter ihren Vorgänger aus diesem Lauf (sonst vor den Nachfolger): die Reihenfolge ist die Zeichenreihenfolge
+  const bekannt = (k) => ebenen.some((a) => a.id === k.id);
+  KATALOG.forEach((e, i) => {
+    if (bekannt(e)) return;
+    const vorher = KATALOG.slice(0, i).reverse().find(bekannt), danach = KATALOG.slice(i + 1).find(bekannt);
+    const stelle = vorher ? ebenen.findIndex((a) => a.id === vorher.id) + 1 : danach ? ebenen.findIndex((a) => a.id === danach.id) : ebenen.length;
+    ebenen.splice(stelle, 0, e);
+  });
 }
 writeFileSync(join(ZIEL, "ebenen.json"), JSON.stringify({ stand: new Date().toISOString().slice(0, 10), ebenen }, null, 2));
 console.log(`Katalog: ${join(ZIEL, "ebenen.json")}`);

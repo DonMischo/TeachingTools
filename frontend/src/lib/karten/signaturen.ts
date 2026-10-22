@@ -18,6 +18,7 @@ export const SIGNATUREN: Record<string, Record<string, Signatur>> = {
     kernenergie: { bild: "atom", grund: "kreis" }, wasser: { bild: "welle", grund: "quadrat" }, "*": { bild: "blitz", grund: "quadrat" },
   },
   "de-bergbau": { historisch: { bild: "schlaegel", grund: "hohl" }, "*": { bild: "schlaegel", grund: "quadrat" } },
+  "de-abbaustellen": { erdoel: { bild: "bohrturm", grund: "quadrat" }, erdgas: { bild: "bohrturm", grund: "quadrat" }, "*": { bild: "schlaegel", grund: "quadrat" } },
   "de-flughaefen": { "*": { bild: "flugzeug", grund: "kreis" } },
   "eu-haefen-flughaefen": { hafen: { bild: "anker", grund: "kreis" }, flughafen: { bild: "flugzeug", grund: "kreis" } },
   "us-industrie": {

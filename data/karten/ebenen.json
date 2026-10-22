@@ -1,5 +1,5 @@
 {
-  "stand": "2026-10-08",
+  "stand": "2026-10-22",
   "ebenen": [
     {
       "id": "de-laender",
@@ -679,6 +679,87 @@
       "bytes": 881770
     },
     {
+      "id": "de-kreisstrassen",
+      "name": "Kreisstraßen",
+      "gruppe": "wirtschaft",
+      "bereich": "de",
+      "geometrie": "linie",
+      "quiz": false,
+      "quelle": {
+        "name": "© GeoBasis-DE / BKG (2026)",
+        "lizenz": "dl-de/by-2.0",
+        "url": "https://www.govdata.de/dl-de/by-2-0"
+      },
+      "darstellung": {
+        "feld": "art",
+        "art": "kategorie",
+        "breite": 0.4,
+        "werte": [
+          {
+            "wert": "kreisstrasse",
+            "text": "Kreisstraße",
+            "farbe": "#a89f91"
+          }
+        ]
+      },
+      "anzahl": 1,
+      "bytes": 4844773
+    },
+    {
+      "id": "de-landesstrassen",
+      "name": "Landes- und Staatsstraßen",
+      "gruppe": "wirtschaft",
+      "bereich": "de",
+      "geometrie": "linie",
+      "quiz": false,
+      "quelle": {
+        "name": "© GeoBasis-DE / BKG (2026)",
+        "lizenz": "dl-de/by-2.0",
+        "url": "https://www.govdata.de/dl-de/by-2-0"
+      },
+      "darstellung": {
+        "feld": "art",
+        "art": "kategorie",
+        "breite": 0.55,
+        "werte": [
+          {
+            "wert": "landesstrasse",
+            "text": "Landes-/Staatsstraße",
+            "farbe": "#e3c25a"
+          }
+        ]
+      },
+      "anzahl": 1,
+      "bytes": 2669860
+    },
+    {
+      "id": "de-bundesstrassen",
+      "name": "Bundesstraßen",
+      "gruppe": "wirtschaft",
+      "bereich": "de",
+      "geometrie": "linie",
+      "quiz": true,
+      "quelle": {
+        "name": "© GeoBasis-DE / BKG (2026)",
+        "lizenz": "dl-de/by-2.0",
+        "url": "https://www.govdata.de/dl-de/by-2-0"
+      },
+      "darstellung": {
+        "feld": "art",
+        "art": "kategorie",
+        "breite": 0.75,
+        "werte": [
+          {
+            "wert": "bundesstrasse",
+            "text": "Bundesstraße",
+            "farbe": "#f0a020"
+          }
+        ]
+      },
+      "anzahl": 457,
+      "bytes": 1107168
+    },
+    {
       "id": "de-autobahnen",
       "name": "Autobahnen",
       "gruppe": "wirtschaft",
@@ -884,6 +965,128 @@
       },
       "anzahl": 3428,
       "bytes": 4429018
+    },
+    {
+      "id": "de-bodennutzung-fein",
+      "name": "Bodennutzung, genau (CORINE 2018)",
+      "gruppe": "wirtschaft",
+      "bereich": "de",
+      "geometrie": "flaeche",
+      "quiz": false,
+      "quelle": {
+        "name": "© GeoBasis-DE / BKG (2026), CORINE Land Cover 2018",
+        "lizenz": "dl-de/by-2.0",
+        "url": "https://www.govdata.de/dl-de/by-2-0"
+      },
+      "darstellung": {
+        "feld": "art",
+        "art": "kategorie",
+        "werte": [
+          {
+            "wert": "ackerland",
+            "text": "Ackerland",
+            "farbe": "#f3e08a"
+          },
+          {
+            "wert": "gruenland",
+            "text": "Wiesen und Weiden",
+            "farbe": "#a6d96a"
+          },
+          {
+            "wert": "wein",
+            "text": "Weinbau",
+            "farbe": "#8e3a7e"
+          },
+          {
+            "wert": "obst",
+            "text": "Obstbau",
+            "farbe": "#e7298a"
+          },
+          {
+            "wert": "laubwald",
+            "text": "Laubwald",
+            "farbe": "#5fb04a"
+          },
+          {
+            "wert": "mischwald",
+            "text": "Mischwald",
+            "farbe": "#3c8f34"
+          },
+          {
+            "wert": "nadelwald",
+            "text": "Nadelwald",
+            "farbe": "#1b6b2d"
+          },
+          {
+            "wert": "gebuesch",
+            "text": "Wald-Strauch-Übergang",
+            "farbe": "#93c47d"
+          },
+          {
+            "wert": "heide",
+            "text": "Heide, Magerrasen",
+            "farbe": "#c2a5cf"
+          },
+          {
+            "wert": "fels",
+            "text": "Fels, spärliche Vegetation",
+            "farbe": "#bdbdbd"
+          },
+          {
+            "wert": "moor",
+            "text": "Torfmoor",
+            "farbe": "#8073ac"
+          },
+          {
+            "wert": "sumpf",
+            "text": "Sumpf",
+            "farbe": "#a6a1d1"
+          },
+          {
+            "wert": "kueste",
+            "text": "Strand, Düne, Salzwiese",
+            "farbe": "#e0d3b8"
+          },
+          {
+            "wert": "watt",
+            "text": "Watt",
+            "farbe": "#c9bfa6"
+          },
+          {
+            "wert": "stadtkern",
+            "text": "Dichte Bebauung",
+            "farbe": "#b2182b"
+          },
+          {
+            "wert": "siedlung",
+            "text": "Lockere Bebauung",
+            "farbe": "#f4787a"
+          },
+          {
+            "wert": "gruenanlage",
+            "text": "Parks, Sport, Freizeit",
+            "farbe": "#c7e9a0"
+          },
+          {
+            "wert": "industrie",
+            "text": "Industrie, Gewerbe",
+            "farbe": "#7a0177"
+          },
+          {
+            "wert": "verkehr",
+            "text": "Verkehr, Häfen, Flughäfen",
+            "farbe": "#9e9ac8"
+          },
+          {
+            "wert": "abbau",
+            "text": "Abbau, Deponien, Baustellen",
+            "farbe": "#6a3d0a"
+          }
+        ],
+        "grundfarbe": "#f3e08a"
+      },
+      "anzahl": 25408,
+      "bytes": 9696276
     },
     {
       "id": "de-orte",
@@ -2077,6 +2280,154 @@
       },
       "anzahl": 5,
       "bytes": 164566
+    },
+    {
+      "id": "de-energierohstoffe",
+      "name": "Energierohstoffe (Lagerstätten)",
+      "gruppe": "wirtschaft",
+      "bereich": "de",
+      "geometrie": "flaeche",
+      "quiz": false,
+      "quelle": {
+        "name": "© BGR, Karte der Bodenschätze 1:1 000 000 (BSK1000, Stand 2010)",
+        "lizenz": "GeoNutzV",
+        "url": "https://www.bgr.bund.de/DE/Themen/Sammlungen-Grundlagen/GG_geol_Info/Karten/Deutschland/Bodenschatzkarte/bodenschatzkarte_node.html"
+      },
+      "darstellung": {
+        "feld": "art",
+        "art": "kategorie",
+        "werte": [
+          {
+            "wert": "braunkohle",
+            "text": "Braunkohle",
+            "farbe": "#8b5a2b"
+          },
+          {
+            "wert": "steinkohle",
+            "text": "Steinkohle",
+            "farbe": "#333333"
+          },
+          {
+            "wert": "erdoel-erdgas",
+            "text": "Erdöl, Erdgas",
+            "farbe": "#7b3294"
+          },
+          {
+            "wert": "oelschiefer",
+            "text": "Ölschiefer",
+            "farbe": "#c2a5cf"
+          },
+          {
+            "wert": "torf",
+            "text": "Torf",
+            "farbe": "#c49a6c"
+          }
+        ]
+      },
+      "anzahl": 182,
+      "bytes": 124106
+    },
+    {
+      "id": "de-steine-erden",
+      "name": "Steine und Erden (Lagerstätten)",
+      "gruppe": "wirtschaft",
+      "bereich": "de",
+      "geometrie": "flaeche",
+      "quiz": false,
+      "quelle": {
+        "name": "© BGR, Karte der Bodenschätze 1:1 000 000 (BSK1000, Stand 2010)",
+        "lizenz": "GeoNutzV",
+        "url": "https://www.bgr.bund.de/DE/Themen/Sammlungen-Grundlagen/GG_geol_Info/Karten/Deutschland/Bodenschatzkarte/bodenschatzkarte_node.html"
+      },
+      "darstellung": {
+        "feld": "art",
+        "art": "kategorie",
+        "werte": [
+          {
+            "wert": "kies-sand",
+            "text": "Kies und Sand",
+            "farbe": "#f6d47b"
+          },
+          {
+            "wert": "ton",
+            "text": "Ton, Tonstein",
+            "farbe": "#d6604d"
+          },
+          {
+            "wert": "kalk",
+            "text": "Kalk-, Dolomit-, Gipsstein",
+            "farbe": "#92c5de"
+          },
+          {
+            "wert": "naturstein",
+            "text": "Naturwerk- und Hartgestein",
+            "farbe": "#878787"
+          },
+          {
+            "wert": "sonstige",
+            "text": "Industrieminerale, Erz",
+            "farbe": "#542788"
+          }
+        ]
+      },
+      "anzahl": 632,
+      "bytes": 509035
+    },
+    {
+      "id": "de-abbaustellen",
+      "name": "Abbaustellen (Bodenschätze)",
+      "gruppe": "wirtschaft",
+      "bereich": "de",
+      "geometrie": "punkt",
+      "quiz": true,
+      "quelle": {
+        "name": "© BGR, Karte der Bodenschätze 1:1 000 000 (BSK1000, Stand 2010)",
+        "lizenz": "GeoNutzV",
+        "url": "https://www.bgr.bund.de/DE/Themen/Sammlungen-Grundlagen/GG_geol_Info/Karten/Deutschland/Bodenschatzkarte/bodenschatzkarte_node.html"
+      },
+      "darstellung": {
+        "feld": "art",
+        "art": "kategorie",
+        "werte": [
+          {
+            "wert": "braunkohle",
+            "text": "Braunkohle",
+            "farbe": "#8b5a2b"
+          },
+          {
+            "wert": "steinkohle",
+            "text": "Steinkohle (Abbau bis 2018)",
+            "farbe": "#333333"
+          },
+          {
+            "wert": "erdoel",
+            "text": "Erdöl",
+            "farbe": "#7b3294"
+          },
+          {
+            "wert": "erdgas",
+            "text": "Erdgas",
+            "farbe": "#f2a33a"
+          },
+          {
+            "wert": "kali",
+            "text": "Kalisalz",
+            "farbe": "#d6604d"
+          },
+          {
+            "wert": "steinsalz",
+            "text": "Steinsalz",
+            "farbe": "#f4a582"
+          },
+          {
+            "wert": "erz",
+            "text": "Erz, Spat, Graphit",
+            "farbe": "#2166ac"
+          }
+        ]
+      },
+      "anzahl": 75,
+      "bytes": 13027
     }
   ]
 }

@@ -133,3 +133,21 @@ def test_europa_endet_am_ural():
         return [p[0] for teil in teile for p in teil[0]]
     assert max(laengen("Europa")) < 70  # Sibirien gehört zu Asien
     assert min(x for x in laengen("Asien") if x > 0) < 62  # Asien reicht bis an den Ural
+
+
+def test_strassen_und_bodenschaetze_sind_da():
+    bundesstrassen = {f["properties"]["name"] for f in _lade("de-bundesstrassen")["features"]}
+    assert {"B7", "B4", "B19"} <= bundesstrassen
+    abbau = {f["properties"]["name"]: f["properties"]["art"] for f in _lade("de-abbaustellen")["features"]}
+    assert abbau["Hambach"] == "braunkohle" and abbau["Zielitz"] == "kali"
+    energie = {f["properties"]["art"] for f in _lade("de-energierohstoffe")["features"]}
+    assert {"braunkohle", "steinkohle", "erdoel-erdgas"} <= energie
+    # Gezeichnet wird in Katalog-Reihenfolge: kleine Straßen unter den großen
+    ids = [e["id"] for e in KATALOG]
+    assert ids.index("de-kreisstrassen") < ids.index("de-landesstrassen") < ids.index("de-bundesstrassen") < ids.index("de-autobahnen")
+
+
+def test_genaue_bodennutzung_trennt_waldarten():
+    arten = {f["properties"]["art"] for f in _lade("de-bodennutzung-fein")["features"]}
+    assert {"laubwald", "nadelwald", "mischwald", "wein", "obst", "stadtkern"} <= arten
+    assert "ackerland" not in arten  # Ackerland ist die Grundfarbe
