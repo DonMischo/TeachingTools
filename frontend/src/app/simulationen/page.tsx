@@ -157,6 +157,14 @@ const ALL_CARDS: Werkzeug[] = [
     color: "#b91c1c",
   },
   {
+    slug: "stromkreis",
+    href: "/simulationen/stromkreis",
+    icon: "💡",
+    title: "Stromkreise",
+    description: "Schaltungen bauen und zusehen, wie der Strom fließt: Batterie, Lämpchen, Schalter, LED, Motor, Messgeräte, Kondensator, Spule und Trafo — als Schaltplan oder wie im Experimentierkasten, mit Oszilloskop und 16 Beispielen.",
+    color: "#ca8a04",
+  },
+  {
     slug: "diagramme",
     href: "/simulationen/diagramme",
     icon: "🔀",

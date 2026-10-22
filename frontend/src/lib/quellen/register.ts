@@ -144,6 +144,16 @@ export const REGISTER: WerkzeugQuellen[] = [
     ],
   },
   {
+    slug: "stromkreis", name: "💡 Stromkreise",
+    eintraege: [
+      { quelle: "Circuit Simulator (circuitjs1)", urheber: "Paul Falstad, Iain Sharp", lizenz: "GPL-2.0", url: "https://github.com/pfalstad/circuitjs1", verwendung: "Vorbild für Bedienung und Darstellung (Strompunkte, Potenzialfarben); Löser, Zeichnung und Bedienung neu in TypeScript geschrieben, kein Code übernommen" },
+    ],
+    literatur: [
+      "Ho, C.-W., Ruehli, A. & Brennan, P. (1975): The modified nodal approach to network analysis. IEEE Transactions on Circuits and Systems 22, 504–509.",
+      "Nagel, L. W. (1975): SPICE2: A Computer Program to Simulate Semiconductor Circuits. UC Berkeley, ERL-M520 (Spannungsbegrenzung pnjlim).",
+    ],
+  },
+  {
     slug: "dla", name: "🪸 Fraktales Wachstum",
     eintraege: [
       { quelle: "dlaf (Diffusion-limited aggregation)", urheber: "Michael Fogleman", lizenz: "MIT", url: "https://github.com/fogleman/dlaf", verwendung: "Vorbild für Parameter (Abstand, Anziehung, Mindestschritt, Haftung) und den Sprung im leeren Raum; neu in TypeScript geschrieben, kein Code übernommen" },

@@ -201,6 +201,10 @@ CATALOG: list[CatalogTool] = [
     CatalogTool("vulkan", "🌋 Vulkane", "🌋", "simulationen", {
         "use": _cap(True, True),
     }),
+    # Stromkreise: Schaltungen bauen, Strom fliessen sehen (Gleich- und Wechselstrom).
+    CatalogTool("stromkreis", "💡 Stromkreise", "💡", "simulationen", {
+        "use": _cap(True, True),
+    }),
     # Periodensystem: Elemente nachschlagen, typische Reaktionen fuehren in die
     # Gleichungswaage.
     CatalogTool("pse", "🧪 Periodensystem", "🧪", "simulationen", {

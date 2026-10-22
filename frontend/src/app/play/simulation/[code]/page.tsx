@@ -39,6 +39,7 @@ import Wachstum from "@/components/dla/Wachstum";
 import Stadtentwicklung from "@/components/stadt/Stadtentwicklung";
 import Erosion from "@/components/erosion/Erosion";
 import Vulkan from "@/components/vulkan/Vulkan";
+import Stromkreis from "@/components/stromkreis/Stromkreis";
 import DiagrammWerkstatt from "@/components/diagramme/DiagrammWerkstatt";
 import Schichtenmodell from "@/components/schichten/Schichtenmodell";
 import Tippen from "@/components/tippen/Tippen";
@@ -85,6 +86,8 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   leben: { title: "Rock your Life", icon: "🎸", node: null },
   // Der Leviathan liest die Einstellungen der Lehrkraft über den Code.
   leviathan: { title: "Leviathan", icon: "🐋", node: null },
+  // Die Stromkreise holen über den Code die Schaltung der Lehrkraft.
+  stromkreis: { title: "Stromkreise", icon: "💡", node: null },
   // Die KI-Werkstatt braucht den Code: an ihm hängt die gemeinsame Tafel.
   ki: { title: "KI-Werkstatt", icon: "🤖", node: null },
   // Übung holt ihre Aufgaben vom Server und braucht dafür Code und Gast-Token.
@@ -205,6 +208,8 @@ export default function SimulationJoinPage() {
               speicherSchluessel={auth
                 ? `konto-${auth.user_type}-${auth.student?.id ?? auth.teacher?.id ?? 0}`
                 : guest.token ? schluesselFuerGast(code, guest.token) : `gast-${code}`} />
+        : session.tool_slug === "stromkreis"
+          ? <Stromkreis code={code} />
         : session.tool_slug === "leviathan"
           ? <Leviathan code={code}
               speicherSchluessel={auth

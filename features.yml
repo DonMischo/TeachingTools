@@ -396,6 +396,16 @@ simulationen:
       - Querschnitt durch alle Schichten mit Schlot, Gängen, Magmakammer und Ringbrüchen, drehbar, höchstens 2,5-fach überhöht
       - Kennzahlen Höhe, Durchmesser, Hangneigung, Volumen, Ascheanteil; Karte mit verwitternden Lavaströmen, Beschriftungen und 3D-Flug
       - Als TaskCrawler-Werkzeug mit festem Typ (schild, schicht, hotspot) und Untergrund
+  - id: stromkreis
+    name: Stromkreise
+    kann:
+      - Schaltungen auf einem Raster bauen - Bauteile setzen oder aufziehen, Leitungen ziehen, verschieben (Leitungen wandern mit), drehen, löschen, Rückgängig
+      - Batterie, Wechselspannung, Lämpchen, Widerstand, Motor, LED, Diode, Schalter, Umschalter, Sicherung, Kondensator, Spule, Trafo, Strom- und Spannungsmesser
+      - Knotenpotenzialverfahren (MNA) mit Trapezregel für C, L und Trafo und Newton für Dioden; Durchbrennen, Sicherung löst aus, Motor mit Gegenspannung
+      - Strompunkte in technischer Stromrichtung oder als Elektronen, Potenzialfarben, Zeitlupe, Effektivwerte bei Wechselstrom, Oszilloskop
+      - Schaltplan mit DIN-Schaltzeichen oder realistische Ansicht wie im Experimentierkasten
+      - 16 Beispielschaltungen; Speichern und Öffnen als JSON-Datei
+      - Lehrkraft gibt Schaltung und Arbeitsauftrag an die Sitzung; Beitretende starten mit einer eigenen Kopie
   - id: diagramme
     name: Diagramm-Werkstatt
     kann:

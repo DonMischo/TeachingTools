@@ -370,6 +370,20 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet)." },
     ],
   },
+  stromkreis: {
+    title: "Stromkreise",
+    intro: "Schaltungen bauen und zusehen, wie der Strom fließt. Gerechnet wird wie in einem Schaltungssimulator (Knotenpotenzialverfahren), vereinfacht für die Schule: ideale Leitungen, Quellen mit Innenwiderstand, Trafo ohne Kernverluste. Vorbild ist der Circuit Simulator von Paul Falstad; alles läuft im Browser.",
+    sections: [
+      { label: "🔧 Bauen", text: "Bauteil links wählen und auf die Fläche klicken — oder aufziehen, um Lage und Länge festzulegen. »Leitung« zieht Leitungen von Punkt zu Punkt (schräg gezogen wird ein Winkel daraus). Verbunden ist, was sich an einem Punkt trifft; ein Anschluss mitten auf einer Leitung verbindet auch. Sich nur kreuzende Leitungen sind nicht verbunden." },
+      { label: "✋ Bearbeiten", text: "Bauteile ziehen verschiebt sie, die Leitungen wandern mit; an den Enden ziehen macht sie länger. R dreht, Entf löscht, Strg+Z/Strg+Y nimmt zurück und wiederholt. Schalter und Umschalter mit einem Klick umlegen. Leere Fläche ziehen verschiebt die Ansicht, das Mausrad zoomt, ⤢ zeigt alles." },
+      { label: "🔍 Inspektor", text: "Rechts stehen die Werte des gewählten Bauteils (Spannung der Batterie, Widerstand, Kapazität, Windungszahlen …) und was gerade gemessen wird: Spannung, Stromstärke, Leistung, bei Lämpchen und LED die Helligkeit, beim Motor die Drehzahl. Bei Wechselstrom stehen dort Effektivwerte. Durchgebrannte Lämpchen und LEDs lassen sich austauschen, eine ausgelöste Sicherung ersetzen." },
+      { label: "⚡ Strom sehen", text: "Gelbe Punkte laufen in technischer Stromrichtung (von + nach −), schneller bei mehr Strom; »Elektronen« zeigt blaue Punkte in die Gegenrichtung. »Spannung farbig«: grün = höheres Potenzial, rot = niedrigeres, grau = Minuspol der Quelle. Wechselstrom (50 Hz) ist in Echtzeit zu schnell fürs Auge — die Zeitlupe zeigt das Hin und Her." },
+      { label: "📈 Oszilloskop", text: "Im Inspektor »Oszilloskop« wählen: Spannung (gelb) und Strom (blau) des Bauteils über der Zeit, jede Kurve mit eigenem Maßstab. Gut für Kondensator laden, Schwingkreis und Gleichrichter." },
+      { label: "🔦 Ansicht", text: "»Schaltplan« zeigt Schaltzeichen nach DIN, »Realistisch« Bauteile wie im Experimentierkasten: Glühwendel im Glaskolben, Widerstand mit Farbringen, Motor mit Propeller, Glassicherung, Multimeter mit Anzeige." },
+      { label: "📚 Beispiele und Dateien", text: "16 Beispiele vom ersten Stromkreis über Reihe/Parallel, UND/ODER und Wechselschaltung bis zu Kondensator, Spule, Schwingkreis, Trafo und Gleichrichtern — jedes mit einer Idee zum Ausprobieren. »Speichern« lädt die Schaltung als JSON-Datei herunter, »Öffnen« lädt eine wieder (sie wird dabei geprüft)." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet). Unter »Für die Klasse« geben Sie die aktuelle Schaltung samt Arbeitsauftrag an die Sitzung: Wer beitritt, startet damit und baut an einer eigenen Kopie weiter." },
+    ],
+  },
   dla: {
     title: "Fraktales Wachstum",
     intro: "Diffusionsbegrenzte Aggregation (DLA): Ein Teilchen irrt zufällig umher, bis es den Haufen berührt, und bleibt dort hängen. Weil die Spitzen die ankommenden Teilchen zuerst abfangen, wachsen verzweigte Äste mit luftigem Innern — wie Korallen, Kupferbäumchen, Eisblumen oder Lichtenberg-Figuren. Rechnet ganz im Browser; Vorbild ist dlaf von Michael Fogleman (MIT).",

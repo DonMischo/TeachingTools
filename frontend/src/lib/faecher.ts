@@ -41,6 +41,7 @@ export const STANDARD_FAECHER: Record<string, string[]> = {
   stadt: ["Geografie", "Geschichte"],
   erosion: ["Geografie", "Physik"],
   vulkan: ["Geografie", "Chemie", "Physik"],
+  stromkreis: ["Physik"],
   diagramme: ["Informatik"],
   dla: ["Physik", "Chemie", "Mathematik", "Biologie", "Informatik"],
   schichten: ["Informatik"],
