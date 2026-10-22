@@ -34,6 +34,7 @@ const LAUFLICHT: number[][] = [[0, 4, 3], [0.5, 4, 2.5], [1, 4, 2], [1.5, 4, 1.5
 
 /** Deutschland mit etwas Rand */
 const START: [[number, number], [number, number]] = [[5.6, 47.2], [15.3, 55.1]];
+const BROCKEN: [number, number] = [10.6155, 51.7991];
 
 /** Liefert das Kartenbild als PNG-data-URL, sobald der aktuelle Stil fertig gezeichnet ist. */
 export type KartenBild = () => Promise<string>;
@@ -91,7 +92,8 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
       m = new maplibre.Map({
         container: behaelter.current,
         style: ersterStil.current,
-        bounds: START,
+        // Start auf dem Brocken (Harz); »⤢« passt danach Deutschland ein
+        center: BROCKEN, zoom: 10,
         // Kein maxBounds über die ganze Welt: MapLibre stürzt dann beim Start ab (_calcMatrices)
         renderWorldCopies: false,
         minZoom: 0.5,
