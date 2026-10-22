@@ -14,11 +14,14 @@ import { Simulation } from "@/lib/stromkreis/simulation";
 import { drehe, loesche, setzeWert as setzeWertIn, type Auswahl } from "@/lib/stromkreis/editor";
 import { hatWechsel } from "@/lib/stromkreis/lauf";
 import { TEILE } from "@/lib/stromkreis/teile";
-import { START } from "@/lib/stromkreis/beispiele";
+import { BEISPIELE, START } from "@/lib/stromkreis/beispiele";
+import { alsDatei, alsVorgabe, liesSchaltung, vorgabeAus, type Vorgabe } from "@/lib/stromkreis/datei";
+import { api } from "@/lib/api";
 import Zeichenflaeche, { type Anzeige, type Ansicht, type Effektiv, type OsziPuffer, type Werkzeug } from "./Zeichenflaeche";
 import Palette from "./Palette";
 import Inspektor, { type Stand } from "./Inspektor";
 import Oszilloskop from "./Oszilloskop";
+import KlassenVorgabe from "./KlassenVorgabe";
 
 const TEMPI = [
   { wert: 1, label: "Echtzeit" },
@@ -29,8 +32,16 @@ const TEMPI = [
 
 interface Verlauf { liste: Schaltung[]; pos: number }
 
-/** `start`: Schaltung, mit der es losgeht (sonst Batterie, Schalter, Lämpchen). */
-export default function Stromkreis({ action, start }: { action?: ReactNode; start?: Schaltung }) {
+interface Props {
+  action?: ReactNode;
+  /** Schaltung, mit der es losgeht (sonst Batterie, Schalter, Lämpchen). */
+  start?: Schaltung;
+  /** Sitzungscode: Lehrkräfte legen darüber die Vorgabe fest, Schüler·innen bekommen sie. */
+  code?: string | null;
+  lehrkraft?: boolean;
+}
+
+export default function Stromkreis({ action, start, code, lehrkraft = false }: Props) {
   const [verlauf, setVerlauf] = useState<Verlauf>({ liste: [start ?? START], pos: 0 });
   const schaltung = verlauf.liste[verlauf.pos];
   const [auswahl, setAuswahl] = useState<Auswahl | null>(null);
@@ -41,6 +52,11 @@ export default function Stromkreis({ action, start }: { action?: ReactNode; star
   const [osziId, setOsziId] = useState<string | null>(null);
   const [stand, setStand] = useState<Stand>({});
   const [taktNr, setTaktNr] = useState(0);
+  const [vorgabe, setVorgabe] = useState<Vorgabe | null>(null);
+  // Zählt nur Abrufe vom Server: dann übernimmt das Lehrkraft-Feld den gespeicherten Auftrag.
+  const [vorgabeAbruf, setVorgabeAbruf] = useState(0);
+  const [dateiFehler, setDateiFehler] = useState<string | null>(null);
+  const dateiWahl = useRef<HTMLInputElement>(null);
 
   const sim = useRef<Simulation | null>(null);
   const ansicht = useRef<Ansicht>({ x: 40, y: 40, zoom: 1.5 });
@@ -53,6 +69,64 @@ export default function Stromkreis({ action, start }: { action?: ReactNode; star
       return { liste, pos: liste.length - 1 };
     });
   }, []);
+  /** Eine ganze Schaltung übernehmen (Beispiel, Datei, Vorgabe) — Rückgängig bleibt möglich. */
+  const [hinweis, setHinweis] = useState<string | null>(null);
+  const laden = (s: Schaltung, tempo?: number, idee?: string) => {
+    aendern(s);
+    setHinweis(idee ?? null);
+    setAuswahl(null);
+    setWerkzeug("auswahl");
+    setEinpassen(n => n + 1);
+    if (tempo) setAnzeige(a => ({ ...a, tempo }));
+  };
+
+  const herunterladen = () => {
+    const blob = new Blob([alsDatei(schaltung)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "stromkreis.json";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+  const oeffnen = async (datei: File) => {
+    setDateiFehler(null);
+    try {
+      const r = liesSchaltung(JSON.parse(await datei.text()));
+      if ("fehler" in r) setDateiFehler(r.fehler);
+      else laden(r.schaltung);
+    } catch {
+      setDateiFehler("Die Datei ist kein gültiges JSON.");
+    }
+  };
+
+  // Vorgabe der Sitzung: Schüler·innen starten damit (eigene Kopie), die Lehrkraft sieht, was gilt.
+  useEffect(() => {
+    if (!code) { setVorgabe(null); return; }
+    let aktiv = true;
+    api.toolSessions.get(code).then(sitzung => {
+      if (!aktiv) return;
+      const v = vorgabeAus(sitzung.settings);
+      setVorgabe(v);
+      if (v) setVorgabeAbruf(n => n + 1);
+      if (v && !lehrkraft) {
+        setVerlauf({ liste: [v.schaltung], pos: 0 });
+        setEinpassen(n => n + 1);
+      }
+    }).catch(() => { /* ohne Vorgabe geht es auch */ });
+    return () => { aktiv = false; };
+  }, [code, lehrkraft]);
+
+  const festlegen = async (aufgabe: string) => {
+    if (!code) return;
+    const sitzung = await api.toolSessions.einstellungen(code, alsVorgabe(schaltung, aufgabe));
+    setVorgabe(vorgabeAus(sitzung.settings));
+  };
+  const entfernen = async () => {
+    if (!code) return;
+    await api.toolSessions.einstellungen(code, {});
+    setVorgabe(null);
+  };
+
   const rueckgaengig = () => setVerlauf(v => ({ ...v, pos: Math.max(0, v.pos - 1) }));
   const wiederholen = () => setVerlauf(v => ({ ...v, pos: Math.min(v.liste.length - 1, v.pos + 1) }));
 
@@ -157,13 +231,43 @@ export default function Stromkreis({ action, start }: { action?: ReactNode; star
           <input type="checkbox" checked={anzeige.farbig} onChange={e => setAnzeige(a => ({ ...a, farbig: e.target.checked }))} />
           Spannung farbig
         </label>
+        <select
+          className="input w-auto" value="" aria-label="Beispiel laden"
+          onChange={e => { const b = BEISPIELE.find(x => x.id === e.target.value); if (b) laden(b.schaltung, b.tempo ?? 1, b.idee); }}
+        >
+          <option value="">📚 Beispiel laden …</option>
+          {BEISPIELE.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+        </select>
+        <button className="btn btn-secondary" onClick={herunterladen} title="Schaltung als JSON-Datei speichern">💾 Speichern</button>
+        <button className="btn btn-secondary" onClick={() => dateiWahl.current?.click()} title="Schaltung aus einer JSON-Datei laden">📂 Öffnen</button>
+        <input
+          ref={dateiWahl} type="file" accept=".json,application/json" className="hidden"
+          onChange={e => { const f = e.target.files?.[0]; if (f) oeffnen(f); e.target.value = ""; }}
+        />
         <div className="flex gap-1 ml-auto">
           <button className="btn btn-secondary" onClick={rueckgaengig} disabled={verlauf.pos === 0} title="Rückgängig (Strg+Z)">↶</button>
           <button className="btn btn-secondary" onClick={wiederholen} disabled={verlauf.pos >= verlauf.liste.length - 1} title="Wiederholen (Strg+Y)">↷</button>
           <button className="btn btn-secondary" onClick={() => setEinpassen(n => n + 1)} title="Ganze Schaltung zeigen">⤢</button>
-          <button className="btn btn-danger" onClick={() => { aendern({ version: 1, bauteile: [], draehte: [] }); setAuswahl(null); }} title="Alles löschen">🗑</button>
+          <button className="btn btn-danger" onClick={() => laden({ version: 1, bauteile: [], draehte: [] })} title="Alles löschen">🗑</button>
         </div>
       </div>
+
+      {dateiFehler && (
+        <div className="rounded-lg border border-bad p-2 text-sm text-bad flex justify-between gap-2">
+          <span>Konnte die Datei nicht öffnen: {dateiFehler}</span>
+          <button className="underline" onClick={() => setDateiFehler(null)}>OK</button>
+        </div>
+      )}
+      {hinweis && <div className="text-sm text-muted">💡 {hinweis}</div>}
+      {vorgabe && !lehrkraft && (
+        <div className="card p-3 flex flex-wrap items-start justify-between gap-3">
+          <div className="text-sm">
+            <div className="font-bold">📋 Aufgabe</div>
+            <div className="whitespace-pre-wrap">{vorgabe.aufgabe || "Deine Lehrkraft hat dir diese Schaltung mitgegeben. Probiere sie aus und baue sie weiter."}</div>
+          </div>
+          <button className="btn btn-secondary" onClick={() => laden(vorgabe.schaltung)}>⟲ Zurück zur Vorgabe</button>
+        </div>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-[170px_minmax(0,1fr)_280px]">
         <div className="order-2 lg:order-1"><Palette werkzeug={werkzeug} setWerkzeug={setWerkzeug} stil={anzeige.stil} /></div>
@@ -186,13 +290,19 @@ export default function Stromkreis({ action, start }: { action?: ReactNode; star
             />
           )}
         </div>
-        <div className="order-3">
+        <div className="order-3 flex flex-col gap-4">
           <Inspektor
             key={auswahl?.id ?? "-"}
             bauteil={bauteil} draht={draht} stand={stand} wechsel={wechsel}
             setzeWert={setzeWert} schalten={schalten} drehen={drehen} loeschen={loeschen}
             reparieren={id => { sim.current?.repariere(id); }} oszi={setOsziId}
           />
+          {lehrkraft && code && (
+            <KlassenVorgabe
+              key={vorgabeAbruf} vorgabe={vorgabe}
+              festlegen={festlegen} entfernen={entfernen} laden={() => vorgabe && laden(vorgabe.schaltung)}
+            />
+          )}
         </div>
       </div>
       <p className="text-xs text-muted">

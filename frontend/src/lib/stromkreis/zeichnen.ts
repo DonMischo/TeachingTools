@@ -197,14 +197,18 @@ export function zeichneBauteil(
     }
     case "umschalter": {
       const fc = pf[2] ?? f.linie;
+      // Die Kontakte sitzen neben der Leitung, damit der Hebel immer schräg steht
+      // und man auch in Stellung 1 sieht, dass hier umgeschaltet wird.
       const dreh = Math.max(r * 0.8, L - 2.2 * r);
-      const k = L - 0.8 * r;
+      const k = L - 0.7 * r;
       linie(0, 0, dreh, 0, fa, 3);
-      linie(k, 0, L, 0, fb, 3);
-      linie(k, -2 * r, L, -2 * r, fc, 3);
+      ctx.strokeStyle = fb; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(k, -0.5 * r); ctx.lineTo(k, 0); ctx.lineTo(L, 0); ctx.stroke();
+      ctx.strokeStyle = fc;
+      ctx.beginPath(); ctx.moveTo(k, -1.5 * r); ctx.lineTo(k, -2 * r); ctx.lineTo(L, -2 * r); ctx.stroke();
       const oben = (w.stellung ?? 0) >= 0.5;
-      linie(dreh, 0, k, oben ? -2 * r : 0, f.linie, 3);
-      kontakt(dreh, 0); kontakt(k, 0); kontakt(k, -2 * r);
+      linie(dreh, 0, k, oben ? -1.5 * r : -0.5 * r, f.linie, 3);
+      kontakt(dreh, 0); kontakt(k, -0.5 * r); kontakt(k, -1.5 * r);
       break;
     }
     case "sicherung": {

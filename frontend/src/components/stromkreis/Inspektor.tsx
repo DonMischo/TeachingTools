@@ -20,7 +20,7 @@ function Zahlfeld({ feld, wert, setzen }: { feld: Feld; wert: number; setzen: (v
   const uebernehmen = () => {
     const v = Number(text.replace(",", ".").trim());
     if (!Number.isFinite(v)) { setText(anzeige(wert)); return; }
-    const si = Math.max(feld.min, Math.min(feld.max, v * feld.faktor));
+    const si = Math.max(feld.min, Math.min(feld.max, v)) * feld.faktor;
     setzen(si);
     setText(anzeige(si));
   };

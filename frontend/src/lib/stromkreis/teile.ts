@@ -14,6 +14,7 @@ export interface Feld {
   einheit: string;
   /** Anzeige = SI-Wert / faktor, z. B. µF: faktor 1e-6. */
   faktor: number;
+  /** Grenzen in Anzeigeeinheiten. */
   min: number;
   max: number;
 }
