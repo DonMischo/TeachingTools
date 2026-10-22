@@ -25,7 +25,7 @@ import { TEILE, TRAFO_L_JE_WINDUNG2 } from "./teile";
 /** Geschlossener Schalter, Strommesser, Sicherung: fast nichts, aber nicht null. */
 const R_KLEIN = 1e-3;
 /** Offener Kontakt, durchgebranntes Bauteil. */
-const G_OFFEN = 1e-9;
+const G_OFFEN = 1e-12;
 /** Hält jeden Knoten an Masse fest, auch wenn er in der Luft hängt (offener Schalter, Trafo-Sekundärseite). */
 const STUETZE = 1e-12;
 const R_VOLTMETER = 1e7;
