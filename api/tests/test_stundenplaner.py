@@ -819,3 +819,109 @@ class TestPhaseId:
         body = {**MINIMAL_PLAN, "phasen": [{**FULL_PLAN["phasen"][0], "id": "custom-id-1"}]}
         r = client.post("/api/stundenplaner", json=body, headers=_auth(teacher_token))
         assert r.json()["phasen"][0]["id"] == "custom-id-1"
+
+
+# ---------------------------------------------------------------------------
+# Kompendium-Methoden je Phase
+# ---------------------------------------------------------------------------
+
+def _phase(**extra) -> dict:
+    return {**FULL_PLAN["phasen"][0], **extra}
+
+
+class TestMethoden:
+    def test_saved_and_deduplicated(self, client, teacher_token):
+        body = {**MINIMAL_PLAN, "phasen": [_phase(methoden=["d_do_now", "d_do_now", "d_bruecke_321"])]}
+        r = client.post("/api/stundenplaner", json=body, headers=_auth(teacher_token))
+        assert r.status_code == 201, r.text
+        assert r.json()["phasen"][0]["methoden"] == ["d_do_now", "d_bruecke_321"]
+
+    def test_too_many(self, client, teacher_token):
+        body = {**MINIMAL_PLAN, "phasen": [_phase(methoden=[f"m_{i}" for i in range(6)])]}
+        assert client.post("/api/stundenplaner", json=body, headers=_auth(teacher_token)).status_code == 422
+
+    def test_bad_id(self, client, teacher_token):
+        body = {**MINIMAL_PLAN, "phasen": [_phase(methoden=["../x"])]}
+        assert client.post("/api/stundenplaner", json=body, headers=_auth(teacher_token)).status_code == 422
+
+
+# ---------------------------------------------------------------------------
+# Export als Dokument
+# ---------------------------------------------------------------------------
+
+EXITGAME_DATA = {
+    "title": "Hebel-Werkstatt",
+    "dda": {"enabled": True, "levels": [
+        {"name": "selbstständig", "hintCount": 0, "timeLimitSeconds": 60, "extraExample": False, "offerEasier": False},
+        {"name": "mittel", "hintCount": 2, "timeLimitSeconds": 120, "extraExample": True, "offerEasier": False},
+        {"name": "maximal", "hintCount": 99, "timeLimitSeconds": 300, "extraExample": True, "offerEasier": True},
+    ]},
+    "slides": [
+        {"id": "a", "type": "task", "title": "Hebel", "hints": ["Denk an eine Wippe."],
+         "task": {"kind": "single", "question": "Wo drückt man am leichtesten?",
+                  "answers": [{"text": "weit außen", "correct": True}, {"text": "am Drehpunkt", "correct": False}],
+                  "easierAlternative": {"kind": "input", "question": r"Rechne $2 \cdot 3$.", "accept": ["6"]}}},
+    ],
+}
+
+
+class TestExport:
+    def _plan(self, client, token, phasen):
+        r = client.post("/api/stundenplaner", json={**FULL_PLAN, "phasen": phasen}, headers=_auth(token))
+        assert r.status_code == 201, r.text
+        return r.json()["id"]
+
+    def test_tex_has_toc_methods_and_sources(self, client, teacher_token):
+        pid = self._plan(client, teacher_token, [_phase(methoden=["d_do_now"])])
+        r = client.get(f"/api/stundenplaner/{pid}/export/tex", headers=_auth(teacher_token))
+        assert r.status_code == 200, r.text
+        assert r.headers["content-type"].startswith("application/x-tex")
+        tex = r.text
+        assert r"\tableofcontents" in tex
+        assert "Verlaufsplanung" in tex and "Bildimpuls" in tex
+        assert "Do Now" in tex                    # Methode aus dem Kompendium
+        assert "Lemov" in tex and "Quellen" in tex  # ihre Quelle im Quellenteil
+
+    def test_games_bring_tasks_answers_and_dda(self, client, db, teacher, teacher_token):
+        from api.models import ExitGame, Quiz, QuizQuestion, QuizAnswer
+        game = ExitGame(title="Hebel-Werkstatt", subject="physik", data=EXITGAME_DATA, created_by=teacher.id)
+        quiz = Quiz(title="Gleichungen")
+        db.add_all([game, quiz])
+        db.flush()
+        q = QuizQuestion(quiz_id=quiz.id, order=1, type="single", question_text="Was ist x bei x+1=3?")
+        db.add(q)
+        db.flush()
+        db.add_all([QuizAnswer(question_id=q.id, order=1, text="2", correct=True),
+                    QuizAnswer(question_id=q.id, order=2, text="4", correct=False)])
+        db.flush()
+        pid = self._plan(client, teacher_token, [
+            _phase(tool_link={"type": "exitgame", "ref_id": str(game.id), "label": "Werkstatt"}),
+            _phase(name="Übung", tool_link={"type": "caputh", "ref_id": str(quiz.id), "label": "Quiz"}),
+        ])
+        tex = client.get(f"/api/stundenplaner/{pid}/export/tex", headers=_auth(teacher_token)).text
+        assert "Wo drückt man am leichtesten?" in tex and "weit außen" in tex
+        assert "Leichtere Alternative" in tex and r"2 \cdot 3" in tex  # KaTeX bleibt Formel
+        assert "Was ist x bei x+1=3?" in tex
+        assert "Fuzzy" in tex and "Zadeh" in tex and "maximal" in tex
+
+    def test_docx(self, client, teacher_token):
+        import io, zipfile
+        pid = self._plan(client, teacher_token, FULL_PLAN["phasen"])
+        r = client.get(f"/api/stundenplaner/{pid}/export/docx", headers=_auth(teacher_token))
+        assert r.status_code == 200
+        xml = zipfile.ZipFile(io.BytesIO(r.content)).read("word/document.xml").decode()
+        assert "Inhaltsverzeichnis" in xml and 'w:w="11906"' in xml  # TOC + A4
+
+    def test_pdf(self, client, teacher_token):
+        pid = self._plan(client, teacher_token, FULL_PLAN["phasen"])
+        r = client.get(f"/api/stundenplaner/{pid}/export/pdf", headers=_auth(teacher_token))
+        assert r.status_code == 200
+        assert r.content.startswith(b"%PDF")
+
+    def test_bad_format(self, client, teacher_token):
+        pid = self._plan(client, teacher_token, [])
+        assert client.get(f"/api/stundenplaner/{pid}/export/odt", headers=_auth(teacher_token)).status_code == 400
+
+    def test_other_teacher_blocked(self, client, teacher_token, teacher2_token):
+        pid = self._plan(client, teacher_token, [])
+        assert client.get(f"/api/stundenplaner/{pid}/export/tex", headers=_auth(teacher2_token)).status_code == 403

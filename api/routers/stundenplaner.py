@@ -7,13 +7,14 @@ Features:
   - Import from JSON with strict validation and HTML stripping
   - Tool-refs endpoint to populate tool-link pickers in UI
 """
+import logging
 import re
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse
 
-from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, UploadFile, File, Form
 from pydantic import BaseModel, Field, field_validator, model_validator
 from sqlalchemy.orm import Session
 
@@ -25,6 +26,7 @@ from ..auth import get_current_teacher
 from ..tool_registry import REGISTRY
 from ..upload_utils import ALLOWED_MIMES, ALLOWED_EXTENSIONS, MAX_FILE_BYTES, CONVERTIBLE_EXTENSIONS
 from ..doc_convert import convert_to_pdf
+from ..stundenplan_export import FORMATE, MAX_METHODEN, export as export_document
 
 MATERIALS_BASE = Path(__file__).parent.parent.parent / "data" / "stundenplaner"
 
@@ -103,6 +105,18 @@ class PhaseIn(BaseModel):
     methode: str = Field(default="", max_length=200)
     material: str = Field(default="", max_length=500)
     tool_link: ToolLinkIn | None = None
+    # ids aus dem Methoden-Kompendium (data/methoden_kompendium); unbekannte ids überspringt der Export
+    methoden: list[str] = Field(default_factory=list)
+
+    @field_validator("methoden")
+    @classmethod
+    def valid_methoden(cls, v: list[str]) -> list[str]:
+        if len(v) > MAX_METHODEN:
+            raise ValueError(f"max {MAX_METHODEN} Methoden je Phase")
+        for m in v:
+            if not re.match(r"^[a-z0-9_]{1,60}$", m):
+                raise ValueError("Methoden-id enthält ungültige Zeichen")
+        return list(dict.fromkeys(v))
 
     @field_validator("sozialform")
     @classmethod
@@ -488,6 +502,31 @@ def get_plan(
     plan = _get_plan_or_404(plan_id, db)
     _assert_access(plan, teacher.id)
     return _serialize(plan, teacher.id)
+
+
+@router.get("/{plan_id}/export/{fmt}")
+def export_plan(
+    plan_id: int,
+    fmt: str,
+    teacher: Teacher = Depends(get_current_teacher),
+    db: Session = Depends(get_db),
+):
+    """Planung als Dokument (pdf/docx/tex) mit Inhaltsverzeichnis, Methoden, Spielinhalten und Quellen."""
+    if fmt not in FORMATE:
+        raise HTTPException(400, f"Format nicht unterstützt: {fmt}. Erlaubt: {', '.join(FORMATE)}")
+    plan = _get_plan_or_404(plan_id, db)
+    _assert_access(plan, teacher.id)
+    try:
+        data = export_document(plan, db, fmt)
+    except Exception:
+        logging.getLogger(__name__).exception("Stundenplan-Export fehlgeschlagen")
+        data = None
+    if data is None:
+        raise HTTPException(503, "Export fehlgeschlagen (pandoc/LibreOffice)")
+    mime, ext = FORMATE[fmt]
+    name = (re.sub(r"[^\w-]+", "_", plan.title).strip("_")[:60] or "stundenplanung") + ext
+    return Response(data, media_type=mime, headers={
+        "Content-Disposition": f"attachment; filename=\"stundenplanung{ext}\"; filename*=UTF-8''{quote(name)}"})
 
 
 @router.put("/{plan_id}")

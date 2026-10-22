@@ -16,6 +16,8 @@ python-multipart>=0.0.9
 chardet>=5.0.0
 pycrdt>=0.10.0
 pypandoc>=1.13
+# Stundenplaner-Export liest die Methoden-Kompendium-YAMLs (kam vorher nur über uvicorn[standard])
+PyYAML>=6
 # Arbeitsblatt-Export: Querformat-Karten auf dem hochkanten Blatt drehen
 Pillow>=11,<12
 # Kartennetze Robinson und Winkel-Tripel (PROJ, MIT-artige Lizenz) — siehe api/karten_projektion.py

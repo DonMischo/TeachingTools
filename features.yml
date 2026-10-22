@@ -649,6 +649,9 @@ tools:
       - Verlaufsplanungen mit Phasen (Inhalt, Methode, Material)
       - Materialien anhängen, Office-Dateien zusätzlich als PDF
       - JSON-Import, teilen
+      - Methoden aus dem Kompendium je Phase verknüpfen
+      - Export als PDF, Word, LaTeX mit Inhaltsverzeichnis und Quellen
+      - Spielinhalte im Export mit Aufgaben, Lösungen und DDA-Differenzierung
   - id: kompendium
     name: Methoden-Kompendium
     faehigkeiten: {use: [true, false]}

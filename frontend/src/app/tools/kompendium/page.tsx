@@ -111,7 +111,12 @@ export default function KompendiumPage() {
   useEffect(() => {
     fetch(BASIS + "methoden_kompendium.json")
       .then(r => { if (!r.ok) throw new Error(); return r.json(); })
-      .then(setDaten)
+      .then((d: Kompendium) => {
+        setDaten(d);
+        // ?m=<id> öffnet die Methode direkt (Verweis aus dem Stundenplaner)
+        const m = new URLSearchParams(window.location.search).get("m");
+        if (m && d.methoden.some(x => x.id === m)) setOffen(m);
+      })
       .catch(() => setFehler(true));
   }, []);
 

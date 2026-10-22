@@ -14,6 +14,8 @@ import { launchTool } from "@/lib/toolLaunch";
 const SOZIALFORMEN = ["Plenum", "EA", "PA", "GA", "Gruppen"];
 const PHASE_PRESETS = ["Einstieg", "Erarbeitung I", "Erarbeitung II", "Sicherung", "Abschluss", "Vertiefung", "Übung", "Reflexion"];
 const CUSTOM_PHASE = "__custom__";
+type ExportFormat = "pdf" | "docx" | "tex";
+const EXPORT_FORMATE: [ExportFormat, string][] = [["pdf", "PDF (.pdf)"], ["docx", "Word (.docx)"], ["tex", "LaTeX (.tex)"]];
 const FAECHER = ["", "Deutsch", "Mathematik", "Englisch", "Biologie", "Chemie", "Physik", "Geschichte", "Geographie", "Informatik", "Musik", "Kunst", "Sport", "Ethik", "Religion"];
 
 // ---------------------------------------------------------------------------
@@ -130,6 +132,119 @@ function ToolPicker({ refs, onConfirm, onClose }: {
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Methoden aus dem Kompendium (public/kompendium, einmal geladen)
+// ---------------------------------------------------------------------------
+
+type KompendiumMethode = { id: string; name: string; aliase?: string[]; kurz: string; phasen: string[]; dauer?: string };
+const MAX_METHODEN = 5;
+let kompendiumLaden: Promise<KompendiumMethode[]> | null = null;
+
+function ladeMethoden(): Promise<KompendiumMethode[]> {
+  kompendiumLaden ??= fetch("/kompendium/methoden_kompendium.json")
+    .then(r => { if (!r.ok) throw new Error(); return r.json(); })
+    .then(d => d.methoden as KompendiumMethode[])
+    .catch(e => { kompendiumLaden = null; throw e; });
+  return kompendiumLaden;
+}
+
+function useMethoden(): KompendiumMethode[] {
+  const [methoden, setMethoden] = useState<KompendiumMethode[]>([]);
+  useEffect(() => { ladeMethoden().then(setMethoden).catch(() => {}); }, []);
+  return methoden;
+}
+
+// Phasenname → Kompendium-Phase, damit passende Methoden oben stehen
+function kompendiumPhase(name: string): string {
+  const n = name.toLowerCase();
+  if (n.includes("einstieg")) return "einstieg";
+  if (/abschluss|sicherung|reflexion/.test(n)) return "abschluss";
+  return "hauptteil";
+}
+
+function MethodenPicker({ phaseName, gewaehlt, onPick, onClose }: {
+  phaseName: string;
+  gewaehlt: string[];
+  onPick: (m: KompendiumMethode) => void;
+  onClose: () => void;
+}) {
+  const methoden = useMethoden();
+  const [suche, setSuche] = useState("");
+  const [nurPhase, setNurPhase] = useState(true);
+  const phase = kompendiumPhase(phaseName);
+  const q = suche.trim().toLowerCase();
+  const treffer = methoden
+    .filter(m => !gewaehlt.includes(m.id))
+    .filter(m => !nurPhase || m.phasen.includes(phase) || m.phasen.includes("uebergreifend"))
+    .filter(m => !q || [m.name, m.kurz, ...(m.aliase ?? [])].join(" ").toLowerCase().includes(q))
+    .slice(0, 60);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
+      <div className="card p-6 w-full max-w-lg mx-4 flex flex-col gap-3 max-h-[80vh]" onClick={e => e.stopPropagation()}>
+        <div className="font-bold text-base">Methode aus dem Kompendium</div>
+        <input autoFocus value={suche} onChange={e => setSuche(e.target.value)} placeholder="Suchen, z.B. Think-Pair-Share" className="input text-sm py-2 w-full" />
+        <label className="flex items-center gap-2 text-xs text-muted">
+          <input type="checkbox" checked={nurPhase} onChange={e => setNurPhase(e.target.checked)} />
+          nur Methoden für diese Phase ({phase === "einstieg" ? "Einstieg" : phase === "abschluss" ? "Abschluss" : "Hauptteil"})
+        </label>
+        <div className="flex flex-col gap-1 overflow-y-auto min-h-0">
+          {methoden.length === 0 && <p className="text-xs text-muted">Lädt…</p>}
+          {methoden.length > 0 && treffer.length === 0 && <p className="text-xs text-muted">Keine passende Methode.</p>}
+          {treffer.map(m => (
+            <button key={m.id} onClick={() => onPick(m)}
+              className="text-left px-3 py-2 rounded-lg border border-line hover:border-accent hover:bg-surface-hover transition-colors">
+              <div className="text-sm font-semibold">{m.name}{m.dauer && <span className="text-xs text-muted font-normal"> · {m.dauer}</span>}</div>
+              <div className="text-xs text-muted line-clamp-2">{m.kurz}</div>
+            </button>
+          ))}
+        </div>
+        <div className="flex justify-end">
+          <button onClick={onClose} className="btn-secondary text-sm py-1.5 px-4">Schließen</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MethodenChips({ phase, readOnly, onChange }: { phase: Phase; readOnly: boolean; onChange: (p: Phase) => void }) {
+  const methoden = useMethoden();
+  const [picker, setPicker] = useState(false);
+  const ids = phase.methoden ?? [];
+  const name = (id: string) => methoden.find(m => m.id === id)?.name ?? id;
+
+  return (
+    <div className="flex items-center gap-2 flex-wrap">
+      {ids.map(id => (
+        <span key={id} className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border border-line bg-surface">
+          <a href={`/tools/kompendium?m=${encodeURIComponent(id)}`} target="_blank" rel="noopener noreferrer" className="hover:text-accent transition-colors">
+            📚 {name(id)}
+          </a>
+          {!readOnly && (
+            <button onClick={() => onChange({ ...phase, methoden: ids.filter(x => x !== id) })} className="text-red-400 hover:underline">✕</button>
+          )}
+        </span>
+      ))}
+      {!readOnly && ids.length < MAX_METHODEN && (
+        <button onClick={() => setPicker(true)} className="text-xs text-muted hover:text-accent transition-colors border border-dashed border-line px-3 py-1 rounded-full hover:border-accent">
+          + Methode aus Kompendium
+        </button>
+      )}
+      {picker && (
+        <MethodenPicker
+          phaseName={phase.name}
+          gewaehlt={ids}
+          onPick={m => {
+            onChange({ ...phase, methoden: [...ids, m.id], methode: phase.methode || m.name });
+            setPicker(false);
+          }}
+          onClose={() => setPicker(false)}
+        />
+      )}
     </div>
   );
 }
@@ -316,6 +431,9 @@ function PhaseCard({ phase, index, total, refs, planId, klasse, readOnly, onChan
               <input value={phase.material} onChange={e => set("material", e.target.value)} placeholder="z.B. Beamer, AB" className="input text-sm py-1.5" />
             </div>
           </div>
+
+          {/* Methoden aus dem Kompendium */}
+          <MethodenChips phase={phase} readOnly={readOnly} onChange={onChange} />
 
           {/* Tool Link */}
           <div>
@@ -538,6 +656,8 @@ export default function StundenplanerEditor() {
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [showShare, setShowShare] = useState(false);
+  const [showExport, setShowExport] = useState(false);
+  const [exporting, setExporting] = useState<ExportFormat | null>(null);
 
   // Editable fields
   const [title, setTitle] = useState("");
@@ -600,6 +720,24 @@ export default function StundenplanerEditor() {
     }
   }
 
+  async function exportieren(fmt: ExportFormat) {
+    setShowExport(false);
+    setExporting(fmt);
+    try {
+      const { datei, name } = await api.stundenplaner.export(id, fmt);
+      const url = URL.createObjectURL(datei);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = name;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e: any) {
+      toast(e.message ?? "Export fehlgeschlagen", "error");
+    } finally {
+      setExporting(null);
+    }
+  }
+
   function addPhase() {
     const id = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}`;
     setPhasen(prev => [...prev, { id, name: "Neue Phase", dauer_min: 10, inhalt: "", sozialform: "Plenum", methode: "", material: "", tool_link: null }]);
@@ -659,13 +797,23 @@ export default function StundenplanerEditor() {
             {saving ? "Speichere…" : dirty ? "💾 Speichern" : "Gespeichert"}
           </button>
         )}
-        <button
-          onClick={() => window.print()}
-          className="btn-secondary text-sm py-1.5 px-3"
-          title="Drucken / PDF"
-        >
-          🖨
-        </button>
+        <div className="relative">
+          <button onClick={() => setShowExport(v => !v)} disabled={exporting !== null}
+            className="btn-secondary text-sm py-1.5 px-3" title="Als Dokument exportieren">
+            {exporting ? "Exportiere…" : "📄 Export ▾"}
+          </button>
+          {showExport && (
+            <div className="absolute right-0 top-full mt-1 z-20 bg-surface border border-line rounded-xl overflow-hidden shadow-lg min-w-48">
+              {EXPORT_FORMATE.map(([fmt, label]) => (
+                <button key={fmt} onClick={() => exportieren(fmt)}
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-surface-hover transition-colors">
+                  {label}
+                </button>
+              ))}
+              {dirty && <p className="px-3 py-2 text-xs text-muted border-t border-line">Ungespeicherte Änderungen fehlen im Export.</p>}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Share panel */}

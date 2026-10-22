@@ -678,6 +678,8 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "▶️ Starten", text: "»+ Neue Planung« (Titel, Fach, Klasse) öffnet den Editor zum Strukturieren der Phasen." },
       { label: "⬆️ Importieren", text: "»↑ Importieren« akzeptiert eingefügtes JSON oder eine .json-Datei." },
       { label: "🔗 Teilen", text: "Planungen mit Kolleg·innen teilen; geteilte Planungen erscheinen unter »Geteilt mit mir«." },
+      { label: "📚 Methoden", text: "»+ Methode aus Kompendium« verknüpft bis zu 5 Methoden mit einer Phase; ein Klick auf die Methode öffnet sie im Kompendium." },
+      { label: "📄 Export", text: "»📄 Export« erzeugt ein Dokument als PDF, Word oder LaTeX: Inhaltsverzeichnis, Verlaufstabelle, Phasen mit Methoden, Quellen. Verknüpfte Caputh-, TaskCrawler- und Challenge-Inhalte kommen mit Aufgaben, Lösungen und Differenzierung dazu. Vorher speichern." },
     ],
   },
   wettkampf: {

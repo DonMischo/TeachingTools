@@ -796,6 +796,8 @@ export type Phase = {
   methode: string;
   material: string;
   tool_link: ToolLink | null;
+  /** ids aus dem Methoden-Kompendium (max. 5) */
+  methoden?: string[];
 };
 
 export type LessonPlanBody = {
@@ -2744,6 +2746,14 @@ export const api = {
         return r.json() as Promise<LessonPlanOut>;
       }),
     get: (id: number) => apiFetch<LessonPlanOut>(`stundenplaner/${id}`),
+    /** Planung als Dokument (PDF/DOCX/LaTeX); Name aus Content-Disposition */
+    export: async (id: number, format: "pdf" | "docx" | "tex"): Promise<{ datei: Blob; name: string }> => {
+      const r = await fetch(`/api/stundenplaner/${id}/export/${format}`, { credentials: "include" });
+      if (!r.ok) throw new Error((await r.text()) || r.statusText);
+      const kopf = r.headers.get("content-disposition") ?? "";
+      const name = decodeURIComponent(/filename\*=UTF-8''([^;]+)/.exec(kopf)?.[1] ?? `stundenplanung.${format}`);
+      return { datei: await r.blob(), name };
+    },
     update: (id: number, body: LessonPlanBody) =>
       apiFetch<LessonPlanOut>(`stundenplaner/${id}`, { method: "PUT", body: JSON.stringify(body) }),
     delete: (id: number) => apiFetch<void>(`stundenplaner/${id}`, { method: "DELETE" }),

@@ -229,6 +229,8 @@ Das Lehrkraft-Werkzeugset. Standardmäßig nur für Lehrkräfte sichtbar.
 - Verlaufsplanungen mit Phasen erstellen (Titel, Fach, Klasse; je Phase Inhalt, Methode, Material)
 - Materialien anhängen; Office-Dateien werden per LibreOffice zusätzlich als PDF abgelegt
 - JSON-Import, Planungen mit Kolleginnen und Kollegen teilen
+- Je Phase bis zu 5 Methoden aus dem Methoden-Kompendium verknüpfen (Verweis öffnet die Methode)
+- Export als Dokument (PDF, Word, LaTeX) mit Inhaltsverzeichnis, Verlaufstabelle, Phasen im Detail samt Kompendium-Methoden und nummerierten Quellen; verknüpfte Caputh-, TaskCrawler- und Challenge-Inhalte erscheinen mit Aufgaben, Lösungen und ihrer Differenzierung (DDA-Stufen und Fuzzy-Regeln). Läuft über pandoc und LibreOffice (`api/stundenplan_export.py`)
 
 ### 📚 Methoden-Kompendium
 - Nachschlagewerk mit Methoden aus Didaktik, Pädagogik und Psychologie für Einstieg, Hauptteil und Abschluss, für Einzel- und Gruppensettings mit Kindern, Jugendlichen und Erwachsenen
