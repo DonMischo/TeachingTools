@@ -5,7 +5,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { erzeuge, type GelaendeWahl } from "@/lib/gelaende/gelaende";
-import { gelaendeFarben, hoehenSpanne } from "@/lib/gelaende/farbe";
+import { gelaendeFarben } from "@/lib/gelaende/farbe";
 import {
   aenderung, aufGelaende, erosionSchritt, flussFormen, erosionsSchritte, erosionStart, gewaesser, jahreszeit, JAHR, STANDARD_EROSION,
   type Erosion as ErosionsZustand, type ErosionsParameter,
@@ -24,6 +24,9 @@ export const ANSICHTEN = [
 ] as const;
 export type Ansicht = (typeof ANSICHTEN)[number]["id"];
 
+// eine Höhenskala (m) für alle Landschaften: Schnee erst ab ~1300 m, Hügelland bleibt grün
+const SPANNE: [number, number] = [0, 1400];
+
 const REGLER: { k: keyof ErosionsParameter; label: string; text: string; max: number }[] = [
   { k: "regen", label: "🌧️ Regen", text: "Wie viel Wasser je Schritt fällt.", max: 3 },
   { k: "jahreszeiten", label: "🌦️ Regen- und Trockenzeit", text: "0 = jeden Schritt gleich viel Regen; hoch = ausgeprägte Regenzeit, in der die Flüsse anschwellen.", max: 1 },
@@ -37,7 +40,6 @@ export default function FlussErosion({ startAnsicht }: { startAnsicht?: Ansicht 
   const [wahl, setWahl] = useState<GelaendeWahl>({ art: "huegel", seed: 12, fluss: true, relief: 1.3 });
   const [fein, setFein] = useState(false);
   const g = useMemo(() => (fein ? erzeuge(wahl, 512, 6) : erzeuge(wahl, 256, 12)), [wahl, fein]);
-  const spanne = useMemo(() => hoehenSpanne(g), [g]);
   const zustand = useRef<ErosionsZustand | null>(null);
   const [version, setVersion] = useState(0);
   const [laeuft, setLaeuft] = useState(false);
@@ -80,10 +82,10 @@ export default function FlussErosion({ startAnsicht }: { startAnsicht?: Ansicht 
     for (let k = 0; k < hoehe.length; k++) hoehe[k] = e.null + e.h[k] * e.einheit;
     const aktuell = { ...jetzt, hoehe };
     let px: Uint8ClampedArray;
-    if (ansicht === "vorher") px = gelaendeFarben(g, { spanne });
+    if (ansicht === "vorher") px = gelaendeFarben(g, { spanne: SPANNE });
     else if (ansicht === "aenderung") {
       const d = aenderung(e);
-      px = gelaendeFarben(aktuell, { spanne });
+      px = gelaendeFarben(aktuell, { spanne: SPANNE });
       let m = 0.5;
       for (let k = 0; k < d.length; k++) m = Math.max(m, Math.abs(d[k]));
       for (let k = 0; k < d.length; k++) {
@@ -91,19 +93,19 @@ export default function FlussErosion({ startAnsicht }: { startAnsicht?: Ansicht 
         const f = d[k] < 0 ? [220, 40, 40] : [40, 90, 230];
         for (let q = 0; q < 3; q++) px[k * 4 + q] = px[k * 4 + q] * (1 - t * 0.85) + f[q] * t * 0.85;
       }
-    } else px = gelaendeFarben(aktuell, { spanne, wasserMenge: ansicht === "wasser" ? e.wasser : undefined });
+    } else px = gelaendeFarben(aktuell, { spanne: SPANNE, wasserMenge: ansicht === "wasser" ? e.wasser : undefined });
     c.width = g.n; c.height = g.n;
     const ctx = c.getContext("2d")!;
     const b = ctx.createImageData(g.n, g.n);
     b.data.set(px);
     ctx.putImageData(b, 0, 0);
-  }, [version, ansicht, g, jetzt, spanne]);
+  }, [version, ansicht, g, jetzt]);
 
   const voxelStand = Math.floor(version / 8);
   const karte = useMemo<VoxelKarte | null>(() => {
     const e = zustand.current;
     if (!drei || !e) return null;
-    const farbe = gelaendeFarben(jetzt, { spanne, wasserMenge: e.wasser });
+    const farbe = gelaendeFarben(jetzt, { spanne: SPANNE, wasserMenge: e.wasser });
     return voxelAusGitter(jetzt.hoehe, farbe, g.n, g.zelle, 1024);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [drei, voxelStand, g]);
