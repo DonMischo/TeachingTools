@@ -29,7 +29,8 @@ import { Start } from "./Start";
 import { SteuerApp } from "./SteuerApp";
 import { AmtApp, VertraegeApp } from "./VertraegeAmt";
 import { RechercheApp, WohnungApp } from "./WohnungApp";
-import { Wohnungsbild, type Platz } from "./Wohnungsbild";
+import { type Platz } from "./Wohnungsbild";
+import { Wohnung3D } from "./Wohnung3D";
 import { Checkliste } from "./Checkliste";
 import { MobilApp, Stil } from "./Stil";
 import { BLINKEN, frei, hervor, tutorialEnde, tutorialSchritt, tutorialWeiter, TutorialKarte, type Frei, type Tat } from "./Tutorial";
@@ -241,7 +242,7 @@ export default function RockYourLife({ speicherSchluessel = "geraet", zugang = n
             {minijob(s) && <span>🧾 Minijob samstags</span>}
           </div>}
           <div className="relative h-[32vh] min-h-[220px] overflow-hidden rounded-xl bg-slate-800 sm:h-[46vh] sm:min-h-[300px]">
-            <Wohnungsbild s={s} platz={platz} onVerschieben={(uid, x, y, drehen) => tu((alt) => {
+            <Wohnung3D s={s} platz={platz} onVerschieben={(uid, x, y, drehen) => tu((alt) => {
               const neu = klon(alt); const m = neu.moebel.find((q) => q.uid === uid);
               if (m) { if (drehen) m.gedreht = !m.gedreht; else { m.x = x; m.y = y; } }
               return { stand: neu };

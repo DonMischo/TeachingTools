@@ -10,9 +10,9 @@ import type { Spielstand } from "@/lib/leben/typen";
 
 export type Platz = "bett" | "kueche" | "bad" | "sofa" | "tisch" | "tuer" | "mitte";
 
-type Raum = { id: string; name: string; x: number; y: number; b: number; t: number; boden: string };
+export type Raum = { id: string; name: string; x: number; y: number; b: number; t: number; boden: string };
 
-function grundriss(s: Spielstand): Raum[] {
+export function grundriss(s: Spielstand): Raum[] {
   const w = s.wohnung;
   if (w.form === "eltern") {
     return [
@@ -65,7 +65,7 @@ const RAUM_FUER: Record<string, string[]> = {
   technik: ["wohnen", "schlafen"],
 };
 
-type Gestellt = { uid: number; id: string; x: number; y: number; b: number; t: number; icon: string; name: string; defekt: boolean };
+export type Gestellt = { uid: number; id: string; x: number; y: number; b: number; t: number; icon: string; name: string; defekt: boolean };
 
 /** Möbel reihum an den Wänden entlang in ihre Räume stellen (einfaches Regalpacken). */
 function stellen(s: Spielstand, raeume: Raum[]): { gestellt: Gestellt[]; kisten: string[] } {
@@ -115,6 +115,30 @@ const ELTERN_MOEBEL: Gestellt[] = [
   { uid: -8, id: "e-wm", x: 760, y: 214, b: 60, t: 60, icon: "🫧", name: "Waschmaschine", defekt: false },
 ];
 
+/** Möbel der Wohnung samt Kleinkram ohne Stellfläche (bei den Eltern deren Möbel). */
+export function einrichtung(s: Spielstand, raeume: Raum[]): { gestellt: Gestellt[]; kisten: string[] } {
+  const r = stellen(s, raeume);
+  if (s.wohnung.form === "eltern") return { gestellt: [...ELTERN_MOEBEL, ...r.gestellt.filter((g) => g.id === "fahrrad-schloss")], kisten: r.kisten };
+  return r;
+}
+
+/** Wo die Figur für `platz` steht (cm) — und an welchem Möbel, falls es eins gibt. */
+export function zielPunkt(platz: Platz, gestellt: Gestellt[], raeume: Raum[]): { x: number; y: number; moebel?: Gestellt } {
+  const finde = (ids: string[]) => gestellt.find((g) => ids.some((i) => g.id.includes(i)));
+  const raum = (id: string) => raeume.find((r) => r.id === id) ?? raeume[0];
+  const mitte = (r: Raum) => ({ x: r.x + r.b / 2, y: r.y + r.t / 2 });
+  const an = (g: Gestellt | undefined, sonst: { x: number; y: number }) => g ? { x: g.x + g.b / 2, y: g.y + g.t / 2, moebel: g } : sonst;
+  switch (platz) {
+    case "bett": { const r = raum("schlafen"); return an(finde(["bett", "matratze", "schlafsofa"]), { x: r.x + 80, y: r.y + r.t - 80 }); }
+    case "kueche": return mitte(raum("kueche"));
+    case "bad": return mitte(raum("bad"));
+    case "sofa": return an(finde(["sofa", "stuhl", "burostuhl"]), mitte(raum("schlafen")));
+    case "tisch": { const t = finde(["tisch", "schreibtisch"]); return t ? { x: t.x + t.b / 2, y: t.y + t.t + 30, moebel: t } : mitte(raum("schlafen")); }
+    case "tuer": { const f = raum("flur"); return { x: f.x + f.b / 2, y: f.y + f.t - 40 }; }
+    default: return mitte(raum("schlafen"));
+  }
+}
+
 export function Wohnungsbild({ s, platz, onVerschieben }: {
   s: Spielstand; platz: Platz;
   /** Möbel verschieben (x, y in cm) oder drehen. */
@@ -129,29 +153,14 @@ export function Wohnungsbild({ s, platz, onVerschieben }: {
     return { x: p.x, y: p.y };
   };
   const raeume = useMemo(() => grundriss(s), [s.wohnung.id, s.wohnung.qm, s.wohnung.form, s.wohnung.zimmer, s.wohnung.ebk]); // eslint-disable-line react-hooks/exhaustive-deps
-  const { gestellt, kisten } = useMemo(() => {
-    const r = stellen(s, raeume);
-    if (s.wohnung.form === "eltern") return { gestellt: [...ELTERN_MOEBEL, ...r.gestellt.filter((g) => g.id === "fahrrad-schloss")], kisten: r.kisten };
-    return r;
-  }, [s.moebel, raeume, s.wohnung.form]); // eslint-disable-line react-hooks/exhaustive-deps
+  const { gestellt, kisten } = useMemo(() => einrichtung(s, raeume), [s.moebel, raeume, s.wohnung.form]); // eslint-disable-line react-hooks/exhaustive-deps
   const breite = Math.max(...raeume.map((r) => r.x + r.b));
   const tiefe = Math.max(...raeume.map((r) => r.y + r.t));
 
   // Wo steht die Figur?
   const finde = (ids: string[]) => gestellt.find((g) => ids.some((i) => g.id.includes(i)));
   const raum = (id: string) => raeume.find((r) => r.id === id) ?? raeume[0];
-  const ziel = (() => {
-    const bett = finde(["bett", "matratze", "schlafsofa"]);
-    switch (platz) {
-      case "bett": return bett ? { x: bett.x + bett.b / 2, y: bett.y + bett.t / 2 } : { x: raum("schlafen").x + 80, y: raum("schlafen").y + raum("schlafen").t - 80 };
-      case "kueche": return { x: raum("kueche").x + raum("kueche").b / 2, y: raum("kueche").y + raum("kueche").t / 2 };
-      case "bad": return { x: raum("bad").x + raum("bad").b / 2, y: raum("bad").y + raum("bad").t / 2 };
-      case "sofa": { const so = finde(["sofa", "stuhl", "burostuhl"]); return so ? { x: so.x + so.b / 2, y: so.y + so.t / 2 } : { x: raum("schlafen").x + raum("schlafen").b / 2, y: raum("schlafen").y + raum("schlafen").t / 2 }; }
-      case "tisch": { const t = finde(["tisch", "schreibtisch"]); return t ? { x: t.x + t.b / 2, y: t.y + t.t + 30 } : { x: raum("schlafen").x + raum("schlafen").b / 2, y: raum("schlafen").y + raum("schlafen").t / 2 }; }
-      case "tuer": return { x: raum("flur").x + raum("flur").b / 2, y: raum("flur").y + raum("flur").t - 40 };
-      default: return { x: raum("schlafen").x + raum("schlafen").b / 2, y: raum("schlafen").y + raum("schlafen").t / 2 };
-    }
-  })();
+  const ziel = zielPunkt(platz, gestellt, raeume);
 
   const nacht = s.stunde < 6 || s.stunde >= 21;
   const licht = effekt(s, "licht");
