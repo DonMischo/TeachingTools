@@ -16,6 +16,29 @@ describe("Editor", () => {
     expect(s.draehte.map(d => [d.a, d.b])).toEqual([[P(0, 0), P(4, 0)], [P(4, 0), P(8, 0)]]);
   });
 
+  it("ein Bauteil auf einer Leitung ersetzt das Stück darunter, statt kurzgeschlossen zu sein", () => {
+    // Rahmen: Batterie links, oben und unten je eine durchgehende Leitung, rechts zu
+    let s = fuegeBauteilHinzu(LEER, "batterie", P(0, 4), P(0, 0)).schaltung;
+    s = fuegeDrahtHinzu(s, P(0, 0), P(12, 0));
+    s = fuegeDrahtHinzu(s, P(12, 0), P(12, 4));
+    s = fuegeDrahtHinzu(s, P(12, 4), P(0, 4));
+    // Motor mitten auf die untere Leitung, Lämpchen mitten auf die obere
+    s = fuegeBauteilHinzu(s, "motor", P(8, 4), P(4, 4)).schaltung;
+    s = fuegeBauteilHinzu(s, "lampe", P(4, 0), P(8, 0)).schaltung;
+    expect(s.draehte.some(d => d.a.y === 4 && Math.min(d.a.x, d.b.x) >= 4 && Math.max(d.a.x, d.b.x) <= 8)).toBe(false);
+    const sim = new Simulation(s);
+    sim.laufe(0.5, 1e-3);
+    expect(sim.messung("b2").drehzahl!).toBeGreaterThan(50);
+    expect(Math.abs(sim.messung("b2").spannung)).toBeGreaterThan(1);
+    expect(sim.messung("b3").helligkeit!).toBeGreaterThan(0.05);
+  });
+
+  it("Umschalter und Trafo verdrängen keine Leitung zwischen a und b", () => {
+    let s = fuegeDrahtHinzu(LEER, P(0, 0), P(8, 0));
+    s = fuegeBauteilHinzu(s, "trafo", P(2, 0), P(6, 0)).schaltung;
+    expect(s.draehte.some(d => d.a.x === 2 && d.b.x === 6)).toBe(true);
+  });
+
   it("ein schräg gezogener Draht wird zum Winkel, doppelte und leere fallen weg", () => {
     let s = fuegeDrahtHinzu(LEER, P(0, 0), P(3, 2));
     expect(s.draehte.map(d => [d.a, d.b])).toEqual([[P(0, 0), P(3, 0)], [P(3, 0), P(3, 2)]]);

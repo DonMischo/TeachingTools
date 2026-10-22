@@ -33,7 +33,17 @@ function liegtInnen(p: Punkt, a: Punkt, b: Punkt): boolean {
   return skalar > 0 && skalar < bx * bx + by * by;
 }
 
-/** Teilt Drähte an fremden Endpunkten, wirft Drähte der Länge null und Doppelte weg. */
+/** Liegt p auf der Strecke a–b, Enden eingeschlossen? */
+function liegtAuf(p: Punkt, a: Punkt, b: Punkt): boolean {
+  return gleich(p, a) || gleich(p, b) || liegtInnen(p, a, b);
+}
+
+/**
+ * Teilt Drähte an fremden Endpunkten, wirft Drähte der Länge null und Doppelte
+ * weg — und Drahtstücke, die genau unter einem Bauteil liegen: Wer ein Bauteil
+ * auf eine Leitung legt, will es in die Leitung setzen. Bliebe der Draht
+ * darunter, schlösse er das Bauteil kurz (es bekäme keine Spannung).
+ */
 export function normalisiere(s: Schaltung): Schaltung {
   let draehte = s.draehte.filter(d => !gleich(d.a, d.b));
   for (let runde = 0; runde < 1000; runde++) {
@@ -49,6 +59,9 @@ export function normalisiere(s: Schaltung): Schaltung {
     }
     if (!geteilt) break;
   }
+  // Umschalter und Trafo haben zwischen a und b keine Leitung, dort darf ein Draht liegen.
+  const zweipole = s.bauteile.filter(t => t.art !== "umschalter" && t.art !== "trafo");
+  draehte = draehte.filter(d => !zweipole.some(t => liegtAuf(d.a, t.a, t.b) && liegtAuf(d.b, t.a, t.b)));
   const gesehen = new Set<string>();
   draehte = draehte.filter(d => {
     const k1 = `${d.a.x},${d.a.y}|${d.b.x},${d.b.y}`, k2 = `${d.b.x},${d.b.y}|${d.a.x},${d.a.y}`;
