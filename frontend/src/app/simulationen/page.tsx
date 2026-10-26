@@ -165,6 +165,14 @@ const ALL_CARDS: Werkzeug[] = [
     color: "#ca8a04",
   },
   {
+    slug: "baum",
+    href: "/simulationen/baum",
+    icon: "🌳",
+    title: "Baumleben",
+    description: "Ein Baum vom Samen bis zum Humus: wachsen lassen, Wasser- und Nährstoffhaushalt, Bewohner und Jahresringe; Stoffströme und Fotosynthese mit Reaktionsgleichungen; 30 Bäume mit Foto und Blattschema bestimmen — und »Sei ein Baum« als Spiel.",
+    color: "#4d7c0f",
+  },
+  {
     slug: "diagramme",
     href: "/simulationen/diagramme",
     icon: "🔀",

@@ -132,6 +132,19 @@ export const REGISTER: WerkzeugQuellen[] = [
     ],
   },
   {
+    slug: "baum", name: "🌳 Baumleben",
+    eintraege: [
+      { quelle: "Wikimedia Commons", urheber: "verschiedene (Nachweis an jedem Bild)", lizenz: "gemeinfrei, CC0, CC BY, CC BY-SA", url: "https://commons.wikimedia.org/", verwendung: "30 Baumfotos (Wikidata-Hauptbild je Art), verkleinert; Urheber und Lizenz in src/lib/baum/credits.ts und unter jedem Bild" },
+    ],
+    literatur: [
+      "Runions, A., Lane, B. & Prusinkiewicz, P. (2007): Modeling trees with a space colonization algorithm. Eurographics Workshop on Natural Phenomena.",
+      "Pałubicki, W. et al. (2009): Self-organizing tree models for image synthesis. ACM Transactions on Graphics 28(3).",
+      "Weber, J. & Penn, J. (1995): Creation and rendering of realistic trees. SIGGRAPH 1995.",
+      "Renton, M., Guédon, Y., Godin, C. & Costes, E. (2006): Similarities and gradients in growth unit branching patterns during ontogeny in Fuji apple trees: a stochastic approach. Journal of Experimental Botany 57.",
+      "Shinozaki, K. et al. (1964): A quantitative analysis of plant form — the pipe model theory. Japanese Journal of Ecology 14.",
+    ],
+  },
+  {
     slug: "vulkan", name: "🌋 Vulkane",
     eintraege: [
       { quelle: "VoxelSpace", urheber: "Sebastian Macke", lizenz: "MIT", url: "https://github.com/s-macke/VoxelSpace", verwendung: "Algorithmus für den 3D-Flug; neu geschrieben (geteilt mit der Erosion)" },

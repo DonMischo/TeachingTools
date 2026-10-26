@@ -407,6 +407,18 @@ simulationen:
       - Schaltplan mit DIN-Schaltzeichen oder realistische Ansicht wie im Experimentierkasten
       - 16 Beispielschaltungen; Speichern und Öffnen als JSON-Datei
       - Lehrkraft gibt Schaltung und Arbeitsauftrag an die Sitzung; Beitretende starten mit einer eigenen Kopie
+  - id: baum
+    name: Baumleben
+    kann:
+      - Lebenslauf eines Baumes vom Samen bis zum Humus für Rotbuche, Stieleiche, Fichte, Waldkiefer und Hänge-Birke; Standort, Boden und Niederschlag wählbar, Zeitleiste zum Abspielen und Springen
+      - Prozedurales Wachstum - Laubbäume per Raumkolonisierung (Runions u. a. 2007), Nadelbäume als Quirle, Astdicke nach dem Pfeifenmodell, Knospenschicksal als Markow-Kette nach dem Licht, Blattstellung über den Goldenen Winkel, Selbstreinigung der unteren Äste
+      - Wurzeln je Art als Pfahl-, Herz- oder Flachwurzel mit Senkern, Feinwurzeln und Mykorrhiza; Sämlinge zuerst mit Pfahlwurzel
+      - Wasserhaushalt (Regen auf die Krone, Interzeption, Transpiration, Anteil der Fotosynthese), Nährsalze N P K Ca Mg, CO₂-Speicher und Gaswechsel als Modellwerte; Jahresringe mit Dürre- und Mastjahren
+      - Bewohner je Lebensphase und Art in Krone, Stamm, Höhlen, Boden, Wurzelraum und Totholz
+      - Stoffströme im Baum animiert (Xylem, Phloem, Nährsalze, Gase, Mykorrhiza) mit elf Erklärungen, Wasserpotential, Stammquerschnitt, Spaltöffnungs-Rechner
+      - Fotosynthese für die Oberstufe - Blattquerschnitt, Chloroplast, Absorptions- und Wirkungsspektrum, Herbstfärbung, Lichtreaktion mit Z-Schema, Calvin-Zyklus, Einflussfaktoren, Wasserpest-Versuch, Quiz
+      - 30 Bäume bestimmen mit Foto von Wikimedia Commons (Nachweis am Bild), Blattschema mit Maßstab, Steckbrief, Bestimmungsschlüssel und Quiz
+      - Spiel »Sei ein Baum« nach dem Vorbild von Forest Shuffle mit Ereigniskarten, Zuckerverteilung, Bewohnerkarten und Totholz-Phase
   - id: diagramme
     name: Diagramm-Werkstatt
     kann:

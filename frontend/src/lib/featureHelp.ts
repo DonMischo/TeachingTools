@@ -384,6 +384,19 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet). Unter »Für die Klasse« geben Sie die aktuelle Schaltung samt Arbeitsauftrag an die Sitzung: Wer beitritt, startet damit und baut an einer eigenen Kopie weiter." },
     ],
   },
+  baum: {
+    title: "Baumleben",
+    intro: "Ein Baum vom Samen bis zum Humus, in fünf Reitern. Alle Zahlen sind gerundete Modellwerte für den Unterricht; die Bäume wachsen prozedural und rechnen ganz im Browser.",
+    sections: [
+      { label: "🌱 Lebenslauf", text: "Baumart (Rotbuche, Stieleiche, Fichte, Waldkiefer, Hänge-Birke), Standort, Boden und Niederschlag wählen und abspielen oder mit der Zeitleiste springen: Samen, Keimling, Sämling, Jungbaum, reifer Baum, Altbaum, stehendes und liegendes Totholz, Humus. Rechts Höhe, Durchmesser, Blattfläche, gespeichertes CO₂, Wasserhaushalt, Nährsalze und wer gerade im Baum lebt; Dürre-, Mast- und Sturmjahre zeigen sich im Jahresring." },
+      { label: "🌳 Wie der Baum wächst", text: "Laubbäume wachsen per Raumkolonisierung in einer mitwachsenden Kronenhülle (Runions u. a. 2007), Nadelbäume Quirl für Quirl; die Astdicke folgt dem Pfeifenmodell (da-Vinci-Regel). Was aus jeder Knospe wird (ruhend, Kurztrieb, Langtrieb, Blüte, abgestorben), entscheidet eine Markow-Kette nach dem Licht. Untere, beschattete Äste sterben ab, im Wald schneller. Wurzeln je nach Art als Pfahl-, Herz- oder Flachwurzel." },
+      { label: "💧 Im Baum", text: "Animierte Stoffströme (Wasser im Xylem, Zucker im Phloem, Nährsalze, Gase, Mykorrhiza) mit elf Erklärungen zum Anklicken, Wasserpotential vom Boden bis zur Luft, Stammquerschnitt und ein Spaltöffnungs-Rechner mit Licht, Temperatur, Luftfeuchte, Wind und Bodenwasser." },
+      { label: "☀️ Fotosynthese", text: "Blattquerschnitt und Chloroplast zum Anklicken, Absorptions- und Wirkungsspektrum mit Engelmann-Versuch, Herbstfärbung, Lichtreaktion in acht Schritten mit Z-Schema, Calvin-Zyklus zum Durchzählen, Einflussfaktoren mit Licht-Kurve für Sonnen- und Schattenblätter, virtueller Wasserpest-Versuch und Quiz." },
+      { label: "🔎 Bäume bestimmen", text: "30 Bäume Mitteleuropas mit Foto (Wikimedia Commons, Nachweis am Bild), Blattschema mit Maßstab und Steckbrief; ein Bestimmungsschlüssel, der nur noch trennende Merkmale abfragt, und ein Quiz mit Blättern oder Fotos." },
+      { label: "🎲 Sei ein Baum", text: "Spiel nach dem Vorbild von Forest Shuffle: Jede Runde sind 15 Jahre, Zucker auf Krone, Wurzeln, Stamm, Abwehr, Reserve und Samen verteilen, Dürre, Sturm und Käfer überstehen und Bewohner aufnehmen (Spechte zimmern Höhlen für Nachmieter). Nach dem Tod geht es als Totholz weiter." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet)." },
+    ],
+  },
   dla: {
     title: "Fraktales Wachstum",
     intro: "Diffusionsbegrenzte Aggregation (DLA): Ein Teilchen irrt zufällig umher, bis es den Haufen berührt, und bleibt dort hängen. Weil die Spitzen die ankommenden Teilchen zuerst abfangen, wachsen verzweigte Äste mit luftigem Innern — wie Korallen, Kupferbäumchen, Eisblumen oder Lichtenberg-Figuren. Rechnet ganz im Browser; Vorbild ist dlaf von Michael Fogleman (MIT).",

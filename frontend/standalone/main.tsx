@@ -32,6 +32,7 @@ import Wachstum from "@/components/dla/Wachstum";
 import Stadtentwicklung from "@/components/stadt/Stadtentwicklung";
 import Erosion from "@/components/erosion/Erosion";
 import Vulkan from "@/components/vulkan/Vulkan";
+import Baumleben from "@/components/baum/Baumleben";
 import Stromkreis from "@/components/stromkreis/Stromkreis";
 import Periodensystem from "@/components/pse/Periodensystem";
 import Strukturformeln from "@/components/struktur/Strukturformeln";
@@ -63,6 +64,7 @@ const TOOLS: { id: string; icon: string; label: string; node: ReactNode }[] = [
   { id: "stadt", icon: "🏘️", label: "Stadtentwicklung", node: <Stadtentwicklung /> },
   { id: "erosion", icon: "🌧️", label: "Erosion", node: <Erosion /> },
   { id: "vulkan", icon: "🌋", label: "Vulkane", node: <Vulkan /> },
+  { id: "baum", icon: "🌳", label: "Baumleben", node: <Baumleben /> },
   // Ohne Sitzung keine Vorgabe der Lehrkraft; Speichern und Öffnen als JSON-Datei gehen.
   { id: "stromkreis", icon: "💡", label: "Stromkreise", node: <Stromkreis /> },
   { id: "pse", icon: "🧪", label: "Periodensystem", node: <Periodensystem /> },

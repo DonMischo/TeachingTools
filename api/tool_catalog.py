@@ -205,6 +205,10 @@ CATALOG: list[CatalogTool] = [
     CatalogTool("stromkreis", "💡 Stromkreise", "💡", "simulationen", {
         "use": _cap(True, True),
     }),
+    # Baumleben: Lebenslauf eines Baumes, Stoffströme, Fotosynthese, Bäume bestimmen, Spiel.
+    CatalogTool("baum", "🌳 Baumleben", "🌳", "simulationen", {
+        "use": _cap(True, True),
+    }),
     # Periodensystem: Elemente nachschlagen, typische Reaktionen fuehren in die
     # Gleichungswaage.
     CatalogTool("pse", "🧪 Periodensystem", "🧪", "simulationen", {
