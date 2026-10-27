@@ -7,7 +7,7 @@ BL.Key = (function () {
   const CSS = `
   .tree-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px }
   .tcard { display: grid; grid-template-rows: auto auto; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--panel); cursor: pointer; text-align: left; padding: 0 }
-  .tcard:hover { border-color: var(--leaf) }
+  .tcard:hover { border-color: var(--border-selected) }
   .tcard .ph { position: relative; aspect-ratio: 4 / 3; background: var(--leaf-soft); overflow: hidden }
   .tcard .ph img { width: 100%; height: 100%; object-fit: cover; display: block }
   .tcard .lf { position: absolute; right: 6px; bottom: 6px; width: 54px; height: 64px; background: var(--panel); border-radius: 6px; padding: 4px; border: 1px solid var(--line) }
@@ -21,6 +21,8 @@ BL.Key = (function () {
   .tdetail figcaption { font-size: .75rem; color: var(--muted) }
   .tdetail figcaption a { color: inherit }
   .tdetail .schema { height: 300px; border: 1px solid var(--line); border-radius: 8px; padding: 12px; background: var(--panel) }
+  .tdetail .tafel { height: 460px; border: 1px solid var(--line); border-radius: 8px; background: #fbf8f0; overflow: hidden }
+  .tdetail .tafel img { display: block; width: 100%; height: 100%; max-height: none; object-fit: contain; border-radius: 0 }
   .tdetail dl { display: grid; grid-template-columns: 7.5em minmax(0, 1fr); gap: 6px 12px; margin: 0; font-size: .95rem }
   .tdetail dt { color: var(--muted); font-size: .8rem; letter-spacing: .06em; text-transform: uppercase; padding-top: 3px }
   .tdetail dd { margin: 0 }
@@ -28,7 +30,7 @@ BL.Key = (function () {
   .key-q { display: grid; gap: 10px }
   .key-q .opts { display: flex; flex-wrap: wrap; gap: 8px }
   .key-q .opts button { padding: 10px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); cursor: pointer; text-align: left }
-  .key-q .opts button:hover { border-color: var(--leaf); background: var(--leaf-soft) }
+  .key-q .opts button:hover { border-color: var(--border-selected); background: var(--surface-hover) }
   .key-path { display: flex; flex-wrap: wrap; gap: 6px }
   .mini-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px }
   .mini { border: 1px solid var(--line); border-radius: 8px; padding: 6px; background: var(--panel); font-size: .78rem; text-align: center; cursor: pointer }
@@ -55,7 +57,7 @@ BL.Key = (function () {
     root = el;
     BL.addStyle(CSS);
     root.append(BL.html(`<div class="stack"><h2>Bäume bestimmen</h2>
-      <p class="lead">30 Bäume Mitteleuropas mit Foto, Blattschema und Steckbrief. Übe mit dem Bestimmungsschlüssel oder teste dich im Quiz. Die Blattschemata zeigen typische Formen, der Maßstab gibt die echte Größe an.</p></div>`));
+      <p class="lead">30 Bäume Mitteleuropas mit Foto, botanischer Tafel und Steckbrief. Übe mit dem Bestimmungsschlüssel oder teste dich im Quiz. Die Blattschemata zeigen typische Formen, der Maßstab gibt die echte Größe an.</p></div>`));
     BL.subtabs(root, ["Alle Bäume", "Bestimmungsschlüssel", "Quiz"], i => { mode = i; render(); });
     body = BL.html(`<div class="stack"></div>`); root.append(body);
     render();
@@ -93,7 +95,8 @@ BL.Key = (function () {
         <div class="row">${traits}</div>
       </div>
       <div class="stack">
-        <div class="schema">${BL.leafSVG(t.leaf, { label: "Blattschema " + t.de })}</div>
+        ${BL.BLAETTER[t.id] ? `<figure><div class="tafel"><img src="${BL.BLAETTER[t.id].datei}" alt="Botanische Tafel ${t.de}" loading="lazy"></div><figcaption>${BL.blattCredit(t.id)}</figcaption></figure>`
+          : `<div class="schema">${BL.leafSVG(t.leaf, { label: "Blattschema " + t.de })}</div>`}
         <dl><dt>${t.typ === "nadel" ? "Nadeln" : "Blatt"}</dt><dd>${t.blatt}</dd><dt>Rinde</dt><dd>${t.rinde}</dd><dt>Frucht</dt><dd>${t.frucht}</dd>
           <dt>Größe</dt><dd>${t.hoehe}, wird ${t.alter} alt</dd><dt>Standort</dt><dd>${t.standort}</dd><dt>Wer lebt hier</dt><dd>${t.leben}</dd></dl>
         <p class="fakt">${t.fakt}</p>

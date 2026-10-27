@@ -70,7 +70,14 @@ BL.Life = (function () {
 
   let root, cv, ctx, ringCv, ringCtx, sparkCv, sparkCtx, W = 600, Hc = 460;
   let params = BL.store.get("lifeParams", { sp: "buche", rain: 800, soil: 1, light: 1, seed: 7 });
-  let sim, skel, t = -0.6, playing = false, speed = 4, last = 0, showFlow = true, showMyc = true, colors = {};
+  let sim, skel, t = -0.6, playing = false, last = 0, showFlow = true, showMyc = true, colors = {};
+  // speed 0 = Jahreszeiten (ein Jahr dauert YEAR_S Sekunden), sonst Jahre pro Sekunde bei fester Jahreszeit
+  let speed = BL.store.get("lifeSpeed", 0), real = BL.store.get("lifeReal", true), dayOn = BL.store.get("lifeDay", true);
+  let dayT = 10 / 24, acc = 0, sFix = 0, sunXNow = -.6, fgCv, fgCtx, phX = 0, phP = 0, lastFlow = 0;
+  const YEAR_S = 20, DAY_S = 36, SEASON_AT = [.1, .35, .63, .85];
+  const frac = x => ((x % 1) + 1) % 1;
+  // Beim Springen über Jahre und beim Ziehen am Regler bleibt die Jahreszeit stehen
+  const holdSeason = () => { acc = Math.floor(t); sFix = frac(t); };
 
   // ---------- Modell ----------
   function simulate() {
@@ -215,39 +222,186 @@ BL.Life = (function () {
   function draw() {
     if (!ctx) return;
     const S = sim.S, st = stageAt(t), a = Math.max(0, Math.floor(t)), y = sim.years[Math.min(a, sim.years.length - 1)];
-    const season = ((t % 1) + 1) % 1, groundY = Hc * .72;
-    // Himmel und Boden
-    const g = ctx.createLinearGradient(0, 0, 0, groundY);
-    const winter = season >= .75, dry = y && y.ev === "duerre" && season >= .25 && season < .6;
-    g.addColorStop(0, colors.dark ? "#0f1a24" : dry ? "#e9e1c9" : winter ? "#d9e0e6" : "#cfe3ef");
-    g.addColorStop(1, colors.dark ? "#1b2a26" : dry ? "#f2ead3" : "#eef4ea");
-    ctx.fillStyle = g; ctx.fillRect(0, 0, W, groundY);
-    const sg = ctx.createLinearGradient(0, groundY, 0, Hc);
-    sg.addColorStop(0, colors.dark ? "#3a2c20" : "#7a5c40"); sg.addColorStop(1, colors.dark ? "#211912" : "#4e3a28");
-    ctx.fillStyle = sg; ctx.fillRect(0, groundY, W, Hc - groundY);
-    ctx.fillStyle = colors.dark ? "#2d3b22" : winter ? "#c9cfc2" : "#7aa05a"; ctx.fillRect(0, groundY - 3, W, 5);
-
+    const season = frac(t), groundY = Hc * .72;
     // Maßstab: kleine Pflanzen groß zeigen, große Bäume ganz
     const viewH = Math.max(st <= 2 ? .25 + (y ? y.H : 0) * 1.4 : 2, (y ? y.H : 0) * 1.12, st >= 6 ? sim.years[sim.deathAge].H * .8 : 0);
     const sc = (groundY - 24) / viewH; // px pro m
     const cx = W * .42;
-    // Mensch als Größenvergleich
-    if (sc * 1.75 < groundY - 30 && sc * 1.75 > 18) drawPerson(cx + Math.max(60, (y ? y.crownR : 1) * sc + 40), groundY, sc * 1.75);
+    const sun = sunState(season);
+    sunXNow = sun.day ? Math.round((sun.f - .5) * 4) / 2 : -.5;
+    const scene = () => {
+      // Mensch als Größenvergleich
+      if (sc * 1.75 < groundY - 30 && sc * 1.75 > 18) drawPerson(cx + Math.max(60, (y ? y.crownR : 1) * sc + 40), groundY, sc * 1.75);
+      if (st === 0) drawSeed(cx, groundY, sc);
+      else if (st === 1) drawGerm(cx, groundY, sc, t);
+      else if (st <= 5) drawTree(cx, groundY, sc, y, season, st);
+      else drawDead(cx, groundY, sc, st);
+      if (st >= 1 && st <= 5) drawRoots(cx, groundY, sc, y, st);
+    };
+    if (real) {
+      // Natürlich: Himmel nach Sonnenstand, Landschaft und Baum in einer eigenen Ebene, die nachts abgedunkelt wird
+      const horizon = drawSkyReal(groundY, season, y, sun);
+      const main = ctx; ctx = fgCtx; ctx.clearRect(0, 0, W, Hc);
+      drawLandReal(groundY, season, horizon);
+      drawGroundReal(groundY, season, y, cx, st);
+      if (st >= 2 && st <= 5 && tRes) {
+        ctx.fillStyle = `rgba(20,30,15,${.32 * sun.light})`;
+        ctx.beginPath(); ctx.ellipse(cx - sunXNow * 20, groundY + 1, Math.max(14, tRes.half * 1.05), Math.max(3, tRes.half * .08), 0, 0, 7); ctx.fill();
+      }
+      scene();
+      ctx.globalCompositeOperation = "source-atop";
+      ctx.fillStyle = `rgba(10,18,46,${.68 * (1 - sun.light)})`; ctx.fillRect(0, 0, W, groundY + 4);
+      if (sun.dusk > .05) { ctx.fillStyle = `rgba(255,130,60,${.15 * sun.dusk})`; ctx.fillRect(0, 0, W, groundY + 4); }
+      ctx.globalCompositeOperation = "source-over";
+      ctx = main; ctx.drawImage(fgCv, 0, 0, W, Hc);
+      // Beschriftungen bleiben auf hellem Himmel lesbar
+      ctx.save(); ctx.shadowColor = "rgba(0,0,0,.65)"; ctx.shadowBlur = 3;
+    } else {
+      // Schema: Himmel und Boden
+      const g = ctx.createLinearGradient(0, 0, 0, groundY);
+      const winter = season >= .75, dry = y && y.ev === "duerre" && season >= .25 && season < .6;
+      g.addColorStop(0, colors.dark ? "#0f1a24" : dry ? "#e9e1c9" : winter ? "#d9e0e6" : "#cfe3ef");
+      g.addColorStop(1, colors.dark ? "#1b2a26" : dry ? "#f2ead3" : "#eef4ea");
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, groundY);
+      const sg = ctx.createLinearGradient(0, groundY, 0, Hc);
+      sg.addColorStop(0, colors.dark ? "#3a2c20" : "#7a5c40"); sg.addColorStop(1, colors.dark ? "#211912" : "#4e3a28");
+      ctx.fillStyle = sg; ctx.fillRect(0, groundY, W, Hc - groundY);
+      ctx.fillStyle = colors.dark ? "#2d3b22" : winter ? "#c9cfc2" : "#7aa05a"; ctx.fillRect(0, groundY - 3, W, 5);
+      ctx.save();
+      scene();
+    }
     drawRuler(groundY, sc);
-
-    if (st === 0) drawSeed(cx, groundY, sc);
-    else if (st === 1) drawGerm(cx, groundY, sc, t);
-    else if (st <= 5) drawTree(cx, groundY, sc, y, season, st);
-    else drawDead(cx, groundY, sc, st);
-    if (st >= 1 && st <= 5) drawRoots(cx, groundY, sc, y, st);
-    if (showFlow && st >= 2 && st <= 5) drawFlows(cx, groundY, sc, y, season);
+    if (showFlow && st >= 2 && st <= 5) drawFlows(cx, groundY, sc, y, season, sun);
     drawDwellers(cx, groundY, sc, st, y);
+    if (real && dayOn) {
+      const hh = Math.floor(sun.hour), mm = Math.floor((sun.hour - hh) * 6) * 10;
+      ctx.font = "600 12px " + BL.css("--mono"); ctx.textAlign = "right"; ctx.fillStyle = "#f4f1e8";
+      ctx.fillText(`${sun.day ? "☀" : "☾"} ${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")} Uhr`, W - 12, 24);
+      ctx.textAlign = "left";
+    }
+    ctx.restore();
     // Ereignis-Hinweis
     if (y && y.ev && t >= 0 && st <= 5) {
       ctx.font = "600 13px " + BL.css("--body"); const txt = EVENT_TXT[y.ev].split(":")[0];
       const w = ctx.measureText(txt).width + 16;
       ctx.fillStyle = colors.dark ? "rgba(0,0,0,.55)" : "rgba(255,255,255,.8)"; ctx.fillRect(10, 10, w, 24);
       ctx.fillStyle = y.ev === "nass" || y.ev === "nachbar" ? colors.xylem : colors.warn; ctx.fillText(txt, 18, 27);
+    }
+  }
+  // ---------- Natürliche Darstellung: Sonnenstand, Himmel, Landschaft, Boden ----------
+  // Der Tag läuft auf eigener Uhr, unabhängig vom Wachstum. Tageslänge 8 h im Winter bis 16 h im Sommer.
+  function sunState(season) {
+    const d = real && dayOn ? dayT : .45;
+    const dl = .5 + .167 * Math.sin(season * 2 * Math.PI), u = frac(d - (.5 - dl / 2));
+    const day = u < dl, f = day ? u / dl : (u - dl) / (1 - dl);
+    const alt = (day ? 1 : -1) * Math.sin(Math.PI * f);
+    return { day, f, alt, light: BL.clamp((alt + .06) / .3, 0, 1), dusk: Math.exp(-Math.pow(alt / .15, 2)), peak: .5 + 1.4 * (dl - .333), hour: d * 24 };
+  }
+  const mixC = (a, b, k) => a.map((x, i) => Math.round(x + (b[i] - x) * k));
+  const rgbS = (c, a = 1) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+  function drawSkyReal(groundY, season, y, sun) {
+    const winter = season >= .75, dry = y && y.ev === "duerre" && season >= .25 && season < .6;
+    let top = mixC([8, 12, 32], winter ? [104, 146, 190] : [58, 124, 200], sun.light);
+    let bot = mixC([26, 34, 64], winter ? [206, 220, 232] : [176, 212, 236], sun.light);
+    top = mixC(top, [78, 82, 138], sun.dusk * .45); bot = mixC(bot, [246, 164, 96], sun.dusk * .75);
+    if (dry) bot = mixC(bot, [236, 214, 170], .4 * sun.light);
+    const g = ctx.createLinearGradient(0, 0, 0, groundY);
+    g.addColorStop(0, rgbS(top)); g.addColorStop(1, rgbS(bot));
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, groundY + 4);
+    if (sun.light < .7) {
+      const r = BL.rng(3), a0 = 1 - sun.light / .7, now = performance.now() / 700;
+      for (let i = 0; i < 110; i++) {
+        const x = r() * W, yy = r() * groundY * .85, s = r();
+        ctx.fillStyle = `rgba(255,252,236,${a0 * (.3 + .6 * s) * (.8 + .2 * Math.sin(now + i * 1.7))})`;
+        ctx.fillRect(x, yy, s > .92 ? 2 : 1, s > .92 ? 2 : 1);
+      }
+    }
+    // Sonne bzw. Mond wandern auf einem Bogen über den Himmel
+    const px = W * (.06 + .88 * sun.f), py = groundY + 6 - (groundY - 30) * Math.abs(sun.alt) * (sun.day ? sun.peak : .75);
+    if (sun.day) {
+      const c = mixC([255, 248, 226], [255, 168, 88], sun.dusk);
+      const gl = ctx.createRadialGradient(px, py, 0, px, py, 90);
+      gl.addColorStop(0, rgbS(c, .6)); gl.addColorStop(1, rgbS(c, 0));
+      ctx.fillStyle = gl; ctx.fillRect(px - 90, py - 90, 180, 180);
+      ctx.fillStyle = rgbS(c); ctx.beginPath(); ctx.arc(px, py, 13, 0, 7); ctx.fill();
+    } else {
+      const gl = ctx.createRadialGradient(px, py, 0, px, py, 50);
+      gl.addColorStop(0, "rgba(220,228,255,.25)"); gl.addColorStop(1, "rgba(220,228,255,0)");
+      ctx.fillStyle = gl; ctx.fillRect(px - 50, py - 50, 100, 100);
+      ctx.fillStyle = "#e9edf4"; ctx.beginPath(); ctx.arc(px, py, 10, 0, 7); ctx.fill();
+      ctx.fillStyle = "rgba(150,160,180,.45)";
+      for (const [mx, my, mr] of [[-3, -2, 2.4], [3, 3, 1.8], [2, -4, 1.2]]) { ctx.beginPath(); ctx.arc(px + mx, py + my, mr, 0, 7); ctx.fill(); }
+    }
+    return bot;
+  }
+  function drawLandReal(groundY, season, horizon) {
+    const winter = season >= .78 && season < .97;
+    // Hügel in Luftperspektive: je weiter weg, desto mehr Himmelsfarbe
+    for (const [hh, m, col] of [[.2, .45, [86, 112, 92]], [.11, .7, [56, 92, 58]]]) {
+      ctx.fillStyle = rgbS(mixC(horizon, winter ? mixC(col, [214, 222, 230], .65) : col, m));
+      ctx.beginPath(); ctx.moveTo(0, groundY + 2);
+      for (let x = 0; x <= W + 8; x += 8) ctx.lineTo(x, groundY - groundY * hh * (.55 + .25 * Math.sin(x / W * 5.3 + hh * 40) + .2 * Math.sin(x / W * 13.1 + hh * 9)));
+      ctx.lineTo(W, groundY + 2); ctx.fill();
+    }
+    // Nachbarbäume im Wald oder am Waldrand, als dunstige Silhouetten im Hintergrund
+    if (!params.light) return;
+    const r = BL.rng(params.seed + 77), n = params.light === 2 ? 9 : 4, conif = sim.S.conifer;
+    const crown = season < .12 ? [118, 168, 82] : season < .55 ? [58, 98, 50] : season < .75 ? [164, 112, 52] : null;
+    for (let i = 0; i < n; i++) {
+      const x = params.light === 2 ? W * (i + .5) / n + (r() - .5) * W / n * .6 : W * (.7 + i * .085 + r() * .04);
+      const H = groundY * (.55 + r() * .35), tw = Math.max(3, H * .028), m = .45 + r() * .15;
+      if (Math.abs(x - W * .42) < 30) continue;
+      ctx.fillStyle = rgbS(mixC(horizon, [58, 46, 36], m));
+      ctx.fillRect(x - tw / 2, groundY - H * .75, tw, H * .75 + 2);
+      if (conif) {
+        ctx.fillStyle = rgbS(mixC(horizon, [36, 66, 44], m));
+        ctx.beginPath(); ctx.moveTo(x, groundY - H); ctx.lineTo(x - H * .2, groundY - H * .3); ctx.lineTo(x + H * .2, groundY - H * .3); ctx.fill();
+      } else if (crown) {
+        ctx.fillStyle = rgbS(mixC(horizon, crown, m));
+        for (const [ox, oy, rx] of [[0, .78, .2], [-.11, .66, .15], [.12, .64, .14]]) { ctx.beginPath(); ctx.ellipse(x + ox * H, groundY - oy * H, rx * H, rx * H * .85, 0, 0, 7); ctx.fill(); }
+      } else {
+        ctx.strokeStyle = rgbS(mixC(horizon, [70, 56, 44], m)); ctx.lineWidth = Math.max(1, tw * .3);
+        for (const a of [-.7, -.35, .3, .65]) { ctx.beginPath(); ctx.moveTo(x, groundY - H * .55); ctx.lineTo(x + Math.sin(a) * H * .25, groundY - H * .55 - Math.cos(a) * H * .35); ctx.stroke(); }
+      }
+    }
+  }
+  const HORIZONS = [[0, [46, 34, 24], "Humusauflage"], [.07, [84, 60, 40], "Oberboden"], [.38, [126, 92, 60], "Unterboden"], [.76, [146, 126, 100], "Ausgangsgestein"]];
+  function drawGroundReal(groundY, season, y, cx, st) {
+    const winter = season >= .8 && season < .97, dry = y && y.ev === "duerre" && season >= .25 && season < .6;
+    // Bodenprofil im Anschnitt
+    const D = Hc - groundY, g = ctx.createLinearGradient(0, groundY, 0, Hc);
+    HORIZONS.forEach(([f, c], i) => { g.addColorStop(f, rgbS(c)); g.addColorStop(i < 3 ? HORIZONS[i + 1][0] - .03 : 1, rgbS(c)); });
+    ctx.fillStyle = g; ctx.fillRect(0, groundY, W, D);
+    const r = BL.rng(9);
+    for (let i = 0; i < 70; i++) {
+      const f = .3 + r() * .7, x = r() * W, yy = groundY + D * f, s = 1 + r() * (f > .7 ? 5 : 2.5);
+      ctx.fillStyle = rgbS(mixC([126, 112, 96], [168, 156, 140], r()), .7);
+      ctx.beginPath(); ctx.ellipse(x, yy, s * 1.3, s, r() * 3, 0, 7); ctx.fill();
+    }
+    ctx.font = "10px " + BL.css("--body"); ctx.textAlign = "right"; ctx.fillStyle = "rgba(255,240,220,.5)";
+    HORIZONS.forEach(([f, , n], i) => { if (i) ctx.fillText(n, W - 8, groundY + D * f + 12); });
+    ctx.textAlign = "left";
+    // Grasnarbe bzw. Schneedecke
+    const grass = dry ? [158, 146, 86] : season < .12 ? [104, 156, 64] : season < .55 ? [78, 128, 52] : [128, 118, 58];
+    if (winter) {
+      ctx.fillStyle = "#eef2f6"; ctx.beginPath(); ctx.moveTo(0, groundY + 3);
+      for (let x = 0; x <= W + 10; x += 10) ctx.lineTo(x, groundY - 4 - 1.5 * Math.sin(x * .07));
+      ctx.lineTo(W, groundY + 3); ctx.fill();
+      return;
+    }
+    ctx.fillStyle = rgbS(mixC(grass, [40, 30, 20], .35)); ctx.fillRect(0, groundY - 2, W, 6);
+    const rg = BL.rng(4); ctx.lineWidth = 1;
+    for (let x = 0; x < W; x += 2.5) {
+      ctx.strokeStyle = rgbS(mixC(grass, [210, 220, 150], rg() * .3), .9);
+      const h = 3 + rg() * 6; ctx.beginPath(); ctx.moveTo(x, groundY + 2); ctx.lineTo(x + (rg() - .5) * 4, groundY + 2 - h); ctx.stroke();
+    }
+    // Falllaub unter dem Baum
+    if (season >= .55 && st >= 3 && st <= 5 && !sim.S.conifer && tRes) {
+      const rl = BL.rng(12), w = tRes.half * 1.2;
+      for (let i = 0; i < Math.min(160, w); i++) {
+        ctx.fillStyle = rgbS([[160, 92, 34], [196, 140, 52], [126, 82, 40]][i % 3], .9);
+        ctx.beginPath(); ctx.ellipse(cx + (rl() - .5) * 2 * w, groundY + rl() * 3, 2.2, 1.2, rl() * 3, 0, 7); ctx.fill();
+      }
     }
   }
   function drawPerson(x, gy, h) {
@@ -300,7 +454,13 @@ BL.Life = (function () {
   const growthFrac = y => BL.clamp(y.H / (sim.S.Hmax * .97), .004, 1);
   const crownBase = y => [.16, .26, .45][params.light] * BL.clamp(y.a / 60, .2, 1);
   function blitTree(v) {
-    const key = [W, Hc, Math.round(v.Hpx), v.g.toFixed(4), Math.round(v.season * 48), Math.round(v.trunkPx), v.cb.toFixed(2), (v.dead || 0).toFixed(2), v.snag ? 1 : 0, colors.dark, params.sp, params.seed, params.light].join("|");
+    const M = skel.model;
+    if (M.pruneFor !== sim) {
+      const last = sim.deathAge ?? sim.years.length - 1;
+      BL.TreeGen.pruneHistory(M, sim.years.slice(0, last + 1).map(y => ({ g: growthFrac(y), cb: crownBase(y) })));
+      M.pruneFor = sim; tKey = "";
+    }
+    const key = [W, Hc, Math.round(v.Hpx), v.g.toFixed(4), Math.round(v.season * 48), Math.round(v.trunkPx), v.cb.toFixed(2), (v.dead || 0).toFixed(2), v.snag ? 1 : 0, v.step, colors.dark, v.real ? 1 : 0, v.sunX, params.sp, params.seed, params.light].join("|");
     const now = performance.now();
     if (key !== tKey && (!playing || now - tTime > 45 || !tRes)) {
       const dpr = cv.width / W;
@@ -315,7 +475,7 @@ BL.Life = (function () {
   function drawTree(cx, gy, sc, y, season, st) {
     const S = sim.S, Hpx = y.H * sc, trunkPx = Math.max(1.5, y.D / 100 * sc * 1.4);
     const dead = st === 5 ? BL.clamp((y.a - S.life * .6) / (S.life * .4), 0, .6) : 0;
-    blitTree({ cx, gy, Hpx, g: growthFrac(y), season, trunkPx, cb: crownBase(y), dead, leaves: true, dark: colors.dark });
+    blitTree({ cx, gy, Hpx, g: growthFrac(y), season, trunkPx, cb: crownBase(y), dead, leaves: true, dark: colors.dark, real, sunX: sunXNow, step: Math.round(y.a) });
     // Höhle im Altbaum
     if (st === 5 && trunkPx > 10) { ctx.fillStyle = "#1a120b"; ctx.beginPath(); ctx.ellipse(cx, gy - Hpx * .3, trunkPx * .18, trunkPx * .24, 0, 0, 7); ctx.fill(); }
   }
@@ -335,11 +495,17 @@ BL.Life = (function () {
       }
       return { list: out, trunkPx };
     }
-    const rs = Math.min(Hpx, maxDepth / Math.max(.02, -skel.rMinY), (W * .46) / Math.max(.02, skel.rMaxX));
     const a = y ? y.a : 0, visD = a < 12 ? 1 : a < 30 ? 2 : 3;
+    // Die Ansicht zoomt mit dem Baum mit, deshalb wächst das Wurzelwerk hier eigens mit dem Alter:
+    // jung ein knappes Drittel, ausgewachsen (doppeltes Mannbarkeitsalter) die volle Ausdehnung.
+    // Breite bis etwa zur Kronentraufe; Tiefe je nach Wurzeltyp (Flachwurzler bleiben flach, Pfahlwurzeln füllen den Boden).
+    const grow = BL.clamp(.3 + .7 * a / (sim.S.fruit * 2), .3, 1);
+    const rsY = Math.min(Hpx * 2.5, maxDepth * .9 / Math.max(.02, -skel.rMinY)) * grow;
+    const reach = tRes && tRes.half > 4 ? tRes.half : Hpx * .3;
+    const rsX = Math.min(W * .46, Math.max(reach, rsY * skel.rMaxX)) / Math.max(.02, skel.rMaxX) * grow;
     for (const rt of skel.roots) {
       if (rt.d > visD) continue;
-      out.push({ pts: rt.pts.map(([x, yy]) => [cx + x * rs, gy - yy * rs]), w: Math.max(.8, trunkPx * .55 * rt.w), d: rt.d });
+      out.push({ pts: rt.pts.map(([x, yy]) => [cx + x * rsX, gy - yy * rsY]), w: Math.max(.8, trunkPx * .55 * rt.w), d: rt.d });
     }
     return { list: out, trunkPx };
   }
@@ -347,7 +513,7 @@ BL.Life = (function () {
     if (st < 2) return; // der Keimling zeichnet seine Keimwurzel selbst
     const { list } = rootLayout(cx, gy, sc, y, st);
     ctx.save(); ctx.lineCap = "round"; ctx.lineJoin = "round";
-    const col = colors.dark ? "#c7a27a" : "#d9bf98";
+    const col = real ? "#a8845f" : colors.dark ? "#c7a27a" : "#d9bf98";
     ctx.strokeStyle = col;
     for (const rt of list) {
       const n = rt.pts.length - 1;
@@ -377,10 +543,14 @@ BL.Life = (function () {
     }
     ctx.restore();
   }
-  function drawFlows(cx, gy, sc, y, season) {
+  function drawFlows(cx, gy, sc, y, season, sun) {
     const S = sim.S, active = S.conifer ? (season < .75 ? 1 : .15) : (season >= .05 && season < .62 ? 1 : 0);
     if (!active) return;
     const Hpx = y.H * sc, now = performance.now() / 1000, trunkPx = Math.max(1.5, y.D / 100 * sc * 1.4);
+    // Nachts sind die Spaltöffnungen zu: kaum Transpiration, der Wasserstrom wird langsam; Zucker wandert weiter
+    const dtf = Math.min(.1, now - lastFlow); lastFlow = now;
+    phX = (phX + dtf * .12 * (.12 + .88 * sun.light)) % 1; phP = (phP + dtf * .07) % 1;
+    const night = sun.light < .3;
     // Routen: Wurzelspitze → Stammfuß → Stamm → Äste → Blatt (Wasser) und umgekehrt (Zucker)
     const rl = rootLayout(cx, gy, sc, y, stageAt(t)).list;
     const rootEnds = rl.filter(rt => rt.d === 0 || rl.length === 1).map(rt => rt.pts);
@@ -401,18 +571,24 @@ BL.Life = (function () {
       const up = [...rE.slice().reverse(), ...lE.map(([x, yy]) => [x - off * .5, yy])];
       const down = [...lE.map(([x, yy]) => [x + off * .5, yy]).reverse(), ...rE];
       ctx.globalAlpha = active * .9;
-      let p = along(up, (now * .12 + i / n) % 1);
+      let p = along(up, (phX + i / n) % 1);
       ctx.fillStyle = colors.xylem; ctx.beginPath(); ctx.arc(p[0], p[1], 2.3, 0, 7); ctx.fill();
-      p = along(down, (now * .07 + i / n + .5) % 1);
+      p = along(down, (phP + i / n + .5) % 1);
       ctx.fillStyle = colors.phloem; ctx.beginPath(); ctx.arc(p[0], p[1], 2.3, 0, 7); ctx.fill();
     }
     // Gase an der Krone
     ctx.font = "600 11px " + BL.css("--mono"); ctx.globalAlpha = .9 * active;
     const half = Math.max(26, (tRes ? tRes.half : 20) + 10);
     const kx = cx + half, ky = gy - Hpx * .72, bob = Math.sin(now * 2) * 3;
-    ctx.fillStyle = colors.gas; ctx.textAlign = "right"; ctx.fillText("CO₂ →", cx - half - 4, ky + bob); ctx.textAlign = "left";
-    ctx.fillStyle = colors.xylem; ctx.fillText("→ H₂O", kx + 8, ky - 14 - bob);
-    ctx.fillStyle = colors.leaf; ctx.fillText("→ O₂", kx + 8, ky + 4 + bob);
+    if (night) {
+      ctx.fillStyle = colors.leaf; ctx.textAlign = "right"; ctx.fillText("O₂ →", cx - half - 4, ky + bob); ctx.textAlign = "left";
+      ctx.fillStyle = colors.gas; ctx.fillText("→ CO₂", kx + 8, ky + 4 + bob);
+      ctx.font = "11px " + BL.css("--body"); ctx.fillStyle = "#e8e4d8"; ctx.fillText("Nacht: keine Fotosynthese, nur Zellatmung", Math.min(kx + 8, W - 250), ky + 22 + bob);
+    } else {
+      ctx.fillStyle = colors.gas; ctx.textAlign = "right"; ctx.fillText("CO₂ →", cx - half - 4, ky + bob); ctx.textAlign = "left";
+      ctx.fillStyle = colors.xylem; ctx.fillText("→ H₂O", kx + 8, ky - 14 - bob);
+      ctx.fillStyle = colors.leaf; ctx.fillText("→ O₂", kx + 8, ky + 4 + bob);
+    }
     ctx.restore();
   }
   function drawDead(cx, gy, sc, st) {
@@ -420,7 +596,7 @@ BL.Life = (function () {
     const prog = BL.clamp((t - sim.deathAge) / sim.decay, 0, 1);
     ctx.save(); ctx.lineCap = "round";
     if (st === 6) {
-      blitTree({ cx, gy, Hpx: H, g: growthFrac(yd), season: .9, trunkPx: D, cb: crownBase(yd), snag: true, leaves: false, dark: colors.dark });
+      blitTree({ cx, gy, Hpx: H, g: growthFrac(yd), season: .9, trunkPx: D, cb: crownBase(yd), snag: true, leaves: false, dark: colors.dark, real, sunX: sunXNow, step: sim.deathAge });
       bracket(cx + D * .5, gy - H * .22, D); bracket(cx - D * .5, gy - H * .32, D * .8, true);
       ctx.fillStyle = "#1a120b"; ctx.beginPath(); ctx.ellipse(cx, gy - H * .42, D * .18, D * .24, 0, 0, 7); ctx.fill();
     } else if (st === 7) {
@@ -556,7 +732,11 @@ BL.Life = (function () {
     // Ereignisse bis jetzt
     const evs = sim.years.filter(y2 => y2.ev && y2.a <= Math.min(a, sim.deathAge)).slice(-6).reverse();
     BL.$("#lf-events").innerHTML = evs.length ? evs.map(e => `<li><span class="num">Jahr ${e.a}</span> ${EVENT_TXT[e.ev]}</li>`).join("") : `<li class="note">Noch keine besonderen Jahre.</li>`;
-    BL.$("#lf-slider").value = t;
+    BL.$("#lf-slider").value = Math.floor(t);
+    const si = Math.floor(frac(t) * 4);
+    BL.$$("#lf-season button").forEach((b, i) => b.setAttribute("aria-pressed", String(i === si)));
+    BL.$$("#lf-style button").forEach(b => b.setAttribute("aria-pressed", String((b.dataset.r === "1") === real)));
+    BL.$("#lf-day").disabled = !real;
   }
   const fmtL = v => v > 10000 ? BL.fmt(v / 1000, 0) + " m³" : v > 1000 ? BL.fmt(v / 1000, 1) + " m³" : BL.fmt(v, v < 10 ? 2 : 0) + " L";
   const fmtKg = v => v < 1 ? BL.fmt(v * 1000) + " g" : v > 1000 ? BL.fmt(v / 1000, 2) + " t" : BL.fmt(v, 1) + " kg";
@@ -568,8 +748,8 @@ BL.Life = (function () {
   .timeline { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center }
   #lf-stages { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 3px; font-size: .68rem; color: var(--muted) }
   #lf-stages i { font-style: normal; border-top: 4px solid var(--line); padding-top: 3px; line-height: 1.2; overflow-wrap: anywhere }
-  #lf-stages i[data-past="true"] { border-color: color-mix(in srgb, var(--leaf) 45%, var(--line)) }
-  #lf-stages i[data-on="true"] { border-color: var(--leaf); color: var(--ink); font-weight: 700 }
+  #lf-stages i[data-past="true"] { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)) }
+  #lf-stages i[data-on="true"] { border-color: var(--accent); color: var(--ink); font-weight: 700 }
   #lf-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px }
   #lf-metrics b { display: block; font-size: 1.05rem }
   .wrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; font-size: .85rem; margin-bottom: 6px }
@@ -598,8 +778,11 @@ BL.Life = (function () {
       <div class="bench">
         <div class="stack">
           <div class="canvas-box" id="lf-box"><canvas id="lf-cv" aria-label="Baum im Zeitverlauf"></canvas></div>
-          <div class="timeline"><button class="btn primary" id="lf-play">Abspielen</button><input type="range" id="lf-slider" step="0.01" aria-label="Zeit"><div class="seg" id="lf-speed">${[1, 4, 15].map(s => `<button data-s="${s}" aria-pressed="${s === speed}">${s} J/s</button>`).join("")}</div></div>
+          <div class="timeline"><button class="btn primary" id="lf-play">Abspielen</button><input type="range" id="lf-slider" step="1" aria-label="Jahr"><div class="seg" id="lf-speed">${[[0, "Jahreszeiten"], [1, "1 J/s"], [4, "4 J/s"], [15, "15 J/s"]].map(([s, l]) => `<button data-s="${s}" aria-pressed="${s === speed}" title="${s ? "Jahre überspringen, die Jahreszeit bleibt stehen" : "Ein Jahr in " + YEAR_S + " Sekunden, mit allen Jahreszeiten"}">${l}</button>`).join("")}</div></div>
           <div id="lf-stages">${STAGES.map(s => `<i>${s.n}</i>`).join("")}</div>
+          <div class="row"><div class="seg" id="lf-season" aria-label="Jahreszeit">${["Frühling", "Sommer", "Herbst", "Winter"].map((n, i) => `<button data-i="${i}">${n}</button>`).join("")}</div>
+            <div class="seg" id="lf-style" aria-label="Darstellung"><button data-r="1">Natürlich</button><button data-r="0">Schema</button></div>
+            <label title="Die Tageszeit läuft auf eigener Uhr, unabhängig vom Wachstum"><input type="checkbox" id="lf-day"> Tag und Nacht</label></div>
           <div class="row"><label><input type="checkbox" id="lf-flow" checked> Stoffströme</label><label><input type="checkbox" id="lf-myc" checked> Pilzgeflecht (Mykorrhiza)</label></div>
           <div class="panel rings"><canvas id="lf-rings" aria-label="Stammquerschnitt"></canvas>
             <div class="stack"><h3>Jahresringe</h3><p class="note">Jedes Jahr legt das Kambium eine Schicht helles Frühholz (weite Gefäße für viel Wasser) und dunkles Spätholz (dickwandig, stabil) an. ${"In Dürrejahren (rot) und Mastjahren (gelb) bleiben die Ringe schmal."}</p><canvas id="lf-spark" aria-label="Ringbreite je Jahr"></canvas><p class="note">Ringbreite je Jahr</p></div></div>
@@ -623,26 +806,34 @@ BL.Life = (function () {
     BL.$("#lf-light").addEventListener("change", () => { skel = buildSkeleton(); render(); });
     BL.$("#lf-rain").addEventListener("input", change);
     BL.$("#lf-seed").onclick = () => { params.seed = Math.floor(Math.random() * 1e6); change(); skel = buildSkeleton(); };
-    BL.$("#lf-play").onclick = () => { playing = !playing; if (playing && t >= sim.end - .01) t = -0.6; syncPlay(); };
-    BL.$("#lf-slider").addEventListener("input", e => { t = +e.target.value; render(); });
-    BL.$("#lf-speed").addEventListener("click", e => { const b = e.target.closest("[data-s]"); if (!b) return; speed = +b.dataset.s; BL.$$("[data-s]", BL.$("#lf-speed")).forEach(x => x.setAttribute("aria-pressed", x === b)); });
+    BL.$("#lf-play").onclick = () => { playing = !playing; if (playing && t >= sim.end - .01) t = -1 + frac(t); holdSeason(); syncPlay(); };
+    // Der Regler springt in ganzen Jahren, die Jahreszeit bleibt
+    BL.$("#lf-slider").addEventListener("input", e => { t = Math.min(sim.end, +e.target.value + frac(t)); holdSeason(); render(); });
+    BL.$("#lf-speed").addEventListener("click", e => { const b = e.target.closest("[data-s]"); if (!b) return; speed = +b.dataset.s; BL.store.set("lifeSpeed", speed); holdSeason(); BL.$$("[data-s]", BL.$("#lf-speed")).forEach(x => x.setAttribute("aria-pressed", x === b)); });
+    BL.$("#lf-season").addEventListener("click", e => { const b = e.target.closest("[data-i]"); if (!b) return; t = Math.min(sim.end, Math.floor(t) + SEASON_AT[+b.dataset.i]); holdSeason(); render(); });
+    BL.$("#lf-style").addEventListener("click", e => { const b = e.target.closest("[data-r]"); if (!b) return; real = b.dataset.r === "1"; BL.store.set("lifeReal", real); render(); });
+    BL.$("#lf-day").checked = dayOn;
+    BL.$("#lf-day").onchange = e => { dayOn = e.target.checked; BL.store.set("lifeDay", dayOn); render(); };
     BL.$("#lf-flow").onchange = e => { showFlow = e.target.checked; render(); };
     BL.$("#lf-myc").onchange = e => { showMyc = e.target.checked; render(); };
     new ResizeObserver(resize).observe(BL.$("#lf-box"));
     matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { readColors(); render(); });
     skel = buildSkeleton(); recompute(true);
-    t = BL.store.get("lifeT", 35.4); if (t > sim.end) t = 35.4;
+    t = BL.store.get("lifeT", 35.35); if (t > sim.end) t = 35.35;
+    holdSeason();
     resize(); requestAnimationFrame(loop);
   }
   function recompute() {
     sim = simulate();
-    const s = BL.$("#lf-slider"); s.min = -0.6; s.max = sim.end; if (t > sim.end) t = sim.end;
+    const s = BL.$("#lf-slider"); s.min = -1; s.max = Math.floor(sim.end); if (t > sim.end) t = sim.end;
     BL.$("#lf-rain-o").textContent = params.rain + " mm";
     render();
   }
   function resize() {
     const box = BL.$("#lf-box"); if (!box.clientWidth) return; W = box.clientWidth; Hc = Math.round(BL.clamp(W * .78, 340, 560));
     ctx = BL.fitCanvas(cv, W, Hc);
+    if (!fgCv) fgCv = document.createElement("canvas");
+    fgCtx = BL.fitCanvas(fgCv, W, Hc);
     const rs = 170; ringCtx = BL.fitCanvas(ringCv, rs, rs); ringCv._w = rs;
     const sw = Math.max(120, sparkCv.parentElement.clientWidth); sparkCtx = BL.fitCanvas(sparkCv, sw, 48); sparkCv._w = sw; sparkCv._h = 48;
     render();
@@ -654,10 +845,18 @@ BL.Life = (function () {
     if (!root.isConnected) return;
     const dt = Math.min(.1, (ts - last) / 1000 || 0); last = ts;
     if (!root.hidden) {
+      if (real && dayOn) dayT = frac(dayT + dt / DAY_S);
       if (playing) {
-        // Keimphase langsamer abspielen, damit sie sichtbar wird
-        const sp = t < 1.5 ? Math.min(speed, 1) * .5 : speed;
-        t += dt * sp; if (t >= sim.end) { t = sim.end; playing = false; syncPlay(); }
+        if (!speed || t < 1) {
+          // Jahreszeiten: ein Jahr in YEAR_S Sekunden. Samen und Keimung laufen immer so, damit man sie sieht;
+          // beim Jahressprung geht es danach in der gewählten Jahreszeit weiter.
+          const was = t; t += dt / (t < 1 ? 8 : YEAR_S);
+          if (speed && was < 1 && t >= 1) t = 1 + sFix;
+          if (!speed || t >= 1) { acc = Math.floor(t); if (!speed) sFix = frac(t); }
+        } else {
+          acc += dt * speed; t = Math.floor(acc) + sFix;
+        }
+        if (t >= sim.end) { t = sim.end; playing = false; syncPlay(); }
       }
       draw();
       if (playing && ts - lastPanel > 120) { lastPanel = ts; drawRings(); updatePanel(); BL.store.set("lifeT", t); }

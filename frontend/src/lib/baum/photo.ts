@@ -12,7 +12,7 @@ BL.Photo = (function () {
   .ph-svg .sel { stroke: var(--phloem) !important; stroke-width: 3 !important }
   .lr-steps { display: flex; gap: 4px; flex-wrap: wrap }
   .lr-steps button { width: 2.2em; height: 2.2em; border-radius: 50%; border: 1px solid var(--line); background: var(--panel); cursor: pointer; font-family: var(--mono) }
-  .lr-steps button[aria-current="true"] { background: var(--leaf); color: var(--paper); border-color: var(--leaf) }
+  .lr-steps button[aria-current="true"] { background: var(--accent); color: var(--accent-text); border-color: var(--accent) }
   .counter { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px }
   .counter div { background: var(--leaf-soft); border-radius: 8px; padding: 8px 10px }
   .counter b { display: block; font-family: var(--mono); font-size: 1.25rem }

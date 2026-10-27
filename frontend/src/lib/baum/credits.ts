@@ -2,6 +2,7 @@
 /* eslint-disable */
 // Baumleben: aus der eigenständigen Fassung übernommen, ungeprüftes JavaScript.
 import { BL } from "./bl";
+import blaetter from "./blaetter.json";
 BL.CREDITS = {
 "buche": {
 "file": "buche.jpg",
@@ -183,4 +184,11 @@ BL.CREDITS = {
 "artist": "H. Zell",
 "page": "https://commons.wikimedia.org/wiki/File:Prunus_avium_-_Hohenwettersbach_01.jpg"
 }
+};
+// Blatt-Tafeln für »Bäume bestimmen«, geholt mit scripts/fetch-baum-blaetter.mjs
+BL.BLAETTER = blaetter;
+BL.blattCredit = (id) => {
+  const c = BL.BLAETTER[id]; if (!c) return "";
+  const lic = c.lizenz === "Public domain" ? "gemeinfrei" : c.lizenzUrl ? `<a href="${c.lizenzUrl}" target="_blank" rel="noopener">${c.lizenz}</a>` : c.lizenz;
+  return `${c.urheber === "unbekannt" ? "" : c.urheber + " · "}${lic} · <a href="${c.seite}" target="_blank" rel="noopener">Wikimedia Commons</a>`;
 };

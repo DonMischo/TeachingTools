@@ -161,7 +161,7 @@ BL.TreeGen = (function () {
 
   // Sichtbare Teile bei Wachstumsanteil g. Selbstreinigung: Äste am Schaft unterhalb der Kronenbasis sterben ab.
   // Der Schaft endet an der ersten Zwiesel (zwei etwa gleich dicke Stämmlinge); darüber ist alles Krone.
-  function visibleSCA(M, g, cbFrac) {
+  function visibleSCA(M, g, cbFrac, step) {
     const N = M.nodes.length, vis = new Uint8Array(N); let h = .01;
     M.nodes.forEach((n, i) => { if (n.b <= g + 1e-6) { vis[i] = 1; h = Math.max(h, n.y); } });
     const rr = pipeRadii(M, vis), top = new Float32Array(N);
@@ -179,10 +179,33 @@ BL.TreeGen = (function () {
     for (let i = 1; i < N; i++) {
       if (!vis[i]) continue;
       const p = M.nodes[i].p;
-      if (dead[p]) { dead[i] = 1; vis[i] = 0; continue; }
+      if (dead[p] || (M.prune && M.prune.deadFrom[i] <= step)) { dead[i] = 1; vis[i] = 0; continue; }
       if (!bole[i] && bole[p] && M.nodes[p].y < cut && rr[i] < rr[p] * .5) { dead[i] = 1; vis[i] = 0; }
     }
     return { vis, h };
+  }
+  // Selbstreinigung geht nur in eine Richtung: einmal abgeworfene Äste wachsen nicht wieder nach.
+  // steps = [{ g, cb }] Jahr für Jahr; render bekommt dann v.step (Jahr) und hält sich an die Geschichte.
+  function pruneHistory(M, steps) {
+    M.prune = null;
+    if (M.pp.kind === "whorl") {
+      let g = 0, cut = 0;
+      const gMax = new Float32Array(steps.length), cutMax = new Float32Array(steps.length);
+      steps.forEach((st, i) => {
+        g = Math.max(g, st.g);
+        const h = Math.max(2, Math.floor(g * M.pp.whorls)) / M.pp.whorls, pineOld = M.pp.pine ? BL.clamp((g - .45) / .4, 0, 1) : 0;
+        cut = Math.max(cut, Math.max(st.cb, pineOld * .62) * h);
+        gMax[i] = g; cutMax[i] = cut;
+      });
+      M.prune = { gMax, cutMax };
+      return;
+    }
+    const deadFrom = new Int32Array(M.nodes.length).fill(1e9);
+    steps.forEach((st, k) => {
+      const { vis } = visibleSCA(M, st.g, st.cb);
+      M.nodes.forEach((n, i) => { if (!vis[i] && n.b <= st.g + 1e-6 && deadFrom[i] > k) deadFrom[i] = k; });
+    });
+    M.prune = { deadFrom };
   }
   function pipeRadii(M, vis) {
     const rr = new Float32Array(M.nodes.length);
@@ -199,23 +222,30 @@ BL.TreeGen = (function () {
     const c = k => Math.round(((pa >> k) & 255) * (1 - t) + ((pb >> k) & 255) * t);
     return `rgb(${c(16)},${c(8)},${c(0)})`;
   }
-  function leafColor(pp, L, season) {
+  // Farben als [r, g, b] für die natürliche Darstellung (Licht und Schatten rechnen)
+  const hex = h => { const p = parseInt(h.slice(1), 16); return [p >> 16 & 255, p >> 8 & 255, p & 255]; };
+  const toward = (c, d, t) => c.map((x, i) => x + (d[i] - x) * t);
+  const rgba = (c, f = 1, a = 1) => `rgba(${c.map(x => Math.round(BL.clamp(x * f, 0, 255))).join(",")},${a})`;
+  function leafRGB(pp, L, season) {
     const c = pp.col, sunT = L.e * .8 + L.tone * .2;
     // Saison 0 = Frühlingsbeginn, 0,75 = Winterbeginn
     const off = Math.min(.745, L.on + .07 + L.tone * .06);
     if (season < L.bb) return null;
-    if (season < .12) return mix(c.spring[0], c.spring[1], sunT);
-    if (season < L.on) return mix(c.summer[0], c.summer[1], sunT);
+    if (season < .12) return toward(hex(c.spring[0]), hex(c.spring[1]), sunT);
+    if (season < L.on) return toward(hex(c.summer[0]), hex(c.summer[1]), sunT);
     const a = c.autumn, k = Math.floor(L.tone * a.length) % a.length;
-    if (season < off) return mix(c.summer[0], a[k], BL.clamp((season - L.on) / (off - L.on) * 1.6, 0, 1));
+    if (season < off) return toward(hex(c.summer[0]), hex(a[k]), BL.clamp((season - L.on) / (off - L.on) * 1.6, 0, 1));
     return null;
   }
+  function leafColor(pp, L, season) { const c = leafRGB(pp, L, season); return c && rgba(c); }
 
   // ---------- Zeichnen ----------
-  // v: { cx, gy, Hpx, g, season, trunkPx, cb, dead (0..1 Kronenverlust), snag, dark, leaves (bool) }
+  // v: { cx, gy, Hpx, g, season, trunkPx, cb, dead (0..1 Kronenverlust), snag, dark, leaves (bool),
+  //      real (natürliche Darstellung statt Schema), sunX (-1 Sonne links … 1 rechts) }
   function render(ctx, M, v) {
     if (M.pp.kind === "whorl") return renderWhorl(ctx, M, v);
-    const { vis, h } = visibleSCA(M, v.g, v.cb);
+    if (v.real) return renderReal(ctx, M, v);
+    const { vis, h } = visibleSCA(M, v.g, v.cb, v.step ?? -1);
     const rr = pipeRadii(M, vis), r0 = rr[0] || 1, k = v.Hpx / h;
     const X = n => v.cx + n.x * k, Y = n => v.gy - n.y * k;
     const pp = M.pp, snagH = v.snag ? .55 * h : 9;
@@ -278,19 +308,167 @@ BL.TreeGen = (function () {
     return { half, h, vis, k };
   }
 
+  // Blattform als Pfad um den Ursprung, Spitze nach oben
+  function leafPath(ctx, pp, len) {
+    if (pp.leaf.lobed && len > 3.5) { for (let j = 0; j < 3; j++) ctx.ellipse(0, -len * (.25 + j * .28), len * pp.leaf.a * (.55 + .2 * (j % 2)), len * .2, 0, 0, 7); }
+    else ctx.ellipse(0, -len * .5, len * pp.leaf.a * .5, len * .5, 0, 0, 7);
+  }
+
+  // Natürliche Darstellung: Rinde mit Licht- und Schattenseite, Blätter in Büscheln, beleuchtet von der Sonnenseite,
+  // Schnee auf waagerechten Ästen im Winter.
+  function renderReal(ctx, M, v) {
+    const { vis, h } = visibleSCA(M, v.g, v.cb, v.step ?? -1);
+    const rr = pipeRadii(M, vis), r0 = rr[0] || 1, k = v.Hpx / h;
+    const X = n => v.cx + n.x * k, Y = n => v.gy - n.y * k;
+    const pp = M.pp, snagH = v.snag ? .55 * h : 9, birch = M.sp === "birke";
+    const sunX = v.sunX ?? -.6, rnd = BL.rng(M.r * 17 + 3), snow = v.season >= .8 && v.season < .97;
+    const bark = hex(pp.bark), twig = hex("#5b4a3c"), white = [236, 234, 226];
+    const barkOf = w => birch ? (w > Math.max(3, v.trunkPx * .3) ? white : hex("#4e3a32")) : w < Math.max(1.2, v.trunkPx * .05) ? twig : bark;
+    ctx.save(); ctx.lineCap = "round"; ctx.lineJoin = "round";
+    // Wurzelanlauf am Stammfuß
+    const tw = v.trunkPx;
+    if (tw > 3) {
+      ctx.fillStyle = rgba(barkOf(tw), .7);
+      ctx.beginPath(); ctx.moveTo(v.cx - tw * 1.15, v.gy + 1);
+      ctx.quadraticCurveTo(v.cx - tw * .5, v.gy - tw * .15, v.cx - tw * .5, v.gy - tw * 1.3); ctx.lineTo(v.cx + tw * .5, v.gy - tw * 1.3);
+      ctx.quadraticCurveTo(v.cx + tw * .5, v.gy - tw * .15, v.cx + tw * 1.15, v.gy + 1); ctx.fill();
+    }
+    const segs = [];
+    for (let i = 1; i < M.nodes.length; i++) {
+      if (!vis[i]) continue;
+      const n = M.nodes[i];
+      if (v.snag && (n.y > snagH || rr[i] < r0 * .05)) continue;
+      const p = M.nodes[n.p], x0 = X(p), y0 = Y(p), x1 = X(n), y1 = Y(n), L = Math.hypot(x1 - x0, y1 - y0) || 1;
+      // Normale zur Sonnenseite (oben, Richtung Sonne)
+      let nx = -(y1 - y0) / L, ny = (x1 - x0) / L;
+      if (nx * sunX - ny < 0) { nx = -nx; ny = -ny; }
+      segs.push({ x0, y0, x1, y1, w: Math.max(.5, v.trunkPx * rr[i] / r0), nx, ny, horiz: Math.abs(x1 - x0) / L });
+    }
+    // Schattenton, dann die schmalere Lichtseite darüber
+    for (const s of segs) { ctx.strokeStyle = rgba(barkOf(s.w), birch && s.w > 3 ? .78 : .62); ctx.lineWidth = s.w; ctx.beginPath(); ctx.moveTo(s.x0, s.y0); ctx.lineTo(s.x1, s.y1); ctx.stroke(); }
+    for (const s of segs) {
+      if (s.w < 1.6) continue;
+      const o = s.w * .2; ctx.strokeStyle = rgba(barkOf(s.w), birch && s.w > 3 ? 1.04 : 1.12); ctx.lineWidth = s.w * .5;
+      ctx.beginPath(); ctx.moveTo(s.x0 + s.nx * o, s.y0 + s.ny * o); ctx.lineTo(s.x1 + s.nx * o, s.y1 + s.ny * o); ctx.stroke();
+    }
+    // Borke: Längsrisse auf dicken Ästen, bei der Birke schwarze Querbänder
+    ctx.lineCap = "butt";
+    for (const s of segs) {
+      if (s.w < 6) continue;
+      if (birch) {
+        if (s.w < v.trunkPx * .45 || rnd() > .55) continue;
+        ctx.strokeStyle = "rgba(30,26,24,.85)"; ctx.lineWidth = Math.max(1, s.w * .1);
+        const mx = (s.x0 + s.x1) / 2, my = (s.y0 + s.y1) / 2, l = s.w * (.25 + rnd() * .3), q = (rnd() - .5) * s.w * .4;
+        ctx.beginPath(); ctx.moveTo(mx + q - l / 2, my); ctx.lineTo(mx + q + l / 2, my - 1); ctx.stroke();
+        continue;
+      }
+      ctx.strokeStyle = rgba(bark, .42, .55); ctx.lineWidth = Math.max(.7, s.w * .06); ctx.setLineDash([s.w * .9, s.w * .5]);
+      for (const f of [-.28, .05, .32]) { const o = s.w * f; ctx.beginPath(); ctx.moveTo(s.x0 + s.nx * o, s.y0 + s.ny * o); ctx.lineTo(s.x1 + s.nx * o, s.y1 + s.ny * o); ctx.stroke(); }
+      ctx.setLineDash([]);
+    }
+    ctx.lineCap = "round";
+    // Feine Zweige an den Triebspitzen: im Winter sieht man die Feinverzweigung
+    const hasKid = new Uint8Array(M.nodes.length); for (let i = 1; i < M.nodes.length; i++) if (vis[i]) hasKid[M.nodes[i].p] = 1;
+    const leafPx = BL.clamp(v.Hpx * .028, 2.6, 16) * pp.leaf.len;
+    if (!v.snag) {
+      ctx.strokeStyle = rgba(birch ? hex("#4e3a32") : twig, .9, .85); ctx.lineWidth = .6;
+      for (let i = 1; i < M.nodes.length; i++) {
+        if (!vis[i] || hasKid[i]) continue;
+        const n = M.nodes[i], x = X(n), y = Y(n), l = leafPx * (birch ? 2.2 : 1.4);
+        for (const a of [-.45, .4]) {
+          const dx = n.dx * Math.cos(a) - n.dy * Math.sin(a), dy = n.dx * Math.sin(a) + n.dy * Math.cos(a);
+          ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + dx * l, y - dy * l + (birch ? l * .8 : 0)); ctx.stroke();
+        }
+      }
+    }
+    if (snow) {
+      ctx.strokeStyle = "rgba(246,249,252,.92)";
+      for (const s of segs) {
+        if (s.w < 1.2 || s.horiz < .45) continue;
+        const o = s.w * .45; ctx.lineWidth = Math.max(.8, s.w * .35);
+        ctx.beginPath(); ctx.moveTo(s.x0, s.y0 - o); ctx.lineTo(s.x1, s.y1 - o); ctx.stroke();
+      }
+    }
+    let half = 0;
+    if (v.leaves && !v.snag) {
+      if (pp.weep) {
+        ctx.strokeStyle = "rgba(78,58,50,.5)"; ctx.lineWidth = .6;
+        const seen = new Set();
+        for (const L of M.leaves) { if (L.tw < 0 || seen.has(L.tw) || !vis[L.n]) continue; seen.add(L.tw); const n = M.nodes[L.n]; ctx.beginPath(); ctx.moveTo(X(n), Y(n)); ctx.quadraticCurveTo(X(n) + Math.sin(n.x * 40) * 3, Y(n) + leafPx, X(n) + Math.sin(n.x * 40) * 2, Y(n) + leafPx * 3.2); ctx.stroke(); }
+      }
+      // unten bleibt der Stamm frei sichtbar
+      const list = M.leaves.filter(L => vis[L.n] && L.y > h * .17 && (!hasKid[L.n] || M.nodes[L.n].b >= v.g - .45) && !(v.dead && ((L.n * 7919) % 100) / 100 < v.dead));
+      list.sort((a, b) => a.e - b.e);
+      // Blätter sitzen nicht auf dem Ast, sondern rund um die Triebe verteilt: so wird die Krone voll
+      const P = list.map(L => {
+        const a = L.ang * 2.3 + L.tone * 6.283, d = leafPx * 2.4 * Math.sqrt((L.tone * 7.7 + L.s) % 1);
+        return [v.cx + L.x * k + Math.cos(a) * d + (pp.weep ? Math.sin(L.ang) * leafPx * 1.4 : 0), v.gy - L.y * k + Math.sin(a) * d * .8 + (pp.weep ? leafPx * 1.6 * L.s : 0)];
+      });
+      // Kronenausdehnung für die Beleuchtung
+      let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+      for (const [x, y] of P) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+      const ccx = (x0 + x1) / 2, ccy = (y0 + y1) / 2, rx = Math.max(4, (x1 - x0) / 2), ry = Math.max(4, (y1 - y0) / 2);
+      const lx = sunX * .8, ly = -.75, ll = Math.hypot(lx, ly);
+      // Laubmasse in zwei Schichten: tiefer Schatten im Kroneninneren, darüber das zur Sonne hin hellere Volumen.
+      // Deckend gezeichnet, damit die Krone als geschlossene, wolkige Form erscheint und nicht als Perlenkette.
+      const mass = (rad, f, shift) => {
+        for (let j = 0; j < list.length; j++) {
+          const L = list[j], col = leafRGB(pp, L, v.season); if (!col) continue;
+          const [x, y] = P[j], dot = ((x - ccx) / rx * lx + (y - ccy) / ry * ly) / ll;
+          ctx.fillStyle = rgba(col, f * (1 + .35 * dot));
+          ctx.beginPath(); ctx.arc(x - sunX * shift, y + Math.abs(shift), leafPx * rad * (.8 + L.s * .4), 0, 7); ctx.fill();
+        }
+      };
+      mass(1.7, .38, leafPx * .5);
+      mass(1.45, .62, -leafPx * .25);
+      for (let j = 0; j < list.length; j++) {
+        const L = list[j], col = leafRGB(pp, L, v.season); if (!col) continue;
+        const [x, y] = P[j], dot = ((x - ccx) / rx * lx + (y - ccy) / ry * ly) / ll;
+        const lit = BL.clamp(.78 + .45 * dot + .3 * (L.e - .5) + (rnd() - .5) * .3, .35, 1.55);
+        const len = leafPx * L.s;
+        // ein Büschel aus drei Blättern
+        for (let c = 0; c < 3; c++) {
+          const ox = c ? (rnd() - .5) * len * 1.1 : 0, oy = c ? (rnd() - .5) * len * .9 : 0;
+          ctx.fillStyle = rgba(col, lit * (1 - c * .07));
+          ctx.save(); ctx.translate(x + ox, y + oy); ctx.rotate(L.ang + (c ? (rnd() - .5) * 1.6 : 0));
+          ctx.beginPath(); leafPath(ctx, pp, len * (c ? .8 : 1)); ctx.fill(); ctx.restore();
+        }
+        // Glanzlicht auf sonnigen Blättern
+        if (lit > 1.15 && len > 3) { ctx.fillStyle = rgba(col, 1.45, .55); ctx.beginPath(); ctx.ellipse(x - len * .12, y - len * .5, len * .18, len * .28, L.ang, 0, 7); ctx.fill(); }
+        half = Math.max(half, Math.abs(x - v.cx));
+      }
+      if (v.season > .45 && v.season < .7 && v.g > .35) {
+        const f = hex(pp.fruit);
+        for (const i of M.fruits) if (vis[i]) {
+          const n = M.nodes[i], fr = Math.max(1.4, leafPx * .3);
+          ctx.fillStyle = rgba(f); ctx.beginPath(); ctx.arc(X(n) + 1, Y(n) + 3, fr, 0, 7); ctx.fill();
+          ctx.fillStyle = rgba(f, 1.6, .7); ctx.beginPath(); ctx.arc(X(n) + 1 - fr * .3, Y(n) + 3 - fr * .3, fr * .35, 0, 7); ctx.fill();
+        }
+      }
+    }
+    ctx.restore();
+    if (!half) M.nodes.forEach((n, i) => { if (vis[i]) half = Math.max(half, Math.abs(X(n) - v.cx)); });
+    return { half, h, vis, k };
+  }
+
   function renderWhorl(ctx, M, v) {
     const pp = M.pp, r = BL.rng(M.r * 13 + 1), N = pp.whorls;
     const topI = Math.max(2, Math.floor(v.g * N)), h = topI / N, k = v.Hpx / h;
-    const pineOld = pp.pine ? BL.clamp((v.g - .45) / .4, 0, 1) : 0;
-    const cbFrac = Math.max(v.cb, pineOld * .62);
+    const hist = M.prune && M.prune.gMax && v.step >= 0 ? Math.min(v.step, M.prune.gMax.length - 1) : -1;
+    const gOld = hist >= 0 ? Math.max(v.g, M.prune.gMax[hist]) : v.g;
+    const pineOld = pp.pine ? BL.clamp((gOld - .45) / .4, 0, 1) : 0;
+    const cbFrac = Math.max(v.cb, pineOld * .62, hist >= 0 ? M.prune.cutMax[hist] / h : 0);
     const X = x => v.cx + x * k, Y = y => v.gy - y * k;
+    const real = v.real, sunX = v.sunX ?? -.6, snow = real && v.season >= .8 && v.season < .97;
     ctx.save(); ctx.lineCap = "round";
     // Stamm, verjüngt sich zur Spitze
     const topY = v.snag ? h * .55 : h;
     for (let i = 0; i < topI; i++) {
       const y0 = i / N, y1 = (i + 1) / N; if (y0 > topY) break;
-      ctx.strokeStyle = pp.pine && y0 > h * .45 ? pp.bark : pp.barkLow || pp.bark;
-      ctx.lineWidth = Math.max(1, v.trunkPx * (1 - y0 / h * .9)); ctx.beginPath(); ctx.moveTo(v.cx, Y(y0)); ctx.lineTo(v.cx, Y(y1) - .5); ctx.stroke();
+      const col = pp.pine && y0 > h * .45 ? pp.bark : pp.barkLow || pp.bark, w = Math.max(1, v.trunkPx * (1 - y0 / h * .9));
+      ctx.strokeStyle = real ? rgba(hex(col), .68) : col;
+      ctx.lineWidth = w; ctx.beginPath(); ctx.moveTo(v.cx, Y(y0)); ctx.lineTo(v.cx, Y(y1) - .5); ctx.stroke();
+      if (real && w > 2) { const o = sunX * w * .2; ctx.strokeStyle = rgba(hex(col), 1.12); ctx.lineWidth = w * .45; ctx.beginPath(); ctx.moveTo(v.cx + o, Y(y0)); ctx.lineTo(v.cx + o, Y(y1) - .5); ctx.stroke(); }
     }
     let half = 0;
     const ends = [];
@@ -317,12 +495,15 @@ BL.TreeGen = (function () {
         pts.push([b.side * Math.sin(ang) * len * t, b.by + Math.cos(ang) * len * t - droop]);
       }
       const w = Math.max(.7, v.trunkPx * .22 * Math.sqrt(len / pp.lenCap));
-      ctx.strokeStyle = b.back ? "#4a3a2c" : "#5e4836"; ctx.lineWidth = w;
+      // Sonnenseite heller, hintere Äste im Schatten
+      const lit = real ? (b.back ? .62 : 1) * (b.side * sunX < 0 ? 1.12 : .86) : 1;
+      ctx.strokeStyle = real ? rgba(hex("#5e4836"), lit) : b.back ? "#4a3a2c" : "#5e4836"; ctx.lineWidth = w;
       ctx.beginPath(); ctx.moveTo(X(pts[0][0]), Y(pts[0][1])); for (const p of pts) ctx.lineTo(X(p[0]), Y(p[1])); ctx.stroke();
       ends.push(pts.map(p => [X(p[0]), Y(p[1])]));
       if (!v.leaves) continue;
       const col = v.dead && b.seed < v.dead ? null : (b.back ? pp.needle[0] : pp.needle[1]);
       if (!col) continue;
+      if (real) { needlesReal(ctx, pp, b, pts, len, X, Y, k, lit, snow, pineOld); half = Math.max(half, Math.abs(X(pts[steps][0]) - v.cx)); continue; }
       if (pp.twig === "hang") {
         // Fichte: Zweige hängen kammartig herab, benadelt
         ctx.fillStyle = col; ctx.strokeStyle = col; ctx.lineCap = "round";
@@ -350,7 +531,7 @@ BL.TreeGen = (function () {
       half = Math.max(half, Math.abs(X(pts[steps][0]) - v.cx));
     }
     // Spitze
-    if (v.leaves && !v.snag) { ctx.fillStyle = pp.needle[1]; ctx.beginPath(); ctx.moveTo(v.cx, Y(h) - 4); ctx.lineTo(v.cx - 3, Y(h - 1.5 / N)); ctx.lineTo(v.cx + 3, Y(h - 1.5 / N)); ctx.fill(); }
+    if (v.leaves && !v.snag) { ctx.fillStyle = real ? rgba(hex(pp.needle[1]), 1.1) : pp.needle[1]; ctx.beginPath(); ctx.moveTo(v.cx, Y(h) - 4); ctx.lineTo(v.cx - 3, Y(h - 1.5 / N)); ctx.lineTo(v.cx + 3, Y(h - 1.5 / N)); ctx.fill(); }
     // Zapfen
     if (v.leaves && v.g > .3 && v.season > .4 && v.season < .9) {
       ctx.fillStyle = pp.pine ? "#7a6248" : "#8a5a36";
@@ -358,6 +539,61 @@ BL.TreeGen = (function () {
     }
     ctx.restore();
     return { half, h, ends, k };
+  }
+
+  // Benadelung in der natürlichen Darstellung. Fichte: Zweigvorhang mit Verlauf (oben Licht, unten Schatten)
+  // und einzelnen Nadelstrichen; Kiefer: Nadelbüschel, die strahlenförmig aus dem Zweigende stehen.
+  function needlesReal(ctx, pp, b, pts, len, X, Y, k, lit, snow, pineOld) {
+    const dark = hex(pp.needle[0]), light = hex(pp.needle[1]), cr = BL.rng(Math.floor(b.seed * 1e6) + 1), steps = pts.length - 1;
+    ctx.lineCap = "round";
+    if (pp.twig === "hang") {
+      const th = Math.max(2.5, k * .016);
+      const top = Y(pts[1][1]) - th, bot = Y(pts[steps][1]) + th * 2;
+      const g = ctx.createLinearGradient(0, Math.min(top, bot) - th, 0, Math.max(top, bot) + th);
+      g.addColorStop(0, rgba(light, lit * 1.05)); g.addColorStop(1, rgba(dark, lit * .6));
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.moveTo(X(pts[1][0]), Y(pts[1][1]) - th * .4);
+      for (const p of pts.slice(2)) ctx.lineTo(X(p[0]), Y(p[1]) - th * .4);
+      for (const p of pts.slice(1).reverse()) ctx.lineTo(X(p[0]), Y(p[1]) + th * (1.1 + .6 * Math.abs(p[0] - pts[0][0]) / Math.max(.001, len)));
+      ctx.closePath(); ctx.fill();
+      // herabhängende Seitenzweige mit Nadeln
+      ctx.lineWidth = Math.max(.6, k * .0022);
+      for (let s = 2; s <= steps; s++) {
+        const [px, py] = pts[s];
+        for (let j = 0; j < 4; j++) {
+          const hang = (.3 + .5 * s / steps) * len * .17 * (.5 + cr()), x = X(px) + (cr() - .5) * th, y = Y(py);
+          ctx.strokeStyle = rgba(cr() < .5 ? dark : light, lit * (.65 + cr() * .45));
+          ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(x + b.side * th * .6, y + th, x + b.side * th * .3, y + th + hang * k); ctx.stroke();
+        }
+      }
+      // Nadelstriche entlang der Oberkante fangen das Licht
+      ctx.lineWidth = Math.max(.5, k * .0016);
+      for (let s = 1; s <= steps; s++) {
+        const [px, py] = pts[s];
+        for (let j = 0; j < 5; j++) {
+          const a = -Math.PI / 2 + (cr() - .5) * 2.2, l = th * (.6 + cr() * .7), x = X(px) + (cr() - .5) * th * 1.5, y = Y(py) - th * .2;
+          ctx.strokeStyle = rgba(light, lit * (1 + cr() * .35), .85);
+          ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); ctx.stroke();
+        }
+      }
+      if (snow) {
+        ctx.strokeStyle = "rgba(246,249,252,.92)"; ctx.lineWidth = th * .6;
+        ctx.beginPath(); ctx.moveTo(X(pts[1][0]), Y(pts[1][1]) - th * .6); for (const p of pts.slice(2, steps)) ctx.lineTo(X(p[0]), Y(p[1]) - th * .6); ctx.stroke();
+      }
+      return;
+    }
+    // Kiefer
+    for (let s = 4; s <= steps; s += 2) {
+      const [px, py] = pts[s], rad = Math.max(2, k * .011) * (1 + pineOld * .8), cx = X(px), cy = Y(py) - rad * .5;
+      ctx.fillStyle = rgba(dark, lit * .55); ctx.beginPath(); ctx.ellipse(cx + rad * .3, cy + rad * .5, rad * 2, rad * 1.1, 0, 0, 7); ctx.fill();
+      ctx.lineWidth = Math.max(.5, rad * .16);
+      for (let j = 0; j < 16; j++) {
+        const a = -Math.PI / 2 + (cr() - .5) * 2.9, l = rad * (1.3 + cr() * 1.1);
+        ctx.strokeStyle = rgba(cr() < .4 ? dark : light, lit * (.8 + cr() * .5));
+        ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(a) * l, cy + Math.sin(a) * l * .8); ctx.stroke();
+      }
+      if (snow) { ctx.fillStyle = "rgba(246,249,252,.9)"; ctx.beginPath(); ctx.ellipse(cx, cy - rad * .9, rad * 1.4, rad * .45, 0, 0, 7); ctx.fill(); }
+    }
   }
 
   // Wege für Wasser und Zucker: Stammfuß → Hauptpfad → Blatt
@@ -372,5 +608,5 @@ BL.TreeGen = (function () {
     }
     return out;
   }
-  return { build, render, flowPaths, params: P };
+  return { build, render, flowPaths, pruneHistory, params: P };
 })();

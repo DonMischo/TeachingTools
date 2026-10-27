@@ -16,12 +16,12 @@ import "./photo";
 import "./key";
 import "./game";
 
-// Farben aus dem Theme der App; die botanischen Farben (Blattgrün, Wasser, Zucker …) sind fest,
-// passend zu den dunklen Farbthemen.
+// Bedienelemente nehmen die Farben des App-Themes (Akzent für Gewähltes und Hauptknöpfe), damit der Kontrast
+// in hellen wie dunklen Themes stimmt. Die botanischen Farben (Blattgrün, Wasser, Zucker …) gelten nur für Grafiken.
 const CSS = `
 :root {
   --paper: var(--bg); --panel: var(--surface); --ink: var(--text); --muted: var(--text-muted); --line: var(--border);
-  --leaf: #8cc77a; --leaf-soft: #22301d; --xylem: #6fa8e0; --phloem: #e2b043; --nutri: #b893d8;
+  --leaf: #8cc77a; --leaf-soft: color-mix(in srgb, var(--leaf) 22%, var(--surface)); --xylem: #6fa8e0; --phloem: #e2b043; --nutri: #b893d8;
   --gas: #8fc0ba; --soil: #b58f6c; --warn: #ec7a62; --sky: #1b2630;
   --display: inherit; --body: inherit; --mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
   color: var(--ink); display: grid; gap: 16px;
@@ -32,12 +32,12 @@ h2, h3 { font-family: var(--display); font-weight: 800; text-wrap: balance; marg
 h2 { font-size: 1.4rem } h3 { font-size: 1.1rem }
 p { margin: 0 }
 button, input, select { font: inherit; color: inherit }
-:focus-visible { outline: 2px solid var(--leaf); outline-offset: 2px }
+:focus-visible { outline: 2px solid var(--border-selected); outline-offset: 2px }
 .mono, .num { font-family: var(--mono); font-variant-numeric: tabular-nums }
 nav.bl-tabs { display: flex; gap: 4px; flex-wrap: wrap; border: 1px solid var(--line); background: var(--panel); border-radius: 12px; padding: 4px; width: fit-content; max-width: 100% }
 nav.bl-tabs button { border: 0; background: none; padding: 6px 12px; border-radius: 8px; cursor: pointer; color: var(--muted); font-weight: 700; font-size: .9rem }
 nav.bl-tabs button:hover { color: var(--ink) }
-nav.bl-tabs button[aria-selected="true"] { background: var(--leaf); color: #10200c }
+nav.bl-tabs button[aria-selected="true"] { background: var(--accent); color: var(--accent-text) }
 section.view { display: grid; gap: 20px }
 .lead { color: var(--muted); max-width: 75ch }
 .bench { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 20px; align-items: start }
@@ -47,22 +47,25 @@ section.view { display: grid; gap: 20px }
 .row { display: flex; gap: 8px 12px; flex-wrap: wrap; align-items: center }
 .label { font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 400 }
 .btn { border: 1px solid var(--line); background: var(--panel); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 600 }
-.btn:hover { border-color: var(--leaf) }
-.btn.primary { background: var(--leaf); color: #10200c; border-color: var(--leaf) }
+.btn:hover { border-color: var(--border-selected) }
+.btn.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent) }
 .btn:disabled { opacity: .45; cursor: not-allowed }
 .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; flex-wrap: wrap }
 .seg button { border: 0; background: none; padding: 5px 10px; cursor: pointer; color: var(--muted) }
-.seg button[aria-pressed="true"] { background: var(--leaf-soft); color: var(--ink) }
+.seg button:hover { color: var(--ink) }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-text) }
+.seg button:disabled, label:has(> input:disabled) { opacity: .5; cursor: not-allowed }
 .chip { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: .8rem; border: 1px solid var(--line); background: none }
 label.slider { display: grid; grid-template-columns: 9.5em minmax(0,1fr) 4.5em; gap: 8px; align-items: center; font-size: .9rem }
 label.slider output { font-family: var(--mono); font-size: .8rem; text-align: right }
-input[type=range] { accent-color: var(--leaf); width: 100% }
+input[type=range] { accent-color: var(--accent); width: 100% }
+input[type=checkbox] { accent-color: var(--accent) }
 select { background: var(--panel) }
 canvas, svg { display: block; max-width: 100% }
 .canvas-box { position: relative; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); background: var(--sky) }
 .subtabs { display: flex; gap: 6px; flex-wrap: wrap; border-bottom: 1px solid var(--line); padding-bottom: 8px }
 .subtabs button { background: none; border: 0; padding: 4px 2px; margin-right: 10px; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent }
-.subtabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--phloem) }
+.subtabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent) }
 .prose { display: grid; gap: 10px; max-width: 72ch }
 .prose ul { margin: 0; padding-left: 1.2em; list-style: disc }
 .eq { font-family: var(--mono); background: var(--leaf-soft); border-radius: 6px; padding: 8px 12px; overflow-x: auto; white-space: nowrap; font-size: .92rem }
