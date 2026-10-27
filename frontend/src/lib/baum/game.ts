@@ -81,34 +81,66 @@ BL.Game = (function () {
     { n: "Moose", ph: [1], e: "🌱", pts: 1, txt: "Überziehen den liegenden Stamm und halten ihn feucht." },
     { n: "Hallimasch", ph: [0, 1], e: "🍄", pts: 2, txt: "Seine Pilzfäden leuchten im Dunkeln schwach (Biolumineszenz)." }
   ];
+  const HELP = `<p>Du bist ein Samen im Waldboden. Jede Runde vergehen ${YEARS} Jahre. Verteile deinen Zucker auf Krone, Wurzeln und Stamm, überstehe Dürre, Stürme und Käfer und biete möglichst vielen Arten ein Zuhause. Und wenn du stirbst, geht das Spiel weiter: im Totholz.</p>
+<ul>
+        <li>Jede Runde bestimmt eine Ereigniskarte Licht und Wasser. Deine Blätter (Krone) machen daraus Zucker, aber nur so viel, wie die Wurzeln Wasser liefern.</li>
+        <li>Die Zellatmung verbraucht Zucker, je größer du bist, desto mehr. Reicht der Zucker nicht, gehen Reserve und dann Vitalität verloren.</li>
+        <li>Wachsen kostet so viel Zucker wie die jetzige Stufe (Stamm 1 mehr): Der erste Schritt ist billig, später wird es teuer. Ungenutzter Zucker wird veratmet, also lieber als Stärke speichern.</li>
+        <li>Was du tun kannst, hängt vom Lebensabschnitt ab: Ein Sämling wächst nur, ein mannbarer Baum bildet Samen, ein Altbaum wächst nicht mehr in die Höhe. Im Totholz ziehen nacheinander Arten des stehenden, des liegenden und des zerfallenden Holzes ein.</li>
+        <li>Unter einem Stamm von 5 stehst du im Schatten älterer Bäume. Schattenbaumarten wie die Buche kommen damit besser zurecht. Lichtbaumarten verkümmern, wenn sie zu lange klein im Schatten stehen. Im Moor und auf der Heide gibt es kein geschlossenes Kronendach.</li>
+        <li>Der Standort zählt: Im Moor bleibst du klein, auf Sand ist es trocken, in der Aue kommt Hochwasser, im Bergwald Sturm und Schnee. Zweimal abgefressene Spitzen oder ein abgebrochener Wipfel führen zu Krüppelwuchs.</li>
+        <li>Mindestens 1 Zucker hast du jede Runde, auch im schlechtesten Jahr.</li>
+        <li>Bewohner bringen Punkte und manchmal Hilfe. Spechte zimmern Höhlen für Nachmieter, so entstehen Ketten wie im Kartenspiel Forest Shuffle.</li>
+        <li>Punkte gibt es für dein Alter, deine Samen, alle Bewohner, die Vielfalt der besiedelten Bereiche und das Totholz nach deinem Tod.</li></ul>`;
+  // Dialog für Anleitung und Tagebuch; liegt im .baumleben-Bereich, damit die Stile greifen
+  function popup(title, html) {
+    const dlg = BL.html(`<dialog class="gdlg prose" aria-label="${title}"><div class="row" style="justify-content:space-between"><h3 style="margin:0">${title}</h3><button class="btn" data-close>Schließen</button></div>${html}</dialog>`);
+    root.append(dlg); dlg.showModal();
+    dlg.addEventListener("click", e => { if (e.target.closest("[data-close]") || e.target === dlg) dlg.close(); });
+    dlg.addEventListener("close", () => dlg.remove());
+  }
   const SLOTS = { krone: "Krone", stamm: "Stamm", hoehle: "Höhlen", wurzel: "Wurzel und Boden" };
   const has = (s, id) => s.cards.some(c => c.id === id);
 
   let root, s = null, pickBiome = null;
   const CSS = `
-  .gm { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 20px; align-items: start }
+  .gm { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 14px; align-items: start }
+  .gm .stack { gap: 10px }
+  .gm-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between }
+  .gm-head h2 { margin: 0 }
+  .gdlg { margin: auto; width: min(720px, 92vw); max-height: 85vh; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); color: var(--ink); padding: 16px 18px }
+  .gdlg::backdrop { background: rgba(0, 0, 0, .55) }
+  .gdlg .glog { max-height: none }
   @media (max-width: 900px) { .gm { grid-template-columns: minmax(0, 1fr) } }
   .tableau { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "t t" "k s" "h w"; gap: 8px; align-items: stretch }
-  .tableau .slot { border: 1px dashed var(--line); border-radius: 10px; padding: 6px; min-height: 64px; display: flex; flex-wrap: wrap; gap: 4px; align-content: flex-start; min-width: 0 }
+  .tableau .slot { border: 1px dashed var(--line); border-radius: 10px; padding: 5px; min-height: 40px; display: flex; flex-wrap: wrap; gap: 4px; align-content: flex-start; min-width: 0 }
   .tableau .slot > .label { width: 100% }
-  .gcard { border: 1px solid var(--line); border-radius: 8px; background: var(--panel); padding: 4px 6px; font-size: .78rem; display: inline-flex; gap: 4px; align-items: center }
+  .gcard { border: 1px solid var(--line); border-radius: 8px; background: var(--panel); padding: 2px 6px; font-size: .74rem; display: inline-flex; gap: 4px; align-items: center }
   .gcard b { font-family: var(--mono); font-size: .75rem; color: color-mix(in srgb, var(--leaf) 55%, var(--ink)) }
   .tableau .tree { grid-area: t; border: 1px solid var(--line); border-radius: 12px; background: var(--sky); overflow: hidden; min-width: 0 }
   .tableau .tree canvas { display: block }
-  .market { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px }
-  .mcard { border: 1px solid var(--line); border-radius: 10px; padding: 10px; background: var(--panel); display: grid; gap: 4px; align-content: start; font-size: .85rem }
-  .mcard .em { font-size: 1.6rem; line-height: 1 }
-  .mcard h4 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 1rem }
-  .mcard .meta { font-family: var(--mono); font-size: .72rem; color: var(--muted) }
-  .ev { border: 2px solid var(--phloem); border-radius: 12px; padding: 12px; background: var(--panel); display: grid; gap: 6px }
-  .alloc { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px }
-  .alloc button { text-align: left; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); cursor: pointer; display: grid; gap: 2px }
+  .market { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px }
+  .mcard { border: 1px solid var(--line); border-radius: 10px; padding: 8px; background: var(--panel); display: grid; gap: 3px; align-content: start; font-size: .8rem }
+  .mcard .em { font-size: 1.3rem; line-height: 1 }
+  .mcard h4 { margin: 0; font-family: var(--display); font-weight: 400; font-size: .95rem }
+  .mcard .meta { font-family: var(--mono); font-size: .68rem; color: var(--muted) }
+  .mcard { cursor: help }
+  .mcard .top { display: flex; gap: 6px; align-items: center }
+  .ev { border: 2px solid var(--phloem); border-radius: 12px; padding: 8px 10px; background: var(--panel); display: grid; gap: 4px }
+  .ev h3 { margin: 0; font-size: 1.05rem }
+  .ev .note { font-size: .8rem; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden }
+  .ev .last { font-size: .78rem; border-top: 1px dashed var(--line); padding-top: 4px; margin: 0 }
+  .gm .panel { padding: 10px 12px }
+  .gm .panel h3 { margin: 0 0 4px; font-size: 1rem }
+  .alloc { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 6px }
+  .alloc button { text-align: left; padding: 5px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); cursor: pointer; display: grid; gap: 2px }
   .alloc button:hover:not(:disabled) { border-color: var(--border-selected) }
   .alloc button:disabled { opacity: .45; cursor: not-allowed }
-  .alloc small { color: var(--muted); font-size: .75rem }
-  .res { display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: 8px }
-  .res div { background: var(--leaf-soft); border-radius: 8px; padding: 6px 8px }
-  .res b { display: block; font-family: var(--mono); font-size: 1.15rem }
+  .alloc small { color: var(--muted); font-size: .7rem }
+  .res { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px }
+  .res div { background: var(--leaf-soft); border-radius: 8px; padding: 3px 7px }
+  .res .label { font-size: .62rem }
+  .res b { display: block; font-family: var(--mono); font-size: 1rem }
   .sugar { color: color-mix(in srgb, var(--phloem) 70%, var(--ink)) }
   .glog { font-size: .85rem; display: grid; gap: 3px; max-height: 220px; overflow: auto; margin: 0; padding-left: 1.1em }
   .species-pick { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px }
@@ -344,7 +376,7 @@ BL.Game = (function () {
     return { half: len * .5 };
   }
   function paintTree(cv) {
-    const W = Math.max(200, cv.parentElement.clientWidth), Hh = Math.round(Math.min(W * 1.05, 620)), gy = Math.round(Hh * .66);
+    const W = Math.max(200, cv.parentElement.clientWidth), Hh = Math.round(Math.min(W * 1.05, Math.max(260, window.innerHeight * .5))), gy = Math.round(Hh * .66);
     const ctx = BL.fitCanvas(cv, W, Hh), Bi = B(), Sp = SPECIES[s.sp], rnd = BL.rng((s.seed || 1) * 13 + 7);
     const alive = s.phase === "play", lying = s.phase === "over" || (s.phase === "dead" && s.deadRound >= 1), cx = W * .5;
     const season = alive ? seasonNow() : .7, winter = season > .8;
@@ -431,50 +463,57 @@ BL.Game = (function () {
   }
   function render() {
     root.innerHTML = "";
-    root.append(BL.html(`<div class="stack"><h2>Sei ein Baum</h2><p class="lead">Du bist ein Samen im Waldboden. Jede Runde vergehen ${YEARS} Jahre. Verteile deinen Zucker auf Krone, Wurzeln und Stamm, überstehe Dürre, Stürme und Käfer und biete möglichst vielen Arten ein Zuhause. Und wenn du stirbst, geht das Spiel weiter: im Totholz.</p></div>`));
+    const head = BL.html(`<div class="gm-head"><h2>Sei ein Baum</h2><div class="row"><button class="btn" id="gm-help">📖 Anleitung</button>${s ? '<button class="btn" id="gm-log">📜 Tagebuch</button>' : ""}</div></div>`);
+    root.append(head);
+    BL.$("#gm-help", head).onclick = () => popup("So funktioniert es", HELP);
+    if (s) BL.$("#gm-log", head).onclick = () => popup("Tagebuch", `<ul class="glog">${s.log.map(l => `<li>${l}</li>`).join("")}</ul>`);
     if (!s) return renderPick();
     if (s.phase === "over") return renderOver();
     const ev = EV(), Sp = SPECIES[s.sp];
-    const wrap = BL.html(`<div class="gm"><div class="stack">${tableau()}<div class="panel"><h3>Tagebuch</h3><ul class="glog">${s.log.slice(0, 30).map(l => `<li>${l}</li>`).join("")}</ul></div></div><div class="stack" id="gm-side"></div></div>`);
+    const wrap = BL.html(`<div class="gm"><div class="stack">${tableau()}</div><div class="stack" id="gm-side"></div></div>`);
     root.append(wrap);
     const side = BL.$("#gm-side", wrap);
     if (s.phase === "play") {
       const wat = BL.clamp(ev.water + B().water, 0, 3);
-      side.append(BL.html(`<div class="ev"><span class="label">Runde ${s.round} · Jahr ${s.age - YEARS} bis ${s.age} · ${STAGES[stage()]} · ${B().n}</span><h3>${ev.n}</h3><p class="note">${ev.f}</p>
-        <p class="num" style="font-size:.85rem">Licht ${"●".repeat(ev.light)}${"○".repeat(3 - ev.light)} · Wasser ${"●".repeat(wat)}${"○".repeat(3 - wat)}${B().canopy && s.S < 5 && !(s.gapRounds > 0 || ev.gap) ? " · du stehst im Schatten der Großen" : ""}</p></div>`));
+      side.append(BL.html(`<div class="ev"><span class="label">Runde ${s.round} · Jahr ${s.age - YEARS} bis ${s.age} · ${STAGES[stage()]} · ${B().n}</span><h3>${ev.n}</h3><p class="note" title="${ev.f}">${ev.f}</p>
+        <p class="num" style="font-size:.85rem">Licht ${"●".repeat(ev.light)}${"○".repeat(3 - ev.light)} · Wasser ${"●".repeat(wat)}${"○".repeat(3 - wat)}${B().canopy && s.S < 5 && !(s.gapRounds > 0 || ev.gap) ? " · du stehst im Schatten der Großen" : ""}</p>
+        ${(() => { const l = s.log.find(x => x.startsWith(`Jahr ${s.age}:`)); return l ? `<p class="last">${l}${s.sugar === 1 && s.lastProd <= s.lastUpkeep ? ". Rinde und Knospen retten dir 1 Zucker." : ""}</p>` : ""; })()}</div>`));
       side.append(BL.html(`<div class="res">
         <div><span class="label">Zucker</span><b class="sugar">${s.sugar}</b></div><div><span class="label">Reserve</span><b>${s.R}</b></div>
         <div><span class="label">Vitalität</span><b style="color:${s.V < 4 ? "var(--warn)" : "inherit"}">${s.V}/10</b></div>
         <div><span class="label">Krone</span><b>${s.K}</b></div><div><span class="label">Wurzel</span><b>${s.W}</b></div><div><span class="label">Stamm</span><b>${s.S}</b></div>
         <div><span class="label">Abwehr</span><b>${s.A}</b></div><div><span class="label">Samen</span><b>${s.seeds}</b></div></div>`));
-      side.append(BL.html(`<p class="note">Diese Runde: ${s.lastProd} Zucker durch Fotosynthese, ${s.lastUpkeep} verbraucht die Zellatmung (sie wächst mit deiner Größe).${s.sugar === 1 && s.lastProd <= s.lastUpkeep ? " Rinde und Knospen retten dir 1 Zucker." : ""}</p>`));
       if (s.shadeRounds > 0) side.append(BL.html(`<p class="note" style="color:var(--warn)">Zu wenig Licht: Wächst dein Stamm nicht bald auf 2, verkümmerst du in ${4 - s.shadeRounds} ${4 - s.shadeRounds === 1 ? "Runde" : "Runden"}.</p>`));
       if (s.kr) side.append(BL.html(`<p class="note"><b>Krüppelwuchs.</b> ${s.kr} Der Stamm wird höchstens ${capS()}.</p>`));
       const st = stage();
       const later = { saemling: `Als Jungbaum kommen Abwehrstoffe dazu, Samen ab Stamm ${Sp.mature}.`, jung: `Samen bildest du erst, wenn du mannbar bist (Stamm ${Sp.mature}).`,
         reif: "", alt: "Im Alter wächst der Stamm nicht mehr in die Höhe. Jetzt zählen Samen, Abwehr und Reserven." + (s.S < Sp.mature ? ` Samen bildest du erst ab Stamm ${Sp.mature}, dafür bist du zu klein geblieben.` : "") }[st];
-      side.append(BL.html(`<div class="panel stack"><h3>Zucker verteilen</h3><div class="alloc">${ACTIONS.filter(shown).map(a => {
+      side.append(BL.html(`<div class="panel stack"><h3>Zucker verteilen</h3><p class="note" style="margin:0 0 4px">Zahl = Kosten in Zucker. Zeig mit der Maus auf eine Aktion für die Erklärung.</p><div class="alloc">${ACTIONS.filter(shown).map(a => {
         const c = cost(a), ok = a.ok() && s.sugar >= c;
         const why = !a.ok() && (a.k === "seed" ? "diese Runde schon 2 Samen" : a.k === "S" && EV().browse ? "Verbiss: diese Runde nicht"
           : a.k === "S" && s.S < 8 ? (s.kr ? "Krüppelwuchs: nicht höher" : "auf diesem Standort nicht höher") : a.k === "W" && s.W < 8 ? "Staunässe: Wurzeln bleiben flach"
           : ["K", "W", "S"].includes(a.k) && s[a.k] >= 8 ? "ausgewachsen" : "");
-        return `<button data-a="${a.k}" ${ok ? "" : "disabled"}><span>${a.n} <b class="sugar mono">${c}</b></span><small>${why || a.d}</small></button>`;
+        return `<button data-a="${a.k}" title="${a.d}" ${ok ? "" : "disabled"}><span>${a.n} <b class="sugar mono">${c}</b></span>${why ? `<small>${why}</small>` : ""}</button>`;
       }).join("")}</div>${later ? `<p class="note">${later}</p>` : ""}</div>`));
       side.append(BL.html(`<div class="panel stack"><h3>Wer möchte einziehen?</h3><p class="note">${s.hosted ? "Diese Runde ist schon jemand eingezogen." : s.market.length ? "Eine dieser Arten darf diese Runde einziehen." : "Gerade findet keine Art bei dir Platz. Wachse oder bilde Samen, dann kommen neue."}</p>
         <div class="market">${s.market.map(id => { const c = CARDS.find(x => x.id === id), ok = !s.hosted && c.req(s);
-          return `<div class="mcard"><span class="em" aria-hidden="true">${c.e}</span><h4>${c.n}</h4><span class="meta">${SLOTS[c.slot]} · ${c.pts} Punkte</span><span class="meta">braucht: ${c.rq}</span><span class="meta">Wirkung: ${c.eff}</span><p class="note">${c.txt}</p><button class="btn ${ok ? "primary" : ""}" data-h="${id}" ${ok ? "" : "disabled"}>Einziehen lassen</button></div>`; }).join("")}</div></div>`));
-      side.append(BL.html(`<div class="row"><button class="btn primary" id="gm-next">${YEARS} Jahre weiter</button><button class="btn" id="gm-restart">Neues Spiel</button></div>`));
+          return `<div class="mcard" title="${c.txt}"><div class="top"><span class="em" aria-hidden="true">${c.e}</span><h4>${c.n}</h4></div><span class="meta">${SLOTS[c.slot]} · ${c.pts} P${c.eff !== "–" ? " · " + c.eff : ""}</span><button class="btn ${ok ? "primary" : ""}" data-h="${id}" ${ok ? "" : "disabled"}>Einziehen</button></div>`; }).join("")}</div></div>`));
+      // Rundenknöpfe in die Kopfzeile, damit sie ohne Scrollen erreichbar sind
+      const bar = BL.$(".gm-head .row", root);
+      bar.prepend(BL.html(`<button class="btn" id="gm-restart">Neues Spiel</button>`));
+      bar.prepend(BL.html(`<button class="btn primary" id="gm-next">${YEARS} Jahre weiter</button>`));
+      BL.$("#gm-next", bar).onclick = endRound;
+      BL.$("#gm-restart", bar).onclick = () => { s = null; save(); render(); };
     } else {
       side.append(BL.html(`<div class="ev"><span class="label">Totholz · Phase ${s.deadRound + 1} von 3</span><h3>${["Stehendes Totholz", "Der Stamm liegt am Boden", "Fast schon Humus"][s.deadRound]}</h3>
         <p class="note">Dein Baum ist ${s.deathCause}. Ein toter Baum beherbergt oft mehr Arten als ein lebender. ${["Am stehenden Stamm siedeln Holzpilze und Käfer, die trockenes, besonntes Holz mögen.", "Am Boden wird das Holz feucht und weich: jetzt kommen Tiere, die Verstecke und Nässe brauchen.", "Das Holz zerfällt zu Mulm und Humus. Bodentiere und Larven verarbeiten den Rest."][s.deadRound]} Wähle, wer als Nächstes einzieht.</p></div>`));
       side.append(BL.html(`<div class="market">${s.market.map(n => { const d = DEAD.find(x => x.n === n);
-        return `<div class="mcard"><span class="em" aria-hidden="true">${d.e}</span><h4>${d.n}</h4><span class="meta">${d.pts + (d.bonus === s.sp ? 2 : 0)} Punkte${d.bonus === s.sp ? " (Bonus für deine Art)" : ""}</span><p class="note">${d.txt}</p><button class="btn primary" data-d="${n}">Einziehen lassen</button></div>`; }).join("")}</div>`));
+        return `<div class="mcard" title="${d.txt}"><div class="top"><span class="em" aria-hidden="true">${d.e}</span><h4>${d.n}</h4></div><span class="meta">${d.pts + (d.bonus === s.sp ? 2 : 0)} P${d.bonus === s.sp ? " (Bonus für deine Art)" : ""}</span><p class="note" style="font-size:.74rem;margin:0">${d.txt}</p><button class="btn primary" data-d="${n}">Einziehen</button></div>`; }).join("")}</div>`));
     }
     paintTree(BL.$(".gtree", wrap));
     wrap.addEventListener("click", e => {
       const a = e.target.closest("[data-a]"), h = e.target.closest("[data-h]"), d = e.target.closest("[data-d]");
       if (a) act(a.dataset.a); else if (h) host(h.dataset.h); else if (d) pickDead(d.dataset.d);
-      else if (e.target.id === "gm-next") endRound(); else if (e.target.id === "gm-restart") { s = null; save(); render(); }
     });
   }
   function renderPick() {
@@ -483,16 +522,7 @@ BL.Game = (function () {
       `<button data-bi="${k}" aria-pressed="${pickBiome === k}" style="${pickBiome === k ? "border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)" : ""}"><b style="font-family:var(--display);font-weight:400;font-size:1.1rem">${b.n}</b><span class="note">${b.txt}</span><span class="mono" style="font-size:.75rem">${b.sp.map(x => SPECIES[x].name).join(", ")}</span></button>`).join("")}</div>`;
     const node = BL.html(`<div class="stack">${biomes}${pickBiome ? `<h3>2. Welche Baumart wächst hier?</h3><p class="note">Zur Wahl stehen nur Arten, die für diesen Standort typisch sind.</p>` : ""}<div class="species-pick">${(pickBiome ? BIOMES[pickBiome].sp : []).map(k => [k, SPECIES[k]]).map(([k, sp]) =>
       `<button data-sp="${k}"><div class="lf">${BL.leafSVG(BL.tree(k).leaf)}</div><b style="font-family:var(--display);font-weight:400;font-size:1.1rem">${sp.name}</b><span class="note">${sp.txt}</span><span class="mono" style="font-size:.75rem">wird etwa ${sp.max} Jahre alt${best[k] ? " · Rekord " + best[k] + " Punkte" : ""}</span></button>`).join("")}</div>
-      <div class="panel prose"><h3>So funktioniert es</h3><ul>
-        <li>Jede Runde bestimmt eine Ereigniskarte Licht und Wasser. Deine Blätter (Krone) machen daraus Zucker, aber nur so viel, wie die Wurzeln Wasser liefern.</li>
-        <li>Die Zellatmung verbraucht Zucker, je größer du bist, desto mehr. Reicht der Zucker nicht, gehen Reserve und dann Vitalität verloren.</li>
-        <li>Wachsen kostet so viel Zucker wie die jetzige Stufe (Stamm 1 mehr): Der erste Schritt ist billig, später wird es teuer. Ungenutzter Zucker wird veratmet, also lieber als Stärke speichern.</li>
-        <li>Was du tun kannst, hängt vom Lebensabschnitt ab: Ein Sämling wächst nur, ein mannbarer Baum bildet Samen, ein Altbaum wächst nicht mehr in die Höhe. Im Totholz ziehen nacheinander Arten des stehenden, des liegenden und des zerfallenden Holzes ein.</li>
-        <li>Unter einem Stamm von 5 stehst du im Schatten älterer Bäume. Schattenbaumarten wie die Buche kommen damit besser zurecht. Lichtbaumarten verkümmern, wenn sie zu lange klein im Schatten stehen. Im Moor und auf der Heide gibt es kein geschlossenes Kronendach.</li>
-        <li>Der Standort zählt: Im Moor bleibst du klein, auf Sand ist es trocken, in der Aue kommt Hochwasser, im Bergwald Sturm und Schnee. Zweimal abgefressene Spitzen oder ein abgebrochener Wipfel führen zu Krüppelwuchs.</li>
-        <li>Mindestens 1 Zucker hast du jede Runde, auch im schlechtesten Jahr.</li>
-        <li>Bewohner bringen Punkte und manchmal Hilfe. Spechte zimmern Höhlen für Nachmieter, so entstehen Ketten wie im Kartenspiel Forest Shuffle.</li>
-        <li>Punkte gibt es für dein Alter, deine Samen, alle Bewohner, die Vielfalt der besiedelten Bereiche und das Totholz nach deinem Tod.</li></ul></div></div>`);
+      <p class="note">Wie das Spiel geht, steht unter 📖 Anleitung.</p></div>`);
     node.addEventListener("click", e => {
       const bi = e.target.closest("[data-bi]"), b = e.target.closest("[data-sp]");
       if (bi) { pickBiome = bi.dataset.bi; render(); } else if (b) start(b.dataset.sp, pickBiome);
@@ -508,8 +538,7 @@ BL.Game = (function () {
         <tr><td>Vielfalt der Lebensräume</td><td class="num">${p.vielfalt}</td></tr><tr><td>Totholz-Bewohner</td><td class="num">${p.totholz}</td></tr></table>
       <p class="note">Rekord für diese Art: ${best[s.sp] || p.sum} Punkte</p>
       <div class="row"><button class="btn primary" id="gm-again">Nochmal als ${SPECIES[s.sp].name}</button><button class="btn" id="gm-other">Andere Baumart</button></div></div>
-      <div class="panel prose"><h3>Was du gelernt hast</h3><p>Ein Baum muss ständig abwägen: Blätter bringen Zucker, kosten aber Wasser. Wurzeln bringen Wasser und Halt, aber kein Licht. Wer schnell in die Höhe wächst, entkommt dem Schatten, wird aber sturmanfälliger. Und nach dem Tod ist er noch Jahrzehnte lang Lebensraum und Nährstoffquelle für den Wald.</p></div>
-      <div class="panel"><h3>Tagebuch</h3><ul class="glog">${s.log.map(l => `<li>${l}</li>`).join("")}</ul></div></div></div>`));
+      <div class="panel prose"><h3>Was du gelernt hast</h3><p>Ein Baum muss ständig abwägen: Blätter bringen Zucker, kosten aber Wasser. Wurzeln bringen Wasser und Halt, aber kein Licht. Wer schnell in die Höhe wächst, entkommt dem Schatten, wird aber sturmanfälliger. Und nach dem Tod ist er noch Jahrzehnte lang Lebensraum und Nährstoffquelle für den Wald.</p></div></div></div>`));
     paintTree(BL.$(".gtree", root));
     BL.$("#gm-again", root).onclick = () => start(s.sp, s.biome || "buchenwald");
     BL.$("#gm-other", root).onclick = () => { s = null; save(); render(); };
