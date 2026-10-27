@@ -602,16 +602,16 @@ BL.Game = (function () {
       const st = stage();
       const later = { saemling: `Als Jungbaum kommen Abwehrstoffe dazu, Samen ab Stamm ${Sp.mature}.`, jung: `Samen bildest du erst, wenn du mannbar bist (Stamm ${Sp.mature}).`,
         reif: "", alt: "Im Alter wächst der Stamm nicht mehr in die Höhe. Jetzt zählen Samen, Abwehr und Reserven." + (s.S < Sp.mature ? ` Samen bildest du erst ab Stamm ${Sp.mature}, dafür bist du zu klein geblieben.` : "") }[st];
-      side.append(BL.html(`<div class="panel stack"><h3>Zucker verteilen</h3><p class="note" style="margin:0 0 4px">Zahl = Kosten in Zucker. Zeig mit der Maus auf eine Aktion für die Erklärung.</p><div class="alloc">${ACTIONS.filter(shown).map(a => {
+      side.append(BL.html(`<div class="panel stack"><h3>Zucker verteilen</h3><p class="note" style="margin:0 0 4px">Zahl = Kosten in Zucker.</p><div class="alloc">${ACTIONS.filter(shown).map(a => {
         const c = cost(a), ok = a.ok() && s.sugar >= c;
         const why = !a.ok() && (a.k === "seed" ? "diese Runde schon 2 Samen" : a.k === "S" && EV().browse ? "Verbiss: diese Runde nicht"
           : a.k === "S" && s.S < 8 ? (s.kr ? "Krüppelwuchs: nicht höher" : "auf diesem Standort nicht höher") : a.k === "W" && s.W < 8 ? "Staunässe: Wurzeln bleiben flach"
           : ["K", "W", "S"].includes(a.k) && s[a.k] >= 8 ? "ausgewachsen" : "");
-        return `<button data-a="${a.k}" title="${a.d}" ${ok ? "" : "disabled"}><span>${a.n} <b class="sugar mono">${c}</b></span>${why ? `<small>${why}</small>` : ""}</button>`;
+        return `<button data-a="${a.k}" ${ok ? "" : "disabled"}><span>${a.n} <b class="sugar mono">${c}</b></span><small>${why || a.d}</small></button>`;
       }).join("")}</div>${later ? `<p class="note">${later}</p>` : ""}</div>`));
       side.append(BL.html(`<div class="panel stack"><h3>Wer möchte einziehen?</h3><p class="note" style="margin:0">🤝 = bildet mit einer Art bei dir eine Gemeinschaft (Extrapunkte).</p><p class="note">${s.hosted ? "Diese Runde ist schon jemand eingezogen." : s.market.length ? "Eine dieser Arten darf diese Runde einziehen." : "Gerade findet keine Art bei dir Platz. Wachse oder bilde Samen, dann kommen neue."}</p>
         <div class="market">${s.market.map(id => { const c = CARDS.find(x => x.id === id), ok = !s.hosted && c.req(s);
-          return `<div class="mcard"><div class="top"><span class="em" aria-hidden="true">${c.e}</span><h4>${c.n}</h4></div><span class="meta">${SLOTS[c.slot]} · ${c.pts} P${c.eff !== "–" ? " · " + c.eff : ""}</span>${synWith(id).map(g => `<span class="syn ${g.pts < 0 ? "neg" : ""}" title="${g.txt}">${g.pts < 0 ? "⚔️" : "🤝"} ${g.pts > 0 ? "+" + g.pts : "−" + -g.pts} mit ${g.a.filter(x => x !== id).map(nameOf).join(", ")}</span>`).join("")}<p class="note txt">${c.txt}</p><button class="btn ${ok ? "primary" : ""}" data-h="${id}" ${ok ? "" : "disabled"}>Einziehen</button></div>`; }).join("")}</div></div>`));
+          return `<div class="mcard"><div class="top"><span class="em" aria-hidden="true">${c.e}</span><h4 lang="de">${c.n}</h4></div><span class="meta">${SLOTS[c.slot]} · ${c.pts} P${c.eff !== "–" ? " · " + c.eff : ""}</span>${synWith(id).map(g => `<span class="syn ${g.pts < 0 ? "neg" : ""}" title="${g.txt}">${g.pts < 0 ? "⚔️" : "🤝"} ${g.pts > 0 ? "+" + g.pts : "−" + -g.pts} mit ${g.a.filter(x => x !== id).map(nameOf).join(", ")}</span>`).join("")}<p class="note txt">${c.txt}</p><button class="btn ${ok ? "primary" : ""}" data-h="${id}" ${ok ? "" : "disabled"}>Einziehen</button></div>`; }).join("")}</div></div>`));
       // Rundenknöpfe in die Kopfzeile, damit sie ohne Scrollen erreichbar sind
       const bar = BL.$(".gm-head .row", root);
       bar.prepend(BL.html(`<button class="btn" id="gm-restart">Neues Spiel</button>`));
@@ -626,7 +626,7 @@ BL.Game = (function () {
         <p class="last">Dein Baum ist ${s.deathCause}${s.deadYears ? `, das ist ${s.deadYears} Jahre her` : ""}. Ein toter Baum beherbergt oft mehr Arten als ein lebender. Wähle, wer als Nächstes einzieht.</p>
         <div class="row" style="gap:4px">${SUBS.map((x, k) => `<span class="chip" style="font-size:.68rem;${k === s.sub ? "background:var(--accent);color:var(--accent-text)" : k < s.sub ? "opacity:.5" : ""}">${x.n}</span>`).join("")}</div></div>`));
       side.append(BL.html(`<div class="market">${s.market.map(n => { const d = DEAD.find(x => x.n === n);
-        return `<div class="mcard" title="${d.txt}"><div class="top"><span class="em" aria-hidden="true">${d.e}</span><h4>${d.n}</h4></div><span class="meta">${deadPts(d)} P${bon(d) ? " (Bonus für deine Art)" : ""}</span><p class="note" style="font-size:.74rem;margin:0">${d.txt}</p><button class="btn primary" data-d="${n}">Einziehen</button></div>`; }).join("")}</div>`));
+        return `<div class="mcard" title="${d.txt}"><div class="top"><span class="em" aria-hidden="true">${d.e}</span><h4 lang="de">${d.n}</h4></div><span class="meta">${deadPts(d)} P${bon(d) ? " (Bonus für deine Art)" : ""}</span><p class="note" style="font-size:.74rem;margin:0">${d.txt}</p><button class="btn primary" data-d="${n}">Einziehen</button></div>`; }).join("")}</div>`));
     }
     paintTree(BL.$(".gtree", wrap));
     wrap.addEventListener("click", e => {
