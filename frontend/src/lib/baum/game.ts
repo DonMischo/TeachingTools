@@ -66,35 +66,87 @@ BL.Game = (function () {
     { id: "windroeschen", n: "Buschwindröschen", e: "🌼", slot: "wurzel", pts: 1, plant: true, req: s => !["fichte", "waldkiefer"].includes(s.sp) && !["moor", "sand"].includes(s.biome), rq: "Laubbaum, frischer Boden", eff: "–", txt: "Frühblüher: blüht im März und April, bevor sich das Kronendach schließt. Lebt von Stärke im Wurzelstock." },
     { id: "heidelbeere", n: "Heidelbeere", e: "🫐", slot: "wurzel", pts: 2, plant: true, req: s => ["fichte", "waldkiefer"].includes(s.sp) || ["moor", "sand", "berg"].includes(s.biome), rq: "saurer Boden", eff: "–", txt: "Zwergstrauch auf saurem, nährstoffarmem Boden. Die Beeren fressen Vögel, Füchse und Bären." },
     { id: "farn", n: "Wurmfarn", e: "🌿", slot: "wurzel", pts: 1, plant: true, req: s => B().canopy || s.K >= 5, rq: "Schatten", eff: "–", txt: "Liebt feuchten Schatten. Vermehrt sich mit Sporen statt Samen, die Sporenhäufchen sitzen unter den Wedeln." },
+    // Larven und Erwachsene: Engerlinge im Boden, Raupen und Blattkäfer je nach Baumart
+    { id: "maikaefer", n: "Maikäfer", e: "🪲", slot: "krone", pts: 1, req: s => s.K >= 2 && !["fichte", "waldkiefer"].includes(s.sp), rq: "Laubbaum, Krone 2", eff: "–", txt: "Fliegt nur wenige Wochen im Mai und frisst Blätter von Eiche und Buche. Die meiste Zeit seines Lebens ist er Engerling im Boden." },
+    { id: "engerling", n: "Maikäfer-Engerling", e: "🐛", slot: "wurzel", pts: 1, req: s => has(s, "maikaefer"), rq: "Maikäfer", eff: "–", txt: "Die Larve lebt drei bis vier Jahre im Boden und nagt an Feinwurzeln, dann verpuppt sie sich." },
+    { id: "eichenwickler", n: "Eichenwickler-Raupe", e: "🐛", slot: "krone", pts: 1, req: s => s.sp === "stieleiche", rq: "Eiche", eff: "–", txt: "Kleine grüne Raupe, die junge Eichenblätter zusammenrollt. In manchen Jahren frisst sie ganze Kronen kahl." },
+    { id: "buchenspinner", n: "Buchen-Streckfuß-Raupe", e: "🐛", slot: "krone", pts: 2, req: s => s.sp === "buche", rq: "Buche", eff: "–", txt: "Behaarte, gelbliche Raupe mit roten Haarpinseln. Frisst Buchenblätter und wird zu einem unscheinbaren Nachtfalter." },
+    { id: "kiefernschwaermer", n: "Kiefernschwärmer-Raupe", e: "🐛", slot: "krone", pts: 2, req: s => ["fichte", "waldkiefer"].includes(s.sp), rq: "Nadelbaum", eff: "–", txt: "Grün-braun gestreift und gut getarnt zwischen Nadeln. Der Falter ist ein schneller Nachtflieger." },
+    { id: "trauermantel", n: "Trauermantel-Raupe", e: "🐛", slot: "krone", pts: 2, req: s => s.sp === "birke", rq: "Birke", eff: "–", txt: "Schwarze, bedornte Raupen leben gesellig an Birken. Der Falter überwintert und fliegt schon im März." },
+    { id: "erlenblattkaefer", n: "Blauer Erlenblattkäfer", e: "🪲", slot: "krone", pts: 1, req: s => s.sp === "schwarzerle", rq: "Erle", eff: "–", txt: "Käfer und Larven fressen Löcher in Erlenblätter. Die Erle treibt einfach neu aus." },
+    { id: "falter", n: "Nachtfalter", e: "🦋", slot: "krone", pts: 1, req: s => hasRaupe(s), rq: "eine Raupe", eff: "–", txt: "Aus den Raupen werden Falter. Sie bestäuben nachts Blüten am Waldrand und sind Futter für Fledermäuse." },
+    { id: "kuckuck", n: "Kuckuck", e: "🐦", slot: "krone", pts: 2, req: s => hasRaupe(s), rq: "eine Raupe", eff: "schützt vor Raupen", txt: "Frisst sogar behaarte Raupen, die andere Vögel meiden. Seine Eier legt er in fremde Nester." },
+    // Säugetiere am Boden rund um den Baum
+    { id: "reh", n: "Reh", e: "🦌", slot: "wurzel", pts: 1, ground: true, req: s => true, rq: "–", eff: "–", txt: "Frisst Knospen, Kräuter und Früchte. Junge Bäume verbeißt es, alte Bäume bieten ihm Deckung." },
+    { id: "roetelmaus", n: "Rötelmaus", e: "🐭", slot: "wurzel", pts: 1, ground: true, req: s => s.seeds >= 1, rq: "1 Samen", eff: "–", txt: "Frisst Samen, Knospen und Pilze. In Mastjahren vermehrt sie sich stark." },
+    { id: "fuchs", n: "Rotfuchs", e: "🦊", slot: "wurzel", pts: 2, ground: true, req: s => has(s, "roetelmaus"), rq: "Rötelmaus", eff: "–", txt: "Jagt Mäuse mit einem hohen Sprung, dem Mäusesprung. Gräbt seinen Bau gern zwischen Wurzeln." },
+    { id: "wildschwein", n: "Wildschwein", e: "🐗", slot: "wurzel", pts: 3, ground: true, req: s => s.seeds >= 2 && ["stieleiche", "buche"].includes(s.sp), rq: "2 Samen, Eiche oder Buche", eff: "–", txt: "Kommt zur Mast: Eicheln und Bucheckern sind sein Herbstfutter. Beim Wühlen lockert es den Boden." },
+    { id: "dachs", n: "Dachs", e: "🦡", slot: "wurzel", pts: 2, ground: true, req: s => s.W >= 3, rq: "Wurzel 3", eff: "–", txt: "Gräbt weitläufige Baue zwischen starken Wurzeln und frisst vor allem Regenwürmer und Engerlinge." },
+    { id: "siebenschlaefer", n: "Siebenschläfer", e: "🐭", slot: "hoehle", pts: 3, req: s => s.holes > 0 && ["stieleiche", "buche"].includes(s.sp), rq: "Höhle, Eiche oder Buche", eff: "–", txt: "Frisst im Herbst Bucheckern und Eicheln und schläft dann sieben Monate in einer Baumhöhle." },
     { id: "kleiber", n: "Kleiber", e: "🐦", slot: "hoehle", pts: 2, req: s => s.holes > 0, rq: "Höhle", eff: "–", txt: "Mauert den Eingang einer Spechthöhle mit Lehm passend zu, damit kein größerer Vogel hineinpasst." },
     { id: "fledermaus", n: "Großer Abendsegler", e: "🦇", slot: "hoehle", pts: 3, req: s => s.holes > 0, rq: "Höhle", eff: "schützt vor Raupen", txt: "Fledermaus, die in Baumhöhlen überwintert und nachts Nachtfalter jagt." },
     { id: "kauz", n: "Waldkauz", e: "🦉", slot: "hoehle", pts: 4, req: s => s.bigHoles > 0, rq: "große Höhle", eff: "–", txt: "Häufigste Eule Mitteleuropas. Brütet in großen Höhlen alter Bäume." },
     { id: "taube", n: "Hohltaube", e: "🕊️", slot: "hoehle", pts: 3, req: s => s.bigHoles > 0, rq: "große Höhle", eff: "–", txt: "Die einzige heimische Taube, die in Höhlen brütet, fast nur in Schwarzspechthöhlen." }
   ];
-  const DEAD = [
-    { n: "Zunderschwamm", ph: [0], e: "🍄", pts: 3, txt: "Weißfäule: baut Lignin ab, das Holz wird hell und faserig. Früher Zunder zum Feuermachen." },
-    { n: "Hirschkäfer", ph: [2], e: "🪲", pts: 4, bonus: "stieleiche", txt: "Die Larve lebt fünf bis acht Jahre in morschen Eichenwurzeln." },
-    { n: "Alpenbock", ph: [0], e: "🪲", pts: 4, bonus: "buche", txt: "Seltener blauer Bockkäfer in besonntem Buchentotholz." },
-    { n: "Holzwespe", ph: [0], e: "🐝", pts: 2, bonus: "fichte", txt: "Bringt Pilzsporen mit ins Holz, von denen sich ihre Larven ernähren." },
-    { n: "Feuersalamander", ph: [1], e: "🦎", pts: 3, txt: "Versteckt sich tagsüber unter feuchten, liegenden Stämmen." },
-    { n: "Asseln", ph: [1, 2], e: "🐛", pts: 2, txt: "Krebstiere an Land. Sie zerkleinern morsches Holz für Pilze und Bakterien." },
-    { n: "Schleimpilz", ph: [1, 2], e: "🟡", pts: 2, txt: "Kriecht als Plasmodium über das Holz und frisst Bakterien." },
-    { n: "Zaunkönig", ph: [1], e: "🐦", pts: 2, txt: "Baut sein Nest gern im Wurzelteller umgestürzter Bäume." },
-    { n: "Baummarder", ph: [0], e: "🦦", pts: 3, needsHole: true, txt: "Nutzt alte Spechthöhlen als Schlafplatz." },
-    { n: "Springschwänze", ph: [2], e: "🦗", pts: 2, txt: "Winzige Bodentiere, bis zu 100.000 pro Quadratmeter Waldboden." },
-    { n: "Moose", ph: [1], e: "🌱", pts: 1, txt: "Überziehen den liegenden Stamm und halten ihn feucht." },
-    { n: "Hallimasch", ph: [0, 1], e: "🍄", pts: 2, txt: "Seine Pilzfäden leuchten im Dunkeln schwach (Biolumineszenz)." }
+  // Totholz zerfällt in sechs Stufen (je zwei Runden à 10 Jahre). sub = Stufen, in denen die Art einziehen kann;
+  // bonus = Baumarten, an deren Holz sie besonders hängt (+2).
+  const SUBS = [
+    { n: "Frisch abgestorben", main: 0, txt: "Die Rinde sitzt noch fest, das Holz ist voller Zucker und Stärke. Die ersten sind Käfer und Holzwespen, die ihre Eier unter die Rinde legen, dicht gefolgt von Spechten auf Larvensuche." },
+    { n: "Die Rinde löst sich", main: 0, txt: "Pilzfäden durchziehen das Holz, die Rinde blättert ab. Dahinter entstehen Verstecke für Fledermäuse und Vögel, außen wachsen Baumpilze." },
+    { n: "Frisch gefallen", main: 1, txt: "Der Stamm liegt am Boden, der Wurzelteller ragt in die Luft. Unter dem feuchten Holz finden Amphibien und Kleinsäuger Verstecke." },
+    { n: "Morsch und weich", main: 1, txt: "Weiß- und Braunfäule haben das Holz weich gemacht. Asseln, Schnecken und Käferlarven fressen sich hindurch." },
+    { n: "Mulm", main: 2, txt: "Vom Stamm ist ein krümeliger, dunkler Mulm übrig. Bodentiere zerkleinern ihn weiter." },
+    { n: "Humus", main: 2, txt: "Bakterien zerlegen den Rest zu CO₂, Wasser und Nährsalzen. Auf dem Moderholz keimen neue Bäume: Der Kreislauf schließt sich." }
   ];
+  const SUB_ROUNDS = 2, SUB_YEARS = 10;
+  const DEAD = [
+    { n: "Borkenkäfer", sub: [0], e: "🪲", pts: 2, bonus: ["fichte"], txt: "Legt seine Brutgänge unter der Rinde frisch abgestorbener Fichten an. Im toten Baum richtet er keinen Schaden an." },
+    { n: "Holzwespe", sub: [0], e: "🐝", pts: 2, bonus: ["fichte", "waldkiefer"], txt: "Bringt Pilzsporen mit ins Holz, von denen sich ihre Larven ernähren." },
+    { n: "Alpenbock", sub: [0], e: "🪲", pts: 4, bonus: ["buche"], txt: "Seltener blauer Bockkäfer in besonntem Buchentotholz." },
+    { n: "Rothalsbock", sub: [0, 1], e: "🪲", pts: 2, txt: "Seine Larven fressen sich zwei Jahre lang durch frisch abgestorbenes Holz." },
+    { n: "Specht auf Larvensuche", sub: [0, 1], e: "🐦", pts: 2, txt: "Spechte hacken Käferlarven aus dem Holz und öffnen es so für Pilze." },
+    { n: "Hallimasch", sub: [0, 1], e: "🍄", pts: 2, txt: "Seine Pilzfäden leuchten im Dunkeln schwach (Biolumineszenz)." },
+    { n: "Zunderschwamm", sub: [1], e: "🍄", pts: 3, txt: "Weißfäule: baut Lignin ab, das Holz wird hell und faserig. Früher Zunder zum Feuermachen." },
+    { n: "Birkenporling", sub: [1], e: "🍄", pts: 3, bonus: ["birke"], txt: "Wächst nur an Birken. Früher zog man auf ihm Rasiermesser ab." },
+    { n: "Erlen-Schillerporling", sub: [1], e: "🍄", pts: 3, bonus: ["schwarzerle"], txt: "Rostbrauner Porling, der fast nur an Erlen wächst." },
+    { n: "Mopsfledermaus", sub: [1], e: "🦇", pts: 3, txt: "Schläft tagsüber in schmalen Spalten hinter abstehender Rinde." },
+    { n: "Baumläufer-Nest", sub: [1], e: "🐦", pts: 2, txt: "Der Waldbaumläufer baut sein Nest hinter loser Rinde." },
+    { n: "Baummarder", sub: [1], e: "🦦", pts: 3, needsHole: true, txt: "Nutzt alte Spechthöhlen als Schlafplatz." },
+    { n: "Zaunkönig", sub: [2], e: "🐦", pts: 2, txt: "Baut sein Nest gern im Wurzelteller umgestürzter Bäume." },
+    { n: "Feuersalamander", sub: [2, 3], e: "🦎", pts: 3, txt: "Versteckt sich tagsüber unter feuchten, liegenden Stämmen." },
+    { n: "Erdkröte", sub: [2], e: "🐸", pts: 2, txt: "Überwintert in Hohlräumen unter liegendem Holz." },
+    { n: "Igel", sub: [2], e: "🦔", pts: 2, txt: "Baut sein Winternest aus Laub im Schutz des Stammes." },
+    { n: "Schwefelporling", sub: [2], e: "🍄", pts: 2, bonus: ["stieleiche"], txt: "Leuchtend gelber Porling, oft an Eichen. Braunfäule: Das Holz zerfällt in würfelige Stücke." },
+    { n: "Moose", sub: [2, 3], e: "🌱", pts: 1, txt: "Überziehen den liegenden Stamm und halten ihn feucht." },
+    { n: "Asseln", sub: [3, 4], e: "🐛", pts: 2, txt: "Krebstiere an Land. Sie zerkleinern morsches Holz für Pilze und Bakterien." },
+    { n: "Schleimpilz", sub: [3], e: "🟡", pts: 2, txt: "Kriecht als Plasmodium über das Holz und frisst Bakterien." },
+    { n: "Hirschkäfer", sub: [3, 4], e: "🪲", pts: 4, bonus: ["stieleiche"], txt: "Die Larve lebt fünf bis acht Jahre in morschen Eichenwurzeln." },
+    { n: "Tigerschnegel", sub: [3], e: "🐌", pts: 1, txt: "Gefleckte Nacktschnecke, frisst Pilze und Algen am morschen Holz." },
+    { n: "Lederlaufkäfer", sub: [3], e: "🪲", pts: 2, txt: "Jagt nachts Schnecken und versteckt sich tagsüber unter Totholz." },
+    { n: "Stockschwämmchen", sub: [3], e: "🍄", pts: 2, txt: "Büschel kleiner, essbarer Pilze auf morschen Laubholzstümpfen." },
+    { n: "Rosenkäfer", sub: [3, 4], e: "🪲", pts: 2, txt: "Seine Engerlinge entwickeln sich im Holzmulm." },
+    { n: "Springschwänze", sub: [4, 5], e: "🦗", pts: 2, txt: "Winzige Bodentiere, bis zu 100.000 pro Quadratmeter Waldboden." },
+    { n: "Tausendfüßer", sub: [4], e: "🐛", pts: 2, txt: "Zerkleinern Mulm und Laub und machen es für Bakterien zugänglich." },
+    { n: "Hornmilben", sub: [4], e: "🕷️", pts: 1, txt: "Winzige, gepanzerte Milben, Hunderttausende pro Quadratmeter. Sie fressen Pilzfäden." },
+    { n: "Regenwürmer", sub: [4, 5], e: "🪱", pts: 2, txt: "Ziehen den Mulm in den Boden und mischen ihn mit Erde." },
+    { n: "Bakterien", sub: [5], e: "🦠", pts: 2, txt: "Zerlegen den Rest zu CO₂, Wasser und Nährsalzen. Die Nährsalze nehmen die Nachbarbäume auf." },
+    { n: "Maulwurf", sub: [5], e: "🐾", pts: 2, txt: "Gräbt im lockeren Humus nach Regenwürmern." },
+    { n: "Pilzgeflecht", sub: [5], e: "🍄", pts: 1, txt: "Mykorrhizapilze der Nachbarbäume wachsen in den frischen Humus." },
+    { n: "Neuer Keimling", sub: [5], e: "🌱", pts: 4, txt: "Rannenverjüngung: Auf dem feuchten Moderholz keimt ein neuer Baum. Der Kreislauf beginnt von vorn." }
+  ];
+  const bon = d => (d.bonus || []).includes(s.sp);
+  const deadPts = d => d.pts + (bon(d) ? 2 : 0);
   const HELP = `<p>Du bist ein Samen im Waldboden. Jede Runde vergehen ${YEARS} Jahre. Verteile deinen Zucker auf Krone, Wurzeln und Stamm, überstehe Dürre, Stürme und Käfer und biete möglichst vielen Arten ein Zuhause. Und wenn du stirbst, geht das Spiel weiter: im Totholz.</p>
 <ul>
         <li>Jede Runde bestimmt eine Ereigniskarte Licht und Wasser. Deine Blätter (Krone) machen daraus Zucker, aber nur so viel, wie die Wurzeln Wasser liefern.</li>
         <li>Die Zellatmung verbraucht Zucker, je größer du bist, desto mehr. Reicht der Zucker nicht, gehen Reserve und dann Vitalität verloren.</li>
         <li>Wachsen kostet so viel Zucker wie die jetzige Stufe (Stamm 1 mehr): Der erste Schritt ist billig, später wird es teuer. Ungenutzter Zucker wird veratmet, also lieber als Stärke speichern.</li>
-        <li>Was du tun kannst, hängt vom Lebensabschnitt ab: Ein Sämling wächst nur, ein mannbarer Baum bildet Samen, ein Altbaum wächst nicht mehr in die Höhe. Im Totholz ziehen nacheinander Arten des stehenden, des liegenden und des zerfallenden Holzes ein.</li>
+        <li>Was du tun kannst, hängt vom Lebensabschnitt ab: Ein Sämling wächst nur, ein mannbarer Baum bildet Samen, ein Altbaum wächst nicht mehr in die Höhe. Im Totholz geht es in sechs Stufen weiter, je zwei Runden à 10 Jahre: frisch abgestorben, Rinde löst sich, frisch gefallen, morsch, Mulm, Humus. In jeder Stufe ziehen andere Tiere, Pilze und Zersetzer ein.</li>
         <li>Unter einem Stamm von 5 stehst du im Schatten älterer Bäume. Schattenbaumarten wie die Buche kommen damit besser zurecht. Lichtbaumarten verkümmern, wenn sie zu lange klein im Schatten stehen. Im Moor und auf der Heide gibt es kein geschlossenes Kronendach.</li>
         <li>Der Standort zählt: Im Moor bleibst du klein, auf Sand ist es trocken, in der Aue kommt Hochwasser, im Bergwald Sturm und Schnee. Zweimal abgefressene Spitzen oder ein abgebrochener Wipfel führen zu Krüppelwuchs.</li>
         <li>Mindestens 1 Zucker hast du jede Runde, auch im schlechtesten Jahr.</li>
         <li>Arten, die zusammenleben, bilden Gemeinschaften und bringen Extrapunkte (🤝): Marienkäfer fressen Blattläuse, Kleiber ziehen in Spechthöhlen, Moose und Farne lieben feuchten Schatten. Manche Arten stören sich aber auch (⚔️): Ameisen verjagen Marienkäfer.</li>
+        <li>Viele Insekten leben erst als Larve bei dir: Engerlinge im Boden, Raupen in der Krone. Kommen später Maikäfer oder Falter dazu, ist die Verwandlung komplett. Rund um den Baum leben auch Säugetiere: Reh, Wildschwein, Dachs, Fuchs, Rötelmaus und Siebenschläfer.</li>
         <li>Neben Tieren und Pilzen wachsen auch Pflanzen an und unter dir: Efeu am Stamm, Frühblüher unter Laubbäumen, Heidelbeeren auf saurem Boden, Farne im Schatten.</li>
         <li>Bewohner bringen Punkte und manchmal Hilfe. Spechte zimmern Höhlen für Nachmieter, so entstehen Ketten wie im Kartenspiel Forest Shuffle.</li>
         <li>Punkte gibt es für dein Alter, deine Samen, alle Bewohner, die Vielfalt der besiedelten Bereiche und das Totholz nach deinem Tod.</li></ul>`;
@@ -123,13 +175,29 @@ BL.Game = (function () {
     { a: ["efeu", "fledermaus"], pts: 1, n: "Versteck im Efeu", txt: "Fledermäuse ruhen tagsüber hinter dichtem Efeu." },
     { a: ["windroeschen", "wurm"], pts: 1, n: "Frühling im Laub", txt: "Regenwürmer machen aus dem Falllaub den Humus, in dem die Frühblüher wurzeln." },
     { a: ["heidelbeere", "moos"], pts: 1, n: "Teppich aus Moos und Beeren", txt: "Auf saurem Boden bilden Moose und Heidelbeeren gemeinsam die Bodendecke." },
-    { a: ["farn", "moos"], pts: 1, n: "Feuchter Schatten", txt: "Farne und Moose halten den Boden feucht und kühl." }
+    { a: ["farn", "moos"], pts: 1, n: "Feuchter Schatten", txt: "Farne und Moose halten den Boden feucht und kühl." },
+    { a: ["maikaefer", "engerling"], pts: 2, n: "Verwandlung", txt: "Aus dem Engerling wird nach drei bis vier Jahren im Boden ein Maikäfer." },
+    { a: ["wildschwein", "engerling"], pts: 2, n: "Wühlen nach Engerlingen", txt: "Wildschweine brechen den Boden um und fressen Engerlinge und Mäusenester." },
+    { a: ["dachs", "engerling"], pts: 1, n: "Engerlinge ausgraben", txt: "Der Dachs gräbt Engerlinge aus dem Boden." },
+    { a: ["dachs", "wurm"], pts: 1, n: "Regenwurmjäger", txt: "Regenwürmer sind die Hauptnahrung des Dachses." },
+    { a: ["fledermaus", "falter"], pts: 2, n: "Nachtjäger", txt: "Abendsegler fangen Nachtfalter im Flug." },
+    { a: ["roetelmaus", "fuchs"], pts: 2, n: "Jäger und Beute", txt: "Der Fuchs lebt in vielen Gegenden vor allem von Mäusen." },
+    { a: ["roetelmaus", "kauz"], pts: 2, n: "Mäusejäger", txt: "Der Waldkauz jagt nachts Mäuse am Waldboden." },
+    { a: ["siebenschlaefer", "bunt"], pts: 1, n: "Höhlen-Nachmieter", txt: "Der Siebenschläfer schläft in alten Spechthöhlen." },
+    ...["eichenwickler", "buchenspinner", "kiefernschwaermer", "trauermantel"].flatMap(r => [
+      { a: [r, "falter"], pts: 2, n: "Verwandlung", txt: "Aus der Raupe wird über die Puppe ein Falter." },
+      { a: [r, "meise"], pts: 1, n: "Raupenfutter", txt: "Ein Meisenpaar verfüttert an seine Jungen Zehntausende Raupen." },
+      { a: [r, "kuckuck"], pts: 2, n: "Raupenfutter", txt: "Der Kuckuck frisst sogar behaarte Raupen." }
+    ]),
+    { a: ["erlenblattkaefer", "meise"], pts: 1, n: "Käferfutter", txt: "Meisen sammeln Käferlarven von den Erlenblättern." }
   ];
   const synActive = () => SYN.filter(g => g.a.every(id => has(s, id)));
   // Was eine Karte im Markt zusammen mit schon vorhandenen Arten bringen würde
   const synWith = id => SYN.filter(g => g.a.includes(id) && g.a.every(x => x === id || has(s, x)));
   const nameOf = id => CARDS.find(c => c.id === id).n;
   const SLOTS = { krone: "Krone", stamm: "Stamm", hoehle: "Höhlen", wurzel: "Wurzel und Boden" };
+  const RAUPEN = ["eichenwickler", "buchenspinner", "kiefernschwaermer", "trauermantel", "erlenblattkaefer"];
+  const hasRaupe = s => RAUPEN.some(id => has(s, id));
   const has = (s, id) => s.cards.some(c => c.id === id);
 
   let root, s = null, pickBiome = null;
@@ -248,7 +316,7 @@ BL.Game = (function () {
       if (dmg) { s.V -= dmg; msgs.push(`Borkenkäfer: zu wenig Abwehr, Vitalität −${dmg}`); } else msgs.push("Borkenkäfer: mit Harz und Gerbstoffen abgewehrt");
     }
     if (ev.caterpillar) {
-      const prot = has(s, "meise") || has(s, "fledermaus") || has(s, "ameise");
+      const prot = has(s, "meise") || has(s, "fledermaus") || has(s, "ameise") || has(s, "kuckuck");
       if (prot) msgs.push("Raupen: Meisen, Fledermäuse oder Ameisen halten sie klein");
       else { s.K = Math.max(1, s.K - 1); s.V -= 1; msgs.push("Raupen: Krone −1, Vitalität −1"); }
     }
@@ -291,11 +359,15 @@ BL.Game = (function () {
   }
   function die(cause) {
     // Ein dünnes Stämmchen steht nicht lange als Totholz: es fällt gleich um oder zerfällt sofort
-    s.V = 0; s.phase = "dead"; s.deathCause = cause; s.deadRound = s.S <= 1 ? 2 : s.S <= 2 ? 1 : 0; dealDead();
+    s.V = 0; s.phase = "dead"; s.deathCause = cause; s.deadYears = 0;
+    setSub(s.S <= 1 ? 4 : s.S <= 2 ? 2 : 0); dealDead();
     s.log.unshift(`Jahr ${s.age}: Der Baum ist ${cause}. Jetzt beginnt sein zweites Leben als Totholz.`);
   }
+  // Stufe setzen; deadRound bleibt die Hauptphase (0 stehend, 1 liegend, 2 Mulm) für Bild und alte Spielstände
+  function setSub(n) { s.sub = n; s.subPick = 0; s.deadRound = SUBS[Math.min(n, SUBS.length - 1)].main; }
   function dealDead() {
-    const pool = DEAD.filter(d => d.ph.includes(s.deadRound) && !s.dead.includes(d.n) && (!d.needsHole || s.holes + s.bigHoles > 0));
+    if (s.sub == null) setSub((s.deadRound || 0) * 2);
+    const pool = DEAD.filter(d => d.sub.includes(s.sub) && !s.dead.includes(d.n) && (!d.needsHole || s.holes + s.bigHoles > 0));
     s.market = BL.shuffle(pool).slice(0, 3).map(d => d.n);
   }
 
@@ -341,8 +413,13 @@ BL.Game = (function () {
     newRound(); save(); render();
   }
   function pickDead(n) {
-    s.dead.push(n); s.deadRound++;
-    if (s.deadRound >= 3) { s.phase = "over"; finalize(); } else dealDead();
+    s.dead.push(n); s.subPick++; s.deadYears = (s.deadYears || 0) + SUB_YEARS;
+    const d = DEAD.find(x => x.n === n);
+    s.log.unshift(`${s.deadYears} Jahre nach dem Tod (${SUBS[s.sub].n}): ${d.e} ${d.n} zieht ein.`);
+    if (s.subPick >= SUB_ROUNDS) setSub(s.sub + 1);
+    // Stufe ohne passende Arten überspringen
+    while (s.sub < SUBS.length) { dealDead(); if (s.market.length) break; setSub(s.sub + 1); }
+    if (s.sub >= SUBS.length) { s.phase = "over"; s.market = []; finalize(); }
     save(); render();
   }
   function score() {
@@ -351,7 +428,7 @@ BL.Game = (function () {
     for (const c of s.cards) pts.bewohner += CARDS.find(x => x.id === c.id).pts;
     if (has(s, "hoernchen")) pts.extra += Math.floor(s.seeds / 2);
     if (has(s, "haeher")) pts.extra += Math.min(5, s.seeds);
-    for (const n of s.dead) { const d = DEAD.find(x => x.n === n); pts.totholz += d.pts + (d.bonus === s.sp ? 2 : 0); }
+    for (const n of s.dead) { const d = DEAD.find(x => x.n === n); pts.totholz += deadPts(d); }
     const slots = new Set(s.cards.map(c => CARDS.find(x => x.id === c.id).slot)); pts.vielfalt = slots.size * 2 + (s.dead.length ? 2 : 0);
     pts.sum = Object.values(pts).reduce((a, b) => a + b, 0);
     return pts;
@@ -412,7 +489,7 @@ BL.Game = (function () {
   function paintTree(cv) {
     const W = Math.max(200, cv.parentElement.clientWidth), Hh = Math.round(Math.min(W * 1.05, Math.max(260, window.innerHeight * .5))), gy = Math.round(Hh * .66);
     const ctx = BL.fitCanvas(cv, W, Hh), Bi = B(), Sp = SPECIES[s.sp], rnd = BL.rng((s.seed || 1) * 13 + 7);
-    const alive = s.phase === "play", lying = s.phase === "over" || (s.phase === "dead" && s.deadRound >= 1), cx = W * .5;
+    const alive = s.phase === "play", lying = s.phase === "over" || (s.phase === "dead" && s.deadRound >= 1), humus = s.phase === "over" || (s.phase === "dead" && s.deadRound >= 2), cx = W * .5;
     const season = alive ? seasonNow() : .7, winter = season > .8;
     // Himmel und Hintergrund nach Standort
     const sky = ctx.createLinearGradient(0, 0, 0, gy);
@@ -456,7 +533,7 @@ BL.Game = (function () {
     const v = { cx, gy, Hpx, g, season, trunkPx: 2 + S * 1.7, cb: .14 + S * .02, dead: thin, leaves: alive, snag: !alive, dark: false, real: true, sunX: -.5 };
     ctx.save();
     if (s.kr && !lying) { ctx.translate(cx, gy); ctx.rotate(.13); ctx.translate(-cx, -gy); }
-    const res = lying ? drawLog(ctx, cx, gy, W, S, s.phase === "over") : BL.TreeGen.render(ctx, model(), v);
+    const res = lying ? drawLog(ctx, cx, gy, W, S, humus) : BL.TreeGen.render(ctx, model(), v);
     // Höhlen am Stamm
     const holes = s.holes + s.bigHoles + s.cards.filter(c => CARDS.find(x => x.id === c.id).slot === "hoehle").length;
     if (!lying) for (let i = 0; i < Math.min(3, holes); i++) { ctx.fillStyle = "#1a120b"; ctx.beginPath(); ctx.ellipse(cx + (i % 2 ? 2 : -2), gy - Hpx * (.3 + i * .12), 2.5 + S * .4, 3.5 + S * .5, 0, 0, 7); ctx.fill(); }
@@ -469,11 +546,11 @@ BL.Game = (function () {
       const p = d.slot === "krone" ? [cx + (r2() * 2 - 1) * half * .8, gy - Hpx * (.6 + r2() * .35)]
         : d.slot === "stamm" ? [cx + (i % 2 ? 9 : -9) + S, gy - Hpx * (.15 + r2() * .35)]
         : d.slot === "hoehle" ? [cx + 14 + S, gy - Hpx * (.3 + r2() * .2)]
-        : d.plant && d.slot === "wurzel" ? [cx + (r2() < .5 ? -1 : 1) * W * (.12 + r2() * .3), gy - 9] : [cx + (r2() * 2 - 1) * W * .35, gy + 18 + r2() * (Hh - gy - 30)];
+        : (d.plant || d.ground) && d.slot === "wurzel" ? [cx + (r2() < .5 ? -1 : 1) * W * (.12 + r2() * .3), gy - 9] : [cx + (r2() * 2 - 1) * W * .35, gy + 18 + r2() * (Hh - gy - 30)];
       if (!alive && d.slot !== "wurzel") return;
       ctx.fillText(d.e, p[0], p[1]);
     });
-    s.dead.forEach((n, i) => { const d = DEAD.find(x => x.n === n); ctx.fillText(d.e, cx + 20 + i * 24, gy - 12 - (i % 2) * 10); });
+    s.dead.forEach((n, i) => { const d = DEAD.find(x => x.n === n); ctx.fillText(d.e, cx - W * .38 + (i % 8) * W * .1, gy - 12 - Math.floor(i / 8) * 18 - (i % 2) * 6); });
     if (has(s, "steinpilz")) { ctx.font = "18px system-ui, sans-serif"; ctx.fillText("🍄", cx - W * .3, gy - 8); }
     // Schatten der Großen: dunkles Kronendach über dem jungen Baum
     if (alive && Bi.canopy && S < 5 && !(s.gapRounds > 0 || (EV() || {}).gap)) {
@@ -488,7 +565,7 @@ BL.Game = (function () {
   }
   function tableau() {
     const by = slot => s.cards.filter(c => CARDS.find(x => x.id === c.id).slot === slot).map(c => { const d = CARDS.find(x => x.id === c.id); return `<span class="gcard" title="${d.txt}">${d.e} ${d.n} <b>${d.pts}</b></span>`; }).join("");
-    const deadCards = s.dead.map(n => { const d = DEAD.find(x => x.n === n); return `<span class="gcard" title="${d.txt}">${d.e} ${d.n} <b>${d.pts + (d.bonus === s.sp ? 2 : 0)}</b></span>`; }).join("");
+    const deadCards = s.dead.map(n => { const d = DEAD.find(x => x.n === n); return `<span class="gcard" title="${d.txt}">${d.e} ${d.n} <b>${deadPts(d)}</b></span>`; }).join("");
     return `<div class="tableau">
       <div class="slot" style="grid-area:k"><span class="label">Krone</span>${by("krone")}</div>
       <div class="slot" style="grid-area:s"><span class="label">Stamm</span>${by("stamm")}</div>
@@ -541,10 +618,14 @@ BL.Game = (function () {
       BL.$("#gm-next", bar).onclick = endRound;
       BL.$("#gm-restart", bar).onclick = () => { s = null; save(); render(); };
     } else {
-      side.append(BL.html(`<div class="ev"><span class="label">Totholz · Phase ${s.deadRound + 1} von 3</span><h3>${["Stehendes Totholz", "Der Stamm liegt am Boden", "Fast schon Humus"][s.deadRound]}</h3>
-        <p class="note">Dein Baum ist ${s.deathCause}. Ein toter Baum beherbergt oft mehr Arten als ein lebender. ${["Am stehenden Stamm siedeln Holzpilze und Käfer, die trockenes, besonntes Holz mögen.", "Am Boden wird das Holz feucht und weich: jetzt kommen Tiere, die Verstecke und Nässe brauchen.", "Das Holz zerfällt zu Mulm und Humus. Bodentiere und Larven verarbeiten den Rest."][s.deadRound]} Wähle, wer als Nächstes einzieht.</p></div>`));
+      if (s.sub == null) dealDead();
+      const sb = SUBS[s.sub];
+      side.append(BL.html(`<div class="ev"><span class="label">Totholz · ${["Stehendes Totholz", "Liegender Stamm", "Mulm und Humus"][sb.main]} · Stufe ${s.sub + 1} von ${SUBS.length} · Runde ${s.subPick + 1} von ${SUB_ROUNDS}</span><h3>${sb.n}</h3>
+        <p class="note" title="${sb.txt}">${sb.txt}</p>
+        <p class="last">Dein Baum ist ${s.deathCause}${s.deadYears ? `, das ist ${s.deadYears} Jahre her` : ""}. Ein toter Baum beherbergt oft mehr Arten als ein lebender. Wähle, wer als Nächstes einzieht.</p>
+        <div class="row" style="gap:4px">${SUBS.map((x, k) => `<span class="chip" style="font-size:.68rem;${k === s.sub ? "background:var(--accent);color:var(--accent-text)" : k < s.sub ? "opacity:.5" : ""}">${x.n}</span>`).join("")}</div></div>`));
       side.append(BL.html(`<div class="market">${s.market.map(n => { const d = DEAD.find(x => x.n === n);
-        return `<div class="mcard" title="${d.txt}"><div class="top"><span class="em" aria-hidden="true">${d.e}</span><h4>${d.n}</h4></div><span class="meta">${d.pts + (d.bonus === s.sp ? 2 : 0)} P${d.bonus === s.sp ? " (Bonus für deine Art)" : ""}</span><p class="note" style="font-size:.74rem;margin:0">${d.txt}</p><button class="btn primary" data-d="${n}">Einziehen</button></div>`; }).join("")}</div>`));
+        return `<div class="mcard" title="${d.txt}"><div class="top"><span class="em" aria-hidden="true">${d.e}</span><h4>${d.n}</h4></div><span class="meta">${deadPts(d)} P${bon(d) ? " (Bonus für deine Art)" : ""}</span><p class="note" style="font-size:.74rem;margin:0">${d.txt}</p><button class="btn primary" data-d="${n}">Einziehen</button></div>`; }).join("")}</div>`));
     }
     paintTree(BL.$(".gtree", wrap));
     wrap.addEventListener("click", e => {
