@@ -17,9 +17,7 @@ const NEXT_PORT = parseInt(process.env.NEXT_PORT || "3000");
 const API_HOST = process.env.API_HOST || "127.0.0.1";
 const API_PORT = parseInt(process.env.API_PORT || "8000");
 
-const { execSync } = require("child_process");
-console.log("Syncing node_modules...");
-execSync("npm install --legacy-peer-deps --prefer-offline", { stdio: "inherit" });
+require("./sync-deps").syncDeps();
 
 const nextProc = spawn(
   "npx",

@@ -69,9 +69,8 @@ function needsBuild() {
   return Math.max(srcTime, cfgTime) > buildTime;
 }
 
-// Always sync packages so a stale node_modules volume doesn't break the build.
-console.log("Syncing node_modules...");
-execSync("npm install --legacy-peer-deps --prefer-offline", { stdio: "inherit" });
+// Sync packages so a stale node_modules volume doesn't break the build (skipped when nothing changed).
+require("./sync-deps").syncDeps();
 
 // Snap! (public/snap) ist zu groß fürs Repo und wird einmalig geholt — hier und
 // nicht im Dockerfile, weil der Bind-Mount ./frontend:/app alles überdeckt, was
