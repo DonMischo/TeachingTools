@@ -2,6 +2,7 @@
 /* eslint-disable */
 // Baumleben: aus der eigenständigen Fassung übernommen, ungeprüftes JavaScript.
 import { BL } from "./bl";
+import { Dla } from "../dla/kern";
 /* Sei ein Baum: Ressourcen-Spiel mit Bewohnerkarten (angelehnt an Forest Shuffle). Eine Runde = 15 Jahre. */
 BL.Game = (function () {
   const YEARS = 15;
@@ -87,12 +88,13 @@ BL.Game = (function () {
   const CSS = `
   .gm { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 20px; align-items: start }
   @media (max-width: 900px) { .gm { grid-template-columns: minmax(0, 1fr) } }
-  .tableau { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr); grid-template-areas: ". k ." "s t h" ". w ."; gap: 8px; align-items: center }
+  .tableau { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "t t" "k s" "h w"; gap: 8px; align-items: stretch }
   .tableau .slot { border: 1px dashed var(--line); border-radius: 10px; padding: 6px; min-height: 64px; display: flex; flex-wrap: wrap; gap: 4px; align-content: flex-start; min-width: 0 }
   .tableau .slot > .label { width: 100% }
   .gcard { border: 1px solid var(--line); border-radius: 8px; background: var(--panel); padding: 4px 6px; font-size: .78rem; display: inline-flex; gap: 4px; align-items: center }
   .gcard b { font-family: var(--mono); font-size: .75rem; color: color-mix(in srgb, var(--leaf) 55%, var(--ink)) }
-  .tableau .tree { grid-area: t; border: 1px solid var(--line); border-radius: 12px; background: var(--sky); overflow: hidden }
+  .tableau .tree { grid-area: t; border: 1px solid var(--line); border-radius: 12px; background: var(--sky); overflow: hidden; min-width: 0 }
+  .tableau .tree canvas { display: block }
   .market { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px }
   .mcard { border: 1px solid var(--line); border-radius: 10px; padding: 10px; background: var(--panel); display: grid; gap: 4px; align-content: start; font-size: .85rem }
   .mcard .em { font-size: 1.6rem; line-height: 1 }
@@ -122,7 +124,7 @@ BL.Game = (function () {
   function save() { BL.store.set("game", s); }
 
   function start(sp, biome) {
-    s = { sp, biome, round: 0, kr: "", browsed: 0, shadeRounds: 0, age: 0, K: 1, W: 1, S: 1, A: 0, R: 2, V: 10, seeds: 0, cards: [], holes: 0, bigHoles: 0, log: [], phase: "play",
+    s = { sp, biome, seed: 1 + Math.floor(Math.random() * 1e5), round: 0, kr: "", browsed: 0, shadeRounds: 0, age: 0, K: 1, W: 1, S: 1, A: 0, R: 2, V: 10, seeds: 0, cards: [], holes: 0, bigHoles: 0, log: [], phase: "play",
       sugar: 0, gapRounds: 0, hosted: false, seedsRound: 0, dead: [], deadRound: 0, market: [], event: null, deathCause: "" };
     newRound(); save(); render();
   }
@@ -291,24 +293,131 @@ BL.Game = (function () {
   function finalize() { const sc = score().sum, best = BL.store.get("gamebest", {}); if (!best[s.sp] || sc > best[s.sp]) { best[s.sp] = sc; BL.store.set("gamebest", best); } }
 
   // ---------- Ansicht ----------
-  function treeSVG() {
-    const dead = s.phase !== "play", H = 40 + s.S * 16, cr = 14 + s.K * 7, rw = 10 + s.W * 9, gy = 200;
-    const conifer = s.sp === "fichte", pine = s.sp === "waldkiefer", col = dead ? "#8a7a62" : s.sp === "birke" ? "#7fb24f" : conifer || pine ? "#2c5a33" : "#3f7f34";
-    const bend = s.kr ? 14 : 0;
-    let crown = "";
-    if (!dead && pine) crown = `<ellipse cx="${110 + bend}" cy="${gy - H}" rx="${cr * 1.15}" ry="${cr * .5}" fill="${col}"/><ellipse cx="${110 + bend - cr * .45}" cy="${gy - H + 6}" rx="${cr * .55}" ry="${cr * .3}" fill="${col}"/>`;
-    else if (!dead) crown = conifer ? `<path d="M${110 + bend} ${gy - H - 16}L${110 + bend + cr} ${gy - H * .35}L${110 + bend - cr} ${gy - H * .35}Z" fill="${col}"/>`
-      : `<ellipse cx="${110 + bend}" cy="${gy - H}" rx="${cr * 1.1}" ry="${cr * .85}" fill="${col}" opacity=".9"/><ellipse cx="${110 + bend - cr * .5}" cy="${gy - H + 8}" rx="${cr * .6}" ry="${cr * .5}" fill="${col}"/><ellipse cx="${110 + bend + cr * .5}" cy="${gy - H + 6}" rx="${cr * .6}" ry="${cr * .5}" fill="${col}"/>`;
-    const bark = s.sp === "birke" ? "#e9e9e4" : pine ? "#b0643a" : "#6b5444", tw = 6 + s.S * 1.8, th = dead ? H * .6 : H;
-    const trunk = s.phase === "over" ? `<ellipse cx="120" cy="${gy - 6}" rx="${H * .45}" ry="8" fill="#6b5a48"/>`
-      : bend ? `<path d="M110 ${gy}C${110 - bend} ${gy - th * .35} ${110 + bend * 1.6} ${gy - th * .6} ${110 + bend} ${gy - th}" stroke="${bark}" stroke-width="${tw}" fill="none"/>`
-      : `<rect x="${110 - tw / 2}" y="${gy - th}" width="${tw}" height="${th}" fill="${bark}"/>`;
-    const roots = Array.from({ length: 5 }, (_, i) => `<path d="M110 ${gy}Q${110 + (i - 2) * rw * .6} ${gy + 14 + (s.sp === "fichte" ? 0 : i % 2 * 10)} ${110 + (i - 2) * rw} ${gy + (s.sp === "fichte" ? 14 : 30 + (i % 2) * 10)}" stroke="#a88a66" stroke-width="2" fill="none"/>`).join("");
+  // ---------- Baumbild ----------
+  // Krone und Äste kommen aus dem Baumgenerator des Lebenslaufs (Raumkolonisierung, Knospenschicksal als Markow-Kette),
+  // Wurzeln und Pilzgeflecht aus der diffusionsbegrenzten Aggregation (DLA) der Simulation »Fraktales Wachstum«.
+  // Ein DLA-Haufen wächst Teilchen für Teilchen: Die ersten n Teilchen sind eine kleinere Fassung desselben Haufens,
+  // deshalb wächst das Wurzelwerk mit der Wurzelstufe einfach weiter.
+  const models = {}, clusters = {};
+  const model = () => { const k = s.sp + ":" + (s.seed || 1); return models[k] || (models[k] = BL.TreeGen.build(s.sp, s.seed || 1, 0)); };
+  function cluster(key, n, haftung, seed) {
+    if (!clusters[key]) { const d = new Dla({ dim: 2, kapazitaet: n, haftung, saat: "punkt", zufall: seed }); d.wachse(); clusters[key] = d; }
+    return clusters[key];
+  }
+  // Teilchen 0..n-1 als Linien zum Elternteilchen, Dicke nach der Zahl der Nachfahren (wie das Pfeifenmodell)
+  function drawCluster(ctx, d, n, map, col, wMul) {
+    n = Math.min(n, d.anzahl);
+    const cnt = new Float32Array(n).fill(1);
+    for (let i = n - 1; i > 0; i--) { const e = d.eltern[i]; if (e >= 0 && e < n) cnt[e] += cnt[i]; }
+    ctx.strokeStyle = col; ctx.lineCap = "round";
+    for (let i = 1; i < n; i++) {
+      const e = d.eltern[i]; if (e < 0) continue;
+      const [x1, y1] = map(d.pos[i * 3], d.pos[i * 3 + 1]), [x0, y0] = map(d.pos[e * 3], d.pos[e * 3 + 1]);
+      ctx.lineWidth = Math.min(7, .4 + Math.sqrt(cnt[i]) * .22 * wMul);
+      ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+    }
+  }
+  function seasonNow() {
+    const ev = EV() || {};
+    return ev.frost ? .06 : ev.snow ? .9 : ev.id === "duerre" || ev.id === "hitze" ? .5 : .32;
+  }
+  // Liegendes Totholz: Stamm am Boden mit hochgeklapptem Wurzelteller, später ein bemooster Mulmhügel
+  function drawLog(ctx, cx, gy, W, S, humus) {
+    const r = BL.rng((s.seed || 1) * 17), len = W * (.35 + S * .05), th = 6 + S * 2.6, x0 = cx - len * .45, bark = s.sp === "birke" ? "#d9d6cc" : s.sp === "waldkiefer" ? "#8a5a3a" : "#5e5246";
+    if (humus) {
+      ctx.fillStyle = "#4a3523"; ctx.beginPath(); ctx.ellipse(cx, gy, len * .5, th * .55, 0, Math.PI, 0); ctx.fill();
+      for (let i = 0; i < 40; i++) { ctx.fillStyle = r() < .6 ? "#6f8f3a" : "#8a6a42"; ctx.beginPath(); ctx.arc(cx + (r() * 2 - 1) * len * .45, gy - r() * th * .45, 1.5 + r() * 2.5, 0, 7); ctx.fill(); }
+      return { half: len * .5 };
+    }
+    // Wurzelteller: senkrecht aufgestellte Erdscheibe mit Wurzelstümpfen
+    ctx.fillStyle = "#4a3624"; ctx.beginPath(); ctx.ellipse(x0, gy - th * 1.2, th * .55, th * 1.7, 0, 0, 7); ctx.fill();
+    ctx.strokeStyle = "#7a6450"; ctx.lineWidth = 1.5;
+    for (let i = 0; i < 12; i++) { const a = r() * 6.28, l = th * (1.2 + r()); ctx.beginPath(); ctx.moveTo(x0, gy - th * 1.2); ctx.lineTo(x0 + Math.cos(a) * l * .5, gy - th * 1.2 + Math.sin(a) * l); ctx.stroke(); }
+    // Stamm, zur Spitze dünner, Rinde mit Längsrissen, Aststümpfe nach oben
+    ctx.fillStyle = bark; ctx.beginPath(); ctx.moveTo(x0, gy - th); ctx.lineTo(x0 + len, gy - th * .35); ctx.lineTo(x0 + len, gy); ctx.lineTo(x0, gy); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = "rgba(0,0,0,.25)"; ctx.lineWidth = 1;
+    for (let i = 0; i < 6; i++) { const yy = gy - th * (.15 + i * .13); ctx.beginPath(); ctx.moveTo(x0 + 4, yy); ctx.lineTo(x0 + len * (.5 + r() * .45), yy + th * .1); ctx.stroke(); }
+    ctx.strokeStyle = bark; ctx.lineWidth = Math.max(2, th * .2);
+    for (let i = 0; i < 4; i++) { const x = x0 + len * (.35 + i * .15), yt = gy - th * (1 - (x - x0) / len * .65); ctx.beginPath(); ctx.moveTo(x, yt); ctx.lineTo(x + 6 + r() * 8, yt - 10 - r() * 14); ctx.stroke(); }
+    // Moos auf der Oberseite
+    for (let i = 0; i < 26; i++) { const x = x0 + r() * len; ctx.fillStyle = "rgba(110,150,60,.85)"; ctx.beginPath(); ctx.arc(x, gy - th * (1 - (x - x0) / len * .65) + 1, 1.5 + r() * 2.5, 0, 7); ctx.fill(); }
+    return { half: len * .5 };
+  }
+  function paintTree(cv) {
+    const W = Math.max(200, cv.parentElement.clientWidth), Hh = Math.round(Math.min(W * 1.05, 620)), gy = Math.round(Hh * .66);
+    const ctx = BL.fitCanvas(cv, W, Hh), Bi = B(), Sp = SPECIES[s.sp], rnd = BL.rng((s.seed || 1) * 13 + 7);
+    const alive = s.phase === "play", lying = s.phase === "over" || (s.phase === "dead" && s.deadRound >= 1), cx = W * .5;
+    const season = alive ? seasonNow() : .7, winter = season > .8;
+    // Himmel und Hintergrund nach Standort
+    const sky = ctx.createLinearGradient(0, 0, 0, gy);
+    sky.addColorStop(0, winter ? "#b9c8d4" : "#8fc0e2"); sky.addColorStop(1, winter ? "#e6ecef" : "#e3f0e8");
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, W, gy);
+    if (s.biome === "berg") { ctx.fillStyle = "#9fb0bf"; ctx.beginPath(); ctx.moveTo(0, gy * .7); ctx.lineTo(W * .25, gy * .3); ctx.lineTo(W * .45, gy * .55); ctx.lineTo(W * .7, gy * .22); ctx.lineTo(W, gy * .6); ctx.lineTo(W, gy); ctx.lineTo(0, gy); ctx.fill();
+      ctx.fillStyle = "#f4f7f9"; ctx.beginPath(); ctx.moveTo(W * .7, gy * .22); ctx.lineTo(W * .64, gy * .32); ctx.lineTo(W * .76, gy * .31); ctx.fill(); }
+    // ferne Bäume: im Wald dicht und dunkel, auf Heide und Moor vereinzelt
+    // Waldrand am Horizont, deckend in Dunstfarbe (hinten heller); Nadelwald als Spitzen, Laubwald als Kronenbögen
+    const coniferous = s.biome === "berg" || s.biome === "moor" || s.biome === "sand";
+    for (const [layer, col] of [[0, winter ? "#a9b6b4" : "#9fb8a2"], [1, winter ? "#8d9c98" : "#7f9f84"]]) {
+      const top = gy * (Bi.canopy ? .62 - layer * .1 : .82 - layer * .05), n = Bi.canopy ? 14 : 6;
+      ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(0, gy);
+      for (let i = 0; i <= n; i++) {
+        const x = i / n * W, h = (gy - top) * (.6 + rnd() * .4);
+        if (!Bi.canopy && rnd() < .45) { ctx.lineTo(x, gy - h * .25); continue; }
+        if (coniferous) { ctx.lineTo(x - W / n * .4, gy - h * .35); ctx.lineTo(x, gy - h); ctx.lineTo(x + W / n * .4, gy - h * .35); }
+        else ctx.quadraticCurveTo(x - W / n * .5, gy - h * 1.15, x, gy - h * .75);
+      }
+      ctx.lineTo(W, gy); ctx.closePath(); ctx.fill();
+    }
+    // Boden
+    const soil = { moor: ["#3e3020", "#2c2116"], sand: ["#d8c08c", "#c3a46a"], aue: ["#6b5236", "#4f3c28"] }[s.biome] || ["#6a4e33", "#4a3624"];
+    const sg = ctx.createLinearGradient(0, gy, 0, Hh); sg.addColorStop(0, soil[0]); sg.addColorStop(1, soil[1]);
+    ctx.fillStyle = sg; ctx.fillRect(0, gy, W, Hh - gy);
+    ctx.fillStyle = winter ? "#f2f5f7" : s.biome === "sand" ? "#9c8a4c" : s.biome === "moor" ? "#7d8a3a" : "#5f8a3a"; ctx.fillRect(0, gy - 3, W, 6);
+    if (s.biome === "moor" || s.biome === "aue") { ctx.fillStyle = "rgba(111,155,184,.75)"; ctx.beginPath(); ctx.ellipse(W * .82, gy + 2, W * .14, 5, 0, 0, 7); ctx.fill(); }
+    if (s.biome === "moor" && !winter) for (let i = 0; i < 14; i++) { const x = rnd() * W; ctx.fillStyle = "#f4f2ea"; ctx.beginPath(); ctx.arc(x, gy - 6 - rnd() * 4, 2.2, 0, 7); ctx.fill(); }
+    if (s.biome === "sand" && !winter) for (let i = 0; i < 18; i++) { ctx.fillStyle = "#9b5b9a"; ctx.fillRect(rnd() * W, gy - 4 - rnd() * 3, 3, 3); }
+    // Wurzeln: DLA-Haufen, nach unten gespiegelt; Flachwurzler und Staunässe drücken ihn flach
+    const flat = Sp.flat || s.biome === "moor" ? .38 : s.sp === "stieleiche" ? 1 : .75;
+    const rootD = cluster("root:" + s.sp + (s.seed || 1), 1500, .9, (s.seed || 1) * 3 + 11), R = rootD.rmax || 1;
+    const nRoot = 40 + s.W * 182, sxR = W * .44 / R, syR = (Hh - gy) * .92 / R * flat;
+    const mapR = (x, y) => [cx + x * sxR, gy + 2 + Math.abs(y) * syR];
+    if (has(s, "myko")) { const m = cluster("myko" + (s.seed || 1), 1400, .25, (s.seed || 1) * 5 + 3), mr = m.rmax || 1;
+      drawCluster(ctx, m, 1400, (x, y) => [cx + x * W * .46 / mr, gy + 6 + Math.abs(y) * (Hh - gy) * .9 / mr], "rgba(245,240,225,.45)", .3); }
+    if (!lying) drawCluster(ctx, rootD, nRoot, mapR, alive ? "#a07a52" : "#7a6450", 1);
+    // Baum
+    const S = s.S, Hpx = gy * (.1 + .105 * (S - 1)) * (lying ? .8 : 1), g = BL.clamp(.1 + .9 * (S - 1) / 7, .06, 1);
+    const thin = alive ? BL.clamp((S + 1 - s.K) / 9, 0, .7) : 0;
+    const v = { cx, gy, Hpx, g, season, trunkPx: 2 + S * 1.7, cb: .14 + S * .02, dead: thin, leaves: alive, snag: !alive, dark: false, real: true, sunX: -.5 };
+    ctx.save();
+    if (s.kr && !lying) { ctx.translate(cx, gy); ctx.rotate(.13); ctx.translate(-cx, -gy); }
+    const res = lying ? drawLog(ctx, cx, gy, W, S, s.phase === "over") : BL.TreeGen.render(ctx, model(), v);
+    // Höhlen am Stamm
     const holes = s.holes + s.bigHoles + s.cards.filter(c => CARDS.find(x => x.id === c.id).slot === "hoehle").length;
-    const holeSvg = holes && s.phase !== "over" ? `<ellipse cx="${110 + bend * .4}" cy="${gy - H * .45}" rx="4" ry="6" fill="#1a120b"/>` : "";
-    return `<svg viewBox="0 0 220 260" style="width:100%;height:auto;display:block" role="img" aria-label="Dein Baum">
-      <rect y="${gy}" width="220" height="60" fill="${s.biome === "moor" ? "#4b3a22" : s.biome === "sand" ? "#d9c08a" : "var(--soil)"}" opacity="${s.biome === "sand" ? .6 : .35}"/>${s.biome === "moor" || s.biome === "aue" ? `<ellipse cx="172" cy="${gy + 4}" rx="34" ry="5" fill="#6f9bb8" opacity=".6"/>` : ""}${roots}${trunk}${crown}${holeSvg}
-      <text x="8" y="16" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--ink)">${s.age} Jahre · ${s.phase === "play" ? STAGES[stage()] : "Totholz"}</text></svg>`;
+    if (!lying) for (let i = 0; i < Math.min(3, holes); i++) { ctx.fillStyle = "#1a120b"; ctx.beginPath(); ctx.ellipse(cx + (i % 2 ? 2 : -2), gy - Hpx * (.3 + i * .12), 2.5 + S * .4, 3.5 + S * .5, 0, 0, 7); ctx.fill(); }
+    ctx.restore();
+    // Bewohner als Bildzeichen: Krone oben, Stamm am Stamm, Boden im Boden, Totholz am liegenden Holz
+    ctx.font = "16px system-ui, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    const half = Math.max(20, Math.min(W * .4, res.half || Hpx * .3));
+    s.cards.forEach((c, i) => {
+      const d = CARDS.find(x => x.id === c.id), r2 = BL.rng(i * 97 + 5);
+      const p = d.slot === "krone" ? [cx + (r2() * 2 - 1) * half * .8, gy - Hpx * (.6 + r2() * .35)]
+        : d.slot === "stamm" ? [cx + (i % 2 ? 9 : -9) + S, gy - Hpx * (.15 + r2() * .35)]
+        : d.slot === "hoehle" ? [cx + 14 + S, gy - Hpx * (.3 + r2() * .2)] : [cx + (r2() * 2 - 1) * W * .35, gy + 18 + r2() * (Hh - gy - 30)];
+      if (!alive && d.slot !== "wurzel") return;
+      ctx.fillText(d.e, p[0], p[1]);
+    });
+    s.dead.forEach((n, i) => { const d = DEAD.find(x => x.n === n); ctx.fillText(d.e, cx + 20 + i * 24, gy - 12 - (i % 2) * 10); });
+    if (has(s, "steinpilz")) { ctx.font = "18px system-ui, sans-serif"; ctx.fillText("🍄", cx - W * .3, gy - 8); }
+    // Schatten der Großen: dunkles Kronendach über dem jungen Baum
+    if (alive && Bi.canopy && S < 5 && !(s.gapRounds > 0 || (EV() || {}).gap)) {
+      const cg = ctx.createLinearGradient(0, 0, 0, gy * .5); cg.addColorStop(0, "rgba(28,52,30,.9)"); cg.addColorStop(1, "rgba(28,52,30,0)");
+      ctx.fillStyle = cg; ctx.fillRect(0, 0, W, gy * .5);
+      for (let i = 0; i < 7; i++) { ctx.fillStyle = "rgba(34,62,36,.85)"; ctx.beginPath(); ctx.ellipse(i * W / 6, 0, W * .14, gy * .12, 0, 0, 7); ctx.fill(); }
+    }
+    // Beschriftung
+    ctx.textAlign = "left"; ctx.font = "12px IBM Plex Mono, monospace"; ctx.fillStyle = "#fff"; ctx.shadowColor = "rgba(0,0,0,.7)"; ctx.shadowBlur = 3;
+    ctx.fillText(`${s.age} Jahre · ${alive ? STAGES[stage()] : "Totholz"}${s.kr ? " · Krüppelwuchs" : ""}`, 8, 14);
+    ctx.shadowBlur = 0;
   }
   function tableau() {
     const by = slot => s.cards.filter(c => CARDS.find(x => x.id === c.id).slot === slot).map(c => { const d = CARDS.find(x => x.id === c.id); return `<span class="gcard" title="${d.txt}">${d.e} ${d.n} <b>${d.pts}</b></span>`; }).join("");
@@ -316,7 +425,7 @@ BL.Game = (function () {
     return `<div class="tableau">
       <div class="slot" style="grid-area:k"><span class="label">Krone</span>${by("krone")}</div>
       <div class="slot" style="grid-area:s"><span class="label">Stamm</span>${by("stamm")}</div>
-      <div class="tree">${treeSVG()}</div>
+      <div class="tree"><canvas class="gtree" role="img" aria-label="Dein Baum mit Wurzeln und Bewohnern"></canvas></div>
       <div class="slot" style="grid-area:h"><span class="label">Höhlen · frei ${s.holes} klein, ${s.bigHoles} groß</span>${by("hoehle")}</div>
       <div class="slot" style="grid-area:w"><span class="label">${s.phase === "play" ? "Wurzel und Boden" : "Totholz"}</span>${s.phase === "play" ? by("wurzel") : by("wurzel") + deadCards}</div></div>`;
   }
@@ -361,6 +470,7 @@ BL.Game = (function () {
       side.append(BL.html(`<div class="market">${s.market.map(n => { const d = DEAD.find(x => x.n === n);
         return `<div class="mcard"><span class="em" aria-hidden="true">${d.e}</span><h4>${d.n}</h4><span class="meta">${d.pts + (d.bonus === s.sp ? 2 : 0)} Punkte${d.bonus === s.sp ? " (Bonus für deine Art)" : ""}</span><p class="note">${d.txt}</p><button class="btn primary" data-d="${n}">Einziehen lassen</button></div>`; }).join("")}</div>`));
     }
+    paintTree(BL.$(".gtree", wrap));
     wrap.addEventListener("click", e => {
       const a = e.target.closest("[data-a]"), h = e.target.closest("[data-h]"), d = e.target.closest("[data-d]");
       if (a) act(a.dataset.a); else if (h) host(h.dataset.h); else if (d) pickDead(d.dataset.d);
@@ -400,6 +510,7 @@ BL.Game = (function () {
       <div class="row"><button class="btn primary" id="gm-again">Nochmal als ${SPECIES[s.sp].name}</button><button class="btn" id="gm-other">Andere Baumart</button></div></div>
       <div class="panel prose"><h3>Was du gelernt hast</h3><p>Ein Baum muss ständig abwägen: Blätter bringen Zucker, kosten aber Wasser. Wurzeln bringen Wasser und Halt, aber kein Licht. Wer schnell in die Höhe wächst, entkommt dem Schatten, wird aber sturmanfälliger. Und nach dem Tod ist er noch Jahrzehnte lang Lebensraum und Nährstoffquelle für den Wald.</p></div>
       <div class="panel"><h3>Tagebuch</h3><ul class="glog">${s.log.map(l => `<li>${l}</li>`).join("")}</ul></div></div></div>`));
+    paintTree(BL.$(".gtree", root));
     BL.$("#gm-again", root).onclick = () => start(s.sp, s.biome || "buchenwald");
     BL.$("#gm-other", root).onclick = () => { s = null; save(); render(); };
   }

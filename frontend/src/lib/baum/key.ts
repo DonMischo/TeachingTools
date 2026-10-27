@@ -39,6 +39,16 @@ BL.Key = (function () {
   @media (max-width: 760px) { .quiz-card { grid-template-columns: minmax(0, 1fr) } }
   .quiz-card .q-vis { height: 320px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); padding: 14px; display: grid; place-items: center; overflow: hidden }
   .quiz-card .q-vis img { width: 100%; height: 100%; object-fit: cover; border-radius: 6px }
+  .zoomable { cursor: zoom-in }
+  .zoombox { padding: 0; border: 0; margin: 0; width: 100vw; height: 100vh; max-width: none; max-height: none; background: rgba(12, 14, 12, .94); color: #eee }
+  .zoombox::backdrop { background: rgba(0, 0, 0, .6) }
+  .zoombox .stage { position: absolute; inset: 0 0 52px 0; overflow: hidden; cursor: grab; touch-action: none }
+  .zoombox .stage:active { cursor: grabbing }
+  .zoombox .stage img { position: absolute; left: 0; top: 0; transform-origin: 0 0; max-width: none; user-select: none; -webkit-user-drag: none }
+  .zoombox .bar { position: absolute; left: 0; right: 0; bottom: 0; min-height: 52px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 6px 12px; background: rgba(0, 0, 0, .7); font-size: .8rem }
+  .zoombox .bar a { color: inherit }
+  .zoombox .bar .cap { flex: 1; min-width: 0; opacity: .85 }
+  .zoombox .bar .mono { min-width: 4em; text-align: center }
   `;
   const QUESTIONS = {
     typ: { q: "Hat der Baum Nadeln oder Blätter?", labels: { laub: "Blätter (Laubbaum)", nadel: "Nadeln (Nadelbaum)" } },
@@ -91,18 +101,60 @@ BL.Key = (function () {
     host.innerHTML = `<div class="panel tdetail">
       <div class="stack">
         <div class="row" style="justify-content:space-between"><div><h2>${t.de}</h2><i>${t.lat} · ${t.fam}</i></div><button class="btn" id="kclose">Schließen</button></div>
-        <figure><img src="${BL.img(t.id)}" alt="${t.de}"><figcaption>${BL.credit(t.id)}</figcaption></figure>
+        <figure><img class="zoomable" src="${BL.img(t.id)}" alt="${t.de}" title="Zum Vergrößern klicken" data-cap="photo"><figcaption>${BL.credit(t.id)}</figcaption></figure>
         <div class="row">${traits}</div>
       </div>
       <div class="stack">
-        ${BL.BLAETTER[t.id] ? `<figure><div class="tafel"><img src="${BL.BLAETTER[t.id].datei}" alt="Botanische Tafel ${t.de}" loading="lazy"></div><figcaption>${BL.blattCredit(t.id)}</figcaption></figure>`
+        ${BL.BLAETTER[t.id] ? `<figure><div class="tafel"><img class="zoomable" src="${BL.BLAETTER[t.id].datei}" alt="Botanische Tafel ${t.de}" title="Zum Vergrößern klicken" data-cap="tafel" loading="lazy"></div><figcaption>${BL.blattCredit(t.id)}</figcaption></figure>`
           : `<div class="schema">${BL.leafSVG(t.leaf, { label: "Blattschema " + t.de })}</div>`}
         <dl><dt>${t.typ === "nadel" ? "Nadeln" : "Blatt"}</dt><dd>${t.blatt}</dd><dt>Rinde</dt><dd>${t.rinde}</dd><dt>Frucht</dt><dd>${t.frucht}</dd>
           <dt>Größe</dt><dd>${t.hoehe}, wird ${t.alter} alt</dd><dt>Standort</dt><dd>${t.standort}</dd><dt>Wer lebt hier</dt><dd>${t.leben}</dd></dl>
         <p class="fakt">${t.fakt}</p>
       </div></div>`;
     BL.$("#kclose", host).onclick = () => { host.innerHTML = ""; };
+    host.onclick = e => { const im = e.target.closest("img.zoomable"); if (im) zoom(im.src, im.alt, im.dataset.cap === "tafel" ? BL.blattCredit(t.id) : BL.credit(t.id)); };
     host.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  // Großansicht mit Lupe: Mausrad oder zwei Finger zoomen um den Zeiger, Ziehen verschiebt, Doppelklick wechselt
+  // zwischen eingepasst und 2,5-fach. <dialog> liegt in der obersten Ebene, bleibt aber im .baumleben-Bereich (Stile).
+  function zoom(src, alt, cap) {
+    const dlg = BL.html(`<dialog class="zoombox" aria-label="${alt}"><div class="stage"><img src="${src}" alt="${alt}" draggable="false"></div>
+      <div class="bar"><button class="btn" data-z="-" aria-label="Verkleinern">−</button><span class="mono" id="zpct"></span><button class="btn" data-z="+" aria-label="Vergrößern">+</button>
+      <button class="btn" data-z="0">Einpassen</button><span class="cap">${cap || ""}</span><button class="btn primary" data-z="x">Schließen</button></div></dialog>`);
+    root.append(dlg);
+    const stage = BL.$(".stage", dlg), img = BL.$("img", dlg), pct = BL.$("#zpct", dlg);
+    let sc = 1, tx = 0, ty = 0, fit = 1;
+    const apply = () => { img.style.transform = `translate(${tx}px, ${ty}px) scale(${sc})`; pct.textContent = Math.round(sc / fit * 100) + " %"; };
+    const fitIn = () => {
+      const W = stage.clientWidth, H = stage.clientHeight; if (!img.naturalWidth) return;
+      fit = Math.min(W / img.naturalWidth, H / img.naturalHeight); sc = fit;
+      tx = (W - img.naturalWidth * sc) / 2; ty = (H - img.naturalHeight * sc) / 2; apply();
+    };
+    const zoomAt = (f, px, py) => { const ns = BL.clamp(sc * f, fit, fit * 8); tx = px - (px - tx) * ns / sc; ty = py - (py - ty) * ns / sc; sc = ns; apply(); };
+    const mid = () => [stage.clientWidth / 2, stage.clientHeight / 2];
+    img.onload = fitIn; dlg.showModal(); if (img.complete) fitIn();
+    stage.addEventListener("wheel", e => { e.preventDefault(); const r = stage.getBoundingClientRect(); zoomAt(e.deltaY < 0 ? 1.2 : 1 / 1.2, e.clientX - r.left, e.clientY - r.top); }, { passive: false });
+    stage.addEventListener("dblclick", e => { const r = stage.getBoundingClientRect(); zoomAt(sc > fit * 1.5 ? fit / sc : 2.5, e.clientX - r.left, e.clientY - r.top); });
+    // Zeiger: einer verschiebt, zwei zoomen um ihre Mitte
+    const pts = new Map(); let last = null;
+    const pinch = () => { const [a, b] = [...pts.values()]; return { d: Math.hypot(a.x - b.x, a.y - b.y), x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; };
+    stage.addEventListener("pointerdown", e => { stage.setPointerCapture(e.pointerId); pts.set(e.pointerId, { x: e.clientX, y: e.clientY }); last = pts.size === 2 ? pinch() : null; });
+    stage.addEventListener("pointermove", e => {
+      if (!pts.has(e.pointerId)) return;
+      const p = pts.get(e.pointerId), dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY;
+      if (pts.size === 1) { tx += dx; ty += dy; apply(); }
+      else if (pts.size === 2 && last) { const n = pinch(), r = stage.getBoundingClientRect(); zoomAt(n.d / last.d, n.x - r.left, n.y - r.top); tx += n.x - last.x; ty += n.y - last.y; apply(); last = n; }
+    });
+    const up = e => { pts.delete(e.pointerId); last = pts.size === 2 ? pinch() : null; };
+    stage.addEventListener("pointerup", up); stage.addEventListener("pointercancel", up);
+    dlg.addEventListener("click", e => {
+      const z = e.target.closest("[data-z]")?.dataset.z; if (!z) return;
+      if (z === "x") dlg.close(); else if (z === "0") fitIn(); else zoomAt(z === "+" ? 1.4 : 1 / 1.4, ...mid());
+    });
+    dlg.addEventListener("keydown", e => { if (e.key === "+" || e.key === "=") zoomAt(1.4, ...mid()); else if (e.key === "-") zoomAt(1 / 1.4, ...mid()); else if (e.key === "0") fitIn(); });
+    const onResize = () => fitIn(); window.addEventListener("resize", onResize);
+    dlg.addEventListener("close", () => { window.removeEventListener("resize", onResize); dlg.remove(); });
   }
 
   // Bestimmungsschlüssel: fragt nur Merkmale ab, die die verbleibenden Arten noch unterscheiden
@@ -160,7 +212,7 @@ BL.Key = (function () {
     const t = quiz.items[quiz.i];
     const pool = BL.shuffle(BL.TREES.filter(x => x.id !== t.id && x.typ === t.typ)).slice(0, 3);
     const opts = BL.shuffle([t, ...pool]);
-    const vis = quiz.kind === "blatt" ? BL.leafSVG(t.leaf) : `<img src="${BL.img(t.id)}" alt="Gesuchter Baum">`;
+    const vis = quiz.kind === "blatt" ? BL.leafSVG(t.leaf) : `<img class="zoomable" src="${BL.img(t.id)}" alt="Gesuchter Baum" title="Zum Vergrößern klicken">`;
     const node = BL.html(`<div class="stack">
       <div class="row" style="justify-content:space-between"><div class="seg">${["blatt", "foto"].map(k => `<button data-k="${k}" aria-pressed="${quiz.kind === k}">${k === "blatt" ? "Blätter erkennen" : "Fotos erkennen"}</button>`).join("")}</div>
         <span class="mono">Frage ${quiz.i + 1}/10 · ${quiz.score} richtig · Rekord ${best}</span></div>
@@ -169,6 +221,7 @@ BL.Key = (function () {
     node.addEventListener("click", e => {
       const k = e.target.closest("[data-k]");
       if (k) { newQuiz(k.dataset.k); render(); return; }
+      if (e.target.closest("img.zoomable")) { zoom(BL.img(t.id), "Gesuchter Baum", quiz.answered ? BL.credit(t.id) : "Bildnachweis nach der Antwort"); return; }
       const b = e.target.closest(".answers button"); if (!b || quiz.answered) return;
       quiz.answered = true;
       const ok = b.dataset.id === t.id; if (ok) quiz.score++;

@@ -16,6 +16,8 @@ BL.TreeGen = (function () {
       col: { spring: ["#b3cf6a", "#cddf86"], summer: ["#35612a", "#5f8a3a"], autumn: ["#7d6527", "#a88a3a", "#6b4f22"] }, bark: "#5e4a38", fruit: "#8a6a2a" },
     birke: { kind: "sca", env: { cb: .14, wMax: .26, yMax: .42, pTop: 1.3, pBot: 2 }, n: 420, jitter: .16, trop: .22, weep: true, leaf: { a: .75, len: .65, phyl: "spiral" },
       col: { spring: ["#b9e07a", "#d3ec92"], summer: ["#4f8f39", "#7db552"], autumn: ["#d9b52e", "#f0d455", "#c79a28"] }, bark: "#ececE6", fruit: "#7a6a4a" },
+    schwarzerle: { kind: "sca", env: { cb: .16, wMax: .3, yMax: .38, pTop: 1.2, pBot: 1.6 }, n: 480, jitter: .12, trop: .1, leaf: { a: .6, len: .75, phyl: "spiral" },
+      col: { spring: ["#7fae55", "#9cc46b"], summer: ["#244f22", "#3d6b30"], autumn: ["#3d5a2a", "#55622f", "#5a4a2a"] }, bark: "#4e4a46", fruit: "#3a2c22" },
     fichte: { kind: "whorl", whorls: 64, angle: 1.25, droop: .55, lenCap: .2, twig: "hang", needle: ["#1f4426", "#2f5e35"], bark: "#7a5a44" },
     waldkiefer: { kind: "whorl", whorls: 46, angle: 1.05, droop: .1, lenCap: .17, twig: "tuft", pine: true, needle: ["#3d6b44", "#5d8a5a"], bark: "#b06a3e", barkLow: "#6e5a4a" }
   };

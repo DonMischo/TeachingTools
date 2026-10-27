@@ -10,6 +10,7 @@ BL.Photo = (function () {
   .ph-svg .t-s { font-size: 11px } .ph-svg .t-m { font-size: 13px } .ph-svg .mono { font-family: var(--mono) }
   .ph-svg [data-part] { cursor: pointer } .ph-svg [data-part]:hover { filter: brightness(1.15) }
   .ph-svg .sel { stroke: var(--phloem) !important; stroke-width: 3 !important }
+  .ph-svg [data-part="ic"].sel { fill: #bfe0f0 }
   .lr-steps { display: flex; gap: 4px; flex-wrap: wrap }
   .lr-steps button { width: 2.2em; height: 2.2em; border-radius: 50%; border: 1px solid var(--line); background: var(--panel); cursor: pointer; font-family: var(--mono) }
   .lr-steps button[aria-current="true"] { background: var(--accent); color: var(--accent-text); border-color: var(--accent) }
@@ -41,7 +42,7 @@ BL.Photo = (function () {
     lb: ["Leitbündel", "Blattader mit Xylem (oben, Wasser hinein) und Phloem (unten, Zucker hinaus)."],
     uep: ["Untere Epidermis", "Enthält die meisten Spaltöffnungen."],
     sz: ["Schließzellen", "Die einzigen Epidermiszellen mit Chloroplasten. Regulieren die Öffnung des Spalts."],
-    ic: ["Interzellulare", "Luftgefüllte Hohlräume. CO₂ diffundiert hier von der Spaltöffnung zu den Zellen."],
+    ic: ["Interzellulare und Atemhöhle", "Luftgefüllte Hohlräume zwischen den Zellen, vor allem im Schwammgewebe. Durch die Spaltöffnung gelangt CO₂ in die Atemhöhle direkt darüber und diffundiert durch die Interzellularen bis zu den Palisadenzellen. Dort löst es sich im Wasserfilm der Zellwand und wandert in die Zelle. O₂ aus der Fotosynthese und Wasserdampf nehmen den umgekehrten Weg nach draußen."],
     am: ["Äußere und innere Hüllmembran", "Doppelmembran um den Chloroplasten. Nach der Endosymbiontentheorie stammen Chloroplasten von Cyanobakterien ab, die eine Urzelle aufgenommen hat."],
     st: ["Stroma", "Flüssiger Innenraum. Hier läuft der Calvin-Zyklus ab, hier liegen Enzyme wie RuBisCO, ringförmige DNA und 70S-Ribosomen."],
     gr: ["Granum", "Stapel aus Thylakoiden, wie Geldmünzen. In der Thylakoidmembran sitzen die Fotosysteme: Hier laufen die lichtabhängigen Reaktionen."],
@@ -54,13 +55,24 @@ BL.Photo = (function () {
       <rect data-part="kut" x="10" y="14" width="500" height="8" fill="#e8e0a8" stroke="#bfb36a"/>
       ${Array.from({ length: 12 }, (_, i) => `<rect data-part="oep" x="${10 + i * 41.6}" y="22" width="41.6" height="26" fill="#eef4dc" stroke="#a9b98a"/>`).join("")}
       ${Array.from({ length: 18 }, (_, i) => `<rect data-part="pal" x="${12 + i * 27.6}" y="50" width="24" height="84" rx="8" fill="#a6cf7d" stroke="#5f8f3f"/>${Array.from({ length: 5 }, (_, j) => `<ellipse cx="${18 + i * 27.6 + (j % 2) * 10}" cy="${62 + j * 15}" rx="4" ry="3" fill="#3f7f2a" pointer-events="none"/>`).join("")}`).join("")}
-      <rect data-part="ic" x="10" y="136" width="500" height="104" fill="#f4f8ee"/>
-      ${[[40, 160], [95, 190], [150, 165], [330, 170], [390, 200], [450, 165], [480, 210], [60, 215], [250, 220], [300, 210]].map(([x, y]) => `<ellipse data-part="sch" cx="${x}" cy="${y}" rx="26" ry="18" fill="#c3e09f" stroke="#6f9f4f"/>`).join("")}
+      <rect data-part="ic" x="10" y="136" width="500" height="104" fill="#e4eff3"/>
+      ${[[40, 160], [95, 190], [150, 165], [330, 170], [390, 200], [450, 165], [480, 210], [60, 215], [250, 220], [282, 212]].map(([x, y]) => `<ellipse data-part="sch" cx="${x}" cy="${y}" rx="26" ry="18" fill="#c3e09f" stroke="#6f9f4f"/>`).join("")}
       <g data-part="lb"><ellipse cx="200" cy="185" rx="42" ry="34" fill="#e7dcc0" stroke="#9a8a5a"/><circle cx="190" cy="174" r="8" fill="#9cc3e8" stroke="#2a68a8"/><circle cx="208" cy="172" r="7" fill="#9cc3e8" stroke="#2a68a8"/><circle cx="198" cy="200" r="7" fill="#f0cf86" stroke="#b9790b"/><circle cx="214" cy="198" r="6" fill="#f0cf86" stroke="#b9790b"/></g>
       ${Array.from({ length: 12 }, (_, i) => i === 7 ? "" : `<rect data-part="uep" x="${10 + i * 41.6}" y="242" width="41.6" height="24" fill="#eef4dc" stroke="#a9b98a"/>`).join("")}
       <g data-part="sz"><ellipse cx="312" cy="254" rx="11" ry="12" fill="#86b85c" stroke="#3f7f2a"/><ellipse cx="342" cy="254" rx="11" ry="12" fill="#86b85c" stroke="#3f7f2a"/></g>
-      <path d="M327 290V250" stroke="var(--gas)" stroke-width="2" marker-end="url(#ar)"/><defs><marker id="ar" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--gas)"/></marker></defs>
-      <text x="335" y="292" class="t-s mono" style="fill:var(--gas)">CO₂</text>
+      <path d="M324 292V250" stroke="var(--gas)" stroke-width="2" marker-end="url(#ar)"/><path d="M331 248V290" stroke="#2a68a8" stroke-width="2" marker-end="url(#ar2)"/>
+      <defs><marker id="ar" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--gas)"/></marker>
+        <marker id="ar2" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#2a68a8"/></marker></defs>
+      <text x="290" y="296" class="t-s mono" style="fill:var(--gas)" text-anchor="end">CO₂ hinein</text><text x="356" y="296" class="t-s mono" style="fill:#2a68a8">O₂, H₂O hinaus</text>
+      <text x="345" y="234" class="t-s" style="fill:var(--muted)" pointer-events="none">Atemhöhle</text>
+      ${(() => {
+        // Diffusionswege durch die Interzellularen: CO₂ hinauf zu den Palisadenzellen, O₂ und Wasserdampf hinab zur Spaltöffnung
+        const up = ["M325 248C322 222 296 205 288 186S283 150 286 138", "M327 248C333 228 357 214 360 194S360 156 362 138"];
+        const down = "M346 138C352 160 360 180 358 196S338 222 331 248";
+        const dot = (d, col, i, dur) => `<circle r="2.6" fill="${col}" pointer-events="none"><animateMotion dur="${dur}s" begin="${-i * dur / 3}s" repeatCount="indefinite" path="${d}"/></circle>`;
+        return up.map(d => `<path d="${d}" fill="none" stroke="var(--gas)" stroke-width="1.4" stroke-dasharray="3 4" opacity=".7" pointer-events="none"/>${[0, 1, 2].map(i => dot(d, "var(--gas)", i, 4.5)).join("")}`).join("")
+          + `<path d="${down}" fill="none" stroke="#2a68a8" stroke-width="1.4" stroke-dasharray="3 4" opacity=".7" pointer-events="none"/>${[0, 1, 2].map(i => dot(down, "#2a68a8", i, 4)).join("")}`;
+      })()}
       <text x="16" y="296" class="t-s" style="fill:var(--muted)">Klicke auf ein Gewebe</text></svg>`;
     const chl = `<svg class="ph-svg" viewBox="0 0 520 300" role="img" aria-label="Chloroplast">
       <ellipse data-part="am" cx="260" cy="150" rx="245" ry="130" fill="#d9ead0" stroke="#3f7f2a" stroke-width="3"/>
@@ -184,13 +196,12 @@ BL.Photo = (function () {
     body.append(BL.html(`<div class="stack">
       <div class="panel stack"><div class="row" style="justify-content:space-between"><div class="lr-steps" id="lr-steps">${LR.map((_, i) => `<button data-i="${i}" aria-label="Schritt ${i + 1}">${i + 1}</button>`).join("")}</div>
         <div class="row"><button class="btn" id="lr-prev">Zurück</button><button class="btn primary" id="lr-next">Weiter</button></div></div>
-        <svg class="ph-svg" viewBox="0 0 640 300" id="lr-svg" role="img" aria-label="Thylakoidmembran"></svg></div>
-      <div class="bench"><div class="panel prose" id="lr-txt"></div>
+        <div class="bench"><svg class="ph-svg" viewBox="0 0 660 300" id="lr-svg" role="img" aria-label="Thylakoidmembran"></svg><div class="prose" id="lr-txt"></div></div></div>
+      <div class="bench"><div class="panel prose"><h3>Bilanz der lichtabhängigen Reaktionen</h3><div class="eq">2 H₂O + 2 NADP⁺ + 3 ADP + 3 Pᵢ → O₂ + 2 NADPH + 2 H⁺ + 3 ATP</div>
+        <p class="note">Ungefähre Stöchiometrie je 4 Elektronen bzw. 8 absorbierte Photonen. Der Calvin-Zyklus braucht ATP und NADPH im Verhältnis 3 : 2. Fehlt ATP, schaltet die Pflanze auf zyklischen Elektronentransport um PS I.</p></div>
         <div class="panel stack"><h3>Z-Schema</h3><svg class="ph-svg" viewBox="0 0 400 260" id="lr-z" role="img" aria-label="Z-Schema der Redoxpotentiale"></svg>
           <p class="note">Elektronen fließen von selbst nur zum positiveren Redoxpotential (nach unten). Zweimal hebt Licht sie nach oben.</p>
-          <label><input type="checkbox" id="lr-cyc"> zyklischer Elektronentransport (nur ATP, kein NADPH)</label></div></div>
-      <div class="panel prose"><h3>Bilanz der lichtabhängigen Reaktionen</h3><div class="eq">2 H₂O + 2 NADP⁺ + 3 ADP + 3 Pᵢ → O₂ + 2 NADPH + 2 H⁺ + 3 ATP</div>
-        <p class="note">Ungefähre Stöchiometrie je 4 Elektronen bzw. 8 absorbierte Photonen. Der Calvin-Zyklus braucht ATP und NADPH im Verhältnis 3 : 2. Fehlt ATP, schaltet die Pflanze auf zyklischen Elektronentransport um PS I.</p></div></div>`));
+          <label><input type="checkbox" id="lr-cyc"> zyklischer Elektronentransport (nur ATP, kein NADPH)</label></div></div></div>`));
     BL.$("#lr-steps").onclick = e => { const b = e.target.closest("[data-i]"); if (b) { lrStep = +b.dataset.i; updLR(); } };
     BL.$("#lr-prev").onclick = () => { lrStep = Math.max(0, lrStep - 1); updLR(); };
     BL.$("#lr-next").onclick = () => { lrStep = (lrStep + 1) % LR.length; updLR(); };
@@ -202,33 +213,40 @@ BL.Photo = (function () {
     BL.$$("#lr-steps button").forEach((b, i) => b.setAttribute("aria-current", i === lrStep));
     BL.$("#lr-txt").innerHTML = `<p class="label">Schritt ${lrStep + 1} von ${LR.length}</p><h3>${s.t}</h3><p>${s.d}</p><div class="eq">${s.eq}</div>`;
     const on = (i) => i <= lrStep;
-    const cx = { ps2: 118, pq: 190, b6f: 260, pc: 300, ps1: 370, fd: 430, fnr: 470, atp: 560 };
-    const membrane = `<rect x="20" y="120" width="600" height="60" fill="#e6dfa8" opacity=".7"/><text x="26" y="112" class="t-s" style="fill:var(--muted)">Stroma (pH ≈ 8)</text><text x="26" y="204" class="t-s" style="fill:var(--muted)">Thylakoidlumen (pH ≈ 5)</text>`;
-    const cplx = (x, w, h, col, label, hl) => `<rect x="${x - w / 2}" y="${150 - h / 2}" width="${w}" height="${h}" rx="12" fill="${col}" stroke="${hl ? "var(--phloem)" : "#2f3a2a"}" stroke-width="${hl ? 3 : 1}"/><text x="${x}" y="154" class="t-s" text-anchor="middle" style="fill:#14200f;font-weight:700">${label}</text>`;
+    // Raster: Membran y 130–190, Stroma oben, Lumen unten; jede Beschriftung hat einen eigenen freien Platz
+    const cx = { ps2: 150, pq: 225, b6f: 300, pc: 365, ps1: 430, fd: 482, fnr: 535, atp: 612 }, my = 160;
     const hl = { 0: "ps2", 1: "ps2", 2: "ps2", 3: "b6f", 4: "pc", 5: "ps1", 6: "fnr", 7: "atp" }[lrStep];
-    const nH = [0, 0, 4, 8, 8, 8, 8, 8][lrStep];
-    const protons = Array.from({ length: nH + (lrStep === 7 ? 0 : 0) }, (_, i) => `<text x="${190 + (i * 47) % 330}" y="${232 + (i % 3) * 16}" class="t-s mono" style="fill:var(--warn)">H⁺</text>`).join("");
-    let sv = membrane +
-      cplx(cx.ps2, 74, 92, "#8fc46a", "PS II", hl === "ps2") + cplx(cx.b6f, 60, 80, "#d6a45a", "Cyt b6f", hl === "b6f") +
-      cplx(cx.ps1, 74, 92, "#8fc46a", "PS I", hl === "ps1") +
-      `<ellipse cx="${cx.pq}" cy="150" rx="16" ry="10" fill="#f4e27a" stroke="#2f3a2a"/><text x="${cx.pq}" y="154" class="t-s" text-anchor="middle" style="fill:#14200f">PQ</text>` +
-      `<ellipse cx="${cx.pc}" cy="206" rx="15" ry="10" fill="#7ab3e0" stroke="${hl === "pc" ? "var(--phloem)" : "#2f3a2a"}" stroke-width="${hl === "pc" ? 3 : 1}"/><text x="${cx.pc}" y="210" class="t-s" text-anchor="middle" style="fill:#14200f">PC</text>` +
-      `<ellipse cx="${cx.fd}" cy="98" rx="15" ry="10" fill="#c78a5a" stroke="#2f3a2a"/><text x="${cx.fd}" y="102" class="t-s" text-anchor="middle" style="fill:#14200f">Fd</text>` +
-      `<rect x="${cx.fnr - 22}" y="84" width="44" height="26" rx="8" fill="#b5a0d8" stroke="${hl === "fnr" ? "var(--phloem)" : "#2f3a2a"}" stroke-width="${hl === "fnr" ? 3 : 1}"/><text x="${cx.fnr}" y="101" class="t-s" text-anchor="middle" style="fill:#14200f">FNR</text>` +
-      `<rect x="${cx.atp - 18}" y="120" width="36" height="62" rx="6" fill="#c9c9c9" stroke="${hl === "atp" ? "var(--phloem)" : "#2f3a2a"}" stroke-width="${hl === "atp" ? 3 : 1}"/><circle cx="${cx.atp}" cy="92" r="28" fill="#dedede" stroke="${hl === "atp" ? "var(--phloem)" : "#2f3a2a"}" stroke-width="${hl === "atp" ? 3 : 1}"/><text x="${cx.atp}" y="96" class="t-s" text-anchor="middle" style="fill:#14200f">ATP-</text><text x="${cx.atp}" y="108" class="t-s" text-anchor="middle" style="fill:#14200f">Synthase</text>`;
+    const st = k => hl === k ? `stroke="var(--phloem)" stroke-width="3"` : `stroke="#2f3a2a" stroke-width="1"`;
+    const lab = (x, y, t, extra = "") => `<text x="${x}" y="${y}" class="t-s" text-anchor="middle" style="fill:#14200f;font-weight:600" ${extra}>${t}</text>`;
+    const cplx = (k, w, h, col, label) => `<rect x="${cx[k] - w / 2}" y="${my - h / 2}" width="${w}" height="${h}" rx="12" fill="${col}" ${st(k)}/>${lab(cx[k], my + 4, label)}`;
+    let sv = `<defs><marker id="lr-e" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--xylem)"/></marker>
+      <marker id="lr-h" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--warn)"/></marker></defs>
+      <rect x="10" y="130" width="640" height="60" fill="#e6dfa8" opacity=".7"/>
+      <text x="12" y="122" class="t-s" style="fill:var(--muted)">Stroma (pH ≈ 8)</text><text x="12" y="208" class="t-s" style="fill:var(--muted)">Lumen (pH ≈ 5)</text>`;
     // Licht
-    if (on(0)) sv += `<path d="M80 20L104 96" stroke="#e5b800" stroke-width="3" stroke-dasharray="6 4"/><text x="60" y="18" class="t-s" style="fill:#c99a00">Licht</text>`;
-    if (on(5)) sv += `<path d="M340 20L362 96" stroke="#e5b800" stroke-width="3" stroke-dasharray="6 4"/><text x="320" y="18" class="t-s" style="fill:#c99a00">Licht</text>`;
-    // Elektronenweg
-    const path = [[cx.ps2, 150], [cx.pq, 150], [cx.b6f, 150], [cx.pc, 206], [cx.ps1, 150], [cx.fd, 98], [cx.fnr, 97]];
-    const upto = [1, 2, 2, 3, 4, 5, 7, 7][lrStep];
-    let pd = "M" + path.slice(0, upto + 1).map(p => p.join(" ")).join("L");
-    if (lrStep >= 1) sv += `<path d="${pd}" stroke="var(--xylem)" stroke-width="2.5" fill="none" stroke-dasharray="5 3"/>`;
-    if (cyclic && lrStep >= 5) sv += `<path d="M${cx.fd} 108C${cx.fd - 40} 130 ${cx.pq + 40} 130 ${cx.pq} 142" stroke="var(--nutri)" stroke-width="2.5" fill="none" stroke-dasharray="4 3"/><text x="300" y="132" class="t-s" style="fill:var(--nutri)">zyklisch</text>`;
-    if (on(2)) sv += `<text x="${cx.ps2 - 50}" y="276" class="t-s mono">2 H₂O → O₂ + 4 H⁺</text><path d="M${cx.ps2} 196V260" stroke="var(--gas)" stroke-width="1.5"/>`;
-    if (on(6) && !cyclic) sv += `<text x="${cx.fnr + 4}" y="62" class="t-s mono">NADP⁺ + H⁺ → NADPH</text>`;
-    if (on(7)) sv += `<path d="M${cx.atp} 236V128" stroke="var(--warn)" stroke-width="2.5"/><text x="${cx.atp + 30}" y="70" class="t-s mono">ADP + Pᵢ → ATP</text>`;
-    sv += protons;
+    if (on(0)) sv += `<path d="M118 26L140 106" stroke="#e5b800" stroke-width="3" stroke-dasharray="6 4"/><text x="104" y="20" class="t-s" style="fill:#c99a00">Licht</text>`;
+    if (on(5)) sv += `<path d="M398 26L420 106" stroke="#e5b800" stroke-width="3" stroke-dasharray="6 4"/><text x="384" y="20" class="t-s" style="fill:#c99a00">Licht</text>`;
+    // Elektronenweg (unter den Komplexen, damit er keine Beschriftung durchstreicht)
+    const path = [[cx.ps2, my], [cx.pq, my], [cx.b6f, my], [cx.pc, 226], [cx.ps1, my], [cx.fd, 100], [cx.fnr, 100]];
+    const upto = [1, 2, 2, 3, 4, 5, 6, 6][lrStep];
+    if (lrStep >= 1) sv += `<path d="M${path.slice(0, upto + 1).map(p => p.join(" ")).join("L")}" stroke="var(--xylem)" stroke-width="2.5" fill="none" stroke-dasharray="5 3"/>`;
+    if (cyclic && lrStep >= 5) sv += `<path d="M${cx.fd} 90C440 44 270 44 ${cx.pq} 150" stroke="var(--nutri)" stroke-width="2.5" fill="none" stroke-dasharray="4 3"/><text x="330" y="52" class="t-s" text-anchor="middle" style="fill:var(--nutri)">zyklisch</text>`;
+    // Protonenstrom durch die ATP-Synthase
+    if (on(7)) sv += `<path d="M${cx.atp} 290V196" stroke="var(--warn)" stroke-width="2.5" marker-end="url(#lr-h)"/><text x="${cx.atp + 10}" y="282" class="t-s mono" style="fill:var(--warn)">H⁺</text>`;
+    // Komplexe
+    sv += cplx("ps2", 70, 96, "#8fc46a", "PS II") + cplx("b6f", 58, 80, "#d6a45a", "Cyt b6f") + cplx("ps1", 70, 96, "#8fc46a", "PS I")
+      + `<ellipse cx="${cx.pq}" cy="${my}" rx="17" ry="11" fill="#f4e27a" stroke="#2f3a2a"/>${lab(cx.pq, my + 4, "PQ")}`
+      + `<ellipse cx="${cx.pc}" cy="226" rx="17" ry="11" fill="#7ab3e0" ${st("pc")}/>${lab(cx.pc, 230, "PC")}`
+      + `<ellipse cx="${cx.fd}" cy="100" rx="17" ry="11" fill="#c78a5a" stroke="#2f3a2a"/>${lab(cx.fd, 104, "Fd")}`
+      + `<rect x="${cx.fnr - 23}" y="87" width="46" height="26" rx="8" fill="#b5a0d8" ${st("fnr")}/>${lab(cx.fnr, 104, "FNR")}`
+      + `<rect x="${cx.atp - 15}" y="130" width="30" height="62" rx="6" fill="#c9c9c9" ${st("atp")}/><circle cx="${cx.atp}" cy="100" r="27" fill="#dedede" ${st("atp")}/>${lab(cx.atp, 98, "ATP-")}${lab(cx.atp, 110, "Synthase")}`;
+    // Reaktionen, jede an ihrem Ort
+    if (on(2)) sv += `<path d="M${cx.ps2} 210V250" stroke="var(--gas)" stroke-width="1.5"/><text x="${cx.ps2}" y="266" class="t-s mono" text-anchor="middle">2 H₂O → O₂ + 4 H⁺</text>`;
+    if (on(6) && !cyclic) sv += `<text x="${cx.fnr - 30}" y="66" class="t-s mono" text-anchor="middle">NADP⁺ + H⁺ → NADPH</text>`;
+    if (on(7)) sv += `<text x="650" y="36" class="t-s mono" text-anchor="end">ADP + Pᵢ → ATP</text>`;
+    // Protonen sammeln sich im Lumen, in zwei ordentlichen Reihen
+    const nH = [0, 0, 4, 8, 8, 8, 8, 8][lrStep];
+    sv += Array.from({ length: nH }, (_, i) => `<text x="${250 + (i % 4) * 70 + (i >= 4 ? 35 : 0)}" y="${i < 4 ? 262 : 284}" class="t-s mono" style="fill:var(--warn)">H⁺</text>`).join("");
     BL.$("#lr-svg").innerHTML = sv;
     // Z-Schema
     const zx = i => 30 + i * 38, zy = v => 30 + (v + 1.4) / 2.7 * 200;
