@@ -225,7 +225,8 @@ BL.Game = (function () {
   .mcard .em { font-size: 1.3rem; line-height: 1 }
   .mcard h4 { margin: 0; font-family: var(--display); font-weight: 400; font-size: .95rem }
   .mcard .meta { font-family: var(--mono); font-size: .68rem; color: var(--muted) }
-  .mcard { cursor: help }
+  .mcard .txt { font-size: .74rem; margin: 0; line-height: 1.35 }
+  .mcard h4 { hyphens: auto; overflow-wrap: anywhere }
   .mcard .top { display: flex; gap: 6px; align-items: center }
   .ev { border: 2px solid var(--phloem); border-radius: 12px; padding: 8px 10px; background: var(--panel); display: grid; gap: 4px }
   .ev h3 { margin: 0; font-size: 1.05rem }
@@ -610,7 +611,7 @@ BL.Game = (function () {
       }).join("")}</div>${later ? `<p class="note">${later}</p>` : ""}</div>`));
       side.append(BL.html(`<div class="panel stack"><h3>Wer möchte einziehen?</h3><p class="note" style="margin:0">🤝 = bildet mit einer Art bei dir eine Gemeinschaft (Extrapunkte).</p><p class="note">${s.hosted ? "Diese Runde ist schon jemand eingezogen." : s.market.length ? "Eine dieser Arten darf diese Runde einziehen." : "Gerade findet keine Art bei dir Platz. Wachse oder bilde Samen, dann kommen neue."}</p>
         <div class="market">${s.market.map(id => { const c = CARDS.find(x => x.id === id), ok = !s.hosted && c.req(s);
-          return `<div class="mcard" title="${c.txt}"><div class="top"><span class="em" aria-hidden="true">${c.e}</span><h4>${c.n}</h4></div><span class="meta">${SLOTS[c.slot]} · ${c.pts} P${c.eff !== "–" ? " · " + c.eff : ""}</span>${synWith(id).map(g => `<span class="syn ${g.pts < 0 ? "neg" : ""}" title="${g.txt}">${g.pts < 0 ? "⚔️" : "🤝"} ${g.pts > 0 ? "+" + g.pts : "−" + -g.pts} mit ${g.a.filter(x => x !== id).map(nameOf).join(", ")}</span>`).join("")}<button class="btn ${ok ? "primary" : ""}" data-h="${id}" ${ok ? "" : "disabled"}>Einziehen</button></div>`; }).join("")}</div></div>`));
+          return `<div class="mcard"><div class="top"><span class="em" aria-hidden="true">${c.e}</span><h4>${c.n}</h4></div><span class="meta">${SLOTS[c.slot]} · ${c.pts} P${c.eff !== "–" ? " · " + c.eff : ""}</span>${synWith(id).map(g => `<span class="syn ${g.pts < 0 ? "neg" : ""}" title="${g.txt}">${g.pts < 0 ? "⚔️" : "🤝"} ${g.pts > 0 ? "+" + g.pts : "−" + -g.pts} mit ${g.a.filter(x => x !== id).map(nameOf).join(", ")}</span>`).join("")}<p class="note txt">${c.txt}</p><button class="btn ${ok ? "primary" : ""}" data-h="${id}" ${ok ? "" : "disabled"}>Einziehen</button></div>`; }).join("")}</div></div>`));
       // Rundenknöpfe in die Kopfzeile, damit sie ohne Scrollen erreichbar sind
       const bar = BL.$(".gm-head .row", root);
       bar.prepend(BL.html(`<button class="btn" id="gm-restart">Neues Spiel</button>`));
