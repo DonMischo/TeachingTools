@@ -213,6 +213,19 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
     ],
   },
+  prozent: {
+    title: "Prozent- und Zinsrechnung",
+    intro: "Prozent- und Zinsrechnung zum Ansehen, Nachrechnen und Üben — sechs Blätter.",
+    sections: [
+      { label: "👀 Anschauen", text: "Ein Prozentsatz (Regler bis 200 % oder genau eingetippt) und ein Grundwert, vier Bilder: Kreis mit Viertel-Linien, Prozentstreifen (oben %, unten der Wert — was übereinander steht, gehört zusammen), Hunderterfeld (ein Kästchen = 1 %) und gezählte Dinge (bis 60). Darunter dieselbe Zahl als Bruch, gekürzt, und als Dezimalzahl. Über 100 % kommt ein zweiter Kreis bzw. ein zweites Feld dazu." },
+      { label: "🔢 Dreisatz", text: "Wählen, was gesucht ist — Prozentwert W, Grundwert G oder Prozentsatz p —, die beiden anderen eintippen. »▶ Nächster Schritt« deckt den Dreisatz Zeile für Zeile auf, immer über 1 (1 % bzw. 1 Einheit), links und rechts mit derselben Rechnung. Daneben derselbe Weg als Formel und mit der Dezimalzahl, darunter der Prozentstreifen; das Gesuchte ist rot." },
+      { label: "💡 Denkwege & Tipps", text: "Karten mit Merkprozenten (50 % = :2, 25 % = :4, 10 % = :10 …), Zerlegen (35 % = 25 % + 10 %, 99 % = 100 % − 1 %), erst 1 % dann alles, Umdrehen (8 % von 50 = 50 % von 8), woran man den Grundwert erkennt, Wachstumsfaktor, Fallen (+20 % und −20 %, Prozent oder Prozentpunkte), Überschlagen, Zinsen als Prozente mit Zeit und die 72er-Regel. Alle Beispiele rechnen mit der oben eingestellten Zahl; 🎲 würfelt eine neue." },
+      { label: "🏦 Zinsen", text: "»Zinsen für eine Zeit«: Kapital, Zinssatz und Dauer in Jahren, Monaten oder Tagen — Jahreszinsen, dann der Teil pro Monat (: 12) oder Tag (: 360, kaufmännisch), dann mal die Dauer. »Zinseszins«: Säulen Jahr für Jahr, getrennt in Startkapital, Zinsen aufs Startkapital und Zinsen auf Zinsen, mit Linie beim doppelten Kapital, Formel K₀ · qⁿ, Vergleich ohne Zinseszins und Tabelle." },
+      { label: "✍️ Üben", text: "Sachaufgaben würfeln: Prozentwert, Grundwert, Prozentsatz, Erhöhen, Rabatt, Zinsen, Zinseszins — beliebig kombinierbar, in drei Stufen (Merkprozente, ganze Prozente, krumme Prozente und Rückwärtsrechnen vom neuen Preis). Antwort eintippen (Komma oder Punkt, Geld auf Cent), prüfen, Lösungsweg aufklappen. Gezählt wird nur der erste Versuch, und nur, solange der Lösungsweg zu ist. »🖨️ Blatt mit 10 Aufgaben« baut ein Übungsblatt mit Lösungen zum Drucken." },
+      { label: "⚡ Prozent-Blitz", text: "60 Sekunden, so viele Runden wie möglich: Anteil schätzen (Kreis, Streifen oder Hunderterfeld), Merkprozente im Kopf (vier Antworten, die falschen sind typische Fehler) und Schnäppchen vergleichen. Richtig = 10 Punkte plus Serienbonus bis 10, falsch kostet 3 Sekunden. Am Ende stehen die Fehler mit Erklärung; der Bestwert bleibt im Browser." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
+    ],
+  },
   rechenregeln: {
     title: "Rechenregeln",
     intro: "Die Rechenregeln der Klassen 5/6 als Bild: Klammern vor Punkt vor Strich am Obstkorb, das Vertauschen am Rechenzug, die Stufenzahlen auf der Stellenwerttafel. Drei Reiter, jeder mit vier Würfelstufen und einem Feld für eigene Terme.",

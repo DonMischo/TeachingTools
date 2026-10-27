@@ -615,6 +615,18 @@ simulationen:
       - ² ³ √ als Quadrat, Würfel und Suche nach der Quadratseite
       - < > ≤ ≥ an Säulen und Zahlenstrahl
       - ∫ als Streifensumme und f′ als Tangentensteigung mit Sekante
+  - id: prozent
+    name: Prozent- und Zinsrechnung
+    faehigkeiten: {use: [true, true]}
+    kann:
+      - Prozente als Kreis, Prozentstreifen, Hunderterfeld und gezählte Dinge, auch über 100 %
+      - Prozent als Bruch und Dezimalzahl
+      - Dreisatz Schritt für Schritt für W, G und p, dazu Formel und Dezimalzahl
+      - Denkwege und Tipps (Merkprozente, Zerlegen, Faktor, Fallen, 72er-Regel)
+      - Monats-, Tages- und Jahreszinsen; Zinseszins als Säulen mit Tabelle
+      - Sachaufgaben in drei Stufen mit Lösungsweg und Punktestand
+      - Übungsblatt mit 10 Aufgaben und Lösungen zum Drucken
+      - "Spiel Prozent-Blitz: schätzen, Kopfrechnen, Schnäppchen gegen die Uhr"
   - id: rechenregeln
     name: Rechenregeln
     kann:
