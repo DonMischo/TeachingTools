@@ -69,8 +69,9 @@ function Plus() {
 function Minus() {
   const [a, setA] = useState(8), [b, setB] = useState(3);
   const bb = Math.min(a, b);
-  const fa = feld(a), fr = feld(a - bb);
-  const gap = 70, W = fa.w + fr.w + gap + 20, H = Math.max(fa.h, fr.h) + 20;
+  const fa = feld(a), fb = feld(bb);
+  const gap = 56, W = 2 * fa.w + fb.w + 2 * gap + 80, H = Math.max(fa.h, fb.h) + 20;
+  const x2 = fa.w + gap, x3 = x2 + fb.w + gap + 40;
   return (
     <>
       <Regelzeile>
@@ -78,12 +79,14 @@ function Minus() {
         <Regler label="so viele kommen weg" wert={bb} setze={setB} min={0} max={a} />
       </Regelzeile>
       <svg viewBox={`-10 -10 ${W} ${H}`} className="w-full h-auto max-h-[40vh]">
-        <Dinge n={a} emoji={APFEL} weg={bb} />
-        <text x={fa.w + gap / 2} y={H / 2 - 10} textAnchor="middle" dominantBaseline="central" fontSize={44} fontWeight={900} fill="var(--text)">→</text>
-        <Dinge n={a - bb} emoji={APFEL} x={fa.w + gap} />
+        <Dinge n={a} emoji={APFEL} />
+        <text x={fa.w + gap / 2} y={H / 2 - 10} textAnchor="middle" dominantBaseline="central" fontSize={48} fontWeight={900} fill="var(--text)">−</text>
+        <Dinge n={bb} emoji={APFEL} x={x2} />
+        <text x={x2 + fb.w + gap / 2 + 20} y={H / 2 - 10} textAnchor="middle" dominantBaseline="central" fontSize={48} fontWeight={900} fill="var(--text)">=</text>
+        <Dinge n={a} emoji={APFEL} x={x3} weg={bb} />
       </svg>
       <Tafel>{a} − {bb} = {a - bb}</Tafel>
-      <Erklaerung>Minus heißt <strong>wegnehmen</strong>: von {a} Äpfeln werden {bb} gegessen (durchgestrichen). Was übrig bleibt, ist das Ergebnis. Anders als bei Plus darf man hier nicht tauschen.</Erklaerung>
+      <Erklaerung>Minus heißt <strong>wegnehmen</strong>: von {a} Äpfeln werden {bb} gegessen (durchgestrichen). Was nicht durchgestrichen ist, bleibt übrig — das ist das Ergebnis. Anders als bei Plus darf man hier nicht tauschen.</Erklaerung>
     </>
   );
 }
