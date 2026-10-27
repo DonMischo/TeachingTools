@@ -24,8 +24,12 @@ BL.store = {
   set(k, v) { try { localStorage.setItem("baumleben:" + k, JSON.stringify(v)); } catch { } }
 };
 BL.tree = (id) => BL.TREES.find(t => t.id === id);
-BL.img = (id) => "/baum/img/" + id + ".webp";
-BL.credit = (id) => {
+// Hauptfoto zeigt den ganzen Baum (Habitus); wo das alte Foto eine Nahaufnahme ist, gibt es ein eigenes Habitusfoto
+BL.img = (id) => BL.HABITUS && BL.HABITUS[id] ? BL.HABITUS[id].datei : "/baum/img/" + id + ".webp";
+BL.credit = (id) => BL.HABITUS && BL.HABITUS[id] ? BL.commonsCredit(BL.HABITUS[id], "Foto") : BL.closeCredit(id);
+// Nahaufnahme (Blatt, Blüte, Frucht, Stamm) nur für Arten mit eigenem Habitusfoto
+BL.closeImg = (id) => BL.HABITUS && BL.HABITUS[id] ? "/baum/img/" + id + ".webp" : null;
+BL.closeCredit = (id) => {
   const c = BL.CREDITS[id]; if (!c) return "";
   return `Foto: ${c.artist} · ${c.license} · <a href="${c.page}" target="_blank" rel="noopener">Wikimedia Commons</a>`;
 };

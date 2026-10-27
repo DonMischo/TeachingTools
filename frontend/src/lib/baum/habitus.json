@@ -1,0 +1,74 @@
+{
+  "bergahorn": {
+    "datei": "/baum/habitus/bergahorn.webp",
+    "titel": "2018-06-07 Sycamore Gap Tree (Acer pseudoplatanus), next to Hadrian’s Wall UK.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:2018-06-07_Sycamore_Gap_Tree_(Acer_pseudoplatanus),_next_to_Hadrian%E2%80%99s_Wall_UK.jpg",
+    "lizenz": "CC BY-SA 4.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "urheber": "Gordon Leggett"
+  },
+  "edelkastanie": {
+    "datei": "/baum/habitus/edelkastanie.webp",
+    "titel": "Sweet Chestnut tree in Carshalton Park - geograph.org.uk - 1534352.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Sweet_Chestnut_tree_in_Carshalton_Park_-_geograph.org.uk_-_1534352.jpg",
+    "lizenz": "CC BY-SA 2.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "urheber": "JOHN PARKIN"
+  },
+  "feldahorn": {
+    "datei": "/baum/habitus/feldahorn.webp",
+    "titel": "Field Maple - geograph.org.uk - 433718.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Field_Maple_-_geograph.org.uk_-_433718.jpg",
+    "lizenz": "CC BY-SA 2.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "urheber": "Roger Cornfoot"
+  },
+  "sommerlinde": {
+    "datei": "/baum/habitus/sommerlinde.webp",
+    "titel": "Tilia platyphyllos - geograph.org.uk - 6483594.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Tilia_platyphyllos_-_geograph.org.uk_-_6483594.jpg",
+    "lizenz": "CC BY-SA 2.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "urheber": "Bob Harvey"
+  },
+  "spitzahorn": {
+    "datei": "/baum/habitus/spitzahorn.webp",
+    "titel": "Acer platanoides Marki 2.JPG",
+    "seite": "https://commons.wikimedia.org/wiki/File:Acer_platanoides_Marki_2.JPG",
+    "lizenz": "CC BY-SA 3.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "urheber": "Crusier"
+  },
+  "tanne": {
+    "datei": "/baum/habitus/tanne.webp",
+    "titel": "Abies alba Tree.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Abies_alba_Tree.jpg",
+    "lizenz": "CC0",
+    "lizenzUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "urheber": "Nicolas Weghaupt"
+  },
+  "traubeneiche": {
+    "datei": "/baum/habitus/traubeneiche.webp",
+    "titel": "Sessile Oak (Quercus petraea) - geograph.org.uk - 650268.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Sessile_Oak_(Quercus_petraea)_-_geograph.org.uk_-_650268.jpg",
+    "lizenz": "CC BY-SA 2.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "urheber": "Evelyn Simak"
+  },
+  "vogelkirsche": {
+    "datei": "/baum/habitus/vogelkirsche.webp",
+    "titel": "Prunus avium - geograph.org.uk - 6973404.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Prunus_avium_-_geograph.org.uk_-_6973404.jpg",
+    "lizenz": "CC BY-SA 2.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "urheber": "Bob Harvey"
+  },
+  "walnuss": {
+    "datei": "/baum/habitus/walnuss.webp",
+    "titel": "Juglans regia autumn 2009.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Juglans_regia_autumn_2009.jpg",
+    "lizenz": "CC BY-SA 3.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "urheber": "JLPC"
+  }
+}

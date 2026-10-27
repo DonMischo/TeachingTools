@@ -3,6 +3,7 @@
 // Baumleben: aus der eigenständigen Fassung übernommen, ungeprüftes JavaScript.
 import { BL } from "./bl";
 import blaetter from "./blaetter.json";
+import habitus from "./habitus.json";
 BL.CREDITS = {
 "buche": {
 "file": "buche.jpg",
@@ -187,8 +188,11 @@ BL.CREDITS = {
 };
 // Blatt-Tafeln für »Bäume bestimmen«, geholt mit scripts/fetch-baum-blaetter.mjs
 BL.BLAETTER = blaetter;
-BL.blattCredit = (id) => {
-  const c = BL.BLAETTER[id]; if (!c) return "";
+// Nachweis aus den Commons-Skripten (scripts/commons-galerie.mjs)
+BL.commonsCredit = (c, was) => {
   const lic = c.lizenz === "Public domain" ? "gemeinfrei" : c.lizenzUrl ? `<a href="${c.lizenzUrl}" target="_blank" rel="noopener">${c.lizenz}</a>` : c.lizenz;
-  return `${c.urheber === "unbekannt" ? "" : c.urheber + " · "}${lic} · <a href="${c.seite}" target="_blank" rel="noopener">Wikimedia Commons</a>`;
+  return `${was ? was + ": " : ""}${c.urheber === "unbekannt" ? "" : c.urheber + " · "}${lic} · <a href="${c.seite}" target="_blank" rel="noopener">Wikimedia Commons</a>`;
 };
+BL.blattCredit = (id) => BL.BLAETTER[id] ? BL.commonsCredit(BL.BLAETTER[id]) : "";
+// Fotos ganzer Bäume für Arten, deren Hauptfoto eine Nahaufnahme ist; geholt mit scripts/fetch-baum-habitus.mjs
+BL.HABITUS = habitus;

@@ -20,6 +20,8 @@ BL.Key = (function () {
   .tdetail figure img { width: 100%; border-radius: 8px; max-height: 420px; object-fit: cover }
   .tdetail figcaption { font-size: .75rem; color: var(--muted) }
   .tdetail figcaption a { color: inherit }
+  .tdetail figure.nah { grid-template-columns: 96px minmax(0, 1fr); align-items: center; gap: 10px }
+  .tdetail figure.nah img { width: 96px; height: 72px; max-height: none }
   .tdetail .schema { height: 300px; border: 1px solid var(--line); border-radius: 8px; padding: 12px; background: var(--panel) }
   .tdetail .tafel { height: 460px; border: 1px solid var(--line); border-radius: 8px; background: #fbf8f0; overflow: hidden }
   .tdetail .tafel img { display: block; width: 100%; height: 100%; max-height: none; object-fit: contain; border-radius: 0 }
@@ -102,6 +104,7 @@ BL.Key = (function () {
       <div class="stack">
         <div class="row" style="justify-content:space-between"><div><h2>${t.de}</h2><i>${t.lat} · ${t.fam}</i></div><button class="btn" id="kclose">Schließen</button></div>
         <figure><img class="zoomable" src="${BL.img(t.id)}" alt="${t.de}" title="Zum Vergrößern klicken" data-cap="photo"><figcaption>${BL.credit(t.id)}</figcaption></figure>
+        ${BL.closeImg(t.id) ? `<figure class="nah"><img class="zoomable" src="${BL.closeImg(t.id)}" alt="${t.de}, Nahaufnahme" title="Zum Vergrößern klicken" data-cap="nah"><figcaption>Nahaufnahme · ${BL.closeCredit(t.id)}</figcaption></figure>` : ""}
         <div class="row">${traits}</div>
       </div>
       <div class="stack">
@@ -112,7 +115,7 @@ BL.Key = (function () {
         <p class="fakt">${t.fakt}</p>
       </div></div>`;
     BL.$("#kclose", host).onclick = () => { host.innerHTML = ""; };
-    host.onclick = e => { const im = e.target.closest("img.zoomable"); if (im) zoom(im.src, im.alt, im.dataset.cap === "tafel" ? BL.blattCredit(t.id) : BL.credit(t.id)); };
+    host.onclick = e => { const im = e.target.closest("img.zoomable"); if (im) zoom(im.src, im.alt, im.dataset.cap === "tafel" ? BL.blattCredit(t.id) : im.dataset.cap === "nah" ? BL.closeCredit(t.id) : BL.credit(t.id)); };
     host.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
