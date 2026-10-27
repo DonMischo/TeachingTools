@@ -62,6 +62,10 @@ BL.Game = (function () {
     { id: "schwarz", n: "Schwarzspecht", e: "🐦", slot: "stamm", pts: 3, req: s => s.S >= 6 && s.sp !== "birke", rq: "Stamm 6", eff: "zimmert 1 große Höhle", txt: "Größter Specht Europas. Seine Höhlen sind Wohnraum für über 50 Tierarten." },
     { id: "flechte", n: "Flechten", e: "🌿", slot: "stamm", pts: 1, req: s => s.age >= 45, rq: "Alter 45", eff: "–", txt: "Lebensgemeinschaft aus Pilz und Alge. Viele Arten wachsen nur bei sauberer Luft." },
     { id: "moos", n: "Moospolster", e: "🌱", slot: "stamm", pts: 1, req: s => true, rq: "–", eff: "–", txt: "Wächst auf der Wetterseite am Stammfuß und speichert Regenwasser." },
+    { id: "efeu", n: "Efeu", e: "🌿", slot: "stamm", pts: 2, plant: true, req: s => s.S >= 3, rq: "Stamm 3", eff: "–", txt: "Klettert mit Haftwurzeln am Stamm hinauf, schadet dem Baum aber nicht. Blüht erst im Herbst und trägt im Spätwinter Beeren: Futter, wenn sonst nichts da ist." },
+    { id: "windroeschen", n: "Buschwindröschen", e: "🌼", slot: "wurzel", pts: 1, plant: true, req: s => !["fichte", "waldkiefer"].includes(s.sp) && !["moor", "sand"].includes(s.biome), rq: "Laubbaum, frischer Boden", eff: "–", txt: "Frühblüher: blüht im März und April, bevor sich das Kronendach schließt. Lebt von Stärke im Wurzelstock." },
+    { id: "heidelbeere", n: "Heidelbeere", e: "🫐", slot: "wurzel", pts: 2, plant: true, req: s => ["fichte", "waldkiefer"].includes(s.sp) || ["moor", "sand", "berg"].includes(s.biome), rq: "saurer Boden", eff: "–", txt: "Zwergstrauch auf saurem, nährstoffarmem Boden. Die Beeren fressen Vögel, Füchse und Bären." },
+    { id: "farn", n: "Wurmfarn", e: "🌿", slot: "wurzel", pts: 1, plant: true, req: s => B().canopy || s.K >= 5, rq: "Schatten", eff: "–", txt: "Liebt feuchten Schatten. Vermehrt sich mit Sporen statt Samen, die Sporenhäufchen sitzen unter den Wedeln." },
     { id: "kleiber", n: "Kleiber", e: "🐦", slot: "hoehle", pts: 2, req: s => s.holes > 0, rq: "Höhle", eff: "–", txt: "Mauert den Eingang einer Spechthöhle mit Lehm passend zu, damit kein größerer Vogel hineinpasst." },
     { id: "fledermaus", n: "Großer Abendsegler", e: "🦇", slot: "hoehle", pts: 3, req: s => s.holes > 0, rq: "Höhle", eff: "schützt vor Raupen", txt: "Fledermaus, die in Baumhöhlen überwintert und nachts Nachtfalter jagt." },
     { id: "kauz", n: "Waldkauz", e: "🦉", slot: "hoehle", pts: 4, req: s => s.bigHoles > 0, rq: "große Höhle", eff: "–", txt: "Häufigste Eule Mitteleuropas. Brütet in großen Höhlen alter Bäume." },
@@ -90,6 +94,8 @@ BL.Game = (function () {
         <li>Unter einem Stamm von 5 stehst du im Schatten älterer Bäume. Schattenbaumarten wie die Buche kommen damit besser zurecht. Lichtbaumarten verkümmern, wenn sie zu lange klein im Schatten stehen. Im Moor und auf der Heide gibt es kein geschlossenes Kronendach.</li>
         <li>Der Standort zählt: Im Moor bleibst du klein, auf Sand ist es trocken, in der Aue kommt Hochwasser, im Bergwald Sturm und Schnee. Zweimal abgefressene Spitzen oder ein abgebrochener Wipfel führen zu Krüppelwuchs.</li>
         <li>Mindestens 1 Zucker hast du jede Runde, auch im schlechtesten Jahr.</li>
+        <li>Arten, die zusammenleben, bilden Gemeinschaften und bringen Extrapunkte (🤝): Marienkäfer fressen Blattläuse, Kleiber ziehen in Spechthöhlen, Moose und Farne lieben feuchten Schatten. Manche Arten stören sich aber auch (⚔️): Ameisen verjagen Marienkäfer.</li>
+        <li>Neben Tieren und Pilzen wachsen auch Pflanzen an und unter dir: Efeu am Stamm, Frühblüher unter Laubbäumen, Heidelbeeren auf saurem Boden, Farne im Schatten.</li>
         <li>Bewohner bringen Punkte und manchmal Hilfe. Spechte zimmern Höhlen für Nachmieter, so entstehen Ketten wie im Kartenspiel Forest Shuffle.</li>
         <li>Punkte gibt es für dein Alter, deine Samen, alle Bewohner, die Vielfalt der besiedelten Bereiche und das Totholz nach deinem Tod.</li></ul>`;
   // Dialog für Anleitung und Tagebuch; liegt im .baumleben-Bereich, damit die Stile greifen
@@ -99,6 +105,30 @@ BL.Game = (function () {
     dlg.addEventListener("click", e => { if (e.target.closest("[data-close]") || e.target === dlg) dlg.close(); });
     dlg.addEventListener("close", () => dlg.remove());
   }
+  // Gemeinschaften: Arten, die zusammen mehr ergeben (wie Kartenketten in Forest Shuffle). Negative Werte sind Konkurrenz.
+  const SYN = [
+    { a: ["marienkaefer", "laus"], pts: 2, n: "Fressen und gefressen werden", txt: "Eine Marienkäferlarve frisst Hunderte Blattläuse." },
+    { a: ["ameise", "laus"], pts: 2, n: "Honigtau-Melker", txt: "Ameisen melken Blattläuse und schützen sie dafür vor Fressfeinden." },
+    { a: ["ameise", "marienkaefer"], pts: -1, n: "Konkurrenz", txt: "Ameisen verjagen Marienkäfer von ihren Blattlauskolonien." },
+    { a: ["myko", "steinpilz"], pts: 2, n: "Pilz und Fruchtkörper", txt: "Der Steinpilz ist nur der Fruchtkörper, das eigentliche Lebewesen ist das Geflecht an deinen Wurzeln." },
+    { a: ["wurm", "myko"], pts: 1, n: "Gesunder Boden", txt: "Regenwürmer lockern den Boden, Pilzfäden halten ihn zusammen: Wasser und Luft kommen an die Wurzeln." },
+    { a: ["bunt", "kleiber"], pts: 2, n: "Höhlen-Nachmieter", txt: "Der Kleiber bezieht eine alte Buntspechthöhle und mauert den Eingang passend zu." },
+    { a: ["bunt", "meise"], pts: 1, n: "Höhlen-Nachmieter", txt: "Kohlmeisen brüten gern in verlassenen Spechthöhlen." },
+    { a: ["bunt", "fledermaus"], pts: 1, n: "Höhlen-Nachmieter", txt: "Abendsegler überwintern in alten Spechthöhlen." },
+    { a: ["schwarz", "kauz"], pts: 2, n: "Große Höhle", txt: "Der Waldkauz brütet in der geräumigen Schwarzspechthöhle." },
+    { a: ["schwarz", "taube"], pts: 2, n: "Große Höhle", txt: "Die Hohltaube ist fast ganz auf Schwarzspechthöhlen angewiesen." },
+    { a: ["hoernchen", "haeher"], pts: 2, n: "Samenverstecker", txt: "Beide vergraben Vorräte und vergessen viele: So wandert der Wald." },
+    { a: ["baumlaeufer", "flechte"], pts: 1, n: "Rindensucher", txt: "Zwischen Flechten und Rindenritzen findet der Baumläufer Spinnen und Insekteneier." },
+    { a: ["meise", "gallwespe"], pts: 1, n: "Gallenjäger", txt: "Meisen hacken Gallen auf und fressen die Larven darin." },
+    { a: ["efeu", "fledermaus"], pts: 1, n: "Versteck im Efeu", txt: "Fledermäuse ruhen tagsüber hinter dichtem Efeu." },
+    { a: ["windroeschen", "wurm"], pts: 1, n: "Frühling im Laub", txt: "Regenwürmer machen aus dem Falllaub den Humus, in dem die Frühblüher wurzeln." },
+    { a: ["heidelbeere", "moos"], pts: 1, n: "Teppich aus Moos und Beeren", txt: "Auf saurem Boden bilden Moose und Heidelbeeren gemeinsam die Bodendecke." },
+    { a: ["farn", "moos"], pts: 1, n: "Feuchter Schatten", txt: "Farne und Moose halten den Boden feucht und kühl." }
+  ];
+  const synActive = () => SYN.filter(g => g.a.every(id => has(s, id)));
+  // Was eine Karte im Markt zusammen mit schon vorhandenen Arten bringen würde
+  const synWith = id => SYN.filter(g => g.a.includes(id) && g.a.every(x => x === id || has(s, x)));
+  const nameOf = id => CARDS.find(c => c.id === id).n;
   const SLOTS = { krone: "Krone", stamm: "Stamm", hoehle: "Höhlen", wurzel: "Wurzel und Boden" };
   const has = (s, id) => s.cards.some(c => c.id === id);
 
@@ -112,7 +142,10 @@ BL.Game = (function () {
   .gdlg::backdrop { background: rgba(0, 0, 0, .55) }
   .gdlg .glog { max-height: none }
   @media (max-width: 900px) { .gm { grid-template-columns: minmax(0, 1fr) } }
-  .tableau { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "t t" "k s" "h w"; gap: 8px; align-items: stretch }
+  .tableau { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "t t" "k s" "h w" "g g"; gap: 8px; align-items: stretch }
+  .gcard b.neg { color: var(--warn) }
+  .mcard .syn { font-size: .68rem; color: color-mix(in srgb, var(--leaf) 55%, var(--ink)) }
+  .mcard .syn.neg { color: var(--warn) }
   .tableau .slot { border: 1px dashed var(--line); border-radius: 10px; padding: 5px; min-height: 40px; display: flex; flex-wrap: wrap; gap: 4px; align-content: flex-start; min-width: 0 }
   .tableau .slot > .label { width: 100% }
   .gcard { border: 1px solid var(--line); border-radius: 8px; background: var(--panel); padding: 2px 6px; font-size: .74rem; display: inline-flex; gap: 4px; align-items: center }
@@ -313,7 +346,8 @@ BL.Game = (function () {
     save(); render();
   }
   function score() {
-    const pts = { alter: Math.floor(s.age / YEARS), samen: s.seeds * 2, bewohner: 0, extra: 0, totholz: 0, vielfalt: 0 };
+    const pts = { alter: Math.floor(s.age / YEARS), samen: s.seeds * 2, bewohner: 0, extra: 0, totholz: 0, vielfalt: 0, gemeinschaft: 0 };
+    for (const g of synActive()) pts.gemeinschaft += g.pts;
     for (const c of s.cards) pts.bewohner += CARDS.find(x => x.id === c.id).pts;
     if (has(s, "hoernchen")) pts.extra += Math.floor(s.seeds / 2);
     if (has(s, "haeher")) pts.extra += Math.min(5, s.seeds);
@@ -434,7 +468,8 @@ BL.Game = (function () {
       const d = CARDS.find(x => x.id === c.id), r2 = BL.rng(i * 97 + 5);
       const p = d.slot === "krone" ? [cx + (r2() * 2 - 1) * half * .8, gy - Hpx * (.6 + r2() * .35)]
         : d.slot === "stamm" ? [cx + (i % 2 ? 9 : -9) + S, gy - Hpx * (.15 + r2() * .35)]
-        : d.slot === "hoehle" ? [cx + 14 + S, gy - Hpx * (.3 + r2() * .2)] : [cx + (r2() * 2 - 1) * W * .35, gy + 18 + r2() * (Hh - gy - 30)];
+        : d.slot === "hoehle" ? [cx + 14 + S, gy - Hpx * (.3 + r2() * .2)]
+        : d.plant && d.slot === "wurzel" ? [cx + (r2() < .5 ? -1 : 1) * W * (.12 + r2() * .3), gy - 9] : [cx + (r2() * 2 - 1) * W * .35, gy + 18 + r2() * (Hh - gy - 30)];
       if (!alive && d.slot !== "wurzel") return;
       ctx.fillText(d.e, p[0], p[1]);
     });
@@ -459,7 +494,8 @@ BL.Game = (function () {
       <div class="slot" style="grid-area:s"><span class="label">Stamm</span>${by("stamm")}</div>
       <div class="tree"><canvas class="gtree" role="img" aria-label="Dein Baum mit Wurzeln und Bewohnern"></canvas></div>
       <div class="slot" style="grid-area:h"><span class="label">Höhlen · frei ${s.holes} klein, ${s.bigHoles} groß</span>${by("hoehle")}</div>
-      <div class="slot" style="grid-area:w"><span class="label">${s.phase === "play" ? "Wurzel und Boden" : "Totholz"}</span>${s.phase === "play" ? by("wurzel") : by("wurzel") + deadCards}</div></div>`;
+      <div class="slot" style="grid-area:w"><span class="label">${s.phase === "play" ? "Wurzel und Boden" : "Totholz"}</span>${s.phase === "play" ? by("wurzel") : by("wurzel") + deadCards}</div>
+      ${synActive().length ? `<div class="slot syn" style="grid-area:g"><span class="label">Gemeinschaften</span>${synActive().map(g => `<span class="gcard" title="${g.txt}">${g.pts < 0 ? "⚔️" : "🤝"} ${g.n}: ${g.a.map(nameOf).join(" + ")} <b class="${g.pts < 0 ? "neg" : ""}">${g.pts > 0 ? "+" + g.pts : "−" + -g.pts}</b></span>`).join("")}</div>` : ""}</div>`;
   }
   function render() {
     root.innerHTML = "";
@@ -495,9 +531,9 @@ BL.Game = (function () {
           : ["K", "W", "S"].includes(a.k) && s[a.k] >= 8 ? "ausgewachsen" : "");
         return `<button data-a="${a.k}" title="${a.d}" ${ok ? "" : "disabled"}><span>${a.n} <b class="sugar mono">${c}</b></span>${why ? `<small>${why}</small>` : ""}</button>`;
       }).join("")}</div>${later ? `<p class="note">${later}</p>` : ""}</div>`));
-      side.append(BL.html(`<div class="panel stack"><h3>Wer möchte einziehen?</h3><p class="note">${s.hosted ? "Diese Runde ist schon jemand eingezogen." : s.market.length ? "Eine dieser Arten darf diese Runde einziehen." : "Gerade findet keine Art bei dir Platz. Wachse oder bilde Samen, dann kommen neue."}</p>
+      side.append(BL.html(`<div class="panel stack"><h3>Wer möchte einziehen?</h3><p class="note" style="margin:0">🤝 = bildet mit einer Art bei dir eine Gemeinschaft (Extrapunkte).</p><p class="note">${s.hosted ? "Diese Runde ist schon jemand eingezogen." : s.market.length ? "Eine dieser Arten darf diese Runde einziehen." : "Gerade findet keine Art bei dir Platz. Wachse oder bilde Samen, dann kommen neue."}</p>
         <div class="market">${s.market.map(id => { const c = CARDS.find(x => x.id === id), ok = !s.hosted && c.req(s);
-          return `<div class="mcard" title="${c.txt}"><div class="top"><span class="em" aria-hidden="true">${c.e}</span><h4>${c.n}</h4></div><span class="meta">${SLOTS[c.slot]} · ${c.pts} P${c.eff !== "–" ? " · " + c.eff : ""}</span><button class="btn ${ok ? "primary" : ""}" data-h="${id}" ${ok ? "" : "disabled"}>Einziehen</button></div>`; }).join("")}</div></div>`));
+          return `<div class="mcard" title="${c.txt}"><div class="top"><span class="em" aria-hidden="true">${c.e}</span><h4>${c.n}</h4></div><span class="meta">${SLOTS[c.slot]} · ${c.pts} P${c.eff !== "–" ? " · " + c.eff : ""}</span>${synWith(id).map(g => `<span class="syn ${g.pts < 0 ? "neg" : ""}" title="${g.txt}">${g.pts < 0 ? "⚔️" : "🤝"} ${g.pts > 0 ? "+" + g.pts : "−" + -g.pts} mit ${g.a.filter(x => x !== id).map(nameOf).join(", ")}</span>`).join("")}<button class="btn ${ok ? "primary" : ""}" data-h="${id}" ${ok ? "" : "disabled"}>Einziehen</button></div>`; }).join("")}</div></div>`));
       // Rundenknöpfe in die Kopfzeile, damit sie ohne Scrollen erreichbar sind
       const bar = BL.$(".gm-head .row", root);
       bar.prepend(BL.html(`<button class="btn" id="gm-restart">Neues Spiel</button>`));
@@ -535,7 +571,7 @@ BL.Game = (function () {
       <div class="panel stack"><h3>${p.sum} Punkte</h3><p>Deine ${SPECIES[s.sp].name} (${B().n}) wurde ${s.age} Jahre alt und ist ${s.deathCause}.${s.kr ? " Sie wuchs als Krüppel." : ""}</p>
       <table class="data"><tr><td>Alter (1 je ${YEARS} Jahre)</td><td class="num">${p.alter}</td></tr><tr><td>Samen (2 je Samen)</td><td class="num">${p.samen}</td></tr>
         <tr><td>Bewohner</td><td class="num">${p.bewohner}</td></tr><tr><td>Samenverstecker</td><td class="num">${p.extra}</td></tr>
-        <tr><td>Vielfalt der Lebensräume</td><td class="num">${p.vielfalt}</td></tr><tr><td>Totholz-Bewohner</td><td class="num">${p.totholz}</td></tr></table>
+        <tr><td>Gemeinschaften</td><td class="num">${p.gemeinschaft}</td></tr><tr><td>Vielfalt der Lebensräume</td><td class="num">${p.vielfalt}</td></tr><tr><td>Totholz-Bewohner</td><td class="num">${p.totholz}</td></tr></table>
       <p class="note">Rekord für diese Art: ${best[s.sp] || p.sum} Punkte</p>
       <div class="row"><button class="btn primary" id="gm-again">Nochmal als ${SPECIES[s.sp].name}</button><button class="btn" id="gm-other">Andere Baumart</button></div></div>
       <div class="panel prose"><h3>Was du gelernt hast</h3><p>Ein Baum muss ständig abwägen: Blätter bringen Zucker, kosten aber Wasser. Wurzeln bringen Wasser und Halt, aber kein Licht. Wer schnell in die Höhe wächst, entkommt dem Schatten, wird aber sturmanfälliger. Und nach dem Tod ist er noch Jahrzehnte lang Lebensraum und Nährstoffquelle für den Wald.</p></div></div></div>`));
