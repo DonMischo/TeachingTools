@@ -627,6 +627,9 @@ simulationen:
       - Sachaufgaben in drei Stufen mit Lösungsweg und Punktestand
       - Übungsblatt mit 10 Aufgaben und Lösungen zum Drucken
       - "Spiel Prozent-Blitz: schätzen, Kopfrechnen, Schnäppchen gegen die Uhr"
+      - "Saftbar: Schorle auf Prozent mischen (Saft, Nektar, Wasser), verdünnen und verstärken"
+      - "Handy-Check: Barzahlung, 0 %-Finanzierung, Ratenkauf, Vertrag mit Kleingedrucktem und Kontoverlauf"
+      - "Mein Kiosk: acht Wochen Kalkulation mit Aufschlag, Mehrwertsteuer, Verderb und Ereignissen"
   - id: rechenregeln
     name: Rechenregeln
     kann:

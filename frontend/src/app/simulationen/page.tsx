@@ -257,7 +257,7 @@ const ALL_CARDS: Werkzeug[] = [
     href: "/simulationen/prozent",
     icon: "💯",
     title: "Prozent- und Zinsrechnung",
-    description: "Prozente als Kreis, Prozentstreifen, Hunderterfeld und gezählte Dinge; der Dreisatz Schritt für Schritt (W, G oder p gesucht); Denkwege wie Merkprozente, Zerlegen und Faktor samt typischer Fallen; Monats-, Tages- und Zinseszinsen. Dazu Sachaufgaben in drei Stufen mit Lösungsweg, ein Übungsblatt zum Drucken und das Spiel Prozent-Blitz.",
+    description: "Prozente als Kreis, Prozentstreifen, Hunderterfeld und gezählte Dinge; der Dreisatz Schritt für Schritt (W, G oder p gesucht); Denkwege wie Merkprozente, Zerlegen und Faktor samt typischer Fallen; Monats-, Tages- und Zinseszinsen. Dazu Sachaufgaben in drei Stufen mit Lösungsweg, ein Übungsblatt zum Drucken und vier Spiele: Prozent-Blitz, Saftbar (mischen), Handy-Check (Ratenkauf, Vertrag) und Mein Kiosk (Kalkulation mit MwSt).",
     color: "#f97316",
   },
   {

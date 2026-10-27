@@ -108,7 +108,7 @@ describe("Gewürfelte Aufgaben", () => {
 describe("Oberfläche", () => {
   it("jedes Blatt öffnet ohne Absturz", () => {
     render(<Prozent />);
-    for (const name of [/Dreisatz/, /Denkwege/, /Zinsen/, /Üben/, /Prozent-Blitz/, /Anschauen/]) {
+    for (const name of [/Dreisatz/, /Denkwege/, /Zinsen/, /Üben/, /Spiele/, /Anschauen/]) {
       fireEvent.click(screen.getAllByRole("button", { name })[0]);
     }
     expect(screen.getByText(/von 40 = 10/)).toBeInTheDocument();
@@ -134,6 +134,7 @@ describe("Oberfläche", () => {
 
   it("Prozent-Blitz startet und zählt", () => {
     render(<Prozent />);
+    fireEvent.click(screen.getByRole("button", { name: /Spiele/ }));
     fireEvent.click(screen.getByRole("button", { name: /Prozent-Blitz/ }));
     act(() => { fireEvent.click(screen.getByRole("button", { name: /Los geht/ })); });
     expect(screen.getByText(/⭐ 0/)).toBeInTheDocument();

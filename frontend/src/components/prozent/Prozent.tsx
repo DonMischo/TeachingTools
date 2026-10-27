@@ -6,7 +6,7 @@
  *   💡 Denkwege    Merkprozente, Zerlegen, Faktor, Fallen
  *   🏦 Zinsen      Monats-/Tageszinsen und Zinseszins
  *   ✍️ Üben        Sachaufgaben in drei Stufen, Übungsblatt zum Drucken
- *   ⚡ Spiel       Prozent-Blitz: schätzen, Kopfrechnen, Schnäppchen
+ *   🎮 Spiele      Prozent-Blitz, Saftbar, Handy-Check, Mein Kiosk
  */
 import { useState, type ReactNode } from "react";
 import Anschauen from "./Anschauen";
@@ -14,7 +14,7 @@ import Dreisatz from "./Dreisatz";
 import Denkwege from "./Denkwege";
 import Zinsen from "./Zinsen";
 import Ueben from "./Ueben";
-import Spiel from "./Spiel";
+import Spiele from "./Spiele";
 
 const BLAETTER = [
   { id: "anschauen", icon: "👀", label: "Anschauen" },
@@ -22,7 +22,7 @@ const BLAETTER = [
   { id: "denkwege", icon: "💡", label: "Denkwege & Tipps" },
   { id: "zinsen", icon: "🏦", label: "Zinsen" },
   { id: "ueben", icon: "✍️", label: "Üben" },
-  { id: "spiel", icon: "⚡", label: "Prozent-Blitz" },
+  { id: "spiel", icon: "🎮", label: "Spiele" },
 ] as const;
 type Blatt = (typeof BLAETTER)[number]["id"];
 
@@ -32,7 +32,7 @@ const INHALT: Record<Blatt, () => ReactNode> = {
   denkwege: () => <Denkwege />,
   zinsen: () => <Zinsen />,
   ueben: () => <Ueben />,
-  spiel: () => <Spiel />,
+  spiel: () => <Spiele />,
 };
 
 export default function Prozent({ action }: { action?: ReactNode }) {
@@ -44,7 +44,7 @@ export default function Prozent({ action }: { action?: ReactNode }) {
           <h1 className="text-2xl font-black tracking-tight">💯 Prozent- und Zinsrechnung</h1>
           <p className="text-muted text-sm mt-1">
             Prozente sehen (Kreis, Streifen, Hunderterfeld), mit dem Dreisatz rechnen, im Kopf rechnen lernen,
-            Zinsen und Zinseszins verstehen — dazu Übungsaufgaben und der Prozent-Blitz.
+            Zinsen und Zinseszins verstehen — dazu Übungsaufgaben und vier Spiele.
           </p>
         </div>
         <div className="flex items-center gap-2">{action}</div>
