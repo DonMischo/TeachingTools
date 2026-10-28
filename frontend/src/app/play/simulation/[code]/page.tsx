@@ -25,6 +25,7 @@ import Rechenregeln from "@/components/simulationen/Rechenregeln";
 import Groessen from "@/components/groessen/Groessen";
 import Rechenzeichen from "@/components/rechenzeichen/Rechenzeichen";
 import Prozent from "@/components/prozent/Prozent";
+import Stellenwert from "@/components/stellenwert/Stellenwert";
 import Uebung from "@/components/simulationen/Uebung";
 import KiWerkstatt from "@/components/ki/KiWerkstatt";
 import Sonnensystem from "@/components/sonnensystem/Sonnensystem";
@@ -64,6 +65,7 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   groessen: { title: "Größen & Einheiten", icon: "🪜", node: <Groessen /> },
   rechenzeichen: { title: "Rechenzeichen", icon: "➗", node: <Rechenzeichen /> },
   prozent: { title: "Prozent- und Zinsrechnung", icon: "💯", node: <Prozent /> },
+  stellenwert: { title: "Stellenwerttafeln", icon: "🔢", node: <Stellenwert /> },
   tippen: { title: "Tippen", icon: "⌨️", node: <Tippen /> },
   kueste: { title: "Küstendynamik", icon: "🌊", node: <Kueste /> },
   erdaufbau: { title: "Aufbau der Erde", icon: "🌍", node: <ErdAufbau /> },

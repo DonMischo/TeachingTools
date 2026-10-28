@@ -630,6 +630,18 @@ simulationen:
       - "Saftbar: Schorle auf Prozent mischen (Saft, Nektar, Wasser), verdünnen und verstärken"
       - "Handy-Check: Barzahlung, 0 %-Finanzierung, Ratenkauf, Vertrag mit Kleingedrucktem und Kontoverlauf"
       - "Mein Kiosk: acht Wochen Kalkulation mit Aufschlag, Mehrwertsteuer, Mengenrabatt, Verderb und Ereignissen; Kundenzufriedenheit mit Sternen und Kommentaren"
+  - id: stellenwert
+    name: Stellenwerttafeln
+    faehigkeiten: {use: [true, true]}
+    kann:
+      - Stellenwerttafel für Zehner-, Zweier- und Sechzehnersystem mit Plättchen oder Ziffern
+      - Bündeln und Entbündeln automatisch oder von Hand
+      - Zehnersystem bis Milliarden, umschaltbar mit Kommastellen bis Tausendstel
+      - Dieselbe Zahl in allen drei Systemen, Bits farbig in Vierer-Päckchen
+      - Umrechnen Schritt für Schritt (Stellenwerte abziehen, Division mit Rest, Ziffer mal Stellenwert)
+      - Zählwerk mit sichtbarem Übertrag
+      - Übungen in drei Stufen mit Lösungsweg (Ablesen, Ziffernwert, Zahlwort, Zerlegen, Umrechnen, Weiterzählen)
+      - "Spiele: Bit-Fall, Hex-Farbmischer, Zählwerk-Rennen, Geheimbotschaft (ASCII)"
   - id: rechenregeln
     name: Rechenregeln
     kann:

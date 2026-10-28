@@ -115,6 +115,9 @@ CATALOG: list[CatalogTool] = [
     CatalogTool("prozent", "💯 Prozent- und Zinsrechnung", "💯", "simulationen", {
         "use": _cap(True, True),
     }),
+    CatalogTool("stellenwert", "🔢 Stellenwerttafeln", "🔢", "simulationen", {
+        "use": _cap(True, True),
+    }),
     # Rechenregeln: eigenes Tempo, eigener QR, kein Host.
     CatalogTool("rechenregeln", "🍎 Rechenregeln", "🍎", "simulationen", {
         "use": _cap(True, True),

@@ -261,6 +261,14 @@ const ALL_CARDS: Werkzeug[] = [
     color: "#f97316",
   },
   {
+    slug: "stellenwert",
+    href: "/simulationen/stellenwert",
+    icon: "🔢",
+    title: "Stellenwerttafeln",
+    description: "Zehner-, Zweier- und Sechzehnersystem in einer farbigen Stellenwerttafel: Plättchen legen, bündeln und entbündeln, große Zahlen bis Milliarden und Kommazahlen bis Tausendstel, dieselbe Zahl in allen drei Systemen. Umrechnen Schritt für Schritt (Stellenwerte abziehen, Division mit Rest), Vierer-Päckchen zwischen Binär und Hex, Übungen in drei Stufen und vier Spiele: Bit-Fall, Hex-Farbmischer, Zählwerk-Rennen und Geheimbotschaft (ASCII).",
+    color: "#a855f7",
+  },
+  {
     slug: "rechenregeln",
     href: "/simulationen/rechenregeln",
     icon: "🍎",

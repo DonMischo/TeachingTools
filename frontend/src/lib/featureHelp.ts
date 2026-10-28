@@ -229,6 +229,20 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
     ],
   },
+  stellenwert: {
+    title: "Stellenwerttafeln",
+    intro: "Zehner-, Zweier- und Sechzehnersystem in der Stellenwerttafel — vier Blätter zum Legen, Verstehen, Üben und Spielen.",
+    sections: [
+      { label: "🧱 Tafel", text: "System wählen (Zehner, Zweier, Sechzehner) und die Größe der Tafel (bis Tausender/Millionen/Milliarden, 4/8/12 Bit, 2–4 Hex-Stellen); im Zehnersystem schaltet »Mit Komma« die Spalten bis Tausendstel dazu. Mit + und − legt man Plättchen (oder Ziffern). »Automatisch bündeln« macht den Übertrag selbst und leiht beim Wegnehmen; ohne das liegen auch 13 Plättchen in einer Spalte, und man bündelt bzw. entbündelt von Hand. Darunter der Wert als Summe »Ziffer · Stellenwert« und dieselbe Zahl in allen drei Systemen — Bits in Vierer-Päckchen, jedes in der Farbe seiner Hex-Ziffer. Beim Systemwechsel bleibt die Zahl erhalten." },
+      { label: "💡 Verstehen", text: "Bündeln als Bild für alle drei Basen, der Ziffernvorrat (A–F = 10–15), die Stellenwerte als Potenzen, ein Zählwerk mit Übertrag zum Durchklicken, Umrechnen Schritt für Schritt mit eigener Zahl (Stellenwerte abziehen oder fortgesetzt teilen, zurück per Ziffer · Stellenwert), Vierer-Päckchen zwischen Binär und Hex, Kommazahlen in der Tafel und Beispiele aus dem Alltag (Webfarben, Bytes, ASCII, MAC-Adressen, Uhr, römische Zahlen)." },
+      { label: "✍️ Üben", text: "Aufgaben aus zwei Gruppen kombinierbar — Zehnersystem: Tafel ablesen (leere Spalten = 0), Wert einer Ziffer, Zahlwort → Zahl, Zerlegt → Zahl (schwer: mit Bündeln); Binär & Hex: ₂→₁₀, ₁₀→₂, ₁₆→₁₀, ₁₀→₁₆, ₂↔₁₆ und Weiterzählen mit Übertrag. Drei Stufen, Lösungsweg zum Aufklappen, gezählt wird nur der erste Versuch ohne Lösungsweg." },
+      { label: "🎮 Bit-Fall", text: "Zeilen stapeln sich im Takt: Zahl gegeben → Bits schalten, Bits gegeben → Zahl tippen (Zehner- oder Hex-Modus). Gelöste Zeilen verschwinden; bei 7 Zeilen ist Schluss. Alle 5 Zeilen schneller, ab Stufe 3 mit 8 Bits. Bestwert bleibt im Browser." },
+      { label: "🎨 Hex-Farbmischer", text: "Eine Zielfarbe mit #RRGGBB nachmischen: je Kanal 16er- und Einerstelle drehen, Wert und Balken zeigen, wie viel Rot/Grün/Blau drin ist. Stufe 1 nur 00/80/FF, Stufe 2 Einerstelle 0, Stufe 3 alles. Fünf Farben, bis zu 3 Sterne je Farbe, ein Tipp kostet einen." },
+      { label: "🚗 Zählwerk-Rennen", text: "60 Sekunden: Was zeigt das Zählwerk nach +1, −1 oder + einem Stellenwert? Systeme frei wählbar. Danach dreht das Zählwerk wirklich, der Übertrag wandert sichtbar nach links; mehr gedrehte Walzen = mehr Punkte, Fehler kosten 3 Sekunden." },
+      { label: "🕵️ Geheimbotschaft", text: "ASCII-Bytes in Hex oder Binär entschlüsseln (Groß/klein zählt), mit ASCII-Tafel; ein Klick aufs Byte rechnet es vor und zählt als Hilfe. »Verschlüsseln« macht aus einer eigenen Nachricht Bytes zum Kopieren — die Nachbarin fügt sie unter »Entschlüsseln« ein." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
+    ],
+  },
   rechenregeln: {
     title: "Rechenregeln",
     intro: "Die Rechenregeln der Klassen 5/6 als Bild: Klammern vor Punkt vor Strich am Obstkorb, das Vertauschen am Rechenzug, die Stufenzahlen auf der Stellenwerttafel. Drei Reiter, jeder mit vier Würfelstufen und einem Feld für eigene Terme.",
