@@ -582,11 +582,13 @@ def _purge_last_school_year():
     Jahre loeschen. Siehe api/retention.py — wiederholbar, findet beim
     zweiten Lauf nichts mehr."""
     from .database import SessionLocal
-    from .retention import purge_old_sessions, school_year_cutoff
+    from .retention import purge_old_audit, purge_old_sessions, school_year_cutoff
 
     db = SessionLocal()
     try:
         geloescht = purge_old_sessions(db)
+        if audit := purge_old_audit(db):
+            geloescht["audit_log"] = audit
         if geloescht:
             db.commit()
             logging.getLogger(__name__).info(

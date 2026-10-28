@@ -772,7 +772,7 @@ datenschutz_sicherheit:
   - Schülernamen außerhalb von Klassenleitung und Datenverwaltung nur als »Vorname N.«
   - Zwei-Faktor (TOTP) für Lehrkraft-Passwörter und Zugangsdaten-Export
   - bcrypt für Logins, Fernet-Verschlüsselung für druckbare Zugangsdaten
-  - Audit-Log für sicherheitsrelevante Zugriffe
+  - Audit-Log für sicherheitsrelevante Zugriffe, zehn Schuljahre aufbewahrt
   - Löschen der Spielsitzungen zum Schuljahreswechsel (1. August), Punkte bleiben
   - Kein ausführbarer Code in Uploads, SSRF-Schutz bei Link-Vorschauen
   - Keine KI in der App, nur Prompts für externe Werkzeuge

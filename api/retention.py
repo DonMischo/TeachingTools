@@ -18,6 +18,11 @@ Schuelerdaten.
 **Was mitgeht:** alles unterhalb einer Sitzung. Teilnehmer, Antworten,
 Versuche, Ereignisprotokolle haengen per ``ON DELETE CASCADE`` an ihrer
 Sitzung, ein Loeschen der Sitzungszeile nimmt sie also mit.
+
+**Das Audit-Log hat eine eigene, lange Frist:** zehn Schuljahre. Es haelt
+keine Schuelerdaten, sondern belegt, wer wann auf welche Art von Daten
+zugegriffen hat (Rechenschaftspflicht, Art. 5 (2) DSGVO) — das muss auch
+Jahre spaeter noch nachweisbar sein.
 """
 import logging
 from datetime import date, datetime, timezone
@@ -26,10 +31,12 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from .join_codes import JOIN_CODE_TOOLS
-from .models import QuizSession, SchreibraumRoom
+from .models import AuditLog, QuizSession, SchreibraumRoom
 from .schoolyear import get_school_year_start
 
 log = logging.getLogger(__name__)
+
+AUDIT_RETENTION_YEARS = 10
 
 
 def school_year_cutoff(today: date | None = None) -> datetime:
@@ -78,3 +85,13 @@ def purge_old_sessions(db: Session, *, today: date | None = None) -> dict[str, i
 
     db.expire_all()
     return geloescht
+
+
+def audit_cutoff(today: date | None = None) -> datetime:
+    """Stichtag fuer das Audit-Log: zehn Schuljahre vor dem laufenden."""
+    return datetime(get_school_year_start(today) - AUDIT_RETENTION_YEARS, 8, 1, tzinfo=timezone.utc)
+
+
+def purge_old_audit(db: Session, *, today: date | None = None) -> int:
+    """Audit-Eintraege loeschen, die aelter als zehn Schuljahre sind. Der Aufrufer committet."""
+    return db.query(AuditLog).filter(AuditLog.ts < audit_cutoff(today)).delete(synchronize_session=False)

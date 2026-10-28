@@ -4,10 +4,10 @@ from datetime import date, datetime, timedelta, timezone
 import pytest
 
 from api.models import (
-    ExitTicketResponse, ExitTicketSession, Quiz, QuizParticipant, QuizResponse,
+    AuditLog, ExitTicketResponse, ExitTicketSession, Quiz, QuizParticipant, QuizResponse,
     QuizQuestion, QuizSession, SchreibraumRoom, Transaction,
 )
-from api.retention import purge_old_sessions, school_year_cutoff
+from api.retention import audit_cutoff, purge_old_audit, purge_old_sessions, school_year_cutoff
 
 
 def _quiz(db) -> Quiz:
@@ -159,3 +159,26 @@ class TestWasBleibt:
         db.flush()
         assert purge_old_sessions(db) == {}
         assert db.query(QuizSession).filter_by(join_code="OHNE01").first() is not None
+
+
+class TestAuditLog:
+    """Das Audit-Log ueberlebt den Schuljahreswechsel und geht erst nach zehn Schuljahren."""
+
+    def test_stichtag_liegt_zehn_schuljahre_zurueck(self):
+        assert audit_cutoff(date(2026, 8, 1)) == datetime(2016, 8, 1, tzinfo=timezone.utc)
+        assert audit_cutoff(date(2026, 7, 31)) == datetime(2015, 8, 1, tzinfo=timezone.utc)
+
+    def test_die_schuljahresbereinigung_laesst_es_stehen(self, db):
+        db.add(AuditLog(action="test.alt", ts=school_year_cutoff() - timedelta(days=400)))
+        db.flush()
+        purge_old_sessions(db)
+        purge_old_audit(db)
+        assert db.query(AuditLog).filter_by(action="test.alt").count() == 1
+
+    def test_nach_zehn_schuljahren_geht_es(self, db):
+        db.add(AuditLog(action="test.uralt", ts=audit_cutoff() - timedelta(days=1)))
+        db.add(AuditLog(action="test.grenze", ts=audit_cutoff() + timedelta(days=1)))
+        db.flush()
+        assert purge_old_audit(db) == 1
+        assert db.query(AuditLog).filter_by(action="test.uralt").count() == 0
+        assert db.query(AuditLog).filter_by(action="test.grenze").count() == 1

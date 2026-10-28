@@ -473,6 +473,8 @@ class AuditLog(Base):
     Angabe (Klassenkuerzel, Benutzername, Anzahl), `detail` eine kurze Notiz.
 
     Nur schreiben, nie aendern: es gibt keinen Endpunkt, der Zeilen loescht.
+    Die Schuljahresbereinigung laesst es stehen; erst nach zehn Schuljahren
+    faellt ein Eintrag weg (api/retention.py, purge_old_audit).
     Uebernommen aus dem Werkstatt-Tool (backend/audit.py).
     """
     __tablename__ = "audit_log"
