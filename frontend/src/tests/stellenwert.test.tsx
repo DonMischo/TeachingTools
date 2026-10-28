@@ -184,6 +184,14 @@ describe("Oberfläche", () => {
     expect(screen.queryByRole("table", { name: /Zahlen in der Stellenwerttafel/ })).toBeNull();
   });
 
+  it("die Zahl von der Tafel kommt per Knopf in die Liste", () => {
+    render(<Stellenwert />);
+    // Start: 135, dann + 1 Zehner
+    fireEvent.click(screen.getByRole("button", { name: "Zehner plus eins" }));
+    fireEvent.click(screen.getByRole("button", { name: /Zahl von der Tafel in die Liste \(145/ }));
+    expect(screen.getByRole("checkbox", { name: "Zeile 145 auswählen" })).toBeTruthy();
+  });
+
   it("jedes Blatt und jedes Spiel öffnet", () => {
     render(<Stellenwert />);
     for (const name of [/Verstehen/, /Üben/]) fireEvent.click(screen.getByRole("button", { name }));

@@ -241,6 +241,11 @@ export default function Tafel() {
 
         <TafelAnsicht basis={basis} maxExp={maxExp} minExp={minExp} werte={werte} art={art} blitz={blitz} auto={auto}
           knoepfe={{ plus, minus, buendeln, entbuendeln }} />
+        <div>
+          <button className="btn" onClick={() => { setZeilen(z => [...z, { id: naechsteId.current++, wert }]); setMeldung(""); }}>
+            📋 Zahl von der Tafel in die Liste ({basis === 10 ? dez(wert, nk) : schreibe(Math.floor(wert), basis)}{INDEX[basis]})
+          </button>
+        </div>
 
         {meldung && <p className="text-sm font-bold text-bad" role="status">{meldung}</p>}
         {!gebuendelt && (
