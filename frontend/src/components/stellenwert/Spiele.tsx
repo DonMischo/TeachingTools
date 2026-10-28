@@ -4,13 +4,13 @@
  * schalten oder ablesen), Hex-Farbmischer (#RRGGBB nachmischen),
  * Zählwerk-Rennen (Übertrag vorhersagen) und Geheimbotschaft (ASCII-Bytes).
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Chips } from "@/components/prozent/ui";
 import BitFall from "./spiele/BitFall";
 import Farbmischer from "./spiele/Farbmischer";
 import ZaehlwerkRennen from "./spiele/ZaehlwerkRennen";
 import Geheimbotschaft from "./spiele/Geheimbotschaft";
-import type { StellenwertZugang } from "./Stellenwert";
+import type { Empfangen, Geheimpost } from "./spiele/Geheimpost";
 
 const SPIELE = [
   { id: "bitfall", label: "🧱 Bit-Fall" },
@@ -20,8 +20,10 @@ const SPIELE = [
 ] as const;
 type Id = (typeof SPIELE)[number]["id"];
 
-export default function Spiele({ zugang }: { zugang?: StellenwertZugang }) {
-  const [spiel, setSpiel] = useState<Id>("bitfall");
+export default function Spiele({ post, empfangen }: { post?: Geheimpost; empfangen?: Empfangen | null }) {
+  const [spiel, setSpiel] = useState<Id>(empfangen ? "geheim" : "bitfall");
+  // angenommene Post: gleich zur Geheimbotschaft
+  useEffect(() => { if (empfangen) setSpiel("geheim"); }, [empfangen]);
   return (
     <div className="flex flex-col gap-3">
       <Chips wahl={spiel} setze={setSpiel} optionen={SPIELE} />
@@ -29,7 +31,7 @@ export default function Spiele({ zugang }: { zugang?: StellenwertZugang }) {
         {spiel === "bitfall" && <BitFall />}
         {spiel === "farbe" && <Farbmischer />}
         {spiel === "zaehlwerk" && <ZaehlwerkRennen />}
-        {spiel === "geheim" && <Geheimbotschaft zugang={zugang} />}
+        {spiel === "geheim" && <Geheimbotschaft post={post} empfangen={empfangen} />}
       </div>
     </div>
   );

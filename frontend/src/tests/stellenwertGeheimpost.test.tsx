@@ -1,11 +1,13 @@
 /**
  * Geheimbotschaft: Kopieren klappt auch ohne https, Post geht nur an
  * Anwesende, die Sperre zählt herunter, angenommene Post landet zum Knacken
- * im Entschlüsseln-Blatt.
+ * im Entschlüsseln-Blatt. Anwesend ist man auf jedem Blatt der Simulation,
+ * und die Frage »annehmen?« kommt auch dort.
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import Geheimbotschaft from "@/components/stellenwert/spiele/Geheimbotschaft";
+import Stellenwert, { type StellenwertZugang } from "@/components/stellenwert/Stellenwert";
 import { api, type GeheimStand } from "@/lib/api";
 import { kopiereText } from "@/lib/zwischenablage";
 
@@ -18,6 +20,15 @@ const STAND: GeheimStand = {
 };
 
 afterEach(() => { vi.restoreAllMocks(); vi.useRealTimers(); });
+
+/** die ganze Simulation, gleich in der Geheimbotschaft unter »Verschlüsseln« */
+async function zumVerschluesseln(zugang: StellenwertZugang) {
+  render(<Stellenwert zugang={zugang} />);
+  fireEvent.click(screen.getByRole("button", { name: /Spiele/ }));
+  fireEvent.click(screen.getByRole("button", { name: /Geheimbotschaft/ }));
+  fireEvent.click(screen.getByRole("button", { name: /Verschlüsseln/ }));
+  await act(async () => {});
+}
 
 describe("Kopieren", () => {
   it("nimmt ohne sichere Verbindung den alten Weg über execCommand", async () => {
@@ -52,9 +63,7 @@ describe("Geheimpost", () => {
       stand = { ...STAND, sperre_sekunden: 180, gesendet: [{ id: 1, von_name: "Ich", an_name: "Mia", basis: 16, status: "offen", inhalt: body.inhalt }] };
       return stand.gesendet[0];
     });
-    render(<Geheimbotschaft zugang={{ code: "ABCD", token: "t" }} />);
-    fireEvent.click(screen.getByRole("button", { name: /Verschlüsseln/ }));
-    await act(async () => {});
+    await zumVerschluesseln({ code: "ABCD", token: "t" });
     fireEvent.change(screen.getByLabelText("Empfänger"), { target: { value: "g:mia" } });
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: /Schicken/ })); });
     expect(senden).toHaveBeenCalledWith("ABCD", expect.objectContaining({ an: "g:mia", basis: 16 }), "t");
@@ -66,22 +75,30 @@ describe("Geheimpost", () => {
   it("zeigt den Fehler des Servers", async () => {
     vi.spyOn(api.toolSessions, "geheimpost").mockResolvedValue(STAND);
     vi.spyOn(api.toolSessions, "geheimpostSenden").mockRejectedValue(new Error('{"detail":"Diese Person ist gerade nicht in der Sitzung."}'));
-    render(<Geheimbotschaft zugang={{ code: "ABCD" }} />);
-    fireEvent.click(screen.getByRole("button", { name: /Verschlüsseln/ }));
-    await act(async () => {});
+    await zumVerschluesseln({ code: "ABCD" });
     fireEvent.change(screen.getByLabelText("Empfänger"), { target: { value: "g:mia" } });
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: /Schicken/ })); });
     expect(screen.getByRole("alert").textContent).toBe("Diese Person ist gerade nicht in der Sitzung.");
   });
 
-  it("Eingang: erst annehmen, dann liegt die Botschaft zum Knacken bereit", async () => {
+  it("auf der Tafel schon anwesend: das Lebenszeichen geht ohne das Spiel raus", async () => {
+    const stand = vi.spyOn(api.toolSessions, "geheimpost").mockResolvedValue(STAND);
+    render(<Stellenwert zugang={{ code: "ABCD" }} />);
+    await act(async () => {});
+    expect(screen.getByRole("button", { name: /Tafel/ }).className).toMatch(/bg-accent/);
+    expect(stand).toHaveBeenCalledWith("ABCD", null);
+  });
+
+  it("Eingang auf jedem Blatt: annehmen springt zur Geheimbotschaft und legt sie zum Knacken hin", async () => {
     vi.spyOn(api.toolSessions, "geheimpost").mockResolvedValue({
       ...STAND, eingang: [{ id: 7, von_name: "Mia", an_name: "Ich", basis: 2, status: "offen", inhalt: null }],
     });
     const antwort = vi.spyOn(api.toolSessions, "geheimpostAntwort").mockResolvedValue(
       { id: 7, von_name: "Mia", an_name: "Ich", basis: 2, status: "angenommen", inhalt: "01001000 01101001" });
-    render(<Geheimbotschaft zugang={{ code: "ABCD" }} />);
+    render(<Stellenwert zugang={{ code: "ABCD" }} />);
     await act(async () => {});
+    // noch auf der Tafel — die Frage kommt trotzdem
+    expect(screen.getByLabelText("Zahl eintragen")).toBeTruthy();
     expect(screen.getByText(/schickt dir eine Geheimbotschaft/)).toBeTruthy();
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: /Annehmen/ })); });
     expect(antwort).toHaveBeenCalledWith("ABCD", 7, true, null);

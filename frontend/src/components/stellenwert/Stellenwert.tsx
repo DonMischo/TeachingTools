@@ -11,6 +11,7 @@ import Tafel from "./Tafel";
 import Verstehen from "./Verstehen";
 import Ueben from "./Ueben";
 import Spiele from "./Spiele";
+import { Eingang, useGeheimpost, type Empfangen, type Geheimpost } from "./spiele/Geheimpost";
 
 const BLAETTER = [
   { id: "tafel", icon: "🧱", label: "Tafel" },
@@ -23,15 +24,20 @@ type Blatt = (typeof BLAETTER)[number]["id"];
 /** Sitzungscode (und Gast-Token) — die Geheimpost braucht ihn. */
 export type StellenwertZugang = { code: string; token?: string | null };
 
-const INHALT: Record<Blatt, (zugang?: StellenwertZugang) => ReactNode> = {
+type Post = { post?: Geheimpost; empfangen: Empfangen | null };
+const INHALT: Record<Blatt, (p: Post) => ReactNode> = {
   tafel: () => <Tafel />,
   verstehen: () => <Verstehen />,
   ueben: () => <Ueben />,
-  spiele: zugang => <Spiele zugang={zugang} />,
+  spiele: p => <Spiele post={p.post} empfangen={p.empfangen} />,
 };
 
 export default function Stellenwert({ action, zugang }: { action?: ReactNode; zugang?: StellenwertZugang }) {
   const [blatt, setBlatt] = useState<Blatt>("tafel");
+  // Geheimpost: anwesend ist, wer die Simulation offen hat — egal welches Blatt
+  const geheimpost = useGeheimpost(zugang);
+  const post = geheimpost.code ? geheimpost : undefined;
+  const [empfangen, setEmpfangen] = useState<Empfangen | null>(null);
   return (
     <div className="page">
       <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -56,7 +62,9 @@ export default function Stellenwert({ action, zugang }: { action?: ReactNode; zu
         ))}
       </div>
 
-      {INHALT[blatt](zugang)}
+      {post && <Eingang post={post} angenommen={e => { setEmpfangen(e); setBlatt("spiele"); }} />}
+
+      {INHALT[blatt]({ post, empfangen })}
     </div>
   );
 }

@@ -12,8 +12,7 @@ import { BOTSCHAFTEN, asciiSicher, codiere, decodiere } from "@/lib/stellenwertS
 import { Chips } from "@/components/prozent/ui";
 import { kopiereText } from "@/lib/zwischenablage";
 import { GeheimErklaerung } from "./Erklaerung";
-import { Eingang, SendenLeiste, useGeheimpost, type Geheimpost } from "./Geheimpost";
-import type { StellenwertZugang } from "../Stellenwert";
+import { SendenLeiste, type Empfangen, type Geheimpost } from "./Geheimpost";
 
 type Code = 2 | 16;
 
@@ -127,7 +126,7 @@ function Entschluesseln({ code, empfangen }: { code: Code; empfangen?: { text: s
   );
 }
 
-function Verschluesseln({ code, post, hatSitzung }: { code: Code; post: Geheimpost; hatSitzung: boolean }) {
+function Verschluesseln({ code, post }: { code: Code; post?: Geheimpost }) {
   const [text, setText] = useState("Treffen in der Pause");
   const [kopiert, setKopiert] = useState<boolean | null>(null);
   const bytes = codiere(text.slice(0, 60), code);
@@ -157,18 +156,23 @@ function Verschluesseln({ code, post, hatSitzung }: { code: Code; post: Geheimpo
             ref={el => { el?.focus(); el?.select(); }} onFocus={e => e.target.select()} />
         </div>
       )}
-      <SendenLeiste post={post} inhalt={bytes.join(" ")} basis={code} hatCode={hatSitzung} />
+      <SendenLeiste post={post} inhalt={bytes.join(" ")} basis={code} />
     </div>
   );
 }
 
-export default function Geheimbotschaft({ zugang }: { zugang?: StellenwertZugang }) {
+/**
+ * `post` kommt von der ganzen Simulation (Stellenwert.tsx): anwesend ist man,
+ * sobald die Stellenwerttafeln offen sind, nicht erst in diesem Spiel.
+ * `empfangen`: eine angenommene Botschaft — sie wird hier zum Knacken aufgebaut.
+ */
+export default function Geheimbotschaft({ post, empfangen }: { post?: Geheimpost; empfangen?: Empfangen | null }) {
   const [modus, setModus] = useState<"ent" | "ver">("ent");
-  const [code, setCode] = useState<Code>(16);
+  const [code, setCode] = useState<Code>(empfangen?.basis ?? 16);
   const [tafel, setTafel] = useState(true);
-  const post = useGeheimpost(zugang);
-  // eine angenommene Botschaft: im Entschlüsseln-Blatt neu aufbauen (key)
-  const [empfangen, setEmpfangen] = useState<{ id: number; text: string; von: string } | null>(null);
+  useEffect(() => {
+    if (empfangen) { setCode(empfangen.basis); setModus("ent"); }
+  }, [empfangen]);
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap gap-3 items-center justify-between">
@@ -185,14 +189,9 @@ export default function Geheimbotschaft({ zugang }: { zugang?: StellenwertZugang
         Im Computer ist jeder Buchstabe eine Zahl — festgelegt im <b>ASCII-Code</b>: »A« ist 65, »a« ist 97, das Leerzeichen 32.
         Jedes Zeichen passt in ein Byte: 8 Bits oder 2 Hex-Ziffern.
       </p>
-      <Eingang post={post} angenommen={p => {
-        const text = p.inhalt ? decodiere(p.inhalt, p.basis) : null;
-        if (!text) return;
-        setCode(p.basis); setModus("ent"); setEmpfangen({ id: p.id, text, von: p.von_name });
-      }} />
       {modus === "ent"
         ? <Entschluesseln key={`${code}-${empfangen?.id ?? 0}`} code={code} empfangen={empfangen ?? undefined} />
-        : <Verschluesseln code={code} post={post} hatSitzung={!!post.code} />}
+        : <Verschluesseln code={code} post={post} />}
       <details open={tafel} onToggle={e => setTafel((e.target as HTMLDetailsElement).open)}>
         <summary className="cursor-pointer font-bold">📖 ASCII-Tafel</summary>
         <div className="mt-2"><AsciiTafel code={code} /></div>

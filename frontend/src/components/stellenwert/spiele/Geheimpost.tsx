@@ -1,13 +1,14 @@
 "use client";
 /**
  * Geheimpost: einen Code an jemanden schicken, der gerade dieselbe Sitzung
- * offen hat (und dabei die Geheimbotschaft). Der Empfänger muss annehmen;
+ * offen hat — irgendein Blatt der Stellenwerttafeln reicht. Der Empfänger muss annehmen;
  * je Absender geht höchstens alle 3 Minuten eine Botschaft raus — das prüft
  * der Server (api/routers/geheimpost.py), die Seite zählt nur herunter.
  */
 import { useCallback, useEffect, useState } from "react";
 import { api, type GeheimPostOut, type GeheimStand } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
+import { decodiere } from "@/lib/stellenwertSpiele";
 import type { StellenwertZugang } from "../Stellenwert";
 
 /** Wie oft nachgeschaut wird — zugleich das Lebenszeichen (Server: 20 s). */
@@ -21,6 +22,7 @@ function meldung(e: unknown): string {
 }
 
 export type Geheimpost = {
+  code: string | null;
   stand: GeheimStand | null;
   /** Sekunden bis zur nächsten erlaubten Botschaft, lokal heruntergezählt */
   sperre: number;
@@ -34,7 +36,7 @@ export type Geheimpost = {
  * selbst — dieselbe, die »Zum Mitmachen« ausgibt. Alle anderen bleiben ohne
  * Post: ohne Sitzung gibt es niemanden, dem man schreiben könnte.
  */
-export function useGeheimpost(zugang?: StellenwertZugang): Geheimpost & { code: string | null } {
+export function useGeheimpost(zugang?: StellenwertZugang): Geheimpost {
   const { auth } = useAuth();
   const [eigener, setEigener] = useState<string | null>(null);
   const [stand, setStand] = useState<GeheimStand | null>(null);
@@ -93,6 +95,9 @@ export function useGeheimpost(zugang?: StellenwertZugang): Geheimpost & { code: 
   return { code, stand, sperre, fehler, senden, antworten };
 }
 
+/** Eine angenommene Botschaft, die im Entschlüsseln-Blatt geknackt wird. */
+export type Empfangen = { id: number; text: string; von: string; basis: 2 | 16 };
+
 const uhr = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
 const STATUS: Record<GeheimPostOut["status"], string> = {
@@ -102,16 +107,17 @@ const STATUS: Record<GeheimPostOut["status"], string> = {
 };
 
 /** Im Verschlüsseln-Blatt: Empfänger wählen und abschicken. */
-export function SendenLeiste({ post, inhalt, basis, hatCode }: {
-  post: Geheimpost; inhalt: string; basis: 2 | 16; hatCode: boolean;
+export function SendenLeiste({ post, inhalt, basis }: {
+  /** fehlt ohne Sitzung */
+  post?: Geheimpost; inhalt: string; basis: 2 | 16;
 }) {
   const [an, setAn] = useState("");
   const [ok, setOk] = useState("");
-  const anwesend = post.stand?.anwesend ?? [];
+  const anwesend = post?.stand?.anwesend ?? [];
   // wer gewählt war und gegangen ist, ist nicht mehr wählbar
   useEffect(() => { if (an && !anwesend.some(p => p.schluessel === an)) setAn(""); }, [anwesend, an]);
 
-  if (!hatCode) {
+  if (!post?.code) {
     return <p className="text-sm text-muted">📨 Verschicken geht in einer Sitzung: über »Zum Mitmachen« (Code/QR) beitreten.</p>;
   }
   const name = anwesend.find(p => p.schluessel === an)?.name;
@@ -119,7 +125,7 @@ export function SendenLeiste({ post, inhalt, basis, hatCode }: {
     <div className="rounded-xl border border-line p-3 flex flex-col gap-2">
       <b>📨 An jemanden in der Sitzung schicken</b>
       {anwesend.length === 0
-        ? <p className="text-sm text-muted">Gerade ist niemand sonst in der Geheimbotschaft. Wer sie öffnet, erscheint hier.</p>
+        ? <p className="text-sm text-muted">Gerade ist niemand sonst in der Sitzung. Wer die Stellenwerttafeln mit dem Code öffnet, erscheint hier.</p>
         : (
           <div className="flex flex-wrap gap-2 items-center">
             <select className="input" value={an} onChange={e => { setAn(e.target.value); setOk(""); }} aria-label="Empfänger">
@@ -144,8 +150,8 @@ export function SendenLeiste({ post, inhalt, basis, hatCode }: {
   );
 }
 
-/** Oben im Spiel: was gerade für mich bereitliegt — annehmen oder ablehnen. */
-export function Eingang({ post, angenommen }: { post: Geheimpost; angenommen: (p: GeheimPostOut) => void }) {
+/** Oben auf jedem Blatt: was gerade für mich bereitliegt — annehmen oder ablehnen. */
+export function Eingang({ post, angenommen }: { post: Geheimpost; angenommen: (e: Empfangen) => void }) {
   const offen = post.stand?.eingang ?? [];
   if (!offen.length) return null;
   return (
@@ -154,7 +160,11 @@ export function Eingang({ post, angenommen }: { post: Geheimpost; angenommen: (p
         <div key={p.id} className="rounded-xl border-2 border-accent bg-surface p-3 flex flex-wrap items-center gap-3">
           <span className="text-2xl">📨</span>
           <span className="flex-1 min-w-48"><b>{p.von_name}</b> schickt dir eine Geheimbotschaft ({p.basis === 16 ? "Hex" : "Binär"}).</span>
-          <button className="btn-primary" onClick={async () => { const r = await post.antworten(p.id, true); if (r) angenommen(r); }}>Annehmen und knacken</button>
+          <button className="btn-primary" onClick={async () => {
+            const r = await post.antworten(p.id, true);
+            const text = r?.inhalt ? decodiere(r.inhalt, r.basis) : null;
+            if (r && text) angenommen({ id: r.id, text, von: r.von_name, basis: r.basis });
+          }}>Annehmen und knacken</button>
           <button className="btn" onClick={() => post.antworten(p.id, false)}>Ablehnen</button>
         </div>
       ))}
