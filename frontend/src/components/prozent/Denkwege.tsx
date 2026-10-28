@@ -50,7 +50,7 @@ export default function Denkwege() {
   const teilwert = (q: number) => z((G * q) / 100);
 
   return (
-    <div className="card flex flex-col gap-4">
+    <div className="card p-4 sm:p-5 flex flex-col gap-4">
       <div className="flex flex-wrap gap-4 items-end">
         <Zahlfeld label="Beispielzahl G" wert={G} setze={setG} min={1} />
         <Zahlfeld label="Beispiel-Prozentsatz" wert={p} setze={setP} min={0} max={1000} einheit="%" breite="w-24" />

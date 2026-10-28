@@ -49,7 +49,7 @@ export default function Ueben() {
   };
 
   return (
-    <div className="card flex flex-col gap-4">
+    <div className="card p-4 sm:p-5 flex flex-col gap-4">
       <div className="flex flex-col gap-2">
         <div className="flex flex-wrap gap-1.5" role="group" aria-label="Aufgabenarten">
           {AUFGABEN_ARTEN.map(a => (

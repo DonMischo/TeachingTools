@@ -28,7 +28,7 @@ export default function Anschauen() {
   const b = alsBruch(p);
 
   return (
-    <div className="card flex flex-col gap-4">
+    <div className="card p-4 sm:p-5 flex flex-col gap-4">
       <Chips wahl={bild} setze={setBild} optionen={BILDER} />
       <div className="flex flex-wrap gap-4 items-end">
         <Regler label="Prozentsatz p (in %)" wert={p} setze={setP} min={0} max={200} breit />

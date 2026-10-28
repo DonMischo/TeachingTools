@@ -165,7 +165,7 @@ function Zinseszins() {
 export default function Zinsen() {
   const [modus, setModus] = useState<(typeof MODI)[number]["id"]>("zeit");
   return (
-    <div className="card flex flex-col gap-4">
+    <div className="card p-4 sm:p-5 flex flex-col gap-4">
       <Chips wahl={modus} setze={setModus} optionen={MODI} />
       {modus === "zeit" ? <Zeit /> : <Zinseszins />}
     </div>

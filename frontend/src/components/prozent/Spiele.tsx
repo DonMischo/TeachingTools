@@ -25,7 +25,7 @@ export default function Spiele() {
     <div className="flex flex-col gap-3">
       <Chips wahl={spiel} setze={setSpiel} optionen={SPIELE} />
       {spiel === "blitz" ? <Spiel /> : (
-        <div className="card">
+        <div className="card p-4 sm:p-5">
           {spiel === "saft" && <Saftbar />}
           {spiel === "handy" && <HandyCheck />}
           {spiel === "kiosk" && <Kiosk />}

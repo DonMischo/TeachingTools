@@ -96,7 +96,7 @@ export default function Spiel() {
 
   if (phase === "start") {
     return (
-      <div className="card flex flex-col gap-4 items-center text-center">
+      <div className="card p-4 sm:p-5 flex flex-col gap-4 items-center text-center">
         <h2 className="text-3xl font-black">⚡ Prozent-Blitz</h2>
         <p className="max-w-xl text-muted">
           {DAUER} Sekunden, so viele Aufgaben wie möglich. Jede richtige gibt 10 Punkte, eine Serie bis zu 10 extra.
@@ -111,7 +111,7 @@ export default function Spiel() {
 
   if (phase === "ende") {
     return (
-      <div className="card flex flex-col gap-4 items-center text-center">
+      <div className="card p-4 sm:p-5 flex flex-col gap-4 items-center text-center">
         <h2 className="text-3xl font-black">⏱️ Zeit um!</h2>
         <p className="text-5xl font-black">{punkte} Punkte</p>
         <p className="text-muted">{stat.richtig} von {stat.gesamt} richtig · beste Serie {stat.besteSerie}{punkte >= best && punkte > 0 ? " · 🏆 neuer Bestwert!" : ` · Bestwert ${best}`}</p>
@@ -137,7 +137,7 @@ export default function Spiel() {
 
   const r = aktuell!;
   return (
-    <div className="card flex flex-col gap-4">
+    <div className="card p-4 sm:p-5 flex flex-col gap-4">
       <div className="flex items-center gap-4">
         <div className="flex-1 h-3 rounded-full bg-page overflow-hidden" aria-label={`noch ${Math.ceil(rest)} Sekunden`}>
           <div className="h-full" style={{ width: `${(rest / DAUER) * 100}%`, background: rest < 10 ? "#e11d48" : FARBE, transition: "width 100ms linear" }} />
