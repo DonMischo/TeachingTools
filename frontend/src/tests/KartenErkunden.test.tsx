@@ -54,7 +54,7 @@ describe("Karten erkunden per Code", () => {
     expect(screen.queryByText(/Auswählen/)).toBeNull();
     expect(screen.queryByText("Üben-Liste")).toBeNull();
     // MapLibre holt die Ebenen von der Sitzungsadresse, mit dem Token
-    const p = ansicht.mock.calls.at(-1)![0];
+    const p = ansicht.mock.calls.at(-1)![0] as { stil: { sources: Record<string, { data?: unknown }> }; gastToken?: string | null };
     expect(p.gastToken).toBe("gast");
     const urls = Object.values(p.stil.sources).map(s => String(s.data ?? ""));
     expect(urls.some(u => u.startsWith("/api/karten/sitzung/KX12/ebenen/"))).toBe(true);

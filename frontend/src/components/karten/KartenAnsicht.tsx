@@ -33,8 +33,29 @@ const LAUFLICHT: number[][] = [[0, 4, 3], [0.5, 4, 2.5], [1, 4, 2], [1.5, 4, 1.5
   [0, 0.5, 3, 3.5], [0, 1, 3, 3], [0, 1.5, 3, 2.5], [0, 2, 3, 2], [0, 2.5, 3, 1.5], [0, 3, 3, 1], [0, 3.5, 3, 0.5]];
 
 /** Deutschland mit etwas Rand */
-const START: [[number, number], [number, number]] = [[5.6, 47.2], [15.3, 55.1]];
+const START: Ausschnitt = { west: 5.6, sued: 47.2, ost: 15.3, nord: 55.1 };
 const BROCKEN: [number, number] = [10.6155, 51.7991];
+
+// Web-Mercator-Höhe einer Breite — so rechnet MapLibre die Bildhöhe (auch für die Schein-Koordinaten der Netze)
+const merc = (lat: number) => Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI) / 360));
+const breite = (y: number) => (360 / Math.PI) * Math.atan(Math.exp(y)) - 90;
+
+/**
+ * Startansicht: ganz Deutschland, der Brocken genau in der Mitte. Der Ausschnitt
+ * wird dafür um den Brocken herum symmetrisch gemacht (in Bildhöhe, nicht in
+ * Grad) — dann liegt die Mitte von fitBounds auf dem Brocken.
+ */
+export function startKamera(projektion: Projektion) {
+  const z = ausschnittVor(START, projektion);
+  const [x, lat] = vor(BROCKEN, projektion);
+  const y = merc(lat);
+  const halbB = Math.max(x - z.west, z.ost - x);
+  const halbH = Math.max(y - merc(z.sued), merc(z.nord) - y);
+  return {
+    mitte: [x, lat] as [number, number],
+    rahmen: [[x - halbB, breite(y - halbH)], [x + halbB, breite(y + halbH)]] as [[number, number], [number, number]],
+  };
+}
 
 /** Liefert das Kartenbild als PNG-data-URL, sobald der aktuelle Stil fertig gezeichnet ist. */
 export type KartenBild = () => Promise<string>;
@@ -92,8 +113,8 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
       m = new maplibre.Map({
         container: behaelter.current,
         style: ersterStil.current,
-        // Start auf dem Brocken (Harz); »⤢« passt danach Deutschland ein
-        center: BROCKEN, zoom: 10,
+        // Start: ganz Deutschland, der Brocken (Harz) in der Mitte — gleich unten nach dem Anlegen
+        center: vor(BROCKEN, aktuell.current.projektion), zoom: 5,
         // Kein maxBounds über die ganze Welt: MapLibre stürzt dann beim Start ab (_calcMatrices)
         renderWorldCopies: false,
         minZoom: 0.5,
@@ -108,6 +129,8 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
           return token && url.includes("/api/") ? { url, headers: { Authorization: `Bearer ${token}` } } : { url };
         },
       });
+      // ohne gewählte Region gleich auf Deutschland um den Brocken — sonst passt `ziel` gleich ein
+      if (!ziel) m.fitBounds(startKamera(aktuell.current.projektion).rahmen, { duration: 0 });
       m.touchZoomRotate.disableRotation();
       m.addControl(new maplibre.NavigationControl({ showCompass: false }), "top-right");
       // Symbole erst bei Bedarf zeichnen — seit MapLibre 6 nur noch über den Resolver
@@ -253,7 +276,7 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
         zoom: Math.log2((radius * 2 * Math.PI) / 512), duration: dauer });
       return;
     }
-    m.fitBounds(z ? [[z.west, z.sued], [z.ost, z.nord]] : START, { duration: dauer });
+    m.fitBounds(z ? [[z.west, z.sued], [z.ost, z.nord]] : startKamera(projektion).rahmen, { duration: dauer });
   };
   useEffect(() => {
     if (bereit && ziel) einpassen();
