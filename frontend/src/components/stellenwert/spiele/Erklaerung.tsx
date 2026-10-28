@@ -64,8 +64,8 @@ export function ZaehlwerkErklaerung() {
   return (
     <Erklaerung titel="🚗 Zählwerk-Rennen — so geht's">
       <p className="text-sm leading-relaxed">
-        Das Zählwerk zeigt eine Zahl, daneben steht, was dazukommt (zum Beispiel <b>+ 1</b>). Tippe, was das Zählwerk
-        <b> danach</b> zeigt. Jede Walze kann nur die Ziffern ihres Systems — im Zweiersystem 0 und 1, im Sechzehnersystem 0 bis F.
+        Das Zählwerk zeigt eine Zahl, daneben steht, was dazukommt (zum Beispiel <b>+ 1</b>). Dreh die Walzen so,
+        wie das Zählwerk <b>danach</b> steht, und prüf mit Enter. Jede Walze kann nur die Ziffern ihres Systems — im Zweiersystem 0 und 1, im Sechzehnersystem 0 bis F.
       </p>
       <div className="rounded-xl border border-line p-3 flex flex-col gap-3">
         <Chips wahl={id} setze={x => { setId(x); setGedreht(false); }} optionen={BEISPIELE.map(b => ({ id: b.id, label: b.label }))} />
@@ -105,7 +105,8 @@ export function ZaehlwerkErklaerung() {
         <li>Falsch: Du siehst das richtige Ergebnis. Beim Spiel auf Zeit kostet es 3 Sekunden.</li>
         <li>Im Zehnersystem steht über jeder Walze ihr Stellenwert: <b>+ 1 Z</b> dreht also die Zehner-Walze.</li>
         <li>Spiel auf Zeit (60 s, 2 min) oder eine feste Zahl Aufgaben (10, 20, 30) — die Zeit läuft dann mit.</li>
-        <li>Unter dem Eingabefeld gibt es Zifferntasten — praktisch für A bis F.</li>
+        <li>Drehen mit ▲▼ oder den Pfeiltasten, ←→ wechselt die Walze; eine Ziffer (auch A–F) tippen stellt die Walze direkt ein.</li>
+        <li>⚙️ <b>Übertrag mitdrehen</b> (normal aus): läuft eine Walze über, dreht die links daneben von selbst mit — Walze für Walze, wie im echten Zählwerk. Ohne den Schalter musst du den Übertrag selbst drehen.</li>
       </ul>
     </Erklaerung>
   );

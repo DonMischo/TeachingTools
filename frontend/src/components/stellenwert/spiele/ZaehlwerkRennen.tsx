@@ -1,17 +1,18 @@
 "use client";
 /**
  * Zählwerk-Rennen: Das Zählwerk zeigt eine Zahl, gefragt ist, was nach +1
- * (−1, + einem Stellenwert …) dasteht. Nach der Antwort dreht das Zählwerk
- * wirklich — man sieht den Übertrag wandern. Je mehr Walzen sich bewegen,
+ * (−1, + einem Stellenwert …) dasteht. Geantwortet wird, indem man die Walzen
+ * selbst dreht (DrehZaehlwerk); mit »Übertrag mitdrehen« nimmt eine
+ * überlaufende Walze die nächste mit. Je mehr Walzen sich bewegen müssen,
  * desto mehr Punkte. Gespielt wird auf Zeit (ein Fehler kostet 3 Sekunden)
  * oder eine feste Zahl Aufgaben (die Zeit läuft mit). Im Zehnersystem wird in
  * Stellenwerten gezählt (+ 1 H, − 3 Z …), bis 1 000, 1 Million oder 1 Milliarde.
  */
 import { useEffect, useRef, useState } from "react";
-import { BASEN, INDEX, geaenderteStellen, lies, schreibe, spalte, ziffer, ziffernVon, type Basis } from "@/lib/stellenwert";
+import { BASEN, INDEX, geaenderteStellen, schreibe, spalte, ziffer, ziffernVon, type Basis } from "@/lib/stellenwert";
 import { DEZ_BEREICHE, zaehlRunde, zaehlZiel, zehnerSchritt, type ZaehlRunde } from "@/lib/stellenwertSpiele";
 import { Chips } from "@/components/prozent/ui";
-import { ZaehlwerkAnzeige } from "../teile";
+import { DrehZaehlwerk } from "../DrehZaehlwerk";
 import { ZaehlwerkErklaerung } from "./Erklaerung";
 
 const STRAFE = 3;
@@ -48,6 +49,15 @@ function schrittText(r: ZaehlRunde) {
   return `${vz} ${schreibe(Math.abs(r.schritt), r.basis)}${Math.abs(r.schritt) > 1 ? INDEX[r.basis] : ""}`;
 }
 
+/** Übertrag mitdrehen: eine überlaufende Walze nimmt die links daneben mit (Standard: aus). */
+function MitdrehenSchalter({ an, setze }: { an: boolean; setze: (b: boolean) => void }) {
+  return (
+    <label className="flex items-center gap-1.5 text-sm cursor-pointer" title="Läuft eine Walze über, dreht die links daneben von selbst eins weiter — Walze für Walze, wie im echten Zählwerk.">
+      <input type="checkbox" checked={an} onChange={e => setze(e.target.checked)} /> ⚙️ Übertrag mitdrehen
+    </label>
+  );
+}
+
 const uhr = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 
 export default function ZaehlwerkRennen() {
@@ -57,8 +67,12 @@ export default function ZaehlwerkRennen() {
   const [modus, setModus] = useState<Modus>("t60");
   const [phase, setPhase] = useState<"start" | "laeuft" | "ende">("start");
   const [runde, setRunde] = useState<ZaehlRunde | null>(null);
-  const [zeigt, setZeigt] = useState(0);
-  const [eingabe, setEingabe] = useState("");
+  // jede Runde ein frisches Zählwerk (key)
+  const [rundeNr, setRundeNr] = useState(0);
+  // was gerade auf den Walzen steht, und ob ein Übertrag noch unterwegs ist
+  const [eingestellt, setEingestellt] = useState(0);
+  const [laeuft, setLaeuft] = useState(false);
+  const [mitdrehen, setMitdrehen] = useState(false);
   const [rueck, setRueck] = useState<{ ok: boolean; text: string; deine?: string; richtig?: string; seit: number } | null>(null);
   const [punkte, setPunkte] = useState(0);
   const [stat, setStat] = useState({ richtig: 0, gesamt: 0 });
@@ -66,7 +80,6 @@ export default function ZaehlwerkRennen() {
   const [best, setBest] = useState(0);
   const uhrRef = useRef(0);
   const weiter = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const feld = useRef<HTMLInputElement>(null);
 
   const m = MODI.find(x => x.id === modus)!;
   const zeit = "zeit" in m ? m.zeit : null;
@@ -94,8 +107,7 @@ export default function ZaehlwerkRennen() {
 
   const neueRunde = () => {
     const r = zaehlRunde(Number(stufe) as 1 | 2 | 3, basen, Math.random, dezStellen);
-    setRunde(r); setZeigt(r.start); setEingabe(""); setRueck(null);
-    feld.current?.focus();
+    setRunde(r); setRundeNr(n => n + 1); setEingestellt(r.start); setLaeuft(false); setRueck(null);
   };
 
   /** nach der Rückmeldung: nächste Aufgabe oder Schluss */
@@ -113,12 +125,13 @@ export default function ZaehlwerkRennen() {
     neueRunde();
   };
 
-  const antworte = (text = eingabe) => {
+  const antworte = () => {
     if (!runde) return;
     // Enter während der Rückmeldung: weiter, sobald man sie kurz gesehen hat
     if (rueck) { if (Date.now() - rueck.seit > SPERRE) naechste(); return; }
-    const x = lies(text, runde.basis);
-    if (x === null) return;
+    // erst prüfen, wenn das Zählwerk stillsteht
+    if (laeuft) return;
+    const x = eingestellt;
     const ziel = zaehlZiel(runde);
     const ok = x === ziel;
     const gedreht = geaenderteStellen(runde.start, ziel, runde.basis, runde.stellen).length;
@@ -132,7 +145,6 @@ export default function ZaehlwerkRennen() {
           deine: ziffernVon(x, runde.basis, runde.stellen).map(ziffer).join(""),
           richtig: ziffernVon(ziel, runde.basis, runde.stellen).map(ziffer).join(""),
         });
-    setZeigt(ziel);
     clearTimeout(weiter.current);
   };
 
@@ -151,9 +163,10 @@ export default function ZaehlwerkRennen() {
           <ZaehlwerkErklaerung />
         </div>
         <p className="text-sm max-w-2xl">
-          Das Zählwerk zeigt eine Zahl. Was steht da nach dem nächsten Schritt? Achtung beim <b>Übertrag</b>: läuft eine
-          Walze über die größte Ziffer, springt sie auf 0 und die Walze links dreht eins weiter. Je mehr Walzen sich
-          drehen, desto mehr Punkte. Im Zehnersystem wird in Stellenwerten gezählt: <b>+ 1 H</b> heißt »einen Hunderter dazu«.
+          Das Zählwerk zeigt eine Zahl. Dreh die Walzen so, wie sie nach dem nächsten Schritt stehen, und prüf mit Enter.
+          Achtung beim <b>Übertrag</b>: läuft eine Walze über die größte Ziffer, springt sie auf 0 und die Walze links
+          dreht eins weiter. Je mehr Walzen sich drehen, desto mehr Punkte. Im Zehnersystem wird in Stellenwerten
+          gezählt: <b>+ 1 H</b> heißt »einen Hunderter dazu«.
         </p>
         <Chips wahl={modus} setze={setModus} optionen={MODI} />
         <Chips wahl={stufe} setze={setStufe} optionen={STUFEN} />
@@ -171,6 +184,7 @@ export default function ZaehlwerkRennen() {
             <Chips wahl={bereich} setze={setBereich} optionen={DEZ_BEREICHE} />
           </div>
         )}
+        <MitdrehenSchalter an={mitdrehen} setze={setMitdrehen} />
         {phase === "ende" && (
           <p className="text-lg font-black" role="status">
             {zeit !== null ? "Zeit um!" : `Geschafft in ${uhr(sek)}!`} {punkte} Punkte, {stat.richtig} von {stat.gesamt} richtig.
@@ -194,24 +208,22 @@ export default function ZaehlwerkRennen() {
         <span>✔ {stat.richtig}/{stat.gesamt}</span>
         <button className="btn text-xs ml-auto" onClick={() => { clearTimeout(weiter.current); setPhase("ende"); }}>⏹ Aufhören</button>
       </div>
-      <div className="flex flex-wrap items-center gap-4 max-w-full">
-        <div className="overflow-x-auto max-w-full">
-          <ZaehlwerkAnzeige n={zeigt} basis={runde.basis} stellen={runde.stellen} gross={runde.stellen <= 7} beschriftet={runde.basis === 10} />
-        </div>
-        <span className="text-3xl font-black">{schrittText(runde)}</span>
-        <span className="text-sm text-muted">{BASEN.find(b => b.basis === runde.basis)!.name}</span>
+      <p className="text-lg">
+        <span className="text-muted text-sm">Start: </span>
+        <b className="font-mono">{schreibe(runde.start, runde.basis, runde.stellen).replace(/\s/g, "")}</b>
+        <span className="text-sm text-muted">{INDEX[runde.basis]}</span>
+        <span className="text-3xl font-black ml-3">{schrittText(runde)}</span>
+        <span className="text-sm text-muted ml-3">{BASEN.find(b => b.basis === runde.basis)!.name}</span>
+      </p>
+      <div className="overflow-x-auto max-w-full">
+        <DrehZaehlwerk key={rundeNr} basis={runde.basis} stellen={runde.stellen} start={runde.start}
+          mitdrehen={mitdrehen} gesperrt={!!rueck} beschriftet={runde.basis === 10} gross={runde.stellen <= 7}
+          onWert={setEingestellt} onLaeuft={setLaeuft} onEnter={antworte} />
       </div>
-      <form className="flex flex-wrap gap-2 items-center" onSubmit={e => { e.preventDefault(); antworte(); }}>
-        <input ref={feld} className="input w-52 font-mono text-xl uppercase" value={eingabe} autoFocus autoComplete="off" aria-label="Was zeigt das Zählwerk dann?"
-          onChange={e => { if (!rueck) setEingabe(e.target.value); }} readOnly={!!rueck} placeholder="?" />
-        <span className="text-muted">{INDEX[runde.basis]}</span>
-        <button className="btn-primary" type="submit">{rueck ? "Weiter ⏎" : "OK ⏎"}</button>
-      </form>
-      <div className="flex flex-wrap gap-1" aria-label="Zifferntasten">
-        {Array.from({ length: runde.basis }, (_, d) => (
-          <button key={d} type="button" className="btn font-mono w-10" disabled={!!rueck} onClick={() => { setEingabe(t => t + ziffer(d)); feld.current?.focus(); }}>{ziffer(d)}</button>
-        ))}
-        <button type="button" className="btn w-10" disabled={!!rueck} onClick={() => { setEingabe(t => t.slice(0, -1)); feld.current?.focus(); }} aria-label="Löschen">⌫</button>
+      <div className="flex flex-wrap gap-3 items-center">
+        <button className="btn-primary" onClick={antworte} disabled={laeuft && !rueck}>{rueck ? "Weiter ⏎" : "Prüfen ⏎"}</button>
+        <MitdrehenSchalter an={mitdrehen} setze={setMitdrehen} />
+        <span className="text-xs text-muted">▲▼ oder Pfeiltasten drehen, ←→ wechselt die Walze, eine Ziffer tippen stellt sie direkt ein.</span>
       </div>
       {rueck && (
         <div role="status" className="flex flex-col gap-1">

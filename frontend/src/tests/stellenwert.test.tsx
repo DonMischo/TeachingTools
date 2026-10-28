@@ -220,11 +220,14 @@ describe("Oberfläche", () => {
     fireEvent.click(screen.getByRole("button", { name: /bis 1 Million/ }));
     fireEvent.click(screen.getByRole("button", { name: /Start/ }));
     expect(screen.getByText(/Aufgabe 1 von 10/)).toBeTruthy();
-    expect(screen.getByRole("img", { name: /Zählwerk zeigt \d{7}$/ })).toBeTruthy();
+    const werk = screen.getByRole("group", { name: "Zählwerk zum Drehen" });
+    expect(werk.querySelectorAll("[aria-label$='hochdrehen']")).toHaveLength(7);
     expect(screen.getByText("M")).toBeTruthy();
+    // Standard: kein automatischer Übertrag
+    expect((screen.getByRole("checkbox", { name: /Übertrag mitdrehen/ }) as HTMLInputElement).checked).toBe(false);
   });
 
-  it("Zählwerk-Rennen: Enter prüft, Fehler bleibt stehen, Enter geht weiter, Fokus bleibt im Feld", () => {
+  it("Zählwerk-Rennen: Walzen drehen statt tippen, Enter prüft, Fehler bleibt stehen, Enter geht weiter", () => {
     vi.useFakeTimers();
     try {
       render(<Stellenwert />);
@@ -232,20 +235,21 @@ describe("Oberfläche", () => {
       fireEvent.click(screen.getAllByRole("button", { name: /Zählwerk-Rennen/ })[0]);
       fireEvent.click(screen.getByRole("button", { name: /10 Aufgaben/ }));
       fireEvent.click(screen.getByRole("button", { name: /Start/ }));
-      const feld = screen.getByLabelText("Was zeigt das Zählwerk dann?") as HTMLInputElement;
-      expect(document.activeElement).toBe(feld);
-      // »0« ist nie richtig: jede Aufgabe endet über 0
-      fireEvent.change(feld, { target: { value: "0" } });
-      fireEvent.submit(feld.closest("form")!);
+      expect(screen.queryByRole("textbox")).toBeNull(); // kein Eingabefeld mehr
+      const einer = screen.getByRole("button", { name: /^Einer: / });
+      expect(document.activeElement).toBe(einer);
+      // unverändert abschicken ist nie richtig: jeder Schritt ändert die Zahl
+      fireEvent.keyDown(einer, { key: "Enter" });
       expect(screen.getByText(/Leider falsch/)).toBeTruthy();
       expect(screen.getByText("richtig")).toBeTruthy();
+      // während der Rückmeldung lässt sich nichts drehen
+      expect((screen.getByRole("button", { name: "Einer hochdrehen" }) as HTMLButtonElement).disabled).toBe(true);
       act(() => { vi.advanceTimersByTime(3000); });
       expect(screen.getByText(/Leider falsch/)).toBeTruthy();
-      expect(document.activeElement).toBe(feld);
-      fireEvent.submit(feld.closest("form")!);
+      fireEvent.keyDown(document.activeElement!, { key: "Enter" });
       expect(screen.queryByText(/Leider falsch/)).toBeNull();
       expect(screen.getByText(/Aufgabe 2 von 10/)).toBeTruthy();
-      expect(document.activeElement).toBe(feld);
+      expect(document.activeElement).toBe(screen.getByRole("button", { name: /^Einer: / }));
     } finally {
       vi.useRealTimers();
     }

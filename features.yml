@@ -643,6 +643,7 @@ simulationen:
       - Zählwerk mit sichtbarem Übertrag
       - Übungen in drei Stufen mit Lösungsweg (Ablesen, Ziffernwert, Zahlwort, Zerlegen, Umrechnen, Weiterzählen)
       - "Spiele: Bit-Fall, Hex-Farbmischer, Zählwerk-Rennen, Geheimbotschaft (ASCII)"
+      - "Zählwerk-Rennen: Antwort durch Drehen der Walzen, Übertrag auf Wunsch automatisch und Walze für Walze"
       - "Zählwerk-Rennen auf Zeit oder mit fester Aufgabenzahl; im Zehnersystem Schritte in Stellenwerten (+ 1 H) bis 1 000, 1 Million oder 1 Milliarde"
       - "Geheimbotschaft: Code direkt an Anwesende derselben Sitzung schicken, Empfänger nimmt an, höchstens eine Botschaft je 3 Minuten"
   - id: rechenregeln
