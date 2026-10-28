@@ -4,11 +4,15 @@
  * wegnehmen. »Automatisch bündeln« macht den Übertrag selbst; ohne liegen
  * auch einmal 13 Plättchen in einer Spalte, und man bündelt von Hand.
  * Wechselt man das System, bleibt die Zahl dieselbe.
+ *
+ * »➕ Neue Zeile« schreibt die Zahl fest in eine Zeile darüber und fängt
+ * unten eine neue an — so stehen mehrere Zahlen untereinander, nur die
+ * letzte lässt sich verändern. Führende Nullen bleiben dort leer wie im Heft.
  */
 import { useEffect, useRef, useState } from "react";
-import { BASEN, INDEX, dez, lies, nachkommaVon, schreibe, spalte, spalten, ziffer, ziffernVon, type Basis } from "@/lib/stellenwert";
+import { BASEN, INDEX, dez, lies, nachkommaVon, schreibe, spalte, ziffernVon, type Basis } from "@/lib/stellenwert";
 import { Chips } from "@/components/prozent/ui";
-import { DreiSysteme, TafelAnsicht } from "./teile";
+import { DreiSysteme, TafelAnsicht, type FruehereZeile } from "./teile";
 
 const GROESSEN: Record<Basis, readonly { id: string; label: string; maxExp: number }[]> = {
   10: [{ id: "3", label: "bis Tausender", maxExp: 3 }, { id: "6", label: "bis Millionen", maxExp: 6 }, { id: "9", label: "bis Milliarden", maxExp: 9 }],
@@ -34,79 +38,6 @@ function verteile(einheiten: number, basis: Basis, minExp: number): Werte {
 
 type Zeile = { id: number; wert: number };
 
-/**
- * Mehrere Zahlen untereinander in einer Stellenwerttafel, je Zahl eine Zeile.
- * Führende Nullen bleiben leer wie im Heft. In anderen Systemen als dem
- * Zehnersystem nur der ganze Teil.
- */
-function Zeilen({ basis, maxExp, zeilen, auswahl, setAuswahl, loesche }: {
-  basis: Basis; maxExp: number; zeilen: Zeile[];
-  auswahl: Set<number>; setAuswahl: (s: Set<number>) => void; loesche: () => void;
-}) {
-  const ganz = (w: number) => (basis === 10 ? w : Math.floor(w));
-  const minExp = basis === 10 && zeilen.some(z => z.wert !== Math.floor(z.wert)) ? -Math.max(...zeilen.map(z => nachkommaVon(z.wert))) : 0;
-  const ziffernLaenge = Math.max(1, ...zeilen.map(z => ziffernVon(Math.floor(ganz(z.wert)), basis).length));
-  const sp = spalten(basis, Math.max(maxExp, ziffernLaenge - 1), minExp);
-  const alle = zeilen.length > 0 && zeilen.every(z => auswahl.has(z.id));
-  const umschalten = (id: number) => {
-    const s = new Set(auswahl);
-    if (s.has(id)) s.delete(id); else s.add(id);
-    setAuswahl(s);
-  };
-  return (
-    <div className="flex flex-col gap-2">
-      <div className="flex flex-wrap items-center gap-2">
-        <h2 className="font-black">📋 Zahlen untereinander</h2>
-        <span className="flex-1" />
-        <button className="btn text-sm" disabled={!auswahl.size} onClick={loesche}>🗑 Ausgewählte löschen{auswahl.size ? ` (${auswahl.size})` : ""}</button>
-      </div>
-      <div className="overflow-x-auto pb-1">
-        <table className="border-collapse border-2 border-line rounded-xl" aria-label="Zahlen in der Stellenwerttafel">
-          <thead>
-            <tr>
-              <th className="px-2 bg-surface">
-                <input type="checkbox" checked={alle} aria-label="Alle Zeilen auswählen"
-                  onChange={() => setAuswahl(alle ? new Set() : new Set(zeilen.map(z => z.id)))} />
-              </th>
-              {sp.map(s => (
-                <th key={s.exp} title={s.name} className={`w-12 sm:w-14 text-white font-black text-sm py-1 ${s.exp === -1 ? "border-l-4" : ""}`}
-                  style={{ background: s.farbe, borderLeftColor: "var(--text)" }}>{s.kurz}</th>
-              ))}
-              {basis !== 10 && <th className="px-3 text-sm text-muted font-normal bg-surface">Wert</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {zeilen.map(z => {
-              const w = ganz(z.wert);
-              const werte = verteile(Math.round(w * basis ** -minExp), basis, minExp);
-              const hoechste = Math.max(0, ...Object.keys(werte).map(Number));
-              const niedrigste = Math.min(0, ...Object.keys(werte).map(Number));
-              return (
-                <tr key={z.id} className={auswahl.has(z.id) ? "bg-surface-hover" : ""}>
-                  <td className="px-2 text-center border-t border-line">
-                    <input type="checkbox" checked={auswahl.has(z.id)} onChange={() => umschalten(z.id)}
-                      aria-label={`Zeile ${basis === 10 ? dez(w, nachkommaVon(w)) : schreibe(w, basis)} auswählen`} />
-                  </td>
-                  {sp.map(s => (
-                    <td key={s.exp} className={`text-center font-mono font-black text-xl py-1 border-t border-line ${s.exp === -1 ? "border-l-4" : "border-l"}`}
-                      style={{ background: s.farbe + "1a", borderLeftColor: s.exp === -1 ? "var(--text)" : s.farbe + "55" }}>
-                      {s.exp <= hoechste && s.exp >= niedrigste ? ziffer(werte[s.exp] ?? 0) : ""}
-                    </td>
-                  ))}
-                  {basis !== 10 && <td className="px-3 text-sm text-muted border-t border-line tabular-nums">= {schreibe(w, 10)}₁₀</td>}
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-      {basis !== 10 && zeilen.some(z => z.wert !== Math.floor(z.wert)) && (
-        <p className="text-xs text-muted">Kommazahlen zeigt die Tafel nur im Zehnersystem — hier steht der ganze Teil.</p>
-      )}
-    </div>
-  );
-}
-
 export default function Tafel() {
   const [basis, setBasis] = useState<Basis>(10);
   const [groesse, setGroesse] = useState<Record<Basis, string>>({ 10: "3", 2: "7", 16: "1" });
@@ -123,8 +54,13 @@ export default function Tafel() {
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(() => () => clearTimeout(timer.current), []);
 
-  const maxExp = GROESSEN[basis].find(g => g.id === groesse[basis])!.maxExp;
-  const minExp = basis === 10 && komma ? -3 : 0;
+  // Kommazahlen in früheren Zeilen brauchen die Kommaspalten, große Zahlen mehr Spalten links
+  const kommaAn = basis === 10 && (komma || zeilen.some(z => z.wert !== Math.floor(z.wert)));
+  const maxExp = Math.max(
+    GROESSEN[basis].find(g => g.id === groesse[basis])!.maxExp,
+    ...zeilen.map(z => ziffernVon(Math.floor(z.wert), basis).length - 1),
+  );
+  const minExp = kommaAn ? -3 : 0;
   const einheiten = Object.entries(werte).reduce((s, [e, n]) => s + n * basis ** (Number(e) - minExp), 0);
   const wert = einheiten / basis ** -minExp;
   const gebuendelt = Object.values(werte).every(n => n < basis);
@@ -198,19 +134,31 @@ export default function Tafel() {
     setWerte(verteile(e, basis, minExp)); setMeldung("");
   };
 
-  /** Eingetippte Zahl (oder, wenn das Feld leer ist, die Zahl auf der Tafel) als neue Zeile darunter */
+  /** Die Zahl auf der Tafel festschreiben und darunter eine neue Zeile anfangen (leer oder mit der getippten Zahl). */
   const neueZeile = () => {
-    let x = wert;
+    let start: Werte = {};
     if (eingabe.trim()) {
       const y = lies(eingabe, basis);
       if (y === null) { setMeldung(`Das ist keine Zahl im ${BASEN.find(s => s.basis === basis)!.name}.`); return; }
       if (y !== Math.floor(y) && minExp === 0) { setMeldung("Für Kommazahlen erst »Mit Komma« einschalten."); return; }
-      if (ziffernVon(Math.floor(y), basis).length > 13) { setMeldung("Diese Zahl ist zu lang für die Tafel."); return; }
-      x = y;
+      const e = Math.round(y * basis ** -minExp);
+      if (e >= basis ** (maxExp - minExp + 1)) { setMeldung("Zu groß für diese Tafel — mach sie größer."); return; }
+      start = verteile(e, basis, minExp);
     }
-    setZeilen(z => [...z, { id: naechsteId.current++, wert: x }]);
-    setMeldung("");
+    setZeilen(z => [...z, { id: naechsteId.current++, wert }]);
+    setWerte(start); setEingabe(""); setMeldung("");
   };
+
+  const fruehere: FruehereZeile[] = zeilen.map(z => {
+    const w = basis === 10 ? z.wert : Math.floor(z.wert);
+    const zf = verteile(Math.round(w * basis ** -minExp), basis, minExp);
+    const exps = Object.keys(zf).map(Number);
+    return {
+      id: z.id, ziffern: zf,
+      hoechste: Math.max(0, ...exps), niedrigste: Math.min(0, ...exps),
+      name: basis === 10 ? dez(w, nachkommaVon(w)) : schreibe(w, basis),
+    };
+  });
 
   const wuerfle = () => {
     const stellen = maxExp - minExp + 1;
@@ -230,7 +178,7 @@ export default function Tafel() {
         <div className="flex flex-wrap gap-3 items-center">
           <Chips wahl={groesse[basis]} setze={g => setGroesse({ ...groesse, [basis]: g })} optionen={GROESSEN[basis]} />
           {basis === 10 && (
-            <Chips wahl={komma ? "k" : "g"} setze={k => { setKomma(k === "k"); if (k === "g") setWerte(w => Object.fromEntries(Object.entries(w).filter(([e]) => Number(e) >= 0))); }}
+            <Chips wahl={kommaAn ? "k" : "g"} setze={k => { setKomma(k === "k"); if (k === "g") setWerte(w => Object.fromEntries(Object.entries(w).filter(([e]) => Number(e) >= 0))); }}
               optionen={[{ id: "g", label: "Ganze Zahlen" }, { id: "k", label: "Mit Komma" }]} />
           )}
           <Chips wahl={art} setze={setArt} optionen={[{ id: "plaettchen", label: "🔵 Plättchen" }, { id: "ziffern", label: "🔢 Ziffern" }]} />
@@ -239,13 +187,17 @@ export default function Tafel() {
           </label>
         </div>
 
+        {zeilen.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm text-muted">{zeilen.length + 1} Zahlen untereinander — nur die letzte (▶) lässt sich verändern.</span>
+            <button className="btn text-sm" disabled={!auswahl.size}
+              onClick={() => { setZeilen(z => z.filter(x => !auswahl.has(x.id))); setAuswahl(new Set()); }}>
+              🗑 Ausgewählte löschen{auswahl.size ? ` (${auswahl.size})` : ""}
+            </button>
+          </div>
+        )}
         <TafelAnsicht basis={basis} maxExp={maxExp} minExp={minExp} werte={werte} art={art} blitz={blitz} auto={auto}
-          knoepfe={{ plus, minus, buendeln, entbuendeln }} />
-        <div>
-          <button className="btn" onClick={() => { setZeilen(z => [...z, { id: naechsteId.current++, wert }]); setMeldung(""); }}>
-            📋 Zahl von der Tafel in die Liste ({basis === 10 ? dez(wert, nk) : schreibe(Math.floor(wert), basis)}{INDEX[basis]})
-          </button>
-        </div>
+          knoepfe={{ plus, minus, buendeln, entbuendeln }} fruehere={fruehere} auswahl={{ gewaehlt: auswahl, setze: setAuswahl }} />
 
         {meldung && <p className="text-sm font-bold text-bad" role="status">{meldung}</p>}
         {!gebuendelt && (
@@ -257,24 +209,17 @@ export default function Tafel() {
         <div className="flex flex-wrap gap-2 items-center">
           <form className="flex gap-2 items-center" onSubmit={e => { e.preventDefault(); setzeZahl(); }}>
             <input className="input w-40 font-mono" value={eingabe} onChange={e => setEingabe(e.target.value)}
-              placeholder={basis === 2 ? "z. B. 1011" : basis === 16 ? "z. B. 2AF" : komma ? "z. B. 3,05" : "z. B. 4072"}
+              placeholder={basis === 2 ? "z. B. 1011" : basis === 16 ? "z. B. 2AF" : kommaAn ? "z. B. 3,05" : "z. B. 4072"}
               aria-label="Zahl eintragen" />
             <span className="text-muted">{INDEX[basis]}</span>
             <button className="btn" type="submit">In die Tafel</button>
-            <button className="btn" type="button" onClick={neueZeile} title="Als neue Zeile unter die anderen Zahlen schreiben (leeres Feld: die Zahl von der Tafel)">➕ Neue Zeile</button>
+            <button className="btn" type="button" onClick={neueZeile} title="Die Zahl auf der Tafel festschreiben und darunter eine neue Zeile anfangen — mit der getippten Zahl oder leer">➕ Neue Zeile</button>
           </form>
           <button className="btn" onClick={wuerfle}>🎲 Zufallszahl</button>
           <button className="btn" onClick={() => { setWerte({}); setMeldung(""); }}>↺ Leeren</button>
         </div>
         <p className="text-sm text-muted max-w-3xl">{TIPPS[basis]}</p>
       </div>
-
-      {zeilen.length > 0 && (
-        <div className="card p-4 sm:p-5">
-          <Zeilen basis={basis} maxExp={maxExp} zeilen={zeilen} auswahl={auswahl} setAuswahl={setAuswahl}
-            loesche={() => { setZeilen(z => z.filter(x => !auswahl.has(x.id))); setAuswahl(new Set()); }} />
-        </div>
-      )}
 
       <div className="grid gap-4 md:grid-cols-2">
         <div className="card p-4 sm:p-5 flex flex-col gap-2">

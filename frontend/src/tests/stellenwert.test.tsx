@@ -163,33 +163,36 @@ describe("Oberfläche", () => {
     expect(screen.getByLabelText("Einer: 0")).toBeTruthy();
   });
 
-  it("Zahlen als neue Zeilen untereinander, ausgewählte Zeilen löschen", () => {
+  it("Neue Zeile schreibt die Zahl fest, nur die letzte bleibt veränderbar; Auswahl ab zwei Zeilen", () => {
     render(<Stellenwert />);
     const feld = screen.getByLabelText("Zahl eintragen");
     const neu = screen.getByRole("button", { name: /Neue Zeile/ });
-    fireEvent.change(feld, { target: { value: "4072" } }); fireEvent.click(neu);
-    fireEvent.change(feld, { target: { value: "58" } }); fireEvent.click(neu);
-    fireEvent.change(feld, { target: { value: "" } }); fireEvent.click(neu); // leeres Feld: Zahl von der Tafel (135)
-    const tabelle = screen.getByRole("table", { name: /Zahlen in der Stellenwerttafel/ });
-    expect(tabelle.querySelectorAll("tbody tr")).toHaveLength(3);
-    // führende Nullen bleiben leer: 58 hat genau zwei Ziffern
-    const zeile58 = screen.getByLabelText("Zeile 58 auswählen").closest("tr")!;
-    expect([...zeile58.querySelectorAll("td")].map(td => td.textContent).join("")).toBe("58");
-    fireEvent.click(screen.getByLabelText("Zeile 4072 auswählen"));
+    // eine Zeile: keine Häkchen, kein Löschen
+    expect(screen.queryByRole("button", { name: /Ausgewählte löschen/ })).toBeNull();
+    expect(screen.queryByLabelText("Alle Zeilen auswählen")).toBeNull();
+
+    fireEvent.click(neu); // 135 wird fest, unten leer
+    expect(screen.getByLabelText("Zeile 135 auswählen")).toBeTruthy();
+    expect(screen.getByLabelText("Einer: 0")).toBeTruthy();
+    fireEvent.change(feld, { target: { value: "58" } }); fireEvent.click(neu); // 0 wird fest, unten 58
+    expect(screen.getByLabelText("Zehner: 5")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Einer plus eins" })); // nur die letzte ändert sich
+    expect(screen.getByLabelText("Einer: 9")).toBeTruthy();
+    expect(screen.getByLabelText("Zeile 135 auswählen")).toBeTruthy();
+    fireEvent.click(neu); // 59 fest
+    expect(screen.getByLabelText("Zeile 59 auswählen")).toBeTruthy();
+
+    // führende Nullen bleiben in festen Zeilen leer: die Zeile 59 zeigt genau »59«
+    const tafel = screen.getByRole("group", { name: "Stellenwerttafel" });
+    expect(tafel.textContent).toContain("59");
+
     fireEvent.click(screen.getByLabelText("Zeile 135 auswählen"));
+    fireEvent.click(screen.getByLabelText("Zeile 0 auswählen"));
     fireEvent.click(screen.getByRole("button", { name: /Ausgewählte löschen \(2\)/ }));
-    expect(tabelle.querySelectorAll("tbody tr")).toHaveLength(1);
+    expect(screen.queryByLabelText("Zeile 135 auswählen")).toBeNull();
     fireEvent.click(screen.getByLabelText("Alle Zeilen auswählen"));
     fireEvent.click(screen.getByRole("button", { name: /Ausgewählte löschen/ }));
-    expect(screen.queryByRole("table", { name: /Zahlen in der Stellenwerttafel/ })).toBeNull();
-  });
-
-  it("die Zahl von der Tafel kommt per Knopf in die Liste", () => {
-    render(<Stellenwert />);
-    // Start: 135, dann + 1 Zehner
-    fireEvent.click(screen.getByRole("button", { name: "Zehner plus eins" }));
-    fireEvent.click(screen.getByRole("button", { name: /Zahl von der Tafel in die Liste \(145/ }));
-    expect(screen.getByRole("checkbox", { name: "Zeile 145 auswählen" })).toBeTruthy();
+    expect(screen.queryByLabelText("Alle Zeilen auswählen")).toBeNull();
   });
 
   it("jedes Blatt und jedes Spiel öffnet", () => {

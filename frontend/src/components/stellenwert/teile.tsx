@@ -28,8 +28,15 @@ function Plaettchen({ anzahl, farbe, basis }: { anzahl: number; farbe: string; b
   );
 }
 
-/** Die Tafel: eine Spalte je Stellenwert, links der größte. */
-export function TafelAnsicht({ basis, maxExp, minExp = 0, werte, art = "ziffern", luecken = false, blitz = [], knoepfe, auto = true }: {
+/** Eine fertige Zeile über der Tafel: Ziffern je Stellenwert, außerhalb von hoechste…niedrigste bleibt es leer. */
+export type FruehereZeile = { id: number; ziffern: Record<number, number>; hoechste: number; niedrigste: number; name: string };
+
+/**
+ * Die Tafel: eine Spalte je Stellenwert, links der größte. Als Raster gebaut,
+ * damit frühere Zeilen (`fruehere`) genau über der veränderbaren letzten Zeile
+ * stehen. Mit `auswahl` bekommen die früheren Zeilen Häkchen zum Löschen.
+ */
+export function TafelAnsicht({ basis, maxExp, minExp = 0, werte, art = "ziffern", luecken = false, blitz = [], knoepfe, auto = true, fruehere = [], auswahl }: {
   basis: Basis; maxExp: number; minExp?: number; werte: Record<number, number>;
   art?: "ziffern" | "plaettchen";
   /** leere Spalten frei lassen statt 0 zu zeigen (Ablese-Aufgaben) */
@@ -38,34 +45,86 @@ export function TafelAnsicht({ basis, maxExp, minExp = 0, werte, art = "ziffern"
   knoepfe?: Knoepfe;
   /** beim automatischen Bündeln braucht es keine Bündel-Knöpfe */
   auto?: boolean;
+  fruehere?: FruehereZeile[];
+  auswahl?: { gewaehlt: Set<number>; setze: (s: Set<number>) => void };
 }) {
   const sp = spalten(basis, maxExp, minExp);
+  const haken = !!auswahl && fruehere.length > 0;
+  const breite = knoepfe && !auto ? "4.75rem" : "3.75rem";
+  const rand = (exp: number, farbe: string, erste: boolean) => ({
+    borderLeftWidth: erste ? 0 : exp === -1 ? 4 : 1,
+    borderLeftColor: exp === -1 ? "var(--text)" : farbe + "55",
+  });
+  const alle = haken && fruehere.every(z => auswahl!.gewaehlt.has(z.id));
+  const umschalten = (id: number) => {
+    const n = new Set(auswahl!.gewaehlt);
+    if (n.has(id)) n.delete(id); else n.add(id);
+    auswahl!.setze(n);
+  };
+  const leer = <div className="bg-surface" />;
   return (
     <div className="overflow-x-auto pb-1">
-      <div className="inline-flex rounded-xl overflow-hidden border-2 border-line" role="group" aria-label="Stellenwerttafel">
-        {sp.map(s => {
+      <div className="inline-grid rounded-xl overflow-hidden border-2 border-line" role="group" aria-label="Stellenwerttafel"
+        style={{ gridTemplateColumns: `${haken ? "2.25rem " : ""}repeat(${sp.length}, ${breite})` }}>
+        {/* Kopf */}
+        {haken && (
+          <div className="bg-surface flex items-center justify-center">
+            <input type="checkbox" checked={alle} aria-label="Alle Zeilen auswählen"
+              onChange={() => auswahl!.setze(alle ? new Set() : new Set(fruehere.map(z => z.id)))} />
+          </div>
+        )}
+        {sp.map((s, k) => (
+          <div key={s.exp} className="text-center px-1 py-1 text-white border-solid" style={{ background: s.farbe, ...rand(s.exp, s.farbe, k === 0 && !haken) }} title={s.name}>
+            <div className="font-black text-sm leading-tight">{s.kurz}</div>
+            <div className="text-[10px] opacity-90 leading-tight">{basis === 10 && s.exp < 6 ? s.wert : s.potenz}</div>
+          </div>
+        ))}
+
+        {/* frühere Zeilen: fest, nur auswählbar */}
+        {fruehere.map(z => {
+          const an = auswahl?.gewaehlt.has(z.id);
+          return [
+            haken && (
+              <div key={`h${z.id}`} className={`flex items-center justify-center border-t border-line ${an ? "bg-surface-hover" : "bg-surface"}`}>
+                <input type="checkbox" checked={!!an} onChange={() => umschalten(z.id)} aria-label={`Zeile ${z.name} auswählen`} />
+              </div>
+            ),
+            ...sp.map((s, k) => (
+              <div key={`${z.id}_${s.exp}`} className="text-center font-mono font-black text-xl py-1 border-t border-line border-solid"
+                style={{ background: s.farbe + (an ? "40" : "1a"), ...rand(s.exp, s.farbe, k === 0 && !haken) }}>
+                {s.exp <= z.hoechste && s.exp >= z.niedrigste ? ziffer(z.ziffern[s.exp] ?? 0) : " "}
+              </div>
+            )),
+          ];
+        })}
+
+        {/* die aktuelle (letzte) Zeile */}
+        {haken && <div className="bg-surface border-t-2 border-line flex items-center justify-center text-accent" aria-hidden>▶</div>}
+        {sp.map((s, k) => {
           const n = werte[s.exp] ?? 0;
           const voll = n >= basis;
-          const leuchtet = blitz.includes(s.exp);
           return (
-            <div key={s.exp} role="group" aria-label={s.name} className={`flex flex-col ${knoepfe && !auto ? "w-[4.75rem]" : "w-14 sm:w-16"} ${s.exp === -1 ? "border-l-4" : "border-l"} first:border-l-0`}
-              style={{ borderLeftColor: s.exp === -1 ? "var(--text)" : s.farbe + "55" }}>
-              <div className="text-center px-1 py-1 text-white" style={{ background: s.farbe }} title={s.name}>
-                <div className="font-black text-sm leading-tight">{s.kurz}</div>
-                <div className="text-[10px] opacity-90 leading-tight">{basis === 10 && s.exp < 6 ? s.wert : s.potenz}</div>
-              </div>
-              <div className={`flex-1 flex flex-col items-center justify-center p-1.5 transition-colors duration-300 ${voll ? "ring-2 ring-inset ring-bad" : ""}`}
-                style={{ background: leuchtet ? s.farbe + "66" : s.farbe + "1a", minHeight: art === "plaettchen" ? "4.5rem" : "3.25rem" }}
-                aria-label={`${s.name}: ${n}`}>
-                {art === "plaettchen"
-                  ? <Plaettchen anzahl={n} farbe={s.farbe} basis={basis} />
-                  : <span className={`font-mono font-black text-2xl ${voll ? "text-bad" : ""}`}>
-                      {luecken && !n ? "" : n < basis ? ziffer(n) : n}
-                    </span>}
-                {art === "plaettchen" && <span className={`text-xs font-bold ${voll ? "text-bad" : "text-muted"}`}>{n}</span>}
-              </div>
-              {knoepfe && (
-                <div className="flex flex-col gap-0.5 p-1 bg-surface border-t border-line">
+            <div key={`a${s.exp}`} className={`flex flex-col items-center justify-center p-1.5 transition-colors duration-300 border-solid ${fruehere.length ? "border-t-2 border-t-line" : ""} ${voll ? "ring-2 ring-inset ring-bad" : ""}`}
+              style={{ background: blitz.includes(s.exp) ? s.farbe + "66" : s.farbe + "1a", minHeight: art === "plaettchen" ? "4.5rem" : "3.25rem", ...rand(s.exp, s.farbe, k === 0 && !haken) }}
+              aria-label={`${s.name}: ${n}`}>
+              {art === "plaettchen"
+                ? <Plaettchen anzahl={n} farbe={s.farbe} basis={basis} />
+                : <span className={`font-mono font-black text-2xl ${voll ? "text-bad" : ""}`}>
+                    {luecken && !n ? "" : n < basis ? ziffer(n) : n}
+                  </span>}
+              {art === "plaettchen" && <span className={`text-xs font-bold ${voll ? "text-bad" : "text-muted"}`}>{n}</span>}
+            </div>
+          );
+        })}
+
+        {knoepfe && (
+          <>
+            {haken && leer}
+            {sp.map(s => {
+              const n = werte[s.exp] ?? 0;
+              const voll = n >= basis;
+              return (
+                <div key={`k${s.exp}`} className="flex flex-col gap-0.5 p-1 bg-surface border-t border-line">
                   <div className="flex gap-0.5">
                     <button className="flex-1 rounded bg-page hover:bg-surface-hover font-black" aria-label={`${s.name} plus eins`} onClick={() => knoepfe.plus(s.exp)}>+</button>
                     <button className="flex-1 rounded bg-page hover:bg-surface-hover font-black" aria-label={`${s.name} minus eins`} onClick={() => knoepfe.minus(s.exp)}>−</button>
@@ -81,10 +140,10 @@ export function TafelAnsicht({ basis, maxExp, minExp = 0, werte, art = "ziffern"
                     </>
                   )}
                 </div>
-              )}
-            </div>
-          );
-        })}
+              );
+            })}
+          </>
+        )}
       </div>
     </div>
   );
