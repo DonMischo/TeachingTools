@@ -6,7 +6,7 @@
  * Wechselt man das System, bleibt die Zahl dieselbe.
  */
 import { useEffect, useRef, useState } from "react";
-import { BASEN, INDEX, dez, lies, schreibe, spalte, ziffernVon, type Basis } from "@/lib/stellenwert";
+import { BASEN, INDEX, dez, lies, nachkommaVon, schreibe, spalte, spalten, ziffer, ziffernVon, type Basis } from "@/lib/stellenwert";
 import { Chips } from "@/components/prozent/ui";
 import { DreiSysteme, TafelAnsicht } from "./teile";
 
@@ -32,6 +32,81 @@ function verteile(einheiten: number, basis: Basis, minExp: number): Werte {
   return w;
 }
 
+type Zeile = { id: number; wert: number };
+
+/**
+ * Mehrere Zahlen untereinander in einer Stellenwerttafel, je Zahl eine Zeile.
+ * Führende Nullen bleiben leer wie im Heft. In anderen Systemen als dem
+ * Zehnersystem nur der ganze Teil.
+ */
+function Zeilen({ basis, maxExp, zeilen, auswahl, setAuswahl, loesche }: {
+  basis: Basis; maxExp: number; zeilen: Zeile[];
+  auswahl: Set<number>; setAuswahl: (s: Set<number>) => void; loesche: () => void;
+}) {
+  const ganz = (w: number) => (basis === 10 ? w : Math.floor(w));
+  const minExp = basis === 10 && zeilen.some(z => z.wert !== Math.floor(z.wert)) ? -Math.max(...zeilen.map(z => nachkommaVon(z.wert))) : 0;
+  const ziffernLaenge = Math.max(1, ...zeilen.map(z => ziffernVon(Math.floor(ganz(z.wert)), basis).length));
+  const sp = spalten(basis, Math.max(maxExp, ziffernLaenge - 1), minExp);
+  const alle = zeilen.length > 0 && zeilen.every(z => auswahl.has(z.id));
+  const umschalten = (id: number) => {
+    const s = new Set(auswahl);
+    if (s.has(id)) s.delete(id); else s.add(id);
+    setAuswahl(s);
+  };
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <h2 className="font-black">📋 Zahlen untereinander</h2>
+        <span className="flex-1" />
+        <button className="btn text-sm" disabled={!auswahl.size} onClick={loesche}>🗑 Ausgewählte löschen{auswahl.size ? ` (${auswahl.size})` : ""}</button>
+      </div>
+      <div className="overflow-x-auto pb-1">
+        <table className="border-collapse border-2 border-line rounded-xl" aria-label="Zahlen in der Stellenwerttafel">
+          <thead>
+            <tr>
+              <th className="px-2 bg-surface">
+                <input type="checkbox" checked={alle} aria-label="Alle Zeilen auswählen"
+                  onChange={() => setAuswahl(alle ? new Set() : new Set(zeilen.map(z => z.id)))} />
+              </th>
+              {sp.map(s => (
+                <th key={s.exp} title={s.name} className={`w-12 sm:w-14 text-white font-black text-sm py-1 ${s.exp === -1 ? "border-l-4" : ""}`}
+                  style={{ background: s.farbe, borderLeftColor: "var(--text)" }}>{s.kurz}</th>
+              ))}
+              {basis !== 10 && <th className="px-3 text-sm text-muted font-normal bg-surface">Wert</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {zeilen.map(z => {
+              const w = ganz(z.wert);
+              const werte = verteile(Math.round(w * basis ** -minExp), basis, minExp);
+              const hoechste = Math.max(0, ...Object.keys(werte).map(Number));
+              const niedrigste = Math.min(0, ...Object.keys(werte).map(Number));
+              return (
+                <tr key={z.id} className={auswahl.has(z.id) ? "bg-surface-hover" : ""}>
+                  <td className="px-2 text-center border-t border-line">
+                    <input type="checkbox" checked={auswahl.has(z.id)} onChange={() => umschalten(z.id)}
+                      aria-label={`Zeile ${basis === 10 ? dez(w, nachkommaVon(w)) : schreibe(w, basis)} auswählen`} />
+                  </td>
+                  {sp.map(s => (
+                    <td key={s.exp} className={`text-center font-mono font-black text-xl py-1 border-t border-line ${s.exp === -1 ? "border-l-4" : "border-l"}`}
+                      style={{ background: s.farbe + "1a", borderLeftColor: s.exp === -1 ? "var(--text)" : s.farbe + "55" }}>
+                      {s.exp <= hoechste && s.exp >= niedrigste ? ziffer(werte[s.exp] ?? 0) : ""}
+                    </td>
+                  ))}
+                  {basis !== 10 && <td className="px-3 text-sm text-muted border-t border-line tabular-nums">= {schreibe(w, 10)}₁₀</td>}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      {basis !== 10 && zeilen.some(z => z.wert !== Math.floor(z.wert)) && (
+        <p className="text-xs text-muted">Kommazahlen zeigt die Tafel nur im Zehnersystem — hier steht der ganze Teil.</p>
+      )}
+    </div>
+  );
+}
+
 export default function Tafel() {
   const [basis, setBasis] = useState<Basis>(10);
   const [groesse, setGroesse] = useState<Record<Basis, string>>({ 10: "3", 2: "7", 16: "1" });
@@ -42,6 +117,9 @@ export default function Tafel() {
   const [blitz, setBlitz] = useState<number[]>([]);
   const [meldung, setMeldung] = useState("");
   const [eingabe, setEingabe] = useState("");
+  const [zeilen, setZeilen] = useState<Zeile[]>([]);
+  const [auswahl, setAuswahl] = useState<Set<number>>(new Set());
+  const naechsteId = useRef(1);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(() => () => clearTimeout(timer.current), []);
 
@@ -120,6 +198,20 @@ export default function Tafel() {
     setWerte(verteile(e, basis, minExp)); setMeldung("");
   };
 
+  /** Eingetippte Zahl (oder, wenn das Feld leer ist, die Zahl auf der Tafel) als neue Zeile darunter */
+  const neueZeile = () => {
+    let x = wert;
+    if (eingabe.trim()) {
+      const y = lies(eingabe, basis);
+      if (y === null) { setMeldung(`Das ist keine Zahl im ${BASEN.find(s => s.basis === basis)!.name}.`); return; }
+      if (y !== Math.floor(y) && minExp === 0) { setMeldung("Für Kommazahlen erst »Mit Komma« einschalten."); return; }
+      if (ziffernVon(Math.floor(y), basis).length > 13) { setMeldung("Diese Zahl ist zu lang für die Tafel."); return; }
+      x = y;
+    }
+    setZeilen(z => [...z, { id: naechsteId.current++, wert: x }]);
+    setMeldung("");
+  };
+
   const wuerfle = () => {
     const stellen = maxExp - minExp + 1;
     const e = Math.floor(Math.random() * basis ** Math.min(stellen, 12));
@@ -164,12 +256,20 @@ export default function Tafel() {
               aria-label="Zahl eintragen" />
             <span className="text-muted">{INDEX[basis]}</span>
             <button className="btn" type="submit">In die Tafel</button>
+            <button className="btn" type="button" onClick={neueZeile} title="Als neue Zeile unter die anderen Zahlen schreiben (leeres Feld: die Zahl von der Tafel)">➕ Neue Zeile</button>
           </form>
           <button className="btn" onClick={wuerfle}>🎲 Zufallszahl</button>
           <button className="btn" onClick={() => { setWerte({}); setMeldung(""); }}>↺ Leeren</button>
         </div>
         <p className="text-sm text-muted max-w-3xl">{TIPPS[basis]}</p>
       </div>
+
+      {zeilen.length > 0 && (
+        <div className="card p-4 sm:p-5">
+          <Zeilen basis={basis} maxExp={maxExp} zeilen={zeilen} auswahl={auswahl} setAuswahl={setAuswahl}
+            loesche={() => { setZeilen(z => z.filter(x => !auswahl.has(x.id))); setAuswahl(new Set()); }} />
+        </div>
+      )}
 
       <div className="grid gap-4 md:grid-cols-2">
         <div className="card p-4 sm:p-5 flex flex-col gap-2">

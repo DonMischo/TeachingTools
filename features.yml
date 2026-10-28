@@ -635,6 +635,7 @@ simulationen:
     faehigkeiten: {use: [true, true]}
     kann:
       - Stellenwerttafel für Zehner-, Zweier- und Sechzehnersystem mit Plättchen oder Ziffern
+      - Mehrere Zahlen als Zeilen untereinander in der Stellenwerttafel, per Häkchen auswählen und löschen
       - Bündeln und Entbündeln automatisch oder von Hand
       - Zehnersystem bis Milliarden, umschaltbar mit Kommastellen bis Tausendstel
       - Dieselbe Zahl in allen drei Systemen, Bits farbig in Vierer-Päckchen
