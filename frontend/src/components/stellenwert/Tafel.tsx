@@ -42,12 +42,14 @@ export default function Tafel() {
   const [basis, setBasis] = useState<Basis>(10);
   const [groesse, setGroesse] = useState<Record<Basis, string>>({ 10: "3", 2: "7", 16: "1" });
   const [komma, setKomma] = useState(false);
-  const [werte, setWerte] = useState<Werte>({ 2: 1, 1: 3, 0: 5 });
+  const [werte, setWerteRoh] = useState<Werte>({ 2: 1, 1: 3, 0: 5 });
   const [art, setArt] = useState<"plaettchen" | "ziffern">("plaettchen");
   const [auto, setAuto] = useState(true);
   const [blitz, setBlitz] = useState<number[]>([]);
   const [meldung, setMeldung] = useState("");
   const [eingabe, setEingabe] = useState("");
+  // Knöpfe ändern die Tafel: dann passt das Getippte nicht mehr und wird geleert
+  const setWerte = (w: Werte | ((alt: Werte) => Werte)) => { setWerteRoh(w); setEingabe(""); };
   const [zeilen, setZeilen] = useState<Zeile[]>([]);
   const [auswahl, setAuswahl] = useState<Set<number>>(new Set());
   const naechsteId = useRef(1);
@@ -125,28 +127,23 @@ export default function Tafel() {
     setWerte(verteile(n, b, 0));
   };
 
-  const setzeZahl = () => {
-    const x = lies(eingabe, basis);
+  /** Getipptes landet sofort in der letzten Zeile. */
+  const tippe = (text: string) => {
+    setEingabe(text);
+    if (!text.trim()) { setWerteRoh({}); setMeldung(""); return; }
+    // ein Komma am Ende ist noch Tippen, kein Fehler
+    const x = lies(text.replace(/[,.]$/, ""), basis);
     if (x === null) { setMeldung(`Das ist keine Zahl im ${BASEN.find(s => s.basis === basis)!.name}.`); return; }
     if (x !== Math.floor(x) && minExp === 0) { setMeldung("Für Kommazahlen erst »Mit Komma« einschalten."); return; }
     const e = Math.round(x * basis ** -minExp);
     if (e >= basis ** (maxExp - minExp + 1)) { setMeldung("Zu groß für diese Tafel — mach sie größer."); return; }
-    setWerte(verteile(e, basis, minExp)); setMeldung("");
+    setWerteRoh(verteile(e, basis, minExp)); setMeldung("");
   };
 
-  /** Die Zahl auf der Tafel festschreiben und darunter eine neue Zeile anfangen (leer oder mit der getippten Zahl). */
+  /** Die Zahl der letzten Zeile festschreiben und darunter eine leere Zeile anfangen. */
   const neueZeile = () => {
-    let start: Werte = {};
-    if (eingabe.trim()) {
-      const y = lies(eingabe, basis);
-      if (y === null) { setMeldung(`Das ist keine Zahl im ${BASEN.find(s => s.basis === basis)!.name}.`); return; }
-      if (y !== Math.floor(y) && minExp === 0) { setMeldung("Für Kommazahlen erst »Mit Komma« einschalten."); return; }
-      const e = Math.round(y * basis ** -minExp);
-      if (e >= basis ** (maxExp - minExp + 1)) { setMeldung("Zu groß für diese Tafel — mach sie größer."); return; }
-      start = verteile(e, basis, minExp);
-    }
     setZeilen(z => [...z, { id: naechsteId.current++, wert }]);
-    setWerte(start); setEingabe(""); setMeldung("");
+    setWerte({}); setMeldung("");
   };
 
   const fruehere: FruehereZeile[] = zeilen.map(z => {
@@ -207,13 +204,12 @@ export default function Tafel() {
         )}
 
         <div className="flex flex-wrap gap-2 items-center">
-          <form className="flex gap-2 items-center" onSubmit={e => { e.preventDefault(); setzeZahl(); }}>
-            <input className="input w-40 font-mono" value={eingabe} onChange={e => setEingabe(e.target.value)}
+          <form className="flex gap-2 items-center" onSubmit={e => { e.preventDefault(); neueZeile(); }}>
+            <input className="input w-40 font-mono" value={eingabe} onChange={e => tippe(e.target.value)}
               placeholder={basis === 2 ? "z. B. 1011" : basis === 16 ? "z. B. 2AF" : kommaAn ? "z. B. 3,05" : "z. B. 4072"}
               aria-label="Zahl eintragen" />
             <span className="text-muted">{INDEX[basis]}</span>
-            <button className="btn" type="submit">In die Tafel</button>
-            <button className="btn" type="button" onClick={neueZeile} title="Die Zahl auf der Tafel festschreiben und darunter eine neue Zeile anfangen — mit der getippten Zahl oder leer">➕ Neue Zeile</button>
+            <button className="btn" type="submit" title="Die Zahl festschreiben und darunter eine neue Zeile anfangen (Enter im Feld tut dasselbe)">➕ Neue Zeile</button>
           </form>
           <button className="btn" onClick={wuerfle}>🎲 Zufallszahl</button>
           <button className="btn" onClick={() => { setWerte({}); setMeldung(""); }}>↺ Leeren</button>
