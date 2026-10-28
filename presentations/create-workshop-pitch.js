@@ -175,7 +175,7 @@ function bigStat(s, number, label, x, y, w = 1.8) {
   s.addText("PLATTFORM   Ein Code für alles · QR + Gastzugang · Häuser + Punkte · Erfolge · Rechte je Werkzeug · Klassen, Kurse, A/B", {
     x: 0.7, y: 4.62, w: 8.6, h: 0.5, fontSize: 10.5, bold: true, color: CREAM, fontFace: "Calibri", valign: "middle", margin: 0,
   });
-  s.addNotes("Das ist die Kernbotschaft. Jede Schicht wächst unabhängig: Wer eine neue Simulation baut, bekommt Codes, Rechte und Punkte geschenkt, und der TaskCrawler kann sie sofort als Station öffnen. Wer Inhalte baut, braucht gar keinen Code.");
+  s.addNotes("Das ist die Kernbotschaft. Jede Schicht wächst unabhängig: Wer eine neue Simulation baut, bekommt Codes, Rechte und Punkte geschenkt, und kann sie als Station im TaskCrawler anbieten. Wer Inhalte baut, braucht gar keinen Code.");
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -197,7 +197,7 @@ function bigStat(s, number, label, x, y, w = 1.8) {
   bullets(s, ["• Rechner mit Docker: Schulserver, Mini-PC oder VM", "• Jeder aktuelle Browser, auch Handy und Tablet", "• Optional: 3D-Simulationen brauchen WebGL"], 0.7, 3.65, 4.1, CREAM, 0.42, 11.5);
   card(s, 5.1, 3.15, 4.4, 1.85, TILE);
   s.addText("Datenschutz eingebaut", { x: 5.3, y: 3.25, w: 4, h: 0.35, fontSize: 13, bold: true, color: ORANGE, fontFace: "Calibri", margin: 0 });
-  bullets(s, ["• Keine KI in der App, nur Vorlagen für externe KI", "• Gäste per befristetem Code, Namen nur »Vorname N.«", "• 2FA, Audit-Log, Löschung zum Schuljahreswechsel"], 5.3, 3.65, 4.1, CREAM, 0.42, 11.5);
+  bullets(s, ["• Keine KI in der App, nur Vorlagen für externe KI", "• Gäste per befristetem Code, Namen nur »Vorname N.«", "• Spielsitzungen gelöscht zum Schuljahreswechsel", "• 2FA, Audit-Log wird zehn Jahre aufbewahrt"], 5.3, 3.65, 4.1, CREAM, 0.33, 11.5);
   s.addNotes("Bewusst kurz halten. Für Technikinteressierte: Python/FastAPI und React/Next.js, WebSockets für Live-Spiele, three.js für 3D. Alles läuft im Schulnetz, auch die Karten (MapLibre mit amtlichen Daten).");
 }
 
@@ -267,7 +267,7 @@ function bigStat(s, number, label, x, y, w = 1.8) {
   const s = pres.addSlide();
   s.background = { color: WHITE };
   sectionTag(s, "ERWEITERBAR");
-  title(s, "Jede Simulation wird zum Spielbaustein");
+  title(s, "Simulationen als Station im TaskCrawler");
   sub(s, "Eine Aufgabe im TaskCrawler öffnet eine Simulation mit fester Vorgabe. Die Antwort prüft weiterhin der Server.");
 
   card(s, 0.5, 2.1, 4.4, 1.15, LIGHT);
@@ -289,7 +289,7 @@ function bigStat(s, number, label, x, y, w = 1.8) {
   caption(s, "Karten", 5.15, 5.0, 2.15);
   screen(s, "59-sim-ki", 7.45, 3.75, 2.15);
   caption(s, "KI-Werkstatt", 7.45, 5.0, 2.15);
-  s.addNotes("Das ist der Punkt, der TT von Einzeltools unterscheidet: Was jemand als Simulation baut, wird automatisch zum Baustein für alle Spiele. Beispiel: In der Medien-Zeitreise öffnen zwei Aufgaben die KI-Werkstatt, Reiter Sprache und Bilder.");
+  s.addNotes("Das ist der Punkt, der TT von Einzeltools unterscheidet: Eine Simulation lässt sich als Station in den TaskCrawler hängen. Jede bringt dabei ihr eigenes Vorgabe-Format mit (bei der Waage die Gleichung, bei der Karte die Region); 23 sind schon angebunden. Beispiel: In der Medien-Zeitreise öffnen zwei Aufgaben die KI-Werkstatt, Reiter Sprache und Bilder.");
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -306,7 +306,7 @@ function bigStat(s, number, label, x, y, w = 1.8) {
     ["1", "Vorlage holen", "JSON mit Format, Regeln und Beispiel"],
     ["2", "KI füllen lassen", "Chatbot nach Wahl oder lokales Modell, mit Thema und Klassenstufe"],
     ["3", "Prüfen", "Fakten checken, im Formular-Editor nacharbeiten"],
-    ["4", "Hochladen", "Server prüft das Format, Satz läuft in allen passenden Spielarten"],
+    ["4", "Hochladen", "Server prüft das Format, das Spiel ist sofort startklar"],
   ];
   steps.forEach(([n, h, b], i) => {
     const x = 0.5 + i * 2.3;
@@ -317,7 +317,7 @@ function bigStat(s, number, label, x, y, w = 1.8) {
     if (i < 3) s.addText("→", { x: x + 2.08, y: 3.1, w: 0.24, h: 0.4, fontSize: 16, bold: true, color: ORANGE, align: "center", margin: 0 });
   });
   banner(s, "Vorlagen für TaskCrawler, Caputh, Zeitstrahl, Lückentext, Bingo, Karten, Umfrage, Stundenplaner");
-  s.addNotes("Live zeigen, wenn Zeit ist: Zeitstrahl-Vorlage herunterladen, mit Thema in einen Chatbot geben, Ergebnis hochladen. Das dauert drei Minuten. Die Begleitseite hat einen Knopf, der den Prompt kopiert.");
+  s.addNotes("Live zeigen, wenn Zeit ist: Zeitstrahl-Vorlage herunterladen, mit Thema in einen Chatbot geben, Ergebnis hochladen. Das dauert drei Minuten. Die Begleitseite hat einen Knopf, der den Prompt kopiert. Wichtig: Jedes Werkzeug hat sein eigenes JSON-Format, die Vorlage bringt es mit.");
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -328,10 +328,10 @@ function bigStat(s, number, label, x, y, w = 1.8) {
   s.background = { color: NAVY };
   sectionTag(s, "JETZT AUSPROBIEREN");
   title(s, "Zeitreise der Medien", WHITE, 32);
-  sub(s, "Ein Datensatz, drei Spielarten. Am Handy öffnen und mitspielen.", CREAM);
+  sub(s, "Ein Thema, drei Vorlagen. Am Handy öffnen und mitspielen.", CREAM);
   bullets(s, [
     "🕰  Zeitstrahl mit 56 Ereignissen in vier Spuren, von der Höhlenmalerei bis zur KI",
-    "🔀  Sortier-Challenge: Was kam zuerst?",
+    "🔀  Einsortieren: Ereignisse auf den Zeitstrahl ziehen",
     "🏛  TaskCrawler: sechs Stockwerke, Codeschnipsel, Tür für Tür",
     "⚖  Endgegner im Gerichtssaal: Behauptungen mit Beweisen widerlegen",
     "🔧  Hinter den Kulissen: die JSON-Vorlage und der KI-Prompt",
@@ -411,7 +411,7 @@ function bigStat(s, number, label, x, y, w = 1.8) {
     bullets(s, c.body.map(t => "• " + t), x + 0.2, 2.4, 2.5, NAVY, 0.72, 12);
   });
   banner(s, "Was eine Schule baut, können alle anderen nutzen.");
-  s.addNotes("Vor dem Workshop klären: Lizenz (Vorschlag AGPL-3.0 für den Code, CC BY-SA für Inhalte) und Repo öffentlich schalten. Ohne das ist »Open Source« nur eine Absicht.");
+  s.addNotes("Vor dem Workshop klären: Lizenz (Vorschlag: MIT oder Apache-2.0 für den Code, damit auch eigene Sims privat bleiben dürfen, Pflicht ist nur der Hinweis auf das Original-Repo; CC BY 4.0 für Inhalte) und Repo öffentlich schalten. Ohne das ist »Open Source« nur eine Absicht.");
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -454,7 +454,7 @@ function bigStat(s, number, label, x, y, w = 1.8) {
   s.addText("Alles zum Nachlesen, alle Funktionen und wie ihr einsteigt:", { x: 0.5, y: 1.45, w: 9, h: 0.4, fontSize: 14, color: CREAM, fontFace: "Calibri", italic: true, align: "center", margin: 0 });
   qr(s, "qr-handout.png", 2.3, 2.15, 2.0, "Begleitseite");
   qr(s, "qr-demo.png", 5.7, 2.15, 2.0, "Zeitreise der Medien");
-  s.addText("Kontakt: [ E-Mail / Messenger ]   ·   Code: github.com/DonMischo/TeachingTools", { x: 0.5, y: 4.95, w: 9, h: 0.35, fontSize: 11, color: MUTED, fontFace: "Calibri", align: "center", margin: 0 });
+  s.addText("Kontakt: donflauschelot@gmail.com   ·   Code: github.com/DonMischo/TeachingTools", { x: 0.5, y: 4.95, w: 9, h: 0.35, fontSize: 11, color: MUTED, fontFace: "Calibri", align: "center", margin: 0 });
   s.addNotes("Häufige Einwände: Datenschutz (eigener Server, keine Anfragen nach außen), Aufwand (Installationsskript, Code an die Tafel), Nachhaltigkeit (genau deshalb suchen wir Mitstreiter und einen Träger).");
 }
 
