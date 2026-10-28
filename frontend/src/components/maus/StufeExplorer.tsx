@@ -186,6 +186,12 @@ export default function StufeExplorer({
     if (!demoLaeuft.current) pruefeSchritt(neu);
   }
 
+  /** Seitenleiste oder Adressleiste: zurück auf Ebene `tiefe` (0 = »Dokumente«), egal wie tief man ist. */
+  function zuEbene(tiefe: number) {
+    if (demo.aktiv) return;
+    aendern(s => { while (s.pfad.length > tiefe) s = zurueck(s); return s; });
+  }
+
   function klickAuf(e: MausEreignis, id: string) {
     if (demo.aktiv || fertig) return;
     e.stopPropagation();
@@ -415,17 +421,33 @@ export default function StufeExplorer({
                 ← Zurück
               </button>
             )}
-            <span>Dokumente{stand.aktuellerOrdner && " › Schule"}</span>
+            <div className="flex-1 min-w-0 flex items-center gap-0.5 rounded-sm border border-line bg-page px-1.5 py-0.5 text-fg" data-testid="adressleiste">
+              <button type="button" onClick={() => zuEbene(0)} data-pfad="dokumente" className="rounded-sm px-1 hover:bg-surface-hover">Dokumente</button>
+              {stand.pfad.map((id, i) => (
+                <span key={id} className="flex items-center gap-0.5">
+                  <span className="text-muted">›</span>
+                  <button type="button" onClick={() => zuEbene(i + 1)} data-pfad={id} className="rounded-sm px-1 hover:bg-surface-hover">
+                    {stand.dateien.find(d => d.id === id)?.name ?? "Ordner"}
+                  </button>
+                </span>
+              ))}
+            </div>
           </div>
 
           {/* Navigation + Inhalt */}
           <div className="flex">
             <div className="w-28 shrink-0 border-r border-line p-2 flex flex-col gap-1 text-xs">
               {NAV.map(n => (
-                <div key={n.id}
-                  className={"rounded-lg px-2 py-1.5 flex items-center gap-1.5 " + (n.id === "dokumente" ? "bg-surface-hover font-bold" : "text-muted")}>
-                  <span>{n.icon}</span>{n.label}
-                </div>
+                n.id === "dokumente" ? (
+                  <button key={n.id} type="button" onClick={() => zuEbene(0)} data-nav="dokumente"
+                    className={"rounded-lg px-2 py-1.5 flex items-center gap-1.5 text-left font-bold " + (stand.aktuellerOrdner ? "hover:bg-surface-hover" : "bg-surface-hover")}>
+                    <span>{n.icon}</span>{n.label}
+                  </button>
+                ) : (
+                  <div key={n.id} className="rounded-lg px-2 py-1.5 flex items-center gap-1.5 text-muted">
+                    <span>{n.icon}</span>{n.label}
+                  </div>
+                )
               ))}
             </div>
 
