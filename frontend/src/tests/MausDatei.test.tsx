@@ -89,6 +89,84 @@ describe("Maus-Führerschein: Speichern & USB-Stick", () => {
     expect(fertig.mock.calls[0][0].details[0]).toBe("7 von 7 Aufgaben");
   }, 30000);
 
+  /** Aufgaben 1–4 durchlaufen, bis der Stick steckt; der Explorer ist offen. */
+  async function bisZumStick() {
+    render(<StufeDatei avatar="cat" onFertig={() => {}} onWeiter={() => {}} />);
+    fireEvent.change(screen.getByLabelText("Text im Editor"), { target: { value: "Mein Hund heißt Bello." } });
+    await screen.findByText("Toll geschrieben!", undefined, LANGSAM);
+    await warten(1150);
+    fireEvent.click(document.querySelector("[data-editor] [aria-expanded]")!);
+    fireEvent.click(document.querySelector('[data-datei-menue="speichernUnter"]')!);
+    const dialog = await screen.findByTestId("speichern-unter");
+    fireEvent.change(within(dialog).getByTestId("dateiname"), { target: { value: "Mein Tier" } });
+    fireEvent.click(within(dialog).getByTestId("speichern-knopf"));
+    await screen.findByText(/Gespeichert als/, undefined, LANGSAM);
+    await warten(1150);
+    fireEvent.change(screen.getByLabelText("Text im Editor"), { target: { value: "Mein Hund heißt Bello.\nEr spielt gern." } });
+    fireEvent.click(screen.getAllByLabelText("Schließen")[0]);
+    fireEvent.click(document.querySelector('[data-frage="speichern"]')!);
+    await screen.findByText("Gespeichert und geschlossen!", undefined, LANGSAM);
+    await warten(1150);
+    fireEvent.doubleClick(document.querySelector('[data-desktop-symbol="dieserpc"]')!);
+    fireEvent.click(document.querySelector('[data-explorer] [data-nav="dokumente"]')!);
+    fireEvent.doubleClick(screen.getByText("Mein Tier.txt").closest("button")!);
+    await screen.findByText(/Wiedergefunden/, undefined, LANGSAM);
+    await warten(1150);
+    await screen.findByRole("status", undefined, LANGSAM);
+  }
+
+  function aufStickZiehen(name: string) {
+    const fach = ablage();
+    fireEvent.dragStart(within(screen.getByTestId("explorer-liste")).getByText(name).closest("button")!, { dataTransfer: fach });
+    const usb = document.querySelector('[data-explorer] [data-nav="usb"]')!;
+    fireEvent.dragOver(usb, { dataTransfer: fach });
+    fireEvent.drop(usb, { dataTransfer: fach });
+  }
+
+  it("Datei schon beim Suchen auf den Stick gezogen: beide Aufgaben erledigt", async () => {
+    await bisZumStick();
+    fireEvent.click(document.querySelector('[data-explorer] [data-nav="dokumente"]')!);
+    aufStickZiehen("Mein Tier.txt");
+    await screen.findByText(/gleich draufkopiert/, undefined, LANGSAM);
+    await warten(1150);
+    await screen.findByText(/schon auf dem Stick/, undefined, LANGSAM);
+    await warten(1150);
+    expect(within(document.querySelector("aside")!).getByText("Herunterfahren").closest("li")).toHaveClass("font-bold");
+  }, 30000);
+
+  it("löscht nur eigene Dateien und setzt den Stick zurück", async () => {
+    await bisZumStick();
+    fireEvent.click(document.querySelector('[data-explorer] [data-nav="dokumente"]')!);
+    const liste = () => within(screen.getByTestId("explorer-liste"));
+
+    // vorhandene Datei: nur ein Hinweis
+    fireEvent.click(liste().getByText("Noten.xlsx").closest("button")!);
+    fireEvent.click(screen.getByTestId("loeschen"));
+    expect(screen.getByText(/hast nicht du angelegt/)).toBeInTheDocument();
+    expect(liste().getByText("Noten.xlsx")).toBeInTheDocument();
+
+    // die eigene Datei in Dokumente wird noch gebraucht
+    fireEvent.keyDown(liste().getByText("Mein Tier.txt").closest("button")!, { key: "Delete" });
+    expect(screen.getByText(/die brauchst du noch/)).toBeInTheDocument();
+
+    // eigene Kopie auf dem Stick: weg mit Entf
+    aufStickZiehen("Noten.xlsx");
+    fireEvent.click(document.querySelector('[data-explorer] [data-nav="usb"]')!);
+    await screen.findByText(/Da ist der USB-Stick/, undefined, LANGSAM);
+    await warten(1150);
+    fireEvent.keyDown(liste().getByText("Noten.xlsx").closest("button")!, { key: "Delete" });
+    expect(screen.getByText("»Noten.xlsx« gelöscht.")).toBeInTheDocument();
+    expect(liste().getByText("Dieser Ordner ist leer.")).toBeInTheDocument();
+
+    // zurücksetzen leert den Stick
+    fireEvent.click(document.querySelector('[data-explorer] [data-nav="dokumente"]')!);
+    aufStickZiehen("Noten.xlsx");
+    fireEvent.click(screen.getByTestId("stick-zuruecksetzen"));
+    expect(screen.getByText(/der Stick ist wieder leer/)).toBeInTheDocument();
+    fireEvent.click(document.querySelector('[data-explorer] [data-nav="usb"]')!);
+    expect(liste().getByText("Dieser Ordner ist leer.")).toBeInTheDocument();
+  }, 30000);
+
   it("schließt ohne Änderung ohne Rückfrage", () => {
     render(<StufeDatei avatar="cat" onFertig={() => {}} onWeiter={() => {}} />);
     fireEvent.click(screen.getAllByLabelText("Schließen")[0]);

@@ -25,7 +25,7 @@ function Symbol({ k, groesse }: { k: Knoten; groesse: number | string }) {
 const ZIEH_TYP = "application/x-maus-datei";
 
 export function ExplorerInhalt({
-  fs, ordner, onOrdner, onOeffnen, markiert = null, onMarkieren, onAblegen, dunkel = false, hilfe = false,
+  fs, ordner, onOrdner, onOeffnen, markiert = null, onMarkieren, onAblegen, onLoeschen, dunkel = false, hilfe = false,
 }: {
   fs: Dateisystem;
   ordner: string;
@@ -36,6 +36,8 @@ export function ExplorerInhalt({
   onMarkieren?: (k: Knoten | null) => void;
   /** Datei auf einen Ordner oder ein Laufwerk gezogen (Liste oder Navigationsbereich). Ohne: kein Ziehen. */
   onAblegen?: (dateiId: string, zielId: string) => void;
+  /** Markierte Datei löschen (🗑 oder Entf). Ohne: kein Löschen. */
+  onLoeschen?: (datei: Knoten) => void;
   dunkel?: boolean;
   hilfe?: boolean;
 }) {
@@ -45,6 +47,7 @@ export function ExplorerInhalt({
   const inhalt = kinder(fs, aktuell.id);
   const icon = hilfe ? 52 : 40;
   const [ueber, setUeber] = useState<string | null>(null);
+  const markierteDatei = inhalt.find(k => k.id === markiert && k.art === "datei");
 
   // Ablegen geht auf Ordner und Laufwerke — in der Liste wie im Navigationsbereich.
   function ablage(zielId: string) {
@@ -110,6 +113,19 @@ export function ExplorerInhalt({
         >
           ↑
         </button>
+        {onLoeschen && (
+          <button
+            type="button"
+            aria-label="Löschen"
+            title="Löschen (Entf)"
+            disabled={!markierteDatei}
+            onClick={() => markierteDatei && onLoeschen(markierteDatei)}
+            data-testid="loeschen"
+            className={`rounded-sm w-7 h-7 flex items-center justify-center disabled:opacity-30 ${BLAU_HOVER}`}
+          >
+            🗑
+          </button>
+        )}
         <div
           className="flex-1 min-w-0 flex items-center gap-0.5 rounded-sm px-1.5 py-1 overflow-x-auto whitespace-nowrap"
           style={{ background: farben.grund, border: `1px solid ${farben.linie}` }}
@@ -163,6 +179,7 @@ export function ExplorerInhalt({
                   data-knoten={k.id}
                   onClick={() => onMarkieren?.(k)}
                   onDoubleClick={() => oeffnen(k)}
+                  onKeyDown={e => { if (e.key === "Delete" && onLoeschen && k.art === "datei") onLoeschen(k); }}
                   draggable={!!onAblegen && k.art === "datei"}
                   onDragStart={e => {
                     if (!onAblegen || k.art !== "datei") return;

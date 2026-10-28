@@ -134,6 +134,8 @@ export default function StufeDatei({
   const [aus, setAus] = useState<"faehrt" | "aus" | null>(null);
   const [usbMeldung, setUsbMeldung] = useState(false);
   const meineDatei = useRef<string | null>(null);
+  /** Die Kopie der eigenen Datei auf dem Stick — auch wenn sie schon vor ihrer Aufgabe dort landet. */
+  const stickKopie = useRef<string | null>(null);
   const nachSpeichernSchliessen = useRef(false);
   const wartet = useRef(false);
   const start = useRef(performance.now());
@@ -194,6 +196,13 @@ export default function StufeDatei({
     }, 700);
     return () => clearTimeout(uhr);
   }, [aufgabe.id, fs.usb]);
+
+  // Wer die Datei schon beim Suchen auf den Stick gezogen hat, ist mit »aufStick« gleich fertig.
+  useEffect(() => {
+    if (aufgabe.id === "aufStick" && stickKopie.current && fs[stickKopie.current]) {
+      geschafft("aufStick", "Deine Datei ist schon auf dem Stick — und auch noch in »Dokumente«.");
+    }
+  }, [aufgabe.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!usbMeldung) return;
@@ -338,12 +347,44 @@ export default function StufeDatei({
     setFs(r.fs);
     if (r.kopiert) setInhalte(i => ({ ...i, [r.id]: i[dateiId] ?? "" }));
     if (zielId === "usb" && dateiId === meineDatei.current) {
-      geschafft("aufStick", "Kopiert! Deine Datei ist jetzt auf dem Stick — und auch noch in »Dokumente«.");
+      stickKopie.current = r.id;
+      if (aufgabe.id === "usbFinden") geschafft("usbFinden", "Stick gefunden — und deine Datei gleich draufkopiert!");
+      else geschafft("aufStick", "Kopiert! Deine Datei ist jetzt auf dem Stick — und auch noch in »Dokumente«.");
     } else if (zielId === "usb") {
       setHinweis({ text: `»${name}« ist jetzt auch auf dem Stick. Zieh noch deine eigene Datei hinüber.`, gut: false });
     } else {
       setHinweis({ text: `»${name}« ${r.kopiert ? "kopiert" : "verschoben"} nach »${fs[zielId]?.name}«.`, gut: false });
     }
+  }
+
+  /** Eigene Dateien (gespeichert oder kopiert) dürfen weg, vorhandene nicht. */
+  function loeschen(k: Knoten) {
+    if (!k.id.startsWith("neu-")) {
+      setHinweis({ text: `»${k.name}« hast nicht du angelegt — fremde Dateien löscht man nicht einfach. Lösch nur, was du selbst gespeichert oder kopiert hast.`, gut: false });
+      return;
+    }
+    if (k.id === meineDatei.current) {
+      setHinweis({ text: `»${k.name}« in »Dokumente« ist deine Datei — die brauchst du noch.`, gut: false });
+      return;
+    }
+    entfernen([k.id]);
+    setHinweis({ text: `»${k.name}« gelöscht.`, gut: false });
+  }
+
+  function entfernen(ids: string[]) {
+    setFs(f => Object.fromEntries(Object.entries(f).filter(([id]) => !ids.includes(id))));
+    setInhalte(i => Object.fromEntries(Object.entries(i).filter(([id]) => !ids.includes(id))));
+    if (stickKopie.current && ids.includes(stickKopie.current)) stickKopie.current = null;
+    if (editor.datei && ids.includes(editor.datei)) editorZu();
+    setExplorer(x => ({ ...x, markiert: null }));
+  }
+
+  /** Stick leeren und neu anfangen, wenn beim Ziehen etwas schiefging. */
+  function stickZuruecksetzen() {
+    entfernen(Object.values(fs).filter(k => k.eltern === "usb").map(k => k.id));
+    setExplorer({ offen: true, ordner: aufgabe.id === "aufStick" ? "dokumente" : "pc", markiert: null });
+    setAktiv("explorer");
+    setHinweis({ text: "Zurückgesetzt — der Stick ist wieder leer.", gut: false });
   }
 
   // ── Taskleiste & Start ──────────────────────────────────────────────
@@ -659,6 +700,7 @@ export default function StufeDatei({
                   markiert={explorer.markiert}
                   onMarkieren={k => setExplorer(x => ({ ...x, markiert: k?.id ?? null }))}
                   onAblegen={abgelegt}
+                  onLoeschen={loeschen}
                   dunkel={dunkel}
                   hilfe={hilfe}
                 />
@@ -677,6 +719,14 @@ export default function StufeDatei({
               </li>
             ))}
           </ul>
+          {(aufgabe.id === "usbFinden" || aufgabe.id === "aufStick") && !fertig && (
+            <div className="flex flex-col gap-1.5 text-sm text-muted">
+              <span>{mitTasten("Falsche Datei auf dem Stick? Markieren und [[Entf]] drücken oder oben im Explorer auf 🗑.")}</span>
+              <button type="button" onClick={stickZuruecksetzen} disabled={demo.aktiv} data-testid="stick-zuruecksetzen" className="btn-secondary self-start">
+                ↺ Aufgabe zurücksetzen
+              </button>
+            </div>
+          )}
           <div className="min-h-12 text-sm font-bold" aria-live="polite"
             style={{ color: hinweis?.gut ? "var(--green, #16a34a)" : "var(--text-muted)" }}>
             {hinweis?.text}
