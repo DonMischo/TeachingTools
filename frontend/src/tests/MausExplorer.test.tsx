@@ -8,6 +8,7 @@ function inSchule() {
   fireEvent.click(screen.getByTitle("Neuer Ordner"));
   fireEvent.doubleClick(screen.getByText(/Neuer Ordner/, { selector: "button *, button" }).closest("button")!);
   expect(within(screen.getByTestId("adressleiste")).getByText("Neuer Ordner")).toBeInTheDocument();
+  expect(screen.getByTestId("explorer-titel")).toHaveTextContent("Neuer Ordner");
 }
 
 describe("Maus-Führerschein: Explorer-Navigation", () => {
@@ -21,5 +22,6 @@ describe("Maus-Führerschein: Explorer-Navigation", () => {
     inSchule();
     fireEvent.click(document.querySelector('[data-pfad="dokumente"]')!);
     expect(within(screen.getByTestId("adressleiste")).queryByText("Neuer Ordner")).not.toBeInTheDocument();
+    expect(screen.getByTestId("explorer-titel")).toHaveTextContent("Dokumente");
   });
 });
