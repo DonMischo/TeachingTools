@@ -400,7 +400,7 @@ function bigStat(s, number, label, x, y, w = 1.8) {
   sectionTag(s, "OFFEN");
   title(s, "Offen, selbst gehostet, erweiterbar");
   const cols = [
-    { h: "Offen", fill: PEACH, body: ["Quellcode auf GitHub", "Offene Datenformate (JSON)", "Inhalte teilbar zwischen Schulen"] },
+    { h: "Offen", fill: PEACH, body: ["Code: Apache-2.0, Inhalte: CC BY 4.0", "Offene Datenformate (JSON)", "Inhalte teilbar zwischen Schulen"] },
     { h: "Selbst gehostet", fill: LIGHT, body: ["Daten bleiben in der Schule", "Kein Abo, kein Anbieterwechsel", "Läuft auch ohne Internet im Schulnetz"] },
     { h: "Erweiterbar", fill: MINT, body: ["Neue Simulation = Komponente + Katalogeintrag", "Codes, Rechte, Punkte kommen automatisch", "Jede Simulation wird Station in Spielen"] },
   ];
@@ -411,7 +411,7 @@ function bigStat(s, number, label, x, y, w = 1.8) {
     bullets(s, c.body.map(t => "• " + t), x + 0.2, 2.4, 2.5, NAVY, 0.72, 12);
   });
   banner(s, "Was eine Schule baut, können alle anderen nutzen.");
-  s.addNotes("Vor dem Workshop klären: Lizenz (Vorschlag: MIT oder Apache-2.0 für den Code, damit auch eigene Sims privat bleiben dürfen, Pflicht ist nur der Hinweis auf das Original-Repo; CC BY 4.0 für Inhalte) und Repo öffentlich schalten. Ohne das ist »Open Source« nur eine Absicht.");
+  s.addNotes("Lizenz: Apache-2.0 für den Code, CC BY 4.0 für eigene Inhalte. Eigene Simulationen dürfen privat bleiben, Pflicht ist nur die NOTICE-Datei mit dem Hinweis auf das Original-Repo. Fremdes Material (Fotos, Schriften, Kartendaten) behält seine eigene Lizenz, alle Nachweise stehen unter /admin/quellen. Vor dem Workshop noch das Repo öffentlich schalten.");
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
