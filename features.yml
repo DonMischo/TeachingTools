@@ -629,7 +629,7 @@ simulationen:
       - "Spiel Prozent-Blitz: schätzen, Kopfrechnen, Schnäppchen gegen die Uhr"
       - "Saftbar: Schorle auf Prozent mischen (Saft, Nektar, Wasser), verdünnen und verstärken"
       - "Handy-Check: Barzahlung, 0 %-Finanzierung, Ratenkauf, Vertrag mit Kleingedrucktem und Kontoverlauf"
-      - "Mein Kiosk: acht Wochen Kalkulation mit Aufschlag, Mehrwertsteuer, Mengenrabatt, Verderb und Ereignissen; Kundenzufriedenheit mit Sternen und Kommentaren"
+      - "Mein Kiosk: acht Wochen Kalkulation mit Aufschlag, Mehrwertsteuer, Mengenrabatt, Verderb und Ereignissen; 600 Schüler·innen kaufen per Kaufwahrscheinlichkeit, Eröffnungsandrang, Ruf aus Kundenzufriedenheit mit Sternen und Kommentaren"
   - id: stellenwert
     name: Stellenwerttafeln
     faehigkeiten: {use: [true, true]}

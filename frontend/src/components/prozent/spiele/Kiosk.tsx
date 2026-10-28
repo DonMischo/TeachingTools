@@ -2,12 +2,13 @@
 /**
  * Mein Kiosk: acht Schulwochen. Vor jeder Woche Aufschlag und Bestellmenge je
  * Ware festlegen — die Kalkulation (Einkauf → Aufschlag → netto → MwSt →
- * brutto) steht daneben. Danach der Wochenbericht: verkauft, ausverkauft,
- * weggeworfen, Mehrwertsteuer ans Finanzamt, Gewinn in € und in % vom Umsatz.
+ * brutto) und die Kaufwahrscheinlichkeit stehen daneben. Danach der
+ * Wochenbericht: verkauft, zu teuer, ausverkauft ab, weggeworfen,
+ * Mehrwertsteuer ans Finanzamt, Gewinn, Sterne — die Sterne bewegen den Ruf.
  */
 import { Fragment, useState } from "react";
 import {
-  FIXKOSTEN, PRODUKTE, RABATT_STUFEN, START_KASSE, WOCHEN, bestellkosten, einkaufFuer, ekJetzt, ereignisFuer, kalkuliere, leeresLager, leererPlan, marktJetzt, mengenrabatt, spieleWoche,
+  FIXKOSTEN, OHNE_BROT, PRODUKTE, RABATT_STUFEN, SCHUELER, START_KASSE, START_RUF, TAGE, WOCHEN, bestellkosten, einkaufFuer, ekJetzt, ereignisFuer, kalkuliere, kaufWahrscheinlichkeit, leeresLager, leererPlan, marktJetzt, mengenrabatt, neuerRuf, spieleWoche,
   type Ereignis, type Lager, type Plan, type ProduktId, type Wochenbericht,
 } from "@/lib/kiosk";
 import { euro, z } from "@/lib/prozent";
@@ -22,10 +23,10 @@ function Hinweise({ b, e }: { b: Wochenbericht; e: Ereignis }) {
   const tipps: string[] = [];
   for (const zl of b.zeilen) {
     const p = P[zl.id], markt = marktJetzt(p, e);
-    if (zl.verpasst > 0) tipps.push(`${p.emoji} ${p.name}: ausverkauft — ${zl.verpasst} Kundinnen und Kunden gingen leer aus.`);
+    if (zl.verpasst > 0) tipps.push(`${p.emoji} ${p.name}: ab ${TAGE[zl.leerAb ?? 4]} ausverkauft — ${zl.verpasst} Kundinnen und Kunden gingen leer aus.`);
     if (zl.verdorben > 0) tipps.push(`${p.emoji} ${p.name}: ${zl.verdorben} Stück weggeworfen (${z((zl.verdorben / zl.verfuegbar) * 100, 0)} % der Ware, ${euro(zl.verdorben * zl.ek * (1 - zl.rabatt / 100))} Einkauf verloren).`);
     const diff = ((zl.brutto - markt) / markt) * 100;
-    if (diff > 20) tipps.push(`${p.emoji} ${p.name}: ${z(diff, 0)} % teurer als die Konkurrenz (${euro(markt)}) — da kaufen nur wenige.`);
+    if (diff > 20) tipps.push(`${p.emoji} ${p.name}: ${z(diff, 0)} % teurer als die Konkurrenz (${euro(markt)}) — ${zl.zuTeuer} wollten, fanden es aber zu teuer.`);
     if (diff < -30) tipps.push(`${p.emoji} ${p.name}: ${z(-diff, 0)} % billiger als die Konkurrenz — viel Andrang, aber verdienst du genug pro Stück?`);
   }
   if (!tipps.length) return null;
@@ -63,7 +64,7 @@ function Sterne({ n, gross }: { n: number; gross?: boolean }) {
   );
 }
 
-function Zufriedenheit({ b }: { b: Wochenbericht }) {
+function Zufriedenheit({ b, ruf }: { b: Wochenbericht; ruf: number }) {
   const zf = b.zufriedenheit;
   return (
     <div className="rounded-xl border border-line p-4 bg-page flex flex-col gap-3 max-w-xl">
@@ -88,24 +89,29 @@ function Zufriedenheit({ b }: { b: Wochenbericht }) {
           </li>
         ))}
       </ul>
+      <p className="text-xs text-muted">
+        ⭐ Dein Ruf ist jetzt <strong>{z(ruf, 1)}</strong>. Er rückt jede Woche zur Hälfte an die neuen Sterne heran — guter Ruf bringt nächste Woche
+        mehr Kundschaft (bis +24 %), schlechter weniger.
+      </p>
     </div>
   );
 }
 
 /** Wochenbericht: Verkäufe je Ware, Gewinnrechnung, Kundenzufriedenheit, Hinweise */
-function Bericht({ b, e }: { b: Wochenbericht; e: Ereignis }) {
+function Bericht({ b, e, ruf }: { b: Wochenbericht; e: Ereignis; ruf: number }) {
   return (
     <>
       <div className="overflow-x-auto">
         <table className="text-sm w-full min-w-[560px]">
-          <thead><tr className="text-left text-muted"><th>Ware</th><th>Preis</th><th>verkauft</th><th>wollten kaufen</th><th>weggeworfen</th><th className="text-right">Umsatz</th></tr></thead>
+          <thead><tr className="text-left text-muted"><th>Ware</th><th>Preis</th><th>verkauft</th><th>wollten kaufen</th><th>zu teuer</th><th>weggeworfen</th><th className="text-right">Umsatz</th></tr></thead>
           <tbody>
             {b.zeilen.map(zl => (
               <tr key={zl.id} className="border-t border-line/50">
                 <td className="py-1">{P[zl.id].emoji} {P[zl.id].name}</td>
                 <td>{euro(zl.brutto)}</td>
-                <td className="tabular-nums">{zl.verkauft}{zl.verpasst > 0 && <span className="text-bad"> · ausverkauft</span>}</td>
+                <td className="tabular-nums">{zl.verkauft}{zl.verpasst > 0 && <span className="text-bad"> · ausverkauft ab {TAGE[zl.leerAb ?? 4]}</span>}</td>
                 <td className="tabular-nums">{zl.gewollt}</td>
+                <td className={`tabular-nums ${zl.zuTeuer > zl.gewollt / 4 ? "text-bad" : ""}`}>{zl.zuTeuer || "–"}</td>
                 <td className={`tabular-nums ${zl.verdorben ? "text-bad" : ""}`}>{zl.verdorben || "–"}</td>
                 <td className="text-right tabular-nums">{euro(zl.umsatz)}</td>
               </tr>
@@ -128,7 +134,7 @@ function Bericht({ b, e }: { b: Wochenbericht; e: Ereignis }) {
           </span>
         )}
       </div>
-      <Zufriedenheit b={b} />
+      <Zufriedenheit b={b} ruf={ruf} />
       <Hinweise b={b} e={e} />
     </>
   );
@@ -143,14 +149,16 @@ export default function Kiosk() {
   const [ereignis, setEreignis] = useState<Ereignis>(() => ereignisFuer(1));
   const [bericht, setBericht] = useState<Wochenbericht | null>(null);
   /** Bericht der Vorwoche zum Nachschauen beim Planen */
-  const [letzte, setLetzte] = useState<{ woche: number; b: Wochenbericht; e: Ereignis } | null>(null);
+  const [letzte, setLetzte] = useState<{ woche: number; b: Wochenbericht; e: Ereignis; ruf: number } | null>(null);
+  /** Ruf aus den Sternen der Vorwochen: bestimmt, wie viele kommen */
+  const [ruf, setRuf] = useState(START_RUF);
   const [rueckblick, setRueckblick] = useState(false);
   const [kalk, setKalk] = useState<ProduktId | null>(null);
   const [best, setBest] = useState(0);
 
   const starte = () => {
     setWoche(1); setKasse(START_KASSE); setKassen([START_KASSE]); setPlan(leererPlan()); setLager(leeresLager());
-    setEreignis(ereignisFuer(1)); setBericht(null); setLetzte(null); setRueckblick(false); setBest(liesBest());
+    setEreignis(ereignisFuer(1)); setBericht(null); setLetzte(null); setRueckblick(false); setRuf(START_RUF); setBest(liesBest());
   };
   const setze = (id: ProduktId, was: "aufschlag" | "bestellen", n: number) =>
     setPlan(p => ({ ...p, [id]: { ...p[id], [was]: Math.max(0, Math.round(n)) } }));
@@ -163,6 +171,10 @@ export default function Kiosk() {
           Du übernimmst den Pausenkiosk für {WOCHEN} Wochen, mit {euro(START_KASSE)} in der Kasse. Kauf Ware ein und leg den
           Aufschlag fest — auf den Einkaufspreis kommt dein Gewinn, darauf die Mehrwertsteuer. Zu teuer, und die Kundschaft geht
           zur Bäckerei; zu viel bestellt, und Brötchen landen im Müll. Die Standmiete kostet {euro(FIXKOSTEN)} pro Woche.
+        </p>
+        <p className="max-w-xl text-muted">
+          An der Schule sind {SCHUELER} Schülerinnen und Schüler; {z(OHNE_BROT * 100, 0)} % bringen kein Pausenbrot mit und kommen öfter.
+          Zur Eröffnung wollen alle den Kiosk ausprobieren — danach entscheidet dein Ruf, wie viele wiederkommen.
         </p>
         <button className="btn-primary text-xl px-8 py-3" onClick={starte}>▶ Kiosk öffnen</button>
       </div>
@@ -189,8 +201,9 @@ export default function Kiosk() {
   const reicht = kosten <= kasse;
 
   const oeffnen = () => {
-    const b = spieleWoche(plan, lager, ereignis);
+    const b = spieleWoche(plan, lager, ereignis, Math.random, ruf);
     setBericht(b);
+    setRuf(neuerRuf(ruf, b.zufriedenheit.sterne));
     const neu = Math.round((kasse - kosten + b.umsatz - b.steuer - FIXKOSTEN) * 100) / 100;
     setKasse(neu);
     setKassen(k => [...k, neu]);
@@ -202,7 +215,7 @@ export default function Kiosk() {
       setWoche(WOCHEN + 1);
       return;
     }
-    if (bericht) setLetzte({ woche, b: bericht, e: ereignis });
+    if (bericht) setLetzte({ woche, b: bericht, e: ereignis, ruf });
     setWoche(w => w + 1); setEreignis(ereignisFuer(woche + 1)); setBericht(null); setRueckblick(false);
     // Mengen bleiben als Vorschlag stehen
   };
@@ -212,6 +225,7 @@ export default function Kiosk() {
       <div className="flex flex-wrap items-center gap-3">
         <span className="font-black">Woche {woche} von {WOCHEN}</span>
         <span className="chip">💶 Kasse {euro(kasse)}</span>
+        <span className="chip" title="Aus den Sternen der Vorwochen; bestimmt, wie viele Kundinnen und Kunden kommen">⭐ Ruf {z(ruf, 1)}</span>
         <span className="flex-1" />
         <button className="btn text-xs" onClick={() => setWoche(0)}>Aufgeben</button>
       </div>
@@ -230,22 +244,23 @@ export default function Kiosk() {
               {rueckblick && (
                 <div className="rounded-xl border border-line p-3 sm:p-4 bg-page flex flex-col gap-3">
                   <p className="font-black">Rückblick Woche {letzte.woche}: {letzte.e.titel}</p>
-                  <Bericht b={letzte.b} e={letzte.e} />
+                  <Bericht b={letzte.b} e={letzte.e} ruf={letzte.ruf} />
                 </div>
               )}
             </div>
           )}
           <div className="overflow-x-auto">
-            <table className="text-sm w-full min-w-[720px]">
+            <table className="text-sm w-full min-w-[800px]">
               <thead>
                 <tr className="text-left text-muted">
-                  <th>Ware</th><th>Einkauf netto</th><th>Aufschlag</th><th>Verkaufspreis</th><th>Konkurrenz</th><th>Lager</th><th>Bestellen</th><th className="text-right">Kosten</th>
+                  <th>Ware</th><th>Einkauf netto</th><th>Aufschlag</th><th>Verkaufspreis</th><th>Konkurrenz</th><th title="Wahrscheinlichkeit, dass jemand, der die Ware will, sie zu deinem Preis kauft">kaufen zum Preis</th><th>Lager</th><th>Bestellen</th><th className="text-right">Kosten</th>
                 </tr>
               </thead>
               <tbody>
                 {PRODUKTE.map(p => {
                   const ek = ekJetzt(p, ereignis), k = kalkuliere(ek, plan[p.id].aufschlag, p.mwst), markt = marktJetzt(p, ereignis);
                   const teurer = ek > p.ek, billiger = ek < p.ek, offen = kalk === p.id, rabatt = mengenrabatt(plan[p.id].bestellen);
+                  const quote = kaufWahrscheinlichkeit(p, k.brutto, ereignis);
                   return (
                     <Fragment key={p.id}>
                       <tr className="border-t border-line/50 align-middle">
@@ -264,6 +279,7 @@ export default function Kiosk() {
                           </button>
                         </td>
                         <td className="text-muted">{euro(markt)}</td>
+                        <td className={`tabular-nums font-bold ${quote < 0.5 ? "text-bad" : quote > 0.85 ? "text-ok" : ""}`}>{z(quote * 100, 0)} %</td>
                         <td className="tabular-nums">{lager[p.id]}</td>
                         <td>
                           <span className="flex items-center gap-1">
@@ -280,7 +296,7 @@ export default function Kiosk() {
                       </tr>
                       {offen && (
                         <tr>
-                          <td colSpan={8} className="pb-2">
+                          <td colSpan={9} className="pb-2">
                             <p className="rounded-lg bg-page border border-line px-3 py-2 font-mono text-xs leading-relaxed">
                               Einkauf {euro(ek)} + {plan[p.id].aufschlag} % Aufschlag = {euro(k.netto)} netto
                               {" "}+ {p.mwst} % MwSt ({euro(k.steuer)}) = {euro(k.netto + k.steuer)} → gerundet <strong>{euro(k.brutto)}</strong>
@@ -297,7 +313,7 @@ export default function Kiosk() {
               </tbody>
             </table>
           </div>
-          <p className="text-xs text-muted">Tipp auf einen Verkaufspreis zeigt die Kalkulation. »frisch« = am Freitag wird weggeworfen, was übrig ist; alles andere bleibt im Lager.
+          <p className="text-xs text-muted">Tipp auf einen Verkaufspreis zeigt die Kalkulation. »kaufen zum Preis«: so viele von denen, die die Ware wollen, zahlen deinen Preis. »frisch« = am Freitag wird weggeworfen, was übrig ist; alles andere bleibt im Lager.
             {" "}Mengenrabatt je Ware: {RABATT_STUFEN.map(s => `ab ${s.ab} Stück ${s.prozent} %`).reverse().join(", ")} — der Verkaufspreis rechnet weiter mit dem Listenpreis, der Rabatt ist Extragewinn.</p>
           <div className="flex flex-wrap items-center gap-3">
             <span>Einkauf diese Woche: <strong>{euro(kosten)}</strong> · Kasse danach: <strong className={reicht ? "" : "text-bad"}>{euro(kasse - kosten)}</strong></span>
@@ -309,7 +325,7 @@ export default function Kiosk() {
 
       {bericht && (
         <div className="flex flex-col gap-3">
-          <Bericht b={bericht} e={ereignis} />
+          <Bericht b={bericht} e={ereignis} ruf={ruf} />
           <button className="btn-primary self-start" onClick={naechste}>{woche >= WOCHEN ? "Abschluss ▶" : "Nächste Woche ▶"}</button>
         </div>
       )}

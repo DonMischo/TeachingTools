@@ -7,7 +7,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import Spiele from "@/components/prozent/Spiele";
 import { bewerte, erzeugeBestellung, mischung, rechenweg, type Stufe } from "@/lib/saftbar";
 import { SIM_ONLY, annuitaet, bestes, erzeugeFall, handyKosten, kontoVerlauf, warten, MONATE } from "@/lib/handy";
-import { PRODUKTE, FIXKOSTEN, bestellkosten, einkaufFuer, mengenrabatt, ereignisFuer, EREIGNISSE, kalkuliere, leeresLager, leererPlan, nachfrage, spieleWoche } from "@/lib/kiosk";
+import { PRODUKTE, FIXKOSTEN, bestellkosten, einkaufFuer, mengenrabatt, ereignisFuer, EREIGNISSE, kalkuliere, kaufWahrscheinlichkeit, leeresLager, leererPlan, neuerRuf, spieleWoche, EROEFFNUNG, SCHUELER, TAGE } from "@/lib/kiosk";
 
 function zufall(seed: number) {
   return () => {
@@ -92,10 +92,33 @@ describe("Kiosk", () => {
     expect(b.zeilen.find(z => z.id === "brezel")!.rabatt).toBe(10);
   });
 
-  it("teurer verkauft weniger", () => {
-    const p = PRODUKTE[0], e = EREIGNISSE[0];
-    const fest = () => 0.5;
-    expect(nachfrage(p, 1, e, fest)).toBeGreaterThan(nachfrage(p, 2, e, fest));
+  it("Kaufwahrscheinlichkeit: billiger kauft eher, Wucher kaum, bei Tante Emma bleibt die Bequemlichkeit", () => {
+    const riegel = PRODUKTE.find(p => p.id === "riegel")!, normal = EREIGNISSE[0];
+    const emma = EREIGNISSE.find(e => e.id === "tanteEmma")!;
+    expect(kaufWahrscheinlichkeit(riegel, 0.8, normal)).toBeGreaterThan(kaufWahrscheinlichkeit(riegel, 1.2, normal));
+    expect(kaufWahrscheinlichkeit(riegel, 0.8, normal)).toBeGreaterThan(0.9);
+    expect(kaufWahrscheinlichkeit(riegel, kalkuliere(riegel.ek, 400, riegel.mwst).brutto, normal)).toBeLessThan(0.01);
+    // Tante Emma ist billiger als dein Einkauf — wer bei dir zum üblichen Preis kauft, tut es aus Bequemlichkeit
+    const q = kaufWahrscheinlichkeit(riegel, 1, emma);
+    expect(q).toBeGreaterThan(0.2);
+    expect(q).toBeLessThanOrEqual(0.3);
+  });
+
+  it("Schülerschaft: feste Zahl, Eröffnung lockt, Ruf zählt, Ausverkauf hat einen Tag", () => {
+    const voll = Object.fromEntries(PRODUKTE.map(p => [p.id, { aufschlag: 100, bestellen: 5000 }])) as ReturnType<typeof leererPlan>;
+    const summe = (b: ReturnType<typeof spieleWoche>) => b.zeilen.reduce((a, z) => a + z.verkauft, 0);
+    const normal = spieleWoche(voll, leeresLager(), EREIGNISSE[0], zufall(1));
+    for (const z of normal.zeilen) expect(z.leerAb).toBeNull();
+    const wuensche = normal.zeilen.reduce((a, z) => a + z.gewollt + z.zuTeuer, 0);
+    expect(wuensche).toBeLessThanOrEqual(SCHUELER * TAGE.length * 2);
+    expect(summe(spieleWoche(voll, leeresLager(), EROEFFNUNG, zufall(1)))).toBeGreaterThan(summe(normal) * 1.3);
+    expect(summe(spieleWoche(voll, leeresLager(), EREIGNISSE[0], zufall(1), 5))).toBeGreaterThan(summe(spieleWoche(voll, leeresLager(), EREIGNISSE[0], zufall(1), 1)));
+    const knapp = leererPlan();
+    knapp.broetchen.bestellen = 5;
+    const b = spieleWoche(knapp, leeresLager(), EREIGNISSE[0], zufall(2)).zeilen.find(z => z.id === "broetchen")!;
+    expect(b.leerAb).not.toBeNull();
+    expect(b.verpasst).toBeGreaterThan(0);
+    expect(neuerRuf(3, 5)).toBe(4);
   });
 
   it("eine Woche verliert keine Ware und rechnet den Gewinn richtig", () => {
