@@ -3,8 +3,8 @@
  * jede gewürfelte Übungsaufgabe ist mit ihrer eigenen Lösung richtig, die
  * Spiel-Logik bleibt im Rahmen, und jedes Blatt öffnet.
  */
-import { describe, expect, it } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import Stellenwert from "@/components/stellenwert/Stellenwert";
 import { loesungsTafel } from "@/components/stellenwert/Ueben";
 import {
@@ -186,6 +186,33 @@ describe("Oberfläche", () => {
     expect(screen.getByText(/Aufgabe 1 von 10/)).toBeTruthy();
     expect(screen.getByRole("img", { name: /Zählwerk zeigt \d{7}$/ })).toBeTruthy();
     expect(screen.getByText("M")).toBeTruthy();
+  });
+
+  it("Zählwerk-Rennen: Enter prüft, Fehler bleibt stehen, Enter geht weiter, Fokus bleibt im Feld", () => {
+    vi.useFakeTimers();
+    try {
+      render(<Stellenwert />);
+      fireEvent.click(screen.getByRole("button", { name: /Spiele/ }));
+      fireEvent.click(screen.getAllByRole("button", { name: /Zählwerk-Rennen/ })[0]);
+      fireEvent.click(screen.getByRole("button", { name: /10 Aufgaben/ }));
+      fireEvent.click(screen.getByRole("button", { name: /Start/ }));
+      const feld = screen.getByLabelText("Was zeigt das Zählwerk dann?") as HTMLInputElement;
+      expect(document.activeElement).toBe(feld);
+      // »0« ist nie richtig: jede Aufgabe endet über 0
+      fireEvent.change(feld, { target: { value: "0" } });
+      fireEvent.submit(feld.closest("form")!);
+      expect(screen.getByText(/Leider falsch/)).toBeTruthy();
+      expect(screen.getByText("richtig")).toBeTruthy();
+      act(() => { vi.advanceTimersByTime(3000); });
+      expect(screen.getByText(/Leider falsch/)).toBeTruthy();
+      expect(document.activeElement).toBe(feld);
+      fireEvent.submit(feld.closest("form")!);
+      expect(screen.queryByText(/Leider falsch/)).toBeNull();
+      expect(screen.getByText(/Aufgabe 2 von 10/)).toBeTruthy();
+      expect(document.activeElement).toBe(feld);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("die Erklärungen öffnen als Popup mit Beispiel", () => {

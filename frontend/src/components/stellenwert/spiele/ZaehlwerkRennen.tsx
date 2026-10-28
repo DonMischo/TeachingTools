@@ -8,13 +8,15 @@
  * Stellenwerten gezählt (+ 1 H, − 3 Z …), bis 1 000, 1 Million oder 1 Milliarde.
  */
 import { useEffect, useRef, useState } from "react";
-import { BASEN, INDEX, geaenderteStellen, lies, schreibe, spalte, ziffer, type Basis } from "@/lib/stellenwert";
+import { BASEN, INDEX, geaenderteStellen, lies, schreibe, spalte, ziffer, ziffernVon, type Basis } from "@/lib/stellenwert";
 import { DEZ_BEREICHE, zaehlRunde, zaehlZiel, zehnerSchritt, type ZaehlRunde } from "@/lib/stellenwertSpiele";
 import { Chips } from "@/components/prozent/ui";
 import { ZaehlwerkAnzeige } from "../teile";
 import { ZaehlwerkErklaerung } from "./Erklaerung";
 
 const STRAFE = 3;
+/** so lange bleibt die Rückmeldung stehen (ms); Enter geht nach SPERRE früher weiter */
+const ZEIGEN_OK = 1200, ZEIGEN_FEHLER = 4500, SPERRE = 700;
 const SCHLUESSEL = "hp_stellenwert_zaehlwerk_best";
 
 const MODI = [
@@ -57,13 +59,14 @@ export default function ZaehlwerkRennen() {
   const [runde, setRunde] = useState<ZaehlRunde | null>(null);
   const [zeigt, setZeigt] = useState(0);
   const [eingabe, setEingabe] = useState("");
-  const [rueck, setRueck] = useState<{ ok: boolean; text: string } | null>(null);
+  const [rueck, setRueck] = useState<{ ok: boolean; text: string; deine?: string; richtig?: string; seit: number } | null>(null);
   const [punkte, setPunkte] = useState(0);
   const [stat, setStat] = useState({ richtig: 0, gesamt: 0 });
   const [sek, setSek] = useState(0);
   const [best, setBest] = useState(0);
   const uhrRef = useRef(0);
   const weiter = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const feld = useRef<HTMLInputElement>(null);
 
   const m = MODI.find(x => x.id === modus)!;
   const zeit = "zeit" in m ? m.zeit : null;
@@ -92,6 +95,16 @@ export default function ZaehlwerkRennen() {
   const neueRunde = () => {
     const r = zaehlRunde(Number(stufe) as 1 | 2 | 3, basen, Math.random, dezStellen);
     setRunde(r); setZeigt(r.start); setEingabe(""); setRueck(null);
+    feld.current?.focus();
+  };
+
+  /** nach der Rückmeldung: nächste Aufgabe oder Schluss */
+  const naechste = () => {
+    clearTimeout(weiter.current);
+    // wer einen Fehler anschaut, soll dafür keine Zeit verlieren
+    if (rueck && !rueck.ok) uhrRef.current += Date.now() - rueck.seit;
+    if (aufgaben !== null && stat.gesamt >= aufgaben) setPhase("ende");
+    else neueRunde();
   };
 
   const starte = () => {
@@ -101,7 +114,9 @@ export default function ZaehlwerkRennen() {
   };
 
   const antworte = (text = eingabe) => {
-    if (!runde || rueck) return;
+    if (!runde) return;
+    // Enter während der Rückmeldung: weiter, sobald man sie kurz gesehen hat
+    if (rueck) { if (Date.now() - rueck.seit > SPERRE) naechste(); return; }
     const x = lies(text, runde.basis);
     if (x === null) return;
     const ziel = zaehlZiel(runde);
@@ -109,19 +124,24 @@ export default function ZaehlwerkRennen() {
     const gedreht = geaenderteStellen(runde.start, ziel, runde.basis, runde.stellen).length;
     if (ok) setPunkte(p => p + 5 + gedreht * 5);
     else if (zeit !== null) uhrRef.current -= STRAFE * 1000;
-    const gesamt = stat.gesamt + 1;
     setStat(s => ({ richtig: s.richtig + (ok ? 1 : 0), gesamt: s.gesamt + 1 }));
-    setRueck({
-      ok,
-      text: ok
-        ? `✔ ${gedreht > 1 ? `${gedreht} Walzen haben sich gedreht!` : "Richtig!"}`
-        : `✘ Es ist ${schreibe(ziel, runde.basis)}${INDEX[runde.basis]}${zeit !== null ? ` (−${STRAFE} s)` : ""}`,
-    });
+    setRueck(ok
+      ? { ok, seit: Date.now(), text: `✔ ${gedreht > 1 ? `${gedreht} Walzen haben sich gedreht!` : "Richtig!"}` }
+      : {
+          ok, seit: Date.now(), text: `✘ Leider falsch${zeit !== null ? ` (−${STRAFE} s)` : ""}`,
+          deine: ziffernVon(x, runde.basis, runde.stellen).map(ziffer).join(""),
+          richtig: ziffernVon(ziel, runde.basis, runde.stellen).map(ziffer).join(""),
+        });
     setZeigt(ziel);
     clearTimeout(weiter.current);
-    const fertig = aufgaben !== null && gesamt >= aufgaben;
-    weiter.current = setTimeout(fertig ? () => setPhase("ende") : neueRunde, ok ? 1300 : 2600);
   };
+
+  // die Rückmeldung bleibt stehen; danach geht es von selbst weiter
+  useEffect(() => {
+    if (!rueck) return;
+    weiter.current = setTimeout(naechste, rueck.ok ? ZEIGEN_OK : ZEIGEN_FEHLER);
+    return () => clearTimeout(weiter.current);
+  }, [rueck]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (phase !== "laeuft" || !runde) {
     return (
@@ -182,18 +202,39 @@ export default function ZaehlwerkRennen() {
         <span className="text-sm text-muted">{BASEN.find(b => b.basis === runde.basis)!.name}</span>
       </div>
       <form className="flex flex-wrap gap-2 items-center" onSubmit={e => { e.preventDefault(); antworte(); }}>
-        <input className="input w-52 font-mono text-xl uppercase" value={eingabe} autoFocus autoComplete="off" aria-label="Was zeigt das Zählwerk dann?"
-          onChange={e => setEingabe(e.target.value)} disabled={!!rueck} placeholder="?" />
+        <input ref={feld} className="input w-52 font-mono text-xl uppercase" value={eingabe} autoFocus autoComplete="off" aria-label="Was zeigt das Zählwerk dann?"
+          onChange={e => { if (!rueck) setEingabe(e.target.value); }} readOnly={!!rueck} placeholder="?" />
         <span className="text-muted">{INDEX[runde.basis]}</span>
-        <button className="btn-primary" type="submit" disabled={!!rueck}>OK</button>
+        <button className="btn-primary" type="submit">{rueck ? "Weiter ⏎" : "OK ⏎"}</button>
       </form>
       <div className="flex flex-wrap gap-1" aria-label="Zifferntasten">
         {Array.from({ length: runde.basis }, (_, d) => (
-          <button key={d} type="button" className="btn font-mono w-10" disabled={!!rueck} onClick={() => setEingabe(t => t + ziffer(d))}>{ziffer(d)}</button>
+          <button key={d} type="button" className="btn font-mono w-10" disabled={!!rueck} onClick={() => { setEingabe(t => t + ziffer(d)); feld.current?.focus(); }}>{ziffer(d)}</button>
         ))}
-        <button type="button" className="btn w-10" disabled={!!rueck} onClick={() => setEingabe(t => t.slice(0, -1))} aria-label="Löschen">⌫</button>
+        <button type="button" className="btn w-10" disabled={!!rueck} onClick={() => { setEingabe(t => t.slice(0, -1)); feld.current?.focus(); }} aria-label="Löschen">⌫</button>
       </div>
-      {rueck && <p className={`font-black ${rueck.ok ? "text-ok" : "text-bad"}`} role="status">{rueck.text}</p>}
+      {rueck && (
+        <div role="status" className="flex flex-col gap-1">
+          <p className={`font-black ${rueck.ok ? "text-ok" : "text-bad"}`}>{rueck.text}</p>
+          {rueck.deine && rueck.richtig && (
+            <div className="font-mono text-xl flex flex-col gap-0.5">
+              <span>
+                <span className="text-sm text-muted font-sans inline-block w-16">deine</span>
+                {rueck.deine.split("").map((c, i) => (
+                  <span key={i} className={c !== rueck.richtig![i] ? "text-bad font-black underline" : "text-muted"}>{c}</span>
+                ))}
+              </span>
+              <span>
+                <span className="text-sm text-muted font-sans inline-block w-16">richtig</span>
+                {rueck.richtig.split("").map((c, i) => (
+                  <span key={i} className={c !== rueck.deine![i] ? "text-ok font-black" : ""}>{c}</span>
+                ))}
+              </span>
+            </div>
+          )}
+          <p className="text-xs text-muted">⏎ Enter = weiter</p>
+        </div>
+      )}
     </div>
   );
 }
