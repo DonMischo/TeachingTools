@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from "react";
 import { HEX_FARBEN, schreibe, zuDezimalWeg } from "@/lib/stellenwert";
 import { BOTSCHAFTEN, asciiSicher, codiere, decodiere } from "@/lib/stellenwertSpiele";
 import { Chips } from "@/components/prozent/ui";
+import { GeheimErklaerung } from "./Erklaerung";
 
 type Code = 2 | 16;
 
@@ -156,7 +157,10 @@ export default function Geheimbotschaft() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap gap-3 items-center justify-between">
-        <h2 className="text-xl font-black">🕵️ Geheimbotschaft</h2>
+        <div className="flex flex-wrap items-center gap-3">
+          <h2 className="text-xl font-black">🕵️ Geheimbotschaft</h2>
+          <GeheimErklaerung code={code} />
+        </div>
         <div className="flex flex-wrap gap-2">
           <Chips wahl={modus} setze={setModus} optionen={[{ id: "ent", label: "🔓 Entschlüsseln" }, { id: "ver", label: "🔒 Verschlüsseln" }]} />
           <Chips wahl={String(code) as "16" | "2"} setze={c => setCode(Number(c) as Code)} optionen={[{ id: "16", label: "🔣 Hex" }, { id: "2", label: "💡 Binär" }]} />

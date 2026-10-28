@@ -424,3 +424,26 @@ export function pruefe(a: Aufgabe, eingabe: string): boolean | null {
 /** Die Lösung so, wie man sie hinschreibt. */
 export const loesungText = (a: Aufgabe) =>
   a.basis === 10 ? dez(a.loesung, nachkommaVon(a.loesung)) : schreibe(a.loesung, a.basis) + INDEX[a.basis];
+
+/**
+ * Schriftlich rechnen am Zählwerk, Stelle für Stelle von rechts: was dazukommt
+ * (oder weggeht), was übrig bleibt, und ob ein Übertrag (Ausleihen) weiterwandert.
+ * `exp` 0 = Einer. Die Liste hört auf, sobald sich links nichts mehr ändert.
+ */
+export function uebertragsSchritte(start: number, schritt: number, basis: number, stellen: number) {
+  const a = ziffernVon(start, basis, stellen).reverse();
+  const b = ziffernVon(Math.abs(schritt), basis, stellen).reverse();
+  const minus = schritt < 0;
+  const out: { exp: number; vorher: number; dazu: number; nachher: number; uebertrag: boolean }[] = [];
+  let mit = 0;
+  for (let exp = 0; exp < stellen; exp++) {
+    const dazu = (b[exp] ?? 0) + mit;
+    if (!dazu && exp > 0 && b.slice(exp).every(d => !d)) break;
+    let n = minus ? a[exp] - dazu : a[exp] + dazu;
+    const uebertrag = minus ? n < 0 : n >= basis;
+    if (uebertrag) n += minus ? basis : -basis;
+    out.push({ exp, vorher: a[exp], dazu, nachher: n, uebertrag });
+    mit = uebertrag ? 1 : 0;
+  }
+  return out;
+}

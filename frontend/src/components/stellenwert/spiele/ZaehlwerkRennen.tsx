@@ -10,6 +10,7 @@ import { BASEN, INDEX, geaenderteStellen, lies, schreibe, ziffer, type Basis } f
 import { zaehlRunde, zaehlZiel, type ZaehlRunde } from "@/lib/stellenwertSpiele";
 import { Chips } from "@/components/prozent/ui";
 import { ZaehlwerkAnzeige } from "../teile";
+import { ZaehlwerkErklaerung } from "./Erklaerung";
 
 const DAUER = 60, STRAFE = 3;
 const SCHLUESSEL = "hp_stellenwert_zaehlwerk_best";
@@ -91,7 +92,10 @@ export default function ZaehlwerkRennen() {
   if (phase !== "laeuft" || !runde) {
     return (
       <div className="flex flex-col gap-3 items-start">
-        <h2 className="text-xl font-black">🚗 Zählwerk-Rennen</h2>
+        <div className="flex flex-wrap items-center gap-3">
+          <h2 className="text-xl font-black">🚗 Zählwerk-Rennen</h2>
+          <ZaehlwerkErklaerung />
+        </div>
         <p className="text-sm max-w-2xl">
           Das Zählwerk zeigt eine Zahl. Was steht da nach dem nächsten Schritt? Achtung beim <b>Übertrag</b>: läuft eine
           Walze über die größte Ziffer, springt sie auf 0 und die Walze links dreht eins weiter. {DAUER} Sekunden — je mehr

@@ -8,7 +8,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import Stellenwert from "@/components/stellenwert/Stellenwert";
 import { loesungsTafel } from "@/components/stellenwert/Ueben";
 import {
-  UEB_ARTEN, abziehWeg, dez, divisionsWeg, erzeugeAufgabe, lies, loesungText, paeckchen, pruefe, schreibe, spalten,
+  UEB_ARTEN, abziehWeg, uebertragsSchritte, dez, divisionsWeg, erzeugeAufgabe, lies, loesungText, paeckchen, pruefe, schreibe, spalten,
   zahlwort, zuDezimalWeg, type Stufe,
 } from "@/lib/stellenwert";
 import {
@@ -65,6 +65,16 @@ describe("Rechenwege", () => {
     expect(w.map(z => z.rest).reverse().join("")).toBe("1101");
     expect(divisionsWeg(0, 2)).toEqual([{ zahl: 0, quotient: 0, rest: 0 }]);
   });
+  it("Übertragsschritte am Zählwerk", () => {
+    const h = uebertragsSchritte(0x0ff, 1, 16, 3);
+    expect(h.map(s => [s.nachher, s.uebertrag])).toEqual([[0, true], [0, true], [1, false]]);
+    const m = uebertragsSchritte(0b1000, -1, 2, 4);
+    expect(m.map(s => s.nachher)).toEqual([1, 1, 1, 0]);
+    // + 10₂: die Einer bleiben, ab den Zweiern wird addiert
+    expect(uebertragsSchritte(0b0110, 2, 2, 4).map(s => s.nachher)).toEqual([0, 0, 0, 1]);
+    expect(uebertragsSchritte(5, 100, 10, 3).map(s => s.nachher)).toEqual([5, 0, 1]);
+  });
+
   it("Abziehen endet bei 0", () => {
     const w = abziehWeg(200, 16);
     expect(w.at(-1)?.nachher).toBe(0);
@@ -146,5 +156,20 @@ describe("Oberfläche", () => {
       fireEvent.click(screen.getAllByRole("button", { name: spiel })[0]);
     }
     expect(screen.getByRole("button", { name: /Los geht/ })).toBeTruthy();
+  });
+
+  it("die Erklärungen öffnen als Popup mit Beispiel", () => {
+    render(<Stellenwert />);
+    fireEvent.click(screen.getByRole("button", { name: /Spiele/ }));
+    fireEvent.click(screen.getAllByRole("button", { name: /Zählwerk-Rennen/ })[0]);
+    fireEvent.click(screen.getByRole("button", { name: /So geht/ }));
+    expect(screen.getByRole("dialog", { name: /Zählwerk-Rennen/ })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /Drehen/ }));
+    expect(screen.getByText(/Ergebnis: 100/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Schließen" }));
+    expect(screen.queryByRole("dialog")).toBeNull();
+    fireEvent.click(screen.getAllByRole("button", { name: /Geheimbotschaft/ })[0]);
+    fireEvent.click(screen.getByRole("button", { name: /So geht/ }));
+    expect(screen.getByRole("dialog", { name: /Geheimbotschaft/ })).toBeTruthy();
   });
 });
