@@ -8,6 +8,8 @@
  *   + Mehrwertsteuer (7 % Lebensmittel, 19 % Getränke) = Verkaufspreis brutto,
  *   auf 5 Cent gerundet. Die Mehrwertsteuer gehört dem Finanzamt.
  */
+import { euro } from "./prozent";
+
 type Rnd = () => number;
 const cent = (x: number) => Math.round(x * 100) / 100;
 
@@ -61,7 +63,15 @@ export const EREIGNISSE: Ereignis[] = [
   { id: "sportfest", titel: "🏃 Sportfest", text: "Viele Gäste auf dem Schulhof — Riegel und Getränke gehen weg.", nachfrage: { alle: 1.3, riegel: 1.6, getraenke: 1.3 } },
   { id: "kalt", titel: "❄️ Kälteeinbruch", text: "Bitterkalt: Kakao ist gefragt, Schorle kaum.", nachfrage: { kakao: 1.8, schorle: 0.6, wasser: 0.7, obst: 0.7 } },
   { id: "gesund", titel: "🥗 Gesundheitswoche", text: "Die Schule wirbt für gesunde Pausen.", nachfrage: { obst: 1.8, wasser: 1.4, riegel: 0.7 } },
+  { id: "grosshandel", titel: "🏷️ Großhandel-Aktion", text: "Müsliriegel und Apfelschorle kosten im Einkauf 30 % weniger — gut zum Vorrat anlegen, sie verderben nicht.", ek: { riegel: 0.7, schorle: 0.7 } },
+  { id: "backstube", titel: "🥨 Backstube hat zu viel", text: "Dein Bäcker-Lieferant gibt Brezeln und Käsebrötchen 25 % billiger ab.", ek: { brezel: 0.75, broetchen: 0.75 } },
 ];
+
+/** Mengenrabatt beim Lieferanten je Ware und Bestellung (größte Stufe zuerst) */
+export const RABATT_STUFEN = [{ ab: 200, prozent: 10 }, { ab: 100, prozent: 5 }] as const;
+export const mengenrabatt = (stueck: number) => RABATT_STUFEN.find(s => stueck >= s.ab)?.prozent ?? 0;
+/** Einkaufskosten einer Bestellung: Stückzahl · Einkaufspreis − Mengenrabatt */
+export const einkaufFuer = (stueck: number, ek: number) => cent(stueck * ek * (1 - mengenrabatt(stueck) / 100));
 
 /** Einkaufspreis in dieser Woche (mit Ereignis). */
 export const ekJetzt = (p: Produkt, e: Ereignis) => cent(p.ek * (e.ek?.[p.id] ?? 1));
@@ -89,15 +99,84 @@ export type Plan = Record<ProduktId, { aufschlag: number; bestellen: number }>;
 export type Lager = Record<ProduktId, number>;
 
 export type Zeile = {
-  id: ProduktId; brutto: number; ek: number; bestellt: number; verfuegbar: number;
+  /** ek = Listenpreis; rabatt = Mengenrabatt in % auf diese Bestellung */
+  id: ProduktId; brutto: number; ek: number; rabatt: number; bestellt: number; verfuegbar: number;
   gewollt: number; verkauft: number; verpasst: number; verdorben: number;
   umsatz: number; steuer: number; einkauf: number;
+};
+export type Kommentar = { wer: string; sterne: number; text: string };
+export type Zufriedenheit = {
+  /** 1 bis 5 in halben Sternen */
+  sterne: number;
+  /** Anteil der Kundschaft, die bekam, was sie wollte (0–1) */
+  bedient: number;
+  /** Preis im Schnitt im Verhältnis zur Konkurrenz (1 = gleich teuer) */
+  preisVerhaeltnis: number;
+  kommentare: Kommentar[];
 };
 export type Wochenbericht = {
   zeilen: Zeile[];
   umsatz: number; steuer: number; einkauf: number; verderbWert: number; fix: number; gewinn: number;
   lager: Lager;
+  zufriedenheit: Zufriedenheit;
 };
+
+const klemme = (x: number) => Math.min(1, Math.max(0, x));
+const VORNAMEN = ["Mia", "Ben", "Emil", "Lina", "Noah", "Ida", "Paul", "Ella", "Finn", "Mila", "Jonas", "Lea", "Karl", "Nele", "Tom", "Zoe"];
+
+/**
+ * Kundenzufriedenheit aus Verfügbarkeit (wer leer ausging) und Preisen
+ * (verglichen mit der Konkurrenz, gewichtet nach üblicher Nachfrage).
+ * Dazu bis zu vier Kommentare: Ärger über Ausverkauftes und Wucherpreise
+ * zuerst, dann Lob.
+ */
+export function bewerteKiosk(zeilen: Zeile[], e: Ereignis, rnd: Rnd = Math.random, produkte = PRODUKTE): Zufriedenheit {
+  const P = Object.fromEntries(produkte.map(p => [p.id, p])) as Record<ProduktId, Produkt>;
+  const gewollt = zeilen.reduce((a, z) => a + z.gewollt, 0);
+  const bedient = gewollt ? zeilen.reduce((a, z) => a + z.verkauft, 0) / gewollt : 1;
+  const gewicht = zeilen.reduce((a, z) => a + P[z.id].basis, 0);
+  const preisVerhaeltnis = zeilen.reduce((a, z) => a + P[z.id].basis * (z.brutto / marktJetzt(P[z.id], e)), 0) / gewicht;
+  // halb leer ausgegangen = 0, alle bedient = 1; 50 % teurer = 0, 10 % billiger = 1
+  const gesamt = 0.55 * klemme((bedient - 0.5) / 0.5) + 0.45 * klemme((1.5 - preisVerhaeltnis) / 0.6);
+  const sterne = Math.round((1 + 4 * gesamt) * 2) / 2;
+
+  const namen = [...VORNAMEN].sort(() => rnd() - 0.5);
+  const wer = (i: number) => `${namen[i % namen.length]}, ${5 + Math.floor(rnd() * 6)}${"abc"[Math.floor(rnd() * 3)]}`;
+  const waehle = <T,>(xs: T[]) => xs[Math.floor(rnd() * xs.length)];
+  const aerger: { gewicht: number; sterne: number; text: string }[] = [];
+  const lob: { sterne: number; text: string }[] = [];
+  for (const z of zeilen) {
+    const p = P[z.id], markt = marktJetzt(p, e), r = z.brutto / markt;
+    const leer = z.gewollt ? z.verpasst / z.gewollt : 0;
+    if (leer > 0.1) {
+      aerger.push({
+        gewicht: leer + 0.5, sterne: leer > 0.4 ? 1 : 2,
+        text: waehle([
+          `${p.name}? Schon in der ersten Pause alle! 😠`,
+          `${p.name} war wieder ausverkauft. Dann geh ich halt zur Bäckerei.`,
+          `Hab extra Geld für ${p.name} mitgebracht — alles weg. 🙄`,
+        ]),
+      });
+    }
+    if (r > 1.2) {
+      aerger.push({
+        gewicht: r - 1, sterne: r > 1.4 ? 1 : 2,
+        text: waehle([
+          `${euro(z.brutto)} für ${p.name}? Bei der Konkurrenz kostet das ${euro(markt)}. 💸`,
+          `${p.name} ist viel zu teuer geworden. Wucher!`,
+          `Für ${euro(z.brutto)} kauf ich ${p.name} nicht. Mein Taschengeld reicht so nicht.`,
+        ]),
+      });
+    } else if (leer <= 0.1 && z.verkauft > 0) {
+      if (r < 0.9) lob.push({ sterne: 5, text: waehle([`${p.name} für nur ${euro(z.brutto)} — da komm ich jeden Tag! 😍`, `${p.name} so günstig wie nirgends sonst. 👍`]) });
+      else lob.push({ sterne: 4, text: waehle([`${p.name} gab's immer, Preis passt.`, `Fairer Preis für ${p.name}. 🙂`]) });
+    }
+  }
+  aerger.sort((a, b) => b.gewicht - a.gewicht);
+  const auswahl = [...aerger.slice(0, 3), ...lob.sort(() => rnd() - 0.5)].slice(0, 4);
+  if (!auswahl.length) auswahl.push({ sterne: 3, text: "Ganz okay, nichts Besonderes." });
+  return { sterne, bedient, preisVerhaeltnis, kommentare: auswahl.map((k, i) => ({ wer: wer(i), sterne: k.sterne, text: k.text })) };
+}
 
 export function spieleWoche(plan: Plan, lager: Lager, e: Ereignis, rnd: Rnd = Math.random, produkte = PRODUKTE): Wochenbericht {
   const zeilen: Zeile[] = [];
@@ -114,17 +193,20 @@ export function spieleWoche(plan: Plan, lager: Lager, e: Ereignis, rnd: Rnd = Ma
     neu[p.id] = p.frisch ? 0 : rest;
     const umsatz = cent(verkauft * brutto);
     const steuer = cent((umsatz * p.mwst) / (100 + p.mwst));
-    zeilen.push({ id: p.id, brutto, ek, bestellt: bestellen, verfuegbar, gewollt, verkauft, verpasst: gewollt - verkauft, verdorben, umsatz, steuer, einkauf: cent(bestellen * ek) });
+    zeilen.push({ id: p.id, brutto, ek, rabatt: mengenrabatt(bestellen), bestellt: bestellen, verfuegbar, gewollt, verkauft, verpasst: gewollt - verkauft, verdorben, umsatz, steuer, einkauf: einkaufFuer(bestellen, ek) });
   }
   const sum = (f: (z: Zeile) => number) => cent(zeilen.reduce((a, z) => a + f(z), 0));
   const umsatz = sum(z => z.umsatz), steuer = sum(z => z.steuer), einkauf = sum(z => z.einkauf);
-  const verderbWert = sum(z => z.verdorben * z.ek);
-  return { zeilen, umsatz, steuer, einkauf, verderbWert, fix: FIXKOSTEN, gewinn: cent(umsatz - steuer - einkauf - FIXKOSTEN), lager: neu };
+  const verderbWert = sum(z => z.verdorben * z.ek * (1 - z.rabatt / 100));
+  return {
+    zeilen, umsatz, steuer, einkauf, verderbWert, fix: FIXKOSTEN, gewinn: cent(umsatz - steuer - einkauf - FIXKOSTEN), lager: neu,
+    zufriedenheit: bewerteKiosk(zeilen, e, rnd, produkte),
+  };
 }
 
 /** Kosten der Bestellung für diese Woche. */
 export const bestellkosten = (plan: Plan, e: Ereignis, produkte = PRODUKTE) =>
-  cent(produkte.reduce((a, p) => a + plan[p.id].bestellen * ekJetzt(p, e), 0));
+  cent(produkte.reduce((a, p) => a + einkaufFuer(plan[p.id].bestellen, ekJetzt(p, e)), 0));
 
 export const leererPlan = (): Plan =>
   Object.fromEntries(PRODUKTE.map(p => [p.id, { aufschlag: 100, bestellen: Math.round(p.basis / 20) * 10 }])) as Plan;

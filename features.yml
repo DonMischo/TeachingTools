@@ -629,7 +629,7 @@ simulationen:
       - "Spiel Prozent-Blitz: schätzen, Kopfrechnen, Schnäppchen gegen die Uhr"
       - "Saftbar: Schorle auf Prozent mischen (Saft, Nektar, Wasser), verdünnen und verstärken"
       - "Handy-Check: Barzahlung, 0 %-Finanzierung, Ratenkauf, Vertrag mit Kleingedrucktem und Kontoverlauf"
-      - "Mein Kiosk: acht Wochen Kalkulation mit Aufschlag, Mehrwertsteuer, Verderb und Ereignissen"
+      - "Mein Kiosk: acht Wochen Kalkulation mit Aufschlag, Mehrwertsteuer, Mengenrabatt, Verderb und Ereignissen; Kundenzufriedenheit mit Sternen und Kommentaren"
   - id: rechenregeln
     name: Rechenregeln
     kann:

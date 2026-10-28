@@ -7,7 +7,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import Spiele from "@/components/prozent/Spiele";
 import { bewerte, erzeugeBestellung, mischung, rechenweg, type Stufe } from "@/lib/saftbar";
 import { SIM_ONLY, annuitaet, bestes, erzeugeFall, handyKosten, kontoVerlauf, warten, MONATE } from "@/lib/handy";
-import { PRODUKTE, FIXKOSTEN, ereignisFuer, EREIGNISSE, kalkuliere, leeresLager, leererPlan, nachfrage, spieleWoche } from "@/lib/kiosk";
+import { PRODUKTE, FIXKOSTEN, bestellkosten, einkaufFuer, mengenrabatt, ereignisFuer, EREIGNISSE, kalkuliere, leeresLager, leererPlan, nachfrage, spieleWoche } from "@/lib/kiosk";
 
 function zufall(seed: number) {
   return () => {
@@ -80,6 +80,18 @@ describe("Kiosk", () => {
     expect(kalkuliere(0.32, 100, 7).brutto).toBe(0.7);
   });
 
+  it("Mengenrabatt ab 100 und 200 Stück, Bestellkosten und Wochenbericht stimmen überein", () => {
+    expect(mengenrabatt(99)).toBe(0);
+    expect(mengenrabatt(100)).toBe(5);
+    expect(mengenrabatt(250)).toBe(10);
+    expect(einkaufFuer(200, 1)).toBe(180);
+    const plan = leererPlan();
+    plan.brezel.bestellen = 200;
+    const b = spieleWoche(plan, leeresLager(), EREIGNISSE[0], zufall(3));
+    expect(b.einkauf).toBeCloseTo(bestellkosten(plan, EREIGNISSE[0]), 2);
+    expect(b.zeilen.find(z => z.id === "brezel")!.rabatt).toBe(10);
+  });
+
   it("teurer verkauft weniger", () => {
     const p = PRODUKTE[0], e = EREIGNISSE[0];
     const fest = () => 0.5;
@@ -99,6 +111,26 @@ describe("Kiosk", () => {
       }
       expect(b.gewinn).toBeCloseTo(b.umsatz - b.steuer - b.einkauf - FIXKOSTEN, 1);
       lager = b.lager;
+    }
+  });
+
+  it("Zufriedenheit: leere Regale und Wucherpreise kosten Sterne", () => {
+    const e = EREIGNISSE[0];
+    const plan = (aufschlag: number, faktor: number) => Object.fromEntries(PRODUKTE.map(p => [p.id, { aufschlag, bestellen: Math.round(p.basis * faktor) }])) as ReturnType<typeof leererPlan>;
+    const fair = spieleWoche(plan(130, 3), leeresLager(), e, zufall(1)).zufriedenheit;
+    const leer = spieleWoche(plan(130, 0.3), leeresLager(), e, zufall(1)).zufriedenheit;
+    const teuer = spieleWoche(plan(260, 3), leeresLager(), e, zufall(1)).zufriedenheit;
+    expect(fair.sterne).toBeGreaterThanOrEqual(4);
+    expect(leer.sterne).toBeLessThan(fair.sterne);
+    expect(teuer.sterne).toBeLessThan(fair.sterne);
+    expect(leer.kommentare.some(k => /ausverkauft|keine|alles weg/.test(k.text))).toBe(true);
+    expect(teuer.kommentare.some(k => /teuer|Wucher|Konkurrenz|Taschengeld/.test(k.text))).toBe(true);
+    for (const zf of [fair, leer, teuer]) {
+      expect(zf.sterne).toBeGreaterThanOrEqual(1);
+      expect(zf.sterne).toBeLessThanOrEqual(5);
+      expect(zf.kommentare.length).toBeGreaterThan(0);
+      expect(zf.kommentare.length).toBeLessThanOrEqual(4);
+      for (const k of zf.kommentare) expect(k.text).not.toMatch(/NaN|undefined/);
     }
   });
 
@@ -142,6 +174,11 @@ describe("Spiele-Oberfläche", () => {
     fireEvent.click(screen.getAllByTitle("Kalkulation zeigen")[0]);
     expect(screen.getByText(/Aufschlag =/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Woche öffnen/ }));
+    expect(screen.getByText(/Mehrwertsteuer ans Finanzamt/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Nächste Woche/ }));
+    expect(screen.queryByText(/Mehrwertsteuer ans Finanzamt/)).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /Woche 1 ansehen/ }));
+    expect(screen.getByText(/Rückblick Woche 1/)).toBeInTheDocument();
     expect(screen.getByText(/Mehrwertsteuer ans Finanzamt/)).toBeInTheDocument();
   });
 });

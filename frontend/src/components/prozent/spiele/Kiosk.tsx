@@ -7,7 +7,7 @@
  */
 import { Fragment, useState } from "react";
 import {
-  FIXKOSTEN, PRODUKTE, START_KASSE, WOCHEN, bestellkosten, ekJetzt, ereignisFuer, kalkuliere, leeresLager, leererPlan, marktJetzt, spieleWoche,
+  FIXKOSTEN, PRODUKTE, RABATT_STUFEN, START_KASSE, WOCHEN, bestellkosten, einkaufFuer, ekJetzt, ereignisFuer, kalkuliere, leeresLager, leererPlan, marktJetzt, mengenrabatt, spieleWoche,
   type Ereignis, type Lager, type Plan, type ProduktId, type Wochenbericht,
 } from "@/lib/kiosk";
 import { euro, z } from "@/lib/prozent";
@@ -23,7 +23,7 @@ function Hinweise({ b, e }: { b: Wochenbericht; e: Ereignis }) {
   for (const zl of b.zeilen) {
     const p = P[zl.id], markt = marktJetzt(p, e);
     if (zl.verpasst > 0) tipps.push(`${p.emoji} ${p.name}: ausverkauft — ${zl.verpasst} Kundinnen und Kunden gingen leer aus.`);
-    if (zl.verdorben > 0) tipps.push(`${p.emoji} ${p.name}: ${zl.verdorben} Stück weggeworfen (${z((zl.verdorben / zl.verfuegbar) * 100, 0)} % der Ware, ${euro(zl.verdorben * zl.ek)} Einkauf verloren).`);
+    if (zl.verdorben > 0) tipps.push(`${p.emoji} ${p.name}: ${zl.verdorben} Stück weggeworfen (${z((zl.verdorben / zl.verfuegbar) * 100, 0)} % der Ware, ${euro(zl.verdorben * zl.ek * (1 - zl.rabatt / 100))} Einkauf verloren).`);
     const diff = ((zl.brutto - markt) / markt) * 100;
     if (diff > 20) tipps.push(`${p.emoji} ${p.name}: ${z(diff, 0)} % teurer als die Konkurrenz (${euro(markt)}) — da kaufen nur wenige.`);
     if (diff < -30) tipps.push(`${p.emoji} ${p.name}: ${z(-diff, 0)} % billiger als die Konkurrenz — viel Andrang, aber verdienst du genug pro Stück?`);
@@ -46,6 +46,94 @@ function Verlauf({ kassen }: { kassen: number[] }) {
   );
 }
 
+/** 1–5 Sterne, halbe Sterne als halb gefüllter Stern */
+function Sterne({ n, gross }: { n: number; gross?: boolean }) {
+  return (
+    <span className={`inline-flex ${gross ? "text-2xl" : "text-sm"}`} role="img" aria-label={`${z(n, 1)} von 5 Sternen`}>
+      {[1, 2, 3, 4, 5].map(i => {
+        const voll = Math.min(1, Math.max(0, n - i + 1));
+        return (
+          <span key={i} className="relative leading-none" style={{ color: "var(--text-muted)", opacity: 0.9 }}>
+            ☆
+            <span className="absolute inset-0 overflow-hidden" style={{ width: `${voll * 100}%`, color: "#f59e0b" }}>★</span>
+          </span>
+        );
+      })}
+    </span>
+  );
+}
+
+function Zufriedenheit({ b }: { b: Wochenbericht }) {
+  const zf = b.zufriedenheit;
+  return (
+    <div className="rounded-xl border border-line p-4 bg-page flex flex-col gap-3 max-w-xl">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <span className="font-black">Kundenzufriedenheit</span>
+        <Sterne n={zf.sterne} gross />
+        <span className="font-black tabular-nums">{z(zf.sterne, 1)}</span>
+      </div>
+      <p className="text-xs text-muted">
+        {z(zf.bedient * 100, 0)} % der Kundschaft bekamen, was sie wollten · Preise im Schnitt{" "}
+        {Math.abs(zf.preisVerhaeltnis - 1) < 0.03 ? "wie bei der Konkurrenz"
+          : `${z(Math.abs(zf.preisVerhaeltnis - 1) * 100, 0)} % ${zf.preisVerhaeltnis > 1 ? "teurer" : "billiger"} als die Konkurrenz`}
+      </p>
+      <ul className="flex flex-col gap-2">
+        {zf.kommentare.map((k, i) => (
+          <li key={i} className="rounded-lg border border-line bg-surface px-3 py-2 text-sm">
+            <span className="flex flex-wrap items-center gap-2">
+              <span className="font-bold">{k.wer}</span>
+              <Sterne n={k.sterne} />
+            </span>
+            <span>»{k.text}«</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/** Wochenbericht: Verkäufe je Ware, Gewinnrechnung, Kundenzufriedenheit, Hinweise */
+function Bericht({ b, e }: { b: Wochenbericht; e: Ereignis }) {
+  return (
+    <>
+      <div className="overflow-x-auto">
+        <table className="text-sm w-full min-w-[560px]">
+          <thead><tr className="text-left text-muted"><th>Ware</th><th>Preis</th><th>verkauft</th><th>wollten kaufen</th><th>weggeworfen</th><th className="text-right">Umsatz</th></tr></thead>
+          <tbody>
+            {b.zeilen.map(zl => (
+              <tr key={zl.id} className="border-t border-line/50">
+                <td className="py-1">{P[zl.id].emoji} {P[zl.id].name}</td>
+                <td>{euro(zl.brutto)}</td>
+                <td className="tabular-nums">{zl.verkauft}{zl.verpasst > 0 && <span className="text-bad"> · ausverkauft</span>}</td>
+                <td className="tabular-nums">{zl.gewollt}</td>
+                <td className={`tabular-nums ${zl.verdorben ? "text-bad" : ""}`}>{zl.verdorben || "–"}</td>
+                <td className="text-right tabular-nums">{euro(zl.umsatz)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="rounded-xl border border-line p-4 bg-page grid gap-1 max-w-md font-mono text-sm">
+        <span className="flex justify-between"><span>Umsatz (brutto)</span><span>{euro(b.umsatz)}</span></span>
+        <span className="flex justify-between"><span>− Mehrwertsteuer ans Finanzamt</span><span>{euro(b.steuer)}</span></span>
+        <span className="flex justify-between"><span>− Wareneinkauf</span><span>{euro(b.einkauf)}</span></span>
+        <span className="flex justify-between"><span>− Standmiete</span><span>{euro(b.fix)}</span></span>
+        <span className={`flex justify-between font-black border-t border-line pt-1 ${b.gewinn >= 0 ? "text-ok" : "text-bad"}`}>
+          <span>= {b.gewinn >= 0 ? "Gewinn" : "Verlust"}</span><span>{euro(b.gewinn)}</span>
+        </span>
+        {b.umsatz > 0 && (
+          <span className="text-xs text-muted mt-1">
+            Umsatzrendite: {euro(b.gewinn)} : {euro(b.umsatz - b.steuer)} netto · 100 = {z((b.gewinn / (b.umsatz - b.steuer)) * 100, 1)} %
+            {b.verderbWert > 0 && ` · Verderb kostete ${euro(b.verderbWert)}`}
+          </span>
+        )}
+      </div>
+      <Zufriedenheit b={b} />
+      <Hinweise b={b} e={e} />
+    </>
+  );
+}
+
 export default function Kiosk() {
   const [woche, setWoche] = useState(0);
   const [kasse, setKasse] = useState(START_KASSE);
@@ -54,12 +142,15 @@ export default function Kiosk() {
   const [lager, setLager] = useState<Lager>(leeresLager);
   const [ereignis, setEreignis] = useState<Ereignis>(() => ereignisFuer(1));
   const [bericht, setBericht] = useState<Wochenbericht | null>(null);
+  /** Bericht der Vorwoche zum Nachschauen beim Planen */
+  const [letzte, setLetzte] = useState<{ woche: number; b: Wochenbericht; e: Ereignis } | null>(null);
+  const [rueckblick, setRueckblick] = useState(false);
   const [kalk, setKalk] = useState<ProduktId | null>(null);
   const [best, setBest] = useState(0);
 
   const starte = () => {
     setWoche(1); setKasse(START_KASSE); setKassen([START_KASSE]); setPlan(leererPlan()); setLager(leeresLager());
-    setEreignis(ereignisFuer(1)); setBericht(null); setBest(liesBest());
+    setEreignis(ereignisFuer(1)); setBericht(null); setLetzte(null); setRueckblick(false); setBest(liesBest());
   };
   const setze = (id: ProduktId, was: "aufschlag" | "bestellen", n: number) =>
     setPlan(p => ({ ...p, [id]: { ...p[id], [was]: Math.max(0, Math.round(n)) } }));
@@ -111,7 +202,8 @@ export default function Kiosk() {
       setWoche(WOCHEN + 1);
       return;
     }
-    setWoche(w => w + 1); setEreignis(ereignisFuer(woche + 1)); setBericht(null);
+    if (bericht) setLetzte({ woche, b: bericht, e: ereignis });
+    setWoche(w => w + 1); setEreignis(ereignisFuer(woche + 1)); setBericht(null); setRueckblick(false);
     // Mengen bleiben als Vorschlag stehen
   };
 
@@ -130,6 +222,19 @@ export default function Kiosk() {
 
       {!bericht && (
         <>
+          {letzte && (
+            <div className="flex flex-col gap-3">
+              <button className="btn self-start" aria-expanded={rueckblick} onClick={() => setRueckblick(r => !r)}>
+                {rueckblick ? "▾" : "▸"} 📋 Woche {letzte.woche} ansehen
+              </button>
+              {rueckblick && (
+                <div className="rounded-xl border border-line p-3 sm:p-4 bg-page flex flex-col gap-3">
+                  <p className="font-black">Rückblick Woche {letzte.woche}: {letzte.e.titel}</p>
+                  <Bericht b={letzte.b} e={letzte.e} />
+                </div>
+              )}
+            </div>
+          )}
           <div className="overflow-x-auto">
             <table className="text-sm w-full min-w-[720px]">
               <thead>
@@ -140,15 +245,15 @@ export default function Kiosk() {
               <tbody>
                 {PRODUKTE.map(p => {
                   const ek = ekJetzt(p, ereignis), k = kalkuliere(ek, plan[p.id].aufschlag, p.mwst), markt = marktJetzt(p, ereignis);
-                  const teurer = ek > p.ek, offen = kalk === p.id;
+                  const teurer = ek > p.ek, billiger = ek < p.ek, offen = kalk === p.id, rabatt = mengenrabatt(plan[p.id].bestellen);
                   return (
                     <Fragment key={p.id}>
                       <tr className="border-t border-line/50 align-middle">
                         <td className="py-1.5 font-bold">{p.emoji} {p.name}{p.frisch && <span className="text-xs text-muted font-normal"> · frisch</span>}</td>
-                        <td className={teurer ? "text-bad font-bold" : ""}>{euro(ek)}</td>
+                        <td className={teurer ? "text-bad font-bold" : billiger ? "text-ok font-bold" : ""}>{euro(ek)}</td>
                         <td>
                           <span className="flex items-center gap-2">
-                            <input type="range" min={0} max={250} step={5} value={plan[p.id].aufschlag} aria-label={`Aufschlag ${p.name}`}
+                            <input type="range" min={0} max={400} step={5} value={plan[p.id].aufschlag} aria-label={`Aufschlag ${p.name}`}
                               onChange={e => setze(p.id, "aufschlag", Number(e.target.value))} className="accent-accent w-28" />
                             <span className="tabular-nums w-12">{plan[p.id].aufschlag} %</span>
                           </span>
@@ -168,7 +273,10 @@ export default function Kiosk() {
                             <button className="btn px-2 py-0.5" onClick={() => setze(p.id, "bestellen", plan[p.id].bestellen + 10)}>+</button>
                           </span>
                         </td>
-                        <td className="text-right tabular-nums">{euro(plan[p.id].bestellen * ek)}</td>
+                        <td className="text-right tabular-nums">
+                          {rabatt > 0 && <span className="text-xs text-ok font-bold mr-1">−{rabatt} %</span>}
+                          {euro(einkaufFuer(plan[p.id].bestellen, ek))}
+                        </td>
                       </tr>
                       {offen && (
                         <tr>
@@ -178,6 +286,7 @@ export default function Kiosk() {
                               {" "}+ {p.mwst} % MwSt ({euro(k.steuer)}) = {euro(k.netto + k.steuer)} → gerundet <strong>{euro(k.brutto)}</strong>
                               <br />Davon bleiben dir {euro(k.brutto / (1 + p.mwst / 100))} netto, also {euro(k.brutto / (1 + p.mwst / 100) - ek)} Rohgewinn je Stück
                               {" "}(echter Aufschlag {z(k.echterAufschlag, 1)} %). {p.mwst === 7 ? "Lebensmittel: 7 % MwSt." : "Getränke: 19 % MwSt."}
+                              {rabatt > 0 && <><br />Mit {rabatt} % Mengenrabatt kostet dich ein Stück nur {euro(ek * (1 - rabatt / 100))} — {euro(k.brutto / (1 + p.mwst / 100) - ek * (1 - rabatt / 100))} Rohgewinn je Stück.</>}
                             </p>
                           </td>
                         </tr>
@@ -188,7 +297,8 @@ export default function Kiosk() {
               </tbody>
             </table>
           </div>
-          <p className="text-xs text-muted">Tipp auf einen Verkaufspreis zeigt die Kalkulation. »frisch« = am Freitag wird weggeworfen, was übrig ist; alles andere bleibt im Lager.</p>
+          <p className="text-xs text-muted">Tipp auf einen Verkaufspreis zeigt die Kalkulation. »frisch« = am Freitag wird weggeworfen, was übrig ist; alles andere bleibt im Lager.
+            {" "}Mengenrabatt je Ware: {RABATT_STUFEN.map(s => `ab ${s.ab} Stück ${s.prozent} %`).reverse().join(", ")} — der Verkaufspreis rechnet weiter mit dem Listenpreis, der Rabatt ist Extragewinn.</p>
           <div className="flex flex-wrap items-center gap-3">
             <span>Einkauf diese Woche: <strong>{euro(kosten)}</strong> · Kasse danach: <strong className={reicht ? "" : "text-bad"}>{euro(kasse - kosten)}</strong></span>
             <button className="btn-primary" disabled={!reicht} onClick={oeffnen}>🔔 Woche öffnen</button>
@@ -199,39 +309,7 @@ export default function Kiosk() {
 
       {bericht && (
         <div className="flex flex-col gap-3">
-          <div className="overflow-x-auto">
-            <table className="text-sm w-full min-w-[560px]">
-              <thead><tr className="text-left text-muted"><th>Ware</th><th>Preis</th><th>verkauft</th><th>wollten kaufen</th><th>weggeworfen</th><th className="text-right">Umsatz</th></tr></thead>
-              <tbody>
-                {bericht.zeilen.map(zl => (
-                  <tr key={zl.id} className="border-t border-line/50">
-                    <td className="py-1">{P[zl.id].emoji} {P[zl.id].name}</td>
-                    <td>{euro(zl.brutto)}</td>
-                    <td className="tabular-nums">{zl.verkauft}{zl.verpasst > 0 && <span className="text-bad"> · ausverkauft</span>}</td>
-                    <td className="tabular-nums">{zl.gewollt}</td>
-                    <td className={`tabular-nums ${zl.verdorben ? "text-bad" : ""}`}>{zl.verdorben || "–"}</td>
-                    <td className="text-right tabular-nums">{euro(zl.umsatz)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="rounded-xl border border-line p-4 bg-page grid gap-1 max-w-md font-mono text-sm">
-            <span className="flex justify-between"><span>Umsatz (brutto)</span><span>{euro(bericht.umsatz)}</span></span>
-            <span className="flex justify-between"><span>− Mehrwertsteuer ans Finanzamt</span><span>{euro(bericht.steuer)}</span></span>
-            <span className="flex justify-between"><span>− Wareneinkauf</span><span>{euro(bericht.einkauf)}</span></span>
-            <span className="flex justify-between"><span>− Standmiete</span><span>{euro(bericht.fix)}</span></span>
-            <span className={`flex justify-between font-black border-t border-line pt-1 ${bericht.gewinn >= 0 ? "text-ok" : "text-bad"}`}>
-              <span>= {bericht.gewinn >= 0 ? "Gewinn" : "Verlust"}</span><span>{euro(bericht.gewinn)}</span>
-            </span>
-            {bericht.umsatz > 0 && (
-              <span className="text-xs text-muted mt-1">
-                Umsatzrendite: {euro(bericht.gewinn)} : {euro(bericht.umsatz - bericht.steuer)} netto · 100 = {z((bericht.gewinn / (bericht.umsatz - bericht.steuer)) * 100, 1)} %
-                {bericht.verderbWert > 0 && ` · Verderb kostete ${euro(bericht.verderbWert)}`}
-              </span>
-            )}
-          </div>
-          <Hinweise b={bericht} e={ereignis} />
+          <Bericht b={bericht} e={ereignis} />
           <button className="btn-primary self-start" onClick={naechste}>{woche >= WOCHEN ? "Abschluss ▶" : "Nächste Woche ▶"}</button>
         </div>
       )}
