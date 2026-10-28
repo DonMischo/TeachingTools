@@ -38,13 +38,13 @@ def test_every_joinable_tool_can_open_a_session(client, teacher_token):
     from api.routers.tool_sessions import SESSION_TOOLS
     from api.tool_catalog import BY_SLUG
 
-    from api.routers.tool_sessions import REF_TOOLS
+    from api.routers.tool_sessions import OHNE_INHALT_MOEGLICH, REF_TOOLS
 
     codes = set()
     for slug in SESSION_TOOLS:
         assert slug in BY_SLUG, f"{slug} fehlt im tool_catalog"
         r = _create(client, teacher_token, slug)
-        if slug in REF_TOOLS:
+        if slug in REF_TOOLS and slug not in OHNE_INHALT_MOEGLICH:
             # Der Zeitstrahl teilt eine bestimmte Zeitleiste — ohne ref_id
             # gibt es nichts zu teilen, und der Code bleibt aus.
             assert r.status_code == 422, f"{slug}: {r.text}"
@@ -52,7 +52,7 @@ def test_every_joinable_tool_can_open_a_session(client, teacher_token):
         assert r.status_code == 201, f"{slug}: {r.text}"
         codes.add(r.json()["code"])
     # Jedes Werkzeug hat seinen eigenen Code, nicht einen gemeinsamen.
-    assert len(codes) == len([s for s in SESSION_TOOLS if s not in REF_TOOLS])
+    assert len(codes) == len([s for s in SESSION_TOOLS if s not in REF_TOOLS or s in OHNE_INHALT_MOEGLICH])
 
 
 def test_unknown_or_unsupported_tool_is_refused(client, teacher_token):

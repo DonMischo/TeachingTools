@@ -2,7 +2,9 @@
 
 Die Ebenen erzeugt ``frontend/scripts/fetch-karten.mjs`` (BKG + Natural
 Earth) und bleiben hier unangetastet. Mit Konto sieht man alles samt Namen;
-Gäste bekommen Karten nur über ein Quiz, und dort ohne Namen.
+Gäste bekommen Karten über ein Quiz (ohne Namen) oder über eine Sitzung zum
+Erkunden — Code ohne Kartensatz, ``/sitzung/{code}/…`` —, dort mit Namen,
+aber ohne die eigenen Ebenen der Lehrkräfte.
 
 Ein Kartensatz ist die Auswahl einer Lehrkraft: Kartenart, Ebenen, je Ebene
 die gezeigten/nummerierten Objekte (ids) und das Nummernschema.
@@ -22,13 +24,13 @@ from pydantic import BaseModel, Field, model_validator
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
-from ..auth import get_current_teacher, get_current_user
+from ..auth import get_current_teacher, get_current_user, get_player
 from ..database import get_db
 from ..karten_quiz import ankerpunkt, normalisiere
 from ..karten_eigene import MAX_BYTES, UploadFehler, geometrie_von, lies_upload, mit_namen
 from ..karten_export import MEDIENTYP, exportiere
 from ..karten_projektion import SCHEIN, transformiere
-from ..models import KartenEbeneEigen, KartenSatz, Student, Teacher
+from ..models import KartenEbeneEigen, KartenSatz, Student, Teacher, ToolSession
 
 router = APIRouter(prefix="/api/karten", tags=["karten"])
 
@@ -159,10 +161,51 @@ def ebene(ebene_id: str, request: Request, projektion: str | None = None, punkte
     if ebene_id.startswith(EIGEN_PRAEFIX):
         e = _eigene_ebene(db, ebene_id, wer)
         return geojson_antwort(EIGENE / f"{e.id}.geojson", request, "no-cache", projektion, punkte)
+    return _feste_ebene(ebene_id, request, projektion, punkte)
+
+
+def _feste_ebene(ebene_id: str, request: Request, projektion: str | None, punkte: bool) -> Response:
     eintrag = next((e for e in katalog()["ebenen"] if e["id"] == ebene_id), None)
     if eintrag is None or eintrag["geometrie"] == "raster":
         raise HTTPException(404, "Unbekannte Ebene")
     return geojson_antwort(DATEN / "ebenen" / f"{ebene_id}.geojson", request, "private, max-age=86400", projektion, punkte)
+
+
+# ── Erkunden per Code (auch für Gäste) ───────────────────────────────
+
+def _erkunden(db: Session, code: str) -> ToolSession:
+    """Eine Karten-Sitzung ohne Kartensatz: das ganze Kartentool zum Erkunden."""
+    s = db.query(ToolSession).filter_by(code=code.upper(), tool_slug="karten").first()
+    if s is None or s.ref_id is not None:
+        raise HTTPException(404, "Keine Karten-Sitzung zum Erkunden")
+    if s.status == "closed":
+        raise HTTPException(403, "Diese Sitzung ist geschlossen")
+    return s
+
+
+@router.get("/sitzung/{code}/ebenen")
+def sitzung_ebenen(code: str, db: Session = Depends(get_db), spieler=Depends(get_player)):
+    """Der Katalog — mit Konto wie gewohnt samt geteilter eigener Ebenen, für Gäste nur die festen."""
+    _erkunden(db, code)
+    if isinstance(spieler, (Teacher, Student)):
+        return ebenen(db, spieler)
+    return katalog()
+
+
+@router.get("/sitzung/{code}/ebenen/{ebene_id}")
+def sitzung_ebene(code: str, ebene_id: str, request: Request, projektion: str | None = None, punkte: bool = False,
+                  db: Session = Depends(get_db), spieler=Depends(get_player)):
+    _erkunden(db, code)
+    if isinstance(spieler, (Teacher, Student)):
+        return ebene(ebene_id, request, projektion, punkte, db, spieler)
+    # Gäste: nur die festen Ebenen, keine eigenen der Lehrkräfte
+    return _feste_ebene(ebene_id, request, projektion, punkte)
+
+
+@router.get("/sitzung/{code}/suche")
+def sitzung_suche(code: str, q: str, bereich: str | None = None, db: Session = Depends(get_db), _spieler=Depends(get_player)):
+    _erkunden(db, code)
+    return _suche(q, bereich)
 
 
 # ── Kartensätze ──────────────────────────────────────────────────────
@@ -500,6 +543,10 @@ def _suchindex() -> list[tuple[str, dict]]:
 def suche(q: str, bereich: str | None = None, _: Union[Teacher, Student] = Depends(get_current_user)):
     """Orte, Flüsse, Berge … nach Namen. Ortsteile werden auch über ihre Gemeinde gefunden
     (»Trusetal« → Brotterode-Trusetal mit Trusen, Elmenthal …)."""
+    return _suche(q, bereich)
+
+
+def _suche(q: str, bereich: str | None) -> list[dict]:
     n = _suchname(q)
     if len(n) < 2:
         return []

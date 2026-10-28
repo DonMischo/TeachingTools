@@ -7,6 +7,10 @@
  * »nur Auswahl«, Nummern (1, a, A, I) für stumme Karten und Tests, darunter das
  * Arbeitsblatt zum Ausfüllen. Gespeichert wird das als Kartensatz (nur ids;
  * die Ebenen selbst bleiben unverändert).
+ *
+ * `zugang`: per Code beigetreten (Sitzung ohne Kartensatz) — alles zum
+ * Erkunden, auch für Gäste; Ebenen und Suche laufen über die Sitzung, ohne
+ * Kartensätze, Auswählen, Vorlagen, Upload und Export.
  */
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import { useQueries, useQuery } from "@tanstack/react-query";
@@ -14,7 +18,7 @@ import type { FeatureCollection } from "geojson";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import HelpButton from "@/components/HelpButton";
-import { auswahlFuer, baueStil, GRUPPEN, KARTENARTEN, monatVon, region, REGIONEN, wendeSatzAn, type Ebene, type Kartenart } from "@/lib/karten/stil";
+import { auswahlFuer, baueStil, GRUPPEN, KARTENARTEN, monatVon, region, REGIONEN, wendeSatzAn, type Ebene, type Kartenart, type Quelle } from "@/lib/karten/stil";
 import { ankerpunkt, vergibNummern } from "@/lib/karten/nummern";
 import { signaturUrl } from "@/lib/karten/signaturen";
 import { schalteObjekt, type Ausschnitt, type KartenSatz, type SatzInhalt, type SuchTreffer } from "@/lib/karten/satz";
@@ -38,10 +42,21 @@ const neuerInhalt = (art: Kartenart): SatzInhalt => ({ art, region: "deutschland
 /** Um Deutschland herum sind diese Weltebenen der Rahmen */
 const UMLAND = ["welt-staaten", "welt-hoehen", "welt-staedte"];
 
-export default function Karten({ action }: { action?: ReactNode }) {
+export type KartenZugang = { code: string; token?: string | null };
+
+/** Ebenen beim Erkunden über die Sitzung laden (eigene Ebenen mit Namensfeld wie sonst auch) */
+const quelleSitzung = (code: string): Quelle => (e) =>
+  `/api/karten/sitzung/${encodeURIComponent(code)}/ebenen/${e.id}${e.eigen ? `?namen=${encodeURIComponent(e.eigen.namensfeld)}` : ""}`;
+
+export default function Karten({ action, zugang }: { action?: ReactNode; zugang?: KartenZugang }) {
   const { auth } = useAuth();
-  const lehrkraft = auth?.user_type === "teacher";
-  const { data: katalog, error } = useQuery({ queryKey: ["karten", "katalog"], queryFn: api.karten.katalog, staleTime: Infinity });
+  // per Code nur erkunden — auch eine Lehrkraft, die über den Code kommt
+  const lehrkraft = !zugang && auth?.user_type === "teacher";
+  const { data: katalog, error } = useQuery({
+    queryKey: ["karten", "katalog", zugang?.code ?? ""],
+    queryFn: () => (zugang ? api.karten.sitzungKatalog(zugang.code, zugang.token) : api.karten.katalog()),
+    staleTime: Infinity,
+  });
   const [inhalt, setInhalt] = useState<SatzInhalt>(() => neuerInhalt(START_ART));
   const [satz, setSatz] = useState<Pick<KartenSatz, "id" | "titel" | "geteilt" | "eigen"> | null>(null);
   const [bearbeiten, setBearbeiten] = useState(false);
@@ -80,7 +95,11 @@ export default function Karten({ action }: { action?: ReactNode }) {
   const benoetigt = useMemo(() => [...new Set([...Object.keys(inhalt.auswahl), ...(bearbeiten ? [aktiveEbene] : [])])],
     [inhalt.auswahl, bearbeiten, aktiveEbene]);
   const abfragen = useQueries({
-    queries: benoetigt.map((id) => ({ queryKey: ["karten", "ebene", id], queryFn: () => api.karten.ebene(id), staleTime: Infinity })),
+    queries: benoetigt.map((id) => ({
+      queryKey: ["karten", "ebene", id, zugang?.code ?? ""],
+      queryFn: () => (zugang ? api.karten.sitzungEbene(zugang.code, id, zugang.token) : api.karten.ebene(id)),
+      staleTime: Infinity,
+    })),
   });
   const daten: Record<string, FeatureCollection | undefined> = Object.fromEntries(benoetigt.map((id, i) => [id, abfragen[i].data]));
   // Fester Schlüssel für useMemo: ändert sich, sobald eine Ebene (neu) geladen ist
@@ -91,7 +110,8 @@ export default function Karten({ action }: { action?: ReactNode }) {
 
   const stil = useMemo(() => {
     if (!katalog) return null;
-    const grund = baueStil(katalog, { ...inhalt, beschriftung: inhalt.beschriftung && !druck, partikel: partikelAn && !druck }, inhalt.art);
+    const grund = baueStil(katalog, { ...inhalt, beschriftung: inhalt.beschriftung && !druck, partikel: partikelAn && !druck }, inhalt.art,
+      zugang ? quelleSitzung(zugang.code) : undefined);
     const anker: FeatureCollection = { type: "FeatureCollection", features: [] };
     for (const [ebene, marken] of Object.entries(nummern)) {
       if (!inhalt.ebenen.includes(ebene)) continue;
@@ -102,7 +122,7 @@ export default function Karten({ action }: { action?: ReactNode }) {
       }
     }
     return wendeSatzAn(grund, katalog, { auswahl: inhalt.auswahl, nummern, anker, bearbeiten: bearbeiten && !druck, projektion: inhalt.projektion });
-  }, [katalog, inhalt, nummern, bearbeiten, druck, datenStand, partikelAn]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [katalog, inhalt, nummern, bearbeiten, druck, datenStand, partikelAn, zugang?.code]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const bereich = region(inhalt.region).bereich;
   const waehleArt = (art: Kartenart) => setInhalt((v) => ({ ...v, art, ...auswahlFuer(art, region(v.region).bereich) }));
@@ -137,7 +157,9 @@ export default function Karten({ action }: { action?: ReactNode }) {
         <div>
           <h1 className="text-2xl font-black tracking-tight">🗺️ Karten</h1>
           <p className="text-muted text-sm mt-1">
-            Deutschland politisch und topographisch — Objekte auswählen, nummerieren und als Kartensatz speichern.
+            {zugang
+              ? "Deutschland, Europa und die Welt erkunden — Ebenen an- und ausschalten, Orte suchen, Kartenart und Kartennetz wechseln."
+              : "Deutschland politisch und topographisch — Objekte auswählen, nummerieren und als Kartensatz speichern."}
           </p>
         </div>
         <div className="flex items-center gap-2">{action}<HelpButton slug="karten" /></div>
@@ -185,7 +207,7 @@ export default function Karten({ action }: { action?: ReactNode }) {
       {katalog && stil && (
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4 items-start">
           <div className="flex flex-col gap-4 min-w-0">
-            <KartenAnsicht stil={stil} katalog={katalog} namenZeigen={inhalt.beschriftung || bearbeiten} onKlick={klick}
+            <KartenAnsicht stil={stil} katalog={katalog} namenZeigen={inhalt.beschriftung || bearbeiten} onKlick={klick} gastToken={zugang?.token}
               projektion={inhalt.projektion ?? "equalearth"} seite={inhalt.seite}
               menue={<KartenMenue projektion={inhalt.projektion ?? "equalearth"} setProjektion={(p) => setInhalt((v) => ({ ...v, projektion: p }))}
                 seite={inhalt.seite} setSeite={(seite) => setInhalt((v) => ({ ...v, seite }))}
@@ -207,8 +229,9 @@ export default function Karten({ action }: { action?: ReactNode }) {
               </>
             ) : (
               <>
-                <UebenListe />
-                <OrtSuche bereich={bereich} onWahl={zeigeTreffer} />
+                {!zugang && <UebenListe />}
+                <OrtSuche bereich={bereich} onWahl={zeigeTreffer}
+                  suche={zugang ? (q, b) => api.karten.sitzungSuche(zugang.code, q, b, zugang.token) : undefined} />
                 <label className="flex items-center gap-2 font-bold">
                   <input type="checkbox" checked={inhalt.beschriftung}
                     onChange={() => setInhalt((v) => ({ ...v, beschriftung: !v.beschriftung }))} />

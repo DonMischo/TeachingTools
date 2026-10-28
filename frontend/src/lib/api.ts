@@ -1717,6 +1717,20 @@ export const api = {
     ebene: (id: string) => apiFetch<GeoJSON.FeatureCollection>(`karten/ebenen/${encodeURIComponent(id)}`),
     suche: (q: string, bereich?: string) =>
       apiFetch<SuchTreffer[]>(`karten/suche?q=${encodeURIComponent(q)}${bereich ? `&bereich=${bereich}` : ""}`),
+    /** Erkunden per Code (Sitzung ohne Kartensatz) — auch für Gäste mit ihrem Token */
+    sitzungKatalog: (code: string, token?: string | null) =>
+      apiFetch<KartenKatalog>(`karten/sitzung/${encodeURIComponent(code)}/ebenen`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      }),
+    sitzungEbene: (code: string, id: string, token?: string | null) =>
+      apiFetch<GeoJSON.FeatureCollection>(`karten/sitzung/${encodeURIComponent(code)}/ebenen/${encodeURIComponent(id)}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      }),
+    sitzungSuche: (code: string, q: string, bereich?: string, token?: string | null) =>
+      apiFetch<SuchTreffer[]>(
+        `karten/sitzung/${encodeURIComponent(code)}/suche?q=${encodeURIComponent(q)}${bereich ? `&bereich=${bereich}` : ""}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        }),
     saetze: () => apiFetch<KartenSatzKurz[]>("karten/saetze"),
     satz: (id: number) => apiFetch<KartenSatz>(`karten/saetze/${id}`),
     anlegen: (body: KartenSatzIn) => apiFetch<KartenSatz>("karten/saetze", { method: "POST", body: JSON.stringify(body) }),

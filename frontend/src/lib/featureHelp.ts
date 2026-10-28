@@ -79,6 +79,7 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "⬇️ Arbeitsblatt", text: "PDF, Word, LibreOffice oder LaTeX: Seite 1 Karte mit Aufgabe »Finde und benenne …«, danach Tabelle — auch mit Lösung." },
       { label: "🎮 Kartenquiz", text: "Gespeicherten Kartensatz per Code/QR teilen: Nummern benennen oder Orte anklicken. Erfolge je Kategorie, Hauspunkte je Klasse nach Trefferquote." },
       { label: "⬆️ Eigene Ebenen", text: "GeoJSON, KML/KMZ (z. B. Google My Maps) oder GPX hochladen — nur Lehrkräfte." },
+      { label: "📱 Erkunden per Code", text: "»Zum Mitmachen« oben auf der Kartenseite gibt einen Code samt QR für das ganze Kartentool: Region, Kartenart, Kartennetz, alle Ebenen und die Ortssuche — mit »Gäste erlauben« auch ohne Konto. Kartensätze, Auswählen, Vorlagen, Upload und Export bleiben bei der Lehrkraft; geteilte eigene Ebenen sehen nur angemeldete Schüler:innen. Quiz-Codes gibt es weiter je Kartensatz." },
       { label: "🧑‍🏫 Selbst mitspielen", text: "»▶ Selbst mitspielen« an der Steuerung öffnet dasselbe Spiel wie bei den Schülern. Über »← Steuerung« geht es zurück, der eigene Stand bleibt erhalten. Für die Klasse bist du unsichtbar: keine Rangliste, keine Lobby, keine Hauspunkte; nur in der eigenen Auswertung stehst du, markiert als »Lehrkraft«." },
     ],
   },

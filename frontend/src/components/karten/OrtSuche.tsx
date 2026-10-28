@@ -4,14 +4,17 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import type { SuchTreffer } from "@/lib/karten/satz";
 
-export default function OrtSuche({ bereich, onWahl }: { bereich?: string; onWahl: (t: SuchTreffer) => void }) {
+/** `suche`: wie gesucht wird — ohne Angabe über das Konto, beim Erkunden per Code über die Sitzung. */
+export default function OrtSuche({ bereich, onWahl, suche = api.karten.suche }: {
+  bereich?: string; onWahl: (t: SuchTreffer) => void; suche?: (q: string, bereich?: string) => Promise<SuchTreffer[]>;
+}) {
   const [q, setQ] = useState("");
   const [treffer, setTreffer] = useState<SuchTreffer[]>([]);
   useEffect(() => {
     if (q.trim().length < 2) { setTreffer([]); return; }
-    const t = setTimeout(() => { api.karten.suche(q, bereich).then(setTreffer).catch(() => setTreffer([])); }, 250);
+    const t = setTimeout(() => { suche(q, bereich).then(setTreffer).catch(() => setTreffer([])); }, 250);
     return () => clearTimeout(t);
-  }, [q, bereich]);
+  }, [q, bereich]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="flex flex-col gap-1">

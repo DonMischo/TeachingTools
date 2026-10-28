@@ -154,6 +154,7 @@ aktivitaeten:
       - Eigene Ebenen (GeoJSON, KML, KMZ, GPX) nur für Lehrkräfte
       - JSON-Vorlage mit »aktiv« je Objekt zum Filtern (auch per KI) und wieder hochladen
       - Kartenquiz per Code/QR (benennen oder finden), Prüfung auf dem Server, Hauspunkte je Klasse
+      - Ganzes Kartentool per Code/QR zum Erkunden (Ebenen, Kartenart, Kartennetz, Ortssuche) - auch für Gäste, ohne Kartensätze, Upload und Export
       - Erfolge je Kartensatz in neun Arten (Anteil, fehlerfrei, bestimmte Objekte, Serie, auf Zeit, benennen und finden, Fehler aufgeholt, an mehreren Tagen, alle)
       - Lernhelfer »Üben« – Fuzzy-Regeln wählen, was am wenigsten sitzt; unsicher → Auswahl mit Ablenkern (frühere Verwechslungen, Nachbarn, ähnliche Namen), sicher → freie Eingabe; Lernstand über Sitzungen hinweg
       - Üben ohne Code - eingeloggte Schüler üben geteilte Kartensätze direkt, mit Lern-Erfolgen

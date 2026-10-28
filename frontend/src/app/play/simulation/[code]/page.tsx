@@ -49,6 +49,7 @@ import Tippen from "@/components/tippen/Tippen";
 import MausFuehrerschein, { schluesselFuerGast, schluesselFuerGastName } from "@/components/maus/MausFuehrerschein";
 import { SharedTimeline } from "@/components/timeline/SharedTimeline";
 import KartenQuizSpiel from "@/components/karten/KartenQuizSpiel";
+import Karten from "@/components/karten/Karten";
 import ChallengeSpiel from "@/components/challenge/ChallengeSpiel";
 import Algorithmen from "@/components/algo/Algorithmen";
 import Periodensystem from "@/components/pse/Periodensystem";
@@ -186,7 +187,10 @@ export default function SimulationJoinPage() {
   const body = session.tool_slug === "zeitstrahl"
     ? <SharedTimeline code={code} guestToken={guest.token} />
     : session.tool_slug === "karten"
-      ? <KartenQuizSpiel code={code} token={auth ? null : guest.token} />
+      // mit Kartensatz ein Quiz, ohne das ganze Kartentool zum Erkunden
+      ? session.ref_id != null
+        ? <KartenQuizSpiel code={code} token={auth ? null : guest.token} />
+        : <Karten zugang={{ code, token: auth ? null : guest.token }} />
     : session.tool_slug === "challenge"
       ? <ChallengeSpiel code={code} token={auth ? null : guest.token} />
     : session.tool_slug === "uebung"
@@ -262,7 +266,7 @@ export default function SimulationJoinPage() {
       <PlayerIdentityForm
         gameCode={code}
         gameIcon={tool.icon}
-        gameTitle={tool.title}
+        gameTitle={session.tool_slug === "karten" && session.ref_id == null ? "Karten erkunden" : tool.title}
         error={joinError}
         submitting={joining}
         onJoin={name => handleJoin(name)}

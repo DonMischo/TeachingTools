@@ -31,6 +31,9 @@ SESSION_TOOLS = ("abacus", "gleichungswaage", "bildformate", "tippen", "zeitstra
 # Zeitstrahl ist eine Bibliothek: geteilt wird immer *eine* Zeitleiste, also
 # gehoert ihre Id zur Sitzung — und je Zeitleiste gibt es einen eigenen Code.
 REF_TOOLS = {"zeitstrahl": TimelineSet, "karten": KartenSatz, "challenge": ChallengeSet}
+# Werkzeuge, die auch ohne Inhalt einen Code bekommen: Karten ohne Kartensatz
+# ist das ganze Kartentool zum Erkunden (routers/karten.py, /sitzung/{code}).
+OHNE_INHALT_MOEGLICH = ("karten",)
 # Werkzeuge, deren geteilter Satz über /content an Spieler gehen darf (ein Challenge-Satz enthält die Lösungen)
 OEFFENTLICHER_INHALT = ("zeitstrahl", "karten")
 
@@ -93,8 +96,9 @@ def create_or_get(
 
     ref_model = REF_TOOLS.get(body.tool_slug)
     if ref_model is not None:
-        if body.ref_id is None:
+        if body.ref_id is None and body.tool_slug not in OHNE_INHALT_MOEGLICH:
             raise HTTPException(422, "Für dieses Werkzeug fehlt der Inhalt.")
+    if ref_model is not None and body.ref_id is not None:
         if db.get(ref_model, body.ref_id) is None:
             raise HTTPException(404, "Inhalt nicht gefunden")
     ref_id = body.ref_id if ref_model is not None else None
