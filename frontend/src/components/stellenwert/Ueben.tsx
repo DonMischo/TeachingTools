@@ -5,7 +5,9 @@
  * und nur, solange der Lösungsweg zu ist.
  */
 import { useEffect, useState } from "react";
-import { INDEX, UEB_ARTEN, erzeugeAufgabe, loesungText, pruefe, type Aufgabe, type Stufe, type UebArt } from "@/lib/stellenwert";
+import {
+  INDEX, UEB_ARTEN, erzeugeAufgabe, loesungText, nachkommaVon, pruefe, ziffernVon, type Aufgabe, type Stufe, type UebArt,
+} from "@/lib/stellenwert";
 import { LEER, zaehle } from "@/components/prozent/ui";
 import { TafelAnsicht } from "./teile";
 
@@ -19,6 +21,16 @@ const GRUPPEN = [
   { id: "dez", label: "🔟 Zehnersystem" },
   { id: "bin", label: "💡🔣 Binär & Hex" },
 ] as const;
+
+/** Die Lösung als Tafel in der Basis der Antwort; Binärzahlen auf ganze Vierer-Päckchen. */
+export function loesungsTafel(a: Aufgabe) {
+  const nk = a.basis === 10 ? nachkommaVon(a.loesung) : 0;
+  const z = ziffernVon(Math.round(a.loesung * 10 ** nk), a.basis, nk + 1);
+  const stellen = a.basis === 2 ? Math.ceil(z.length / 4) * 4 : z.length;
+  const werte: Record<number, number> = {};
+  z.forEach((d, i) => { werte[z.length - 1 - i - nk] = d; });
+  return { basis: a.basis, maxExp: stellen - 1 - nk, minExp: -nk, werte };
+}
 
 const wuerfle = (arten: UebArt[], stufe: Stufe) => erzeugeAufgabe(arten[Math.floor(Math.random() * arten.length)], stufe);
 
@@ -113,6 +125,7 @@ export default function Ueben() {
                 {aufgabe.weg.map((w, i) => <li key={i}>{w}</li>)}
               </ol>
               <p className="text-sm">Lösung: <b className="font-mono">{loesungText(aufgabe)}</b></p>
+              <div aria-label="Lösung in der Stellenwerttafel"><TafelAnsicht {...loesungsTafel(aufgabe)} /></div>
             </div>
           )}
         </div>

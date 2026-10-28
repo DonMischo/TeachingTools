@@ -6,6 +6,7 @@
 import { describe, expect, it } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import Stellenwert from "@/components/stellenwert/Stellenwert";
+import { loesungsTafel } from "@/components/stellenwert/Ueben";
 import {
   UEB_ARTEN, abziehWeg, dez, divisionsWeg, erzeugeAufgabe, lies, loesungText, paeckchen, pruefe, schreibe, spalten,
   zahlwort, zuDezimalWeg, type Stufe,
@@ -81,6 +82,9 @@ describe("Übungsaufgaben", () => {
       const auf = erzeugeAufgabe(a.id, s, r);
       expect(pruefe(auf, loesungText(auf).replace(/[₀-₉]/g, "")), `${a.id}/${s}: ${auf.frage}`).toBe(true);
       expect(auf.weg.length).toBeGreaterThan(0);
+      const lt = loesungsTafel(auf);
+      expect(Object.entries(lt.werte).reduce((x, [e, d]) => x + d * auf.basis ** Number(e), 0)).toBeCloseTo(auf.loesung, 6);
+      expect(lt.basis).toBe(auf.basis);
       expect(auf.weg.join(" ")).not.toMatch(/NaN|undefined/);
       if (auf.tafel) {
         const t = auf.tafel;
