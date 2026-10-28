@@ -2112,6 +2112,32 @@ class SimBeitrag(Base):
     session: Mapped["ToolSession"] = relationship()
 
 
+class GeheimPost(Base):
+    """Eine verschlüsselte Botschaft aus der Geheimbotschaft (Simulation
+    »stellenwert«), von einem Teilnehmer an einen anderen derselben Sitzung.
+
+    Absender und Empfänger stehen als Schlüssel »s:12« (Schüler), »t:3«
+    (Lehrkraft) oder »g:<uuid>« (Gast) da, dazu der Name von damals — Gäste
+    haben keine eigene Tabelle. Den Inhalt sieht der Empfänger erst, wenn er
+    angenommen hat; abgelehnte Post bleibt ungelesen.
+    """
+    __tablename__ = "geheimpost"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    session_id: Mapped[int] = mapped_column(
+        ForeignKey("tool_sessions.id", ondelete="CASCADE"), nullable=False, index=True)
+    von: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
+    von_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    an: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
+    an_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    # die Bytes, durch Leerzeichen getrennt — 8 Bits oder 2 Hex-Ziffern je Zeichen
+    inhalt: Mapped[str] = mapped_column(Text, nullable=False)
+    basis: Mapped[int] = mapped_column(Integer, nullable=False)
+    # "offen" | "angenommen" | "abgelehnt"
+    status: Mapped[str] = mapped_column(String(20), nullable=False, server_default="offen")
+    erstellt_am: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
 class BildPaar(Base):
     """Zwei Bilder zum Vergleichen: eines echt, eines von einer KI erzeugt.
 

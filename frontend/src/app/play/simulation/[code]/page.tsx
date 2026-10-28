@@ -216,6 +216,9 @@ export default function SimulationJoinPage() {
                 : guest.token ? schluesselFuerGast(code, guest.token) : `gast-${code}`} />
         : session.tool_slug === "stromkreis"
           ? <Stromkreis code={code} />
+        : session.tool_slug === "stellenwert"
+          // der Code für die Geheimpost: Botschaften gehen nur an Leute derselben Sitzung
+          ? <Stellenwert zugang={{ code, token: auth ? null : guest.token }} />
         : session.tool_slug === "leviathan"
           ? <Leviathan code={code}
               speicherSchluessel={auth

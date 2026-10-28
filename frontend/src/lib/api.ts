@@ -1451,6 +1451,19 @@ export type ToolSessionOut = {
 };
 
 /** Ein abgegebener Text aus der KI-Werkstatt (siehe api/models.py::SimBeitrag). */
+/** Geheimpost in der Geheimbotschaft (Stellenwerttafeln), siehe api/routers/geheimpost.py. */
+export type GeheimPerson = { schluessel: string; name: string };
+export type GeheimPostOut = {
+  id: number; von_name: string; an_name: string; basis: 2 | 16;
+  status: "offen" | "angenommen" | "abgelehnt";
+  /** für den Empfänger erst nach dem Annehmen */
+  inhalt: string | null;
+};
+export type GeheimStand = {
+  ich: GeheimPerson; anwesend: GeheimPerson[]; eingang: GeheimPostOut[]; gesendet: GeheimPostOut[];
+  sperre_sekunden: number;
+};
+
 export type SimBeitragOut = {
   id: number;
   name: string;
@@ -1860,6 +1873,21 @@ export const api = {
       apiFetch<SimBeitragOut>(`tool-sessions/${encodeURIComponent(code)}/beitraege`, {
         method: "POST",
         body: JSON.stringify(body),
+        headers: guestToken ? { Authorization: `Bearer ${guestToken}` } : undefined,
+      }),
+    /** Geheimpost: wer ist da, was liegt bereit — zählt zugleich als »bin noch da«. */
+    geheimpost: (code: string, guestToken?: string | null) =>
+      apiFetch<GeheimStand>(`tool-sessions/${encodeURIComponent(code)}/geheimpost`, {
+        headers: guestToken ? { Authorization: `Bearer ${guestToken}` } : undefined,
+      }),
+    geheimpostSenden: (code: string, body: { an: string; inhalt: string; basis: 2 | 16 }, guestToken?: string | null) =>
+      apiFetch<GeheimPostOut>(`tool-sessions/${encodeURIComponent(code)}/geheimpost`, {
+        method: "POST", body: JSON.stringify(body),
+        headers: guestToken ? { Authorization: `Bearer ${guestToken}` } : undefined,
+      }),
+    geheimpostAntwort: (code: string, id: number, annehmen: boolean, guestToken?: string | null) =>
+      apiFetch<GeheimPostOut>(`tool-sessions/${encodeURIComponent(code)}/geheimpost/${id}/antwort`, {
+        method: "POST", body: JSON.stringify({ annehmen }),
         headers: guestToken ? { Authorization: `Bearer ${guestToken}` } : undefined,
       }),
     /** Runde leeren — nur für die Lehrkraft, der die Sitzung gehört. */

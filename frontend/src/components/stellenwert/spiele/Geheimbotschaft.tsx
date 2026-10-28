@@ -3,13 +3,17 @@
  * Geheimbotschaft: Computer speichern Buchstaben als Zahlen (ASCII), jedes
  * Zeichen ein Byte. Entschlüsseln: unter jedes Byte den Buchstaben schreiben,
  * die ASCII-Tafel hilft; ein Klick aufs Byte rechnet es vor (zählt als Hilfe).
- * Verschlüsseln: eigene Nachricht in Bytes, zum Weitergeben an die Nachbarin.
+ * Verschlüsseln: eigene Nachricht in Bytes, zum Weitergeben an die Nachbarin —
+ * kopiert oder in einer Sitzung direkt verschickt (Geheimpost.tsx).
  */
 import { useEffect, useRef, useState } from "react";
 import { HEX_FARBEN, schreibe, zuDezimalWeg } from "@/lib/stellenwert";
 import { BOTSCHAFTEN, asciiSicher, codiere, decodiere } from "@/lib/stellenwertSpiele";
 import { Chips } from "@/components/prozent/ui";
+import { kopiereText } from "@/lib/zwischenablage";
 import { GeheimErklaerung } from "./Erklaerung";
+import { Eingang, SendenLeiste, useGeheimpost, type Geheimpost } from "./Geheimpost";
+import type { StellenwertZugang } from "../Stellenwert";
 
 type Code = 2 | 16;
 
@@ -32,7 +36,8 @@ function AsciiTafel({ code }: { code: Code }) {
   );
 }
 
-function Entschluesseln({ code }: { code: Code }) {
+/** `empfangen`: eine angenommene Botschaft statt einer gewürfelten. */
+function Entschluesseln({ code, empfangen }: { code: Code; empfangen?: { text: string; von: string } }) {
   const [text, setText] = useState<string | null>(null);
   const [eingaben, setEingaben] = useState<string[]>([]);
   const [hilfe, setHilfe] = useState<number | null>(null);
@@ -49,7 +54,7 @@ function Entschluesseln({ code }: { code: Code }) {
     setStart(Date.now()); setDauer(0);
   };
   // erst im Browser würfeln (sonst Hydration-Mismatch)
-  useEffect(() => { lade(BOTSCHAFTEN[Math.floor(Math.random() * BOTSCHAFTEN.length)]); }, []);
+  useEffect(() => { lade(empfangen?.text ?? BOTSCHAFTEN[Math.floor(Math.random() * BOTSCHAFTEN.length)]); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const geschafft = text !== null && eingaben.every((e, i) => e === text[i]);
   useEffect(() => { if (geschafft) setDauer(Math.round((Date.now() - start) / 1000)); }, [geschafft, start]);
@@ -77,6 +82,7 @@ function Entschluesseln({ code }: { code: Code }) {
 
   return (
     <div className="flex flex-col gap-3">
+      {empfangen && text === asciiSicher(empfangen.text) && <p className="font-bold">📨 Botschaft von {empfangen.von} — knack sie!</p>}
       <div className="flex flex-wrap gap-2">
         {bytes.map((b, i) => {
           const leer = text[i] === " ";
@@ -121,17 +127,15 @@ function Entschluesseln({ code }: { code: Code }) {
   );
 }
 
-function Verschluesseln({ code }: { code: Code }) {
+function Verschluesseln({ code, post, hatSitzung }: { code: Code; post: Geheimpost; hatSitzung: boolean }) {
   const [text, setText] = useState("Treffen in der Pause");
-  const [kopiert, setKopiert] = useState(false);
+  const [kopiert, setKopiert] = useState<boolean | null>(null);
   const bytes = codiere(text.slice(0, 60), code);
   const sicher = asciiSicher(text.slice(0, 60));
-  const kopiere = async () => {
-    try { await navigator.clipboard.writeText(bytes.join(" ")); setKopiert(true); } catch { setKopiert(false); }
-  };
+  const kopiere = async () => setKopiert(await kopiereText(bytes.join(" ")));
   return (
     <div className="flex flex-col gap-3">
-      <input className="input font-bold" value={text} maxLength={60} onChange={e => { setText(e.target.value); setKopiert(false); }} aria-label="Deine Nachricht" />
+      <input className="input font-bold" value={text} maxLength={60} onChange={e => { setText(e.target.value); setKopiert(null); }} aria-label="Deine Nachricht" />
       {sicher !== text.slice(0, 60) && <p className="text-xs text-muted">ASCII kennt keine Umlaute: daraus wird »{sicher}«.</p>}
       <div className="flex flex-wrap gap-1.5">
         {bytes.map((b, i) => (
@@ -143,17 +147,28 @@ function Verschluesseln({ code }: { code: Code }) {
       </div>
       <div className="flex gap-2 items-center flex-wrap">
         <button className="btn-primary" onClick={kopiere}>📋 Code kopieren</button>
-        {kopiert && <span className="text-sm text-ok font-bold">Kopiert!</span>}
-        <span className="text-sm text-muted">Schick den Code jemandem — unter »Entschlüsseln« einfügen und knacken lassen.</span>
+        {kopiert && <span className="text-sm text-ok font-bold" role="status">Kopiert!</span>}
+        <span className="text-sm text-muted">Oder kopieren und weitergeben — unter »Entschlüsseln« einfügen und knacken lassen.</span>
       </div>
+      {kopiert === false && (
+        <div className="flex flex-col gap-1" role="status">
+          <span className="text-sm text-bad">Der Browser lässt das Kopieren hier nicht zu. Der Code ist unten markiert — mit Strg+C kopieren:</span>
+          <textarea className="input font-mono text-sm" readOnly rows={2} value={bytes.join(" ")} aria-label="Code zum Kopieren"
+            ref={el => { el?.focus(); el?.select(); }} onFocus={e => e.target.select()} />
+        </div>
+      )}
+      <SendenLeiste post={post} inhalt={bytes.join(" ")} basis={code} hatCode={hatSitzung} />
     </div>
   );
 }
 
-export default function Geheimbotschaft() {
+export default function Geheimbotschaft({ zugang }: { zugang?: StellenwertZugang }) {
   const [modus, setModus] = useState<"ent" | "ver">("ent");
   const [code, setCode] = useState<Code>(16);
   const [tafel, setTafel] = useState(true);
+  const post = useGeheimpost(zugang);
+  // eine angenommene Botschaft: im Entschlüsseln-Blatt neu aufbauen (key)
+  const [empfangen, setEmpfangen] = useState<{ id: number; text: string; von: string } | null>(null);
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap gap-3 items-center justify-between">
@@ -170,7 +185,14 @@ export default function Geheimbotschaft() {
         Im Computer ist jeder Buchstabe eine Zahl — festgelegt im <b>ASCII-Code</b>: »A« ist 65, »a« ist 97, das Leerzeichen 32.
         Jedes Zeichen passt in ein Byte: 8 Bits oder 2 Hex-Ziffern.
       </p>
-      {modus === "ent" ? <Entschluesseln key={code} code={code} /> : <Verschluesseln code={code} />}
+      <Eingang post={post} angenommen={p => {
+        const text = p.inhalt ? decodiere(p.inhalt, p.basis) : null;
+        if (!text) return;
+        setCode(p.basis); setModus("ent"); setEmpfangen({ id: p.id, text, von: p.von_name });
+      }} />
+      {modus === "ent"
+        ? <Entschluesseln key={`${code}-${empfangen?.id ?? 0}`} code={code} empfangen={empfangen ?? undefined} />
+        : <Verschluesseln code={code} post={post} hatSitzung={!!post.code} />}
       <details open={tafel} onToggle={e => setTafel((e.target as HTMLDetailsElement).open)}>
         <summary className="cursor-pointer font-bold">📖 ASCII-Tafel</summary>
         <div className="mt-2"><AsciiTafel code={code} /></div>

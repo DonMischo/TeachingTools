@@ -75,6 +75,8 @@ app.include_router(guest_router.router)
 
 from .routers import tool_sessions as tool_sessions_router
 app.include_router(tool_sessions_router.router)
+from .routers import geheimpost as geheimpost_router
+app.include_router(geheimpost_router.router)
 from .routers import standalone as standalone_router
 app.include_router(standalone_router.router)
 from .routers import fragments as fragments_router

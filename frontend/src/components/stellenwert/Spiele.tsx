@@ -10,6 +10,7 @@ import BitFall from "./spiele/BitFall";
 import Farbmischer from "./spiele/Farbmischer";
 import ZaehlwerkRennen from "./spiele/ZaehlwerkRennen";
 import Geheimbotschaft from "./spiele/Geheimbotschaft";
+import type { StellenwertZugang } from "./Stellenwert";
 
 const SPIELE = [
   { id: "bitfall", label: "🧱 Bit-Fall" },
@@ -19,7 +20,7 @@ const SPIELE = [
 ] as const;
 type Id = (typeof SPIELE)[number]["id"];
 
-export default function Spiele() {
+export default function Spiele({ zugang }: { zugang?: StellenwertZugang }) {
   const [spiel, setSpiel] = useState<Id>("bitfall");
   return (
     <div className="flex flex-col gap-3">
@@ -28,7 +29,7 @@ export default function Spiele() {
         {spiel === "bitfall" && <BitFall />}
         {spiel === "farbe" && <Farbmischer />}
         {spiel === "zaehlwerk" && <ZaehlwerkRennen />}
-        {spiel === "geheim" && <Geheimbotschaft />}
+        {spiel === "geheim" && <Geheimbotschaft zugang={zugang} />}
       </div>
     </div>
   );

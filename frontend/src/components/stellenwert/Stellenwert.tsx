@@ -20,14 +20,17 @@ const BLAETTER = [
 ] as const;
 type Blatt = (typeof BLAETTER)[number]["id"];
 
-const INHALT: Record<Blatt, () => ReactNode> = {
+/** Sitzungscode (und Gast-Token) — die Geheimpost braucht ihn. */
+export type StellenwertZugang = { code: string; token?: string | null };
+
+const INHALT: Record<Blatt, (zugang?: StellenwertZugang) => ReactNode> = {
   tafel: () => <Tafel />,
   verstehen: () => <Verstehen />,
   ueben: () => <Ueben />,
-  spiele: () => <Spiele />,
+  spiele: zugang => <Spiele zugang={zugang} />,
 };
 
-export default function Stellenwert({ action }: { action?: ReactNode }) {
+export default function Stellenwert({ action, zugang }: { action?: ReactNode; zugang?: StellenwertZugang }) {
   const [blatt, setBlatt] = useState<Blatt>("tafel");
   return (
     <div className="page">
@@ -53,7 +56,7 @@ export default function Stellenwert({ action }: { action?: ReactNode }) {
         ))}
       </div>
 
-      {INHALT[blatt]()}
+      {INHALT[blatt](zugang)}
     </div>
   );
 }
