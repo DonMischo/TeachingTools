@@ -8,11 +8,11 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import Stellenwert from "@/components/stellenwert/Stellenwert";
 import { loesungsTafel } from "@/components/stellenwert/Ueben";
 import {
-  UEB_ARTEN, abziehWeg, uebertragsSchritte, dez, divisionsWeg, erzeugeAufgabe, lies, loesungText, paeckchen, pruefe, schreibe, spalten,
+  UEB_ARTEN, abziehWeg, geaenderteStellen, uebertragsSchritte, dez, divisionsWeg, erzeugeAufgabe, lies, loesungText, paeckchen, pruefe, schreibe, spalten,
   zahlwort, zuDezimalWeg, type Stufe,
 } from "@/lib/stellenwert";
 import {
-  codiere, decodiere, farbAbstand, farbSterne, hexFarbe, neueZeile, zaehlRunde, zaehlZiel, zielFarbe,
+  codiere, decodiere, farbAbstand, farbSterne, hexFarbe, neueZeile, zaehlRunde, zaehlZiel, zehnerSchritt, zielFarbe,
 } from "@/lib/stellenwertSpiele";
 
 function zufall(seed: number) {
@@ -129,6 +129,22 @@ describe("Spiele", () => {
       expect(z.start).toBeLessThan(z.basis ** z.stellen);
     }
   });
+  it("Zehnersystem: Stellenwert-Schritte mit Übertrag, im gewählten Bereich", () => {
+    const r = zufall(11);
+    for (const stellen of [4, 7, 10]) for (const s of [1, 2, 3] as const) for (let i = 0; i < 100; i++) {
+      const z = zaehlRunde(s, [10], r, stellen);
+      expect(z.stellen).toBe(stellen);
+      expect(zaehlZiel(z)).toBeGreaterThanOrEqual(0);
+      expect(zaehlZiel(z)).toBeLessThan(10 ** stellen);
+      const { anzahl, exp } = zehnerSchritt(z.schritt);
+      expect(anzahl * 10 ** exp).toBe(Math.abs(z.schritt));
+      expect(anzahl).toBeLessThan(10);
+      if (s === 1) expect(z.schritt).toBe(1);
+      // jede Aufgabe hat mindestens einen Übertrag (zwei Walzen drehen sich)
+      expect(geaenderteStellen(z.start, zaehlZiel(z), 10, stellen).length).toBeGreaterThan(1);
+    }
+  });
+
   it("Geheimbotschaft hin und zurück", () => {
     expect(codiere("Hi", 2)).toEqual(["01001000", "01101001"]);
     expect(codiere("Hi", 16)).toEqual(["48", "69"]);
@@ -156,6 +172,20 @@ describe("Oberfläche", () => {
       fireEvent.click(screen.getAllByRole("button", { name: spiel })[0]);
     }
     expect(screen.getByRole("button", { name: /Los geht/ })).toBeTruthy();
+  });
+
+  it("Zählwerk-Rennen: feste Aufgabenzahl, Zehnersystem bis 1 Million mit beschrifteten Walzen", () => {
+    render(<Stellenwert />);
+    fireEvent.click(screen.getByRole("button", { name: /Spiele/ }));
+    fireEvent.click(screen.getAllByRole("button", { name: /Zählwerk-Rennen/ })[0]);
+    fireEvent.click(screen.getByRole("button", { name: /10 Aufgaben/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Binär/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Hexadezimal/ }));
+    fireEvent.click(screen.getByRole("button", { name: /bis 1 Million/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Start/ }));
+    expect(screen.getByText(/Aufgabe 1 von 10/)).toBeTruthy();
+    expect(screen.getByRole("img", { name: /Zählwerk zeigt \d{7}$/ })).toBeTruthy();
+    expect(screen.getByText("M")).toBeTruthy();
   });
 
   it("die Erklärungen öffnen als Popup mit Beispiel", () => {

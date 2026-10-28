@@ -7,6 +7,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { HEX_FARBEN, INDEX, schreibe, spalte, uebertragsSchritte, ziffer, zuDezimalWeg, type Basis } from "@/lib/stellenwert";
+import { zehnerSchritt } from "@/lib/stellenwertSpiele";
 import { Chips } from "@/components/prozent/ui";
 import { ZaehlwerkAnzeige } from "../teile";
 
@@ -44,7 +45,7 @@ export function Erklaerung({ titel, children }: { titel: string; children: React
 // ── Zählwerk ─────────────────────────────────────────────────────────────────
 
 const BEISPIELE: { id: string; label: string; basis: Basis; stellen: number; start: number; schritt: number }[] = [
-  { id: "z", label: "199 + 1", basis: 10, stellen: 3, start: 199, schritt: 1 },
+  { id: "z", label: "4 960 + 1 Z", basis: 10, stellen: 4, start: 4960, schritt: 10 },
   { id: "b", label: "0111₂ + 1", basis: 2, stellen: 4, start: 0b0111, schritt: 1 },
   { id: "h", label: "0FF₁₆ + 1", basis: 16, stellen: 3, start: 0x0ff, schritt: 1 },
   { id: "m", label: "1000₂ − 1", basis: 2, stellen: 4, start: 0b1000, schritt: -1 },
@@ -69,8 +70,8 @@ export function ZaehlwerkErklaerung() {
       <div className="rounded-xl border border-line p-3 flex flex-col gap-3">
         <Chips wahl={id} setze={x => { setId(x); setGedreht(false); }} optionen={BEISPIELE.map(b => ({ id: b.id, label: b.label }))} />
         <div className="flex flex-wrap items-center gap-3">
-          <ZaehlwerkAnzeige n={gedreht ? ziel : bsp.start} basis={bsp.basis} stellen={bsp.stellen} gross />
-          <span className="text-2xl font-black">{minus ? "−" : "+"} {schreibe(Math.abs(bsp.schritt), bsp.basis)}</span>
+          <ZaehlwerkAnzeige n={gedreht ? ziel : bsp.start} basis={bsp.basis} stellen={bsp.stellen} gross beschriftet={bsp.basis === 10} />
+          <span className="text-2xl font-black">{minus ? "−" : "+"} {bsp.basis === 10 ? `1 ${spalte(10, zehnerSchritt(bsp.schritt).exp).kurz}` : schreibe(Math.abs(bsp.schritt), bsp.basis)}</span>
           <button className="btn-primary" onClick={() => setGedreht(g => !g)}>{gedreht ? "↺ Zurück" : "▶ Drehen"}</button>
         </div>
         <ol className="flex flex-col gap-1.5 text-sm">
@@ -101,7 +102,9 @@ export function ZaehlwerkErklaerung() {
       </div>
       <ul className="text-sm list-disc pl-5 flex flex-col gap-1">
         <li>Richtig: 5 Punkte plus 5 für <b>jede Walze, die sich dreht</b> — lange Übertragsketten lohnen sich.</li>
-        <li>Falsch: 3 Sekunden Abzug, dann siehst du das richtige Ergebnis.</li>
+        <li>Falsch: Du siehst das richtige Ergebnis. Beim Spiel auf Zeit kostet es 3 Sekunden.</li>
+        <li>Im Zehnersystem steht über jeder Walze ihr Stellenwert: <b>+ 1 Z</b> dreht also die Zehner-Walze.</li>
+        <li>Spiel auf Zeit (60 s, 2 min) oder eine feste Zahl Aufgaben (10, 20, 30) — die Zeit läuft dann mit.</li>
         <li>Unter dem Eingabefeld gibt es Zifferntasten — praktisch für A bis F.</li>
       </ul>
     </Erklaerung>

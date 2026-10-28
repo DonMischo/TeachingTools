@@ -57,12 +57,49 @@ export const farbSterne = (abstand: number) => (abstand <= 0.02 ? 3 : abstand <=
 
 export type ZaehlRunde = { basis: Basis; stellen: number; start: number; schritt: number };
 
+/** Wie weit die Zahlen im Zehnersystem reichen: Anzahl der Walzen. */
+export const DEZ_BEREICHE = [
+  { id: "4", label: "bis 1 000", stellen: 4 },
+  { id: "7", label: "bis 1 Million", stellen: 7 },
+  { id: "10", label: "bis 1 Milliarde", stellen: 10 },
+] as const;
+
+/**
+ * Zehnersystem: gezählt wird in Stellenwerten (+ 1 H, − 1 T, + 3 Z …).
+ * Stufe 1: + 1 E. Stufe 2: ± 1 an irgendeiner Stelle, mit Übertragskette.
+ * Stufe 3: + oder − eine Ziffer 2–9 an irgendeiner Stelle.
+ */
+function zehnerRunde(stufe: 1 | 2 | 3, stellen: number, r: Zufall): ZaehlRunde {
+  const exp = stufe === 1 ? 0 : ganz(r, 0, stellen - 2);
+  const minus = stufe > 1 && r() < 0.5;
+  const anzahl = stufe === 3 ? ganz(r, 2, 9) : 1;
+  const schritt = (minus ? -1 : 1) * anzahl * 10 ** exp;
+  // Ziffern von rechts: unter exp beliebig, ab exp eine Kette, die beim Rechnen umspringt
+  const z = Array.from({ length: stellen }, () => ganz(r, 0, 9));
+  const kette = ganz(r, 1, Math.max(1, Math.min(4, stellen - 1 - exp)));
+  for (let k = exp; k < exp + kette; k++) z[k] = minus ? 0 : 9;
+  if (stufe === 3) z[exp] = minus ? ganz(r, 0, anzahl - 1) : ganz(r, 10 - anzahl, 9);
+  // die Stelle hinter der Kette fängt den Übertrag auf — sie darf nicht selbst überlaufen
+  z[exp + kette] = minus ? ganz(r, 1, 9) : ganz(r, 0, 8);
+  const start = z.reduce((s, d, k) => s + d * 10 ** k, 0);
+  return { basis: 10, stellen, start, schritt };
+}
+
+/** Schritt im Zehnersystem als Stellenwert: 300 → 3 H */
+export function zehnerSchritt(schritt: number) {
+  let exp = 0, n = Math.abs(schritt);
+  while (n >= 10 && n % 10 === 0) { n /= 10; exp++; }
+  return { anzahl: n, exp };
+}
+
 /**
  * Stufe 1: +1. Stufe 2: +1 oder −1, gern mit langen Übertragsketten.
  * Stufe 3: + ein Stellenwert (10₂, 100₂, 10₁₆ …) oder eine kleine Zahl.
+ * Im Zehnersystem siehe `zehnerRunde`; `dezStellen` = Anzahl der Walzen dort.
  */
-export function zaehlRunde(stufe: 1 | 2 | 3, basen: readonly Basis[], r: Zufall = Math.random): ZaehlRunde {
+export function zaehlRunde(stufe: 1 | 2 | 3, basen: readonly Basis[], r: Zufall = Math.random, dezStellen = 4): ZaehlRunde {
   const basis = wahl(r, basen);
+  if (basis === 10) return zehnerRunde(stufe, dezStellen, r);
   const stellen = basis === 2 ? ganz(r, 4, 6) : ganz(r, 3, 4);
   const max = basis ** stellen - 1;
   if (stufe === 1) return { basis, stellen, start: r() < 0.6 ? uebertragsStart(r, basis, stellen) : ganz(r, 0, max - 1), schritt: 1 };

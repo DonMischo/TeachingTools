@@ -137,7 +137,11 @@ export function DreiSysteme({ n }: { n: number }) {
  * über, dreht die nächste links ein wenig später — so sieht man den Übertrag
  * von rechts nach links wandern.
  */
-export function ZaehlwerkAnzeige({ n, basis, stellen, gross = false }: { n: number; basis: Basis; stellen: number; gross?: boolean }) {
+export function ZaehlwerkAnzeige({ n, basis, stellen, gross = false, beschriftet = false }: {
+  n: number; basis: Basis; stellen: number; gross?: boolean;
+  /** über jeder Walze ihr Stellenwert (E, Z, H, T …) */
+  beschriftet?: boolean;
+}) {
   const z = ziffernVon(n, basis, stellen).slice(-stellen);
   const h = gross ? 3.5 : 2.5;
   return (
@@ -146,15 +150,18 @@ export function ZaehlwerkAnzeige({ n, basis, stellen, gross = false }: { n: numb
         const exp = z.length - 1 - i;
         const s = spalten(basis, exp, exp)[0];
         return (
-          <div key={exp} className="relative overflow-hidden rounded-md" style={{ height: `${h}rem`, width: `${h * 0.72}rem`, background: s.farbe }}>
-            <div className="flex flex-col transition-transform duration-500 ease-out"
-              style={{ transform: `translateY(-${d * h}rem)`, transitionDelay: `${exp * 140}ms` }}>
-              {Array.from({ length: basis }, (_, k) => (
-                <span key={k} className="flex items-center justify-center font-mono font-black text-white"
-                  style={{ height: `${h}rem`, fontSize: `${h * 0.6}rem` }}>{ziffer(k)}</span>
-              ))}
+          <div key={exp} className="flex flex-col items-center gap-1">
+            {beschriftet && <span className="text-xs font-black leading-none" style={{ color: s.farbe }}>{s.kurz}</span>}
+            <div className="relative overflow-hidden rounded-md" style={{ height: `${h}rem`, width: `${h * 0.72}rem`, background: s.farbe }}>
+              <div className="flex flex-col transition-transform duration-500 ease-out"
+                style={{ transform: `translateY(-${d * h}rem)`, transitionDelay: `${exp * 140}ms` }}>
+                {Array.from({ length: basis }, (_, k) => (
+                  <span key={k} className="flex items-center justify-center font-mono font-black text-white"
+                    style={{ height: `${h}rem`, fontSize: `${h * 0.6}rem` }}>{ziffer(k)}</span>
+                ))}
+              </div>
+              <div className="absolute inset-0 pointer-events-none" style={{ background: "linear-gradient(#0006, transparent 30%, transparent 70%, #0006)" }} />
             </div>
-            <div className="absolute inset-0 pointer-events-none" style={{ background: "linear-gradient(#0006, transparent 30%, transparent 70%, #0006)" }} />
           </div>
         );
       })}
