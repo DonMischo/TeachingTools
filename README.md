@@ -4,6 +4,8 @@
 
 Eine maschinenlesbare Fassung der Feature-Liste steht in [features.yml](features.yml).
 
+[![Unterstützen auf Ko-fi](https://img.shields.io/badge/Ko--fi-unterst%C3%BCtzen-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/DonMischo)
+
 ## Tech-Stack
 
 | Schicht | Technologie |
@@ -31,6 +33,8 @@ Eine maschinenlesbare Fassung der Feature-Liste steht in [features.yml](features
 - [Datenschutz und Sicherheit](#-datenschutz-und-sicherheit)
 - [Setup & Start](#setup--start)
 - [Rollen](#rollen)
+- [Lizenz](#lizenz)
+- [Unterstützen](#unterstützen)
 
 ---
 
@@ -383,3 +387,15 @@ Alle Farben und Grundbausteine stehen in `frontend/src/styles/theme.css`, die Ap
 | **Klassenlehrkraft** | Zusätzlich: eigene Klasse bearbeiten (Rollen, Dienste, Sitzplan, Freigaben), Zugangsdaten exportieren (mit 2FA) |
 | **Schüler** | Aktivitäten und Simulationen, freigegebene Werkzeuge, eigene Inhalte im gemeinsamen Schüler-Pool |
 | **Gast** | Nur die eine Sitzung, deren QR oder Code gescannt wurde, und nur für begrenzte Zeit |
+
+---
+
+## Lizenz
+
+- **Code:** [Apache License 2.0](LICENSE). Nutzen, ändern und erweitern ist erlaubt, auch kommerziell, und eigene Erweiterungen (etwa neue Simulationen) dürfen privat bleiben. Wer TT weitergibt oder darauf aufbaut, behält die Datei [NOTICE](NOTICE) bei und nennt damit das Original-Repository.
+- **Eigene Inhalte** (Texte, Aufgaben, Vorlagen und Datensätze unter `data/` und `docs/`, eigene Bilder): [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/deed.de) mit Namensnennung »TT - Teaching Tools, github.com/DonMischo/TeachingTools«.
+- **Fremdes Material** (Fotos, Schriften, Kartendaten, 3D-Modelle, Datensätze, portierter Code, Bibliotheken) steht unter der Lizenz aus seinem Nachweis, nicht unter den beiden oben. Alle Nachweise sammelt die Admin-Seite **Quellen** (`/admin/quellen`); welche Dateien dahinter stehen, listet [NOTICE](NOTICE).
+
+## Unterstützen
+
+TT entsteht nebenbei im Schulalltag. Wer die Arbeit unterstützen möchte: **[ko-fi.com/DonMischo](https://ko-fi.com/DonMischo)**. Fehlermeldungen, Ideen und eigene Simulationen helfen genauso.

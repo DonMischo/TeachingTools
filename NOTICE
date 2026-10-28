@@ -1,0 +1,52 @@
+TT - Teaching Tools
+Copyright 2025-2026 DonMischo
+Original: https://github.com/DonMischo/TeachingTools
+
+Wer TT weitergibt oder darauf aufbaut, behält diese Datei bei
+(Apache-2.0, Abschnitt 4 d) und nennt damit das Original-Repository.
+Eigene Erweiterungen, etwa neue Simulationen, dürfen privat bleiben.
+
+
+Lizenzen im Überblick
+---------------------
+
+1. Programmcode: Apache License 2.0, siehe LICENSE.
+
+2. Eigene Inhalte: Creative Commons Namensnennung 4.0 International
+   (CC BY 4.0), https://creativecommons.org/licenses/by/4.0/deed.de
+   Das betrifft die eigenen Texte, Aufgaben, Vorlagen und Datensätze
+   unter data/ und docs/ sowie eigene Bilder und Grafiken.
+   Namensnennung: »TT - Teaching Tools, github.com/DonMischo/TeachingTools«.
+
+3. Fremdes Material steht NICHT unter 1. oder 2., sondern unter der
+   Lizenz, die in seinem Nachweis genannt ist. Dazu gehören Bilder,
+   Fotos, Schriften, Kartendaten, 3D-Modelle, Datensätze, portierter
+   Code und Programmbibliotheken. Die Nachweise stehen hier:
+
+   - App-Seite /admin/quellen (alles gesammelt, nach Werkzeug):
+     frontend/src/lib/quellen/register.ts
+     frontend/src/lib/quellen/pakete.json (npm-Pakete)
+   - Bildnachweise je Werkzeug:
+     frontend/src/lib/kueste/bilder.json
+     frontend/src/lib/pse/bilder.json
+     frontend/src/lib/sonnensystem/bilder.json
+     frontend/src/lib/vulkan/bilder.json
+     frontend/src/lib/baum/credits.ts
+     frontend/public/challenge/pixel/LIZENZEN.json
+     frontend/public/karten/kinderatlas/lizenzen.json
+     frontend/public/modelle/monster/LIZENZ.txt
+     frontend/public/verkehr/tux.lizenz.json
+   - Lizenztexte, die beim Material liegen:
+     api/fonts/OFL.txt
+     data/quizzes/flag-icons-main/LICENSE
+   - Kartenebenen: Katalog der Karten-API, Quelle und Lizenz stehen
+     auch unter jeder Karte.
+
+   Beispiele: Fotos von Wikimedia Commons (u. a. CC BY-SA, CC BY, FAL,
+   gemeinfrei), OpenStreetMap-Daten (ODbL), Schriften (SIL OFL 1.1),
+   Portierungen von MIT-Projekten (MarkovJunior, TextureSynthesis).
+   Snap! (AGPL-3.0) liegt nicht im Repository, es wird per
+   »npm run fetch:snap« samt eigener LICENSE geholt.
+
+   Einträge, die auf /admin/quellen mit ⚠ markiert sind (Rechte
+   ungeklärt), sind von keiner Lizenz dieses Repositorys gedeckt.
