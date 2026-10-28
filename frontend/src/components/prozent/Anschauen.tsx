@@ -18,6 +18,8 @@ const BILDER = [
 ] as const;
 
 const EMOJIS = ["🧒", "🍎", "🚲", "⚽", "🐟"];
+/** Prozentstellen auf Kreis und Streifen */
+const MARKEN = [0, 10, 20, 25, 30, 40, 50, 60, 70, 75, 80, 90, 100];
 
 export default function Anschauen() {
   const [bild, setBild] = useState<Bild>("kreis");
@@ -43,8 +45,8 @@ export default function Anschauen() {
         )}
       </div>
 
-      {bild === "kreis" && <KreisBild p={p} />}
-      {bild === "streifen" && <StreifenBild p={p} G={G} marken={[0, 10, 20, 25, 30, 40, 50, 60, 70, 75, 80, 90, 100]} />}
+      {bild === "kreis" && <KreisBild p={p} marken={MARKEN} />}
+      {bild === "streifen" && <StreifenBild p={p} G={G} marken={MARKEN} />}
       {bild === "feld" && <HunderterBild p={p} />}
       {bild === "dinge" && (G > 60 || !Number.isInteger(G) ? (
         <p className="text-sm text-muted">Zum Zählen bitte einen ganzen Grundwert bis 60 wählen.</p>
@@ -61,7 +63,7 @@ export default function Anschauen() {
         <span className="chip">Rest: {z(Math.max(0, 100 - p))} % = {z(Math.max(0, G - W), 4)}</span>
       </div>
       <Erklaerung>
-        {bild === "kreis" && <>Der ganze Kreis ist immer <strong>100 %</strong> — egal, wie groß das Ganze ist. Die gestrichelten Linien teilen ihn in Viertel: 25 %, 50 %, 75 %. Über 100 % braucht man einen zweiten Kreis.</>}
+        {bild === "kreis" && <>Der ganze Kreis ist immer <strong>100 %</strong> — egal, wie groß das Ganze ist. Die gestrichelten Linien teilen ihn in Viertel: 25 %, 50 %, 75 %; die Striche am Rand stehen alle 10 % — wie eine Uhr, bei der eine Runde 100 % ist. Über 100 % braucht man einen zweiten Kreis.</>}
         {bild === "streifen" && <>Oben die Prozent, unten die Werte: was übereinander steht, gehört zusammen (100 % ≙ {z(G)}). Halbiert man oben, halbiert man unten — genau das macht der Dreisatz.</>}
         {bild === "feld" && <>Hundert Kästchen, jedes ist <strong>1 %</strong>. »Prozent« heißt »von Hundert«: {z(p)} % sind {z(p)} von 100 Kästchen — egal, ob das Ganze 100, {z(G)} oder eine Million ist.</>}
         {bild === "dinge" && <>Von {z(G)} sind {z(p)} % markiert. Bei 100 Dingen wäre jedes eins 1 %; hier ist jedes {z(100 / G, 3)} %.</>}

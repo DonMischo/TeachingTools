@@ -22,15 +22,19 @@ function stueck(cx: number, cy: number, r: number, anteil: number): string {
   return `M ${cx} ${cy} L ${cx} ${cy - r} A ${r} ${r} 0 ${anteil > 0.5 ? 1 : 0} 1 ${x} ${y} Z`;
 }
 
-export function KreisBild({ p, beschriftung = true, klein = false }: { p: number; beschriftung?: boolean; klein?: boolean }) {
+/**
+ * `marken`: Prozentstellen am Rand als Striche mit Zahl, wie beim
+ * Prozentstreifen (im Schätzspiel weggelassen, sonst verrät der Rand die Antwort).
+ */
+export function KreisBild({ p, beschriftung = true, klein = false, marken }: { p: number; beschriftung?: boolean; klein?: boolean; marken?: number[] }) {
   const kreise = Math.max(1, Math.ceil(p / 100 - 1e-9));
-  const r = 90, d = 2 * r + 30;
+  const r = 90, rand = marken ? 30 : 0, d = 2 * r + 30 + 2 * rand;
   return (
     <svg viewBox={`-10 -10 ${kreise * d} ${d + (beschriftung ? 20 : 0)}`} className={`w-full h-auto ${klein ? "max-h-40" : "max-h-[38vh]"}`}
       role="img" aria-label={beschriftung ? `Kreis, ${z(p)} % gefärbt` : "Kreis"}>
       {Array.from({ length: kreise }, (_, i) => {
         const anteil = Math.min(1, Math.max(0, (p - 100 * i) / 100));
-        const cx = i * d + r + 5, cy = r + 5;
+        const cx = i * d + r + 5 + rand, cy = r + 5 + rand;
         return (
           <g key={i}>
             <circle cx={cx} cy={cy} r={r} fill="none" strokeWidth={2} style={{ stroke: "var(--border)" }} />
@@ -40,8 +44,22 @@ export function KreisBild({ p, beschriftung = true, klein = false }: { p: number
               const w = (k * Math.PI) / 2;
               return <line key={k} x1={cx} y1={cy} x2={cx + r * Math.sin(w)} y2={cy - r * Math.cos(w)} strokeWidth={1} strokeDasharray="3 4" style={{ stroke: "var(--text-muted)" }} />;
             })}
+            {marken?.filter(m => m >= 0 && m < 100).map(m => {
+              const w = (m / 100) * 2 * Math.PI, sin = Math.sin(w), cos = Math.cos(w);
+              const viertel = m % 25 === 0;
+              return (
+                <g key={`m${m}`}>
+                  <line x1={cx + (r - (viertel ? 10 : 6)) * sin} y1={cy - (r - (viertel ? 10 : 6)) * cos} x2={cx + (r + 5) * sin} y2={cy - (r + 5) * cos}
+                    strokeWidth={viertel ? 2 : 1.2} style={{ stroke: viertel ? "var(--text)" : "var(--text-muted)" }} />
+                  <text x={cx + (r + 18) * sin} y={cy - (r + 18) * cos} textAnchor="middle" dominantBaseline="central"
+                    fontSize={viertel ? 13 : 11} fontWeight={viertel ? 800 : 500} style={viertel ? TEXT : MUTED}>
+                    {z(m + 100 * i)} %
+                  </text>
+                </g>
+              );
+            })}
             {beschriftung && (
-              <text x={cx} y={2 * r + 28} textAnchor="middle" fontSize={18} fontWeight={800} style={TEXT}>
+              <text x={cx} y={cy + r + 23 + rand} textAnchor="middle" fontSize={18} fontWeight={800} style={TEXT}>
                 {z(anteil * 100)} %{i ? " dazu" : ""}
               </text>
             )}
