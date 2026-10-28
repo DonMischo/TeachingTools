@@ -316,6 +316,26 @@ export function pruefe(a: Aufgabe, eingabe: string): boolean | null {
 
 /* ─────────────────────────────────────────────────────────── Spiel ── */
 
+/**
+ * Wertung im Prozent-Blitz — so, dass blindes Klicken sich nicht lohnt:
+ * - richtig: 10 + Serienbonus (bis 10); falsch: doppelt so viel abziehen (−20)
+ * - »geklickt, bevor man lesen konnte« (unter SCHNELL_MS nach dem Erscheinen):
+ *   richtig gibt nur die Hälfte, falsch kostet dreifach (−30)
+ * - jede weitere hastige Antwort in Folge sperrt die nächste Aufgabe länger
+ *   (SPERRE_JE je Mal, höchstens SPERRE_MAX); eine überlegte Antwort setzt das zurück.
+ */
+export const BLITZ = { punkte: 10, schnellMs: 500, sperreJe: 600, sperreMax: 3000 } as const;
+
+export function blitzWertung(ok: boolean, ms: number, serie: number, hastig: number) {
+  const schnell = ms < BLITZ.schnellMs;
+  const neueSerie = ok ? serie + 1 : 0;
+  const voll = BLITZ.punkte + Math.min(neueSerie - 1, 5) * 2;
+  const plus = ok ? (schnell ? Math.floor(voll / 2) : voll) : -(schnell ? 3 : 2) * BLITZ.punkte;
+  const neuHastig = schnell ? hastig + 1 : 0;
+  const sperre = Math.min(BLITZ.sperreMax, neuHastig * BLITZ.sperreJe);
+  return { plus, neueSerie, schnell, hastig: neuHastig, sperre };
+}
+
 export type Runde =
   | { art: "schaetzen"; p: number; bild: "kreis" | "streifen" | "feld"; optionen: number[]; richtig: number; erklaerung: string }
   | { art: "kopf"; frage: string; optionen: string[]; richtig: number; erklaerung: string }
