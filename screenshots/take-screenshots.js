@@ -108,6 +108,7 @@ const TEACHER_PAGES = [
   ["76-sim-binaerrechner",   "/simulationen/binaerrechner"],
   ["77-sim-bildformate",     "/simulationen/bildformate"],
   ["78-sim-abacus",          "/simulationen/abacus"],
+  ["79-sim-baum",            "/simulationen/baum",         3000],
   // Admin
   ["80-admin-availability",  "/admin/availability"],
   ["81-admin-permissions",   "/admin/permissions"],
