@@ -192,6 +192,14 @@ Jede Simulation trägt Fächer (auch mehrere, z. B. Geografie und Physik); die �
 - Quellen fürs Referat: wörtliches Zitat und Literaturangabe aus einem Buch (Titelseite, Impressum, Inhaltsseite) oder einer nachgebauten Webseite (Adresszeile, Kurzlink, Werbung, Cookie-Hinweis) herauskopieren — Vorlage mit Kurzbeleg und Literaturverzeichnis, Hinweise zu typischen Fehlgriffen
 - Spickzettel mit allen Kürzeln
 
+### 🪛 PC-Werkstatt
+- Gaming-PC, 386er-PC (1990) und Raspberry Pi 5 zusammenbauen: Teile aus der Teilekiste an die leuchtende Stelle, Kabel an beide Anschlüsse (Netzteil, 24-Pin, EPS, PCIe, SATA, Front-Panel, P8/P9, Molex, Berg, IDE- und Disketten-Flachband, USB-C, Micro-HDMI …)
+- Entscheidungen mit Folgen: CPU einsetzen, Wärmeleitpaste, Dual Channel, P8/P9 »Schwarz an Schwarz«, rote Ader an Pin 1, Laufwerk A: hinter der Verdrehung, SD-Karte per Imager
+- Einschalten jederzeit: nichts, Piepcodes (auch hörbar, beim 386er nur mit Lautsprecher), BIOS-Meldungen, durchgebrannte Chips, Warnungen — oder Start mit Bootbildschirm; halbe SIMM-Bank beim 386er
+- Realistische Ansicht und Schaltplan (Strom, Daten, Wärme), auch nebeneinander; Bauen geht in beiden
+- Erkennen mit Infokarten und Quiz für alle Geräte inklusive Smartphone; »Damals & heute« vergleicht Takt, Kerne, Speicher und Netzteil logarithmisch
+- Tipp-Knopf, Fehlerzähler, Bestzeit im Browser
+
 ### 🍎 Rechenregeln
 - Punkt vor Strich am Obstkorb: »3 · 4« sind drei Körbe mit je vier Äpfeln, Klammern sind Kisten
 - Vertauschungsgesetz am Rechenzug, Stufenzahlen und Kommaverschiebung an der Stellenwerttafel

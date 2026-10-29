@@ -107,6 +107,7 @@ CATALOG: list[CatalogTool] = [
     # Sitzung ist nur der Beitritts-Code (siehe routers/tool_sessions.py).
     CatalogTool("maus", "🐭 Maus-Führerschein", "🐭", "simulationen", {"use": _cap(True, True)}),
     CatalogTool("markieren", "🖍️ Markieren & Bearbeiten", "🖍️", "simulationen", {"use": _cap(True, True)}),
+    CatalogTool("pcbau", "🪛 PC-Werkstatt", "🪛", "simulationen", {"use": _cap(True, True)}),
     CatalogTool("groessen", "🪜 Größen & Einheiten", "🪜", "simulationen", {
         "use": _cap(True, True),
     }),

@@ -27,6 +27,7 @@ import Rechenzeichen from "@/components/rechenzeichen/Rechenzeichen";
 import Prozent from "@/components/prozent/Prozent";
 import Stellenwert from "@/components/stellenwert/Stellenwert";
 import Markieren from "@/components/markieren/Markieren";
+import PcWerkstatt from "@/components/pcbau/PcWerkstatt";
 import Uebung from "@/components/simulationen/Uebung";
 import KiWerkstatt from "@/components/ki/KiWerkstatt";
 import Sonnensystem from "@/components/sonnensystem/Sonnensystem";
@@ -71,6 +72,7 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   tippen: { title: "Tippen", icon: "⌨️", node: <Tippen /> },
   // Die Bestenliste braucht Code und Gast-Token.
   markieren: { title: "Markieren & Bearbeiten", icon: "🖍️", node: null },
+  pcbau: { title: "PC-Werkstatt", icon: "🪛", node: <PcWerkstatt /> },
   kueste: { title: "Küstendynamik", icon: "🌊", node: <Kueste /> },
   erdaufbau: { title: "Aufbau der Erde", icon: "🌍", node: <ErdAufbau /> },
   wilson: { title: "Wilson-Zyklus", icon: "🌋", node: <WilsonZyklus /> },

@@ -243,6 +243,17 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein). Das Werkzeug braucht eine Tastatur." },
     ],
   },
+  pcbau: {
+    title: "PC-Werkstatt",
+    intro: "Computer von innen: zusammenbauen, einschalten, Fehler finden — vom 386er bis zum Smartphone. Jede Ansicht gibt es realistisch und als Schaltplan (oder beides nebeneinander).",
+    sections: [
+      { label: "🔧 Bauen", text: "Gaming-PC, 386er-PC und Raspberry Pi. Teil in der Teilekiste wählen, dann die leuchtende Stelle anklicken; Kabel wählen, dann beide Anschlüsse anklicken. Manche Teile brauchen eine Entscheidung (Prozessor einsetzen, Wärmeleitpaste, RAM-Steckplätze, P8/P9, Flachbandkabel, SD-Karte) — falsche Antworten rächen sich erst beim Einschalten." },
+      { label: "⏻ Einschalten", text: "Jederzeit möglich: Fehlt etwas, zeigt die Werkstatt, was passiert — nichts, Piepcodes (auch hörbar), Fehlermeldungen auf dem Bildschirm oder durchgebrannte Chips. Beim 386er piept es nur mit angeschlossenem Lautsprecher. Bestzeit für einen kompletten, richtigen Bau im Browser." },
+      { label: "🔍 Erkennen", text: "Alle vier Geräte, auch das Smartphone: Teile anklicken und nachlesen, Namen einblenden oder das Quiz mit 10 Fragen spielen (nach Name oder nach Aufgabe; 2 Punkte im ersten, 1 im zweiten Versuch). Das Quiz geht auch im Schaltplan." },
+      { label: "📊 Damals & heute", text: "Takt, Kerne, Arbeitsspeicher, Dauerspeicher und Netzteil der vier Geräte auf logarithmischer Skala, mit dem Faktor gegenüber dem 386er von 1990." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
+    ],
+  },
   stellenwert: {
     title: "Stellenwerttafeln",
     intro: "Zehner-, Zweier- und Sechzehnersystem in der Stellenwerttafel — vier Blätter zum Legen, Verstehen, Üben und Spielen.",

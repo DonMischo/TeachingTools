@@ -300,6 +300,14 @@ const ALL_CARDS: Werkzeug[] = [
     description: "Der nächste Schritt nach dem Maus-Führerschein: Doppel- und Dreifachklick, Umschalt + Klick, Pos1/Ende, Strg + Umschalt + Pfeile, Strg + C/X/V/Z und Löschen — erst Technik für Technik, dann als Challenge auf Zeit mit Bestenliste und Profi-Tipps. Dazu Quellen fürs Referat: Zitat und Literaturangabe aus Buch oder Webseite kopieren.",
     color: "#facc15",
   },
+  {
+    slug: "pcbau",
+    href: "/simulationen/pcbau",
+    icon: "🪛",
+    title: "PC-Werkstatt",
+    description: "Gaming-PC, 386er von 1990 und Raspberry Pi zusammenschrauben — Netzteil, Kabel, Wärmeleitpaste und alles. Einschalten zeigt Piepcodes und Fehler; dazu realistische Ansicht und Schaltplan, ein Teile-Quiz fürs Smartphone und »Damals & heute«.",
+    color: "#38bdf8",
+  },
 ];
 
 export default function SimulationenPage() {

@@ -609,6 +609,16 @@ simulationen:
       - "Quellen: Zitat + Kurzbeleg + Literaturverzeichnis aus Buch oder Webseite kopieren, Hinweise zu Fehlgriffen (Lektorat, Kurzlink, Website-Name, Abrufdatum)"
       - Aufgaben gewürfelt aus sechs Übungstexten (markieren, Cursor setzen, löschen, ersetzen, kopieren, verschieben, rückgängig)
       - Spickzettel mit allen Kürzeln
+  - id: pcbau
+    name: PC-Werkstatt
+    faehigkeiten: {use: [true, true]}
+    kann:
+      - Gaming-PC, 386er-PC und Raspberry Pi 5 aus Teilen und Kabeln zusammenbauen
+      - Entscheidungen beim Einbau (Wärmeleitpaste, P8/P9, Pin 1, Dual Channel, SD-Karte), die sich beim Einschalten zeigen
+      - Einschalten mit Piepcodes, BIOS-Meldungen, Schäden, Warnungen oder Bootbildschirm
+      - Realistische Ansicht und Schaltplan, auch nebeneinander
+      - Teile erkennen und Quiz für alle Geräte inklusive Smartphone
+      - Damals & heute — Kennzahlen der Geräte im Vergleich
   - id: groessen
     name: Größen & Einheiten
     faehigkeiten: {use: [true, true]}
