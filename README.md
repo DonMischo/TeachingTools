@@ -201,6 +201,15 @@ Jede Simulation trägt Fächer (auch mehrere, z. B. Geografie und Physik); die �
 - Erkennen mit Infokarten und Quiz für alle Geräte inklusive Smartphone; »Damals & heute« vergleicht Takt, Kerne, Speicher und Netzteil logarithmisch
 - Tipp-Knopf, Fehlerzähler, Bestzeit im Browser
 
+### 📱 Klikk
+- Eine Schulwoche (Mo–Fr ab 14 Uhr) mit einer erfundenen Social-Media-App, daneben Hausaufgaben, Freunde und Schlaf — Zeit vergeht nur durch Handlungen
+- Anmeldung mit gemessener AGB-Lesezeit, Altersangabe und Rechte-Abfragen (Kontakte, Mitteilungen, Standort, Mikrofon)
+- Feed nach echter Verweildauer, der in Themen immer tiefer führt; jeder fünfte Beitrag ist gezielte Werbung
+- Streaks, variable Likes, Abzeichen und Benachrichtigungen bis 23:40 — Gamification, die man selbst spürt
+- Challenges, die mit dem Risiko an Reichweite gewinnen (bis #GleisSelfie), und Cybermobbing gegen Jonas im Klassenchat; unbeantwortet heißt geschwiegen
+- Warnsignale, die nur sieht, wer bei Jonas nachschaut; Wetter-App, Spiel, Shop und Quiz teilen sich das Werbe-SDK »AdKit«
+- Danach dieselbe Woche auf Jonas' Handy und der Datenspiegel: Werbe-Profil mit Belegen, Datenflüsse je App, echte Werbegründe, App- gegen Lebens-Punkte, Hilfsangebote — alles nur im Browser gespeichert
+
 ### 🍎 Rechenregeln
 - Punkt vor Strich am Obstkorb: »3 · 4« sind drei Körbe mit je vier Äpfeln, Klammern sind Kisten
 - Vertauschungsgesetz am Rechenzug, Stufenzahlen und Kommaverschiebung an der Stellenwerttafel

@@ -308,6 +308,14 @@ const ALL_CARDS: Werkzeug[] = [
     description: "Gaming-PC, 386er von 1990 und Raspberry Pi zusammenschrauben — Netzteil, Kabel, Wärmeleitpaste und alles. Einschalten zeigt Piepcodes und Fehler; dazu realistische Ansicht und Schaltplan, ein Teile-Quiz fürs Smartphone und »Damals & heute«.",
     color: "#38bdf8",
   },
+  {
+    slug: "klikk",
+    href: "/simulationen/klikk",
+    icon: "📱",
+    title: "Klikk",
+    description: "Eine Schulwoche mit einer Social-Media-App: Feed, Streaks, Likes, Challenges und ein Klassenchat, in dem es kippt. Am Ende zeigt der Datenspiegel, was die App (und die »anderen« Apps mit demselben Werbe-SDK) über dich gelernt hat — mit Belegen.",
+    color: "#f43f5e",
+  },
 ];
 
 export default function SimulationenPage() {

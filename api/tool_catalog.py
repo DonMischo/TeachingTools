@@ -108,6 +108,7 @@ CATALOG: list[CatalogTool] = [
     CatalogTool("maus", "🐭 Maus-Führerschein", "🐭", "simulationen", {"use": _cap(True, True)}),
     CatalogTool("markieren", "🖍️ Markieren & Bearbeiten", "🖍️", "simulationen", {"use": _cap(True, True)}),
     CatalogTool("pcbau", "🪛 PC-Werkstatt", "🪛", "simulationen", {"use": _cap(True, True)}),
+    CatalogTool("klikk", "📱 Klikk", "📱", "simulationen", {"use": _cap(True, True)}),
     CatalogTool("groessen", "🪜 Größen & Einheiten", "🪜", "simulationen", {
         "use": _cap(True, True),
     }),

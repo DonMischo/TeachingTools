@@ -255,6 +255,20 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
     ],
   },
+  klikk: {
+    title: "Klikk",
+    intro: "Eine Schulwoche (Mo–Fr, je ab 14 Uhr) mit einer erfundenen Social-Media-App. Die Simulation erklärt nichts von oben: Schüler·innen erleben Sog, Gruppendruck und Mobbing selbst und sehen erst am Ende, was dabei passiert ist.",
+    sections: [
+      { label: "📱 Anmeldung", text: "Benutzername, Alter (unter 16 mit Eltern-Zustimmung), Nutzungsbedingungen (die Lesezeit wird gemessen) und Rechte: Kontakte, Mitteilungen, Standort, Mikrofon. Wer Mitteilungen verbietet, wird später nicht unterbrochen." },
+      { label: "⏰ Nachmittag", text: "Neben dem Handy: Mathe-Hausaufgaben (5 Aufgaben, je 9 Minuten; wer zwischendurch ans Handy geht, braucht länger), Freunde treffen (1,5 Std.), Schlafen gehen. Zeit vergeht nur durch Handlungen: ein Beitrag im Feed kostet 2 Minuten. Um 23:40 leuchtet das Handy noch einmal auf." },
+      { label: "✨ Feed", text: "Ein Beitrag nach dem anderen; die Verweildauer wird echt gemessen. Der Algorithmus gibt mehr von dem, wobei man hängen bleibt, und geht dabei tiefer (vom Workout zu Körpervergleichen). Jeder fünfte Beitrag ist Werbung — zugeschnitten auf das, was die App weiß." },
+      { label: "💬 Geschichte", text: "Im Klassenchat wird Jonas Tag für Tag mehr verspottet (Foto, Sticker, Fake-Account, Umfrage); Mo zieht durch immer gefährlichere Challenges bis zum #GleisSelfie. Antworten sind Knöpfe — unbeantwortet gilt über Nacht als Schweigen. Jonas' Warnsignale (Profilbild weg, nachts online, Gruppe verlassen …) zeigt niemand an; man sieht sie nur in seinem Chat." },
+      { label: "🕸️ Tracking", text: "Wetter, Spiel, Sneaker-Shop und Typ-Quiz haben dasselbe Werbe-SDK »AdKit« eingebaut. Was dort passiert, taucht als Werbung in Klikk wieder auf." },
+      { label: "🪞 Auswertung", text: "Nach Freitag: dieselbe Woche auf Jonas' Handy (eigene Reaktionen und gelesenes Schweigen gelb), dann der Datenspiegel mit Werbe-Profil samt Belegen, Datenflüssen je App, echten Werbegründen, App- vs. Lebens-Punkten, Reichweite gegen Risiko, bemerkten Warnsignalen und Hilfsangeboten." },
+      { label: "🔒 Daten", text: "Alles bleibt im Browser (localStorage), nichts geht an den Server. »Daten löschen & neue Woche« setzt zurück." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
+    ],
+  },
   stellenwert: {
     title: "Stellenwerttafeln",
     intro: "Zehner-, Zweier- und Sechzehnersystem in der Stellenwerttafel — vier Blätter zum Legen, Verstehen, Üben und Spielen.",

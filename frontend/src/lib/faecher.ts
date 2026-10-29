@@ -60,6 +60,7 @@ export const STANDARD_FAECHER: Record<string, string[]> = {
   maus: ["Informatik"],
   markieren: ["Informatik"],
   pcbau: ["Informatik"],
+  klikk: ["Informatik", "Sozialkunde"],
 };
 
 /** Die gültigen Fächer eines Werkzeugs: von Hand gesetzt, sonst Voreinstellung. */

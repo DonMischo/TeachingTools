@@ -24,7 +24,7 @@ router = APIRouter(prefix="/api/tool-sessions", tags=["tool-sessions"])
 # Tools that can be joined this way — everything that runs purely client-side.
 SESSION_TOOLS = ("abacus", "gleichungswaage", "bildformate", "tippen", "zeitstrahl",
                  "vierecke", "binaerrechner", "funktionen", "rechenregeln", "groessen", "rechenzeichen", "prozent", "stellenwert", "uebung",
-                 "ki", "maus", "markieren", "pcbau", "sonnensystem", "verkehr", "leben", "kueste",
+                 "ki", "maus", "markieren", "pcbau", "klikk", "sonnensystem", "verkehr", "leben", "kueste",
                  "erdaufbau", "wilson", "regeln", "wfc", "leviathan", "karten", "algo", "dla", "schichten", "pse", "atommodelle", "strukturformeln", "challenge", "stadt", "erosion", "vulkan", "baum", "stromkreis", "diagramme")
 
 # Werkzeuge, die einen konkreten Inhalt teilen statt nur sich selbst. Der

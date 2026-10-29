@@ -620,6 +620,18 @@ simulationen:
       - Teile erkennen und Quiz für alle Geräte inklusive Smartphone
       - Smartphone in vier Schichten zerlegen (Rückseite, Bleche, Akku)
       - Damals & heute — Kennzahlen der Geräte im Vergleich
+  - id: klikk
+    name: Klikk
+    faehigkeiten: {use: [true, true]}
+    kann:
+      - Schulwoche Mo–Fr mit erfundener Social-Media-App, Zeit vergeht durch Handlungen (Feed, Hausaufgaben, Freunde, Schlaf)
+      - Anmeldung mit AGB-Lesezeit, Altersangabe und Rechte-Abfragen
+      - Feed-Algorithmus nach echter Verweildauer mit Kaninchenbau-Stufen und gezielter Werbung
+      - Gamification als Falle — Streaks, variable Likes, Abzeichen, Benachrichtigungen auch nachts
+      - Challenge-Eskalation bis #GleisSelfie und Cybermobbing im Klassenchat mit Entscheidungen, Schweigen zählt
+      - Warnsignale, die nur sieht, wer hinschaut
+      - Fremde Apps mit gemeinsamem Werbe-SDK (Tracking über Apps hinweg)
+      - Perspektivwechsel auf Jonas' Handy und Datenspiegel mit Belegen, Datenflüssen, Werbegründen und Hilfsangeboten
   - id: groessen
     name: Größen & Einheiten
     faehigkeiten: {use: [true, true]}
