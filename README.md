@@ -188,6 +188,7 @@ Jede Simulation trägt Fächer (auch mehrere, z. B. Geografie und Physik); die �
 - Anschluss an den Maus-Führerschein: Textbearbeitung in einem echten Textfeld, das sich wie Word verhält
 - 15 Lektionen, je eine Technik: Doppel- und Dreifachklick, Ziehen, Umschalt + Klick, Pos1/Ende, Umschalt + Pos1/Ende, Strg + Pfeil, Strg + Umschalt + Pfeil, Umschalt + Pfeil, Strg + A, Löschen, Überschreiben, Strg + C/V, Strg + X, Strg + Z — gezählt wird nur mit der geübten Technik
 - Challenge auf Zeit (Markier-Sprint, Bearbeiten, Profi-Mix) mit gewürfelten Aufgaben, Bestzeit im Browser und dem schnelleren Weg, wo jemand viele Aktionen brauchte
+- Bestenliste je Modus (auch Gäste über den Code), eingrenzbar auf Sitzung und Klasse
 - Spickzettel mit allen Kürzeln
 
 ### 🍎 Rechenregeln

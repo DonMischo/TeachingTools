@@ -13,6 +13,7 @@ import { TEXTE } from "@/lib/markieren/texte";
 import { technikAusTaste, zaehltAlsAktion } from "@/lib/markieren/technik";
 import { Textfeld } from "@/components/markieren/Textfeld";
 import Markieren from "@/components/markieren/Markieren";
+import Challenge from "@/components/markieren/Challenge";
 
 const taste = (key: string, mod: Partial<{ ctrlKey: boolean; shiftKey: boolean; metaKey: boolean }> = {}) =>
   ({ key, ctrlKey: false, shiftKey: false, metaKey: false, ...mod });
@@ -165,5 +166,21 @@ describe("Werkzeug", () => {
     fireEvent.click(screen.getByText("Abbrechen"));
     fireEvent.click(screen.getByText(/Spickzettel/, { selector: "button" }));
     expect(screen.getByText(/Markieren mit der Tastatur/)).toBeTruthy();
+  });
+});
+
+describe("Bestenliste", () => {
+  it("die Offline-Fassung zeigt keinen Bestenlisten-Reiter", () => {
+    render(<Markieren />);
+    expect(screen.queryByText(/Bestenliste/, { selector: "button" })).toBeNull();
+  });
+
+  it("eine Runde mit Überspringen wird nicht gemeldet", () => {
+    const melden = vi.fn(() => Promise.resolve({ platz: 1 }));
+    render(<Challenge melden={melden} />);
+    fireEvent.click(screen.getAllByText("Los!")[0]);
+    for (let i = 0; i < 10; i++) fireEvent.click(screen.getByText(/^Überspringen/));
+    expect(screen.getByText(/Andere Challenge/)).toBeTruthy();
+    expect(melden).not.toHaveBeenCalled();
   });
 });

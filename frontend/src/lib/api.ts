@@ -1270,6 +1270,14 @@ export type MausPruefungOut = { bestanden: boolean; punkte: number; schon_vergeb
 /** Beitritt über Code/QR; `token` nur für Gäste ohne Konto. */
 export type MausZugang = { code: string; token: string | null };
 
+// Bestenliste der Challenge in »Markieren & Bearbeiten« (siehe api/routers/markieren.py)
+export type MarkierModus = "markieren" | "bearbeiten" | "gemischt";
+export type MarkierEintrag = {
+  id: number; platz: number; name: string; klasse: string | null; gast: boolean;
+  zeit_ms: number; aktionen: number; selbst: boolean;
+};
+export type MarkierEintragIn = { modus: MarkierModus; zeit_ms: number; aktionen: number };
+
 // »Rock your Life« (siehe api/routers/leben.py)
 export type LebenLogZeile = { tag: number; stunde: number; datum: string; art: string; text: string; betrag?: number | null };
 export type LebenStandIn = { spiel_id: string; figur: string; zusammenfassung: Record<string, unknown>; neu: LebenLogZeile[]; neustart?: boolean };
@@ -1638,6 +1646,27 @@ export const api = {
       }),
     /** Nur Admin — für unpassende Gastnamen. */
     loeschen: (id: number) => apiFetch<void>(`maus/bestenliste/eintrag/${id}`, { method: "DELETE" }),
+  },
+
+  // Bestenliste von »Markieren & Bearbeiten« — mit Zugang über den Code (auch Gäste)
+  markierBestenliste: {
+    liste: (modus: MarkierModus, zugang?: MausZugang, filter: MausFilter = {}) => {
+      const q = new URLSearchParams({ modus });
+      if (filter.sitzung) q.set("sitzung", filter.sitzung);
+      if (filter.klasse) q.set("klasse", filter.klasse);
+      return apiFetch<MarkierEintrag[]>(
+        `markieren/bestenliste${zugang ? `/${encodeURIComponent(zugang.code)}` : ""}?${q}`,
+        { headers: zugang?.token ? { Authorization: `Bearer ${zugang.token}` } : undefined },
+      );
+    },
+    eintragen: (body: MarkierEintragIn, zugang?: MausZugang) =>
+      apiFetch<MarkierEintrag>(`markieren/bestenliste${zugang ? `/${encodeURIComponent(zugang.code)}` : ""}`, {
+        method: "POST",
+        body: JSON.stringify(body),
+        headers: zugang?.token ? { Authorization: `Bearer ${zugang.token}` } : undefined,
+      }),
+    /** Nur Admin — für unpassende Gastnamen. */
+    loeschen: (id: number) => apiFetch<void>(`markieren/bestenliste/eintrag/${id}`, { method: "DELETE" }),
   },
 
   // Maus-Führerschein: Fortschritt je Sitzung, Live-Übersicht, Prüfung (siehe api/routers/maus.py)

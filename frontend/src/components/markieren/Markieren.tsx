@@ -3,16 +3,20 @@
  * Markieren & Bearbeiten — Anschluss an den Maus-Führerschein (Stufe 5/6):
  *   📘 Techniken    je Technik eine Lektion mit drei Aufgaben
  *   ⏱️ Challenge    gewürfelte Aufgaben auf Zeit, Bestzeit im Browser
+ *   🏆 Bestenliste  die schnellsten Challenge-Runden (nur mit Server, nicht in der Offline-Datei)
  *   📋 Spickzettel  alle Kürzel auf einen Blick
  */
 import { useState, type ReactNode } from "react";
+import { api, type MausZugang } from "@/lib/api";
 import { mitTasten } from "@/components/maus/Taste";
 import Lektionen from "./Lektionen";
 import Challenge from "./Challenge";
+import Bestenliste from "./Bestenliste";
 
 const BLAETTER = [
   { id: "techniken", icon: "📘", label: "Techniken" },
   { id: "challenge", icon: "⏱️", label: "Challenge" },
+  { id: "beste", icon: "🏆", label: "Bestenliste" },
   { id: "spick", icon: "📋", label: "Spickzettel" },
 ] as const;
 type Blatt = (typeof BLAETTER)[number]["id"];
@@ -80,14 +84,29 @@ function Spickzettel() {
   );
 }
 
-const INHALT: Record<Blatt, () => ReactNode> = {
-  techniken: () => <Lektionen />,
-  challenge: () => <Challenge />,
-  spick: () => <Spickzettel />,
+/** Ohne diese Angaben (Offline-Datei) gibt es keine Bestenliste. */
+export type MarkierRangliste = {
+  /** Beitritt über Code/QR (auch Gäste). */
+  zugang?: MausZugang;
+  klasse?: string | null;
+  /** Lehrkraft auf der Werkzeugseite: »Diese Sitzung« = ihre eigene. */
+  verwaltung?: boolean;
 };
 
-export default function Markieren({ action }: { action?: ReactNode }) {
+export default function Markieren({ action, rangliste }: { action?: ReactNode; rangliste?: MarkierRangliste }) {
   const [blatt, setBlatt] = useState<Blatt>("techniken");
+  const zugang = rangliste?.zugang;
+
+  const INHALT: Record<Blatt, () => ReactNode> = {
+    techniken: () => <Lektionen />,
+    challenge: () => (
+      <Challenge melden={rangliste
+        ? (modus, zeit_ms, aktionen) => api.markierBestenliste.eintragen({ modus, zeit_ms, aktionen }, zugang)
+        : undefined} />
+    ),
+    beste: () => <Bestenliste zugang={zugang} verwaltung={rangliste?.verwaltung} klasse={rangliste?.klasse} />,
+    spick: () => <Spickzettel />,
+  };
   return (
     <div className="page">
       <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -102,7 +121,7 @@ export default function Markieren({ action }: { action?: ReactNode }) {
       </div>
 
       <div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface">
-        {BLAETTER.map(b => (
+        {BLAETTER.filter(b => b.id !== "beste" || rangliste).map(b => (
           <button key={b.id} onClick={() => setBlatt(b.id)}
             className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${
               blatt === b.id ? "bg-accent text-accent-fg" : "text-muted hover:text-fg"

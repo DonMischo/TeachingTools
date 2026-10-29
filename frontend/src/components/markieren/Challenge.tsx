@@ -22,13 +22,17 @@ const schreibBest = (b: Bestzeiten) => {
 type Ergebnis = { aufgabe: Aufgabe; ms: number; aktionen: number; uebersprungen: boolean };
 type Lauf = { modus: Modus; aufgaben: Aufgabe[]; ergebnisse: Ergebnis[]; seit: number };
 
-const sek = (ms: number) => (ms / 1000).toLocaleString("de-DE", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + " s";
+export const sek = (ms: number) => (ms / 1000).toLocaleString("de-DE", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + " s";
 const summe = (e: Ergebnis[]) => e.reduce((s, x) => s + x.ms + (x.uebersprungen ? STRAFE_MS : 0), 0);
 
-export default function Challenge() {
+/** Meldet eine Runde ohne Überspringen an die Bestenliste; liefert den Platz. */
+export type Melden = (modus: Modus, zeitMs: number, aktionen: number) => Promise<{ platz: number }>;
+
+export default function Challenge({ melden }: { melden?: Melden }) {
   const [best, setBest] = useState<Bestzeiten>({});
   const [lauf, setLauf] = useState<Lauf | null>(null);
   const [neuerRekord, setNeuerRekord] = useState(false);
+  const [platz, setPlatz] = useState<number | null>(null);
   const [jetzt, setJetzt] = useState(0);
   const uhr = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -46,6 +50,7 @@ export default function Challenge() {
 
   function los(modus: Modus) {
     setNeuerRekord(false);
+    setPlatz(null);
     setLauf({ modus, aufgaben: challengeAufgaben(modus), ergebnisse: [], seit: performance.now() });
     setJetzt(performance.now());
   }
@@ -57,8 +62,14 @@ export default function Challenge() {
     if (ergebnisse.length === lauf.aufgaben.length) {
       const gesamt = summe(ergebnisse);
       const alt = best[lauf.modus];
+      const sauber = !ergebnisse.some(x => x.uebersprungen);
+      if (sauber && melden) {
+        // Fehler bleiben still — die Runde ist auch ohne Liste geschafft.
+        melden(lauf.modus, gesamt, ergebnisse.reduce((s, x) => s + x.aktionen, 0))
+          .then(r => setPlatz(r.platz)).catch(() => { /* offline oder ohne Freigabe */ });
+      }
       // Bestzeit nur ohne Überspringen — sonst wäre »alles überspringen« ein Rekord.
-      if (!ergebnisse.some(x => x.uebersprungen) && (alt === undefined || gesamt < alt)) {
+      if (sauber && (alt === undefined || gesamt < alt)) {
         const neu = { ...best, [lauf.modus]: gesamt };
         setBest(neu);
         schreibBest(neu);
@@ -85,7 +96,7 @@ export default function Challenge() {
     );
   }
 
-  if (fertig) return <Auswertung lauf={lauf} best={best[lauf.modus]} neuerRekord={neuerRekord} onNochmal={() => los(lauf.modus)} onZurueck={() => setLauf(null)} />;
+  if (fertig) return <Auswertung lauf={lauf} best={best[lauf.modus]} neuerRekord={neuerRekord} platz={platz} onNochmal={() => los(lauf.modus)} onZurueck={() => setLauf(null)} />;
 
   const nr = lauf.ergebnisse.length;
   const aufgabe = lauf.aufgaben[nr];
@@ -113,8 +124,8 @@ export default function Challenge() {
   );
 }
 
-function Auswertung({ lauf, best, neuerRekord, onNochmal, onZurueck }: {
-  lauf: Lauf; best?: number; neuerRekord: boolean; onNochmal: () => void; onZurueck: () => void;
+function Auswertung({ lauf, best, neuerRekord, platz, onNochmal, onZurueck }: {
+  lauf: Lauf; best?: number; neuerRekord: boolean; platz: number | null; onNochmal: () => void; onZurueck: () => void;
 }) {
   const gesamt = summe(lauf.ergebnisse);
   const tipps = lauf.ergebnisse.filter(e => !e.uebersprungen && e.aktionen > e.aufgabe.profiAktionen + 2);
@@ -127,6 +138,7 @@ function Auswertung({ lauf, best, neuerRekord, onNochmal, onZurueck }: {
           {neuerRekord ? "Neue Bestzeit!" : best !== undefined ? `Bestzeit: ${sek(best)}` : ""}
           {" · "}Ø {sek(gesamt / lauf.ergebnisse.length)} je Aufgabe
         </p>
+        {platz !== null && <p className="font-bold">🏅 Deine Bestzeit steht auf Platz {platz} der Bestenliste.</p>}
         <div className="flex gap-2 flex-wrap justify-center mt-2">
           <button type="button" className="btn-primary" onClick={onNochmal}>↺ Nochmal</button>
           <button type="button" className="btn-secondary" onClick={onZurueck}>Andere Challenge</button>

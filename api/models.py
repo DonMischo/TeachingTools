@@ -2358,6 +2358,35 @@ class MausBestenliste(Base):
     hilfe: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
 
 
+class MarkierBestenliste(Base):
+    """Bestenliste der Challenge in »Markieren & Bearbeiten« — eine Zeile je
+    Person und Modus, wie beim Maus-Führerschein auch für Gäste (``guest_id``).
+
+    Anders als dort gewinnt die *kleinste* Zeit. ``session_id`` ist die Sitzung,
+    in der die Bestzeit fiel — danach filtert »Diese Sitzung«.
+    """
+    __tablename__ = "markier_bestenliste"
+    __table_args__ = (
+        UniqueConstraint("modus", "student_id", name="uq_markier_beste_student"),
+        UniqueConstraint("modus", "teacher_id", name="uq_markier_beste_teacher"),
+        UniqueConstraint("modus", "guest_id", name="uq_markier_beste_guest"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    # markieren | bearbeiten | gemischt
+    modus: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    klasse: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    gast: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
+    student_id: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"), nullable=True)
+    teacher_id: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="CASCADE"), nullable=True)
+    guest_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    session_id: Mapped[int | None] = mapped_column(ForeignKey("tool_sessions.id", ondelete="SET NULL"), nullable=True)
+    zeit_ms: Mapped[int] = mapped_column(Integer, nullable=False)
+    aktionen: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    erreicht_am: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class MausFortschritt(Base):
     """Fortschritt einer Person in einer Maus-Sitzung — eine Zeile je Teilnehmer,
     damit die Lehrkraft live sieht, wer welche Stufe des Führerscheins schon

@@ -69,7 +69,8 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   prozent: { title: "Prozent- und Zinsrechnung", icon: "💯", node: <Prozent /> },
   stellenwert: { title: "Stellenwerttafeln", icon: "🔢", node: <Stellenwert /> },
   tippen: { title: "Tippen", icon: "⌨️", node: <Tippen /> },
-  markieren: { title: "Markieren & Bearbeiten", icon: "🖍️", node: <Markieren /> },
+  // Die Bestenliste braucht Code und Gast-Token.
+  markieren: { title: "Markieren & Bearbeiten", icon: "🖍️", node: null },
   kueste: { title: "Küstendynamik", icon: "🌊", node: <Kueste /> },
   erdaufbau: { title: "Aufbau der Erde", icon: "🌍", node: <ErdAufbau /> },
   wilson: { title: "Wilson-Zyklus", icon: "🌋", node: <WilsonZyklus /> },
@@ -222,6 +223,8 @@ export default function SimulationJoinPage() {
                 : guest.token ? schluesselFuerGast(code, guest.token) : `gast-${code}`} />
         : session.tool_slug === "stromkreis"
           ? <Stromkreis code={code} />
+        : session.tool_slug === "markieren"
+          ? <Markieren rangliste={{ zugang: { code, token: auth ? null : guest.token }, klasse: auth?.student?.klasse ?? null }} />
         : session.tool_slug === "stellenwert"
           // der Code für die Geheimpost: Botschaften gehen nur an Leute derselben Sitzung
           ? <Stellenwert zugang={{ code, token: auth ? null : guest.token }} />
