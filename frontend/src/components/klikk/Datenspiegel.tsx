@@ -5,7 +5,7 @@ import { TAGE, istGewaehlt } from "@/lib/klikk/geschichte";
 import { WERBUNG } from "@/lib/klikk/posts";
 import { RISIKO_NAME, TRENDS, trendNachId } from "@/lib/klikk/trends";
 import { zeit } from "@/lib/klikk/motor";
-import { APP_NAME, abzeichenWahrheit, datenfluesse, erkenntnisse, profilWert, punktestaende, warnsignale } from "@/lib/klikk/profil";
+import { APP_NAME, HILFE_LEITER, faelle, abzeichenWahrheit, datenfluesse, erkenntnisse, profilWert, punktestaende, warnsignale } from "@/lib/klikk/profil";
 import type { Stand } from "@/lib/klikk/typen";
 import type { MausZugang } from "@/lib/api";
 import { AuktionSchueler } from "./Werbeauktion";
@@ -17,6 +17,7 @@ const BLAETTER = [
   { id: "punkte", label: "⚖️ Zwei Punktestände" },
   { id: "trends", label: "📈 Reichweite & Risiko" },
   { id: "signale", label: "🚨 Warnsignale" },
+  { id: "faelle", label: "⚖️ Fälle" },
   { id: "hilfe", label: "🤝 Hilfe" },
   { id: "auktion", label: "🔨 Werbeauktion" },
 ] as const;
@@ -111,6 +112,7 @@ export default function Datenspiegel({ s, neu, zugang }: { s: Stand; neu: () => 
       {blatt === "punkte" && <Punkte s={s} />}
       {blatt === "trends" && <Trends s={s} />}
       {blatt === "signale" && <Signale s={s} />}
+      {blatt === "faelle" && <Faelle s={s} />}
       {blatt === "hilfe" && <Hilfe />}
       {blatt === "auktion" && zugang && <AuktionSchueler zugang={zugang} merkmale={e.map(x => ({ titel: x.titel, wert: x.wert, heikel: !!x.heikel }))} />}
 
@@ -216,7 +218,7 @@ function Trends({ s }: { s: Stand }) {
           : gleis === "stopp" ? "Du hast Mo widersprochen — und Mo hat es sich überlegt. Ein Satz zur richtigen Zeit kann reichen."
           : "Mo war am Bahndamm. Ein gebrochener Arm, eine Anzeige — und ein Video, das bleibt."}
       </p>
-      <p className="text-xs text-muted">An Bahngleisen sterben jedes Jahr Menschen. Züge sind fast lautlos und brauchen hunderte Meter zum Bremsen; an Oberleitungen reicht schon Nähe für einen tödlichen Stromschlag.</p>
+      <p className="text-xs text-muted">An Bahngleisen verunglücken jedes Jahr Menschen schwer. Züge sind fast lautlos und brauchen hunderte Meter zum Bremsen; an Oberleitungen reicht schon Nähe für einen lebensgefährlichen Stromschlag.</p>
     </div>
   );
 }
@@ -239,6 +241,28 @@ function Signale({ s }: { s: Stand }) {
         Typische Zeichen, dass es jemandem nicht gut geht: zieht sich zurück, löscht Bilder oder Konten, ist nachts online, schreibt »alles egal«,
         fehlt in der Schule. Ein »Alles okay?« ist kein Risiko — Wegschauen schon eher.
       </p>
+    </div>
+  );
+}
+
+function Faelle({ s }: { s: Stand }) {
+  const farbe = { gut: "border-ok", mittel: "border-amber-500", schlecht: "border-bad" };
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-sm text-muted">Was diese Woche passiert ist, was du getan hast — und was in so einem Fall hilft.</p>
+      {faelle(s).map(f => (
+        <div key={f.titel} className={`card p-4 border-l-4 ${farbe[f.bilanz]} flex flex-col gap-1 text-sm`}>
+          <h3 className="font-black">{f.emoji} {f.titel}</h3>
+          <p><b>Was passiert ist:</b> {f.passiert}</p>
+          <p><b>Dein Weg:</b> {f.deinWeg}</p>
+          <p><b>Wie es ausging:</b> {f.ausgang}</p>
+          {f.recht && <p className="text-xs text-muted mt-1">⚖️ {f.recht}</p>}
+        </div>
+      ))}
+      <div className="card p-4 text-sm">
+        <h3 className="font-black mb-2">🪜 Was hilft – von leicht bis ernst</h3>
+        <ol className="flex flex-col gap-1">{HILFE_LEITER.map(h => <li key={h.stufe}><b>{h.stufe}:</b> {h.text}</li>)}</ol>
+      </div>
     </div>
   );
 }

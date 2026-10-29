@@ -3,7 +3,7 @@
  * Vulkan-Galerie, PC-Teile aus der PC-Werkstatt, 3D-Clips mit den Avataren,
  * Monstern und Zaubern der Plattform — dazu Memes, Umfragen und Nachrichten.
  *
- * Die Nachrichten über tödliche Challenges sind erfunden (wie alles in Klikk),
+ * Die Nachrichten über schwere Unfälle bei Challenges sind erfunden (wie alles in Klikk),
  * die Fakten darin stimmen.
  */
 import type { Medien, Post } from "./posts";
@@ -76,7 +76,7 @@ export const MEHR: Post[] = [
 
   // ── Nachrichten: was Challenges anrichten ──
   m("ne5", "news", 1, "news.kompakt", "Bitte teilt das. 🙏", 64000, news("Klikk News", "Polizei warnt vor #DachSprung", "15-Jähriger nach Sturz von Garagendach schwer verletzt. Die Polizei bittet Eltern, mit ihren Kindern zu sprechen."), { ab: 1 }),
-  m("ne6", "news", 1, "news.kompakt", "😢", 120000, news("Klikk News", "14-Jähriger stirbt an Bahnstrecke", "Freunde filmten für ein #GleisSelfie. Die Bundespolizei: Oberleitungen führen 15.000 Volt – ein Stromschlag ist schon ohne Berührung möglich, wenn man näher als 1,5 Meter kommt.", true), { ab: 3 }),
-  m("ne7", "news", 1, "gesund.kurz", "Kinderärzt·innen schlagen Alarm", 27000, news("Klikk News", "#HotChip: Jugendliche in der Notaufnahme", "Extrem scharfe Chips können Atemnot, Krämpfe und Herzprobleme auslösen. In den USA starb 2023 ein 14-Jähriger nach so einer Challenge."), { ab: 2 }),
+  m("ne6", "news", 1, "news.kompakt", "😢", 120000, news("Klikk News", "14-Jähriger an Bahnstrecke schwer verletzt", "Freunde filmten für ein #GleisSelfie. Stromschlag an der Oberleitung, schwere Verbrennungen, monatelange Reha. Die Bundespolizei: Oberleitungen führen 15.000 Volt – ein Stromschlag ist schon ohne Berührung möglich, wenn man näher als 1,5 Meter kommt.", true), { ab: 3 }),
+  m("ne7", "news", 1, "gesund.kurz", "Kinderärzt·innen schlagen Alarm", 27000, news("Klikk News", "#HotChip: Jugendliche in der Notaufnahme", "Extrem scharfe Chips können Atemnot, Krämpfe und Herzprobleme auslösen. Ein 14-Jähriger musste nach so einer Challenge auf der Intensivstation behandelt werden."), { ab: 2 }),
   m("ne8", "news", 1, "wissen.wow", "Lest das, bevor ihr mitmacht.", 38000, news("Klikk News", "Warum Challenges immer krasser werden", "Videos mit Risiko bekommen mehr Aufrufe – also zeigen Apps sie öfter. Wer mitmacht, wird belohnt. Bis etwas passiert."), { ab: 1 }),
 ];

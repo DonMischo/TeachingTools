@@ -1,0 +1,74 @@
+/**
+ * Kurzgeschichten zum Lesen in Klikk — eigene Texte, je etwa sechs Seiten.
+ * Eine Seite kostet sechs Spielminuten; der Lesestand bleibt pro Buch erhalten.
+ */
+
+export interface Buch {
+  id: string;
+  titel: string;
+  autor: string;
+  genre: string;
+  emoji: string;
+  farbe: string;
+  seiten: string[];
+}
+
+export const BUECHER: Buch[] = [
+  {
+    id: "kasse", titel: "Die verschwundene Klassenkasse", autor: "Mira Lenz", genre: "Krimi", emoji: "🔍", farbe: "#1e3a5f",
+    seiten: [
+      "Am Montag fehlten 214 Euro. Die Klassenkasse der 8c lag in einer roten Blechdose im Lehrerschrank, und der Schrank war abgeschlossen. Frau Kessler hielt die leere Dose hoch, als wäre sie ein Beweisstück im Fernsehen. »Bis Freitag ist das Geld wieder da«, sagte sie. »Sonst fällt die Klassenfahrt aus.«\n\nNoah sah sich um. Siebenundzwanzig Gesichter, und alle sahen gleich unschuldig aus. Nur Kemal starrte auf seine Schuhe. Kemal, der seit zwei Wochen neue Kopfhörer trug. Teure.",
+      "»Er war's«, flüsterte Jule in der Pause. »Ganz klar.« Halb die Klasse dachte dasselbe, und bis zur sechsten Stunde wusste es die ganze Schule. Jemand hatte ein Foto von Kemals Kopfhörern in den Klassenchat gestellt, mit drei Geldsack-Emojis darunter.\n\nNoah schrieb nichts. Er hatte von seiner Oma gelernt, dass die offensichtlichste Antwort meistens die faulste ist. »Wer schnell urteilt, will nicht denken«, sagte sie immer. Also dachte Noah.",
+      "Der Schrank hatte zwei Schlüssel. Einen trug Frau Kessler am Bund. Den zweiten bewahrte der Hausmeister auf, in einem Kasten neben der Turnhalle, mit Zahlenschloss. Noah fragte Herrn Brückner, wer die Kombination kannte. »Nur ich«, brummte der. »Und die Putzfirma. Und der Vertretungslehrer letzte Woche, der Herr Albers. Dem hab ich's aufgeschrieben, der hat ja nix gefunden.«\n\nNoah notierte: Albers. Vertretung Mittwoch, Stunde 3 und 4. Im Raum der 8c.",
+      "Kemal saß allein auf der Mauer am Fahrradständer. Noah setzte sich daneben. »Die Kopfhörer«, sagte Kemal, ohne aufzusehen, »hat mein Bruder mir geschenkt. Erster Lohn als Azubi. Ich hab's gar nicht nötig, euch das zu erklären.«\n\n»Musst du auch nicht«, sagte Noah. »Aber vielleicht kannst du mir helfen. Saßt du Mittwoch in der Vertretungsstunde vorne?« Kemal nickte langsam. »Albers hatte eine Tasche dabei. So eine braune. Und er war ewig am Schrank. Hat gesagt, er sucht Kreide.«",
+      "Im Lehrerzimmer hing der Vertretungsplan. Herr Albers war nicht mehr drauf. »Der war nur für eine Woche da«, sagte die Sekretärin. »Komisch, gestern hat eine andere Schule angerufen und nach ihm gefragt. Da fehlt wohl auch was.«\n\nNoah ging zu Frau Kessler. Er erzählte von dem Schlüsselkasten, von der braunen Tasche, von der anderen Schule. Sie hörte zu, ohne ihn zu unterbrechen. Dann griff sie zum Telefon.",
+      "Am Donnerstag war die Polizei an der Schule. Am Freitag hatte die 8c ihr Geld zurück — die Versicherung der Schule zahlte, bis die Sache geklärt war. Herr Albers, stellte sich heraus, hatte an drei Schulen Vertretung gemacht. An allen dreien fehlte danach etwas.\n\nIn der Klassenkonferenz entschuldigte sich Jule bei Kemal. Das Foto war längst gelöscht, aber jeder hatte es gesehen. »Ein Foto löschen geht schnell«, sagte Kemal. »Was die Leute dabei gedacht haben, nicht.«\n\nNoah schrieb in sein Notizheft: Fall gelöst. Und darunter, kleiner: Die faulste Antwort war die lauteste.",
+    ],
+  },
+  {
+    id: "haltestellen", titel: "Zwei Haltestellen", autor: "Lou Bergmann", genre: "Romance", emoji: "🚌", farbe: "#be185d",
+    seiten: [
+      "Jeden Morgen um 7:12 Uhr stieg er an der Haltestelle Wiesenweg ein, und jeden Morgen stieg er an der Stadtbibliothek wieder aus. Zwei Haltestellen. Elf Minuten, wenn die Ampel am Ring rot war. Lina wusste das so genau, weil sie es seit drei Wochen zählte.\n\nEr las. Immer. Nie aufs Handy, sondern in echten Büchern mit Eselsohren. Diese Woche war es etwas Dickes mit einem Wal auf dem Umschlag. Lina hatte keine Ahnung, wie er hieß. In ihrem Kopf hieß er »Wal«.",
+      "Am Dienstag stand Wal plötzlich direkt neben ihr, weil der Bus so voll war. Er roch nach Regen und Zimtschnecke. Lina tat so, als würde sie Nachrichten tippen. Sie tippte: »asdfghj«. Dann löschte sie es wieder.\n\nAn der Ampel bremste der Bus scharf, und das dicke Buch landete auf ihrem Fuß. »Sorry!«, sagte Wal. »Moby Dick ist schwerer, als man denkt.« Lina sagte: »Ja.« Nur »ja«. Den ganzen Tag dachte sie darüber nach, was sie stattdessen hätte sagen können.",
+      "Ihre beste Freundin Defne hatte einen Plan. »Du schreibst ihm einen Zettel. Ganz altmodisch. Das ist so süß, dass es schon wieder cool ist.« Lina schrieb siebzehn Zettel. Auf dem achtzehnten stand nur: »Wie geht's aus mit dem Wal?«\n\nAm Mittwoch saß er vorne, und sie traute sich nicht. Am Donnerstag war er nicht da. Am Freitag auch nicht. Lina fragte sich, ob man jemanden vermissen kann, mit dem man genau ein Wort gesprochen hat.",
+      "In der nächsten Woche war er wieder da, mit einem Gips am Arm. Fahrradunfall, erzählte er der Busfahrerin. Das Buch lag aufgeschlagen auf seinen Knien, und er versuchte, mit einer Hand umzublättern. Es sah ungefähr so elegant aus wie ein Pinguin beim Klavierspielen.\n\nLina stand auf, bevor sie es sich anders überlegen konnte, und setzte sich neben ihn. »Soll ich umblättern?«, fragte sie. Er sah sie an, und dann lachte er. »Du bist die mit dem Fuß.«",
+      "Er hieß Jonte. Er las, weil sein Handy einen Sprung hatte und er sich weigerte, ein neues zu kaufen, »aus Prinzip«. Welches Prinzip, wusste er selbst nicht genau. Lina blätterte für ihn um, elf Minuten lang, und hörte kaum, was im Buch passierte.\n\nAn der Stadtbibliothek stand er auf. »Morgen auch?«, fragte er. »Das Kapitel mit dem Sturm kommt.« Lina nickte. Als der Bus weiterfuhr, merkte sie, dass sie ihre eigene Haltestelle verpasst hatte.",
+      "Drei Wochen später war der Gips ab, und eigentlich hätte Jonte selbst umblättern können. Er tat es nicht. Lina auch nicht. Sie lasen jetzt zu zweit, sie las die Dialoge und er die Beschreibungen vom Meer, die sie langweilig fand und er nicht.\n\nDen Zettel fand er in ihrem Mäppchen, als er sich einen Stift borgte. »Wie geht's aus mit dem Wal?«, las er laut. Lina wurde rot bis zu den Ohren. »Das verrat ich dir nicht«, sagte Jonte. »Das musst du schon mitlesen. Jeden Morgen. Zwei Haltestellen.«",
+    ],
+  },
+  {
+    id: "offline", titel: "Offline", autor: "Sam Ritter", genre: "Young Adult", emoji: "📵", farbe: "#334155",
+    seiten: [
+      "Das Handy fiel am ersten Tag der Klassenfahrt in den See. Nicht dramatisch, eher peinlich: Mia wollte ein Selfie mit dem Steg machen, rutschte auf einer Planke aus, und das Handy machte einfach »plopp«. Sie sah zu, wie es zwischen den Algen verschwand, mitsamt 2.300 Fotos und einer 89-Tage-Streak.\n\n»Fünf Tage ohne Handy«, sagte Tarek. »Du wirst sterben.« Er meinte es als Witz. Mia lachte nicht.",
+      "Der erste Abend war schlimm. Alle saßen am Lagerfeuer und schauten auf ihre Bildschirme, und Mia schaute auf alle, die auf ihre Bildschirme schauten. Sie merkte, wie oft ihre Hand in die Hosentasche wanderte, zu etwas, das nicht mehr da war. Siebzehn Mal in einer Stunde. Sie zählte mit.\n\nNachts lag sie wach und dachte daran, was sie alles verpasste. Wer was gepostet hatte. Ob jemand etwas über sie geschrieben hatte. Ob jemand gemerkt hatte, dass sie weg war.",
+      "Am zweiten Tag gab ihr Herr Okafor, der Erdkundelehrer, ein Fernglas. »Wenn du schon nicht fotografieren kannst, kannst du wenigstens gucken.« Mia verdrehte die Augen. Dann sah sie einen Eisvogel. Er saß auf einem Ast über dem Wasser, so blau, dass es fast unecht aussah, und dann stürzte er sich wie ein Pfeil in den See.\n\nSie wollte ihn fotografieren. Sie konnte nicht. Also guckte sie, bis er wegflog, und erinnerte sich später an jede Feder.",
+      "Am dritten Tag redete sie mit Leuten, mit denen sie sonst nie redete. Mit Paula, die Vögel zeichnete. Mit Ben, der jeden Pflanzennamen auf Latein wusste und dafür ausgelacht wurde. Mit Tarek, der zugab, dass er nachts auch nicht schlafen konnte, weil er Angst hatte, dass in der Gruppe über ihn geredet wurde.\n\n»Wird doch eh über jeden geredet«, sagte Mia. »Ja«, sagte Tarek. »Aber ohne Handy weiß ich's wenigstens nicht.«",
+      "Am vierten Abend erzählte jemand am Lagerfeuer eine Gruselgeschichte, und zum ersten Mal hörte die ganze Klasse zu. Kein Bildschirm leuchtete. Nur das Feuer und Gesichter, orange angestrahlt, und Herr Okafor, der so tat, als würde er schlafen, aber grinste.\n\nMia merkte, dass ihre Hand den ganzen Abend nicht in die Hosentasche gewandert war. Sie wusste nicht, ob das gut war oder unheimlich. Vielleicht beides.",
+      "Zu Hause wartete ein neues Handy. Gebraucht, von ihrer Cousine, mit Sprung in der Ecke. Mia schaltete es ein, und es summte und vibrierte minutenlang: 412 Benachrichtigungen. Die Streak war weg. Niemand hatte über sie geschrieben. Niemand hatte gemerkt, dass sie fehlte, jedenfalls nicht online.\n\nSie scrollte zehn Minuten. Dann legte sie das Handy weg und schrieb Paula eine Nachricht, eine einzige: »Zeichnest du mir einen Eisvogel?« Die Antwort kam sofort. Ein Bild. Blau, so blau, dass es fast unecht aussah.",
+    ],
+  },
+  {
+    id: "keller", titel: "Das Tor im Schulkeller", autor: "Ronja Falk", genre: "Fantasy", emoji: "🗝️", farbe: "#4c1d95",
+    seiten: [
+      "Im Keller der Gesamtschule gab es eine Tür, die auf keinem Plan stand. Leo fand sie, weil er vor Finn und dessen Kumpels geflüchtet war, die Treppe runter, um die Ecke, an den alten Tischen vorbei. Die Tür war aus dunklem Holz, viel älter als das Gebäude, und auf der Klinke saß ein Käfer aus Messing.\n\nAls Leo sie berührte, bewegte der Käfer die Fühler. »Name?«, fragte er mit einer Stimme wie eine verstimmte Geige.",
+      "»Leo«, sagte Leo, weil man einem sprechenden Türkäfer offenbar antwortete. »Leo wer?« — »Leo Schubert. 8b.« Der Käfer schien nachzudenken. »Schubert. Hatten wir schon mal einen. 1987. Hat nie seine Hausaufgaben gemacht.« Dann klickte das Schloss.\n\nHinter der Tür lag kein Kellerraum. Da lag ein Wald, in dem es nach Zimt und Regen roch, und die Bäume hatten Blätter aus Papier. Auf jedem Blatt stand ein Wort.",
+      "Eine Frau mit einer Brille aus Bernstein erwartete ihn auf einer Lichtung. »Ich bin die Archivarin«, sagte sie. »Hier landet alles, was in eurer Schule gesagt wird. Jedes Wort wird ein Blatt.« Leo sah sich um. Manche Blätter waren golden. Viele waren grau. Einige waren schwarz und so scharf, dass sie die Rinde zerschnitten.\n\n»Die schwarzen«, sagte die Archivarin, »sind die Wörter, die wehtun. Sie wachsen am schnellsten.«",
+      "Leo fand einen Baum, der fast nur schwarze Blätter trug. Auf vielen stand sein eigener Name. Daneben Wörter, die Finn gesagt hatte, und Wörter, die andere weitergetragen hatten, lachend, nebenbei. Der Baum knarrte, als würde er Schmerzen haben.\n\n»Kann man die abmachen?«, fragte Leo. Die Archivarin schüttelte den Kopf. »Man kann nur neue wachsen lassen. Ein goldenes Blatt braucht ein freundliches Wort. Ein ehrliches. Die sind seltener, als du denkst.«",
+      "Am nächsten Tag tat Leo etwas Seltsames. Er sagte zu Paula, dass ihre Präsentation gut war. Er sagte dem Hausmeister Danke. Er sagte sogar zu Jonas aus der Parallelklasse, der immer allein in der Pause saß: »Willst du mit?« Jedes Mal spürte er ein leises Ziehen, als würde irgendwo ein Blatt wachsen.\n\nAbends schlich er in den Keller. Der Käfer gähnte. »Schubert. Du schon wieder.«",
+      "Der schwarze Baum stand noch da. Aber an seinen untersten Ästen hingen jetzt drei goldene Blätter, und eines davon glänzte so hell, dass die Lichtung warm aussah. Darauf stand nicht Leos Name. Da stand: »Willst du mit?«\n\n»Das war nicht für mich«, sagte Leo. »Das war für Jonas.« Die Archivarin lächelte. »Genau so funktioniert es. Wörter wachsen nicht bei dem, der sie sagt. Sie wachsen bei dem, der sie hört.« Als Leo die Tür hinter sich schloss, flüsterte der Käfer: »Besser als 1987.«",
+    ],
+  },
+  {
+    id: "signal", titel: "Signal 7", autor: "Theo Brandt", genre: "Grusel", emoji: "📡", farbe: "#0f172a",
+    seiten: [
+      "Um 3:07 Uhr leuchtete Jakobs Handy auf. Eine Nachricht von einer Nummer, die nur aus Siebenen bestand. »Bist du wach?« Jakob war wach. Er war immer wach um diese Zeit, seit die Ferien angefangen hatten. Er schrieb zurück: »Wer ist da?«\n\nDie Antwort kam sofort, als hätte jemand gewartet. »Jemand, der weiß, dass du gerade unter der Decke liegst. Mit dem blauen Kissen. Das linke Bein ragt raus.« Jakob zog das Bein ein.",
+      "Natürlich war es ein Scherz. Wahrscheinlich Ole, sein Cousin, der solche Sachen lustig fand. Jakob schrieb: »Haha, Ole. Sehr witzig.« Die Antwort: »Ole schläft. Ole schläft immer um diese Zeit. Du nicht.«\n\nJakob sah zum Fenster. Die Jalousie war unten. Die Tür war zu. Im Zimmer war nur das Licht vom Display, und plötzlich fand er es viel zu hell.",
+      "Am nächsten Morgen erzählte er es seiner Schwester Hanna, die Informatik studierte. Sie nahm sein Handy, scrollte durch die Einstellungen und runzelte die Stirn. »Du hast dieser Taschenlampen-App erlaubt, auf die Kamera zuzugreifen. Und auf das Mikro. Und auf deinen Standort. Warum braucht eine Taschenlampe ein Mikro?«\n\nJakob zuckte mit den Schultern. Er hatte einfach auf »Erlauben« gedrückt. Wie immer.",
+      "In der Nacht kam die nächste Nachricht. »Du hast mit Hanna gesprochen.« Jakob starrte auf den Bildschirm. Dann schrieb er, mit zitternden Fingern: »Was willst du?« Die Antwort kam nach einer langen Minute: »Was alle wollen. Aufmerksamkeit. Deine bekomme ich jede Nacht um drei.«\n\nUnd dann, eine Sekunde später: ein Foto. Sein Zimmer. Von oben. Das blaue Kissen. Das Bein, das wieder herausragte.",
+      "Hanna löschte die App noch in der Nacht. Sie setzte das Handy zurück, änderte jedes Passwort, klebte ein Stück Pflaster über die Frontkamera. Dann rief sie die Verbraucherzentrale an und fand heraus, dass die Taschenlampen-App aus einem Land kam, das Jakob auf keiner Karte gefunden hätte, und dass sie schon von Tausenden heruntergeladen worden war.\n\n»Das Foto«, sagte Jakob. »Wie ging das von oben?« Hanna sah lange zur Zimmerdecke. Dann zum Rauchmelder.",
+      "Im Rauchmelder war nichts. Nur eine Batterie und Staub. Hanna lachte erleichtert: Das Foto war ein altes gewesen, aus seiner eigenen Galerie, von dem Tag, an dem er das Zimmer für eine Bewerbung fotografiert hatte. Die App hatte es einfach gestohlen.\n\nJakob schlief in dieser Nacht mit dem Handy in der Küche. Um 3:07 Uhr wachte er trotzdem auf, aus Gewohnheit. Im Haus war es still. Ganz still. Und dann, unten in der Küche, leuchtete etwas auf. Er ging nicht nachsehen. Zum ersten Mal seit Wochen schlief er wieder ein.",
+    ],
+  },
+];
+
+export const buchNachId = (id: string) => BUECHER.find(b => b.id === id);

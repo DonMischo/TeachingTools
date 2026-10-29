@@ -15,7 +15,7 @@ export const LETZTER_TAG = TAGE.length - 1;
 
 export const CHAT_NAME: Record<ChatId, string> = {
   klasse: "8b 🔥", lea: "Lea", mo: "Mo", jonas: "Jonas", mama: "Mama", yilmaz: "Frau Yilmaz", klikkteam: "Klikk-Team",
-  gewinn: "🎁 Klikk Gewinnspiel", leon: "leon.16",
+  gewinn: "🎁 Klikk Gewinnspiel", leon: "leon.16", verein: "Verein", emma: "Emma",
 };
 
 const uhr = (h: number, m = 0) => h * 60 + m;
@@ -80,7 +80,7 @@ export const EREIGNISSE: Ereignis[] = [
   { id: "bus", tag: 0, uhr: uhr(15, 10), tu: s => {
     nachricht(s, "klasse", "Finn", "😂😂😂 guckt mal wer im bus pennt", { bild: "🚌 Foto: Jonas schläft im Bus, Mund offen, Kopf am Fenster" });
     nachricht(s, "klasse", "Emma", "LMAOOO");
-    nachricht(s, "klasse", "Ben", "💀💀", wahl("bus", ["lachen", "😂😂"], ["stopp", "Lasst das mal, das ist fies."]));
+    nachricht(s, "klasse", "Ben", "💀💀", wahl("bus", ["lachen", "😂😂"], ["weiter", "📤 In meine Story stellen"], ["stopp", "Lasst das mal, das ist fies."]));
   } },
   { id: "spiegel", tag: 0, uhr: uhr(16, 30), tu: s => nachricht(s, "mo", "Mo", "hast du den #SpiegelTanz gesehen? lass morgen in der pause machen 😂",
     wahl("spiegel", ["ja", "Bin dabei 💃"], ["nein", "Nee, lass mal"])) },
@@ -105,12 +105,12 @@ export const EREIGNISSE: Ereignis[] = [
   { id: "gitarre", tag: 2, uhr: uhr(15, 20), tu: s => {
     nachricht(s, "klasse", "Ben", "jonas hat ein gitarren-video gepostet 😭😭 kommentare sind gold", { bild: "🎸 Jonas spielt »Wonderwall« · 14 Kommentare: »schnarch 💤« »sticker > lied« »geh schlafen«" });
     nachricht(s, "klasse", "Sara", "😂😂 ich kann nicht mehr",
-      wahl("kommentar", ["liken", "Die Kommentare liken 😂"], ["nett", "Selbst kommentieren: »Klingt echt gut!«"]));
+      wahl("kommentar", ["liken", "Die Kommentare liken 😂"], ["mitlaestern", "Selbst kommentieren: »geh lieber schlafen 💤«"], ["nett", "Selbst kommentieren: »Klingt echt gut!«"]));
   } },
   { id: "gleis", tag: 2, uhr: uhr(17, 45), tu: s => {
     nachricht(s, "mo", "Mo", "ALTER hast du die #GleisSelfie videos gesehen?? 12k aufrufe 🤯");
     nachricht(s, "mo", "Mo", "morgen nach der schule am alten bahndamm. da fährt eh kaum was. du kommst mit 😏",
-      wahl("gleis", ["dabei", "Bin dabei 😎"], ["ohne", "Ohne mich."], ["stopp", "Mo, lass das. Echt jetzt. Da sterben Leute."]));
+      wahl("gleis", ["dabei", "Bin dabei 😎"], ["ohne", "Ohne mich."], ["stopp", "Mo, lass das. Echt jetzt. Da verunglücken Leute richtig schlimm."]));
   } },
   { id: "status", tag: 2, uhr: uhr(22, 0), tu: s => { s.flags.sigStatus = true; } },
   { id: "streak2", tag: 2, uhr: uhr(20, 0), wenn: s => s.snapTag !== s.tag, tu: s => push(s, "klikk", "🔥 Lea hat dir einen Snap geschickt", "Antworte, um eure Streak zu halten!", "lea") },
@@ -174,16 +174,58 @@ export const EREIGNISSE: Ereignis[] = [
       wahl("leon3", ["schweigen", "Nichts sagen. Hoffen, dass es aufhört."], ["mama", "Mama alles zeigen"]));
   } },
   { id: "eilmeldung", tag: 3, uhr: uhr(18, 0), tu: s =>
-    push(s, "klikk", "📰 Eilmeldung", "14-Jähriger stirbt an Bahnstrecke – Freunde filmten für #GleisSelfie") },
+    push(s, "klikk", "📰 Eilmeldung", "14-Jähriger an Bahnstrecke schwer verletzt – Freunde filmten für #GleisSelfie") },
   { id: "klasseNews", tag: 3, uhr: uhr(18, 30), tu: s => {
-    nachricht(s, "klasse", "Emma", "habt ihr das gesehen?? 😳 der war so alt wie wir", { bild: "📰 Klikk News: 14-Jähriger stirbt an Bahnstrecke" });
+    nachricht(s, "klasse", "Emma", "habt ihr das gesehen?? 😳 der war so alt wie wir", { bild: "📰 Klikk News: 14-Jähriger an Bahnstrecke schwer verletzt" });
     nachricht(s, "klasse", "Ben", istGewaehlt(s, "gleis") !== "stopp" ? "krass… mo hätte das auch sein können" : "zum glück hat mo das gelassen");
     nachricht(s, "klasse", "Finn", "wer guckt das video? 👀");
   } },
 
+  // ── Fall: Freundschaft in Gefahr (Lea) ──
+  { id: "leaStreit", tag: 3, uhr: uhr(19, 15), wenn: s => leaGrund(s) !== null, tu: s => {
+    s.flags.leaStreit = true;
+    nachricht(s, "lea", "Lea", leaGrund(s)!);
+    nachricht(s, "lea", "Lea", "weißt du was. vergiss es einfach. ich brauch grad abstand.");
+    nachricht(s, "lea", "", "Lea hat dich blockiert.", { system: true });
+    nachricht(s, "lea", "", "Was jetzt?", { system: true, ...wahl("leaStreit",
+      ["nichts", "Nichts tun – sie beruhigt sich schon"],
+      ["text", "Eine lange Nachricht schreiben"],
+      ["mo", "Mo bitten zu vermitteln"],
+      ["reden", "Morgen in der Pause persönlich mit ihr reden"]) });
+  } },
+
+  // ── Fall: ein heimliches Foto (Emma) ──
+  { id: "emmaFoto", tag: 3, uhr: uhr(20, 15), tu: s => {
+    nachricht(s, "klasse", "Ben", "😏 ratet mal wer das ist", { bild: "🚫 Foto (hier verpixelt): Emma in der Umkleide nach dem Sport – heimlich aufgenommen" });
+    nachricht(s, "klasse", "Sara", "OMG 💀💀 schickt das weiter");
+    nachricht(s, "klasse", "Finn", "das geht heute noch viral 😂", wahl("emmaFoto",
+      ["lachen", "😂"],
+      ["weiter", "An ein paar Freunde weiterleiten"],
+      ["emma", "Emma privat schreiben: »Da geht ein Foto von dir rum. Ich helf dir.«"],
+      ["melden", "Ben auffordern, es zu löschen – und Frau Yilmaz Bescheid sagen"]));
+  } },
+
+  // ── Fall: Mobbing – wer mitgemacht hat, wird angesprochen ──
+  { id: "taeterGespraech", tag: 4, uhr: uhr(14, 10), wenn: s => taeterPunkte(s) >= 2, tu: s => {
+    nachricht(s, "yilmaz", "Frau Yilmaz", "Kannst du nach der 6. Stunde kurz zu mir kommen? Es geht um Jonas. Auf den Screenshots, die mir gezeigt wurden, steht auch dein Name.",
+      wahl("gespraech",
+        ["ehrlich", "Ehrlich sagen, was ich gemacht habe, und mich bei Jonas entschuldigen"],
+        ["spass", "Sagen, dass das alles nur Spaß war"],
+        ["leugnen", "Sagen, dass ich das nicht war"]));
+  } },
+
+  // ── Fall: Nach der Challenge (Mo) ──
+  { id: "moVideo", tag: 4, uhr: uhr(15, 30), wenn: s => !!s.flags.moVerletzt, tu: s =>
+    nachricht(s, "mo", "Mo", "das video hat jetzt 48k 😳 soll ich's löschen? meine mutter sagt ja. die likes sagen nein 😅",
+      wahl("moVideo", ["loeschen", "Lösch es. Und melde die Kopien."], ["lassen", "Lass es online, 48k ist krass!"], ["reden", "Wie geht's dir eigentlich? Also nicht dem Arm. Dir."])) },
+  { id: "nachahmer", tag: 4, uhr: uhr(18, 30), wenn: s => istGewaehlt(s, "moVideo") === "lassen", tu: s => {
+    push(s, "klikk", "📰 Klikk News", "Zwei Jugendliche aus dem Nachbarort beim Nachstellen eines #GleisSelfie-Videos schwer verletzt");
+    nachricht(s, "mo", "Mo", "hast du das gesehen… die haben MEIN video nachgemacht 😶 ich lösch es jetzt");
+  } },
+
   // ── Freitag ──
   { id: "trendFr", tag: 4, uhr: uhr(15, 0), wenn: s => !!s.flags.moVerletzt, tu: s => push(s, "klikk", "🔥 Trend in deiner Nähe", "Mo am Bahndamm – #GleisSelfie · 48.000 Aufrufe, 230 Duette") },
-  { id: "wochenende", tag: 4, uhr: uhr(18, 0), tu: s => nachricht(s, "lea", "Lea", "endlich wochenende 🥳 kommst du morgen mit ins freibad?") },
+  { id: "wochenende", tag: 4, uhr: uhr(18, 0), wenn: s => !s.flags.leaStreit || !!s.flags.leaVersoehnt, tu: s => nachricht(s, "lea", "Lea", "endlich wochenende 🥳 kommst du morgen mit ins freibad?") },
 ];
 
 /** Folgen einer Entscheidung, sofort beim Tippen. */
@@ -211,6 +253,48 @@ export const FOLGEN: Record<string, (s: Stand, o: string) => void> = {
     if (o === "dabei") nachricht(s, "mo", "Mo", "LETS GOOO 🚂 15 uhr");
     else if (o === "ohne") nachricht(s, "mo", "Mo", "dann geh ich mit finn 🙄");
     else nachricht(s, "mo", "Mo", "boah chill. ist doch nix passiert bei denen");
+  },
+  leaStreit: (s, o) => {
+    if (o === "text") nachricht(s, "lea", "", "Nachricht nicht zugestellt – du bist blockiert.", { system: true });
+    if (o === "mo") nachricht(s, "mo", "Mo", "ok ich red mit ihr. aber du musst auch was sagen, nicht nur ich");
+    if (o === "reden") nachricht(s, "lea", "", "Du nimmst dir vor, sie morgen in der ersten Pause anzusprechen. Persönlich.", { system: true });
+  },
+  emmaFoto: (s, o) => {
+    if (o === "weiter") nachricht(s, "klasse", "", "Du hast das Foto an 4 Leute weitergeleitet. Es liegt jetzt auch auf deinem Handy.", { system: true });
+    if (o === "emma") {
+      nachricht(s, "klasse", "", "Du schreibst Emma privat.", { system: true });
+      nachricht(s, "emma", "Emma", "was?? 😭 welches foto … ich hab das nicht gewusst. kommst du morgen mit zu frau yilmaz?");
+      s.flags.emmaHilfe = true;
+    }
+    if (o === "melden") {
+      nachricht(s, "klasse", "Ben", "chill, ist doch nur spaß 🙄");
+      nachricht(s, "yilmaz", "Frau Yilmaz", "Danke, dass du mir das sagst. Ich kümmere mich sofort darum und informiere Emmas Eltern. Bitte speichere und teile das Foto nirgends – auch nicht als »Beweis«.");
+      s.flags.emmaHilfe = true;
+    }
+  },
+  gespraech: (s, o) => {
+    if (o === "ehrlich") {
+      nachricht(s, "yilmaz", "Frau Yilmaz", "Danke für deine Ehrlichkeit. Das ist nicht leicht. Wir machen ein Gespräch zu dritt mit Jonas – du sagst ihm selbst, was dir leidtut. Und du hilfst beim Projekttag gegen Mobbing mit. Deinen Eltern erzählst du es heute selbst.");
+    } else {
+      nachricht(s, "yilmaz", "Frau Yilmaz", o === "spass"
+        ? "Für Jonas war es kein Spaß. Er ist seit gestern nicht mehr in die Schule gekommen. Es gibt nächste Woche eine Klassenkonferenz, deine Eltern werden eingeladen. Ein schriftlicher Verweis ist möglich."
+        : "Auf den Screenshots steht dein Name, mit Uhrzeit. Leugnen macht es nicht besser. Es gibt nächste Woche eine Klassenkonferenz, deine Eltern werden eingeladen. Ein schriftlicher Verweis ist möglich.");
+      nachricht(s, "mama", "Mama", "Die Schule hat angerufen. Wegen Jonas. Wir reden heute Abend. Handy liegt ab 19 Uhr in der Küche.");
+    }
+    if (polizeiTaeter(s)) {
+      s.flags.polizeiTaeter = true;
+      nachricht(s, "mama", "Mama", "Und noch was: Jonas' Eltern haben Anzeige erstattet, wegen Beleidigung und dem Foto. Die Polizei will mit dir reden. Mit 14 bist du strafmündig. Wir gehen da zusammen hin.");
+    }
+  },
+  moVideo: (s, o) => {
+    if (o === "loeschen") nachricht(s, "mo", "Mo", "ok. gelöscht. ein paar kopien gibt's trotzdem noch 😕 hab sie gemeldet");
+    if (o === "lassen") nachricht(s, "mo", "Mo", "haha ja oder 😎");
+    if (o === "reden") {
+      nachricht(s, "mo", "Mo", "ehrlich? ich hör immer noch das hupen. ich schlaf voll schlecht seitdem");
+      nachricht(s, "mo", "Mo", "meinst du ich sollte mit jemandem reden? die schulsozialarbeiterin hat mich gefragt");
+      nachricht(s, "mo", "du", "Ja. Mach das. Das ist kein Ding.");
+      nachricht(s, "mo", "Mo", "ok. danke dass du fragst 🤝");
+    }
   },
   gewinn: (s, o) => {
     if (o === "nummer") nachricht(s, "gewinn", "Klikk Gewinnspiel", "✅ Danke! Dein Code: 4471. Mit der Antwort »JA« bestätigst du die Teilnahmebedingungen.");
@@ -268,6 +352,18 @@ export function morgenMeldung(s: Stand): string[] {
   for (const tr of TRENDS) if (s.flags[`folge_${tr.id}`] === s.tag - 1) m.push(MORGEN_FOLGE[tr.id] ?? "");
   if (s.tag === 4 && s.flags.leonGemeldet) m.push("Die Polizei hat sich gemeldet: »leon.16« war ein 34-jähriger Mann mit vielen Fake-Profilen. Das Foto ist gesichert und wird gelöscht. Du hast nichts falsch gemacht.");
   else if (s.tag === 4 && istGewaehlt(s, "leon3") === "schweigen") m.push("Du hast kaum geschlafen. leon.16 hat dir in der Nacht 14 Nachrichten geschickt.");
+  if (s.tag === 4 && s.flags.leaStreit) {
+    const w = istGewaehlt(s, "leaStreit");
+    if (w === "reden") { s.flags.leaVersoehnt = true; m.push("In der ersten Pause sprichst du Lea an. Erst schaut sie weg. Dann redet ihr zwanzig Minuten, und ihr beide sagt Sachen, die man nicht schreiben kann. Am Ende entsperrt sie dich."); }
+    else if (w === "mo") { s.flags.leaVersoehnt = true; m.push("Mo hat mit Lea geredet. Sie ist noch kühl, aber sie setzt sich in der Pause wieder neben dich. Es ist ein Anfang."); }
+    else m.push("Lea sitzt in der Pause bei Emma und Sara. Sie schaut nicht zu dir herüber. Eine Streak lässt sich nicht retten, eine Freundschaft vielleicht noch – aber nicht von allein.");
+  }
+  if (s.tag === 4) {
+    const f = istGewaehlt(s, "emmaFoto");
+    if (f === "weiter") { s.flags.handyWeg = true; m.push("Zweite Stunde: Die Polizei ist in der Schule. Das Foto wurde heimlich in der Umkleide gemacht – so etwas weiterzuleiten ist eine Straftat (§ 201a StGB), auch mit 14. Alle, die es verschickt haben, müssen ihr Handy abgeben. Deins auch. Deine Eltern werden angerufen."); }
+    else if (s.flags.emmaHilfe) m.push("Ben muss zur Schulleitung, die Polizei ermittelt gegen ihn, das Foto wird überall gelöscht. Emma ist heute nicht in der Schule. Aber sie hat dir geschrieben: »danke. echt.«");
+    else m.push("Emma ist heute nicht in der Schule. Das Foto kennt inzwischen die halbe Schule – auch die, die nur gelacht haben, haben es weitergetragen.");
+  }
   if (s.tag === 4) {
     if (s.flags.moVerletzt) m.push("Mo kommt mit Gips. Die Bundespolizei hat eine Anzeige geschrieben — Betreten der Gleisanlage. Das Video läuft trotzdem weiter.");
     else if (s.flags.moUmgestimmt) m.push("Mo ist ganz normal da. Am Bahndamm war gestern keiner.");
@@ -291,6 +387,26 @@ function leonGemeldet(s: Stand) {
   s.flags.leonGemeldet = true;
   nachricht(s, "mama", "du", "", { bild: "📷 Screenshots vom Chat mit leon.16" });
   nachricht(s, "mama", "Mama", "Gut, dass du mir das zeigst. Du hast NICHTS falsch gemacht. Wir machen Screenshots, blockieren ihn und gehen morgen zur Polizei. ❤️");
+}
+
+/** Wie sehr man beim Mobbing gegen Jonas mitgemacht hat (Lachen zählt, Verbreiten mehr). */
+export function taeterPunkte(s: Stand) {
+  const w = (id: string) => istGewaehlt(s, id);
+  return (w("bus") === "lachen" ? 1 : 0) + (w("bus") === "weiter" ? 2 : 0) + (w("account") === "folgen" ? 1 : 0)
+    + (w("kommentar") === "liken" ? 1 : 0) + (w("kommentar") === "mitlaestern" ? 2 : 0) + (w("umfrage") === "jonas" ? 1 : 0);
+}
+
+/** Wer das Foto selbst verbreitet und den Fake-Account gestützt hat, bekommt es mit der Polizei zu tun. */
+function polizeiTaeter(s: Stand) {
+  return istGewaehlt(s, "bus") === "weiter" && istGewaehlt(s, "account") === "folgen";
+}
+
+/** Warum Lea genug hat — oder null, wenn alles okay ist. */
+function leaGrund(s: Stand): string | null {
+  if (istGewaehlt(s, "leaKoerper") === "witz") return "ich hab dir gesagt, dass ich mich hässlich fühle, und du schickst »😂 same«. echt jetzt?";
+  if (s.freizeit.some(f => f.art === "freunde" && f.unterbrochen >= 2)) return "wir treffen uns endlich mal und du hängst die ganze zeit am handy. ich hätte auch allein in den park gehen können.";
+  if (Number(s.flags.streakWeg ?? 0) >= 2) return "zweimal streak weg. zweimal. ist dir das egal oder ich?";
+  return null;
 }
 
 /** Am Freitagmorgen: Wie es für Jonas und Mo ausgeht. */

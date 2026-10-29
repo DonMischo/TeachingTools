@@ -43,13 +43,18 @@ export function Candy({ setze }: { setze: Setze }) {
   const [rest, setRest] = useState(15);
   const [punkte, setPunkte] = useState(0);
   const [an, setAn] = useState(0);
+  /** zählt jeden Sprung des Bonbons — ein Treffer startet so die Sprung-Uhr neu */
+  const [sprung, setSprung] = useState(0);
   const [fertig, setFertig] = useState<number | null>(null);
   const punkteRef = useRef(0);
 
+  // Immer an eine andere Stelle springen, sonst sieht ein Sprung wie Stillstand aus
+  const springe = () => { setAn(a => (a + 1 + Math.floor(Math.random() * 8)) % 9); setSprung(n => n + 1); };
+
+  // Countdown: unabhängig vom Bonbon
   useEffect(() => {
     if (!laeuft) return;
     const t = setInterval(() => {
-      setAn(Math.floor(Math.random() * 9));
       setRest(r => {
         if (r <= 1) {
           setLaeuft(false);
@@ -63,11 +68,18 @@ export function Candy({ setze }: { setze: Setze }) {
     return () => clearInterval(t);
   }, [laeuft, setze]);
 
+  // Das Bonbon bleibt eine Sekunde stehen — nach jedem Sprung (auch nach einem Treffer) von vorn
+  useEffect(() => {
+    if (!laeuft) return;
+    const t = setTimeout(springe, 1000);
+    return () => clearTimeout(t);
+  }, [laeuft, sprung]);
+
   const tippe = (i: number) => {
     if (!laeuft || i !== an) return;
     punkteRef.current += 10;
     setPunkte(punkteRef.current);
-    setAn(Math.floor(Math.random() * 9));
+    springe();
   };
 
   return (

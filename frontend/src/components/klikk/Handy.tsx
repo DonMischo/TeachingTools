@@ -34,6 +34,16 @@ export default function Handy({ s, setze }: { s: Stand; setze: Setze }) {
   const [chat, setChat] = useState<ChatId | undefined>();
 
   if (s.phase === "onboarding") return <Rahmen uhr={zeit(s.uhr)}><Anmeldung s={s} setze={setze} /></Rahmen>;
+  if (s.flags.handyWeg && s.tag === 4) return (
+    <Rahmen uhr="--:--" dunkel>
+      <div className="flex-1 flex flex-col items-center justify-center gap-3 p-6 text-center">
+        <div className="text-6xl">📵</div>
+        <div className="font-black text-lg">Dein Handy liegt bei der Polizei.</div>
+        <p className="text-sm text-neutral-400">Weil du das Foto von Emma weitergeleitet hast, wird es ausgewertet. Abholen können es deine Eltern frühestens nächste Woche.</p>
+        <p className="text-xs text-neutral-500">Der Nachmittag gehört dir trotzdem.</p>
+      </div>
+    </Rahmen>
+  );
 
   const oeffne = (a: AppId, c?: ChatId) => { setChat(c); setApp(a); setze(st => oeffneApp(st, a)); };
   const ungelesen = Object.values(s.ungelesen).reduce((a, b) => a + (b ?? 0), 0);

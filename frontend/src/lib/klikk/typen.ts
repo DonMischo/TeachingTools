@@ -13,7 +13,7 @@ export type AppId = "klikk" | "chats" | "wetter" | "candy" | "sneakr" | "quiz";
 
 export type Recht = "kontakte" | "standort" | "mikrofon" | "mitteilungen";
 
-export type ChatId = "klasse" | "lea" | "mo" | "jonas" | "mama" | "yilmaz" | "klikkteam" | "gewinn" | "leon";
+export type ChatId = "klasse" | "lea" | "mo" | "jonas" | "mama" | "yilmaz" | "klikkteam" | "gewinn" | "leon" | "verein" | "emma";
 
 export type Phase = "start" | "onboarding" | "woche" | "nacht" | "jonas" | "spiegel";
 
@@ -106,6 +106,13 @@ export interface Stand {
   schleich: string[];
   /** Antworten auf Umfrage-Beiträge: Post-ID → Option */
   umfragen: Record<string, string>;
+  /** laufende Freizeit-Aktivität (Lesen, Serie, Familie, Verein, Freunde) */
+  aktivitaet: { art: "lesen" | "serie" | "familie" | "verein" | "freunde"; id: string; schritt: number; unterbrochen: number; start: number; gestoert: boolean } | null;
+  /** erledigte Aktivitäten */
+  freizeit: { art: string; id: string; tag: number; minuten: number; unterbrochen: number }[];
+  verein: string | null;
+  lesestand: Record<string, number>;
+  serienstand: Record<string, number>;
   /** eigene Challenge-Videos */
   videos: { trend: string; fake: boolean; tag: number; aufrufe: number }[];
 

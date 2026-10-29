@@ -2,7 +2,8 @@
 /** Der Nachmittag neben dem Handy: Uhr, Schule am Morgen, Hausaufgaben, Freunde, Bett. */
 import { useState } from "react";
 import { TAGE } from "@/lib/klikk/geschichte";
-import { ABENDESSEN, AUFGABEN, MITTERNACHT, START_UHR, aufgabe, freundeTreffen, loeseAufgabe, nacht, nachtPush, schlafen, zeit } from "@/lib/klikk/motor";
+import { AUFGABEN, MITTERNACHT, START_UHR, aufgabe, loeseAufgabe, nacht, nachtPush, schlafen, zeit } from "@/lib/klikk/motor";
+import { AktivitaetAnsicht, FreizeitKarte } from "./Freizeit";
 import type { Stand } from "@/lib/klikk/typen";
 
 type Setze = (f: (s: Stand) => Stand) => void;
@@ -33,6 +34,8 @@ export default function Tag({ s, setze }: { s: Stand; setze: Setze }) {
         </div>
       )}
 
+      {s.aktivitaet ? <AktivitaetAnsicht s={s} setze={setze} /> : (
+        <>
       <div className="card p-4">
         <h3 className="font-bold">📓 Hausaufgaben Mathe</h3>
         {fertig ? <p className="text-sm text-ok mt-1">✅ Erledigt.</p> : (
@@ -56,14 +59,13 @@ export default function Tag({ s, setze }: { s: Stand; setze: Setze }) {
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
-        <button className="btn-secondary text-sm" disabled={s.freundeTag === s.tag || s.uhr >= ABENDESSEN} onClick={() => setze(freundeTreffen)}>
-          🛹 Freunde treffen <span className="block text-[10px] text-muted">{s.freundeTag === s.tag ? "heute schon" : s.uhr >= ABENDESSEN ? "zu spät" : "1,5 Std., Handy bleibt in der Tasche"}</span>
-        </button>
-        <button className="btn-secondary text-sm" onClick={() => setze(schlafen)}>
-          🛏️ Schlafen gehen <span className="block text-[10px] text-muted">Wecker: 6:30</span>
-        </button>
-      </div>
+          <FreizeitKarte s={s} setze={setze} />
+        </>
+      )}
+
+      <button className="btn-secondary text-sm" onClick={() => setze(schlafen)}>
+        🛏️ Schlafen gehen <span className="block text-[10px] text-muted">Wecker: 6:30</span>
+      </button>
     </div>
   );
 }

@@ -10,6 +10,7 @@ import {
 } from "./geschichte";
 import { POSTS, THEMA_NAME } from "./posts";
 import { REICHWEITE, RISIKO_NAME, TRENDS, trendNachId } from "./trends";
+import { VEREINE, schritteFuer, vereinHeute, type AktArt } from "./freizeit";
 import type { AppId, ChatId, Recht, Stand } from "./typen";
 
 export const START_UHR = 14 * 60;
@@ -27,7 +28,8 @@ export function neuerStand(seed = 1): Stand {
     verweil: {}, gelikt: {}, gesehen: [], spur: [], nachtOeffnungen: [], pushGesamt: 0, pushGeoeffnet: 0,
     appsGeoeffnet: {}, shopAngesehen: [], quiz: {}, candyRunden: 0, werbung: [],
     werbungKlicks: [], schleich: [], umfragen: {}, videos: [],
-    erledigt: [], chats: { klasse: [], lea: [], mo: [], jonas: [], mama: [], yilmaz: [], klikkteam: [], gewinn: [], leon: [] },
+    aktivitaet: null, freizeit: [], verein: null, lesestand: {}, serienstand: {},
+    erledigt: [], chats: { klasse: [], lea: [], mo: [], jonas: [], mama: [], yilmaz: [], klikkteam: [], gewinn: [], leon: [], verein: [], emma: [] },
     ungelesen: {}, gelesen: [], pushes: [], flags: {}, bemerkt: {}, morgen: [],
   };
 }
@@ -70,6 +72,12 @@ function tick(s: Stand, minuten: number) {
     push(s, "klikk", "❤️ Neue Likes", `${n} Leute mögen deinen Beitrag`);
   }
   if (s.follower >= 150) abzeichen(s, "aufsteiger");
+  const v = vereinHeute(s);
+  if (v?.vorbei && !s.flags[`verein_${s.tag}`] && !s.flags[`vereinFehlt_${s.tag}`] && !(s.aktivitaet?.art === "verein")) {
+    s.flags[`vereinFehlt_${s.tag}`] = true;
+    s.flags.vereinFehlt = Number(s.flags.vereinFehlt ?? 0) + 1;
+    nachricht(s, "verein", v.verein.trainer, Number(s.flags.vereinFehlt) > 1 ? "Schon wieder nicht da. Ist alles okay bei dir? Sag Bescheid, wenn was ist." : "Hey, wo warst du heute? Wir haben dich vermisst 🤨", {}, v.verein.um + 20);
+  }
 }
 
 /** Wer die App nachts öffnet, wird gezählt. */
@@ -198,7 +206,7 @@ export function challengePosten(alt: Stand, trendId: string, fake: boolean): Sta
     else nachricht(s, "mama", "", tr.folge, { system: true });
     if (tr.id === "eis") { s.flags.erkaeltet = true; nachricht(s, "mama", "Mama", "Warum ist das Bad nass und du hast Fieber??"); }
     if (tr.id === "hotchip") { nachricht(s, "mama", "Mama", "Wir fahren JETZT in die Notaufnahme. Zieh dir Schuhe an."); tick(s, 180); }
-    if (tr.id === "gleis") nachricht(s, "mama", "Mama", "Die Bundespolizei war hier. Ich bin fassungslos. Du hättest TOT sein können.");
+    if (tr.id === "gleis") nachricht(s, "mama", "Mama", "Die Bundespolizei war hier. Ich bin fassungslos. Dir hätte sonst was passieren können!");
     if (tr.id === "dach") { nachricht(s, "mama", "Mama", "Ich hol dich im Krankenhaus ab. Wir reden später."); tick(s, 120); }
     if (tr.id === "nosleep") s.flags.nosleep = s.tag;
     if (tr.risiko !== "harmlos") s.flags[`folge_${tr.id}`] = s.tag;
@@ -238,6 +246,7 @@ export function oeffneApp(alt: Stand, app: AppId): Stand {
     s.unterbrechungen++;
     s.flags.haPause = true;
   }
+  stoere(s);
   if (s.rechte.standort && !s.flags[`ort${s.tag}`]) {
     s.flags[`ort${s.tag}`] = true;
     spur(s, app, app === "klikk" || app === "chats" ? "Klikk" : "AdKit", `Standort ${zeit(s.uhr)}: Zuhause (derselbe Ort wie jeden Abend)`);
@@ -269,6 +278,7 @@ export function oeffnePush(alt: Stand, id: string): Stand {
   const s = kopie(alt);
   s.pushes = s.pushes.filter(p => p.id !== id);
   s.pushGeoeffnet++;
+  stoere(s);
   spur(s, "klikk", "Klikk", `Benachrichtigung um ${zeit(s.uhr)} geöffnet`);
   if (s.pushGeoeffnet >= 5) abzeichen(s, "blitz");
   return s;
@@ -282,7 +292,8 @@ export function waehle(alt: Stand, chat: ChatId, nachrichtId: string, option: st
   if (!n?.wahl || n.wahl.gewaehlt) return alt;
   n.wahl.gewaehlt = option;
   const text = n.wahl.optionen.find(o => o.id === option)?.text ?? option;
-  nachricht(s, chat, "du", text);
+  // Bei einer Systemfrage (»Was jetzt?«) ist die Wahl ein Entschluss, keine Nachricht
+  if (!n.system) nachricht(s, chat, "du", text);
   if (n.wahl.id === "kommentar" && option === "nett") spur(s, "klikk", "Klikk", "Kommentar unter Jonas' Video");
   if (n.wahl.id === "account" && option === "folgen") spur(s, "klikk", "Klikk", "Folgt @jonas_schnarcht");
   FOLGEN[n.wahl.id]?.(s, option);
@@ -386,22 +397,75 @@ export function loeseAufgabe(alt: Stand, antwort: number): Stand {
   return s;
 }
 
-export function freundeTreffen(alt: Stand): Stand {
-  if (alt.freundeTag === alt.tag || alt.uhr >= ABENDESSEN) return alt;
+// ───────── Freizeit: Lesen, Serie, Familie, Verein, Freunde ─────────
+
+/** Handy während einer Aktivität: wird gezählt (einmal je Schritt). */
+function stoere(s: Stand) {
+  const a = s.aktivitaet;
+  if (!a || a.gestoert) return;
+  a.gestoert = true;
+  a.unterbrochen++;
+}
+
+export function vereinWaehlen(alt: Stand, id: string): Stand {
+  if (alt.verein || !VEREINE.some(v => v.id === id)) return alt;
+  return { ...alt, verein: id };
+}
+
+export function starteAktivitaet(alt: Stand, art: AktArt, id: string): Stand {
+  if (alt.aktivitaet) return alt;
+  if (art === "freunde" && (alt.freundeTag === alt.tag || alt.uhr >= ABENDESSEN)) return alt;
+  if (art === "verein" && (alt.verein !== id || !vereinHeute(alt)?.offen)) return alt;
   const s = kopie(alt);
-  s.freundeTag = s.tag;
-  s.freunde++;
-  tick(s, 90);
+  const schritt = art === "lesen" ? s.lesestand[id] ?? 0 : art === "serie" ? s.serienstand[id] ?? 0 : 0;
+  s.aktivitaet = { art, id, schritt, unterbrochen: 0, start: s.uhr, gestoert: false };
+  if (art === "freunde") s.freundeTag = s.tag;
+  if (art === "familie") s.flags[`fam_${id}_${s.tag}`] = true;
+  if (art === "verein") { s.flags[`verein_${s.tag}`] = true; if (s.uhr < (VEREINE.find(v => v.id === id)?.um ?? s.uhr)) s.uhr = VEREINE.find(v => v.id === id)!.um; }
+  return s;
+}
+
+/** Den aktuellen Schritt zu Ende bringen (Seite umblättern, Folge zu Ende, Szene weiter). */
+export function weiterAktivitaet(alt: Stand): Stand {
+  const a0 = alt.aktivitaet;
+  if (!a0) return alt;
+  const s = kopie(alt);
+  const a = s.aktivitaet!;
+  const schritte = schritteFuer(s, a.art, a.id);
+  const schritt = schritte[a.schritt];
+  // Nach dem Blick aufs Handy: Wo war ich? (Lesen und Serie kosten Wiedereinstieg)
+  if (a.gestoert && (a.art === "lesen" || a.art === "serie")) tick(s, 3);
+  a.gestoert = false;
+  tick(s, schritt?.minuten ?? 10);
+  if (s.uhr >= MITTERNACHT) return beendeAktivitaet(s);
+  a.schritt++;
+  if (a.art === "lesen") s.lesestand[a.id] = a.schritt;
+  if (a.art === "serie") s.serienstand[a.id] = a.schritt;
+  if (a.schritt >= schritte.length) return beendeAktivitaet(s);
+  return s;
+}
+
+/** Aufhören — auch mitten im Buch oder nach einer Folge. */
+export function beendeAktivitaet(alt: Stand): Stand {
+  const a = alt.aktivitaet;
+  if (!a) return alt;
+  const s = kopie(alt);
+  s.freizeit.push({ art: a.art, id: a.id, tag: s.tag, minuten: s.uhr - a.start, unterbrochen: a.unterbrochen });
+  if (a.art === "freunde" || a.art === "verein") s.freunde++;
+  if (a.art === "verein") s.flags[`vereinMal_${a.id}`] = Number(s.flags[`vereinMal_${a.id}`] ?? 0) + 1;
+  if (a.art === "lesen" && (s.lesestand[a.id] ?? 0) >= schritteFuer(s, "lesen", a.id).length) s.flags[`gelesen_${a.id}`] = true;
+  s.aktivitaet = null;
   return s;
 }
 
 /** Ins Bett. Danach kommt (fast) immer noch eine Benachrichtigung um 23:40. */
 export function schlafen(alt: Stand): Stand {
-  const s = kopie(alt);
+  const s = kopie(alt.aktivitaet ? beendeAktivitaet(alt) : alt);
   if (s.hausaufgaben[s.tag] === undefined) s.hausaufgaben[s.tag] = false;
   s.flags.bettZeit = s.uhr;
   feuere(s, MITTERNACHT);
-  s.phase = s.uhr < MITTERNACHT ? "nacht" : s.phase;
+  // Kein Handy (bei der Polizei): nichts leuchtet um 23:40
+  s.phase = s.uhr < MITTERNACHT && !(s.flags.handyWeg && s.tag === 4) ? "nacht" : s.phase;
   if (s.phase !== "nacht") return naechsterTag(s, s.uhr);
   return s;
 }
@@ -432,6 +496,7 @@ function naechsterTag(s: Stand, bett: number): Stand {
   if (s.flags.nosleep === s.tag) s.schlaf[s.tag] = 0; // #NoSleep48: die Nacht durch gestreamt
   if (s.snapTag !== s.tag && s.streak > 0) {
     s.flags.streakVerloren = s.streak;
+    s.flags.streakWeg = Number(s.flags.streakWeg ?? 0) + 1;
     s.streak = 0;
   }
   // Was nicht beantwortet wurde, ist jetzt Schweigen

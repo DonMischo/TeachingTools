@@ -283,3 +283,85 @@ describe("Neue Fäden", () => {
     expect(setze).toHaveBeenCalledTimes(3);
   });
 });
+
+describe("Freizeit", () => {
+  it("Lesen: Seiten kosten Zeit, ein Blick aufs Handy kostet Wiedereinstieg, der Lesestand bleibt", async () => {
+    const { starteAktivitaet, weiterAktivitaet, beendeAktivitaet } = await import("@/lib/klikk/motor");
+    let s = starteAktivitaet(angemeldet(), "lesen", "kasse");
+    s = weiterAktivitaet(s);
+    expect(s.uhr).toBe(14 * 60 + 6);
+    s = oeffneApp(s, "klikk");
+    expect(s.aktivitaet?.unterbrochen).toBe(1);
+    const vor = s.uhr;
+    s = weiterAktivitaet(s);
+    expect(s.uhr).toBe(vor + 3 + 6);
+    s = beendeAktivitaet(s);
+    expect(s.lesestand.kasse).toBe(2);
+    expect(s.freizeit[0]).toMatchObject({ art: "lesen", unterbrochen: 1 });
+    s = starteAktivitaet(s, "lesen", "kasse");
+    expect(s.aktivitaet?.schritt).toBe(2);
+    for (let i = 0; i < 4; i++) s = weiterAktivitaet(s);
+    expect(s.aktivitaet).toBeNull();
+    expect(s.flags.gelesen_kasse).toBe(true);
+  });
+
+  it("Verein: wer das Training verpasst, bekommt eine Nachricht vom Trainer", async () => {
+    const { vereinWaehlen, starteAktivitaet } = await import("@/lib/klikk/motor");
+    let s = vereinWaehlen(angemeldet(), "fussball");
+    s = tagZuEnde(s);
+    expect(starteAktivitaet(s, "verein", "fussball").aktivitaet?.art).toBe("verein");
+    s = bis(s, 16 * 60 + 30);
+    expect(s.chats.verein.at(-1)?.text).toContain("wo warst du");
+    expect(starteAktivitaet(s, "verein", "fussball").aktivitaet).toBeNull();
+  });
+
+  it("Familie gibt es nur zur passenden Zeit", async () => {
+    const { familieJetzt } = await import("@/lib/klikk/freizeit");
+    const s = angemeldet();
+    expect(familieJetzt(s).map(f => f.id)).not.toContain("essen");
+    expect(familieJetzt(bis(s, 18 * 60 + 40)).map(f => f.id)).toContain("essen");
+  });
+});
+
+describe("Krisenfälle", () => {
+  it("wer beim Mobbing mitmacht und es abstreitet, landet in der Klassenkonferenz – mit Verbreiten auch bei der Polizei", () => {
+    let s = bis(angemeldet(), 15 * 60 + 15);
+    s = waehle(s, "klasse", wahlId(s, "klasse", "bus"), "weiter");
+    s = tagZuEnde(s);
+    s = bis(s, 15 * 60 + 45);
+    s = waehle(s, "klasse", wahlId(s, "klasse", "account"), "folgen");
+    while (s.tag < 4) s = tagZuEnde(s);
+    s = bis(s, 14 * 60 + 15);
+    s = waehle(s, "yilmaz", wahlId(s, "yilmaz", "gespraech"), "leugnen");
+    expect(s.chats.yilmaz.at(-1)?.text).toContain("Klassenkonferenz");
+    expect(s.flags.polizeiTaeter).toBe(true);
+    expect(s.chats.mama.at(-1)?.text).toContain("strafmündig");
+  });
+
+  it("Emmas Foto weiterleiten: am Freitag ist das Handy bei der Polizei", () => {
+    let s = angemeldet();
+    while (s.tag < 3) s = tagZuEnde(s);
+    s = bis(s, 20 * 60 + 20);
+    s = waehle(s, "klasse", wahlId(s, "klasse", "emmaFoto"), "weiter");
+    s = tagZuEnde(s);
+    expect(s.flags.handyWeg).toBe(true);
+    expect(s.morgen.join(" ")).toContain("§ 201a");
+    expect(schlafen(s).phase).toBe("jonas"); // kein Handy, das um 23:40 leuchtet
+  });
+
+  it("Lea: ein »😂 same« kostet die Freundschaft – reden rettet sie", () => {
+    let s = angemeldet();
+    while (s.tag < 2) s = tagZuEnde(s);
+    s = bis(s, 21 * 60 + 5);
+    s = waehle(s, "lea", wahlId(s, "lea", "leaKoerper"), "witz");
+    s = tagZuEnde(s);
+    s = bis(s, 19 * 60 + 20);
+    expect(s.chats.lea.some(n => n.text === "Lea hat dich blockiert.")).toBe(true);
+    const frage = s.chats.lea.find(n => n.wahl?.id === "leaStreit")!;
+    const geredet = tagZuEnde(waehle(s, "lea", frage.id, "reden"));
+    const geschwiegen = tagZuEnde(s);
+    expect(geredet.flags.leaVersoehnt).toBe(true);
+    expect(geschwiegen.morgen.join(" ")).toContain("nicht von allein");
+    expect(erkenntnisse(geredet)).toBeTruthy();
+  });
+});

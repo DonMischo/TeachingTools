@@ -5,8 +5,8 @@ import { CHAT_NAME } from "@/lib/klikk/geschichte";
 import { jonasOptionen, oeffneChat, schreibeJonas, snap, waehle, zeit } from "@/lib/klikk/motor";
 import type { ChatId, Stand } from "@/lib/klikk/typen";
 
-const REIHE: ChatId[] = ["klasse", "lea", "mo", "jonas", "leon", "gewinn", "mama", "yilmaz", "klikkteam"];
-const BILD: Record<ChatId, string> = { klasse: "🏫", lea: "🌸", mo: "🛹", jonas: "🎸", mama: "👩", yilmaz: "👩‍🏫", klikkteam: "💙", gewinn: "🎁", leon: "😎" };
+const REIHE: ChatId[] = ["klasse", "lea", "mo", "jonas", "leon", "gewinn", "emma", "verein", "mama", "yilmaz", "klikkteam"];
+const BILD: Record<ChatId, string> = { klasse: "🏫", lea: "🌸", mo: "🛹", jonas: "🎸", mama: "👩", yilmaz: "👩‍🏫", klikkteam: "💙", gewinn: "🎁", leon: "😎", verein: "🏟️", emma: "🌻" };
 
 export function jonasKopf(s: Stand) {
   return {
@@ -61,7 +61,13 @@ export default function Chats({ s, setze, start }: { s: Stand; setze: (f: (s: St
       <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2">
         {nachrichten.length === 0 && <p className="text-xs text-muted text-center mt-6">Noch keine Nachrichten.</p>}
         {nachrichten.map(n => n.system ? (
-          <p key={n.id} className="text-xs text-muted text-center italic px-4">{n.text}</p>
+          <div key={n.id} className="flex flex-col gap-1 px-4">
+            <p className="text-xs text-muted text-center italic">{n.text}</p>
+            {n.wahl && !n.wahl.gewaehlt && n.wahl.optionen.map(o => (
+              <button key={o.id} className="btn-secondary text-xs text-left" onClick={() => setze(st => waehle(st, offen, n.id, o.id))}>{o.text}</button>
+            ))}
+            {n.wahl?.gewaehlt && n.wahl.gewaehlt !== "still" && <p className="text-[11px] text-center">→ {n.wahl.optionen.find(o => o.id === n.wahl!.gewaehlt)?.text}</p>}
+          </div>
         ) : (
           <div key={n.id} className={`max-w-[85%] ${n.von === "du" ? "self-end" : "self-start"}`}>
             <div className={`rounded-2xl px-3 py-2 text-sm ${n.von === "du" ? "bg-accent text-accent-fg" : "bg-surface-hover"}`}>

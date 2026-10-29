@@ -29,7 +29,7 @@ export function jonasWoche(s: Stand): Zeile[] {
 
   z.push({ tag: 0, uhr: u(15, 10), text: "8b 🔥 · Finn: 📷 Foto — »😂😂😂 guckt mal wer im bus pennt«", art: "push" });
   z.push({ tag: 0, uhr: u(15, 11), text: "8b 🔥 · Emma: LMAOOO · Ben: 💀💀", art: "push" });
-  reaktion(0, u(15, 12), "bus", { lachen: "8b 🔥 · du: 😂😂", stopp: "8b 🔥 · du: »Lasst das mal, das ist fies.« — Jonas schaut lange auf deinen Namen." });
+  reaktion(0, u(15, 12), "bus", { lachen: "8b 🔥 · du: 😂😂", weiter: "Klikk: Dein Foto ist in der Story von @" + (s.name || "dir") + " – 63 Leute haben es angesehen. Jonas auch.", stopp: "8b 🔥 · du: »Lasst das mal, das ist fies.« — Jonas schaut lange auf deinen Namen." });
   z.push({ tag: 0, uhr: u(22, 30), text: "Jonas tippt in die Gruppe: »warum macht ihr das« … und löscht es wieder.", art: "jonas" });
 
   z.push({ tag: 1, uhr: u(15, 40), text: "8b 🔥 · Ben: Sticker 💤 — sein Gesicht mit »ZZZ«", art: "push" });
@@ -43,6 +43,7 @@ export function jonasWoche(s: Stand): Zeile[] {
   z.push({ tag: 2, uhr: u(15, 20), text: "Klikk: 14 neue Kommentare zu deinem Video 🎸 — »schnarch 💤«, »sticker > lied«, »geh schlafen«", art: "push" });
   reaktion(2, u(15, 25), "kommentar", {
     liken: "Klikk: du gefällt »schnarch 💤«. Er sieht deinen Namen unter dem Kommentar.",
+    mitlaestern: "Neuer Kommentar von dir: »geh lieber schlafen 💤«. Er liest ihn öfter als alle anderen.",
     nett: "Klikk: Neuer Kommentar — »Klingt echt gut!« Jonas liest ihn fünfmal. Es ist der einzige nette.",
   });
   z.push({ tag: 2, uhr: u(22, 0), text: "Jonas ändert seinen Status: »einfach alles egal«.", art: "jonas" });

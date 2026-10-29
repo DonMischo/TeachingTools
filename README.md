@@ -210,8 +210,10 @@ Jede Simulation trägt Fächer (auch mehrere, z. B. Geografie und Physik); die �
 - Warnsignale, die nur sieht, wer bei Jonas nachschaut; Wetter-App, Spiel, Shop und Quiz teilen sich das Werbe-SDK »AdKit«
 - Danach dieselbe Woche auf Jonas' Handy und der Datenspiegel: Werbe-Profil mit Belegen, Datenflüsse je App, echte Werbegründe, App- gegen Lebens-Punkte, Hilfsangebote — der Spielstand bleibt im Browser
 - Feed mit echten Inhalten aus anderen Sims: Commons-Fotos (Weltall, Vulkane), PC-Teile aus der PC-Werkstatt, 3D-Clips mit den Avataren, Monstern und Elementar-Zaubern, dazu Memes, Nachrichten, »anonyme« Umfragen und versteckte Werbung
-- Acht Challenges von harmlos bis lebensgefährlich, eigene Challenge-Videos (echt oder gefaked) mit Folgen, Nachrichten über tödliche Challenges; Werbung führt auf Shopseiten mit Dark Patterns, die sich am Ende selbst erklären
+- Acht Challenges von harmlos bis lebensgefährlich, eigene Challenge-Videos (echt oder gefaked) mit Folgen, Nachrichten über schwere Unfälle bei Challenges; Werbung führt auf Shopseiten mit Dark Patterns, die sich am Ende selbst erklären
 - Weitere Fäden: Gewinnspiel-Abofalle, Lea und das Körperbild, Cybergrooming durch »leon.16« mit Hilfe statt Schuld
+- Freizeit neben dem Handy: fünf Kurzgeschichten zum Lesen (Krimi, Romance, Young Adult, Fantasy, Grusel), zwei Serien mit Autoplay, Familie (Abendessen, Hund, Oma, Spieleabend, Pizza backen), ein Verein mit festen Trainingszeiten und Freunde treffen — das Handy vibriert dazwischen, jeder Blick wird gezählt und manchmal bemerkt
+- Krisenfälle mit Entscheidungen und Folgen: Mitmachen beim Mobbing führt zu Gespräch, Klassenkonferenz oder Polizei (ab 14 strafmündig), ein heimliches Umkleide-Foto weiterzuleiten kostet am Freitag das Handy, eine Freundschaft geht verloren, wenn man nicht redet; der Datenspiegel zeigt je Fall den eigenen Weg, die Rechtslage und eine Hilfe-Leiter von Freund·innen bis Polizei
 - Werbeauktion live: die Klasse gibt ihre Profile nach Zustimmung anonym ab und ersteigert sie als Werbefirmen (100 Taler, verdeckte Gebote); die Lehrkraft leitet am Beamer und bespricht, welche Merkmale den Preis treiben
 
 ### 🍎 Rechenregeln
