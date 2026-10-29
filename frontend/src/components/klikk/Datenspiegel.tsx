@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { TAGE, istGewaehlt } from "@/lib/klikk/geschichte";
 import { WERBUNG } from "@/lib/klikk/posts";
+import { RISIKO_NAME, TRENDS, trendNachId } from "@/lib/klikk/trends";
 import { zeit } from "@/lib/klikk/motor";
 import { APP_NAME, abzeichenWahrheit, datenfluesse, erkenntnisse, profilWert, punktestaende, warnsignale } from "@/lib/klikk/profil";
 import type { Stand } from "@/lib/klikk/typen";
@@ -79,6 +80,18 @@ export default function Datenspiegel({ s, neu, zugang }: { s: Stand; neu: () => 
         <div className="card p-4">
           <p className="text-sm text-muted mb-3">Klikk sagte bei jeder Anzeige: »Basierend auf deinen Aktivitäten.« Das war der echte Grund:</p>
           {s.werbung.length === 0 && <p className="text-sm">Du hast keine Werbung gesehen — du warst kaum im Feed.</p>}
+          {s.werbungKlicks.length > 0 && (
+            <div className="rounded-xl bg-surface-hover p-3 mb-3 text-sm">
+              <b>Angeklickt:</b> {s.werbungKlicks.map(k => `${WERBUNG.find(w => w.id === k.id)?.firma} (${k.stufe === "seite" ? "angesehen" : k.stufe === "kasse" ? "bis zur Kasse" : "»Bestellen« gedrückt"})`).join(" · ")}.
+              <span className="text-muted"> Jeder Klick macht dein Profil wertvoller: Klikk weiß jetzt, worauf du anspringst.</span>
+            </div>
+          )}
+          {s.schleich.length > 0 && (
+            <div className="rounded-xl bg-surface-hover p-3 mb-3 text-sm">
+              <b>Versteckte Werbung:</b> Du hast Beiträge gesehen, für die {s.schleich.join(", ")} bezahlt hat — ohne »Anzeige« oder »Werbung« darüber.
+              <span className="text-muted"> In Deutschland muss Werbung gekennzeichnet sein. Rabattcodes, »geschenkt bekommen« und »nicht gesponsert 😉« sind typische Hinweise.</span>
+            </div>
+          )}
           {[...new Set(s.werbung.map(w => w.id))].map(id => {
             const w = WERBUNG.find(x => x.id === id)!;
             const mal = s.werbung.filter(x => x.id === id);
@@ -182,8 +195,12 @@ function Punkte({ s }: { s: Stand }) {
 }
 
 function Trends({ s }: { s: Stand }) {
-  const reihen: [string, string, number][] = [["#SpiegelTanz", "harmlos", 800], ["#EiswasserChallenge", "riskant", 3200], ["#GleisSelfie", "lebensgefährlich", 12400], ["Mos Video (Freitag)", "nach dem Unfall", 48000]];
-  const max = 48000;
+  const reihen: [string, string, number][] = [
+    ...[...TRENDS].sort((a, b) => a.aufrufe - b.aufrufe).map(t => [t.name, RISIKO_NAME[t.risiko], t.aufrufe] as [string, string, number]),
+    ["Mos Video (Freitag)", "nach dem Unfall", 48000],
+    ...s.videos.map(v => [`Dein Video: ${trendNachId(v.trend)?.name}${v.fake ? " (gefaked)" : ""}`, RISIKO_NAME[trendNachId(v.trend)?.risiko ?? "harmlos"], v.aufrufe] as [string, string, number]),
+  ];
+  const max = Math.max(...reihen.map(r => r[2]));
   const gleis = istGewaehlt(s, "gleis");
   return (
     <div className="card p-4 flex flex-col gap-3">
@@ -232,6 +249,7 @@ function Hilfe() {
     ["💬 juuuport.de", "Jugendliche helfen Jugendlichen", "bei Mobbing, Stress und Ärger im Netz"],
     ["🛡️ klicksafe.de", "Infos zu Cybermobbing, Datenschutz und Challenges", "auch für Eltern"],
     ["👩‍🏫 Vertrauenslehrkraft / Schulsozialarbeit", "an deiner Schule", "darf nichts weitererzählen, was du nicht willst"],
+    ["🚨 Polizei / Onlinewache", "110 oder Onlinewache deines Bundeslandes", "wenn dich jemand erpresst oder bedroht – Anzeige ist auch online möglich"],
   ];
   return (
     <div className="flex flex-col gap-3">
@@ -245,12 +263,18 @@ function Hilfe() {
         ))}
       </div>
       <div className="card p-4 text-sm">
+        <h3 className="font-black mb-1">Wenn Fremde schreiben</h3>
+        <p className="mb-1">Wer schnell Komplimente macht, auf eine andere App wechseln will, »erzähl's nicht deinen Eltern« sagt oder nach Fotos fragt, ist ein Warnsignal — auch wenn das Profil »16« sagt.</p>
+        <p>Wenn jemand droht, ein Foto zu verbreiten: nichts mehr schicken, nicht bezahlen, Screenshots machen, einem Erwachsenen zeigen. <b>Schuld hat immer der Erpresser.</b></p>
+      </div>
+      <div className="card p-4 text-sm">
         <h3 className="font-black mb-1">An deinem echten Handy</h3>
         <ul className="list-disc pl-5 flex flex-col gap-1">
           <li>Einstellungen → Datenschutz: Welche App darf Standort, Kontakte, Mikrofon?</li>
           <li>»App-Tracking« bzw. »Werbe-ID« ausschalten oder zurücksetzen.</li>
           <li>Mitteilungen nur für Menschen, nicht für Apps.</li>
           <li>Nachts: Handy aus dem Zimmer oder Ruhemodus.</li>
+          <li>Drittanbietersperre beim Mobilfunkanbieter: dann können »Gewinnspiele« kein Abo über die Handyrechnung abbuchen.</li>
         </ul>
       </div>
     </div>

@@ -7,13 +7,13 @@
  */
 
 export type Thema =
-  | "fitness" | "beauty" | "gaming" | "tiere" | "musik" | "mode" | "essen" | "comedy" | "news" | "trend";
+  | "fitness" | "beauty" | "gaming" | "tiere" | "musik" | "mode" | "essen" | "comedy" | "news" | "wissen" | "trend";
 
 export type AppId = "klikk" | "chats" | "wetter" | "candy" | "sneakr" | "quiz";
 
 export type Recht = "kontakte" | "standort" | "mikrofon" | "mitteilungen";
 
-export type ChatId = "klasse" | "lea" | "mo" | "jonas" | "mama" | "yilmaz" | "klikkteam";
+export type ChatId = "klasse" | "lea" | "mo" | "jonas" | "mama" | "yilmaz" | "klikkteam" | "gewinn" | "leon";
 
 export type Phase = "start" | "onboarding" | "woche" | "nacht" | "jonas" | "spiegel";
 
@@ -100,6 +100,14 @@ export interface Stand {
   quiz: Record<string, string>;
   candyRunden: number;
   werbung: { id: string; tag: number; uhr: number }[];
+  /** angeklickte Werbung und wie weit es ging */
+  werbungKlicks: { id: string; stufe: "seite" | "kasse" | "bestellt"; tag: number; uhr: number }[];
+  /** gesehene Beiträge mit versteckter Werbung (Marke) */
+  schleich: string[];
+  /** Antworten auf Umfrage-Beiträge: Post-ID → Option */
+  umfragen: Record<string, string>;
+  /** eigene Challenge-Videos */
+  videos: { trend: string; fake: boolean; tag: number; aufrufe: number }[];
 
   // Geschichte
   erledigt: string[];

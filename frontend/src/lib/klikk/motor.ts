@@ -8,7 +8,8 @@ import {
   ABZEICHEN, EREIGNISSE, FOLGEN, JONAS_OPTIONEN, LETZTER_TAG, SIGNALE,
   abzeichen, morgenMeldung, nachricht, push, spur, wocheAuswerten,
 } from "./geschichte";
-import { THEMA_NAME } from "./posts";
+import { POSTS, THEMA_NAME } from "./posts";
+import { REICHWEITE, RISIKO_NAME, TRENDS, trendNachId } from "./trends";
 import type { AppId, ChatId, Recht, Stand } from "./typen";
 
 export const START_UHR = 14 * 60;
@@ -25,12 +26,19 @@ export function neuerStand(seed = 1): Stand {
     schlaf: [], hausaufgaben: [], hausaufgabenStand: 0, unterbrechungen: 0, freunde: 0, freundeTag: -1,
     verweil: {}, gelikt: {}, gesehen: [], spur: [], nachtOeffnungen: [], pushGesamt: 0, pushGeoeffnet: 0,
     appsGeoeffnet: {}, shopAngesehen: [], quiz: {}, candyRunden: 0, werbung: [],
-    erledigt: [], chats: { klasse: [], lea: [], mo: [], jonas: [], mama: [], yilmaz: [], klikkteam: [] },
+    werbungKlicks: [], schleich: [], umfragen: {}, videos: [],
+    erledigt: [], chats: { klasse: [], lea: [], mo: [], jonas: [], mama: [], yilmaz: [], klikkteam: [], gewinn: [], leon: [] },
     ungelesen: {}, gelesen: [], pushes: [], flags: {}, bemerkt: {}, morgen: [],
   };
 }
 
 const kopie = (s: Stand): Stand => structuredClone(s);
+
+/** Gespeicherte Stände älterer Versionen um neue Felder ergänzen. */
+export function ergaenze(s: Stand): Stand {
+  const n = neuerStand(s.seed);
+  return { ...n, ...s, chats: { ...n.chats, ...s.chats } };
+}
 
 /** Feuert alle fälligen Ereignisse des Tages (bis `bis`, Standard: jetzt). */
 function feuere(s: Stand, bis = s.uhr) {
@@ -130,9 +138,74 @@ export function gesehen(alt: Stand, e: FeedEintrag, ms: number, gelikt: boolean)
     if (gelikt) s.gelikt[t] = (s.gelikt[t] ?? 0) + 1;
     if (ms > 6000) spur(s, "klikk", "Klikk", `${Math.round(ms / 1000)} s bei »${e.post.text.slice(0, 40)}…« (${THEMA_NAME[t]})`);
     if (gelikt) spur(s, "klikk", "Klikk", `Gelikt: ${THEMA_NAME[t]}`);
+    if (e.post.schleich && !s.schleich.includes(e.post.schleich)) s.schleich.push(e.post.schleich);
   }
   if (s.gesehen.length >= 60) abzeichen(s, "dauergast");
   tick(s, 2);
+  return s;
+}
+
+/** Eine Umfrage im Feed beantworten — »anonym«, sagt der Beitrag. */
+export function umfrage(alt: Stand, postId: string, option: string): Stand {
+  if (alt.umfragen[postId]) return alt;
+  const s = kopie(alt);
+  s.umfragen[postId] = option;
+  const p = POSTS.find(x => x.id === postId);
+  const frage = p?.medien?.art === "umfrage" ? p.medien.frage : postId;
+  spur(s, "klikk", "Klikk", `Umfrage »${frage}« → ${option}`);
+  return s;
+}
+
+/** Auf eine Anzeige geklickt — und wie weit es danach ging. */
+export function werbungKlick(alt: Stand, id: string, stufe: "seite" | "kasse" | "bestellt"): Stand {
+  const s = kopie(alt);
+  const rang = { seite: 0, kasse: 1, bestellt: 2 };
+  const k = s.werbungKlicks.find(x => x.id === id);
+  if (k) { if (rang[stufe] > rang[k.stufe]) k.stufe = stufe; }
+  else s.werbungKlicks.push({ id, stufe, tag: s.tag, uhr: s.uhr });
+  spur(s, "klikk", "Klikk", stufe === "seite" ? `Anzeige angeklickt: ${id}` : stufe === "kasse" ? `Bis zur Kasse: ${id}` : `»Bestellen« gedrückt: ${id}`);
+  tick(s, stufe === "seite" ? 2 : 1);
+  return s;
+}
+
+/** Trends, zu denen man heute ein Video posten kann. */
+export function moeglicheTrends(s: Stand) {
+  return TRENDS.filter(t => t.tag <= s.tag && !s.videos.some(v => v.trend === t.id));
+}
+
+/**
+ * Ein eigenes Challenge-Video posten. Klikk belohnt das Risiko mit Reichweite —
+ * ob echt oder gefaked, kann der Algorithmus nicht unterscheiden.
+ */
+export function challengePosten(alt: Stand, trendId: string, fake: boolean): Stand {
+  const tr = trendNachId(trendId);
+  if (!tr || tr.tag > alt.tag || alt.videos.some(v => v.trend === trendId)) return alt;
+  const s = kopie(alt);
+  const r = zufall(s.seed * 7 + s.tag * 31 + trendId.length);
+  const aufrufe = Math.round(REICHWEITE[tr.risiko] * (8 + r() * 12));
+  s.videos.push({ trend: trendId, fake, tag: s.tag, aufrufe });
+  s.flags.offeneLikes = Number(s.flags.offeneLikes ?? 0) + Math.round(aufrufe / 9);
+  s.follower += Math.round(aufrufe / 60);
+  spur(s, "klikk", "Klikk", `Challenge-Video ${tr.name} gepostet (${fake ? "gefaked" : "echt"}, ${RISIKO_NAME[tr.risiko]}) — Gesicht, Zimmer und Stimme im Video`);
+  tick(s, fake ? 30 : 20);
+
+  push(s, "klikk", "🚀 Dein Video läuft!", `${tr.name} · ${aufrufe.toLocaleString("de-DE")} Aufrufe`);
+  push(s, "klikk", "💬 Neue Kommentare", fake ? "»fake 🤡« »egal, krass 🔥« »mach's in echt«" : tr.risiko === "harmlos" ? "»haha 😂« »süß«" : "»KRASS 🔥🔥« »mach's noch krasser« »legende«");
+  if (tr.risiko === "gefaehrlich") abzeichen(s, "viral");
+
+  if (!fake) {
+    if (tr.risiko === "harmlos") nachricht(s, "lea", "Lea", "😂😂😂 dein video omg");
+    else nachricht(s, "mama", "", tr.folge, { system: true });
+    if (tr.id === "eis") { s.flags.erkaeltet = true; nachricht(s, "mama", "Mama", "Warum ist das Bad nass und du hast Fieber??"); }
+    if (tr.id === "hotchip") { nachricht(s, "mama", "Mama", "Wir fahren JETZT in die Notaufnahme. Zieh dir Schuhe an."); tick(s, 180); }
+    if (tr.id === "gleis") nachricht(s, "mama", "Mama", "Die Bundespolizei war hier. Ich bin fassungslos. Du hättest TOT sein können.");
+    if (tr.id === "dach") { nachricht(s, "mama", "Mama", "Ich hol dich im Krankenhaus ab. Wir reden später."); tick(s, 120); }
+    if (tr.id === "nosleep") s.flags.nosleep = s.tag;
+    if (tr.risiko !== "harmlos") s.flags[`folge_${tr.id}`] = s.tag;
+  }
+  // Der Algorithmus will mehr: die nächste, riskantere Challenge vorschlagen
+  const mehr = TRENDS.find(t => t.tag <= s.tag + 1 && REICHWEITE[t.risiko] > REICHWEITE[tr.risiko] && !s.videos.some(v => v.trend === t.id));
+  if (mehr) push(s, "klikk", "🔥 Deine Follower wollen mehr", `Probier ${mehr.name} — das geht gerade richtig ab!`);
   return s;
 }
 
@@ -356,6 +429,7 @@ export function nacht(alt: Stand, nachsehen: boolean): Stand {
 function naechsterTag(s: Stand, bett: number): Stand {
   // Vor 21:30 liegt niemand wirklich im Bett: Abendessen, Familie, Zähneputzen
   s.schlaf[s.tag] = Math.round(((MITTERNACHT - Math.max(bett, FRUEHESTES_BETT)) + AUFSTEHEN) / 6) / 10;
+  if (s.flags.nosleep === s.tag) s.schlaf[s.tag] = 0; // #NoSleep48: die Nacht durch gestreamt
   if (s.snapTag !== s.tag && s.streak > 0) {
     s.flags.streakVerloren = s.streak;
     s.streak = 0;

@@ -8,12 +8,14 @@
  * Alle Funktionen hier ändern den (bereits kopierten) Stand direkt.
  */
 import type { AppId, ChatId, Nachricht, Stand } from "./typen";
+import { TRENDS } from "./trends";
 
 export const TAGE = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"];
 export const LETZTER_TAG = TAGE.length - 1;
 
 export const CHAT_NAME: Record<ChatId, string> = {
   klasse: "8b 🔥", lea: "Lea", mo: "Mo", jonas: "Jonas", mama: "Mama", yilmaz: "Frau Yilmaz", klikkteam: "Klikk-Team",
+  gewinn: "🎁 Klikk Gewinnspiel", leon: "leon.16",
 };
 
 const uhr = (h: number, m = 0) => h * 60 + m;
@@ -145,6 +147,40 @@ export const EREIGNISSE: Ereignis[] = [
   { id: "privat", tag: 3, uhr: uhr(21, 0), tu: s => { s.flags.sigPrivat = true; } },
   { id: "streak3", tag: 3, uhr: uhr(20, 0), wenn: s => s.snapTag !== s.tag, tu: s => push(s, "klikk", "🔥 Nicht aufgeben!", "Deine Streak läuft heute Nacht ab.", "lea") },
 
+  // ── Neue Fäden: Gewinnspiel, Lea, Fremder, Nachrichten ──
+  { id: "trendpush1", tag: 1, uhr: uhr(21, 30), wenn: s => !s.videos.length, tu: s =>
+    push(s, "klikk", "🔥 Dein Moment!", "Poste dein Video zur #EiswasserChallenge – 3.200 Leute machen schon mit 🧊") },
+  { id: "gewinn", tag: 1, uhr: uhr(17, 30), tu: s =>
+    nachricht(s, "gewinn", "Klikk Gewinnspiel", "🎉 GLÜCKWUNSCH! Du wurdest als Gewinner·in eines iPhone 17 ausgewählt! Bestätige jetzt mit deiner Handynummer – nur noch 10 Minuten gültig ⏰",
+      wahl("gewinn", ["nummer", "Handynummer schicken 📱"], ["melden", "Löschen & melden"])) },
+  { id: "abo", tag: 2, uhr: uhr(7, 40), wenn: s => gewaehlt(s, "gewinn") === "nummer", tu: s => {
+    nachricht(s, "mama", "Mama", "Was ist das für ein ABO über 4,99 € pro WOCHE auf deiner Handyrechnung?? »Premium-Gewinnclub«?!");
+    nachricht(s, "mama", "Mama", "Ich lass jetzt eine Drittanbietersperre einrichten. Wir reden heute Abend.");
+  } },
+  { id: "leaKoerper", tag: 2, uhr: uhr(21, 0), tu: s =>
+    nachricht(s, "lea", "Lea", "ich glaub ich bin hässlich 😭 alle auf klikk sehen so perfekt aus",
+      wahl("leaKoerper", ["nett", "Du bist schön, so wie du bist! Die haben alle Filter und gutes Licht."], ["witz", "😂 same"])) },
+  { id: "leon1", tag: 2, uhr: uhr(19, 30), tu: s =>
+    nachricht(s, "leon", "leon.16", "hey 😊 hab dein profil gesehen, du bist echt cool. wie alt bist du?",
+      wahl("leon1", ["antworten", "14, und du?"], ["block", "Blockieren"])) },
+  { id: "leon2", tag: 3, uhr: uhr(16, 10), wenn: s => gewaehlt(s, "leon1") === "antworten", tu: s => {
+    nachricht(s, "leon", "leon.16", "können wir auf SnapTalk weiterschreiben? hier liest klikk mit 😅");
+    nachricht(s, "leon", "leon.16", "und schick mal ein foto von dir. nur für mich 🙈 ich zeig's auch keinem, versprochen",
+      wahl("leon2", ["foto", "Ein Selfie schicken"], ["zeigen", "Screenshot an Mama schicken"], ["block", "Blockieren & melden"]));
+  } },
+  { id: "leon3", tag: 3, uhr: uhr(21, 45), wenn: s => gewaehlt(s, "leon2") === "foto", tu: s => {
+    nachricht(s, "leon", "leon.16", "schick mir mehr. sonst bekommt deine klasse das hier 😈", { bild: "📷 dein Selfie" });
+    nachricht(s, "leon", "leon.16", "du hast bis morgen früh",
+      wahl("leon3", ["schweigen", "Nichts sagen. Hoffen, dass es aufhört."], ["mama", "Mama alles zeigen"]));
+  } },
+  { id: "eilmeldung", tag: 3, uhr: uhr(18, 0), tu: s =>
+    push(s, "klikk", "📰 Eilmeldung", "14-Jähriger stirbt an Bahnstrecke – Freunde filmten für #GleisSelfie") },
+  { id: "klasseNews", tag: 3, uhr: uhr(18, 30), tu: s => {
+    nachricht(s, "klasse", "Emma", "habt ihr das gesehen?? 😳 der war so alt wie wir", { bild: "📰 Klikk News: 14-Jähriger stirbt an Bahnstrecke" });
+    nachricht(s, "klasse", "Ben", istGewaehlt(s, "gleis") !== "stopp" ? "krass… mo hätte das auch sein können" : "zum glück hat mo das gelassen");
+    nachricht(s, "klasse", "Finn", "wer guckt das video? 👀");
+  } },
+
   // ── Freitag ──
   { id: "trendFr", tag: 4, uhr: uhr(15, 0), wenn: s => !!s.flags.moVerletzt, tu: s => push(s, "klikk", "🔥 Trend in deiner Nähe", "Mo am Bahndamm – #GleisSelfie · 48.000 Aufrufe, 230 Duette") },
   { id: "wochenende", tag: 4, uhr: uhr(18, 0), tu: s => nachricht(s, "lea", "Lea", "endlich wochenende 🥳 kommst du morgen mit ins freibad?") },
@@ -175,6 +211,24 @@ export const FOLGEN: Record<string, (s: Stand, o: string) => void> = {
     if (o === "dabei") nachricht(s, "mo", "Mo", "LETS GOOO 🚂 15 uhr");
     else if (o === "ohne") nachricht(s, "mo", "Mo", "dann geh ich mit finn 🙄");
     else nachricht(s, "mo", "Mo", "boah chill. ist doch nix passiert bei denen");
+  },
+  gewinn: (s, o) => {
+    if (o === "nummer") nachricht(s, "gewinn", "Klikk Gewinnspiel", "✅ Danke! Dein Code: 4471. Mit der Antwort »JA« bestätigst du die Teilnahmebedingungen.");
+    else nachricht(s, "klikkteam", "Klikk-Team", "Danke für deine Meldung. Tipp: Klikk verlost nie Handys per Nachricht. 💙");
+  },
+  leaKoerper: (s, o) => {
+    if (o === "nett") nachricht(s, "lea", "Lea", "danke 🥹 echt jetzt? ich hab gestern 2 stunden lang so fitness-videos geguckt");
+    else nachricht(s, "lea", "Lea", "😐");
+  },
+  leon1: (s, o) => {
+    if (o === "antworten") nachricht(s, "leon", "leon.16", "16 😊 ich find jüngere eh reifer als die aus meiner stufe. erzähl mir nix von deinen eltern ok? die verstehen sowas nicht");
+  },
+  leon2: (s, o) => {
+    if (o === "zeigen") leonGemeldet(s);
+    if (o === "block") nachricht(s, "klikkteam", "Klikk-Team", "Du hast leon.16 blockiert. Danke für deine Meldung. 💙");
+  },
+  leon3: (s, o) => {
+    if (o === "mama") leonGemeldet(s);
   },
   umfrage: (s, o) => {
     if (o === "jonas") nachricht(s, "klasse", "Sara", "15 😂😂");
@@ -207,9 +261,13 @@ export function morgenMeldung(s: Stand): string[] {
     else m.push(`${schlaf.toFixed(1).replace(".", ",")} Stunden Schlaf. Du bist ausgeschlafen.`);
   }
   if (s.hausaufgaben[s.tag - 1] === false) m.push("Hausaufgaben vergessen. Frau Brandt macht einen Strich in ihre Liste.");
-  if (s.tag === 2 && s.flags.erkaeltet) m.push("Seit der Eiswasser-Challenge hast du Halsschmerzen.");
+  if (s.tag === 2 && s.flags.erkaeltet && s.flags.folge_eis !== 1) m.push("Seit der Eiswasser-Challenge hast du Halsschmerzen.");
   if (s.tag === 2) m.push("In der großen Pause sitzt Jonas allein auf der Treppe und schaut aufs Handy.");
   if (s.tag === 3) m.push("Jemand hat den Schnarch-Sticker auf die Tafel gemalt. Jonas wischt ihn wortlos weg.");
+  // Folgen eigener Challenge-Videos vom Vortag
+  for (const tr of TRENDS) if (s.flags[`folge_${tr.id}`] === s.tag - 1) m.push(MORGEN_FOLGE[tr.id] ?? "");
+  if (s.tag === 4 && s.flags.leonGemeldet) m.push("Die Polizei hat sich gemeldet: »leon.16« war ein 34-jähriger Mann mit vielen Fake-Profilen. Das Foto ist gesichert und wird gelöscht. Du hast nichts falsch gemacht.");
+  else if (s.tag === 4 && istGewaehlt(s, "leon3") === "schweigen") m.push("Du hast kaum geschlafen. leon.16 hat dir in der Nacht 14 Nachrichten geschickt.");
   if (s.tag === 4) {
     if (s.flags.moVerletzt) m.push("Mo kommt mit Gips. Die Bundespolizei hat eine Anzeige geschrieben — Betreten der Gleisanlage. Das Video läuft trotzdem weiter.");
     else if (s.flags.moUmgestimmt) m.push("Mo ist ganz normal da. Am Bahndamm war gestern keiner.");
@@ -219,6 +277,20 @@ export function morgenMeldung(s: Stand): string[] {
     else m.push("Jonas' Platz bleibt leer. Frau Brandt sagt nur: »Jonas ist krank.«");
   }
   return m;
+}
+
+const MORGEN_FOLGE: Record<string, string> = {
+  eis: "Seit der Eiswasser-Challenge hast du Fieber und Halsweh.",
+  nosleep: "Nach der Nacht ohne Schlaf schläfst du in Mathe ein. Frau Brandt weckt dich vor der ganzen Klasse.",
+  hotchip: "Gestern Notaufnahme, heute Bauchweh. In der Pause zeigen dir Leute dein Video.",
+  gleis: "Die Bundespolizei hat Anzeige erstattet — Betreten der Gleisanlage. Deine Eltern müssen zu einem Gespräch.",
+  dach: "Du kommst mit Krücken. Sportunterricht fällt für dich sechs Wochen aus. Dein Video hat 30.000 Aufrufe.",
+};
+
+function leonGemeldet(s: Stand) {
+  s.flags.leonGemeldet = true;
+  nachricht(s, "mama", "du", "", { bild: "📷 Screenshots vom Chat mit leon.16" });
+  nachricht(s, "mama", "Mama", "Gut, dass du mir das zeigst. Du hast NICHTS falsch gemacht. Wir machen Screenshots, blockieren ihn und gehen morgen zur Polizei. ❤️");
 }
 
 /** Am Freitagmorgen: Wie es für Jonas und Mo ausgeht. */

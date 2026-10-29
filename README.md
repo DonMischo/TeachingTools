@@ -209,6 +209,9 @@ Jede Simulation trägt Fächer (auch mehrere, z. B. Geografie und Physik); die �
 - Challenges, die mit dem Risiko an Reichweite gewinnen (bis #GleisSelfie), und Cybermobbing gegen Jonas im Klassenchat; unbeantwortet heißt geschwiegen
 - Warnsignale, die nur sieht, wer bei Jonas nachschaut; Wetter-App, Spiel, Shop und Quiz teilen sich das Werbe-SDK »AdKit«
 - Danach dieselbe Woche auf Jonas' Handy und der Datenspiegel: Werbe-Profil mit Belegen, Datenflüsse je App, echte Werbegründe, App- gegen Lebens-Punkte, Hilfsangebote — der Spielstand bleibt im Browser
+- Feed mit echten Inhalten aus anderen Sims: Commons-Fotos (Weltall, Vulkane), PC-Teile aus der PC-Werkstatt, 3D-Clips mit den Avataren, Monstern und Elementar-Zaubern, dazu Memes, Nachrichten, »anonyme« Umfragen und versteckte Werbung
+- Acht Challenges von harmlos bis lebensgefährlich, eigene Challenge-Videos (echt oder gefaked) mit Folgen, Nachrichten über tödliche Challenges; Werbung führt auf Shopseiten mit Dark Patterns, die sich am Ende selbst erklären
+- Weitere Fäden: Gewinnspiel-Abofalle, Lea und das Körperbild, Cybergrooming durch »leon.16« mit Hilfe statt Schuld
 - Werbeauktion live: die Klasse gibt ihre Profile nach Zustimmung anonym ab und ersteigert sie als Werbefirmen (100 Taler, verdeckte Gebote); die Lehrkraft leitet am Beamer und bespricht, welche Merkmale den Preis treiben
 
 ### 🍎 Rechenregeln

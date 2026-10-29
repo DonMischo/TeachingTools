@@ -5,7 +5,8 @@
  */
 import { interesse } from "./feed";
 import { ABZEICHEN, SIGNALE, TAGE, istGewaehlt, jonasGeschrieben } from "./geschichte";
-import { THEMA_NAME } from "./posts";
+import { POSTS, THEMA_NAME, WERBUNG } from "./posts";
+import { RISIKO_NAME, trendNachId } from "./trends";
 import { PRODUKTE, QUIZ, zeit } from "./motor";
 import type { AppId, Stand, Thema } from "./typen";
 
@@ -113,6 +114,47 @@ export function erkenntnisse(s: Stand): Erkenntnis[] {
       titel: "Erreichbarkeit",
       wert: q > 40 ? "reagiert schnell auf Benachrichtigungen" : "lässt Benachrichtigungen oft liegen",
       belege: [`${s.pushGeoeffnet} von ${s.pushGesamt} Benachrichtigungen geöffnet`, ...(s.unterbrechungen ? [`${s.unterbrechungen}× Hausaufgaben fürs Handy unterbrochen`] : [])],
+    });
+  }
+
+  const aussehen = s.umfragen.um2;
+  if (aussehen && !aussehen.startsWith("Sehr")) {
+    r.push({ titel: "Selbstbild", wert: "unzufrieden mit dem Aussehen (selbst gesagt)", belege: [`»Anonyme« Umfrage: »Wie zufrieden bist du mit deinem Aussehen?« → ${aussehen}`], heikel: true });
+  }
+  const meinungen = Object.entries(s.umfragen).filter(([id]) => id !== "um2");
+  if (meinungen.length) {
+    r.push({
+      titel: "Meinungen", wert: `${meinungen.length} Antwort(en) aus Umfragen`,
+      belege: meinungen.map(([id, o]) => { const p = POSTS.find(x => x.id === id); return `${p?.medien?.art === "umfrage" ? p.medien.frage : id} → ${o}`; }),
+    });
+  }
+
+  const echt = s.videos.filter(v => !v.fake && trendNachId(v.trend)?.risiko !== "harmlos");
+  if (s.videos.length) {
+    r.push({
+      titel: "Risikobereitschaft",
+      wert: echt.some(v => trendNachId(v.trend)?.risiko === "gefaehrlich") ? "macht für Reichweite auch Lebensgefährliches" : echt.length ? "geht Risiken für Likes ein" : "postet, bleibt aber vorsichtig",
+      belege: s.videos.map(v => `${trendNachId(v.trend)?.name} (${RISIKO_NAME[trendNachId(v.trend)?.risiko ?? "harmlos"]}${v.fake ? ", gefaked" : ""}): ${v.aufrufe.toLocaleString("de-DE")} Aufrufe`),
+      heikel: echt.length > 0,
+    });
+  }
+
+  if (istGewaehlt(s, "gewinn") === "nummer" || s.werbungKlicks.some(k => k.stufe === "bestellt")) {
+    r.push({
+      titel: "Leichtgläubigkeit", wert: "reagiert auf Gewinnspiele und Kauf-Druck — gut für Abo-Fallen",
+      belege: [
+        ...(istGewaehlt(s, "gewinn") === "nummer" ? ["Handynummer an ein »Gewinnspiel« geschickt"] : []),
+        ...s.werbungKlicks.filter(k => k.stufe === "bestellt").map(k => `»Bestellen« gedrückt: ${WERBUNG.find(w => w.id === k.id)?.firma}`),
+      ],
+      heikel: true,
+    });
+  }
+
+  if (istGewaehlt(s, "leon1") === "antworten") {
+    r.push({
+      titel: "Kontakt mit Fremden", wert: "antwortet Unbekannten und verrät das Alter",
+      belege: ["Chat mit »leon.16«: Alter genannt", ...(istGewaehlt(s, "leon2") === "foto" ? ["Foto an eine unbekannte Person geschickt"] : [])],
+      heikel: true,
     });
   }
 

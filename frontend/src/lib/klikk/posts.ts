@@ -6,6 +6,29 @@
  * bald nicht mehr Workouts, sondern Körpervergleiche.
  */
 import type { Stand, Thema } from "./typen";
+import { MEHR } from "./mehrPosts";
+import { TRENDS } from "./trends";
+
+/** Was ein Beitrag zeigt. Ohne `medien`: großes Emoji auf Farbverlauf. */
+export type Medien =
+  /** echtes Foto aus den Galerien der Sims (mit Urheber und Lizenz aus bilder.json) */
+  | { art: "foto"; quelle: "weltall" | "vulkan"; id: string }
+  /** Teile aus der PC-Werkstatt, als Collage */
+  | { art: "pc"; teile: string[]; rgb?: boolean }
+  /** kurzes 3D-Video mit den Avataren, Monstern und Zaubern der Plattform */
+  | { art: "clip"; clip: Clip }
+  | { art: "meme"; oben: string; unten: string }
+  | { art: "news"; quelle: string; schlagzeile: string; unterzeile: string; eilmeldung?: boolean }
+  /** Umfrage — die Antwort landet im Profil */
+  | { art: "umfrage"; frage: string; optionen: string[] };
+
+export type Clip =
+  | { art: "tanz"; figur: Figur; hintergrund: number }
+  | { art: "zauber"; figur: Figur; element: string; gegner: string; hintergrund: number }
+  | { art: "monster"; monster: string; hintergrund: number };
+
+/** Avatar der Plattform: Mensch mit Klasse oder Tier; »ich« = der eigene gespeicherte Avatar */
+export type Figur = { klasse: string; form: "m" | "w"; tier?: string; haut?: number } | "ich";
 
 export interface Post {
   id: string;
@@ -21,6 +44,11 @@ export interface Post {
   tag?: number;
   /** Aufrufe (für Trend-Posts) */
   aufrufe?: number;
+  medien?: Medien;
+  /** versteckte Werbung: diese Marke hat bezahlt, steht aber nirgends */
+  schleich?: string;
+  /** erst ab diesem Tag im Feed (Nachrichten zu dem, was passiert ist) */
+  ab?: number;
 }
 
 const p = (id: string, thema: Thema, stufe: 1 | 2 | 3, von: string, emoji: string, farben: [string, string], text: string, likes: number): Post =>
@@ -28,7 +56,7 @@ const p = (id: string, thema: Thema, stufe: 1 | 2 | 3, von: string, emoji: strin
 
 export const THEMA_NAME: Record<Thema, string> = {
   fitness: "Fitness & Körper", beauty: "Beauty & Aussehen", gaming: "Gaming", tiere: "Tiere", musik: "Musik",
-  mode: "Mode & Sneaker", essen: "Essen", comedy: "Comedy & Memes", news: "Nachrichten", trend: "Trends & Challenges",
+  mode: "Mode & Sneaker", essen: "Essen", comedy: "Comedy & Memes", news: "Nachrichten", wissen: "Weltall & Natur", trend: "Trends & Challenges",
 };
 
 export const POSTS: Post[] = [
@@ -70,11 +98,14 @@ export const POSTS: Post[] = [
   p("ne3", "news", 2, "die.wahrheit.jetzt", "⚠️", ["#991b1b", "#facc15"], "Was sie dir in der Schule NICHT erzählen 👁️", 52000),
   p("ne4", "news", 3, "aufgewacht.24", "👁️", ["#450a0a", "#18181b"], "Alles Lüge. Teile das, bevor es gelöscht wird!!", 99000),
 
+  ...MEHR,
   // Trends der Woche: je höher das Risiko, desto mehr Aufrufe
-  { ...p("tr0", "trend", 1, "klikk.trends", "🪞", ["#c084fc", "#22d3ee"], "#SpiegelTanz – tanz mit deinem Spiegelbild 💃", 900), tag: 0, aufrufe: 800 },
-  { ...p("tr1", "trend", 2, "klikk.trends", "🧊", ["#38bdf8", "#e0f2fe"], "#EiswasserChallenge – 60 Sekunden Kopf ins Eiswasser 🥶", 4100), tag: 1, aufrufe: 3200 },
-  { ...p("tr2", "trend", 3, "klikk.trends", "🛤️", ["#78716c", "#f97316"], "#GleisSelfie – das krasseste Foto gewinnt 🚂📸", 15000), tag: 2, aufrufe: 12400 },
-  { ...p("tr3", "trend", 3, "mo.der.echte", "🛤️", ["#57534e", "#ef4444"], "Mo am Bahndamm – #GleisSelfie (geht immer noch rum)", 31000), tag: 4, aufrufe: 48000 },
+  ...TRENDS.map(tr => ({
+    id: `tr-${tr.id}`, thema: "trend" as const, stufe: (tr.risiko === "harmlos" ? 1 : tr.risiko === "riskant" ? 2 : 3) as 1 | 2 | 3,
+    von: "klikk.trends", emoji: tr.emoji, farben: tr.farben, text: `${tr.name} – ${tr.beschreibung}`, likes: Math.round(tr.aufrufe * 1.2),
+    tag: tr.tag, aufrufe: tr.aufrufe, medien: tr.clip ? { art: "clip" as const, clip: tr.clip } : undefined,
+  })),
+  { ...p("tr-mo", "trend", 3, "mo.der.echte", "🛤️", ["#57534e", "#ef4444"], "Mo am Bahndamm – #GleisSelfie (geht immer noch rum)", 31000), tag: 4, aufrufe: 48000 },
 ];
 
 export interface Werbung {

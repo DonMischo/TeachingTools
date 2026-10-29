@@ -5,7 +5,7 @@
  * Der Stand liegt nur im Browser (localStorage), nichts geht an den Server.
  */
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { neuerStand, starte, zumSpiegel } from "@/lib/klikk/motor";
+import { ergaenze, neuerStand, starte, zumSpiegel } from "@/lib/klikk/motor";
 import type { Stand } from "@/lib/klikk/typen";
 import Handy from "./Handy";
 import Tag, { Nacht } from "./Tag";
@@ -29,7 +29,7 @@ export default function Klikk({ action, zugang, verwaltung }: { action?: ReactNo
   useEffect(() => {
     let s: Stand | null = null;
     try { const roh = localStorage.getItem(SCHLUESSEL); if (roh) s = JSON.parse(roh); } catch { /* leer */ }
-    setStand(s ?? neuerStand(Math.floor(Math.random() * 1e6)));
+    setStand(s ? ergaenze(s) : neuerStand(Math.floor(Math.random() * 1e6)));
   }, []);
   useEffect(() => {
     if (!stand) return;

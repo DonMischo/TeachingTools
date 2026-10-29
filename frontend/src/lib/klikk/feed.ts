@@ -26,7 +26,7 @@ export function interesse(s: Stand): Record<Thema, number> {
   return r;
 }
 const themenListe: Record<Thema, true> = {
-  fitness: true, beauty: true, gaming: true, tiere: true, musik: true, mode: true, essen: true, comedy: true, news: true, trend: true,
+  fitness: true, beauty: true, gaming: true, tiere: true, musik: true, mode: true, essen: true, comedy: true, news: true, wissen: true, trend: true,
 };
 
 /** Wie tief der Feed in ein Thema geht: Anteil am Gesamtinteresse. */
@@ -42,8 +42,10 @@ export type FeedEintrag = { art: "post"; post: Post } | { art: "werbung"; werbun
 /** Der nächste Beitrag. Jeder fünfte ist Werbung; Trends des Tages zuerst. */
 export function naechster(s: Stand): FeedEintrag {
   const r = zufall(s.seed + s.gesehen.length * 7919);
+  // Trends des Tages zuerst — aber mit Abstand, nicht drei hintereinander
+  const letzteTrend = s.gesehen.slice(-2).some(id => id.startsWith("tr-"));
   const trend = POSTS.find(x => x.tag === s.tag && !s.gesehen.includes(x.id));
-  if (trend) return { art: "post", post: trend };
+  if (trend && !letzteTrend) return { art: "post", post: trend };
 
   if (s.gesehen.length % 5 === 4) {
     const gezielt = WERBUNG.filter(w => w.passt(s) && w.id !== "tarif");
@@ -55,9 +57,18 @@ export function naechster(s: Stand): FeedEintrag {
   }
 
   const w = interesse(s);
-  const kandidaten = POSTS.filter(x => x.tag === undefined && x.stufe <= stufeFuer(s, x.thema));
+  const kandidaten = POSTS.filter(x => x.tag === undefined && (x.ab ?? 0) <= s.tag && x.stufe <= stufeFuer(s, x.thema));
   const frische = kandidaten.filter(x => !s.gesehen.slice(-6).includes(x.id));
   const pool = frische.length ? frische : kandidaten;
+  // Ausprobieren: jeder vierte Beitrag kommt aus dem Thema, das am wenigsten gezeigt wurde —
+  // so findet der Feed heraus, wo jemand hängen bleibt
+  if (s.gesehen.length % 4 === 1) {
+    const gezeigt = (t: Thema) => s.gesehen.filter(id => POSTS.find(x => x.id === id)?.thema === t).length;
+    const proben = pool.filter(x => x.thema !== "trend");
+    const min = Math.min(...proben.map(x => gezeigt(x.thema)));
+    const selten = proben.filter(x => gezeigt(x.thema) === min);
+    if (selten.length) return { art: "post", post: selten[Math.floor(r() * selten.length)] };
+  }
   // Gewicht ^1.6 lässt starke Interessen überproportional wachsen; tiefe Stufen ziehen mehr
   const gewicht = (x: Post) => Math.pow(w[x.thema], 1.6) * (x.stufe === 3 ? 1.6 : x.stufe === 2 ? 1.3 : 1);
   const summe = pool.reduce((a, x) => a + gewicht(x), 0);
