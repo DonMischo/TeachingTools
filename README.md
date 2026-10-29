@@ -184,6 +184,12 @@ Jede Simulation trägt Fächer (auch mehrere, z. B. Geografie und Physik); die �
 - Prüfung je Teil: beim ersten Bestehen 5 Hauspunkte für die Klasse, Urkunde als Bild und PDF
 - Klassenübersicht für die Lehrkraft und Bestenlisten (Gäste mit Namen)
 
+### 🖍️ Markieren & Bearbeiten
+- Anschluss an den Maus-Führerschein: Textbearbeitung in einem echten Textfeld, das sich wie Word verhält
+- 15 Lektionen, je eine Technik: Doppel- und Dreifachklick, Ziehen, Umschalt + Klick, Pos1/Ende, Umschalt + Pos1/Ende, Strg + Pfeil, Strg + Umschalt + Pfeil, Umschalt + Pfeil, Strg + A, Löschen, Überschreiben, Strg + C/V, Strg + X, Strg + Z — gezählt wird nur mit der geübten Technik
+- Challenge auf Zeit (Markier-Sprint, Bearbeiten, Profi-Mix) mit gewürfelten Aufgaben, Bestzeit im Browser und dem schnelleren Weg, wo jemand viele Aktionen brauchte
+- Spickzettel mit allen Kürzeln
+
 ### 🍎 Rechenregeln
 - Punkt vor Strich am Obstkorb: »3 · 4« sind drei Körbe mit je vier Äpfeln, Klammern sind Kisten
 - Vertauschungsgesetz am Rechenzug, Stufenzahlen und Kommaverschiebung an der Stellenwerttafel

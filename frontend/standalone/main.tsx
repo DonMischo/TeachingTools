@@ -21,6 +21,7 @@ import Groessen from "@/components/groessen/Groessen";
 import Rechenzeichen from "@/components/rechenzeichen/Rechenzeichen";
 import Prozent from "@/components/prozent/Prozent";
 import Stellenwert from "@/components/stellenwert/Stellenwert";
+import Markieren from "@/components/markieren/Markieren";
 import KiWerkstatt from "@/components/ki/KiWerkstatt";
 import RockYourLife from "@/components/leben/RockYourLife";
 import Leviathan from "@/components/leviathan/Leviathan";
@@ -52,6 +53,7 @@ const TOOLS: { id: string; icon: string; label: string; node: ReactNode }[] = [
   { id: "rechenzeichen", icon: "➗", label: "Rechenzeichen", node: <Rechenzeichen /> },
   { id: "prozent", icon: "💯", label: "Prozent- und Zinsrechnung", node: <Prozent /> },
   { id: "stellenwert", icon: "🔢", label: "Stellenwerttafeln", node: <Stellenwert /> },
+  { id: "markieren", icon: "🖍️", label: "Markieren & Bearbeiten", node: <Markieren /> },
   // Ohne Sitzung: der Vergleich mit der Klasse bleibt aus, alles andere rechnet im Browser.
   { id: "ki", icon: "🤖", label: "KI-Werkstatt", node: <KiWerkstatt /> },
   // Ohne Sitzung keine Lehrer-Übersicht; Spielstand im Browser bzw. als JSON-Datei.

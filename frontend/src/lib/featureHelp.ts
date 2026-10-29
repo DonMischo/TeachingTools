@@ -230,6 +230,17 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
     ],
   },
+  markieren: {
+    title: "Markieren & Bearbeiten",
+    intro: "Textbearbeitung mit Maus und Tastatur üben — der nächste Schritt nach dem Maus-Führerschein. Geübt wird in einem echten Textfeld: alles verhält sich wie in Word oder LibreOffice.",
+    sections: [
+      { label: "📘 Techniken", text: "15 Lektionen: Doppelklick, Dreifachklick, Ziehen, Umschalt + Klick, Pos1/Ende, Umschalt + Pos1/Ende, Strg + Pfeil, Strg + Umschalt + Pfeil, Umschalt + Pfeil, Strg + A, Löschen, Überschreiben, Kopieren (Strg + C/V), Ausschneiden (Strg + X) und Rückgängig (Strg + Z). Je Lektion drei Aufgaben; gezählt wird nur, wer die geübte Technik auch benutzt. Geschaffte Lektionen bekommen ein Häkchen (im Browser gespeichert)." },
+      { label: "⏱️ Challenge", text: "Markier-Sprint (10 Aufgaben, nur markieren), Bearbeiten (8: löschen, überschreiben, kopieren, verschieben, rückgängig) und Profi-Mix (12). Jede Technik ist erlaubt, die Uhr läuft; Überspringen kostet 15 Sekunden. Am Ende Gesamtzeit, Bestzeit im Browser und für Aufgaben mit deutlich mehr Aktionen als nötig der schnellere Weg." },
+      { label: "🔢 Aktionen", text: "Gezählt werden Klicks (ein Doppelklick zählt einmal) und Tastenkürzel, getippte Buchstaben nicht." },
+      { label: "✅ Prüfen", text: "Beim Markieren zählen Leerzeichen und Satzzeichen am Rand nicht (Doppelklick nimmt unter Windows das Leerzeichen mit), beim Bearbeiten weder doppelte Leerzeichen noch leere Zeilen. In reinen Markier-Aufgaben lässt sich der Text nicht verändern." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein). Das Werkzeug braucht eine Tastatur." },
+    ],
+  },
   stellenwert: {
     title: "Stellenwerttafeln",
     intro: "Zehner-, Zweier- und Sechzehnersystem in der Stellenwerttafel — vier Blätter zum Legen, Verstehen, Üben und Spielen.",

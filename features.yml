@@ -598,6 +598,15 @@ simulationen:
       - Vorführen, Vorlesen, 1 bis 3 Sterne je Stufe, Hilfsmodus
       - Prüfung je Teil mit 5 Hauspunkten beim ersten Bestehen, Urkunde als Bild und PDF
       - Klassenübersicht und Bestenlisten
+  - id: markieren
+    name: Markieren & Bearbeiten
+    faehigkeiten: {use: [true, true]}
+    kann:
+      - Echtes Textfeld mit Zeilennummern, erkennt Doppel-/Dreifachklick, Ziehen, Umschalt-Klick und Tastenkürzel
+      - 15 Lektionen je Technik, zählt nur mit der verlangten Technik
+      - Challenge auf Zeit in drei Modi mit Bestzeit, Aktionen und Profi-Weg
+      - Aufgaben gewürfelt aus sechs Übungstexten (markieren, Cursor setzen, löschen, ersetzen, kopieren, verschieben, rückgängig)
+      - Spickzettel mit allen Kürzeln
   - id: groessen
     name: Größen & Einheiten
     faehigkeiten: {use: [true, true]}

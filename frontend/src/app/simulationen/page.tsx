@@ -292,6 +292,14 @@ const ALL_CARDS: Werkzeug[] = [
     description: "Grundkurs am Computer: Klicken, Doppelklick, Rechtsklick, Ziehen, Markieren, Kopieren und Speichern — in sieben Stufen mit Vorführung und Bestenliste.",
     color: "#fb7185",
   },
+  {
+    slug: "markieren",
+    href: "/simulationen/markieren",
+    icon: "🖍️",
+    title: "Markieren & Bearbeiten",
+    description: "Der nächste Schritt nach dem Maus-Führerschein: Doppel- und Dreifachklick, Umschalt + Klick, Pos1/Ende, Strg + Umschalt + Pfeile, Strg + C/X/V/Z und Löschen — erst Technik für Technik, dann als Challenge auf Zeit mit Bestzeit und Profi-Tipps.",
+    color: "#facc15",
+  },
 ];
 
 export default function SimulationenPage() {
