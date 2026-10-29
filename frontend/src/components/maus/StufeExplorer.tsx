@@ -13,7 +13,7 @@ import { wertung } from "@/lib/maus/wertung";
 import {
   anfangsStand, ausschneiden, einfuegen, istFalscherZielordner, klick, kopieren, leeren, loeschen,
   neuerOrdner, oeffnen, sichtbareDateien, strgKlick, umbenennen, umschaltKlick, verschieben, zurueck,
-  type Datei, type ExplorerStand,
+  WURZEL, type Datei, type ExplorerStand,
 } from "@/lib/maus/explorer";
 import { Stufenkopf } from "./Stufenkopf";
 import { Kontextmenue, SYMBOLE } from "./Kontextmenue";
@@ -36,6 +36,15 @@ const NAV = [
   { id: "musik", label: "Musik", icon: "🎵" },
 ];
 
+/**
+ * Ablageziel »Dokumente« (Seitenleiste, Adressleiste). Die Wurzel hat die id
+ * "" — als `data-ordner` und in `ueberOrdner` wäre das falsy, daher ein Platzhalter.
+ */
+const DOKUMENTE_ZIEL = "__dokumente__";
+const zielOrdner = (ablage: string) => (ablage === DOKUMENTE_ZIEL ? WURZEL : ablage);
+/** Wie Windows: ein zweiter, langsamer Klick auf den Namen der markierten Datei benennt um. */
+const LANGSAMER_KLICK_MS = 550;
+
 const FAECHER = ["deutsch", "englisch", "mathe", "technik"];
 const BEREICH = ["ferien", "geburtstag", "klassenfoto"];
 
@@ -51,7 +60,11 @@ const AUFGABEN: { titel: string; schritte: string[]; merke?: string }[] = [
   },
   {
     titel: "Benenne ihn in »Schule« um.",
-    schritte: ["Den neuen Ordner einmal anklicken.", "[[F2]] drücken — oder Rechtsklick › Umbenennen.", "»Schule« tippen und [[Enter]] drücken."],
+    schritte: [
+      "Den neuen Ordner einmal anklicken.",
+      "[[F2]] drücken — oder Rechtsklick › Umbenennen — oder kurz warten und noch einmal langsam auf den Namen klicken.",
+      "Der Name ist jetzt blau markiert: einfach »Schule« tippen und [[Enter]] drücken.",
+    ],
   },
   {
     titel: "Markiere mit Strg + Klick alle vier Fächer: Deutsch, Englisch, Mathe und Technik.",
@@ -91,6 +104,7 @@ export default function StufeExplorer({
   const [ueberOrdner, setUeberOrdner] = useState<string | null>(null);
   const [fehler, setFehler] = useState(0);
   const fehlerRef = useRef(0);
+  const langsamUhr = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const start = useRef(performance.now());
   const schulordner = useRef<string | null>(null);
@@ -195,12 +209,20 @@ export default function StufeExplorer({
   function klickAuf(e: MausEreignis, id: string) {
     if (demo.aktiv || fertig) return;
     e.stopPropagation();
+    langsamAbbrechen();
     if (e.ctrlKey || e.metaKey) { strgBenutzt.current = true; aendern(s => strgKlick(s, id)); return; }
     if (e.shiftKey) { umschaltBenutzt.current = true; aendern(s => umschaltKlick(s, id)); return; }
+    const schonAllein = standRef.current.auswahl.length === 1 && standRef.current.auswahl[0] === id;
     aendern(s => klick(s, id));
+    // Zweiter Klick auf den Namen der schon markierten Datei: erst umbenennen,
+    // wenn kein Doppelklick daraus wird (der bricht die Uhr ab).
+    if (schonAllein && e.detail === 1 && !umbenennenId && (e.target as HTMLElement).closest("[data-name]")) {
+      langsamUhr.current = setTimeout(() => { langsamUhr.current = null; anF2(id); }, LANGSAMER_KLICK_MS);
+    }
   }
 
   function doppelklickAuf(e: MausEreignis, datei: Datei) {
+    langsamAbbrechen();
     if (demo.aktiv || fertig || datei.art !== "ordner") return;
     e.stopPropagation();
     doppelBenutzt.current = true;
@@ -223,7 +245,36 @@ export default function StufeExplorer({
 
   function anF2(id: string) {
     setUmbenennenId(id);
-    setNameEntwurf(stand.dateien.find(d => d.id === id)?.name ?? "");
+    setNameEntwurf(standRef.current.dateien.find(d => d.id === id)?.name ?? "");
+  }
+
+  function langsamAbbrechen() {
+    if (langsamUhr.current) clearTimeout(langsamUhr.current);
+    langsamUhr.current = null;
+  }
+  useEffect(() => langsamAbbrechen, []);
+
+  /** Alles auf Anfang — Dateien, Aufgaben, Zeit und Fehlversuche. */
+  function zuruecksetzen() {
+    if (demo.aktiv) return;
+    langsamAbbrechen();
+    const neu = anfangsStand();
+    standRef.current = neu;
+    setStand(neu);
+    setSchritt(0);
+    setHinweis(null);
+    setMenue(null);
+    setUmbenennenId(null);
+    setZug(null);
+    setUeberOrdner(null);
+    fehlerRef.current = 0;
+    setFehler(0);
+    start.current = performance.now();
+    schulordner.current = null;
+    strgBenutzt.current = false;
+    umschaltBenutzt.current = false;
+    doppelBenutzt.current = false;
+    gemeldet.current = false;
   }
 
   function nameSpeichern() {
@@ -279,16 +330,19 @@ export default function StufeExplorer({
     if (!aktiv) return;
     const unter = document.elementFromPoint(e.clientX, e.clientY);
     const ordnerEl = unter?.closest<HTMLElement>("[data-ordner]");
-    setUeberOrdner(ordnerEl && !zug.ids.includes(ordnerEl.dataset.ordner!) ? ordnerEl.dataset.ordner! : null);
+    const ablage = ordnerEl?.dataset.ordner;
+    // Nicht auf sich selbst und nicht in den Ordner, in dem die Dateien schon liegen.
+    setUeberOrdner(ablage && !zug.ids.includes(ablage) && zielOrdner(ablage) !== stand.aktuellerOrdner ? ablage : null);
   }
 
   function loslassen() {
     if (!zug) return;
     if (zug.aktiv && ueberOrdner) {
-      if (schritt === VERSCHIEBE_SCHRITT && istFalscherZielordner(ueberOrdner, schulordner.current)) {
+      const ziel = zielOrdner(ueberOrdner);
+      if (schritt === VERSCHIEBE_SCHRITT && istFalscherZielordner(ziel, schulordner.current)) {
         fehlerHinzu();
       }
-      aendern(s => verschieben(s, zug.ids, ueberOrdner));
+      aendern(s => verschieben(s, zug.ids, ziel));
     }
     setZug(null);
     setUeberOrdner(null);
@@ -422,11 +476,13 @@ export default function StufeExplorer({
               </button>
             )}
             <div className="flex-1 min-w-0 flex items-center gap-0.5 rounded-sm border border-line bg-page px-1.5 py-0.5 text-fg" data-testid="adressleiste">
-              <button type="button" onClick={() => zuEbene(0)} data-pfad="dokumente" className="rounded-sm px-1 hover:bg-surface-hover">Dokumente</button>
+              <button type="button" onClick={() => zuEbene(0)} data-pfad="dokumente" data-ordner={DOKUMENTE_ZIEL}
+                className={"rounded-sm px-1 " + (ueberOrdner === DOKUMENTE_ZIEL ? "bg-[#0078d738]" : "hover:bg-surface-hover")}>Dokumente</button>
               {stand.pfad.map((id, i) => (
                 <span key={id} className="flex items-center gap-0.5">
                   <span className="text-muted">›</span>
-                  <button type="button" onClick={() => zuEbene(i + 1)} data-pfad={id} className="rounded-sm px-1 hover:bg-surface-hover">
+                  <button type="button" onClick={() => zuEbene(i + 1)} data-pfad={id} data-ordner={id}
+                    className={"rounded-sm px-1 " + (ueberOrdner === id ? "bg-[#0078d738]" : "hover:bg-surface-hover")}>
                     {stand.dateien.find(d => d.id === id)?.name ?? "Ordner"}
                   </button>
                 </span>
@@ -439,8 +495,10 @@ export default function StufeExplorer({
             <div className="w-28 shrink-0 border-r border-line p-2 flex flex-col gap-1 text-xs">
               {NAV.map(n => (
                 n.id === "dokumente" ? (
-                  <button key={n.id} type="button" onClick={() => zuEbene(0)} data-nav="dokumente"
-                    className={"rounded-lg px-2 py-1.5 flex items-center gap-1.5 text-left font-bold " + (stand.aktuellerOrdner ? "hover:bg-surface-hover" : "bg-surface-hover")}>
+                  <button key={n.id} type="button" onClick={() => zuEbene(0)} data-nav="dokumente" data-ordner={DOKUMENTE_ZIEL}
+                    className={"rounded-lg px-2 py-1.5 flex items-center gap-1.5 text-left font-bold border " + (
+                      ueberOrdner === DOKUMENTE_ZIEL ? "bg-[#0078d738] border-[#0078d799]"
+                        : stand.aktuellerOrdner ? "border-transparent hover:bg-surface-hover" : "border-transparent bg-surface-hover")}>
                     <span>{n.icon}</span>{n.label}
                   </button>
                 ) : (
@@ -487,7 +545,15 @@ export default function StufeExplorer({
                     <span style={{ fontSize: `${2.2 * groesse}rem` }}>{ICON[d.art]}</span>
                     {umbenennenId === d.id ? (
                       <input
-                        autoFocus
+                        // Wie Windows: der Name steht blau markiert da (bei Dateien ohne die
+                        // Endung), Lostippen ersetzt ihn.
+                        ref={el => {
+                          if (!el || document.activeElement === el) return;
+                          el.focus();
+                          const punkt = d.art === "ordner" ? -1 : el.value.lastIndexOf(".");
+                          el.setSelectionRange(0, punkt > 0 ? punkt : el.value.length);
+                        }}
+                        aria-label="Neuer Name"
                         value={nameEntwurf}
                         onChange={e => setNameEntwurf(e.target.value)}
                         onClick={e => e.stopPropagation()}
@@ -497,10 +563,10 @@ export default function StufeExplorer({
                           else if (e.key === "Escape") setUmbenennenId(null);
                         }}
                         onBlur={nameSpeichern}
-                        className="w-full text-xs text-center rounded-sm border border-accent bg-page px-1"
+                        className="w-full text-xs text-center rounded-sm border border-[#0078d7] bg-page px-1 selection:bg-[#0078d7] selection:text-white"
                       />
                     ) : (
-                      <span className="text-xs break-all leading-tight">{d.name}</span>
+                      <span data-name className="text-xs break-all leading-tight">{d.name}</span>
                     )}
                   </button>
                 );
@@ -523,6 +589,10 @@ export default function StufeExplorer({
             style={{ color: hinweis?.gut ? "var(--green, #16a34a)" : "var(--text-muted)" }}>
             {hinweis?.text}
           </div>
+          <button type="button" onClick={zuruecksetzen} disabled={demo.aktiv}
+            className="text-sm rounded-lg px-3 py-1.5 border border-line hover:border-accent disabled:opacity-30 self-start">
+            ↺ Übung zurücksetzen
+          </button>
         </aside>
       </div>
 
