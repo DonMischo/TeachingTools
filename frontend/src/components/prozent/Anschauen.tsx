@@ -33,7 +33,8 @@ export default function Anschauen() {
     <div className="card p-4 sm:p-5 flex flex-col gap-4">
       <Chips wahl={bild} setze={setBild} optionen={BILDER} />
       <div className="flex flex-wrap gap-4 items-end">
-        <Regler label="Prozentsatz p (in %)" wert={p} setze={setP} min={0} max={200} breit />
+        <Regler label="Prozentsatz p (in %)" wert={p} setze={setP} min={0} max={200} breit
+          skala={{ klein: 5, gross: 25, betont: [100], einheit: " %" }} />
         <Zahlfeld label="p genau" wert={p} setze={setP} min={0} max={400} einheit="%" breite="w-24" />
         <Zahlfeld label="Grundwert G (das Ganze)" wert={G} setze={setG} min={1} max={1e7} />
         {bild === "dinge" && (

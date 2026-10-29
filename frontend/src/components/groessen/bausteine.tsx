@@ -103,15 +103,52 @@ export function wuerfelMass(n: number, s: number) {
   return { w, h, ox: w / 2, oy: n * s };
 }
 
-export function Regler({ label, wert, setze, min, max, step = 1, breit = false }: {
+/**
+ * Skala unter einem Regler: kleine Striche alle `klein`, beschriftete alle `gross`,
+ * `betont` (z. B. 100 %) kräftiger. Ein Klick auf eine Zahl springt dorthin.
+ */
+export type ReglerSkala = { klein: number; gross: number; betont?: number[]; einheit?: string };
+
+// Der Griff des Reglers ist ~16 px breit: seine Mitte läuft von 8 px bis Breite − 8 px
+const lage = (f: number) => `calc(8px + (100% - 16px) * ${f})`;
+
+function Skala({ min, max, skala, setze }: { min: number; max: number; skala: ReglerSkala; setze: (n: number) => void }) {
+  const werte: number[] = [];
+  for (let v = min; v <= max + 1e-9; v += skala.klein) werte.push(Math.round(v * 1000) / 1000);
+  return (
+    <div className="relative h-7 text-[11px] select-none" aria-hidden>
+      {werte.map(v => {
+        const gross = Math.abs(v / skala.gross - Math.round(v / skala.gross)) < 1e-9;
+        const betont = skala.betont?.includes(v);
+        return (
+          <div key={v} className="absolute top-0 -translate-x-1/2 flex flex-col items-center" style={{ left: lage((v - min) / (max - min)) }}>
+            <span className={`block w-px ${gross ? "h-2.5" : "h-1.5"} ${betont ? "w-0.5 bg-fg" : "bg-muted"}`} />
+            {gross && (
+              <button type="button" tabIndex={-1} onClick={() => setze(v)}
+                className={`leading-none mt-0.5 whitespace-nowrap hover:text-accent ${betont ? "font-black text-fg" : "text-muted"}`}>
+                {String(v).replace(".", ",")}{skala.einheit}
+              </button>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+export function Regler({ label, wert, setze, min, max, step = 1, breit = false, skala }: {
   label: ReactNode; wert: number; setze: (n: number) => void; min: number; max: number; step?: number; breit?: boolean;
+  skala?: ReglerSkala;
 }) {
   return (
-    <label className={`flex flex-col gap-1 ${breit ? "flex-1 min-w-48" : "min-w-36"}`}>
-      <span className="text-xs text-muted">{label} = <strong className="text-fg text-base">{String(wert).replace(".", ",")}</strong></span>
-      <input type="range" min={min} max={max} step={step} value={wert} onChange={e => setze(Number(e.target.value))}
-        className="accent-accent" />
-    </label>
+    <div className={`flex flex-col gap-1 ${breit ? "flex-1 min-w-48" : "min-w-36"}`}>
+      <label className="flex flex-col gap-1">
+        <span className="text-xs text-muted">{label} = <strong className="text-fg text-base">{String(wert).replace(".", ",")}</strong></span>
+        <input type="range" min={min} max={max} step={step} value={wert} onChange={e => setze(Number(e.target.value))}
+          className="accent-accent" />
+      </label>
+      {skala && <Skala min={min} max={max} skala={skala} setze={setze} />}
+    </div>
   );
 }
 

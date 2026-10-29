@@ -114,6 +114,14 @@ describe("Oberfläche", () => {
     expect(screen.getByText(/von 40 = 10/)).toBeInTheDocument();
   });
 
+  it("der Regler hat eine Skala; ein Klick auf eine Zahl stellt sie ein", () => {
+    render(<Prozent />);
+    for (const marke of ["0 %", "25 %", "100 %", "200 %"]) expect(screen.getByRole("button", { name: marke, hidden: true })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "75 %", hidden: true }));
+    expect((screen.getByRole("slider") as HTMLInputElement).value).toBe("75");
+    expect(screen.getByText(/75 % von 40 = 30/)).toBeInTheDocument();
+  });
+
   it("Dreisatz zeigt den Grundwert", () => {
     render(<Prozent />);
     fireEvent.click(screen.getByRole("button", { name: /🔢 Dreisatz/ }));
