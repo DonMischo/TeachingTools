@@ -208,7 +208,8 @@ Jede Simulation trägt Fächer (auch mehrere, z. B. Geografie und Physik); die �
 - Streaks, variable Likes, Abzeichen und Benachrichtigungen bis 23:40 — Gamification, die man selbst spürt
 - Challenges, die mit dem Risiko an Reichweite gewinnen (bis #GleisSelfie), und Cybermobbing gegen Jonas im Klassenchat; unbeantwortet heißt geschwiegen
 - Warnsignale, die nur sieht, wer bei Jonas nachschaut; Wetter-App, Spiel, Shop und Quiz teilen sich das Werbe-SDK »AdKit«
-- Danach dieselbe Woche auf Jonas' Handy und der Datenspiegel: Werbe-Profil mit Belegen, Datenflüsse je App, echte Werbegründe, App- gegen Lebens-Punkte, Hilfsangebote — alles nur im Browser gespeichert
+- Danach dieselbe Woche auf Jonas' Handy und der Datenspiegel: Werbe-Profil mit Belegen, Datenflüsse je App, echte Werbegründe, App- gegen Lebens-Punkte, Hilfsangebote — der Spielstand bleibt im Browser
+- Werbeauktion live: die Klasse gibt ihre Profile nach Zustimmung anonym ab und ersteigert sie als Werbefirmen (100 Taler, verdeckte Gebote); die Lehrkraft leitet am Beamer und bespricht, welche Merkmale den Preis treiben
 
 ### 🍎 Rechenregeln
 - Punkt vor Strich am Obstkorb: »3 · 4« sind drei Körbe mit je vier Äpfeln, Klammern sind Kisten

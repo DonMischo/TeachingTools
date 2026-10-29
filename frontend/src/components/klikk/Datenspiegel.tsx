@@ -6,6 +6,8 @@ import { WERBUNG } from "@/lib/klikk/posts";
 import { zeit } from "@/lib/klikk/motor";
 import { APP_NAME, abzeichenWahrheit, datenfluesse, erkenntnisse, profilWert, punktestaende, warnsignale } from "@/lib/klikk/profil";
 import type { Stand } from "@/lib/klikk/typen";
+import type { MausZugang } from "@/lib/api";
+import { AuktionSchueler } from "./Werbeauktion";
 
 const BLAETTER = [
   { id: "profil", label: "🪞 Was Klikk weiß" },
@@ -15,12 +17,13 @@ const BLAETTER = [
   { id: "trends", label: "📈 Reichweite & Risiko" },
   { id: "signale", label: "🚨 Warnsignale" },
   { id: "hilfe", label: "🤝 Hilfe" },
+  { id: "auktion", label: "🔨 Werbeauktion" },
 ] as const;
 type Blatt = (typeof BLAETTER)[number]["id"];
 
 const wann = (tag: number, uhr: number) => `${TAGE[tag]?.slice(0, 2)} ${zeit(uhr)}`;
 
-export default function Datenspiegel({ s, neu }: { s: Stand; neu: () => void }) {
+export default function Datenspiegel({ s, neu, zugang }: { s: Stand; neu: () => void; zugang?: MausZugang }) {
   const [blatt, setBlatt] = useState<Blatt>("profil");
   const [offen, setOffen] = useState<number | null>(null);
   const e = erkenntnisse(s);
@@ -36,7 +39,7 @@ export default function Datenspiegel({ s, neu }: { s: Stand; neu: () => void }) 
       </div>
 
       <div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface">
-        {BLAETTER.map(b => (
+        {BLAETTER.filter(b => b.id !== "auktion" || zugang).map(b => (
           <button key={b.id} onClick={() => setBlatt(b.id)}
             className={`px-3 py-1.5 rounded-lg text-sm font-bold ${blatt === b.id ? "bg-accent text-accent-fg" : "text-muted hover:text-fg"}`}>{b.label}</button>
         ))}
@@ -96,6 +99,7 @@ export default function Datenspiegel({ s, neu }: { s: Stand; neu: () => void }) 
       {blatt === "trends" && <Trends s={s} />}
       {blatt === "signale" && <Signale s={s} />}
       {blatt === "hilfe" && <Hilfe />}
+      {blatt === "auktion" && zugang && <AuktionSchueler zugang={zugang} merkmale={e.map(x => ({ titel: x.titel, wert: x.wert, heikel: !!x.heikel }))} />}
 
       <button className="btn-secondary self-start text-sm" onClick={() => { if (confirm("Alle Daten dieser Woche löschen und neu anfangen?")) neu(); }}>
         🗑 Daten löschen & neue Woche

@@ -632,6 +632,7 @@ simulationen:
       - Warnsignale, die nur sieht, wer hinschaut
       - Fremde Apps mit gemeinsamem Werbe-SDK (Tracking über Apps hinweg)
       - Perspektivwechsel auf Jonas' Handy und Datenspiegel mit Belegen, Datenflüssen, Werbegründen und Hilfsangeboten
+      - Live-Werbeauktion der Klasse mit anonymen Profilen, Firmenrollen, verdeckten Geboten und Auswertung (Lehrkraft leitet)
   - id: groessen
     name: Größen & Einheiten
     faehigkeiten: {use: [true, true]}

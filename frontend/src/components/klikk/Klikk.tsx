@@ -11,11 +11,18 @@ import Handy from "./Handy";
 import Tag, { Nacht } from "./Tag";
 import JonasSicht from "./JonasSicht";
 import Datenspiegel from "./Datenspiegel";
+import { AuktionLeitung } from "./Werbeauktion";
+import type { MausZugang } from "@/lib/api";
 
 const SCHLUESSEL = "hp_klikk_stand";
 
-export default function Klikk({ action }: { action?: ReactNode }) {
+/**
+ * `zugang`: über Code/QR beigetreten — dann gibt es im Datenspiegel die Werbeauktion.
+ * `verwaltung`: Lehrkraft auf der Werkzeugseite — sie führt die Auktion.
+ */
+export default function Klikk({ action, zugang, verwaltung }: { action?: ReactNode; zugang?: MausZugang; verwaltung?: boolean }) {
   const [stand, setStand] = useState<Stand | null>(null);
+  const [ansicht, setAnsicht] = useState<"spiel" | "auktion">("spiel");
 
   // Laden nach dem Mounten, Speichern erst danach — sonst überschreibt der
   // leere Anfangsstand den gespeicherten (StrictMode führt Effekte doppelt aus).
@@ -42,7 +49,16 @@ export default function Klikk({ action }: { action?: ReactNode }) {
         <div className="flex items-center gap-2">{action}</div>
       </div>
 
-      {!stand ? null : stand.phase === "start" ? (
+      {verwaltung && (
+        <div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface">
+          {([["spiel", "📱 Woche spielen"], ["auktion", "🔨 Werbeauktion leiten"]] as const).map(([id, label]) => (
+            <button key={id} onClick={() => setAnsicht(id)}
+              className={`px-3 py-1.5 rounded-lg text-sm font-bold ${ansicht === id ? "bg-accent text-accent-fg" : "text-muted hover:text-fg"}`}>{label}</button>
+          ))}
+        </div>
+      )}
+
+      {verwaltung && ansicht === "auktion" ? <AuktionLeitung /> : !stand ? null : stand.phase === "start" ? (
         <div className="card p-6 max-w-xl flex flex-col gap-3">
           <h2 className="text-xl font-black">Du bist 14 und gehst in die 8b.</h2>
           <p className="text-sm">
@@ -68,7 +84,7 @@ export default function Klikk({ action }: { action?: ReactNode }) {
       ) : stand.phase === "jonas" ? (
         <JonasSicht s={stand} weiter={() => setze(zumSpiegel)} />
       ) : (
-        <Datenspiegel s={stand} neu={neu} />
+        <Datenspiegel s={stand} neu={neu} zugang={zugang} />
       )}
     </div>
   );

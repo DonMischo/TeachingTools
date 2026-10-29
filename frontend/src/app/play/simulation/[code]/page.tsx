@@ -74,7 +74,7 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   // Die Bestenliste braucht Code und Gast-Token.
   markieren: { title: "Markieren & Bearbeiten", icon: "🖍️", node: null },
   pcbau: { title: "PC-Werkstatt", icon: "🪛", node: <PcWerkstatt /> },
-  klikk: { title: "Klikk", icon: "📱", node: <Klikk /> },
+  klikk: { title: "Klikk", icon: "📱", node: null },
   kueste: { title: "Küstendynamik", icon: "🌊", node: <Kueste /> },
   erdaufbau: { title: "Aufbau der Erde", icon: "🌍", node: <ErdAufbau /> },
   wilson: { title: "Wilson-Zyklus", icon: "🌋", node: <WilsonZyklus /> },
@@ -227,6 +227,8 @@ export default function SimulationJoinPage() {
                 : guest.token ? schluesselFuerGast(code, guest.token) : `gast-${code}`} />
         : session.tool_slug === "stromkreis"
           ? <Stromkreis code={code} />
+        : session.tool_slug === "klikk"
+          ? <Klikk zugang={{ code, token: auth ? null : guest.token }} />
         : session.tool_slug === "markieren"
           ? <Markieren rangliste={{ zugang: { code, token: auth ? null : guest.token }, klasse: auth?.student?.klasse ?? null }} />
         : session.tool_slug === "stellenwert"

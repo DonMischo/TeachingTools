@@ -2707,3 +2707,51 @@ class KompendiumMarke(Base):
     student_id: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"), nullable=True, index=True)
     methode_id: Mapped[str] = mapped_column(String(80), nullable=False)
     marke: Mapped[str] = mapped_column(String(20), nullable=False)
+
+
+class KlikkProfil(Base):
+    """Ein anonymes Werbe-Profil aus »Klikk« für die Werbeauktion der Klasse.
+
+    Abgegeben erst nach ausdrücklicher Zustimmung im Datenspiegel. Gespeichert
+    werden nur die Merkmale (Titel + Wert), keine Belege und kein Name — die
+    Teilnehmer-Spalten dienen nur dazu, dass ein zweites Abgeben das erste
+    ersetzt und jemand nicht sein eigenes Profil ersteigert. ``nr`` ist die
+    laufende Nummer in der Sitzung, ``firma`` die Werbefirma, die diese Person
+    in der Auktion spielt.
+    """
+    __tablename__ = "klikk_profile"
+    __table_args__ = (
+        UniqueConstraint("session_id", "student_id", name="uq_klikk_profil_student"),
+        UniqueConstraint("session_id", "teacher_id", name="uq_klikk_profil_teacher"),
+        UniqueConstraint("session_id", "guest_id", name="uq_klikk_profil_guest"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    session_id: Mapped[int] = mapped_column(
+        ForeignKey("tool_sessions.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    student_id: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"), nullable=True)
+    teacher_id: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="CASCADE"), nullable=True)
+    guest_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    nr: Mapped[int] = mapped_column(Integer, nullable=False)
+    firma: Mapped[str] = mapped_column(String(40), nullable=False)
+    # [{"titel": str, "wert": str, "heikel": bool}]
+    merkmale: Mapped[list] = mapped_column(JSON, nullable=False, default=list, server_default="[]")
+
+
+class KlikkGebot(Base):
+    """Ein Gebot in der Werbeauktion: wer (über sein Profil) wie viel für
+    Profil ``nr`` bietet. Ein Gebot je Bieter und Runde, ein neues ersetzt es."""
+    __tablename__ = "klikk_gebote"
+    __table_args__ = (UniqueConstraint("session_id", "nr", "bieter_id", name="uq_klikk_gebot"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    session_id: Mapped[int] = mapped_column(
+        ForeignKey("tool_sessions.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    nr: Mapped[int] = mapped_column(Integer, nullable=False)
+    bieter_id: Mapped[int] = mapped_column(ForeignKey("klikk_profile.id", ondelete="CASCADE"), nullable=False)
+    betrag: Mapped[int] = mapped_column(Integer, nullable=False)
+    abgegeben_am: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )

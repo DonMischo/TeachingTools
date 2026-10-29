@@ -1278,6 +1278,17 @@ export type MarkierEintrag = {
 };
 export type MarkierEintragIn = { modus: MarkierModus; zeit_ms: number; aktionen: number };
 
+// Werbeauktion zu »Klikk« (siehe api/routers/klikk.py)
+export type KlikkMerkmal = { titel: string; wert: string; heikel: boolean };
+export type KlikkIch = { nr: number; firma: string; sucht: string; budget: number };
+export type KlikkAuktion = {
+  profile: number;
+  lehrkraft: boolean;
+  ich: KlikkIch | null;
+  aktuell: { nr: number; merkmale: KlikkMerkmal[]; offen: boolean; gebote: number; hoechstes: number | null; eigenes: boolean; mein_gebot: number | null } | null;
+  verkauft: { nr: number; merkmale: KlikkMerkmal[]; preis: number; firma: string | null; gebote: number; selbst_gekauft: boolean; eigenes: boolean }[];
+};
+
 // »Rock your Life« (siehe api/routers/leben.py)
 export type LebenLogZeile = { tag: number; stunde: number; datum: string; art: string; text: string; betrag?: number | null };
 export type LebenStandIn = { spiel_id: string; figur: string; zusammenfassung: Record<string, unknown>; neu: LebenLogZeile[]; neustart?: boolean };
@@ -1646,6 +1657,29 @@ export const api = {
       }),
     /** Nur Admin — für unpassende Gastnamen. */
     loeschen: (id: number) => apiFetch<void>(`maus/bestenliste/eintrag/${id}`, { method: "DELETE" }),
+  },
+
+  // Werbeauktion zu »Klikk« — über den Sitzungscode, auch für Gäste
+  klikk: {
+    profil: (zugang: MausZugang, merkmale: KlikkMerkmal[]) =>
+      apiFetch<KlikkIch>(`klikk/sitzung/${encodeURIComponent(zugang.code)}/profil`, {
+        method: "PUT", body: JSON.stringify({ merkmale }),
+        headers: zugang.token ? { Authorization: `Bearer ${zugang.token}` } : undefined,
+      }),
+    auktion: (zugang: MausZugang) =>
+      apiFetch<KlikkAuktion>(`klikk/sitzung/${encodeURIComponent(zugang.code)}/auktion`, {
+        headers: zugang.token ? { Authorization: `Bearer ${zugang.token}` } : undefined,
+      }),
+    bieten: (zugang: MausZugang, betrag: number) =>
+      apiFetch<KlikkIch>(`klikk/sitzung/${encodeURIComponent(zugang.code)}/gebot`, {
+        method: "POST", body: JSON.stringify({ betrag }),
+        headers: zugang.token ? { Authorization: `Bearer ${zugang.token}` } : undefined,
+      }),
+    /** Nur die Lehrkraft der Sitzung. */
+    steuern: (code: string, aktion: "naechstes" | "zuschlag" | "zuruecksetzen") =>
+      apiFetch<KlikkAuktion>(`klikk/sitzung/${encodeURIComponent(code)}/steuern`, {
+        method: "POST", body: JSON.stringify({ aktion }),
+      }),
   },
 
   // Bestenliste von »Markieren & Bearbeiten« — mit Zugang über den Code (auch Gäste)
