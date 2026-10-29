@@ -590,7 +590,6 @@ const handyPlatine: Z = (w, h) => (
   <g>
     <path d={`M0 12 q0 -12 12 -12 h${w - 24} q12 0 12 12 v${h - 24} q0 12 -12 12 h-${w - 24} q-12 0 -12 -12z`} fill="url(#pcb-blau)" />
     <rect width={w} height={h} rx={12} fill="url(#pcb-bahnen)" />
-    <rect x={56} y={68} width={160} height={120} rx={4} fill="none" stroke="#94a3b8" strokeOpacity=".5" strokeDasharray="4 3" />
     {Array.from({ length: 14 }, (_, i) => <rect key={i} x={90 + (i % 7) * 18} y={i < 7 ? 8 : 24} width={8} height={5} fill="#cbd5e1" opacity=".5" />)}
   </g>
 );
@@ -650,6 +649,70 @@ const handyUsbc: Z = (w, h) => (
   <g><rect width={w} height={h} rx={6} fill="url(#pcb-metall)" stroke="#6b7280" /><rect x={10} y={h / 2 - 4} width={w - 20} height={8} rx={4} fill="#0b0d10" /></g>
 );
 
+const handyUnterplatine: Z = (w, h) => (
+  <g><rect width={w} height={h} rx={26} fill="url(#pcb-blau)" /><rect width={w} height={h} rx={26} fill="url(#pcb-bahnen)" />
+    <rect x={w - 26} y={4} width={14} height={18} rx={2} fill="#c2410c" opacity=".85" /></g>
+);
+
+const handyGraphit: Z = (w, h) => (
+  <g>
+    <rect width={w} height={h} rx={10} fill="#3a3d44" />
+    {Array.from({ length: 30 }, (_, i) => <line key={i} x1={0} y1={i * 8} x2={w} y2={i * 8 - 40} stroke="#fff" strokeOpacity=".04" />)}
+    <rect x={10} y={10} width={w - 20} height={h - 20} rx={6} fill="none" stroke="#5b606b" strokeDasharray="6 4" />
+    <Text x={w / 2} y={h / 2 - 4} size={11} farbe="#9ca3af" gewicht={800}>GRAPHIT</Text>
+    <Text x={w / 2} y={h / 2 + 12} size={7.5} farbe="#6b7280">Rückseite des Displays</Text>
+    {[40, w - 40].map(x => <rect key={x} x={x - 14} y={h - 34} width={28} height={10} rx={3} fill="#f8fafc" opacity=".35" />)}
+  </g>
+);
+
+const handyHauptflex: Z = (w, h) => (
+  <g><rect width={w} height={h} rx={4} fill="#c2410c" opacity=".9" />
+    {[3, 7, 11, 15].map(x => <line key={x} x1={x} y1={6} x2={x} y2={h - 6} stroke="#fdba74" strokeOpacity=".55" strokeWidth={.8} />)}
+    {[0, h - 18].map(y => <rect key={y} x={1} y={y} width={w - 2} height={18} rx={2} fill="url(#pcb-metall)" />)}</g>
+);
+
+const handyBlech: Z = (w, h) => (
+  <g filter="url(#pcb-schatten)">
+    <rect width={w} height={h} rx={5} fill="url(#pcb-metall)" stroke="#6b7280" />
+    <rect x={4} y={4} width={w - 8} height={h * .3} rx={4} fill="#fff" opacity=".22" />
+    {Array.from({ length: 18 }, (_, i) => <circle key={i} cx={14 + (i % 6) * 21} cy={h - 50 + Math.floor(i / 6) * 14} r={2.4} fill="#6b7280" />)}
+    {[[2, 2], [w - 8, 2], [2, h - 8], [w - 8, h - 8]].map(([x, y], i) => <rect key={i} x={x} y={y} width={6} height={6} fill="#9aa2ad" />)}
+    <Text x={w / 2} y={h / 2 - 14} size={8} farbe="#475569" gewicht={800}>EMV-ABSCHIRMUNG</Text>
+  </g>
+);
+
+const handyHalteblech: Z = (w, h) => (
+  <g filter="url(#pcb-schatten)">
+    <path d={`M0 6 q0 -6 6 -6 h${w - 12} q6 0 6 6 v${h - 12} q0 6 -6 6 h-${w - 12} q-6 0 -6 -6z`} fill="url(#pcb-metall)" stroke="#6b7280" />
+    {[14, w / 2, w - 14].map(x => <g key={x}><circle cx={x} cy={h / 2} r={5} fill="#cbd5e1" stroke="#64748b" /><path d={`M${x - 3} ${h / 2} h6 M${x} ${h / 2 - 3} v6`} stroke="#475569" strokeWidth={1.2} /></g>)}
+  </g>
+);
+
+const handySpule: Z = (w, h) => (
+  <g filter="url(#pcb-schatten)">
+    <rect width={w} height={h} rx={10} fill="#1f2937" opacity=".85" />
+    {Array.from({ length: 9 }, (_, i) => <circle key={i} cx={w / 2} cy={h / 2} r={w / 2 - 8 - i * 4.5} fill="none" stroke="#d97706" strokeWidth={2.4} opacity={.95 - i * .04} />)}
+    <rect x={w / 2 - 3} y={h / 2} width={6} height={h / 2 - 2} fill="#d97706" />
+  </g>
+);
+
+const handyRueckglas: Z = (w, h) => (
+  <g filter="url(#pcb-schatten)">
+    <defs>
+      <linearGradient id="pcb-glas" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#3b3561" /><stop offset=".55" stopColor="#1e1b3a" /><stop offset="1" stopColor="#2d2850" /></linearGradient>
+    </defs>
+    <rect width={w} height={h} rx={38} fill="url(#pcb-metall-q)" />
+    <rect x={4} y={4} width={w - 8} height={h - 8} rx={35} fill="url(#pcb-glas)" />
+    <path d={`M40 4 L 150 4 L 30 ${h * .55} L 4 ${h * .55} L 4 60 Z`} fill="#fff" opacity=".05" />
+    <rect x={16} y={20} width={96} height={100} rx={22} fill="#15132a" stroke="#4c4682" strokeWidth={2} />
+    {[[42, 46, 16], [86, 46, 14], [42, 94, 14]].map(([x, y, r], i) => <g key={i}><circle cx={x} cy={y} r={r + 3} fill="#0b0a16" stroke="#6b6699" /><circle cx={x} cy={y} r={r - 1} fill="url(#pcb-linse)" /></g>)}
+    <circle cx={86} cy={94} r={6} fill="#fde68a" opacity=".8" />
+    <circle cx={w / 2} cy={h / 2 + 40} r={46} fill="none" stroke="#fff" strokeOpacity=".07" strokeWidth={8} />
+    {[160, 210].map(y => <rect key={y} x={w} y={y} width={4} height={34} rx={2} fill="#9aa2ad" />)}
+    <rect x={-4} y={130} width={4} height={50} rx={2} fill="#9aa2ad" />
+  </g>
+);
+
 export const ZEICHNUNGEN: Record<string, Z> = {
   "pc-gehaeuse": pcGehaeuse, "pc-luefter": pcLuefter, "pc-mainboard": pcMainboard, "pc-io": pcIo, "pc-vrm": pcVrm,
   "pc-chipsatz": pcChipsatz, knopfzelle, "pc-cpu": pcCpu, "pc-kuehler": pcKuehler, "pc-ram": pcRam, "pc-m2": pcM2,
@@ -665,6 +728,8 @@ export const ZEICHNUNGEN: Record<string, Z> = {
   "handy-rahmen": handyRahmen, "handy-antenne": handyAntenne, "handy-platine": handyPlatine, "handy-soc": handySoc,
   "handy-kamera": handyKamera, "handy-frontkamera": handyFrontkamera, "handy-sim": handySim, "handy-akku": handyAkku,
   "handy-flex": handyFlex, "handy-vibration": handyVibration, "handy-lautsprecher": handyLautsprecher, "handy-usbc": handyUsbc,
+  "handy-unterplatine": handyUnterplatine, "handy-graphit": handyGraphit, "handy-hauptflex": handyHauptflex, "handy-blech": handyBlech,
+  "handy-halteblech": handyHalteblech, "handy-spule": handySpule, "handy-rueckglas": handyRueckglas,
 };
 
 export function Zeichnung({ name, w, h, an = false }: { name: string; w: number; h: number; an?: boolean }) {

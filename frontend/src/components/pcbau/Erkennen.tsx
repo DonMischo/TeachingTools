@@ -1,7 +1,7 @@
 "use client";
 /** Erkennen: Teile anklicken und nachlesen, oder im Quiz das gesuchte Teil finden. */
 import { useEffect, useMemo, useState } from "react";
-import { komplett, teil } from "@/lib/pcbau/logik";
+import { inSchicht, komplett, teil } from "@/lib/pcbau/logik";
 import type { Geraet, Teil } from "@/lib/pcbau/typen";
 import { Ansicht, KATEGORIEN, type Blick } from "./Ansichten";
 import { KategorieChip, Vorschau } from "./Teile";
@@ -19,7 +19,9 @@ function mische<T>(a: T[]): T[] {
 
 export default function Erkennen({ g, blick }: { g: Geraet; blick: Blick }) {
   const bau = useMemo(() => komplett(g), [g]);
-  const kandidaten = useMemo(() => g.teile.filter(t => !t.nichtAbfragen), [g]);
+  const [schicht, setSchicht] = useState<number | undefined>(g.schichten ? 1 : undefined);
+  const kandidaten = useMemo(() => g.teile.filter(t => !t.nichtAbfragen && inSchicht(t, schicht)), [g, schicht]);
+  const speicher = quizKey(g.id + (schicht === undefined ? "" : `_s${schicht}`));
   const [markiert, setMarkiert] = useState<string | null>(null);
   const [namen, setNamen] = useState(false);
   const [quiz, setQuiz] = useState<{ aufgaben: Aufgabe[]; i: number; punkte: number; versuch: number } | null>(null);
@@ -28,8 +30,8 @@ export default function Erkennen({ g, blick }: { g: Geraet; blick: Blick }) {
 
   useEffect(() => {
     setQuiz(null); setMarkiert(null);
-    try { const v = localStorage.getItem(quizKey(g.id)); setBest(v ? Number(v) : null); } catch { setBest(null); }
-  }, [g.id]);
+    try { const v = localStorage.getItem(speicher); setBest(v ? Number(v) : null); } catch { setBest(null); }
+  }, [speicher]);
 
   function starte() {
     const ids = mische(kandidaten).slice(0, Math.min(RUNDEN, kandidaten.length));
@@ -51,7 +53,7 @@ export default function Erkennen({ g, blick }: { g: Geraet; blick: Blick }) {
       setQuiz({ ...quiz, i, punkte, versuch: 0 });
       if (i >= quiz.aufgaben.length && (best === null || punkte > best)) {
         setBest(punkte);
-        try { localStorage.setItem(quizKey(g.id), String(punkte)); } catch { /* nur im Speicher */ }
+        try { localStorage.setItem(speicher, String(punkte)); } catch { /* nur im Speicher */ }
       }
     }, 700);
   }
@@ -75,7 +77,8 @@ export default function Erkennen({ g, blick }: { g: Geraet; blick: Blick }) {
             <div className="text-lg font-black">{quiz!.punkte} P</div>
           </div>
         )}
-        <Ansicht blick={blick} g={g} bau={bau} an={!quiz} markiert={quiz ? null : markiert} namen={namen} blitz={blitz}
+        {g.schichten && schicht !== undefined && <SchichtWahl schichten={g.schichten} schicht={schicht} setSchicht={setSchicht} />}
+        <Ansicht blick={blick} g={g} bau={bau} an={!quiz} markiert={quiz ? null : markiert} namen={namen} blitz={blitz} schicht={schicht}
           onTeil={klick} onKnoten={klick} />
         <div className="flex flex-wrap items-center gap-2">
           <button className="btn btn-primary" onClick={starte}>🎯 {quiz ? "Quiz neu starten" : "Quiz starten"}</button>
@@ -129,6 +132,28 @@ function Legende({ teile, onWahl, markiert, verdeckt }: { teile: Teil[]; onWahl:
           </button>
         ))}
       </div>
+    </div>
+  );
+}
+
+/** Zerlegen: Schicht für Schicht abnehmen oder wieder zusammensetzen. */
+function SchichtWahl({ schichten, schicht, setSchicht }: { schichten: { name: string; text: string }[]; schicht: number; setSchicht: (n: number) => void }) {
+  const letzte = schichten.length - 1;
+  return (
+    <div className="card p-3 grid gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <button className="btn btn-secondary" disabled={schicht === 0} onClick={() => setSchicht(schicht - 1)} aria-label="Schicht zurück">◀</button>
+        <div className="flex flex-1 flex-wrap gap-1">
+          {schichten.map((s, i) => (
+            <button key={s.name} onClick={() => setSchicht(i)} aria-pressed={i === schicht}
+              className={`flex-1 min-w-24 rounded-lg px-2 py-1.5 text-sm font-bold transition-colors ${i === schicht ? "bg-accent text-accent-fg" : i < schicht ? "bg-surface-hover text-fg" : "text-muted hover:text-fg border border-line"}`}>
+              {i + 1}. {s.name}
+            </button>
+          ))}
+        </div>
+        <button className="btn btn-primary" disabled={schicht === letzte} onClick={() => setSchicht(schicht + 1)}>Abnehmen ▶</button>
+      </div>
+      <p className="text-sm text-muted">🛠️ {schichten[schicht].text}</p>
     </div>
   );
 }

@@ -197,6 +197,7 @@ Jede Simulation trägt Fächer (auch mehrere, z. B. Geografie und Physik); die �
 - Entscheidungen mit Folgen: CPU einsetzen, Wärmeleitpaste, Dual Channel, P8/P9 »Schwarz an Schwarz«, rote Ader an Pin 1, Laufwerk A: hinter der Verdrehung, SD-Karte per Imager
 - Einschalten jederzeit: nichts, Piepcodes (auch hörbar, beim 386er nur mit Lautsprecher), BIOS-Meldungen, durchgebrannte Chips, Warnungen — oder Start mit Bootbildschirm; halbe SIMM-Bank beim 386er
 - Realistische Ansicht und Schaltplan (Strom, Daten, Wärme), auch nebeneinander; Bauen geht in beiden
+- Smartphone Schicht für Schicht zerlegen: Glasrückseite, Halte- und Abschirmblech, Akku mit Ladespule — darunter Chips, Graphitfolie und Flexkabel
 - Erkennen mit Infokarten und Quiz für alle Geräte inklusive Smartphone; »Damals & heute« vergleicht Takt, Kerne, Speicher und Netzteil logarithmisch
 - Tipp-Knopf, Fehlerzähler, Bestzeit im Browser
 

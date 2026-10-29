@@ -6,9 +6,9 @@
 import { describe, expect, it } from "vitest";
 import { GERAETE } from "@/lib/pcbau/geraete";
 import {
-  ausbauen, einbauen, einschalten, hindernis, istDrin, kabel, kabelAbziehen, kabelDrin, kabelKnoten, komplett, port, stecken, steckenAnKnoten, teil, tipp, vollstaendig,
+  ausbauen, einbauen, einschalten, hindernis, inSchicht, istDrin, kabel, kabelAbziehen, kabelDrin, kabelKnoten, komplett, port, stecken, steckenAnKnoten, teil, tipp, vollstaendig,
 } from "@/lib/pcbau/logik";
-import { LEER, type Bau, type Bedingung, type Geraet } from "@/lib/pcbau/typen";
+import { LEER, type Bau, type Bedingung, type Geraet, type Rect } from "@/lib/pcbau/typen";
 
 const geraet = (id: string) => GERAETE.find(g => g.id === id)!;
 const ohne = (g: Geraet, bau: Bau, id: string): Bau => kabel(g, id) ? kabelAbziehen(bau, id) : ausbauen(g, bau, id);
@@ -149,6 +149,31 @@ describe("Regeln beim Bauen", () => {
     expect(kabelDrin(leer, "atx24")).toBe(false);
     expect(leer.stecker.atx24).toEqual(["psu_24"]);
     expect(istDrin(g, leer, "psu")).toBe(true);
+  });
+});
+
+describe("Smartphone in Schichten", () => {
+  const g = geraet("handy");
+  const sichtbar = (s: number) => g.teile.filter(t => inSchicht(t, s)).map(t => t.id);
+
+  it("jede Schicht deckt auf, was darunter liegt", () => {
+    expect(sichtbar(0).sort()).toEqual(["rahmen", "rueckglas"]);
+    expect(sichtbar(1)).toEqual(expect.arrayContaining(["akku", "blech", "halteblech", "ladespule"]));
+    expect(sichtbar(1)).not.toContain("soc");
+    expect(sichtbar(2)).toEqual(expect.arrayContaining(["soc", "flash", "wlan", "akkustecker", "akku"]));
+    expect(sichtbar(2)).not.toContain("blech");
+    expect(sichtbar(3)).toEqual(expect.arrayContaining(["graphit", "hauptflex", "soc"]));
+    expect(sichtbar(3)).not.toContain("akku");
+    for (const t of g.teile) expect(g.schichten!.some((_, s) => inSchicht(t, s)), t.id).toBe(true);
+  });
+
+  it("in keiner Schicht liegen zwei Teile übereinander (außer auf Platine, Akku, Folie)", () => {
+    const grund = new Set(["rahmen", "platine", "unterplatine", "graphit", "akku"]);
+    const schneiden = (a: Rect, b: Rect) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+    g.schichten!.forEach((_, s) => {
+      const ts = g.teile.filter(t => inSchicht(t, s) && !grund.has(t.id));
+      for (const a of ts) for (const b of ts) if (a.id < b.id) expect(schneiden(a.rect, b.rect), `Schicht ${s}: ${a.id}/${b.id}`).toBe(false);
+    });
   });
 });
 

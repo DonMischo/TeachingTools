@@ -618,6 +618,7 @@ simulationen:
       - Einschalten mit Piepcodes, BIOS-Meldungen, Schäden, Warnungen oder Bootbildschirm
       - Realistische Ansicht und Schaltplan, auch nebeneinander
       - Teile erkennen und Quiz für alle Geräte inklusive Smartphone
+      - Smartphone in vier Schichten zerlegen (Rückseite, Bleche, Akku)
       - Damals & heute — Kennzahlen der Geräte im Vergleich
   - id: groessen
     name: Größen & Einheiten

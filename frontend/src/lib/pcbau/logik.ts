@@ -29,6 +29,10 @@ export const kabelDrin = (bau: Bau, id: string) => (bau.stecker[id]?.length ?? 0
 export const istDrin = (g: Geraet, bau: Bau, id: string) =>
   kabel(g, id) ? kabelDrin(bau, id) : teilDrin(g, bau, id);
 
+/** Ist das Teil in dieser Zerlege-Schicht zu sehen? Ohne Schicht: immer. */
+export const inSchicht = (t: Teil, schicht?: number) =>
+  schicht === undefined || ((t.ab ?? 0) <= schicht && schicht < (t.weg ?? Infinity));
+
 /** Was in der Teilekiste liegt. */
 export const kisteTeile = (g: Geraet) => g.teile.filter(t => !t.fest);
 

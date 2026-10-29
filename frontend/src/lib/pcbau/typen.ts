@@ -43,6 +43,10 @@ export type Teil = {
   schema?: { x: number; y: number };
   /** Im Erkennen-Modus nicht abgefragt (etwa das Gehäuse selbst). */
   nichtAbfragen?: boolean;
+  /** Schichten (nur Geräte mit `schichten`): sichtbar ab dieser Schicht … */
+  ab?: number;
+  /** … und bis vor diese (dann abgenommen). */
+  weg?: number;
 };
 
 export type KabelStil = "strom" | "sata" | "flach" | "dünn" | "hdmi" | "usb" | "usbc" | "lan";
@@ -105,6 +109,8 @@ export type Geraet = {
   start: { titel: string; text: string; bildschirm: string[] };
   /** Farben der Realansicht. */
   buehne: string;
+  /** Zerlegen in Schichten (Erkennen): Name und Hinweis je Stufe. */
+  schichten?: { name: string; text: string }[];
   /** Kabel des PC-Lautsprechers: ohne ihn bleiben Piepcodes stumm. */
   lautsprecher?: string;
   kennzahlen: Record<Kennzahl, number> & { jahr: number; notiz: string };

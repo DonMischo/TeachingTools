@@ -4,7 +4,7 @@
  * und Schaltplan (Kästen mit Strom-, Daten- und Wärmeleitungen).
  */
 import type { ReactNode } from "react";
-import { belegt, istDrin, kabelDrin, kabelKnoten, port, teil, teilDrin } from "@/lib/pcbau/logik";
+import { belegt, inSchicht, istDrin, kabelDrin, kabelKnoten, port, teil, teilDrin } from "@/lib/pcbau/logik";
 import type { Bau, Geraet, Kabel, KabelStil, Kategorie } from "@/lib/pcbau/typen";
 import { Zeichnung } from "./zeichnungen";
 
@@ -33,6 +33,8 @@ export type AnsichtProps = {
   auswahl?: Auswahl;
   markiert?: string | null;
   namen?: boolean;
+  /** Zerlege-Schicht (nur Geräte mit `schichten`). */
+  schicht?: number;
   /** Kurzes Aufleuchten nach einer Quiz-Antwort. */
   blitz?: { id: string; ok: boolean } | null;
   onTeil?: (id: string) => void;
@@ -89,11 +91,11 @@ function KabelBild({ g, k, ports, aktiv }: { g: Geraet; k: Kabel; ports: string[
   );
 }
 
-export function Realansicht({ g, bau, an = false, auswahl, markiert, namen, blitz, onTeil, onZiel, onPort }: AnsichtProps) {
+export function Realansicht({ g, bau, an = false, auswahl, markiert, namen, schicht, blitz, onTeil, onZiel, onPort }: AnsichtProps) {
   const besetzt = belegt(bau);
   const gewaehlt = auswahl?.art === "teil" ? teil(g, auswahl.id) : undefined;
   const kabelWahl = auswahl?.art === "kabel" ? auswahl.id : null;
-  const sichtbar = g.teile.filter(t => teilDrin(g, bau, t.id));
+  const sichtbar = g.teile.filter(t => teilDrin(g, bau, t.id) && inSchicht(t, schicht));
 
   return (
     <svg viewBox="0 0 800 600" className="w-full h-auto rounded-2xl select-none" style={{ background: g.buehne }} role="img" aria-label={`${g.name}, Realansicht`}>
@@ -161,7 +163,7 @@ export function Realansicht({ g, bau, an = false, auswahl, markiert, namen, blit
 const KNOTEN_W = 124, KNOTEN_H = 40;
 const LEITUNG = { strom: "#f87171", daten: "#60a5fa", waerme: "#fb923c" };
 
-export function Schaltplan({ g, bau, an = false, auswahl, markiert, blitz, onKnoten }: AnsichtProps) {
+export function Schaltplan({ g, bau, an = false, auswahl, markiert, schicht, blitz, onKnoten }: AnsichtProps) {
   const knoten = g.teile.filter(t => t.schema);
   const pos = (id: string) => teil(g, id)?.schema;
   const kanten: { key: string; a: string; b: string; name: string; art: keyof typeof LEITUNG; drin: boolean; halb?: boolean; kabelId?: string }[] = [
@@ -222,6 +224,7 @@ export function Schaltplan({ g, bau, an = false, auswahl, markiert, blitz, onKno
         const rand = blitz?.id === t.id ? (blitz.ok ? "#22c55e" : "#ef4444") : istZiel || hervor ? "#facc15" : kat.farbe;
         return (
           <g key={t.id} transform={`translate(${x - KNOTEN_W / 2} ${y - KNOTEN_H / 2})`} className={onKnoten ? "cursor-pointer" : ""}
+            opacity={inSchicht(t, schicht) ? 1 : .35}
             role={onKnoten ? "button" : undefined} aria-label={onKnoten ? t.name : undefined} onClick={() => onKnoten?.(t.id)}>
             <rect width={KNOTEN_W} height={KNOTEN_H} rx={10} fill={drin ? kat.farbe : "#0b2440"} fillOpacity={drin ? .2 : 1}
               stroke={rand} strokeWidth={istZiel || hervor ? 3 : 1.5} strokeDasharray={drin ? undefined : "5 4"}
