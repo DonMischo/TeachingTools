@@ -3,6 +3,7 @@
  * Markieren & Bearbeiten — Anschluss an den Maus-Führerschein (Stufe 5/6):
  *   📘 Techniken    je Technik eine Lektion mit drei Aufgaben
  *   ⏱️ Challenge    gewürfelte Aufgaben auf Zeit, Bestzeit im Browser
+ *   📚 Quellen      Zitat und Literaturangabe aus Buch oder Webseite kopieren
  *   🏆 Bestenliste  die schnellsten Challenge-Runden (nur mit Server, nicht in der Offline-Datei)
  *   📋 Spickzettel  alle Kürzel auf einen Blick
  */
@@ -12,10 +13,12 @@ import { mitTasten } from "@/components/maus/Taste";
 import Lektionen from "./Lektionen";
 import Challenge from "./Challenge";
 import Bestenliste from "./Bestenliste";
+import Quellen from "./Quellen";
 
 const BLAETTER = [
   { id: "techniken", icon: "📘", label: "Techniken" },
   { id: "challenge", icon: "⏱️", label: "Challenge" },
+  { id: "quellen", icon: "📚", label: "Quellen" },
   { id: "beste", icon: "🏆", label: "Bestenliste" },
   { id: "spick", icon: "📋", label: "Spickzettel" },
 ] as const;
@@ -104,6 +107,7 @@ export default function Markieren({ action, rangliste }: { action?: ReactNode; r
         ? (modus, zeit_ms, aktionen) => api.markierBestenliste.eintragen({ modus, zeit_ms, aktionen }, zugang)
         : undefined} />
     ),
+    quellen: () => <Quellen />,
     beste: () => <Bestenliste zugang={zugang} verwaltung={rangliste?.verwaltung} klasse={rangliste?.klasse} />,
     spick: () => <Spickzettel />,
   };

@@ -297,7 +297,7 @@ const ALL_CARDS: Werkzeug[] = [
     href: "/simulationen/markieren",
     icon: "🖍️",
     title: "Markieren & Bearbeiten",
-    description: "Der nächste Schritt nach dem Maus-Führerschein: Doppel- und Dreifachklick, Umschalt + Klick, Pos1/Ende, Strg + Umschalt + Pfeile, Strg + C/X/V/Z und Löschen — erst Technik für Technik, dann als Challenge auf Zeit mit Bestzeit und Profi-Tipps.",
+    description: "Der nächste Schritt nach dem Maus-Führerschein: Doppel- und Dreifachklick, Umschalt + Klick, Pos1/Ende, Strg + Umschalt + Pfeile, Strg + C/X/V/Z und Löschen — erst Technik für Technik, dann als Challenge auf Zeit mit Bestenliste und Profi-Tipps. Dazu Quellen fürs Referat: Zitat und Literaturangabe aus Buch oder Webseite kopieren.",
     color: "#facc15",
   },
 ];

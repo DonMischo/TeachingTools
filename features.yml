@@ -606,6 +606,7 @@ simulationen:
       - 15 Lektionen je Technik, zählt nur mit der verlangten Technik
       - Challenge auf Zeit in drei Modi mit Bestzeit, Aktionen und Profi-Weg
       - Bestenliste je Modus mit Gästen, Filter Sitzung/Klasse, Admin löscht Einträge
+      - "Quellen: Zitat + Kurzbeleg + Literaturverzeichnis aus Buch oder Webseite kopieren, Hinweise zu Fehlgriffen (Lektorat, Kurzlink, Website-Name, Abrufdatum)"
       - Aufgaben gewürfelt aus sechs Übungstexten (markieren, Cursor setzen, löschen, ersetzen, kopieren, verschieben, rückgängig)
       - Spickzettel mit allen Kürzeln
   - id: groessen

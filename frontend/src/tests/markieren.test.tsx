@@ -14,6 +14,8 @@ import { technikAusTaste, zaehltAlsAktion } from "@/lib/markieren/technik";
 import { Textfeld } from "@/components/markieren/Textfeld";
 import Markieren from "@/components/markieren/Markieren";
 import Challenge from "@/components/markieren/Challenge";
+import Quellen from "@/components/markieren/Quellen";
+import { faelle, pruefeFeld } from "@/lib/markieren/quellen";
 
 const taste = (key: string, mod: Partial<{ ctrlKey: boolean; shiftKey: boolean; metaKey: boolean }> = {}) =>
   ({ key, ctrlKey: false, shiftKey: false, metaKey: false, ...mod });
@@ -182,5 +184,60 @@ describe("Bestenliste", () => {
     for (let i = 0; i < 10; i++) fireEvent.click(screen.getByText(/^Überspringen/));
     expect(screen.getByText(/Andere Challenge/)).toBeTruthy();
     expect(melden).not.toHaveBeenCalled();
+  });
+});
+
+describe("Quellen", () => {
+  const heute = new Date(2026, 9, 29);
+  const alle = faelle(heute);
+
+  it("jeder Fall ist mit seinen Zielwerten lösbar, und die Vorlagen nennen nur echte Felder", () => {
+    for (const f of alle) {
+      for (const feld of f.felder) expect(pruefeFeld(feld, feld.ziel[0]).ok, `${f.id}/${feld.id}`).toBe(true);
+      const ids = new Set(f.felder.map(x => x.id));
+      for (const t of [...f.zitatSatz, ...f.verzeichnis]) if (typeof t !== "string") expect(ids.has(t.feld), `${f.id}: ${t.feld}`).toBe(true);
+      // das Zitat steht wörtlich in der Quelle
+      const quelltext = f.quelle.art === "buch" ? f.quelle.seiten.flatMap(s => s.zeilen).join(" ") : f.quelle.absaetze.join(" ");
+      expect(quelltext).toContain(f.felder.find(x => x.id === "zitat")!.ziel[0]);
+    }
+  });
+
+  it("Fehlgriffe bekommen einen eigenen Hinweis", () => {
+    const mond = alle.find(f => f.id === "mond")!;
+    const feld = (id: string) => mond.felder.find(f => f.id === id)!;
+    expect(pruefeFeld(feld("titel"), "Sternenfenster").hinweis).toMatch(/Name der ganzen Website/);
+    expect(pruefeFeld(feld("url"), "https://sfw.link/m7Q2").hinweis).toMatch(/Kurzlink/);
+    expect(pruefeFeld(feld("url"), "https://www.sternenfenster-wissen.de").hinweis).toMatch(/Startseite/);
+    expect(pruefeFeld(feld("abruf"), "14.03.2025").hinweis).toMatch(/Datum des Artikels/);
+    expect(pruefeFeld(feld("abruf"), "29.10.2026").ok).toBe(true);
+    expect(pruefeFeld(feld("abruf"), "29.10.26").ok).toBe(true);
+    const bienen = alle.find(f => f.id === "bienen")!;
+    const bf = (id: string) => bienen.felder.find(f => f.id === id)!;
+    expect(pruefeFeld(bf("nachname"), "Fink").hinweis).toMatch(/Lektorat/);
+    expect(pruefeFeld(bf("seite"), "3").hinweis).toMatch(/Kapitel/);
+    expect(pruefeFeld(bf("nachname"), "brandt").ok).toBe(true);
+    const wasser = alle.find(f => f.id === "wasser")!;
+    expect(pruefeFeld(wasser.felder.find(f => f.id === "autor")!, "Redaktion Wasserwelt").hinweis).toMatch(/keine Person/);
+  });
+
+  it("das Zitat muss wörtlich sein", () => {
+    const zitat = alle[0].felder.find(f => f.id === "zitat")!;
+    const satz = zitat.ziel[0];
+    expect(pruefeFeld(zitat, `„${satz}“`).ok).toBe(true);
+    expect(pruefeFeld(zitat, satz.slice(0, -1)).ok).toBe(true); // Punkt darf fehlen
+    expect(pruefeFeld(zitat, satz.slice(0, 30)).hinweis).toMatch(/fehlt/);
+    expect(pruefeFeld(zitat, satz + " Je länger sie").hinweis).toMatch(/zu viel/);
+    expect(pruefeFeld(zitat, satz.toLowerCase()).hinweis).toMatch(/Groß- und Kleinschreibung/);
+  });
+
+  it("ein Fall wird im Referat gelöst", () => {
+    render(<Quellen />);
+    fireEvent.click(screen.getByText(/Das große Bienenbuch/, { selector: "span" }));
+    const bienen = alle.find(f => f.id === "bienen")!;
+    expect(bienen.felder.map(f => f.id)).toEqual(expect.arrayContaining(["nachnameBeleg", "jahrBeleg", "nachname", "jahr"]));
+    for (const feld of bienen.felder) fireEvent.change(screen.getByLabelText(feld.label), { target: { value: feld.ziel[0] } });
+    fireEvent.click(screen.getByText("Prüfen"));
+    expect(screen.getByText(/Richtig zitiert/)).toBeTruthy();
+    expect(screen.getByText(/Brandt, Johanna \(2021\): Das große Bienenbuch\. Leben, Arbeit und Sprache der Honigbiene\. Leipzig: Wiesengrund Verlag\./)).toBeTruthy();
   });
 });
