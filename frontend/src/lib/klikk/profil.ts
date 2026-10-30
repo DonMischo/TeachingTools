@@ -174,7 +174,7 @@ export function profilWert(s: Stand): number {
 }
 
 export const APP_NAME: Record<AppId, string> = {
-  klikk: "Klikk", chats: "Klikk Chats", spiele: "Klikk Games", wetter: "Wolke (Wetter)", candy: "Candy Blast", sneakr: "Sneakr", quiz: "Welcher Typ bist du?",
+  klikk: "Klikk", chats: "Klikk Chats", spiele: "Klikk Games", einstellungen: "Einstellungen", wetter: "Wolke (Wetter)", candy: "Candy Blast", sneakr: "Sneakr", quiz: "Welcher Typ bist du?",
 };
 
 /** Was jede App an wen geschickt hat — für das Bild »Wer liest mit?«. */

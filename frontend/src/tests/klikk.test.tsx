@@ -10,7 +10,7 @@ import { POSTS } from "@/lib/klikk/posts";
 import { istGewaehlt } from "@/lib/klikk/geschichte";
 import {
   agbAkzeptiert, aufgabe, gesehen, loeseAufgabe, nacht, neuerStand, oeffneApp, oeffneChat, onboardingFertig,
-  profil, recht, schlafen, schreibeJonas, shopAnsehen, starte, waehle,
+  profil, recht, schlafen, schreibeJonas, shopAnsehen, starte, waehle, weiterAktivitaet,
 } from "@/lib/klikk/motor";
 import { erkenntnisse, warnsignale } from "@/lib/klikk/profil";
 import { jonasWoche } from "@/components/klikk/JonasSicht";
@@ -408,5 +408,67 @@ describe("Klasse, Kommentare, Nachahmer", () => {
     expect(w.fakes_erkannt).toBe(1);
     expect(w.ungeprueft_geteilt).toBe(1);
     expect(Object.keys(w).length).toBeLessThanOrEqual(60);
+  });
+});
+
+describe("Einstellungen und Familie", () => {
+  it("Limit sperrt das Handy; eigenes Limit lässt sich ignorieren, das der strengen Eltern nicht", async () => {
+    const { einstellen, gesperrt, limitUmgehen } = await import("@/lib/klikk/motor");
+    let s = einstellen(angemeldet(), { eltern: "locker", proTag: 60, sperreAb: null, verein: null, vereinTage: null, vereinUm: null });
+    for (let i = 0; i < 31; i++) s = gesehen(s, naechster(s), 500, false);
+    expect(gesperrt(s)).toBe("limit");
+    s = limitUmgehen(s);
+    expect(gesperrt(s)).toBeNull();
+    expect(s.limitIgnoriert).toBe(1);
+
+    let streng = einstellen(angemeldet(), { eltern: "streng", proTag: null, sperreAb: null, verein: null, vereinTage: null, vereinUm: null });
+    streng = bis(streng, 21 * 60 + 5);
+    expect(gesperrt(streng)).toBe("elternSperre");
+    expect(gesperrt(limitUmgehen(streng))).toBe("elternSperre");
+    expect(schlafen(streng).phase).toBe("woche"); // kein Handy um 23:40
+  });
+
+  it("strenge Eltern: nach einem Nein ist Schluss – die Familiensache startet von selbst", () => {
+    let s = angemeldet();
+    s = { ...s, eltern: "streng" };
+    s = bis(s, 16 * 60 + 45);
+    s = waehle(s, "mama", wahlId(s, "mama", "bitte_einkaufen"), "nein");
+    expect(s.famErzwungen).toBeNull();
+    s = tagZuEnde(s);
+    s = bis(s, 17 * 60 + 55);
+    s = waehle(s, "mama", wahlId(s, "mama", "bitte_aufraeumen"), "nein");
+    s = loeseAufgabe(s, -1);
+    expect(s.aktivitaet).toMatchObject({ art: "familie", id: "aufraeumen" });
+  });
+
+  it("Tracking aus: AdKit bekommt nichts, Werbung aus anderen Apps fällt weg; stumm und Fokus filtern", async () => {
+    const { handyEinstellung, starteAktivitaet } = await import("@/lib/klikk/motor");
+    let s = handyEinstellung(angemeldet(), "tracking", true);
+    s = shopAnsehen(s, "jordan");
+    expect(s.spur.some(x => x.app === "sneakr")).toBe(false);
+    for (let i = 0; i < 4; i++) s = gesehen(s, naechster(s), 500, false);
+    const w = naechster(s);
+    expect(w.art === "werbung" && w.werbung.id).not.toBe("sneaker");
+
+    let leise = handyEinstellung(angemeldet(), "stumm", "chats");
+    leise = bis(leise, 15 * 60 + 20);
+    expect(leise.pushes.some(p => p.app === "chats")).toBe(false);
+
+    let fokus = handyEinstellung(angemeldet(), "fokus", true);
+    fokus = starteAktivitaet(fokus, "lesen", "offline");
+    for (let i = 0; i < 6; i++) fokus = weiterAktivitaet(fokus);
+    expect(fokus.pushes.filter(p => p.app === "chats")).toHaveLength(0);
+    expect(Number(fokus.flags.fokusGefiltert)).toBeGreaterThan(0);
+  });
+
+  it("eigener Trainingsplan und Absagen", async () => {
+    const { einstellen, vereinAbsagen } = await import("@/lib/klikk/motor");
+    const { vereinHeute } = await import("@/lib/klikk/freizeit");
+    let s = einstellen(angemeldet(), { eltern: "locker", proTag: null, sperreAb: null, verein: "band", vereinTage: [0], vereinUm: 15 * 60 });
+    expect(vereinHeute(s)?.verein.um).toBe(15 * 60);
+    s = vereinAbsagen(s);
+    expect(s.chats.verein.at(-1)?.text).toContain("Bescheid");
+    s = bis(s, 16 * 60);
+    expect(s.chats.verein.some(n => n.text.includes("wo warst du"))).toBe(false);
   });
 });

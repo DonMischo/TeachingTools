@@ -642,6 +642,8 @@ simulationen:
       - Geteilter Klassen-Feed mit festen Kommentaren, generierten Namen und Nachahmer-Folgen
       - Eigenes Profil mit Kommentar-Moderation, Faktencheck und Teilen
       - Lehrkraft-Bereich mit Klassenübersicht, Fake-Meldungen, Moderation und Nachbesprechungskarten
+      - Elterntypen, Handy-Limits, Avatar und Vereinsplan vor der Woche; Familienbitten mit Ablehnen bis zum Muss
+      - Einstellungen-App (Mitteilungen, Fokus, Tracking, Werbe-ID, Rechte, Bildschirmzeit) mit Wirkung aufs Spiel
       - Live-Werbeauktion der Klasse mit anonymen Profilen, Firmenrollen, verdeckten Geboten und Auswertung (Lehrkraft leitet)
   - id: groessen
     name: Größen & Einheiten

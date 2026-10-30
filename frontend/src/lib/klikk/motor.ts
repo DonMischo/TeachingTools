@@ -12,7 +12,7 @@ import { POSTS, THEMA_NAME } from "./posts";
 import { REICHWEITE, RISIKO_NAME, TRENDS, trendNachId } from "./trends";
 import { VEREINE, schritteFuer, vereinHeute, type AktArt } from "./freizeit";
 import { npcKommentare } from "./klasse";
-import type { AppId, ChatId, Recht, Stand } from "./typen";
+import type { AppId, ChatId, ElternTyp, Recht, Stand } from "./typen";
 
 export const START_UHR = 14 * 60;
 export const MITTERNACHT = 24 * 60;
@@ -29,6 +29,9 @@ export function neuerStand(seed = 1): Stand {
     verweil: {}, gelikt: {}, gesehen: [], spur: [], nachtOeffnungen: [], pushGesamt: 0, pushGeoeffnet: 0,
     appsGeoeffnet: {}, shopAngesehen: [], quiz: {}, candyRunden: 0, werbung: [],
     werbungKlicks: [], schleich: [], umfragen: {}, videos: [],
+    eltern: "locker", limit: { proTag: null, sperreAb: null, vonEltern: false }, handyMinuten: [], limitIgnoriert: 0,
+    stumm: [], trackingAus: false, werbeIdNeu: false, fokus: false, vereinTage: null, vereinUm: null,
+    famAbgelehnt: 0, famZusagen: [], famErzwungen: null,
     spielRunden: [], checks: {}, geteilt: [], eigenePosts: [], blockiert: [], klasseGesehen: [], aktivitaet: null, freizeit: [], verein: null, lesestand: {}, serienstand: {},
     erledigt: [], chats: { klasse: [], lea: [], mo: [], jonas: [], mama: [], yilmaz: [], klikkteam: [], gewinn: [], leon: [], verein: [], emma: [] },
     ungelesen: {}, gelesen: [], pushes: [], flags: {}, bemerkt: {}, morgen: [],
@@ -75,12 +78,107 @@ function tick(s: Stand, minuten: number) {
   if (s.follower >= 150) abzeichen(s, "aufsteiger");
   neueKommentare(s);
   moKopieFaellig(s);
+  if (s.famErzwungen && !s.aktivitaet && s.phase === "woche") {
+    const id = s.famErzwungen;
+    s.famErzwungen = null;
+    s.aktivitaet = { art: "familie", id, schritt: 0, unterbrochen: 0, start: s.uhr, gestoert: false };
+    s.flags[`fam_${id}_${s.tag}`] = true;
+    s.flags[`fam_${id}`] = true;
+  }
+  // Freitagabend: der Wochenbericht der Bildschirmzeit
+  if (s.tag === LETZTER_TAG && s.uhr >= 20 * 60 && !s.flags.bildschirmBericht) {
+    s.flags.bildschirmBericht = true;
+    const tage = s.handyMinuten.filter(m => m !== undefined);
+    const schnitt = tage.length ? tage.reduce((a, b) => a + (b ?? 0), 0) / tage.length : 0;
+    push(s, "einstellungen", "📊 Bildschirmzeit", `Diese Woche ${Math.floor(schnitt / 60)} Std. ${Math.round(schnitt % 60)} Min. pro Tag – ${schnitt > 120 ? "+" : "−"}${Math.abs(Math.round((schnitt - 120) / 1.2))} % zur Vorwoche`);
+  }
   const v = vereinHeute(s);
   if (v?.vorbei && !s.flags[`verein_${s.tag}`] && !s.flags[`vereinFehlt_${s.tag}`] && !(s.aktivitaet?.art === "verein")) {
     s.flags[`vereinFehlt_${s.tag}`] = true;
     s.flags.vereinFehlt = Number(s.flags.vereinFehlt ?? 0) + 1;
     nachricht(s, "verein", v.verein.trainer, Number(s.flags.vereinFehlt) > 1 ? "Schon wieder nicht da. Ist alles okay bei dir? Sag Bescheid, wenn was ist." : "Hey, wo warst du heute? Wir haben dich vermisst 🤨", {}, v.verein.um + 20);
   }
+}
+
+/** Zeit am Handy: zählt für die Bildschirmzeit und vergeht wie jede andere. */
+function handyTick(s: Stand, minuten: number) {
+  s.handyMinuten[s.tag] = (s.handyMinuten[s.tag] ?? 0) + minuten;
+  tick(s, minuten);
+}
+
+/** Ist das Handy gerade gesperrt (Limit, Sperrzeit)? Liefert den Grund. */
+export function gesperrt(s: Stand): string | null {
+  if (s.limit.sperreAb !== null && s.uhr >= s.limit.sperreAb && !s.flags[`sperreWeg_${s.tag}`])
+    return s.limit.vonEltern ? "elternSperre" : "sperre";
+  if (s.limit.proTag !== null && (s.handyMinuten[s.tag] ?? 0) >= s.limit.proTag && !s.flags[`limitWeg_${s.tag}`])
+    return s.limit.vonEltern ? "elternLimit" : "limit";
+  return null;
+}
+
+/** Eigenes Limit für heute ignorieren — oder die Eltern um mehr Zeit bitten. */
+export function limitUmgehen(alt: Stand): Stand {
+  const grund = gesperrt(alt);
+  if (!grund) return alt;
+  const s = kopie(alt);
+  if (grund === "sperre" || grund === "limit") {
+    s.flags[grund === "sperre" ? `sperreWeg_${s.tag}` : `limitWeg_${s.tag}`] = true;
+    s.limitIgnoriert++;
+    return s;
+  }
+  // Eltern fragen: Besorgte geben einmal nach, Strenge nie
+  const schon = Number(s.flags.elternGefragt ?? 0);
+  s.flags.elternGefragt = schon + 1;
+  if (s.eltern === "besorgt" && schon === 0) {
+    s.flags[grund === "elternSperre" ? `sperreWeg_${s.tag}` : `limitWeg_${s.tag}`] = true;
+    nachricht(s, "mama", "Mama", "Na gut, heute noch ein bisschen. Aber wirklich nur heute. ❤️");
+  } else {
+    nachricht(s, "mama", s.eltern === "streng" ? "Papa" : "Mama", s.eltern === "streng" ? "Nein. Regel ist Regel." : "Nein, Schatz. Morgen wieder.");
+  }
+  return s;
+}
+
+/** Vor der Woche: Eltern, Bildschirmzeit, Verein. */
+export function einstellen(alt: Stand, e: { eltern: ElternTyp; proTag: number | null; sperreAb: number | null; verein: string | null; vereinTage: number[] | null; vereinUm: number | null }): Stand {
+  const s = kopie(alt);
+  s.eltern = e.eltern;
+  // Strenge Eltern sammeln das Handy um 21 Uhr ein, besorgte setzen zwei Stunden — wer selbst strenger ist, gewinnt
+  const eltern = e.eltern === "streng" ? { proTag: null, sperreAb: 21 * 60 } : e.eltern === "besorgt" ? { proTag: 120, sperreAb: null } : null;
+  s.limit = {
+    proTag: eltern?.proTag ?? e.proTag ?? null, sperreAb: eltern?.sperreAb ?? e.sperreAb ?? null,
+    vonEltern: !!eltern,
+  };
+  if (eltern && e.proTag !== null) s.limit.proTag = Math.min(e.proTag, s.limit.proTag ?? e.proTag);
+  if (eltern && e.sperreAb !== null) s.limit.sperreAb = Math.min(e.sperreAb, s.limit.sperreAb ?? e.sperreAb);
+  s.verein = e.verein;
+  s.vereinTage = e.vereinTage;
+  s.vereinUm = e.vereinUm;
+  return s;
+}
+
+/** Handy-Einstellungen ändern. */
+export function handyEinstellung(alt: Stand, was: "stumm" | "tracking" | "werbeId" | "fokus" | "recht" | "limit", wert: string | boolean | number | null, recht?: Recht): Stand {
+  const s = kopie(alt);
+  if (was === "stumm") { const app = wert as AppId; s.stumm = s.stumm.includes(app) ? s.stumm.filter(a => a !== app) : [...s.stumm, app]; }
+  if (was === "tracking") { s.trackingAus = !!wert; spur(s, "klikk", "Klikk", wert ? "App-Tracking verboten – AdKit bekommt keine Geräte-ID mehr" : "App-Tracking wieder erlaubt"); }
+  if (was === "werbeId") { s.werbeIdNeu = true; spur(s, "klikk", "Klikk", "Werbe-ID zurückgesetzt – das alte Werbeprofil hängt nicht mehr an deinem Gerät"); }
+  if (was === "fokus") s.fokus = !!wert;
+  if (was === "recht" && recht) s.rechte[recht] = !!wert;
+  if (was === "limit" && !s.limit.vonEltern) s.limit = { ...s.limit, proTag: wert as number | null };
+  handyTick(s, 1);
+  return s;
+}
+
+/** Training heute absagen — freundlich, statt einfach nicht zu kommen. */
+export function vereinAbsagen(alt: Stand): Stand {
+  const v = vereinHeute(alt);
+  if (!v?.offen) return alt;
+  const s = kopie(alt);
+  s.flags[`vereinAbgesagt_${s.tag}`] = true;
+  s.flags.vereinAbsagen = Number(s.flags.vereinAbsagen ?? 0) + 1;
+  nachricht(s, "verein", "du", "Ich kann heute leider nicht, sorry!");
+  nachricht(s, "verein", v.verein.trainer, Number(s.flags.vereinAbsagen) > 1 ? "Okay. Langsam vermissen wir dich aber 😅" : "Danke fürs Bescheid sagen 👍 Bis zum nächsten Mal!");
+  handyTick(s, 1);
+  return s;
 }
 
 /** Wer die App nachts öffnet, wird gezählt. */
@@ -152,7 +250,7 @@ export function gesehen(alt: Stand, e: FeedEintrag, ms: number, gelikt: boolean)
     if (e.post.schleich && !s.schleich.includes(e.post.schleich)) s.schleich.push(e.post.schleich);
   }
   if (s.gesehen.length >= 60) abzeichen(s, "dauergast");
-  tick(s, 2);
+  handyTick(s, 2);
   return s;
 }
 
@@ -175,7 +273,7 @@ export function werbungKlick(alt: Stand, id: string, stufe: "seite" | "kasse" | 
   if (k) { if (rang[stufe] > rang[k.stufe]) k.stufe = stufe; }
   else s.werbungKlicks.push({ id, stufe, tag: s.tag, uhr: s.uhr });
   spur(s, "klikk", "Klikk", stufe === "seite" ? `Anzeige angeklickt: ${id}` : stufe === "kasse" ? `Bis zur Kasse: ${id}` : `»Bestellen« gedrückt: ${id}`);
-  tick(s, stufe === "seite" ? 2 : 1);
+  handyTick(s, stufe === "seite" ? 2 : 1);
   return s;
 }
 
@@ -199,7 +297,7 @@ export function challengePosten(alt: Stand, trendId: string, fake: boolean): Sta
   s.flags.offeneLikes = Number(s.flags.offeneLikes ?? 0) + Math.round(aufrufe / 9);
   s.follower += Math.round(aufrufe / 60);
   spur(s, "klikk", "Klikk", `Challenge-Video ${tr.name} gepostet (${fake ? "gefaked" : "echt"}, ${RISIKO_NAME[tr.risiko]}) — Gesicht, Zimmer und Stimme im Video`);
-  tick(s, fake ? 30 : 20);
+  handyTick(s, fake ? 30 : 20);
 
   push(s, "klikk", "🚀 Dein Video läuft!", `${tr.name} · ${aufrufe.toLocaleString("de-DE")} Aufrufe`);
   push(s, "klikk", "💬 Neue Kommentare", fake ? "»fake 🤡« »egal, krass 🔥« »mach's in echt«" : tr.risiko === "harmlos" ? "»haha 😂« »süß«" : "»KRASS 🔥🔥« »mach's noch krasser« »legende«");
@@ -210,9 +308,9 @@ export function challengePosten(alt: Stand, trendId: string, fake: boolean): Sta
     if (tr.risiko === "harmlos") nachricht(s, "lea", "Lea", "😂😂😂 dein video omg");
     else nachricht(s, "mama", "", tr.folge, { system: true });
     if (tr.id === "eis") { s.flags.erkaeltet = true; nachricht(s, "mama", "Mama", "Warum ist das Bad nass und du hast Fieber??"); }
-    if (tr.id === "hotchip") { nachricht(s, "mama", "Mama", "Wir fahren JETZT in die Notaufnahme. Zieh dir Schuhe an."); tick(s, 180); }
+    if (tr.id === "hotchip") { nachricht(s, "mama", "Mama", "Wir fahren JETZT in die Notaufnahme. Zieh dir Schuhe an."); handyTick(s, 180); }
     if (tr.id === "gleis") nachricht(s, "mama", "Mama", "Die Bundespolizei war hier. Ich bin fassungslos. Dir hätte sonst was passieren können!");
-    if (tr.id === "dach") { nachricht(s, "mama", "Mama", "Ich hol dich im Krankenhaus ab. Wir reden später."); tick(s, 120); }
+    if (tr.id === "dach") { nachricht(s, "mama", "Mama", "Ich hol dich im Krankenhaus ab. Wir reden später."); handyTick(s, 120); }
     if (tr.id === "nosleep") s.flags.nosleep = s.tag;
     if (tr.risiko !== "harmlos") s.flags[`folge_${tr.id}`] = s.tag;
   }
@@ -261,7 +359,7 @@ export function kommentarAktion(alt: Stand, postId: string, index: number, aktio
       : `Wir haben den Kommentar von ${k.von} geprüft und keinen Verstoß gegen unsere Richtlinien festgestellt.`);
   }
   if (k.gemein) s.flags[`hass_${aktion}`] = Number(s.flags[`hass_${aktion}`] ?? 0) + 1;
-  tick(s, 1);
+  handyTick(s, 1);
   return s;
 }
 
@@ -270,7 +368,7 @@ export function faktencheck(alt: Stand, id: string, urteil: "echt" | "fake", ist
   if (alt.checks[id]) return alt;
   const s = kopie(alt);
   s.checks[id] = { urteil, richtig: (urteil === "fake") === istFake };
-  tick(s, 4);
+  handyTick(s, 4);
   return s;
 }
 
@@ -289,7 +387,7 @@ export function klassenGesehen(alt: Stand, id: number): Stand {
   if (alt.klasseGesehen.includes(id)) return alt;
   const s = kopie(alt);
   s.klasseGesehen.push(id);
-  tick(s, 2);
+  handyTick(s, 2);
   return s;
 }
 
@@ -345,7 +443,7 @@ export function posten(alt: Stand, motiv: string): Stand {
   s.flags.offeneLikes = Number(s.flags.offeneLikes ?? 0) + Math.round(6 + r() * r() * 160) + (motiv === "selfie" ? 20 : 0);
   spur(s, "klikk", "Klikk", motiv === "selfie" ? "Selfie hochgeladen — Gesichtsdaten erfasst" : `Foto gepostet (${motiv}) mit Ort und Uhrzeit`);
   eigenerPost(s, { art: "foto", motiv }, false);
-  tick(s, 5);
+  handyTick(s, 5);
   return s;
 }
 
@@ -364,7 +462,7 @@ export function oeffneApp(alt: Stand, app: AppId): Stand {
     spur(s, app, app === "klikk" || app === "chats" ? "Klikk" : "AdKit", `Standort ${zeit(s.uhr)}: Zuhause (derselbe Ort wie jeden Abend)`);
   }
   nachtCheck(s, app);
-  tick(s, 1);
+  handyTick(s, 1);
   return s;
 }
 
@@ -375,7 +473,7 @@ export function oeffneChat(alt: Stand, chat: ChatId): Stand {
   if (chat === "jonas") {
     for (const sig of SIGNALE) if (s.flags[sig.flag] && !s.bemerkt[sig.id]) s.bemerkt[sig.id] = { tag: s.tag, uhr: s.uhr };
   }
-  tick(s, 1);
+  handyTick(s, 1);
   return s;
 }
 
@@ -410,7 +508,7 @@ export function waehle(alt: Stand, chat: ChatId, nachrichtId: string, option: st
   if (n.wahl.id === "account" && option === "folgen") spur(s, "klikk", "Klikk", "Folgt @jonas_schnarcht");
   FOLGEN[n.wahl.id]?.(s, option);
   imChat(s, chat);
-  tick(s, 1);
+  handyTick(s, 1);
   return s;
 }
 
@@ -425,7 +523,7 @@ export function schreibeJonas(alt: Stand, id: string): Stand {
   s.flags[`jonas_${id}`] = true;
   s.flags[`jonas_${id}_zeit`] = s.tag * MITTERNACHT + s.uhr;
   nachricht(s, "jonas", "du", o.text);
-  tick(s, 4);
+  handyTick(s, 4);
   nachricht(s, "jonas", "Jonas", o.antwort(s));
   imChat(s, "jonas");
   return s;
@@ -439,7 +537,7 @@ export function snap(alt: Stand): Stand {
   nachricht(s, "lea", "du", "", { bild: "📸 Snap: schwarzes Bild mit »streak«" });
   spur(s, "klikk", "Klikk", "Streak-Snap an Lea — täglich aktiv");
   if (s.streak >= 15) abzeichen(s, "streak");
-  tick(s, 1);
+  handyTick(s, 1);
   return s;
 }
 
@@ -457,7 +555,7 @@ export function shopAnsehen(alt: Stand, produkt: string): Stand {
   const p = PRODUKTE.find(x => x.id === produkt);
   if (p && !s.shopAngesehen.includes(p.name)) s.shopAngesehen.push(p.name);
   if (p) spur(s, "sneakr", "AdKit", `Produkt angesehen: ${p.name} (${p.preis} €)`);
-  tick(s, 2);
+  handyTick(s, 2);
   return s;
 }
 
@@ -466,7 +564,7 @@ export function spielRunde(alt: Stand, spiel: string, punkte: number): Stand {
   const s = kopie(alt);
   s.spielRunden = [...(s.spielRunden ?? []), { spiel, punkte, tag: s.tag, uhr: s.uhr }];
   spur(s, "spiele", "Klikk", `Spiel »${spiel}«: ${punkte} Punkte um ${zeit(s.uhr)}`);
-  tick(s, 6);
+  handyTick(s, 6);
   return s;
 }
 
@@ -474,7 +572,7 @@ export function candyRunde(alt: Stand, punkte: number): Stand {
   const s = kopie(alt);
   s.candyRunden++;
   spur(s, "candy", "AdKit", `Spielrunde: ${punkte} Punkte, Geräte-ID, Spielzeit ${zeit(s.uhr)}`);
-  tick(s, 6);
+  handyTick(s, 6);
   return s;
 }
 
@@ -492,7 +590,7 @@ export function quizAntwort(alt: Stand, frage: string, antwort: string): Stand {
   const q = QUIZ.find(x => x.id === frage);
   const text = q?.antworten.find(a => a[0] === antwort)?.[1] ?? antwort;
   spur(s, "quiz", "AdKit", `Quiz: »${q?.frage}« → ${text}`);
-  tick(s, 1);
+  handyTick(s, 1);
   return s;
 }
 
@@ -541,7 +639,7 @@ export function starteAktivitaet(alt: Stand, art: AktArt, id: string): Stand {
   const schritt = art === "lesen" ? s.lesestand[id] ?? 0 : art === "serie" ? s.serienstand[id] ?? 0 : 0;
   s.aktivitaet = { art, id, schritt, unterbrochen: 0, start: s.uhr, gestoert: false };
   if (art === "freunde") s.freundeTag = s.tag;
-  if (art === "familie") s.flags[`fam_${id}_${s.tag}`] = true;
+  if (art === "familie") { s.flags[`fam_${id}_${s.tag}`] = true; s.flags[`fam_${id}`] = true; }
   if (art === "verein") { s.flags[`verein_${s.tag}`] = true; if (s.uhr < (VEREINE.find(v => v.id === id)?.um ?? s.uhr)) s.uhr = VEREINE.find(v => v.id === id)!.um; }
   return s;
 }
@@ -586,7 +684,9 @@ export function schlafen(alt: Stand): Stand {
   s.flags.bettZeit = s.uhr;
   feuere(s, MITTERNACHT);
   // Kein Handy (bei der Polizei): nichts leuchtet um 23:40
-  s.phase = s.uhr < MITTERNACHT && !(s.flags.handyWeg && s.tag === 4) ? "nacht" : s.phase;
+  // Kein Handy (bei der Polizei, eingesammelt oder gesperrt): nichts leuchtet um 23:40
+  const nachtGesperrt = s.limit.sperreAb !== null && s.limit.sperreAb <= 23 * 60 + 40 && !s.flags[`sperreWeg_${s.tag}`];
+  s.phase = s.uhr < MITTERNACHT && !(s.flags.handyWeg && s.tag === 4) && !nachtGesperrt ? "nacht" : s.phase;
   if (s.phase !== "nacht") return naechsterTag(s, s.uhr);
   return s;
 }

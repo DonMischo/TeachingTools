@@ -9,7 +9,9 @@
 export type Thema =
   | "fitness" | "beauty" | "gaming" | "tiere" | "musik" | "mode" | "essen" | "comedy" | "news" | "wissen" | "trend";
 
-export type AppId = "klikk" | "chats" | "wetter" | "candy" | "sneakr" | "quiz" | "spiele";
+export type AppId = "klikk" | "chats" | "wetter" | "candy" | "sneakr" | "quiz" | "spiele" | "einstellungen";
+
+export type ElternTyp = "streng" | "locker" | "besorgt" | "arbeit";
 
 export type Recht = "kontakte" | "standort" | "mikrofon" | "mitteilungen";
 
@@ -127,6 +129,25 @@ export interface Stand {
   /** Faktencheck: Post-ID → Urteil und ob es stimmte; geteilte Nachrichten (geprüft oder nicht) */
   checks: Record<string, { urteil: "echt" | "fake"; richtig: boolean }>;
   geteilt: { id: string; geprueft: boolean; fake: boolean }[];
+  /** Einstellungen vor der Woche */
+  eltern: ElternTyp;
+  /** Bildschirmzeit: Minuten pro Tag, Sperre ab Uhrzeit; vonEltern = nicht selbst abschaltbar */
+  limit: { proTag: number | null; sperreAb: number | null; vonEltern: boolean };
+  /** Minuten am Handy je Tag (gezählt bei jeder Handlung am Handy) */
+  handyMinuten: number[];
+  limitIgnoriert: number;
+  /** Handy-Einstellungen */
+  stumm: AppId[];
+  trackingAus: boolean;
+  werbeIdNeu: boolean;
+  fokus: boolean;
+  /** eigener Trainingsplan für den Verein */
+  vereinTage: number[] | null;
+  vereinUm: number | null;
+  /** Bitten der Familie: abgelehnt (Anzahl), zugesagt, erzwungen */
+  famAbgelehnt: number;
+  famZusagen: string[];
+  famErzwungen: string | null;
   /** Runden in »Klikk Games« */
   spielRunden: { spiel: string; punkte: number; tag: number; uhr: number }[];
   /** eigene Challenge-Videos */

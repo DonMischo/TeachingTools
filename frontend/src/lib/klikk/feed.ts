@@ -48,8 +48,10 @@ export function naechster(s: Stand): FeedEintrag {
   if (trend && !letzteTrend) return { art: "post", post: trend };
 
   if (s.gesehen.length % 5 === 4) {
-    const gezielt = WERBUNG.filter(w => w.passt(s) && w.id !== "tarif");
-    const passend = gezielt.length ? gezielt : WERBUNG.filter(w => w.passt(s));
+    // Ohne Tracking (oder mit neuer Werbe-ID) fehlen die Daten aus den anderen Apps
+    const ohneAdKit = s.trackingAus || s.werbeIdNeu;
+    const gezielt = WERBUNG.filter(w => w.passt(s) && w.id !== "tarif" && !(ohneAdKit && (w.id === "sneaker" || w.id === "diamanten")));
+    const passend = gezielt.length ? gezielt : WERBUNG.filter(w => w.id === "tarif");
     // Die gezielteste zuerst: die noch nicht gezeigte, sonst irgendeine passende
     const neu = passend.filter(w => !s.werbung.some(x => x.id === w.id));
     const wahl = (neu.length ? neu : passend)[Math.floor(r() * (neu.length ? neu.length : passend.length))];

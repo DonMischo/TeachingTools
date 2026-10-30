@@ -47,6 +47,8 @@ export const SERIEN: Serie[] = [
 
 export interface FamilienSache {
   id: string; name: string; emoji: string;
+  /** eine Bitte der Familie: verfügbar nach Zusage (oder wenn sie erzwungen wird) */
+  bitte?: boolean;
   /** an welchen Tagen und in welchem Zeitfenster (Spielminuten) */
   tage: number[]; von: number; bis: number;
   schritte: (tag: number) => Schritt[];
@@ -99,6 +101,27 @@ export const FAMILIE: FamilienSache[] = [
     ],
   },
 ];
+
+FAMILIE.push(
+  { id: "einkaufen", name: "Einkaufen helfen", emoji: "🛒", bitte: true, tage: [], von: 0, bis: 0, schritte: () => [
+    { text: "Im Supermarkt streitet ihr, ob Ketchup ein Gemüse ist. An der Kasse ist es so voll, dass ihr anfangt, euch Geschichten über die Leute in der Schlange auszudenken.", minuten: 45, beiHandy: "»Kannst du mal tragen helfen, statt aufs Handy zu starren?«" },
+  ] },
+  { id: "aufraeumen", name: "Zimmer aufräumen", emoji: "🧹", bitte: true, tage: [], von: 0, bis: 0, schritte: () => [
+    { text: "Unter dem Bett findest du drei Socken, einen Zettel aus der 5. Klasse und das Ladekabel, das du seit Wochen suchst.", minuten: 30, beiHandy: "Mama schaut rein: »Ah. Sehr ordentlich. Das Handy.«" },
+    { text: "Am Ende sieht das Zimmer fast aus wie auf den Fotos aus dem Katalog. Fast.", minuten: 20 },
+  ] },
+  { id: "omaBesuch", name: "Oma besuchen (Geburtstag)", emoji: "🎂", bitte: true, tage: [], von: 0, bis: 0, schritte: () => [
+    { text: "Oma hat drei Kuchen gebacken, für vier Leute. Sie fragt dich nach der Schule, nach Freunden, nach allem. Sie hört richtig zu.", minuten: 60, beiHandy: "Oma: »Was ist denn da so spannend? Zeig mal!« Du zeigst es ihr. Sie versteht es nicht. Du irgendwie auch nicht." },
+    { text: "Sie holt das alte Fotoalbum. Opa mit Schlaghose. Mama als Baby. Du mit drei, voller Schokolade. Alle lachen.", minuten: 60 },
+  ] },
+  { id: "mila", name: "Auf Mila aufpassen", emoji: "🧸", bitte: true, tage: [], von: 0, bis: 0, schritte: () => [
+    { text: "Mila will Verstecken spielen. Sie versteckt sich immer hinter dem gleichen Vorhang und ruft dann »Ich bin nicht hier!«.", minuten: 30, beiHandy: "Plötzlich ist es still. Zu still. Mila hat den Filzstift gefunden. Und die Wand." },
+    { text: "Ihr baut eine Murmelbahn aus Klopapierrollen. Sie funktioniert sogar.", minuten: 30 },
+  ] },
+  { id: "fahrrad", name: "Fahrrad reparieren", emoji: "🚲", bitte: true, tage: [], von: 0, bis: 0, schritte: () => [
+    { text: "Kette ölen, Bremsen einstellen, Reifen flicken. Deine Hände sind schwarz, Papa erklärt jeden Handgriff zweimal. Danach fährt das Rad wie neu.", minuten: 50, beiHandy: "Papa: »Halt mal fest – nein, nicht das Handy, die Kette!«" },
+  ] },
+);
 
 // ───────── Vereine: feste Tage und Zeiten ─────────
 
@@ -177,12 +200,17 @@ export function schritteFuer(s: Stand, art: AktArt, id: string): Schritt[] {
 
 /** Familien-Sachen, die jetzt gehen. */
 export function familieJetzt(s: Stand) {
-  return FAMILIE.filter(f => f.tage.includes(s.tag) && s.uhr >= f.von && s.uhr < f.bis && !s.flags[`fam_${f.id}_${s.tag}`]);
+  return FAMILIE.filter(f => !s.flags[`fam_${f.id}_${s.tag}`] && (f.bitte
+    ? s.famZusagen.includes(f.id) && !s.flags[`fam_${f.id}`] && s.uhr < 21 * 60
+    : f.tage.includes(s.tag) && s.uhr >= f.von && s.uhr < f.bis && !(s.eltern === "arbeit" && f.id === "essen" && s.tag % 2 === 0)));
 }
 
 /** Der eigene Verein, falls heute Training ist: noch nicht angefangen, oder höchstens 15 Minuten zu spät. */
 export function vereinHeute(s: Stand) {
-  const v = VEREINE.find(x => x.id === s.verein);
-  if (!v || !v.tage.includes(s.tag)) return null;
+  const basis = VEREINE.find(x => x.id === s.verein);
+  if (!basis) return null;
+  // Eigener Trainingsplan (Einstellungen vor der Woche) statt der Standardzeiten
+  const v = { ...basis, tage: s.vereinTage ?? basis.tage, um: s.vereinUm ?? basis.um };
+  if (!v.tage.includes(s.tag) || s.flags[`vereinAbgesagt_${s.tag}`]) return null;
   return { verein: v, offen: s.uhr <= v.um + 15 && !s.flags[`verein_${s.tag}`], vorbei: s.uhr > v.um + 15 };
 }

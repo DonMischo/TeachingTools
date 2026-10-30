@@ -21,11 +21,18 @@ export const CHAT_NAME: Record<ChatId, string> = {
 const uhr = (h: number, m = 0) => h * 60 + m;
 
 export function spur(s: Stand, app: AppId, an: "Klikk" | "AdKit", text: string) {
+  // App-Tracking verboten: AdKit bekommt nichts mehr
+  if (an === "AdKit" && s.trackingAus) { s.flags.adkitBlockiert = Number(s.flags.adkitBlockiert ?? 0) + 1; return; }
   s.spur.push({ tag: s.tag, uhr: s.uhr, app, an, text });
 }
 
 export function push(s: Stand, app: AppId, titel: string, text: string, chat?: ChatId, zeit = s.uhr) {
-  if (s.rechte.mitteilungen === false) return;
+  if (s.rechte.mitteilungen === false || s.stumm?.includes(app)) return;
+  // Fokus-Modus: während Hausaufgaben und Freizeit bleibt das Handy still
+  if (s.fokus && (s.aktivitaet || (s.hausaufgabenStand > 0 && !s.hausaufgaben[s.tag]))) {
+    s.flags.fokusGefiltert = Number(s.flags.fokusGefiltert ?? 0) + 1;
+    return;
+  }
   s.pushes.push({ id: `p${s.pushGesamt}`, app, chat, titel, text, tag: s.tag, uhr: zeit });
   s.pushGesamt++;
 }
@@ -223,6 +230,20 @@ export const EREIGNISSE: Ereignis[] = [
     nachricht(s, "mo", "Mo", "hast du das gesehen… die haben MEIN video nachgemacht 😶 ich lösch es jetzt");
   } },
 
+  // ── Familie bittet um Hilfe (ablehnen geht – bis es reicht) ──
+  { id: "bitteEinkaufen", tag: 0, uhr: uhr(16, 40), tu: s => bitte(s, "einkaufen", ELTERN_TEXT[s.eltern].einkaufen) },
+  { id: "bitteAufraeumen", tag: 1, uhr: uhr(17, 50), tu: s => bitte(s, "aufraeumen", ELTERN_TEXT[s.eltern].aufraeumen) },
+  { id: "bitteOma", tag: 2, uhr: uhr(14, 20), tu: s => bitte(s, "omaBesuch", "Oma hat heute Geburtstag 🎂 Wir fahren um 16 Uhr zu ihr. Kommst du mit?") },
+  { id: "bitteMila", tag: 3, uhr: uhr(15, 10), tu: s => bitte(s, "mila", ELTERN_TEXT[s.eltern].mila) },
+  { id: "bitteFahrrad", tag: 4, uhr: uhr(15, 30), tu: s => bitte(s, "fahrrad", "Hilfst du mir, dein Fahrrad fürs Wochenende fit zu machen? Kette ist voll rostig.") },
+  // ── Elterntypen ──
+  { id: "besorgt0", tag: 0, uhr: uhr(14, 15), wenn: s => s.eltern === "besorgt", tu: s => nachricht(s, "mama", "Mama", "Bist du gut nach Hause gekommen? Schreib kurz! ❤️ Und denk dran: 2 Stunden Handy, nicht mehr.") },
+  { id: "besorgt2", tag: 2, uhr: uhr(17, 0), wenn: s => s.eltern === "besorgt", tu: s => nachricht(s, "mama", "Mama", "Ich hab gelesen, dass da so eine Gleis-Challenge rumgeht 😟 Du machst sowas nicht, oder?") },
+  { id: "streng0", tag: 0, uhr: uhr(14, 10), wenn: s => s.eltern === "streng", tu: s => nachricht(s, "mama", "Papa", "Erst Hausaufgaben, dann Handy. Um 21 Uhr liegt es in der Küche.") },
+  { id: "arbeit0", tag: 0, uhr: uhr(18, 30), wenn: s => s.eltern === "arbeit", tu: s => nachricht(s, "mama", "Mama", "Sorry Schatz, wird heute wieder spät 😩 Essen steht im Kühlschrank. Papa ist auf Dienstreise.") },
+  { id: "arbeit3", tag: 3, uhr: uhr(19, 0), wenn: s => s.eltern === "arbeit", tu: s => nachricht(s, "mama", "Mama", "Ich weiß, ich war diese Woche kaum da. Am Wochenende machen wir was zusammen, versprochen.") },
+  { id: "locker1", tag: 1, uhr: uhr(20, 30), wenn: s => s.eltern === "locker", tu: s => nachricht(s, "mama", "Mama", "Na, alles gut bei dir? Du sitzt ja nur noch am Handy 😅 Ist ja deine Sache, aber geh nicht so spät ins Bett.") },
+
   // ── Freitag ──
   { id: "trendFr", tag: 4, uhr: uhr(15, 0), wenn: s => !!s.flags.moVerletzt, tu: s => push(s, "klikk", "🔥 Trend in deiner Nähe", "Mo am Bahndamm – #GleisSelfie · 48.000 Aufrufe, 230 Duette") },
   { id: "wochenende", tag: 4, uhr: uhr(18, 0), wenn: s => !s.flags.leaStreit || !!s.flags.leaVersoehnt, tu: s => nachricht(s, "lea", "Lea", "endlich wochenende 🥳 kommst du morgen mit ins freibad?") },
@@ -230,6 +251,7 @@ export const EREIGNISSE: Ereignis[] = [
 
 /** Folgen einer Entscheidung, sofort beim Tippen. */
 export const FOLGEN: Record<string, (s: Stand, o: string) => void> = {
+  ...Object.fromEntries(["einkaufen", "aufraeumen", "omaBesuch", "mila", "fahrrad"].map(id => [`bitte_${id}`, (s: Stand, o: string) => bitteBeantworten(s, id, o === "ja")])),
   bus: (s, o) => {
     if (o === "lachen") nachricht(s, "klasse", "Finn", "sag ich doch 😂");
     else { nachricht(s, "klasse", "Finn", "chill, ist nur spaß"); nachricht(s, "klasse", "Emma", "naja… stimmt schon irgendwie"); }
@@ -392,6 +414,33 @@ function leonGemeldet(s: Stand) {
   s.flags.leonGemeldet = true;
   nachricht(s, "mama", "du", "", { bild: "📷 Screenshots vom Chat mit leon.16" });
   nachricht(s, "mama", "Mama", "Gut, dass du mir das zeigst. Du hast NICHTS falsch gemacht. Wir machen Screenshots, blockieren ihn und gehen morgen zur Polizei. ❤️");
+}
+
+/** Texte je nach Elterntyp */
+const ELTERN_TEXT: Record<Stand["eltern"], { einkaufen: string; aufraeumen: string; mila: string }> = {
+  streng: { einkaufen: "Um 17 Uhr fährst du mit mir einkaufen. Wir brauchen Getränke.", aufraeumen: "Dein Zimmer sieht aus wie ein Schlachtfeld. Heute noch aufräumen.", mila: "Ich muss noch weg. Du passt eine Stunde auf Mila auf." },
+  locker: { einkaufen: "Hast du Lust, nachher mit einkaufen zu kommen? Du darfst die Chips aussuchen 😄", aufraeumen: "Könntest du heute mal dein Zimmer aufräumen? Wäre echt lieb.", mila: "Kannst du kurz auf Mila aufpassen? Ich bin in einer Stunde zurück." },
+  besorgt: { einkaufen: "Kommst du mit einkaufen? Dann bist du mal an der frischen Luft ☀️", aufraeumen: "Räumst du heute dein Zimmer auf? Ich finde da sonst nie was.", mila: "Ich muss kurz zum Arzt. Passt du auf Mila auf? Ruf an, wenn was ist!" },
+  arbeit: { einkaufen: "Ich schaff's heute nicht zum Einkaufen 😩 Gehst du mit Papas Liste? Geld liegt auf dem Tisch.", aufraeumen: "Kannst du die Spülmaschine ausräumen und dein Zimmer machen? Ich komm erst um 21 Uhr.", mila: "Notfall im Büro. Kannst du Mila vom Hort abholen und auf sie aufpassen?" },
+};
+
+function bitte(s: Stand, id: string, text: string) {
+  nachricht(s, "mama", s.eltern === "streng" ? "Papa" : "Mama", text, wahl(`bitte_${id}`, ["ja", "Ja, mach ich"], ["nein", "Keine Zeit gerade"]));
+}
+
+/** Zusage oder Absage zu einer Familienbitte — irgendwann ist die Geduld vorbei. */
+export function bitteBeantworten(s: Stand, id: string, ja: boolean) {
+  const wer = s.eltern === "streng" ? "Papa" : "Mama";
+  if (ja) { if (!s.famZusagen.includes(id)) s.famZusagen.push(id); nachricht(s, "mama", wer, "Danke dir! ❤️"); return; }
+  s.famAbgelehnt++;
+  const geduld = { streng: 1, arbeit: 2, besorgt: 2, locker: 3 }[s.eltern];
+  if (s.famAbgelehnt > geduld) {
+    s.famErzwungen = id;
+    nachricht(s, "mama", wer, s.eltern === "streng" ? "Schluss jetzt. Handy weg, du kommst. Sofort."
+      : s.eltern === "locker" ? "Ich frag nicht nochmal nett. Komm bitte JETZT." : "Jetzt reicht's. Keine Diskussion.");
+  } else {
+    nachricht(s, "mama", wer, ["Hm. Okay.", "Schon wieder nein?", "Du hast echt nie Zeit, oder?"][Math.min(2, s.famAbgelehnt - 1)]);
+  }
 }
 
 /** Wie sehr man beim Mobbing gegen Jonas mitgemacht hat (Lachen zählt, Verbreiten mehr). */

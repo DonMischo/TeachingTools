@@ -12,6 +12,7 @@ import Tag, { Nacht } from "./Tag";
 import JonasSicht from "./JonasSicht";
 import Datenspiegel from "./Datenspiegel";
 import Lehrkraft from "./Lehrkraft";
+import { Vorbereitung } from "./Einstellungen";
 import type { MausZugang } from "@/lib/api";
 
 const SCHLUESSEL = "hp_klikk_stand";
@@ -73,7 +74,7 @@ export default function Klikk({ action, zugang, verwaltung, konto }: { action?: 
             Es gibt keine richtigen oder falschen Knöpfe. Spiel so, wie du wirklich bist.
           </p>
           <p className="text-xs text-muted">Dauer: etwa 25–40 Minuten. Der Stand bleibt in diesem Browser gespeichert.</p>
-          <button className="btn-primary self-start" onClick={() => setze(starte)}>📱 Handy einschalten</button>
+          <Vorbereitung s={stand} setze={setze} los={() => setze(starte)} />
         </div>
       ) : stand.phase === "onboarding" ? (
         <Handy s={stand} setze={setze} online={online} />

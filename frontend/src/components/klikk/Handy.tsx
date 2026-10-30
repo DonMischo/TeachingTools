@@ -7,6 +7,8 @@ import Feed from "./Feed";
 import Chats from "./Chats";
 import { Candy, Quiz, Sneakr, Wetter } from "./Apps";
 import SpieleApp, { type Online } from "./spiele/SpieleApp";
+import Einstellungen, { Sperre } from "./Einstellungen";
+import { gesperrt } from "@/lib/klikk/motor";
 import { namensVorschlaege } from "@/lib/klikk/klasse";
 
 type Setze = (f: (s: Stand) => Stand) => void;
@@ -30,6 +32,7 @@ const APPS: { id: AppId; name: string; icon: string; farbe: string }[] = [
   { id: "sneakr", name: "Sneakr", icon: "👟", farbe: "linear-gradient(135deg,#0f172a,#f97316)" },
   { id: "quiz", name: "Typ-Quiz", icon: "🔮", farbe: "linear-gradient(135deg,#f59e0b,#a855f7)" },
   { id: "spiele", name: "Games", icon: "🎮", farbe: "linear-gradient(135deg,#7c3aed,#06b6d4)" },
+  { id: "einstellungen", name: "Einstellungen", icon: "⚙️", farbe: "linear-gradient(135deg,#64748b,#1e293b)" },
 ];
 
 export default function Handy({ s, setze, online }: { s: Stand; setze: Setze; online?: Online }) {
@@ -47,6 +50,8 @@ export default function Handy({ s, setze, online }: { s: Stand; setze: Setze; on
       </div>
     </Rahmen>
   );
+
+  if (s.phase === "woche" && gesperrt(s)) return <Rahmen uhr={zeit(s.uhr)} dunkel><Sperre s={s} setze={setze} /></Rahmen>;
 
   const oeffne = (a: AppId, c?: ChatId) => { setChat(c); setApp(a); setze(st => oeffneApp(st, a)); };
   const ungelesen = Object.values(s.ungelesen).reduce((a, b) => a + (b ?? 0), 0);
@@ -97,6 +102,7 @@ export default function Handy({ s, setze, online }: { s: Stand; setze: Setze; on
             {app === "sneakr" && <Sneakr setze={setze} />}
             {app === "quiz" && <Quiz s={s} setze={setze} />}
             {app === "spiele" && <SpieleApp setze={setze} online={online} />}
+            {app === "einstellungen" && <Einstellungen s={s} setze={setze} />}
           </div>
           <button onClick={() => setApp(null)} className="py-2 border-t border-line text-xs font-bold text-muted hover:text-fg">● Startbildschirm</button>
         </>

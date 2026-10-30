@@ -7,7 +7,7 @@
 import { useEffect, useRef, useState } from "react";
 import { BUECHER, buchNachId } from "@/lib/klikk/buecher";
 import { FAMILIE, FREUNDE, SERIEN, VEREINE, familieJetzt, schritteFuer, vereinHeute } from "@/lib/klikk/freizeit";
-import { ABENDESSEN, beendeAktivitaet, starteAktivitaet, vereinWaehlen, weiterAktivitaet, zeit } from "@/lib/klikk/motor";
+import { ABENDESSEN, beendeAktivitaet, starteAktivitaet, vereinAbsagen, vereinWaehlen, weiterAktivitaet, zeit } from "@/lib/klikk/motor";
 import type { Stand } from "@/lib/klikk/typen";
 
 type Setze = (f: (s: Stand) => Stand) => void;
@@ -38,6 +38,9 @@ export function FreizeitKarte({ s, setze }: { s: Stand; setze: Setze }) {
         </button>
       </div>
 
+      {v?.offen && (
+        <button className="text-xs text-muted underline self-start" onClick={() => setze(vereinAbsagen)}>Training heute absagen (dem Trainer Bescheid geben)</button>
+      )}
       {fam.length > 0 && (
         <div className="flex flex-col gap-1">
           <div className="text-xs font-bold text-muted mt-1">👨‍👩‍👧 Familie</div>

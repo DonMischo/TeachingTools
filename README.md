@@ -218,6 +218,8 @@ Jede Simulation trägt Fächer (auch mehrere, z. B. Geografie und Physik); die �
 - Klassen-Feed mit Code: alle sehen die Fotos und Challenge-Videos der anderen, liken und kommentieren aus einer festen Liste (kein Freitext, Namen nur generiert); ein gefährliches Video – auch ein gefaktes – macht Mo nach und landet im Krankenhaus
 - Eigenes Profil mit Kommentaren (auch gemeinen) zum Beantworten, Löschen, Blockieren, Melden; Faktencheck (»Stimmt das?«) und Teilen bei jeder Nachricht
 - Lehrkraft-Bereich: anonyme Klassenübersicht (ab drei), Meldung samt Galeriebild in den Klassen-Feed stellen (auch als Fake), Feed moderieren, druckbare Nachbesprechungskarten mit Fragen und Rollenspielen
+- Vor der Woche: Elterntyp (locker, streng, besorgt, arbeiten viel), eigenes Handy-Limit oder Sperrzeit, 3D-Avatar, Verein mit eigenem Trainingsplan; Familie bittet um Hilfe (Einkaufen, Oma, Mila …) – Nein sagen geht, bis die Geduld vorbei ist
+- Einstellungen-App: Mitteilungen je App, Fokus-Modus, App-Tracking verbieten, Werbe-ID zurücksetzen, Berechtigungen, Bildschirmzeit je Tag samt Wochenbericht; Sperrbildschirm bei Limit
 - Werbeauktion live: die Klasse gibt ihre Profile nach Zustimmung anonym ab und ersteigert sie als Werbefirmen (100 Taler, verdeckte Gebote); die Lehrkraft leitet am Beamer und bespricht, welche Merkmale den Preis treiben
 
 ### 🍎 Rechenregeln
