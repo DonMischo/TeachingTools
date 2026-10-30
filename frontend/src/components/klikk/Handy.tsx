@@ -25,6 +25,7 @@ import Feed from "./Feed";
 import Chats from "./Chats";
 import { Candy, Quiz, Sneakr, Wetter } from "./Apps";
 import SpieleApp, { type Online } from "./spiele/SpieleApp";
+import ElemonApp from "./elemon/ElemonApp";
 import Einstellungen, { Sperre } from "./Einstellungen";
 import { gesperrt } from "@/lib/klikk/motor";
 import { namensVorschlaege } from "@/lib/klikk/klasse";
@@ -50,6 +51,7 @@ const APPS: { id: AppId; name: string; icon: string; farbe: string }[] = [
   { id: "sneakr", name: "Sneakr", icon: "👟", farbe: "linear-gradient(135deg,#0f172a,#f97316)" },
   { id: "quiz", name: "Typ-Quiz", icon: "🔮", farbe: "linear-gradient(135deg,#f59e0b,#a855f7)" },
   { id: "spiele", name: "Games", icon: "🎮", farbe: "linear-gradient(135deg,#7c3aed,#06b6d4)" },
+  { id: "elemon", name: "Elemon", icon: "🐾", farbe: "linear-gradient(135deg,#f97316,#16a34a)" },
   { id: "einstellungen", name: "Einstellungen", icon: "⚙️", farbe: "linear-gradient(135deg,#64748b,#1e293b)" },
 ];
 
@@ -125,6 +127,7 @@ export default function Handy({ s, setze, online }: { s: Stand; setze: Setze; on
             {app === "sneakr" && <Sneakr setze={setze} />}
             {app === "quiz" && <Quiz s={s} setze={setze} online={online ?? { konto: false }} />}
             {app === "spiele" && <SpieleApp s={s} setze={setze} online={online} />}
+            {app === "elemon" && <ElemonApp s={s} setze={setze} online={online} />}
             {app === "einstellungen" && <Einstellungen s={s} setze={setze} />}
           </div>
           <button onClick={() => setApp(null)} className="py-2 border-t border-line text-xs font-bold text-muted hover:text-fg">● Startbildschirm</button>

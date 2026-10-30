@@ -9,7 +9,7 @@
 export type Thema =
   | "fitness" | "beauty" | "gaming" | "tiere" | "musik" | "mode" | "essen" | "comedy" | "news" | "wissen" | "trend";
 
-export type AppId = "klikk" | "chats" | "wetter" | "candy" | "sneakr" | "quiz" | "spiele" | "einstellungen";
+export type AppId = "klikk" | "chats" | "wetter" | "candy" | "sneakr" | "quiz" | "spiele" | "elemon" | "einstellungen";
 
 export type ElternTyp = "streng" | "locker" | "besorgt" | "arbeit";
 
@@ -163,6 +163,8 @@ export interface Stand {
   famErzwungen: string | null;
   /** Runden in »Klikk Games« */
   spielRunden: { spiel: string; punkte: number; tag: number; uhr: number }[];
+  /** Monster-Sammelspiel auf dem Handy (fehlt, bis die App zum ersten Mal startet) */
+  elemon?: import("./elemon/spiel").ElemonStand;
   /** eigene Challenge-Videos */
   videos: { trend: string; fake: boolean; tag: number; aufrufe: number }[];
 

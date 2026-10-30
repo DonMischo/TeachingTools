@@ -1304,6 +1304,15 @@ export type KlikkUebersicht = {
   werte: Record<string, { art: "ja"; ja: number; von: number } | { art: "zahl"; schnitt: number; min: number; max: number } | { art: "wahl"; zaehlung: Record<string, number> }>;
 };
 export type KlikkSpiel = "bloecke" | "sprung" | "logik";
+/** Elemon-Duell: der Server hält nur Teams, Startwert und vollständige Runden */
+export type DuellElemon = { art: string; stufe: number; attacken: string[] };
+export type DuellZug = { art: "angriff" | "wechsel" | "aufgeben"; nr: number };
+export type KlikkDuell = {
+  id: number; status: "offen" | "laeuft" | "fertig"; seite: "a" | "b" | null;
+  a_name: string; b_name: string | null; a_team: DuellElemon[]; b_team: DuellElemon[] | null;
+  seed: number; zuege: [DuellZug, DuellZug][]; warte: boolean; sieger: "a" | "b" | null;
+};
+export type KlikkDuelle = { offen: { id: number; name: string; team: { art: string; stufe: number }[] }[]; meins: KlikkDuell | null };
 export type KlikkUhr = { laeuft: boolean; pausiert: boolean; start_ms: number | null; minuten_pro_tag: number; pausiert_ms: number | null; jetzt_ms: number };
 export type KlikkSpielEintrag = { platz: number; name: string; klasse: string | null; gast: boolean; wert: number; selbst: boolean };
 
@@ -1724,6 +1733,29 @@ export const api = {
       apiFetch<KlikkUhr>(`klikk/sitzung/${encodeURIComponent(z.code)}/uhr`, { headers: z.token ? { Authorization: `Bearer ${z.token}` } : undefined }),
     uhrSteuern: (code: string, aktion: "start" | "pause" | "weiter" | "stopp", minuten_pro_tag = 6) =>
       apiFetch<KlikkUhr>(`klikk/sitzung/${encodeURIComponent(code)}/uhr`, { method: "POST", body: JSON.stringify({ aktion, minuten_pro_tag }) }),
+    // Elemon-Duelle
+    duelle: (z: MausZugang) =>
+      apiFetch<KlikkDuelle>(`klikk/sitzung/${encodeURIComponent(z.code)}/duelle`, { headers: z.token ? { Authorization: `Bearer ${z.token}` } : undefined }),
+    duellAnbieten: (z: MausZugang, name: string, team: DuellElemon[]) =>
+      apiFetch<KlikkDuell>(`klikk/sitzung/${encodeURIComponent(z.code)}/duelle`, {
+        method: "POST", body: JSON.stringify({ name, team }), headers: z.token ? { Authorization: `Bearer ${z.token}` } : undefined,
+      }),
+    duellAnnehmen: (z: MausZugang, id: number, name: string, team: DuellElemon[]) =>
+      apiFetch<KlikkDuell>(`klikk/sitzung/${encodeURIComponent(z.code)}/duelle/${id}/annehmen`, {
+        method: "POST", body: JSON.stringify({ name, team }), headers: z.token ? { Authorization: `Bearer ${z.token}` } : undefined,
+      }),
+    duellZug: (z: MausZugang, id: number, runde: number, zug: DuellZug) =>
+      apiFetch<KlikkDuell>(`klikk/sitzung/${encodeURIComponent(z.code)}/duelle/${id}/zug`, {
+        method: "POST", body: JSON.stringify({ runde, ...zug }), headers: z.token ? { Authorization: `Bearer ${z.token}` } : undefined,
+      }),
+    duellEnde: (z: MausZugang, id: number, sieger: "a" | "b") =>
+      apiFetch<KlikkDuell>(`klikk/sitzung/${encodeURIComponent(z.code)}/duelle/${id}/ende`, {
+        method: "POST", body: JSON.stringify({ sieger }), headers: z.token ? { Authorization: `Bearer ${z.token}` } : undefined,
+      }),
+    duellZurueck: (z: MausZugang, id: number) =>
+      apiFetch<void>(`klikk/sitzung/${encodeURIComponent(z.code)}/duelle/${id}`, {
+        method: "DELETE", headers: z.token ? { Authorization: `Bearer ${z.token}` } : undefined,
+      }),
   },
 
   // Bestenlisten der Klikk-Handyspiele (Klicker/Doppelklicker: siehe mausBestenliste)

@@ -2841,3 +2841,30 @@ class KlikkSpielstand(Base):
     teacher_id: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="CASCADE"), nullable=True)
     guest_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     session_id: Mapped[int | None] = mapped_column(ForeignKey("tool_sessions.id", ondelete="SET NULL"), nullable=True)
+
+
+class KlikkDuell(Base):
+    """Elemon-Duell zweier Leute in einer Klikk-Sitzung.
+
+    Der Server rechnet nicht: er hält die Teams, einen Zufallsstartwert und die
+    Züge je Runde. Beide Handys spielen damit dieselben Regeln durch
+    (``lib/klikk/elemon/kampf.ts``). ``a_wer``/``b_wer`` sind »s:12«, »t:3«
+    oder »g:<uuid>«.
+    """
+    __tablename__ = "klikk_duelle"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    session_id: Mapped[int] = mapped_column(ForeignKey("tool_sessions.id", ondelete="CASCADE"), nullable=False, index=True)
+    # offen | laeuft | fertig
+    status: Mapped[str] = mapped_column(String(10), nullable=False, default="offen")
+    a_wer: Mapped[str] = mapped_column(String(50), nullable=False)
+    a_name: Mapped[str] = mapped_column(String(40), nullable=False)
+    a_team: Mapped[list] = mapped_column(JSON, nullable=False)
+    b_wer: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    b_name: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    b_team: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    seed: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    # [[zug_a | null, zug_b | null], …]
+    zuege: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    sieger: Mapped[str | None] = mapped_column(String(1), nullable=True)
+    erstellt_am: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

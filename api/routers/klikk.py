@@ -658,3 +658,203 @@ def spiel_eintragen_sitzung(spiel: str, code: str, body: SpielIn, db: Session = 
     session = _sitzung(code, db)
     _darf_mitmachen(db, session, spieler)
     return _spiel_eintragen(db, spiel, body.wert, spieler, session.id)
+
+
+# --- Elemon-Duelle ---------------------------------------------------------
+# Lockstep: beide schicken ihren Zug für Runde n; erst wenn beide da sind, sieht
+# jeder den des anderen. Gerechnet wird auf beiden Handys mit denselben Regeln.
+
+import random  # noqa: E402
+
+from ..models import KlikkDuell  # noqa: E402
+
+ATTACKE_ID = re.compile(r"^[a-z]{3,10}\d?$")
+ZUG_ARTEN = {"angriff", "wechsel", "aufgeben"}
+
+
+class DuellElemon(BaseModel):
+    art: str = Field(pattern=r"^[a-z_]{2,24}$")
+    stufe: int = Field(ge=1, le=50)
+    attacken: list[str] = Field(min_length=1, max_length=4)
+
+
+class DuellIn(BaseModel):
+    name: str = Field(max_length=40)
+    team: list[DuellElemon] = Field(min_length=1, max_length=3)
+
+
+class ZugIn(BaseModel):
+    runde: int = Field(ge=0, le=500)
+    art: str
+    nr: int = Field(default=0, ge=0, le=5)
+
+
+class DuellOut(BaseModel):
+    id: int
+    status: str
+    seite: str | None
+    a_name: str
+    b_name: str | None
+    a_team: list
+    b_team: list | None
+    seed: int
+    # nur vollständige Runden
+    zuege: list
+    # mein Zug für die laufende Runde ist schon da
+    warte: bool
+    sieger: str | None
+
+
+class OffenOut(BaseModel):
+    id: int
+    name: str
+    team: list
+
+
+class DuelleOut(BaseModel):
+    offen: list[OffenOut]
+    meins: DuellOut | None
+
+
+def _wer(spieler) -> str:
+    if isinstance(spieler, Student):
+        return f"s:{spieler.id}"
+    if isinstance(spieler, Teacher):
+        return f"t:{spieler.id}"
+    return f"g:{spieler.id}"
+
+
+def _team(team: list[DuellElemon]) -> list[dict]:
+    for e in team:
+        if not all(ATTACKE_ID.match(a) for a in e.attacken):
+            raise HTTPException(400, "Unbekannte Attacke.")
+    return [e.model_dump() for e in team]
+
+
+def _duell_out(d: KlikkDuell, wer: str) -> DuellOut:
+    seite = "a" if d.a_wer == wer else "b" if d.b_wer == wer else None
+    zuege = list(d.zuege or [])
+    voll = [z for z in zuege if z[0] is not None and z[1] is not None]
+    offen = zuege[len(voll)] if len(zuege) > len(voll) else None
+    warte = bool(offen and seite and offen[0 if seite == "a" else 1] is not None)
+    return DuellOut(id=d.id, status=d.status, seite=seite, a_name=d.a_name, b_name=d.b_name, a_team=d.a_team,
+                    b_team=d.b_team, seed=d.seed, zuege=voll, warte=warte, sieger=d.sieger)
+
+
+def _duell(db: Session, session: ToolSession, duell_id: int) -> KlikkDuell:
+    d = db.query(KlikkDuell).filter_by(id=duell_id, session_id=session.id).first()
+    if not d:
+        raise HTTPException(404, "Duell nicht gefunden")
+    return d
+
+
+@router.get("/{code}/duelle", response_model=DuelleOut)
+def duelle(code: str, db: Session = Depends(get_db), spieler: Union[Teacher, Student, Guest] = Depends(get_player)):
+    session = _sitzung(code, db)
+    wer = _wer(spieler)
+    offen = (db.query(KlikkDuell).filter_by(session_id=session.id, status="offen")
+             .filter(KlikkDuell.a_wer != wer).order_by(KlikkDuell.id.desc()).limit(30).all())
+    meins = (db.query(KlikkDuell).filter_by(session_id=session.id)
+             .filter((KlikkDuell.a_wer == wer) | (KlikkDuell.b_wer == wer)).order_by(KlikkDuell.id.desc()).first())
+    return DuelleOut(
+        offen=[OffenOut(id=d.id, name=d.a_name, team=[{"art": e["art"], "stufe": e["stufe"]} for e in d.a_team]) for d in offen],
+        meins=_duell_out(meins, wer) if meins else None,
+    )
+
+
+@router.post("/{code}/duelle", response_model=DuellOut, status_code=201)
+def duell_anbieten(code: str, body: DuellIn, db: Session = Depends(get_db), spieler: Union[Teacher, Student, Guest] = Depends(get_player)):
+    session = _sitzung(code, db)
+    _darf_mitmachen(db, session, spieler)
+    if not NAME.match(body.name):
+        raise HTTPException(400, "Unbekannter Klikk-Name.")
+    wer = _wer(spieler)
+    # Eine offene Herausforderung pro Person: die alte verfällt
+    db.query(KlikkDuell).filter_by(session_id=session.id, status="offen", a_wer=wer).delete()
+    d = KlikkDuell(session_id=session.id, a_wer=wer, a_name=body.name, a_team=_team(body.team), zuege=[])
+    db.add(d)
+    db.commit()
+    db.refresh(d)
+    return _duell_out(d, wer)
+
+
+@router.post("/{code}/duelle/{duell_id}/annehmen", response_model=DuellOut)
+def duell_annehmen(code: str, duell_id: int, body: DuellIn, db: Session = Depends(get_db),
+                   spieler: Union[Teacher, Student, Guest] = Depends(get_player)):
+    session = _sitzung(code, db)
+    _darf_mitmachen(db, session, spieler)
+    if not NAME.match(body.name):
+        raise HTTPException(400, "Unbekannter Klikk-Name.")
+    d = _duell(db, session, duell_id)
+    wer = _wer(spieler)
+    if d.a_wer == wer:
+        raise HTTPException(400, "Gegen dich selbst geht nicht.")
+    if d.status != "offen":
+        raise HTTPException(409, "Jemand anderes war schneller.")
+    db.query(KlikkDuell).filter_by(session_id=session.id, status="offen", a_wer=wer).delete()
+    d.b_wer, d.b_name, d.b_team = wer, body.name, _team(body.team)
+    d.status, d.seed = "laeuft", random.randint(1, 2**31 - 1)
+    db.commit()
+    db.refresh(d)
+    return _duell_out(d, wer)
+
+
+@router.post("/{code}/duelle/{duell_id}/zug", response_model=DuellOut)
+def duell_zug(code: str, duell_id: int, body: ZugIn, db: Session = Depends(get_db),
+              spieler: Union[Teacher, Student, Guest] = Depends(get_player)):
+    session = _sitzung(code, db)
+    d = _duell(db, session, duell_id)
+    wer = _wer(spieler)
+    if wer not in (d.a_wer, d.b_wer):
+        raise HTTPException(403, "Das ist nicht dein Duell.")
+    if d.status != "laeuft":
+        raise HTTPException(409, "Das Duell läuft nicht.")
+    if body.art not in ZUG_ARTEN:
+        raise HTTPException(400, "Unbekannter Zug.")
+    zuege = [list(z) for z in (d.zuege or [])]
+    laufend = len(zuege) - (1 if zuege and None in zuege[-1] else 0)
+    if body.runde != laufend:
+        raise HTTPException(409, "Falsche Runde.")
+    if body.runde == len(zuege):
+        zuege.append([None, None])
+    i = 0 if wer == d.a_wer else 1
+    if zuege[body.runde][i] is not None:
+        raise HTTPException(409, "Dein Zug ist schon da.")
+    zuege[body.runde][i] = {"art": body.art, "nr": body.nr}
+    if body.art == "aufgeben" and zuege[body.runde][1 - i] is None:
+        # Aufgeben endet sofort; der Zug des anderen spielt keine Rolle mehr
+        zuege[body.runde][1 - i] = {"art": "angriff", "nr": 0}
+    d.zuege = zuege
+    db.commit()
+    db.refresh(d)
+    return _duell_out(d, wer)
+
+
+class EndeIn(BaseModel):
+    sieger: Literal["a", "b"]
+
+
+@router.post("/{code}/duelle/{duell_id}/ende", response_model=DuellOut)
+def duell_ende(code: str, duell_id: int, body: EndeIn, db: Session = Depends(get_db),
+               spieler: Union[Teacher, Student, Guest] = Depends(get_player)):
+    session = _sitzung(code, db)
+    d = _duell(db, session, duell_id)
+    wer = _wer(spieler)
+    if wer not in (d.a_wer, d.b_wer):
+        raise HTTPException(403, "Das ist nicht dein Duell.")
+    if d.status == "laeuft":
+        d.status, d.sieger = "fertig", body.sieger
+        db.commit()
+        db.refresh(d)
+    return _duell_out(d, wer)
+
+
+@router.delete("/{code}/duelle/{duell_id}", status_code=204)
+def duell_zurueckziehen(code: str, duell_id: int, db: Session = Depends(get_db),
+                        spieler: Union[Teacher, Student, Guest] = Depends(get_player)):
+    session = _sitzung(code, db)
+    d = _duell(db, session, duell_id)
+    if d.a_wer != _wer(spieler) or d.status != "offen":
+        raise HTTPException(403, "Nur eigene offene Herausforderungen.")
+    db.delete(d)
+    db.commit()

@@ -12,6 +12,7 @@ import { POSTS, THEMA_NAME } from "./posts";
 import { REICHWEITE, RISIKO_NAME, TRENDS, trendNachId } from "./trends";
 import { VEREINE, schritteFuer, vereinHeute, type AktArt } from "./freizeit";
 import { npcKommentare } from "./klasse";
+import { energieAuffuellen, neuerElemonStand, type ElemonStand } from "./elemon/spiel";
 import type { AppId, ChatId, ElternTyp, Recht, Stand } from "./typen";
 
 export const START_UHR = 14 * 60;
@@ -600,6 +601,19 @@ export function spielRunde(alt: Stand, spiel: string, punkte: number): Stand {
   s.spielRunden = [...(s.spielRunden ?? []), { spiel, punkte, tag: s.tag, uhr: s.uhr }];
   spur(s, "spiele", "Klikk", `Spiel »${spiel}«: ${punkte} Punkte um ${zeit(s.uhr)}`);
   handyTick(s, 6);
+  return s;
+}
+
+/**
+ * Eine Aktion in »Elemon«: Spielstand ändern, Spielzeit verbrauchen und —
+ * wenn das SDK mitläuft — eine Spur an AdKit.
+ */
+export function elemonAktion(alt: Stand, f: (e: ElemonStand) => ElemonStand, minuten = 0, spurText?: string): Stand {
+  const s = kopie(alt);
+  const jetzt = s.tag * 1440 + s.uhr;
+  s.elemon = energieAuffuellen(f(energieAuffuellen(s.elemon ?? { ...neuerElemonStand(), energieAb: jetzt }, jetzt)), jetzt);
+  if (spurText && !s.trackingAus) spur(s, "elemon", "AdKit", spurText);
+  if (minuten) handyTick(s, minuten);
   return s;
 }
 

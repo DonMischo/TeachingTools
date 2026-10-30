@@ -186,3 +186,43 @@ def test_meldung_mit_eigenem_bild(client, teacher_token):
     assert client.post(url, json={**basis, "bild_daten": "data:text/html;base64,PHNjcmlwdD4="}, headers=auth(teacher_token)).status_code == 400
     r = client.post(url, json={**basis, "bild_daten": "data:image/jpeg;base64,/9j/4AAQSkZJRg=="}, headers=auth(teacher_token))
     assert r.status_code == 201 and r.json()["inhalt"]["bild_daten"].startswith("data:image/jpeg")
+
+
+TEAM = [{"art": "fox", "stufe": 8, "attacken": ["rempler", "feuer1"]}]
+
+
+def test_elemon_duell_lockstep(client, teacher_token):
+    code = _sitzung(client, teacher_token)
+    mia, ben, ali = (_gast(client, teacher_token, code, n) for n in ("Mia", "Ben", "Ali"))
+    url = f"/api/klikk/sitzung/{code}/duelle"
+
+    # Nur generierte Klikk-Namen
+    assert client.post(url, json={"name": "Mia", "team": TEAM}, headers=mia).status_code == 400
+    r = client.post(url, json={"name": "rote.katze.3", "team": TEAM}, headers=mia)
+    assert r.status_code == 201, r.text
+    did = r.json()["id"]
+    assert r.json()["status"] == "offen" and r.json()["seite"] == "a"
+
+    # Ben sieht die Herausforderung (ohne Attacken), Mia nicht ihre eigene
+    offen = client.get(url, headers=ben).json()["offen"]
+    assert offen == [{"id": did, "name": "rote.katze.3", "team": [{"art": "fox", "stufe": 8}]}]
+    assert client.get(url, headers=mia).json()["offen"] == []
+    assert client.post(f"{url}/{did}/annehmen", json={"name": "rote.katze.3", "team": TEAM}, headers=mia).status_code == 400
+
+    r = client.post(f"{url}/{did}/annehmen", json={"name": "blaue.ente.7", "team": TEAM}, headers=ben).json()
+    assert r["status"] == "laeuft" and r["seite"] == "b" and r["seed"] > 0
+    assert client.post(f"{url}/{did}/annehmen", json={"name": "gelbe.eule.1", "team": TEAM}, headers=ali).status_code == 409
+
+    # Mias Zug bleibt verdeckt, bis Ben gezogen hat
+    r = client.post(f"{url}/{did}/zug", json={"runde": 0, "art": "angriff", "nr": 1}, headers=mia).json()
+    assert r["warte"] is True and r["zuege"] == []
+    assert client.get(url, headers=ben).json()["meins"]["zuege"] == []
+    assert client.post(f"{url}/{did}/zug", json={"runde": 0, "art": "angriff", "nr": 0}, headers=mia).status_code == 409
+    assert client.post(f"{url}/{did}/zug", json={"runde": 0, "art": "angriff", "nr": 0}, headers=ali).status_code == 403
+    r = client.post(f"{url}/{did}/zug", json={"runde": 0, "art": "angriff", "nr": 0}, headers=ben).json()
+    assert r["zuege"] == [[{"art": "angriff", "nr": 1}, {"art": "angriff", "nr": 0}]] and r["warte"] is False
+
+    # Aufgeben schließt die Runde sofort, Ende setzt den Sieger
+    r = client.post(f"{url}/{did}/zug", json={"runde": 1, "art": "aufgeben"}, headers=ben).json()
+    assert len(r["zuege"]) == 2
+    assert client.post(f"{url}/{did}/ende", json={"sieger": "a"}, headers=ben).json()["status"] == "fertig"
