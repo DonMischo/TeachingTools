@@ -20,6 +20,8 @@ function stellen(schwer: boolean) {
 
 export function SchamRegler({ wem, schwer, geschafft, aufgeben }: { wem: string; schwer: boolean; geschafft: () => void; aufgeben: () => void }) {
   const ziele = useMemo(() => stellen(schwer), [schwer]);
+  // Gedanken gemischt, damit nicht zweimal derselbe hintereinander kommt
+  const gedanken = useMemo(() => [...SCHAM_GEDANKEN].sort(() => Math.random() - 0.5), []);
   const [wert, setWert] = useState(0);
   const [naechste, setNaechste] = useState(0);
   const [gedanke, setGedanke] = useState<string | null>(null);
@@ -35,7 +37,7 @@ export function SchamRegler({ wem, schwer, geschafft, aufgeben }: { wem: string;
     if (naechste < ziele.length && neu >= ziele[naechste]) {
       ziehen.current = false;
       setWert(Math.max(0, ziele[naechste] * (0.25 + Math.random() * 0.45)));
-      setGedanke(SCHAM_GEDANKEN[Math.floor(Math.random() * SCHAM_GEDANKEN.length)]);
+      setGedanke(gedanken[naechste % gedanken.length]);
       setNaechste(naechste + 1);
       setRueck(r => r + 1);
       return;
