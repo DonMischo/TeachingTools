@@ -32,8 +32,9 @@ export function neuerStand(seed = 1): Stand {
     eltern: "locker", limit: { proTag: null, sperreAb: null, vonEltern: false }, handyMinuten: [], limitIgnoriert: 0,
     stumm: [], trackingAus: false, werbeIdNeu: false, fokus: false, vereinTage: null, vereinUm: null,
     famAbgelehnt: 0, famZusagen: [], famErzwungen: null, samstag: false, ton: false,
+    weckzeit: 6 * 60 + 30, hygiene: 80, morgenErledigt: [], zuSpaet: [],
     spielRunden: [], checks: {}, geteilt: [], eigenePosts: [], blockiert: [], klasseGesehen: [], aktivitaet: null, freizeit: [], verein: null, lesestand: {}, serienstand: {},
-    erledigt: [], chats: { klasse: [], lea: [], mo: [], jonas: [], mama: [], yilmaz: [], klikkteam: [], gewinn: [], leon: [], verein: [], emma: [], marke: [] },
+    erledigt: [], chats: { klasse: [], lea: [], mo: [], jonas: [], mama: [], yilmaz: [], klikkteam: [], gewinn: [], leon: [], verein: [], emma: [], marke: [], tim: [] },
     ungelesen: {}, gelesen: [], pushes: [], flags: {}, bemerkt: {}, morgen: [],
   };
 }
@@ -149,8 +150,9 @@ export function limitUmgehen(alt: Stand): Stand {
 }
 
 /** Vor der Woche: Eltern, Bildschirmzeit, Verein. */
-export function einstellen(alt: Stand, e: { eltern: ElternTyp; proTag: number | null; sperreAb: number | null; verein: string | null; vereinTage: number[] | null; vereinUm: number | null; samstag?: boolean }): Stand {
+export function einstellen(alt: Stand, e: { eltern: ElternTyp; proTag: number | null; sperreAb: number | null; verein: string | null; vereinTage: number[] | null; vereinUm: number | null; samstag?: boolean; weckzeit?: number }): Stand {
   const s = kopie(alt);
+  if (e.weckzeit) s.weckzeit = e.weckzeit;
   s.eltern = e.eltern;
   s.samstag = !!e.samstag;
   // Strenge Eltern sammeln das Handy um 21 Uhr ein, besorgte setzen zwei Stunden — wer selbst strenger ist, gewinnt
@@ -338,10 +340,12 @@ export function challengePosten(alt: Stand, trendId: string, fake: boolean): Sta
 const jetztAbs = (s: Stand) => s.tag * MITTERNACHT + s.uhr;
 
 /** Eigenen Beitrag merken; Kommentare von Fremden kommen über die nächste Stunde. */
-function eigenerPost(s: Stand, p: { art: "foto" | "video"; motiv?: string; trend?: string; fake?: boolean }, riskant: boolean) {
+function eigenerPost(s: Stand, p: { art: "foto" | "video" | "spiel"; motiv?: string; trend?: string; fake?: boolean; spiel?: string; punkte?: number; tipp?: string }, riskant: boolean) {
   const id = `e${s.eigenePosts.length}`;
-  const kommentare = npcKommentare(s.seed * 13 + s.eigenePosts.length * 7 + s.tag, riskant)
-    .map((k, i) => ({ ...k, um: jetztAbs(s) + 10 + i * 12 }));
+  const roh = npcKommentare(s.seed * 13 + s.eigenePosts.length * 7 + s.tag, riskant);
+  // Wer ungewaschen in die Kamera hält, bekommt das zu lesen
+  if (s.hygiene < 35 && p.art !== "spiel") roh.push({ von: "kein.name.7", text: "Riecht man bis hier 🤢", gemein: true });
+  const kommentare = roh.map((k, i) => ({ ...k, um: jetztAbs(s) + 10 + i * 12 }));
   s.eigenePosts.push({ id, ...p, tag: s.tag, uhr: s.uhr, kommentare });
 }
 
@@ -393,6 +397,21 @@ export function teilen(alt: Stand, id: string, istFake: boolean): Stand {
   spur(s, "klikk", "Klikk", `Nachricht geteilt${s.checks[id] ? " (nach Prüfung)" : " (ungeprüft)"}`);
   if (istFake) push(s, "klikk", "📤 Geteilt", "38 Leute haben deinen geteilten Beitrag weitergeschickt.");
   return s;
+}
+
+/** Ein Spielergebnis teilen — Klikk macht daraus einen Beitrag. */
+export function spielTeilen(alt: Stand, spiel: string, punkte: number, tipp?: string): Stand {
+  const s = kopie(alt);
+  eigenerPost(s, { art: "spiel", spiel, punkte, tipp }, false);
+  s.flags.offeneLikes = Number(s.flags.offeneLikes ?? 0) + 5 + Math.round(Math.random() * 20);
+  spur(s, "klikk", "Klikk", `Spielergebnis geteilt: ${spiel} (${punkte})`);
+  handyTick(s, 1);
+  return s;
+}
+
+/** Selbst einen gemeinen Kommentar unter den Beitrag einer Mitschülerin/eines Mitschülers gesetzt. */
+export function klassenGemein(alt: Stand): Stand {
+  return { ...alt, flags: { ...alt.flags, klasseGemein: Number(alt.flags.klasseGemein ?? 0) + 1 } };
 }
 
 /** Ein Beitrag aus der Klasse wurde angesehen. */
@@ -690,6 +709,40 @@ export function beendeAktivitaet(alt: Stand): Stand {
   return s;
 }
 
+// ───────── Morgen: Wecker, Bad, Frühstück, Bus ─────────
+
+export const MORGEN_SACHEN: { id: string; name: string; emoji: string; minuten: number; hygiene: number }[] = [
+  { id: "duschen", name: "Duschen", emoji: "🚿", minuten: 15, hygiene: 45 },
+  { id: "zaehne", name: "Zähne putzen", emoji: "🪥", minuten: 5, hygiene: 15 },
+  { id: "deo", name: "Deo und Haare", emoji: "🧴", minuten: 5, hygiene: 10 },
+  { id: "anziehen", name: "Frische Sachen anziehen", emoji: "👕", minuten: 5, hygiene: 10 },
+  { id: "fruehstueck", name: "Frühstücken", emoji: "🥣", minuten: 15, hygiene: 0 },
+];
+export const BUS = 7 * 60 + 35;
+
+export function morgenSache(alt: Stand, id: string): Stand {
+  const m = MORGEN_SACHEN.find(x => x.id === id);
+  if (!m || alt.phase !== "morgen" || alt.morgenErledigt.includes(id)) return alt;
+  const s = kopie(alt);
+  s.morgenErledigt.push(id);
+  s.hygiene = Math.min(100, s.hygiene + m.hygiene);
+  tick(s, m.minuten);
+  return s;
+}
+
+/** Aus dem Haus: Schule (8–14 Uhr) läuft ab, der Nachmittag beginnt. */
+export function losgehen(alt: Stand): Stand {
+  if (alt.phase !== "morgen") return alt;
+  const s = kopie(alt);
+  if (s.uhr > BUS) s.zuSpaet.push(s.tag);
+  if (!s.morgenErledigt.includes("fruehstueck")) s.flags[`ohneFruehstueck_${s.tag}`] = true;
+  s.phase = "woche";
+  s.uhr = START_UHR;
+  s.morgen = morgenMeldung(s);
+  feuere(s);
+  return s;
+}
+
 /** Ins Bett. Danach kommt (fast) immer noch eine Benachrichtigung um 23:40. */
 export function schlafen(alt: Stand): Stand {
   const s = kopie(alt.aktivitaet ? beendeAktivitaet(alt) : alt);
@@ -726,7 +779,7 @@ export function nacht(alt: Stand, nachsehen: boolean): Stand {
 
 function naechsterTag(s: Stand, bett: number): Stand {
   // Vor 21:30 liegt niemand wirklich im Bett: Abendessen, Familie, Zähneputzen
-  s.schlaf[s.tag] = Math.round(((MITTERNACHT - Math.max(bett, FRUEHESTES_BETT)) + AUFSTEHEN) / 6) / 10;
+  s.schlaf[s.tag] = Math.round(((MITTERNACHT - Math.max(bett, FRUEHESTES_BETT)) + (s.weckzeit ?? AUFSTEHEN)) / 6) / 10;
   if (s.flags.nosleep === s.tag) s.schlaf[s.tag] = 0; // #NoSleep48: die Nacht durch gestreamt
   if (s.snapTag !== s.tag && s.streak > 0) {
     s.flags.streakVerloren = s.streak;
@@ -740,19 +793,22 @@ function naechsterTag(s: Stand, bett: number): Stand {
     return s;
   }
   s.tag++;
-  s.uhr = s.tag > LETZTER_TAG ? 10 * 60 : START_UHR;
   s.hausaufgabenStand = 0;
   s.flags.haPause = false;
-  s.phase = "woche";
+  // Über Nacht und den Tag riecht man nicht frischer
+  s.hygiene = Math.max(0, s.hygiene - 25);
+  s.morgenErledigt = [];
+  const schultag = s.tag <= LETZTER_TAG;
+  // Schultage beginnen mit dem Wecker; der Samstag erst um 10
+  s.uhr = schultag ? s.weckzeit ?? AUFSTEHEN : 10 * 60;
+  s.phase = schultag ? "morgen" : "woche";
   if (s.tag === LETZTER_TAG) wocheAuswerten(s);
   if (s.flags.streakVerloren) {
-    const zeitAlt = s.uhr;
-    s.uhr = 7 * 60;
-    nachricht(s, "lea", "Lea", `unsere streak ist weg 😭😭 ${s.flags.streakVerloren} tage!! warum hast du nicht geantwortet`);
-    s.uhr = zeitAlt;
+    nachricht(s, "lea", "Lea", `unsere streak ist weg 😭😭 ${s.flags.streakVerloren} tage!! warum hast du nicht geantwortet`, {}, Math.min(s.uhr, 7 * 60));
     s.flags.streakVerloren = 0;
   }
-  s.morgen = morgenMeldung(s);
+  // Die Schulmeldung kommt beim Losgehen (dann sind Bad, Frühstück und Bus bekannt)
+  s.morgen = schultag ? [] : morgenMeldung(s);
   feuere(s);
   return s;
 }

@@ -63,7 +63,7 @@ export default function Feed({ s, setze, online }: { s: Stand; setze: Setze; onl
   const imKlassennetz = !!online?.zugang && NAME_MUSTER.test(s.name);
   const insNetz = (body: { art: "foto" | "video"; motiv?: string; trend?: string; fake?: boolean }) => {
     if (!imKlassennetz || !online?.zugang) return;
-    api.klikk.posten(online.zugang, { name: s.name, tag: s.tag, ...body }).then(klasse.laden).catch(() => {});
+    api.klikk.posten(online.zugang, { name: s.name, tag: s.tag, hygiene: s.hygiene, ...body }).then(klasse.laden).catch(() => {});
   };
   const start = useRef(0);
   const [like, setLike] = useState(false);

@@ -14,6 +14,7 @@ import Datenspiegel from "./Datenspiegel";
 import Lehrkraft from "./Lehrkraft";
 import { Vorbereitung } from "./Einstellungen";
 import OpferWoche from "./OpferWoche";
+import Morgen from "./Morgen";
 import type { MausZugang } from "@/lib/api";
 
 const SCHLUESSEL = "hp_klikk_stand";
@@ -81,10 +82,10 @@ export default function Klikk({ action, zugang, verwaltung, konto }: { action?: 
         </div>
       ) : stand.phase === "onboarding" ? (
         <Handy s={stand} setze={setze} online={online} />
-      ) : stand.phase === "woche" ? (
+      ) : stand.phase === "woche" || stand.phase === "morgen" ? (
         <div className="grid gap-6 lg:grid-cols-[360px_1fr] items-start">
           <Handy s={stand} setze={setze} online={online} />
-          <Tag s={stand} setze={setze} />
+          {stand.phase === "morgen" ? <Morgen s={stand} setze={setze} /> : <Tag s={stand} setze={setze} />}
         </div>
       ) : stand.phase === "nacht" ? (
         <Nacht s={stand} setze={setze} />

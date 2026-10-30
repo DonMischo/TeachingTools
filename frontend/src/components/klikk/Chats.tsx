@@ -5,8 +5,8 @@ import { CHAT_NAME } from "@/lib/klikk/geschichte";
 import { jonasOptionen, oeffneChat, schreibeJonas, snap, waehle, zeit } from "@/lib/klikk/motor";
 import type { ChatId, Stand } from "@/lib/klikk/typen";
 
-const REIHE: ChatId[] = ["klasse", "lea", "mo", "jonas", "leon", "gewinn", "emma", "marke", "verein", "mama", "yilmaz", "klikkteam"];
-const BILD: Record<ChatId, string> = { klasse: "🏫", lea: "🌸", mo: "🛹", jonas: "🎸", mama: "👩", yilmaz: "👩‍🏫", klikkteam: "💙", gewinn: "🎁", leon: "😎", verein: "🏟️", emma: "🌻", marke: "🥤" };
+const REIHE: ChatId[] = ["klasse", "lea", "mo", "jonas", "leon", "tim", "gewinn", "emma", "marke", "verein", "mama", "yilmaz", "klikkteam"];
+const BILD: Record<ChatId, string> = { klasse: "🏫", lea: "🌸", mo: "🛹", jonas: "🎸", mama: "👩", yilmaz: "👩‍🏫", klikkteam: "💙", gewinn: "🎁", leon: "😎", verein: "🏟️", emma: "🌻", marke: "🥤", tim: "🧢" };
 
 export function jonasKopf(s: Stand) {
   return {

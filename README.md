@@ -222,6 +222,9 @@ Jede Simulation trägt Fächer (auch mehrere, z. B. Geografie und Physik); die �
 - Einstellungen-App: Mitteilungen je App, Fokus-Modus, App-Tracking verbieten, Werbe-ID zurücksetzen, Berechtigungen, Bildschirmzeit je Tag samt Wochenbericht; Sperrbildschirm bei Limit
 - Perspektivwechsel: dieselbe Woche als Jonas oder Emma, mit Gedanken und Gefühlen; jemandem davon zu erzählen braucht Überwindung – der Scham-Regler springt bis zu 20-mal zurück, manchmal kurz vor dem Ziel, mit den Gedanken, die Betroffene wirklich haben
 - KI-Fake von Lea, Werbedeal einer Marke (bezahlt wird nie), »5 Jahre später« (die Personalabteilung googelt dich), Influencer-Chance (winzig), Bonus-Samstag, Töne, gute Erfolge und »Schattenseiten« (auch auf /erfolge)
+- Morgen ab dem eigenen Wecker: Duschen, Zähne, Deo, frische Sachen, Frühstück – oder im Bett scrollen und den Bus um 7:35 verpassen; Hygiene-Anzeige, die täglich sinkt und auffällt
+- Tim riecht, und die Klasse macht einen Sticker daraus: mitlästern zählt als Mobbing, nachfragen zeigt den Grund (Waschmaschine kaputt, Mama im Krankenhaus); im Klassen-Feed zeigt ein 💨 niedrige Hygiene, und nur dort gibt es den Kommentar »Riecht man bis hier 🤢« – mit Folgen für wer ihn nutzt
+- Spielergebnisse, Candy Blast und das Typ-Quiz (Ergebnis passend zu den Antworten) lassen sich in Klikk teilen
 - Werbeauktion live: die Klasse gibt ihre Profile nach Zustimmung anonym ab und ersteigert sie als Werbefirmen (100 Taler, verdeckte Gebote); die Lehrkraft leitet am Beamer und bespricht, welche Merkmale den Preis treiben
 
 ### 🍎 Rechenregeln

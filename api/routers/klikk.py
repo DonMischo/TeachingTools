@@ -279,7 +279,10 @@ KOMMENTARE: dict[str, str] = {
     "krass": "Krass 🔥", "lol": "😂😂", "suess": "Süß 🥹", "cool": "Cool 😎", "stark": "Stark von dir 💪",
     "fake": "Fake 🤡", "cringe": "Cringe 😬", "mehr": "Mach's krasser!", "vorsicht": "Pass auf dich auf 🙏",
     "loeschen": "Lösch das lieber",
+    # nur unter Beiträgen von jemandem mit niedriger Hygiene (Spielwert) – Mobbing mit Folgen im Spiel
+    "stinkt": "Riecht man bis hier 🤢",
 }
+SPIELE_TEILEN = {"klick", "doppelklick", "bloecke", "sprung", "logik", "candy", "quiz"}
 MOTIVE = {"selfie", "essen", "tier", "himmel"}
 TRENDS = {"spiegel", "mehl", "eis", "zitrone", "gleis", "nosleep", "hotchip", "dach"}
 NAME = re.compile(r"^[a-zäöü]{3,12}\.[a-zäöü]{3,12}\.\d{1,2}$")
@@ -287,11 +290,15 @@ NAME = re.compile(r"^[a-zäöü]{3,12}\.[a-zäöü]{3,12}\.\d{1,2}$")
 
 class BeitragIn(BaseModel):
     name: str = Field(max_length=40)
-    art: Literal["foto", "video", "news"]
+    art: Literal["foto", "video", "news", "spiel"]
     tag: int = Field(ge=0, le=6)
     motiv: str | None = None
     trend: str | None = None
     fake: bool = False
+    # Spielwerte: Hygiene des Postenden (0–100), geteiltes Spielergebnis
+    hygiene: int | None = Field(default=None, ge=0, le=100)
+    spiel: str | None = None
+    punkte: int | None = Field(default=None, ge=0, le=1_000_000)
     # nur Lehrkraft: Nachricht mit Bild aus den Galerien
     schlagzeile: str | None = Field(default=None, max_length=120)
     unterzeile: str | None = Field(default=None, max_length=300)
@@ -360,7 +367,12 @@ def beitrag_posten(
             raise HTTPException(400, "Unbekanntes Motiv.")
         if body.art == "video" and body.trend not in TRENDS:
             raise HTTPException(400, "Unbekannter Trend.")
-        inhalt = {"motiv": body.motiv} if body.art == "foto" else {"trend": body.trend, "fake": body.fake}
+        if body.art == "spiel" and (body.spiel not in SPIELE_TEILEN or body.punkte is None):
+            raise HTTPException(400, "Unbekanntes Spiel.")
+        inhalt = ({"motiv": body.motiv} if body.art == "foto" else {"trend": body.trend, "fake": body.fake} if body.art == "video"
+                  else {"spiel": body.spiel, "punkte": body.punkte})
+        if body.hygiene is not None:
+            inhalt["hygiene"] = body.hygiene
         name = body.name
     b = KlikkBeitrag(session_id=session.id, name=name, art=body.art, inhalt=inhalt, tag=body.tag, **_teilnehmer(spieler))
     db.add(b)
@@ -396,6 +408,8 @@ def reagieren(
         raise HTTPException(404, "Beitrag nicht gefunden")
     if body.kommentar is not None and body.kommentar not in KOMMENTARE:
         raise HTTPException(400, "Kommentare gibt es nur aus der Liste.")
+    if body.kommentar == "stinkt" and (b.inhalt or {}).get("hygiene", 100) >= 35:
+        raise HTTPException(400, "Diesen Kommentar gibt es hier nicht.")
     leitung = _ist_leitung(session, spieler)
     if not leitung and not NAME.match(body.name):
         raise HTTPException(400, "Unbekannter Klikk-Name.")

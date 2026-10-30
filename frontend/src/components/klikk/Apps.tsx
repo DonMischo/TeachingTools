@@ -6,6 +6,8 @@
 import { useEffect, useRef, useState } from "react";
 import { PRODUKTE, QUIZ, candyRunde, quizAntwort, recht, shopAnsehen } from "@/lib/klikk/motor";
 import type { Stand } from "@/lib/klikk/typen";
+import TeilenKnopf from "./Teilen";
+import type { Online } from "./spiele/SpieleApp";
 
 type Setze = (f: (s: Stand) => Stand) => void;
 
@@ -38,7 +40,7 @@ export function Wetter({ s, setze }: { s: Stand; setze: Setze }) {
   );
 }
 
-export function Candy({ setze }: { setze: Setze }) {
+export function Candy({ s, setze, online }: { s: Stand; setze: Setze; online?: Online }) {
   const [laeuft, setLaeuft] = useState(false);
   const [rest, setRest] = useState(15);
   const [punkte, setPunkte] = useState(0);
@@ -98,6 +100,7 @@ export function Candy({ setze }: { setze: Setze }) {
           <b>{fertig} Punkte!</b>
           <p className="text-muted text-xs mt-1">💔 Keine Leben mehr. Warte 30 Minuten — oder hol dir 💎 Diamanten!</p>
           <button className="btn-secondary text-xs mt-2 w-full" disabled>💎 500 Diamanten · 4,99 €</button>
+          <div className="mt-2 flex justify-center"><TeilenKnopf s={s} setze={setze} online={online} spiel="candy" punkte={fertig} /></div>
         </div>
       )}
       <p className="text-[10px] text-muted mt-auto">Kostenlos dank Werbung · powered by AdKit</p>
@@ -136,7 +139,17 @@ export function Sneakr({ setze }: { setze: Setze }) {
   );
 }
 
-export function Quiz({ s, setze }: { s: Stand; setze: Setze }) {
+/** Das Ergebnis passt zu den Antworten — klingt aber, wie alle Typ-Tests, ein bisschen nach jedem (Barnum-Effekt). */
+export function quizTyp(q: Record<string, string>) {
+  if (q.aendern === "koerper") return { emoji: "🪞", name: "Die/der Selbstkritische", text: "Du siehst genau hin – vor allem bei dir selbst. Manchmal zu genau. Du bist strenger mit dir als mit anderen." };
+  if (q.laune === "allein" || q.aendern === "freunde") return { emoji: "🌧️", name: "Die/der stille Beobachter·in", text: "Du merkst mehr, als du zeigst. In Gruppen hältst du dich zurück und fühlst dich trotzdem manchmal außen vor." };
+  if ((q.schlaf === "spaet" || q.schlaf === "sehrspaet") && q.laune !== "gut") return { emoji: "🌙", name: "Die Nachteule", text: "Wenn alle schlafen, wirst du wach. Morgens ist die Welt dir zu laut und zu früh." };
+  if (q.laune === "gestresst" || q.aendern === "noten" || q.eltern === "oft" || q.eltern === "immer") return { emoji: "⚡", name: "Die/der Getriebene", text: "Bei dir ist immer etwas los, und selten genug Zeit. Du willst viel – und manchmal will zu viel von dir." };
+  if (q.laune === "gut" && q.aendern === "nichts") return { emoji: "☀️", name: "Der Sonnenschein", text: "Du bringst Licht in jeden Raum und bist im Reinen mit dir. Pass auf, dass andere das nicht ausnutzen." };
+  return { emoji: "🌀", name: "Die/der Vielseitige", text: "Mal so, mal so – dich in eine Schublade zu stecken, klappt nicht. Das finden manche anstrengend, die meisten spannend." };
+}
+
+export function Quiz({ s, setze, online }: { s: Stand; setze: Setze; online?: Online }) {
   const frage = QUIZ.find(q => !s.quiz[q.id]);
   return (
     <div className="p-4 flex flex-col gap-3 h-full bg-gradient-to-b from-amber-300/30 to-transparent">
@@ -150,10 +163,11 @@ export function Quiz({ s, setze }: { s: Stand; setze: Setze }) {
           ))}
         </>
       ) : (
-        <div className="card p-4 text-center">
-          <div className="text-6xl">☀️</div>
-          <div className="font-black text-xl mt-2">Du bist ein Sonnenschein!</div>
-          <p className="text-sm text-muted mt-1">Du bringst Licht in jeden Raum. Teile dein Ergebnis mit deinen Freunden!</p>
+        <div className="card p-4 text-center flex flex-col items-center gap-1">
+          <div className="text-6xl">{quizTyp(s.quiz).emoji}</div>
+          <div className="font-black text-xl mt-2">Du bist: {quizTyp(s.quiz).name}</div>
+          <p className="text-sm text-muted mt-1">{quizTyp(s.quiz).text}</p>
+          {online !== undefined && <TeilenKnopf s={s} setze={setze} online={online} spiel="quiz" punkte={0} tipp={quizTyp(s.quiz).name} />}
         </div>
       )}
       <p className="text-[10px] text-muted mt-auto">powered by AdKit</p>

@@ -28,6 +28,15 @@ export const KOMMENTARE: Record<string, { text: string; gemein: boolean }> = {
   mehr: { text: "Mach's krasser!", gemein: false },
   vorsicht: { text: "Pass auf dich auf 🙏", gemein: false },
   loeschen: { text: "Lösch das lieber", gemein: false },
+  /** nur unter Beiträgen von jemandem mit niedriger Hygiene */
+  stinkt: { text: "Riecht man bis hier 🤢", gemein: true },
+};
+
+export const SPIEL_NAME: Record<string, { name: string; emoji: string; einheit: string }> = {
+  klick: { name: "Klicker", emoji: "🎯", einheit: "Punkte" }, doppelklick: { name: "Doppelklicker", emoji: "✌️", einheit: "Punkte" },
+  bloecke: { name: "Blockregen", emoji: "🧱", einheit: "Punkte" }, sprung: { name: "Würfelsprung", emoji: "🟨", einheit: "m" },
+  logik: { name: "Lichtschalter", emoji: "💡", einheit: "Punkte" }, candy: { name: "Candy Blast", emoji: "🍬", einheit: "Punkte" },
+  quiz: { name: "Typ-Quiz", emoji: "🔮", einheit: "" },
 };
 
 /** Antworten auf Kommentare unter eigenen Beiträgen — ebenfalls fest. */

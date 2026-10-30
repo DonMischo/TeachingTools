@@ -13,6 +13,7 @@ import type { Stand } from "@/lib/klikk/typen";
 import Bloecke from "./Bloecke";
 import Sprung from "./Sprung";
 import Logik from "./Logik";
+import TeilenKnopf from "../Teilen";
 
 type Setze = (f: (s: Stand) => Stand) => void;
 export type Online = { zugang?: MausZugang; konto: boolean };
@@ -63,13 +64,15 @@ function Bestenliste({ spiel, online, neu }: { spiel: SpielId; online: Online; n
   );
 }
 
-export default function SpieleApp({ setze, online }: { setze: Setze; online?: Online }) {
+export default function SpieleApp({ s, setze, online }: { s: Stand; setze: Setze; online?: Online }) {
   const [spiel, setSpiel] = useState<SpielId | null>(null);
+  const [letztes, setLetztes] = useState<{ spiel: SpielId; punkte: number; nr: number } | null>(null);
   const [neu, setNeu] = useState(0);
   const darfMelden = !!online && (online.konto || !!online.zugang);
 
   const melden = useCallback((id: SpielId, wert: number, dauerMs = 0, kontext = "") => {
     setze(st => spielRunde(st, id, wert));
+    setLetztes(l => ({ spiel: id, punkte: wert, nr: (l?.nr ?? 0) + 1 }));
     if (!darfMelden || wert <= 0) return;
     const fertig = () => setNeu(n => n + 1);
     if (id === "klick" || id === "doppelklick") {
@@ -108,6 +111,9 @@ export default function SpieleApp({ setze, online }: { setze: Setze; online?: On
           {spiel === "bloecke" && <Bloecke onEnde={p => melden("bloecke", p)} />}
           {spiel === "sprung" && <Sprung onEnde={p => melden("sprung", p)} />}
           {spiel === "logik" && <Logik onEnde={p => melden("logik", p)} />}
+          {letztes && letztes.spiel === spiel && letztes.punkte > 0 && (
+            <TeilenKnopf key={letztes.nr} s={s} setze={setze} online={online} spiel={spiel} punkte={letztes.punkte} />
+          )}
           <Bestenliste spiel={spiel} online={online ?? { konto: false }} neu={neu} />
         </>
       )}

@@ -15,7 +15,7 @@ export const TAGE = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", 
 export const LETZTER_TAG = 4;
 
 export const CHAT_NAME: Record<ChatId, string> = {
-  klasse: "8b 🔥", lea: "Lea", mo: "Mo", jonas: "Jonas", mama: "Mama", yilmaz: "Frau Yilmaz", klikkteam: "Klikk-Team", marke: "GlowDrink Team ✔",
+  klasse: "8b 🔥", lea: "Lea", mo: "Mo", jonas: "Jonas", mama: "Mama", yilmaz: "Frau Yilmaz", klikkteam: "Klikk-Team", marke: "GlowDrink Team ✔", tim: "Tim",
   gewinn: "🎁 Klikk Gewinnspiel", leon: "leon.16", verein: "Verein", emma: "Emma",
 };
 
@@ -257,6 +257,20 @@ export const EREIGNISSE: Ereignis[] = [
   { id: "samstagLea", tag: 5, uhr: uhr(11, 0), wenn: s => !s.flags.leaStreit || !!s.flags.leaVersoehnt, tu: s => nachricht(s, "lea", "Lea", "FREIBAD um 13 uhr?? 🏊‍♀️ mo kommt auch (mit gips am rand sitzen lol)") },
   { id: "samstagPush", tag: 5, uhr: uhr(10, 5), tu: s => push(s, "klikk", "☀️ Wochenende!", "Deine Freunde sind schon online. Schau, was du verpasst hast!") },
 
+  // ── Fall: Tim riecht ──
+  { id: "tim", tag: 1, uhr: uhr(15, 5), tu: s => {
+    nachricht(s, "klasse", "Finn", "tim stinkt heute wieder sooo 🤢🤢 wer setzt sich morgen neben den", { bild: "🦨 Sticker: Stinktier mit Tims Gesicht" });
+    nachricht(s, "klasse", "Ben", "nicht ich 💀",
+      wahl("tim", ["lachen", "🤢😂"], ["mitmachen", "Selbst schreiben: »Ich setz mich nicht neben den 🦨«"],
+        ["fragen", "Tim privat fragen, ob alles okay ist"], ["stopp", "»Hört auf. Ihr wisst nicht, was bei ihm los ist.«"]));
+  } },
+  { id: "timErzaehlt", tag: 2, uhr: uhr(16, 0), wenn: s => istGewaehlt(s, "tim") === "fragen", tu: s => {
+    nachricht(s, "tim", "Tim", "unsere waschmaschine ist seit 2 wochen kaputt. mama ist im krankenhaus, ich wohn grad bei meinem bruder. der hat kein geld für ne neue.");
+    nachricht(s, "tim", "Tim", "bitte sag's keinem. das ist so peinlich",
+      wahl("timHilfe", ["sozial", "»Frau Weber (Schulsozialarbeit) kann helfen – ohne Namen zu nennen. Soll ich mitkommen?«"],
+        ["leihen", "»Ich bring dir morgen ein paar Pullis mit.«"], ["schweigen", "»Ok, ich sag nix.«"]));
+  } },
+
   // ── Freitag ──
   { id: "trendFr", tag: 4, uhr: uhr(15, 0), wenn: s => !!s.flags.moVerletzt, tu: s => push(s, "klikk", "🔥 Trend in deiner Nähe", "Mo am Bahndamm – #GleisSelfie · 48.000 Aufrufe, 230 Duette") },
   { id: "wochenende", tag: 4, uhr: uhr(18, 0), wenn: s => !s.flags.leaStreit || !!s.flags.leaVersoehnt, tu: s => nachricht(s, "lea", "Lea", "endlich wochenende 🥳 kommst du morgen mit ins freibad?") },
@@ -344,6 +358,16 @@ export const FOLGEN: Record<string, (s: Stand, o: string) => void> = {
       if (o === "verstecken") nachricht(s, "klasse", "Emma", "seit wann trinkst du glowdrink 😂 sieht nach werbung aus");
     }
   },
+  tim: (s, o) => {
+    if (o === "fragen") nachricht(s, "tim", "Tim", "warum fragst du? … ich erzähl's dir morgen. vielleicht.");
+    if (o === "stopp") { nachricht(s, "klasse", "Finn", "uiii der tim-anwalt 😂"); nachricht(s, "klasse", "Emma", "naja er hat recht, ist echt fies"); }
+    if (o === "mitmachen") nachricht(s, "klasse", "Finn", "😂😂😂 sag ich doch");
+  },
+  timHilfe: (s, o) => {
+    if (o === "sozial") { s.flags.timHilfe = true; nachricht(s, "tim", "Tim", "ok … wenn du mitkommst. danke 🙏"); }
+    if (o === "leihen") nachricht(s, "tim", "Tim", "echt? danke. das vergess ich dir nicht.");
+    if (o === "schweigen") nachricht(s, "tim", "Tim", "danke.");
+  },
   gewinn: (s, o) => {
     if (o === "nummer") nachricht(s, "gewinn", "Klikk Gewinnspiel", "✅ Danke! Dein Code: 4471. Mit der Antwort »JA« bestätigst du die Teilnahmebedingungen.");
     else nachricht(s, "klikkteam", "Klikk-Team", "Danke für deine Meldung. Tipp: Klikk verlost nie Handys per Nachricht. 💙");
@@ -393,6 +417,13 @@ export function morgenMeldung(s: Stand): string[] {
     else m.push(`${schlaf.toFixed(1).replace(".", ",")} Stunden Schlaf. Du bist ausgeschlafen.`);
   }
   if (s.hausaufgaben[s.tag - 1] === false) m.push("Hausaufgaben vergessen. Frau Brandt macht einen Strich in ihre Liste.");
+  if (s.zuSpaet?.includes(s.tag)) m.push(s.eltern === "arbeit" ? "Bus verpasst. Niemand kann dich fahren – du kommst zwanzig Minuten zu spät. Eintrag ins Klassenbuch." : "Bus verpasst. Mama fährt dich, genervt. Du kommst trotzdem zu spät: Eintrag ins Klassenbuch.");
+  if (s.flags[`ohneFruehstueck_${s.tag}`]) m.push("Ohne Frühstück knurrt dir in der zweiten Stunde der Magen. Laut. Jemand kichert.");
+  if (s.hygiene < 25) {
+    m.push("In der Pause rückt Ben demonstrativ von dir weg und hält sich die Nase zu. »Wer müffelt hier so?« Ein paar lachen. Du weißt, dass er dich meint.");
+    s.flags.selbstGestunken = Number(s.flags.selbstGestunken ?? 0) + 1;
+  } else if (s.hygiene < 45) m.push("Lea flüstert dir zu: »Du, ähm … Deo?« Sie meint es nett. Es ist trotzdem peinlich.");
+  if (s.tag === 3 && istGewaehlt(s, "tim") && istGewaehlt(s, "tim") !== "still") m.push("Tim sitzt heute ganz hinten, allein. Sein Pulli ist frisch gewaschen – zu groß, vermutlich von seinem Bruder.");
   if (s.tag === 2 && s.flags.erkaeltet && s.flags.folge_eis !== 1) m.push("Seit der Eiswasser-Challenge hast du Halsschmerzen.");
   if (s.tag === 2) m.push("In der großen Pause sitzt Jonas allein auf der Treppe und schaut aufs Handy.");
   if (s.tag === 3) m.push("Jemand hat den Schnarch-Sticker auf die Tafel gemalt. Jonas wischt ihn wortlos weg.");
@@ -479,7 +510,10 @@ export function bitteBeantworten(s: Stand, id: string, ja: boolean) {
 export function taeterPunkte(s: Stand) {
   const w = (id: string) => istGewaehlt(s, id);
   return (w("bus") === "lachen" ? 1 : 0) + (w("bus") === "weiter" ? 2 : 0) + (w("account") === "folgen" ? 1 : 0)
-    + (w("kommentar") === "liken" ? 1 : 0) + (w("kommentar") === "mitlaestern" ? 2 : 0) + (w("umfrage") === "jonas" ? 1 : 0);
+    + (w("kommentar") === "liken" ? 1 : 0) + (w("kommentar") === "mitlaestern" ? 2 : 0) + (w("umfrage") === "jonas" ? 1 : 0)
+    + (w("tim") === "lachen" ? 1 : 0) + (w("tim") === "mitmachen" ? 2 : 0)
+    // gemeine Kommentare unter echten Beiträgen aus der Klasse
+    + Number(s.flags.klasseGemein ?? 0);
 }
 
 /** Wer das Foto selbst verbreitet und den Fake-Account gestützt hat, bekommt es mit der Polizei zu tun. */

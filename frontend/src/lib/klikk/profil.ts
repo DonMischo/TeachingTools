@@ -297,6 +297,17 @@ export function faelle(s: Stand): Fall[] {
     recht: "Gleisanlagen betreten ist eine Ordnungswidrigkeit oder Straftat; die Bundespolizei schreibt Anzeigen. Wichtiger: Strom an Oberleitungen springt schon aus 1,5 m über.",
   });
 
+  // Tim
+  const tm = w("tim");
+  if (tm) r.push({
+    emoji: "🧢", titel: "Tim und der Geruch",
+    passiert: "Tim roch, und die Klasse machte einen Sticker daraus. Niemand fragte, warum: Waschmaschine kaputt, Mama im Krankenhaus, wohnt beim Bruder.",
+    deinWeg: tm === "mitmachen" ? "Du hast selbst gelästert." : tm === "lachen" ? "Du hast mitgelacht." : tm === "fragen" ? `Du hast Tim gefragt.${w("timHilfe") === "sozial" ? " Und bist mit ihm zur Schulsozialarbeit." : w("timHilfe") === "leihen" ? " Und hast ihm Sachen geliehen." : ""}` : tm === "stopp" ? "Du hast widersprochen." : "Du hast nichts gesagt.",
+    ausgang: s.flags.timHilfe ? "Die Schulsozialarbeit hat geholfen (Kleiderkammer, Waschmarken, ein Gespräch mit dem Jugendamt). Der Sticker ist weg." : "Tim sitzt jetzt allein. Die Gründe kennt kaum jemand.",
+    bilanz: tm === "mitmachen" || tm === "lachen" ? "schlecht" : tm === "fragen" || tm === "stopp" ? "gut" : "mittel",
+    recht: "Wer schlecht riecht, hat oft Gründe, über die er nicht reden kann. Schulsozialarbeit hilft vertraulich.",
+  });
+
   // KI-Fake
   const d = w("deepfake");
   if (d) r.push({

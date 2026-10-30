@@ -4,6 +4,7 @@ import { useState } from "react";
 import { TAGE } from "@/lib/klikk/geschichte";
 import { AUFGABEN, MITTERNACHT, START_UHR, aufgabe, loeseAufgabe, nacht, nachtPush, schlafen, zeit } from "@/lib/klikk/motor";
 import { AktivitaetAnsicht, FreizeitKarte } from "./Freizeit";
+import { HygieneMeter } from "./Morgen";
 import type { Stand } from "@/lib/klikk/typen";
 
 type Setze = (f: (s: Stand) => Stand) => void;
@@ -27,6 +28,7 @@ export default function Tag({ s, setze }: { s: Stand; setze: Setze }) {
         <div className="flex justify-between text-[10px] text-muted mt-1"><span>14:00</span><span>🍝 19:00</span><span>24:00</span></div>
       </div>
 
+      <div className="card p-3"><HygieneMeter wert={s.hygiene} /></div>
       {s.morgen.length > 0 && (
         <div className="card p-4 text-sm">
           <h3 className="font-bold mb-1">🏫 Heute in der Schule</h3>
@@ -66,7 +68,7 @@ export default function Tag({ s, setze }: { s: Stand; setze: Setze }) {
       )}
 
       <button className="btn-secondary text-sm" onClick={() => setze(schlafen)}>
-        🛏️ Schlafen gehen <span className="block text-[10px] text-muted">Wecker: 6:30</span>
+        🛏️ Schlafen gehen <span className="block text-[10px] text-muted">Wecker: {zeit(s.weckzeit)}</span>
       </button>
     </div>
   );

@@ -6,8 +6,8 @@
  */
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { api, type KlikkBeitrag } from "@/lib/api";
-import { KOMMENTARE, NAME_MUSTER } from "@/lib/klikk/klasse";
-import { MOTIVE, faktencheck, klassenEcho, teilen } from "@/lib/klikk/motor";
+import { KOMMENTARE, NAME_MUSTER, SPIEL_NAME } from "@/lib/klikk/klasse";
+import { MOTIVE, faktencheck, klassenEcho, klassenGemein, teilen } from "@/lib/klikk/motor";
 import { trendNachId } from "@/lib/klikk/trends";
 import type { Stand } from "@/lib/klikk/typen";
 import type { Online } from "./spiele/SpieleApp";
@@ -64,8 +64,11 @@ export function KlassenPost({ b, s, setze, online, aktualisieren }: { b: KlikkBe
   const tr = b.inhalt.trend ? trendNachId(b.inhalt.trend) : undefined;
   const motiv = MOTIVE.find(m => m.id === b.inhalt.motiv);
   const darf = NAME_MUSTER.test(s.name) && !!online.zugang;
+  const riecht = (b.inhalt.hygiene ?? 100) < 35;
+  const spiel = b.inhalt.spiel ? SPIEL_NAME[b.inhalt.spiel] : undefined;
   const reagieren = (body: { like?: boolean; kommentar?: string }) => {
     if (!online.zugang || !darf) return;
+    if (body.kommentar && KOMMENTARE[body.kommentar]?.gemein) setze(klassenGemein);
     api.klikk.reagieren(online.zugang, b.id, { name: s.name, ...body }).then(aktualisieren).catch(() => {});
   };
 
@@ -81,6 +84,14 @@ export function KlassenPost({ b, s, setze, online, aktualisieren }: { b: KlikkBe
           </div>
         )}
         {b.art === "foto" && <span className="text-8xl">{motiv?.emoji ?? "📷"}</span>}
+        {b.art === "spiel" && spiel && (
+          <div className="text-center text-white drop-shadow">
+            <div className="text-7xl">{spiel.emoji}</div>
+            <div className="font-black text-2xl">{b.inhalt.punkte} {spiel.einheit}</div>
+            <div className="text-sm">in {spiel.name} – schaffst du mehr? 😏</div>
+          </div>
+        )}
+        {riecht && <span className="absolute top-8 right-3 text-3xl animate-pulse" title="Hygiene niedrig">💨🦨</span>}
         {b.art === "news" && <NachrichtBild b={b} />}
         <span className="absolute top-2 left-2 text-xs font-bold bg-black/60 text-white rounded-full px-2 py-0.5">👥 Aus deiner Klasse</span>
         {b.art !== "news" && (
@@ -97,7 +108,7 @@ export function KlassenPost({ b, s, setze, online, aktualisieren }: { b: KlikkBe
         {b.kommentare.slice(-3).map((k, i) => <div key={i} className="text-xs"><b>{k.name}</b> {k.kommentar}</div>)}
         {kommentieren && (
           <div className="flex flex-wrap gap-1 mt-1">
-            {Object.entries(KOMMENTARE).map(([id, k]) => (
+            {Object.entries(KOMMENTARE).filter(([id]) => id !== "stinkt" || riecht).map(([id, k]) => (
               <button key={id} className={`text-[11px] rounded-full px-2 py-0.5 border ${b.mein_kommentar === k.text ? "bg-accent text-accent-fg" : "border-line"}`}
                 onClick={() => { reagieren({ kommentar: id }); setKommentieren(false); }}>{k.text}</button>
             ))}

@@ -6,7 +6,7 @@
  */
 import { useState } from "react";
 import type { KlikkBeitrag } from "@/lib/api";
-import { ANTWORTEN } from "@/lib/klikk/klasse";
+import { ANTWORTEN, SPIEL_NAME } from "@/lib/klikk/klasse";
 import { MITTERNACHT, MOTIVE, kommentarAktion } from "@/lib/klikk/motor";
 import { trendNachId } from "@/lib/klikk/trends";
 import type { Stand } from "@/lib/klikk/typen";
@@ -30,7 +30,7 @@ export default function Profil({ s, setze, klasse }: { s: Stand; setze: Setze; k
       {s.eigenePosts.length === 0 && <p className="text-sm text-muted">Noch nichts gepostet. Oben auf »＋ Posten«.</p>}
       {[...s.eigenePosts].reverse().map(p => {
         const tr = p.trend ? trendNachId(p.trend) : undefined;
-        const motiv = MOTIVE.find(m => m.id === p.motiv);
+        const motiv = MOTIVE.find(m => m.id === p.motiv) ?? (p.spiel ? { emoji: SPIEL_NAME[p.spiel]?.emoji, text: `${SPIEL_NAME[p.spiel]?.name}: ${p.tipp ?? `${p.punkte} ${SPIEL_NAME[p.spiel]?.einheit}`}` } : undefined);
         const sichtbar = p.kommentare.map((k, i) => ({ k, i })).filter(({ k }) => k.um <= jetzt && k.status !== "geloescht" && k.status !== "blockiert" && !s.blockiert.includes(k.von));
         return (
           <div key={p.id} className="card p-3 flex flex-col gap-2">

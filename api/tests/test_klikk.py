@@ -139,3 +139,15 @@ def test_spiele_bestenliste_mehr_ist_besser(client, teacher_token):
     assert client.post("/api/klikk/spiele/quatsch/" + code, json={"wert": 1}, headers=mia).status_code == 400
     liste = client.get(url, headers=mia).json()
     assert [(e["wert"], e["gast"], e["selbst"]) for e in liste] == [(300, True, True)]
+
+
+def test_spiel_teilen_und_geruchs_kommentar_nur_bei_niedriger_hygiene(client, teacher_token):
+    code = _sitzung(client, teacher_token)
+    mia, ben = (_gast(client, teacher_token, code, n) for n in ("Mia", "Ben"))
+    url = f"/api/klikk/sitzung/{code}/beitraege"
+    r = client.post(url, json={"name": "blauer.otter.17", "art": "spiel", "tag": 0, "spiel": "sprung", "punkte": 812, "hygiene": 20}, headers=mia)
+    assert r.status_code == 201 and r.json()["inhalt"] == {"spiel": "sprung", "punkte": 812, "hygiene": 20}
+    sauber = client.post(url, json={"name": "blauer.otter.17", "art": "foto", "tag": 0, "motiv": "selfie", "hygiene": 90}, headers=mia).json()
+    assert client.post(f"{url}/{r.json()['id']}/reaktion", json={"name": "rote.ente.4", "kommentar": "stinkt"}, headers=ben).status_code == 200
+    assert client.post(f"{url}/{sauber['id']}/reaktion", json={"name": "rote.ente.4", "kommentar": "stinkt"}, headers=ben).status_code == 400
+    assert client.post(url, json={"name": "blauer.otter.17", "art": "spiel", "tag": 0, "spiel": "quatsch", "punkte": 1}, headers=mia).status_code == 400

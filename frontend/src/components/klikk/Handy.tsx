@@ -74,7 +74,7 @@ export default function Handy({ s, setze, online }: { s: Stand; setze: Setze; on
     </Rahmen>
   );
 
-  if (s.phase === "woche" && gesperrt(s)) return <Rahmen uhr={zeit(s.uhr)} dunkel><Sperre s={s} setze={setze} /></Rahmen>;
+  if ((s.phase === "woche" || s.phase === "morgen") && gesperrt(s)) return <Rahmen uhr={zeit(s.uhr)} dunkel><Sperre s={s} setze={setze} /></Rahmen>;
 
   const oeffne = (a: AppId, c?: ChatId) => { setChat(c); setApp(a); setze(st => oeffneApp(st, a)); };
   const ungelesen = Object.values(s.ungelesen).reduce((a, b) => a + (b ?? 0), 0);
@@ -121,10 +121,10 @@ export default function Handy({ s, setze, online }: { s: Stand; setze: Setze; on
             {app === "klikk" && <Feed s={s} setze={setze} online={online} />}
             {app === "chats" && <Chats key={chat ?? "liste"} s={s} setze={setze} start={chat} />}
             {app === "wetter" && <Wetter s={s} setze={setze} />}
-            {app === "candy" && <Candy setze={setze} />}
+            {app === "candy" && <Candy s={s} setze={setze} online={online} />}
             {app === "sneakr" && <Sneakr setze={setze} />}
-            {app === "quiz" && <Quiz s={s} setze={setze} />}
-            {app === "spiele" && <SpieleApp setze={setze} online={online} />}
+            {app === "quiz" && <Quiz s={s} setze={setze} online={online ?? { konto: false }} />}
+            {app === "spiele" && <SpieleApp s={s} setze={setze} online={online} />}
             {app === "einstellungen" && <Einstellungen s={s} setze={setze} />}
           </div>
           <button onClick={() => setApp(null)} className="py-2 border-t border-line text-xs font-bold text-muted hover:text-fg">● Startbildschirm</button>

@@ -15,9 +15,9 @@ export type ElternTyp = "streng" | "locker" | "besorgt" | "arbeit";
 
 export type Recht = "kontakte" | "standort" | "mikrofon" | "mitteilungen";
 
-export type ChatId = "klasse" | "lea" | "mo" | "jonas" | "mama" | "yilmaz" | "klikkteam" | "gewinn" | "leon" | "verein" | "emma" | "marke";
+export type ChatId = "klasse" | "lea" | "mo" | "jonas" | "mama" | "yilmaz" | "klikkteam" | "gewinn" | "leon" | "verein" | "emma" | "marke" | "tim";
 
-export type Phase = "start" | "onboarding" | "woche" | "nacht" | "jonas" | "spiegel";
+export type Phase = "start" | "onboarding" | "morgen" | "woche" | "nacht" | "jonas" | "spiegel";
 
 export interface Wahl {
   id: string;
@@ -117,7 +117,7 @@ export interface Stand {
   serienstand: Record<string, number>;
   /** eigene Beiträge mit den Kommentaren darunter */
   eigenePosts: {
-    id: string; art: "foto" | "video"; motiv?: string; trend?: string; fake?: boolean; tag: number; uhr: number;
+    id: string; art: "foto" | "video" | "spiel"; motiv?: string; trend?: string; fake?: boolean; spiel?: string; punkte?: number; tipp?: string; tag: number; uhr: number;
     kommentare: { von: string; text: string; gemein: boolean; um: number; gemeldet?: boolean; status?: "beantwortet" | "geloescht" | "blockiert" | "gemeldet"; antwort?: string }[];
   }[];
   blockiert: string[];
@@ -144,6 +144,13 @@ export interface Stand {
   /** eigener Trainingsplan für den Verein */
   vereinTage: number[] | null;
   vereinUm: number | null;
+  /** Wecker (Spielminuten) und Hygiene 0–100 */
+  weckzeit: number;
+  hygiene: number;
+  /** was heute Morgen schon erledigt ist */
+  morgenErledigt: string[];
+  /** Tage, an denen man zu spät kam */
+  zuSpaet: number[];
   /** Bonustag Samstag (frei, ohne Schule) */
   samstag: boolean;
   /** Töne und Vibration bei Benachrichtigungen */

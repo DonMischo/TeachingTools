@@ -7,7 +7,7 @@ import { describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { naechster, stufeFuer } from "@/lib/klikk/feed";
 import { POSTS } from "@/lib/klikk/posts";
-import { istGewaehlt } from "@/lib/klikk/geschichte";
+import { istGewaehlt, taeterPunkte } from "@/lib/klikk/geschichte";
 import {
   agbAkzeptiert, aufgabe, gesehen, loeseAufgabe, nacht, neuerStand, oeffneApp, oeffneChat, onboardingFertig,
   profil, recht, schlafen, schreibeJonas, shopAnsehen, starte, waehle, weiterAktivitaet,
@@ -16,7 +16,7 @@ import { erkenntnisse, warnsignale } from "@/lib/klikk/profil";
 import { jonasWoche } from "@/components/klikk/JonasSicht";
 import Klikk from "@/components/klikk/Klikk";
 import type { ChatId, Stand } from "@/lib/klikk/typen";
-import { challengePosten, ergaenze, posten, umfrage, werbungKlick } from "@/lib/klikk/motor";
+import { challengePosten, ergaenze, losgehen, posten, umfrage, werbungKlick } from "@/lib/klikk/motor";
 import { TRENDS } from "@/lib/klikk/trends";
 import { nachweis } from "@/components/klikk/PostMedien";
 import Werbeseite from "@/components/klikk/Werbeseite";
@@ -39,7 +39,9 @@ function angemeldet(mitteilungen = true): Stand {
 /** Bis Mitternacht vorspulen (über das Feed-Ansehen), dann schlafen ohne nachzusehen. */
 function tagZuEnde(s: Stand): Stand {
   s = schlafen(s);
-  return s.phase === "nacht" ? nacht(s, false) : s;
+  if (s.phase === "nacht") s = nacht(s, false);
+  // Morgens direkt los zur Schule
+  return s.phase === "morgen" ? losgehen(s) : s;
 }
 
 function wahlId(s: Stand, chat: ChatId, id: string) {
@@ -425,7 +427,7 @@ describe("Einstellungen und Familie", () => {
     streng = bis(streng, 21 * 60 + 5);
     expect(gesperrt(streng)).toBe("elternSperre");
     expect(gesperrt(limitUmgehen(streng))).toBe("elternSperre");
-    expect(schlafen(streng).phase).toBe("woche"); // kein Handy um 23:40
+    expect(schlafen(streng).phase).toBe("morgen"); // kein Handy um 23:40, gleich der nächste Morgen
   });
 
   it("strenge Eltern: nach einem Nein ist Schluss – die Familiensache startet von selbst", () => {
@@ -520,5 +522,54 @@ describe("Perspektivwechsel, KI-Fake, Werbedeal, Samstag, Erfolge", () => {
     const erreicht = KLIKK_ERFOLGE.filter(e => e.erreicht(s)).map(e => e.id);
     expect(erreicht).toEqual(expect.arrayContaining(["agb", "nachteule"]));
     expect(KLIKK_ERFOLGE.some(e => !e.gut) && KLIKK_ERFOLGE.some(e => e.gut)).toBe(true);
+  });
+});
+
+describe("Morgen und Hygiene, Tim", () => {
+  it("der Tag beginnt mit dem Wecker; Duschen hebt die Hygiene, zu spät kommen wird gemeldet", async () => {
+    const { morgenSache } = await import("@/lib/klikk/motor");
+    let s = schlafen(bis(angemeldet(), 22 * 60));
+    s = nacht(s, false);
+    expect(s.phase).toBe("morgen");
+    expect(s.uhr).toBe(6 * 60 + 30);
+    const vorher = s.hygiene;
+    s = morgenSache(s, "duschen");
+    expect(s.hygiene).toBeGreaterThan(vorher);
+    for (let i = 0; i < 30; i++) s = gesehen(s, naechster(s), 500, false); // im Bett scrollen
+    s = losgehen(s);
+    expect(s.uhr).toBe(14 * 60);
+    expect(s.morgen.join(" ")).toContain("zu spät");
+  });
+
+  it("ohne Duschen sinkt die Hygiene, und die Klasse merkt es", () => {
+    let s = angemeldet();
+    while (s.tag < 3) s = tagZuEnde(s);
+    expect(s.hygiene).toBeLessThan(25);
+    expect(s.morgen.join(" ")).toContain("Nase");
+  });
+
+  it("über Tim lästern zählt als Mitmachen; nachfragen zeigt den Grund", () => {
+    let s = tagZuEnde(angemeldet());
+    s = bis(s, 15 * 60 + 10);
+    const mit = waehle(s, "klasse", wahlId(s, "klasse", "tim"), "mitmachen");
+    expect(taeterPunkte(mit)).toBe(2);
+    let gefragt = waehle(s, "klasse", wahlId(s, "klasse", "tim"), "fragen");
+    gefragt = bis(tagZuEnde(gefragt), 16 * 60 + 5);
+    expect(gefragt.chats.tim.some(n => n.text.includes("waschmaschine"))).toBe(true);
+  });
+});
+
+describe("Quiz und Teilen", () => {
+  it("das Quiz-Ergebnis folgt den Antworten", async () => {
+    const { quizTyp } = await import("@/components/klikk/Apps");
+    expect(quizTyp({ laune: "allein", aendern: "nichts" }).emoji).toBe("🌧️");
+    expect(quizTyp({ aendern: "koerper", laune: "gut" }).emoji).toBe("🪞");
+    expect(quizTyp({ laune: "gut", aendern: "nichts", schlaf: "frueh" }).emoji).toBe("☀️");
+  });
+
+  it("ein geteiltes Spielergebnis wird ein eigener Beitrag", async () => {
+    const { spielTeilen } = await import("@/lib/klikk/motor");
+    const s = spielTeilen(angemeldet(), "sprung", 812);
+    expect(s.eigenePosts[0]).toMatchObject({ art: "spiel", spiel: "sprung", punkte: 812 });
   });
 });
