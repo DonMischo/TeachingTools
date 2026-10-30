@@ -16,6 +16,8 @@ export interface Lesetext {
   antworten: string[];
   /** Index der richtigen Antwort */
   richtig: number;
+  /** Druckvorlage bei fremden Texten (Gedichte) */
+  quelle?: string;
 }
 
 /** Seiten aus dem Geschichtsbuch (eigene Sachtexte) */
@@ -95,15 +97,8 @@ export const GESCHICHTE: Lesetext[] = [
 export const DEUTSCH: Lesetext[] = [
   {
     fach: "Deutsch", seite: "Lesebuch S. 64–65", titel: "Johann Wolfgang von Goethe: Der Zauberlehrling (1797, Anfang)",
-    text: "Hat der alte Hexenmeister\nSich doch einmal wegbegeben!\nUnd nun sollen seine Geister\nAuch nach meinem Willen leben.\n"
-      + "Seine Wort und Werke\nMerkt ich und den Brauch,\nUnd mit Geistesstärke\nTu ich Wunder auch.\nWalle! walle\nManche Strecke,\n"
-      + "Daß, zum Zwecke,\nWasser fließe\nUnd mit reichem, vollem Schwalle\nZu dem Bade sich ergieße.\n\n"
-      + "Und nun komm, du alter Besen!\nNimm die schlechten Lumpenhüllen;\nBist schon lange Knecht gewesen:\nNun erfülle meinen Willen!\n"
-      + "Auf zwei Beinen stehe,\nOben sei ein Kopf,\nEile nun und gehe\nMit dem Wassertopf!\n\n"
-      + "Seht, er läuft zum Ufer nieder,\nWahrlich! ist schon an dem Flusse,\nUnd mit Blitzesschnelle wieder\nIst er hier mit raschem Gusse.\n"
-      + "Schon zum zweiten Male!\nWie das Becken schwillt!\nWie sich jede Schale\nVoll mit Wasser füllt!\nStehe! stehe!\nDenn wir haben\n"
-      + "Deiner Gaben\nVollgemessen! –\nAch, ich merk es! Wehe! wehe!\nHab ich doch das Wort vergessen!\n\n"
-      + "(Im weiteren Gedicht flutet der Besen das ganze Haus. Erst der zurückgekehrte Meister kann ihn mit dem richtigen Wort stoppen.)",
+    text: "Hat der alte Hexenmeister\nSich doch einmal wegbegeben!\nUnd nun sollen seine Geister\nAuch nach meinem Willen leben.\nSeine Wort’ und Werke\nMerkt’ ich, und den Brauch,\nUnd mit Geistesstärke\nThu’ ich Wunder auch.\n\nWalle! walle\nManche Strecke,\nDaß, zum Zwecke,\nWasser fließe,\nUnd mit reichem vollem Schwalle\nZu dem Bade sich ergieße.\n\nUnd nun komm, du alter Besen!\nNimm die schlechten Lumpenhüllen;\nBist schon lange Knecht gewesen;\nNun erfülle meinen Willen!\nAuf zwey Beinen stehe,\nOben sey ein Kopf,\nEile nun und gehe\nMit dem Wassertopf!\n\nWalle! walle\nManche Strecke,\nDaß, zum Zwecke,\nWasser fließe,\nUnd mit reichem vollem Schwalle\nZu dem Bade sich ergieße.\n\nSeht, er läuft zum Ufer nieder;\nWahrlich! ist schon an dem Flusse,\nUnd mit Blitzesschnelle wieder\nIst er hier mit raschem Gusse.\nSchon zum zweytenmale!\nWie das Becken schwillt!\nWie sich jede Schale\nVoll mit Wasser füllt!\n\nStehe! stehe!\nDenn wir haben\nDeiner Gaben\nVollgemessen! –\nAch, ich merk’ es! Wehe! wehe!\nHab’ ich doch das Wort vergessen!\n\n(Im weiteren Gedicht flutet der Besen das ganze Haus. Erst der zurückgekehrte Meister kann ihn mit dem richtigen Wort stoppen.)",
+    quelle: "Goethe’s Werke. Vollständige Ausgabe letzter Hand, Bd. 1, Cotta 1827, S. 217–220 (nach de.wikisource.org, Schreibweise des Originals)",
     frage: "Warum kann der Lehrling den Besen nicht mehr anhalten?",
     antworten: [
       "Er hat das Zauberwort vergessen.", "Der Besen ist zu schnell für ihn.", "Der Meister hat den Besen verzaubert, bevor er ging.",
@@ -128,24 +123,9 @@ export const DEUTSCH: Lesetext[] = [
     richtig: 0,
   },
   {
-    fach: "Deutsch", seite: "Lesebuch S. 140–141", titel: "Theodor Fontane: John Maynard (1886, gekürzt)",
-    text: "John Maynard!\n»Wer ist John Maynard?«\n»John Maynard war unser Steuermann,\naushielt er, bis er das Ufer gewann,\n"
-      + "er hat uns gerettet, er trägt die Kron',\ner starb für uns, unsre Liebe sein Lohn.\nJohn Maynard.«\n\n"
-      + "Die »Schwalbe« fliegt über den Eriesee,\nGischt schäumt um den Bug wie Flocken von Schnee;\nvon Detroit fliegt sie nach Buffalo –\n"
-      + "die Herzen aber sind frei und froh,\nund die Passagiere mit Kindern und Fraun\nim Dämmerlicht schon das Ufer schaun,\n"
-      + "und plaudernd an John Maynard heran\ntritt alles: »Wie weit noch, Steuermann?«\nDer schaut nach vorn und schaut in die Rund:\n"
-      + "»Noch dreißig Minuten ... Halbe Stund.«\n\n"
-      + "Alle Herzen sind froh, alle Herzen sind frei –\nda klingt's aus dem Schiffsraum her wie Schrei,\n»Feuer!« war es, was da klang,\n"
-      + "ein Qualm aus Kajüt und Luke drang,\nein Qualm, dann Flammen lichterloh,\nund noch zwanzig Minuten bis Buffalo.\n\n"
-      + "Und die Passagiere, buntgemengt,\nam Bugspriet stehn sie zusammengedrängt,\nam Bugspriet vorn ist noch Luft und Licht,\n"
-      + "am Steuer aber lagert sich's dicht,\nund ein Jammern wird laut: »Wo sind wir? wo?«\nUnd noch fünfzehn Minuten bis Buffalo. –\n\n"
-      + "Der Zugwind wächst, doch die Qualmwolke steht,\nder Kapitän nach dem Steuer späht,\ner sieht nicht mehr seinen Steuermann,\n"
-      + "aber durchs Sprachrohr fragt er an:\n»Noch da, John Maynard?«\n»Ja, Herr. Ich bin.«\n»Auf den Strand! In die Brandung!«\n"
-      + "»Ich halte drauf hin.«\nUnd das Schiffsvolk jubelt: »Halt aus! Hallo!«\nUnd noch zehn Minuten bis Buffalo. –\n\n"
-      + "»Noch da, John Maynard?« Und Antwort schallt's\nmit ersterbender Stimme: »Ja, Herr, ich halt's!«\nUnd in die Brandung, was Klippe, was Stein,\n"
-      + "jagt er die »Schwalbe« mitten hinein.\nSoll Rettung kommen, so kommt sie nur so.\nRettung: der Strand von Buffalo!\n\n"
-      + "Das Schiff geborsten. Das Feuer verschwelt.\nGerettet alle. Nur einer fehlt!\n\n"
-      + "(Zum Schluss trägt die ganze Stadt Buffalo John Maynard zu Grabe und setzt ihm einen Grabstein mit Dankspruch.)",
+    fach: "Deutsch", seite: "Lesebuch S. 140–141", titel: "Theodor Fontane: John Maynard (1886)",
+    text: "John Maynard!\n\n„Wer ist John Maynard?“\n\n„John Maynard war unser Steuermann,\nAushielt er bis er das Ufer gewann,\nEr hat uns gerettet, er trägt die Kron’,\nEr starb für uns, unsre Liebe sein Lohn.\nJohn Maynard.“\n\nDie „Schwalbe“ fliegt über den Erie-See,\nGischt schäumt um den Bug wie Flocken von Schnee,\nVon Detroit fliegt sie nach Buffalo –\nDie Herzen aber sind frei und froh,\nUnd die Passagiere, mit Kindern und Frau’n\nIm Dämmerlicht schon das Ufer schau’n\nUnd plaudernd an John Maynard heran\nTritt alles: „Wie weit noch, Steuermann?\nDer schaut nach vorn und schaut in die Rund’:\n„Noch dreißig Minuten … Halbe Stund’.“\n\nAlle Herzen sind froh, alle Herzen sind frei –\nDa klingt’s aus dem Schiffsraum her wie Schrei,\n„Feuer“ war es, was da klang,\nEin Qualm aus Kajütt’ und Luke drang,\nEin Qualm, dann Flammen lichterloh,\nUnd noch zwanzig Minuten bis Buffalo.\n\nUnd die Passagiere, buntgemengt,\nAm Bugspriet stehn sie zusammengedrängt,\nAm Bugspriet vorn ist noch Luft und Licht,\nAm Steuer aber lagert sich’s dicht,\nUnd ein Jammern wird laut: „Wo sind wir? wo?“\nUnd noch fünfzehn Minuten bis Buffalo,\n\nDer Zugwind wächst, doch die Qualmwolke steht,\nDer Kapitän nach dem Steuer späht,\nEr sieht nicht mehr seinen Steuermann,\nAber durchs Sprachrohr fragt er an:\n„Noch da, John Maynard?“\n„Ja, Herr. Ich bin.“\n„„Auf den Strand. In die Brandung.““\n„Ich halte drauf hin.“\nUnd das Schiffsvolk jubelt: „Halt aus. Halloh.“\nUnd noch zehn Minuten bis Buffalo.\n\n„„Noch da, John Maynard?““ Und Antwort schallt’s\nMit ersterbender Stimme: „Ja, Herr, ich halt’s“\nUnd in die Brandung, was Klippe was Stein,\nJagt er die „Schwalbe“ mitten hinein,\nSoll Rettung kommen, so kommt sie nur so.\nRettung: der Strand von Buffalo.\n\nDas Schiff geborsten. Das Feuer verschweelt.\nGerettet alle. Nur Einer fehlt!\n\nAlle Glocken gehn; ihre Töne schwell’n\nHimmelan aus Kirchen und Kapell’n,\nEin Klingen und Läuten, sonst schweigt die Stadt,\nEin Dienst nur, den sie heute hat:\nZehntausend folgen oder mehr\nUnd kein Aug’ im Zuge, das thränenleer.\n\nSie lassen den Sarg in Blumen hinab,\nMit Blumen schließen sie das Grab,\nUnd mit goldner Schrift in den Marmorstein\nSchreibt die Stadt ihren Dankspruch ein:\n„Hier ruht John Maynard. In Qualm und Brand,\nHielt er das Steuer fest in der Hand,\nEr hat uns gerettet, er trägt die Kron’,\nEr starb für uns, unsre Liebe sein Lohn.\nJohn Maynard.“",
+    quelle: "Theodor Fontane: Gedichte, 10. Aufl., Cotta 1905, S. 205–207 (nach de.wikisource.org, Schreibweise des Originals)",
     frage: "Wie viele Minuten sind es noch bis Buffalo, als das Feuer entdeckt wird?",
     antworten: ["zwanzig Minuten", "dreißig Minuten", "fünfzehn Minuten", "zehn Minuten", "fünf Minuten", "eine Stunde"],
     richtig: 0,

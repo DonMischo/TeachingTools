@@ -78,6 +78,7 @@ export default function Tag({ s, setze }: { s: Stand; setze: Setze }) {
               <div className="mt-2 flex flex-col gap-2">
                 <div className="text-xs font-bold">📖 {a.lesetext.fach}, {a.lesetext.seite}: {a.lesetext.titel}</div>
                 <div className="text-sm whitespace-pre-line rounded-lg bg-surface-hover p-3 max-h-64 overflow-y-auto leading-relaxed">{a.lesetext.text}</div>
+                {a.lesetext.quelle && <div className="text-[10px] text-muted">Quelle: {a.lesetext.quelle}</div>}
                 <div className="text-sm font-bold">{a.lesetext.frage}</div>
                 <div className="flex flex-col gap-1">
                   {a.reihenfolge.map(k => (
