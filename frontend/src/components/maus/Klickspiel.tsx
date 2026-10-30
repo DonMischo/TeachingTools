@@ -42,8 +42,12 @@ function neueRunde(anzahl: number, nr: number, ohne?: string, reihenfolge?: stri
 }
 
 export default function Klickspiel({
-  art, onFertig, onWeiter,
-}: { art: Art; onFertig: (e: StufenErgebnis) => void; onWeiter: () => void }) {
+  art, onFertig, onWeiter, kompakt = false,
+}: {
+  art: Art; onFertig: (e: StufenErgebnis) => void; onWeiter: () => void;
+  /** nur das Spielfeld (Klikk-Handy): kein Auftragstext, kein Vorführen, kein Weiter */
+  kompakt?: boolean;
+}) {
   const spiel = art === "klick" ? KLICK : DOPPELKLICK;
   const { hilfe } = useMausKontext();
   // Hilfsmodus: höchstens 4×4 — die Felder bleiben groß genug zum Treffen.
@@ -236,6 +240,13 @@ export default function Klickspiel({
 
   return (
     <div className="flex flex-col gap-4">
+      {kompakt ? (
+        <div className="flex items-center gap-3">
+          <div ref={zielAnzeige} className="w-12 h-12 shrink-0 rounded-xl flex items-center justify-center text-3xl"
+            style={{ backgroundColor: avatar.bg }} data-testid="ziel">{avatar.emoji}</div>
+          <div className="text-sm font-bold tabular-nums">⭐ {punkte} · {treffer}/{spiel.ziele}</div>
+        </div>
+      ) : (
       <Stufenkopf
         titel={art === "klick" ? "👆 Stufe 1 · Klicken" : "✌️ Stufe 2 · Doppelklick"}
         auftrag={
@@ -262,6 +273,7 @@ export default function Klickspiel({
           {avatar.emoji}
         </div>
       </Stufenkopf>
+      )}
 
       <div className="h-2 rounded-full bg-surface-hover overflow-hidden" aria-hidden>
         {phase === "laeuft" && (
@@ -326,7 +338,7 @@ export default function Klickspiel({
                 <div className="text-2xl font-black mt-1">{punkte} Punkte</div>
                 <div className="flex gap-2 justify-center mt-4">
                   <button onClick={nochmal} className="rounded-lg px-4 py-2 border border-line hover:border-accent">↺ Nochmal</button>
-                  <button onClick={onWeiter} className="btn-primary px-4 py-2">Weiter →</button>
+                  {!kompakt && <button onClick={onWeiter} className="btn-primary px-4 py-2">Weiter →</button>}
                 </div>
               </div>
             )}

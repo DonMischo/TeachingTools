@@ -117,7 +117,7 @@ export interface Stand {
   serienstand: Record<string, number>;
   /** eigene Beiträge mit den Kommentaren darunter */
   eigenePosts: {
-    id: string; art: "foto" | "video" | "spiel"; motiv?: string; trend?: string; fake?: boolean; spiel?: string; punkte?: number; tipp?: string; tag: number; uhr: number;
+    id: string; art: "foto" | "video" | "spiel"; motiv?: string; trend?: string; fake?: boolean; spiel?: string; punkte?: number; tipp?: string; spruch?: string; tag: number; uhr: number;
     kommentare: { von: string; text: string; gemein: boolean; um: number; gemeldet?: boolean; status?: "beantwortet" | "geloescht" | "blockiert" | "gemeldet"; antwort?: string }[];
   }[];
   blockiert: string[];

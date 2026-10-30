@@ -39,6 +39,14 @@ export const SPIEL_NAME: Record<string, { name: string; emoji: string; einheit: 
   quiz: { name: "Typ-Quiz", emoji: "🔮", einheit: "" },
 };
 
+/** Sprüche zum Teilen eines Spielergebnisses — dieselbe Liste wie im Backend (SPRUECHE). */
+export const SPRUECHE: Record<string, string> = {
+  yeah: "Yeah! 🎉", gg: "GG 🤝", rekord: "Neuer Rekord! 🏆", easy: "Easy. 😴", zuleicht: "Zu einfach 🥱",
+  toppen: "Wer kann das toppen? 👀", traut: "Kommt ran, wenn ihr euch traut 😏", geuebt: "Hab nur ein bisschen geübt 😇",
+  glueck: "Glück gehabt 🍀", gut: "Bin ich gut oder bin ich gut? 💅", anfang: "Das war erst der Anfang 🔥",
+  neidisch: "Schaut nicht so neidisch 😏", owned: "Owned! 😎", noobs: "Owned, ihr Noobs 🎮😎",
+};
+
 /** Antworten auf Kommentare unter eigenen Beiträgen — ebenfalls fest. */
 export const ANTWORTEN = ["Danke 🥰", "Haha ja 😂", "Was soll das?", "🙄", "Lass mich in Ruhe."];
 

@@ -167,3 +167,22 @@ def test_klassen_uhr_start_pause_weiter_stopp(client, teacher_token):
     assert w["pausiert"] is False and w["start_ms"] >= u["start_ms"]
     assert client.get(url, headers=mia).json()["laeuft"] is True
     assert client.post(url, json={"aktion": "stopp"}, headers=auth(teacher_token)).json()["laeuft"] is False
+
+
+def test_spruch_beim_teilen_nur_aus_der_liste(client, teacher_token):
+    code = _sitzung(client, teacher_token)
+    mia = _gast(client, teacher_token, code, "Mia")
+    url = f"/api/klikk/sitzung/{code}/beitraege"
+    basis = {"name": "blauer.otter.17", "art": "spiel", "tag": 0, "spiel": "bloecke", "punkte": 450}
+    assert client.post(url, json={**basis, "spruch": "ihr seid alle doof"}, headers=mia).status_code == 400
+    r = client.post(url, json={**basis, "spruch": "noobs"}, headers=mia)
+    assert r.status_code == 201 and r.json()["inhalt"]["spruch"] == "Owned, ihr Noobs 🎮😎"
+
+
+def test_meldung_mit_eigenem_bild(client, teacher_token):
+    code = _sitzung(client, teacher_token)
+    url = f"/api/klikk/sitzung/{code}/beitraege"
+    basis = {"name": "", "art": "news", "tag": 0, "schlagzeile": "Hitzefrei für alle!", "fake": True}
+    assert client.post(url, json={**basis, "bild_daten": "data:text/html;base64,PHNjcmlwdD4="}, headers=auth(teacher_token)).status_code == 400
+    r = client.post(url, json={**basis, "bild_daten": "data:image/jpeg;base64,/9j/4AAQSkZJRg=="}, headers=auth(teacher_token))
+    assert r.status_code == 201 and r.json()["inhalt"]["bild_daten"].startswith("data:image/jpeg")

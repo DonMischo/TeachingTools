@@ -88,7 +88,7 @@ export function KlassenPost({ b, s, setze, online, aktualisieren }: { b: KlikkBe
           <div className="text-center text-white drop-shadow">
             <div className="text-7xl">{spiel.emoji}</div>
             <div className="font-black text-2xl">{b.inhalt.punkte} {spiel.einheit}</div>
-            <div className="text-sm">in {spiel.name} – schaffst du mehr? 😏</div>
+            <div className="text-sm">{b.inhalt.spruch ?? `in ${spiel.name} – schaffst du mehr? 😏`}</div>
           </div>
         )}
         {riecht && <span className="absolute top-8 right-3 text-3xl animate-pulse" title="Hygiene niedrig">💨🦨</span>}
@@ -114,7 +114,8 @@ export function KlassenPost({ b, s, setze, online, aktualisieren }: { b: KlikkBe
             ))}
           </div>
         )}
-        {b.art === "news" && <Faktencheck id={`k${b.id}`} istFake={!!b.inhalt.fake} quelle={b.name} bild={newsBild(b.inhalt.bild)} s={s} setze={setze} />}
+        {b.art === "news" && <Faktencheck id={`k${b.id}`} istFake={!!b.inhalt.fake} quelle={b.name}
+          bild={b.inhalt.bild_daten ? { urheber: "einer anderen Quelle", lizenz: "ohne Angabe" } : newsBild(b.inhalt.bild)} s={s} setze={setze} />}
       </div>
     </div>
   );
@@ -122,10 +123,11 @@ export function KlassenPost({ b, s, setze, online, aktualisieren }: { b: KlikkBe
 
 function NachrichtBild({ b }: { b: KlikkBeitrag }) {
   const n = newsBild(b.inhalt.bild);
+  const quelle = b.inhalt.bild_daten ?? n?.datei;
   return (
     <div className="absolute inset-0 flex flex-col bg-white text-zinc-900">
       <div className="px-3 py-2 text-xs font-black text-white bg-red-600">⚠️ EILMELDUNG · Klikk News</div>
-      {n && (/* eslint-disable-next-line @next/next/no-img-element */ <img src={n.datei} alt="" className="w-full h-40 object-cover" />)}
+      {quelle && (/* eslint-disable-next-line @next/next/no-img-element */ <img src={quelle} alt="" className="w-full h-40 object-cover" />)}
       <div className="p-4 flex flex-col gap-2">
         <div className="text-xl font-black leading-tight">{b.inhalt.schlagzeile}</div>
         <div className="text-sm text-zinc-600">{b.inhalt.unterzeile}</div>

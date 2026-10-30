@@ -141,15 +141,38 @@ const BILDER = [
   ...VULKANE.slice(0, 14).map(b => ({ id: `vulkan:${b.id}`, titel: `🌋 ${b.titel}` })),
 ];
 
+/** Ein eigenes Bild im Browser verkleinern (längste Seite 900 px, JPEG) — so passt es direkt in den Beitrag. */
+function verkleinern(datei: File): Promise<string> {
+  return new Promise((ok, fehler) => {
+    const url = URL.createObjectURL(datei);
+    const img = new Image();
+    img.onload = () => {
+      const f = Math.min(1, 900 / Math.max(img.width, img.height));
+      const c = document.createElement("canvas");
+      c.width = Math.round(img.width * f); c.height = Math.round(img.height * f);
+      c.getContext("2d")!.drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      ok(c.toDataURL("image/jpeg", 0.8));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); fehler(new Error("Das Bild ließ sich nicht lesen.")); };
+    img.src = url;
+  });
+}
+
 function MeldungPosten({ code }: { code: string }) {
   const [schlagzeile, setSchlagzeile] = useState("");
   const [unterzeile, setUnterzeile] = useState("");
   const [bild, setBild] = useState(BILDER[0]?.id ?? "");
+  const [eigenesBild, setEigenesBild] = useState<string | null>(null);
+  const [bildFehler, setBildFehler] = useState<string | null>(null);
   const [fake, setFake] = useState(true);
   const [ok, setOk] = useState(false);
   const posten = useMutation({
-    mutationFn: () => api.klikk.posten({ code, token: null }, { name: "", art: "news", tag: 0, schlagzeile, unterzeile, bild, fake }),
-    onSuccess: () => { setOk(true); setSchlagzeile(""); setUnterzeile(""); },
+    mutationFn: () => api.klikk.posten({ code, token: null }, {
+      name: "", art: "news", tag: 0, schlagzeile, unterzeile, fake,
+      ...(eigenesBild ? { bild_daten: eigenesBild } : { bild }),
+    }),
+    onSuccess: () => { setOk(true); setSchlagzeile(""); setUnterzeile(""); setEigenesBild(null); },
   });
   const [quelle, id] = bild.split(":");
   const n = quelle === "weltall" || quelle === "vulkan" ? nachweis({ art: "foto", quelle, id }) : undefined;
@@ -159,12 +182,24 @@ function MeldungPosten({ code }: { code: string }) {
       <label className="text-sm">Schlagzeile<input className="input w-full mt-1" maxLength={120} value={schlagzeile} onChange={e => setSchlagzeile(e.target.value)} placeholder="z. B. Ab Montag Handyverbot an allen Schulen!" /></label>
       <label className="text-sm">Unterzeile<textarea className="input w-full mt-1" maxLength={300} rows={2} value={unterzeile} onChange={e => setUnterzeile(e.target.value)} /></label>
       <label className="text-sm">Bild aus den Galerien
-        <select className="input w-full mt-1" value={bild} onChange={e => setBild(e.target.value)}>
+        <select className="input w-full mt-1" value={bild} disabled={!!eigenesBild} onChange={e => setBild(e.target.value)}>
           {BILDER.map(b => <option key={b.id} value={b.id}>{b.titel}</option>)}
         </select>
       </label>
+      <label className="text-sm">… oder ein eigenes Bild
+        <input type="file" accept="image/jpeg,image/png,image/webp" className="block mt-1 text-sm"
+          onChange={async e => {
+            const datei = e.target.files?.[0];
+            setBildFehler(null);
+            if (!datei) return;
+            try { setEigenesBild(await verkleinern(datei)); } catch (err) { setBildFehler((err as Error).message); }
+          }} />
+      </label>
+      {bildFehler && <p className="text-sm text-bad">{bildFehler}</p>}
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      {n && <img src={n.datei} alt="" className="h-32 w-full object-cover rounded-lg" />}
+      {eigenesBild ? <img src={eigenesBild} alt="" className="h-32 w-full object-cover rounded-lg" /> : n && <img src={n.datei} alt="" className="h-32 w-full object-cover rounded-lg" />}
+      {eigenesBild && <button className="text-xs underline text-muted self-start" onClick={() => setEigenesBild(null)}>Eigenes Bild entfernen</button>}
+      <p className="text-xs text-muted">Nur Bilder verwenden, an denen du die Rechte hast – und keine erkennbaren Personen aus der Schule.</p>
       <label className="text-sm flex gap-2 items-center"><input type="checkbox" checked={fake} onChange={e => setFake(e.target.checked)} /> Das ist eine Falschmeldung (der Faktencheck deckt sie auf)</label>
       <button className="btn-primary self-start" disabled={!schlagzeile.trim() || posten.isPending} onClick={() => posten.mutate()}>📰 In den Klassen-Feed stellen</button>
       {ok && <p className="text-sm text-ok">Gepostet. Sie erscheint bei allen beim nächsten Wischen.</p>}

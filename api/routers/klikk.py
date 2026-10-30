@@ -282,6 +282,13 @@ KOMMENTARE: dict[str, str] = {
     # nur unter Beiträgen von jemandem mit niedriger Hygiene (Spielwert) – Mobbing mit Folgen im Spiel
     "stinkt": "Riecht man bis hier 🤢",
 }
+# Sprüche zum Teilen eines Spielergebnisses — feste Liste wie in lib/klikk/klasse.ts (SPRUECHE)
+SPRUECHE: dict[str, str] = {
+    "yeah": "Yeah! 🎉", "gg": "GG 🤝", "rekord": "Neuer Rekord! 🏆", "easy": "Easy. 😴", "zuleicht": "Zu einfach 🥱",
+    "toppen": "Wer kann das toppen? 👀", "traut": "Kommt ran, wenn ihr euch traut 😏", "geuebt": "Hab nur ein bisschen geübt 😇",
+    "glueck": "Glück gehabt 🍀", "gut": "Bin ich gut oder bin ich gut? 💅", "anfang": "Das war erst der Anfang 🔥",
+    "neidisch": "Schaut nicht so neidisch 😏", "owned": "Owned! 😎", "noobs": "Owned, ihr Noobs 🎮😎",
+}
 SPIELE_TEILEN = {"klick", "doppelklick", "bloecke", "sprung", "logik", "candy", "quiz"}
 MOTIVE = {"selfie", "essen", "tier", "himmel"}
 TRENDS = {"spiegel", "mehl", "eis", "zitrone", "gleis", "nosleep", "hotchip", "dach"}
@@ -299,10 +306,13 @@ class BeitragIn(BaseModel):
     hygiene: int | None = Field(default=None, ge=0, le=100)
     spiel: str | None = None
     punkte: int | None = Field(default=None, ge=0, le=1_000_000)
+    spruch: str | None = None
     # nur Lehrkraft: Nachricht mit Bild aus den Galerien
     schlagzeile: str | None = Field(default=None, max_length=120)
     unterzeile: str | None = Field(default=None, max_length=300)
     bild: str | None = Field(default=None, max_length=80)
+    # eigenes Bild der Lehrkraft, im Browser verkleinert (JPEG/PNG/WebP als data:-URL, höchstens ~300 kB)
+    bild_daten: str | None = Field(default=None, max_length=400_000)
 
 
 class KommentarOut(BaseModel):
@@ -358,7 +368,11 @@ def beitrag_posten(
             raise HTTPException(403, "Nachrichten postet nur die Lehrkraft.")
         if not body.schlagzeile:
             raise HTTPException(400, "Eine Nachricht braucht eine Schlagzeile.")
+        if body.bild_daten and not re.match(r"^data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$", body.bild_daten):
+            raise HTTPException(400, "Das Bild muss ein JPEG, PNG oder WebP sein.")
         inhalt = {"schlagzeile": body.schlagzeile, "unterzeile": body.unterzeile or "", "bild": body.bild, "fake": body.fake}
+        if body.bild_daten:
+            inhalt["bild_daten"] = body.bild_daten
         name = "klikk.news"
     else:
         if not NAME.match(body.name):
@@ -369,8 +383,12 @@ def beitrag_posten(
             raise HTTPException(400, "Unbekannter Trend.")
         if body.art == "spiel" and (body.spiel not in SPIELE_TEILEN or body.punkte is None):
             raise HTTPException(400, "Unbekanntes Spiel.")
+        if body.spruch is not None and body.spruch not in SPRUECHE:
+            raise HTTPException(400, "Sprüche gibt es nur aus der Liste.")
         inhalt = ({"motiv": body.motiv} if body.art == "foto" else {"trend": body.trend, "fake": body.fake} if body.art == "video"
                   else {"spiel": body.spiel, "punkte": body.punkte})
+        if body.spruch:
+            inhalt["spruch"] = SPRUECHE[body.spruch]
         if body.hygiene is not None:
             inhalt["hygiene"] = body.hygiene
         name = body.name

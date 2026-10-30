@@ -1291,13 +1291,13 @@ export type KlikkAuktion = {
 
 export type KlikkBeitrag = {
   id: number; name: string; art: "foto" | "video" | "news" | "spiel"; tag: number;
-  inhalt: { motiv?: string; trend?: string; fake?: boolean; schlagzeile?: string; unterzeile?: string; bild?: string | null; hygiene?: number; spiel?: string; punkte?: number };
+  inhalt: { motiv?: string; trend?: string; fake?: boolean; schlagzeile?: string; unterzeile?: string; bild?: string | null; bild_daten?: string; hygiene?: number; spiel?: string; punkte?: number; spruch?: string };
   likes: number; kommentare: { name: string; kommentar: string }[];
   eigener: boolean; gelikt: boolean; mein_kommentar: string | null; lehrkraft: boolean;
 };
 export type KlikkBeitragIn = {
   name: string; art: "foto" | "video" | "news" | "spiel"; tag: number; motiv?: string; trend?: string; fake?: boolean;
-  schlagzeile?: string; unterzeile?: string; bild?: string; hygiene?: number; spiel?: string; punkte?: number;
+  schlagzeile?: string; unterzeile?: string; bild?: string; bild_daten?: string; hygiene?: number; spiel?: string; punkte?: number; spruch?: string;
 };
 export type KlikkUebersicht = {
   anzahl: number;

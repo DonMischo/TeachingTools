@@ -104,7 +104,7 @@ export default function SpieleApp({ s, setze, online }: { s: Stand; setze: Setze
         <>
           {(spiel === "klick" || spiel === "doppelklick") && (
             <div className="klikk-klickspiel text-sm">
-              <Klickspiel key={`${spiel}-${neu}`} art={spiel} onWeiter={() => setNeu(n => n + 1)}
+              <Klickspiel key={`${spiel}-${neu}`} art={spiel} kompakt onWeiter={() => setNeu(n => n + 1)}
                 onFertig={e => melden(spiel, e.punkte, e.dauerMs, e.details[0] ?? "")} />
             </div>
           )}

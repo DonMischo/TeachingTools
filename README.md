@@ -224,7 +224,7 @@ Jede Simulation trägt Fächer (auch mehrere, z. B. Geografie und Physik); die �
 - KI-Fake von Lea, Werbedeal einer Marke (bezahlt wird nie), »5 Jahre später« (die Personalabteilung googelt dich), Influencer-Chance (winzig), Bonus-Samstag, Töne, gute Erfolge und »Schattenseiten« (auch auf /erfolge)
 - Morgen ab dem eigenen Wecker: Duschen, Zähne, Deo, frische Sachen, Frühstück – oder im Bett scrollen und den Bus um 7:35 verpassen; Hygiene-Anzeige, die täglich sinkt und auffällt
 - Tim riecht, und die Klasse macht einen Sticker daraus: mitlästern zählt als Mobbing, nachfragen zeigt den Grund (Waschmaschine kaputt, Mama im Krankenhaus); im Klassen-Feed zeigt ein 💨 niedrige Hygiene, und nur dort gibt es den Kommentar »Riecht man bis hier 🤢« – mit Folgen für wer ihn nutzt
-- Spielergebnisse, Candy Blast und das Typ-Quiz (Ergebnis passend zu den Antworten) lassen sich in Klikk teilen
+- Spielergebnisse, Candy Blast und das Typ-Quiz (Ergebnis passend zu den Antworten) lassen sich in Klikk teilen – mit Teilen-Symbol und einem Spruch aus einer festen Liste (von »Yeah! 🎉« bis »Owned, ihr Noobs 🎮😎«); Meldungen der Lehrkraft auch mit eigenem Bild
 - Klassenmodus: die Lehrkraft startet eine gemeinsame Klassen-Uhr (ein Tag von 6 bis 24 Uhr in 4–10 echten Minuten, Pause/Weiter/Stopp); Handlungen kosten dann keine Spielzeit mehr, Schule (8–14 Uhr) sperrt das Handy, Aktivitäten dauern echte Zeit, alle schlafen und wachen gleichzeitig – der Druck, jetzt nachzusehen, wird echt
 - Werbeauktion live: die Klasse gibt ihre Profile nach Zustimmung anonym ab und ersteigert sie als Werbefirmen (100 Taler, verdeckte Gebote); die Lehrkraft leitet am Beamer und bespricht, welche Merkmale den Preis treiben
 

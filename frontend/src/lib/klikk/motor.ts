@@ -343,7 +343,7 @@ export function challengePosten(alt: Stand, trendId: string, fake: boolean): Sta
 const jetztAbs = (s: Stand) => s.tag * MITTERNACHT + s.uhr;
 
 /** Eigenen Beitrag merken; Kommentare von Fremden kommen über die nächste Stunde. */
-function eigenerPost(s: Stand, p: { art: "foto" | "video" | "spiel"; motiv?: string; trend?: string; fake?: boolean; spiel?: string; punkte?: number; tipp?: string }, riskant: boolean) {
+function eigenerPost(s: Stand, p: { art: "foto" | "video" | "spiel"; motiv?: string; trend?: string; fake?: boolean; spiel?: string; punkte?: number; tipp?: string; spruch?: string }, riskant: boolean) {
   const id = `e${s.eigenePosts.length}`;
   const roh = npcKommentare(s.seed * 13 + s.eigenePosts.length * 7 + s.tag, riskant);
   // Wer ungewaschen in die Kamera hält, bekommt das zu lesen
@@ -403,9 +403,9 @@ export function teilen(alt: Stand, id: string, istFake: boolean): Stand {
 }
 
 /** Ein Spielergebnis teilen — Klikk macht daraus einen Beitrag. */
-export function spielTeilen(alt: Stand, spiel: string, punkte: number, tipp?: string): Stand {
+export function spielTeilen(alt: Stand, spiel: string, punkte: number, tipp?: string, spruch?: string): Stand {
   const s = kopie(alt);
-  eigenerPost(s, { art: "spiel", spiel, punkte, tipp }, false);
+  eigenerPost(s, { art: "spiel", spiel, punkte, tipp, spruch }, false);
   s.flags.offeneLikes = Number(s.flags.offeneLikes ?? 0) + 5 + Math.round(Math.random() * 20);
   spur(s, "klikk", "Klikk", `Spielergebnis geteilt: ${spiel} (${punkte})`);
   handyTick(s, 1);
