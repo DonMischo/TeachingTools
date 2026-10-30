@@ -152,6 +152,11 @@ export default function Feed({ s, setze, online }: { s: Stand; setze: Setze; onl
           </div>
           <div className="p-3 text-sm">
             <b>@{post.von}</b> {post.text}
+            {post.kommentare && (
+              <div className="mt-1 flex flex-col gap-0.5 text-xs">
+                {post.kommentare.map(([von, text]) => <div key={von}><b>@{von}</b> {text}</div>)}
+              </div>
+            )}
             {(post.thema === "news" || post.medien?.art === "news") && (
               <Faktencheck id={post.id} istFake={!!post.fake} quelle={post.von} bild={post.medien?.art === "foto" ? nachweis(post.medien) : undefined} s={s} setze={setze} />
             )}

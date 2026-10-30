@@ -51,6 +51,8 @@ export interface Post {
   ab?: number;
   /** Falschmeldung — der Faktencheck deckt sie auf */
   fake?: boolean;
+  /** Top-Kommentare unter dem Beitrag (Meme-Sprüche der Woche) */
+  kommentare?: [string, string][];
 }
 
 const p = (id: string, thema: Thema, stufe: 1 | 2 | 3, von: string, emoji: string, farben: [string, string], text: string, likes: number): Post =>

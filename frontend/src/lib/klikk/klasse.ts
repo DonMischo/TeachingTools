@@ -28,6 +28,13 @@ export const KOMMENTARE: Record<string, { text: string; gemein: boolean }> = {
   mehr: { text: "Mach's krasser!", gemein: false },
   vorsicht: { text: "Pass auf dich auf 🙏", gemein: false },
   loeschen: { text: "Lösch das lieber", gemein: false },
+  sechs: { text: "6️⃣7️⃣ 🤲", gemein: false },
+  aura: { text: "+1000 Aura ✨", gemein: false },
+  w: { text: "W 🏆", gemein: false },
+  sahur: { text: "Tung Tung Tung Sahur 🥁", gemein: false },
+  chillguy: { text: "Just a chill guy 😌", gemein: false },
+  minusaura: { text: "−1000 Aura 💀", gemein: true },
+  ratio: { text: "L + Ratio 💀", gemein: true },
   nieda: { text: "Nie erreichbar 🙄", gemein: true },
   mitspielen: { text: "Kannst eh nicht mitspielen 🤷", gemein: true },
   eltern: { text: "Darfst wohl nicht wegen Mami 👶", gemein: true },
@@ -50,6 +57,7 @@ export const SPRUECHE: Record<string, string> = {
   toppen: "Wer kann das toppen? 👀", traut: "Kommt ran, wenn ihr euch traut 😏", geuebt: "Hab nur ein bisschen geübt 😇",
   glueck: "Glück gehabt 🍀", gut: "Bin ich gut oder bin ich gut? 💅", anfang: "Das war erst der Anfang 🔥",
   neidisch: "Schaut nicht so neidisch 😏", owned: "Owned! 😎", noobs: "Owned, ihr Noobs 🎮😎",
+  sechs: "6️⃣7️⃣ 🤲", aura: "+1000 Aura ✨", chillguy: "Just a chill guy 😌", sahur: "Tung Tung Tung Sahur 🥁", w: "Ein W nach dem anderen 🏆",
 };
 
 /** Antworten auf Kommentare unter eigenen Beiträgen — ebenfalls fest. */
@@ -59,10 +67,10 @@ export const ANTWORTEN = ["Danke 🥰", "Haha ja 😂", "Was soll das?", "🙄",
 export function npcKommentare(seed: number, riskant: boolean): { von: string; text: string; gemein: boolean }[] {
   const r = zufall(seed);
   const leute = namensVorschlaege(seed * 3 + 1).concat(namensVorschlaege(seed * 5 + 2));
-  const nett = riskant ? ["Krass 🔥", "Mach's krasser!", "LEGENDE 🔥🔥", "Pass auf dich auf 🙏"] : ["Süß 🥹", "Cool 😎", "😂😂", "Stark 💪"];
+  const nett = riskant ? ["Krass 🔥", "Mach's krasser!", "LEGENDE 🔥🔥", "Pass auf dich auf 🙏", "+1000 Aura ✨"] : ["Süß 🥹", "Cool 😎", "😂😂", "Stark 💪", "6️⃣7️⃣ 🤲", "W 🏆", "Just a chill guy 😌"];
   const gemein = riskant
     ? ["Fake 🤡", "Cringe 😬 wer macht sowas", "Hoffentlich fliegst du dabei hin 😂"]
-    : ["Cringe 😬", "Wer hat gefragt? 💀", "Lösch dich 🤡"];
+    : ["Cringe 😬", "Wer hat gefragt? 💀", "Lösch dich 🤡", "−1000 Aura 💀", "L + Ratio 💀"];
   const n = 2 + Math.floor(r() * 3);
   const out = Array.from({ length: n }, (_, i) => ({ von: leute[i], text: nett[Math.floor(r() * nett.length)], gemein: false }));
   if (r() < 0.65) out.push({ von: leute[n], text: gemein[Math.floor(r() * gemein.length)], gemein: true });

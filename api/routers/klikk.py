@@ -279,6 +279,9 @@ KOMMENTARE: dict[str, str] = {
     "krass": "Krass 🔥", "lol": "😂😂", "suess": "Süß 🥹", "cool": "Cool 😎", "stark": "Stark von dir 💪",
     "fake": "Fake 🤡", "cringe": "Cringe 😬", "mehr": "Mach's krasser!", "vorsicht": "Pass auf dich auf 🙏",
     "loeschen": "Lösch das lieber",
+    # Meme-Sprüche der Woche
+    "sechs": "6️⃣7️⃣ 🤲", "aura": "+1000 Aura ✨", "w": "W 🏆", "sahur": "Tung Tung Tung Sahur 🥁", "chillguy": "Just a chill guy 😌",
+    "minusaura": "−1000 Aura 💀", "ratio": "L + Ratio 💀",
     # wer nie online ist oder nicht darf – fies oder fair
     "nieda": "Nie erreichbar 🙄", "mitspielen": "Kannst eh nicht mitspielen 🤷", "eltern": "Darfst wohl nicht wegen Mami 👶",
     "morgen": "Kein Stress, wir spielen morgen 🤝", "handyfrei": "Handyfrei ist auch okay 👍",
@@ -291,6 +294,7 @@ SPRUECHE: dict[str, str] = {
     "toppen": "Wer kann das toppen? 👀", "traut": "Kommt ran, wenn ihr euch traut 😏", "geuebt": "Hab nur ein bisschen geübt 😇",
     "glueck": "Glück gehabt 🍀", "gut": "Bin ich gut oder bin ich gut? 💅", "anfang": "Das war erst der Anfang 🔥",
     "neidisch": "Schaut nicht so neidisch 😏", "owned": "Owned! 😎", "noobs": "Owned, ihr Noobs 🎮😎",
+    "sechs": "6️⃣7️⃣ 🤲", "aura": "+1000 Aura ✨", "chillguy": "Just a chill guy 😌", "sahur": "Tung Tung Tung Sahur 🥁", "w": "Ein W nach dem anderen 🏆",
 }
 SPIELE_TEILEN = {"klick", "doppelklick", "bloecke", "sprung", "logik", "candy", "quiz"}
 MOTIVE = {"selfie", "essen", "tier", "himmel"}
