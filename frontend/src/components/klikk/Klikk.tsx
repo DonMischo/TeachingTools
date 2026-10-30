@@ -13,6 +13,7 @@ import JonasSicht from "./JonasSicht";
 import Datenspiegel from "./Datenspiegel";
 import Lehrkraft from "./Lehrkraft";
 import { Vorbereitung } from "./Einstellungen";
+import OpferWoche from "./OpferWoche";
 import type { MausZugang } from "@/lib/api";
 
 const SCHLUESSEL = "hp_klikk_stand";
@@ -27,6 +28,7 @@ export default function Klikk({ action, zugang, verwaltung, konto }: { action?: 
   const online = useMemo(() => ({ zugang: code ? { code, token } : undefined, konto: !!konto }), [code, token, konto]);
   const [stand, setStand] = useState<Stand | null>(null);
   const [ansicht, setAnsicht] = useState<"spiel" | "auktion">("spiel");
+  const [opfer, setOpfer] = useState(false);
 
   // Laden nach dem Mounten, Speichern erst danach — sonst überschreibt der
   // leere Anfangsstand den gespeicherten (StrictMode führt Effekte doppelt aus).
@@ -62,7 +64,7 @@ export default function Klikk({ action, zugang, verwaltung, konto }: { action?: 
         </div>
       )}
 
-      {verwaltung && ansicht === "auktion" ? <Lehrkraft /> : !stand ? null : stand.phase === "start" ? (
+      {opfer ? <OpferWoche zurueck={() => setOpfer(false)} /> : verwaltung && ansicht === "auktion" ? <Lehrkraft /> : !stand ? null : stand.phase === "start" ? (
         <div className="card p-6 max-w-xl flex flex-col gap-3">
           <h2 className="text-xl font-black">Du bist 14 und gehst in die 8b.</h2>
           <p className="text-sm">
@@ -74,6 +76,7 @@ export default function Klikk({ action, zugang, verwaltung, konto }: { action?: 
             Es gibt keine richtigen oder falschen Knöpfe. Spiel so, wie du wirklich bist.
           </p>
           <p className="text-xs text-muted">Dauer: etwa 25–40 Minuten. Der Stand bleibt in diesem Browser gespeichert.</p>
+          <button className="text-sm underline self-start text-muted" onClick={() => setOpfer(true)}>🔄 Oder: die Woche als Jonas oder Emma erleben</button>
           <Vorbereitung s={stand} setze={setze} los={() => setze(starte)} />
         </div>
       ) : stand.phase === "onboarding" ? (
@@ -88,7 +91,7 @@ export default function Klikk({ action, zugang, verwaltung, konto }: { action?: 
       ) : stand.phase === "jonas" ? (
         <JonasSicht s={stand} weiter={() => setze(zumSpiegel)} />
       ) : (
-        <Datenspiegel s={stand} neu={neu} zugang={zugang} />
+        <Datenspiegel s={stand} neu={neu} zugang={zugang} perspektive={() => setOpfer(true)} />
       )}
     </div>
   );

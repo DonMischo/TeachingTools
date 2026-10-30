@@ -15,7 +15,7 @@ export type ElternTyp = "streng" | "locker" | "besorgt" | "arbeit";
 
 export type Recht = "kontakte" | "standort" | "mikrofon" | "mitteilungen";
 
-export type ChatId = "klasse" | "lea" | "mo" | "jonas" | "mama" | "yilmaz" | "klikkteam" | "gewinn" | "leon" | "verein" | "emma";
+export type ChatId = "klasse" | "lea" | "mo" | "jonas" | "mama" | "yilmaz" | "klikkteam" | "gewinn" | "leon" | "verein" | "emma" | "marke";
 
 export type Phase = "start" | "onboarding" | "woche" | "nacht" | "jonas" | "spiegel";
 
@@ -144,6 +144,10 @@ export interface Stand {
   /** eigener Trainingsplan für den Verein */
   vereinTage: number[] | null;
   vereinUm: number | null;
+  /** Bonustag Samstag (frei, ohne Schule) */
+  samstag: boolean;
+  /** Töne und Vibration bei Benachrichtigungen */
+  ton: boolean;
   /** Bitten der Familie: abgelehnt (Anzahl), zugesagt, erzwungen */
   famAbgelehnt: number;
   famZusagen: string[];

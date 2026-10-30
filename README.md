@@ -220,6 +220,8 @@ Jede Simulation trägt Fächer (auch mehrere, z. B. Geografie und Physik); die �
 - Lehrkraft-Bereich: anonyme Klassenübersicht (ab drei), Meldung samt Galeriebild in den Klassen-Feed stellen (auch als Fake), Feed moderieren, druckbare Nachbesprechungskarten mit Fragen und Rollenspielen
 - Vor der Woche: Elterntyp (locker, streng, besorgt, arbeiten viel), eigenes Handy-Limit oder Sperrzeit, 3D-Avatar, Verein mit eigenem Trainingsplan; Familie bittet um Hilfe (Einkaufen, Oma, Mila …) – Nein sagen geht, bis die Geduld vorbei ist
 - Einstellungen-App: Mitteilungen je App, Fokus-Modus, App-Tracking verbieten, Werbe-ID zurücksetzen, Berechtigungen, Bildschirmzeit je Tag samt Wochenbericht; Sperrbildschirm bei Limit
+- Perspektivwechsel: dieselbe Woche als Jonas oder Emma, mit Gedanken und Gefühlen; jemandem davon zu erzählen braucht Überwindung – der Scham-Regler springt bis zu 20-mal zurück, manchmal kurz vor dem Ziel, mit den Gedanken, die Betroffene wirklich haben
+- KI-Fake von Lea, Werbedeal einer Marke (bezahlt wird nie), »5 Jahre später« (die Personalabteilung googelt dich), Influencer-Chance (winzig), Bonus-Samstag, Töne, gute Erfolge und »Schattenseiten« (auch auf /erfolge)
 - Werbeauktion live: die Klasse gibt ihre Profile nach Zustimmung anonym ab und ersteigert sie als Werbefirmen (100 Taler, verdeckte Gebote); die Lehrkraft leitet am Beamer und bespricht, welche Merkmale den Preis treiben
 
 ### 🍎 Rechenregeln

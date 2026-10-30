@@ -62,6 +62,7 @@ export default function Einstellungen({ s, setze }: { s: Stand; setze: Setze }) 
 
       <div className="card p-3">
         <Schalter an={s.fokus} onClick={() => setze(st => handyEinstellung(st, "fokus", !st.fokus))} text="🎧 Fokus-Modus" klein="Keine Mitteilungen während Hausaufgaben und Freizeit" />
+        <Schalter an={s.ton} onClick={() => setze(st => handyEinstellung(st, "ton", !st.ton))} text="🔊 Töne und Vibration" klein="Ein Ton bei jeder Benachrichtigung" />
         <b className="text-sm block mt-2">🔔 Mitteilungen pro App</b>
         {APPS.map(([id, name]) => (
           <Schalter key={id} an={!s.stumm.includes(id)} onClick={() => setze(st => handyEinstellung(st, "stumm", id))} text={name} />
@@ -120,6 +121,7 @@ export function Vorbereitung({ s, setze, los }: { s: Stand; setze: Setze; los: (
   const [verein, setVerein] = useState<string | null>(null);
   const [tage, setTage] = useState<number[]>([1, 3]);
   const [um, setUm] = useState(16 * 60);
+  const [samstag, setSamstag] = useState(false);
   const v = VEREINE.find(x => x.id === verein);
 
   return (
@@ -170,8 +172,12 @@ export function Vorbereitung({ s, setze, los }: { s: Stand; setze: Setze; los: (
           </div>
         )}
       </div>
+      <label className="card p-4 flex gap-2 items-start text-sm">
+        <input type="checkbox" checked={samstag} onChange={e => setSamstag(e.target.checked)} className="mt-1" />
+        <span><b>☀️ Mit Bonus-Samstag</b><span className="block text-xs text-muted">Ein freier Tag ab 10 Uhr ohne Schule – da ziehen Feed und Serien am stärksten.</span></span>
+      </label>
       <button className="btn-primary self-start" onClick={() => {
-        setze(st => einstellen(st, { eltern, proTag, sperreAb, verein, vereinTage: verein ? tage : null, vereinUm: verein ? um : null }));
+        setze(st => einstellen(st, { eltern, proTag, sperreAb, verein, vereinTage: verein ? tage : null, vereinUm: verein ? um : null, samstag }));
         los();
       }}>📱 Handy einschalten</button>
     </div>

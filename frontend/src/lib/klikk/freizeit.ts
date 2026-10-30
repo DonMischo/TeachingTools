@@ -186,6 +186,12 @@ export const FREUNDE: Schritt[][] = [
   ],
 ];
 
+// Samstag: Freibad
+FREUNDE.push([
+  { text: "Freibad! Das Wasser ist eiskalt, Lea springt trotzdem als Erste. Mo sitzt mit Gips am Rand und kommentiert jeden Sprung wie ein Sportreporter.", minuten: 90, beiHandy: "Lea, tropfnass: »Leg das Ding weg und komm rein!«" },
+  { text: "Pommes auf dem Handtuch, Sonne im Gesicht. Für eine Weile denkt niemand an irgendwas.", minuten: 60 },
+]);
+
 /** Die Schritte einer Aktivität. */
 export function schritteFuer(s: Stand, art: AktArt, id: string): Schritt[] {
   if (art === "lesen") return (buchNachId(id)?.seiten ?? []).map(text => ({ text, minuten: 6 }));

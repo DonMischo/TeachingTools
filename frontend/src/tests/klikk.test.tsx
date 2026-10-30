@@ -472,3 +472,53 @@ describe("Einstellungen und Familie", () => {
     expect(s.chats.verein.some(n => n.text.includes("wo warst du"))).toBe(false);
   });
 });
+
+describe("Perspektivwechsel, KI-Fake, Werbedeal, Samstag, Erfolge", () => {
+  it("Opfer-Rollen haben Szenen mit Erzählen-Option und ein Ende je nach Weg", async () => {
+    const { ROLLEN, SCHAM_GEDANKEN } = await import("@/lib/klikk/opfer");
+    expect(SCHAM_GEDANKEN.length).toBeGreaterThanOrEqual(20);
+    for (const r of ROLLEN) {
+      expect(r.szenen.some(sz => sz.optionen.some(o => o.erzaehlen))).toBe(true);
+      expect(r.ende([]).text).not.toEqual(r.ende([{ wem: "Mama", tag: 0 }]).text);
+    }
+  });
+
+  it("über das KI-Bild lachen kostet Leas Freundschaft", () => {
+    let s = angemeldet();
+    while (s.tag < 2) s = tagZuEnde(s);
+    s = bis(s, 18 * 60 + 35);
+    s = waehle(s, "klasse", wahlId(s, "klasse", "deepfake"), "lachen");
+    s = tagZuEnde(s);
+    s = bis(s, 19 * 60 + 20);
+    expect(s.chats.lea.some(n => n.text.includes("ki-bild"))).toBe(true);
+  });
+
+  it("ab 200 Followern meldet sich eine Marke – bezahlt wird nie", () => {
+    let s = { ...angemeldet(), follower: 210 };
+    s = loeseAufgabe(s, -1);
+    const frage = s.chats.marke.find(n => n.wahl?.id === "deal")!;
+    s = waehle(s, "marke", frage.id, "verstecken");
+    s = tagZuEnde(s);
+    s = bis(s, 14 * 60 + 5);
+    expect(s.chats.marke.at(-1)?.text).toContain("nicht möglich");
+  });
+
+  it("mit Bonus-Samstag geht es nach Freitag weiter, ohne Hausaufgaben, ab 10 Uhr", async () => {
+    const { einstellen } = await import("@/lib/klikk/motor");
+    let s = einstellen(angemeldet(), { eltern: "locker", proTag: null, sperreAb: null, verein: null, vereinTage: null, vereinUm: null, samstag: true });
+    while (s.tag < 4) s = tagZuEnde(s);
+    s = tagZuEnde(s);
+    expect(s.phase).toBe("woche");
+    expect(s.tag).toBe(5);
+    expect(s.uhr).toBe(10 * 60);
+    expect(tagZuEnde(s).phase).toBe("jonas");
+  });
+
+  it("gute und schlechte Erfolge", async () => {
+    const { KLIKK_ERFOLGE } = await import("@/lib/klikk/erfolge");
+    const s = { ...angemeldet(), agbSekunden: 90, nachtOeffnungen: [{ tag: 0, uhr: 1400 }, { tag: 1, uhr: 1410 }] };
+    const erreicht = KLIKK_ERFOLGE.filter(e => e.erreicht(s)).map(e => e.id);
+    expect(erreicht).toEqual(expect.arrayContaining(["agb", "nachteule"]));
+    expect(KLIKK_ERFOLGE.some(e => !e.gut) && KLIKK_ERFOLGE.some(e => e.gut)).toBe(true);
+  });
+});

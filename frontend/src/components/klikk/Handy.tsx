@@ -1,6 +1,24 @@
 "use client";
 /** Das Handy: Startbildschirm, Benachrichtigungen, Apps — und vorher die Anmeldung bei Klikk. */
 import { useEffect, useRef, useState, type ReactNode } from "react";
+
+/** Zwei kurze Töne und ein Vibrieren — wie ein echtes Handy. */
+function pling() {
+  try {
+    const ctx = new AudioContext();
+    [880, 1320].forEach((f, i) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.frequency.value = f;
+      g.gain.setValueAtTime(0.08, ctx.currentTime + i * 0.12);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + i * 0.12 + 0.11);
+      o.connect(g).connect(ctx.destination);
+      o.start(ctx.currentTime + i * 0.12);
+      o.stop(ctx.currentTime + i * 0.12 + 0.12);
+    });
+    setTimeout(() => ctx.close(), 500);
+    navigator.vibrate?.(80);
+  } catch { /* ohne Audio */ }
+}
 import { agbAkzeptiert, oeffneApp, oeffnePush, onboardingFertig, profil, pushesWeg, recht, zeit } from "@/lib/klikk/motor";
 import type { AppId, ChatId, Recht, Stand } from "@/lib/klikk/typen";
 import Feed from "./Feed";
@@ -38,6 +56,11 @@ const APPS: { id: AppId; name: string; icon: string; farbe: string }[] = [
 export default function Handy({ s, setze, online }: { s: Stand; setze: Setze; online?: Online }) {
   const [app, setApp] = useState<AppId | null>(null);
   const [chat, setChat] = useState<ChatId | undefined>();
+  const pushZahl = useRef(s.pushGesamt);
+  useEffect(() => {
+    if (s.ton && s.pushGesamt > pushZahl.current) pling();
+    pushZahl.current = s.pushGesamt;
+  }, [s.pushGesamt, s.ton]);
 
   if (s.phase === "onboarding") return <Rahmen uhr={zeit(s.uhr)}><Anmeldung s={s} setze={setze} /></Rahmen>;
   if (s.flags.handyWeg && s.tag === 4) return (
@@ -74,7 +97,7 @@ export default function Handy({ s, setze, online }: { s: Stand; setze: Setze; on
         <div className="flex-1 p-5 pt-16 bg-gradient-to-b from-indigo-500/20 via-transparent to-pink-500/20">
           <div className="text-center mb-6">
             <div className="text-5xl font-thin">{zeit(s.uhr)}</div>
-            <div className="text-xs text-muted">{["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"][s.tag]}</div>
+            <div className="text-xs text-muted">{["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"][s.tag]}</div>
           </div>
           <div className="grid grid-cols-3 gap-5">
             {APPS.map(a => {

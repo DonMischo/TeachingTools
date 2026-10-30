@@ -10,8 +10,8 @@ import type { Stand } from "@/lib/klikk/typen";
 type Setze = (f: (s: Stand) => Stand) => void;
 
 export function Wetter({ s, setze }: { s: Stand; setze: Setze }) {
-  const tage = ["Mo", "Di", "Mi", "Do", "Fr"];
-  const wetter = ["☀️ 14°", "🌦️ 11°", "🌧️ 9°", "⛅ 12°", "☀️ 15°"];
+  const tage = ["Mo", "Di", "Mi", "Do", "Fr", "Sa"];
+  const wetter = ["☀️ 14°", "🌦️ 11°", "🌧️ 9°", "⛅ 12°", "☀️ 15°", "☀️ 19°"];
   return (
     <div className="p-4 flex flex-col gap-3 h-full bg-gradient-to-b from-sky-400/30 to-transparent">
       <div className="font-black text-lg">☁️ Wolke</div>
@@ -30,7 +30,7 @@ export function Wetter({ s, setze }: { s: Stand; setze: Setze }) {
         <div className="text-6xl font-black mt-1">{wetter[s.tag].split(" ")[1]}</div>
         <div className="text-4xl">{wetter[s.tag].split(" ")[0]}</div>
       </div>
-      <div className="grid grid-cols-5 gap-1 text-center text-xs">
+      <div className="grid grid-cols-6 gap-1 text-center text-xs">
         {tage.map((t, i) => <div key={t} className={`card p-1 ${i === s.tag ? "ring-2 ring-accent" : ""}`}>{t}<br />{wetter[i]}</div>)}
       </div>
       <p className="text-[10px] text-muted mt-auto">Kostenlos dank Werbung · powered by AdKit</p>

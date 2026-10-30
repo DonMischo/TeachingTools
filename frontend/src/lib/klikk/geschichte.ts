@@ -10,11 +10,12 @@
 import type { AppId, ChatId, Nachricht, Stand } from "./typen";
 import { TRENDS } from "./trends";
 
-export const TAGE = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"];
-export const LETZTER_TAG = TAGE.length - 1;
+export const TAGE = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
+/** Letzter Schultag; der Samstag ist ein freiwilliger Bonustag danach */
+export const LETZTER_TAG = 4;
 
 export const CHAT_NAME: Record<ChatId, string> = {
-  klasse: "8b 🔥", lea: "Lea", mo: "Mo", jonas: "Jonas", mama: "Mama", yilmaz: "Frau Yilmaz", klikkteam: "Klikk-Team",
+  klasse: "8b 🔥", lea: "Lea", mo: "Mo", jonas: "Jonas", mama: "Mama", yilmaz: "Frau Yilmaz", klikkteam: "Klikk-Team", marke: "GlowDrink Team ✔",
   gewinn: "🎁 Klikk Gewinnspiel", leon: "leon.16", verein: "Verein", emma: "Emma",
 };
 
@@ -244,6 +245,18 @@ export const EREIGNISSE: Ereignis[] = [
   { id: "arbeit3", tag: 3, uhr: uhr(19, 0), wenn: s => s.eltern === "arbeit", tu: s => nachricht(s, "mama", "Mama", "Ich weiß, ich war diese Woche kaum da. Am Wochenende machen wir was zusammen, versprochen.") },
   { id: "locker1", tag: 1, uhr: uhr(20, 30), wenn: s => s.eltern === "locker", tu: s => nachricht(s, "mama", "Mama", "Na, alles gut bei dir? Du sitzt ja nur noch am Handy 😅 Ist ja deine Sache, aber geh nicht so spät ins Bett.") },
 
+  // ── Fall: KI-Fake von Lea ──
+  { id: "deepfake", tag: 2, uhr: uhr(18, 30), tu: s => {
+    nachricht(s, "klasse", "Sara", "😂😂 lea ohne filter", { bild: "🤖 KI-Bild: Leas Gesicht auf einem Clown mit Pickeln und Zahnlücke – sieht täuschend echt aus" });
+    nachricht(s, "klasse", "Finn", "LOL wie echt das aussieht 💀",
+      wahl("deepfake", ["lachen", "😂😂"], ["weiter", "An ein paar Leute weiterleiten"],
+        ["lea", "Lea schreiben: »Ich weiß, dass das KI ist. Ich helf dir, es zu melden.«"], ["gruppe", "In die Gruppe: »Das ist ein KI-Fake. Löscht das.«"]));
+  } },
+  { id: "leaKi", tag: 2, uhr: uhr(19, 0), tu: s => nachricht(s, "lea", "Lea", "das bin ich NICHT 😭😭 das ist KI. wieso macht man sowas") },
+  // ── Bonustag Samstag ──
+  { id: "samstagLea", tag: 5, uhr: uhr(11, 0), wenn: s => !s.flags.leaStreit || !!s.flags.leaVersoehnt, tu: s => nachricht(s, "lea", "Lea", "FREIBAD um 13 uhr?? 🏊‍♀️ mo kommt auch (mit gips am rand sitzen lol)") },
+  { id: "samstagPush", tag: 5, uhr: uhr(10, 5), tu: s => push(s, "klikk", "☀️ Wochenende!", "Deine Freunde sind schon online. Schau, was du verpasst hast!") },
+
   // ── Freitag ──
   { id: "trendFr", tag: 4, uhr: uhr(15, 0), wenn: s => !!s.flags.moVerletzt, tu: s => push(s, "klikk", "🔥 Trend in deiner Nähe", "Mo am Bahndamm – #GleisSelfie · 48.000 Aufrufe, 230 Duette") },
   { id: "wochenende", tag: 4, uhr: uhr(18, 0), wenn: s => !s.flags.leaStreit || !!s.flags.leaVersoehnt, tu: s => nachricht(s, "lea", "Lea", "endlich wochenende 🥳 kommst du morgen mit ins freibad?") },
@@ -318,6 +331,19 @@ export const FOLGEN: Record<string, (s: Stand, o: string) => void> = {
       nachricht(s, "mo", "Mo", "ok. danke dass du fragst 🤝");
     }
   },
+  deepfake: (s, o) => {
+    if (o === "lea") { s.flags.leaHilfe = true; nachricht(s, "lea", "Lea", "danke 🥺 ich dachte, alle glauben das. kannst du mitkommen, wenn ich's frau yilmaz zeige?"); }
+    if (o === "gruppe") { s.flags.deepfakeGestoppt = true; nachricht(s, "klasse", "Sara", "ok sorry 🙄 gelöscht"); nachricht(s, "klasse", "Emma", "gut dass das einer sagt"); }
+    if (o === "weiter") nachricht(s, "klasse", "", "Du hast das KI-Bild an 3 Leute weitergeleitet.", { system: true });
+  },
+  deal: (s, o) => {
+    if (o === "ablehnen") nachricht(s, "marke", "GlowDrink Team ✔", "Schade! Melde dich, wenn du es dir anders überlegst 💫");
+    else {
+      s.flags.deal = o === "kennzeichnen" ? 1 : 2;
+      nachricht(s, "marke", "GlowDrink Team ✔", "Mega 🥳 Dein Paket ist unterwegs! Poste es bis morgen 18 Uhr. Bezahlung nach Reichweite.");
+      if (o === "verstecken") nachricht(s, "klasse", "Emma", "seit wann trinkst du glowdrink 😂 sieht nach werbung aus");
+    }
+  },
   gewinn: (s, o) => {
     if (o === "nummer") nachricht(s, "gewinn", "Klikk Gewinnspiel", "✅ Danke! Dein Code: 4471. Mit der Antwort »JA« bestätigst du die Teilnahmebedingungen.");
     else nachricht(s, "klikkteam", "Klikk-Team", "Danke für deine Meldung. Tipp: Klikk verlost nie Handys per Nachricht. 💙");
@@ -379,6 +405,12 @@ export function morgenMeldung(s: Stand): string[] {
   for (const tr of TRENDS) if (s.flags[`folge_${tr.id}`] === s.tag - 1) m.push(MORGEN_FOLGE[tr.id] ?? "");
   if (s.tag === 4 && s.flags.leonGemeldet) m.push("Die Polizei hat sich gemeldet: »leon.16« war ein 34-jähriger Mann mit vielen Fake-Profilen. Das Foto ist gesichert und wird gelöscht. Du hast nichts falsch gemacht.");
   else if (s.tag === 4 && istGewaehlt(s, "leon3") === "schweigen") m.push("Du hast kaum geschlafen. leon.16 hat dir in der Nacht 14 Nachrichten geschickt.");
+  if (s.tag === 3) {
+    const d = istGewaehlt(s, "deepfake");
+    if (d === "weiter" || d === "lachen") m.push("Das KI-Bild von Lea ist auf mindestens drei Schulhöfen angekommen. Lea war heute nur zwei Stunden in der Schule.");
+    else if (s.flags.deepfakeGestoppt || s.flags.leaHilfe) m.push("Das KI-Bild von Lea ist gelöscht. Frau Yilmaz spricht in der ersten Stunde über KI-Fakes und das Recht am eigenen Bild.");
+  }
+  if (s.tag === 5) m.push("Samstag. Kein Wecker, keine Schule, keine Hausaufgaben. Der ganze Tag gehört dir – und dem Handy, wenn du es lässt.");
   if (s.tag === 4 && s.flags.leaStreit) {
     const w = istGewaehlt(s, "leaStreit");
     if (w === "reden") { s.flags.leaVersoehnt = true; m.push("In der ersten Pause sprichst du Lea an. Erst schaut sie weg. Dann redet ihr zwanzig Minuten, und ihr beide sagt Sachen, die man nicht schreiben kann. Am Ende entsperrt sie dich."); }
@@ -457,6 +489,8 @@ function polizeiTaeter(s: Stand) {
 
 /** Warum Lea genug hat — oder null, wenn alles okay ist. */
 function leaGrund(s: Stand): string | null {
+  const d = istGewaehlt(s, "deepfake");
+  if (d === "lachen" || d === "weiter") return "du hast über das ki-bild von mir gelacht. ich hab's gesehen. ich dachte, wir sind freunde.";
   if (istGewaehlt(s, "leaKoerper") === "witz") return "ich hab dir gesagt, dass ich mich hässlich fühle, und du schickst »😂 same«. echt jetzt?";
   if (s.freizeit.some(f => f.art === "freunde" && f.unterbrochen >= 2)) return "wir treffen uns endlich mal und du hängst die ganze zeit am handy. ich hätte auch allein in den park gehen können.";
   if (Number(s.flags.streakWeg ?? 0) >= 2) return "zweimal streak weg. zweimal. ist dir das egal oder ich?";

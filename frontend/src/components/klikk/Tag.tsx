@@ -36,6 +36,7 @@ export default function Tag({ s, setze }: { s: Stand; setze: Setze }) {
 
       {s.aktivitaet ? <AktivitaetAnsicht s={s} setze={setze} /> : (
         <>
+      {s.tag <= 4 && (
       <div className="card p-4">
         <h3 className="font-bold">📓 Hausaufgaben Mathe</h3>
         {fertig ? <p className="text-sm text-ok mt-1">✅ Erledigt.</p> : (
@@ -59,6 +60,7 @@ export default function Tag({ s, setze }: { s: Stand; setze: Setze }) {
         )}
       </div>
 
+      )}
           <FreizeitKarte s={s} setze={setze} />
         </>
       )}

@@ -31,9 +31,9 @@ export function neuerStand(seed = 1): Stand {
     werbungKlicks: [], schleich: [], umfragen: {}, videos: [],
     eltern: "locker", limit: { proTag: null, sperreAb: null, vonEltern: false }, handyMinuten: [], limitIgnoriert: 0,
     stumm: [], trackingAus: false, werbeIdNeu: false, fokus: false, vereinTage: null, vereinUm: null,
-    famAbgelehnt: 0, famZusagen: [], famErzwungen: null,
+    famAbgelehnt: 0, famZusagen: [], famErzwungen: null, samstag: false, ton: false,
     spielRunden: [], checks: {}, geteilt: [], eigenePosts: [], blockiert: [], klasseGesehen: [], aktivitaet: null, freizeit: [], verein: null, lesestand: {}, serienstand: {},
-    erledigt: [], chats: { klasse: [], lea: [], mo: [], jonas: [], mama: [], yilmaz: [], klikkteam: [], gewinn: [], leon: [], verein: [], emma: [] },
+    erledigt: [], chats: { klasse: [], lea: [], mo: [], jonas: [], mama: [], yilmaz: [], klikkteam: [], gewinn: [], leon: [], verein: [], emma: [], marke: [] },
     ungelesen: {}, gelesen: [], pushes: [], flags: {}, bemerkt: {}, morgen: [],
   };
 }
@@ -78,6 +78,17 @@ function tick(s: Stand, minuten: number) {
   if (s.follower >= 150) abzeichen(s, "aufsteiger");
   neueKommentare(s);
   moKopieFaellig(s);
+  // Genug Reichweite: eine Marke meldet sich (bezahlt wird am Ende nie)
+  if (!s.flags.dealAngebot && (s.follower >= 200 || s.videos.some(v => v.aufrufe >= 5000))) {
+    s.flags.dealAngebot = true;
+    nachricht(s, "marke", "GlowDrink Team ✔", "Hey 💫 Wir lieben deinen Content! Wir schicken dir 12 Dosen GlowDrink, du postest ein Video damit. Deal? 🤝",
+      { wahl: { id: "deal", optionen: [{ id: "kennzeichnen", text: "Annehmen und als #Werbung kennzeichnen" }, { id: "verstecken", text: "Annehmen, aber ohne »Werbung« – wirkt echter" }, { id: "ablehnen", text: "Ablehnen" }] } });
+  }
+  if (s.flags.deal && !s.flags.dealEnde && s.flags.dealAngebot && s.uhr >= 9 * 60 && s.tag > Number(s.flags.dealTag ?? 99)) {
+    s.flags.dealEnde = true;
+    nachricht(s, "marke", "GlowDrink Team ✔", "Leider hat dein Video unsere Reichweiten-Ziele nicht erreicht 😔 Eine Bezahlung ist daher nicht möglich. Die Dosen darfst du natürlich behalten! 💫");
+  }
+  if (s.flags.deal && s.flags.dealTag === undefined) s.flags.dealTag = s.tag;
   if (s.famErzwungen && !s.aktivitaet && s.phase === "woche") {
     const id = s.famErzwungen;
     s.famErzwungen = null;
@@ -138,9 +149,10 @@ export function limitUmgehen(alt: Stand): Stand {
 }
 
 /** Vor der Woche: Eltern, Bildschirmzeit, Verein. */
-export function einstellen(alt: Stand, e: { eltern: ElternTyp; proTag: number | null; sperreAb: number | null; verein: string | null; vereinTage: number[] | null; vereinUm: number | null }): Stand {
+export function einstellen(alt: Stand, e: { eltern: ElternTyp; proTag: number | null; sperreAb: number | null; verein: string | null; vereinTage: number[] | null; vereinUm: number | null; samstag?: boolean }): Stand {
   const s = kopie(alt);
   s.eltern = e.eltern;
+  s.samstag = !!e.samstag;
   // Strenge Eltern sammeln das Handy um 21 Uhr ein, besorgte setzen zwei Stunden — wer selbst strenger ist, gewinnt
   const eltern = e.eltern === "streng" ? { proTag: null, sperreAb: 21 * 60 } : e.eltern === "besorgt" ? { proTag: 120, sperreAb: null } : null;
   s.limit = {
@@ -156,12 +168,13 @@ export function einstellen(alt: Stand, e: { eltern: ElternTyp; proTag: number | 
 }
 
 /** Handy-Einstellungen ändern. */
-export function handyEinstellung(alt: Stand, was: "stumm" | "tracking" | "werbeId" | "fokus" | "recht" | "limit", wert: string | boolean | number | null, recht?: Recht): Stand {
+export function handyEinstellung(alt: Stand, was: "stumm" | "tracking" | "werbeId" | "fokus" | "recht" | "limit" | "ton", wert: string | boolean | number | null, recht?: Recht): Stand {
   const s = kopie(alt);
   if (was === "stumm") { const app = wert as AppId; s.stumm = s.stumm.includes(app) ? s.stumm.filter(a => a !== app) : [...s.stumm, app]; }
   if (was === "tracking") { s.trackingAus = !!wert; spur(s, "klikk", "Klikk", wert ? "App-Tracking verboten – AdKit bekommt keine Geräte-ID mehr" : "App-Tracking wieder erlaubt"); }
   if (was === "werbeId") { s.werbeIdNeu = true; spur(s, "klikk", "Klikk", "Werbe-ID zurückgesetzt – das alte Werbeprofil hängt nicht mehr an deinem Gerät"); }
   if (was === "fokus") s.fokus = !!wert;
+  if (was === "ton") s.ton = !!wert;
   if (was === "recht" && recht) s.rechte[recht] = !!wert;
   if (was === "limit" && !s.limit.vonEltern) s.limit = { ...s.limit, proTag: wert as number | null };
   handyTick(s, 1);
@@ -722,12 +735,12 @@ function naechsterTag(s: Stand, bett: number): Stand {
   }
   // Was nicht beantwortet wurde, ist jetzt Schweigen
   for (const c of Object.values(s.chats)) for (const n of c) if (n.wahl && !n.wahl.gewaehlt) n.wahl.gewaehlt = "still";
-  if (s.tag >= LETZTER_TAG) {
+  if (s.tag >= LETZTER_TAG && !(s.samstag && s.tag === LETZTER_TAG)) {
     s.phase = "jonas";
     return s;
   }
   s.tag++;
-  s.uhr = START_UHR;
+  s.uhr = s.tag > LETZTER_TAG ? 10 * 60 : START_UHR;
   s.hausaufgabenStand = 0;
   s.flags.haPause = false;
   s.phase = "woche";

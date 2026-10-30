@@ -24,6 +24,9 @@ import { LEVEL as ALGO_LEVEL } from "@/lib/algo/level";
 import { ladeStand as ladeAlgo, type AlgoStand } from "@/lib/algo/fortschritt";
 import { LEVEL as KOORD_LEVEL, WELTEN as KOORD_WELTEN } from "@/lib/koordinaten/level";
 import { RAETSEL } from "@/lib/regeln/lehrgang";
+import { KLIKK_ERFOLGE } from "@/lib/klikk/erfolge";
+import { ergaenze } from "@/lib/klikk/motor";
+import type { Stand } from "@/lib/klikk/typen";
 
 /** Ein Erfolg, wie ihn die Übersicht zeigt — unabhängig davon, woher er kommt. */
 export interface SchauErfolg {
@@ -204,7 +207,18 @@ function regeln(): SchauErfolg[] {
   }));
 }
 
+/** Klikk: gute Erfolge und Schattenseiten, gelesen aus dem Wochenstand. */
+function klikk(): SchauErfolg[] {
+  const s = json<Stand | null>("hp_klikk_stand", null);
+  const stand = s ? ergaenze(s) : null;
+  return KLIKK_ERFOLGE.map(e => ({
+    id: e.id, icon: e.icon, name: e.name, text: e.text, gruppe: e.gut ? "Erfolge" : "Schattenseiten",
+    erreicht: stand ? e.erreicht(stand) : false,
+  }));
+}
+
 export const WERKZEUGE: WerkzeugErfolge[] = [
+  { slug: "klikk", name: "Klikk", icon: "📱", bereich: "Simulationen", lies: klikk },
   { slug: "pse", name: "Periodensystem", icon: "🧪", bereich: "Simulationen", lies: pse },
   { slug: "sonnensystem", name: "Sonnensystem", icon: "🪐", bereich: "Simulationen", lies: sonnensystem },
   { slug: "schichten", name: "Schichtenmodell", icon: "📶", bereich: "Simulationen", lies: schichten },

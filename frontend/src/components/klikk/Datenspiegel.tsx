@@ -6,7 +6,8 @@ import { TAGE, istGewaehlt } from "@/lib/klikk/geschichte";
 import { WERBUNG } from "@/lib/klikk/posts";
 import { RISIKO_NAME, TRENDS, trendNachId } from "@/lib/klikk/trends";
 import { zeit } from "@/lib/klikk/motor";
-import { APP_NAME, HILFE_LEITER, faelle, wocheWerte, abzeichenWahrheit, datenfluesse, erkenntnisse, profilWert, punktestaende, warnsignale } from "@/lib/klikk/profil";
+import { KLIKK_ERFOLGE } from "@/lib/klikk/erfolge";
+import { APP_NAME, HILFE_LEITER, epilog, faelle, influencerChance, wocheWerte, abzeichenWahrheit, datenfluesse, erkenntnisse, profilWert, punktestaende, warnsignale } from "@/lib/klikk/profil";
 import type { Stand } from "@/lib/klikk/typen";
 import type { MausZugang } from "@/lib/api";
 import { AuktionSchueler } from "./Werbeauktion";
@@ -19,6 +20,8 @@ const BLAETTER = [
   { id: "trends", label: "📈 Reichweite & Risiko" },
   { id: "signale", label: "🚨 Warnsignale" },
   { id: "faelle", label: "⚖️ Fälle" },
+  { id: "erfolge", label: "🏅 Erfolge" },
+  { id: "zukunft", label: "🔮 5 Jahre später" },
   { id: "hilfe", label: "🤝 Hilfe" },
   { id: "auktion", label: "🔨 Werbeauktion" },
 ] as const;
@@ -26,7 +29,7 @@ type Blatt = (typeof BLAETTER)[number]["id"];
 
 const wann = (tag: number, uhr: number) => `${TAGE[tag]?.slice(0, 2)} ${zeit(uhr)}`;
 
-export default function Datenspiegel({ s, neu, zugang }: { s: Stand; neu: () => void; zugang?: MausZugang }) {
+export default function Datenspiegel({ s, neu, zugang, perspektive }: { s: Stand; neu: () => void; zugang?: MausZugang; perspektive?: () => void }) {
   const [blatt, setBlatt] = useState<Blatt>("profil");
   // Anonyme Zahlen für die Klassenübersicht der Lehrkraft (keine Namen, keine Inhalte)
   const zCode = zugang?.code, zToken = zugang?.token ?? null;
@@ -119,9 +122,12 @@ export default function Datenspiegel({ s, neu, zugang }: { s: Stand; neu: () => 
       {blatt === "trends" && <Trends s={s} />}
       {blatt === "signale" && <Signale s={s} />}
       {blatt === "faelle" && <Faelle s={s} />}
+      {blatt === "erfolge" && <Erfolge s={s} />}
+      {blatt === "zukunft" && <Zukunft s={s} />}
       {blatt === "hilfe" && <Hilfe />}
       {blatt === "auktion" && zugang && <AuktionSchueler zugang={zugang} merkmale={e.map(x => ({ titel: x.titel, wert: x.wert, heikel: !!x.heikel }))} />}
 
+      {perspektive && <button className="btn-primary self-start text-sm" onClick={perspektive}>🔄 Dieselbe Woche als Jonas oder Emma erleben</button>}
       <button className="btn-secondary self-start text-sm" onClick={() => { if (confirm("Alle Daten dieser Woche löschen und neu anfangen?")) neu(); }}>
         🗑 Daten löschen & neue Woche
       </button>
@@ -247,6 +253,51 @@ function Signale({ s }: { s: Stand }) {
         Typische Zeichen, dass es jemandem nicht gut geht: zieht sich zurück, löscht Bilder oder Konten, ist nachts online, schreibt »alles egal«,
         fehlt in der Schule. Ein »Alles okay?« ist kein Risiko — Wegschauen schon eher.
       </p>
+    </div>
+  );
+}
+
+function Erfolge({ s }: { s: Stand }) {
+  return (
+    <div className="grid gap-3 md:grid-cols-2">
+      {[true, false].map(gut => (
+        <div key={String(gut)} className="card p-4">
+          <h3 className="font-black mb-1">{gut ? "🏅 Erfolge" : "🌑 Schattenseiten"}</h3>
+          <p className="text-xs text-muted mb-2">{gut ? "Was im echten Leben zählt." : "Abzeichen, die eine echte App stolz verleihen würde."}</p>
+          {KLIKK_ERFOLGE.filter(e => e.gut === gut).map(e => {
+            const ja = e.erreicht(s);
+            return (
+              <div key={e.id} className={`flex gap-2 py-1.5 border-t border-line text-sm ${ja ? "" : "opacity-40"}`}>
+                <span className="text-xl">{e.icon}</span>
+                <span><b>{e.name}</b><span className="block text-xs text-muted">{e.text}</span></span>
+              </div>
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Zukunft({ s }: { s: Stand }) {
+  const e = epilog(s);
+  const c = influencerChance(s);
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="card p-4 text-sm">
+        <h3 className="font-black text-lg">📨 Bewerbung um einen Ausbildungsplatz – fünf Jahre später</h3>
+        <p className="text-muted">Du bist 19. Die Personalabteilung gibt deinen Namen in eine Suchmaschine ein. Das findet sie:</p>
+        <ul className="mt-2 flex flex-col gap-1">
+          {e.funde.length === 0 && <li>Fast nichts.</li>}
+          {e.funde.map((f, i) => <li key={i}>{f.gut ? "✅" : "⚠️"} {f.text}</li>)}
+        </ul>
+        <p className="mt-3 font-bold">{e.urteil}</p>
+      </div>
+      <div className="card p-4 text-sm">
+        <h3 className="font-black">💰 Und die Influencer-Karriere?</h3>
+        <p>Reichweite deiner Woche: <b>{c.reichweite.toLocaleString("de-DE")}</b>. Deine Chance, davon einmal leben zu können: <b>{c.prozent.toFixed(3).replace(".", ",")} %</b>.</p>
+        <p className="text-xs text-muted mt-1">Die allermeisten Accounts verdienen nie Geld. Die wenigen, die davon leben, haben meist hunderttausende Follower, ein Team und Jahre Arbeit hinter sich. Marken »bezahlen« Anfänger oft nur mit Produkten.</p>
+      </div>
     </div>
   );
 }

@@ -297,6 +297,25 @@ export function faelle(s: Stand): Fall[] {
     recht: "Gleisanlagen betreten ist eine Ordnungswidrigkeit oder Straftat; die Bundespolizei schreibt Anzeigen. Wichtiger: Strom an Oberleitungen springt schon aus 1,5 m über.",
   });
 
+  // KI-Fake
+  const d = w("deepfake");
+  if (d) r.push({
+    emoji: "🤖", titel: "Das KI-Bild von Lea",
+    passiert: "Sara stellte ein KI-erzeugtes Bild in die Gruppe: Leas Gesicht auf einem Clown – täuschend echt.",
+    deinWeg: d === "weiter" ? "Du hast es weitergeleitet." : d === "lachen" ? "Du hast gelacht." : d === "lea" ? "Du hast Lea gesagt, dass du weißt, dass es KI ist, und Hilfe angeboten." : d === "gruppe" ? "Du hast in der Gruppe gesagt, dass es ein Fake ist." : "Du hast nichts gesagt.",
+    ausgang: s.flags.deepfakeGestoppt || s.flags.leaHilfe ? "Das Bild wurde gelöscht; die Klasse hat über KI-Fakes gesprochen." : "Das Bild verbreitete sich weiter; Lea ging früher nach Hause.",
+    bilanz: d === "weiter" || d === "lachen" ? "schlecht" : d === "lea" || d === "gruppe" ? "gut" : "mittel",
+    recht: "Auch KI-Bilder einer echten Person verletzen ihr Recht am eigenen Bild (§ 22 KUG) und ihr Persönlichkeitsrecht; Verbreiten kann strafbar sein.",
+  });
+  if (s.flags.deal) r.push({
+    emoji: "🥤", titel: "Der Werbedeal",
+    passiert: "Eine Marke bot dir Getränke gegen ein Video an – »Bezahlung nach Reichweite«.",
+    deinWeg: s.flags.deal === 1 ? "Du hast angenommen und als #Werbung gekennzeichnet." : "Du hast angenommen, ohne es als Werbung zu kennzeichnen.",
+    ausgang: "Bezahlt wurde nie. Für die Firma war es billige Werbung bei einer Zielgruppe, die man sonst schwer erreicht.",
+    bilanz: s.flags.deal === 1 ? "mittel" : "schlecht",
+    recht: "Werbung muss gekennzeichnet sein. Mit 14 dürft ihr solche Verträge nicht ohne Eltern schließen.",
+  });
+
   // leon.16
   const l1 = w("leon1");
   if (l1) r.push({
@@ -343,4 +362,38 @@ export function wocheWerte(s: Stand): Record<string, boolean | number | string> 
     handy_waehrend_freizeit: s.freizeit.reduce((a, f) => a + f.unterbrochen, 0),
     gemeine_kommentare_gemeldet: Number(s.flags.hass_melden ?? 0),
   };
+}
+
+/** 5 Jahre später: eine Bewerbung, und die Personalabteilung sucht dich im Netz. */
+export function epilog(s: Stand) {
+  const w = (id: string) => istGewaehlt(s, id);
+  const funde: { gut: boolean; text: string }[] = [];
+  for (const v of s.videos) {
+    const tr = trendNachId(v.trend);
+    if (tr?.risiko === "gefaehrlich") funde.push({ gut: false, text: `Ein Video von dir: ${tr.name}${v.fake ? " (gefaked – aber das sieht man nicht)" : ""}. ${v.aufrufe.toLocaleString("de-DE")} Aufrufe, immer noch online, auch wenn du es gelöscht hast.` });
+    else if (tr?.risiko === "riskant") funde.push({ gut: false, text: `Dein ${tr.name}-Video, mehrfach geteilt. Kommentar darunter: »mach's krasser«.` });
+  }
+  if (w("kommentar") === "mitlaestern") funde.push({ gut: false, text: "Ein Kommentar unter einem Gitarrenvideo: »geh lieber schlafen 💤« – mit deinem Namen. Jemand hat den Screenshot aufbewahrt." });
+  if (w("bus") === "weiter") funde.push({ gut: false, text: "Ein Screenshot deiner Story mit einem schlafenden Mitschüler. Er taucht in einem Artikel über Cybermobbing auf." });
+  if (w("emmaFoto") === "weiter" || s.flags.polizeiTaeter) funde.push({ gut: false, text: "Kein Eintrag im Netz – aber die Geschichte mit der Polizei kennt in der Stadt noch jemand." });
+  if (s.flags.deal === 2) funde.push({ gut: false, text: "Ein Werbevideo ohne Kennzeichnung. Die Firma GlowDrink gibt es nicht mehr – das Video schon." });
+  if (s.flags.deal === 1) funde.push({ gut: true, text: "Ein ehrlich als #Werbung gekennzeichnetes Video. Unspektakulär. Gut so." });
+  if (w("kommentar") === "nett") funde.push({ gut: true, text: "Ein Kommentar von dir: »Klingt echt gut!« unter dem Video eines Mitschülers, der heute Musik studiert." });
+  if (s.verein && s.freizeit.some(f => f.art === "verein")) funde.push({ gut: true, text: "Ein Foto auf der Vereinsseite: du mit deinem Team. Teamarbeit – genau das, was die Firma sucht." });
+  if (jonasGeschrieben(s).length) funde.push({ gut: true, text: "Nichts im Netz. Aber Jonas erzählt Jahre später, dass damals jemand gefragt hat, ob alles okay ist." });
+  const schlecht = funde.filter(f => !f.gut).length, gut = funde.filter(f => f.gut).length;
+  return {
+    funde,
+    urteil: schlecht >= 2 ? "Absage. Die Firma schreibt: »Wir haben uns für andere Bewerber·innen entschieden.« Warum, sagt sie nicht."
+      : schlecht === 1 ? "Einladung zum Gespräch – und die erste Frage ist: »Erzählen Sie uns von diesem Video.«"
+      : gut ? "Einladung zum Gespräch. Die Personalerin lächelt: »Wir haben ein bisschen recherchiert. Sie sind im Verein aktiv?«"
+      : "Einladung zum Gespräch. Über dich findet man fast nichts – und das ist manchmal das Beste.",
+  };
+}
+
+/** Die Chance, mit Social Media Geld zu verdienen — für den Account dieser Woche (grobe Spielrechnung, absichtlich winzig). */
+export function influencerChance(s: Stand) {
+  const reichweite = s.follower + s.videos.reduce((a, v) => a + v.aufrufe / 50, 0);
+  const prozent = Math.min(0.5, (reichweite / 10000) ** 2 * 0.4);
+  return { reichweite: Math.round(reichweite), prozent };
 }
