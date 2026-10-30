@@ -64,12 +64,33 @@ function feuere(s: Stand, bis = s.uhr) {
 }
 
 /** Zeit vergeht. Likes auf eigene Beiträge tröpfeln ein — mal viele, mal wenige. */
+/**
+ * Die Eltern-Sperre greift: die Klasse schreibt trotzdem weiter — und merkt,
+ * dass du nie da bist. Einmal am Tag, zu lesen erst, wenn das Handy wieder geht.
+ */
+function nichtErreichbar(s: Stand) {
+  if (s.phase !== "woche" || s.flags[`nieda_${s.tag}`]) return;
+  const grund = gesperrt(s);
+  if (grund !== "elternSperre" && grund !== "elternLimit") return;
+  s.flags[`nieda_${s.tag}`] = true;
+  const r = zufall(s.seed * 17 + s.tag);
+  const fies = [
+    ["Finn", "Wer kommt noch in die Elemon-Arena? 🏟️"],
+    ["Aylin", `@${s.name || "du"} bist du da?`],
+    ["Finn", "Lass, der Akku ist bei den Eltern 😂"],
+    ["Aylin", "Nie erreichbar 🙄"],
+  ];
+  const ende = r() < 0.5 ? ["Mo", "Kein Stress, wir spielen morgen 🤝"] : ["Finn", "Kannst eh nicht mitspielen 🤷"];
+  for (const [i, [von, text]] of [...fies, ende].entries()) nachricht(s, "klasse", von, text, {}, s.uhr + i);
+}
+
 function tick(s: Stand, minuten: number, uhrZieht = false) {
   // Klassenmodus: die Zeit bestimmt die Klassen-Uhr, nicht die Handlung
   if (s.flags.klassenuhr && !uhrZieht) minuten = 0;
   const vorher = s.uhr;
   s.uhr = Math.min(MITTERNACHT, s.uhr + minuten);
   feuere(s);
+  nichtErreichbar(s);
   const offen = Number(s.flags.offeneLikes ?? 0);
   if (offen > 0 && Math.floor(s.uhr / 20) > Math.floor(vorher / 20)) {
     const r = zufall(s.seed + s.uhr);
@@ -643,6 +664,10 @@ export function elternUmZeit(alt: Stand): Stand {
     : `Nein. ${grund || "Heute nicht."}`;
   nachricht(s, "mama", "du", "Darf ich noch ein bisschen Elemon spielen? 🥺");
   nachricht(s, "mama", wer, text);
+  if (!plus) {
+    nachricht(s, "klasse", "Finn", "Arena in 5 Min? Alle da? ⚔️");
+    nachricht(s, "klasse", "Aylin", "Ohne dich wieder 🙄 Darfst wohl nicht wegen Mami 👶");
+  }
   s.elemon = { ...e, energie: Math.min(ENERGIE_MAX, e.energie + plus), elternAntwort: { tag: s.tag, ja: plus > 0, plus, text } };
   tick(s, 2);
   return s;

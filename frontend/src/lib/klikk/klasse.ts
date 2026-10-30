@@ -28,6 +28,11 @@ export const KOMMENTARE: Record<string, { text: string; gemein: boolean }> = {
   mehr: { text: "Mach's krasser!", gemein: false },
   vorsicht: { text: "Pass auf dich auf 🙏", gemein: false },
   loeschen: { text: "Lösch das lieber", gemein: false },
+  nieda: { text: "Nie erreichbar 🙄", gemein: true },
+  mitspielen: { text: "Kannst eh nicht mitspielen 🤷", gemein: true },
+  eltern: { text: "Darfst wohl nicht wegen Mami 👶", gemein: true },
+  morgen: { text: "Kein Stress, wir spielen morgen 🤝", gemein: false },
+  handyfrei: { text: "Handyfrei ist auch okay 👍", gemein: false },
   /** nur unter Beiträgen von jemandem mit niedriger Hygiene */
   stinkt: { text: "Riecht man bis hier 🤢", gemein: true },
 };

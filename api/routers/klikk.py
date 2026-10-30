@@ -279,6 +279,9 @@ KOMMENTARE: dict[str, str] = {
     "krass": "Krass 🔥", "lol": "😂😂", "suess": "Süß 🥹", "cool": "Cool 😎", "stark": "Stark von dir 💪",
     "fake": "Fake 🤡", "cringe": "Cringe 😬", "mehr": "Mach's krasser!", "vorsicht": "Pass auf dich auf 🙏",
     "loeschen": "Lösch das lieber",
+    # wer nie online ist oder nicht darf – fies oder fair
+    "nieda": "Nie erreichbar 🙄", "mitspielen": "Kannst eh nicht mitspielen 🤷", "eltern": "Darfst wohl nicht wegen Mami 👶",
+    "morgen": "Kein Stress, wir spielen morgen 🤝", "handyfrei": "Handyfrei ist auch okay 👍",
     # nur unter Beiträgen von jemandem mit niedriger Hygiene (Spielwert) – Mobbing mit Folgen im Spiel
     "stinkt": "Riecht man bis hier 🤢",
 }

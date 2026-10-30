@@ -130,4 +130,20 @@ describe("Elemon-Spielstand", () => {
     expect(faul.elemon!.elternAntwort).toMatchObject({ ja: false });
     expect(faul.chats.mama.at(-1)!.text).toMatch(/Hausaufgaben/);
   });
+
+  it("Eltern-Sperre: die Klasse schreibt trotzdem — »nie erreichbar«, einmal am Tag", () => {
+    const s = { ...neuerStand(1), phase: "woche" as const, uhr: 17 * 60, limit: { proTag: 30, sperreAb: null, vonEltern: true }, handyMinuten: [40] };
+    const n = elemonAktion(s, e => e, 5);
+    const texte = n.chats.klasse.map(m => m.text);
+    expect(texte).toContain("Nie erreichbar 🙄");
+    expect(elemonAktion(n, e => e, 5).chats.klasse).toHaveLength(n.chats.klasse.length);
+    // ohne Eltern-Sperre kein Spott
+    expect(elemonAktion({ ...s, limit: { ...s.limit, vonEltern: false } }, e => e, 5).chats.klasse.map(m => m.text)).not.toContain("Nie erreichbar 🙄");
+  });
+
+  it("Nein der Eltern: die Klasse spottet im Klassenchat", () => {
+    const basis = elemonAktion(neuerStand(1), e => ({ ...starten(e, "fox"), energie: 0 }));
+    const n = elternUmZeit({ ...basis, eltern: "streng", hausaufgabenStand: 0 });
+    expect(n.chats.klasse.at(-1)!.text).toMatch(/wegen Mami/);
+  });
 });
