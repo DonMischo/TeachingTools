@@ -113,6 +113,20 @@ export interface Stand {
   verein: string | null;
   lesestand: Record<string, number>;
   serienstand: Record<string, number>;
+  /** eigene Beiträge mit den Kommentaren darunter */
+  eigenePosts: {
+    id: string; art: "foto" | "video"; motiv?: string; trend?: string; fake?: boolean; tag: number; uhr: number;
+    kommentare: { von: string; text: string; gemein: boolean; um: number; gemeldet?: boolean; status?: "beantwortet" | "geloescht" | "blockiert" | "gemeldet"; antwort?: string }[];
+  }[];
+  blockiert: string[];
+  /** gesehene Beiträge aus der Klasse (Server-IDs) */
+  klasseGesehen: number[];
+  /** wer das Video gepostet hat, das Mo nachmacht */
+  moKopieName?: string;
+  moKopieTrend?: string;
+  /** Faktencheck: Post-ID → Urteil und ob es stimmte; geteilte Nachrichten (geprüft oder nicht) */
+  checks: Record<string, { urteil: "echt" | "fake"; richtig: boolean }>;
+  geteilt: { id: string; geprueft: boolean; fake: boolean }[];
   /** Runden in »Klikk Games« */
   spielRunden: { spiel: string; punkte: number; tag: number; uhr: number }[];
   /** eigene Challenge-Videos */

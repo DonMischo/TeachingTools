@@ -11,6 +11,7 @@ import {
 import { POSTS, THEMA_NAME } from "./posts";
 import { REICHWEITE, RISIKO_NAME, TRENDS, trendNachId } from "./trends";
 import { VEREINE, schritteFuer, vereinHeute, type AktArt } from "./freizeit";
+import { npcKommentare } from "./klasse";
 import type { AppId, ChatId, Recht, Stand } from "./typen";
 
 export const START_UHR = 14 * 60;
@@ -28,7 +29,7 @@ export function neuerStand(seed = 1): Stand {
     verweil: {}, gelikt: {}, gesehen: [], spur: [], nachtOeffnungen: [], pushGesamt: 0, pushGeoeffnet: 0,
     appsGeoeffnet: {}, shopAngesehen: [], quiz: {}, candyRunden: 0, werbung: [],
     werbungKlicks: [], schleich: [], umfragen: {}, videos: [],
-    spielRunden: [], aktivitaet: null, freizeit: [], verein: null, lesestand: {}, serienstand: {},
+    spielRunden: [], checks: {}, geteilt: [], eigenePosts: [], blockiert: [], klasseGesehen: [], aktivitaet: null, freizeit: [], verein: null, lesestand: {}, serienstand: {},
     erledigt: [], chats: { klasse: [], lea: [], mo: [], jonas: [], mama: [], yilmaz: [], klikkteam: [], gewinn: [], leon: [], verein: [], emma: [] },
     ungelesen: {}, gelesen: [], pushes: [], flags: {}, bemerkt: {}, morgen: [],
   };
@@ -72,6 +73,8 @@ function tick(s: Stand, minuten: number) {
     push(s, "klikk", "❤️ Neue Likes", `${n} Leute mögen deinen Beitrag`);
   }
   if (s.follower >= 150) abzeichen(s, "aufsteiger");
+  neueKommentare(s);
+  moKopieFaellig(s);
   const v = vereinHeute(s);
   if (v?.vorbei && !s.flags[`verein_${s.tag}`] && !s.flags[`vereinFehlt_${s.tag}`] && !(s.aktivitaet?.art === "verein")) {
     s.flags[`vereinFehlt_${s.tag}`] = true;
@@ -192,6 +195,7 @@ export function challengePosten(alt: Stand, trendId: string, fake: boolean): Sta
   const r = zufall(s.seed * 7 + s.tag * 31 + trendId.length);
   const aufrufe = Math.round(REICHWEITE[tr.risiko] * (8 + r() * 12));
   s.videos.push({ trend: trendId, fake, tag: s.tag, aufrufe });
+  eigenerPost(s, { art: "video", trend: trendId, fake }, tr.risiko !== "harmlos");
   s.flags.offeneLikes = Number(s.flags.offeneLikes ?? 0) + Math.round(aufrufe / 9);
   s.follower += Math.round(aufrufe / 60);
   spur(s, "klikk", "Klikk", `Challenge-Video ${tr.name} gepostet (${fake ? "gefaked" : "echt"}, ${RISIKO_NAME[tr.risiko]}) — Gesicht, Zimmer und Stimme im Video`);
@@ -200,6 +204,7 @@ export function challengePosten(alt: Stand, trendId: string, fake: boolean): Sta
   push(s, "klikk", "🚀 Dein Video läuft!", `${tr.name} · ${aufrufe.toLocaleString("de-DE")} Aufrufe`);
   push(s, "klikk", "💬 Neue Kommentare", fake ? "»fake 🤡« »egal, krass 🔥« »mach's in echt«" : tr.risiko === "harmlos" ? "»haha 😂« »süß«" : "»KRASS 🔥🔥« »mach's noch krasser« »legende«");
   if (tr.risiko === "gefaehrlich") abzeichen(s, "viral");
+  if (tr.risiko === "gefaehrlich") Object.assign(s, moNachmachen(s, trendId, "dir", fake));
 
   if (!fake) {
     if (tr.risiko === "harmlos") nachricht(s, "lea", "Lea", "😂😂😂 dein video omg");
@@ -215,6 +220,112 @@ export function challengePosten(alt: Stand, trendId: string, fake: boolean): Sta
   const mehr = TRENDS.find(t => t.tag <= s.tag + 1 && REICHWEITE[t.risiko] > REICHWEITE[tr.risiko] && !s.videos.some(v => v.trend === t.id));
   if (mehr) push(s, "klikk", "🔥 Deine Follower wollen mehr", `Probier ${mehr.name} — das geht gerade richtig ab!`);
   return s;
+}
+
+// ───────── Eigene Beiträge: Kommentare, Klasse, Nachahmer ─────────
+
+const jetztAbs = (s: Stand) => s.tag * MITTERNACHT + s.uhr;
+
+/** Eigenen Beitrag merken; Kommentare von Fremden kommen über die nächste Stunde. */
+function eigenerPost(s: Stand, p: { art: "foto" | "video"; motiv?: string; trend?: string; fake?: boolean }, riskant: boolean) {
+  const id = `e${s.eigenePosts.length}`;
+  const kommentare = npcKommentare(s.seed * 13 + s.eigenePosts.length * 7 + s.tag, riskant)
+    .map((k, i) => ({ ...k, um: jetztAbs(s) + 10 + i * 12 }));
+  s.eigenePosts.push({ id, ...p, tag: s.tag, uhr: s.uhr, kommentare });
+}
+
+/** Kommentare, die inzwischen da sind, melden sich per Benachrichtigung. */
+function neueKommentare(s: Stand) {
+  const jetzt = jetztAbs(s);
+  for (const p of s.eigenePosts) for (const k of p.kommentare) {
+    if (k.um <= jetzt && !k.gemeldet && !s.blockiert.includes(k.von)) {
+      k.gemeldet = true;
+      push(s, "klikk", `💬 ${k.von}`, k.text);
+    }
+  }
+}
+
+export function kommentarAktion(alt: Stand, postId: string, index: number, aktion: "antworten" | "loeschen" | "blockieren" | "melden", antwort?: string): Stand {
+  const s = kopie(alt);
+  const k = s.eigenePosts.find(p => p.id === postId)?.kommentare[index];
+  if (!k) return alt;
+  if (aktion === "antworten") { k.status = "beantwortet"; k.antwort = antwort; }
+  if (aktion === "loeschen") k.status = "geloescht";
+  if (aktion === "blockieren") { k.status = "blockiert"; if (!s.blockiert.includes(k.von)) s.blockiert.push(k.von); }
+  if (aktion === "melden") {
+    k.status = "gemeldet";
+    // Plattformen entscheiden oft gegen die Gemeldeten — nicht jede Meldung wirkt
+    const entfernt = k.gemein && zufall(s.seed + index * 17 + s.eigenePosts.length)() < 0.5;
+    nachricht(s, "klikkteam", "Klikk-Team", entfernt
+      ? `Wir haben den Kommentar von ${k.von} entfernt. Danke für deine Meldung. 💙`
+      : `Wir haben den Kommentar von ${k.von} geprüft und keinen Verstoß gegen unsere Richtlinien festgestellt.`);
+  }
+  if (k.gemein) s.flags[`hass_${aktion}`] = Number(s.flags[`hass_${aktion}`] ?? 0) + 1;
+  tick(s, 1);
+  return s;
+}
+
+/** Faktencheck abgeschlossen: Urteil abgeben. */
+export function faktencheck(alt: Stand, id: string, urteil: "echt" | "fake", istFake: boolean): Stand {
+  if (alt.checks[id]) return alt;
+  const s = kopie(alt);
+  s.checks[id] = { urteil, richtig: (urteil === "fake") === istFake };
+  tick(s, 4);
+  return s;
+}
+
+/** Eine Nachricht weiterteilen — mit oder ohne vorher zu prüfen. */
+export function teilen(alt: Stand, id: string, istFake: boolean): Stand {
+  if (alt.geteilt.some(g => g.id === id)) return alt;
+  const s = kopie(alt);
+  s.geteilt.push({ id, geprueft: !!s.checks[id], fake: istFake });
+  spur(s, "klikk", "Klikk", `Nachricht geteilt${s.checks[id] ? " (nach Prüfung)" : " (ungeprüft)"}`);
+  if (istFake) push(s, "klikk", "📤 Geteilt", "38 Leute haben deinen geteilten Beitrag weitergeschickt.");
+  return s;
+}
+
+/** Ein Beitrag aus der Klasse wurde angesehen. */
+export function klassenGesehen(alt: Stand, id: number): Stand {
+  if (alt.klasseGesehen.includes(id)) return alt;
+  const s = kopie(alt);
+  s.klasseGesehen.push(id);
+  tick(s, 2);
+  return s;
+}
+
+/** Likes und Kommentare aus der Klasse als Benachrichtigungen. */
+export function klassenEcho(alt: Stand, texte: { titel: string; text: string }[]): Stand {
+  if (!texte.length) return alt;
+  const s = kopie(alt);
+  for (const t of texte) push(s, "klikk", t.titel, t.text);
+  return s;
+}
+
+/**
+ * Mo sieht ein gefährliches Challenge-Video — von dir oder aus der Klasse —
+ * und macht es nach. Ob das Video gefaked war, weiß er nicht.
+ */
+export function moNachmachen(alt: Stand, trendId: string, von: string, fake: boolean): Stand {
+  const tr = trendNachId(trendId);
+  if (!tr || tr.risiko !== "gefaehrlich" || alt.flags.moKopie || alt.tag >= LETZTER_TAG) return alt;
+  const s = kopie(alt);
+  s.flags.moKopie = true;
+  s.moKopieTrend = trendId;
+  s.flags.moKopieFake = fake;
+  s.flags.moKopieUm = jetztAbs(s) + 120;
+  s.moKopieName = von;
+  const quelle = von === "dir" ? `dein ${tr.name}-video` : `das ${tr.name}-video von ${von}`;
+  nachricht(s, "mo", "Mo", `hab ${quelle} gesehen 😎 mach ich heute auch, nur krasser`);
+  return s;
+}
+
+function moKopieFaellig(s: Stand) {
+  const um = Number(s.flags.moKopieUm ?? 0);
+  if (!s.flags.moKopie || s.flags.moKopieFolge !== undefined || jetztAbs(s) < um) return;
+  const tr = trendNachId(s.moKopieTrend ?? "");
+  s.flags.moKopieFolge = s.tag;
+  nachricht(s, "klasse", "Emma", `MO hat ${tr?.name} nachgemacht und ist abgestürzt 😳 krankenwagen war da`);
+  nachricht(s, "klasse", "Finn", "das video von mo geht schon rum 💀");
 }
 
 export const MOTIVE = [
@@ -233,6 +344,7 @@ export function posten(alt: Stand, motiv: string): Stand {
   // Variable Belohnung: mal 6, mal 140 Likes — wie am Spielautomaten
   s.flags.offeneLikes = Number(s.flags.offeneLikes ?? 0) + Math.round(6 + r() * r() * 160) + (motiv === "selfie" ? 20 : 0);
   spur(s, "klikk", "Klikk", motiv === "selfie" ? "Selfie hochgeladen — Gesichtsdaten erfasst" : `Foto gepostet (${motiv}) mit Ort und Uhrzeit`);
+  eigenerPost(s, { art: "foto", motiv }, false);
   tick(s, 5);
   return s;
 }

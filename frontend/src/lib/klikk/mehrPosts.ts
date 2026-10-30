@@ -32,7 +32,7 @@ export const MEHR: Post[] = [
   m("wi8", "wissen", 1, "vulkan.vibes", "Mayon bei Nacht. Würdet ihr hier wohnen? 👇", 24000, foto("vulkan", "mayon-nacht")),
   m("wi9", "wissen", 2, "geschichte.gruselig", "Pompeji: Sie hatten keine Warnung … 😳 (Teil 1/7)", 77000, foto("vulkan", "pompeji")),
   m("wi10", "wissen", 1, "erde.von.oben", "Eyjafjallajökull 2010 – dieser Vulkan legte ganz Europa lahm ✈️", 18000, foto("vulkan", "eyjafjallajoekull")),
-  m("wi11", "news", 3, "die.wahrheit.jetzt", "Webb-Foto BEWEIST: Das Weltall ist nur eine Kuppel!!! Teilen bevor es gelöscht wird 👁️", 94000, foto("weltall", "webb-deep-field")),
+  m("wi11", "news", 3, "die.wahrheit.jetzt", "Webb-Foto BEWEIST: Das Weltall ist nur eine Kuppel!!! Teilen bevor es gelöscht wird 👁️", 94000, foto("weltall", "webb-deep-field"), { fake: true }),
 
   // ── PC und Gaming (PC-Werkstatt, Avatare, Zauber) ──
   m("ga5", "gaming", 1, "pixel.paul", "Mein erster selbstgebauter Gaming-PC 🔥 RGB an!", 14000, { art: "pc", teile: ["pc-mainboard", "pc-gpu", "pc-ram", "pc-kuehler"], rgb: true }),

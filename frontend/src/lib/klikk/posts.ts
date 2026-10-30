@@ -49,6 +49,8 @@ export interface Post {
   schleich?: string;
   /** erst ab diesem Tag im Feed (Nachrichten zu dem, was passiert ist) */
   ab?: number;
+  /** Falschmeldung — der Faktencheck deckt sie auf */
+  fake?: boolean;
 }
 
 const p = (id: string, thema: Thema, stufe: 1 | 2 | 3, von: string, emoji: string, farben: [string, string], text: string, likes: number): Post =>
@@ -95,8 +97,8 @@ export const POSTS: Post[] = [
   p("co4", "comedy", 3, "cringe.cam", "📸", ["#7f1d1d", "#a855f7"], "Heimlich gefilmt: der komischste Typ im Bus 💀💀", 83000),
   p("ne1", "news", 1, "news.kompakt", "📰", ["#334155", "#0ea5e9"], "Das Wichtigste des Tages in 60 Sekunden", 3300),
   p("ne2", "news", 1, "wissen.wow", "🔭", ["#1e1b4b", "#6366f1"], "Wie groß ist das Universum wirklich?", 11000),
-  p("ne3", "news", 2, "die.wahrheit.jetzt", "⚠️", ["#991b1b", "#facc15"], "Was sie dir in der Schule NICHT erzählen 👁️", 52000),
-  p("ne4", "news", 3, "aufgewacht.24", "👁️", ["#450a0a", "#18181b"], "Alles Lüge. Teile das, bevor es gelöscht wird!!", 99000),
+  { ...p("ne3", "news", 2, "die.wahrheit.jetzt", "⚠️", ["#991b1b", "#facc15"], "Was sie dir in der Schule NICHT erzählen 👁️", 52000), fake: true },
+  { ...p("ne4", "news", 3, "aufgewacht.24", "👁️", ["#450a0a", "#18181b"], "Alles Lüge. Teile das, bevor es gelöscht wird!!", 99000), fake: true },
 
   ...MEHR,
   // Trends der Woche: je höher das Risiko, desto mehr Aufrufe

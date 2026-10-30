@@ -16,7 +16,7 @@ import { erkenntnisse, warnsignale } from "@/lib/klikk/profil";
 import { jonasWoche } from "@/components/klikk/JonasSicht";
 import Klikk from "@/components/klikk/Klikk";
 import type { ChatId, Stand } from "@/lib/klikk/typen";
-import { challengePosten, ergaenze, umfrage, werbungKlick } from "@/lib/klikk/motor";
+import { challengePosten, ergaenze, posten, umfrage, werbungKlick } from "@/lib/klikk/motor";
 import { TRENDS } from "@/lib/klikk/trends";
 import { nachweis } from "@/components/klikk/PostMedien";
 import Werbeseite from "@/components/klikk/Werbeseite";
@@ -363,5 +363,50 @@ describe("Krisenfälle", () => {
     expect(geredet.flags.leaVersoehnt).toBe(true);
     expect(geschwiegen.morgen.join(" ")).toContain("nicht von allein");
     expect(erkenntnisse(geredet)).toBeTruthy();
+  });
+});
+
+describe("Klasse, Kommentare, Nachahmer", () => {
+  it("generierte Namen passen zur Server-Prüfung", async () => {
+    const { namensVorschlaege, NAME_MUSTER } = await import("@/lib/klikk/klasse");
+    for (let i = 0; i < 50; i++) for (const n of namensVorschlaege(i)) expect(n).toMatch(NAME_MUSTER);
+  });
+
+  it("Mo macht ein gefaktes gefährliches Video nach – und weiß nicht, dass es gefaked war", () => {
+    let s = angemeldet();
+    while (s.tag < 3) s = tagZuEnde(s);
+    s = challengePosten(s, "dach", true);
+    expect(s.chats.mo.at(-1)?.text).toContain("dein #DachSprung-video");
+    s = bis(s, s.uhr + 125);
+    expect(s.chats.klasse.some(n => n.text.includes("MO hat #DachSprung nachgemacht"))).toBe(true);
+    s = tagZuEnde(s);
+    expect(s.morgen.join(" ")).toContain("Mo wusste das nicht");
+    // Nur einmal
+    expect(challengePosten(s, "gleis", false).flags.moKopie).toBe(true);
+  });
+
+  it("Kommentare unter eigenen Beiträgen kommen mit der Zeit; melden, blockieren, antworten", async () => {
+    const { kommentarAktion } = await import("@/lib/klikk/motor");
+    let s = posten(angemeldet(), "selfie");
+    expect(s.eigenePosts).toHaveLength(1);
+    s = bis(s, s.uhr + 90);
+    const p = s.eigenePosts[0];
+    expect(p.kommentare.every(k => k.gemeldet)).toBe(true);
+    s = kommentarAktion(s, p.id, 0, "blockieren");
+    expect(s.blockiert).toContain(p.kommentare[0].von);
+    s = kommentarAktion(s, p.id, 1, "antworten", "Danke 🥰");
+    expect(s.eigenePosts[0].kommentare[1].antwort).toBe("Danke 🥰");
+  });
+
+  it("Faktencheck und Teilen werden gezählt und landen in der Wochen-Zusammenfassung", async () => {
+    const { faktencheck, teilen } = await import("@/lib/klikk/motor");
+    const { wocheWerte } = await import("@/lib/klikk/profil");
+    let s = faktencheck(angemeldet(), "wi11", "fake", true);
+    s = teilen(s, "ne4", true);
+    expect(s.checks.wi11.richtig).toBe(true);
+    const w = wocheWerte(s);
+    expect(w.fakes_erkannt).toBe(1);
+    expect(w.ungeprueft_geteilt).toBe(1);
+    expect(Object.keys(w).length).toBeLessThanOrEqual(60);
   });
 });

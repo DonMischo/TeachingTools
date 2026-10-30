@@ -7,6 +7,13 @@ import { RISIKO_NAME, trendNachId } from "@/lib/klikk/trends";
 import type { Stand } from "@/lib/klikk/typen";
 import PostMedien from "./PostMedien";
 import Werbeseite from "./Werbeseite";
+import Profil from "./Profil";
+import { Faktencheck, KlassenPost, useKlasse } from "./Klasse";
+import type { Online } from "./spiele/SpieleApp";
+import { api } from "@/lib/api";
+import { NAME_MUSTER } from "@/lib/klikk/klasse";
+import { klassenGesehen, moNachmachen } from "@/lib/klikk/motor";
+import { nachweis } from "./PostMedien";
 
 const Clip3D = lazy(() => import("./Clip3D"));
 const zahl = (n: number) => n >= 1000 ? `${(n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(".", ",")}k` : String(n);
@@ -21,7 +28,7 @@ const abgedunkelt = (hex: string) => {
 };
 
 /** Eigenes Video aufnehmen: der eigene Avatar macht die Challenge vor — dann echt oder gefaked posten. */
-function Aufnahme({ trendId, setze, fertig }: { trendId: string; setze: Setze; fertig: () => void }) {
+function Aufnahme({ trendId, setze, fertig, posten }: { trendId: string; setze: Setze; fertig: () => void; posten: (fake: boolean) => void }) {
   const tr = trendNachId(trendId)!;
   return (
     <div className="absolute inset-0 z-20 flex flex-col bg-black text-white">
@@ -37,9 +44,9 @@ function Aufnahme({ trendId, setze, fertig }: { trendId: string; setze: Setze; f
           <span className={`rounded-full px-2 py-0.5 font-bold ${RISIKO_FARBE[tr.risiko]}`}>{RISIKO_NAME[tr.risiko]}</span>{" "}
           {tr.beschreibung}
         </div>
-        <button className="rounded-xl py-2 font-black bg-rose-600" onClick={() => { setze(st => challengePosten(st, trendId, false)); fertig(); }}>🎬 Echt machen & posten</button>
+        <button className="rounded-xl py-2 font-black bg-rose-600" onClick={() => { setze(st => challengePosten(st, trendId, false)); posten(false); fertig(); }}>🎬 Echt machen & posten</button>
         {tr.risiko !== "harmlos" && (
-          <button className="rounded-xl py-2 font-bold bg-zinc-700" onClick={() => { setze(st => challengePosten(st, trendId, true)); fertig(); }}>✂️ Faken (Schnitt + Filter) & posten</button>
+          <button className="rounded-xl py-2 font-bold bg-zinc-700" onClick={() => { setze(st => challengePosten(st, trendId, true)); posten(true); fertig(); }}>✂️ Faken (Schnitt + Filter) & posten</button>
         )}
         <button className="text-xs text-zinc-400" onClick={fertig}>Abbrechen</button>
       </div>
@@ -47,8 +54,17 @@ function Aufnahme({ trendId, setze, fertig }: { trendId: string; setze: Setze; f
   );
 }
 
-export default function Feed({ s, setze }: { s: Stand; setze: Setze }) {
+export default function Feed({ s, setze, online }: { s: Stand; setze: Setze; online?: Online }) {
   const eintrag = naechster(s);
+  const klasse = useKlasse(online, setze);
+  const [profil, setProfil] = useState(false);
+  // Beiträge aus der Klasse kommen vor dem Algorithmus — die eigenen nicht
+  const klassenPost = klasse.liste.find(b => !b.eigener && !s.klasseGesehen.includes(b.id));
+  const imKlassennetz = !!online?.zugang && NAME_MUSTER.test(s.name);
+  const insNetz = (body: { art: "foto" | "video"; motiv?: string; trend?: string; fake?: boolean }) => {
+    if (!imKlassennetz || !online?.zugang) return;
+    api.klikk.posten(online.zugang, { name: s.name, tag: s.tag, ...body }).then(klasse.laden).catch(() => {});
+  };
   const start = useRef(0);
   const [like, setLike] = useState(false);
   const [warum, setWarum] = useState(false);
@@ -61,25 +77,39 @@ export default function Feed({ s, setze }: { s: Stand; setze: Setze }) {
   useEffect(() => { start.current = performance.now(); setLike(false); setWarum(false); }, [nr]);
 
   const weiter = () => {
+    if (klassenPost) {
+      const b = klassenPost;
+      setze(st => {
+        let neu = klassenGesehen(st, b.id);
+        // Ein gefährliches Video aus der Klasse — Mo sieht es auch
+        if (b.art === "video" && b.inhalt.trend) neu = moNachmachen(neu, b.inhalt.trend, b.name, !!b.inhalt.fake);
+        return neu;
+      });
+      return;
+    }
     const ms = performance.now() - start.current;
     setze(st => gesehen(st, eintrag, ms, like));
   };
   const post = eintrag.art === "post" ? eintrag.post : null;
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full relative">
       <div className="flex items-center justify-between px-3 py-2 border-b border-line">
         <span className="font-black text-lg tracking-tight">klikk</span>
         <span className="text-xs text-muted">👥 {s.follower} · ❤️ {s.likes} · 🔥 {s.streak}</span>
-        <button className="text-xs font-bold px-2 py-1 rounded-lg bg-accent text-accent-fg" onClick={() => setPostenOffen(v => !v)}>＋ Posten</button>
+        <span className="flex gap-1">
+          <button className="text-xs font-bold px-2 py-1 rounded-lg border border-line" onClick={() => setProfil(v => !v)} aria-label="Mein Profil">{profil ? "✕" : "👤"}</button>
+          <button className="text-xs font-bold px-2 py-1 rounded-lg bg-accent text-accent-fg" onClick={() => setPostenOffen(v => !v)}>＋ Posten</button>
+        </span>
       </div>
+      {profil && <div className="absolute inset-x-0 bottom-0 top-10 z-10 bg-page overflow-y-auto"><Profil s={s} setze={setze} klasse={klasse.liste} /></div>}
       {postenOffen && (
         <div className="p-3 border-b border-line flex flex-col gap-2 max-h-72 overflow-y-auto">
           <div className="text-xs font-bold text-muted">📷 Foto {s.gepostet.includes(s.tag) ? "(heute schon gepostet)" : ""}</div>
           <div className="grid grid-cols-4 gap-1">
             {MOTIVE.map(m => (
               <button key={m.id} disabled={s.gepostet.includes(s.tag)} className="card p-1 text-[10px] hover:bg-surface-hover disabled:opacity-40"
-                onClick={() => { setze(st => posten(st, m.id)); setPostenOffen(false); }}>
+                onClick={() => { setze(st => posten(st, m.id)); insNetz({ art: "foto", motiv: m.id }); setPostenOffen(false); }}>
                 <span className="text-xl block">{m.emoji}</span>{m.text}
               </button>
             ))}
@@ -97,7 +127,9 @@ export default function Feed({ s, setze }: { s: Stand; setze: Setze }) {
         </div>
       )}
 
-      {post ? (
+      {klassenPost && online ? (
+        <KlassenPost b={klassenPost} s={s} setze={setze} online={online} aktualisieren={klasse.laden} />
+      ) : post ? (
         <div className="flex-1 flex flex-col min-h-0" onWheel={e => { if (e.deltaY > 30) weiter(); }}>
           <div className="flex-1 grid place-items-center relative min-h-[18rem] overflow-hidden"
             style={post.medien ? undefined : { background: `linear-gradient(160deg, ${post.farben[0]}, ${post.farben[1]})` }}
@@ -120,6 +152,9 @@ export default function Feed({ s, setze }: { s: Stand; setze: Setze }) {
           </div>
           <div className="p-3 text-sm">
             <b>@{post.von}</b> {post.text}
+            {(post.thema === "news" || post.medien?.art === "news") && (
+              <Faktencheck id={post.id} istFake={!!post.fake} quelle={post.von} bild={post.medien?.art === "foto" ? nachweis(post.medien) : undefined} s={s} setze={setze} />
+            )}
             {post.thema === "trend" && post.tag !== undefined && post.id !== "tr-mo" && (
               <button className="block mt-1 text-xs font-bold text-accent" onClick={() => setAufnahme(post.id.slice(3))}
                 disabled={!trends.some(t => `tr-${t.id}` === post.id)}>
@@ -148,7 +183,7 @@ export default function Feed({ s, setze }: { s: Stand; setze: Setze }) {
       <button className="m-3 btn-secondary" onClick={weiter}>⬇️ Weiter</button>
 
       {werbeseite && <Werbeseite id={werbeseite} s={s} setze={setze} zu={() => setWerbeseite(null)} />}
-      {aufnahme && <Aufnahme trendId={aufnahme} setze={setze} fertig={() => setAufnahme(null)} />}
+      {aufnahme && <Aufnahme trendId={aufnahme} setze={setze} fertig={() => setAufnahme(null)} posten={fake => insNetz({ art: "video", trend: aufnahme, fake })} />}
     </div>
   );
 }

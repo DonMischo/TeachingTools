@@ -1,11 +1,12 @@
 "use client";
 /** Der Datenspiegel: was die Woche über dich verraten hat — mit Belegen. */
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { api } from "@/lib/api";
 import { TAGE, istGewaehlt } from "@/lib/klikk/geschichte";
 import { WERBUNG } from "@/lib/klikk/posts";
 import { RISIKO_NAME, TRENDS, trendNachId } from "@/lib/klikk/trends";
 import { zeit } from "@/lib/klikk/motor";
-import { APP_NAME, HILFE_LEITER, faelle, abzeichenWahrheit, datenfluesse, erkenntnisse, profilWert, punktestaende, warnsignale } from "@/lib/klikk/profil";
+import { APP_NAME, HILFE_LEITER, faelle, wocheWerte, abzeichenWahrheit, datenfluesse, erkenntnisse, profilWert, punktestaende, warnsignale } from "@/lib/klikk/profil";
 import type { Stand } from "@/lib/klikk/typen";
 import type { MausZugang } from "@/lib/api";
 import { AuktionSchueler } from "./Werbeauktion";
@@ -27,6 +28,11 @@ const wann = (tag: number, uhr: number) => `${TAGE[tag]?.slice(0, 2)} ${zeit(uhr
 
 export default function Datenspiegel({ s, neu, zugang }: { s: Stand; neu: () => void; zugang?: MausZugang }) {
   const [blatt, setBlatt] = useState<Blatt>("profil");
+  // Anonyme Zahlen für die Klassenübersicht der Lehrkraft (keine Namen, keine Inhalte)
+  const zCode = zugang?.code, zToken = zugang?.token ?? null;
+  useEffect(() => {
+    if (zCode) api.klikk.woche({ code: zCode, token: zToken }, wocheWerte(s)).catch(() => {});
+  }, [zCode, zToken]); // eslint-disable-line react-hooks/exhaustive-deps
   const [offen, setOffen] = useState<number | null>(null);
   const e = erkenntnisse(s);
 

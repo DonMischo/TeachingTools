@@ -348,6 +348,11 @@ export function morgenMeldung(s: Stand): string[] {
   if (s.tag === 2 && s.flags.erkaeltet && s.flags.folge_eis !== 1) m.push("Seit der Eiswasser-Challenge hast du Halsschmerzen.");
   if (s.tag === 2) m.push("In der großen Pause sitzt Jonas allein auf der Treppe und schaut aufs Handy.");
   if (s.tag === 3) m.push("Jemand hat den Schnarch-Sticker auf die Tafel gemalt. Jonas wischt ihn wortlos weg.");
+  // Mo hat ein Video nachgemacht
+  if (s.flags.moKopieFolge === s.tag - 1) {
+    const tr = TRENDS.find(t => t.id === s.moKopieTrend);
+    m.push(`Mo liegt im Krankenhaus: Gehirnerschütterung, das Bein zweimal gebrochen. Er hat ${s.moKopieName === "dir" ? "dein" : `${s.moKopieName}s`} ${tr?.name}-Video nachgemacht.${s.flags.moKopieFake ? " Das Video war gefaked – Schnitt und Filter. Mo wusste das nicht." : ""}`);
+  }
   // Folgen eigener Challenge-Videos vom Vortag
   for (const tr of TRENDS) if (s.flags[`folge_${tr.id}`] === s.tag - 1) m.push(MORGEN_FOLGE[tr.id] ?? "");
   if (s.tag === 4 && s.flags.leonGemeldet) m.push("Die Polizei hat sich gemeldet: »leon.16« war ein 34-jähriger Mann mit vielen Fake-Profilen. Das Foto ist gesichert und wird gelöscht. Du hast nichts falsch gemacht.");

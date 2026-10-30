@@ -11,7 +11,7 @@ import Handy from "./Handy";
 import Tag, { Nacht } from "./Tag";
 import JonasSicht from "./JonasSicht";
 import Datenspiegel from "./Datenspiegel";
-import { AuktionLeitung } from "./Werbeauktion";
+import Lehrkraft from "./Lehrkraft";
 import type { MausZugang } from "@/lib/api";
 
 const SCHLUESSEL = "hp_klikk_stand";
@@ -54,14 +54,14 @@ export default function Klikk({ action, zugang, verwaltung, konto }: { action?: 
 
       {verwaltung && (
         <div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface">
-          {([["spiel", "📱 Woche spielen"], ["auktion", "🔨 Werbeauktion leiten"]] as const).map(([id, label]) => (
+          {([["spiel", "📱 Woche spielen"], ["auktion", "👩‍🏫 Lehrkraft: Übersicht & Auktion"]] as const).map(([id, label]) => (
             <button key={id} onClick={() => setAnsicht(id)}
               className={`px-3 py-1.5 rounded-lg text-sm font-bold ${ansicht === id ? "bg-accent text-accent-fg" : "text-muted hover:text-fg"}`}>{label}</button>
           ))}
         </div>
       )}
 
-      {verwaltung && ansicht === "auktion" ? <AuktionLeitung /> : !stand ? null : stand.phase === "start" ? (
+      {verwaltung && ansicht === "auktion" ? <Lehrkraft /> : !stand ? null : stand.phase === "start" ? (
         <div className="card p-6 max-w-xl flex flex-col gap-3">
           <h2 className="text-xl font-black">Du bist 14 und gehst in die 8b.</h2>
           <p className="text-sm">

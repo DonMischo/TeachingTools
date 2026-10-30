@@ -215,6 +215,9 @@ Jede Simulation trägt Fächer (auch mehrere, z. B. Geografie und Physik); die �
 - Freizeit neben dem Handy: fünf Kurzgeschichten zum Lesen (Krimi, Romance, Young Adult, Fantasy, Grusel), zwei Serien mit Autoplay, Familie (Abendessen, Hund, Oma, Spieleabend, Pizza backen), ein Verein mit festen Trainingszeiten und Freunde treffen — das Handy vibriert dazwischen, jeder Blick wird gezählt und manchmal bemerkt
 - Krisenfälle mit Entscheidungen und Folgen: Mitmachen beim Mobbing führt zu Gespräch, Klassenkonferenz oder Polizei (ab 14 strafmündig), ein heimliches Umkleide-Foto weiterzuleiten kostet am Freitag das Handy, eine Freundschaft geht verloren, wenn man nicht redet; der Datenspiegel zeigt je Fall den eigenen Weg, die Rechtslage und eine Hilfe-Leiter von Freund·innen bis Polizei
 - Handy-App »Klikk Games«: Klicker und Doppelklicker aus dem Maus-Führerschein (gleiche Bestenliste), Blockregen, Würfelsprung (Geometry-Dash-artig) und Lichtschalter (Logik) mit eigener Bestenliste; jede Runde kostet Spielzeit
+- Klassen-Feed mit Code: alle sehen die Fotos und Challenge-Videos der anderen, liken und kommentieren aus einer festen Liste (kein Freitext, Namen nur generiert); ein gefährliches Video – auch ein gefaktes – macht Mo nach und landet im Krankenhaus
+- Eigenes Profil mit Kommentaren (auch gemeinen) zum Beantworten, Löschen, Blockieren, Melden; Faktencheck (»Stimmt das?«) und Teilen bei jeder Nachricht
+- Lehrkraft-Bereich: anonyme Klassenübersicht (ab drei), Meldung samt Galeriebild in den Klassen-Feed stellen (auch als Fake), Feed moderieren, druckbare Nachbesprechungskarten mit Fragen und Rollenspielen
 - Werbeauktion live: die Klasse gibt ihre Profile nach Zustimmung anonym ab und ersteigert sie als Werbefirmen (100 Taler, verdeckte Gebote); die Lehrkraft leitet am Beamer und bespricht, welche Merkmale den Preis treiben
 
 ### 🍎 Rechenregeln

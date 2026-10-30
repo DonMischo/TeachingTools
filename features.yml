@@ -639,6 +639,9 @@ simulationen:
       - Freizeit mit Kurzgeschichten, Serien mit Autoplay, Familie, Verein und Freunden; Handy-Unterbrechungen werden gezählt
       - Krisenfälle (Mobbing als Mitläufer·in, heimliches Foto, Freundschaft, Challenge-Folgen) mit Gespräch, Schule und Polizei als Eskalationsstufen
       - Handy-Spiele mit Bestenlisten (Klicker/Doppelklicker teilen sich die des Maus-Führerscheins)
+      - Geteilter Klassen-Feed mit festen Kommentaren, generierten Namen und Nachahmer-Folgen
+      - Eigenes Profil mit Kommentar-Moderation, Faktencheck und Teilen
+      - Lehrkraft-Bereich mit Klassenübersicht, Fake-Meldungen, Moderation und Nachbesprechungskarten
       - Live-Werbeauktion der Klasse mit anonymen Profilen, Firmenrollen, verdeckten Geboten und Auswertung (Lehrkraft leitet)
   - id: groessen
     name: Größen & Einheiten

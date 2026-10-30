@@ -7,6 +7,7 @@ import Feed from "./Feed";
 import Chats from "./Chats";
 import { Candy, Quiz, Sneakr, Wetter } from "./Apps";
 import SpieleApp, { type Online } from "./spiele/SpieleApp";
+import { namensVorschlaege } from "@/lib/klikk/klasse";
 
 type Setze = (f: (s: Stand) => Stand) => void;
 
@@ -89,7 +90,7 @@ export default function Handy({ s, setze, online }: { s: Stand; setze: Setze; on
       ) : (
         <>
           <div className="flex-1 min-h-0 overflow-y-auto">
-            {app === "klikk" && <Feed s={s} setze={setze} />}
+            {app === "klikk" && <Feed s={s} setze={setze} online={online} />}
             {app === "chats" && <Chats key={chat ?? "liste"} s={s} setze={setze} start={chat} />}
             {app === "wetter" && <Wetter s={s} setze={setze} />}
             {app === "candy" && <Candy setze={setze} />}
@@ -132,6 +133,7 @@ function Anmeldung({ s, setze }: { s: Stand; setze: Setze }) {
   const [alter, setAlter] = useState<number | null>(null);
   const [mama, setMama] = useState(false);
   const [abgelehnt, setAbgelehnt] = useState(false);
+  const [wurf, setWurf] = useState(0);
   const agbStart = useRef(0);
   useEffect(() => { if (schritt === 2) agbStart.current = performance.now(); }, [schritt]);
 
@@ -147,9 +149,13 @@ function Anmeldung({ s, setze }: { s: Stand; setze: Setze }) {
   if (schritt === 1) return (
     <div className="flex-1 flex flex-col gap-3 p-5">
       <div className="font-black text-xl">Wer bist du?</div>
-      <label className="text-sm">Benutzername
-        <input className="input w-full mt-1" value={name} maxLength={20} onChange={e => setName(e.target.value)} placeholder="z. B. sunny.2012" />
-      </label>
+      <div className="text-sm">Benutzername <span className="text-[10px] text-muted">(Klikk schlägt vor)</span></div>
+      <div className="grid gap-1">
+        {namensVorschlaege(s.seed + wurf).map(v => (
+          <button key={v} onClick={() => setName(v)} className={`rounded-lg border border-line py-1.5 text-sm ${name === v ? "bg-accent text-accent-fg" : ""}`}>@{v}</button>
+        ))}
+        <button className="text-xs text-muted underline" onClick={() => setWurf(w => w + 1)}>🎲 Andere Vorschläge</button>
+      </div>
       <div className="text-sm">Wie alt bist du?</div>
       <div className="grid grid-cols-4 gap-2">
         {[12, 13, 14, 15, 16, 17, 18, 19].map(a => (

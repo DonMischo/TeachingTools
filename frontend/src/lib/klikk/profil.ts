@@ -309,3 +309,38 @@ export function faelle(s: Stand): Fall[] {
   });
   return r;
 }
+
+/**
+ * Die anonyme Wochen-Zusammenfassung für die Klassenübersicht der Lehrkraft:
+ * nur Zahlen und Entscheidungen, keine Namen, keine Inhalte.
+ */
+export function wocheWerte(s: Stand): Record<string, boolean | number | string> {
+  const w = (id: string) => istGewaehlt(s, id) ?? "still";
+  const schlaf = s.schlaf.length ? s.schlaf.reduce((a, b) => a + b, 0) / s.schlaf.length : 0;
+  return {
+    agb_sekunden: s.agbSekunden,
+    rechte_erlaubt: Object.values(s.rechte).filter(Boolean).length,
+    mobbing_mitgemacht: taeterPunkte(s),
+    jonas_geschrieben: jonasGeschrieben(s).length > 0,
+    bus: w("bus"),
+    umfrage: w("umfrage"),
+    signale_bemerkt: Object.keys(s.bemerkt).length,
+    emma_foto: w("emmaFoto"),
+    gleis: w("gleis"),
+    videos_riskant_echt: s.videos.filter(v => !v.fake && trendNachId(v.trend)?.risiko !== "harmlos").length,
+    videos_gefaked: s.videos.filter(v => v.fake).length,
+    leon: w("leon2") !== "still" ? w("leon2") : w("leon1"),
+    gewinnspiel_nummer: w("gewinn") === "nummer",
+    werbung_geklickt: s.werbungKlicks.length,
+    werbung_bestellt: s.werbungKlicks.filter(k => k.stufe === "bestellt").length,
+    fakes_erkannt: Object.values(s.checks).filter(c => c.richtig).length,
+    ungeprueft_geteilt: s.geteilt.filter(g => !g.geprueft).length,
+    schlaf_schnitt: Math.round(schlaf * 10) / 10,
+    nachts_am_handy: s.nachtOeffnungen.length,
+    hausaufgaben: s.hausaufgaben.filter(Boolean).length,
+    beitraege_gesehen: s.gesehen.length,
+    offline_minuten: s.freizeit.reduce((a, f) => a + f.minuten, 0),
+    handy_waehrend_freizeit: s.freizeit.reduce((a, f) => a + f.unterbrochen, 0),
+    gemeine_kommentare_gemeldet: Number(s.flags.hass_melden ?? 0),
+  };
+}
