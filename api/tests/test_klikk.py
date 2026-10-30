@@ -151,3 +151,19 @@ def test_spiel_teilen_und_geruchs_kommentar_nur_bei_niedriger_hygiene(client, te
     assert client.post(f"{url}/{r.json()['id']}/reaktion", json={"name": "rote.ente.4", "kommentar": "stinkt"}, headers=ben).status_code == 200
     assert client.post(f"{url}/{sauber['id']}/reaktion", json={"name": "rote.ente.4", "kommentar": "stinkt"}, headers=ben).status_code == 400
     assert client.post(url, json={"name": "blauer.otter.17", "art": "spiel", "tag": 0, "spiel": "quatsch", "punkte": 1}, headers=mia).status_code == 400
+
+
+def test_klassen_uhr_start_pause_weiter_stopp(client, teacher_token):
+    code = _sitzung(client, teacher_token)
+    mia = _gast(client, teacher_token, code, "Mia")
+    url = f"/api/klikk/sitzung/{code}/uhr"
+    assert client.get(url, headers=mia).json()["laeuft"] is False
+    assert client.post(url, json={"aktion": "start"}, headers=mia).status_code == 403
+    u = client.post(url, json={"aktion": "start", "minuten_pro_tag": 6}, headers=auth(teacher_token)).json()
+    assert u["laeuft"] and u["minuten_pro_tag"] == 6 and u["pausiert"] is False
+    p = client.post(url, json={"aktion": "pause"}, headers=auth(teacher_token)).json()
+    assert p["pausiert"] is True
+    w = client.post(url, json={"aktion": "weiter"}, headers=auth(teacher_token)).json()
+    assert w["pausiert"] is False and w["start_ms"] >= u["start_ms"]
+    assert client.get(url, headers=mia).json()["laeuft"] is True
+    assert client.post(url, json={"aktion": "stopp"}, headers=auth(teacher_token)).json()["laeuft"] is False

@@ -10,6 +10,7 @@ import { api } from "@/lib/api";
 import { GALERIE as WELTALL } from "@/lib/sonnensystem/galerie";
 import { GALERIE as VULKANE } from "@/lib/vulkan/galerie";
 import { AuktionLeitung } from "./Werbeauktion";
+import { klassenZiel, zeit } from "@/lib/klikk/motor";
 import { nachweis } from "./PostMedien";
 
 const LABEL: Record<string, string> = {
@@ -30,6 +31,7 @@ const WAHL: Record<string, string> = {
 };
 
 const BLAETTER = [
+  { id: "uhr", label: "⏱️ Klassen-Uhr" },
   { id: "uebersicht", label: "📊 Klassenübersicht" },
   { id: "auktion", label: "🔨 Werbeauktion" },
   { id: "news", label: "📰 Meldung posten" },
@@ -38,7 +40,7 @@ const BLAETTER = [
 ] as const;
 
 export default function Lehrkraft() {
-  const [blatt, setBlatt] = useState<(typeof BLAETTER)[number]["id"]>("uebersicht");
+  const [blatt, setBlatt] = useState<(typeof BLAETTER)[number]["id"]>("uhr");
   const { data: sitzung } = useQuery({ queryKey: ["klikk-sitzung"], queryFn: () => api.toolSessions.create("klikk") });
   const code = sitzung?.code;
   return (
@@ -50,6 +52,7 @@ export default function Lehrkraft() {
       </div>
       {!code ? <div className="card p-4 text-sm text-muted">Lade die Sitzung …</div> : (
         <>
+          {blatt === "uhr" && <KlassenUhr code={code} />}
           {blatt === "uebersicht" && <Uebersicht code={code} />}
           {blatt === "auktion" && <AuktionLeitung />}
           {blatt === "news" && <MeldungPosten code={code} />}
@@ -57,6 +60,40 @@ export default function Lehrkraft() {
           {blatt === "karten" && <Nachbesprechung />}
         </>
       )}
+    </div>
+  );
+}
+
+function KlassenUhr({ code }: { code: string }) {
+  const qc = useQueryClient();
+  const [mpt, setMpt] = useState(6);
+  const { data } = useQuery({ queryKey: ["klikk-uhr", code], queryFn: () => api.klikk.uhr({ code, token: null }), refetchInterval: 2000 });
+  const steuern = useMutation({
+    mutationFn: (aktion: "start" | "pause" | "weiter" | "stopp") => api.klikk.uhrSteuern(code, aktion, mpt),
+    onSuccess: u => qc.setQueryData(["klikk-uhr", code], u),
+  });
+  const z = data?.laeuft && data.start_ms ? klassenZiel((data.pausiert_ms ?? data.jetzt_ms) - data.start_ms, data.minuten_pro_tag) : null;
+  return (
+    <div className="card p-4 flex flex-col gap-3 max-w-2xl text-sm">
+      <p>Im Klassenmodus läuft die Spielzeit für alle gleich: ein Tag von 6 bis 24 Uhr dauert wenige echte Minuten. Handlungen kosten keine Spielzeit mehr – nur noch echte. So entsteht der Druck, <i>jetzt</i> nachzusehen.</p>
+      <div className="flex items-center gap-2 flex-wrap">
+        Minuten pro Spieltag:
+        {[4, 6, 8, 10].map(m => <button key={m} disabled={!!data?.laeuft} onClick={() => setMpt(m)} className={`rounded-full px-3 py-1 border border-line ${mpt === m ? "bg-accent text-accent-fg" : ""}`}>{m}</button>)}
+        <span className="text-xs text-muted">(5 Tage ≈ {mpt * 5} Min.)</span>
+      </div>
+      <div className="flex gap-2 flex-wrap">
+        {!data?.laeuft && <button className="btn-primary" onClick={() => steuern.mutate("start")}>▶ Woche starten</button>}
+        {data?.laeuft && !data.pausiert && <button className="btn-secondary" onClick={() => steuern.mutate("pause")}>⏸ Pause</button>}
+        {data?.laeuft && data.pausiert && <button className="btn-primary" onClick={() => steuern.mutate("weiter")}>▶ Weiter</button>}
+        {data?.laeuft && <button className="btn-secondary" onClick={() => { if (confirm("Klassen-Uhr stoppen? Alle spielen dann wieder im eigenen Tempo.")) steuern.mutate("stopp"); }}>⏹ Stopp</button>}
+      </div>
+      {z && (
+        <div className="text-3xl font-black">
+          {z.tag > 4 ? "Woche vorbei" : `${["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"][z.tag]}, ${zeit(z.uhr)}`}
+          {data?.pausiert && <span className="text-sm font-normal text-muted"> (pausiert)</span>}
+        </div>
+      )}
+      <p className="text-xs text-muted">Wer später einsteigt, springt zur aktuellen Klassenzeit (Nachrichten der verpassten Tage sind da, ungelesen).</p>
     </div>
   );
 }

@@ -63,7 +63,9 @@ function feuere(s: Stand, bis = s.uhr) {
 }
 
 /** Zeit vergeht. Likes auf eigene Beiträge tröpfeln ein — mal viele, mal wenige. */
-function tick(s: Stand, minuten: number) {
+function tick(s: Stand, minuten: number, uhrZieht = false) {
+  // Klassenmodus: die Zeit bestimmt die Klassen-Uhr, nicht die Handlung
+  if (s.flags.klassenuhr && !uhrZieht) minuten = 0;
   const vorher = s.uhr;
   s.uhr = Math.min(MITTERNACHT, s.uhr + minuten);
   feuere(s);
@@ -120,6 +122,7 @@ function handyTick(s: Stand, minuten: number) {
 
 /** Ist das Handy gerade gesperrt (Limit, Sperrzeit)? Liefert den Grund. */
 export function gesperrt(s: Stand): string | null {
+  if (s.flags.klassenuhr && s.phase === "woche" && s.uhr >= 8 * 60 && s.uhr < START_UHR && s.tag <= LETZTER_TAG) return "schule";
   if (s.limit.sperreAb !== null && s.uhr >= s.limit.sperreAb && !s.flags[`sperreWeg_${s.tag}`])
     return s.limit.vonEltern ? "elternSperre" : "sperre";
   if (s.limit.proTag !== null && (s.handyMinuten[s.tag] ?? 0) >= s.limit.proTag && !s.flags[`limitWeg_${s.tag}`])
@@ -684,12 +687,15 @@ export function weiterAktivitaet(alt: Stand): Stand {
   const a = s.aktivitaet!;
   const schritte = schritteFuer(s, a.art, a.id);
   const schritt = schritte[a.schritt];
+  // Klassenmodus: weiter erst, wenn die Uhr so weit ist
+  if (s.flags.klassenuhr && s.uhr < (a.schrittStart ?? a.start) + (schritt?.minuten ?? 10)) return alt;
   // Nach dem Blick aufs Handy: Wo war ich? (Lesen und Serie kosten Wiedereinstieg)
   if (a.gestoert && (a.art === "lesen" || a.art === "serie")) tick(s, 3);
   a.gestoert = false;
   tick(s, schritt?.minuten ?? 10);
   if (s.uhr >= MITTERNACHT) return beendeAktivitaet(s);
   a.schritt++;
+  a.schrittStart = s.uhr;
   if (a.art === "lesen") s.lesestand[a.id] = a.schritt;
   if (a.art === "serie") s.serienstand[a.id] = a.schritt;
   if (a.schritt >= schritte.length) return beendeAktivitaet(s);
@@ -737,7 +743,7 @@ export function losgehen(alt: Stand): Stand {
   if (s.uhr > BUS) s.zuSpaet.push(s.tag);
   if (!s.morgenErledigt.includes("fruehstueck")) s.flags[`ohneFruehstueck_${s.tag}`] = true;
   s.phase = "woche";
-  s.uhr = START_UHR;
+  if (!s.flags.klassenuhr) s.uhr = START_UHR;
   s.morgen = morgenMeldung(s);
   feuere(s);
   return s;
@@ -746,6 +752,14 @@ export function losgehen(alt: Stand): Stand {
 /** Ins Bett. Danach kommt (fast) immer noch eine Benachrichtigung um 23:40. */
 export function schlafen(alt: Stand): Stand {
   const s = kopie(alt.aktivitaet ? beendeAktivitaet(alt) : alt);
+  if (s.flags.klassenuhr) {
+    // Klassenmodus: schlafen und auf den Morgen warten – der kommt für alle gleichzeitig
+    if (s.hausaufgaben[s.tag] === undefined) s.hausaufgaben[s.tag] = false;
+    s.schlaeft = true;
+    s.flags.bettZeit = s.uhr;
+    s.phase = "schlaf";
+    return s;
+  }
   if (s.hausaufgaben[s.tag] === undefined) s.hausaufgaben[s.tag] = false;
   s.flags.bettZeit = s.uhr;
   feuere(s, MITTERNACHT);
@@ -765,6 +779,16 @@ export function nachtPush(s: Stand) {
 
 export function nacht(alt: Stand, nachsehen: boolean): Stand {
   const s = kopie(alt);
+  if (s.flags.klassenuhr) {
+    if (nachsehen) {
+      s.nachtOeffnungen.push({ tag: s.tag, uhr: s.uhr });
+      abzeichen(s, "nachteule");
+      if (s.snapTag !== s.tag && s.streak > 0) { s.snapTag = s.tag; s.streak++; }
+      s.flags.bettZeit = Math.max(Number(s.flags.bettZeit ?? s.uhr), 23 * 60 + 40) + 45;
+    }
+    s.phase = "schlaf";
+    return s;
+  }
   let bett = Number(s.flags.bettZeit ?? s.uhr);
   if (nachsehen) {
     s.uhr = Math.max(s.uhr, 23 * 60 + 40);
@@ -810,6 +834,58 @@ function naechsterTag(s: Stand, bett: number): Stand {
   // Die Schulmeldung kommt beim Losgehen (dann sind Bad, Frühstück und Bus bekannt)
   s.morgen = schultag ? [] : morgenMeldung(s);
   feuere(s);
+  return s;
+}
+
+// ───────── Klassenmodus: eine Uhr für alle ─────────
+
+export const KLASSEN_TAG_START = 6 * 60;
+
+/** Spielzeit aus der Klassen-Uhr: ein Tag (6–24 Uhr) dauert `minutenProTag` echte Minuten. */
+export function klassenZiel(vergangenMs: number, minutenProTag: number) {
+  const tage = vergangenMs / (minutenProTag * 60000);
+  const tag = Math.floor(tage);
+  return { tag, uhr: Math.min(MITTERNACHT - 1, KLASSEN_TAG_START + Math.floor((tage - tag) * (MITTERNACHT - KLASSEN_TAG_START))) };
+}
+
+/**
+ * Die Klassen-Uhr zieht den Stand nach: Tage enden um Mitternacht für alle,
+ * morgens fährt der Bus, von 8 bis 14 Uhr ist Schule, um 23:40 leuchtet das Handy.
+ */
+export function klassenZeit(alt: Stand, tagZiel: number, uhrZiel: number): Stand {
+  if (!["morgen", "woche", "nacht", "schlaf"].includes(alt.phase)) return alt;
+  if (alt.tag === tagZiel && alt.uhr >= uhrZiel && alt.flags.klassenuhr) return alt;
+  const s = kopie(alt);
+  s.flags.klassenuhr = true;
+
+  // Ganze Tage abschließen
+  while (s.tag < tagZiel && s.phase !== "jonas") {
+    if (s.aktivitaet) Object.assign(s, beendeAktivitaet(s));
+    feuere(s, MITTERNACHT);
+    if (s.hausaufgaben[s.tag] === undefined) s.hausaufgaben[s.tag] = false;
+    const bett = s.schlaeft ? Number(s.flags.bettZeit ?? MITTERNACHT) : MITTERNACHT;
+    s.schlaeft = false;
+    naechsterTag(s, bett);
+    // naechsterTag kann die Woche beenden (TypeScript weiß das nicht)
+    if ((s.phase as Stand["phase"]) === "jonas") return s;
+    if (s.tag > LETZTER_TAG) { s.phase = "jonas"; return s; }
+    s.uhr = KLASSEN_TAG_START;
+  }
+  if (s.tag > tagZiel) return s;
+
+  // Innerhalb des Tages vorrücken
+  const ziel = Math.max(s.uhr, uhrZiel);
+  if (s.phase === "morgen" && ziel >= BUS + 5) {
+    tick(s, BUS + 5 - s.uhr, true);
+    Object.assign(s, losgehen(s));
+  }
+  tick(s, ziel - s.uhr, true);
+  // 23:40: das Handy auf dem Nachttisch
+  if (s.phase === "schlaf" && s.uhr >= 23 * 60 + 40 && !s.flags[`nachtFrage_${s.tag}`]) {
+    s.flags[`nachtFrage_${s.tag}`] = true;
+    const gesperrtNachts = s.limit.sperreAb !== null && s.limit.sperreAb <= 23 * 60 + 40 && !s.flags[`sperreWeg_${s.tag}`];
+    if (!gesperrtNachts && !(s.flags.handyWeg && s.tag === LETZTER_TAG)) s.phase = "nacht";
+  }
   return s;
 }
 

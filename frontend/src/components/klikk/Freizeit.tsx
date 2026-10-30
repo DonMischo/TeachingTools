@@ -111,7 +111,12 @@ export function AktivitaetAnsicht({ s, setze }: { s: Stand; setze: Setze }) {
   const neue = Math.max(0, s.pushes.length - pushStart.current);
 
   // Streaming: nach jeder Folge startet die nächste von selbst
-  const serieLaeuft = a.art === "serie" && a.schritt > 0 && a.schritt < schritte.length;
+  const serieLaeuft = a.art === "serie" && a.schritt > 0 && a.schritt < schritte.length && !s.flags.klassenuhr;
+  // Im Klassenmodus läuft die Serie mit der Uhr einfach weiter
+  useEffect(() => {
+    if (s.flags.klassenuhr && a.art === "serie" && a.schritt > 0 && a.schritt < schritte.length
+      && s.uhr >= (a.schrittStart ?? a.start) + (schritte[a.schritt]?.minuten ?? 45)) setze(weiterAktivitaet);
+  }, [s.uhr]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { setCountdown(serieLaeuft ? AUTOPLAY : null); }, [serieLaeuft, a.schritt]);
   useEffect(() => {
     if (countdown === null) return;
@@ -123,6 +128,10 @@ export function AktivitaetAnsicht({ s, setze }: { s: Stand; setze: Setze }) {
   const titel = a.art === "lesen" ? buchNachId(a.id)?.titel : a.art === "serie" ? SERIEN.find(x => x.id === a.id)?.titel
     : a.art === "familie" ? FAMILIE.find(x => x.id === a.id)?.name : a.art === "verein" ? VEREINE.find(x => x.id === a.id)?.name : "Mit Lea und Mo";
   const reaktion = a.gestoert ? schritt?.beiHandy : undefined;
+  // Klassenmodus: ein Schritt dauert echte Zeit
+  const klasse = !!s.flags.klassenuhr;
+  const restMin = klasse && schritt ? Math.max(0, (a.schrittStart ?? a.start) + schritt.minuten - s.uhr) : 0;
+  const bereit = restMin === 0;
 
   return (
     <div className="card p-4 flex flex-col gap-3">
@@ -177,9 +186,9 @@ export function AktivitaetAnsicht({ s, setze }: { s: Stand; setze: Setze }) {
             ? <button className="btn-primary" onClick={() => setze(weiterAktivitaet)}>▶ Folge ansehen (45 Min.)</button>
             : <button className="btn-primary" onClick={() => { setCountdown(null); setze(weiterAktivitaet); }}>▶ Jetzt weiterschauen</button>
         ) : (
-          <button className="btn-primary" onClick={() => setze(weiterAktivitaet)}>
+          <button className="btn-primary" disabled={!bereit} onClick={() => setze(weiterAktivitaet)}>
             {a.art === "lesen" ? (a.schritt + 1 >= schritte.length ? "Buch zuklappen" : "Umblättern →") : a.schritt + 1 >= schritte.length ? "Fertig" : "Weiter →"}
-            <span className="text-[10px] opacity-70 ml-1">{schritt?.minuten} Min.</span>
+            <span className="text-[10px] opacity-70 ml-1">{klasse ? (bereit ? "" : `noch ${restMin} Min.`) : `${schritt?.minuten} Min.`}</span>
           </button>
         )}
         <button className="btn-secondary" onClick={() => { setCountdown(null); setze(beendeAktivitaet); }}>

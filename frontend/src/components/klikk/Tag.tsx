@@ -36,7 +36,12 @@ export default function Tag({ s, setze }: { s: Stand; setze: Setze }) {
         </div>
       )}
 
-      {s.aktivitaet ? <AktivitaetAnsicht s={s} setze={setze} /> : (
+      {s.flags.klassenuhr && s.uhr < START_UHR && s.tag <= 4 ? (
+        <div className="card p-4 text-sm">
+          <h3 className="font-bold">🏫 Schule bis 14 Uhr</h3>
+          <p className="text-muted mt-1">Mathe, Deutsch, Bio, Sport. Das Handy liegt im Spind. Die Zeit läuft für alle gleich.</p>
+        </div>
+      ) : s.aktivitaet ? <AktivitaetAnsicht s={s} setze={setze} /> : (
         <>
       {s.tag <= 4 && (
       <div className="card p-4">

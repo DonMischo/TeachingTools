@@ -87,6 +87,14 @@ export default function Einstellungen({ s, setze }: { s: Stand; setze: Setze }) 
 /** Gesperrtes Handy: eigenes Limit (ignorierbar) oder Elternregel (nur fragen). */
 export function Sperre({ s, setze }: { s: Stand; setze: Setze }) {
   const grund = gesperrt(s)!;
+  if (grund === "schule") return (
+    <div className="flex-1 flex flex-col items-center justify-center gap-3 p-6 text-center">
+      <div className="text-6xl">🏫</div>
+      <div className="font-black text-lg">Schule</div>
+      <p className="text-sm text-muted">Das Handy liegt im Spind, bis 14 Uhr. Es ist {zeit(s.uhr)}.</p>
+      <p className="text-xs text-muted">Nachrichten kommen trotzdem an – du siehst sie nach der Schule.</p>
+    </div>
+  );
   const eltern = grund.startsWith("eltern");
   const sperre = grund.endsWith("perre");
   return (

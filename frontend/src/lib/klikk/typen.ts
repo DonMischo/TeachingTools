@@ -17,7 +17,7 @@ export type Recht = "kontakte" | "standort" | "mikrofon" | "mitteilungen";
 
 export type ChatId = "klasse" | "lea" | "mo" | "jonas" | "mama" | "yilmaz" | "klikkteam" | "gewinn" | "leon" | "verein" | "emma" | "marke" | "tim";
 
-export type Phase = "start" | "onboarding" | "morgen" | "woche" | "nacht" | "jonas" | "spiegel";
+export type Phase = "start" | "onboarding" | "morgen" | "woche" | "nacht" | "schlaf" | "jonas" | "spiegel";
 
 export interface Wahl {
   id: string;
@@ -109,7 +109,7 @@ export interface Stand {
   /** Antworten auf Umfrage-Beiträge: Post-ID → Option */
   umfragen: Record<string, string>;
   /** laufende Freizeit-Aktivität (Lesen, Serie, Familie, Verein, Freunde) */
-  aktivitaet: { art: "lesen" | "serie" | "familie" | "verein" | "freunde"; id: string; schritt: number; unterbrochen: number; start: number; gestoert: boolean } | null;
+  aktivitaet: { art: "lesen" | "serie" | "familie" | "verein" | "freunde"; id: string; schritt: number; unterbrochen: number; start: number; gestoert: boolean; schrittStart?: number } | null;
   /** erledigte Aktivitäten */
   freizeit: { art: string; id: string; tag: number; minuten: number; unterbrochen: number }[];
   verein: string | null;
@@ -144,6 +144,8 @@ export interface Stand {
   /** eigener Trainingsplan für den Verein */
   vereinTage: number[] | null;
   vereinUm: number | null;
+  /** Klassenmodus: schläft schon (wartet auf Mitternacht) */
+  schlaeft?: boolean;
   /** Wecker (Spielminuten) und Hygiene 0–100 */
   weckzeit: number;
   hygiene: number;

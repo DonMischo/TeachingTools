@@ -498,6 +498,66 @@ def uebersicht(
     return {"anzahl": n, "werte": werte}
 
 
+
+# ───────── Klassen-Uhr: im Klassenmodus läuft die Spielzeit für alle gleich ─────────
+#
+# Die Lehrkraft startet die Woche; danach rechnet jeder Browser die Spielzeit
+# aus der Serverzeit: ein Tag (6–24 Uhr) dauert `minuten_pro_tag` echte Minuten.
+# Pausen verschieben den Start, damit die Zeit danach nahtlos weiterläuft.
+
+import time  # noqa: E402
+
+
+def _jetzt_ms() -> int:
+    return int(time.time() * 1000)
+
+
+class UhrIn(BaseModel):
+    aktion: Literal["start", "pause", "weiter", "stopp"]
+    minuten_pro_tag: int = Field(default=6, ge=2, le=30)
+
+
+class UhrOut(BaseModel):
+    laeuft: bool
+    pausiert: bool
+    start_ms: int | None
+    minuten_pro_tag: int
+    pausiert_ms: int | None
+    jetzt_ms: int
+
+
+def _uhr(session: ToolSession) -> UhrOut:
+    u = (session.settings or {}).get("uhr") or {}
+    return UhrOut(laeuft=bool(u.get("start_ms")), pausiert=u.get("pausiert_ms") is not None, start_ms=u.get("start_ms"),
+                  minuten_pro_tag=u.get("minuten_pro_tag", 6), pausiert_ms=u.get("pausiert_ms"), jetzt_ms=_jetzt_ms())
+
+
+@router.get("/{code}/uhr", response_model=UhrOut)
+def uhr_lesen(code: str, db: Session = Depends(get_db), spieler: Union[Teacher, Student, Guest] = Depends(get_player)):
+    return _uhr(_sitzung(code, db))
+
+
+@router.post("/{code}/uhr", response_model=UhrOut)
+def uhr_steuern(code: str, body: UhrIn, db: Session = Depends(get_db), spieler: Union[Teacher, Student, Guest] = Depends(get_player)):
+    session = _sitzung(code, db)
+    if not _ist_leitung(session, spieler):
+        raise HTTPException(403, "Die Klassen-Uhr stellt die Lehrkraft.")
+    u = dict((session.settings or {}).get("uhr") or {})
+    jetzt = _jetzt_ms()
+    if body.aktion == "start":
+        u = {"start_ms": jetzt, "minuten_pro_tag": body.minuten_pro_tag, "pausiert_ms": None}
+    elif body.aktion == "pause" and u.get("start_ms") and u.get("pausiert_ms") is None:
+        u["pausiert_ms"] = jetzt
+    elif body.aktion == "weiter" and u.get("pausiert_ms") is not None:
+        u["start_ms"] += jetzt - u["pausiert_ms"]
+        u["pausiert_ms"] = None
+    elif body.aktion == "stopp":
+        u = {}
+    session.settings = {**(session.settings or {}), "uhr": u}
+    db.commit()
+    return _uhr(session)
+
+
 # ───────── Bestenlisten der Handy-Spiele ─────────
 #
 # Klicker und Doppelklicker tragen in die Bestenliste des Maus-Führerscheins

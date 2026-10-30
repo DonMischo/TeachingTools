@@ -1304,6 +1304,7 @@ export type KlikkUebersicht = {
   werte: Record<string, { art: "ja"; ja: number; von: number } | { art: "zahl"; schnitt: number; min: number; max: number } | { art: "wahl"; zaehlung: Record<string, number> }>;
 };
 export type KlikkSpiel = "bloecke" | "sprung" | "logik";
+export type KlikkUhr = { laeuft: boolean; pausiert: boolean; start_ms: number | null; minuten_pro_tag: number; pausiert_ms: number | null; jetzt_ms: number };
 export type KlikkSpielEintrag = { platz: number; name: string; klasse: string | null; gast: boolean; wert: number; selbst: boolean };
 
 // »Rock your Life« (siehe api/routers/leben.py)
@@ -1718,6 +1719,11 @@ export const api = {
         method: "PUT", body: JSON.stringify({ werte }), headers: z.token ? { Authorization: `Bearer ${z.token}` } : undefined,
       }),
     uebersicht: (code: string) => apiFetch<KlikkUebersicht>(`klikk/sitzung/${encodeURIComponent(code)}/uebersicht`),
+    // Klassen-Uhr: im Klassenmodus läuft die Zeit für alle gleich
+    uhr: (z: MausZugang) =>
+      apiFetch<KlikkUhr>(`klikk/sitzung/${encodeURIComponent(z.code)}/uhr`, { headers: z.token ? { Authorization: `Bearer ${z.token}` } : undefined }),
+    uhrSteuern: (code: string, aktion: "start" | "pause" | "weiter" | "stopp", minuten_pro_tag = 6) =>
+      apiFetch<KlikkUhr>(`klikk/sitzung/${encodeURIComponent(code)}/uhr`, { method: "POST", body: JSON.stringify({ aktion, minuten_pro_tag }) }),
   },
 
   // Bestenlisten der Klikk-Handyspiele (Klicker/Doppelklicker: siehe mausBestenliste)

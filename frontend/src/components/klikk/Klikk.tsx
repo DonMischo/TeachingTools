@@ -5,7 +5,9 @@
  * Der Stand liegt nur im Browser (localStorage), nichts geht an den Server.
  */
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { ergaenze, neuerStand, starte, zumSpiegel } from "@/lib/klikk/motor";
+import { ergaenze, klassenZeit, klassenZiel, neuerStand, starte, zeit, zumSpiegel } from "@/lib/klikk/motor";
+import { api, type KlikkUhr } from "@/lib/api";
+import { TAGE } from "@/lib/klikk/geschichte";
 import type { Stand } from "@/lib/klikk/typen";
 import Handy from "./Handy";
 import Tag, { Nacht } from "./Tag";
@@ -44,6 +46,32 @@ export default function Klikk({ action, zugang, verwaltung, konto }: { action?: 
   }, [stand]);
 
   const setze = useCallback((f: (s: Stand) => Stand) => setStand(s => (s ? f(s) : s)), []);
+
+  // Klassenmodus: die Uhr der Lehrkraft zieht alle gleichzeitig durch die Woche
+  const [uhr, setUhr] = useState<{ u: KlikkUhr; versatz: number } | null>(null);
+  useEffect(() => {
+    if (!code) return;
+    const laden = () => api.klikk.uhr({ code, token }).then(u => setUhr({ u, versatz: u.jetzt_ms - Date.now() })).catch(() => {});
+    laden();
+    const t = setInterval(laden, 5000);
+    return () => clearInterval(t);
+  }, [code, token]);
+  useEffect(() => {
+    if (!uhr) return;
+    const { u, versatz } = uhr;
+    if (!u.laeuft || !u.start_ms) {
+      setze(st => (st.flags.klassenuhr ? { ...st, flags: { ...st.flags, klassenuhr: false } } : st));
+      return;
+    }
+    const schritt = () => {
+      const jetzt = u.pausiert_ms ?? Date.now() + versatz;
+      const z = klassenZiel(jetzt - u.start_ms!, u.minuten_pro_tag);
+      setze(st => klassenZeit(st, z.tag, z.uhr));
+    };
+    schritt();
+    const t = setInterval(schritt, 1000);
+    return () => clearInterval(t);
+  }, [uhr, setze]);
   const neu = () => setStand(neuerStand(Math.floor(Math.random() * 1e6)));
 
   return (
@@ -53,7 +81,14 @@ export default function Klikk({ action, zugang, verwaltung, konto }: { action?: 
           <h1 className="text-2xl font-black tracking-tight">📱 Klikk</h1>
           <p className="text-muted text-sm mt-1">Eine Schulwoche mit einer Social-Media-App. Was du tust, zählt — auch das, was du nicht tust.</p>
         </div>
-        <div className="flex items-center gap-2">{action}</div>
+        <div className="flex items-center gap-2">
+          {uhr?.u.laeuft && stand?.flags.klassenuhr && (
+            <span className="rounded-full bg-accent text-accent-fg text-xs font-bold px-3 py-1">
+              🏫 Klassenzeit {uhr.u.pausiert ? "⏸" : "▶"} {TAGE[stand.tag]?.slice(0, 2)} {zeit(stand.uhr)}
+            </span>
+          )}
+          {action}
+        </div>
       </div>
 
       {verwaltung && (
@@ -89,6 +124,12 @@ export default function Klikk({ action, zugang, verwaltung, konto }: { action?: 
         </div>
       ) : stand.phase === "nacht" ? (
         <Nacht s={stand} setze={setze} />
+      ) : stand.phase === "schlaf" ? (
+        <div className="max-w-md mx-auto w-full rounded-3xl bg-neutral-950 text-neutral-100 p-8 flex flex-col gap-3 items-center text-center">
+          <div className="text-6xl">💤</div>
+          <div className="text-4xl font-thin tabular-nums">{zeit(stand.uhr)}</div>
+          <p className="text-sm text-neutral-400">Du schläfst. Für alle in der Klasse beginnt der nächste Morgen gleichzeitig.</p>
+        </div>
       ) : stand.phase === "jonas" ? (
         <JonasSicht s={stand} weiter={() => setze(zumSpiegel)} />
       ) : (

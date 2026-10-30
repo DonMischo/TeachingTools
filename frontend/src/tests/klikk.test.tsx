@@ -573,3 +573,46 @@ describe("Quiz und Teilen", () => {
     expect(s.eigenePosts[0]).toMatchObject({ art: "spiel", spiel: "sprung", punkte: 812 });
   });
 });
+
+describe("Klassenmodus mit gemeinsamer Uhr", () => {
+  it("6 echte Minuten = ein Tag von 6 bis 24 Uhr", async () => {
+    const { klassenZiel } = await import("@/lib/klikk/motor");
+    expect(klassenZiel(0, 6)).toEqual({ tag: 0, uhr: 6 * 60 });
+    expect(klassenZiel(3 * 60000, 6)).toEqual({ tag: 0, uhr: 15 * 60 });
+    expect(klassenZiel(6 * 60000 + 1, 6).tag).toBe(1);
+  });
+
+  it("Handlungen kosten keine Spielzeit; die Uhr zieht durch Morgen, Schule und Nacht", async () => {
+    const { klassenZeit, gesperrt, starteAktivitaet } = await import("@/lib/klikk/motor");
+    let s = klassenZeit(angemeldet(), 0, 15 * 60);
+    expect(s.uhr).toBe(15 * 60);
+    s = gesehen(s, naechster(s), 500, false);
+    expect(s.uhr).toBe(15 * 60);
+    // Aktivität wartet auf die Uhr
+    s = starteAktivitaet(s, "lesen", "kasse");
+    expect(weiterAktivitaet(s).aktivitaet?.schritt).toBe(0);
+    s = klassenZeit(s, 0, 15 * 60 + 7);
+    expect(weiterAktivitaet(s).aktivitaet?.schritt).toBe(1);
+    // Schlafen, dann leuchtet um 23:40 das Handy
+    s = schlafen(s);
+    expect(s.phase).toBe("schlaf");
+    s = klassenZeit(s, 0, 23 * 60 + 45);
+    expect(s.phase).toBe("nacht");
+    s = nacht(s, false);
+    expect(s.phase).toBe("schlaf");
+    // Nächster Tag: Morgen, um 7:40 automatisch zur Schule (zu spät), dann Schule mit gesperrtem Handy
+    s = klassenZeit(s, 1, 9 * 60);
+    expect(s.tag).toBe(1);
+    expect(s.phase).toBe("woche");
+    expect(s.zuSpaet).toContain(1);
+    expect(gesperrt(s)).toBe("schule");
+    s = klassenZeit(s, 1, 14 * 60 + 30);
+    expect(gesperrt(s)).toBeNull();
+  });
+
+  it("nach Freitag ist die Woche für alle vorbei", async () => {
+    const { klassenZeit } = await import("@/lib/klikk/motor");
+    const s = klassenZeit(angemeldet(), 5, 7 * 60);
+    expect(s.phase).toBe("jonas");
+  });
+});
