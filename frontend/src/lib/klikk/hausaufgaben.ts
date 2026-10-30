@@ -18,8 +18,8 @@ export interface Lesetext {
   richtig: number;
 }
 
-/** Eine Buchseite pro Schultag (Mo–Fr) */
-export const LESETEXTE: Lesetext[] = [
+/** Seiten aus dem Geschichtsbuch (eigene Sachtexte) */
+export const GESCHICHTE: Lesetext[] = [
   {
     fach: "Geschichte", seite: "S. 42–43", titel: "Der Limes – Grenze des Römischen Reiches",
     text: "Um 100 n. Chr. reichte das Römische Reich bis an den Rhein und die Donau. Dazwischen bauten die Römer eine Grenzanlage: den Limes. "
@@ -91,14 +91,87 @@ export const LESETEXTE: Lesetext[] = [
   },
 ];
 
+/** Deutsch: Goethe und Fontane (gemeinfrei) und eine eigene Kurzgeschichte */
+export const DEUTSCH: Lesetext[] = [
+  {
+    fach: "Deutsch", seite: "Lesebuch S. 64–65", titel: "Johann Wolfgang von Goethe: Der Zauberlehrling (1797, Anfang)",
+    text: "Hat der alte Hexenmeister\nSich doch einmal wegbegeben!\nUnd nun sollen seine Geister\nAuch nach meinem Willen leben.\n"
+      + "Seine Wort und Werke\nMerkt ich und den Brauch,\nUnd mit Geistesstärke\nTu ich Wunder auch.\nWalle! walle\nManche Strecke,\n"
+      + "Daß, zum Zwecke,\nWasser fließe\nUnd mit reichem, vollem Schwalle\nZu dem Bade sich ergieße.\n\n"
+      + "Und nun komm, du alter Besen!\nNimm die schlechten Lumpenhüllen;\nBist schon lange Knecht gewesen:\nNun erfülle meinen Willen!\n"
+      + "Auf zwei Beinen stehe,\nOben sei ein Kopf,\nEile nun und gehe\nMit dem Wassertopf!\n\n"
+      + "Seht, er läuft zum Ufer nieder,\nWahrlich! ist schon an dem Flusse,\nUnd mit Blitzesschnelle wieder\nIst er hier mit raschem Gusse.\n"
+      + "Schon zum zweiten Male!\nWie das Becken schwillt!\nWie sich jede Schale\nVoll mit Wasser füllt!\nStehe! stehe!\nDenn wir haben\n"
+      + "Deiner Gaben\nVollgemessen! –\nAch, ich merk es! Wehe! wehe!\nHab ich doch das Wort vergessen!\n\n"
+      + "(Im weiteren Gedicht flutet der Besen das ganze Haus. Erst der zurückgekehrte Meister kann ihn mit dem richtigen Wort stoppen.)",
+    frage: "Warum kann der Lehrling den Besen nicht mehr anhalten?",
+    antworten: [
+      "Er hat das Zauberwort vergessen.", "Der Besen ist zu schnell für ihn.", "Der Meister hat den Besen verzaubert, bevor er ging.",
+      "Der Lehrling will gar nicht, dass der Besen aufhört.", "Der Besen ist kaputtgegangen.", "Das Wasser hat den Zauberspruch weggespült.",
+    ],
+    richtig: 0,
+  },
+  {
+    fach: "Deutsch", seite: "Lesebuch S. 112–113", titel: "Die Bank an der Haltestelle (Kurzgeschichte)",
+    text: "Um 16:12 Uhr ging Mias Handy aus. Einfach so, mitten in einem Video, schwarz. Der Bus kam erst in zwanzig Minuten.\n\n"
+      + "Sie setzte sich auf die Bank an der Haltestelle und wusste nicht, wohin mit ihren Händen. Neben ihr saß ein alter Mann mit einer "
+      + "Thermoskanne, auf der ein verblasster Leuchtturm klebte. Er goss sich Tee in den Deckel und sagte: »Kaputt?«\n\n"
+      + "»Akku leer«, sagte Mia.\n\n»Dann siehst du heute mal was«, sagte er und zeigte auf die andere Straßenseite. Dort hing ein Schild über "
+      + "einem Laden, den Mia jeden Tag passierte: »Uhren & Schlüssel – seit 1962«. Sie hatte es nie bemerkt. Im Fenster saß eine graue Katze "
+      + "zwischen lauter Weckern.\n\nAls der Bus kam, stand der Mann nicht auf. »Ich warte auf meine Enkelin«, sagte er. »Die hat auch immer "
+      + "ein Handy in der Hand.« Mia lachte. Abends schrieb sie in ihr Heft: Katze, Wecker, 1962. Und dass zwanzig Minuten länger sind, als man denkt.",
+    frage: "Was sitzt im Schaufenster des Ladens gegenüber?",
+    antworten: [
+      "eine graue Katze zwischen Weckern", "ein Hund mit Leuchtturm-Halsband", "ein Mädchen mit Handy",
+      "eine Katze auf einem Stapel Schlüssel", "ein alter Mann mit Thermoskanne", "ein Papagei neben einer Standuhr",
+    ],
+    richtig: 0,
+  },
+  {
+    fach: "Deutsch", seite: "Lesebuch S. 140–141", titel: "Theodor Fontane: John Maynard (1886, gekürzt)",
+    text: "John Maynard!\n»Wer ist John Maynard?«\n»John Maynard war unser Steuermann,\naushielt er, bis er das Ufer gewann,\n"
+      + "er hat uns gerettet, er trägt die Kron',\ner starb für uns, unsre Liebe sein Lohn.\nJohn Maynard.«\n\n"
+      + "Die »Schwalbe« fliegt über den Eriesee,\nGischt schäumt um den Bug wie Flocken von Schnee;\nvon Detroit fliegt sie nach Buffalo –\n"
+      + "die Herzen aber sind frei und froh,\nund die Passagiere mit Kindern und Fraun\nim Dämmerlicht schon das Ufer schaun,\n"
+      + "und plaudernd an John Maynard heran\ntritt alles: »Wie weit noch, Steuermann?«\nDer schaut nach vorn und schaut in die Rund:\n"
+      + "»Noch dreißig Minuten ... Halbe Stund.«\n\n"
+      + "Alle Herzen sind froh, alle Herzen sind frei –\nda klingt's aus dem Schiffsraum her wie Schrei,\n»Feuer!« war es, was da klang,\n"
+      + "ein Qualm aus Kajüt und Luke drang,\nein Qualm, dann Flammen lichterloh,\nund noch zwanzig Minuten bis Buffalo.\n\n"
+      + "Und die Passagiere, buntgemengt,\nam Bugspriet stehn sie zusammengedrängt,\nam Bugspriet vorn ist noch Luft und Licht,\n"
+      + "am Steuer aber lagert sich's dicht,\nund ein Jammern wird laut: »Wo sind wir? wo?«\nUnd noch fünfzehn Minuten bis Buffalo. –\n\n"
+      + "Der Zugwind wächst, doch die Qualmwolke steht,\nder Kapitän nach dem Steuer späht,\ner sieht nicht mehr seinen Steuermann,\n"
+      + "aber durchs Sprachrohr fragt er an:\n»Noch da, John Maynard?«\n»Ja, Herr. Ich bin.«\n»Auf den Strand! In die Brandung!«\n"
+      + "»Ich halte drauf hin.«\nUnd das Schiffsvolk jubelt: »Halt aus! Hallo!«\nUnd noch zehn Minuten bis Buffalo. –\n\n"
+      + "»Noch da, John Maynard?« Und Antwort schallt's\nmit ersterbender Stimme: »Ja, Herr, ich halt's!«\nUnd in die Brandung, was Klippe, was Stein,\n"
+      + "jagt er die »Schwalbe« mitten hinein.\nSoll Rettung kommen, so kommt sie nur so.\nRettung: der Strand von Buffalo!\n\n"
+      + "Das Schiff geborsten. Das Feuer verschwelt.\nGerettet alle. Nur einer fehlt!\n\n"
+      + "(Zum Schluss trägt die ganze Stadt Buffalo John Maynard zu Grabe und setzt ihm einen Grabstein mit Dankspruch.)",
+    frage: "Wie viele Minuten sind es noch bis Buffalo, als das Feuer entdeckt wird?",
+    antworten: ["zwanzig Minuten", "dreißig Minuten", "fünfzehn Minuten", "zehn Minuten", "fünf Minuten", "eine Stunde"],
+    richtig: 0,
+  },
+];
+
+/** Wochenplan: Mo Geschichte, Di Zauberlehrling, Mi Geschichte, Do Kurzgeschichte, Fr John Maynard */
+const PLAN: [Lesetext[], number][] = [[GESCHICHTE, 0], [DEUTSCH, 0], [GESCHICHTE, 2], [DEUTSCH, 1], [DEUTSCH, 2]];
+export const ALLE_LESETEXTE = [...GESCHICHTE, ...DEUTSCH];
+
+/** Die Buchseite des Tages; welche Geschichtsseite kommt, hängt an der Person (seed) */
+export function lesetextFuer(seed: number, tag: number): Lesetext | null {
+  const p = PLAN[tag];
+  if (!p) return null;
+  const [liste, versatz] = p;
+  return liste === GESCHICHTE ? liste[(seed + versatz) % liste.length] : liste[versatz];
+}
+
 export type Aufgabe =
   | { art: "rechnen"; text: string; loesung: number }
   | { art: "lesen"; text: string; loesung: number; lesetext: Lesetext; reihenfolge: number[] };
 
 /** Die letzte Aufgabe des Tages ist die Buchseite; die Antworten stehen je Person anders gemischt */
 export function hausaufgabe(seed: number, tag: number, i: number, anzahl: number): Aufgabe {
-  if (i === anzahl - 1 && LESETEXTE[tag]) {
-    const t = LESETEXTE[tag];
+  const t = lesetextFuer(seed, tag);
+  if (i === anzahl - 1 && t) {
     const r = zufall(seed * 7 + tag);
     const reihenfolge = t.antworten.map((_, k) => k).sort(() => r() - 0.5);
     return { art: "lesen", text: `${t.fach}: ${t.seite} lesen`, loesung: t.richtig, lesetext: t, reihenfolge };

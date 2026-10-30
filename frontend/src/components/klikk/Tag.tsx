@@ -52,13 +52,19 @@ export default function Tag({ s, setze }: { s: Stand; setze: Setze }) {
         <>
       {s.tag <= 4 && (
       <div className="card p-4">
-        <h3 className="font-bold">📓 Hausaufgaben Mathe + Geschichte</h3>
-        {sperre > 0 && (
-          <div className="fixed inset-0 z-50 bg-black/70 grid place-items-center p-6" role="alertdialog" aria-label="Falsche Antwort">
-            <div className="card p-5 max-w-sm text-center flex flex-col gap-2">
-              <div className="text-4xl">📖❌</div>
-              <b>Das stand so nicht im Text.</b>
-              <p className="text-sm">Lies die Seite nochmal in Ruhe. Weiter geht es in {sperre} s.</p>
+        <h3 className="font-bold">📓 Hausaufgaben Mathe + {(l => l.art === "lesen" ? l.lesetext.fach : "Lesen")(aufgabe(s, AUFGABEN - 1))}</h3>
+        {sperre > 0 && a.art === "lesen" && (
+          // Alles gesperrt bis auf die Buchseite: die 10 Sekunden sind zum Nachlesen da
+          <div className="fixed inset-0 z-50 bg-black/70 grid place-items-center p-4" role="alertdialog" aria-label="Falsche Antwort">
+            <div className="card p-4 max-w-lg w-full max-h-[90vh] flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">📖❌</span>
+                <b className="flex-1">Das stand so nicht im Text. Lies nochmal nach.</b>
+                <span className="text-sm font-bold tabular-nums">{sperre} s</span>
+              </div>
+              <div className="text-xs font-bold">{a.lesetext.fach}, {a.lesetext.seite}: {a.lesetext.titel}</div>
+              <div className="text-sm whitespace-pre-line rounded-lg bg-surface-hover p-3 overflow-y-auto leading-relaxed">{a.lesetext.text}</div>
+              <div className="text-sm font-bold">{a.lesetext.frage}</div>
             </div>
           </div>
         )}
@@ -93,7 +99,7 @@ export default function Tag({ s, setze }: { s: Stand; setze: Setze }) {
               <button className="btn-secondary text-sm">✓</button>
             </form>
             )}
-            {a.art === "rechnen" && <p className="text-[11px] text-muted mt-1">Jede Aufgabe kostet etwa 9 Minuten. Zum Schluss kommt eine Seite im Geschichtsbuch.</p>}
+            {a.art === "rechnen" && <p className="text-[11px] text-muted mt-1">Jede Aufgabe kostet etwa 9 Minuten. Zum Schluss kommt eine Seite zum Lesen.</p>}
           </>
         )}
       </div>

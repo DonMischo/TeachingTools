@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
 import Tag from "@/components/klikk/Tag";
-import { LESETEXTE, rechenAufgabe } from "@/lib/klikk/hausaufgaben";
+import { ALLE_LESETEXTE, lesetextFuer, rechenAufgabe } from "@/lib/klikk/hausaufgaben";
 import { AUFGABEN, aufgabe, loeseAufgabe, neuerStand } from "@/lib/klikk/motor";
 import type { Stand } from "@/lib/klikk/typen";
 
@@ -10,8 +10,11 @@ const nachmittag = (tag = 0): Stand => ({ ...neuerStand(4), phase: "woche", tag,
 
 describe("Hausaufgaben", () => {
   it("jede Buchseite hat eine Frage mit mindestens sechs Antworten und genau einer richtigen", () => {
-    expect(LESETEXTE).toHaveLength(5);
-    for (const t of LESETEXTE) {
+    for (let tag = 0; tag < 5; tag++) expect(lesetextFuer(4, tag)).not.toBeNull();
+    expect(new Set([1, 2, 3].map(seed => lesetextFuer(seed, 0)!.titel)).size).toBe(3);
+    expect(lesetextFuer(4, 1)!.titel).toMatch(/Zauberlehrling/);
+    expect(lesetextFuer(4, 4)!.titel).toMatch(/John Maynard/);
+    for (const t of ALLE_LESETEXTE) {
       expect(t.antworten.length).toBeGreaterThanOrEqual(6);
       expect(new Set(t.antworten).size).toBe(t.antworten.length);
       expect(t.antworten[t.richtig]).toBeDefined();
@@ -44,10 +47,12 @@ describe("Hausaufgaben", () => {
       return <Tag s={s} setze={f => setS(f)} />;
     }
     render(<Huelle />);
-    const t = LESETEXTE[0];
+    const t = lesetextFuer(4, 0)!;
     expect(screen.getByText(t.frage)).toBeTruthy();
-    fireEvent.click(screen.getByText(t.antworten[0]));
-    expect(screen.getByRole("alertdialog")).toBeTruthy();
+    fireEvent.click(screen.getByText(t.antworten[(t.richtig + 1) % t.antworten.length]));
+    const sperre = screen.getByRole("alertdialog");
+    // Die Buchseite bleibt in der Sperre lesbar
+    expect(sperre.textContent).toContain(t.text.slice(0, 60));
     expect(screen.getByText(t.antworten[t.richtig]).closest("button")!.disabled).toBe(true);
     for (let i = 0; i < 11; i++) await act(async () => { await vi.advanceTimersByTimeAsync(1000); });
     expect(screen.queryByRole("alertdialog")).toBeNull();
