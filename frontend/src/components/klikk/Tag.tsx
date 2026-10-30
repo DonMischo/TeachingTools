@@ -1,6 +1,6 @@
 "use client";
 /** Der Nachmittag neben dem Handy: Uhr, Schule am Morgen, Hausaufgaben, Freunde, Bett. */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { TAGE } from "@/lib/klikk/geschichte";
 import { AUFGABEN, MITTERNACHT, START_UHR, aufgabe, loeseAufgabe, nacht, nachtPush, schlafen, zeit } from "@/lib/klikk/motor";
 import { AktivitaetAnsicht, FreizeitKarte } from "./Freizeit";
@@ -11,6 +11,13 @@ type Setze = (f: (s: Stand) => Stand) => void;
 
 export default function Tag({ s, setze }: { s: Stand; setze: Setze }) {
   const [eingabe, setEingabe] = useState("");
+  // Falsche Antwort auf die Lesefrage: die ganze Simulation ist 10 Sekunden gesperrt
+  const [sperre, setSperre] = useState(0);
+  useEffect(() => {
+    if (sperre <= 0) return;
+    const t = setTimeout(() => setSperre(x => x - 1), 1000);
+    return () => clearTimeout(t);
+  }, [sperre]);
   const fertig = !!s.hausaufgaben[s.tag];
   const a = aufgabe(s);
   const anteil = (s.uhr - START_UHR) / (MITTERNACHT - START_UHR);
@@ -45,13 +52,36 @@ export default function Tag({ s, setze }: { s: Stand; setze: Setze }) {
         <>
       {s.tag <= 4 && (
       <div className="card p-4">
-        <h3 className="font-bold">📓 Hausaufgaben Mathe</h3>
+        <h3 className="font-bold">📓 Hausaufgaben Mathe + Geschichte</h3>
+        {sperre > 0 && (
+          <div className="fixed inset-0 z-50 bg-black/70 grid place-items-center p-6" role="alertdialog" aria-label="Falsche Antwort">
+            <div className="card p-5 max-w-sm text-center flex flex-col gap-2">
+              <div className="text-4xl">📖❌</div>
+              <b>Das stand so nicht im Text.</b>
+              <p className="text-sm">Lies die Seite nochmal in Ruhe. Weiter geht es in {sperre} s.</p>
+            </div>
+          </div>
+        )}
         {fertig ? <p className="text-sm text-ok mt-1">✅ Erledigt.</p> : (
           <>
             <div className="flex gap-1 mt-2">
               {Array.from({ length: AUFGABEN }, (_, i) => <span key={i} className={`h-1.5 flex-1 rounded-full ${i < s.hausaufgabenStand ? "bg-ok" : "bg-surface-hover"}`} />)}
             </div>
             {s.flags.haPause && <p className="text-xs text-muted mt-2">Du warst am Handy. Wo warst du gerade …?</p>}
+            {a.art === "lesen" ? (
+              <div className="mt-2 flex flex-col gap-2">
+                <div className="text-xs font-bold">📖 {a.lesetext.fach}, {a.lesetext.seite}: {a.lesetext.titel}</div>
+                <div className="text-sm whitespace-pre-line rounded-lg bg-surface-hover p-3 max-h-64 overflow-y-auto leading-relaxed">{a.lesetext.text}</div>
+                <div className="text-sm font-bold">{a.lesetext.frage}</div>
+                <div className="flex flex-col gap-1">
+                  {a.reihenfolge.map(k => (
+                    <button key={k} className="btn-secondary text-left text-xs" disabled={sperre > 0}
+                      onClick={() => { if (k !== a.loesung) setSperre(10); setze(st => loeseAufgabe(st, k)); }}>{a.lesetext.antworten[k]}</button>
+                  ))}
+                </div>
+                <p className="text-[11px] text-muted">Lesen und Antworten dauert etwa 15 Minuten. Falsch heißt: nochmal lesen.</p>
+              </div>
+            ) : (
             <form className="flex gap-2 mt-2 items-center" onSubmit={e => {
               e.preventDefault();
               const n = Number(eingabe);
@@ -62,7 +92,8 @@ export default function Tag({ s, setze }: { s: Stand; setze: Setze }) {
               <input className="input w-20" inputMode="numeric" value={eingabe} onChange={e => setEingabe(e.target.value)} aria-label="Ergebnis" />
               <button className="btn-secondary text-sm">✓</button>
             </form>
-            <p className="text-[11px] text-muted mt-1">Jede Aufgabe kostet etwa 9 Minuten.</p>
+            )}
+            {a.art === "rechnen" && <p className="text-[11px] text-muted mt-1">Jede Aufgabe kostet etwa 9 Minuten. Zum Schluss kommt eine Seite im Geschichtsbuch.</p>}
           </>
         )}
       </div>

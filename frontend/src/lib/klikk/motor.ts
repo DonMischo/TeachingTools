@@ -12,6 +12,7 @@ import { POSTS, THEMA_NAME } from "./posts";
 import { REICHWEITE, RISIKO_NAME, TRENDS, trendNachId } from "./trends";
 import { VEREINE, schritteFuer, vereinHeute, type AktArt } from "./freizeit";
 import { npcKommentare } from "./klasse";
+import { hausaufgabe, type Aufgabe } from "./hausaufgaben";
 import { ENERGIE_MAX, energieAuffuellen, neuerElemonStand, type ElemonStand } from "./elemon/spiel";
 import type { AppId, ChatId, ElternTyp, Recht, Stand } from "./typen";
 
@@ -703,10 +704,8 @@ export function quizAntwort(alt: Stand, frage: string, antwort: string): Stand {
 
 export const AUFGABEN = 5;
 
-export function aufgabe(s: Stand, i = s.hausaufgabenStand) {
-  const r = zufall(s.seed * 97 + s.tag * 13 + i);
-  const a = 3 + Math.floor(r() * 7), b = 4 + Math.floor(r() * 6);
-  return { text: `${a} · ${b}`, loesung: a * b };
+export function aufgabe(s: Stand, i = s.hausaufgabenStand): Aufgabe {
+  return hausaufgabe(s.seed, s.tag, i, AUFGABEN);
 }
 
 export function loeseAufgabe(alt: Stand, antwort: number): Stand {
@@ -714,9 +713,11 @@ export function loeseAufgabe(alt: Stand, antwort: number): Stand {
   if (s.hausaufgaben[s.tag]) return alt;
   // Nach einer Unterbrechung dauert es, wieder reinzukommen
   if (s.flags.haPause) { s.flags.haPause = false; tick(s, 5); }
-  if (antwort !== aufgabe(s).loesung) { tick(s, 2); return s; }
+  const a = aufgabe(s);
+  // Falsch gelesen: nochmal von vorn lesen kostet Zeit
+  if (antwort !== a.loesung) { tick(s, a.art === "lesen" ? 6 : 2); return s; }
   s.hausaufgabenStand++;
-  tick(s, 9);
+  tick(s, a.art === "lesen" ? 15 : 9);
   if (s.hausaufgabenStand >= AUFGABEN) s.hausaufgaben[s.tag] = true;
   return s;
 }
