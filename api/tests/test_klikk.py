@@ -78,3 +78,64 @@ def test_falsche_sitzung_und_zu_viele_merkmale(client, teacher_token):
     assert _abgeben(client, andere, auth(teacher_token)).status_code == 400
     code = _sitzung(client, teacher_token)
     assert _abgeben(client, code, auth(teacher_token), MERKMALE * 8).status_code == 422
+
+
+def test_klassenfeed_feste_kommentare_und_nur_generierte_namen(client, teacher_token):
+    code = _sitzung(client, teacher_token)
+    lehrer = auth(teacher_token)
+    mia, ben = (_gast(client, teacher_token, code, n) for n in ("Mia", "Ben"))
+    url = f"/api/klikk/sitzung/{code}/beitraege"
+
+    # Freitext-Namen und unbekannte Inhalte gehen nicht
+    assert client.post(url, json={"name": "Mia Muster", "art": "foto", "tag": 0, "motiv": "selfie"}, headers=mia).status_code == 400
+    assert client.post(url, json={"name": "blauer.otter.17", "art": "video", "tag": 0, "trend": "quatsch"}, headers=mia).status_code == 400
+    r = client.post(url, json={"name": "blauer.otter.17", "art": "video", "tag": 2, "trend": "gleis", "fake": False}, headers=mia)
+    assert r.status_code == 201, r.text
+    bid = r.json()["id"]
+
+    # Ben liked und kommentiert – nur aus der Liste
+    assert client.post(f"{url}/{bid}/reaktion", json={"name": "rote.ente.4", "kommentar": "du bist doof"}, headers=ben).status_code == 400
+    r = client.post(f"{url}/{bid}/reaktion", json={"name": "rote.ente.4", "like": True, "kommentar": "mehr"}, headers=ben).json()
+    assert r["likes"] == 1 and r["kommentare"] == [{"name": "rote.ente.4", "kommentar": "Mach's krasser!"}]
+
+    feed = client.get(url, headers=mia).json()
+    assert feed[0]["eigener"] is True and feed[0]["likes"] == 1
+    assert client.get(url, headers=ben).json()[0]["gelikt"] is True
+
+    # Nachrichten nur von der Lehrkraft, mit Freitext
+    assert client.post(url, json={"name": "x", "art": "news", "tag": 1, "schlagzeile": "Hallo"}, headers=mia).status_code == 403
+    r = client.post(url, json={"name": "", "art": "news", "tag": 1, "schlagzeile": "Schule fällt aus!", "bild": "weltall:pale-blue-dot", "fake": True}, headers=lehrer)
+    assert r.status_code == 201 and r.json()["lehrkraft"] is True
+
+    # Fremde Beiträge löschen darf nur die Lehrkraft
+    assert client.delete(f"{url}/{bid}", headers=ben).status_code == 403
+    assert client.delete(f"{url}/{bid}", headers=lehrer).status_code == 204
+
+
+def test_uebersicht_erst_ab_drei_und_nur_summen(client, teacher_token):
+    code = _sitzung(client, teacher_token)
+    gaeste = [_gast(client, teacher_token, code, n) for n in ("A", "B", "C")]
+    url = f"/api/klikk/sitzung/{code}"
+    werte = [{"mitgemacht": 2, "geholfen": True, "emma": "weiter"}, {"mitgemacht": 0, "geholfen": False, "emma": "melden"}]
+    for g, w in zip(gaeste, werte):
+        assert client.put(f"{url}/woche", json={"werte": w}, headers=g).status_code == 200
+    assert client.get(f"{url}/uebersicht", headers=auth(teacher_token)).json() == {"anzahl": 2, "werte": {}}
+    assert client.get(f"{url}/uebersicht", headers=gaeste[0]).status_code == 403
+    client.put(f"{url}/woche", json={"werte": {"mitgemacht": 1, "geholfen": True, "emma": "melden"}}, headers=gaeste[2])
+    u = client.get(f"{url}/uebersicht", headers=auth(teacher_token)).json()
+    assert u["anzahl"] == 3
+    assert u["werte"]["geholfen"] == {"art": "ja", "ja": 2, "von": 3}
+    assert u["werte"]["mitgemacht"]["schnitt"] == 1.0
+    assert u["werte"]["emma"]["zaehlung"] == {"weiter": 1, "melden": 2}
+
+
+def test_spiele_bestenliste_mehr_ist_besser(client, teacher_token):
+    code = _sitzung(client, teacher_token)
+    mia = _gast(client, teacher_token, code, "Mia")
+    url = f"/api/klikk/spiele/bloecke/{code}"
+    assert client.post(url, json={"wert": 300}, headers=mia).json()["platz"] == 1
+    client.post(url, json={"wert": 200}, headers=mia)  # schlechter: bleibt 300
+    assert client.post(url, json={"wert": 999999}, headers=mia).status_code == 400
+    assert client.post("/api/klikk/spiele/quatsch/" + code, json={"wert": 1}, headers=mia).status_code == 400
+    liste = client.get(url, headers=mia).json()
+    assert [(e["wert"], e["gast"], e["selbst"]) for e in liste] == [(300, True, True)]

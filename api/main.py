@@ -100,6 +100,7 @@ from .routers import markieren as markieren_router
 app.include_router(markieren_router.router)
 from .routers import klikk as klikk_router
 app.include_router(klikk_router.router)
+app.include_router(klikk_router.router_spiele)
 from .routers import verkehr as verkehr_router
 app.include_router(verkehr_router.router)
 from .routers import leben as leben_router

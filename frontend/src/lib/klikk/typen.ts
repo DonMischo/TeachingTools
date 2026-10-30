@@ -9,7 +9,7 @@
 export type Thema =
   | "fitness" | "beauty" | "gaming" | "tiere" | "musik" | "mode" | "essen" | "comedy" | "news" | "wissen" | "trend";
 
-export type AppId = "klikk" | "chats" | "wetter" | "candy" | "sneakr" | "quiz";
+export type AppId = "klikk" | "chats" | "wetter" | "candy" | "sneakr" | "quiz" | "spiele";
 
 export type Recht = "kontakte" | "standort" | "mikrofon" | "mitteilungen";
 
@@ -113,6 +113,8 @@ export interface Stand {
   verein: string | null;
   lesestand: Record<string, number>;
   serienstand: Record<string, number>;
+  /** Runden in »Klikk Games« */
+  spielRunden: { spiel: string; punkte: number; tag: number; uhr: number }[];
   /** eigene Challenge-Videos */
   videos: { trend: string; fake: boolean; tag: number; aufrufe: number }[];
 

@@ -9,6 +9,7 @@ Lehrkraft sieht nur Profilnummern.
 
 Der Auktionsstand liegt in ``ToolSession.settings["auktion"]``.
 """
+import re
 from typing import Literal, Union
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -19,7 +20,7 @@ from sqlalchemy.orm import Session
 from ..auth import Guest, get_player
 from ..availability import is_allowed
 from ..database import get_db
-from ..models import KlikkGebot, KlikkProfil, Student, Teacher, ToolSession
+from ..models import KlikkBeitrag, KlikkGebot, KlikkProfil, KlikkReaktion, KlikkSpielstand, KlikkWoche, Student, Teacher, ToolSession
 
 router = APIRouter(prefix="/api/klikk/sitzung", tags=["klikk"])
 
@@ -266,3 +267,302 @@ def steuern(
     _speichern(session, stand)
     db.commit()
     return auktion(code, db, spieler)
+
+
+# ───────── Geteilter Klassen-Feed ─────────
+#
+# Alle, die mit demselben Code spielen, sehen die Beiträge der anderen und
+# können liken und kommentieren — Kommentare nur aus einer festen Liste, Namen
+# nur generiert. Freitext gibt es allein für die Lehrkraft (Nachrichten).
+
+KOMMENTARE: dict[str, str] = {
+    "krass": "Krass 🔥", "lol": "😂😂", "suess": "Süß 🥹", "cool": "Cool 😎", "stark": "Stark von dir 💪",
+    "fake": "Fake 🤡", "cringe": "Cringe 😬", "mehr": "Mach's krasser!", "vorsicht": "Pass auf dich auf 🙏",
+    "loeschen": "Lösch das lieber",
+}
+MOTIVE = {"selfie", "essen", "tier", "himmel"}
+TRENDS = {"spiegel", "mehl", "eis", "zitrone", "gleis", "nosleep", "hotchip", "dach"}
+NAME = re.compile(r"^[a-zäöü]{3,12}\.[a-zäöü]{3,12}\.\d{1,2}$")
+
+
+class BeitragIn(BaseModel):
+    name: str = Field(max_length=40)
+    art: Literal["foto", "video", "news"]
+    tag: int = Field(ge=0, le=6)
+    motiv: str | None = None
+    trend: str | None = None
+    fake: bool = False
+    # nur Lehrkraft: Nachricht mit Bild aus den Galerien
+    schlagzeile: str | None = Field(default=None, max_length=120)
+    unterzeile: str | None = Field(default=None, max_length=300)
+    bild: str | None = Field(default=None, max_length=80)
+
+
+class KommentarOut(BaseModel):
+    name: str
+    kommentar: str
+
+
+class BeitragOut(BaseModel):
+    id: int
+    name: str
+    art: str
+    inhalt: dict
+    tag: int
+    likes: int
+    kommentare: list[KommentarOut]
+    eigener: bool
+    gelikt: bool
+    mein_kommentar: str | None
+    lehrkraft: bool
+
+
+class ReaktionIn(BaseModel):
+    name: str = Field(max_length=40)
+    like: bool | None = None
+    kommentar: str | None = None
+
+
+def _wer_gleich(zeile, wer: dict) -> bool:
+    return all(getattr(zeile, k) == v for k, v in wer.items())
+
+
+def _beitrag_out(b: KlikkBeitrag, reaktionen: list[KlikkReaktion], wer: dict) -> BeitragOut:
+    meine = next((r for r in reaktionen if _wer_gleich(r, wer)), None)
+    return BeitragOut(
+        id=b.id, name=b.name, art=b.art, inhalt=b.inhalt, tag=b.tag,
+        likes=sum(1 for r in reaktionen if r.like),
+        kommentare=[KommentarOut(name=r.name, kommentar=r.kommentar) for r in reaktionen if r.kommentar],
+        eigener=_wer_gleich(b, wer), gelikt=bool(meine and meine.like),
+        mein_kommentar=meine.kommentar if meine else None, lehrkraft=b.teacher_id is not None,
+    )
+
+
+@router.post("/{code}/beitraege", response_model=BeitragOut, status_code=201)
+def beitrag_posten(
+    code: str, body: BeitragIn,
+    db: Session = Depends(get_db),
+    spieler: Union[Teacher, Student, Guest] = Depends(get_player),
+):
+    session = _sitzung(code, db)
+    _darf_mitmachen(db, session, spieler)
+    if body.art == "news":
+        if not _ist_leitung(session, spieler):
+            raise HTTPException(403, "Nachrichten postet nur die Lehrkraft.")
+        if not body.schlagzeile:
+            raise HTTPException(400, "Eine Nachricht braucht eine Schlagzeile.")
+        inhalt = {"schlagzeile": body.schlagzeile, "unterzeile": body.unterzeile or "", "bild": body.bild, "fake": body.fake}
+        name = "klikk.news"
+    else:
+        if not NAME.match(body.name):
+            raise HTTPException(400, "Unbekannter Klikk-Name.")
+        if body.art == "foto" and body.motiv not in MOTIVE:
+            raise HTTPException(400, "Unbekanntes Motiv.")
+        if body.art == "video" and body.trend not in TRENDS:
+            raise HTTPException(400, "Unbekannter Trend.")
+        inhalt = {"motiv": body.motiv} if body.art == "foto" else {"trend": body.trend, "fake": body.fake}
+        name = body.name
+    b = KlikkBeitrag(session_id=session.id, name=name, art=body.art, inhalt=inhalt, tag=body.tag, **_teilnehmer(spieler))
+    db.add(b)
+    db.commit()
+    db.refresh(b)
+    return _beitrag_out(b, [], _teilnehmer(spieler))
+
+
+@router.get("/{code}/beitraege", response_model=list[BeitragOut])
+def beitraege(
+    code: str,
+    db: Session = Depends(get_db),
+    spieler: Union[Teacher, Student, Guest] = Depends(get_player),
+):
+    session = _sitzung(code, db)
+    liste = db.query(KlikkBeitrag).filter_by(session_id=session.id).order_by(KlikkBeitrag.id.desc()).limit(100).all()
+    ids = [b.id for b in liste]
+    reaktionen = db.query(KlikkReaktion).filter(KlikkReaktion.beitrag_id.in_(ids)).all() if ids else []
+    wer = _teilnehmer(spieler)
+    return [_beitrag_out(b, [r for r in reaktionen if r.beitrag_id == b.id], wer) for b in liste]
+
+
+@router.post("/{code}/beitraege/{beitrag_id}/reaktion", response_model=BeitragOut)
+def reagieren(
+    code: str, beitrag_id: int, body: ReaktionIn,
+    db: Session = Depends(get_db),
+    spieler: Union[Teacher, Student, Guest] = Depends(get_player),
+):
+    session = _sitzung(code, db)
+    _darf_mitmachen(db, session, spieler)
+    b = db.get(KlikkBeitrag, beitrag_id)
+    if not b or b.session_id != session.id:
+        raise HTTPException(404, "Beitrag nicht gefunden")
+    if body.kommentar is not None and body.kommentar not in KOMMENTARE:
+        raise HTTPException(400, "Kommentare gibt es nur aus der Liste.")
+    leitung = _ist_leitung(session, spieler)
+    if not leitung and not NAME.match(body.name):
+        raise HTTPException(400, "Unbekannter Klikk-Name.")
+    wer = _teilnehmer(spieler)
+    r = db.query(KlikkReaktion).filter_by(beitrag_id=b.id, **wer).first()
+    if r is None:
+        r = KlikkReaktion(beitrag_id=b.id, name="Lehrkraft" if leitung else body.name, **wer)
+        db.add(r)
+    if body.like is not None:
+        r.like = body.like
+    if body.kommentar is not None:
+        r.kommentar = KOMMENTARE[body.kommentar]
+    db.commit()
+    reaktionen = db.query(KlikkReaktion).filter_by(beitrag_id=b.id).all()
+    return _beitrag_out(b, reaktionen, wer)
+
+
+@router.delete("/{code}/beitraege/{beitrag_id}", status_code=204)
+def beitrag_loeschen(
+    code: str, beitrag_id: int,
+    db: Session = Depends(get_db),
+    spieler: Union[Teacher, Student, Guest] = Depends(get_player),
+):
+    """Eigene Beiträge löschen; die Lehrkraft darf alle löschen."""
+    session = _sitzung(code, db)
+    b = db.get(KlikkBeitrag, beitrag_id)
+    if not b or b.session_id != session.id:
+        raise HTTPException(404, "Beitrag nicht gefunden")
+    if not (_ist_leitung(session, spieler) or _wer_gleich(b, _teilnehmer(spieler))):
+        raise HTTPException(403, "Das ist nicht dein Beitrag.")
+    db.delete(b)
+    db.commit()
+
+
+# ───────── Klassenübersicht: anonyme Wochen-Zusammenfassungen ─────────
+
+class WocheIn(BaseModel):
+    werte: dict[str, Union[bool, int, float, str]] = Field(max_length=60)
+
+
+@router.put("/{code}/woche")
+def woche_melden(
+    code: str, body: WocheIn,
+    db: Session = Depends(get_db),
+    spieler: Union[Teacher, Student, Guest] = Depends(get_player),
+):
+    session = _sitzung(code, db)
+    _darf_mitmachen(db, session, spieler)
+    werte = {k[:40]: (v[:30] if isinstance(v, str) else v) for k, v in body.werte.items()}
+    wer = _teilnehmer(spieler)
+    zeile = db.query(KlikkWoche).filter_by(session_id=session.id, **wer).first()
+    if zeile is None:
+        zeile = KlikkWoche(session_id=session.id, **wer)
+        db.add(zeile)
+    zeile.werte = werte
+    db.commit()
+    return {"ok": True}
+
+
+@router.get("/{code}/uebersicht")
+def uebersicht(
+    code: str,
+    db: Session = Depends(get_db),
+    spieler: Union[Teacher, Student, Guest] = Depends(get_player),
+):
+    """Nur Summen und Anteile, nie einzelne Zeilen — und erst ab drei Wochen."""
+    session = _sitzung(code, db)
+    if not _ist_leitung(session, spieler):
+        raise HTTPException(403, "Die Übersicht sieht nur die Lehrkraft dieser Sitzung.")
+    zeilen = [z.werte for z in db.query(KlikkWoche).filter_by(session_id=session.id).all()]
+    n = len(zeilen)
+    if n < 3:
+        return {"anzahl": n, "werte": {}}
+    werte: dict[str, dict] = {}
+    for schluessel in sorted({k for z in zeilen for k in z}):
+        vorhanden = [z[schluessel] for z in zeilen if schluessel in z]
+        if all(isinstance(v, bool) for v in vorhanden):
+            werte[schluessel] = {"art": "ja", "ja": sum(vorhanden), "von": len(vorhanden)}
+        elif all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in vorhanden):
+            werte[schluessel] = {"art": "zahl", "schnitt": round(sum(vorhanden) / len(vorhanden), 1), "min": min(vorhanden), "max": max(vorhanden)}
+        else:
+            zaehlung: dict[str, int] = {}
+            for v in vorhanden:
+                zaehlung[str(v)] = zaehlung.get(str(v), 0) + 1
+            werte[schluessel] = {"art": "wahl", "zaehlung": zaehlung}
+    return {"anzahl": n, "werte": werte}
+
+
+# ───────── Bestenlisten der Handy-Spiele ─────────
+#
+# Klicker und Doppelklicker tragen in die Bestenliste des Maus-Führerscheins
+# ein (routers/maus.py). Die drei Klikk-eigenen Spiele haben eine eigene Liste:
+# eine Zeile je Person und Spiel, mehr ist besser, Namen wie beim
+# Maus-Führerschein aus Konto bzw. Gast-Token.
+
+from .maus import _anzeigename  # noqa: E402 — gleiche Namensregeln wie dort
+
+router_spiele = APIRouter(prefix="/api/klikk/spiele", tags=["klikk"])
+
+# Spiel → höchster plausibler Wert
+SPIELE: dict[str, int] = {"bloecke": 20000, "sprung": 200000, "logik": 5000}
+
+
+class SpielIn(BaseModel):
+    wert: int = Field(ge=1)
+
+
+class SpielEintrag(BaseModel):
+    platz: int
+    name: str
+    klasse: str | None
+    gast: bool
+    wert: int
+    selbst: bool
+
+
+def _spiel_liste(db: Session, spiel: str, wer: dict, sitzung_id: int | None) -> list[SpielEintrag]:
+    if spiel not in SPIELE:
+        raise HTTPException(400, f"Unbekanntes Spiel: {spiel}")
+    q = db.query(KlikkSpielstand).filter_by(spiel=spiel)
+    if sitzung_id is not None:
+        q = q.filter_by(session_id=sitzung_id)
+    zeilen = q.order_by(KlikkSpielstand.wert.desc(), KlikkSpielstand.id.asc()).limit(50).all()
+    return [SpielEintrag(platz=i, name=z.name, klasse=z.klasse, gast=z.gast, wert=z.wert, selbst=_wer_gleich(z, wer))
+            for i, z in enumerate(zeilen, start=1)]
+
+
+def _spiel_eintragen(db: Session, spiel: str, wert: int, spieler, session_id: int | None) -> SpielEintrag:
+    if spiel not in SPIELE:
+        raise HTTPException(400, f"Unbekanntes Spiel: {spiel}")
+    if wert > SPIELE[spiel]:
+        raise HTTPException(400, "Dieser Wert ist nicht plausibel.")
+    name, klasse, gast = _anzeigename(spieler)
+    wer = _teilnehmer(spieler)
+    z = db.query(KlikkSpielstand).filter_by(spiel=spiel, **wer).first()
+    if z is None:
+        z = KlikkSpielstand(spiel=spiel, wert=wert, name=name, klasse=klasse, gast=gast, session_id=session_id, **wer)
+        db.add(z)
+    elif wert > z.wert:
+        z.wert, z.session_id, z.name, z.klasse = wert, session_id, name, klasse
+    db.commit()
+    davor = db.query(KlikkSpielstand).filter(KlikkSpielstand.spiel == spiel, KlikkSpielstand.wert > z.wert).count()
+    return SpielEintrag(platz=davor + 1, name=z.name, klasse=z.klasse, gast=z.gast, wert=z.wert, selbst=True)
+
+
+@router_spiele.get("/{spiel}", response_model=list[SpielEintrag])
+def spiel_liste(spiel: str, db: Session = Depends(get_db), spieler: Union[Teacher, Student] = Depends(get_player)):
+    return _spiel_liste(db, spiel, _teilnehmer(spieler), None)
+
+
+@router_spiele.post("/{spiel}", response_model=SpielEintrag)
+def spiel_eintragen(spiel: str, body: SpielIn, db: Session = Depends(get_db), spieler: Union[Teacher, Student, Guest] = Depends(get_player)):
+    if isinstance(spieler, Guest):
+        raise HTTPException(403, "Gäste tragen sich über den Sitzungscode ein.")
+    return _spiel_eintragen(db, spiel, body.wert, spieler, None)
+
+
+@router_spiele.get("/{spiel}/{code}", response_model=list[SpielEintrag])
+def spiel_liste_sitzung(spiel: str, code: str, nur_sitzung: bool = False, db: Session = Depends(get_db),
+                        spieler: Union[Teacher, Student, Guest] = Depends(get_player)):
+    session = _sitzung(code, db)
+    return _spiel_liste(db, spiel, _teilnehmer(spieler), session.id if nur_sitzung else None)
+
+
+@router_spiele.post("/{spiel}/{code}", response_model=SpielEintrag)
+def spiel_eintragen_sitzung(spiel: str, code: str, body: SpielIn, db: Session = Depends(get_db),
+                            spieler: Union[Teacher, Student, Guest] = Depends(get_player)):
+    session = _sitzung(code, db)
+    _darf_mitmachen(db, session, spieler)
+    return _spiel_eintragen(db, spiel, body.wert, spieler, session.id)

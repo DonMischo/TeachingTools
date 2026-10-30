@@ -8,7 +8,7 @@ export default function KlikkPage() {
   const { auth } = useAuth();
   return (
     <RequireAccount icon="📱" title="Klikk">
-      <Klikk action={<ToolSessionBar tool="klikk" title="Klikk" />} verwaltung={!!auth && auth.user_type !== "student"} />
+      <Klikk action={<ToolSessionBar tool="klikk" title="Klikk" />} verwaltung={!!auth && auth.user_type !== "student"} konto={!!auth} />
     </RequireAccount>
   );
 }

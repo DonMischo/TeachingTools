@@ -4,7 +4,7 @@
  *   Start → Anmeldung (AGB, Rechte) → fünf Nachmittage → Jonas' Handy → Datenspiegel
  * Der Stand liegt nur im Browser (localStorage), nichts geht an den Server.
  */
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { ergaenze, neuerStand, starte, zumSpiegel } from "@/lib/klikk/motor";
 import type { Stand } from "@/lib/klikk/typen";
 import Handy from "./Handy";
@@ -20,7 +20,10 @@ const SCHLUESSEL = "hp_klikk_stand";
  * `zugang`: über Code/QR beigetreten — dann gibt es im Datenspiegel die Werbeauktion.
  * `verwaltung`: Lehrkraft auf der Werkzeugseite — sie führt die Auktion.
  */
-export default function Klikk({ action, zugang, verwaltung }: { action?: ReactNode; zugang?: MausZugang; verwaltung?: boolean }) {
+export default function Klikk({ action, zugang, verwaltung, konto }: { action?: ReactNode; zugang?: MausZugang; verwaltung?: boolean; konto?: boolean }) {
+  // Die Play-Seite baut `zugang` bei jedem Rendern neu — an Code und Token festmachen, sonst lädt alles ständig neu
+  const code = zugang?.code, token = zugang?.token ?? null;
+  const online = useMemo(() => ({ zugang: code ? { code, token } : undefined, konto: !!konto }), [code, token, konto]);
   const [stand, setStand] = useState<Stand | null>(null);
   const [ansicht, setAnsicht] = useState<"spiel" | "auktion">("spiel");
 
@@ -73,10 +76,10 @@ export default function Klikk({ action, zugang, verwaltung }: { action?: ReactNo
           <button className="btn-primary self-start" onClick={() => setze(starte)}>📱 Handy einschalten</button>
         </div>
       ) : stand.phase === "onboarding" ? (
-        <Handy s={stand} setze={setze} />
+        <Handy s={stand} setze={setze} online={online} />
       ) : stand.phase === "woche" ? (
         <div className="grid gap-6 lg:grid-cols-[360px_1fr] items-start">
-          <Handy s={stand} setze={setze} />
+          <Handy s={stand} setze={setze} online={online} />
           <Tag s={stand} setze={setze} />
         </div>
       ) : stand.phase === "nacht" ? (

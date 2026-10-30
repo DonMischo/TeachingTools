@@ -28,7 +28,7 @@ export function neuerStand(seed = 1): Stand {
     verweil: {}, gelikt: {}, gesehen: [], spur: [], nachtOeffnungen: [], pushGesamt: 0, pushGeoeffnet: 0,
     appsGeoeffnet: {}, shopAngesehen: [], quiz: {}, candyRunden: 0, werbung: [],
     werbungKlicks: [], schleich: [], umfragen: {}, videos: [],
-    aktivitaet: null, freizeit: [], verein: null, lesestand: {}, serienstand: {},
+    spielRunden: [], aktivitaet: null, freizeit: [], verein: null, lesestand: {}, serienstand: {},
     erledigt: [], chats: { klasse: [], lea: [], mo: [], jonas: [], mama: [], yilmaz: [], klikkteam: [], gewinn: [], leon: [], verein: [], emma: [] },
     ungelesen: {}, gelesen: [], pushes: [], flags: {}, bemerkt: {}, morgen: [],
   };
@@ -346,6 +346,15 @@ export function shopAnsehen(alt: Stand, produkt: string): Stand {
   if (p && !s.shopAngesehen.includes(p.name)) s.shopAngesehen.push(p.name);
   if (p) spur(s, "sneakr", "AdKit", `Produkt angesehen: ${p.name} (${p.preis} €)`);
   tick(s, 2);
+  return s;
+}
+
+/** Eine Runde in »Klikk Games« — kostet Zeit, und Klikk zählt mit. */
+export function spielRunde(alt: Stand, spiel: string, punkte: number): Stand {
+  const s = kopie(alt);
+  s.spielRunden = [...(s.spielRunden ?? []), { spiel, punkte, tag: s.tag, uhr: s.uhr }];
+  spur(s, "spiele", "Klikk", `Spiel »${spiel}«: ${punkte} Punkte um ${zeit(s.uhr)}`);
+  tick(s, 6);
   return s;
 }
 

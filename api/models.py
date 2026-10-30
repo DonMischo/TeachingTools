@@ -2755,3 +2755,89 @@ class KlikkGebot(Base):
     abgegeben_am: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
+
+
+class KlikkBeitrag(Base):
+    """Ein Beitrag im geteilten Klassen-Feed von »Klikk«: Foto-Motiv,
+    Challenge-Video oder (nur Lehrkraft) eine Nachricht mit Bild.
+
+    Freitext gibt es nur für die Lehrkraft (Schlagzeile einer Nachricht);
+    Schüler·innen wählen Motive und Trends aus festen Listen, der Name ist ein
+    generierter Klikk-Name (»blauer.otter.17«).
+    """
+    __tablename__ = "klikk_beitraege"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    session_id: Mapped[int] = mapped_column(
+        ForeignKey("tool_sessions.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    student_id: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"), nullable=True)
+    teacher_id: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="CASCADE"), nullable=True)
+    guest_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    name: Mapped[str] = mapped_column(String(40), nullable=False)
+    # foto | video | news
+    art: Mapped[str] = mapped_column(String(10), nullable=False)
+    inhalt: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict, server_default="{}")
+    tag: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    erstellt_am: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class KlikkReaktion(Base):
+    """Like und/oder Kommentar (aus einer festen Liste) einer Person zu einem Beitrag."""
+    __tablename__ = "klikk_reaktionen"
+    __table_args__ = (
+        UniqueConstraint("beitrag_id", "student_id", name="uq_klikk_reaktion_student"),
+        UniqueConstraint("beitrag_id", "teacher_id", name="uq_klikk_reaktion_teacher"),
+        UniqueConstraint("beitrag_id", "guest_id", name="uq_klikk_reaktion_guest"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    beitrag_id: Mapped[int] = mapped_column(ForeignKey("klikk_beitraege.id", ondelete="CASCADE"), nullable=False, index=True)
+    student_id: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"), nullable=True)
+    teacher_id: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="CASCADE"), nullable=True)
+    guest_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    name: Mapped[str] = mapped_column(String(40), nullable=False)
+    like: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
+    kommentar: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    erstellt_am: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class KlikkWoche(Base):
+    """Anonyme Zusammenfassung einer gespielten Woche (nur Zähler und
+    Entscheidungen, keine Namen) — für die Klassenübersicht der Lehrkraft."""
+    __tablename__ = "klikk_wochen"
+    __table_args__ = (
+        UniqueConstraint("session_id", "student_id", name="uq_klikk_woche_student"),
+        UniqueConstraint("session_id", "teacher_id", name="uq_klikk_woche_teacher"),
+        UniqueConstraint("session_id", "guest_id", name="uq_klikk_woche_guest"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    session_id: Mapped[int] = mapped_column(ForeignKey("tool_sessions.id", ondelete="CASCADE"), nullable=False, index=True)
+    student_id: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"), nullable=True)
+    teacher_id: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="CASCADE"), nullable=True)
+    guest_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    werte: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict, server_default="{}")
+    aktualisiert_am: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class KlikkSpielstand(Base):
+    """Bestwert in einem Handy-Spiel von »Klikk« (Blöcke, Sprung, Logik) —
+    eine Zeile je Person und Spiel, mehr ist besser."""
+    __tablename__ = "klikk_spielstaende"
+    __table_args__ = (
+        UniqueConstraint("spiel", "student_id", name="uq_klikk_spiel_student"),
+        UniqueConstraint("spiel", "teacher_id", name="uq_klikk_spiel_teacher"),
+        UniqueConstraint("spiel", "guest_id", name="uq_klikk_spiel_guest"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    spiel: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
+    wert: Mapped[int] = mapped_column(Integer, nullable=False)
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    klasse: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    gast: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
+    student_id: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"), nullable=True)
+    teacher_id: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="CASCADE"), nullable=True)
+    guest_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    session_id: Mapped[int | None] = mapped_column(ForeignKey("tool_sessions.id", ondelete="SET NULL"), nullable=True)

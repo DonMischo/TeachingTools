@@ -6,6 +6,7 @@ import type { AppId, ChatId, Recht, Stand } from "@/lib/klikk/typen";
 import Feed from "./Feed";
 import Chats from "./Chats";
 import { Candy, Quiz, Sneakr, Wetter } from "./Apps";
+import SpieleApp, { type Online } from "./spiele/SpieleApp";
 
 type Setze = (f: (s: Stand) => Stand) => void;
 
@@ -27,9 +28,10 @@ const APPS: { id: AppId; name: string; icon: string; farbe: string }[] = [
   { id: "candy", name: "Candy Blast", icon: "🍬", farbe: "linear-gradient(135deg,#f472b6,#facc15)" },
   { id: "sneakr", name: "Sneakr", icon: "👟", farbe: "linear-gradient(135deg,#0f172a,#f97316)" },
   { id: "quiz", name: "Typ-Quiz", icon: "🔮", farbe: "linear-gradient(135deg,#f59e0b,#a855f7)" },
+  { id: "spiele", name: "Games", icon: "🎮", farbe: "linear-gradient(135deg,#7c3aed,#06b6d4)" },
 ];
 
-export default function Handy({ s, setze }: { s: Stand; setze: Setze }) {
+export default function Handy({ s, setze, online }: { s: Stand; setze: Setze; online?: Online }) {
   const [app, setApp] = useState<AppId | null>(null);
   const [chat, setChat] = useState<ChatId | undefined>();
 
@@ -93,6 +95,7 @@ export default function Handy({ s, setze }: { s: Stand; setze: Setze }) {
             {app === "candy" && <Candy setze={setze} />}
             {app === "sneakr" && <Sneakr setze={setze} />}
             {app === "quiz" && <Quiz s={s} setze={setze} />}
+            {app === "spiele" && <SpieleApp setze={setze} online={online} />}
           </div>
           <button onClick={() => setApp(null)} className="py-2 border-t border-line text-xs font-bold text-muted hover:text-fg">● Startbildschirm</button>
         </>

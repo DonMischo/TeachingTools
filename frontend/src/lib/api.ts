@@ -1289,6 +1289,23 @@ export type KlikkAuktion = {
   verkauft: { nr: number; merkmale: KlikkMerkmal[]; preis: number; firma: string | null; gebote: number; selbst_gekauft: boolean; eigenes: boolean }[];
 };
 
+export type KlikkBeitrag = {
+  id: number; name: string; art: "foto" | "video" | "news"; tag: number;
+  inhalt: { motiv?: string; trend?: string; fake?: boolean; schlagzeile?: string; unterzeile?: string; bild?: string | null };
+  likes: number; kommentare: { name: string; kommentar: string }[];
+  eigener: boolean; gelikt: boolean; mein_kommentar: string | null; lehrkraft: boolean;
+};
+export type KlikkBeitragIn = {
+  name: string; art: "foto" | "video" | "news"; tag: number; motiv?: string; trend?: string; fake?: boolean;
+  schlagzeile?: string; unterzeile?: string; bild?: string;
+};
+export type KlikkUebersicht = {
+  anzahl: number;
+  werte: Record<string, { art: "ja"; ja: number; von: number } | { art: "zahl"; schnitt: number; min: number; max: number } | { art: "wahl"; zaehlung: Record<string, number> }>;
+};
+export type KlikkSpiel = "bloecke" | "sprung" | "logik";
+export type KlikkSpielEintrag = { platz: number; name: string; klasse: string | null; gast: boolean; wert: number; selbst: boolean };
+
 // »Rock your Life« (siehe api/routers/leben.py)
 export type LebenLogZeile = { tag: number; stunde: number; datum: string; art: string; text: string; betrag?: number | null };
 export type LebenStandIn = { spiel_id: string; figur: string; zusammenfassung: Record<string, unknown>; neu: LebenLogZeile[]; neustart?: boolean };
@@ -1679,6 +1696,39 @@ export const api = {
     steuern: (code: string, aktion: "naechstes" | "zuschlag" | "zuruecksetzen") =>
       apiFetch<KlikkAuktion>(`klikk/sitzung/${encodeURIComponent(code)}/steuern`, {
         method: "POST", body: JSON.stringify({ aktion }),
+      }),
+    // Geteilter Klassen-Feed
+    beitraege: (z: MausZugang) =>
+      apiFetch<KlikkBeitrag[]>(`klikk/sitzung/${encodeURIComponent(z.code)}/beitraege`, { headers: z.token ? { Authorization: `Bearer ${z.token}` } : undefined }),
+    posten: (z: MausZugang, body: KlikkBeitragIn) =>
+      apiFetch<KlikkBeitrag>(`klikk/sitzung/${encodeURIComponent(z.code)}/beitraege`, {
+        method: "POST", body: JSON.stringify(body), headers: z.token ? { Authorization: `Bearer ${z.token}` } : undefined,
+      }),
+    reagieren: (z: MausZugang, id: number, body: { name: string; like?: boolean; kommentar?: string }) =>
+      apiFetch<KlikkBeitrag>(`klikk/sitzung/${encodeURIComponent(z.code)}/beitraege/${id}/reaktion`, {
+        method: "POST", body: JSON.stringify(body), headers: z.token ? { Authorization: `Bearer ${z.token}` } : undefined,
+      }),
+    loeschen: (z: MausZugang, id: number) =>
+      apiFetch<void>(`klikk/sitzung/${encodeURIComponent(z.code)}/beitraege/${id}`, {
+        method: "DELETE", headers: z.token ? { Authorization: `Bearer ${z.token}` } : undefined,
+      }),
+    // Anonyme Wochen-Zusammenfassung und Klassenübersicht
+    woche: (z: MausZugang, werte: Record<string, boolean | number | string>) =>
+      apiFetch<{ ok: boolean }>(`klikk/sitzung/${encodeURIComponent(z.code)}/woche`, {
+        method: "PUT", body: JSON.stringify({ werte }), headers: z.token ? { Authorization: `Bearer ${z.token}` } : undefined,
+      }),
+    uebersicht: (code: string) => apiFetch<KlikkUebersicht>(`klikk/sitzung/${encodeURIComponent(code)}/uebersicht`),
+  },
+
+  // Bestenlisten der Klikk-Handyspiele (Klicker/Doppelklicker: siehe mausBestenliste)
+  klikkSpiele: {
+    liste: (spiel: KlikkSpiel, zugang?: MausZugang, nurSitzung = false) =>
+      apiFetch<KlikkSpielEintrag[]>(`klikk/spiele/${spiel}${zugang ? `/${encodeURIComponent(zugang.code)}?nur_sitzung=${nurSitzung}` : ""}`, {
+        headers: zugang?.token ? { Authorization: `Bearer ${zugang.token}` } : undefined,
+      }),
+    eintragen: (spiel: KlikkSpiel, wert: number, zugang?: MausZugang) =>
+      apiFetch<KlikkSpielEintrag>(`klikk/spiele/${spiel}${zugang ? `/${encodeURIComponent(zugang.code)}` : ""}`, {
+        method: "POST", body: JSON.stringify({ wert }), headers: zugang?.token ? { Authorization: `Bearer ${zugang.token}` } : undefined,
       }),
   },
 

@@ -228,7 +228,7 @@ export default function SimulationJoinPage() {
         : session.tool_slug === "stromkreis"
           ? <Stromkreis code={code} />
         : session.tool_slug === "klikk"
-          ? <Klikk zugang={{ code, token: auth ? null : guest.token }} />
+          ? <Klikk zugang={{ code, token: auth ? null : guest.token }} konto={!!auth} />
         : session.tool_slug === "markieren"
           ? <Markieren rangliste={{ zugang: { code, token: auth ? null : guest.token }, klasse: auth?.student?.klasse ?? null }} />
         : session.tool_slug === "stellenwert"

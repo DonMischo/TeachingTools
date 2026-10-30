@@ -214,6 +214,7 @@ Jede Simulation trägt Fächer (auch mehrere, z. B. Geografie und Physik); die �
 - Weitere Fäden: Gewinnspiel-Abofalle, Lea und das Körperbild, Cybergrooming durch »leon.16« mit Hilfe statt Schuld
 - Freizeit neben dem Handy: fünf Kurzgeschichten zum Lesen (Krimi, Romance, Young Adult, Fantasy, Grusel), zwei Serien mit Autoplay, Familie (Abendessen, Hund, Oma, Spieleabend, Pizza backen), ein Verein mit festen Trainingszeiten und Freunde treffen — das Handy vibriert dazwischen, jeder Blick wird gezählt und manchmal bemerkt
 - Krisenfälle mit Entscheidungen und Folgen: Mitmachen beim Mobbing führt zu Gespräch, Klassenkonferenz oder Polizei (ab 14 strafmündig), ein heimliches Umkleide-Foto weiterzuleiten kostet am Freitag das Handy, eine Freundschaft geht verloren, wenn man nicht redet; der Datenspiegel zeigt je Fall den eigenen Weg, die Rechtslage und eine Hilfe-Leiter von Freund·innen bis Polizei
+- Handy-App »Klikk Games«: Klicker und Doppelklicker aus dem Maus-Führerschein (gleiche Bestenliste), Blockregen, Würfelsprung (Geometry-Dash-artig) und Lichtschalter (Logik) mit eigener Bestenliste; jede Runde kostet Spielzeit
 - Werbeauktion live: die Klasse gibt ihre Profile nach Zustimmung anonym ab und ersteigert sie als Werbefirmen (100 Taler, verdeckte Gebote); die Lehrkraft leitet am Beamer und bespricht, welche Merkmale den Preis treiben
 
 ### 🍎 Rechenregeln
