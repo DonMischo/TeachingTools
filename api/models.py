@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, date, timezone
-from sqlalchemy import Integer, String, Text, Boolean, DateTime, Date, ForeignKey, func, JSON, UniqueConstraint, Float, Index, LargeBinary
+from sqlalchemy import BigInteger, Integer, String, Text, Boolean, DateTime, Date, ForeignKey, func, JSON, UniqueConstraint, Float, Index, LargeBinary
 from sqlalchemy.sql import expression as sql_expr
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .database import Base
@@ -2843,6 +2843,23 @@ class KlikkSpielstand(Base):
     session_id: Mapped[int | None] = mapped_column(ForeignKey("tool_sessions.id", ondelete="SET NULL"), nullable=True)
 
 
+class ElemonSpieler(Base):
+    """Wer in einer Sitzung gerade Elemon offen hat (Klikk-Handy oder eigenes
+    Spiel) — so kann man jede·n gezielt herausfordern. ``zuletzt_ms`` hält die
+    Liste frisch, ``anfrage_ms`` die Wartezeit nach einer Herausforderung."""
+    __tablename__ = "elemon_spieler"
+    __table_args__ = (UniqueConstraint("session_id", "wer", name="uq_elemon_spieler"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    session_id: Mapped[int] = mapped_column(ForeignKey("tool_sessions.id", ondelete="CASCADE"), nullable=False, index=True)
+    wer: Mapped[str] = mapped_column(String(50), nullable=False)
+    name: Mapped[str] = mapped_column(String(40), nullable=False)
+    # [{art, stufe}] — nur zum Anzeigen in der Liste
+    team: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    zuletzt_ms: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
+    anfrage_ms: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
+
+
 class KlikkDuell(Base):
     """Elemon-Duell zweier Leute in einer Klikk-Sitzung.
 
@@ -2855,7 +2872,7 @@ class KlikkDuell(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     session_id: Mapped[int] = mapped_column(ForeignKey("tool_sessions.id", ondelete="CASCADE"), nullable=False, index=True)
-    # offen | laeuft | fertig
+    # offen (an alle) | angefragt (an b) | abgelehnt | laeuft | fertig
     status: Mapped[str] = mapped_column(String(10), nullable=False, default="offen")
     a_wer: Mapped[str] = mapped_column(String(50), nullable=False)
     a_name: Mapped[str] = mapped_column(String(40), nullable=False)

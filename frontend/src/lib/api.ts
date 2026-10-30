@@ -1308,11 +1308,22 @@ export type KlikkSpiel = "bloecke" | "sprung" | "logik";
 export type DuellElemon = { art: string; stufe: number; attacken: string[] };
 export type DuellZug = { art: "angriff" | "wechsel" | "aufgeben"; nr: number };
 export type KlikkDuell = {
-  id: number; status: "offen" | "laeuft" | "fertig"; seite: "a" | "b" | null;
+  id: number; status: "offen" | "angefragt" | "abgelehnt" | "laeuft" | "fertig"; seite: "a" | "b" | null;
   a_name: string; b_name: string | null; a_team: DuellElemon[]; b_team: DuellElemon[] | null;
   seed: number; zuege: [DuellZug, DuellZug][]; warte: boolean; sieger: "a" | "b" | null;
 };
-export type KlikkDuelle = { offen: { id: number; name: string; team: { art: string; stufe: number }[] }[]; meins: KlikkDuell | null };
+export type ElemonKurz = { id: number; name: string; team: { art: string; stufe: number }[] };
+export type KlikkDuelle = {
+  offen: ElemonKurz[]; meins: KlikkDuell | null;
+  /** gezielte Herausforderungen an mich */
+  an_mich: ElemonKurz[];
+  /** wer in der Sitzung gerade Elemon offen hat */
+  spieler: ElemonKurz[];
+  /** meine Spieler-ID (für den QR-Code) */
+  ich: number | null;
+  /** Sekunden bis zur nächsten Herausforderung */
+  warten: number;
+};
 export type KlikkUhr = { laeuft: boolean; pausiert: boolean; start_ms: number | null; minuten_pro_tag: number; pausiert_ms: number | null; jetzt_ms: number };
 export type KlikkSpielEintrag = { platz: number; name: string; klasse: string | null; gast: boolean; wert: number; selbst: boolean };
 
@@ -1736,9 +1747,19 @@ export const api = {
     // Elemon-Duelle
     duelle: (z: MausZugang) =>
       apiFetch<KlikkDuelle>(`klikk/sitzung/${encodeURIComponent(z.code)}/duelle`, { headers: z.token ? { Authorization: `Bearer ${z.token}` } : undefined }),
-    duellAnbieten: (z: MausZugang, name: string, team: DuellElemon[]) =>
+    /** ziel: Spieler-ID (aus der Liste oder dem QR-Code); ohne = offene Herausforderung an alle */
+    duellAnbieten: (z: MausZugang, name: string, team: DuellElemon[], ziel?: number) =>
       apiFetch<KlikkDuell>(`klikk/sitzung/${encodeURIComponent(z.code)}/duelle`, {
-        method: "POST", body: JSON.stringify({ name, team }), headers: z.token ? { Authorization: `Bearer ${z.token}` } : undefined,
+        method: "POST", body: JSON.stringify({ name, team, ziel: ziel ?? null }), headers: z.token ? { Authorization: `Bearer ${z.token}` } : undefined,
+      }),
+    duellAblehnen: (z: MausZugang, id: number) =>
+      apiFetch<KlikkDuell>(`klikk/sitzung/${encodeURIComponent(z.code)}/duelle/${id}/ablehnen`, {
+        method: "POST", headers: z.token ? { Authorization: `Bearer ${z.token}` } : undefined,
+      }),
+    /** Ich habe Elemon offen: in die Liste der Herausforderbaren */
+    elemonMelden: (z: MausZugang, name: string, team: DuellElemon[]) =>
+      apiFetch<ElemonKurz>(`klikk/sitzung/${encodeURIComponent(z.code)}/elemon/ich`, {
+        method: "PUT", body: JSON.stringify({ name, team }), headers: z.token ? { Authorization: `Bearer ${z.token}` } : undefined,
       }),
     duellAnnehmen: (z: MausZugang, id: number, name: string, team: DuellElemon[]) =>
       apiFetch<KlikkDuell>(`klikk/sitzung/${encodeURIComponent(z.code)}/duelle/${id}/annehmen`, {

@@ -196,3 +196,24 @@ export function tauschen(alt: ElemonStand, teamNr: number | null, lagerNr: numbe
 }
 
 export const ALLE_ARTEN = ARTEN.map(a => a.id);
+
+/** »Gebiet« für Elemon von gedruckten QR-Karten */
+export const QR_GEBIET: Gebiet = {
+  id: "qr", name: "QR-Fund", emoji: "📷", farbe: "#334155", stufen: [1, 50], braucht: 0, wild: [], trainer: [],
+  arena: { name: "", emoji: "", team: [], spruch: "", lohn: 0, orden: "" },
+};
+
+export type QrInhalt = { art: "wild"; elemon: string; stufe: number } | { art: "spieler"; code: string; id: number };
+
+/** QR-Inhalte: »ELEMON:W:<art>:<stufe>« (Karte) und »ELEMON:S:<Code>:<Spieler-ID>« (Mitspieler·in) */
+export const qrWild = (art: string, stufe: number) => `ELEMON:W:${art}:${stufe}`;
+export const qrSpieler = (code: string, id: number) => `ELEMON:S:${code}:${id}`;
+
+export function qrLesen(text: string): QrInhalt | null {
+  const t = text.trim();
+  const w = /^ELEMON:W:([a-z_]+):(\d{1,2})$/.exec(t);
+  if (w && ART[w[1]]) return { art: "wild", elemon: w[1], stufe: Math.max(1, Math.min(50, Number(w[2]))) };
+  const s = /^ELEMON:S:([A-Z0-9]{3,12}):(\d{1,9})$/i.exec(t);
+  if (s) return { art: "spieler", code: s[1].toUpperCase(), id: Number(s[2]) };
+  return null;
+}

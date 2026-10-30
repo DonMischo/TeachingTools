@@ -29,6 +29,7 @@ import Stellenwert from "@/components/stellenwert/Stellenwert";
 import Markieren from "@/components/markieren/Markieren";
 import PcWerkstatt from "@/components/pcbau/PcWerkstatt";
 import Klikk from "@/components/klikk/Klikk";
+import ElemonSpiel from "@/components/klikk/elemon/ElemonSpiel";
 import Uebung from "@/components/simulationen/Uebung";
 import KiWerkstatt from "@/components/ki/KiWerkstatt";
 import Sonnensystem from "@/components/sonnensystem/Sonnensystem";
@@ -75,6 +76,8 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   markieren: { title: "Markieren & Bearbeiten", icon: "🖍️", node: null },
   pcbau: { title: "PC-Werkstatt", icon: "🪛", node: <PcWerkstatt /> },
   klikk: { title: "Klikk", icon: "📱", node: null },
+  // Duelle brauchen Code und Gast-Token
+  elemon: { title: "Elemon", icon: "🐾", node: null },
   kueste: { title: "Küstendynamik", icon: "🌊", node: <Kueste /> },
   erdaufbau: { title: "Aufbau der Erde", icon: "🌍", node: <ErdAufbau /> },
   wilson: { title: "Wilson-Zyklus", icon: "🌋", node: <WilsonZyklus /> },
@@ -229,6 +232,11 @@ export default function SimulationJoinPage() {
           ? <Stromkreis code={code} />
         : session.tool_slug === "klikk"
           ? <Klikk zugang={{ code, token: auth ? null : guest.token }} konto={!!auth} />
+        : session.tool_slug === "elemon"
+          ? <ElemonSpiel zugang={{ code, token: auth ? null : guest.token }}
+              speicherSchluessel={auth
+                ? `konto-${auth.user_type}-${auth.student?.id ?? auth.teacher?.id ?? 0}`
+                : guest.token ? schluesselFuerGast(code, guest.token) : `gast-${code}`} />
         : session.tool_slug === "markieren"
           ? <Markieren rangliste={{ zugang: { code, token: auth ? null : guest.token }, klasse: auth?.student?.klasse ?? null }} />
         : session.tool_slug === "stellenwert"

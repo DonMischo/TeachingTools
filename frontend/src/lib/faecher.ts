@@ -61,6 +61,7 @@ export const STANDARD_FAECHER: Record<string, string[]> = {
   markieren: ["Informatik"],
   pcbau: ["Informatik"],
   klikk: ["Informatik", "Sozialkunde"],
+  elemon: ["Informatik", "Sozialkunde"],
 };
 
 /** Die gültigen Fächer eines Werkzeugs: von Hand gesetzt, sonst Voreinstellung. */

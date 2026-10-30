@@ -290,6 +290,19 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
     ],
   },
+  elemon: {
+    title: "Elemon",
+    intro: "Das Monster-Sammelspiel aus dem Klikk-Handy als eigenes Spiel. Es macht Spaß – und zeigt nebenbei, mit welchen Tricks solche Spiele zurückholen.",
+    sections: [
+      { label: "🐾 Spielen", text: "Trainer-Namen wählen (nur Vorschläge, kein Freitext), Starter nehmen, in vier Gebieten wilde Elemon suchen und mit dem Käfig fangen, Trainer und Arenen besiegen, Orden sammeln. 51 Arten aus den Tier-Avataren und Monstern der Plattform, 18 Elemente mit Typentabelle, Kampf in 3D mit den Elementar-Angriffen. Kartei, Team und Lager, Laden mit Münzen. Die App merkt sich, wo man aufgehört hat." },
+      { label: "⚡ Energie", text: "Kämpfe kosten Energie. Sie füllt sich mit der echten Zeit (etwa eine alle 11 Minuten), per Werbevideo oder als »Extra-Nutzung« für 0,99 € bis 19,99 € mit Countdown-Angeboten – Käufe sind gesperrt, der Versuch wird trotzdem vermerkt." },
+      { label: "⚔️ Duelle", text: "Mit Code sieht jede·r, wer gerade Elemon spielt, und kann gezielt herausfordern; die andere Seite muss annehmen oder lehnt ab. Wer will, fordert auch die ganze Klasse offen heraus. Nach jeder Herausforderung sind drei Minuten Pause. Gekämpft wird mit den ersten drei Elemon, voll geheilt; die Züge bleiben verdeckt, bis beide gezogen haben." },
+      { label: "📷 QR-Codes", text: "Jede·r hat im Duell-Reiter einen eigenen QR-Code (und eine Nummer zum Abtippen). Wer ihn mit 📷 scannt, fordert diese Person heraus. Die Kamera braucht https oder localhost; sonst den Code abtippen." },
+      { label: "🖨️ QR-Karten", text: "Unter dem Spiel (nur Lehrkräfte): Elemon und Stufe auswählen und Karten drucken. Wer eine Karte scannt, trifft auf dieses wilde Elemon und kann es fangen – gut für eine Suche im Raum oder Schulhaus. Geht auch ohne Sitzung." },
+      { label: "🔒 Daten", text: "Der Spielstand bleibt im Browser. Mit Code gehen nur der gewählte Trainer-Name, das Duell-Team (Arten und Stufen) und die Duell-Züge an den Server." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
+    ],
+  },
   stellenwert: {
     title: "Stellenwerttafeln",
     intro: "Zehner-, Zweier- und Sechzehnersystem in der Stellenwerttafel — vier Blätter zum Legen, Verstehen, Üben und Spielen.",

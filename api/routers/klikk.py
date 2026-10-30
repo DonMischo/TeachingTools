@@ -98,11 +98,11 @@ def _teilnehmer(spieler: Union[Teacher, Student, Guest]) -> dict:
     return {"guest_id": spieler.id}
 
 
-def _sitzung(code: str, db: Session) -> ToolSession:
+def _sitzung(code: str, db: Session, tools: tuple[str, ...] = ("klikk",)) -> ToolSession:
     session = db.query(ToolSession).filter_by(code=code.upper()).first()
     if not session:
         raise HTTPException(404, "Sitzung nicht gefunden")
-    if session.tool_slug != "klikk":
+    if session.tool_slug not in tools:
         raise HTTPException(400, "Diese Sitzung gehört nicht zu »Klikk«.")
     return session
 
@@ -112,8 +112,8 @@ def _darf_mitmachen(db: Session, session: ToolSession, spieler) -> None:
         raise HTTPException(403, "Diese Sitzung ist geschlossen")
     if not isinstance(spieler, Guest):
         admin = isinstance(spieler, Teacher) and spieler.role == "admin"
-        if not admin and not is_allowed(db, spieler, "klikk", "use"):
-            raise HTTPException(403, "Dieses Werkzeug ist für dich nicht freigeschaltet (klikk/use).")
+        if not admin and not is_allowed(db, spieler, session.tool_slug, "use"):
+            raise HTTPException(403, f"Dieses Werkzeug ist für dich nicht freigeschaltet ({session.tool_slug}/use).")
 
 
 def _ist_leitung(session: ToolSession, spieler) -> bool:
@@ -673,8 +673,14 @@ def spiel_eintragen_sitzung(spiel: str, code: str, body: SpielIn, db: Session = 
 
 import random  # noqa: E402
 
-from ..models import KlikkDuell  # noqa: E402
+from ..models import ElemonSpieler, KlikkDuell  # noqa: E402
 
+# Elemon gibt es im Klikk-Handy und als eigenes Spiel
+DUELL_TOOLS = ("klikk", "elemon")
+# Nach einer Herausforderung so lange warten (Sekunden)
+WARTEZEIT = 180
+# So lange gilt jemand als »da«, ohne sich zu melden
+DA_MS = 10 * 60 * 1000
 ATTACKE_ID = re.compile(r"^[a-z]{3,10}\d?$")
 ZUG_ARTEN = {"angriff", "wechsel", "aufgeben"}
 
@@ -688,6 +694,19 @@ class DuellElemon(BaseModel):
 class DuellIn(BaseModel):
     name: str = Field(max_length=40)
     team: list[DuellElemon] = Field(min_length=1, max_length=3)
+    # gezielt: ElemonSpieler-ID der Person (aus der Liste oder ihrem QR-Code)
+    ziel: int | None = None
+
+
+class IchIn(BaseModel):
+    name: str = Field(max_length=40)
+    team: list[DuellElemon] = Field(default_factory=list, max_length=6)
+
+
+class SpielerOut(BaseModel):
+    id: int
+    name: str
+    team: list
 
 
 class ZugIn(BaseModel):
@@ -721,6 +740,12 @@ class OffenOut(BaseModel):
 class DuelleOut(BaseModel):
     offen: list[OffenOut]
     meins: DuellOut | None
+    # gezielte Herausforderungen an mich
+    an_mich: list[OffenOut] = []
+    spieler: list[SpielerOut] = []
+    ich: int | None = None
+    # Sekunden, bis ich wieder herausfordern darf
+    warten: int = 0
 
 
 def _wer(spieler) -> str:
@@ -755,30 +780,88 @@ def _duell(db: Session, session: ToolSession, duell_id: int) -> KlikkDuell:
     return d
 
 
+def _kurz(team: list) -> list:
+    return [{"art": e["art"], "stufe": e["stufe"]} for e in team]
+
+
+def _ich(db: Session, session: ToolSession, wer: str) -> ElemonSpieler | None:
+    return db.query(ElemonSpieler).filter_by(session_id=session.id, wer=wer).first()
+
+
+def _warten(ich: ElemonSpieler | None) -> int:
+    if not ich or not ich.anfrage_ms:
+        return 0
+    return max(0, WARTEZEIT - (_jetzt_ms() - ich.anfrage_ms) // 1000)
+
+
+@router.put("/{code}/elemon/ich", response_model=SpielerOut)
+def elemon_melden(code: str, body: IchIn, db: Session = Depends(get_db), spieler: Union[Teacher, Student, Guest] = Depends(get_player)):
+    """Ich habe Elemon offen: in die Liste der Herausforderbaren (regelmäßig wiederholen)."""
+    session = _sitzung(code, db, DUELL_TOOLS)
+    _darf_mitmachen(db, session, spieler)
+    if not NAME.match(body.name):
+        raise HTTPException(400, "Unbekannter Klikk-Name.")
+    wer = _wer(spieler)
+    ich = _ich(db, session, wer)
+    if not ich:
+        ich = ElemonSpieler(session_id=session.id, wer=wer, name=body.name)
+        db.add(ich)
+    ich.name, ich.team, ich.zuletzt_ms = body.name, _kurz(_team(body.team)), _jetzt_ms()
+    db.commit()
+    db.refresh(ich)
+    return SpielerOut(id=ich.id, name=ich.name, team=ich.team)
+
+
 @router.get("/{code}/duelle", response_model=DuelleOut)
 def duelle(code: str, db: Session = Depends(get_db), spieler: Union[Teacher, Student, Guest] = Depends(get_player)):
-    session = _sitzung(code, db)
+    session = _sitzung(code, db, DUELL_TOOLS)
     wer = _wer(spieler)
     offen = (db.query(KlikkDuell).filter_by(session_id=session.id, status="offen")
              .filter(KlikkDuell.a_wer != wer).order_by(KlikkDuell.id.desc()).limit(30).all())
+    an_mich = (db.query(KlikkDuell).filter_by(session_id=session.id, status="angefragt", b_wer=wer)
+               .order_by(KlikkDuell.id.desc()).limit(10).all())
     meins = (db.query(KlikkDuell).filter_by(session_id=session.id)
-             .filter((KlikkDuell.a_wer == wer) | (KlikkDuell.b_wer == wer)).order_by(KlikkDuell.id.desc()).first())
+             .filter((KlikkDuell.a_wer == wer) | ((KlikkDuell.b_wer == wer) & (KlikkDuell.status != "angefragt")))
+             .order_by(KlikkDuell.id.desc()).first())
+    ich = _ich(db, session, wer)
+    da = (db.query(ElemonSpieler).filter_by(session_id=session.id).filter(ElemonSpieler.wer != wer)
+          .filter(ElemonSpieler.zuletzt_ms >= _jetzt_ms() - DA_MS).order_by(ElemonSpieler.name).limit(60).all())
     return DuelleOut(
-        offen=[OffenOut(id=d.id, name=d.a_name, team=[{"art": e["art"], "stufe": e["stufe"]} for e in d.a_team]) for d in offen],
+        offen=[OffenOut(id=d.id, name=d.a_name, team=_kurz(d.a_team)) for d in offen],
+        an_mich=[OffenOut(id=d.id, name=d.a_name, team=_kurz(d.a_team)) for d in an_mich],
         meins=_duell_out(meins, wer) if meins else None,
+        spieler=[SpielerOut(id=s.id, name=s.name, team=s.team) for s in da],
+        ich=ich.id if ich else None,
+        warten=_warten(ich),
     )
 
 
 @router.post("/{code}/duelle", response_model=DuellOut, status_code=201)
 def duell_anbieten(code: str, body: DuellIn, db: Session = Depends(get_db), spieler: Union[Teacher, Student, Guest] = Depends(get_player)):
-    session = _sitzung(code, db)
+    session = _sitzung(code, db, DUELL_TOOLS)
     _darf_mitmachen(db, session, spieler)
     if not NAME.match(body.name):
         raise HTTPException(400, "Unbekannter Klikk-Name.")
     wer = _wer(spieler)
-    # Eine offene Herausforderung pro Person: die alte verfällt
-    db.query(KlikkDuell).filter_by(session_id=session.id, status="offen", a_wer=wer).delete()
-    d = KlikkDuell(session_id=session.id, a_wer=wer, a_name=body.name, a_team=_team(body.team), zuege=[])
+    ich = _ich(db, session, wer)
+    if not ich:
+        ich = ElemonSpieler(session_id=session.id, wer=wer, name=body.name, team=[], zuletzt_ms=_jetzt_ms())
+        db.add(ich)
+    # Nach jeder Herausforderung drei Minuten Pause
+    if _warten(ich):
+        raise HTTPException(429, f"Noch {_warten(ich)} Sekunden bis zur nächsten Herausforderung.")
+    ziel = None
+    if body.ziel is not None:
+        ziel = db.query(ElemonSpieler).filter_by(id=body.ziel, session_id=session.id).first()
+        if not ziel:
+            raise HTTPException(404, "Diese Person ist nicht in der Sitzung.")
+        if ziel.wer == wer:
+            raise HTTPException(400, "Gegen dich selbst geht nicht.")
+    # Eine offene/angefragte Herausforderung pro Person: die alte verfällt
+    db.query(KlikkDuell).filter_by(session_id=session.id, a_wer=wer).filter(KlikkDuell.status.in_(("offen", "angefragt"))).delete()
+    d = KlikkDuell(session_id=session.id, a_wer=wer, a_name=body.name, a_team=_team(body.team), zuege=[],
+                   status="angefragt" if ziel else "offen", b_wer=ziel.wer if ziel else None, b_name=ziel.name if ziel else None)
+    ich.anfrage_ms = _jetzt_ms()
     db.add(d)
     db.commit()
     db.refresh(d)
@@ -788,7 +871,7 @@ def duell_anbieten(code: str, body: DuellIn, db: Session = Depends(get_db), spie
 @router.post("/{code}/duelle/{duell_id}/annehmen", response_model=DuellOut)
 def duell_annehmen(code: str, duell_id: int, body: DuellIn, db: Session = Depends(get_db),
                    spieler: Union[Teacher, Student, Guest] = Depends(get_player)):
-    session = _sitzung(code, db)
+    session = _sitzung(code, db, DUELL_TOOLS)
     _darf_mitmachen(db, session, spieler)
     if not NAME.match(body.name):
         raise HTTPException(400, "Unbekannter Klikk-Name.")
@@ -796,7 +879,9 @@ def duell_annehmen(code: str, duell_id: int, body: DuellIn, db: Session = Depend
     wer = _wer(spieler)
     if d.a_wer == wer:
         raise HTTPException(400, "Gegen dich selbst geht nicht.")
-    if d.status != "offen":
+    if d.status == "angefragt" and d.b_wer != wer:
+        raise HTTPException(403, "Diese Herausforderung gilt jemand anderem.")
+    if d.status not in ("offen", "angefragt"):
         raise HTTPException(409, "Jemand anderes war schneller.")
     db.query(KlikkDuell).filter_by(session_id=session.id, status="offen", a_wer=wer).delete()
     d.b_wer, d.b_name, d.b_team = wer, body.name, _team(body.team)
@@ -806,10 +891,24 @@ def duell_annehmen(code: str, duell_id: int, body: DuellIn, db: Session = Depend
     return _duell_out(d, wer)
 
 
+@router.post("/{code}/duelle/{duell_id}/ablehnen", response_model=DuellOut)
+def duell_ablehnen(code: str, duell_id: int, db: Session = Depends(get_db),
+                   spieler: Union[Teacher, Student, Guest] = Depends(get_player)):
+    session = _sitzung(code, db, DUELL_TOOLS)
+    d = _duell(db, session, duell_id)
+    wer = _wer(spieler)
+    if d.status != "angefragt" or d.b_wer != wer:
+        raise HTTPException(409, "Keine offene Herausforderung an dich.")
+    d.status = "abgelehnt"
+    db.commit()
+    db.refresh(d)
+    return _duell_out(d, wer)
+
+
 @router.post("/{code}/duelle/{duell_id}/zug", response_model=DuellOut)
 def duell_zug(code: str, duell_id: int, body: ZugIn, db: Session = Depends(get_db),
               spieler: Union[Teacher, Student, Guest] = Depends(get_player)):
-    session = _sitzung(code, db)
+    session = _sitzung(code, db, DUELL_TOOLS)
     d = _duell(db, session, duell_id)
     wer = _wer(spieler)
     if wer not in (d.a_wer, d.b_wer):
@@ -844,7 +943,7 @@ class EndeIn(BaseModel):
 @router.post("/{code}/duelle/{duell_id}/ende", response_model=DuellOut)
 def duell_ende(code: str, duell_id: int, body: EndeIn, db: Session = Depends(get_db),
                spieler: Union[Teacher, Student, Guest] = Depends(get_player)):
-    session = _sitzung(code, db)
+    session = _sitzung(code, db, DUELL_TOOLS)
     d = _duell(db, session, duell_id)
     wer = _wer(spieler)
     if wer not in (d.a_wer, d.b_wer):
@@ -859,9 +958,9 @@ def duell_ende(code: str, duell_id: int, body: EndeIn, db: Session = Depends(get
 @router.delete("/{code}/duelle/{duell_id}", status_code=204)
 def duell_zurueckziehen(code: str, duell_id: int, db: Session = Depends(get_db),
                         spieler: Union[Teacher, Student, Guest] = Depends(get_player)):
-    session = _sitzung(code, db)
+    session = _sitzung(code, db, DUELL_TOOLS)
     d = _duell(db, session, duell_id)
-    if d.a_wer != _wer(spieler) or d.status != "offen":
+    if d.a_wer != _wer(spieler) or d.status not in ("offen", "angefragt"):
         raise HTTPException(403, "Nur eigene offene Herausforderungen.")
     db.delete(d)
     db.commit()

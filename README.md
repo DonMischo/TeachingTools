@@ -201,6 +201,16 @@ Jede Simulation trägt Fächer (auch mehrere, z. B. Geografie und Physik); die �
 - Erkennen mit Infokarten und Quiz für alle Geräte inklusive Smartphone; »Damals & heute« vergleicht Takt, Kerne, Speicher und Netzteil logarithmisch
 - Tipp-Knopf, Fehlerzähler, Bestzeit im Browser
 
+### 🐾 Elemon
+
+Das Monster-Sammelspiel aus Klikk als eigenes Spiel (gleiche Regeln und 3D-Kämpfe, Spielzeit nach der echten Uhr).
+
+- Trainer-Name aus Vorschlägen, Elemon im Käfig fangen, Trainer, Arenen und Orden in vier Gebieten
+- Energie, Werbevideos und gesperrte »Extra-Nutzung« wie im Klikk-Handy
+- Duelle mit Code: Liste aller, die gerade spielen, gezielt herausfordern (muss angenommen werden) oder die ganze Klasse offen; nach jeder Herausforderung drei Minuten Pause
+- Eigener QR-Code je Spieler·in: scannen fordert heraus (Kamera mit jsQR, sonst Nummer abtippen)
+- Lehrkräfte drucken QR-Karten mit wilden Elemon; wer eine scannt, kann es fangen
+
 ### 📱 Klikk
 - Eine Schulwoche (Mo–Fr ab 14 Uhr) mit einer erfundenen Social-Media-App, daneben Hausaufgaben, Freunde und Schlaf — Zeit vergeht nur durch Handlungen
 - Anmeldung mit gemessener AGB-Lesezeit, Altersangabe und Rechte-Abfragen (Kontakte, Mitteilungen, Standort, Mikrofon)

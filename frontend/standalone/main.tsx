@@ -24,6 +24,7 @@ import Stellenwert from "@/components/stellenwert/Stellenwert";
 import Markieren from "@/components/markieren/Markieren";
 import PcWerkstatt from "@/components/pcbau/PcWerkstatt";
 import Klikk from "@/components/klikk/Klikk";
+import ElemonSpiel from "@/components/klikk/elemon/ElemonSpiel";
 import KiWerkstatt from "@/components/ki/KiWerkstatt";
 import RockYourLife from "@/components/leben/RockYourLife";
 import Leviathan from "@/components/leviathan/Leviathan";
@@ -58,6 +59,8 @@ const TOOLS: { id: string; icon: string; label: string; node: ReactNode }[] = [
   { id: "markieren", icon: "🖍️", label: "Markieren & Bearbeiten", node: <Markieren /> },
   { id: "pcbau", icon: "🪛", label: "PC-Werkstatt", node: <PcWerkstatt /> },
   { id: "klikk", icon: "📱", label: "Klikk", node: <Klikk /> },
+  // Ohne Sitzung keine Duelle; QR-Karten scannen geht trotzdem.
+  { id: "elemon", icon: "🐾", label: "Elemon", node: <ElemonSpiel /> },
   // Ohne Sitzung: der Vergleich mit der Klasse bleibt aus, alles andere rechnet im Browser.
   { id: "ki", icon: "🤖", label: "KI-Werkstatt", node: <KiWerkstatt /> },
   // Ohne Sitzung keine Lehrer-Übersicht; Spielstand im Browser bzw. als JSON-Datei.

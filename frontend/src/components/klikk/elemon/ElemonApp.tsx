@@ -7,10 +7,10 @@
  */
 import { useEffect, useState } from "react";
 import { ART, ARTEN, ATTACKEN, ELEMENTE, STARTER, TYPEN_SCHWACH, TYPEN_STARK, elementInfo, type ElementId } from "@/lib/klikk/elemon/daten";
-import { aktivVon, heile, kiZug, lebt, maxKp, neuerKampf, runde, xpBis, type Elemon, type Kampf, type Zug } from "@/lib/klikk/elemon/kampf";
+import { aktivVon, heile, kiZug, lebt, maxKp, neuesElemon, neuerKampf, runde, xpBis, type Elemon, type Kampf, type Zug } from "@/lib/klikk/elemon/kampf";
 import {
-  ENERGIE_MAX, GEBIETE, PREISE, darfIns, kampfEnde, kaufen, naechsteEnergie, neuerElemonStand, sehen, starten,
-  tauschen, trainerTeam, wildesElemon, type Ausgang, type ElemonOrt, type ElemonStand, type Gebiet,
+  ENERGIE_MAX, GEBIETE, PREISE, QR_GEBIET, darfIns, kampfEnde, kaufen, naechsteEnergie, neuerElemonStand, sehen, starten,
+  tauschen, trainerTeam, wildesElemon, type Ausgang, type ElemonOrt, type ElemonStand, type Gebiet, type QrInhalt,
 } from "@/lib/klikk/elemon/spiel";
 import type { Aufstieg } from "@/lib/klikk/elemon/kampf";
 import { elemonAktion, elternUmZeit, merkeOrt } from "@/lib/klikk/motor";
@@ -20,7 +20,8 @@ const EXTRA: [string, string][] = [["+3 ⚡", "0,99 €"], ["+15 ⚡ · Beliebt!
 import type { Stand } from "@/lib/klikk/typen";
 import type { Online } from "../spiele/SpieleApp";
 import KampfAnsicht from "./KampfAnsicht";
-import Duell from "./Duell";
+import Duell, { duellTeam, laufendesDuell, useDuelle } from "./Duell";
+import Scanner from "./Scanner";
 
 type Setze = (f: (s: Stand) => Stand) => void;
 type Reiter = ElemonOrt["reiter"];
@@ -41,7 +42,8 @@ export function ElemonKarte({ e, onClick, rechts }: { e: Elemon; onClick?: () =>
   );
 }
 
-export default function ElemonApp({ s, setze, online }: { s: Stand; setze: Setze; online?: Online }) {
+/** `eigenstaendig`: das Spiel »Elemon« ohne Klikk-Woche — keine Eltern, keine Hausaufgaben */
+export default function ElemonApp({ s, setze, online, eigenstaendig }: { s: Stand; setze: Setze; online?: Online; eigenstaendig?: boolean }) {
   // Wo man die App verlassen hat, steht im Spielstand: Wiederöffnen geht genau dort weiter
   const ort: ElemonOrt = s.appOrt?.elemon ?? { reiter: "karte" };
   const setOrt = (p: Partial<ElemonOrt>) => setze(st => merkeOrt(st, "elemon", { ...(st.appOrt?.elemon ?? { reiter: "karte" }), ...p }));
@@ -53,6 +55,11 @@ export default function ElemonApp({ s, setze, online }: { s: Stand; setze: Setze
   const jetzt = s.tag * 1440 + s.uhr;
   const e: ElemonStand = s.elemon ?? neuerElemonStand();
   const aendere = (f: (e: ElemonStand) => ElemonStand, minuten = 0, spur?: string) => setze(st => elemonAktion(st, f, minuten, spur));
+  // Duelle: in der Sitzung melden und Anfragen abholen, solange Elemon offen ist
+  const lage = useDuelle(online?.zugang, s.name, duellTeam(e));
+  const [scan, setScan] = useState(false);
+  const [qrZiel, setQrZiel] = useState<number | null>(null);
+  const [qrHinweis, setQrHinweis] = useState<string | null>(null);
 
   // --- Start ---
   if (e.team.length === 0) return (
@@ -100,9 +107,24 @@ export default function ElemonApp({ s, setze, online }: { s: Stand; setze: Setze
     setOrt({ kampf: { kampf, gebiet: gebiet.id, trainer }, bericht: undefined });
   };
 
+  // QR-Code: Karte = wildes Elemon zum Fangen, Mitspieler·in = gezielte Herausforderung
+  const qrGefunden = (q: QrInhalt) => {
+    setScan(false);
+    if (q.art === "wild") {
+      if (e.energie <= 0) { setQrHinweis("Keine Energie für einen Kampf."); return; }
+      if (!e.team.some(lebt)) { setQrHinweis("Alle deine Elemon sind erschöpft. Erst zur Heilstation!"); return; }
+      kampfStarten(QR_GEBIET, [neuesElemon(q.elemon, q.stufe)]);
+      return;
+    }
+    if (!online?.zugang || q.code !== online.zugang.code.toUpperCase()) { setQrHinweis("Dieser Code gehört zu einer anderen Sitzung."); return; }
+    setQrZiel(q.id);
+    setOrt({ reiter: "duell", kampf: undefined, bericht: undefined });
+  };
+  const scanner = scan && <Scanner code={online?.zugang?.code.toUpperCase()} gefunden={qrGefunden} schliessen={() => setScan(false)} />;
+
   if (laufend) {
     const { kampf, trainer } = laufend;
-    const gebiet = GEBIETE.find(g => g.id === laufend.gebiet) ?? GEBIETE[0];
+    const gebiet = GEBIETE.find(g => g.id === laufend.gebiet) ?? (laufend.gebiet === QR_GEBIET.id ? QR_GEBIET : GEBIETE[0]);
     return (
       <KampfAnsicht start={kampf} ich="a" farbe={gebiet.farbe} wild={!trainer} gegnerName={trainer?.name ?? "Wild"}
         tasche={{ traenke: e.traenke, kaefige: e.kaefige, goldkaefige: e.goldkaefige }}
@@ -156,7 +178,15 @@ export default function ElemonApp({ s, setze, online }: { s: Stand; setze: Setze
         <span className="ml-auto" title="Energie">⚡ {e.energie}/{ENERGIE_MAX}</span>
         <span title="Münzen">🪙 {e.muenzen}</span>
         <span title="Orden">🏅 {e.orden.length}</span>
+        <button title="QR-Code scannen" aria-label="QR-Code scannen" onClick={() => { setQrHinweis(null); setScan(true); }}>📷</button>
       </div>
+      {scanner}
+      {qrHinweis && <p className="px-3 pt-2 text-xs text-bad">{qrHinweis}</p>}
+      {reiter !== "duell" && (lage.daten?.an_mich.length || laufendesDuell(lage.daten, e)) ? (
+        <button className="mx-3 mt-2 rounded-xl bg-accent text-accent-fg px-3 py-2 text-xs font-bold text-left" onClick={() => setReiter("duell")}>
+          {laufendesDuell(lage.daten, e) ? "⚔️ Dein Duell läuft – weiter" : `⚔️ ${lage.daten!.an_mich[0].name} fordert dich heraus!`}
+        </button>
+      ) : null}
       <div className="flex text-[11px] border-b border-line">
         {([["karte", "🗺️ Karte"], ["team", "🐾 Team"], ["kartei", "📖 Kartei"], ["laden", "🛒 Laden"], ["duell", "⚔️ Duell"]] as [Reiter, string][]).map(([id, t]) => (
           <button key={id} onClick={() => setReiter(id)} className={`flex-1 py-1.5 ${reiter === id ? "font-bold border-b-2 border-accent" : "text-muted"}`}>{t}</button>
@@ -171,7 +201,7 @@ export default function ElemonApp({ s, setze, online }: { s: Stand; setze: Setze
                 <b>Keine Energie mehr.</b>
                 <span>Nächste ⚡ in {naechsteEnergie(e, jetzt)} Minuten.</span>
                 <button className="btn-primary text-xs" onClick={() => setOrt({ werbung: 15 })}>📺 Werbung ansehen: +2 ⚡</button>
-                {e.elternAntwort?.tag === s.tag ? (
+                {eigenstaendig ? null : e.elternAntwort?.tag === s.tag ? (
                   <p className={`text-[11px] ${e.elternAntwort.ja ? "text-good" : "text-bad"}`}>{s.eltern === "streng" ? "Papa" : "Mama"}: »{e.elternAntwort.text}«{e.elternAntwort.plus ? ` (+${e.elternAntwort.plus} ⚡)` : ""}</p>
                 ) : (
                   <button className="btn-secondary text-xs" onClick={() => setze(elternUmZeit)}>🙋 Eltern um Extra-Zeit bitten</button>
@@ -277,7 +307,8 @@ export default function ElemonApp({ s, setze, online }: { s: Stand; setze: Setze
           </>
         )}
 
-        {reiter === "duell" && <Duell s={s} e={e} online={online} aendere={aendere} />}
+        {reiter === "duell" && <Duell name={s.name} e={e} z={online?.zugang} lage={lage} aendere={aendere}
+          qrZiel={qrZiel} qrErledigt={() => setQrZiel(null)} scannen={() => { setQrHinweis(null); setScan(true); }} />}
       </div>
     </div>
   );

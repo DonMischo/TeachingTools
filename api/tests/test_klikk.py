@@ -226,3 +226,40 @@ def test_elemon_duell_lockstep(client, teacher_token):
     r = client.post(f"{url}/{did}/zug", json={"runde": 1, "art": "aufgeben"}, headers=ben).json()
     assert len(r["zuege"]) == 2
     assert client.post(f"{url}/{did}/ende", json={"sieger": "a"}, headers=ben).json()["status"] == "fertig"
+
+
+def test_elemon_gezielt_herausfordern_mit_wartezeit(client, teacher_token):
+    code = client.post("/api/tool-sessions", json={"tool_slug": "elemon"}, headers=auth(teacher_token)).json()["code"]
+    mia, ben, ali = (_gast(client, teacher_token, code, n) for n in ("Mia", "Ben", "Ali"))
+    url = f"/api/klikk/sitzung/{code}"
+
+    # Wer Elemon offen hat, meldet sich und steht in der Liste der anderen
+    mia_id = client.put(f"{url}/elemon/ich", json={"name": "rote.katze.3", "team": TEAM}, headers=mia).json()["id"]
+    ben_id = client.put(f"{url}/elemon/ich", json={"name": "blaue.ente.7", "team": TEAM}, headers=ben).json()["id"]
+    liste = client.get(f"{url}/duelle", headers=mia).json()
+    assert liste["ich"] == mia_id and [s["name"] for s in liste["spieler"]] == ["blaue.ente.7"]
+
+    # Mia fordert Ben gezielt heraus; Ali sieht nichts davon und darf nicht annehmen
+    r = client.post(f"{url}/duelle", json={"name": "rote.katze.3", "team": TEAM, "ziel": ben_id}, headers=mia)
+    assert r.status_code == 201, r.text
+    assert r.json()["status"] == "angefragt"
+    did = r.json()["id"]
+    assert client.get(f"{url}/duelle", headers=ali).json()["offen"] == []
+    assert client.post(f"{url}/duelle/{did}/annehmen", json={"name": "gelbe.eule.1", "team": TEAM}, headers=ali).status_code == 403
+    sicht = client.get(f"{url}/duelle", headers=ben).json()
+    assert [d["name"] for d in sicht["an_mich"]] == ["rote.katze.3"]
+
+    # Drei Minuten Pause nach einer Herausforderung — auch für die offene an alle
+    assert client.get(f"{url}/duelle", headers=mia).json()["warten"] > 170
+    assert client.post(f"{url}/duelle", json={"name": "rote.katze.3", "team": TEAM}, headers=mia).status_code == 429
+
+    # Ben lehnt ab: Mia sieht es, das Duell startet nicht
+    assert client.post(f"{url}/duelle/{did}/ablehnen", headers=ben).json()["status"] == "abgelehnt"
+    assert client.get(f"{url}/duelle", headers=mia).json()["meins"]["status"] == "abgelehnt"
+    assert client.post(f"{url}/duelle/{did}/annehmen", json={"name": "blaue.ente.7", "team": TEAM}, headers=ben).status_code == 409
+
+    # Ben fordert Mia per QR (ihre Spieler-ID) heraus, Mia nimmt an
+    did = client.post(f"{url}/duelle", json={"name": "blaue.ente.7", "team": TEAM, "ziel": mia_id}, headers=ben).json()["id"]
+    r = client.post(f"{url}/duelle/{did}/annehmen", json={"name": "rote.katze.3", "team": TEAM}, headers=mia).json()
+    assert r["status"] == "laeuft" and r["seite"] == "b"
+    assert client.get(f"{url}/duelle", headers=ben).json()["meins"]["status"] == "laeuft"
