@@ -12,7 +12,7 @@ import { POSTS, THEMA_NAME } from "./posts";
 import { REICHWEITE, RISIKO_NAME, TRENDS, trendNachId } from "./trends";
 import { VEREINE, schritteFuer, vereinHeute, type AktArt } from "./freizeit";
 import { npcKommentare } from "./klasse";
-import { energieAuffuellen, neuerElemonStand, type ElemonStand } from "./elemon/spiel";
+import { ENERGIE_MAX, energieAuffuellen, neuerElemonStand, type ElemonStand } from "./elemon/spiel";
 import type { AppId, ChatId, ElternTyp, Recht, Stand } from "./typen";
 
 export const START_UHR = 14 * 60;
@@ -614,6 +614,37 @@ export function elemonAktion(alt: Stand, f: (e: ElemonStand) => ElemonStand, min
   s.elemon = energieAuffuellen(f(energieAuffuellen(s.elemon ?? { ...neuerElemonStand(), energieAb: jetzt }, jetzt)), jetzt);
   if (spurText && !s.trackingAus) spur(s, "elemon", "AdKit", spurText);
   if (minuten) handyTick(s, minuten);
+  return s;
+}
+
+/** Merken, wo man eine Spiele-App verlassen hat — kostet keine Zeit */
+export function merkeOrt<K extends keyof NonNullable<Stand["appOrt"]>>(alt: Stand, app: K, ort: NonNullable<Stand["appOrt"]>[K]): Stand {
+  return { ...alt, appOrt: { ...alt.appOrt, [app]: ort } };
+}
+
+/**
+ * Eltern um Extra-Zeit für Elemon bitten (einmal am Tag). Ob es klappt, hängt
+ * am echten Leben im Spiel: Hausaufgaben, zugesagte und abgelehnte
+ * Familienbitten, Handyzeit heute — und daran, wie die Eltern ticken.
+ */
+export function elternUmZeit(alt: Stand): Stand {
+  const s = kopie(alt);
+  const e = s.elemon;
+  if (!e || e.elternAntwort?.tag === s.tag) return alt;
+  const wer = s.eltern === "streng" ? "Papa" : "Mama";
+  const hausaufgaben = s.hausaufgabenStand >= AUFGABEN;
+  const minuten = s.handyMinuten[s.tag] ?? 0;
+  const punkte = (hausaufgaben ? 2 : -1) + Math.min(2, s.famZusagen.length) - Math.min(2, s.famAbgelehnt)
+    + (minuten > 120 ? -1 : 0) + ({ streng: -1, locker: 2, besorgt: 0, arbeit: 1 } as const)[s.eltern];
+  const plus = punkte >= 3 ? 3 : punkte >= 1 ? 1 : 0;
+  const grund = !hausaufgaben ? "Erst die Hausaufgaben." : s.famAbgelehnt > s.famZusagen.length ? "Wenn ich dich um Hilfe bitte, hast du auch nie Zeit." : minuten > 120 ? "Du warst heute schon ewig am Handy." : "";
+  const text = plus >= 3 ? "Na gut – du hast heute echt was geschafft. Viel Spaß! 😊"
+    : plus === 1 ? `Eine Runde noch, dann ist Schluss. ${grund}`.trim()
+    : `Nein. ${grund || "Heute nicht."}`;
+  nachricht(s, "mama", "du", "Darf ich noch ein bisschen Elemon spielen? 🥺");
+  nachricht(s, "mama", wer, text);
+  s.elemon = { ...e, energie: Math.min(ENERGIE_MAX, e.energie + plus), elternAntwort: { tag: s.tag, ja: plus > 0, plus, text } };
+  tick(s, 2);
   return s;
 }
 

@@ -4,7 +4,7 @@
  * Wer den Zug des Gegners liefert (KI oder Mitschüler·in über den Server),
  * entscheidet `zieh` — die Ansicht spielt nur die Ereignisse der Runde ab.
  */
-import { lazy, Suspense, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { ART, ATTACKEN, elementInfo } from "@/lib/klikk/elemon/daten";
 import { aktivVon, lebt, maxKp, type Ereignis, type Kampf, type SeiteId, type Zug } from "@/lib/klikk/elemon/kampf";
 import type { BuehneSteuerung } from "./Buehne";
@@ -44,7 +44,7 @@ function anwenden(k: Kampf, e: Ereignis): Kampf {
   return n;
 }
 
-export default function KampfAnsicht({ start, ich, farbe, wild, gegnerName, tasche, zieh, fertig, warteText }: {
+export default function KampfAnsicht({ start, ich, farbe, wild, gegnerName, tasche, zieh, fertig, warteText, verbrauche, merke }: {
   start: Kampf;
   ich: SeiteId;
   farbe: string;
@@ -52,20 +52,28 @@ export default function KampfAnsicht({ start, ich, farbe, wild, gegnerName, tasc
   /** »Wildes«, »Kims« oder der Klikk-Name */
   gegnerName: string;
   tasche?: Tasche;
+  /** einen Gegenstand sofort aus der Tasche nehmen */
+  verbrauche?: (was: keyof Tasche) => void;
+  /** Kampfstand nach jeder Runde sichern (App verlassen → später weiter) */
+  merke?: (k: Kampf) => void;
   /** Text, solange auf den Zug der anderen Seite gewartet wird */
   warteText?: string;
   /** führt meinen Zug aus und liefert die Runde (lokal oder vom Server) */
   zieh: (k: Kampf, zug: Zug) => Promise<{ kampf: Kampf; ereignisse: Ereignis[] }>;
-  fertig: (k: Kampf, verbraucht: { traenke: number; kaefige: number; goldkaefige: number }) => void;
+  fertig: (k: Kampf) => void;
 }) {
   const du: SeiteId = ich, er: SeiteId = ich === "a" ? "b" : "a";
   const [k, setK] = useState(start);
   const [anzeige, setAnzeige] = useState(start);
-  const [text, setText] = useState(`${wild ? "Ein wildes" : gegnerName + " schickt"} ${ART[aktivVon(start[er]).art].name}${wild ? " taucht auf!" : " in den Ring!"}`);
+  const [text, setText] = useState(start.runde > 0
+    ? `Weiter geht's! Was soll ${ART[aktivVon(start[du]).art].name} tun?`
+    : `${wild ? "Ein wildes" : gegnerName + " schickt"} ${ART[aktivVon(start[er]).art].name}${wild ? " taucht auf!" : " in den Ring!"}`);
   const [menue, setMenue] = useState<"haupt" | "angriff" | "team" | "tasche" | "warte">("haupt");
-  const [verbraucht, setVerbraucht] = useState({ traenke: 0, kaefige: 0, goldkaefige: 0 });
-  const verbrauchtRef = useRef(verbraucht);
   const buehne = useRef<BuehneSteuerung>(null);
+  // Mitten in der letzten Runde weggegangen: das Ende ist schon gesichert, also gleich auswerten
+  const fertigRef = useRef(fertig);
+  useEffect(() => { fertigRef.current = fertig; });
+  useEffect(() => { if (start.ende) fertigRef.current(start); }, [start.ende]); // eslint-disable-line react-hooks/exhaustive-deps
   // Auf der Bühne steht »ich« immer links (a)
   const bs = (s: SeiteId): SeiteId => (s === du ? "a" : "b");
 
@@ -76,6 +84,7 @@ export default function KampfAnsicht({ start, ich, farbe, wild, gegnerName, tasc
     setText(zug.art === "aufgeben" ? "Du gibst auf …" : warteText ?? "…");
     let runde;
     try { runde = await zieh(k, zug); } catch { setText("Verbindung weg – versuch es nochmal."); setMenue("haupt"); return; }
+    merke?.(runde.kampf);
     let a = k;
     for (const e of runde.ereignisse) {
       const vorher = a;
@@ -118,18 +127,15 @@ export default function KampfAnsicht({ start, ich, farbe, wild, gegnerName, tasc
       }
     }
     setK(runde.kampf); setAnzeige(runde.kampf);
-    if (runde.kampf.ende) { await warte(0.6); fertig(runde.kampf, verbrauchtRef.current); return; }
+    if (runde.kampf.ende) { await warte(0.6); fertig(runde.kampf); return; }
     // eigenes Elemon erschöpft und kein automatischer Ersatz da? (kommt nicht vor: K.o. holt das nächste)
     setMenue("haupt");
     setText(`Was soll ${ART[aktivVon(runde.kampf[du]).art].name} tun?`);
   }
 
   const mein = aktivVon(k[du]);
-  const t = tasche ? { traenke: tasche.traenke - verbraucht.traenke, kaefige: tasche.kaefige - verbraucht.kaefige, goldkaefige: tasche.goldkaefige - verbraucht.goldkaefige } : null;
-  const nimm = (was: keyof typeof verbraucht) => {
-    verbrauchtRef.current = { ...verbrauchtRef.current, [was]: verbrauchtRef.current[was] + 1 };
-    setVerbraucht(verbrauchtRef.current);
-  };
+  const t = tasche ?? null;
+  const nimm = (was: keyof Tasche) => verbrauche?.(was);
 
   return (
     <div className="flex flex-col h-full">

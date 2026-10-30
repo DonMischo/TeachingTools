@@ -7,7 +7,12 @@ import type { Stand } from "@/lib/klikk/typen";
 
 function Huelle({ start }: { start: Stand }) {
   const [s, setS] = useState(start);
-  return <><ElemonApp s={s} setze={f => setS(f)} /><output data-testid="stand">{JSON.stringify(s.elemon ?? null)}</output></>;
+  const [offen, setOffen] = useState(true);
+  return <>
+    {offen && <ElemonApp s={s} setze={f => setS(f)} />}
+    <button onClick={() => setOffen(o => !o)}>App wechseln</button>
+    <output data-testid="stand">{JSON.stringify(s.elemon ?? null)}</output>
+  </>;
 }
 const stand = () => JSON.parse(screen.getByTestId("stand").textContent!);
 
@@ -39,5 +44,22 @@ describe("Elemon-App", () => {
     fireEvent.click(screen.getByText("⚔️ Duell"));
     expect(screen.getByText(/gemeinsam über einen Sitzungscode/)).toBeTruthy();
     vi.useRealTimers();
+  });
+
+  it("merkt sich, wo man war: Reiter und laufender Kampf bleiben beim Wiederöffnen", async () => {
+    render(<Huelle start={{ ...neuerStand(3), phase: "woche" }} />);
+    fireEvent.click(screen.getByText("Nicht erlauben"));
+    fireEvent.click(screen.getByText("Panzerkröte"));
+    fireEvent.click(screen.getByText("📖 Kartei"));
+    fireEvent.click(screen.getByText("App wechseln"));
+    fireEvent.click(screen.getByText("App wechseln"));
+    expect(screen.getByText(/Gefangen: 1 von/)).toBeTruthy();
+
+    fireEvent.click(screen.getByText("🗺️ Karte"));
+    fireEvent.click(screen.getAllByText(/Suchen/)[0]);
+    fireEvent.click(screen.getByText("App wechseln"));
+    fireEvent.click(screen.getByText("App wechseln"));
+    expect(screen.getByText("⚔️ Angriff")).toBeTruthy();
+    expect(stand().energie).toBe(4);
   });
 });

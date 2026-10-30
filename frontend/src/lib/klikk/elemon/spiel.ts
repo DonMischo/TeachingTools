@@ -4,7 +4,7 @@
  * der Spielzeit oder per Werbevideo — genau die Mechanik, die zurückholt.
  */
 import { ART, ARTEN, STARTER } from "./daten";
-import { erfahrung, heile, neuesElemon, zufall, type Aufstieg, type Elemon } from "./kampf";
+import { erfahrung, heile, neuesElemon, zufall, type Aufstieg, type Elemon, type Kampf } from "./kampf";
 
 export interface ElemonStand {
   team: Elemon[];
@@ -26,8 +26,19 @@ export interface ElemonStand {
   kaufVersuche: number;
   siege: number;
   niederlagen: number;
-  duelle: { gegner: string; sieg: boolean }[];
+  duelle: { id?: number; gegner: string; sieg: boolean }[];
+  /** Antwort der Eltern auf die Bitte um Extra-Zeit (eine Bitte pro Tag) */
+  elternAntwort?: { tag: number; ja: boolean; plus: number; text: string };
   wurf: number;
+}
+
+/** Wo man die App verlassen hat — beim Wiederöffnen geht es genau dort weiter */
+export interface ElemonOrt {
+  reiter: "karte" | "team" | "kartei" | "laden" | "duell";
+  kampf?: { kampf: Kampf; gebiet: string; trainer?: Trainer & { schluessel: string; orden?: string } };
+  bericht?: { titel: string; zeilen: string[] };
+  /** laufendes Werbevideo: Restsekunden */
+  werbung?: number;
 }
 
 export const ENERGIE_MAX = 5;

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { ARTEN, ATTACKEN, lernliste, wirkung } from "@/lib/klikk/elemon/daten";
 import { erfahrung, kiZug, maxKp, neuerKampf, neuesElemon, runde, type Kampf, type Zug } from "@/lib/klikk/elemon/kampf";
 import { ENERGIE_MAX, ENERGIE_MINUTEN, GEBIETE, energieAuffuellen, kampfEnde, neuerElemonStand, starten, wildesElemon } from "@/lib/klikk/elemon/spiel";
-import { elemonAktion, neuerStand } from "@/lib/klikk/motor";
+import { AUFGABEN, elemonAktion, elternUmZeit, neuerStand } from "@/lib/klikk/motor";
 
 const seite = (name: string, ...team: [string, number][]) => ({ name, team: team.map(([a, s]) => neuesElemon(a, s)), aktiv: 0 });
 
@@ -116,5 +116,18 @@ describe("Elemon-Spielstand", () => {
     expect(n.spur.at(-1)).toMatchObject({ app: "elemon", an: "AdKit" });
     const ohne = elemonAktion({ ...s, trackingAus: true }, e => e, 0, "x");
     expect(ohne.spur.some(x => x.app === "elemon")).toBe(false);
+  });
+
+  it("Eltern um Extra-Zeit: Hausaufgaben und Mithilfe zählen, einmal pro Tag", () => {
+    const basis = elemonAktion(neuerStand(1), e => ({ ...starten(e, "fox"), energie: 0 }));
+    const fleissig = elternUmZeit({ ...basis, eltern: "locker", hausaufgabenStand: AUFGABEN, famZusagen: ["oma"] });
+    expect(fleissig.elemon!.energie).toBe(3);
+    expect(fleissig.chats.mama.at(-1)!.text).toMatch(/geschafft/);
+    expect(elternUmZeit(fleissig)).toBe(fleissig);
+
+    const faul = elternUmZeit({ ...basis, eltern: "streng", hausaufgabenStand: 0, famAbgelehnt: 2 });
+    expect(faul.elemon!.energie).toBe(0);
+    expect(faul.elemon!.elternAntwort).toMatchObject({ ja: false });
+    expect(faul.chats.mama.at(-1)!.text).toMatch(/Hausaufgaben/);
   });
 });

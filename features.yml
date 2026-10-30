@@ -650,7 +650,9 @@ simulationen:
       - Spielergebnisse und Quiz-Typ teilen, mit festen Sprüchen; Lehrkraft-Meldungen mit eigenem Bild
       - Klassenmodus mit gemeinsamer Uhr (Lehrkraft startet, pausiert, stoppt)
       - Handy-App »Elemon« — Monster sammeln mit dem Käfig, 51 Arten aus Tier-Avataren und Monstern, 18 Elemente mit Typentabelle, Trainer, Arenen und Orden in 3D mit den Elementar-Angriffen
-      - Elemon mit Energie, Werbevideos, Countdown-Angeboten, gesperrten In-App-Käufen und Standort-Abfrage als AdKit-Spuren im Datenspiegel
+      - Elemon mit Energie, Werbevideos, Countdown-Angeboten, gestaffelter »Extra-Nutzung« (gesperrte In-App-Käufe) und Standort-Abfrage als AdKit-Spuren im Datenspiegel
+      - Eltern um Extra-Zeit bitten (einmal am Tag) — ob es klappt, hängt an Hausaufgaben, Mithilfe in der Familie, Handyzeit und Elterntyp
+      - Spiele-Apps machen beim Wiederöffnen dort weiter, wo man sie verlassen hat (auch mitten im Kampf); Mitteilungen blenden nach 2 Sekunden aus und bleiben auf dem Startbildschirm
       - Elemon-Duelle gegen Mitschüler·innen derselben Sitzung (Herausforderung stellen/annehmen, Züge verdeckt bis beide gezogen haben)
       - Live-Werbeauktion der Klasse mit anonymen Profilen, Firmenrollen, verdeckten Geboten und Auswertung (Lehrkraft leitet)
   - id: groessen

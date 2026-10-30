@@ -165,6 +165,8 @@ export interface Stand {
   spielRunden: { spiel: string; punkte: number; tag: number; uhr: number }[];
   /** Monster-Sammelspiel auf dem Handy (fehlt, bis die App zum ersten Mal startet) */
   elemon?: import("./elemon/spiel").ElemonStand;
+  /** Wo man Spiele-Apps verlassen hat (Reiter, laufender Kampf, gewähltes Spiel) */
+  appOrt?: { elemon?: import("./elemon/spiel").ElemonOrt; spiele?: string | null };
   /** eigene Challenge-Videos */
   videos: { trend: string; fake: boolean; tag: number; aufrufe: number }[];
 

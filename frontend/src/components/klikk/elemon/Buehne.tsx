@@ -159,7 +159,7 @@ export default function Buehne({ links, rechts, farbe, steuerung }: {
       const w = welt.current!;
       w.ablaeufe = w.ablaeufe.filter(f => f(dt));
       effekte.update(dt);
-      a.update(dt); b.update(dt);
+      w.figuren.a.update(dt); w.figuren.b.update(dt);
       tickAvatare();
       tickMonster(dt);
       const wa = effekte.wackel;
@@ -188,8 +188,14 @@ export default function Buehne({ links, rechts, farbe, steuerung }: {
   const setzeSeite = (seite: SeiteId, schluessel: string | null) => {
     const w = welt.current;
     if (!w) return;
-    const fig = w.figuren[seite];
-    fig.basis.y = 0;
+    // Neue Figur statt der alten: deren Zerfall (Absinken, Ausblenden) darf das neue Elemon nicht treffen
+    const alt = w.figuren[seite];
+    const fig = new Figur();
+    fig.basis.copy(alt.basis).setY(0);
+    fig.blick = alt.blick;
+    w.szene.remove(alt.gruppe);
+    w.szene.add(fig.gruppe);
+    w.figuren[seite] = fig;
     fig.gruppe.visible = !!schluessel;
     if (!schluessel) return;
     return koerperFuer(schluessel.split("#")[0], k => {

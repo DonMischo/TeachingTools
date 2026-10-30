@@ -59,10 +59,19 @@ export default function Handy({ s, setze, online }: { s: Stand; setze: Setze; on
   const [app, setApp] = useState<AppId | null>(null);
   const [chat, setChat] = useState<ChatId | undefined>();
   const pushZahl = useRef(s.pushGesamt);
+  // Neue Mitteilung: 2 Sekunden oben einblenden, danach nur noch Zähler und Liste
+  const [banner, setBanner] = useState(false);
+  const bannerUhr = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => {
-    if (s.ton && s.pushGesamt > pushZahl.current) pling();
+    if (s.pushGesamt > pushZahl.current) {
+      if (s.ton) pling();
+      setBanner(true);
+      clearTimeout(bannerUhr.current);
+      bannerUhr.current = setTimeout(() => setBanner(false), 2000);
+    }
     pushZahl.current = s.pushGesamt;
   }, [s.pushGesamt, s.ton]);
+  useEffect(() => () => clearTimeout(bannerUhr.current), []);
 
   if (s.phase === "onboarding") return <Rahmen uhr={zeit(s.uhr)}><Anmeldung s={s} setze={setze} /></Rahmen>;
   if (s.flags.handyWeg && s.tag === 4) return (
@@ -84,8 +93,8 @@ export default function Handy({ s, setze, online }: { s: Stand; setze: Setze; on
 
   return (
     <Rahmen uhr={zeit(s.uhr)}>
-      {letzte && (
-        <button onClick={() => { setze(st => oeffnePush(st, letzte.id)); oeffne(letzte.app, letzte.chat); }}
+      {banner && letzte && (
+        <button onClick={() => { setBanner(false); setze(st => oeffnePush(st, letzte.id)); oeffne(letzte.app, letzte.chat); }}
           className="absolute top-1 left-2 right-2 z-10 card p-2 text-left shadow-lg flex gap-2 items-start animate-[pulse_1s_ease-in-out_1]">
           <span className="text-lg">{APPS.find(a => a.id === letzte.app)?.icon}</span>
           <span className="flex-1 min-w-0">
@@ -114,7 +123,16 @@ export default function Handy({ s, setze, online }: { s: Stand; setze: Setze; on
             })}
           </div>
           {s.pushes.length > 0 && (
-            <button className="mt-8 w-full text-xs text-muted underline" onClick={() => setze(pushesWeg)}>Alle {s.pushes.length} Benachrichtigungen wegwischen</button>
+            <div className="mt-6 flex flex-col gap-1">
+              {s.pushes.slice(-3).reverse().map(p => (
+                <button key={p.id} onClick={() => { setze(st => oeffnePush(st, p.id)); oeffne(p.app, p.chat); }}
+                  className="card px-2 py-1 text-left flex gap-2 items-center bg-surface/80">
+                  <span>{APPS.find(a => a.id === p.app)?.icon}</span>
+                  <span className="flex-1 min-w-0 text-[11px] truncate"><b>{p.titel}</b> {p.text}</span>
+                </button>
+              ))}
+              <button className="w-full text-xs text-muted underline" onClick={() => setze(pushesWeg)}>Alle {s.pushes.length} Benachrichtigungen wegwischen</button>
+            </div>
           )}
         </div>
       ) : (

@@ -10,20 +10,21 @@ import { ART, ARTEN, ATTACKEN, ELEMENTE, STARTER, TYPEN_SCHWACH, TYPEN_STARK, el
 import { aktivVon, heile, kiZug, lebt, maxKp, neuerKampf, runde, xpBis, type Elemon, type Kampf, type Zug } from "@/lib/klikk/elemon/kampf";
 import {
   ENERGIE_MAX, GEBIETE, PREISE, darfIns, kampfEnde, kaufen, naechsteEnergie, neuerElemonStand, sehen, starten,
-  tauschen, trainerTeam, wildesElemon, type Ausgang, type ElemonStand, type Gebiet, type Trainer,
+  tauschen, trainerTeam, wildesElemon, type Ausgang, type ElemonOrt, type ElemonStand, type Gebiet,
 } from "@/lib/klikk/elemon/spiel";
 import type { Aufstieg } from "@/lib/klikk/elemon/kampf";
-import { elemonAktion } from "@/lib/klikk/motor";
+import { elemonAktion, elternUmZeit, merkeOrt } from "@/lib/klikk/motor";
+
+/** Gestaffelte »Extra-Nutzung« — das teuerste Paket ist das »beliebteste« */
+const EXTRA: [string, string][] = [["+3 ⚡", "0,99 €"], ["+15 ⚡ · Beliebt!", "4,99 €"], ["Unbegrenzt für 24 h", "19,99 €"]];
 import type { Stand } from "@/lib/klikk/typen";
 import type { Online } from "../spiele/SpieleApp";
 import KampfAnsicht from "./KampfAnsicht";
 import Duell from "./Duell";
 
 type Setze = (f: (s: Stand) => Stand) => void;
-type Reiter = "karte" | "team" | "kartei" | "laden" | "duell";
-
-interface Laufend { kampf: Kampf; gebiet: Gebiet; trainer?: Trainer & { schluessel: string; orden?: string } }
-interface Bericht { titel: string; zeilen: string[] }
+type Reiter = ElemonOrt["reiter"];
+type Laufend = NonNullable<ElemonOrt["kampf"]>;
 
 export function ElemonKarte({ e, onClick, rechts }: { e: Elemon; onClick?: () => void; rechts?: React.ReactNode }) {
   const art = ART[e.art];
@@ -41,10 +42,12 @@ export function ElemonKarte({ e, onClick, rechts }: { e: Elemon; onClick?: () =>
 }
 
 export default function ElemonApp({ s, setze, online }: { s: Stand; setze: Setze; online?: Online }) {
-  const [reiter, setReiter] = useState<Reiter>("karte");
-  const [laufend, setLaufend] = useState<Laufend | null>(null);
-  const [bericht, setBericht] = useState<Bericht | null>(null);
-  const [werbung, setWerbung] = useState<number | null>(null);
+  // Wo man die App verlassen hat, steht im Spielstand: Wiederöffnen geht genau dort weiter
+  const ort: ElemonOrt = s.appOrt?.elemon ?? { reiter: "karte" };
+  const setOrt = (p: Partial<ElemonOrt>) => setze(st => merkeOrt(st, "elemon", { ...(st.appOrt?.elemon ?? { reiter: "karte" }), ...p }));
+  const { reiter, bericht } = ort;
+  const laufend = ort.kampf;
+  const setReiter = (r: Reiter) => setOrt({ reiter: r });
   const [kaufHinweis, setKaufHinweis] = useState(false);
   const [standort, setStandort] = useState<boolean | null>(null);
   const jetzt = s.tag * 1440 + s.uhr;
@@ -94,16 +97,22 @@ export default function ElemonApp({ s, setze, online }: { s: Stand; setze: Setze
     const kampf = neuerKampf({ name: s.name, team, aktiv }, { name: trainer?.name ?? "wild", team: gegner, aktiv: 0 }, !trainer, wurf * 7919 + s.seed);
     aendere(x => ({ ...sehen({ ...x, wurf }, gegner[0].art), energie: x.energie - 1 }), 3,
       e.standort ? `Kampf in »${gebiet.name}« – Standort, Uhrzeit, Spielstand` : `Kampf in »${gebiet.name}«`);
-    setLaufend({ kampf, gebiet, trainer });
+    setOrt({ kampf: { kampf, gebiet: gebiet.id, trainer }, bericht: undefined });
   };
 
   if (laufend) {
-    const { kampf, gebiet, trainer } = laufend;
+    const { kampf, trainer } = laufend;
+    const gebiet = GEBIETE.find(g => g.id === laufend.gebiet) ?? GEBIETE[0];
     return (
       <KampfAnsicht start={kampf} ich="a" farbe={gebiet.farbe} wild={!trainer} gegnerName={trainer?.name ?? "Wild"}
         tasche={{ traenke: e.traenke, kaefige: e.kaefige, goldkaefige: e.goldkaefige }}
+        verbrauche={was => aendere(x => ({ ...x, [was]: x[was] - 1 }))}
+        merke={k => setze(st => {
+          const o = st.appOrt?.elemon;
+          return o?.kampf ? merkeOrt(st, "elemon", { ...o, kampf: { ...o.kampf, kampf: k } }) : st;
+        })}
         zieh={async (k: Kampf, zug: Zug) => runde(k, zug, kiZug(k))}
-        fertig={(k, verbraucht) => {
+        fertig={k => {
           const ende = k.ende!;
           const aus: Ausgang = ende.gefangen ? { art: "gefangen", elemon: { ...aktivVon(k.b), kp: aktivVon(k.b).kp } }
             : ende.geflohen ? { art: "flucht" }
@@ -116,12 +125,8 @@ export default function ElemonApp({ s, setze, online }: { s: Stand; setze: Setze
           if (aus.art === "sieg" && aus.orden) zeilen.push(`🏅 Neuer Orden: ${aus.orden}`);
           if (aus.art === "niederlage") zeilen.push("Du hast dein Team zur Heilstation geschleppt.", `−${r.verlust} 🪙 für die Behandlung`);
           zeilen.push(...aufstiegsZeilen(r.stand.team, r.aufstiege));
-          aendere(() => ({
-            ...r.stand,
-            traenke: r.stand.traenke - verbraucht.traenke, kaefige: r.stand.kaefige - verbraucht.kaefige, goldkaefige: r.stand.goldkaefige - verbraucht.goldkaefige,
-          }), 4);
-          setBericht({ titel: aus.art === "sieg" ? "🏆 Gewonnen!" : aus.art === "gefangen" ? "⛓️ Gefangen!" : aus.art === "flucht" ? "🏃 Entkommen" : "😵 Verloren", zeilen });
-          setLaufend(null);
+          aendere(x => ({ ...r.stand, traenke: x.traenke, kaefige: x.kaefige, goldkaefige: x.goldkaefige }), 4);
+          setOrt({ kampf: undefined, bericht: { titel: aus.art === "sieg" ? "🏆 Gewonnen!" : aus.art === "gefangen" ? "⛓️ Gefangen!" : aus.art === "flucht" ? "🏃 Entkommen" : "😵 Verloren", zeilen } });
         }} />
     );
   }
@@ -130,14 +135,14 @@ export default function ElemonApp({ s, setze, online }: { s: Stand; setze: Setze
     <div className="p-4 flex flex-col gap-3">
       <div className="text-2xl font-black text-center">{bericht.titel}</div>
       <ul className="text-sm flex flex-col gap-1">{bericht.zeilen.map((z, i) => <li key={i}>{z}</li>)}</ul>
-      <button className="btn-primary" onClick={() => setBericht(null)}>Weiter</button>
+      <button className="btn-primary" onClick={() => setOrt({ bericht: undefined })}>Weiter</button>
       {e.energie > 0 && <p className="text-[11px] text-muted text-center">Noch {e.energie} ⚡ – nur noch ein Kampf?</p>}
     </div>
   );
 
   // --- Werbung für Energie ---
-  if (werbung !== null) return <Werbevideo sekunden={werbung} fertig={() => {
-    setWerbung(null);
+  if (ort.werbung) return <Werbevideo sekunden={ort.werbung} fertig={() => {
+    setOrt({ werbung: undefined });
     aendere(x => ({ ...x, energie: Math.min(ENERGIE_MAX, x.energie + 2), werbungen: x.werbungen + 1 }), 1, "Werbevideo bis zum Ende angesehen – Werbe-ID, Spielstand, Uhrzeit");
   }} />;
 
@@ -165,11 +170,19 @@ export default function ElemonApp({ s, setze, online }: { s: Stand; setze: Setze
               <div className="card p-2 text-xs flex flex-col gap-1 border-amber-500">
                 <b>Keine Energie mehr.</b>
                 <span>Nächste ⚡ in {naechsteEnergie(e, jetzt)} Minuten.</span>
-                <button className="btn-primary text-xs" onClick={() => setWerbung(15)}>📺 Werbung ansehen: +2 ⚡</button>
-                <button className="btn-secondary text-xs" onClick={() => {
-                  setKaufHinweis(true);
-                  aendere(x => ({ ...x, kaufVersuche: x.kaufVersuche + 1 }), 0, "Kaufversuch »Energie-Paket 0,99 €« – Zahlungsbereitschaft vermerkt");
-                }}>💎 Volle Energie für 0,99 €</button>
+                <button className="btn-primary text-xs" onClick={() => setOrt({ werbung: 15 })}>📺 Werbung ansehen: +2 ⚡</button>
+                {e.elternAntwort?.tag === s.tag ? (
+                  <p className={`text-[11px] ${e.elternAntwort.ja ? "text-good" : "text-bad"}`}>{s.eltern === "streng" ? "Papa" : "Mama"}: »{e.elternAntwort.text}«{e.elternAntwort.plus ? ` (+${e.elternAntwort.plus} ⚡)` : ""}</p>
+                ) : (
+                  <button className="btn-secondary text-xs" onClick={() => setze(elternUmZeit)}>🙋 Eltern um Extra-Zeit bitten</button>
+                )}
+                <div className="font-bold mt-1">💎 Extra-Nutzung kaufen</div>
+                {EXTRA.map(([plus, preis]) => (
+                  <button key={preis} className="btn-secondary text-xs flex justify-between" onClick={() => {
+                    setKaufHinweis(true);
+                    aendere(x => ({ ...x, kaufVersuche: x.kaufVersuche + 1 }), 0, `Kaufversuch »Extra-Nutzung ${plus} für ${preis}« – Zahlungsbereitschaft vermerkt`);
+                  }}><span>{plus}</span><span>{preis}</span></button>
+                ))}
                 {kaufHinweis && <p className="text-[11px] text-bad">Kauf abgelehnt: Für In-App-Käufe brauchst du die Zustimmung deiner Eltern. (Die App hat sich trotzdem gemerkt, dass du es versucht hast.)</p>}
               </div>
             )}

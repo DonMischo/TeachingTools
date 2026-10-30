@@ -29,7 +29,6 @@ export default function Duell({ s, e, online, aendere }: {
   const z = online?.zugang;
   const [daten, setDaten] = useState<KlikkDuelle | null>(null);
   const [fehler, setFehler] = useState<string | null>(null);
-  const [kampfId, setKampfId] = useState<number | null>(null);
   const duellRef = useRef<KlikkDuell | null>(null);
 
   const laden = useCallback(() => {
@@ -46,7 +45,8 @@ export default function Duell({ s, e, online, aendere }: {
   const team: DuellElemon[] = e.team.slice(0, 3).map(x => ({ art: x.art, stufe: x.stufe, attacken: x.attacken }));
   const meins = daten?.meins;
 
-  if (meins && meins.status === "laeuft" && meins.seite && kampfId === meins.id) {
+  // Ein laufendes Duell geht beim Öffnen sofort weiter — wie bei echten Spiele-Apps
+  if (meins && meins.status === "laeuft" && meins.seite && !e.duelle.some(d => d.id === meins.id)) {
     const ich = meins.seite, er = ich === "a" ? "b" : "a";
     return (
       <KampfAnsicht start={nachspielen(meins)} ich={ich} farbe="#312e81" wild={false} gegnerName={(ich === "a" ? meins.b_name : meins.a_name) ?? "?"}
@@ -64,11 +64,11 @@ export default function Duell({ s, e, online, aendere }: {
         }}
         fertig={k => {
           const sieg = k.ende!.sieger === ich;
-          api.klikk.duellEnde(z, meins.id, k.ende!.sieger).catch(() => {});
+          api.klikk.duellEnde(z, meins.id, k.ende!.sieger).then(laden).catch(() => {});
           const gegner = (er === "a" ? meins.a_name : meins.b_name) ?? "?";
-          aendere(x => ({ ...x, muenzen: x.muenzen + (sieg ? 30 : 5), duelle: [...x.duelle, { gegner, sieg }] }), 5);
-          setKampfId(null);
-          laden();
+          // Belohnung nur einmal je Duell, auch wenn die Ansicht neu aufgeht
+          aendere(x => x.duelle.some(d => d.id === meins.id) ? x
+            : { ...x, muenzen: x.muenzen + (sieg ? 30 : 5), duelle: [...x.duelle, { id: meins.id, gegner, sieg }] }, 5);
         }} />
     );
   }
@@ -78,9 +78,6 @@ export default function Duell({ s, e, online, aendere }: {
     <div className="flex flex-col gap-2 text-xs">
       {fehler && <p className="text-bad">{fehler}</p>}
       <p className="text-muted">Dein Duell-Team: {team.map(x => `${ART[x.art].emoji} Lv ${x.stufe}`).join(" · ")} (die ersten drei, voll geheilt)</p>
-      {meins?.status === "laeuft" && meins.seite && (
-        <button className="btn-primary" onClick={() => setKampfId(meins.id)}>⚔️ Duell gegen {meins.seite === "a" ? meins.b_name : meins.a_name} – weiter</button>
-      )}
       {meins?.status === "offen" ? (
         <div className="card p-2 flex justify-between items-center">
           <span>⏳ Deine Herausforderung wartet …</span>
@@ -95,7 +92,7 @@ export default function Duell({ s, e, online, aendere }: {
         <div key={o.id} className="card p-2 flex justify-between items-center gap-2">
           <span><b>{o.name}</b><br />{o.team.map(x => `${ART[x.art]?.emoji ?? "❓"} ${x.stufe}`).join(" ")}</span>
           <button className="btn-secondary text-xs" onClick={() => api.klikk.duellAnnehmen(z, o.id, s.name, team)
-            .then(d => { setDaten(v => v && { ...v, meins: d }); setKampfId(d.id); }).catch((err: Error) => setFehler(err.message))}>Annehmen</button>
+            .then(d => setDaten(v => v && { ...v, meins: d })).catch((err: Error) => setFehler(err.message))}>Annehmen</button>
         </div>
       ))}
       {e.duelle.length > 0 && <p className="text-muted">Bilanz: {e.duelle.filter(d => d.sieg).length} Siege, {e.duelle.filter(d => !d.sieg).length} Niederlagen</p>}

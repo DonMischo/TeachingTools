@@ -8,7 +8,7 @@ import { useCallback, useEffect, useState } from "react";
 import Klickspiel from "@/components/maus/Klickspiel";
 import { GRENZEN } from "@/lib/maus/ergebnis";
 import { api, type KlikkSpiel, type MausZugang } from "@/lib/api";
-import { spielRunde } from "@/lib/klikk/motor";
+import { merkeOrt, spielRunde } from "@/lib/klikk/motor";
 import type { Stand } from "@/lib/klikk/typen";
 import Bloecke from "./Bloecke";
 import Sprung from "./Sprung";
@@ -65,7 +65,9 @@ function Bestenliste({ spiel, online, neu }: { spiel: SpielId; online: Online; n
 }
 
 export default function SpieleApp({ s, setze, online }: { s: Stand; setze: Setze; online?: Online }) {
-  const [spiel, setSpiel] = useState<SpielId | null>(null);
+  // Zuletzt geöffnetes Spiel: beim Wiederöffnen der App geht es dort weiter
+  const spiel = (s.appOrt?.spiele ?? null) as SpielId | null;
+  const setSpiel = (id: SpielId | null) => setze(st => merkeOrt(st, "spiele", id));
   const [letztes, setLetztes] = useState<{ spiel: SpielId; punkte: number; nr: number } | null>(null);
   const [neu, setNeu] = useState(0);
   const darfMelden = !!online && (online.konto || !!online.zugang);
