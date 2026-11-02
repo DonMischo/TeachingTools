@@ -136,12 +136,13 @@ export default function GebaeudeSpiel({
   const schnipsel = abschnitt.tuer !== null ? fragments.filter(f => f.door_id === slides[abschnitt.tuer!].id) : [];
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-3 items-start">
-        <div className="relative h-[70vh] min-h-[380px] rounded-2xl border border-line overflow-hidden bg-linear-to-b from-sky-900/30 to-transparent">
+    <div className="flex flex-col gap-3 flex-1 min-h-0">
+      {/* ab lg füllt das Spiel die ganze Höhe; darunter bleibt die Karte 70vh hoch */}
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] lg:grid-rows-[minmax(0,1fr)] gap-3 items-start lg:items-stretch lg:flex-1 lg:min-h-0">
+        <div className="relative h-[70vh] min-h-[380px] lg:h-auto rounded-2xl border border-line overflow-hidden bg-linear-to-b from-sky-900/30 to-transparent">
           <Gebaeude plan={plan} stock={stock} zustaende={zustaende} zielOffen={zielOffen} objekte={objekte}
             art={art} stil={stil} stile={stile} waechter={waechter}
-            avatar={avatar} aktiv={s === null} auftrag={auftrag} onAnkunft={ankunft} />
+            avatar={avatar} aktiv={s === null} auftrag={auftrag} onAnkunft={ankunft} festeKamera />
           <div className="absolute top-2 left-2 flex items-start gap-2">
             <div className="rounded-lg bg-surface/90 border border-line px-2 py-1 text-xs font-bold">
               {W.icon} {W.stock} {stock + 1} / {teile.length}
@@ -151,7 +152,8 @@ export default function GebaeudeSpiel({
 
           {s && offen !== null && (
             <div className="absolute inset-0 bg-black/40 flex items-end sm:items-center justify-center p-2 sm:p-6" data-zimmer={s.id}>
-              <section className="card w-full max-w-xl max-h-full overflow-y-auto p-5 flex flex-col gap-3 shadow-2xl">
+              {/* Boss: das Challenge-Spiel bekommt die ganze Spielfläche */}
+              <section className={`card w-full max-h-full overflow-y-auto p-5 flex flex-col gap-3 shadow-2xl ${s.type === "boss" ? "h-full" : "max-w-xl"}`}>
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-xs text-muted">
                     {s.type === "door" ? `${verlies ? "👹" : "🚪"} ${W.tuer}` : (() => {
@@ -194,7 +196,7 @@ export default function GebaeudeSpiel({
           )}
         </div>
 
-        <aside className="card flex flex-col gap-3 p-4 text-sm">
+        <aside className="card flex flex-col gap-3 p-4 text-sm lg:overflow-y-auto">
           <h2 className="font-black">{data.title}</h2>
           <p className="text-xs text-muted">
             Klicke auf den Boden oder ein Zimmer, nutze die Pfeiltasten oder tippe die Zimmernummer (1–9, 0 = Treppe bzw. Tür). In den Zimmern warten Erklärungen und Aufgaben{verlies ? " — die Monster geben sich erst geschlagen, wenn du ihre Aufgabe löst" : ""}; jede gelöste Aufgabe gibt einen

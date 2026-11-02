@@ -121,7 +121,7 @@ export default function ChallengeSpiel({ code = "", token, quelle, onAntwort, on
   const Modus = (MODI[brett.spiel] ?? MODI.normal).komponente;
 
   return (
-    <div className="ch-buehne p-4 max-w-3xl mx-auto flex flex-col gap-4 text-sm rounded-xl" style={stil} data-challenge-theme={info.settings.theme}>
+    <div className={`ch-buehne p-4 mx-auto flex flex-col gap-4 text-sm rounded-xl ${quelle ? "w-full" : "max-w-3xl"}`} style={stil} data-challenge-theme={info.settings.theme}>
       <h1 className="text-xl font-black">⚔️ {info.title}</h1>
 
       {ansicht === "karte" && (

@@ -22,7 +22,7 @@ import { tickMonster } from "@/lib/angriffe/monsterLader";
 import { STANDARD_AVATAR, baueAvatar, type Avatar } from "./avatar";
 import { beendeAvatar, bewegeAvatar, tickAvatare } from "./avatarModell";
 import {
-  baueStock, entsorge, feldAus, hoeheVon, ortAmStrahl, versatzVon, welt as mitte,
+  abschnittBreite, baueStock, entsorge, feldAus, hoeheVon, ortAmStrahl, versatzVon, welt as mitte,
   type KlickOrt, type RaumZustand, type Richtung, type Stil,
 } from "./szene";
 
@@ -52,6 +52,8 @@ interface Props {
   /** von außen: dorthin laufen (neue `nr` = neuer Auftrag) */
   auftrag?: { ort: Ort; nr: number } | null;
   onAnkunft: (ort: Ort) => void;
+  /** Kamera steht über der Mitte des Stockwerks und zeigt es ganz; nur die Figur läuft (beim Hineinzoomen folgt sie wieder) */
+  festeKamera?: boolean;
 }
 
 const TEMPO = 9; // Welteinheiten pro Sekunde (ein Flurfeld ist 2,2 breit)
@@ -67,7 +69,7 @@ function feldVon(st: Stockwerk, ort: Ort): Punkt {
 }
 
 export default function Gebaeude({
-  plan, stock, zustaende, zielOffen, objekte, stil, stile, avatar = STANDARD_AVATAR, art = "haus", waechter, aktiv, auftrag, onAnkunft,
+  plan, stock, zustaende, zielOffen, objekte, stil, stile, avatar = STANDARD_AVATAR, art = "haus", waechter, aktiv, auftrag, onAnkunft, festeKamera = false,
 }: Props) {
   const verlies = art === "verlies";
   const flach = art === "ebene";
@@ -78,14 +80,14 @@ export default function Gebaeude({
 
   // Alles, was die Zeichenschleife liest, steht in einem Ref.
   const lage = useRef({
-    plan, stock, drehung, zoom, aktiv, onAnkunft, richtung, flach,
+    plan, stock, drehung, zoom, aktiv, onAnkunft, richtung, flach, festeKamera,
     feld: plan.stockwerke[stock].start as Punkt,
     pos: new THREE.Vector3(),
     pfad: [] as Punkt[],
     /** die Gruppe des aktuellen Stockwerks (für Klicks) */
     hier: null as THREE.Object3D | null,
   });
-  Object.assign(lage.current, { plan, stock, drehung, zoom, aktiv, onAnkunft, richtung, flach });
+  Object.assign(lage.current, { plan, stock, drehung, zoom, aktiv, onAnkunft, richtung, flach, festeKamera });
 
   const drei = useRef<{
     szene: THREE.Scene; welt: THREE.Group; spieler: THREE.Group;
@@ -243,12 +245,15 @@ export default function Gebaeude({
       fackel.position.set(l.pos.x, l.pos.y + 3.2, l.pos.z);
       if (fackel.intensity > 0) fackel.intensity = 38 + Math.sin(jetzt / 70) * 2.5 + Math.sin(jetzt / 23) * 1.5;
 
-      // Kamera folgt weich
-      blick.lerp(l.pos, Math.min(1, dt * 5));
+      // Kamera folgt weich — oder steht fest über der Mitte des Stockwerks
+      const fest = l.festeKamera && l.zoom <= 1;
+      const breit = abschnittBreite(l.plan.R);
+      blick.lerp(fest ? new THREE.Vector3(dx() + breit / 2, boden, breit / 2) : l.pos, Math.min(1, dt * 5));
       const a = winkel();
       kamera.position.set(blick.x + Math.cos(a) * 50, blick.y + 42, blick.z + Math.sin(a) * 50);
       kamera.lookAt(blick);
-      const halb = 9.5 / l.zoom;
+      // fest: die Raute des Stockwerks (Breite √2·breit, Höhe ≈ 0,9·breit plus Wände) passt ganz hinein
+      const halb = (fest ? Math.max(breit * 0.5 + 2, (breit * 0.75) / seitenverh) : 9.5) / l.zoom;
       kamera.left = -halb * seitenverh; kamera.right = halb * seitenverh;
       kamera.top = halb; kamera.bottom = -halb;
       kamera.updateProjectionMatrix();
@@ -257,6 +262,7 @@ export default function Gebaeude({
     // Startposition ohne Schwenk
     lage.current.pos.set(dx() + mitte(lage.current.feld[0]), bodenHoehe(), mitte(lage.current.feld[1]));
     blick.copy(lage.current.pos);
+    if (lage.current.festeKamera) { const b = abschnittBreite(lage.current.plan.R); blick.set(dx() + b / 2, bodenHoehe(), b / 2); }
     id = requestAnimationFrame(bild);
 
     return () => {

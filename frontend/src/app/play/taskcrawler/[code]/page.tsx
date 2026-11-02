@@ -222,7 +222,8 @@ export default function ExitgamePlayPage() {
   const isTaskSlide = slide.type === "task" || slide.type === "door";
 
   return (
-    <div className="h-full overflow-y-auto flex flex-col gap-5 p-6 max-w-xl mx-auto w-full rounded-2xl" style={styleVars(data.style)}>
+    // Boss-Folie: das Challenge-Spiel bekommt die volle Breite
+    <div className={`h-full overflow-y-auto flex flex-col gap-5 p-6 mx-auto w-full rounded-2xl ${slide.type === "boss" ? "max-w-seite" : "max-w-xl"}`} style={styleVars(data.style)}>
       <div className="flex items-center justify-between text-xs text-muted">
         <span>{data.title}</span>
         <span className="flex items-center gap-2">{umschalter}{idx + 1}/{data.slides.length}</span>
