@@ -303,6 +303,19 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
     ],
   },
+  trigonometrie: {
+    title: "Trigonometrie",
+    intro: "Winkelfunktionen sehen, im Dreieck anwenden und an Sachaufgaben üben — sechs Blätter.",
+    sections: [
+      { label: "⭕ Einheitskreis", text: "Den Punkt auf dem Kreis ziehen (oder im Graphen, am Regler, über die Winkel-Knöpfe). sin, cos, tan, cot, sec und csc lassen sich einzeln ein- und ausschalten, jede in eigener Farbe — als Strecke am Kreis und als Kurve im Graphen daneben, im selben Maßstab. »Spur« zeichnet die Kurven nur bis zum aktuellen Winkel, ▶ lässt den Punkt einmal herumlaufen. Grad- oder Bogenmaß, exakte Werte an den besonderen Winkeln, Vorzeichen je Quadrant, sin² + cos² = 1. »Winkel mit gleichem Wert« zeigt 180° − φ und 360° − φ — der Grund für zwei Lösungen beim Sinussatz." },
+      { label: "〰️ Sinusfunktion", text: "f(x) = a · sin(b · (x − c)) + d mit vier Reglern, die Grundkurve gestrichelt daneben, Periode und Wertebereich stehen dabei. »Welle treffen«: eine Zielwelle nachstellen, Punkte nach Abstand der Kurven." },
+      { label: "📐 Rechtwinklig", text: "Winkel und Hypotenuse einstellen, Bezugswinkel α oder β wählen: Gegenkathete, Ankathete und Hypotenuse färben sich, sin, cos und tan stehen als Bruch mit Zahlen daneben." },
+      { label: "🔺 Dreiecke", text: "Aufgaben nach Fall würfeln (rechtwinklig, SSS, SWS, WSW/WWS, SsW). Beim SsW-Fall erst entscheiden, ob es 0, 1 oder 2 Dreiecke gibt — die Zeichnung zeigt den Kreis, der die Gerade zweimal, einmal oder gar nicht schneidet. 💡 deckt erst den Fall und den passenden Satz auf, dann Schritt für Schritt den Rechenweg; mit Tipp zählt die Aufgabe nicht. »Selbst rechnen« löst beliebige drei Angaben mit Rechenweg und Bild." },
+      { label: "🧭 Anwendungen", text: "Neun Sachaufgaben mit Bild und neuen Zahlen auf Knopfdruck: Turmhöhe, Leiter, Flussbreite, Schiff anpeilen (Triangulieren), Wanderweg planen (Kosinussatz), Steigung in Prozent, Doppelpeilung eines Berges, Dachsparren und Sonnenstand. Tipps einzeln, dann der Lösungsweg." },
+      { label: "🚨 Küstenwache", text: "Spiel: Zwei Leuchttürme peilen ein Schiff im Nebel an. Kurs (Winkel zur Küste) und Strecke ausrechnen und das Rettungsboot losschicken — bis 300 m heran gilt als gerettet. Stufe 1 rechtwinklig (tan), Stufe 2 Triangulieren (Sinussatz), Stufe 3 Start im Hafen (Sinus- und Kosinussatz). Fünf Einsätze, ein Tipp kostet 25 Punkte, der Bestwert bleibt im Browser." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
+    ],
+  },
   stellenwert: {
     title: "Stellenwerttafeln",
     intro: "Zehner-, Zweier- und Sechzehnersystem in der Stellenwerttafel — vier Blätter zum Legen, Verstehen, Üben und Spielen.",

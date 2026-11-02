@@ -25,6 +25,7 @@ import Rechenregeln from "@/components/simulationen/Rechenregeln";
 import Groessen from "@/components/groessen/Groessen";
 import Rechenzeichen from "@/components/rechenzeichen/Rechenzeichen";
 import Prozent from "@/components/prozent/Prozent";
+import Trigonometrie from "@/components/trigonometrie/Trigonometrie";
 import Stellenwert from "@/components/stellenwert/Stellenwert";
 import Markieren from "@/components/markieren/Markieren";
 import PcWerkstatt from "@/components/pcbau/PcWerkstatt";
@@ -70,6 +71,7 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   groessen: { title: "Größen & Einheiten", icon: "🪜", node: <Groessen /> },
   rechenzeichen: { title: "Rechenzeichen", icon: "➗", node: <Rechenzeichen /> },
   prozent: { title: "Prozent- und Zinsrechnung", icon: "💯", node: <Prozent /> },
+  trigonometrie: { title: "Trigonometrie", icon: "🔺", node: <Trigonometrie /> },
   stellenwert: { title: "Stellenwerttafeln", icon: "🔢", node: <Stellenwert /> },
   tippen: { title: "Tippen", icon: "⌨️", node: <Tippen /> },
   // Die Bestenliste braucht Code und Gast-Token.

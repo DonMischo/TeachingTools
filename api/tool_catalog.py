@@ -119,6 +119,9 @@ CATALOG: list[CatalogTool] = [
     CatalogTool("prozent", "💯 Prozent- und Zinsrechnung", "💯", "simulationen", {
         "use": _cap(True, True),
     }),
+    CatalogTool("trigonometrie", "🔺 Trigonometrie", "🔺", "simulationen", {
+        "use": _cap(True, True),
+    }),
     CatalogTool("stellenwert", "🔢 Stellenwerttafeln", "🔢", "simulationen", {
         "use": _cap(True, True),
     }),

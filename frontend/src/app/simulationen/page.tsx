@@ -261,6 +261,14 @@ const ALL_CARDS: Werkzeug[] = [
     color: "#f97316",
   },
   {
+    slug: "trigonometrie",
+    href: "/simulationen/trigonometrie",
+    icon: "🔺",
+    title: "Trigonometrie",
+    description: "sin, cos, tan (und cot, sec, csc) am Einheitskreis, der Graph wächst beim Drehen mit; die Sinusfunktion mit a, b, c, d und »Welle treffen«. Gegenkathete, Ankathete, Hypotenuse zum Anfassen, Dreiecke berechnen nach Fall (SSS, SWS, WSW, SsW mit 0, 1 oder 2 Lösungen) mit Tipps und eigenem Rechner, Sachaufgaben vom Turm bis zum Triangulieren und das Spiel Küstenwache.",
+    color: "#ef4444",
+  },
+  {
     slug: "stellenwert",
     href: "/simulationen/stellenwert",
     icon: "🔢",

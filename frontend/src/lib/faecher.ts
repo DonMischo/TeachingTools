@@ -55,6 +55,7 @@ export const STANDARD_FAECHER: Record<string, string[]> = {
   groessen: ["Mathematik", "Physik"],
   rechenzeichen: ["Mathematik"],
   prozent: ["Mathematik", "Wirtschaft und Recht"],
+  trigonometrie: ["Mathematik", "Physik", "Geografie"],
   stellenwert: ["Mathematik", "Informatik"],
   tippen: ["Informatik"],
   maus: ["Informatik"],

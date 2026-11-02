@@ -703,6 +703,17 @@ simulationen:
       - "Saftbar: Schorle auf Prozent mischen (Saft, Nektar, Wasser), verdünnen und verstärken"
       - "Handy-Check: Barzahlung, 0 %-Finanzierung, Ratenkauf, Vertrag mit Kleingedrucktem und Kontoverlauf"
       - "Mein Kiosk: acht Wochen Kalkulation mit Aufschlag, Mehrwertsteuer, Mengenrabatt, Verderb und Ereignissen; 600 Schüler·innen kaufen per Kaufwahrscheinlichkeit, Eröffnungsandrang, Ruf aus Kundenzufriedenheit mit Sternen und Kommentaren"
+  - id: trigonometrie
+    name: Trigonometrie
+    faehigkeiten: {use: [true, true]}
+    kann:
+      - "Einheitskreis: sin, cos, tan, cot, sec, csc einzeln zuschaltbar in eigenen Farben, Graph im selben Maßstab mit Spur und Umlauf"
+      - Grad- und Bogenmaß, exakte Werte, Vorzeichen je Quadrant, Winkel mit gleichem Wert
+      - "Sinusfunktion a · sin(b(x − c)) + d mit Reglern und Spiel »Welle treffen«"
+      - Gegenkathete, Ankathete, Hypotenuse im rechtwinkligen Dreieck
+      - "Dreiecke berechnen: rechtwinklig, SSS, SWS, WSW/WWS, SsW mit 0, 1 oder 2 Lösungen; Tipps Schritt für Schritt, eigener Rechner"
+      - "Sachaufgaben: Turm, Leiter, Fluss, Triangulieren, Wanderweg, Steigung, Doppelpeilung, Dach, Sonnenstand"
+      - "Spiel Küstenwache: Peilung → Kurs und Strecke → Rettungsboot, drei Stufen"
   - id: stellenwert
     name: Stellenwerttafeln
     faehigkeiten: {use: [true, true]}
