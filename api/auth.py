@@ -86,7 +86,7 @@ def guest_minutes_left(session, minutes: int) -> int:
     return max(ceil(left), 0)
 
 
-def create_guest_token(code: str, name: str, epoch: int = 0, minutes: int | None = None) -> str:
+def create_guest_token(code: str, name: str, epoch: int = 0, minutes: int | None = None, sub: str | None = None) -> str:
     """Signed, session-scoped, short-lived token for a QR/join-link guest. `sub`
     is a throwaway guest id (no DB row); `scope` binds the token to one session
     code.
@@ -97,12 +97,15 @@ def create_guest_token(code: str, name: str, epoch: int = 0, minutes: int | None
 
     `gen` haelt den Stand des Sitzungszaehlers fest: startet die Lehrkraft den
     Gastzugang neu, sind alle Token mit kleinerem `gen` verbraucht (siehe
-    :func:`guest_access_restarted`)."""
+    :func:`guest_access_restarted`).
+
+    `sub` setzt eine fruehere Gast-Id fort (Spielstand nach Namen, siehe
+    :func:`guest_id_to_resume`)."""
     expire = datetime.now(timezone.utc) + timedelta(
         minutes=minutes or settings.guest_token_expire_minutes
     )
     payload = {
-        "sub": str(uuid.uuid4()),
+        "sub": sub or str(uuid.uuid4()),
         "type": "guest",
         "name": name,
         "scope": code,
@@ -134,6 +137,24 @@ def guest_access_restarted(db: Session, code: str, token_epoch: int | None) -> b
         if (token_epoch or 0) < current:
             return True
     return False
+
+
+def guest_id_to_resume(old_token: str | None, code: str, name: str) -> str | None:
+    """Gast-Id aus einem frueheren Token desselben Browsers — auch abgelaufen —,
+    wenn es zu diesem Code und (ohne Gross/Klein, Leerraum) zu diesem Namen
+    gehoert. So setzt ein Gast, der mit seinem Namen wieder beitritt, seinen
+    Spielstand fort (TaskCrawler-Versuch, Challenge-Stand). Die Signatur muss
+    stimmen; die Freigabe prueft ``guest/join`` wie bei jedem Beitritt."""
+    if not old_token:
+        return None
+    try:
+        payload = jwt.decode(old_token, settings.secret_key, algorithms=["HS256"], options={"verify_exp": False})
+    except JWTError:
+        return None
+    norm = lambda n: " ".join(str(n or "").split()).lower()
+    if payload.get("type") != "guest" or payload.get("scope") != code or norm(payload.get("name")) != norm(name):
+        return None
+    return payload.get("sub") or None
 
 
 def decode_guest_token(token: str, code: str, db: Session | None = None) -> Guest | None:

@@ -43,7 +43,8 @@ export default function ExitgamePlayPage() {
     // Das Tier vom Beitritt wird die Spielfigur im Gebäude — außer man hat schon eine gewählt.
     if (!gespeicherterAvatar() && TIERE.some(t => t.id === tier)) speichereAvatar({ ...STANDARD_AVATAR, tier });
     try {
-      await guest.join("exitgame", name);   // enables the start query once the token lands
+      // Spielstand nach Namen: derselbe Name im selben Browser setzt den Versuch fort
+      await guest.join("exitgame", name, { fortsetzen: true });   // enables the start query once the token lands
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Beitritt fehlgeschlagen";
       setJoinError(/freigeschaltet/.test(msg) ? "Für dieses Spiel sind Gäste nicht freigeschaltet. Bitte melde dich an." : msg);

@@ -20,7 +20,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..auth import create_guest_token, get_current_teacher, guest_minutes_left, guest_token_minutes
+from ..auth import create_guest_token, get_current_teacher, guest_id_to_resume, guest_minutes_left, guest_token_minutes
 from ..models import Teacher
 from ..join_codes import BY_KEY
 
@@ -31,6 +31,9 @@ class GuestJoinIn(BaseModel):
     code: str
     tool: str
     name: str = Field(min_length=1, max_length=100)
+    # Frueheres Token dieses Browsers fuer denselben Namen: der Gast spielt
+    # unter seiner alten Id weiter (Spielstand nach Namen).
+    previous_token: str | None = None
 
 
 class GuestJoinOut(BaseModel):
@@ -129,7 +132,8 @@ def guest_join(body: GuestJoinIn, db: Session = Depends(get_db)):
     minutes = min(minutes, left)
     return GuestJoinOut(
         token=create_guest_token(
-            body.code, name, getattr(session, "guest_epoch", 0) or 0, minutes
+            body.code, name, getattr(session, "guest_epoch", 0) or 0, minutes,
+            sub=guest_id_to_resume(body.previous_token, body.code, name),
         ),
         name=name,
         expires_in_minutes=minutes,

@@ -113,6 +113,8 @@ export function useChallengeLauf(quelle: ChallengeQuelle) {
   /** Ob die Quelle Spielwerte und Bestenliste kann. */
   const hatBestenliste = !!quelle.bestenliste;
 
-  return { info, brett, laden, fehler, waehle, gelegt, antworte, deckSetzen, spielWechseln, spielwert, bestenliste, hatBestenliste, meineEdelsteine };
+  /** Wofür der Lauf läuft (Sitzung/Boss-Folie): Schlüssel für lokal Gemerktes. */
+  const schluessel: string | undefined = key;
+  return { schluessel, info, brett, laden, fehler, waehle, gelegt, antworte, deckSetzen, spielWechseln, spielwert, bestenliste, hatBestenliste, meineEdelsteine };
 }
 export type ChallengeLauf = ReturnType<typeof useChallengeLauf>;

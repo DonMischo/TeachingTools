@@ -195,16 +195,19 @@
     @apply bg-accent text-accent-fg hover:opacity-90;
   }
   /* Challenge-Bühne mit Theme-Farbe (z. B. Weltraum: heller Text auf dunklem Himmel):
-     Karten, Eingaben und Nebenknöpfe behalten ihre eigenen, lesbaren Farben. */
+     Karten, Eingaben und Nebenknöpfe behalten ihre eigenen, lesbaren Farben.
+     Die Rohwerte (--text, --surface …), nicht --color-*: die sind schon an :root
+     aufgelöst und übersähen so das Thema eines umgebenden TaskCrawlers. */
   .ch-buehne :is(.card, .input, .chip) {
-    color: var(--color-fg);
+    color: var(--text);
   }
   /* Was sonst durchsichtig ist (Nebenknöpfe, Chips), bekommt auf der Bühne die normale Fläche */
   .ch-buehne :is(.btn-secondary, .chip) {
-    background-color: var(--color-surface);
+    background-color: var(--surface);
   }
   .ch-buehne .chip-on {
-    background-color: color-mix(in srgb, var(--color-accent) 15%, var(--color-surface));
+    color: var(--accent);
+    background-color: color-mix(in srgb, var(--accent) 15%, var(--surface));
   }
 
   .btn-secondary {

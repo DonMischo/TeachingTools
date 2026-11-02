@@ -80,8 +80,16 @@ export function useGuestSession(code: string) {
     return () => { if (timer.current) clearTimeout(timer.current); };
   }, [key, armExpiry]);
 
-  const join = useCallback(async (tool: string, name: string) => {
-    const res = await api.guest.join(code, tool, name);
+  /** `fortsetzen`: Spielstand nach Namen (wie beim Maus-Führerschein) — wer mit
+   * demselben Namen wieder beitritt, spielt unter seiner alten Gast-Id weiter.
+   * Das letzte Token je Name bleibt dafür auch nach Ablauf liegen. */
+  const join = useCallback(async (tool: string, name: string, { fortsetzen = false } = {}) => {
+    const namenKey = `hp_guest_namen_${code}`;
+    const n = name.trim().toLowerCase().replace(/\s+/g, " ");
+    let namen: Record<string, string> = {};
+    if (fortsetzen) try { namen = JSON.parse(localStorage.getItem(namenKey) ?? "{}") ?? {}; } catch {}
+    const res = fortsetzen ? await api.guest.join(code, tool, name, namen[n]) : await api.guest.join(code, tool, name);
+    if (fortsetzen) try { localStorage.setItem(namenKey, JSON.stringify({ ...namen, [n]: res.token })); } catch {}
     const s: GuestSession = {
       token: res.token,
       name: res.name,

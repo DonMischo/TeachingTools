@@ -22,12 +22,16 @@ const nieAendern = () => () => {};
 export default function Boss({ brett, theme, skin, lauf, zurKarte }: ModusProps) {
   const sk = skinVon(skin);
   const mitGL = useSyncExternalStore(nieAendern, webglDa, () => false); // 3D-Arena nur mit WebGL, sonst Pixelbühne
-  const [phase, setPhase] = useState<"sammeln" | "arena">(brett.fakten.length && !brett.deck ? "sammeln" : "arena");
+  // Schon gesammelt (z. B. nach drei Fehlversuchen zurück zur Karte): direkt wieder zur Gepäck-Wahl, nicht noch einmal ins Verlies
+  const sammelKey = lauf.schluessel ? `hp_ch_gesammelt_${lauf.schluessel}_${brett.etappe}` : null;
+  const [schonGesammelt] = useState(() => { try { return !!sammelKey && localStorage.getItem(sammelKey) === "1"; } catch { return false; } });
+  const [phase, setPhase] = useState<"sammeln" | "arena">(brett.fakten.length && !brett.deck && !schonGesammelt ? "sammeln" : "arena");
   const [deckLokal, setDeckLokal] = useState<string[] | null>(null);
-  const [markiert, setMarkiert] = useState<string[]>([]);
+  const [neuWaehlen, setNeuWaehlen] = useState(false);
+  const [abgewaehlt, setAbgewaehlt] = useState<string[]>([]); // Gepäck: alles ist eingepackt, man wählt ab
   const deck = brett.deck ?? deckLokal;
   const deckWar = useRef(!!brett.deck);
-  const [gefunden, setGefunden] = useState<string[]>([]);
+  const [gefunden, setGefunden] = useState<string[]>(() => (schonGesammelt ? brett.fakten.map((f) => f.id) : []));
   const korb = useAblage(brett.etappe);
   const [idx, setIdx] = useState(0);
   const [ablage, setAblage] = useState<string[]>([]);
@@ -48,7 +52,8 @@ export default function Boss({ brett, theme, skin, lauf, zurKarte }: ModusProps)
   const aktiv = offene.length ? offene[idx % offene.length] : null;
   const gesammelt = brett.fakten.filter((f) => gefunden.includes(f.id) || (brett.deck ?? []).includes(f.id));
   const imGepaeck = gesammelt.filter((f) => !korb.istWeg(f.id));
-  const ausruesten = phase === "arena" && brett.fakten.length > 0 && !deck;
+  const ausruesten = phase === "arena" && brett.fakten.length > 0 && (!deck || neuWaehlen);
+  const markiert = imGepaeck.filter((f) => !abgewaehlt.includes(f.id)).map((f) => f.id);
   const inventar = deck ? brett.fakten.filter((f) => deck.includes(f.id)) : [];
   const b = brett as ChallengeBrett & { geschafft_etappen?: number; gesamt_etappen?: number };
   const gesamt = Math.max(1, b.gesamt_etappen ?? brett.etappen.length);
@@ -62,7 +67,7 @@ export default function Boss({ brett, theme, skin, lauf, zurKarte }: ModusProps)
 
   useEffect(() => { // Server leert das Deck nach der Rückkehr zur Karte: Gepäck neu wählen
     if (brett.deck) deckWar.current = true;
-    else if (deckWar.current) { deckWar.current = false; setDeckLokal(null); setMarkiert([]); }
+    else if (deckWar.current) { deckWar.current = false; setDeckLokal(null); setAbgewaehlt([]); }
   }, [brett.deck]);
   useSpielwert(lauf, "boss", brett.etappe, ep, epMax); // EP aus den Klicker-Kämpfen
   useEffect(() => { if (phase === "arena" && !ausruesten && ansicht === "menu") feldEl.current[feld]?.focus(); }, [phase, ansicht, ausruesten]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -73,9 +78,20 @@ export default function Boss({ brett, theme, skin, lauf, zurKarte }: ModusProps)
     return () => clearTimeout(t);
   }, [zahlen]);
 
+  const zurArena = () => {
+    setPhase("arena");
+    try { if (sammelKey) localStorage.setItem(sammelKey, "1"); } catch { /* ohne Speicher: neu sammeln */ }
+  };
   const einpacken = async () => {
     if (!markiert.length) return;
-    try { await lauf.deckSetzen(markiert); setDeckLokal(markiert); } catch { /* Brett bleibt wie es ist */ }
+    try { await lauf.deckSetzen(markiert); setDeckLokal(markiert); setNeuWaehlen(false); } catch { /* Brett bleibt wie es ist */ }
+  };
+  // Flucht: zurück zur Gepäck-Wahl, wieder mit allem (auch Weggeworfenem) — wer Passendes abgewählt hatte, kann es nun mitnehmen
+  const fliehen = () => {
+    setGefunden(brett.fakten.map((f) => f.id));
+    korb.weg.forEach(korb.zurueckholen);
+    setAbgewaehlt([]); setAblage([]); setTipp(false); setAntwort(null); setAnsicht("menu"); setFeld(0);
+    setNeuWaehlen(true);
   };
   const legeAuf = (id: string) => {
     if (!aktiv || ablage.includes(id) || !fakten.has(id)) return;
@@ -109,14 +125,14 @@ export default function Boss({ brett, theme, skin, lauf, zurKarte }: ModusProps)
   const felder: { id: (typeof FELDER)[number]; text: string; icon: string; aus?: boolean }[] = [
     { id: "kontern", text: sk.kontern, icon: "⚔️" },
     { id: "tasche", text: "Tasche", icon: "🎒" },
-    { id: "wechseln", text: "Wechseln", icon: "🔄", aus: offene.length < 2 },
+    { id: "wechseln", text: "Wechseln", icon: "🔄", aus: true }, // vorerst gesperrt
     { id: "flucht", text: "Flucht", icon: "🏃" },
   ];
   const waehleFeld = (id: (typeof FELDER)[number]) => {
     if (id === "kontern") setAnsicht("kontern");
     else if (id === "tasche") setAnsicht("tasche");
     else if (id === "wechseln") { setIdx(idx + 1); setAblage([]); setTipp(false); setAntwort(null); }
-    else zurKarte();
+    else fliehen();
   };
   // Game-Boy-Menü: Pfeiltasten springen im 2×2-Raster
   const menuTaste = (e: React.KeyboardEvent) => {
@@ -125,9 +141,9 @@ export default function Boss({ brett, theme, skin, lauf, zurKarte }: ModusProps)
     if (ns < 0) return;
     e.preventDefault();
     const n = nz * 2 + ns;
+    if (felder[n].aus) return; // gesperrte Felder lassen sich nicht anwählen
     setFeld(n); feldEl.current[n]?.focus();
   };
-  const nachlesen = inventar.filter((f) => f.info?.text);
 
   return (
     <>
@@ -141,17 +157,17 @@ export default function Boss({ brett, theme, skin, lauf, zurKarte }: ModusProps)
       </div>
 
       {phase === "sammeln" ? (
-        <Sammeln fakten={brett.fakten} theme={theme} seed={bossSeed(brett.etappe, brett.fakten.length)} gefunden={gefunden} setGefunden={setGefunden} weiter={() => setPhase("arena")}
+        <Sammeln fakten={brett.fakten} theme={theme} seed={bossSeed(brett.etappe, brett.fakten.length)} gefunden={gefunden} setGefunden={setGefunden} weiter={zurArena}
           ep={ep} etappe={brett.etappe} onEp={() => setEp((e) => e + EP_SIEG)} onWegwerfen={korb.wegwerfen} />
       ) : ausruesten ? (
         <section aria-label="Ausrüsten" className="card p-3 flex flex-col gap-2">
           <h2 className="font-bold">🎒 Ausrüsten: Was nimmst du in den Kampf mit?</h2>
-          <p className="text-muted text-sm">Markiere die Fakten, die du mitnimmst. Im Kampf stehen nur sie zur Verfügung – wähle mit Bedacht.</p>
+          <p className="text-muted text-sm">Alles ist eingepackt. Klicke Fakten an, die du zurücklässt – im Kampf stehen nur die markierten zur Verfügung.</p>
           <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,180px),1fr))] gap-2">
             {imGepaeck.map((f) => (
               <div key={f.id} aria-pressed={markiert.includes(f.id)} className={`rounded-xl flex flex-col gap-1 ${markiert.includes(f.id) ? "ring-4 ring-accent" : ""}`}>
-                <FaktKarte fakt={f} onClick={() => setMarkiert((m) => (m.includes(f.id) ? m.filter((x) => x !== f.id) : [...m, f.id]))} />
-                <WegKnopf fakt={f} onClick={() => { korb.wegwerfen(f.id); setMarkiert((m) => m.filter((x) => x !== f.id)); }} />
+                <FaktKarte fakt={f} onClick={() => setAbgewaehlt((a) => (a.includes(f.id) ? a.filter((x) => x !== f.id) : [...a, f.id]))} />
+                <WegKnopf fakt={f} onClick={() => korb.wegwerfen(f.id)} />
               </div>
             ))}
           </div>
@@ -205,10 +221,16 @@ export default function Boss({ brett, theme, skin, lauf, zurKarte }: ModusProps)
               <strong>🎒 Tasche</strong>
               {aktiv.tip ? (tipp ? <p className="text-muted">💡 {aktiv.tip}</p> : <button className="btn-secondary self-start" onClick={() => setTipp(true)}>💡 Tipp benutzen</button>)
                 : <p className="text-muted">Für diesen {sk.angriff} gibt es keinen Tipp.</p>}
-              <strong className="text-sm">Wissen nachlesen</strong>
-              {nachlesen.length ? nachlesen.map((f) => (
-                <p key={f.id} className="text-sm"><span className="font-bold">{f.text}</span> – {f.info!.text}</p>
-              )) : <p className="text-muted text-sm">Noch nichts zum Nachlesen in der Tasche.</p>}
+              <strong className="text-sm">Im Gepäck ({inventar.length})</strong>
+              <ul className="flex flex-col gap-1">
+                {inventar.map((f) => (
+                  <li key={f.id} className="text-sm">
+                    <span className="font-bold">{f.text}</span>{f.info?.text && <> – {f.info.text}</>}
+                    {f.info?.source?.url && <> <a href={f.info.source.url} target="_blank" rel="noreferrer" className="text-accent hover:underline">{f.info.source.label || "Quelle"}</a></>}
+                  </li>
+                ))}
+              </ul>
+              <p className="text-muted text-sm">Fehlt dir etwas? Mit »Flucht« packst du neu.</p>
               <button className="btn-secondary self-start" onClick={() => setAnsicht("menu")}>Zurück</button>
             </div>
           )}

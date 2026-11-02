@@ -1646,9 +1646,10 @@ export const api = {
 
   // QR/join-link guest access (see api/routers/guest.py)
   guest: {
-    join: (code: string, tool: string, name: string) =>
+    /** `previousToken`: früheres Token desselben Namens — der Gast spielt unter seiner alten Id weiter. */
+    join: (code: string, tool: string, name: string, previousToken?: string) =>
       apiFetch<{ token: string; name: string; expires_in_minutes?: number }>("guest/join", {
-        method: "POST", body: JSON.stringify({ code, tool, name }),
+        method: "POST", body: JSON.stringify({ code, tool, name, previous_token: previousToken }),
       }),
     status: (tool: string, code: string) =>
       apiFetch<GuestStatus>(`guest/status?tool=${encodeURIComponent(tool)}&code=${encodeURIComponent(code)}`),

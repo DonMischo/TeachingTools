@@ -43,7 +43,8 @@ export default function ChallengeSpiel({ code = "", token, quelle, onAntwort, on
   const theme = themeVon(info.settings.theme);
   const erlaubt = SPIELARTEN.filter((s) => info.settings.spiele.includes(s.id));
   const bg = theme.hintergrund;
-  const stil = { background: theme.farben.himmel, color: theme.farben.text };
+  // Im TaskCrawler gelten dessen Farben und Schrift; nur die Szenen behalten ihren Himmel
+  const stil = quelle ? undefined : { background: theme.farben.himmel, color: theme.farben.text };
 
   const wechsle = async (spiel: string) => {
     setWechselFehler("");

@@ -111,3 +111,47 @@ def test_lueckentext_two_guests_same_name_stay_apart(client, db, teacher):
 
     assert a.json()["id"] != b.json()["id"]
     assert db.query(LueckentextParticipant).filter_by(session_id=s.id).count() == 2
+
+
+# ── Spielstand nach Namen (TaskCrawler, Challenge) ─────────────────────────
+
+def _tool_session(db, teacher, code="NAME01"):
+    from datetime import datetime, timezone
+    from api.models import ToolSession
+    s = ToolSession(code=code, tool_slug="challenge", created_by=teacher.id, allow_guests=True)
+    db.add(s); db.flush()
+    s.guests_opened_at = datetime.now(timezone.utc)
+    db.flush()
+    return s
+
+
+def _sub(token: str) -> str:
+    import jwt
+    return jwt.decode(token, options={"verify_signature": False})["sub"]
+
+
+def _join(client, name, previous=None, code="NAME01"):
+    r = client.post("/api/guest/join", json={"code": code, "tool": "simulation", "name": name, "previous_token": previous})
+    assert r.status_code == 200, r.text
+    return r.json()["token"]
+
+
+def test_rejoin_with_the_same_name_keeps_the_guest_id(client, db, teacher):
+    _tool_session(db, teacher)
+    alt = _join(client, "Max Muster")
+    assert _sub(_join(client, " max  muster ", previous=alt)) == _sub(alt)
+
+
+def test_previous_token_of_another_name_or_code_is_ignored(client, db, teacher):
+    _tool_session(db, teacher)
+    alt = _join(client, "Max")
+    assert _sub(_join(client, "Moritz", previous=alt)) != _sub(alt)
+    fremd = create_guest_token("ANDERS", "Max")
+    assert _sub(_join(client, "Max", previous=fremd)) != _sub(fremd)
+    assert _sub(_join(client, "Max", previous="kaputt")) != _sub(alt)
+
+
+def test_expired_previous_token_still_resumes(client, db, teacher):
+    _tool_session(db, teacher)
+    alt = create_guest_token("NAME01", "Max", minutes=-5)
+    assert _sub(_join(client, "Max", previous=alt)) == _sub(alt)

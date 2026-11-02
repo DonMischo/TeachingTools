@@ -172,7 +172,8 @@ export default function SimulationJoinPage() {
     setJoining(true);
     setJoinError(null);
     try {
-      await guest.join("simulation", name);
+      // Challenge: Spielstand nach Namen
+      await guest.join("simulation", name, { fortsetzen: session?.tool_slug === "challenge" });
     } catch (e) {
       setJoinError(e instanceof Error ? e.message : "Beitritt nicht möglich.");
     } finally {

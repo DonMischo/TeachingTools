@@ -26,7 +26,8 @@ const zeige = (b: unknown, lauf: ReturnType<typeof mkLauf>, skin = "monster", zu
 const ruesteAus = async (u: ReturnType<typeof userEvent.setup>, namen?: RegExp[]) => {
   const reg = screen.getByRole("region", { name: "Ausrüsten" });
   const knoepfe = within(reg).getAllByRole("button").filter((b) => !/In den Kampf/.test(b.textContent ?? "") && !/wegwerfen/.test(b.getAttribute("aria-label") ?? ""));
-  for (const k of knoepfe) if (!namen || namen.some((n) => n.test(k.textContent ?? ""))) await u.click(k);
+  // Alles ist vorgewählt: abgewählt wird, was nicht in `namen` steht
+  for (const k of knoepfe) if (namen && !namen.some((n) => n.test(k.textContent ?? ""))) await u.click(k);
   await u.click(within(reg).getByRole("button", { name: /In den Kampf/ }));
 };
 
@@ -159,23 +160,25 @@ describe("Kampfmenü", () => {
     expect(document.activeElement).toBe(namen[0]);
     await u.keyboard("{ArrowRight}"); expect(document.activeElement).toBe(namen[1]);
     await u.keyboard("{ArrowDown}"); expect(document.activeElement).toBe(namen[3]);
-    await u.keyboard("{ArrowLeft}"); expect(document.activeElement).toBe(namen[2]);
-    await u.keyboard("{ArrowUp}"); expect(document.activeElement).toBe(namen[0]);
+    await u.keyboard("{ArrowLeft}"); expect(document.activeElement).toBe(namen[3]); // Wechseln ist gesperrt
+    await u.keyboard("{ArrowUp}"); expect(document.activeElement).toBe(namen[1]);
+    await u.keyboard("{ArrowLeft}"); expect(document.activeElement).toBe(namen[0]);
   });
-  it("Flucht geht zur Karte", async () => {
-    const zurKarte = vi.fn();
-    const u = await arena(brett(), mkLauf(), zurKarte);
+  it("Flucht führt zurück zur Gepäck-Wahl, wieder mit allem eingepackt", async () => {
+    const zurKarte = vi.fn(); const lauf = mkLauf();
+    const u = userEvent.setup();
+    zeige(brett(), lauf, "monster", zurKarte);
+    await u.click(screen.getByRole("button", { name: "Alles einsammeln" }));
+    await ruesteAus(u, [/Alpha/]);
     await u.click(screen.getByRole("button", { name: "Flucht" }));
-    expect(zurKarte).toHaveBeenCalled();
+    expect(zurKarte).not.toHaveBeenCalled();
+    const reg = screen.getByRole("region", { name: "Ausrüsten" });
+    expect(within(reg).getByRole("button", { name: /In den Kampf \(3\)/ })).toBeEnabled();
+    await u.click(within(reg).getByRole("button", { name: /In den Kampf/ }));
+    expect(lauf.deckSetzen).toHaveBeenLastCalledWith(["f1", "f2", "f3"]);
   });
-  it("Wechseln nimmt den anderen Angriff (nur mit mehreren offenen)", async () => {
-    const b = brett({ challenges: [ch("c1", "Frage Eins"), ch("c3", "Frage Drei")] });
-    const u = await arena(b);
-    await u.click(screen.getByRole("button", { name: "Wechseln" }));
-    expect(screen.getByText("Frage Drei")).toBeInTheDocument();
-  });
-  it("Wechseln ist mit nur einem offenen Angriff gesperrt", async () => {
-    await arena();
+  it("Wechseln ist vorerst gesperrt", async () => {
+    await arena(brett({ challenges: [ch("c1", "Frage Eins"), ch("c3", "Frage Drei")] }));
     expect(screen.getByRole("button", { name: "Wechseln" })).toBeDisabled();
   });
   it("Tasche: Tipp und Wissen nachlesen", async () => {
@@ -224,12 +227,23 @@ describe("Held-EP", () => {
 });
 
 describe("Ausrüsten und Etappen", () => {
+  it("nach der Rückkehr zur Karte geht es ohne neues Sammeln direkt zur Gepäck-Wahl", async () => {
+    const u = userEvent.setup();
+    const lauf = { ...mkLauf(), schluessel: "test-wieder" };
+    const { unmount } = zeige(brett(), lauf);
+    await u.click(screen.getByRole("button", { name: "Alles einsammeln" }));
+    unmount();
+    zeige(brett(), lauf);
+    expect(screen.getByRole("region", { name: "Ausrüsten" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /In den Kampf \(3\)/ })).toBeEnabled();
+    localStorage.clear();
+  });
   it("Ausrüsten setzt das Deck, im Kampf liegen nur die gewählten Fakten", async () => {
     const u = userEvent.setup();
     const lauf = mkLauf();
     zeige(brett(), lauf);
     await u.click(screen.getByRole("button", { name: "Alles einsammeln" }));
-    expect(screen.getByRole("button", { name: /In den Kampf/ })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /In den Kampf \(3\)/ })).toBeEnabled(); // alles vorgewählt
     await ruesteAus(u, [/Alpha/, /Gamma/]);
     expect(lauf.deckSetzen).toHaveBeenCalledWith(["f1", "f3"]);
     await u.click(screen.getByRole("button", { name: "Kontern" }));

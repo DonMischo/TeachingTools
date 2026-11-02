@@ -1,5 +1,5 @@
 "use client";
-/** Normal-Modus: Fakten auf Challenges legen (Klick oder Ziehen) und angreifen. */
+/** Normal-Modus: Fakten auf Challenges legen (Klick oder Ziehen) und angreifen. Gelöste Fragen grün, zuletzt falsch beantwortete rot. */
 import { useState } from "react";
 import type { ChallengeAntwort } from "@/lib/api";
 import type { ModusProps } from "./typen";
@@ -11,10 +11,10 @@ export default function Normal({ brett, lauf, zurKarte }: ModusProps) {
   const [tipp, setTipp] = useState(false);
   const [antwort, setAntwort] = useState<ChallengeAntwort | null>(null);
   const [sende, setSende] = useState(false);
+  const [falsch, setFalsch] = useState<string[]>([]);
 
   const fakten = new Map(brett.fakten.map((f) => [f.id, f]));
   const challenge = brett.challenges.find((c) => c.id === aktiv);
-  const offene = brett.challenges.filter((c) => !c.erledigt);
 
   const waehle = (c: string) => {
     setAktiv(c); setAblage([]); setTipp(false); setAntwort(null);
@@ -31,6 +31,7 @@ export default function Normal({ brett, lauf, zurKarte }: ModusProps) {
     setSende(true);
     try {
       const r = await lauf.antworte(challenge.id, ablage, tipp);
+      setFalsch((f) => (r.komplett ? f.filter((x) => x !== challenge.id) : [...f.filter((x) => x !== challenge.id), challenge.id]));
       setAktiv(null); setAblage([]); setTipp(false);
       setAntwort(r);
     } catch {
@@ -48,14 +49,22 @@ export default function Normal({ brett, lauf, zurKarte }: ModusProps) {
       </div>
       <Treffermeldung antwort={antwort} />
 
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,200px),1fr))] gap-2">
-        {offene.map((c) => (
-          <button key={c.id} onClick={() => waehle(c.id)} aria-pressed={c.id === aktiv}
-            className={`card p-3 text-left ${c.id === aktiv ? "border-accent" : ""}`}>
-            <Inhalt x={c} />
-          </button>
-        ))}
-      </div>
+      <section aria-label="Fragen" className="rounded-xl border-2 border-line p-3 flex flex-col gap-2">
+        <h2 className="font-bold">❓ Fragen ({brett.challenges.filter((c) => c.erledigt).length}/{brett.challenges.length} gelöst)</h2>
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,200px),1fr))] gap-2">
+          {brett.challenges.map((c) => {
+            const zustand = c.erledigt ? "geloest" : falsch.includes(c.id) ? "falsch" : null;
+            return (
+              <button key={c.id} onClick={() => waehle(c.id)} aria-pressed={c.id === aktiv} disabled={c.erledigt} data-zustand={zustand ?? undefined}
+                className={`card p-3 text-left border-2 disabled:cursor-default ${c.id === aktiv ? "border-accent" : zustand === "geloest" ? "border-ok bg-ok/15" : zustand === "falsch" ? "border-bad bg-bad/15" : ""}`}>
+                {zustand && <span className="sr-only">{zustand === "geloest" ? "Gelöst: " : "Falsch beantwortet: "}</span>}
+                <span aria-hidden>{zustand === "geloest" ? "✅ " : zustand === "falsch" ? "❌ " : ""}</span>
+                <Inhalt x={c} />
+              </button>
+            );
+          })}
+        </div>
+      </section>
 
       {challenge && (
         <div className="card p-3 flex flex-col gap-2">
@@ -69,11 +78,14 @@ export default function Normal({ brett, lauf, zurKarte }: ModusProps) {
         </div>
       )}
 
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,180px),1fr))] gap-2">
-        {brett.fakten.filter((f) => !ablage.includes(f.id)).map((f) => (
-          <FaktKarte key={f.id} fakt={f} disabled={!challenge} onClick={() => legeAuf(f.id)} />
-        ))}
-      </div>
+      <section aria-label="Fakten" className="rounded-xl border-2 border-dashed border-line p-3 flex flex-col gap-2">
+        <h2 className="font-bold">🧩 Fakten{!challenge && <span className="font-normal text-muted"> – wähle erst eine Frage</span>}</h2>
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,180px),1fr))] gap-2">
+          {brett.fakten.filter((f) => !ablage.includes(f.id)).map((f) => (
+            <FaktKarte key={f.id} fakt={f} disabled={!challenge} onClick={() => legeAuf(f.id)} />
+          ))}
+        </div>
+      </section>
     </>
   );
 }

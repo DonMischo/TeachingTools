@@ -30,6 +30,19 @@ describe("useGuestSession", () => {
   });
   afterEach(() => vi.useRealTimers());
 
+  it("fortsetzen: derselbe Name schickt das frühere Token mit, auch nach Ablauf", async () => {
+    const { result } = renderHook(() => useGuestSession("WAAGE1"));
+    await waitFor(() => expect(result.current.loaded).toBe(true));
+    await act(async () => { await result.current.join("exitgame", "Max", { fortsetzen: true }); });
+    expect(mockGuestJoin).toHaveBeenLastCalledWith("WAAGE1", "exitgame", "Max", undefined);
+    localStorage.removeItem(KEY); // Fenster abgelaufen und weggeworfen
+    mockGuestJoin.mockResolvedValue({ token: "neu", name: "max", expires_in_minutes: 90 });
+    await act(async () => { await result.current.join("exitgame", " max ", { fortsetzen: true }); });
+    expect(mockGuestJoin).toHaveBeenLastCalledWith("WAAGE1", "exitgame", " max ", "frisch");
+    await act(async () => { await result.current.join("exitgame", "Moritz", { fortsetzen: true }); });
+    expect(mockGuestJoin).toHaveBeenLastCalledWith("WAAGE1", "exitgame", "Moritz", undefined);
+  });
+
   it("nimmt ein laufendes Gastfenster aus dem Speicher an", async () => {
     storeSession(Date.now() + 30 * 60 * 1000);
     const { result } = renderHook(() => useGuestSession("WAAGE1"));
