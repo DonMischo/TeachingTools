@@ -71,9 +71,12 @@ export default function KampfAnsicht({ start, ich, farbe, wild, gegnerName, tasc
   const [menue, setMenue] = useState<"haupt" | "angriff" | "team" | "tasche" | "warte">("haupt");
   const buehne = useRef<BuehneSteuerung>(null);
   // Mitten in der letzten Runde weggegangen: das Ende ist schon gesichert, also gleich auswerten
+  // Nur beim Öffnen: das Ende kommt sonst ein zweites Mal an, sobald die letzte Runde gesichert ist
   const fertigRef = useRef(fertig);
   useEffect(() => { fertigRef.current = fertig; });
-  useEffect(() => { if (start.ende) fertigRef.current(start); }, [start.ende]); // eslint-disable-line react-hooks/exhaustive-deps
+  const ausgewertet = useRef(false);
+  const auswerten = (k: Kampf) => { if (ausgewertet.current) return; ausgewertet.current = true; fertigRef.current(k); };
+  useEffect(() => { if (start.ende) auswerten(start); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   // Auf der Bühne steht »ich« immer links (a)
   const bs = (s: SeiteId): SeiteId => (s === du ? "a" : "b");
 
@@ -127,7 +130,7 @@ export default function KampfAnsicht({ start, ich, farbe, wild, gegnerName, tasc
       }
     }
     setK(runde.kampf); setAnzeige(runde.kampf);
-    if (runde.kampf.ende) { await warte(0.6); fertig(runde.kampf); return; }
+    if (runde.kampf.ende) { await warte(0.6); auswerten(runde.kampf); return; }
     // eigenes Elemon erschöpft und kein automatischer Ersatz da? (kommt nicht vor: K.o. holt das nächste)
     setMenue("haupt");
     setText(`Was soll ${ART[aktivVon(runde.kampf[du]).art].name} tun?`);

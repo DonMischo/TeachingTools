@@ -263,3 +263,15 @@ def test_elemon_gezielt_herausfordern_mit_wartezeit(client, teacher_token):
     r = client.post(f"{url}/duelle/{did}/annehmen", json={"name": "rote.katze.3", "team": TEAM}, headers=mia).json()
     assert r["status"] == "laeuft" and r["seite"] == "b"
     assert client.get(f"{url}/duelle", headers=ben).json()["meins"]["status"] == "laeuft"
+
+
+def test_elemon_item_karte_wird_fuer_alle_gesperrt(client, teacher_token):
+    code = client.post("/api/tool-sessions", json={"tool_slug": "elemon"}, headers=auth(teacher_token)).json()["code"]
+    mia, ben = (_gast(client, teacher_token, code, n) for n in ("Mia", "Ben"))
+    url = f"/api/klikk/sitzung/{code}/elemon/karte"
+    assert client.post(url, json={"karte": "trank-3", "sperre_min": 10}, headers=mia).json() == {"ok": True, "warten": 0}
+    # dieselbe Karte: gesperrt, auch für Ben; eine andere Karte derselben Art geht
+    r = client.post(url, json={"karte": "trank-3", "sperre_min": 10}, headers=ben).json()
+    assert r["ok"] is False and 590 < r["warten"] <= 600
+    assert client.post(url, json={"karte": "trank-4", "sperre_min": 10}, headers=ben).json()["ok"] is True
+    assert client.post(url, json={"karte": "TRANK; drop", "sperre_min": 10}, headers=ben).status_code == 422

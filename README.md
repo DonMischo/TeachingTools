@@ -210,6 +210,8 @@ Das Monster-Sammelspiel aus Klikk als eigenes Spiel (gleiche Regeln und 3D-Kämp
 - Duelle mit Code: Liste aller, die gerade spielen, gezielt herausfordern (muss angenommen werden) oder die ganze Klasse offen; nach jeder Herausforderung drei Minuten Pause
 - Eigener QR-Code je Spieler·in: scannen fordert heraus (Kamera mit jsQR, sonst Nummer abtippen)
 - Lehrkräfte drucken QR-Karten mit wilden Elemon; wer eine scannt, kann es fangen
+- Item-Karten (Kräutertrank, Käfig, Goldkäfig, Beleber) mit Multiplikator; jede Karte hat eine Nummer und ist nach dem Scannen für die ganze Sitzung eine Weile leer (10–30 Min.), daher bis zu 10 Karten je Item
+- Junge Elemon (niedrige Stufe) lassen sich leichter fangen; ein K.o. beendet die Runde
 
 ### 📱 Klikk
 - Eine Schulwoche (Mo–Fr ab 14 Uhr) mit einer erfundenen Social-Media-App, daneben Hausaufgaben, Freunde und Schlaf — Zeit vergeht nur durch Handlungen

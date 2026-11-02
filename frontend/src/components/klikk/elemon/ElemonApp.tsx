@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 import { ART, ARTEN, ATTACKEN, ELEMENTE, STARTER, TYPEN_SCHWACH, TYPEN_STARK, elementInfo, type ElementId } from "@/lib/klikk/elemon/daten";
 import { aktivVon, heile, kiZug, lebt, maxKp, neuesElemon, neuerKampf, runde, xpBis, type Elemon, type Kampf, type Zug } from "@/lib/klikk/elemon/kampf";
 import {
-  ENERGIE_MAX, GEBIETE, PREISE, QR_GEBIET, darfIns, kampfEnde, kaufen, naechsteEnergie, neuerElemonStand, sehen, starten,
+  ENERGIE_MAX, GEBIETE, ITEMS, PREISE, QR_GEBIET, beleben, darfIns, itemEinloesen, karteId, kartenRest, kampfEnde, kaufen, naechsteEnergie, neuerElemonStand, sehen, starten,
   tauschen, trainerTeam, wildesElemon, type Ausgang, type ElemonOrt, type ElemonStand, type Gebiet, type QrInhalt,
 } from "@/lib/klikk/elemon/spiel";
 import type { Aufstieg } from "@/lib/klikk/elemon/kampf";
@@ -22,6 +22,7 @@ import type { Online } from "../spiele/SpieleApp";
 import KampfAnsicht from "./KampfAnsicht";
 import Duell, { duellTeam, laufendesDuell, useDuelle } from "./Duell";
 import Scanner from "./Scanner";
+import { api } from "@/lib/api";
 
 type Setze = (f: (s: Stand) => Stand) => void;
 type Reiter = ElemonOrt["reiter"];
@@ -59,7 +60,7 @@ export default function ElemonApp({ s, setze, online, eigenstaendig }: { s: Stan
   const lage = useDuelle(online?.zugang, s.name, duellTeam(e));
   const [scan, setScan] = useState(false);
   const [qrZiel, setQrZiel] = useState<number | null>(null);
-  const [qrHinweis, setQrHinweis] = useState<string | null>(null);
+  const [qrHinweis, setQrHinweis] = useState<{ text: string; gut?: boolean } | null>(null);
 
   // --- Start ---
   if (e.team.length === 0) return (
@@ -111,12 +112,28 @@ export default function ElemonApp({ s, setze, online, eigenstaendig }: { s: Stan
   const qrGefunden = (q: QrInhalt) => {
     setScan(false);
     if (q.art === "wild") {
-      if (e.energie <= 0) { setQrHinweis("Keine Energie für einen Kampf."); return; }
-      if (!e.team.some(lebt)) { setQrHinweis("Alle deine Elemon sind erschöpft. Erst zur Heilstation!"); return; }
+      if (e.energie <= 0) { setQrHinweis({ text: "Keine Energie für einen Kampf." }); return; }
+      if (!e.team.some(lebt)) { setQrHinweis({ text: "Alle deine Elemon sind erschöpft. Erst zur Heilstation!" }); return; }
       kampfStarten(QR_GEBIET, [neuesElemon(q.elemon, q.stufe)]);
       return;
     }
-    if (!online?.zugang || q.code !== online.zugang.code.toUpperCase()) { setQrHinweis("Dieser Code gehört zu einer anderen Sitzung."); return; }
+    if (q.art === "item") {
+      // Item-Karte: gutschreiben, danach ist genau diese Karte eine Weile gesperrt (mit Code für die ganze Sitzung)
+      const info = ITEMS[q.item], karte = karteId(q.item, q.nr);
+      const gesperrt = (sek: number) => setQrHinweis({ text: `Diese Karte ist noch ${Math.ceil(sek / 60)} Min. leer. Such eine andere ${info.name}-Karte!` });
+      const lokal = kartenRest(e, karte, Date.now());
+      if (lokal > 0) { gesperrt(lokal); return; }
+      const gutschreiben = () => {
+        aendere(x => itemEinloesen(x, q.item, q.menge, q.nr, Date.now()), 1, `Item-Karte »${info.name}« gescannt`);
+        setQrHinweis({ text: `${info.emoji} +${q.menge} ${info.name}!`, gut: true });
+      };
+      if (!online?.zugang) { gutschreiben(); return; }
+      api.klikk.elemonKarte(online.zugang, karte, info.sperreMin)
+        .then(r => (r.ok ? gutschreiben() : gesperrt(r.warten)))
+        .catch(() => setQrHinweis({ text: "Die Karte ließ sich gerade nicht prüfen. Versuch es gleich nochmal." }));
+      return;
+    }
+    if (!online?.zugang || q.code !== online.zugang.code.toUpperCase()) { setQrHinweis({ text: "Dieser Code gehört zu einer anderen Sitzung." }); return; }
     setQrZiel(q.id);
     setOrt({ reiter: "duell", kampf: undefined, bericht: undefined });
   };
@@ -181,7 +198,7 @@ export default function ElemonApp({ s, setze, online, eigenstaendig }: { s: Stan
         <button title="QR-Code scannen" aria-label="QR-Code scannen" onClick={() => { setQrHinweis(null); setScan(true); }}>📷</button>
       </div>
       {scanner}
-      {qrHinweis && <p className="px-3 pt-2 text-xs text-bad">{qrHinweis}</p>}
+      {qrHinweis && <p className={`px-3 pt-2 text-xs ${qrHinweis.gut ? "text-good font-bold" : "text-bad"}`}>{qrHinweis.text}</p>}
       {reiter !== "duell" && (lage.daten?.an_mich.length || laufendesDuell(lage.daten, e)) ? (
         <button className="mx-3 mt-2 rounded-xl bg-accent text-accent-fg px-3 py-2 text-xs font-bold text-left" onClick={() => setReiter("duell")}>
           {laufendesDuell(lage.daten, e) ? "⚔️ Dein Duell läuft – weiter" : `⚔️ ${lage.daten!.an_mich[0].name} fordert dich heraus!`}
@@ -256,7 +273,12 @@ export default function ElemonApp({ s, setze, online, eigenstaendig }: { s: Stan
             <p className="text-[11px] text-muted">Das erste fitte Elemon geht zuerst in den Kampf. Tippen = nach vorn holen.</p>
             {e.team.map((x, i) => (
               <ElemonKarte key={i} e={x} onClick={i > 0 ? () => aendere(st => ({ ...st, team: [st.team[i], ...st.team.filter((_, j) => j !== i)] })) : undefined}
-                rechts={e.team.length > 1 && <button className="text-[10px] underline text-muted" onClick={ev => { ev.stopPropagation(); aendere(st => tauschen(st, i, null)); }}>ins Lager</button>} />
+                rechts={<span className="flex flex-col items-end gap-1">
+                  {!lebt(x) && (e.beleber ?? 0) > 0 && (
+                    <button className="text-[10px] font-bold text-accent" onClick={ev => { ev.stopPropagation(); aendere(st => beleben(st, i)); }}>💫 Beleber</button>
+                  )}
+                  {e.team.length > 1 && <button className="text-[10px] underline text-muted" onClick={ev => { ev.stopPropagation(); aendere(st => tauschen(st, i, null)); }}>ins Lager</button>}
+                </span>} />
             ))}
             {e.lager.length > 0 && <div className="text-xs font-bold mt-2">📦 Lager ({e.lager.length})</div>}
             {e.lager.map((x, i) => (
@@ -294,6 +316,11 @@ export default function ElemonApp({ s, setze, online, eigenstaendig }: { s: Stan
               <span>🧪 Kräutertrank ({e.traenke}×)</span>
               <button className="btn-secondary text-xs" disabled={e.muenzen < PREISE.trank} onClick={() => aendere(x => kaufen(x, "trank"))}>{PREISE.trank} 🪙</button>
             </div>
+            <div className="card p-2 text-xs flex justify-between items-center">
+              <span>💫 Beleber ({e.beleber ?? 0}×) <span className="text-muted">– weckt ein erschöpftes Elemon mit halben KP</span></span>
+              <button className="btn-secondary text-xs" disabled={e.muenzen < PREISE.beleber} onClick={() => aendere(x => kaufen(x, "beleber"))}>{PREISE.beleber} 🪙</button>
+            </div>
+            <p className="text-[10px] text-muted">Tipp: Item-Karten mit QR-Code scannen (📷) bringt Tränke, Käfige und mehr – jede Karte nur ab und zu.</p>
             <div className="rounded-xl p-2 text-xs flex flex-col gap-1 bg-gradient-to-r from-fuchsia-600 to-amber-500 text-white">
               <b>💎 NUR HEUTE: Goldkäfig-Paket</b>
               <span>5 Goldkäfige – hält doppelt so gut! <s>4,99 €</s> <b>1,99 €</b></span>

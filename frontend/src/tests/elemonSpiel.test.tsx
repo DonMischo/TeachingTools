@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import ElemonSpiel from "@/components/klikk/elemon/ElemonSpiel";
 import Duell from "@/components/klikk/elemon/Duell";
-import { qrLesen, qrSpieler, qrWild, starten, neuerElemonStand } from "@/lib/klikk/elemon/spiel";
+import { qrItem, qrLesen, qrSpieler, qrWild, starten, neuerElemonStand } from "@/lib/klikk/elemon/spiel";
 import { api, type KlikkDuelle } from "@/lib/api";
 
 describe("Elemon-QR-Codes", () => {
@@ -32,6 +32,26 @@ describe("Elemon als eigenes Spiel", () => {
     fireEvent.click(screen.getByText("OK"));
     expect(screen.getByText(/Ein wildes Yeti taucht auf/)).toBeTruthy();
     expect(JSON.parse(localStorage.getItem("hp_elemon_test")!).elemon.gesehen).toContain("yeti");
+  });
+
+  it("Item-Karte abtippen: Menge gutgeschrieben, zweites Mal ist die Karte leer", async () => {
+    localStorage.clear();
+    render(<ElemonSpiel speicherSchluessel="items" />);
+    await act(async () => {});
+    fireEvent.click(screen.getAllByRole("button").find(b => /^[a-zäöü]+\.[a-zäöü]+\.\d+$/.test(b.textContent ?? ""))!);
+    fireEvent.click(screen.getByText("Nicht erlauben"));
+    fireEvent.click(screen.getByText("Panzerkröte"));
+    const scannen = (code: string) => {
+      fireEvent.click(screen.getByLabelText("QR-Code scannen"));
+      fireEvent.change(screen.getByLabelText("Code abtippen"), { target: { value: code } });
+      fireEvent.click(screen.getByText("OK"));
+    };
+    scannen(qrItem("kaefig", 3, 1));
+    expect(screen.getByText(/\+3 Käfig!/)).toBeTruthy();
+    expect(JSON.parse(localStorage.getItem("hp_elemon_items")!).elemon.kaefige).toBe(5 + 3);
+    scannen(qrItem("kaefig", 3, 1));
+    expect(screen.getByText(/Diese Karte ist noch 10 Min. leer/)).toBeTruthy();
+    expect(JSON.parse(localStorage.getItem("hp_elemon_items")!).elemon.kaefige).toBe(8);
   });
 });
 

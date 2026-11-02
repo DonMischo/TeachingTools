@@ -812,6 +812,33 @@ def elemon_melden(code: str, body: IchIn, db: Session = Depends(get_db), spieler
     return SpielerOut(id=ich.id, name=ich.name, team=ich.team)
 
 
+class KarteIn(BaseModel):
+    karte: str = Field(pattern=r"^[a-z]{3,12}-\d{1,2}$")
+    sperre_min: int = Field(ge=1, le=60)
+
+
+class KarteOut(BaseModel):
+    ok: bool
+    # Sekunden, die die Karte noch gesperrt ist
+    warten: int
+
+
+@router.post("/{code}/elemon/karte", response_model=KarteOut)
+def elemon_karte(code: str, body: KarteIn, db: Session = Depends(get_db), spieler: Union[Teacher, Student, Guest] = Depends(get_player)):
+    """Gedruckte Item-Karte einlösen: danach ist sie für die ganze Sitzung eine Weile gesperrt."""
+    session = _sitzung(code, db, DUELL_TOOLS)
+    _darf_mitmachen(db, session, spieler)
+    karten = dict((session.settings or {}).get("elemon_karten") or {})
+    jetzt = _jetzt_ms()
+    bis = int(karten.get(body.karte) or 0)
+    if bis > jetzt:
+        return KarteOut(ok=False, warten=(bis - jetzt + 999) // 1000)
+    karten[body.karte] = jetzt + body.sperre_min * 60_000
+    session.settings = {**(session.settings or {}), "elemon_karten": karten}
+    db.commit()
+    return KarteOut(ok=True, warten=0)
+
+
 @router.get("/{code}/duelle", response_model=DuelleOut)
 def duelle(code: str, db: Session = Depends(get_db), spieler: Union[Teacher, Student, Guest] = Depends(get_player)):
     session = _sitzung(code, db, DUELL_TOOLS)

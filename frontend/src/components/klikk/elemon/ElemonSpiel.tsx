@@ -9,7 +9,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import type { MausZugang } from "@/lib/api";
 import { ARTEN, ART } from "@/lib/klikk/elemon/daten";
-import { qrWild } from "@/lib/klikk/elemon/spiel";
+import { ITEMS, qrItem, qrWild, type ItemId } from "@/lib/klikk/elemon/spiel";
 import { NAME_MUSTER, namensVorschlaege } from "@/lib/klikk/klasse";
 import { ergaenze, neuerStand } from "@/lib/klikk/motor";
 import type { Stand } from "@/lib/klikk/typen";
@@ -82,22 +82,33 @@ export default function ElemonSpiel({ zugang, speicherSchluessel = "standalone",
   );
 }
 
-/** Druckbare QR-Karten: wer eine scannt, trifft auf dieses wilde Elemon und kann es fangen */
+const ITEM_IDS = Object.keys(ITEMS) as ItemId[];
+
+/**
+ * Druckbare QR-Karten: wilde Elemon (scannen = Kampf, fangen) und Items
+ * (scannen = gutschreiben, Menge laut Multiplikator). Jede Item-Karte trägt eine
+ * eigene Nummer; nach dem Scannen ist genau diese Karte eine Weile gesperrt —
+ * je nach Item braucht es also mehrere Karten (höchstens 3–10).
+ */
 function QrKarten() {
   const [auswahl, setAuswahl] = useState<string[]>([]);
   const [stufe, setStufe] = useState(5);
+  const [items, setItems] = useState<Record<ItemId, { anzahl: number; menge: number }>>(
+    () => Object.fromEntries(ITEM_IDS.map(id => [id, { anzahl: 0, menge: ITEMS[id].menge }])) as Record<ItemId, { anzahl: number; menge: number }>);
+  const itemKarten = ITEM_IDS.flatMap(id => Array.from({ length: items[id].anzahl }, (_, i) => ({ id, nr: i + 1, menge: items[id].menge })));
+  const setzeItem = (id: ItemId, feld: "anzahl" | "menge", wert: number) => setItems(v => ({ ...v, [id]: { ...v[id], [feld]: wert } }));
   const zufaellig = () => setAuswahl([...ARTEN].sort(() => Math.random() - 0.5).slice(0, 12).map(a => a.id));
   return (
     <div className="card p-4 flex flex-col gap-3 w-full max-w-4xl">
       <style>{`@media print { body * { visibility: hidden; } .elemon-druck, .elemon-druck * { visibility: visible; } .elemon-druck { position: absolute; inset: 0; } }`}</style>
-      <h3 className="font-bold">🖨️ QR-Karten für wilde Elemon</h3>
+      <h3 className="font-bold">🖨️ QR-Karten für wilde Elemon und Items</h3>
       <p className="text-xs text-muted">Ausdrucken und im Raum oder Schulhaus verteilen. Wer eine Karte scannt (📷 in Elemon), kämpft gegen dieses Elemon und kann es mit dem Käfig fangen. Funktioniert auch ohne Sitzung.</p>
       <div className="flex flex-wrap gap-2 items-center text-sm">
         <label>Stufe <input type="number" min={1} max={50} value={stufe} onChange={e => setStufe(Math.max(1, Math.min(50, Number(e.target.value) || 1)))} className="input w-20" /></label>
         <button className="btn-secondary text-sm" onClick={zufaellig}>🎲 12 zufällige</button>
         <button className="btn-secondary text-sm" onClick={() => setAuswahl(ARTEN.map(a => a.id))}>Alle {ARTEN.length}</button>
         <button className="btn-secondary text-sm" onClick={() => setAuswahl([])}>Leeren</button>
-        <button className="btn-primary text-sm" disabled={!auswahl.length} onClick={() => window.print()}>Drucken</button>
+        <button className="btn-primary text-sm" disabled={!auswahl.length && !itemKarten.length} onClick={() => window.print()}>Drucken</button>
       </div>
       <div className="flex flex-wrap gap-1">
         {ARTEN.map(a => (
@@ -107,8 +118,35 @@ function QrKarten() {
           </button>
         ))}
       </div>
-      {auswahl.length > 0 && (
+      <div className="flex flex-col gap-1">
+        <b className="text-sm">Item-Karten</b>
+        <p className="text-xs text-muted">Jede Karte hat eine Nummer und ist nach dem Scannen für alle in der Sitzung eine Weile leer. Wie viele Karten es höchstens gibt, hängt davon ab, wie oft das Item gebraucht wird.</p>
+        <div className="grid sm:grid-cols-2 gap-2 text-sm">
+          {ITEM_IDS.map(id => {
+            const info = ITEMS[id];
+            return (
+              <div key={id} className="rounded-lg border border-line p-2 flex flex-wrap items-center gap-2">
+                <span className="font-bold w-32">{info.emoji} {info.name}</span>
+                <label className="text-xs">Karten <input type="number" min={0} max={info.maxKarten} value={items[id].anzahl} className="input w-16"
+                  onChange={e => setzeItem(id, "anzahl", Math.max(0, Math.min(info.maxKarten, Number(e.target.value) || 0)))} /> / {info.maxKarten}</label>
+                <label className="text-xs">× <input type="number" min={1} max={5} value={items[id].menge} className="input w-14"
+                  onChange={e => setzeItem(id, "menge", Math.max(1, Math.min(5, Number(e.target.value) || 1)))} /></label>
+                <span className="text-[10px] text-muted">leer für {info.sperreMin} Min.</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      {(auswahl.length > 0 || itemKarten.length > 0) && (
         <div className="elemon-druck grid grid-cols-2 sm:grid-cols-3 gap-3 bg-white text-black p-2">
+          {itemKarten.map(k => (
+            <div key={`${k.id}-${k.nr}`} className="border-2 border-dashed border-amber-500 rounded-xl p-3 flex flex-col items-center gap-1 break-inside-avoid">
+              <div className="text-3xl">{ITEMS[k.id].emoji}</div>
+              <QRCodeSVG value={qrItem(k.id, k.menge, k.nr)} size={128} />
+              <div className="text-xs font-bold">{k.menge}× {ITEMS[k.id].name}</div>
+              <div className="text-[10px]">Karte {k.nr} · scannen in Elemon 📷</div>
+            </div>
+          ))}
           {auswahl.map(id => (
             <div key={id} className="border-2 border-dashed border-gray-400 rounded-xl p-3 flex flex-col items-center gap-1 break-inside-avoid">
               <div className="text-3xl">{ART[id].emoji}</div>

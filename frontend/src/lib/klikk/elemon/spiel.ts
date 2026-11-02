@@ -4,7 +4,7 @@
  * der Spielzeit oder per Werbevideo — genau die Mechanik, die zurückholt.
  */
 import { ART, ARTEN, STARTER } from "./daten";
-import { erfahrung, heile, neuesElemon, zufall, type Aufstieg, type Elemon, type Kampf } from "./kampf";
+import { erfahrung, heile, maxKp, neuesElemon, zufall, type Aufstieg, type Elemon, type Kampf } from "./kampf";
 
 export interface ElemonStand {
   team: Elemon[];
@@ -27,6 +27,10 @@ export interface ElemonStand {
   siege: number;
   niederlagen: number;
   duelle: { id?: number; gegner: string; sieg: boolean }[];
+  /** belebt ein erschöpftes Elemon mit halben KP (fehlt in alten Spielständen) */
+  beleber?: number;
+  /** gescannte Item-Karten: Karten-ID → gesperrt bis (echte ms) */
+  kartenSperre?: Record<string, number>;
   /** Antwort der Eltern auf die Bitte um Extra-Zeit (eine Bitte pro Tag) */
   elternAntwort?: { tag: number; ja: boolean; plus: number; text: string };
   wurf: number;
@@ -45,7 +49,17 @@ export const ENERGIE_MAX = 5;
 /** so viele Spielminuten pro Energiepunkt */
 export const ENERGIE_MINUTEN = 45;
 export const TEAM_MAX = 6;
-export const PREISE = { kaefig: 20, trank: 25 } as const;
+export const PREISE = { kaefig: 20, trank: 25, beleber: 60 } as const;
+
+export type ItemId = "trank" | "kaefig" | "goldkaefig" | "beleber";
+/** Item-Karten: wie viele es je Art höchstens gibt, wie lange eine gescannte Karte gesperrt bleibt, Standard-Menge */
+export const ITEMS: Record<ItemId, { name: string; emoji: string; feld: "traenke" | "kaefige" | "goldkaefige" | "beleber"; maxKarten: number; sperreMin: number; menge: number }> = {
+  trank: { name: "Kräutertrank", emoji: "🧪", feld: "traenke", maxKarten: 10, sperreMin: 10, menge: 2 },
+  kaefig: { name: "Käfig", emoji: "⛓️", feld: "kaefige", maxKarten: 10, sperreMin: 10, menge: 3 },
+  beleber: { name: "Beleber", emoji: "💫", feld: "beleber", maxKarten: 5, sperreMin: 20, menge: 1 },
+  goldkaefig: { name: "Goldkäfig", emoji: "✨", feld: "goldkaefige", maxKarten: 3, sperreMin: 30, menge: 1 },
+};
+export const karteId = (item: ItemId, nr: number) => `${item}-${nr}`;
 
 export interface Trainer { name: string; emoji: string; team: [string, number][]; spruch: string; lohn: number }
 export interface Gebiet {
@@ -181,7 +195,31 @@ export function sehen(e: ElemonStand, art: string): ElemonStand {
 
 export function kaufen(e: ElemonStand, was: keyof typeof PREISE): ElemonStand {
   if (e.muenzen < PREISE[was]) return e;
-  return { ...e, muenzen: e.muenzen - PREISE[was], ...(was === "kaefig" ? { kaefige: e.kaefige + 1 } : { traenke: e.traenke + 1 }) };
+  const feld = ITEMS[was].feld;
+  return { ...e, muenzen: e.muenzen - PREISE[was], [feld]: (e[feld] ?? 0) + 1 };
+}
+
+/** Restsekunden, die eine Item-Karte (für mich) noch gesperrt ist */
+export const kartenRest = (e: ElemonStand, karte: string, jetztMs: number) =>
+  Math.max(0, Math.ceil(((e.kartenSperre?.[karte] ?? 0) - jetztMs) / 1000));
+
+/** Item-Karte einlösen: Menge gutschreiben, Karte für die Sperrzeit merken */
+export function itemEinloesen(e: ElemonStand, item: ItemId, menge: number, nr: number, jetztMs: number): ElemonStand {
+  const karte = karteId(item, nr);
+  if (kartenRest(e, karte, jetztMs) > 0) return e;
+  const feld = ITEMS[item].feld;
+  return {
+    ...e, [feld]: (e[feld] ?? 0) + menge,
+    kartenSperre: { ...e.kartenSperre, [karte]: jetztMs + ITEMS[item].sperreMin * 60_000 },
+  };
+}
+
+/** Beleber auf ein erschöpftes Elemon: halbe KP zurück */
+export function beleben(e: ElemonStand, nr: number): ElemonStand {
+  const x = e.team[nr];
+  if (!x || x.kp > 0 || !(e.beleber ?? 0)) return e;
+  const team = e.team.map((t, i) => (i === nr ? { ...t, kp: Math.ceil(maxKp(t) / 2) } : t));
+  return { ...e, team, beleber: (e.beleber ?? 0) - 1 };
 }
 
 /** Elemon zwischen Team und Lager tauschen (das Team bleibt mindestens eins groß) */
@@ -203,11 +241,16 @@ export const QR_GEBIET: Gebiet = {
   arena: { name: "", emoji: "", team: [], spruch: "", lohn: 0, orden: "" },
 };
 
-export type QrInhalt = { art: "wild"; elemon: string; stufe: number } | { art: "spieler"; code: string; id: number };
+export type QrInhalt =
+  | { art: "wild"; elemon: string; stufe: number }
+  | { art: "spieler"; code: string; id: number }
+  | { art: "item"; item: ItemId; menge: number; nr: number };
 
 /** QR-Inhalte: »ELEMON:W:<art>:<stufe>« (Karte) und »ELEMON:S:<Code>:<Spieler-ID>« (Mitspieler·in) */
 export const qrWild = (art: string, stufe: number) => `ELEMON:W:${art}:${stufe}`;
 export const qrSpieler = (code: string, id: number) => `ELEMON:S:${code}:${id}`;
+/** »ELEMON:I:<item>:<menge>:<kartennr>« — jede Karte einer Art hat eine eigene Nummer (Sperre je Karte) */
+export const qrItem = (item: ItemId, menge: number, nr: number) => `ELEMON:I:${item}:${menge}:${nr}`;
 
 export function qrLesen(text: string): QrInhalt | null {
   const t = text.trim();
@@ -215,5 +258,10 @@ export function qrLesen(text: string): QrInhalt | null {
   if (w && ART[w[1]]) return { art: "wild", elemon: w[1], stufe: Math.max(1, Math.min(50, Number(w[2]))) };
   const s = /^ELEMON:S:([A-Z0-9]{3,12}):(\d{1,9})$/i.exec(t);
   if (s) return { art: "spieler", code: s[1].toUpperCase(), id: Number(s[2]) };
+  const i = /^ELEMON:I:([a-z]+):(\d):(\d{1,2})$/.exec(t);
+  if (i && i[1] in ITEMS) {
+    const item = i[1] as ItemId, nr = Number(i[3]);
+    if (nr >= 1 && nr <= ITEMS[item].maxKarten) return { art: "item", item, menge: Math.max(1, Math.min(5, Number(i[2]))), nr };
+  }
   return null;
 }

@@ -39,6 +39,8 @@ describe("Elemon-App", () => {
       await act(async () => { await vi.advanceTimersByTimeAsync(4000); });
     }
     expect(screen.getByText(/Gewonnen|Verloren/)).toBeTruthy();
+    // das Ergebnis zählt genau einmal
+    expect(stand().siege + stand().niederlagen).toBe(1);
     fireEvent.click(screen.getByText("Weiter"));
 
     fireEvent.click(screen.getByText("⚔️ Duell"));

@@ -1756,6 +1756,11 @@ export const api = {
       apiFetch<KlikkDuell>(`klikk/sitzung/${encodeURIComponent(z.code)}/duelle/${id}/ablehnen`, {
         method: "POST", headers: z.token ? { Authorization: `Bearer ${z.token}` } : undefined,
       }),
+    /** Gedruckte Item-Karte einlösen — danach für die ganze Sitzung gesperrt */
+    elemonKarte: (z: MausZugang, karte: string, sperre_min: number) =>
+      apiFetch<{ ok: boolean; warten: number }>(`klikk/sitzung/${encodeURIComponent(z.code)}/elemon/karte`, {
+        method: "POST", body: JSON.stringify({ karte, sperre_min }), headers: z.token ? { Authorization: `Bearer ${z.token}` } : undefined,
+      }),
     /** Ich habe Elemon offen: in die Liste der Herausforderbaren */
     elemonMelden: (z: MausZugang, name: string, team: DuellElemon[]) =>
       apiFetch<ElemonKurz>(`klikk/sitzung/${encodeURIComponent(z.code)}/elemon/ich`, {

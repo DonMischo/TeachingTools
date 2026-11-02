@@ -629,6 +629,7 @@ simulationen:
       - Duelle mit Code — gezielt (andere Seite nimmt an oder lehnt ab) oder offen an alle; drei Minuten Pause nach jeder Herausforderung
       - Eigener QR-Code je Spieler·in zum Herausfordern, Scanner mit Kamera oder Abtippen
       - Druckbare QR-Karten mit wilden Elemon zum Fangen (Lehrkraft)
+      - Item-Karten mit Multiplikator (Trank, Käfig, Goldkäfig, Beleber), je Karte eine Sperre für die ganze Sitzung, bis zu 10 Karten je Item
   - id: klikk
     name: Klikk
     faehigkeiten: {use: [true, true]}

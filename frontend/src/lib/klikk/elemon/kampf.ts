@@ -103,6 +103,17 @@ export function kiZug(k: Kampf, seite: SeiteId = "b"): Zug {
   return { art: "angriff", nr: best };
 }
 
+/**
+ * Wie wahrscheinlich der Käfig hält: Fangrate der Art, angeschlagene Elemon
+ * leichter, Goldkäfig doppelt — und junge Elemon (niedrige Stufe) deutlich
+ * leichter, damit der Anfang nicht frustriert. Seltene bleiben schwer.
+ */
+export function fangChance(wild: Elemon, gold = false): number {
+  const anteil = wild.kp / maxKp(wild);
+  const stufenBonus = Math.max(0, 12 - wild.stufe) * 0.04;
+  return Math.min(0.98, ART[wild.art].fang * (1 - 0.5 * anteil) * (gold ? 2 : 1) + stufenBonus + 0.05);
+}
+
 // --- Runde ---------------------------------------------------------------
 
 const andere = (s: SeiteId): SeiteId => (s === "a" ? "b" : "a");
@@ -145,8 +156,7 @@ export function runde(alt: Kampf, zugA: Zug, zugB: Zug): { kampf: Kampf; ereigni
     if (ok) { ende("b", { geflohen: true }); return { kampf: k, ereignisse: ev }; }
   }
   if (k.wild && za.art === "kaefig") {
-    const wild = aktivVon(k.b), art = ART[wild.art];
-    const chance = Math.min(0.98, art.fang * (1 - (2 / 3) * (wild.kp / maxKp(wild))) * (za.gold ? 2 : 1) + 0.05);
+    const chance = fangChance(aktivVon(k.b), !!za.gold);
     // drei Wackler: jeder hält mit chance^(1/3); alle drei = gefangen
     let wackeln = 0;
     while (wackeln < 3 && r() < Math.cbrt(chance)) wackeln++;
@@ -158,9 +168,11 @@ export function runde(alt: Kampf, zugA: Zug, zugB: Zug): { kampf: Kampf; ereigni
   // 2. Angriffe nach Tempo; bei Gleichstand entscheidet der Zufall
   const tempoA = wert(aktivVon(k.a), "tempo"), tempoB = wert(aktivVon(k.b), "tempo");
   const reihe: SeiteId[] = tempoA > tempoB || (tempoA === tempoB && r() < 0.5) ? ["a", "b"] : ["b", "a"];
+  // Wer in dieser Runde erst eingewechselt wurde (nach einem K.o.), greift nicht mehr an: der K.o. beendet die Runde
+  const frisch = new Set<SeiteId>();
   for (const s of reihe) {
     const z = zuege[s];
-    if (z.art !== "angriff" || k.ende) continue;
+    if (z.art !== "angriff" || k.ende || frisch.has(s)) continue;
     const taeter = aktivVon(k[s]), opferSeite = k[andere(s)], opfer = aktivVon(opferSeite);
     if (!lebt(taeter)) continue;
     const id = taeter.attacken[z.nr] ?? taeter.attacken[0];
@@ -182,7 +194,7 @@ export function runde(alt: Kampf, zugA: Zug, zugB: Zug): { kampf: Kampf; ereigni
       // Das nächste fitte Elemon springt von selbst ein — so braucht ein Duell keinen Extra-Zug
       const naechstes = opferSeite.team.findIndex(lebt);
       if (naechstes < 0) ende(s);
-      else { opferSeite.aktiv = naechstes; ev.push({ typ: "wechsel", seite: andere(s), nr: naechstes }); }
+      else { opferSeite.aktiv = naechstes; frisch.add(andere(s)); ev.push({ typ: "wechsel", seite: andere(s), nr: naechstes }); }
     }
   }
   return { kampf: k, ereignisse: ev };

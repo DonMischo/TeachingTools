@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ARTEN, ATTACKEN, lernliste, wirkung } from "@/lib/klikk/elemon/daten";
-import { erfahrung, kiZug, maxKp, neuerKampf, neuesElemon, runde, type Kampf, type Zug } from "@/lib/klikk/elemon/kampf";
-import { ENERGIE_MAX, ENERGIE_MINUTEN, GEBIETE, energieAuffuellen, kampfEnde, neuerElemonStand, starten, wildesElemon } from "@/lib/klikk/elemon/spiel";
+import { erfahrung, fangChance, kiZug, maxKp, neuerKampf, neuesElemon, runde, type Kampf, type Zug } from "@/lib/klikk/elemon/kampf";
+import { ENERGIE_MAX, ENERGIE_MINUTEN, GEBIETE, ITEMS, beleben, itemEinloesen, kartenRest, qrItem, qrLesen, energieAuffuellen, kampfEnde, neuerElemonStand, starten, wildesElemon } from "@/lib/klikk/elemon/spiel";
 import { AUFGABEN, elemonAktion, elternUmZeit, neuerStand } from "@/lib/klikk/motor";
 
 const seite = (name: string, ...team: [string, number][]) => ({ name, team: team.map(([a, s]) => neuesElemon(a, s)), aktiv: 0 });
@@ -145,5 +145,35 @@ describe("Elemon-Spielstand", () => {
     const basis = elemonAktion(neuerStand(1), e => ({ ...starten(e, "fox"), energie: 0 }));
     const n = elternUmZeit({ ...basis, eltern: "streng", hausaufgabenStand: 0 });
     expect(n.chats.klasse.at(-1)!.text).toMatch(/wegen Mami/);
+  });
+
+  it("ein K.o. beendet die Runde: das neue Elemon schlägt nicht sofort zu", () => {
+    const a = seite("a", ["dragon_evolved", 30]);
+    const b = seite("b", ["duck", 3], ["bee", 3]);
+    const { ereignisse } = runde(neuerKampf(a, b, false, 7), { art: "angriff", nr: 0 }, { art: "angriff", nr: 0 });
+    const nachWechsel = ereignisse.slice(ereignisse.findIndex(x => x.typ === "wechsel"));
+    expect(nachWechsel.some(x => x.typ === "angriff")).toBe(false);
+  });
+
+  it("Fangen: junge Elemon gehen leicht in den Käfig, seltene starke bleiben schwer", () => {
+    expect(fangChance(neuesElemon("duck", 3))).toBeGreaterThan(0.7);
+    expect(fangChance(neuesElemon("hedgehog", 4))).toBeGreaterThan(0.6);
+    expect(fangChance(neuesElemon("dragon_evolved", 25))).toBeLessThan(0.15);
+  });
+
+  it("Item-Karten: Menge laut Karte, danach ist genau diese Karte gesperrt; Beleber weckt mit halben KP", () => {
+    expect(qrLesen(qrItem("trank", 3, 2))).toEqual({ art: "item", item: "trank", menge: 3, nr: 2 });
+    expect(qrLesen(qrItem("goldkaefig", 1, ITEMS.goldkaefig.maxKarten + 1))).toBeNull();
+    let e = starten(neuerElemonStand(), "fox");
+    e = itemEinloesen(e, "trank", 3, 2, 1000);
+    expect(e.traenke).toBe(2 + 3);
+    expect(itemEinloesen(e, "trank", 3, 2, 2000).traenke).toBe(5);
+    expect(itemEinloesen(e, "trank", 3, 3, 2000).traenke).toBe(8);
+    expect(kartenRest(e, "trank-2", 1000 + ITEMS.trank.sperreMin * 60_000)).toBe(0);
+    e = itemEinloesen(e, "beleber", 1, 1, 1000);
+    e.team[0].kp = 0;
+    const wach = beleben(e, 0);
+    expect(wach.team[0].kp).toBe(Math.ceil(maxKp(wach.team[0]) / 2));
+    expect(wach.beleber).toBe(0);
   });
 });
