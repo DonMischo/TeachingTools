@@ -13,7 +13,7 @@ import { REICHWEITE, RISIKO_NAME, TRENDS, trendNachId } from "./trends";
 import { VEREINE, schritteFuer, vereinHeute, type AktArt } from "./freizeit";
 import { npcKommentare } from "./klasse";
 import { hausaufgabe, type Aufgabe } from "./hausaufgaben";
-import { ENERGIE_MAX, energieAuffuellen, neuerElemonStand, type ElemonStand } from "./elemon/spiel";
+import { ENERGIE_MAX, energieAuffuellen, neuerElemonStand, type ElemonStand } from "@/lib/elemon/spiel";
 import type { AppId, ChatId, ElternTyp, Recht, Stand } from "./typen";
 
 export const START_UHR = 14 * 60;

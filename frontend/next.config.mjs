@@ -27,6 +27,8 @@ const nextConfig = {
         destination: `/simulationen/${slug}`,
         permanent: false,
       })),
+      // Elemon lag zuerst unter den Simulationen.
+      { source: "/simulationen/elemon", destination: "/aktivitaeten/elemon", permanent: false },
       { source: "/aktivitaeten/exitgame", destination: "/aktivitaeten/taskcrawler", permanent: false },
       { source: "/aktivitaeten/exitgame/:rest*", destination: "/aktivitaeten/taskcrawler/:rest*", permanent: false },
       { source: "/play/exitgame/:rest*", destination: "/play/taskcrawler/:rest*", permanent: false },

@@ -15,9 +15,9 @@ import { baueAvatar } from "@/components/gebaeude/avatar";
 import { beendeAvatar, bewegeAvatar, tickAvatare } from "@/components/gebaeude/avatarModell";
 import { effektWelt, Figur, type ElementId } from "@/lib/angriffe/effekte";
 import { ladeMonster, tickMonster, type MonsterFigur } from "@/lib/angriffe/monsterLader";
-import { ART } from "@/lib/klikk/elemon/daten";
-import type { SeiteId } from "@/lib/klikk/elemon/kampf";
-import { hatWebGL } from "../Clip3D";
+import { ART } from "@/lib/elemon/daten";
+import type { SeiteId } from "@/lib/elemon/kampf";
+import { hatWebGL } from "@/components/klikk/Clip3D";
 
 export interface BuehneSteuerung {
   /** Angriff von `seite` auf die andere; liefert die Dauer in Sekunden */

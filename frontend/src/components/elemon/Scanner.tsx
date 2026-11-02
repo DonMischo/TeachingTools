@@ -6,7 +6,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import jsQR from "jsqr";
-import { qrLesen, type QrInhalt } from "@/lib/klikk/elemon/spiel";
+import { qrLesen, type QrInhalt } from "@/lib/elemon/spiel";
 
 export default function Scanner({ code, gefunden, schliessen }: {
   /** Sitzungscode: eine abgetippte Zahl gilt als Spieler-ID in dieser Sitzung */

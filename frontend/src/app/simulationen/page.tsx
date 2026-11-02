@@ -324,14 +324,6 @@ const ALL_CARDS: Werkzeug[] = [
     description: "Eine Schulwoche mit einer Social-Media-App: Feed, Streaks, Likes, Challenges und ein Klassenchat, in dem es kippt. Am Ende zeigt der Datenspiegel, was die App (und die »anderen« Apps mit demselben Werbe-SDK) über dich gelernt hat — mit Belegen.",
     color: "#f43f5e",
   },
-  {
-    slug: "elemon",
-    href: "/simulationen/elemon",
-    icon: "🐾",
-    title: "Elemon",
-    description: "Monster-Sammelspiel aus Klikk als eigenes Spiel: Elemon im Käfig fangen, Arenen besiegen, die Klasse zum Duell fordern — per Liste oder QR-Code. Gedruckte QR-Karten verstecken wilde Elemon im Schulhaus. Energie, Werbevideos und Kaufangebote zeigen, wie solche Spiele zurückholen.",
-    color: "#16a34a",
-  },
 ];
 
 export default function SimulationenPage() {

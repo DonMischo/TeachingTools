@@ -5,8 +5,8 @@
  * entscheidet `zieh` — die Ansicht spielt nur die Ereignisse der Runde ab.
  */
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
-import { ART, ATTACKEN, elementInfo } from "@/lib/klikk/elemon/daten";
-import { aktivVon, lebt, maxKp, type Ereignis, type Kampf, type SeiteId, type Zug } from "@/lib/klikk/elemon/kampf";
+import { ART, ATTACKEN, elementInfo } from "@/lib/elemon/daten";
+import { aktivVon, lebt, maxKp, type Ereignis, type Kampf, type SeiteId, type Zug } from "@/lib/elemon/kampf";
 import type { BuehneSteuerung } from "./Buehne";
 
 const Buehne = lazy(() => import("./Buehne"));

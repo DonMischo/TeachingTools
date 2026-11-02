@@ -172,6 +172,16 @@ aktivitaeten:
 # Übersicht /simulationen: Fächer je Simulation (mehrere möglich), Filter nach
 # einem oder mehreren Fächern; Admins ändern Fächer schulweit oder legen eigene
 # an (school_settings.tool_faecher, Voreinstellungen in frontend/src/lib/faecher.ts).
+  - id: elemon
+    name: Elemon
+    faehigkeiten: {use: [true, true]}
+    kann:
+      - Monster-Sammelspiel aus Klikk als eigenes Spiel, Spielzeit nach der echten Uhr
+      - Trainer-Name aus Vorschlägen (kein Freitext), Käfig-Fang, Trainer, Arenen, Orden
+      - Duelle mit Code — gezielt (andere Seite nimmt an oder lehnt ab) oder offen an alle; drei Minuten Pause nach jeder Herausforderung
+      - Eigener QR-Code je Spieler·in zum Herausfordern, Scanner mit Kamera oder Abtippen
+      - Druckbare QR-Karten mit wilden Elemon zum Fangen (Lehrkraft)
+      - Item-Karten mit Multiplikator (Trank, Käfig, Goldkäfig, Beleber), je Karte eine Sperre für die ganze Sitzung, bis zu 10 Karten je Item
 simulationen:
   - id: gleichungswaage
     name: Gleichungswaage
@@ -622,16 +632,6 @@ simulationen:
       - Teile erkennen und Quiz für alle Geräte inklusive Smartphone
       - Smartphone in vier Schichten zerlegen (Rückseite, Bleche, Akku)
       - Damals & heute — Kennzahlen der Geräte im Vergleich
-  - id: elemon
-    name: Elemon
-    faehigkeiten: {use: [true, true]}
-    kann:
-      - Monster-Sammelspiel aus Klikk als eigenes Spiel, Spielzeit nach der echten Uhr
-      - Trainer-Name aus Vorschlägen (kein Freitext), Käfig-Fang, Trainer, Arenen, Orden
-      - Duelle mit Code — gezielt (andere Seite nimmt an oder lehnt ab) oder offen an alle; drei Minuten Pause nach jeder Herausforderung
-      - Eigener QR-Code je Spieler·in zum Herausfordern, Scanner mit Kamera oder Abtippen
-      - Druckbare QR-Karten mit wilden Elemon zum Fangen (Lehrkraft)
-      - Item-Karten mit Multiplikator (Trank, Käfig, Goldkäfig, Beleber), je Karte eine Sperre für die ganze Sitzung, bis zu 10 Karten je Item
   - id: klikk
     name: Klikk
     faehigkeiten: {use: [true, true]}

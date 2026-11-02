@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import ElemonSpiel from "@/components/klikk/elemon/ElemonSpiel";
-import Duell from "@/components/klikk/elemon/Duell";
-import { qrItem, qrLesen, qrSpieler, qrWild, starten, neuerElemonStand } from "@/lib/klikk/elemon/spiel";
+import ElemonSpiel from "@/components/elemon/ElemonSpiel";
+import Duell from "@/components/elemon/Duell";
+import { qrItem, qrLesen, qrSpieler, qrWild, starten, neuerElemonStand } from "@/lib/elemon/spiel";
 import { api, type KlikkDuelle } from "@/lib/api";
 
 describe("Elemon-QR-Codes", () => {

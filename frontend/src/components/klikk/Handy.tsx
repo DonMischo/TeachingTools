@@ -25,7 +25,7 @@ import Feed from "./Feed";
 import Chats from "./Chats";
 import { Candy, Quiz, Sneakr, Wetter } from "./Apps";
 import SpieleApp, { type Online } from "./spiele/SpieleApp";
-import ElemonApp from "./elemon/ElemonApp";
+import ElemonApp from "@/components/elemon/ElemonApp";
 import Einstellungen, { Sperre } from "./Einstellungen";
 import { gesperrt } from "@/lib/klikk/motor";
 import { namensVorschlaege } from "@/lib/klikk/klasse";

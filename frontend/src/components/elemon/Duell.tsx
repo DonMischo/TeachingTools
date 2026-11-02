@@ -9,9 +9,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { api, type DuellElemon, type KlikkDuell, type KlikkDuelle, type MausZugang } from "@/lib/api";
-import { ART } from "@/lib/klikk/elemon/daten";
-import { maxKp, neuerKampf, runde, type Elemon, type Kampf, type Zug } from "@/lib/klikk/elemon/kampf";
-import { qrSpieler, type ElemonStand } from "@/lib/klikk/elemon/spiel";
+import { ART } from "@/lib/elemon/daten";
+import { maxKp, neuerKampf, runde, type Elemon, type Kampf, type Zug } from "@/lib/elemon/kampf";
+import { qrSpieler, type ElemonStand } from "@/lib/elemon/spiel";
 import { NAME_MUSTER } from "@/lib/klikk/klasse";
 import KampfAnsicht from "./KampfAnsicht";
 

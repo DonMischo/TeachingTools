@@ -62,6 +62,14 @@ const ALL_CARDS: Werkzeug[] = [
     color: "#f472b6",
   },
   {
+    slug: "elemon",
+    href: "/aktivitaeten/elemon",
+    icon: "🐾",
+    title: "Elemon",
+    description: "Monster-Sammelspiel aus Klikk als eigenes Spiel: Elemon im Käfig fangen, Arenen besiegen, die Klasse zum Duell fordern — per Liste oder QR-Code. Gedruckte QR-Karten verstecken wilde Elemon im Schulhaus. Energie, Werbevideos und Kaufangebote zeigen, wie solche Spiele zurückholen.",
+    color: "#16a34a",
+  },
+  {
     slug: "uebung",
     href: "/simulationen/uebung",
     icon: "📚",

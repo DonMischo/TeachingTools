@@ -6,19 +6,19 @@
  * wie solche Spiele zurückholen — und alles läuft durch AdKit.
  */
 import { useEffect, useState } from "react";
-import { ART, ARTEN, ATTACKEN, ELEMENTE, STARTER, TYPEN_SCHWACH, TYPEN_STARK, elementInfo, type ElementId } from "@/lib/klikk/elemon/daten";
-import { aktivVon, heile, kiZug, lebt, maxKp, neuesElemon, neuerKampf, runde, xpBis, type Elemon, type Kampf, type Zug } from "@/lib/klikk/elemon/kampf";
+import { ART, ARTEN, ATTACKEN, ELEMENTE, STARTER, TYPEN_SCHWACH, TYPEN_STARK, elementInfo, type ElementId } from "@/lib/elemon/daten";
+import { aktivVon, heile, kiZug, lebt, maxKp, neuesElemon, neuerKampf, runde, xpBis, type Elemon, type Kampf, type Zug } from "@/lib/elemon/kampf";
 import {
   ENERGIE_MAX, GEBIETE, ITEMS, PREISE, QR_GEBIET, beleben, darfIns, itemEinloesen, karteId, kartenRest, kampfEnde, kaufen, naechsteEnergie, neuerElemonStand, sehen, starten,
   tauschen, trainerTeam, wildesElemon, type Ausgang, type ElemonOrt, type ElemonStand, type Gebiet, type QrInhalt,
-} from "@/lib/klikk/elemon/spiel";
-import type { Aufstieg } from "@/lib/klikk/elemon/kampf";
+} from "@/lib/elemon/spiel";
+import type { Aufstieg } from "@/lib/elemon/kampf";
 import { elemonAktion, elternUmZeit, merkeOrt } from "@/lib/klikk/motor";
 
 /** Gestaffelte »Extra-Nutzung« — das teuerste Paket ist das »beliebteste« */
 const EXTRA: [string, string][] = [["+3 ⚡", "0,99 €"], ["+15 ⚡ · Beliebt!", "4,99 €"], ["Unbegrenzt für 24 h", "19,99 €"]];
 import type { Stand } from "@/lib/klikk/typen";
-import type { Online } from "../spiele/SpieleApp";
+import type { Online } from "@/components/klikk/spiele/SpieleApp";
 import KampfAnsicht from "./KampfAnsicht";
 import Duell, { duellTeam, laufendesDuell, useDuelle } from "./Duell";
 import Scanner from "./Scanner";

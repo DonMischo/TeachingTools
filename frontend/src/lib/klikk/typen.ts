@@ -164,9 +164,9 @@ export interface Stand {
   /** Runden in »Klikk Games« */
   spielRunden: { spiel: string; punkte: number; tag: number; uhr: number }[];
   /** Monster-Sammelspiel auf dem Handy (fehlt, bis die App zum ersten Mal startet) */
-  elemon?: import("./elemon/spiel").ElemonStand;
+  elemon?: import("@/lib/elemon/spiel").ElemonStand;
   /** Wo man Spiele-Apps verlassen hat (Reiter, laufender Kampf, gewähltes Spiel) */
-  appOrt?: { elemon?: import("./elemon/spiel").ElemonOrt; spiele?: string | null };
+  appOrt?: { elemon?: import("@/lib/elemon/spiel").ElemonOrt; spiele?: string | null };
   /** eigene Challenge-Videos */
   videos: { trend: string; fake: boolean; tag: number; aufrufe: number }[];
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { ARTEN, ATTACKEN, lernliste, wirkung } from "@/lib/klikk/elemon/daten";
-import { erfahrung, fangChance, kiZug, maxKp, neuerKampf, neuesElemon, runde, type Kampf, type Zug } from "@/lib/klikk/elemon/kampf";
-import { ENERGIE_MAX, ENERGIE_MINUTEN, GEBIETE, ITEMS, beleben, itemEinloesen, kartenRest, qrItem, qrLesen, energieAuffuellen, kampfEnde, neuerElemonStand, starten, wildesElemon } from "@/lib/klikk/elemon/spiel";
+import { ARTEN, ATTACKEN, lernliste, wirkung } from "@/lib/elemon/daten";
+import { erfahrung, fangChance, kiZug, maxKp, neuerKampf, neuesElemon, runde, type Kampf, type Zug } from "@/lib/elemon/kampf";
+import { ENERGIE_MAX, ENERGIE_MINUTEN, GEBIETE, ITEMS, beleben, itemEinloesen, kartenRest, qrItem, qrLesen, energieAuffuellen, kampfEnde, neuerElemonStand, starten, wildesElemon } from "@/lib/elemon/spiel";
 import { AUFGABEN, elemonAktion, elternUmZeit, neuerStand } from "@/lib/klikk/motor";
 
 const seite = (name: string, ...team: [string, number][]) => ({ name, team: team.map(([a, s]) => neuesElemon(a, s)), aktiv: 0 });

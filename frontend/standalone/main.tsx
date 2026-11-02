@@ -25,7 +25,7 @@ import Stellenwert from "@/components/stellenwert/Stellenwert";
 import Markieren from "@/components/markieren/Markieren";
 import PcWerkstatt from "@/components/pcbau/PcWerkstatt";
 import Klikk from "@/components/klikk/Klikk";
-import ElemonSpiel from "@/components/klikk/elemon/ElemonSpiel";
+import ElemonSpiel from "@/components/elemon/ElemonSpiel";
 import KiWerkstatt from "@/components/ki/KiWerkstatt";
 import RockYourLife from "@/components/leben/RockYourLife";
 import Leviathan from "@/components/leviathan/Leviathan";

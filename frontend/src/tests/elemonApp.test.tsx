@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
-import ElemonApp from "@/components/klikk/elemon/ElemonApp";
+import ElemonApp from "@/components/elemon/ElemonApp";
 import { neuerStand } from "@/lib/klikk/motor";
 import type { Stand } from "@/lib/klikk/typen";
 

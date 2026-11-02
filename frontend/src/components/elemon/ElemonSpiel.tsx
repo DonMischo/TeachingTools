@@ -8,8 +8,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import type { MausZugang } from "@/lib/api";
-import { ARTEN, ART } from "@/lib/klikk/elemon/daten";
-import { ITEMS, qrItem, qrWild, type ItemId } from "@/lib/klikk/elemon/spiel";
+import { ARTEN, ART } from "@/lib/elemon/daten";
+import { ITEMS, qrItem, qrWild, type ItemId } from "@/lib/elemon/spiel";
 import { NAME_MUSTER, namensVorschlaege } from "@/lib/klikk/klasse";
 import { ergaenze, neuerStand } from "@/lib/klikk/motor";
 import type { Stand } from "@/lib/klikk/typen";

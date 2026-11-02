@@ -1,5 +1,5 @@
 "use client";
-import ElemonSpiel from "@/components/klikk/elemon/ElemonSpiel";
+import ElemonSpiel from "@/components/elemon/ElemonSpiel";
 import { ToolSessionBar } from "@/components/ToolSessionBar";
 import { RequireAccount } from "@/components/RequireAccount";
 import { useAuth } from "@/contexts/AuthContext";

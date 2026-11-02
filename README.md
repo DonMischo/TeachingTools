@@ -124,6 +124,18 @@ Alle Aktivitäten können Schüler nutzen. Hosten dürfen standardmäßig nur Le
 - Die Schwierigkeit steigt nach drei richtigen und sinkt nach zwei falschen Lösungen
 - Geprüft wird auf dem Server, der Fortschritt zählt je Thema
 
+### 🐾 Elemon
+
+Das Monster-Sammelspiel aus Klikk als eigenes Spiel (gleiche Regeln und 3D-Kämpfe, Spielzeit nach der echten Uhr).
+
+- Trainer-Name aus Vorschlägen, Elemon im Käfig fangen, Trainer, Arenen und Orden in vier Gebieten
+- Energie, Werbevideos und gesperrte »Extra-Nutzung« wie im Klikk-Handy
+- Duelle mit Code: Liste aller, die gerade spielen, gezielt herausfordern (muss angenommen werden) oder die ganze Klasse offen; nach jeder Herausforderung drei Minuten Pause
+- Eigener QR-Code je Spieler·in: scannen fordert heraus (Kamera mit jsQR, sonst Nummer abtippen)
+- Lehrkräfte drucken QR-Karten mit wilden Elemon; wer eine scannt, kann es fangen
+- Item-Karten (Kräutertrank, Käfig, Goldkäfig, Beleber) mit Multiplikator; jede Karte hat eine Nummer und ist nach dem Scannen für die ganze Sitzung eine Weile leer (10–30 Min.), daher bis zu 10 Karten je Item
+- Junge Elemon (niedrige Stufe) lassen sich leichter fangen; ein K.o. beendet die Runde
+
 ---
 
 ## 🔬 Simulationen
@@ -201,18 +213,6 @@ Jede Simulation trägt Fächer (auch mehrere, z. B. Geografie und Physik); die �
 - Smartphone Schicht für Schicht zerlegen: Glasrückseite, Halte- und Abschirmblech, Akku mit Ladespule — darunter Chips, Graphitfolie und Flexkabel
 - Erkennen mit Infokarten und Quiz für alle Geräte inklusive Smartphone; »Damals & heute« vergleicht Takt, Kerne, Speicher und Netzteil logarithmisch
 - Tipp-Knopf, Fehlerzähler, Bestzeit im Browser
-
-### 🐾 Elemon
-
-Das Monster-Sammelspiel aus Klikk als eigenes Spiel (gleiche Regeln und 3D-Kämpfe, Spielzeit nach der echten Uhr).
-
-- Trainer-Name aus Vorschlägen, Elemon im Käfig fangen, Trainer, Arenen und Orden in vier Gebieten
-- Energie, Werbevideos und gesperrte »Extra-Nutzung« wie im Klikk-Handy
-- Duelle mit Code: Liste aller, die gerade spielen, gezielt herausfordern (muss angenommen werden) oder die ganze Klasse offen; nach jeder Herausforderung drei Minuten Pause
-- Eigener QR-Code je Spieler·in: scannen fordert heraus (Kamera mit jsQR, sonst Nummer abtippen)
-- Lehrkräfte drucken QR-Karten mit wilden Elemon; wer eine scannt, kann es fangen
-- Item-Karten (Kräutertrank, Käfig, Goldkäfig, Beleber) mit Multiplikator; jede Karte hat eine Nummer und ist nach dem Scannen für die ganze Sitzung eine Weile leer (10–30 Min.), daher bis zu 10 Karten je Item
-- Junge Elemon (niedrige Stufe) lassen sich leichter fangen; ein K.o. beendet die Runde
 
 ### 📱 Klikk
 - Eine Schulwoche (Mo–Fr ab 14 Uhr) mit einer erfundenen Social-Media-App, daneben Hausaufgaben, Freunde und Schlaf — Zeit vergeht nur durch Handlungen
