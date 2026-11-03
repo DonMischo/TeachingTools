@@ -4,7 +4,7 @@
  *   🧱 Tafel      Plättchen legen, bündeln, entbündeln; dieselbe Zahl in allen drei Systemen
  *   💡 Verstehen  Bündeln, Ziffernvorrat, Stellenwerte, Umrechnen Schritt für Schritt, Päckchen
  *   ✍️ Üben       Aufgaben in drei Stufen mit Lösungsweg
- *   🎮 Spiele     Bit-Fall, Hex-Farbmischer, Zählwerk-Rennen, Geheimbotschaft
+ *   🎮 Spiele     Bit-Fall, Zählwerk-Rennen, Geheimbotschaft
  */
 import { useState, type ReactNode } from "react";
 import Tafel from "./Tafel";
@@ -45,7 +45,7 @@ export default function Stellenwert({ action, zugang }: { action?: ReactNode; zu
           <h1 className="text-2xl font-black tracking-tight">🔢 Stellenwerttafeln</h1>
           <p className="text-muted text-sm mt-1">
             Zehnersystem, Zweiersystem (binär) und Sechzehnersystem (hexadezimal) in der Stellenwerttafel:
-            Plättchen legen und bündeln, umrechnen Schritt für Schritt, üben — und vier Spiele.
+            Plättchen legen und bündeln, umrechnen Schritt für Schritt, üben — und drei Spiele.
           </p>
         </div>
         <div className="flex items-center gap-2">{action}</div>

@@ -1,6 +1,6 @@
 /**
- * Logik der vier Stellenwert-Spiele: Bit-Fall, Hex-Farbmischer, Zählwerk-Rennen
- * und Geheimbotschaft. Reine Rechnung, der Zufall ist einsteckbar (Tests).
+ * Logik der drei Stellenwert-Spiele: Bit-Fall, Zählwerk-Rennen und
+ * Geheimbotschaft. Reine Rechnung, der Zufall ist einsteckbar (Tests).
  */
 import { ausZiffern, schreibe, uebertragsStart, ziffernVon, type Basis } from "./stellenwert";
 
@@ -27,31 +27,6 @@ export function neueZeile(id: number, stufe: number, anzeige: 10 | 16, r: Zufall
 
 /** Punkte für eine gelöste Zeile: mehr Bits und höhere Stufe zählen mehr. */
 export const fallPunkte = (z: FallZeile, stufe: number) => z.bits * 2 + stufe * 2;
-
-// ── Hex-Farbmischer ──────────────────────────────────────────────────────────
-
-export type Rgb = [number, number, number];
-
-export const hexFarbe = (c: Rgb) => "#" + c.map(k => schreibe(k, 16, 2)).join("");
-
-/**
- * Stufe 1: je Kanal 00, 80 oder FF. Stufe 2: die Einerstelle ist 0 (A0, 30 …).
- * Stufe 3: alles. Nie ganz Schwarz oder ganz Weiß, das wäre geschenkt.
- */
-export function zielFarbe(stufe: 1 | 2 | 3, r: Zufall = Math.random): Rgb {
-  for (;;) {
-    const kanal = () => (stufe === 1 ? wahl(r, [0x00, 0x80, 0xff]) : stufe === 2 ? ganz(r, 0, 15) * 16 : ganz(r, 0, 255));
-    const c: Rgb = [kanal(), kanal(), kanal()];
-    const hex = hexFarbe(c);
-    if (hex !== "#000000" && hex !== "#FFFFFF") return c;
-  }
-}
-
-/** 0 = gleich, 1 = Schwarz gegen Weiß */
-export const farbAbstand = (a: Rgb, b: Rgb) =>
-  Math.sqrt(a.reduce((s, k, i) => s + (k - b[i]) ** 2, 0)) / Math.sqrt(3 * 255 ** 2);
-
-export const farbSterne = (abstand: number) => (abstand <= 0.02 ? 3 : abstand <= 0.07 ? 2 : abstand <= 0.15 ? 1 : 0);
 
 // ── Zählwerk-Rennen ──────────────────────────────────────────────────────────
 

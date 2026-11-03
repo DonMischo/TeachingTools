@@ -12,7 +12,7 @@ import {
   zahlwort, zuDezimalWeg, type Stufe,
 } from "@/lib/stellenwert";
 import {
-  codiere, decodiere, farbAbstand, farbSterne, hexFarbe, neueZeile, zaehlRunde, zaehlZiel, zehnerSchritt, zielFarbe,
+  codiere, decodiere, neueZeile, zaehlRunde, zaehlZiel, zehnerSchritt,
 } from "@/lib/stellenwertSpiele";
 
 function zufall(seed: number) {
@@ -114,12 +114,6 @@ describe("Spiele", () => {
       expect(z.ziel).toBeLessThan(2 ** z.bits);
     }
   });
-  it("Farben: Stufe 2 hat 0 als Einerstelle, Abstand und Sterne passen", () => {
-    const r = zufall(5);
-    for (let i = 0; i < 50; i++) expect(hexFarbe(zielFarbe(2, r))).toMatch(/^#([0-9A-F]0){3}$/);
-    expect(farbAbstand([0, 0, 0], [255, 255, 255])).toBeCloseTo(1);
-    expect(farbSterne(0)).toBe(3);
-  });
   it("Zählwerk läuft nie aus der Anzeige", () => {
     const r = zufall(9);
     for (const s of [1, 2, 3] as const) for (let i = 0; i < 100; i++) {
@@ -204,7 +198,7 @@ describe("Oberfläche", () => {
     for (const name of [/Verstehen/, /Üben/]) fireEvent.click(screen.getByRole("button", { name }));
     expect(screen.getByTestId("aufgabe").textContent).not.toBe("");
     fireEvent.click(screen.getByRole("button", { name: /Spiele/ }));
-    for (const spiel of [/Hex-Farbmischer/, /Zählwerk-Rennen/, /Geheimbotschaft/, /Bit-Fall/]) {
+    for (const spiel of [/Zählwerk-Rennen/, /Geheimbotschaft/, /Bit-Fall/]) {
       fireEvent.click(screen.getAllByRole("button", { name: spiel })[0]);
     }
     expect(screen.getByRole("button", { name: /Los geht/ })).toBeTruthy();

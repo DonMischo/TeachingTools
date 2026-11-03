@@ -297,10 +297,17 @@ const ALL_CARDS: Werkzeug[] = [
     href: "/simulationen/stellenwert",
     icon: "🔢",
     title: "Stellenwerttafeln",
-    description: "Zehner-, Zweier- und Sechzehnersystem in einer farbigen Stellenwerttafel: Plättchen legen, bündeln und entbündeln, große Zahlen bis Milliarden und Kommazahlen bis Tausendstel, dieselbe Zahl in allen drei Systemen. Umrechnen Schritt für Schritt (Stellenwerte abziehen, Division mit Rest), Vierer-Päckchen zwischen Binär und Hex, Übungen in drei Stufen und vier Spiele: Bit-Fall, Hex-Farbmischer, Zählwerk-Rennen und Geheimbotschaft (ASCII).",
+    description: "Zehner-, Zweier- und Sechzehnersystem in einer farbigen Stellenwerttafel: Plättchen legen, bündeln und entbündeln, große Zahlen bis Milliarden und Kommazahlen bis Tausendstel, dieselbe Zahl in allen drei Systemen. Umrechnen Schritt für Schritt (Stellenwerte abziehen, Division mit Rest), Vierer-Päckchen zwischen Binär und Hex, Übungen in drei Stufen und drei Spiele: Bit-Fall, Zählwerk-Rennen und Geheimbotschaft (ASCII).",
     color: "#a855f7",
   },
   {
+    slug: "farbmodelle",
+    href: "/simulationen/farbmodelle",
+    icon: "🎨",
+    title: "Farbmodelle",
+    description: "RGB als Licht, CMYK als Druckfarbe, HSV und HSL mit Farbkreis: dieselbe Farbe in jedem Modell, mit Reglern und Bild, dazu alle Schreibweisen von #RRGGBB bis hsl(). Farbcodes zwischen Hex und Dezimal umrechnen, je Kanal mit Rechenweg, und im Spiel Hex-Farbmischer eine Zielfarbe nachmischen.",
+    color: "#f97316",
+  },  {
     slug: "rechenregeln",
     href: "/simulationen/rechenregeln",
     icon: "🍎",

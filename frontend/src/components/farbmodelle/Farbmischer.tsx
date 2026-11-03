@@ -7,7 +7,7 @@
  */
 import { useEffect, useState } from "react";
 import { ziffer } from "@/lib/stellenwert";
-import { farbAbstand, farbSterne, hexFarbe, zielFarbe, type Rgb } from "@/lib/stellenwertSpiele";
+import { farbAbstand, farbSterne, hexFarbe, zielFarbe, type Rgb } from "@/lib/farbmodelle";
 import { Chips } from "@/components/prozent/ui";
 
 const RUNDEN = 5;

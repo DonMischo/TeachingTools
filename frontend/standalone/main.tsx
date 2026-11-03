@@ -25,6 +25,7 @@ import Trigonometrie from "@/components/trigonometrie/Trigonometrie";
 import Dreiecke from "@/components/dreiecke/Dreiecke";
 import Kreis from "@/components/kreis/Kreis";
 import Stellenwert from "@/components/stellenwert/Stellenwert";
+import Farbmodelle from "@/components/farbmodelle/Farbmodelle";
 import Markieren from "@/components/markieren/Markieren";
 import PcWerkstatt from "@/components/pcbau/PcWerkstatt";
 import Klikk from "@/components/klikk/Klikk";
@@ -64,6 +65,7 @@ const TOOLS: { id: string; icon: string; label: string; node: ReactNode }[] = [
   { id: "trigonometrie", icon: "🔺", label: "Trigonometrie", node: <Trigonometrie /> },
   { id: "kreis", icon: "⭕", label: "Kreis", node: <Kreis /> },
   { id: "stellenwert", icon: "🔢", label: "Stellenwerttafeln", node: <Stellenwert /> },
+  { id: "farbmodelle", icon: "🎨", label: "Farbmodelle", node: <Farbmodelle /> },
   { id: "markieren", icon: "🖍️", label: "Markieren & Bearbeiten", node: <Markieren /> },
   { id: "pcbau", icon: "🪛", label: "PC-Werkstatt", node: <PcWerkstatt /> },
   { id: "klikk", icon: "📱", label: "Klikk", node: <Klikk /> },

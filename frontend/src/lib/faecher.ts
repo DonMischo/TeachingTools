@@ -60,6 +60,7 @@ export const STANDARD_FAECHER: Record<string, string[]> = {
   trigonometrie: ["Mathematik", "Physik", "Geografie"],
   kreis: ["Mathematik"],
   stellenwert: ["Mathematik", "Informatik"],
+  farbmodelle: ["Informatik", "Kunst", "Physik"],
   tippen: ["Informatik"],
   maus: ["Informatik"],
   markieren: ["Informatik"],

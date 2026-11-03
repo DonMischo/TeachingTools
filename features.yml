@@ -774,10 +774,19 @@ simulationen:
       - Umrechnen Schritt für Schritt (Stellenwerte abziehen, Division mit Rest, Ziffer mal Stellenwert)
       - Zählwerk mit sichtbarem Übertrag
       - Übungen in drei Stufen mit Lösungsweg (Ablesen, Ziffernwert, Zahlwort, Zerlegen, Umrechnen, Weiterzählen)
-      - "Spiele: Bit-Fall, Hex-Farbmischer, Zählwerk-Rennen, Geheimbotschaft (ASCII)"
+      - "Spiele: Bit-Fall, Zählwerk-Rennen, Geheimbotschaft (ASCII)"
       - "Zählwerk-Rennen: Antwort durch Drehen der Walzen, Übertrag auf Wunsch automatisch und Walze für Walze"
       - "Zählwerk-Rennen auf Zeit oder mit fester Aufgabenzahl; im Zehnersystem Schritte in Stellenwerten (+ 1 H) bis 1 000, 1 Million oder 1 Milliarde"
       - "Geheimbotschaft: Code direkt an Anwesende derselben Sitzung schicken, Empfänger nimmt an, höchstens eine Botschaft je 3 Minuten"
+  - id: farbmodelle
+    name: Farbmodelle
+    faehigkeiten: {use: [true, true]}
+    kann:
+      - "RGB als additive Lichtmischung, CMYK als subtraktive Druckmischung, HSV und HSL mit Farbkreis und Ziehfeld"
+      - Dieselbe Farbe in allen Schreibweisen (Hex mit Kurzform, rgb(), Prozent, CMYK, HSV, hsl(), Grauwert, Gegenfarbe)
+      - Farbcode Hex ↔ Dezimal je Kanal mit Rechenweg in beide Richtungen
+      - Freier Umrechner Hex ↔ Dezimal mit Stellenwerten und fortgesetzter Division
+      - "Spiel Hex-Farbmischer: Zielfarbe in drei Stufen nachmischen, Sterne, Tipp kostet einen Stern"
   - id: rechenregeln
     name: Rechenregeln
     kann:

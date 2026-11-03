@@ -30,6 +30,7 @@ import Trigonometrie from "@/components/trigonometrie/Trigonometrie";
 import Dreiecke from "@/components/dreiecke/Dreiecke";
 import Kreis from "@/components/kreis/Kreis";
 import Stellenwert from "@/components/stellenwert/Stellenwert";
+import Farbmodelle from "@/components/farbmodelle/Farbmodelle";
 import Markieren from "@/components/markieren/Markieren";
 import PcWerkstatt from "@/components/pcbau/PcWerkstatt";
 import Klikk from "@/components/klikk/Klikk";
@@ -79,6 +80,7 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   trigonometrie: { title: "Trigonometrie", icon: "🔺", node: <Trigonometrie /> },
   kreis: { title: "Kreis", icon: "⭕", node: <Kreis /> },
   stellenwert: { title: "Stellenwerttafeln", icon: "🔢", node: <Stellenwert /> },
+  farbmodelle: { title: "Farbmodelle", icon: "🎨", node: <Farbmodelle /> },
   tippen: { title: "Tippen", icon: "⌨️", node: <Tippen /> },
   // Die Bestenliste braucht Code und Gast-Token.
   markieren: { title: "Markieren & Bearbeiten", icon: "🖍️", node: null },

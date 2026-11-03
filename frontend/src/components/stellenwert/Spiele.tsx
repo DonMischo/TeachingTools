@@ -1,20 +1,17 @@
 "use client";
 /**
  * Die Spiele zu den Stellenwerten: Bit-Fall (Zeilen stapeln sich, Bits
- * schalten oder ablesen), Hex-Farbmischer (#RRGGBB nachmischen),
- * Zählwerk-Rennen (Übertrag vorhersagen) und Geheimbotschaft (ASCII-Bytes).
+ * schalten oder ablesen), Zählwerk-Rennen (Übertrag vorhersagen) und Geheimbotschaft (ASCII-Bytes).
  */
 import { useEffect, useState } from "react";
 import { Chips } from "@/components/prozent/ui";
 import BitFall from "./spiele/BitFall";
-import Farbmischer from "./spiele/Farbmischer";
 import ZaehlwerkRennen from "./spiele/ZaehlwerkRennen";
 import Geheimbotschaft from "./spiele/Geheimbotschaft";
 import type { Empfangen, Geheimpost } from "./spiele/Geheimpost";
 
 const SPIELE = [
   { id: "bitfall", label: "🧱 Bit-Fall" },
-  { id: "farbe", label: "🎨 Hex-Farbmischer" },
   { id: "zaehlwerk", label: "🚗 Zählwerk-Rennen" },
   { id: "geheim", label: "🕵️ Geheimbotschaft" },
 ] as const;
@@ -29,7 +26,6 @@ export default function Spiele({ post, empfangen }: { post?: Geheimpost; empfang
       <Chips wahl={spiel} setze={setSpiel} optionen={SPIELE} />
       <div className="card p-4 sm:p-5">
         {spiel === "bitfall" && <BitFall />}
-        {spiel === "farbe" && <Farbmischer />}
         {spiel === "zaehlwerk" && <ZaehlwerkRennen />}
         {spiel === "geheim" && <Geheimbotschaft post={post} empfangen={empfangen} />}
       </div>

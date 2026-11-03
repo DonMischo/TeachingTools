@@ -131,6 +131,9 @@ CATALOG: list[CatalogTool] = [
     CatalogTool("stellenwert", "🔢 Stellenwerttafeln", "🔢", "simulationen", {
         "use": _cap(True, True),
     }),
+    CatalogTool("farbmodelle", "🎨 Farbmodelle", "🎨", "simulationen", {
+        "use": _cap(True, True),
+    }),
     # Rechenregeln: eigenes Tempo, eigener QR, kein Host.
     CatalogTool("rechenregeln", "🍎 Rechenregeln", "🍎", "simulationen", {
         "use": _cap(True, True),
