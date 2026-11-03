@@ -9,6 +9,7 @@
 import { useEffect, useRef, useState, type PointerEvent } from "react";
 import { cosG, exakt, normiere, quadrant, sinG, tanG } from "@/lib/trigonometrie";
 import { z } from "@/lib/prozent";
+import { LANGNAME } from "./Sinusfunktion";
 
 const W = 940, H = 380, CX = 180, CY = 190, R = 140;
 const GX0 = 380, GX1 = 920; // Graph: 0° … 360°
@@ -120,7 +121,7 @@ export default function Einheitskreis() {
       <div className="flex flex-wrap gap-x-4 gap-y-1.5 items-center text-sm">
         <div className="flex flex-wrap gap-1.5" role="group" aria-label="Funktionen">
           {(Object.keys(FARBE) as Fkt[]).map(k => (
-            <label key={k} className="flex items-center gap-1.5 rounded-lg border-2 px-2.5 py-1 font-black cursor-pointer"
+            <label key={k} title={LANGNAME[k]} className="flex items-center gap-1.5 rounded-lg border-2 px-2.5 py-1 font-black cursor-pointer"
               style={{ borderColor: FARBE[k], color: an[k] ? "#fff" : FARBE[k], background: an[k] ? FARBE[k] : "transparent" }}>
               <input type="checkbox" checked={an[k]} onChange={e => setAn({ ...an, [k]: e.target.checked })} style={{ accentColor: FARBE[k] }} /> {k}
             </label>

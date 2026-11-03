@@ -64,28 +64,32 @@ export function DreieckBild({ loesung, gegeben, zeigen }: { loesung: Loesung; ge
           if (!haupt && gegeben[w] !== undefined) return null;
           const q = p[ECKE[w]];
           const [n1, n2] = (["A", "B", "C"] as const).filter(k => k !== ECKE[w]).map(k => richtung(q, p[k]));
-          const r = Math.max(14, Math.min(30, 0.3 * Math.min(n1.l, n2.l)));
           const hl = Math.hypot(n1.x + n2.x, n1.y + n2.y) || 1, h = { x: (n1.x + n2.x) / hl, y: (n1.y + n2.y) / hl };
           const recht = Math.abs(d[w] - 90) < 0.05;
           const kreuz = n1.x * n2.y - n1.y * n2.x;
           const f = gegeben[w] !== undefined ? "#f59e0b" : haupt ? "var(--text-muted)" : "#a855f7";
-          const k = r * 0.6;
+          // Im Bogen steht nur der Wert — oder, solange er unbekannt ist, der Name.
+          const v = gegeben[w] ?? (zeigen ? d[w] : undefined);
+          const text = v !== undefined ? wert(w, v) : ZEICHEN[w];
+          // Bogen so groß, dass die Schrift hineinpasst: Breite und Höhe gegen den halben Öffnungswinkel
+          const halb = (d[w] / 2) * Math.PI / 180, breite = text.length * 7.2 + 4;
+          const t = Math.max(16, (breite / 2) / Math.tan(halb), 9 / Math.sin(halb));
+          const r = Math.min(Math.max(28, t + breite / 2 + 6), 0.5 * Math.min(n1.l, n2.l));
+          const k = Math.min(18, r * 0.6);
           const bogen = recht
             ? `M ${q.x + n1.x * k} ${q.y + n1.y * k} L ${q.x + (n1.x + n2.x) * k} ${q.y + (n1.y + n2.y) * k} L ${q.x + n2.x * k} ${q.y + n2.y * k}`
             : `M ${q.x} ${q.y} L ${q.x + n1.x * r} ${q.y + n1.y * r} A ${r} ${r} 0 0 ${kreuz > 0 ? 1 : 0} ${q.x + n2.x * r} ${q.y + n2.y * r} Z`;
           const eckeNeu = haupt || Math.hypot(q.x - P(alle[0][ECKE[w]]).x, q.y - P(alle[0][ECKE[w]]).y) > 1;
-          // spitze Winkel: Beschriftung weiter hinaus, sonst sitzt sie auf den Schenkeln
-          const ab = r + 10 + (d[w] < 40 ? 16 : 0) + (haupt ? 0 : 26);
-          // Schrift zeigt von der Ecke weg ins Dreieck, statt mittig über dem Schenkel zu stehen
-          const anker = h.x > 0.3 ? "start" : h.x < -0.3 ? "end" : "middle";
           return (
             <g key={w}>
-              <path d={bogen} fill={recht ? "none" : f} fillOpacity={0.25} stroke={f} strokeWidth={1.5} />
-              {recht && <circle cx={q.x + h.x * r * 0.42} cy={q.y + h.y * r * 0.42} r={2} fill={f} />}
+              <path d={bogen} fill={recht ? "none" : f} fillOpacity={0.22} stroke={f} strokeWidth={1.5} />
+              {recht && <circle cx={q.x + h.x * k * 0.7} cy={q.y + h.y * k * 0.7} r={2} fill={f} />}
               {eckeNeu && <text x={q.x - h.x * 18} y={q.y - h.y * 18} textAnchor="middle" dominantBaseline="central" fontSize={17} fontWeight={900}
                 fill={haupt ? "var(--text)" : "#a855f7"}>{ECKE[w]}{haupt ? "" : "₂"}</text>}
-              <text x={q.x + h.x * ab} y={q.y + h.y * ab} textAnchor={anker} dominantBaseline="central" fontSize={13}
-                fontWeight={gegeben[w] !== undefined ? 800 : 600} fill={f}>{beschrift(w, d)}</text>
+              {!recht && (
+                <text x={q.x + h.x * Math.min(t, r - breite / 2 - 2)} y={q.y + h.y * Math.min(t, r - breite / 2 - 2)} textAnchor="middle" dominantBaseline="central"
+                  fontSize={12} fontWeight={v !== undefined ? 800 : 700} fill={f === "var(--text-muted)" ? "var(--text)" : f}>{text}</text>
+              )}
             </g>
           );
         })}

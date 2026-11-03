@@ -709,7 +709,7 @@ simulationen:
     kann:
       - "Einheitskreis: sin, cos, tan, cot, sec, csc einzeln zuschaltbar in eigenen Farben, Graph im selben Maßstab mit Spur und Umlauf"
       - Grad- und Bogenmaß, exakte Werte, Vorzeichen je Quadrant, Winkel mit gleichem Wert
-      - "Sinusfunktion a · sin(b(x − c)) + d mit Reglern und Spiel »Welle treffen«"
+      - "Funktionsgraphen a · g(b(x − c)) + d für sin, cos, tan, cot, sec, csc mit Polstellen, y-Bereich und Spiel »Welle treffen«"
       - Gegenkathete, Ankathete, Hypotenuse im rechtwinkligen Dreieck
       - "Dreiecksrechner: Gegebenes eintippen, alle Größen mit Rechenweg und Bild (Winkelbögen), SsW mit 0, 1 oder 2 Lösungen"
       - "Aufgaben nach Fall (rechtwinklig, SSS, SWS, WSW/WWS, SsW) mit Tipps Schritt für Schritt"

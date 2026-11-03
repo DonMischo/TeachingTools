@@ -2,7 +2,7 @@
 /**
  * Trigonometrie — sieben Blätter:
  *   ⭕ Einheitskreis   sin, cos, tan, cot, sec, csc am Kreis und als Graph
- *   〰️ Sinusfunktion   a · sin(b(x − c)) + d, dazu »Welle treffen«
+ *   〰️ Funktionsgraphen  a · g(b(x − c)) + d für sin … csc, dazu »Welle treffen«
  *   📐 Rechtwinklig    Gegenkathete, Ankathete, Hypotenuse
  *   🔺 Dreiecke        Rechner: Gegebenes eintippen, Ergebnis mit Rechenweg
  *   ✍️ Aufgaben        Dreiecks-Aufgaben nach Fall mit Tipps
@@ -20,7 +20,7 @@ import Kuestenwache from "./Kuestenwache";
 
 const BLAETTER = [
   { id: "kreis", icon: "⭕", label: "Einheitskreis" },
-  { id: "welle", icon: "〰️", label: "Sinusfunktion" },
+  { id: "welle", icon: "〰️", label: "Funktionsgraphen" },
   { id: "recht", icon: "📐", label: "Rechtwinklig" },
   { id: "dreieck", icon: "🔺", label: "Dreiecksrechner" },
   { id: "aufgaben", icon: "✍️", label: "Aufgaben" },

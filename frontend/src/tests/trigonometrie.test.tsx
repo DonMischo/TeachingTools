@@ -133,7 +133,7 @@ describe("Aufgaben und Szenarien", () => {
 describe("Oberfläche", () => {
   it("jedes Blatt öffnet", () => {
     render(<Trigonometrie />);
-    for (const name of [/Einheitskreis/, /Sinusfunktion/, /Rechtwinklig/, /Dreiecksrechner/, /^✍️ Aufgaben$/, /Anwendungen/, /Küstenwache/]) {
+    for (const name of [/Einheitskreis/, /Funktionsgraphen/, /Rechtwinklig/, /Dreiecksrechner/, /^✍️ Aufgaben$/, /Anwendungen/, /Küstenwache/]) {
       fireEvent.click(screen.getByRole("button", { name }));
     }
     expect(screen.getAllByText(/Küstenwache/).length).toBeGreaterThan(0);
