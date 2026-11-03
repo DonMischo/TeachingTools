@@ -21,8 +21,13 @@ const MUTMACHER = [
   'Wer genau liest, muss nicht raten.',
 ];
 
+type Punkt = { x: number; y: number };
+type Art = 'spinne' | 'kaefer' | 'tausendfuss';
+/** Ein Bein: Hüfte am Glied `glied`, Fuß steht auf dem Boden, bis er zu weit
+    hinter seiner Ruhelage zurückbleibt; dann tritt er nach vorn. */
+type Bein = { glied: number; seite: 1 | -1; winkel: number; weite: number; oben: number; unten: number; fuss: Punkt; von: Punkt; nach: Punkt; tritt: number };
 type Kaefer = { x: number; y: number; winkel: number; drehung: number; tempo: number; phase: number; spuckZeit: number; umlauf: number;
-  art: 'spinne' | 'kaefer' | 'tausendfuss'; farbe: string; glut: string; groesse: number };
+  art: Art; farbe: string; glut: string; groesse: number; glieder: Punkt[]; beine: Bein[] };
 type Wort = { text: string; x: number; y: number; vx: number; vy: number; dreh: number; geboren: number; vonX: number; vonY: number; farbe: string };
 
 let serie = 0;
@@ -51,78 +56,187 @@ const FARBEN: [string, string][] = [
   ['#ffd740', '#ff6d00'],
   ['#ff80ab', '#d500f9'],
 ];
-const ARTEN: Kaefer['art'][] = ['spinne', 'kaefer', 'tausendfuss'];
+
+/** Bauplan je Art (Längen in px bei Größe 1): Glieder hintereinander, an
+    welchen Gliedern Beine sitzen, Ruhewinkel der Füße gegen die Laufrichtung. */
+const BAU: Record<Art, { glieder: number; abstand: number; beine: { glied: number; winkel: number }[]; weite: number; oben: number; unten: number; schritt: number }> = {
+  spinne: {
+    glieder: 2, abstand: 26, weite: 72, oben: 50, unten: 52, schritt: 0.12,
+    beine: [40, 75, 110, 145].map((w) => ({ glied: 0, winkel: w })),
+  },
+  kaefer: {
+    glieder: 3, abstand: 16, weite: 42, oben: 26, unten: 28, schritt: 0.1,
+    beine: [{ glied: 1, winkel: 50 }, { glied: 1, winkel: 95 }, { glied: 2, winkel: 125 }],
+  },
+  tausendfuss: {
+    glieder: 12, abstand: 12, weite: 28, oben: 16, unten: 17, schritt: 0.08,
+    beine: Array.from({ length: 11 }, (_, i) => ({ glied: i + 1, winkel: 95 })),
+  },
+};
+const ARTEN = Object.keys(BAU) as Art[];
+
+const richtung = (k: Kaefer, i: number) =>
+  i === 0 ? k.winkel : Math.atan2(k.glieder[i - 1].y - k.glieder[i].y, k.glieder[i - 1].x - k.glieder[i].x);
+
+function ruheLage(k: Kaefer, bein: Bein): Punkt {
+  const g = k.glieder[bein.glied];
+  const a = richtung(k, bein.glied) + bein.seite * bein.winkel;
+  return { x: g.x + Math.cos(a) * bein.weite, y: g.y + Math.sin(a) * bein.weite };
+}
 
 function neuerKaefer(b: number, h: number): Kaefer {
   const [farbe, glut] = FARBEN[Math.floor(Math.random() * FARBEN.length)];
-  return {
-    x: b / 2, y: h / 2, winkel: Math.random() * Math.PI * 2, drehung: 0, tempo: 110 + Math.random() * 70,
+  const art = ARTEN[Math.floor(Math.random() * ARTEN.length)];
+  const bau = BAU[art];
+  const groesse = 1 + Math.random() * 0.4;
+  const winkel = Math.random() * Math.PI * 2;
+  const glieder = Array.from({ length: bau.glieder }, (_, i) => ({
+    x: b / 2 - Math.cos(winkel) * i * bau.abstand * groesse,
+    y: h / 2 - Math.sin(winkel) * i * bau.abstand * groesse,
+  }));
+  const k: Kaefer = {
+    x: b / 2, y: h / 2, winkel, drehung: 0, tempo: 110 + Math.random() * 70,
     phase: Math.random() * 6, spuckZeit: 0, umlauf: Math.random() * Math.PI * 2,
-    art: ARTEN[Math.floor(Math.random() * ARTEN.length)], farbe, glut, groesse: 1.8 + Math.random() * 0.8,
+    art, farbe, glut, groesse, glieder, beine: [],
   };
+  for (const seite of [1, -1] as const) {
+    for (const bb of bau.beine) {
+      const bein: Bein = {
+        glied: bb.glied, seite, winkel: (bb.winkel * Math.PI) / 180,
+        weite: bau.weite * groesse, oben: bau.oben * groesse, unten: bau.unten * groesse,
+        fuss: { x: 0, y: 0 }, von: { x: 0, y: 0 }, nach: { x: 0, y: 0 }, tritt: 0,
+      };
+      bein.fuss = ruheLage(k, bein);
+      k.beine.push(bein);
+    }
+  }
+  return k;
 }
 
-function beinPaar(ctx: CanvasRenderingContext2D, y: number, innen: number, schwung: number, laenge = 1) {
-  for (const s of [-1, 1]) {
-    ctx.beginPath();
-    ctx.moveTo(s * innen, y);
-    ctx.lineTo(s * (innen + 10 * laenge), y - 4 + s * schwung);
-    ctx.lineTo(s * (innen + 16 * laenge), y + 6 + s * schwung);
-    ctx.stroke();
+/** Glieder ziehen dem Kopf nach, Füße treten, wenn sie zu weit zurückliegen. */
+function bewege(k: Kaefer, dt: number) {
+  const bau = BAU[k.art];
+  const abstand = bau.abstand * k.groesse;
+  k.glieder[0] = { x: k.x, y: k.y };
+  for (let i = 1; i < k.glieder.length; i++) {
+    const vor = k.glieder[i - 1], g = k.glieder[i];
+    const d = Math.hypot(g.x - vor.x, g.y - vor.y) || 1;
+    g.x = vor.x + ((g.x - vor.x) / d) * abstand;
+    g.y = vor.y + ((g.y - vor.y) / d) * abstand;
   }
+  const proSeite = bau.beine.length;
+  k.beine.forEach((bein, i) => {
+    if (bein.tritt > 0) {
+      bein.tritt = Math.min(1, bein.tritt + dt / bau.schritt);
+      const f = bein.tritt;
+      bein.fuss = { x: bein.von.x + (bein.nach.x - bein.von.x) * f, y: bein.von.y + (bein.nach.y - bein.von.y) * f };
+      if (f >= 1) bein.tritt = 0;
+      return;
+    }
+    const ruhe = ruheLage(k, bein);
+    if (Math.hypot(bein.fuss.x - ruhe.x, bein.fuss.y - ruhe.y) < bein.weite * 0.4) return;
+    // Nachbarn auf derselben Seite und das Gegenbein bleiben stehen, solange dieses tritt
+    const seite = Math.floor(i / proSeite);
+    const gegen = (1 - seite) * proSeite + (i % proSeite);
+    const nachbarn = [i - 1, i + 1].filter((n) => n >= 0 && Math.floor(n / proSeite) === seite).concat(gegen);
+    if (nachbarn.some((n) => k.beine[n].tritt > 0)) return;
+    bein.von = { ...bein.fuss };
+    bein.nach = { x: ruhe.x + Math.cos(k.winkel) * bein.weite * 0.3, y: ruhe.y + Math.sin(k.winkel) * bein.weite * 0.3 };
+    bein.tritt = 0.001;
+  });
+}
+
+/** Knie per Zwei-Gelenk-IK; von beiden Lösungen die, die vom Körper wegzeigt. */
+function knie(huefte: Punkt, fuss: Punkt, oben: number, unten: number, mitte: Punkt): Punkt {
+  const dx = fuss.x - huefte.x, dy = fuss.y - huefte.y;
+  const d = Math.min(Math.max(Math.hypot(dx, dy), Math.abs(oben - unten) + 0.01), oben + unten - 0.01);
+  const a = Math.acos((oben * oben + d * d - unten * unten) / (2 * oben * d));
+  const zum = Math.atan2(dy, dx);
+  const k1 = { x: huefte.x + Math.cos(zum + a) * oben, y: huefte.y + Math.sin(zum + a) * oben };
+  const k2 = { x: huefte.x + Math.cos(zum - a) * oben, y: huefte.y + Math.sin(zum - a) * oben };
+  return Math.hypot(k1.x - mitte.x, k1.y - mitte.y) > Math.hypot(k2.x - mitte.x, k2.y - mitte.y) ? k1 : k2;
+}
+
+function gelenk(ctx: CanvasRenderingContext2D, p: Punkt, r: number) {
+  ctx.strokeRect(p.x - r, p.y - r, r * 2, r * 2);
+}
+
+/** Glied als gedrehter Gitterkasten. */
+function kasten(ctx: CanvasRenderingContext2D, p: Punkt, w: number, breite: number, laenge: number, linien: number) {
+  ctx.save();
+  ctx.translate(p.x, p.y);
+  ctx.rotate(w);
+  ctx.strokeRect(-laenge / 2, -breite / 2, laenge, breite);
+  ctx.beginPath();
+  for (let i = 1; i < linien; i++) {
+    const x = -laenge / 2 + (laenge * i) / linien;
+    ctx.moveTo(x, -breite / 2); ctx.lineTo(x, breite / 2);
+  }
+  if (linien > 1) { ctx.moveTo(-laenge / 2, 0); ctx.lineTo(laenge / 2, 0); }
+  ctx.stroke();
+  ctx.restore();
 }
 
 function zeichneKaefer(ctx: CanvasRenderingContext2D, k: Kaefer) {
+  const g = k.groesse;
   ctx.save();
-  ctx.translate(k.x, k.y);
-  ctx.rotate(k.winkel + Math.PI / 2);
-  ctx.scale(k.groesse, k.groesse);
   ctx.strokeStyle = k.farbe;
-  ctx.lineWidth = 1.2;
+  ctx.lineWidth = 1.5;
   ctx.shadowColor = k.glut;
   ctx.shadowBlur = 12;
-  if (k.art === 'spinne') {
-    // Gitterkasten-Spinne: 4 Beinpaare, Kieferzangen
-    for (let i = 0; i < 4; i++) beinPaar(ctx, -6 + i * 8, 14, Math.sin(k.phase + i * Math.PI / 2) * 6);
-    for (const s of [-1, 1]) {
-      ctx.beginPath();
-      ctx.moveTo(s * 6, -18);
-      ctx.lineTo(s * 10, -30 + Math.sin(k.phase * 2) * 2);
-      ctx.stroke();
-    }
-    ctx.strokeRect(-10, -18, 20, 10);
-    ctx.strokeRect(-14, -8, 28, 30);
+  const breite = { spinne: 22, kaefer: 26, tausendfuss: 12 }[k.art] * g;
+
+  // Beine: Hüfte – Knie – Fuß, Gelenke als kleine Quadrate
+  for (const bein of k.beine) {
+    const gl = k.glieder[bein.glied];
+    const w = richtung(k, bein.glied) + bein.seite * Math.PI / 2;
+    const huefte = { x: gl.x + Math.cos(w) * breite / 2, y: gl.y + Math.sin(w) * breite / 2 };
+    // im Schritt hebt sich der Fuß: Bein zieht sich an, das Knie steigt
+    const hub = bein.tritt > 0 ? Math.sin(bein.tritt * Math.PI) * 0.25 : 0;
+    const fuss = { x: bein.fuss.x + (huefte.x - bein.fuss.x) * hub, y: bein.fuss.y + (huefte.y - bein.fuss.y) * hub };
+    const kn = knie(huefte, fuss, bein.oben, bein.unten, gl);
     ctx.beginPath();
-    for (let y = -2; y < 22; y += 6) { ctx.moveTo(-14, y); ctx.lineTo(14, y); }
-    ctx.moveTo(0, -8); ctx.lineTo(0, 22);
+    ctx.moveTo(huefte.x, huefte.y);
+    ctx.lineTo(kn.x, kn.y);
+    ctx.lineTo(fuss.x, fuss.y);
     ctx.stroke();
+    gelenk(ctx, kn, 2 * g);
+    if (k.art === 'spinne') gelenk(ctx, fuss, 1.2 * g);
+  }
+
+  // Körper
+  if (k.art === 'spinne') {
+    kasten(ctx, k.glieder[0], richtung(k, 0), breite, 20 * g, 2);
+    kasten(ctx, k.glieder[1], richtung(k, 1), breite * 1.3, 34 * g, 4);
   } else if (k.art === 'kaefer') {
-    // Käfer: ovaler Panzer mit Naht, 3 Beinpaare, Fühler
-    for (let i = 0; i < 3; i++) beinPaar(ctx, -4 + i * 10, 11, Math.sin(k.phase + i * Math.PI * 2 / 3) * 5, 0.9);
+    ctx.save();
+    ctx.translate((k.glieder[1].x + k.glieder[2].x) / 2, (k.glieder[1].y + k.glieder[2].y) / 2);
+    ctx.rotate(richtung(k, 1));
     ctx.beginPath();
-    ctx.ellipse(0, 6, 14, 18, 0, 0, Math.PI * 2);
-    ctx.moveTo(0, -12); ctx.lineTo(0, 24);
-    ctx.moveTo(8, -14); ctx.arc(0, -14, 8, 0, Math.PI * 2);
-    for (const s of [-1, 1]) {
-      ctx.moveTo(s * 4, -20);
-      ctx.quadraticCurveTo(s * 10, -30, s * (14 + Math.sin(k.phase) * 2), -34);
-    }
+    ctx.ellipse(0, 0, 24 * g, breite / 2, 0, 0, Math.PI * 2);
+    ctx.moveTo(-24 * g, 0); ctx.lineTo(16 * g, 0);
+    ctx.stroke();
+    ctx.restore();
+    ctx.beginPath();
+    ctx.arc(k.glieder[0].x, k.glieder[0].y, 7 * g, 0, Math.PI * 2);
     ctx.stroke();
   } else {
-    // Tausendfüßer: Gliederkette, die sich schlängelt
-    for (let i = 0; i < 8; i++) {
-      const y = -20 + i * 7;
-      const dx = Math.sin(k.phase * 0.7 - i * 0.8) * 3;
-      ctx.save();
-      ctx.translate(dx, 0);
-      beinPaar(ctx, y + 3, 6, Math.sin(k.phase * 1.5 + i) * 3, 0.6);
-      ctx.strokeRect(-6, y, 12, 6);
-      ctx.restore();
-    }
-    ctx.beginPath();
-    for (const s of [-1, 1]) { ctx.moveTo(s * 3, -20); ctx.lineTo(s * 9, -30); }
-    ctx.stroke();
+    k.glieder.forEach((p, i) => kasten(ctx, p, richtung(k, i), breite, 10 * g, 1));
   }
+
+  // Kieferzangen bzw. Fühler am Kopf
+  const kopf = k.glieder[0];
+  const lang = (k.art === 'spinne' ? 14 : 26) * g;
+  ctx.beginPath();
+  for (const s of [-1, 1]) {
+    const a = k.winkel + s * (0.35 + Math.sin(k.phase + s) * 0.12);
+    ctx.moveTo(kopf.x + Math.cos(k.winkel) * 6 * g, kopf.y + Math.sin(k.winkel) * 6 * g);
+    ctx.quadraticCurveTo(
+      kopf.x + Math.cos(a) * lang * 0.5, kopf.y + Math.sin(a) * lang * 0.5,
+      kopf.x + Math.cos(a - s * 0.2) * lang, kopf.y + Math.sin(a - s * 0.2) * lang,
+    );
+  }
+  ctx.stroke();
   ctx.restore();
 }
 
@@ -220,6 +334,7 @@ export function krabbeln(opts: { quelle?: Element | null } = {}): void {
       k.x += Math.cos(k.winkel) * k.tempo * dt;
       k.y += Math.sin(k.winkel) * k.tempo * dt;
       k.phase += k.tempo * dt * 0.12;
+      bewege(k, dt);
       k.spuckZeit -= dt;
       if (k.spuckZeit <= 0 && t < zustand.ende) {
         k.spuckZeit = 0.15 + Math.random() * 0.25;
