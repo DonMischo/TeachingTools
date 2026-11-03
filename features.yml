@@ -724,6 +724,18 @@ simulationen:
       - "Sachaufgaben: Turm, Leiter, Fluss, Triangulieren, Wanderweg, Steigung, Doppelpeilung, Dach, Sonnenstand"
       - Arbeitsblatt als Word-Datei (.docx) mit Bildern, Antwortlinien und Lösungsseite
       - "Spiel Küstenwache: Peilung → Kurs und Strecke → Rettungsboot, drei Stufen"
+  - id: kreis
+    name: Kreis
+    faehigkeiten: {use: [true, true]}
+    kann:
+      - "Kreis-Labor: r, d, u, A live mit Formel und Rechenweg, Radius am Rand ziehen oder per Regler"
+      - "π herleiten: Umfang abrollen und Kreis in 4–64 Sektoren zum »Rechteck« legen, als Animation"
+      - "Geraden am Kreis: Sekante mit Sehne, Tangente senkrecht am Berührradius (wandert mit), Passante, frei ziehen mit Einrasten; d(M, g) gegen r"
+      - "Kreisteile: Ausschnitt, Bogen, Abschnitt, Ring, Halb- und Viertelkreis mit Mittelpunktswinkel und Rechenweg"
+      - "Übungen: Umfang, Fläche, rückwärts, Sektor und Bogen, Ring, Halb-/Viertelkreis, Lage der Geraden — mit Skizze, Tipps, Lösungsweg"
+      - "Sachaufgaben: Pizza, Fahrradrad, Uhrzeiger, Laufbahn, Brunnen mit Weg, Tortenstück, Rasensprenger"
+      - Arbeitsblatt als Word-Datei (.docx) mit Skizzen, Antwortlinien und Lösungsseite
+      - "Spiel Rad-Rollen: Umdrehungen oder Radius ausrechnen, das Rad rollt bis zur Fahne; Rekord im Browser"
   - id: stellenwert
     name: Stellenwerttafeln
     faehigkeiten: {use: [true, true]}

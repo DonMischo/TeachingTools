@@ -261,6 +261,14 @@ const ALL_CARDS: Werkzeug[] = [
     color: "#f97316",
   },
   {
+    slug: "kreis",
+    href: "/simulationen/kreis",
+    icon: "⭕",
+    title: "Kreis",
+    description: "Radius, Durchmesser, Umfang und Fläche live mit Rechenweg, den Radius am Rand ziehen; π herleiten durch Abrollen und Zerlegen in Sektoren. Sekante mit Sehne, Tangente (rastet senkrecht am Berührradius ein) und Passante mit d gegen r. Kreisausschnitt, Bogen, Abschnitt, Ring, Halb- und Viertelkreis. Gewürfelte Übungen und Sachaufgaben (Pizza, Fahrrad, Uhr, Laufbahn, Brunnen, Torte) mit Word-Export und das Spiel Rad-Rollen.",
+    color: "#0ea5e9",
+  },
+  {
     slug: "trigonometrie",
     href: "/simulationen/trigonometrie",
     icon: "🔺",

@@ -7,7 +7,7 @@
  */
 import type { ReactNode } from "react";
 import { svgZuPng } from "@/lib/docx";
-import { allePunkte, aussen, rahmen, schwerpunkt, type Pt, type Skizze } from "@/lib/geometrie/skizze";
+import { allePunkte, aussen, bogenPunkt, rahmen, schwerpunkt, type Pt, type Skizze } from "@/lib/geometrie/skizze";
 
 export const SKIZZE_W = 560, SKIZZE_H = 320;
 const RAND = 44;
@@ -48,6 +48,22 @@ export function SkizzenInhalt({ s, w = SKIZZE_W, h = SKIZZE_H }: { s: Skizze; w?
         const m = T(c.m);
         return <circle key={`k${i}`} cx={m.x} cy={m.y} r={c.r * k} fill={c.farbe ?? "var(--accent)"} fillOpacity={c.deckkraft ?? 0.12}
           stroke={c.farbe ?? "var(--accent)"} strokeWidth={3} strokeDasharray={c.gestrichelt ? "6 4" : undefined} />;
+      })}
+      {(s.boegen ?? []).map((b, i) => {
+        const p1 = T(bogenPunkt(b.m, b.r, b.von)), p2 = T(bogenPunkt(b.m, b.r, b.bis)), m = T(b.m), rr = b.r * k;
+        const span = b.bis - b.von;
+        // Gegen den Uhrzeigersinn auf dem Bildschirm = sweep-flag 0 im SVG.
+        const arc = `A ${rr} ${rr} 0 ${Math.abs(span) > 180 ? 1 : 0} ${span > 0 ? 0 : 1} ${p2.x} ${p2.y}`;
+        const d = b.flaeche === "sektor" ? `M ${m.x} ${m.y} L ${p1.x} ${p1.y} ${arc} Z` : b.flaeche === "segment" ? `M ${p1.x} ${p1.y} ${arc} Z` : `M ${p1.x} ${p1.y} ${arc}`;
+        const farbe = b.farbe ?? "var(--accent)";
+        const mitte = T(bogenPunkt(b.m, b.r + (16 + (b.text?.length ?? 0) * 2.6) / k, (b.von + b.bis) / 2));
+        return (
+          <g key={`b${i}`}>
+            <path d={d} fill={b.flaeche ? farbe : "none"} fillOpacity={b.deckkraft ?? 0.2} stroke={farbe} strokeWidth={3}
+              strokeLinejoin="round" strokeDasharray={b.gestrichelt ? "6 4" : undefined} />
+            {b.text && <Txt x={mitte.x} y={mitte.y}>{b.text}</Txt>}
+          </g>
+        );
       })}
       {(s.winkel ?? []).map((wi, i) => {
         const p = T(wi.p), a = T(wi.von), b = T(wi.bis);

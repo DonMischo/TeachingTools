@@ -12,12 +12,19 @@ export type Strecke = { a: Pt; b: Pt; text?: string; art?: "seite" | "hilfe" | "
 export type Winkel = { p: Pt; von: Pt; bis: Pt; text?: string; recht?: boolean };
 export type Kreis = { m: Pt; r: number; farbe?: string; deckkraft?: number; gestrichelt?: boolean };
 export type Marke = { p: Pt; text: string; groesse?: number };
+/**
+ * Kreisbogen um `m` von `von` bis `bis` (Grad, 0° = rechts, gegen den
+ * Uhrzeigersinn wie in der Mathematik). Mit `flaeche` wird er gefüllt:
+ * »sektor« = Kreisausschnitt (Tortenstück), »segment« = Kreisabschnitt.
+ */
+export type Bogen = { m: Pt; r: number; von: number; bis: number; flaeche?: "sektor" | "segment"; farbe?: string; deckkraft?: number; text?: string; gestrichelt?: boolean };
 
 export type Skizze = {
   flaechen?: Flaeche[];
   strecken?: Strecke[];
   winkel?: Winkel[];
   kreise?: Kreis[];
+  boegen?: Bogen[];
   /** Eckpunktnamen, Symbole (Emoji) oder freie Beschriftung */
   marken?: Marke[];
   /** Einheitsraster unterlegen (Kästchen zählen) */
@@ -32,7 +39,18 @@ export function allePunkte(s: Skizze): Pt[] {
   for (const st of s.strecken ?? []) pts.push(st.a, st.b);
   for (const k of s.kreise ?? []) pts.push({ x: k.m.x - k.r, y: k.m.y - k.r }, { x: k.m.x + k.r, y: k.m.y + k.r });
   for (const m of s.marken ?? []) pts.push(m.p);
+  for (const b of s.boegen ?? []) {
+    const schritte = Math.max(2, Math.ceil(Math.abs(b.bis - b.von) / 10));
+    for (let i = 0; i <= schritte; i++) pts.push(bogenPunkt(b.m, b.r, b.von + (b.bis - b.von) * i / schritte));
+    if (b.flaeche === "sektor") pts.push(b.m);
+  }
   return pts;
+}
+
+/** Punkt auf dem Kreis um `m` beim Winkel `grad` (0° = rechts, gegen den Uhrzeigersinn; y nach unten). */
+export function bogenPunkt(m: Pt, r: number, grad: number): Pt {
+  const w = grad * Math.PI / 180;
+  return { x: m.x + r * Math.cos(w), y: m.y - r * Math.sin(w) };
 }
 
 export function rahmen(s: Skizze) {

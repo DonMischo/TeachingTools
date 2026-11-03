@@ -303,6 +303,19 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
     ],
   },
+  kreis: {
+    title: "Kreis",
+    intro: "Kreis für Klasse 6–9 — Größen am Kreis, Geraden, Kreisteile, Übungen, Sachaufgaben und ein Spiel.",
+    sections: [
+      { label: "⭕ Kreis-Labor", text: "Am roten Punkt oder irgendwo am Rand ziehen (oder am Regler): Radius r, Durchmesser d, Umfang u und Fläche A rechnen live mit, jeweils mit Formel und Rechenweg. Darunter »Wo kommt π her?«: Umfang abrollen (die Spur ist gut drei Durchmesser lang) oder den Kreis in 4–64 Stücke zerlegen und zum »Rechteck« π · r mal r legen — abspielen oder am Regler Schritt für Schritt." },
+      { label: "📏 Geraden am Kreis", text: "Sekante, Tangente oder Passante wählen und den Punkt F (bzw. den Berührpunkt B) ziehen. Die Sekante zeigt die Sehne samt Länge, die Tangente bleibt senkrecht auf dem Berührradius und wandert mit, wenn man B oder r ändert. Der Abstand d(M, g) steht neben r, die passende Regel (d < r, d = r, d > r) leuchtet. »Frei ziehen« lässt die Gerade überall hin; nah am Rand rastet sie als Tangente ein." },
+      { label: "🍰 Kreisteile", text: "Kreisausschnitt, Kreisbogen, Kreisabschnitt, Kreisring, Halb- und Viertelkreis. Radius und Mittelpunktswinkel α (bzw. Außen- und Innenradius) am Regler, Formel und Rechenweg daneben — beim Halb- und Viertelkreis mit dem Hinweis, dass die geraden Ränder zum Umfang gehören." },
+      { label: "✍️ Übungen", text: "Gewürfelte Aufgaben mit Skizze: Umfang, Fläche, rückwärts (vom Umfang oder der Fläche zum Radius), Sektor und Bogen, Kreisring, Halb- und Viertelkreis, Lage einer Geraden. Arten an- und abwählen, Tipps einzeln, Lösungsweg; mit Tipp zählt die Aufgabe nicht. »📄 Arbeitsblatt (.docx)« baut ein Word-Dokument mit Skizzen, Antwortlinien und auf Wunsch den Lösungen." },
+      { label: "🍕 Anwendungen", text: "Sachaufgaben mit Skizze und neuen Zahlen auf Knopfdruck: Pizza-Angebot vergleichen, Fahrradrad (Umdrehungen auf dem Schulweg), Weg der Zeigerspitze, Laufbahn im Stadion, Weg um den Brunnen (Ring, Pflasterkosten), Tortenstücke und Rasensprenger. Ebenfalls als Word-Arbeitsblatt." },
+      { label: "🛞 Rad-Rollen", text: "Spiel: Das Rad soll genau bis zur Fahne rollen. Mal ist der Radius gegeben und die Zahl der Umdrehungen gesucht, mal umgekehrt; ab Wurf 5 auch krumme Umdrehungen. Dann rollt das Rad wirklich. Fünf Würfe, bis zu 100 Punkte je Wurf, der Rekord bleibt im Browser." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
+    ],
+  },
   trigonometrie: {
     title: "Trigonometrie",
     intro: "Winkelfunktionen sehen, im Dreieck anwenden und an Sachaufgaben üben — sieben Blätter.",

@@ -21,6 +21,7 @@ import Groessen from "@/components/groessen/Groessen";
 import Rechenzeichen from "@/components/rechenzeichen/Rechenzeichen";
 import Prozent from "@/components/prozent/Prozent";
 import Trigonometrie from "@/components/trigonometrie/Trigonometrie";
+import Kreis from "@/components/kreis/Kreis";
 import Stellenwert from "@/components/stellenwert/Stellenwert";
 import Markieren from "@/components/markieren/Markieren";
 import PcWerkstatt from "@/components/pcbau/PcWerkstatt";
@@ -57,6 +58,7 @@ const TOOLS: { id: string; icon: string; label: string; node: ReactNode }[] = [
   { id: "rechenzeichen", icon: "➗", label: "Rechenzeichen", node: <Rechenzeichen /> },
   { id: "prozent", icon: "💯", label: "Prozent- und Zinsrechnung", node: <Prozent /> },
   { id: "trigonometrie", icon: "🔺", label: "Trigonometrie", node: <Trigonometrie /> },
+  { id: "kreis", icon: "⭕", label: "Kreis", node: <Kreis /> },
   { id: "stellenwert", icon: "🔢", label: "Stellenwerttafeln", node: <Stellenwert /> },
   { id: "markieren", icon: "🖍️", label: "Markieren & Bearbeiten", node: <Markieren /> },
   { id: "pcbau", icon: "🪛", label: "PC-Werkstatt", node: <PcWerkstatt /> },
