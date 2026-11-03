@@ -2062,6 +2062,11 @@ class ToolSession(Base):
     # Einstellungen der Lehrkraft, die das Werkzeug selbst auslegt (Leviathan:
     # Krisenstufe, Rundenzahl, Drehbuch, abgeschaltete Ereignisse).
     settings: Mapped[dict] = mapped_column(JSON, nullable=False, server_default="{}", default=dict)
+    # Für wen die Sitzung läuft (bisher nur die Challenge): eine Klasse oder ein
+    # Kurs/WPF/A-B-Gruppe, wie bei Caputh und TaskCrawler (siehe api/scoping.py).
+    # Beides leer heißt offen für alle — so wie alle Werkzeugsitzungen vorher.
+    class_id: Mapped[int | None] = mapped_column(ForeignKey("classes.id", ondelete="SET NULL"), nullable=True)
+    group_id: Mapped[int | None] = mapped_column(ForeignKey("student_groups.id", ondelete="SET NULL"), nullable=True)
 
     creator: Mapped["Teacher"] = relationship()
 

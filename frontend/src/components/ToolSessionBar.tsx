@@ -15,15 +15,18 @@ import { useLanUrl } from "@/hooks/useLanUrl";
 import { ToolSessionList } from "@/components/ToolSessionList";
 import { SelbstSpielenKnopf } from "@/components/LehrkraftSpielt";
 
-export function ToolSessionBar({ tool, title, refId }: {
+export function ToolSessionBar({ tool, title, refId, sitzung }: {
   tool: string;
   title: string;
   /** Werkzeuge mit Inhalt (Zeitstrahl) teilen eine bestimmte Sache, nicht sich selbst. */
   refId?: number;
+  /** Schon gewählte Sitzung (Challenge: die der gewählten Klasse) — dann wird keine geholt. */
+  sitzung?: ToolSessionOut;
 }) {
   const { auth } = useAuth();
   const [open, setOpen] = useState(false);
-  const [session, setSession] = useState<ToolSessionOut | null>(null);
+  const [geholt, setSession] = useState<ToolSessionOut | null>(null);
+  const session = sitzung ?? geholt;
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   // Hook muss vor dem frühen Return laufen.

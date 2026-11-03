@@ -82,6 +82,7 @@ def test_lookup_is_public_and_says_which_tool(client, teacher_token):
     assert r.json() == {
         "code": code, "tool_slug": "abacus", "allow_guests": False,
         "status": "open", "ref_id": None, "ref_title": None, "settings": {},
+        "class_id": None, "group_id": None, "scope_label": None,
     }
 
 

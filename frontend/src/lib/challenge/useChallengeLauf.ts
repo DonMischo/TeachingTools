@@ -54,7 +54,9 @@ export function useChallengeLauf(quelle: ChallengeQuelle) {
         // Bei mehreren Spielarten und ohne laufenden Stand wählt die Person erst (spielWechseln)
         if (i.settings.spiele.length <= 1 || i.stand) await holeBrett();
       } catch (e) {
-        setFehler((e as Error).message.includes("geschlossen") ? "Diese Challenge ist geschlossen." : "Die Challenge konnte nicht geladen werden.");
+        const m = (e as Error).message;
+        setFehler(m.includes("geschlossen") ? "Diese Challenge ist geschlossen."
+          : m.includes("andere Klasse") ? "Diese Challenge läuft für eine andere Klasse." : "Die Challenge konnte nicht geladen werden.");
       } finally {
         setLaden(false);
       }

@@ -353,6 +353,9 @@ def _run_migrations(db_engine):
         "ALTER TABLE wettschreiben_sessions ADD COLUMN IF NOT EXISTS guests_opened_at TIMESTAMPTZ",
         "ALTER TABLE tool_sessions ADD COLUMN IF NOT EXISTS guests_opened_at TIMESTAMPTZ",
         "ALTER TABLE tool_sessions ADD COLUMN IF NOT EXISTS settings JSON NOT NULL DEFAULT '{}'",
+        # Challenge-Sitzungen je Klasse bzw. Kurs/WPF/A-B-Gruppe
+        "ALTER TABLE tool_sessions ADD COLUMN IF NOT EXISTS class_id INTEGER REFERENCES classes(id) ON DELETE SET NULL",
+        "ALTER TABLE tool_sessions ADD COLUMN IF NOT EXISTS group_id INTEGER REFERENCES student_groups(id) ON DELETE SET NULL",
         # Caputh-Sitzungen bekommen ein Anlagedatum fuer die Schuljahres-
         # bereinigung. Ohne DEFAULT anlegen, damit Postgres die Altbestaende
         # nicht auf den Migrationszeitpunkt datiert; DEFAULT danach fuer neue.

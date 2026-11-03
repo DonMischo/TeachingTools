@@ -57,6 +57,7 @@ export function ToolSessionList({ slug }: { slug: string }) {
               ? { label: "Geschlossen", tone: "closed" }
               : { label: "Offen", tone: "live" },
             meta: [
+              ...(s.scope_label ? [s.scope_label] : []),
               ...(s.mine ? [] : [s.owner ?? "fremde Sitzung"]),
               ...(s.created_at ? [new Date(s.created_at).toLocaleDateString("de-DE")] : []),
             ],

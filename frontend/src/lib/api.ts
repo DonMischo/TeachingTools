@@ -1505,6 +1505,11 @@ export type ToolSessionOut = {
   ref_title: string | null;
   /** Einstellungen der Lehrkraft, die das Werkzeug selbst auslegt (Leviathan: Krisenstufe …). */
   settings?: Record<string, unknown>;
+  /** Für wen die Sitzung läuft (bisher nur Challenge); beides leer = offen für alle. */
+  class_id?: number | null;
+  group_id?: number | null;
+  /** »9a« bzw. »9 NaT« */
+  scope_label?: string | null;
 };
 
 /** Ein abgegebener Text aus der KI-Werkstatt (siehe api/models.py::SimBeitrag). */
@@ -1581,6 +1586,8 @@ export type PlaySessionRow = {
   ref_id: number | null;
   ref_title: string | null;
   owner: string | null;
+  /** »9a« bzw. »9 NaT«, wo die Sitzung einer Klasse/einem Kurs gehört */
+  scope_label?: string | null;
 };
 
 /** Ein Treffer der Code-Suche auf /play (siehe api/routers/play.py). */
@@ -2041,8 +2048,9 @@ export const api = {
 
   toolSessions: {
     /** Session der Lehrkraft für dieses Werkzeug — legt sie beim ersten Mal an. */
-    create: (tool_slug: string, ref_id?: number) =>
-      apiFetch<ToolSessionOut>("tool-sessions", { method: "POST", body: JSON.stringify({ tool_slug, ref_id }) }),
+    /** `scope` (nur Challenge): je Klasse bzw. Kurs eine eigene Sitzung. */
+    create: (tool_slug: string, ref_id?: number, scope?: { class_id?: number; group_id?: number }) =>
+      apiFetch<ToolSessionOut>("tool-sessions", { method: "POST", body: JSON.stringify({ tool_slug, ref_id, ...scope }) }),
     /** Öffentlich: der Beitritts-Screen liest das vor jedem Login. */
     get: (code: string) => apiFetch<ToolSessionOut>(`tool-sessions/${encodeURIComponent(code)}`),
     /** Einstellungen der Sitzung festlegen — nur die Lehrkraft, der sie gehört. */

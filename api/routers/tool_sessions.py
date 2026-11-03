@@ -17,7 +17,7 @@ from ..database import get_db
 from ..auth import get_current_teacher, get_player
 from ..models import ChallengeSet, KartenSatz, SimBeitrag, Student, Teacher, TimelineSet, ToolSession
 from ..utils import gen_code
-from .. import availability, tool_catalog
+from .. import availability, scoping, tool_catalog
 
 router = APIRouter(prefix="/api/tool-sessions", tags=["tool-sessions"])
 
@@ -34,6 +34,8 @@ REF_TOOLS = {"zeitstrahl": TimelineSet, "karten": KartenSatz, "challenge": Chall
 # Werkzeuge, die auch ohne Inhalt einen Code bekommen: Karten ohne Kartensatz
 # ist das ganze Kartentool zum Erkunden (routers/karten.py, /sitzung/{code}).
 OHNE_INHALT_MOEGLICH = ("karten",)
+# Werkzeuge, deren Sitzung einer Klasse bzw. einem Kurs/WPF gehört: je Geltungsbereich ein eigener Code
+MIT_KLASSE = ("challenge",)
 # Werkzeuge, deren geteilter Satz über /content an Spieler gehen darf (ein Challenge-Satz enthält die Lösungen)
 OEFFENTLICHER_INHALT = ("zeitstrahl", "karten")
 
@@ -47,11 +49,18 @@ class ToolSessionOut(BaseModel):
     ref_title: str | None = None
     # Einstellungen der Lehrkraft für das Werkzeug (Leviathan: Krisenstufe …).
     settings: dict = {}
+    class_id: int | None = None
+    group_id: int | None = None
+    # »9a« bzw. »9 NaT«; leer, wenn die Sitzung für alle offen ist
+    scope_label: str | None = None
 
 
 class ToolSessionIn(BaseModel):
     tool_slug: str
     ref_id: int | None = None
+    # Nur für MIT_KLASSE: genau eines von beiden
+    class_id: int | None = None
+    group_id: int | None = None
 
 
 def _check_slug(slug: str) -> None:
@@ -80,6 +89,10 @@ def _out(session: ToolSession, db: Session) -> ToolSessionOut:
         ref_id=session.ref_id,
         ref_title=_ref_title(session, db),
         settings=session.settings or {},
+        class_id=session.class_id,
+        group_id=session.group_id,
+        scope_label=scoping.scope_label(db, session.class_id, session.group_id)
+        if session.class_id is not None or session.group_id is not None else None,
     )
 
 
@@ -102,10 +115,18 @@ def create_or_get(
         if db.get(ref_model, body.ref_id) is None:
             raise HTTPException(404, "Inhalt nicht gefunden")
     ref_id = body.ref_id if ref_model is not None else None
+    # Challenge: je Klasse bzw. Kurs eine eigene Sitzung (wie Caputh, TaskCrawler).
+    # Ohne beides bleibt es die alte, für alle offene Sitzung — gedruckte Codes gelten weiter.
+    class_id = group_id = None
+    if body.tool_slug in MIT_KLASSE and (body.class_id is not None or body.group_id is not None):
+        scoping.validate_scope(body.class_id, body.group_id)
+        if body.group_id is not None:
+            scoping.load_group(db, body.group_id)
+        class_id, group_id = body.class_id, body.group_id
 
     session = (
         db.query(ToolSession)
-        .filter_by(created_by=teacher.id, tool_slug=body.tool_slug, ref_id=ref_id)
+        .filter_by(created_by=teacher.id, tool_slug=body.tool_slug, ref_id=ref_id, class_id=class_id, group_id=group_id)
         .order_by(ToolSession.created_at.desc())
         .first()
     )
@@ -115,6 +136,8 @@ def create_or_get(
             tool_slug=body.tool_slug,
             created_by=teacher.id,
             ref_id=ref_id,
+            class_id=class_id,
+            group_id=group_id,
         )
         db.add(session)
         db.commit()

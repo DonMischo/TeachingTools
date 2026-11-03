@@ -9,10 +9,13 @@ import ChallengeLehrkraft from "@/components/challenge/ChallengeLehrkraft";
 const m = vi.hoisted(() => ({
   info: vi.fn(), start: vi.fn(), antwort: vi.fn(), uebersicht: vi.fn(), schueler: vi.fn(), stufen: vi.fn(), kalibrierung: vi.fn(),
   kalibrierungSetzen: vi.fn(), kalibrierungLoeschen: vi.fn(), standStufe: vi.fn(), csvPfad: vi.fn(() => "/x.csv"),
-  einstellungen: vi.fn(), create: vi.fn(), classes: vi.fn(),
+  einstellungen: vi.fn(), create: vi.fn(), classes: vi.fn(), get: vi.fn(), sessions: vi.fn(), groups: vi.fn(),
 }));
 vi.mock("@/lib/api", () => ({
-  api: { challenge: m, toolSessions: { create: m.create, einstellungen: m.einstellungen, get: vi.fn() }, classes: { list: m.classes } },
+  api: {
+    challenge: m, toolSessions: { create: m.create, einstellungen: m.einstellungen, get: m.get }, classes: { list: m.classes },
+    play: { sessions: m.sessions }, groups: { list: m.groups },
+  },
 }));
 vi.mock("@/components/ToolSessionBar", () => ({ ToolSessionBar: () => null }));
 
@@ -57,6 +60,9 @@ describe("ChallengeLehrkraft", () => {
     Object.values(m).forEach((f) => f.mockReset?.());
     m.csvPfad.mockReturnValue("/x.csv");
     m.create.mockResolvedValue(sitzung);
+    m.get.mockResolvedValue(sitzung);
+    m.sessions.mockResolvedValue([{ code: "XYZ", ref_id: 1, mine: true, scope_label: "7a" }]);
+    m.groups.mockResolvedValue([]);
     m.uebersicht.mockResolvedValue({ teilnehmer: [], punkte: [] });
     m.classes.mockResolvedValue([{ id: 7, code: "7a", display_name: "7a" }]);
     m.schueler.mockResolvedValue([{ id: 5, name: "Eva", startstufe: null, stand_id: null, stufe: null }]);
@@ -66,9 +72,23 @@ describe("ChallengeLehrkraft", () => {
   const zeige = async () => {
     const u = userEvent.setup();
     render(<QueryClientProvider client={new QueryClient()}><ChallengeLehrkraft satzId={1} titel="Hebel" /></QueryClientProvider>);
-    await screen.findByText(/Challenge: Hebel/);
+    await screen.findByLabelText("Etappen in zufälliger Reihenfolge"); // Sitzung der Klasse geladen
     return u;
   };
+
+  it("ohne Sitzung: erst Klasse wählen, dann bekommt sie ihren eigenen Code", async () => {
+    m.sessions.mockResolvedValue([]);
+    const u = userEvent.setup();
+    render(<QueryClientProvider client={new QueryClient()}><ChallengeLehrkraft satzId={1} titel="Hebel" /></QueryClientProvider>);
+    const start = await screen.findByRole("button", { name: "Starten" });
+    expect(start).toBeDisabled();
+    const wahl = screen.getByLabelText("Neu für");
+    await waitFor(() => expect(wahl.querySelectorAll("option")).toHaveLength(2));
+    await u.selectOptions(wahl, "c7");
+    await u.click(start);
+    expect(m.create).toHaveBeenCalledWith("challenge", 1, { class_id: 7 });
+    expect(await screen.findByLabelText("Etappen in zufälliger Reihenfolge")).toBeInTheDocument();
+  });
 
   it("sendet die Startstufe je Schüler", async () => {
     const u = await zeige();

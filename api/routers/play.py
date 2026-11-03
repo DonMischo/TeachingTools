@@ -144,6 +144,8 @@ class SessionRow(BaseModel):
     ref_id: int | None = None
     ref_title: str | None = None
     owner: str | None = None
+    # Für welche Klasse bzw. welchen Kurs die Sitzung läuft (»9a«, »9 NaT«)
+    scope_label: str | None = None
 
 
 def _row(tool: JoinCodeTool, session, teacher: Teacher) -> SessionRow:
@@ -162,7 +164,15 @@ def _row(tool: JoinCodeTool, session, teacher: Teacher) -> SessionRow:
         ref_id=getattr(session, "ref_id", None),
         ref_title=_ref_title(session),
         owner=_owner_name(session, tool),
+        scope_label=_scope_label(session),
     )
+
+
+def _scope_label(session) -> str | None:
+    class_id, group_id = getattr(session, "class_id", None), getattr(session, "group_id", None)
+    if class_id is None and group_id is None:
+        return None
+    return scoping.scope_label(object_session(session), class_id, group_id)
 
 
 def _ref_title(session) -> str | None:

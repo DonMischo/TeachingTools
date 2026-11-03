@@ -30,7 +30,8 @@ from ..availability import require_capability
 from ..database import get_db
 from ..display_names import short_name
 from ..challenge_lauf import AntwortIn, DeckIn, SKINS, STANDARD_STARTSTUFE, StartIn
-from ..models import ChallengeKalibrierung, ChallengeSet, ChallengeStand, Class, Student, Teacher, ToolSession, Transaction
+from .. import scoping
+from ..models import ChallengeKalibrierung, ChallengeSet, ChallengeStand, Class, Student, StudentGroupMember, Teacher, ToolSession, Transaction
 from ..upload_utils import ALLOWED_EXTENSIONS, save_image
 from .karten_quiz import _anzeigename, _wer
 
@@ -222,6 +223,32 @@ def _offene_sitzung(db: Session, code: str) -> ToolSession:
     return s
 
 
+def _gebunden(s: ToolSession) -> bool:
+    return s.class_id is not None or s.group_id is not None
+
+
+def _zugang(db: Session, s: ToolSession, spieler) -> None:
+    """Eine Klassen- bzw. Kurssitzung lässt angemeldete Schüler:innen nur aus ihrem Geltungsbereich herein; Lehrkräfte und Gäste immer."""
+    if not _gebunden(s) or not isinstance(spieler, Student):
+        return
+    if s.class_id is not None:
+        drin = spieler.class_id == s.class_id
+    else:
+        drin = db.query(StudentGroupMember).filter_by(group_id=s.group_id, student_id=spieler.id).first() is not None
+    if not drin:
+        raise HTTPException(403, "Diese Challenge läuft für eine andere Klasse")
+
+
+def _klasse_fuer(db: Session, s: ToolSession, spieler) -> int | None:
+    """Wem der Stand zugutekommt: Schüler:innen ihrer Klasse, Gäste der Klasse der Sitzung (bei einem Kurs aus mehreren Klassen niemandem)."""
+    if isinstance(spieler, Student):
+        return spieler.class_id
+    if isinstance(spieler, Teacher) or not _gebunden(s):
+        return None
+    return scoping.participant_class_id(session_class_id=s.class_id, session_group_id=s.group_id, student_class_id=None,
+                                        chosen_class_id=None, allowed_class_ids=scoping.scope_class_ids(db, s.class_id, s.group_id))
+
+
 def _satz(db: Session, s: ToolSession) -> ChallengeSet:
     g = db.get(ChallengeSet, s.ref_id) if s.ref_id else None
     if g is None:
@@ -286,7 +313,7 @@ def _speichern(st: ChallengeStand, lauf: dict) -> None:
 def _neuer_stand(db: Session, s: ToolSession, spieler, daten: dict, spiel: str) -> ChallengeStand:
     lauf = lauf_logik.neuer_lauf(daten, _startstufe(s, spieler), spiel, mischen=_einstellungen(s, daten)["etappen_mischen"])
     st = ChallengeStand(session_id=s.id, name=_anzeigename(spieler)[:100], stufe_start=lauf["stufe"], seed=lauf["seed"],
-                        class_id=spieler.class_id if isinstance(spieler, Student) else None, **_wer(spieler))
+                        class_id=_klasse_fuer(db, s, spieler), **_wer(spieler))
     _speichern(st, lauf)
     db.add(st)
     db.flush()
@@ -391,6 +418,7 @@ def kalibrierung_zuruecksetzen(class_id: int, db: Session = Depends(get_db), _: 
 @router.get("/{code}")
 def info(code: str, db: Session = Depends(get_db), spieler=Depends(get_player)):
     s = _offene_sitzung(db, code)
+    _zugang(db, s, spieler)
     satz = _satz(db, s)
     st = _stand(db, s, spieler)
     return {"title": satz.title, "subject": satz.subject, "settings": _einstellungen(s, satz.data),
@@ -402,6 +430,7 @@ def info(code: str, db: Session = Depends(get_db), spieler=Depends(get_player)):
 def start(code: str, body: StartIn | None = None, db: Session = Depends(get_db), spieler=Depends(get_player)):
     """Stand anlegen oder fortsetzen (optional mit anderer Spielart); zurück kommt das Brett der aktuellen Etappe."""
     s = _offene_sitzung(db, code)
+    _zugang(db, s, spieler)
     g = _satz(db, s)
     wunsch = body.spiel if body else None
     erlaubt = _spiele(s, g.data)
@@ -550,19 +579,22 @@ def _teilnehmerliste(db: Session, s: ToolSession, staende: list[ChallengeStand] 
     class_ids = {st.class_id for st in staende if st.class_id is not None}
     klassen = {cid: code for cid, code in db.query(Class.id, Class.code).filter(Class.id.in_(class_ids)).all()} if class_ids else {}
     kalibrierungen = _kalibrierungen(db, class_ids)
-    return [_teilnehmer(st, klassen.get(st.class_id, "Gast" if st.guest_id else "Lehrkraft" if st.teacher_id else ""),
+    return [_teilnehmer(st, f"{klassen[st.class_id]} (Gast)" if st.guest_id and st.class_id in klassen
+                        else klassen.get(st.class_id, "Gast" if st.guest_id else "Lehrkraft" if st.teacher_id else ""),
                         ablenker, kalibrierungen.get(st.class_id)) for st in staende]
 
 
 def vorschau_punkte(db: Session, s: ToolSession, staende: list[ChallengeStand] | None = None) -> list[dict]:
-    """Je Klasse der Mittelwert der Punkte (Ergebnis × 100) ihrer Schüler:innen; Gäste und Lehrkräfte zählen nicht.
+    """Je Klasse der Mittelwert der Punkte (Ergebnis × 100) ihrer Schüler:innen; Lehrkräfte zählen nicht.
+    Gebundene Sitzung: Gäste zählen für die Klasse der Sitzung mit, und Punkte gibt es nur für deren Klasse(n).
 
     ``staende``: schon geladene Stände der Sitzung (spart die zweite Abfrage)."""
     je: dict[int, list[int]] = {}
     if staende is None:
         staende = db.query(ChallengeStand).filter(ChallengeStand.session_id == s.id).all()
+    erlaubt = set(scoping.scope_class_ids(db, s.class_id, s.group_id)) if _gebunden(s) else None
     for st in staende:
-        if st.student_id is not None and st.class_id is not None:
+        if st.class_id is not None and (st.student_id is not None or st.guest_id is not None) and (erlaubt is None or st.class_id in erlaubt):
             je.setdefault(st.class_id, []).append(round(st.ergebnis * 100))
     klassen = {c.id: c.code for c in db.query(Class).filter(Class.id.in_(je.keys())).all()} if je else {}
     return sorted(({"class_id": cid, "klasse": klassen.get(cid, str(cid)), "teilnehmer": len(werte),
