@@ -42,6 +42,28 @@ const LABOR: Tab[] = ["labor", "netz", "linien"];
 const zeilenVon = (s: string) => s.split("; ");
 const TEIL_FARBE = (gruppe: "G" | "D" | "M") => (gruppe === "M" ? FARBE.M[0] : FARBE[gruppe]);
 
+/** Bastelbogen als PDF: Netz mit Klebelaschen; jsPDF wird erst beim Klick geladen. */
+function BastelKnopf({ k, m }: { k: KoerperKey; m: Masse }) {
+  const [status, setStatus] = useState<string | null>(null);
+  const los = async () => {
+    setStatus("Bastelbogen wird gebaut …");
+    try {
+      const { bastelbogenPdf } = await import("./bastelbogenPdf");
+      await bastelbogenPdf(k, m);
+      setStatus(null);
+    } catch (e) {
+      setStatus("Export fehlgeschlagen: " + (e instanceof Error ? e.message : String(e)));
+    }
+  };
+  return (
+    <div className="flex flex-col gap-1">
+      <button className="btn btn-primary self-start" onClick={los} disabled={status !== null && !status.startsWith("Export")}>🖨️ Bastelbogen (PDF)</button>
+      <span className="text-xs text-muted">Das Netz mit Klebelaschen zum Ausschneiden, Falten und Kleben, in Originalgröße auf A4 (zu große Netze werden verkleinert).</span>
+      {status && <span className={`text-xs ${status.startsWith("Export") ? "text-bad" : "text-muted"}`}>{status}</span>}
+    </div>
+  );
+}
+
 function Regler({ felder, m, setze }: { felder: { key: string; label: string; min: number; max: number; unter?: string }[]; m: Masse; setze: (k: string, v: number) => void }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -197,6 +219,7 @@ export default function Koerper({ action }: { action?: ReactNode }) {
                         <button className="btn" onClick={() => setZiel(0)}>📂 Aufklappen</button>
                         <button className="btn" onClick={() => setZiel(1)}>📦 Zuklappen</button>
                       </div>
+                      <BastelKnopf k={key} m={m} />
                       <p className="text-sm text-muted">
                         Das Netz besteht aus allen Flächen des Körpers. Seine Fläche ist genau die Oberfläche:
                         O {gl(d.O.wert)} {z(d.O.wert)} cm².

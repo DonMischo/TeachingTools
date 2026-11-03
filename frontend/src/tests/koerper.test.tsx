@@ -6,6 +6,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import Koerper from "@/components/koerper/Koerper";
 import { KOERPER, KOERPER_REIHE, startMasse } from "@/lib/koerper";
 import { faltePolyeder } from "@/lib/koerper-netz";
+import { bastelbogen, innen } from "@/lib/koerper-bastelbogen";
 import { ANWENDUNG_ARTEN, UEBUNG_ARTEN, erzeugeAnwendung, erzeugeUebung, fassPaar } from "@/lib/koerper-aufgaben";
 import { stimmt } from "@/lib/geometrie/aufgabe";
 import { z } from "@/lib/prozent";
@@ -64,5 +65,27 @@ describe("Blätter", () => {
     fireEvent.click(screen.getByRole("button", { name: /Wer fasst mehr/ }));
     fireEvent.click(screen.getByRole("button", { name: /Los geht/ }));
     expect(screen.getAllByRole("button", { name: /Gefäß/ }).length).toBe(2);
+  });
+});
+
+describe("Bastelbogen", () => {
+  it("jede aufgeschnittene Kante bekommt genau eine Lasche", () => {
+    for (const k of KOERPER_REIHE.filter(x => KOERPER[x].poly)) {
+      const m = startMasse(KOERPER[k]), d = KOERPER[k].rechne(m), b = bastelbogen(k, m)!;
+      // Ein Netz aus f Flächen hat f − 1 Scharniere; die übrigen Kanten sind aufgeschnitten.
+      expect(b.laschen.length).toBe(d.zaehlung.k - (d.zaehlung.f - 1));
+      expect(b.falze.length).toBe(d.zaehlung.k);
+    }
+  });
+  it("Zylinder und Kegel haben eine Naht-Lasche und Zähne, die Kugel keinen Bogen", () => {
+    for (const k of ["zylinder", "kegel", "kstumpf"] as const) expect(bastelbogen(k, startMasse(KOERPER[k]))!.laschen.length).toBeGreaterThan(5);
+    expect(bastelbogen("kugel", { r: 3 })).toBeNull();
+  });
+  it("Laschen liegen außerhalb ihrer Fläche", () => {
+    const b = bastelbogen("quader", { a: 6, b: 4, c: 3 })!;
+    for (const l of b.laschen) {
+      const c = { x: (l[1].x + l[2].x) / 2, y: (l[1].y + l[2].y) / 2 };
+      expect(b.teile.some(t => innen(c, t.pts))).toBe(false);
+    }
   });
 });
