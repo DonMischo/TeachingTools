@@ -212,6 +212,10 @@ simulationen:
       - Sechs Vierecke mit Formeln, Rechenweg und Eigenschaften
       - Umfang (Zaun bauen) und Fläche (Einheitsquadrate auslegen)
       - Herleitung der Flächenformel als Trickfilm für Parallelogramm, Trapez, Raute und Drachen (Tempo-Regler, Schritte, Zeitleiste)
+      - "Übungen, gewürfelt mit Skizze: Umfang, Fläche, rückwärts rechnen, Viereck erkennen (Steckbrief oder schräg liegende Figur), Flächeneinheiten, zusammengesetzte Flächen; Tipps einzeln, Lösungsweg, Punktestand"
+      - "Anwendungsaufgaben: Garten einzäunen, Bad fliesen, Wand streichen, Drachen bauen, Dach decken, Grundstückspreis, Rasen säen, Sportplatz"
+      - Übungen und Anwendungen als Word-Arbeitsblatt (.docx) mit Skizzen, Antwortlinien und Lösungen hinten
+      - "Spiel Flächen-Duell: zwei Vierecke auf Kästchenpapier, das größere antippen; 60 s, Serienbonus, Flächen rücken mit der Serie zusammen"
   - id: binaerrechner
     name: Binär-Rechner
     kann:

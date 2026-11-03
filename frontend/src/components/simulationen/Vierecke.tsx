@@ -15,6 +15,9 @@
  * »Fläche« stattdessen die Herleitung der Formel als Trickfilm; das Blatt
  * »Umfang« rechnet am Rechteck weiter und sagt das auch.
  *
+ * Dazu drei Blätter zum Üben: »Übungen« (gewürfelte Aufgaben), »Anwendungen«
+ * (Sachaufgaben) — beide mit Word-Export — und das Spiel »Flächen-Duell«.
+ *
  * Gelegt wird durch Antippen; mit gedrückter Maus/Finger auch im Streichen.
  * Auf dem Smartboard ist das zuverlässiger als Ziehen und Ablegen.
  */
@@ -25,8 +28,11 @@ import {
   type ShapeKey, type Vals,
 } from "@/lib/vierecke";
 import Herleitung from "@/components/simulationen/Herleitung";
+import Aufgabenblatt from "@/components/geometrie/Aufgabenblatt";
+import FlaechenDuell from "@/components/vierecke/FlaechenDuell";
+import { ANWENDUNG_ARTEN, UEBUNG_ARTEN, erzeugeAnwendung, erzeugeUebung } from "@/lib/vierecke-aufgaben";
 
-type Tab = "formen" | "umfang" | "flaeche";
+type Tab = "formen" | "umfang" | "flaeche" | "uebungen" | "anwendungen" | "spiel";
 
 const VB = { w: 620, h: 420 };
 const PAD = { x: 74, y: 62 };
@@ -262,7 +268,11 @@ const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: "formen", label: "Formen", icon: "📐" },
   { id: "umfang", label: "Umfang", icon: "🚧" },
   { id: "flaeche", label: "Fläche", icon: "🧱" },
+  { id: "uebungen", label: "Übungen", icon: "✍️" },
+  { id: "anwendungen", label: "Anwendungen", icon: "🏡" },
+  { id: "spiel", label: "Flächen-Duell", icon: "⚔️" },
 ];
+const UEBEN: Tab[] = ["uebungen", "anwendungen", "spiel"];
 
 /**
  * `vorgabe` (TaskCrawler-Station): { form: "trapez", masse: { a: 8, c: 4, h: 3 }, blatt?: "formen" | "umfang" | "flaeche",
@@ -271,7 +281,7 @@ const TABS: { id: Tab; label: string; icon: string }[] = [
  */
 export default function Vierecke({ action, vorgabe }: { action?: ReactNode; vorgabe?: Vorgabe }) {
   const festeForm = wahl(vorgabe, "form", SHAPE_ORDER);
-  const festesBlatt = festeForm ? (wahl(vorgabe, "blatt", TABS.map(t => t.id)) ?? "formen") : undefined;
+  const festesBlatt = festeForm ? (wahl(vorgabe, "blatt", ["formen", "umfang", "flaeche"] as const) ?? "formen") : undefined;
   const rechnungZeigen = !festeForm || vorgabe?.rechnung === true;
   const [tab, setTab] = useState<Tab>(festesBlatt ?? "formen");
   const [shapeKey, setShapeKey] = useState<ShapeKey>(festeForm ?? "quadrat");
@@ -337,8 +347,8 @@ export default function Vierecke({ action, vorgabe }: { action?: ReactNode; vorg
         <div>
           <h1 className="text-2xl font-black tracking-tight">📐 Vierecke</h1>
           <p className="text-muted text-sm mt-1">
-            Sechs Vierecke mit Formeln und Eigenschaften — und zwei Aufgaben zum Anfassen:
-            die Weide einzäunen (Umfang) und die Fläche auslegen.
+            Sechs Vierecke mit Formeln und Eigenschaften, zwei Aufgaben zum Anfassen (Weide einzäunen,
+            Fläche auslegen), gewürfelte Übungen und Sachaufgaben mit Word-Export und das Flächen-Duell.
           </p>
         </div>
         <div className="flex items-center gap-2">{action}</div>
@@ -361,8 +371,12 @@ export default function Vierecke({ action, vorgabe }: { action?: ReactNode; vorg
         ))}
       </div>}
 
-      {/* Formwahl — gilt für alle Blätter */}
-      {!festeForm && <div className="flex flex-wrap gap-2">
+      {tab === "uebungen" && <Aufgabenblatt arten={UEBUNG_ARTEN} erzeuge={a => erzeugeUebung(a)} titel="Vierecke – Übungen" datei="Vierecke-Uebungen.docx" />}
+      {tab === "anwendungen" && <Aufgabenblatt arten={ANWENDUNG_ARTEN} erzeuge={a => erzeugeAnwendung(a)} titel="Vierecke – Anwendungsaufgaben" datei="Vierecke-Anwendungen.docx" />}
+      {tab === "spiel" && <FlaechenDuell />}
+
+      {/* Formwahl — gilt für die Blätter Formen, Umfang, Fläche */}
+      {!festeForm && !UEBEN.includes(tab) && <div className="flex flex-wrap gap-2">
         {SHAPE_ORDER.map(k => {
           const s = SHAPES[k];
           const dimmed = tab === "umfang" && !s.gridable;
@@ -384,7 +398,7 @@ export default function Vierecke({ action, vorgabe }: { action?: ReactNode; vorg
       </div>}
 
       {/* Maße */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {!UEBEN.includes(tab) && <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {shape.fields.map(f => (
           <label key={f.key} className="flex flex-col gap-1">
             <span className="text-xs text-muted">
@@ -398,7 +412,7 @@ export default function Vierecke({ action, vorgabe }: { action?: ReactNode; vorg
             />
           </label>
         ))}
-      </div>
+      </div>}
 
       {tab === "formen" && (
         <>

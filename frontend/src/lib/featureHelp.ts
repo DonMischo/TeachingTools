@@ -700,11 +700,14 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
   },
   vierecke: {
     title: "Vierecke",
-    intro: "Sechs Vierecke der Klasse 5 mit Formeln und Eigenschaften — und zwei Aufgaben zum Anfassen. Zusammengelegt aus zwei früheren Werkzeugen.",
+    intro: "Sechs Vierecke der Klasse 5 mit Formeln und Eigenschaften, zwei Aufgaben zum Anfassen, gewürfelte Übungen und Sachaufgaben mit Word-Export und ein Spiel.",
     sections: [
       { label: "📐 Formen", text: "Quadrat, Rechteck, Parallelogramm, Trapez, Raute und Drachen. Die Schieberegler ändern die Maße, darunter steht der Rechenweg mit eingesetzten Zahlen und die Eigenschaften der Form. Höhe und Diagonalen sind gestrichelt eingezeichnet, wo die Formel sie braucht." },
       { label: "🚧 Umfang", text: "Die Weide wird Feld für Feld eingezäunt: der Umfang ist die Länge des Zauns, einmal rundherum. Antippen setzt ein Zaunfeld, mit gedrücktem Finger lässt sich streichen. Steht der Zaun, kommen die Schafe raus." },
       { label: "🧱 Fläche", text: "Die Fläche wird mit Einheitsquadraten ausgelegt — gezählt wird, was drinnen liegt. Auslegen geht nur bei Quadrat und Rechteck: nur die zerfallen lückenlos in Einheitsquadrate. Bei Parallelogramm, Trapez, Raute und Drachen zeigt das Blatt stattdessen die Herleitung der Formel als Trickfilm — mit den eingestellten Maßen, Schritt für Schritt, mit Tempo-Regler und Zeitleiste." },
+      { label: "✍️ Übungen", text: "Gewürfelte Aufgaben mit Skizze: Umfang, Fläche, rückwärts rechnen (z. B. Breite aus Fläche und Länge), Viereck erkennen, Flächeneinheiten umrechnen und zusammengesetzte Flächen. Arten lassen sich an- und abwählen. Tipps decken sich einzeln auf; mit Tipp oder Lösungsweg zählt die Aufgabe nicht für den Punktestand." },
+      { label: "🏡 Anwendungen", text: "Sachaufgaben aus dem Alltag: Garten einzäunen, Bad fliesen, Wand streichen, Drachen bauen, Dach decken, Grundstückspreis, Rasen säen, Runden um den Sportplatz — jedes Mal mit neuen Zahlen. »Arbeitsblatt (.docx)« baut aus den gewählten Arten ein Word-Dokument mit Skizzen, Antwortlinien und auf Wunsch den Lösungen hinten; das geht auch bei den Übungen." },
+      { label: "⚔️ Flächen-Duell", text: "Zwei Vierecke auf Kästchenpapier — wer schneller die größere Fläche antippt, punktet. 60 Sekunden, ein Fehler kostet 3 Sekunden, jede dritte richtige Antwort in Folge bringt einen Bonuspunkt mehr, dafür liegen die Flächen dann knapper beieinander. Der Rekord bleibt auf dem Gerät." },
       { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
     ],
   },
