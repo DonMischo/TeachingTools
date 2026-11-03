@@ -22,12 +22,12 @@ const MUTMACHER = [
 ];
 
 type Punkt = { x: number; y: number };
-type Art = 'spinne' | 'kaefer' | 'tausendfuss';
+type Art = 'spinne' | 'kaefer' | 'tausendfuss' | 'skolopender';
 /** Ein Bein: Hüfte am Glied `glied`, Fuß steht auf dem Boden, bis er zu weit
     hinter seiner Ruhelage zurückbleibt; dann tritt er nach vorn. */
 type Bein = { glied: number; seite: 1 | -1; winkel: number; weite: number; oben: number; unten: number; fuss: Punkt; von: Punkt; nach: Punkt; tritt: number };
 type Kaefer = { x: number; y: number; winkel: number; drehung: number; tempo: number; phase: number; spuckZeit: number; umlauf: number;
-  art: Art; farbe: string; glut: string; groesse: number; glieder: Punkt[]; beine: Bein[] };
+  art: Art; farbe: string; glut: string; beinFarbe: string; groesse: number; glieder: Punkt[]; beine: Bein[] };
 type Wort = { text: string; x: number; y: number; vx: number; vy: number; dreh: number; geboren: number; vonX: number; vonY: number; farbe: string };
 
 let serie = 0;
@@ -59,7 +59,7 @@ const FARBEN: [string, string][] = [
 
 /** Bauplan je Art (Längen in px bei Größe 1): Glieder hintereinander, an
     welchen Gliedern Beine sitzen, Ruhewinkel der Füße gegen die Laufrichtung. */
-const BAU: Record<Art, { glieder: number; abstand: number; beine: { glied: number; winkel: number }[]; weite: number; oben: number; unten: number; schritt: number }> = {
+const BAU: Record<Art, { glieder: number; abstand: number; beine: { glied: number; winkel: number; lang?: number }[]; weite: number; oben: number; unten: number; schritt: number }> = {
   spinne: {
     glieder: 2, abstand: 26, weite: 72, oben: 50, unten: 52, schritt: 0.12,
     beine: [40, 75, 110, 145].map((w) => ({ glied: 0, winkel: w })),
@@ -71,6 +71,13 @@ const BAU: Record<Art, { glieder: number; abstand: number; beine: { glied: numbe
   tausendfuss: {
     glieder: 12, abstand: 12, weite: 28, oben: 16, unten: 17, schritt: 0.08,
     beine: Array.from({ length: 11 }, (_, i) => ({ glied: i + 1, winkel: 95 })),
+  },
+  // Spinnenläufer-artig: lange Beine mit drei Gelenken, nach hinten
+  // gespreizt, das letzte Paar als lange Schleppbeine
+  skolopender: {
+    glieder: 14, abstand: 16, weite: 70, oben: 38, unten: 46, schritt: 0.1,
+    beine: Array.from({ length: 13 }, (_, i) =>
+      i === 12 ? { glied: 13, winkel: 160, lang: 1.6 } : { glied: i + 1, winkel: 70 + i * 4 }),
   },
 };
 const ARTEN = Object.keys(BAU) as Art[];
@@ -85,8 +92,10 @@ function ruheLage(k: Kaefer, bein: Bein): Punkt {
 }
 
 function neuerKaefer(b: number, h: number): Kaefer {
-  const [farbe, glut] = FARBEN[Math.floor(Math.random() * FARBEN.length)];
   const art = ARTEN[Math.floor(Math.random() * ARTEN.length)];
+  // der Skolopender trägt immer Gelb mit grünen Beinen wie sein Vorbild
+  const [farbe, glut] = art === 'skolopender' ? ['#ffee58', '#76ff03'] : FARBEN[Math.floor(Math.random() * FARBEN.length)];
+  const beinFarbe = art === 'skolopender' ? '#76ff03' : farbe;
   const bau = BAU[art];
   const groesse = 1 + Math.random() * 0.4;
   const winkel = Math.random() * Math.PI * 2;
@@ -97,13 +106,13 @@ function neuerKaefer(b: number, h: number): Kaefer {
   const k: Kaefer = {
     x: b / 2, y: h / 2, winkel, drehung: 0, tempo: 110 + Math.random() * 70,
     phase: Math.random() * 6, spuckZeit: 0, umlauf: Math.random() * Math.PI * 2,
-    art, farbe, glut, groesse, glieder, beine: [],
+    art, farbe, glut, beinFarbe, groesse, glieder, beine: [],
   };
   for (const seite of [1, -1] as const) {
     for (const bb of bau.beine) {
       const bein: Bein = {
         glied: bb.glied, seite, winkel: (bb.winkel * Math.PI) / 180,
-        weite: bau.weite * groesse, oben: bau.oben * groesse, unten: bau.unten * groesse,
+        weite: bau.weite * groesse * (bb.lang ?? 1), oben: bau.oben * groesse * (bb.lang ?? 1), unten: bau.unten * groesse * (bb.lang ?? 1),
         fuss: { x: 0, y: 0 }, von: { x: 0, y: 0 }, nach: { x: 0, y: 0 }, tritt: 0,
       };
       bein.fuss = ruheLage(k, bein);
@@ -161,6 +170,12 @@ function gelenk(ctx: CanvasRenderingContext2D, p: Punkt, r: number) {
   ctx.strokeRect(p.x - r, p.y - r, r * 2, r * 2);
 }
 
+function punkt(ctx: CanvasRenderingContext2D, p: Punkt, r: number) {
+  ctx.beginPath();
+  ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+  ctx.fill();
+}
+
 /** Glied als gedrehter Gitterkasten. */
 function kasten(ctx: CanvasRenderingContext2D, p: Punkt, w: number, breite: number, laenge: number, linien: number) {
   ctx.save();
@@ -184,7 +199,10 @@ function zeichneKaefer(ctx: CanvasRenderingContext2D, k: Kaefer) {
   ctx.lineWidth = 1.5;
   ctx.shadowColor = k.glut;
   ctx.shadowBlur = 12;
-  const breite = { spinne: 22, kaefer: 26, tausendfuss: 12 }[k.art] * g;
+  const breite = { spinne: 22, kaefer: 26, tausendfuss: 12, skolopender: 16 }[k.art] * g;
+  const lang3 = k.art === 'skolopender';
+  ctx.strokeStyle = k.beinFarbe;
+  ctx.fillStyle = k.farbe;
 
   // Beine: Hüfte – Knie – Fuß, Gelenke als kleine Quadrate
   for (const bein of k.beine) {
@@ -195,14 +213,27 @@ function zeichneKaefer(ctx: CanvasRenderingContext2D, k: Kaefer) {
     const hub = bein.tritt > 0 ? Math.sin(bein.tritt * Math.PI) * 0.25 : 0;
     const fuss = { x: bein.fuss.x + (huefte.x - bein.fuss.x) * hub, y: bein.fuss.y + (huefte.y - bein.fuss.y) * hub };
     const kn = knie(huefte, fuss, bein.oben, bein.unten, gl);
+    const punkte = [huefte, kn];
+    if (lang3) {
+      // drittes Gelenk: auf dem Unterschenkel, leicht nach außen geknickt
+      const dx = fuss.x - kn.x, dy = fuss.y - kn.y;
+      const n = Math.hypot(dx, dy) || 1;
+      let nx = -dy / n, ny = dx / n;
+      const mx = kn.x + dx * 0.55, my = kn.y + dy * 0.55;
+      if ((mx + nx - gl.x) ** 2 + (my + ny - gl.y) ** 2 < (mx - gl.x) ** 2 + (my - gl.y) ** 2) { nx = -nx; ny = -ny; }
+      punkte.push({ x: mx + nx * n * 0.15, y: my + ny * n * 0.15 });
+    }
+    punkte.push(fuss);
     ctx.beginPath();
-    ctx.moveTo(huefte.x, huefte.y);
-    ctx.lineTo(kn.x, kn.y);
-    ctx.lineTo(fuss.x, fuss.y);
+    punkte.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
     ctx.stroke();
-    gelenk(ctx, kn, 2 * g);
-    if (k.art === 'spinne') gelenk(ctx, fuss, 1.2 * g);
+    if (lang3) punkte.slice(1).forEach((p) => punkt(ctx, p, 2.2 * g));
+    else {
+      gelenk(ctx, kn, 2 * g);
+      if (k.art === 'spinne') gelenk(ctx, fuss, 1.2 * g);
+    }
   }
+  ctx.strokeStyle = k.farbe;
 
   // Körper
   if (k.art === 'spinne') {
@@ -220,12 +251,45 @@ function zeichneKaefer(ctx: CanvasRenderingContext2D, k: Kaefer) {
     ctx.beginPath();
     ctx.arc(k.glieder[0].x, k.glieder[0].y, 7 * g, 0, Math.PI * 2);
     ctx.stroke();
+  } else if (k.art === 'skolopender') {
+    // Glieder als Kästen mit gefülltem Kern, Farben im Wechsel
+    k.glieder.forEach((p, i) => {
+      const w = richtung(k, i);
+      kasten(ctx, p, w, breite, 14 * g, 1);
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(w);
+      ctx.globalAlpha = 0.75;
+      ctx.fillStyle = i % 3 === 1 ? k.beinFarbe : k.farbe;
+      ctx.fillRect(-4 * g, -5 * g, 8 * g, 10 * g);
+      ctx.restore();
+    });
   } else {
     k.glieder.forEach((p, i) => kasten(ctx, p, richtung(k, i), breite, 10 * g, 1));
   }
 
   // Kieferzangen bzw. Fühler am Kopf
   const kopf = k.glieder[0];
+  if (lang3) {
+    // lange Fühler aus vier Gliedern, die sich wellen
+    ctx.strokeStyle = k.beinFarbe;
+    for (const s of [-1, 1]) {
+      let p = kopf, a = k.winkel + s * 0.4;
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+      const knoten: Punkt[] = [];
+      for (let i = 0; i < 4; i++) {
+        a += s * (0.12 + Math.sin(k.phase * 0.8 + i + s) * 0.18);
+        p = { x: p.x + Math.cos(a) * 22 * g, y: p.y + Math.sin(a) * 22 * g };
+        ctx.lineTo(p.x, p.y);
+        knoten.push(p);
+      }
+      ctx.stroke();
+      knoten.forEach((q) => punkt(ctx, q, 2 * g));
+    }
+    ctx.restore();
+    return;
+  }
   const lang = (k.art === 'spinne' ? 14 : 26) * g;
   ctx.beginPath();
   for (const s of [-1, 1]) {
