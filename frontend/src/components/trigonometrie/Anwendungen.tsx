@@ -2,12 +2,14 @@
 /**
  * Sachaufgaben mit Bild: Turm, Leiter, Fluss, Schiff anpeilen, Wanderweg,
  * Steigung, Doppelpeilung, Dach, Sonnenstand. Jede Runde neue Zahlen, Tipps
- * einzeln aufdecken, dann der Lösungsweg.
+ * einzeln aufdecken, dann der Lösungsweg. »Arbeitsblatt« baut daraus ein
+ * Word-Dokument mit Bildern und auf Wunsch den Lösungen hinten.
  */
 import { useEffect, useState, type ReactNode } from "react";
 import { SZENARIO_ARTEN, cosG, erzeugeSzenario, sinG, tanG, type Szenario, type SzenarioArt } from "@/lib/trigonometrie";
 import { leseZahl, z } from "@/lib/prozent";
 import { LEER, zaehle } from "@/components/prozent/ui";
+import { baueDocx, herunterladen, svgZuPng, type DocxBlock } from "@/lib/docx";
 
 const W = 560, H = 300;
 const ORANGE = "#f59e0b", ROT = "#ef4444", BLAU = "#3b82f6";
@@ -182,6 +184,82 @@ function Szene({ s }: { s: Szenario }) {
   }
 }
 
+/** Farben der Seite gibt es im Word-Bild nicht — dort feste Druckfarben. */
+const DRUCK: [string, string][] = [
+  ["var(--text-muted)", "#6b7280"], ["var(--text)", "#1f2937"], ["var(--border)", "#cbd5e1"], ["var(--accent)", "#2563eb"], ["var(--surface)", "#ffffff"],
+];
+
+async function szeneAlsPng(s: Szenario) {
+  const { renderToStaticMarkup } = await import("react-dom/server");
+  let svg = renderToStaticMarkup(
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox={`0 0 ${W} ${H}`} width={W} height={H} fontFamily="Segoe UI, Arial, sans-serif">
+      <rect width={W} height={H} fill="#fff" />
+      <Szene s={s} />
+    </svg>,
+  );
+  for (const [a, b] of DRUCK) svg = svg.split(a).join(b);
+  return svgZuPng(svg, W, H);
+}
+
+/** Arbeitsblatt: Aufgaben mit Bild und Antwortlinien, Lösungen auf eigener Seite. */
+export async function arbeitsblatt(aufgaben: Szenario[], loesungen: boolean): Promise<Blob> {
+  const b: DocxBlock[] = [
+    { art: "titel", text: "Trigonometrie – Anwendungsaufgaben" },
+    { art: "text", text: "Name: ______________________   Klasse: ________   Datum: ____________", grau: true },
+  ];
+  for (const [i, s] of aufgaben.entries()) {
+    b.push({ art: "ueberschrift", text: `Aufgabe ${i + 1}: ${s.titel}` }, { art: "text", text: s.text });
+    b.push({ art: "bild", png: await szeneAlsPng(s), breite: W, hoehe: H });
+    for (const g of s.gesucht) b.push({ art: "linie", text: `${g.label} (${g.einheit}):` });
+  }
+  if (loesungen) {
+    b.push({ art: "umbruch" }, { art: "titel", text: "Lösungen" });
+    for (const [i, s] of aufgaben.entries()) {
+      b.push({ art: "ueberschrift", text: `Aufgabe ${i + 1}: ${s.titel}` });
+      for (const x of s.loesung) b.push({ art: "text", text: x, mono: true });
+      b.push({ art: "text", text: "Ergebnis: " + s.gesucht.map(g => `${g.label} ≈ ${z(g.wert, 2)} ${g.einheit}`).join(" · "), fett: true });
+    }
+  }
+  return baueDocx(b);
+}
+
+function Export({ art }: { art: SzenarioArt }) {
+  const [anzahl, setAnzahl] = useState(6);
+  const [gemischt, setGemischt] = useState(true);
+  const [mitLoesung, setMitLoesung] = useState(true);
+  const [status, setStatus] = useState<string | null>(null);
+  const los = async () => {
+    setStatus("Arbeitsblatt wird gebaut …");
+    try {
+      // gemischt: jede Art einmal, bevor sich eine wiederholt
+      const reihe = [...SZENARIO_ARTEN].sort(() => Math.random() - 0.5).map(a => a.id);
+      const aufgaben = Array.from({ length: anzahl }, (_, i) => erzeugeSzenario(gemischt ? reihe[i % reihe.length] : art));
+      herunterladen(await arbeitsblatt(aufgaben, mitLoesung), "Trigonometrie-Anwendungen.docx");
+      setStatus(null);
+    } catch (e) {
+      setStatus("Export fehlgeschlagen: " + (e instanceof Error ? e.message : String(e)));
+    }
+  };
+  const name = SZENARIO_ARTEN.find(a => a.id === art)!;
+  return (
+    <div className="rounded-xl border border-line p-3 flex flex-wrap items-center gap-3 text-sm">
+      <strong>📄 Arbeitsblatt für Word</strong>
+      <label className="flex items-center gap-1.5">
+        <select className="input w-auto" value={anzahl} onChange={e => setAnzahl(Number(e.target.value))} aria-label="Anzahl Aufgaben">
+          {[3, 4, 6, 8, 9, 12].map(n => <option key={n} value={n}>{n}</option>)}
+        </select> Aufgaben
+      </label>
+      <div className="flex gap-1.5">
+        <button className={`chip ${gemischt ? "chip-on" : ""}`} onClick={() => setGemischt(true)}>gemischt</button>
+        <button className={`chip ${!gemischt ? "chip-on" : ""}`} onClick={() => setGemischt(false)}>nur {name.icon} {name.label}</button>
+      </div>
+      <label className="flex items-center gap-1.5"><input type="checkbox" checked={mitLoesung} onChange={e => setMitLoesung(e.target.checked)} /> Lösungen anhängen</label>
+      <button className="btn btn-primary" onClick={los} disabled={status !== null && !status.startsWith("Export")}>⬇ .docx herunterladen</button>
+      {status && <span className={status.startsWith("Export") ? "text-bad" : "text-muted"}>{status}</span>}
+    </div>
+  );
+}
+
 export default function Anwendungen() {
   const [art, setArt] = useState<SzenarioArt>("turm");
   const [s, setS] = useState<Szenario | null>(null);
@@ -191,6 +269,7 @@ export default function Anwendungen() {
   const [weg, setWeg] = useState(false);
   const [gezaehlt, setGezaehlt] = useState(false);
   const [punkte, setPunkte] = useState(LEER);
+  const [export_, setExport] = useState(false);
 
   const neu = (a = art) => { setS(erzeugeSzenario(a)); setEin({}); setUrteil(null); setTipps(0); setWeg(false); setGezaehlt(false); };
   useEffect(() => { neu(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -211,8 +290,10 @@ export default function Anwendungen() {
         ))}
         <span className="flex-1" />
         {punkte.gesamt > 0 && <span className="text-sm font-black">✔ {punkte.richtig} von {punkte.gesamt}</span>}
+        <button className={`btn ${export_ ? "btn-primary" : ""}`} onClick={() => setExport(x => !x)}>📄 Arbeitsblatt (.docx)</button>
         <button className="btn" onClick={() => neu()}>🎲 Neue Zahlen</button>
       </div>
+      {export_ && <Export art={art} />}
       <div className="grid gap-4 lg:grid-cols-2 items-start">
         <div className="flex flex-col gap-3">
           <h3 className="text-lg font-black">{s.titel}</h3>
@@ -240,7 +321,7 @@ export default function Anwendungen() {
             </ol>
           )}
         </div>
-        <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto rounded-xl border border-line" role="img" aria-label={s.titel}><Szene s={s} /></svg>
+        <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto max-h-[calc(100vh-8rem)] rounded-xl border border-line" role="img" aria-label={s.titel}><Szene s={s} /></svg>
       </div>
     </div>
   );

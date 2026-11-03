@@ -47,7 +47,7 @@ export default function Rechtwinklig() {
         </div>
       </div>
       <div className="grid gap-4 lg:grid-cols-[3fr_2fr] items-center">
-        <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label="Rechtwinkliges Dreieck">
+        <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto max-h-[calc(100vh-8rem)]" role="img" aria-label="Rechtwinkliges Dreieck">
           <path d={bogen(A, 0, alpha)} fill="#f59e0b" fillOpacity={bezug === "alpha" ? 0.45 : 0.15} />
           <path d={bogen(B, 270 - beta, 270, 30)} fill="#f59e0b" fillOpacity={bezug === "beta" ? 0.45 : 0.15} />
           <rect x={C.x - 22} y={C.y - 22} width={22} height={22} fill="none" stroke="var(--text-muted)" strokeWidth={1.5} />

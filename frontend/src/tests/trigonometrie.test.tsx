@@ -6,6 +6,8 @@
 import { describe, expect, it } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import Trigonometrie from "@/components/trigonometrie/Trigonometrie";
+import JSZip from "jszip";
+import { baueDocx } from "@/lib/docx";
 import {
   AUFGABEN_ARTEN, SZENARIO_ARTEN, cosG, ecken, erzeugeAufgabe, erzeugeSzenario, exakt, fallVon, loese, loeseRechtwinklig, quadrant, sinG,
   type Dreieck,
@@ -131,9 +133,34 @@ describe("Aufgaben und Szenarien", () => {
 describe("Oberfläche", () => {
   it("jedes Blatt öffnet", () => {
     render(<Trigonometrie />);
-    for (const name of [/Einheitskreis/, /Sinusfunktion/, /Rechtwinklig/, /Dreiecke/, /Anwendungen/, /Küstenwache/]) {
+    for (const name of [/Einheitskreis/, /Sinusfunktion/, /Rechtwinklig/, /Dreiecksrechner/, /^✍️ Aufgaben$/, /Anwendungen/, /Küstenwache/]) {
       fireEvent.click(screen.getByRole("button", { name }));
     }
     expect(screen.getAllByText(/Küstenwache/).length).toBeGreaterThan(0);
+  });
+});
+
+describe("Word-Export", () => {
+  it("baut ein .docx mit Text, Bild und Seitenumbruch", async () => {
+    const png = new Uint8Array([137, 80, 78, 71]);
+    const blob = await baueDocx([
+      { art: "titel", text: "Trigonometrie – Test" },
+      { art: "text", text: "a < b & c > d" },
+      { art: "bild", png, breite: 560, hoehe: 300 },
+      { art: "linie", text: "Höhe (m):" },
+      { art: "umbruch" },
+    ]);
+    const zip = await JSZip.loadAsync(await blob.arrayBuffer());
+    const doc = await zip.file("word/document.xml")!.async("string");
+    expect(doc).toContain("a &lt; b &amp; c &gt; d");
+    for (const datei of ["word/document.xml", "word/_rels/document.xml.rels", "[Content_Types].xml", "_rels/.rels"]) {
+      const xml = new DOMParser().parseFromString(await zip.file(datei)!.async("string"), "application/xml");
+      expect(xml.getElementsByTagName("parsererror"), datei).toHaveLength(0);
+    }
+    expect(doc).toContain('r:embed="rIdBild1"');
+    expect(doc).toContain('w:type="page"');
+    expect(await zip.file("word/_rels/document.xml.rels")!.async("string")).toContain("media/bild1.png");
+    expect(zip.file("word/media/bild1.png")).toBeTruthy();
+    expect(zip.file("[Content_Types].xml")).toBeTruthy();
   });
 });

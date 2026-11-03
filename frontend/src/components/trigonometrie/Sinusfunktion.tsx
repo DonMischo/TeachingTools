@@ -69,7 +69,7 @@ export default function Sinusfunktion() {
         <Regler label="c (Verschiebung nach rechts, °)" wert={p.c} setze={setze("c")} min={0} max={360} step={15} breit />
         <Regler label="d (Verschiebung nach oben)" wert={p.d} setze={setze("d")} min={-2} max={2} step={0.5} breit />
       </div>
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label="Graph der Sinusfunktion">
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto max-h-[calc(100vh-8rem)]" role="img" aria-label="Graph der Sinusfunktion">
         {[-3, -2, -1, 1, 2, 3].map(v => (
           <g key={v}>
             <line x1={L} y1={Y(v)} x2={W - R} y2={Y(v)} stroke="var(--border)" strokeOpacity={0.5} />

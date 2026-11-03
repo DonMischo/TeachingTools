@@ -711,8 +711,11 @@ simulationen:
       - Grad- und Bogenmaß, exakte Werte, Vorzeichen je Quadrant, Winkel mit gleichem Wert
       - "Sinusfunktion a · sin(b(x − c)) + d mit Reglern und Spiel »Welle treffen«"
       - Gegenkathete, Ankathete, Hypotenuse im rechtwinkligen Dreieck
-      - "Dreiecke berechnen: rechtwinklig, SSS, SWS, WSW/WWS, SsW mit 0, 1 oder 2 Lösungen; Tipps Schritt für Schritt, eigener Rechner"
+      - "Dreiecksrechner: Gegebenes eintippen, alle Größen mit Rechenweg und Bild (Winkelbögen), SsW mit 0, 1 oder 2 Lösungen"
+      - "Aufgaben nach Fall (rechtwinklig, SSS, SWS, WSW/WWS, SsW) mit Tipps Schritt für Schritt"
+      - Einrasten an besonderen Winkeln und ½-Linien am Einheitskreis
       - "Sachaufgaben: Turm, Leiter, Fluss, Triangulieren, Wanderweg, Steigung, Doppelpeilung, Dach, Sonnenstand"
+      - Arbeitsblatt als Word-Datei (.docx) mit Bildern, Antwortlinien und Lösungsseite
       - "Spiel Küstenwache: Peilung → Kurs und Strecke → Rettungsboot, drei Stufen"
   - id: stellenwert
     name: Stellenwerttafeln

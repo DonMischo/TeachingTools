@@ -32,6 +32,11 @@ const PI_TEXT: Record<number, string> = {
   0: "0", 30: "π/6", 45: "π/4", 60: "π/3", 90: "π/2", 120: "2π/3", 135: "3π/4", 150: "5π/6", 180: "π",
   210: "7π/6", 225: "5π/4", 240: "4π/3", 270: "3π/2", 300: "5π/3", 315: "7π/4", 330: "11π/6", 360: "2π",
 };
+/** Nahe an einem besonderen Winkel (±4°) springt der Punkt genau darauf. */
+const rastet = (w: number) => {
+  const nah = [...BESONDERE, 360].find(b => Math.abs(b - w) <= 4);
+  return nah ?? Math.round(w);
+};
 const VZ: Record<1 | 2 | 3 | 4, string> = { 1: "sin +, cos +, tan +", 2: "sin +, cos −, tan −", 3: "sin −, cos −, tan +", 4: "sin −, cos +, tan −" };
 
 function kurve(f: (w: number) => number, bis: number) {
@@ -52,6 +57,7 @@ export default function Einheitskreis() {
   const [spur, setSpur] = useState(false);
   const [gleich, setGleich] = useState(false);
   const [laeuft, setLaeuft] = useState(false);
+  const [rasten, setRasten] = useState(true);
   const svg = useRef<SVGSVGElement>(null);
   const zieht = useRef(false);
 
@@ -75,11 +81,10 @@ export default function Einheitskreis() {
     const m = s?.getScreenCTM?.();
     if (!s || !m) return;
     const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(m.inverse());
-    if (p.x < (CX + R + GX0) / 2) {
-      setPhi(Math.round(normiere(Math.atan2(CY - p.y, p.x - CX) * 180 / Math.PI)));
-    } else {
-      setPhi(Math.round(Math.max(0, Math.min(360, ((p.x - GX0) / (GX1 - GX0)) * 360))));
-    }
+    const w = p.x < (CX + R + GX0) / 2
+      ? normiere(Math.atan2(CY - p.y, p.x - CX) * 180 / Math.PI)
+      : Math.max(0, Math.min(360, ((p.x - GX0) / (GX1 - GX0)) * 360));
+    setPhi(rasten ? rastet(w) : Math.round(w));
   };
 
   const s = sinG(phi), c = cosG(phi), t = tanG(phi), ct = cotG(phi);
@@ -122,6 +127,7 @@ export default function Einheitskreis() {
           ))}
         </div>
         <label className="flex items-center gap-1.5"><input type="checkbox" checked={spur} onChange={e => setSpur(e.target.checked)} /> Spur (Graph nur bis φ zeichnen)</label>
+        <label className="flex items-center gap-1.5"><input type="checkbox" checked={rasten} onChange={e => setRasten(e.target.checked)} /> an besonderen Winkeln einrasten</label>
         <label className="flex items-center gap-1.5"><input type="checkbox" checked={gleich} onChange={e => setGleich(e.target.checked)} /> Winkel mit gleichem Wert zeigen</label>
       </div>
       <div className="flex flex-wrap gap-1">
@@ -132,7 +138,7 @@ export default function Einheitskreis() {
         ))}
       </div>
 
-      <svg ref={svg} viewBox={`0 0 ${W} ${H}`} className="w-full h-auto touch-none select-none cursor-pointer" role="img" aria-label="Einheitskreis und Graph"
+      <svg ref={svg} viewBox={`0 0 ${W} ${H}`} className="w-full h-auto max-h-[calc(100vh-7rem)] touch-none select-none cursor-pointer" role="img" aria-label="Einheitskreis und Graph"
         onPointerDown={e => { zieht.current = true; setLaeuft(false); (e.target as Element).setPointerCapture?.(e.pointerId); ziehe(e); }}
         onPointerMove={e => { if (zieht.current) ziehe(e); }}
         onPointerUp={() => { zieht.current = false; }}>
@@ -140,6 +146,14 @@ export default function Einheitskreis() {
         {/* Kreis */}
         <line x1={CX - R - 20} y1={CY} x2={CX + R + 20} y2={CY} stroke="var(--text-muted)" />
         <line x1={CX} y1={CY - R - 20} x2={CX} y2={CY + R + 20} stroke="var(--text-muted)" />
+        {[-0.5, 0.5].map(v => (
+          <g key={v} stroke="var(--text-muted)" strokeOpacity={0.45} strokeDasharray="2 4">
+            <line x1={CX - R} y1={CY - v * R} x2={CX + R} y2={CY - v * R} />
+            <line x1={CX + v * R} y1={CY - R} x2={CX + v * R} y2={CY + R} />
+          </g>
+        ))}
+        <text x={CX - 4} y={CY - 0.5 * R} textAnchor="end" dominantBaseline="central" fontSize={11} fill="var(--text-muted)">½</text>
+        <text x={CX + 0.5 * R} y={CY + 14} textAnchor="middle" fontSize={11} fill="var(--text-muted)">½</text>
         <circle cx={CX} cy={CY} r={R} fill="none" stroke="var(--border-selected)" strokeWidth={2} />
         {[1, 2, 3, 4].map(n => (
           <text key={n} x={CX + (n === 1 || n === 4 ? 1 : -1) * R * 0.8} y={CY + (n <= 2 ? -1 : 1) * R * 0.8} textAnchor="middle" dominantBaseline="central"
@@ -187,6 +201,8 @@ export default function Einheitskreis() {
 
         {/* Graph */}
         {[-1, 1].map(v => <line key={v} x1={GX0} y1={Y(v)} x2={GX1} y2={Y(v)} stroke="var(--border)" strokeDasharray="3 5" />)}
+        {[-0.5, 0.5].map(v => <line key={v} x1={GX0} y1={Y(v)} x2={GX1} y2={Y(v)} stroke="var(--text-muted)" strokeOpacity={0.45} strokeDasharray="2 4" />)}
+        {[30, 60, 120, 150, 210, 240, 300, 330].map(w => <line key={w} x1={X(w)} y1={Y(1.1)} x2={X(w)} y2={Y(-1.1)} stroke="var(--border)" strokeOpacity={0.35} strokeDasharray="1 5" />)}
         {[90, 180, 270, 360].map(w => <line key={w} x1={X(w)} y1={Y(1.3)} x2={X(w)} y2={Y(-1.3)} stroke="var(--border)" strokeDasharray="3 5" />)}
         <line x1={GX0} y1={CY} x2={GX1 + 10} y2={CY} stroke="var(--text-muted)" />
         <line x1={GX0} y1={Y(1.3)} x2={GX0} y2={Y(-1.3)} stroke="var(--text-muted)" />
@@ -195,6 +211,8 @@ export default function Einheitskreis() {
         ))}
         <text x={GX0 - 6} y={Y(1)} textAnchor="end" dominantBaseline="central" fontSize={12} fill="var(--text-muted)">1</text>
         <text x={GX0 - 6} y={Y(-1)} textAnchor="end" dominantBaseline="central" fontSize={12} fill="var(--text-muted)">−1</text>
+        <text x={GX0 - 6} y={Y(0.5)} textAnchor="end" dominantBaseline="central" fontSize={11} fill="var(--text-muted)">½</text>
+        <text x={GX0 - 6} y={Y(-0.5)} textAnchor="end" dominantBaseline="central" fontSize={11} fill="var(--text-muted)">−½</text>
         <g clipPath="url(#ek-graph)">
           {(Object.keys(FARBE) as Fkt[]).filter(k => an[k]).map(k => (
             <path key={k} d={kurve(fn[k], bis)} fill="none" stroke={FARBE[k]} strokeWidth={3} strokeOpacity={0.9} />

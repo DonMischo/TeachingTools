@@ -154,7 +154,7 @@ export default function Kuestenwache() {
 
       {e && lauf !== "start" && (
         <>
-          <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto rounded-xl" role="img" aria-label="Seekarte">
+          <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto max-h-[calc(100vh-12rem)] rounded-xl" role="img" aria-label="Seekarte">
             <defs>
               <radialGradient id="kw-nebel"><stop offset="0%" stopColor="#cbd5e1" stopOpacity={0.55} /><stop offset="100%" stopColor="#cbd5e1" stopOpacity={0} /></radialGradient>
             </defs>

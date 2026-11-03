@@ -1,10 +1,11 @@
 "use client";
 /**
- * Trigonometrie — sechs Blätter:
+ * Trigonometrie — sieben Blätter:
  *   ⭕ Einheitskreis   sin, cos, tan, cot, sec, csc am Kreis und als Graph
  *   〰️ Sinusfunktion   a · sin(b(x − c)) + d, dazu »Welle treffen«
  *   📐 Rechtwinklig    Gegenkathete, Ankathete, Hypotenuse
- *   🔺 Dreiecke        Aufgaben nach Fall mit Tipps, eigener Rechner
+ *   🔺 Dreiecke        Rechner: Gegebenes eintippen, Ergebnis mit Rechenweg
+ *   ✍️ Aufgaben        Dreiecks-Aufgaben nach Fall mit Tipps
  *   🧭 Anwendungen     Sachaufgaben mit Bild
  *   🚨 Küstenwache     Spiel: anpeilen, rechnen, retten
  */
@@ -13,6 +14,7 @@ import Einheitskreis from "./Einheitskreis";
 import Sinusfunktion from "./Sinusfunktion";
 import Rechtwinklig from "./Rechtwinklig";
 import Dreiecke from "./Dreiecke";
+import Aufgaben from "./Aufgaben";
 import Anwendungen from "./Anwendungen";
 import Kuestenwache from "./Kuestenwache";
 
@@ -20,7 +22,8 @@ const BLAETTER = [
   { id: "kreis", icon: "⭕", label: "Einheitskreis" },
   { id: "welle", icon: "〰️", label: "Sinusfunktion" },
   { id: "recht", icon: "📐", label: "Rechtwinklig" },
-  { id: "dreieck", icon: "🔺", label: "Dreiecke" },
+  { id: "dreieck", icon: "🔺", label: "Dreiecksrechner" },
+  { id: "aufgaben", icon: "✍️", label: "Aufgaben" },
   { id: "anwendung", icon: "🧭", label: "Anwendungen" },
   { id: "spiel", icon: "🚨", label: "Küstenwache" },
 ] as const;
@@ -31,6 +34,7 @@ const INHALT: Record<Blatt, () => ReactNode> = {
   welle: () => <Sinusfunktion />,
   recht: () => <Rechtwinklig />,
   dreieck: () => <Dreiecke />,
+  aufgaben: () => <Aufgaben />,
   anwendung: () => <Anwendungen />,
   spiel: () => <Kuestenwache />,
 };
