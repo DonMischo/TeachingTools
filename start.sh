@@ -54,7 +54,10 @@ if ! docker info >/dev/null 2>&1; then
 fi
 
 echo "Starting TT - Teaching Tools..."
-docker compose up -d --build
+# Next.js wird erst beim Containerstart gebaut (server-wrapper.js), nicht im Image.
+# Ohne Neuerstellung bliebe der alte Container mit dem alten Build laufen.
+docker compose up -d --build postgres api
+docker compose up -d --build --force-recreate --no-deps frontend
 
 echo
 echo "TT - Teaching Tools is running:"

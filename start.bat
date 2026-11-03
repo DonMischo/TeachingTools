@@ -47,7 +47,10 @@ if %ERRORLEVEL% neq 0 (
 :: Build and start all services
 echo Starting TT - Teaching Tools...
 set HOST_IP=%HOST_IP%
-docker compose up -d --build
+:: Next.js wird erst beim Containerstart gebaut (server-wrapper.js), nicht im Image.
+:: Ohne Neuerstellung bliebe der alte Container mit dem alten Build laufen.
+docker compose up -d --build postgres api
+if %ERRORLEVEL% equ 0 docker compose up -d --build --force-recreate --no-deps frontend
 
 if %ERRORLEVEL% neq 0 (
     echo.
