@@ -11,6 +11,7 @@ import {
   ExitGameFragment, ExitGameAnswer, DdaAdaptation,
 } from "@/lib/api";
 import { MathText } from "@/components/MathText";
+import { krabbeln } from "@/lib/krabbler";
 import { TimelineGameBoard, timelineAnswerComplete } from "@/components/timeline/TimelineGameBoard";
 import { specToBoard } from "@/components/timeline/game";
 import { toVideoEmbed } from "@/lib/embed";
@@ -180,6 +181,7 @@ function SingleTaskWidget({
         onSolved(res.attempt, res.code_fragments);
       } else {
         setFeedback("wrong");
+        krabbeln();
         setAttempts(a => a + 1);
         onAttemptChange(attempts + 1, hintsShown, res.adaptation);
         const mayTakeEasier = levelOf(res.adaptation)?.offerEasier !== false;
@@ -371,6 +373,7 @@ function DoorCodePanel({
         onSolved(res.attempt, res.code_fragments);
       } else {
         setWrong(true);
+        krabbeln();
         setOpenSlides(res.open_slides ?? []);
       }
     },

@@ -11,6 +11,7 @@ import { useHubIdentity } from "@/hooks/useHubIdentity";
 import { useGuestSession } from "@/hooks/useGuestSession";
 import { useAuth } from "@/contexts/AuthContext";
 import { api, LueckentextBoard, LueckentextBoardGap } from "@/lib/api";
+import { krabbeln } from "@/lib/krabbler";
 
 type Phase = "join" | "waiting" | "active" | "finished";
 
@@ -122,6 +123,7 @@ export default function LueckentextPlayPage() {
     if (participantId == null) return;
     try {
       const res = await api.lueckentexte.submitAttempt(code, gapId, participantId, text);
+      if (res.match === "wrong") krabbeln();
       setAttempts((prev) => {
         const next = {
           ...prev,

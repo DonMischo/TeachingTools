@@ -64,6 +64,8 @@ Eine maschinenlesbare Fassung der Feature-Liste steht in [features.yml](features
 
 Alle Aktivitäten können Schüler nutzen. Hosten dürfen standardmäßig nur Lehrkräfte; Admins können das pro Werkzeug freigeben (siehe [Werkzeug-Freigaben](#-admin)).
 
+**Krabbler gegen Durchklicken:** Nach einer falschen Antwort in TaskCrawler, Challenge (Normal), Bingo oder Lückentext krabbeln Drahtgitter-Käfer über den Bildschirm, sperren Maus und Tastatur und spucken Wörter von der Seite aus (nach »Crawlers« von rybinfx). Die Sperre dauert 10 s und wächst mit jedem weiteren Fehler binnen einer Minute bis 20 s; ab dem dritten Fehler steht ein Mutmacher mit der Fehlerzahl in der Mitte, um den die Käfer kreisen (`frontend/src/lib/krabbler.ts`, Aufruf `krabbeln()`).
+
 ### 🎲 Caputh (Quiz)
 - Quiz-Bibliothek mit den Modi Klassisch, TÜ, Test, Aufgabe, Wettbewerb und Benutzerdefiniert, filterbar nach Typ und Jahrgang
 - Live-Sitzung mit Host-Screen und Beitritt per Code, optional im Team-Modus

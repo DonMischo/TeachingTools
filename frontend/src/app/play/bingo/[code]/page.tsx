@@ -10,6 +10,7 @@ import { useSavedPlayer, newAnonToken } from "@/hooks/useSavedPlayer";
 import { useHubIdentity } from "@/hooks/useHubIdentity";
 import { useGuestSession } from "@/hooks/useGuestSession";
 import { api } from "@/lib/api";
+import { krabbeln } from "@/lib/krabbler";
 
 type Cell = { pair_index: number; answer: string };
 type CardState = { grid_size: number; grid_cols: number; cells: Cell[]; marked_positions: number[]; has_bingo: boolean };
@@ -111,6 +112,7 @@ export default function BingoPlayPage() {
         setPhase({ kind: "closed" });
       } else if (msg.event === "wrong_mark") {
         setWrongPositions(prev => prev.includes(msg.position) ? prev : [...prev, msg.position]);
+        krabbeln();
       } else if (msg.event === "score") {
         setScore({ points: msg.points, ratio: msg.ratio, max_points: msg.max_points, correct: msg.correct, total_called: msg.total_called });
       } else if (msg.event === "reset") {

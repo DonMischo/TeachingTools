@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { ChallengeAntwort } from "@/lib/api";
 import type { ModusProps } from "./typen";
+import { krabbeln } from "@/lib/krabbler";
 import { Ablage, FaktKarte, Frage, Herzen, Treffermeldung } from "./teile";
 
 export default function Normal({ brett, lauf, zurKarte }: ModusProps) {
@@ -31,6 +32,7 @@ export default function Normal({ brett, lauf, zurKarte }: ModusProps) {
     setSende(true);
     try {
       const r = await lauf.antworte(challenge.id, ablage, tipp);
+      if (!r.komplett) krabbeln();
       setFalsch((f) => (r.komplett ? f.filter((x) => x !== challenge.id) : [...f.filter((x) => x !== challenge.id), challenge.id]));
       setAktiv(null); setAblage([]); setTipp(false);
       setAntwort(r);

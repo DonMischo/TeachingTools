@@ -76,6 +76,7 @@ aktivitaeten:
     kann:
       - Spielen im eigenen Tempo, Fortschritt live für die Lehrkraft
       - Codeschnipsel aus Aufgaben öffnen die Tür
+      - "Krabbler bei falscher Antwort: Käfer sperren 10–20 s Maus und Tastatur, ab drei Fehlern pro Minute mit Mutmacher und Fehlerzahl (auch Challenge Normal, Bingo, Lückentext)"
       - Serverseitige Fuzzy-Anpassung der Schwierigkeit (Hinweise, Zeitlimits, leichtere Aufgaben)
       - Aufgaben aus Generatoren, eingebettete Lückentexte und Zeitstrahlen
       - Import als .json/.zip, Vorlage mit allen Bausteinen
