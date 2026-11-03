@@ -95,6 +95,15 @@ describe("Playhub", () => {
     await waitFor(() => expect(mockPush).toHaveBeenCalledWith("/play/exit-ticket/ABC123"));
   });
 
+  it("TaskCrawler: derselbe Name setzt über den Hub den alten Spielstand fort", async () => {
+    const taskcrawler = { ...exitTicket, tool: "exitgame", label: "🗝️ TaskCrawler", join_url: "/play/taskcrawler/ABC123" };
+    mockResolve.mockResolvedValue({ code: "ABC123", matches: [taskcrawler] });
+    localStorage.setItem("hp_guest_namen_ABC123", JSON.stringify({ bob: "alt" }));
+    const user = await enterCode("ABC123");
+    await submitName(user, "Bob");
+    await waitFor(() => expect(mockGuestJoin).toHaveBeenCalledWith("ABC123", "exitgame", "Bob", "alt"));
+  });
+
   it("fragt den Avatar nur, wo das Werkzeug ihn benutzt", async () => {
     mockResolve.mockResolvedValue({ code: "ABC123", matches: [exitTicket] });
     await enterCode("ABC123");

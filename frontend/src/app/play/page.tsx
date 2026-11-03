@@ -21,6 +21,8 @@ import { savePlayIdentity } from "@/lib/playIdentity";
 
 /** Nur die beiden Status, die "hier ist nichts mehr zu holen" bedeuten. */
 const BEENDET = new Set(["closed", "finished"]);
+/** Wo ein Gast mit demselben Namen seinen Spielstand fortsetzt (Challenge läuft als Simulation). */
+const FORTSETZEN = new Set(["exitgame", "simulation"]);
 
 export default function JoinPage() {
   const router = useRouter();
@@ -86,7 +88,8 @@ export default function JoinPage() {
     try {
       // Ohne Konto braucht die Spielerseite den Gast-Token; er liegt unter
       // demselben Code, den sie gleich selbst ausliest.
-      if (!auth) await guest.join(target.tool, name);
+      // TaskCrawler/Challenge: Spielstand nach Namen, wie auf der Werkzeugseite selbst
+      if (!auth) await guest.join(target.tool, name, { fortsetzen: FORTSETZEN.has(target.tool) });
       savePlayIdentity(target.code, { name, avatar });
       router.push(target.join_url);
     } catch (e) {
