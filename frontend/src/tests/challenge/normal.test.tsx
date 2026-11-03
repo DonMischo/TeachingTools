@@ -21,6 +21,7 @@ describe("Normal", () => {
     expect(within(fragen).getByText("1/2 gelöst", { exact: false })).toBeInTheDocument();
     expect(within(fragen).getByRole("button", { name: /Frage Zwei/ })).toHaveAttribute("data-zustand", "geloest");
     expect(within(screen.getByRole("region", { name: "Fakten" })).getByRole("button", { name: "Fakt Alpha" })).toBeInTheDocument();
+    expect(within(fragen).getByRole("button", { name: /Frage Eins/ }).querySelector("[data-frage]")).not.toBeNull(); // hervorgehobene Frage
   });
 
   it("falsch beantwortete Frage wird rot markiert", async () => {
@@ -29,6 +30,6 @@ describe("Normal", () => {
     await u.click(screen.getByRole("button", { name: /Frage Eins/ }));
     await u.click(screen.getByRole("button", { name: "Fakt Alpha" }));
     await u.click(screen.getByRole("button", { name: "Angreifen" }));
-    expect(await screen.findByRole("button", { name: /Falsch beantwortet:s*Frage Eins/ })).toHaveAttribute("data-zustand", "falsch");
+    expect(await screen.findByRole("button", { name: /Falsch beantwortet:\s*Frage Eins/ })).toHaveAttribute("data-zustand", "falsch");
   });
 });

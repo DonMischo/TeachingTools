@@ -9,7 +9,7 @@ import type { ChallengeAntwort, ChallengeAufgabe } from "@/lib/api";
 import type { ModusProps } from "./typen";
 import { PixelMatrix } from "../pixel/Matrix";
 import { BestenlisteKnopf } from "../Bestenliste";
-import { Ablage, FaktKarte, Herzen, Inhalt, Treffermeldung } from "./teile";
+import { Ablage, FaktKarte, Herzen, Frage, Treffermeldung } from "./teile";
 import { useSpielwert } from "@/lib/challenge/useSpielwert";
 import { wenigerBewegung } from "@/lib/challenge/bewegung";
 import { bauplaetze, laengsterPfad, markovKarte } from "@/lib/challenge/markovKarte";
@@ -203,7 +203,7 @@ export default function Turm({ brett, lauf, zurKarte }: ModusProps) {
         <div className="card p-3 flex flex-col gap-2" aria-label="Wissensfeld">
           <div className={`flex items-start gap-3 ${ergebnis?.komplett ? "motion-safe:animate-pulse" : ""}`}>
             <PixelMatrix bild={ANFUEHRER} palette={ANFUEHRER_F} scale={4} />
-            <div className="font-bold"><Inhalt x={aktiv} /></div>
+            <Frage x={aktiv} />
           </div>
           {ergebnis ? (
             <>

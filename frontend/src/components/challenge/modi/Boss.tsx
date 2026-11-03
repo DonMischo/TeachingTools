@@ -8,7 +8,8 @@ import Papierkorb, { WegKnopf } from "@/components/challenge/Papierkorb";
 import type { ChallengeAntwort, ChallengeBrett } from "@/lib/api";
 import { PixelMatrix } from "@/components/challenge/pixel/Matrix";
 import type { ModusProps } from "./typen";
-import { Ablage, FaktKarte, Herzen, Inhalt, Treffermeldung } from "./teile";
+import { Ablage, FaktKarte, Frage, Herzen, Treffermeldung } from "./teile";
+import { heiltrank } from "@/lib/challenge/heiltrank";
 import { skinVon } from "./boss/figuren";
 import Sammeln from "./boss/Sammeln";
 import { Szene, type Anim, type Zahl } from "./boss/Szene";
@@ -41,6 +42,8 @@ export default function Boss({ brett, theme, skin, lauf, zurKarte }: ModusProps)
   const [gegnerAnim, setGegnerAnim] = useState<Anim>(null);
   const [zahlen, setZahlen] = useState<Zahl[]>([]);
   const [schaden, setSchaden] = useState(0);
+  const [geheilt, setGeheilt] = useState(0); // Heiltränke nach falschen/unvollständigen Antworten
+  const [heil, setHeil] = useState(0);
   const [sende, setSende] = useState(false);
   const [ansicht, setAnsicht] = useState<Ansicht>("menu");
   const [feld, setFeld] = useState(0);
@@ -63,7 +66,7 @@ export default function Boss({ brett, theme, skin, lauf, zurKarte }: ModusProps)
 
   const max = brett.challenges.reduce((s, c) => s + c.strength * 15, 0);
   const erledigt = brett.challenges.reduce((s, c) => s + (c.erledigt ? c.strength * 10 : 0), 0);
-  const hp = offene.length === 0 ? 0 : Math.max(1, max - Math.max(schaden, erledigt));
+  const hp = offene.length === 0 ? 0 : Math.min(max, Math.max(1, max - Math.max(schaden, erledigt) + geheilt));
 
   useEffect(() => { // Server leert das Deck nach der Rückkehr zur Karte: Gepäck neu wählen
     if (brett.deck) deckWar.current = true;
@@ -105,10 +108,13 @@ export default function Boss({ brett, theme, skin, lauf, zurKarte }: ModusProps)
       const r = await lauf.antworte(aktiv.id, ablage, tipp);
       setSchaden((s) => s + r.schaden);
       const n = Date.now();
+      const h = heiltrank(r, max, Math.max(schaden + r.schaden, erledigt) - geheilt);
+      setGeheilt((g) => g + h); setHeil(h);
+      const heilZahl = h > 0 ? [{ id: n + 1, wert: h, heil: true }] : [];
       if (r.treffer) {
         setHeldAnim({ art: "lunge", n }); setGegnerAnim({ art: "treffer", n });
-        if (r.schaden > 0) setZahlen([{ id: n, wert: r.schaden }]);
-      } else setGegnerAnim({ art: "wackel", n });
+        setZahlen([...(r.schaden > 0 ? [{ id: n, wert: r.schaden }] : []), ...heilZahl]);
+      } else { setGegnerAnim({ art: "wackel", n }); setZahlen(heilZahl); }
       setAntwort(r);
     } catch {
       setGegnerAnim({ art: "wackel", n: Date.now() }); // z. B. 409: das Brett ist schon neu geladen
@@ -177,7 +183,7 @@ export default function Boss({ brett, theme, skin, lauf, zurKarte }: ModusProps)
       ) : (
         <>
           {etappeBeat && <p className="card p-3 font-bold text-good" role="status">Etappe geschafft – der Drache flieht tiefer ins Verlies!</p>}
-          <Treffermeldung antwort={antwort} />
+          <Treffermeldung antwort={antwort} heil={heil} />
           <Szene introText={sk.intro} himmel={bg} boden={boden === "#6b7a5a" ? undefined : boden}
             held={<PixelMatrix bild={sk.held.bild} palette={sk.held.palette} scale={6} label={sk.held.name} />}
             gegner={<div style={{ transform: "scaleX(-1)" }}><PixelMatrix bild={sk.boss.bild} palette={sk.boss.palette} scale={7} label={sk.boss.name} /></div>}
@@ -190,7 +196,7 @@ export default function Boss({ brett, theme, skin, lauf, zurKarte }: ModusProps)
                 <div aria-live="polite">
                   <p className="text-sm text-muted">{zug}</p>
                   <strong className="text-sm">{sk.angriff} ({"⚔️".repeat(Math.min(5, aktiv.strength))}):</strong>
-                  <div><Inhalt x={aktiv} /></div>
+                  <Frage x={aktiv} />
                 </div>
                 {ansicht === "menu" && (
                   <div role="group" aria-label="Was tust du?" onKeyDown={menuTaste} className="grid grid-cols-2 gap-1 self-end w-full max-w-xs border-2 border-line rounded-lg p-1 bg-surface">

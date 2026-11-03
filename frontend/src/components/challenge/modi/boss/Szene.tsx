@@ -6,7 +6,8 @@ import { wenigerBewegung } from "@/lib/challenge/bewegung";
 import { LebensBalken } from "@/components/challenge/LebensBalken";
 
 export type Anim = { art: "lunge" | "treffer" | "wackel" | "weg"; n: number } | null;
-export type Zahl = { id: number; wert: number };
+/** `heil`: grüne Zahl mit Heiltrank statt Schaden */
+export type Zahl = { id: number; wert: number; heil?: boolean };
 
 const B = 480, H = 270;
 const CSS = `@keyframes bsblink{0%{opacity:0}10%{opacity:1}25%{opacity:0}40%{opacity:1}55%{opacity:0}70%,100%{opacity:1}}
@@ -89,7 +90,7 @@ export function Szene({ held, gegner, heldName, gegnerName, hp, hpMax, himmel, b
           )}
           {zahlen.map((z) => (
             <span key={z.id} className="bs-zahl absolute font-bold text-3xl pointer-events-none" aria-hidden
-              style={{ right: 100 + (z.id % 3) * 24, top: 40 + (z.id % 2) * 16, color: "#ff3b30", textShadow: "0 0 3px #fff, 0 0 3px #fff, 0 0 3px #fff" }}>−{z.wert}</span>
+              style={{ right: 100 + (z.id % 3) * 24, top: 40 + (z.id % 2) * 16, color: z.heil ? "#16a34a" : "#ff3b30", textShadow: "0 0 3px #fff, 0 0 3px #fff, 0 0 3px #fff" }}>{z.heil ? `🧪 +${z.wert}` : `−${z.wert}`}</span>
           ))}
           {sichtbar && <Box name={gegnerName} hp={hp} max={hpMax} label="Lebensbalken des Gegners" klasse={ein("l")} stil={{ left: 12, top: 12 }} />}
           {sichtbar && <Box name={heldName} hp={heldEp?.wert ?? 1} max={heldEp?.max ?? 1} kuerzel={heldEp ? "EP" : "KP"} farbe={heldEp ? "#60a5fa" : undefined} label={heldEp ? "Erfahrung des Helden" : undefined} klasse={ein("r")} stil={{ right: 12, bottom: 12 }} />}

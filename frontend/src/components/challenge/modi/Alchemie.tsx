@@ -10,7 +10,7 @@ import { useAblage } from "@/lib/challenge/useAblage";
 import Papierkorb, { WegKnopf } from "@/components/challenge/Papierkorb";
 import Bestenliste from "@/components/challenge/Bestenliste";
 import type { ModusProps } from "./typen";
-import { Ablage, Herzen, Inhalt, Treffermeldung } from "./teile";
+import { Ablage, Herzen, Frage, Inhalt, Treffermeldung } from "./teile";
 import Garten from "./alchemie/Garten";
 import Kessel, { braufarbe, Flasche, SUPPE_STAND } from "./alchemie/Kessel";
 import Figur, { KUNDENARTEN, type Kundenart, type Stimmung } from "./alchemie/Figuren";
@@ -137,7 +137,7 @@ export default function Alchemie({ brett, theme, lauf, zurKarte }: ModusProps) {
                     <button type="button" aria-pressed={ist} onClick={() => waehleKunde(c.id)}
                       className={`card p-2 text-left text-sm relative ${ist ? "ring-2 ring-accent" : "opacity-80"}`}>
                       <span className="block text-xs text-muted">Bestellung{ist ? "" : " (antippen)"}</span>
-                      {ist ? <Inhalt x={c} /> : <span>…</span>}
+                      {ist ? <Frage x={c} icon="🧾" /> : <span>…</span>}
                     </button>
                     <Kunde art={kundeVon(c.id)} stimmung={ist && (ergebnis?.art === "daneben" || ergebnis?.art === "teil") ? "unmutig" : "neutral"} />
                   </div>

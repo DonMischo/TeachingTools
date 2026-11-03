@@ -44,7 +44,7 @@ describe("Karten", () => {
     expect(screen.getByLabelText("Energie 2 von 3")).toBeTruthy();
     await u.click(screen.getByRole("button", { name: "Ausspielen" }));
     await waitFor(() => expect(lauf.antworte).toHaveBeenCalledWith("c1", ["f1"], false));
-    expect(await screen.findByText("Daneben")).toBeTruthy();
+    expect(await screen.findByText(/^Daneben/)).toBeTruthy();
     await waitFor(() => expect(lauf.spielwert).toHaveBeenCalledWith("karten", 1, expect.any(Number), 3), { timeout: 3000 }); // gedrosselt gemeldet
   });
   it("Zug beenden: Hand bleibt, Energie voll", async () => {

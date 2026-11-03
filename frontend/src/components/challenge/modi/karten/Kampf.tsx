@@ -3,7 +3,8 @@
 import { useState, type ReactNode } from "react";
 import type { ChallengeAntwort } from "@/lib/api";
 import type { ModusProps } from "../typen";
-import { Herzen, Inhalt, Treffermeldung } from "../teile";
+import { Frage, Herzen, Inhalt, Treffermeldung } from "../teile";
+import { heiltrank } from "@/lib/challenge/heiltrank";
 import { LebensBalken } from "@/components/challenge/LebensBalken";
 import { PixelMatrix } from "../../pixel/Matrix";
 import { BestenlisteKnopf } from "../../Bestenliste";
@@ -30,7 +31,8 @@ export default function Kampf({ brett, theme, lauf, zurKarte, seed, lagerKnopf, 
   const [sende, setSende] = useState(false);
   const [wackel, setWackel] = useState(0);
   const [schlag, setSchlag] = useState(0);
-  const [zahl, setZahl] = useState<{ n: number; wert: number } | null>(null);
+  const [zahl, setZahl] = useState<{ n: number; wert: number; heil?: number } | null>(null);
+  const [geheilt, setGeheilt] = useState(0); // Heiltränke nach falschen/unvollständigen Antworten
   const [gegnerZug, setGegnerZug] = useState(0);
   const [ablageOffen, setAblageOffen] = useState(false);
   const [gespielt, setGespielt] = useState(false);
@@ -40,7 +42,7 @@ export default function Kampf({ brett, theme, lauf, zurKarte, seed, lagerKnopf, 
   const challenge = offene.find((c) => c.id === aktiv);
   const gesamt = brett.challenges.reduce((s, c) => s + c.strength * 15, 0);
   const schonErledigt = brett.challenges.filter((c) => c.erledigt).reduce((s, c) => s + c.strength * 10, 0);
-  const hp = offene.length ? Math.max(1, gesamt - Math.max(erzielt, schonErledigt)) : 0;
+  const hp = offene.length ? Math.min(gesamt, Math.max(1, gesamt - Math.max(erzielt, schonErledigt) + geheilt)) : 0;
 
   // Spielwert: Sterne nach Zügen, sobald die erste Antwort gespielt ist
   useSpielwert(lauf, "karten", brett.etappe, gespielt ? sterne(k.zug, brett.challenges.length) : 0, 3);
@@ -65,7 +67,10 @@ export default function Kampf({ brett, theme, lauf, zurKarte, seed, lagerKnopf, 
       const r = await lauf.antworte(challenge.id, karten, false);
       setGespielt(true);
       setErzielt((e) => e + r.schaden);
-      if (r.schaden > 0) { setSchlag((s) => s + 1); setZahl({ n: Date.now(), wert: r.schaden }); }
+      const h = heiltrank(r, gesamt, Math.max(erzielt + r.schaden, schonErledigt) - geheilt);
+      setGeheilt((g) => g + h);
+      if (r.schaden > 0) setSchlag((s) => s + 1);
+      setZahl(r.schaden > 0 || h > 0 ? { n: Date.now(), wert: r.schaden, heil: h } : null);
       if (!r.treffer) setWackel((w) => w + 1);
       setAntwort(r);
     } catch { /* Brett wurde still neu geladen */ } finally {
@@ -92,11 +97,12 @@ export default function Kampf({ brett, theme, lauf, zurKarte, seed, lagerKnopf, 
           <LebensBalken wert={hp} max={gesamt} label="Lebensbalken des Gegners" className="h-4 rounded-full border-2" />
           <div className="relative h-5 text-sm" aria-live="polite">
             {gegnerZug > 0 && <span key={gegnerZug} className="kt-wackel">Der Gegner holt aus … und stolpert. Nichts passiert.</span>}
-            {zahl && <span key={zahl.n} className="kt-zahl absolute right-2 top-0 font-bold text-bad">−{zahl.wert}</span>}
+            {zahl && zahl.wert > 0 && <span key={zahl.n} className="kt-zahl absolute right-2 top-0 font-bold text-bad">−{zahl.wert}</span>}
+            {zahl?.heil ? <span key={`h${zahl.n}`} className="kt-zahl absolute right-14 top-0 font-bold text-ok">🧪 +{zahl.heil}</span> : null}
           </div>
         </div>
       </div>
-      <Treffermeldung antwort={antwort} />
+      <Treffermeldung antwort={antwort} heil={zahl?.heil} />
 
       <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,200px),1fr))] gap-2" aria-label="Absichten des Gegners">
         {offene.map((c) => (
@@ -105,7 +111,7 @@ export default function Kampf({ brett, theme, lauf, zurKarte, seed, lagerKnopf, 
             onDrop={(e) => { e.preventDefault(); const id = e.dataTransfer.getData("text/plain"); if (c.id !== aktiv) waehle(c.id); lege(id); }}
             className={`card p-3 text-left ${c.id === aktiv ? "border-accent ring-2 ring-accent" : ""}`}>
             <span className="text-xs text-muted">Absicht · </span><Schwerter n={c.strength} />
-            <div><Inhalt x={c} /></div>
+            <Frage x={c} />
           </button>
         ))}
       </div>

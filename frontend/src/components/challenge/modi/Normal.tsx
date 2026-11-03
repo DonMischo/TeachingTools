@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { ChallengeAntwort } from "@/lib/api";
 import type { ModusProps } from "./typen";
-import { Ablage, FaktKarte, Herzen, Inhalt, Treffermeldung } from "./teile";
+import { Ablage, FaktKarte, Frage, Herzen, Treffermeldung } from "./teile";
 
 export default function Normal({ brett, lauf, zurKarte }: ModusProps) {
   const [aktiv, setAktiv] = useState<string | null>(null);
@@ -59,7 +59,7 @@ export default function Normal({ brett, lauf, zurKarte }: ModusProps) {
                 className={`card p-3 text-left border-2 disabled:cursor-default ${c.id === aktiv ? "border-accent" : zustand === "geloest" ? "border-ok bg-ok/15" : zustand === "falsch" ? "border-bad bg-bad/15" : ""}`}>
                 {zustand && <span className="sr-only">{zustand === "geloest" ? "Gelöst: " : "Falsch beantwortet: "}</span>}
                 <span aria-hidden>{zustand === "geloest" ? "✅ " : zustand === "falsch" ? "❌ " : ""}</span>
-                <Inhalt x={c} />
+                <Frage x={c} />
               </button>
             );
           })}

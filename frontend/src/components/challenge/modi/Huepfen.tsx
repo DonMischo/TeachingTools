@@ -16,7 +16,7 @@ import {
   schritt, sterne, startSpieler, zumKontrollpunkt, type Eingabe, type Spieler,
 } from "@/lib/challenge/huepfen";
 import type { ModusProps } from "./typen";
-import { Ablage, FaktKarte, Herzen, Inhalt, Treffermeldung } from "./teile";
+import { Ablage, FaktKarte, Herzen, Frage, Treffermeldung } from "./teile";
 import { bodenKachel, type ThemeDef } from "@/lib/challenge/themes";
 
 const SK = 3, KACHEL = 16 * SK; // Bildschirm-Pixel je Kachel
@@ -410,7 +410,7 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
 
       {challenge && (
         <div className="card p-3 flex flex-col gap-2 border-accent" role="dialog" aria-label="Tür">
-          <div><b>Tür:</b> <Inhalt x={challenge} /> </div>
+          <Frage x={challenge} icon="🚪" />
           <div className="text-sm" aria-label="Etappenbilanz">
             <b>Bilanz:</b> 💎 {edel}/{edelMax} · {"★".repeat(sterne(edel, edelMax))}{"☆".repeat(3 - sterne(edel, edelMax))} <span className="text-muted">({sterne(edel, edelMax)} von 3 Sternen)</span>
           </div>

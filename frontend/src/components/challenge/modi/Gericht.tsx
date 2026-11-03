@@ -10,7 +10,7 @@ import { useSpielwert } from "@/lib/challenge/useSpielwert";
 import { useAblage } from "@/lib/challenge/useAblage";
 import Papierkorb, { WegKnopf } from "@/components/challenge/Papierkorb";
 import type { ModusProps } from "./typen";
-import { Ablage, FaktKarte, Herzen, Inhalt, Treffermeldung } from "./teile";
+import { Ablage, FaktKarte, Herzen, Frage, Inhalt, Treffermeldung } from "./teile";
 import { GerichtStil } from "./gericht/hilfen";
 
 const ZEUGEN_SPRUCH = [
@@ -150,7 +150,7 @@ export default function Gericht({ brett, lauf, zurKarte }: ModusProps) {
         <>
           <div className="card p-3 relative" role="group" aria-label="Aussage des Zeugen">
             <p className="text-muted">Aussage {Math.min(idx, offene.length - 1) + 1} von {offene.length}</p>
-            <div className="font-bold">»<Inhalt x={aussage} />«</div>
+            <Frage x={aussage} icon="⚖️" />
             {hakt && (
               <div className="mt-2 text-sm border-l-4 border-line pl-2" role="status">
                 <p>Zeuge: {ZEUGEN_SPRUCH[offene.indexOf(aussage) % ZEUGEN_SPRUCH.length]}</p>

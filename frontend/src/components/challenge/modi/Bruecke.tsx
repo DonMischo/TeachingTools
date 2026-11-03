@@ -11,7 +11,7 @@ import type { ModusProps } from "./typen";
 import { BestenlisteKnopf } from "../Bestenliste";
 import { useAblage } from "@/lib/challenge/useAblage";
 import Papierkorb, { WegKnopf } from "@/components/challenge/Papierkorb";
-import { Ablage, FaktKarte, Herzen, Inhalt, Treffermeldung } from "./teile";
+import { Ablage, FaktKarte, Herzen, Frage, Treffermeldung } from "./teile";
 import Holz from "./bruecke/Holz";
 import Schlucht, { type Fahrt } from "./bruecke/Schlucht";
 import { ausgang, segmentOrt, sterne, strecke, teileBruecken } from "@/lib/challenge/brueckeSpiel";
@@ -149,7 +149,7 @@ export default function Bruecke({ brett, theme, lauf, zurKarte }: ModusProps) {
 
       {c && !alleFertig && (
         <div className="card p-3 flex flex-col gap-2" aria-label="Segment bauen">
-          <div className="font-bold"><Inhalt x={c} /></div>
+          <Frage x={c} />
           <Ablage karten={ablage.map((id) => fakten.get(id)!)} onLege={lege} onNimm={(id) => setAblage(ablage.filter((x) => x !== id))}
             leer="Lege Bretter auf das Segment." />
           <div className="flex flex-wrap gap-2">

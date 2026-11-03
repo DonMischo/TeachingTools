@@ -8,7 +8,7 @@ import { useSpielwert } from "@/lib/challenge/useSpielwert";
 import { useAblage } from "@/lib/challenge/useAblage";
 import Papierkorb, { WegKnopf } from "@/components/challenge/Papierkorb";
 import type { ModusProps } from "./typen";
-import { FaktKarte, Herzen, Inhalt, Treffermeldung } from "./teile";
+import { FaktKarte, Herzen, Frage, Inhalt, Treffermeldung } from "./teile";
 import Tatort from "./detektiv/Tatort";
 import { DetektivStil, VERDAECHTIGE, skizzeVon } from "./detektiv/hilfen";
 
@@ -85,7 +85,7 @@ export default function Detektiv({ brett, theme, lauf, zurKarte }: ModusProps) {
             <button key={c.id} onClick={() => waehle(c)} aria-pressed={c.id === aktiv?.id}
               className={`card p-2 flex gap-2 items-start text-left ${c.id === aktiv?.id ? "ring-2 ring-accent" : ""}`}>
               <Npc name={v.npc} scale={2} />
-              <span><strong className="block text-sm text-muted">{v.name}</strong>»<Inhalt x={c} />«</span>
+              <span className="flex-1 min-w-0"><strong className="block text-sm text-muted">{v.name}</strong><Frage x={c} icon="💬" /></span>
             </button>
           );
         })}
@@ -100,7 +100,7 @@ export default function Detektiv({ brett, theme, lauf, zurKarte }: ModusProps) {
               {ergebnis?.komplett && <span className="absolute -top-1 right-0 text-xl" aria-hidden>😰</span>}
             </div>
             <div className="relative bg-white text-black rounded-xl p-3 shadow">
-              <strong className="block text-sm">{verdaechtig(aktiv).name} sagt:</strong>»<Inhalt x={aktiv} />«
+              <strong className="block text-sm">{verdaechtig(aktiv).name} sagt:</strong><Frage x={aktiv} icon="💬" />
             </div>
           </div>
           {ergebnis ? (

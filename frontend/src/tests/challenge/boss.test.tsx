@@ -96,7 +96,8 @@ describe("Boss", () => {
     await u.click(screen.getByRole("button", { name: /^Fakt Beta$/ }));
     await u.click(screen.getByRole("button", { name: "Kontern" }));
     expect(lauf.antworte).toHaveBeenCalledWith("c1", ["f1", "f2"], false);
-    expect(await screen.findByText("Daneben")).toBeInTheDocument();
+    expect(await screen.findByText(/^Daneben/)).toBeInTheDocument();
+    expect(screen.getByText(/^Daneben/).textContent).toMatch(/Heiltrank: \+\d+/);
   });
 
   it("Rap-Skin nennt den Konter »Konter-Line«", async () => {

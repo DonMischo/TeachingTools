@@ -13,7 +13,7 @@ import { aufgedeckt, galgenTeile, istRatbar, maskiere, MUENZEN_JE_STAERKE, verde
 import { useAblage } from "@/lib/challenge/useAblage";
 import { useSpielwert } from "@/lib/challenge/useSpielwert";
 import type { ModusProps } from "./typen";
-import { Ablage, FaktKarte, Herzen, Inhalt, Treffermeldung } from "./teile";
+import { Ablage, FaktKarte, Herzen, Frage, Treffermeldung } from "./teile";
 import { Buehne, Galgen, GluecksradStil, Moderator } from "./gluecksrad/grafik";
 
 export default function Gluecksrad(props: ModusProps) {
@@ -135,7 +135,7 @@ function Spiel({ brett, lauf, zurKarte }: ModusProps) {
       {frage && (
         <>
           <div className="card p-3 flex flex-col gap-2" aria-label="Frage">
-            <div className="font-bold text-base"><Inhalt x={frage} /></div>
+            <Frage x={frage} />
             <Ablage karten={ablage.map((fid) => fakten.get(fid)!)} leer="Lege passende Fakten hierher."
               onLege={lege} onNimm={(fid) => setAblage(ablage.filter((x) => x !== fid))} />
             <div className="flex flex-wrap gap-2">

@@ -17,6 +17,16 @@ export function Inhalt({ x }: { x: Inh }) {
   );
 }
 
+/** Die Frage bzw. Aufgabe einer Challenge: hebt sich in allen Spielarten deutlich von den Fakten ab. */
+export function Frage({ x, icon = "❓" }: { x: Inh; icon?: string }) {
+  return (
+    <div data-frage className="flex gap-2 items-start rounded-lg border-l-4 border-accent bg-accent/15 px-3 py-2 text-base font-bold text-left">
+      <span aria-hidden>{icon}</span>
+      <div className="min-w-0"><Inhalt x={x} /></div>
+    </div>
+  );
+}
+
 export function FaktKarte({ fakt, onClick, disabled }: { fakt: ChallengeFakt; onClick?: () => void; disabled?: boolean }) {
   return (
     <button draggable={!disabled} disabled={disabled}
@@ -54,10 +64,12 @@ export function Herzen({ leben, max = 3 }: { leben: number; max?: number }) {
   );
 }
 
-export function Treffermeldung({ antwort }: { antwort: ChallengeAntwort | null }) {
+/** `heil`: so viel hat der Gegner mit seinem Heiltrank zurückgeholt (siehe lib/challenge/heiltrank). */
+export function Treffermeldung({ antwort, heil = 0 }: { antwort: ChallengeAntwort | null; heil?: number }) {
   if (!antwort) return null;
-  const text = antwort.komplett
+  const text = (antwort.komplett
     ? `Treffer!${antwort.kombo ? " Kombo!" : ""} Schaden: ${antwort.schaden}${antwort.feedback ? ` – ${antwort.feedback}` : ""}`
-    : antwort.treffer ? "Teiltreffer – da fehlt noch etwas oder es lag Falsches dabei" : "Daneben";
+    : antwort.treffer ? "Teiltreffer – da fehlt noch etwas oder es lag Falsches dabei" : "Daneben")
+    + (heil > 0 ? ` · 🧪 Der Gegner trinkt einen Heiltrank: +${heil}` : "");
   return <p className={`card p-3 font-bold ${antwort.komplett ? "text-good" : "text-bad"}`} role="status">{text}</p>;
 }
