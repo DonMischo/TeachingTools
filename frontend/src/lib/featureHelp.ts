@@ -316,6 +316,20 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
     ],
   },
+  dreiecke: {
+    title: "Dreiecke",
+    intro: "Dreiecke für Klasse 5–8 zum Anfassen — sieben Blätter. Sinus, Kosinus und die Sätze dazu stehen in »Trigonometrie«.",
+    sections: [
+      { label: "△ Dreiecksarten", text: "Ecken A, B, C ziehen oder α, β und c am Regler setzen. Die Einordnung nach Seiten (unregelmäßig, gleichschenklig, gleichseitig) und nach Winkeln (spitz-, recht-, stumpfwinklig) läuft mit; gleich lange Seiten bekommen Strichmarken, an den Seiten stehen Schenkel/Basis bzw. Katheten/Hypotenuse. Beim Ziehen rastet eine Ecke an besonderen Lagen ein (abschaltbar). Knöpfe für typische Dreiecke." },
+      { label: "📐 Winkelsätze", text: "Innenwinkelsumme: α und β abreißen und an C anlegen (Trickfilm mit Regler). Außenwinkel γ′ = α + β mit der Parallelen durch C. Basiswinkel: die Spitze ziehen, das Dreieck an der Achse falten. Thales: C wandert auf dem Halbkreis, der Winkel bleibt 90°; »C bleibt auf dem Kreis« abschalten zeigt, was innen und außen passiert." },
+      { label: "✳️ Besondere Linien", text: "Höhen (Höhenschnittpunkt H), Seitenhalbierende (Schwerpunkt S), Mittelsenkrechte mit Umkreis (U), Winkelhalbierende mit Inkreis (I) einzeln zuschalten. Der Kasten sagt, wo die Punkte gerade liegen — beim stumpfwinkligen Dreieck wandern H und U nach außen." },
+      { label: "🧱 Umfang und Fläche", text: "g, h und die Lage der Spitze per Regler. Der Umfang wird als Streifen abgerollt; A = g · h : 2 entsteht durch Ergänzen zum Parallelogramm oder zum Rechteck (Trickfilm). Unter »Kongruenzsätze« stehen SSS, SWS, WSW und SsW mit Skizze und Konstruktionsschritten." },
+      { label: "✍️ Übungen", text: "Gewürfelt mit Skizze: Winkelsumme, Dreiecksarten, Außenwinkel, Basiswinkel, Fläche, Umfang, rückwärts, Pythagoras, Kongruenzsätze, Thales. Arten an- und abwählen, Tipps einzeln, Lösungsweg; mit Tipp zählt die Aufgabe nicht. »📄 Arbeitsblatt (.docx)« baut ein Word-Dokument mit Skizzen, Antwortlinien und Lösungen hinten." },
+      { label: "🏡 Anwendungen", text: "Sachaufgaben: Giebel streichen, Segel nähen, Leiter anlehnen, Abkürzung über die Wiese, Wimpelkette, Dreiecksbeet, Verkehrsschild, Dachneigung — ebenfalls als Word-Arbeitsblatt." },
+      { label: "⚡ Dreiecks-Blitz", text: "Spiel: Ein Dreieck mit seinen Winkeln erscheint, tippe in der 3 × 3-Tafel nach Seiten und Winkeln das passende Feld. 60 Sekunden, Serienbonus, ein Fehler kostet 3 Sekunden; mit der Serie werden die Dreiecke schräg und knapp. Der Rekord bleibt im Browser." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
+    ],
+  },
   trigonometrie: {
     title: "Trigonometrie",
     intro: "Winkelfunktionen sehen, im Dreieck anwenden und an Sachaufgaben üben — sieben Blätter.",

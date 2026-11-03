@@ -269,6 +269,14 @@ const ALL_CARDS: Werkzeug[] = [
     color: "#0ea5e9",
   },
   {
+    slug: "dreiecke",
+    href: "/simulationen/dreiecke",
+    icon: "△",
+    title: "Dreiecke",
+    description: "Für Klasse 5–8: Ecken ziehen und zusehen, wie sich die Einordnung ändert — unregelmäßig, gleichschenklig, gleichseitig; spitz-, recht-, stumpfwinklig; mit Schenkel, Basis, Katheten und Hypotenuse. Innenwinkelsumme zum Abreißen, Außenwinkel, Basiswinkel und Thales; Höhen, Seitenhalbierende, Umkreis und Inkreis; Fläche durch Ergänzen und die Kongruenzsätze. Dazu gewürfelte Übungen und Sachaufgaben mit Word-Export und das Spiel Dreiecks-Blitz.",
+    color: "#0ea5e9",
+  },
+  {
     slug: "trigonometrie",
     href: "/simulationen/trigonometrie",
     icon: "🔺",

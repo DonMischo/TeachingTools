@@ -114,6 +114,13 @@ WERKZEUGE = {
             "rechnung?": "true = Umfang und Fläche werden angezeigt (sonst verborgen)",
         },
     },
+    "dreiecke": {
+        "name": "Dreiecke",
+        "config": {
+            "reiter?": "arten|saetze|linien|flaeche",
+            "winkel?": "Startdreieck als Winkel, z.B. {\"alpha\": 50, \"beta\": 60}",
+        },
+    },
     "rechenregeln": {
         "name": "Rechenregeln",
         "config": {

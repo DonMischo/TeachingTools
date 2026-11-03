@@ -40,7 +40,7 @@ export function seedAus(text: string): number {
 
 /** Welches Werkzeug zu welchem Objekt passt */
 const OBJEKT_FUER_SIM: Record<string, Objekt> = {
-  gleichungswaage: "waage", zeitstrahl: "kalender", funktionen: "tafel", vierecke: "tafel",
+  gleichungswaage: "waage", zeitstrahl: "kalender", funktionen: "tafel", vierecke: "tafel", dreiecke: "tafel",
   rechenregeln: "abakus", abacus: "abakus", binaerrechner: "grossrechner", bildformate: "grafiktablett",
   ki: "kikern", regeln: "computer", maus: "computer", tippen: "computer", uebung: "pult",
   sonnensystem: "teleskop", erdaufbau: "globus", wilson: "globus", kueste: "globus", wfc: "computer",

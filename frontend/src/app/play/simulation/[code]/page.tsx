@@ -26,6 +26,7 @@ import Groessen from "@/components/groessen/Groessen";
 import Rechenzeichen from "@/components/rechenzeichen/Rechenzeichen";
 import Prozent from "@/components/prozent/Prozent";
 import Trigonometrie from "@/components/trigonometrie/Trigonometrie";
+import Dreiecke from "@/components/dreiecke/Dreiecke";
 import Kreis from "@/components/kreis/Kreis";
 import Stellenwert from "@/components/stellenwert/Stellenwert";
 import Markieren from "@/components/markieren/Markieren";
@@ -72,6 +73,7 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   groessen: { title: "Größen & Einheiten", icon: "🪜", node: <Groessen /> },
   rechenzeichen: { title: "Rechenzeichen", icon: "➗", node: <Rechenzeichen /> },
   prozent: { title: "Prozent- und Zinsrechnung", icon: "💯", node: <Prozent /> },
+  dreiecke: { title: "Dreiecke", icon: "△", node: <Dreiecke /> },
   trigonometrie: { title: "Trigonometrie", icon: "🔺", node: <Trigonometrie /> },
   kreis: { title: "Kreis", icon: "⭕", node: <Kreis /> },
   stellenwert: { title: "Stellenwerttafeln", icon: "🔢", node: <Stellenwert /> },
