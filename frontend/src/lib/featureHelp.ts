@@ -303,6 +303,20 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
     ],
   },
+  koerper: {
+    title: "Körper",
+    intro: "Körper für Klasse 5–10 — drehbar in 3D mit Formeln, Netzen, besonderen Linien, zusammengesetzten Körpern, Übungen, Sachaufgaben und einem Spiel.",
+    sections: [
+      { label: "🧊 Körper-Labor", text: "Würfel, Quader, drei- und sechsseitiges Prisma, Zylinder, quadratische und rechteckige Pyramide, Kegel, Kugel, Halbkugel, Pyramiden- und Kegelstumpf. Ziehen dreht den Körper, das Mausrad zoomt, die Regler ändern die Maße. Daneben stehen Volumen, Oberfläche, Mantel-, Grund- und Deckfläche mit Formel und eingesetztem Rechenweg. Ein Klick auf eine Fläche (im Bild oder in der Liste) hebt sie hervor und zeigt ihre Formel und ihren Wert; »ganzer Mantel« fasst die Seitenflächen zusammen." },
+      { label: "📂 Netz", text: "Das Netz klappt per Regler stufenlos auf und zu, oder mit »Aufklappen«/»Zuklappen« als Trickfilm. Bei Zylinder und Kegel rollt sich der Mantel ab, die Kreise klappen heraus. Darunter liegt das Netz flach als Skizze. Die Kugel lässt sich nicht abwickeln — das Blatt sagt, warum." },
+      { label: "📏 Linien & Euler", text: "Ecken, Kanten und Flächen einzeln zuschalten (Flächen werden durchnummeriert), dazu der Eulersche Polyedersatz e + f − k = 2 mit den Zahlen des Körpers — bei runden Körpern steht, warum er nicht gilt. Höhe h, Seitenhöhe h_s, Mantellinie s, Radius, Seitenkante, Flächen- und Raumdiagonale lassen sich einzeln einschalten und sind beschriftet, mit Formel." },
+      { label: "🏠 Zusammengesetzt", text: "Haus (Quader + Prisma), Silo (Zylinder + Halbkugel), Turm (Zylinder + Kegel), Werkstück mit Bohrung und Eistüte. Volumen und Oberfläche Zeile für Zeile, abgezogene Teile rot markiert. »Auseinanderziehen« trennt die Teile und zeigt die verdeckten Flächen rot — die gehören nicht zur Oberfläche." },
+      { label: "✍️ Übungen", text: "Gewürfelte Aufgaben mit Schrägbild: Volumen, Oberfläche, rückwärts (Höhe oder Kante gesucht), Ecken/Flächen/Kanten mit Euler, Raumeinheiten, Körper erkennen (Steckbrief oder Netz), Pythagoras im Körper (Raumdiagonale, Seitenhöhe, Mantellinie) und zusammengesetzte Körper. Arten an- und abwählen, Tipps einzeln, Lösungsweg. »📄 Arbeitsblatt (.docx)« baut ein Word-Dokument mit Skizzen, Antwortlinien und auf Wunsch den Lösungen." },
+      { label: "🐠 Anwendungen", text: "Sachaufgaben mit neuen Zahlen auf Knopfdruck: Aquarium füllen, Dose etikettieren, Zelt nähen, Eistüte, Pool füllen (mit Füllzeit), Schwimmbecken fliesen, Paket packen und Kerze gießen. Ebenfalls als Word-Arbeitsblatt." },
+      { label: "🚰 Wer fasst mehr?", text: "Spiel: Zwei Gefäße mit Maßen — tippe das, in das mehr Wasser passt. Danach füllen sich zwei Messbecher und zeigen die echten Volumen. 60 Sekunden, Serien bringen Bonuspunkte und knappere Paare, ein Fehler kostet 3 Sekunden. Der Rekord bleibt im Browser." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
+    ],
+  },
   kreis: {
     title: "Kreis",
     intro: "Kreis für Klasse 6–9 — Größen am Kreis, Geraden, Kreisteile, Übungen, Sachaufgaben und ein Spiel.",

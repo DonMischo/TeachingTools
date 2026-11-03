@@ -29,6 +29,7 @@ import Prozent from "@/components/prozent/Prozent";
 import Trigonometrie from "@/components/trigonometrie/Trigonometrie";
 import Dreiecke from "@/components/dreiecke/Dreiecke";
 import Kreis from "@/components/kreis/Kreis";
+import Koerper from "@/components/koerper/Koerper";
 import Stellenwert from "@/components/stellenwert/Stellenwert";
 import Farbmodelle from "@/components/farbmodelle/Farbmodelle";
 import Markieren from "@/components/markieren/Markieren";
@@ -79,6 +80,7 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   dreiecke: { title: "Dreiecke", icon: "△", node: <Dreiecke /> },
   trigonometrie: { title: "Trigonometrie", icon: "🔺", node: <Trigonometrie /> },
   kreis: { title: "Kreis", icon: "⭕", node: <Kreis /> },
+  koerper: { title: "Körper", icon: "🧊", node: <Koerper /> },
   stellenwert: { title: "Stellenwerttafeln", icon: "🔢", node: <Stellenwert /> },
   farbmodelle: { title: "Farbmodelle", icon: "🎨", node: <Farbmodelle /> },
   tippen: { title: "Tippen", icon: "⌨️", node: <Tippen /> },

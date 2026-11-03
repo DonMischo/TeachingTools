@@ -762,6 +762,19 @@ simulationen:
       - "Sachaufgaben: Pizza, Fahrradrad, Uhrzeiger, Laufbahn, Brunnen mit Weg, Tortenstück, Rasensprenger"
       - Arbeitsblatt als Word-Datei (.docx) mit Skizzen, Antwortlinien und Lösungsseite
       - "Spiel Rad-Rollen: Umdrehungen oder Radius ausrechnen, das Rad rollt bis zur Fahne; Rekord im Browser"
+  - id: koerper
+    name: Körper
+    faehigkeiten: {use: [true, true]}
+    kann:
+      - "Körper-Labor in 3D: Würfel, Quader, Prismen (drei-, sechsseitig), Zylinder, Pyramiden (quadratisch, rechteckig), Kegel, Kugel, Halbkugel, Pyramiden- und Kegelstumpf; Maße per Regler"
+      - "Volumen, Oberfläche, Mantel, Grund- und Deckfläche mit Formel und eingesetztem Rechenweg"
+      - "Teilflächen anklicken: Hervorhebung mit Formel und Wert; Netz stufenlos auf- und zuklappen, Mantel von Zylinder und Kegel rollt ab"
+      - "Notation: Ecken, Kanten, Flächen mit Euler e + f − k = 2; Höhe, Seitenhöhe, Mantellinie, Radius, Seitenkante, Flächen- und Raumdiagonale zuschaltbar"
+      - "Zusammengesetzte Körper: Haus, Silo, Turm, Werkstück mit Bohrung, Eistüte; auseinanderziehen zeigt verdeckte Flächen"
+      - "Übungen: Volumen, Oberfläche, rückwärts, Euler, Raumeinheiten, erkennen (Steckbrief, Netz), Pythagoras im Körper, zusammengesetzt — mit Schrägbild"
+      - "Sachaufgaben: Aquarium, Dose, Zelt, Eistüte, Pool, Schwimmbecken, Paket, Kerze"
+      - Arbeitsblatt als Word-Datei (.docx) mit Schrägbildern, Antwortlinien und Lösungsseite
+      - "Spiel »Wer fasst mehr?«: größeres Volumen antippen, Messbecher füllen sich; 60 s, Serienbonus, Rekord im Browser"
   - id: stellenwert
     name: Stellenwerttafeln
     faehigkeiten: {use: [true, true]}

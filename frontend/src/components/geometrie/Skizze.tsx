@@ -93,6 +93,14 @@ export function SkizzenInhalt({ s, w = SKIZZE_W, h = SKIZZE_H }: { s: Skizze; w?
           </g>
         );
       })}
+      {(s.zuege ?? []).map((zg, i) => {
+        const pts = zg.pts.map(p => { const q = T(p); return `${q.x},${q.y}`; }).join(" ");
+        const art = zg.art ?? "sichtbar";
+        const Tag = zg.geschlossen ? "polygon" : "polyline";
+        return <Tag key={`z${i}`} points={pts} fill="none" strokeLinejoin="round" strokeLinecap="round"
+          stroke={art === "verdeckt" ? "var(--text-muted)" : art === "hilfe" ? ORANGE : "var(--accent)"}
+          strokeWidth={art === "sichtbar" ? 3 : 1.8} strokeDasharray={art === "sichtbar" ? undefined : "6 5"} />;
+      })}
       {(s.strecken ?? []).map((st, i) => {
         const a = T(st.a), b = T(st.b), n = aussen(a, b, innen);
         const art = st.art ?? "seite";

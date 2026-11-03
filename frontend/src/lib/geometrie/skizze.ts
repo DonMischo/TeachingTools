@@ -31,6 +31,8 @@ export type Skizze = {
   raster?: boolean;
   /** »Skizze nicht maßstäblich« dazuschreiben */
   nichtMassstaeblich?: boolean;
+  /** Linienzüge, z. B. Kanten und Ellipsen im Schrägbild; verdeckte gestrichelt */
+  zuege?: Zug[];
 };
 
 export function allePunkte(s: Skizze): Pt[] {
@@ -39,6 +41,7 @@ export function allePunkte(s: Skizze): Pt[] {
   for (const st of s.strecken ?? []) pts.push(st.a, st.b);
   for (const k of s.kreise ?? []) pts.push({ x: k.m.x - k.r, y: k.m.y - k.r }, { x: k.m.x + k.r, y: k.m.y + k.r });
   for (const m of s.marken ?? []) pts.push(m.p);
+  for (const zg of s.zuege ?? []) pts.push(...zg.pts);
   for (const b of s.boegen ?? []) {
     const schritte = Math.max(2, Math.ceil(Math.abs(b.bis - b.von) / 10));
     for (let i = 0; i <= schritte; i++) pts.push(bogenPunkt(b.m, b.r, b.von + (b.bis - b.von) * i / schritte));
@@ -97,3 +100,6 @@ export function seiten(pts: Pt[], texte: (string | undefined)[] = []): Strecke[]
 export function ecken(pts: Pt[], namen = "ABCDEFGH"): Marke[] {
   return pts.map((p, i) => ({ p, text: namen[i] }));
 }
+
+/** Linienzug: »sichtbar« wie eine Seite, »verdeckt« dünn und gestrichelt (verdeckte Kanten im Schrägbild). */
+export type Zug = { pts: Pt[]; art?: "sichtbar" | "verdeckt" | "hilfe"; geschlossen?: boolean };

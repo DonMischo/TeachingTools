@@ -128,6 +128,9 @@ CATALOG: list[CatalogTool] = [
     CatalogTool("kreis", "⭕ Kreis", "⭕", "simulationen", {
         "use": _cap(True, True),
     }),
+    CatalogTool("koerper", "🧊 Körper", "🧊", "simulationen", {
+        "use": _cap(True, True),
+    }),
     CatalogTool("stellenwert", "🔢 Stellenwerttafeln", "🔢", "simulationen", {
         "use": _cap(True, True),
     }),

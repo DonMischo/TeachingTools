@@ -269,6 +269,14 @@ const ALL_CARDS: Werkzeug[] = [
     color: "#f97316",
   },
   {
+    slug: "koerper",
+    href: "/simulationen/koerper",
+    icon: "🧊",
+    title: "Körper",
+    description: "Für Klasse 5–10: Würfel, Quader, Prismen, Zylinder, Pyramiden, Kegel, Kugel, Halbkugel, Pyramiden- und Kegelstumpf drehbar in 3D, Maße am Regler, Volumen, Oberfläche, Mantel, Grund- und Deckfläche mit Formel und Rechenweg. Teilflächen anklicken, Netze auf- und zuklappen, Kanten, Ecken, Flächen (Euler), Höhe, Seitenhöhe, Mantellinie und Diagonalen zuschalten. Zusammengesetzte Körper zum Auseinanderziehen, gewürfelte Übungen und Sachaufgaben mit Schrägbild und Word-Export und das Spiel »Wer fasst mehr?«.",
+    color: "#8b5cf6",
+  },
+  {
     slug: "kreis",
     href: "/simulationen/kreis",
     icon: "⭕",
