@@ -21,8 +21,9 @@ const MUTMACHER = [
   'Wer genau liest, muss nicht raten.',
 ];
 
-type Kaefer = { x: number; y: number; winkel: number; drehung: number; tempo: number; phase: number; spuckZeit: number; umlauf: number };
-type Wort = { text: string; x: number; y: number; vx: number; vy: number; dreh: number; geboren: number; vonX: number; vonY: number };
+type Kaefer = { x: number; y: number; winkel: number; drehung: number; tempo: number; phase: number; spuckZeit: number; umlauf: number;
+  art: 'spinne' | 'kaefer' | 'tausendfuss'; farbe: string; glut: string; groesse: number };
+type Wort = { text: string; x: number; y: number; vx: number; vy: number; dreh: number; geboren: number; vonX: number; vonY: number; farbe: string };
 
 let serie = 0;
 let letzterFehler = 0;
@@ -42,47 +43,86 @@ function woerterSammeln(quelle?: Element | null): string[] {
   return alle.length ? alle : ['falsch', 'nachdenken', 'lesen', 'raten', 'krabbel'];
 }
 
+// Strich- und Glutfarbe je Käfer
+const FARBEN: [string, string][] = [
+  [NEON, GLUT],
+  ['#18ffff', '#2979ff'],
+  ['#b2ff59', '#00c853'],
+  ['#ffd740', '#ff6d00'],
+  ['#ff80ab', '#d500f9'],
+];
+const ARTEN: Kaefer['art'][] = ['spinne', 'kaefer', 'tausendfuss'];
+
 function neuerKaefer(b: number, h: number): Kaefer {
-  const rand = Math.floor(Math.random() * 4);
-  const x = rand === 0 ? -40 : rand === 1 ? b + 40 : Math.random() * b;
-  const y = rand === 2 ? -40 : rand === 3 ? h + 40 : Math.random() * h;
-  return { x, y, winkel: Math.atan2(h / 2 - y, b / 2 - x), drehung: 0, tempo: 90 + Math.random() * 60, phase: Math.random() * 6, spuckZeit: 0, umlauf: Math.random() * Math.PI * 2 };
+  const [farbe, glut] = FARBEN[Math.floor(Math.random() * FARBEN.length)];
+  return {
+    x: b / 2, y: h / 2, winkel: Math.random() * Math.PI * 2, drehung: 0, tempo: 110 + Math.random() * 70,
+    phase: Math.random() * 6, spuckZeit: 0, umlauf: Math.random() * Math.PI * 2,
+    art: ARTEN[Math.floor(Math.random() * ARTEN.length)], farbe, glut, groesse: 1.8 + Math.random() * 0.8,
+  };
+}
+
+function beinPaar(ctx: CanvasRenderingContext2D, y: number, innen: number, schwung: number, laenge = 1) {
+  for (const s of [-1, 1]) {
+    ctx.beginPath();
+    ctx.moveTo(s * innen, y);
+    ctx.lineTo(s * (innen + 10 * laenge), y - 4 + s * schwung);
+    ctx.lineTo(s * (innen + 16 * laenge), y + 6 + s * schwung);
+    ctx.stroke();
+  }
 }
 
 function zeichneKaefer(ctx: CanvasRenderingContext2D, k: Kaefer) {
   ctx.save();
   ctx.translate(k.x, k.y);
   ctx.rotate(k.winkel + Math.PI / 2);
-  ctx.strokeStyle = NEON;
-  ctx.lineWidth = 1.5;
-  ctx.shadowColor = GLUT;
-  ctx.shadowBlur = 10;
-  // Beine: 4 Paare, wechselseitig im Takt
-  for (let i = 0; i < 4; i++) {
-    const y = -6 + i * 8;
-    const schwung = Math.sin(k.phase + i * Math.PI / 2) * 6;
+  ctx.scale(k.groesse, k.groesse);
+  ctx.strokeStyle = k.farbe;
+  ctx.lineWidth = 1.2;
+  ctx.shadowColor = k.glut;
+  ctx.shadowBlur = 12;
+  if (k.art === 'spinne') {
+    // Gitterkasten-Spinne: 4 Beinpaare, Kieferzangen
+    for (let i = 0; i < 4; i++) beinPaar(ctx, -6 + i * 8, 14, Math.sin(k.phase + i * Math.PI / 2) * 6);
     for (const s of [-1, 1]) {
       ctx.beginPath();
-      ctx.moveTo(s * 14, y);
-      ctx.lineTo(s * 24, y - 4 + s * schwung);
-      ctx.lineTo(s * 30, y + 6 + s * schwung);
+      ctx.moveTo(s * 6, -18);
+      ctx.lineTo(s * 10, -30 + Math.sin(k.phase * 2) * 2);
       ctx.stroke();
     }
-  }
-  // Kieferzangen
-  for (const s of [-1, 1]) {
+    ctx.strokeRect(-10, -18, 20, 10);
+    ctx.strokeRect(-14, -8, 28, 30);
     ctx.beginPath();
-    ctx.moveTo(s * 6, -18);
-    ctx.lineTo(s * 10, -30 + Math.sin(k.phase * 2) * 2);
+    for (let y = -2; y < 22; y += 6) { ctx.moveTo(-14, y); ctx.lineTo(14, y); }
+    ctx.moveTo(0, -8); ctx.lineTo(0, 22);
+    ctx.stroke();
+  } else if (k.art === 'kaefer') {
+    // Käfer: ovaler Panzer mit Naht, 3 Beinpaare, Fühler
+    for (let i = 0; i < 3; i++) beinPaar(ctx, -4 + i * 10, 11, Math.sin(k.phase + i * Math.PI * 2 / 3) * 5, 0.9);
+    ctx.beginPath();
+    ctx.ellipse(0, 6, 14, 18, 0, 0, Math.PI * 2);
+    ctx.moveTo(0, -12); ctx.lineTo(0, 24);
+    ctx.moveTo(8, -14); ctx.arc(0, -14, 8, 0, Math.PI * 2);
+    for (const s of [-1, 1]) {
+      ctx.moveTo(s * 4, -20);
+      ctx.quadraticCurveTo(s * 10, -30, s * (14 + Math.sin(k.phase) * 2), -34);
+    }
+    ctx.stroke();
+  } else {
+    // Tausendfüßer: Gliederkette, die sich schlängelt
+    for (let i = 0; i < 8; i++) {
+      const y = -20 + i * 7;
+      const dx = Math.sin(k.phase * 0.7 - i * 0.8) * 3;
+      ctx.save();
+      ctx.translate(dx, 0);
+      beinPaar(ctx, y + 3, 6, Math.sin(k.phase * 1.5 + i) * 3, 0.6);
+      ctx.strokeRect(-6, y, 12, 6);
+      ctx.restore();
+    }
+    ctx.beginPath();
+    for (const s of [-1, 1]) { ctx.moveTo(s * 3, -20); ctx.lineTo(s * 9, -30); }
     ctx.stroke();
   }
-  // Kopf und Hinterleib als Gitterkästen
-  ctx.strokeRect(-10, -18, 20, 10);
-  ctx.strokeRect(-14, -8, 28, 30);
-  ctx.beginPath();
-  for (let y = -2; y < 22; y += 6) { ctx.moveTo(-14, y); ctx.lineTo(14, y); }
-  ctx.moveTo(0, -8); ctx.lineTo(0, 22);
-  ctx.stroke();
   ctx.restore();
 }
 
@@ -167,13 +207,13 @@ export function krabbeln(opts: { quelle?: Element | null } = {}): void {
       if (kasten) {
         // um den Mutmacher kreisen: einem Punkt auf der Ellipse um ihn nachlaufen
         k.umlauf += dt * k.tempo / 260;
-        const zx = b / 2 + Math.cos(k.umlauf) * (kasten.width / 2 + 50);
-        const zy = h / 2 + Math.sin(k.umlauf) * (kasten.height / 2 + 50);
+        const zx = b / 2 + Math.cos(k.umlauf) * (kasten.width / 2 + 80);
+        const zy = h / 2 + Math.sin(k.umlauf) * (kasten.height / 2 + 80);
         k.winkel += Math.sin(Math.atan2(zy - k.y, zx - k.x) - k.winkel) * 5 * dt;
       } else {
         // sanft zurück zur Mitte, wenn ein Käfer zum Rand will
         const zurMitte = Math.atan2(h / 2 - k.y, b / 2 - k.x);
-        const ausserhalb = k.x < 60 || k.x > b - 60 || k.y < 60 || k.y > h - 60;
+        const ausserhalb = k.x < 100 || k.x > b - 100 || k.y < 100 || k.y > h - 100;
         if (ausserhalb) k.winkel += Math.sin(zurMitte - k.winkel) * 2 * dt;
       }
       k.winkel += k.drehung * dt;
@@ -185,7 +225,7 @@ export function krabbeln(opts: { quelle?: Element | null } = {}): void {
         k.spuckZeit = 0.15 + Math.random() * 0.25;
         const a = k.winkel + (Math.random() - 0.5) * 2.4;
         const v = 120 + Math.random() * 180;
-        fliegende.push({ text: woerter[Math.floor(Math.random() * woerter.length)], x: k.x, y: k.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, dreh: (Math.random() - 0.5) * 0.4, geboren: t, vonX: k.x, vonY: k.y });
+        fliegende.push({ text: woerter[Math.floor(Math.random() * woerter.length)], x: k.x, y: k.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, dreh: (Math.random() - 0.5) * 0.4, geboren: t, vonX: k.x, vonY: k.y, farbe: k.glut });
       }
     }
 
@@ -204,11 +244,11 @@ export function krabbeln(opts: { quelle?: Element | null } = {}): void {
         ctx.beginPath(); ctx.moveTo(w.vonX, w.vonY); ctx.lineTo(w.x, w.y); ctx.stroke();
       }
       ctx.save();
-      ctx.globalAlpha = alpha;
+      ctx.globalAlpha = alpha * 0.8;
       ctx.translate(w.x, w.y);
       ctx.rotate(w.dreh * alter);
       const breite = ctx.measureText(w.text).width + 10;
-      ctx.fillStyle = 'rgba(170,0,200,.75)';
+      ctx.fillStyle = w.farbe;
       ctx.fillRect(-breite / 2, -11, breite, 22);
       ctx.fillStyle = '#fff';
       ctx.fillText(w.text, -breite / 2 + 5, 0);
