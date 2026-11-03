@@ -7,12 +7,12 @@ import { Dla } from "../dla/kern";
 BL.Game = (function () {
   const YEARS = 15;
   const SPECIES = {
-    buche: { name: "Rotbuche", max: 300, shade: .75, mature: 4, seedCost: 3, txt: "Schattenkünstlerin: wächst auch unter anderen Bäumen. Empfindlich bei Dürre.", drought: 1.2 },
-    stieleiche: { name: "Stieleiche", max: 450, shade: .5, mature: 4, seedCost: 3, txt: "Lebt sehr lange und beherbergt die meisten Arten. Braucht Licht.", drought: .8 },
-    fichte: { name: "Gemeine Fichte", max: 225, shade: .6, mature: 4, seedCost: 3, txt: "Wächst schnell, wurzelt flach. Borkenkäfer und Stürme sind gefährlich.", drought: 1.5, flat: true },
-    birke: { name: "Hänge-Birke", max: 105, shade: .3, mature: 2, seedCost: 2, txt: "Pionierin: wächst rasant, bildet früh viele Samen, stirbt jung.", drought: 1, fast: true },
-    waldkiefer: { name: "Waldkiefer", max: 300, shade: .35, mature: 3, seedCost: 2, txt: "Genügsam: wächst auf Sand und im Moor, wo andere hungern. Braucht viel Licht.", drought: .5, pine: true },
-    schwarzerle: { name: "Schwarzerle", max: 120, shade: .45, mature: 2, seedCost: 2, txt: "Steht mit den Füßen im Wasser. Knöllchen an den Wurzeln holen Stickstoff aus der Luft.", drought: 1.4, fast: true, flood: true }
+    buche: { cut: 130, name: "Rotbuche", max: 300, shade: .75, mature: 4, seedCost: 3, txt: "Schattenkünstlerin: wächst auch unter anderen Bäumen. Empfindlich bei Dürre.", drought: 1.2 },
+    stieleiche: { cut: 180, name: "Stieleiche", max: 450, shade: .5, mature: 4, seedCost: 3, txt: "Lebt sehr lange und beherbergt die meisten Arten. Braucht Licht.", drought: .8 },
+    fichte: { cut: 90, name: "Gemeine Fichte", max: 225, shade: .6, mature: 4, seedCost: 3, txt: "Wächst schnell, wurzelt flach. Borkenkäfer und Stürme sind gefährlich.", drought: 1.5, flat: true },
+    birke: { cut: 70, name: "Hänge-Birke", max: 105, shade: .3, mature: 2, seedCost: 2, txt: "Pionierin: wächst rasant, bildet früh viele Samen, stirbt jung.", drought: 1, fast: true },
+    waldkiefer: { cut: 120, name: "Waldkiefer", max: 300, shade: .35, mature: 3, seedCost: 2, txt: "Genügsam: wächst auf Sand und im Moor, wo andere hungern. Braucht viel Licht.", drought: .5, pine: true },
+    schwarzerle: { cut: 70, name: "Schwarzerle", max: 120, shade: .45, mature: 2, seedCost: 2, txt: "Steht mit den Füßen im Wasser. Knöllchen an den Wurzeln holen Stickstoff aus der Luft.", drought: 1.4, fast: true, flood: true }
   };
   // Standorte: nur typische Arten. water verschiebt das Wasser der Ereignisse, prod die Fotosynthese (Nährstoffe),
   // capS/capW begrenzen Stamm und Wurzel, canopy = geschlossenes Kronendach über jungen Bäumen, ev ändert Ereignis-Gewichte.
@@ -28,6 +28,9 @@ BL.Game = (function () {
     berg: { n: "Bergwald", sp: ["fichte", "buche"], water: 1, prod: .9, capS: 7, capW: 8, canopy: true, ev: { sturm: 2, schnee: 3, hitze: -1 },
       txt: "Kalt und nass, kurze Sommer. Stürme und schwerer Schnee brechen Wipfel." }
   };
+  // Umtriebszeit im Wirtschaftswald: Mit diesem Alter wird gefällt (Mitte der üblichen Spanne)
+  const CUT_RANGE = { buche: "120–140", stieleiche: "180–240", fichte: "80–100", birke: "60–80", waldkiefer: "100–140", schwarzerle: "60–80" };
+  const WALD = f => f ? "Forst" : "Naturwald";
   const B = () => BIOMES[s.biome || "buchenwald"];
   const EVENTS = [
     { id: "gut", n: "Gutes Jahr", w: 3, light: 3, water: 3, f: "Warm, sonnig und genug Regen: Die Spaltöffnungen bleiben lange offen, die Fotosynthese läuft auf Hochtouren." },
@@ -149,6 +152,7 @@ BL.Game = (function () {
         <li>Viele Insekten leben erst als Larve bei dir: Engerlinge im Boden, Raupen in der Krone. Kommen später Maikäfer oder Falter dazu, ist die Verwandlung komplett. Rund um den Baum leben auch Säugetiere: Reh, Wildschwein, Dachs, Fuchs, Rötelmaus und Siebenschläfer.</li>
         <li>Neben Tieren und Pilzen wachsen auch Pflanzen an und unter dir: Efeu am Stamm, Frühblüher unter Laubbäumen, Heidelbeeren auf saurem Boden, Farne im Schatten.</li>
         <li>Bewohner bringen Punkte und manchmal Hilfe. Spechte zimmern Höhlen für Nachmieter, so entstehen Ketten wie im Kartenspiel Forest Shuffle.</li>
+        <li>Ob du im Forst oder im Naturwald keimst, entscheidet der Zufall. Im Forst fällt dich der Förster, sobald du das Erntealter deiner Art erreichst (Umtriebszeit), der Stamm kommt ins Sägewerk. Zurück bleiben nur Stubben, Wurzeln und Reisig, und das Totholz-Leben ist kürzer. Im Naturwald lebst du, bis du stirbst. Am Ende vergleicht eine Statistik Forst und Naturwald.</li>
         <li>Punkte gibt es für dein Alter, deine Samen, alle Bewohner, die Vielfalt der besiedelten Bereiche und das Totholz nach deinem Tod.</li></ul>`;
   // Dialog für Anleitung und Tagebuch; liegt im .baumleben-Bereich, damit die Stile greifen
   function popup(title, html) {
@@ -259,7 +263,7 @@ BL.Game = (function () {
 
   function start(sp, biome) {
     s = { sp, biome, seed: 1 + Math.floor(Math.random() * 1e5), round: 0, kr: "", browsed: 0, shadeRounds: 0, age: 0, K: 1, W: 1, S: 1, A: 0, R: 2, V: 10, seeds: 0, cards: [], holes: 0, bigHoles: 0, log: [], phase: "play",
-      sugar: 0, gapRounds: 0, hosted: false, seedsRound: 0, dead: [], deadRound: 0, market: [], event: null, deathCause: "" };
+      forst: Math.random() < .5, sugar: 0, gapRounds: 0, hosted: false, seedsRound: 0, dead: [], deadRound: 0, market: [], event: null, deathCause: "" };
     newRound(); save(); render();
   }
   function pickEvent() {
@@ -349,6 +353,7 @@ BL.Game = (function () {
     s.log.unshift(`Jahr ${s.age}: ${ev.n}. +${prod} Zucker, −${upkeep} Atmung${msgs.length ? ". " + msgs.join(". ") : ""}`);
     if (early) die(early);
     else if (s.V <= 0) die(ev.storm ? "vom Sturm geworfen" : ev.beetle ? "von Borkenkäfern getötet" : ev.flood ? "im Hochwasser erstickt" : s.age > Sp.max ? "an Altersschwäche gestorben" : young ? "als junger Baum eingegangen" : "an Stress gestorben");
+    else if (s.forst && s.age >= Sp.cut) die("im Forst gefällt worden", true);
   }
   // Höchster Stamm und tiefste Wurzel, die der Standort zulässt; Krüppelwuchs hält den Stamm bei 5
   const capS = () => Math.min(B().capS, s.kr ? 5 : 8);
@@ -358,12 +363,18 @@ BL.Game = (function () {
     const free = CARDS.filter(c => (!has(s, c.id) || c.id === "bunt" || c.id === "schwarz") && c.req(s) && !s.market.includes(c.id));
     s.market = s.market.filter(id => CARDS.find(c => c.id === id).req(s)).concat(BL.shuffle(free).map(c => c.id)).slice(0, 3);
   }
-  function die(cause) {
-    // Ein dünnes Stämmchen steht nicht lange als Totholz: es fällt gleich um oder zerfällt sofort
-    s.V = 0; s.phase = "dead"; s.deathCause = cause; s.deadYears = 0;
-    setSub(s.S <= 1 ? 4 : s.S <= 2 ? 2 : 0); dealDead();
-    s.log.unshift(`Jahr ${s.age}: Der Baum ist ${cause}. Jetzt beginnt sein zweites Leben als Totholz.`);
+  function die(cause, felled) {
+    // Ein dünnes Stämmchen steht nicht lange als Totholz: es fällt gleich um oder zerfällt sofort.
+    // Gefällt bleibt nur der Stubben: Er überspringt das stehende und liegende Totholz.
+    s.V = 0; s.phase = "dead"; s.deathCause = cause; s.deadYears = 0; s.stubben = !!felled;
+    setSub(felled ? 0 : s.S <= 1 ? 4 : s.S <= 2 ? 2 : 0); dealDead();
+    s.log.unshift(felled ? `Jahr ${s.age}: Erntealter erreicht. Der Förster fällt dich, der Stamm kommt ins Sägewerk. Im Wald bleiben Stubben, Wurzeln und Reisig.`
+      : `Jahr ${s.age}: Der Baum ist ${cause}. Jetzt beginnt sein zweites Leben als Totholz.`);
   }
+  // Ein Stubben zerfällt schneller und hat nur eine Runde je Stufe; »Rinde löst sich« (stehend) und »Frisch gefallen« fehlen
+  const STUMP_SUBS = [0, 3, 4, 5];
+  const subRounds = () => s.stubben ? 1 : SUB_ROUNDS;
+  const nextSub = n => s.stubben ? (STUMP_SUBS.find(k => k > n) ?? SUBS.length) : n + 1;
   // Stufe setzen; deadRound bleibt die Hauptphase (0 stehend, 1 liegend, 2 Mulm) für Bild und alte Spielstände
   function setSub(n) { s.sub = n; s.subPick = 0; s.deadRound = SUBS[Math.min(n, SUBS.length - 1)].main; }
   function dealDead() {
@@ -404,7 +415,7 @@ BL.Game = (function () {
     const c = CARDS.find(x => x.id === id);
     if (s.hosted || !c.req(s)) return;
     if (c.slot === "hoehle") { if (c.id === "kauz" || c.id === "taube") s.bigHoles--; else s.holes--; }
-    s.cards.push({ id: c.id }); s.hosted = true;
+    s.cards.push({ id: c.id, at: s.age }); s.hosted = true;
     if (c.id === "bunt") s.holes++; if (c.id === "schwarz") s.bigHoles++;
     s.market = s.market.filter(m => m !== id);
     s.log.unshift(`${c.e} ${c.n} zieht ein.`); save(); render();
@@ -417,9 +428,9 @@ BL.Game = (function () {
     s.dead.push(n); s.subPick++; s.deadYears = (s.deadYears || 0) + SUB_YEARS;
     const d = DEAD.find(x => x.n === n);
     s.log.unshift(`${s.deadYears} Jahre nach dem Tod (${SUBS[s.sub].n}): ${d.e} ${d.n} zieht ein.`);
-    if (s.subPick >= SUB_ROUNDS) setSub(s.sub + 1);
+    if (s.subPick >= subRounds()) setSub(nextSub(s.sub));
     // Stufe ohne passende Arten überspringen
-    while (s.sub < SUBS.length) { dealDead(); if (s.market.length) break; setSub(s.sub + 1); }
+    while (s.sub < SUBS.length) { dealDead(); if (s.market.length) break; setSub(nextSub(s.sub)); }
     if (s.sub >= SUBS.length) { s.phase = "over"; s.market = []; finalize(); }
     save(); render();
   }
@@ -434,7 +445,18 @@ BL.Game = (function () {
     pts.sum = Object.values(pts).reduce((a, b) => a + b, 0);
     return pts;
   }
-  function finalize() { const sc = score().sum, best = BL.store.get("gamebest", {}); if (!best[s.sp] || sc > best[s.sp]) { best[s.sp] = sc; BL.store.set("gamebest", best); } }
+  // Kennzahlen für den Vergleich Forst/Naturwald. Biomasse grob geschätzt in Tonnen Trockenmasse (Stamm wächst mit S³);
+  // im Forst geht der Stamm ohne Stubben aus dem Wald. Arten-Jahre: wie lange jede Art an diesem Baum leben konnte.
+  function stats() {
+    const stem = .0075 * s.S ** 3, bio = stem + .015 * s.K * s.S + .01 * s.W * s.S, holz = s.stubben ? stem * .9 : 0, F = s.deadYears || 0;
+    const jahre = s.cards.reduce((a, c) => a + s.age - (c.at ?? s.age) + YEARS, 0) + s.dead.reduce((a, _, i) => a + F - i * SUB_YEARS, 0);
+    return { forst: !!s.forst, sp: s.sp, biome: s.biome, alter: s.age, bio, holz, wald: bio - holz, bewohner: s.cards.length, totholz: s.dead.length, totholzJahre: F,
+      arten: new Set(s.cards.map(c => c.id)).size + s.dead.length, lebensraeume: new Set(s.cards.map(c => CARDS.find(x => x.id === c.id).slot)).size + (s.dead.length ? 1 : 0), artenJahre: jahre, punkte: score().sum };
+  }
+  function finalize() {
+    const sc = score().sum, best = BL.store.get("gamebest", {}); if (!best[s.sp] || sc > best[s.sp]) { best[s.sp] = sc; BL.store.set("gamebest", best); }
+    BL.store.set("gamestats", [...BL.store.get("gamestats", []), stats()].slice(-200));
+  }
 
   // ---------- Ansicht ----------
   // ---------- Baumbild ----------
@@ -487,10 +509,23 @@ BL.Game = (function () {
     for (let i = 0; i < 26; i++) { const x = x0 + r() * len; ctx.fillStyle = "rgba(110,150,60,.85)"; ctx.beginPath(); ctx.arc(x, gy - th * (1 - (x - x0) / len * .65) + 1, 1.5 + r() * 2.5, 0, 7); ctx.fill(); }
     return { half: len * .5 };
   }
+  // Stubben nach der Fällung: Schnittfläche mit Jahresringen, daneben liegengelassenes Kronenreisig
+  function drawStump(ctx, cx, gy, S, mossy) {
+    const r = BL.rng((s.seed || 1) * 23), w = 6 + S * 3.4, h = 8 + S * 1.6, bark = s.sp === "birke" ? "#d9d6cc" : s.sp === "waldkiefer" ? "#8a5a3a" : "#5e5246";
+    ctx.strokeStyle = "#6b5640"; ctx.lineWidth = 1.5;
+    for (let i = 0; i < 9; i++) { const x = cx + (r() < .5 ? -1 : 1) * (w + 10 + r() * 60), l = 12 + r() * 26, a = (r() - .5) * .5; ctx.beginPath(); ctx.moveTo(x, gy - 1); ctx.lineTo(x + Math.cos(a) * l, gy - 2 - r() * 6); ctx.stroke(); }
+    ctx.fillStyle = bark; ctx.fillRect(cx - w / 2, gy - h, w, h + 2);
+    ctx.fillStyle = mossy ? "#8d7a55" : "#d9b98a"; ctx.beginPath(); ctx.ellipse(cx, gy - h, w / 2, w / 6, 0, 0, 7); ctx.fill();
+    ctx.strokeStyle = "rgba(90,60,30,.5)"; ctx.lineWidth = .7;
+    for (let k = 1; k <= Math.min(6, S); k++) { ctx.beginPath(); ctx.ellipse(cx, gy - h, w / 2 * k / 7, w / 6 * k / 7, 0, 0, 7); ctx.stroke(); }
+    if (mossy) for (let i = 0; i < 14; i++) { ctx.fillStyle = "rgba(110,150,60,.85)"; ctx.beginPath(); ctx.arc(cx + (r() * 2 - 1) * w / 2, gy - h * r(), 1.5 + r() * 2, 0, 7); ctx.fill(); }
+    return { half: w + 30 };
+  }
   function paintTree(cv) {
     const W = Math.max(200, cv.parentElement.clientWidth), Hh = Math.round(Math.min(W * 1.05, Math.max(260, window.innerHeight * .5))), gy = Math.round(Hh * .66);
     const ctx = BL.fitCanvas(cv, W, Hh), Bi = B(), Sp = SPECIES[s.sp], rnd = BL.rng((s.seed || 1) * 13 + 7);
-    const alive = s.phase === "play", lying = s.phase === "over" || (s.phase === "dead" && s.deadRound >= 1), humus = s.phase === "over" || (s.phase === "dead" && s.deadRound >= 2), cx = W * .5;
+    const alive = s.phase === "play", stump = !alive && s.stubben, humus = s.phase === "over" || (s.phase === "dead" && s.deadRound >= 2), cx = W * .5;
+    const lying = stump ? humus : s.phase === "over" || (s.phase === "dead" && s.deadRound >= 1);
     const season = alive ? seasonNow() : .7, winter = season > .8;
     // Himmel und Hintergrund nach Standort
     const sky = ctx.createLinearGradient(0, 0, 0, gy);
@@ -534,10 +569,10 @@ BL.Game = (function () {
     const v = { cx, gy, Hpx, g, season, trunkPx: 2 + S * 1.7, cb: .14 + S * .02, dead: thin, leaves: alive, snag: !alive, dark: false, real: true, sunX: -.5 };
     ctx.save();
     if (s.kr && !lying) { ctx.translate(cx, gy); ctx.rotate(.13); ctx.translate(-cx, -gy); }
-    const res = lying ? drawLog(ctx, cx, gy, W, S, humus) : BL.TreeGen.render(ctx, model(), v);
+    const res = lying ? drawLog(ctx, cx, gy, W, stump ? 1 : S, humus) : stump ? drawStump(ctx, cx, gy, S, s.deadRound >= 1) : BL.TreeGen.render(ctx, model(), v);
     // Höhlen am Stamm
     const holes = s.holes + s.bigHoles + s.cards.filter(c => CARDS.find(x => x.id === c.id).slot === "hoehle").length;
-    if (!lying) for (let i = 0; i < Math.min(3, holes); i++) { ctx.fillStyle = "#1a120b"; ctx.beginPath(); ctx.ellipse(cx + (i % 2 ? 2 : -2), gy - Hpx * (.3 + i * .12), 2.5 + S * .4, 3.5 + S * .5, 0, 0, 7); ctx.fill(); }
+    if (!lying && !stump) for (let i = 0; i < Math.min(3, holes); i++) { ctx.fillStyle = "#1a120b"; ctx.beginPath(); ctx.ellipse(cx + (i % 2 ? 2 : -2), gy - Hpx * (.3 + i * .12), 2.5 + S * .4, 3.5 + S * .5, 0, 0, 7); ctx.fill(); }
     ctx.restore();
     // Bewohner als Bildzeichen: Krone oben, Stamm am Stamm, Boden im Boden, Totholz am liegenden Holz
     ctx.font = "16px system-ui, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
@@ -561,7 +596,7 @@ BL.Game = (function () {
     }
     // Beschriftung
     ctx.textAlign = "left"; ctx.font = "12px IBM Plex Mono, monospace"; ctx.fillStyle = "#fff"; ctx.shadowColor = "rgba(0,0,0,.7)"; ctx.shadowBlur = 3;
-    ctx.fillText(`${s.age} Jahre · ${alive ? STAGES[stage()] : "Totholz"}${s.kr ? " · Krüppelwuchs" : ""}`, 8, 14);
+    ctx.fillText(`${s.age} Jahre · ${alive ? STAGES[stage()] : stump ? "Stubben" : "Totholz"}${s.kr ? " · Krüppelwuchs" : ""} · ${WALD(s.forst)}`, 8, 14);
     ctx.shadowBlur = 0;
   }
   function tableau() {
@@ -589,7 +624,7 @@ BL.Game = (function () {
     const side = BL.$("#gm-side", wrap);
     if (s.phase === "play") {
       const wat = BL.clamp(ev.water + B().water, 0, 3);
-      side.append(BL.html(`<div class="ev"><span class="label">Runde ${s.round} · Jahr ${s.age - YEARS} bis ${s.age} · ${STAGES[stage()]} · ${B().n}</span><h3>${ev.n}</h3><p class="note" title="${ev.f}">${ev.f}</p>
+      side.append(BL.html(`<div class="ev"><span class="label">Runde ${s.round} · Jahr ${s.age - YEARS} bis ${s.age} · ${STAGES[stage()]} · ${B().n} · ${WALD(s.forst)}</span><h3>${ev.n}</h3><p class="note" title="${ev.f}">${ev.f}</p>
         <p class="num" style="font-size:.85rem">Licht ${"●".repeat(ev.light)}${"○".repeat(3 - ev.light)} · Wasser ${"●".repeat(wat)}${"○".repeat(3 - wat)}${B().canopy && s.S < 5 && !(s.gapRounds > 0 || ev.gap) ? " · du stehst im Schatten der Großen" : ""}</p>
         ${(() => { const l = s.log.find(x => x.startsWith(`Jahr ${s.age}:`)); return l ? `<p class="last">${l}${s.sugar === 1 && s.lastProd <= s.lastUpkeep ? ". Rinde und Knospen retten dir 1 Zucker." : ""}</p>` : ""; })()}</div>`));
       side.append(BL.html(`<div class="res">
@@ -598,6 +633,8 @@ BL.Game = (function () {
         <div><span class="label">Krone</span><b>${s.K}</b></div><div><span class="label">Wurzel</span><b>${s.W}</b></div><div><span class="label">Stamm</span><b>${s.S}</b></div>
         <div><span class="label">Abwehr</span><b>${s.A}</b></div><div><span class="label">Samen</span><b>${s.seeds}</b></div></div>`));
       if (s.shadeRounds > 0) side.append(BL.html(`<p class="note" style="color:var(--warn)">Zu wenig Licht: Wächst dein Stamm nicht bald auf 2, verkümmerst du in ${4 - s.shadeRounds} ${4 - s.shadeRounds === 1 ? "Runde" : "Runden"}.</p>`));
+      if (s.forst) { const n = Math.ceil((Sp.cut - s.age) / YEARS);
+        side.append(BL.html(`<p class="note" style="${n <= 1 ? "color:var(--warn)" : ""}"><b>🪓 Forst.</b> Deine Art wird mit ${CUT_RANGE[s.sp]} Jahren geerntet (Umtriebszeit). ${n <= 1 ? "Nach dieser Runde kommt der Förster." : `Noch ${n} Runden bis zur Fällung.`}</p>`)); }
       if (s.kr) side.append(BL.html(`<p class="note"><b>Krüppelwuchs.</b> ${s.kr} Der Stamm wird höchstens ${capS()}.</p>`));
       const st = stage();
       const later = { saemling: `Als Jungbaum kommen Abwehrstoffe dazu, Samen ab Stamm ${Sp.mature}.`, jung: `Samen bildest du erst, wenn du mannbar bist (Stamm ${Sp.mature}).`,
@@ -621,10 +658,10 @@ BL.Game = (function () {
     } else {
       if (s.sub == null) dealDead();
       const sb = SUBS[s.sub];
-      side.append(BL.html(`<div class="ev"><span class="label">Totholz · ${["Stehendes Totholz", "Liegender Stamm", "Mulm und Humus"][sb.main]} · Stufe ${s.sub + 1} von ${SUBS.length} · Runde ${s.subPick + 1} von ${SUB_ROUNDS}</span><h3>${sb.n}</h3>
+      side.append(BL.html(`<div class="ev"><span class="label">Totholz · ${s.stubben ? (sb.main < 2 ? "Baumstubben" : "Mulm und Humus") : ["Stehendes Totholz", "Liegender Stamm", "Mulm und Humus"][sb.main]} · Stufe ${s.sub + 1} von ${SUBS.length} · Runde ${s.subPick + 1} von ${subRounds()}</span><h3>${sb.n}</h3>
         <p class="note" title="${sb.txt}">${sb.txt}</p>
-        <p class="last">Dein Baum ist ${s.deathCause}${s.deadYears ? `, das ist ${s.deadYears} Jahre her` : ""}. Ein toter Baum beherbergt oft mehr Arten als ein lebender. Wähle, wer als Nächstes einzieht.</p>
-        <div class="row" style="gap:4px">${SUBS.map((x, k) => `<span class="chip" style="font-size:.68rem;${k === s.sub ? "background:var(--accent);color:var(--accent-text)" : k < s.sub ? "opacity:.5" : ""}">${x.n}</span>`).join("")}</div></div>`));
+        <p class="last">Dein Baum ist ${s.deathCause}${s.deadYears ? `, das ist ${s.deadYears} Jahre her` : ""}. ${s.stubben ? "Der Stamm liegt jetzt im Sägewerk: Nur Stubben, Wurzeln und Reisig bleiben im Wald, stehendes und liegendes Totholz fehlen." : "Ein toter Baum beherbergt oft mehr Arten als ein lebender."} Wähle, wer als Nächstes einzieht.</p>
+        <div class="row" style="gap:4px">${SUBS.map((x, k) => `<span class="chip" style="font-size:.68rem;${k === s.sub ? "background:var(--accent);color:var(--accent-text)" : k < s.sub ? "opacity:.5" : ""}${s.stubben && !STUMP_SUBS.includes(k) ? ";text-decoration:line-through;opacity:.4" : ""}">${x.n}</span>`).join("")}</div></div>`));
       side.append(BL.html(`<div class="market">${s.market.map(n => { const d = DEAD.find(x => x.n === n);
         return `<div class="mcard" title="${d.txt}"><div class="top"><span class="em" aria-hidden="true">${d.e}</span><h4 lang="de">${d.n}</h4></div><span class="meta">${deadPts(d)} P${bon(d) ? " (Bonus für deine Art)" : ""}</span><p class="note" style="font-size:.74rem;margin:0">${d.txt}</p><button class="btn primary" data-d="${n}">Einziehen</button></div>`; }).join("")}</div>`));
     }
@@ -640,22 +677,46 @@ BL.Game = (function () {
       `<button data-bi="${k}" aria-pressed="${pickBiome === k}" style="${pickBiome === k ? "border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)" : ""}"><b style="font-family:var(--display);font-weight:400;font-size:1.1rem">${b.n}</b><span class="note">${b.txt}</span><span class="mono" style="font-size:.75rem">${b.sp.map(x => SPECIES[x].name).join(", ")}</span></button>`).join("")}</div>`;
     const node = BL.html(`<div class="stack">${biomes}${pickBiome ? `<h3>2. Welche Baumart wächst hier?</h3><p class="note">Zur Wahl stehen nur Arten, die für diesen Standort typisch sind.</p>` : ""}<div class="species-pick">${(pickBiome ? BIOMES[pickBiome].sp : []).map(k => [k, SPECIES[k]]).map(([k, sp]) =>
       `<button data-sp="${k}"><div class="lf">${BL.leafSVG(BL.tree(k).leaf)}</div><b style="font-family:var(--display);font-weight:400;font-size:1.1rem">${sp.name}</b><span class="note">${sp.txt}</span><span class="mono" style="font-size:.75rem">wird etwa ${sp.max} Jahre alt${best[k] ? " · Rekord " + best[k] + " Punkte" : ""}</span></button>`).join("")}</div>
-      <p class="note">Wie das Spiel geht, steht unter 📖 Anleitung.</p></div>`);
+      <p class="note">Ob du im Forst (wirst mit dem Erntealter gefällt) oder im Naturwald (lebst, bis du stirbst) keimst, entscheidet der Zufall. Wie das Spiel geht, steht unter 📖 Anleitung.</p></div>`);
     node.addEventListener("click", e => {
       const bi = e.target.closest("[data-bi]"), b = e.target.closest("[data-sp]");
       if (bi) { pickBiome = bi.dataset.bi; render(); } else if (b) start(b.dataset.sp, pickBiome);
     });
     root.append(node);
   }
+  // Gegenüberstellung: dieses Spiel neben dem Mittel aller beendeten Spiele derselben Art im Forst und im Naturwald
+  const ROWS = [["alter", "Lebensdauer (Jahre)", 0], ["bio", "Biomasse (t Trockenmasse, geschätzt)", 1], ["holz", "davon als Holz geerntet (t)", 1], ["wald", "davon im Wald geblieben (t)", 1],
+    ["bewohner", "Bewohner am lebenden Baum", 1], ["totholz", "Arten im Totholz", 1], ["totholzJahre", "Jahre als Totholz", 0], ["arten", "Arten insgesamt (Biodiversität)", 1],
+    ["lebensraeume", "besiedelte Lebensräume", 1], ["artenJahre", "Arten-Jahre (wie lange Leben unterstützt)", 0], ["punkte", "Punkte", 1]];
+  function compare() {
+    const all = BL.store.get("gamestats", []).filter(r => r.sp === s.sp), me = stats(), Sp = SPECIES[s.sp];
+    const F = all.filter(r => r.forst), N = all.filter(r => !r.forst);
+    const avg = (L, k) => L.length ? L.reduce((a, r) => a + r[k], 0) / L.length : null;
+    const cell = (v, d, hi) => `<td class="num"${hi ? ' style="font-weight:700"' : ""}>${v == null ? "–" : BL.fmt(v, d)}</td>`;
+    const body = ROWS.map(([k, n, d]) => {
+      const f = avg(F, k), nn = avg(N, k), hi = f != null && nn != null && f !== nn ? (f > nn ? "f" : "n") : "";
+      return `<tr><td>${n}</td>${cell(me[k], ["bio", "holz", "wald"].includes(k) ? 1 : 0)}${cell(f, d, hi === "f")}${cell(nn, d, hi === "n")}</tr>`;
+    }).join("");
+    const missing = !F.length ? "im Forst" : !N.length ? "im Naturwald" : "";
+    return `<div class="panel stack"><h3>Forst oder Naturwald?</h3>
+      <p class="note" style="margin:0">Mittelwerte aller beendeten Spiele als ${Sp.name}. Fett: der höhere Wert.${missing ? ` Noch kein Spiel ${missing}: Spiel nochmal, der Zufall entscheidet.` : ""}</p>
+      <div style="overflow-x:auto"><table class="data"><tr><th></th><th class="num">Dieses Spiel (${WALD(s.forst)})</th><th class="num">Ø Forst (${F.length})</th><th class="num">Ø Naturwald (${N.length})</th></tr>${body}</table></div>
+      <p class="note" style="margin:0">Biomasse grob nach Stamm, Krone und Wurzel geschätzt. Arten-Jahre zählen, wie viele Jahre jede Art an deinem Baum oder in seinem Totholz leben konnte.</p></div>
+      <div class="panel prose"><h3>Forst und Naturwald in Zahlen</h3>
+      <p>Im <b>Wirtschaftswald</b> wird ein Baum gefällt, wenn er den gewünschten Durchmesser hat (Umtriebszeit): Birke und Erle mit etwa 60–80, Fichte mit 80–100, Kiefer mit 100–140, Buche mit 120–140 und Eiche mit 180–240 Jahren. Von Natur aus könnten viele Arten zwei- bis dreimal so alt werden. Der Stamm wird zu Bauholz, Möbeln, Papier oder Brennholz und hält den Kohlenstoff noch eine Weile fest.</p>
+      <p>Im <b>Naturwald</b> altert der Baum, bekommt Höhlen, Risse und tote Äste und zerfällt schließlich an Ort und Stelle. Die Bundeswaldinventur 2022 zählte im deutschen Wald im Mittel rund 29 m³ Totholz je Hektar; in Naturwäldern und Urwaldresten sind es oft 100 m³ und mehr. Etwa jede fünfte Waldart ist auf Totholz angewiesen, viele davon auf dicke, alte Stämme.</p>
+      <p>Deshalb lassen Förster heute oft einzelne <b>Habitatbäume</b> stehen und Totholz liegen: Holz ernten und Lebensraum erhalten schließen sich nicht ganz aus.</p></div>`;
+  }
   function renderOver() {
     const p = score(), best = BL.store.get("gamebest", {});
     root.append(BL.html(`<div class="gm"><div class="stack">${tableau()}</div><div class="stack">
-      <div class="panel stack"><h3>${p.sum} Punkte</h3><p>Deine ${SPECIES[s.sp].name} (${B().n}) wurde ${s.age} Jahre alt und ist ${s.deathCause}.${s.kr ? " Sie wuchs als Krüppel." : ""}</p>
+      <div class="panel stack"><h3>${p.sum} Punkte</h3><p>Deine ${SPECIES[s.sp].name} (${B().n}, ${WALD(s.forst)}) wurde ${s.age} Jahre alt und ist ${s.deathCause}.${s.kr ? " Sie wuchs als Krüppel." : ""}</p>
       <table class="data"><tr><td>Alter (1 je ${YEARS} Jahre)</td><td class="num">${p.alter}</td></tr><tr><td>Samen (2 je Samen)</td><td class="num">${p.samen}</td></tr>
         <tr><td>Bewohner</td><td class="num">${p.bewohner}</td></tr><tr><td>Samenverstecker</td><td class="num">${p.extra}</td></tr>
         <tr><td>Gemeinschaften</td><td class="num">${p.gemeinschaft}</td></tr><tr><td>Vielfalt der Lebensräume</td><td class="num">${p.vielfalt}</td></tr><tr><td>Totholz-Bewohner</td><td class="num">${p.totholz}</td></tr></table>
       <p class="note">Rekord für diese Art: ${best[s.sp] || p.sum} Punkte</p>
       <div class="row"><button class="btn primary" id="gm-again">Nochmal als ${SPECIES[s.sp].name}</button><button class="btn" id="gm-other">Andere Baumart</button></div></div>
+      ${compare()}
       <div class="panel prose"><h3>Was du gelernt hast</h3><p>Ein Baum muss ständig abwägen: Blätter bringen Zucker, kosten aber Wasser. Wurzeln bringen Wasser und Halt, aber kein Licht. Wer schnell in die Höhe wächst, entkommt dem Schatten, wird aber sturmanfälliger. Und nach dem Tod ist er noch Jahrzehnte lang Lebensraum und Nährstoffquelle für den Wald.</p></div></div></div>`));
     paintTree(BL.$(".gtree", root));
     BL.$("#gm-again", root).onclick = () => start(s.sp, s.biome || "buchenwald");
