@@ -26,6 +26,7 @@ export const STANDARD_FAECHER: Record<string, string[]> = {
   gleichungswaage: ["Mathematik", "Physik", "Chemie"],
   bildformate: ["Informatik"],
   vierecke: ["Mathematik"],
+  geometrie: ["Mathematik"],
   binaerrechner: ["Informatik", "Mathematik"],
   funktionen: ["Mathematik"],
   ki: ["Informatik"],

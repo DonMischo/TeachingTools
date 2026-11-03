@@ -147,6 +147,9 @@ CATALOG: list[CatalogTool] = [
     CatalogTool("vierecke", "📐 Vierecke", "📐", "simulationen", {
         "use": _cap(True, True),
     }),
+    CatalogTool("geometrie", "📏 Geometrie", "📏", "simulationen", {
+        "use": _cap(True, True),
+    }),
     CatalogTool("binaerrechner", "◈ Binär-Rechner", "◈", "simulationen", {
         "use": _cap(True, True),
     }),

@@ -37,6 +37,14 @@ const ALL_CARDS: Werkzeug[] = [
     color: "#8b5cf6",
   },
   {
+    slug: "geometrie",
+    href: "/simulationen/geometrie",
+    icon: "📏",
+    title: "Geometrie",
+    description: "Grundbegriffe für Klasse 5–7: Winkel messen und zeichnen mit Winkelmesser und Geodreieck, Winkelarten; Punkt, Strecke, Strahl, Gerade, parallel und senkrecht, Abstand; Neben-, Scheitel-, Stufen- und Wechselwinkel farbig gekoppelt; Achsen-, Punkt- und Drehsymmetrie auf Kästchenpapier und Spiegeln im Koordinatensystem. Dazu Übungen und Sachaufgaben mit Word-Export und das Spiel Winkel-Billard.",
+    color: "#0ea5e9",
+  },
+  {
     slug: "binaerrechner",
     href: "/simulationen/binaerrechner",
     icon: "◈",

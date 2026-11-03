@@ -216,6 +216,18 @@ simulationen:
       - "Anwendungsaufgaben: Garten einzäunen, Bad fliesen, Wand streichen, Drachen bauen, Dach decken, Grundstückspreis, Rasen säen, Sportplatz"
       - Übungen und Anwendungen als Word-Arbeitsblatt (.docx) mit Skizzen, Antwortlinien und Lösungen hinten
       - "Spiel Flächen-Duell: zwei Vierecke auf Kästchenpapier, das größere antippen; 60 s, Serienbonus, Flächen rücken mit der Serie zusammen"
+  - id: geometrie
+    name: Geometrie
+    faehigkeiten: {use: [true, true]}
+    kann:
+      - "Winkel ziehen, messen und zeichnen mit drehbarem Winkelmesser (Vollkreis) oder Geodreieck; Einrasten auf 1°, 5°, 15°"
+      - Winkelarten (spitz, recht, stumpf, gestreckt, überstumpf, Vollwinkel) und Bezeichnungen (Scheitel, Schenkel, ∠ASB, griechische Buchstaben)
+      - "Lagebeziehungen auf Kästchenpapier: Strecke, Strahl, Gerade, parallel und senkrecht (∥ ⊥), Schnittpunkt und Schnittwinkel, Abstand Punkt–Gerade"
+      - "Neben-, Scheitel-, Stufen- und Wechselwinkel an geschnittenen Geraden, farbig gekoppelt, mit kippbarer Parallele und Übungsmodus"
+      - "Symmetrie: Figuren an Achsen und am Punkt ergänzen, Symmetrieachsen finden, Drehwinkel bestimmen"
+      - "Spiegeln im Koordinatensystem an x-Achse, y-Achse, Parallelen und Ursprung mit Bildkoordinaten"
+      - "Übungen und Sachaufgaben (Uhr, Kompass, Bahnübergang, Billard, Spiegelschrift, Windrad, Schatzkarte, Leiter) mit Skizze, als Word-Arbeitsblatt (.docx)"
+      - "Spiel Winkel-Billard: über die Bande ins Loch, Einfallswinkel = Ausfallswinkel, Spiegeltrick, Rekord im Browser"
   - id: binaerrechner
     name: Binär-Rechner
     kann:

@@ -725,6 +725,21 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto." },
     ],
   },
+  geometrie: {
+    title: "Geometrie",
+    intro: "Grundbegriffe für Klasse 5–7: Winkel, Lage, Winkel an Geraden und Symmetrie — acht Blätter zum Ausprobieren, Üben und Spielen.",
+    sections: [
+      { label: "📐 Winkel", text: "Punkt B ziehen (beim Erkunden auch A), Einrasten auf 1°, 5° oder 15°. Winkelmesser (Vollkreis) oder Geodreieck liegen mit dem Nullpunkt auf dem Scheitel S und lassen sich drehen — angelegt wird wie im Heft: 0° auf den ersten Schenkel. Die Winkelart (spitz, recht, stumpf, gestreckt, überstumpf, Vollwinkel) färbt Bogen und Liste; Bezeichnungen Scheitel, Schenkel, ∠ASB und ein griechischer Buchstabe nach Wahl. »Messen« würfelt einen Winkel in beliebiger Lage zum Ablesen (±1°), »Zeichnen« gibt die Größe vor." },
+      { label: "∥ Lagebeziehungen", text: "Kästchenpapier, Punkte rasten auf Gitterpunkten ein (1 Kästchen ≙ 1 cm). Strecke, Strahl und Gerade durch A und B mit Länge der Strecke; zwei Geraden g und h mit parallel (∥), senkrecht (⊥) oder Schnittpunkt S und Schnittwinkel, Knöpfe »h ∥ g« und »h ⊥ g«; Abstand Punkt–Gerade als Lot mit Fußpunkt F und Länge d." },
+      { label: "🛤️ Winkel an Geraden", text: "Zwei Geraden g und h, geschnitten von s (Griff ziehen oder Regler). Die acht Winkel α₁ … δ₂ sind farbig gekoppelt: gleiche Farbe = gleich groß. Winkel antippen und Neben-, Scheitel-, Stufen- oder Wechselwinkel wählen, die Partner leuchten mit Satz und Rechnung auf. »h kippen« macht h schief — dann sind Stufen- und Wechselwinkel nicht mehr gleich. »Üben« fragt: Tippe den Stufenwinkel zu β₂ …" },
+      { label: "🦋 Symmetrie", text: "Auf Kästchenpapier: eine halbe Figur an einer Achse (senkrecht, waagerecht, schräg) oder am Punkt Z ergänzen — Kästchen antippen, prüfen, Lösung zeigen. »Achsen finden«: alle Symmetrieachsen einer gewürfelten Figur wählen und sagen, ob sie punktsymmetrisch ist. »Drehen«: eine Kopie von Windrad, Stern, Vieleck oder Propeller drehen, bis sie passt, und den kleinsten Drehwinkel angeben." },
+      { label: "🪞 Spiegeln im Koordinatensystem", text: "Punkt, Dreieck oder Viereck an der x-Achse, der y-Achse, einer Parallelen (x = k, y = k) oder am Ursprung spiegeln. Bildpunkte im Koordinatensystem antippen oder die Koordinaten eintragen; »Regel & Hilfslinien« zeigt die Spiegelregel und die Verbindungen PP′ (zählt dann nicht)." },
+      { label: "✍️ Übungen", text: "Gewürfelt mit Skizze: Winkelarten, Neben- und Scheitelwinkel, Winkel an Parallelen, Lage (Strecke/Strahl/Gerade, parallel/senkrecht), Abstand auf Kästchenpapier, Symmetrieachsen zählen, Drehwinkel und Spiegeln im Koordinatensystem. Arten an- und abwählen, Tipps einzeln, Lösungsweg, Punktestand. »📄 Arbeitsblatt (.docx)« baut ein Word-Dokument mit Skizzen, Antwortlinien und auf Wunsch den Lösungen." },
+      { label: "🏡 Anwendungen", text: "Sachaufgaben mit Bild: Winkel zwischen Uhrzeigern, Drehen nach Himmelsrichtungen, Bahnübergang an parallelen Straßen, Billardkugel an der Bande, Spiegelschrift, Windrad & Co. (Drehsymmetrie), Schatzkarte im Koordinatensystem und Leiter anlehnen (Anstellwinkel 65°–75°). Ebenfalls als Word-Arbeitsblatt." },
+      { label: "🎱 Winkel-Billard", text: "Spiel: Die Kugel muss über mindestens eine (später zwei) Banden ins Loch. Gezielt wird mit einem ganzen Winkel — auf den Tisch tippen, Regler, ± oder eintippen; die gestrichelte Linie zeigt die erste Bahn. Einfallswinkel = Ausfallswinkel. Zehn Runden mit je drei Stößen (3, 2, 1 Punkt), ab Runde 7 mit Hindernis. Der 🪞 Spiegeltrick zeigt das Loch hinter den Banden und die zweite Bahn (−1 Punkt). Rekord bleibt im Browser." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
+    ],
+  },
   vierecke: {
     title: "Vierecke",
     intro: "Sechs Vierecke der Klasse 5 mit Formeln und Eigenschaften, zwei Aufgaben zum Anfassen, gewürfelte Übungen und Sachaufgaben mit Word-Export und ein Spiel.",

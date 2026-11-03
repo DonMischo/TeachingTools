@@ -27,6 +27,7 @@ export const SIM_STATIONEN: Record<string, { name: string; icon: string; Kompone
   abacus: { name: "Abakus", icon: "🧮", Komponente: laden(() => import("@/components/simulationen/Abakus")) },
   bildformate: { name: "Bildformate", icon: "🖼️", Komponente: laden(() => import("@/components/simulationen/Bildformate")) },
   vierecke: { name: "Vierecke", icon: "📐", Komponente: laden(() => import("@/components/simulationen/Vierecke")) },
+  geometrie: { name: "Geometrie", icon: "📏", Komponente: laden(() => import("@/components/grundbegriffe/Geometrie")) },
   dreiecke: { name: "Dreiecke", icon: "△", Komponente: laden(() => import("@/components/dreiecke/Dreiecke")) },
   binaerrechner: { name: "Binär-Rechner", icon: "◈", Komponente: laden(() => import("@/components/simulationen/Binaerrechner")) },
   funktionen: { name: "Funktionen", icon: "📈", Komponente: laden(() => import("@/components/simulationen/Funktionen")) },

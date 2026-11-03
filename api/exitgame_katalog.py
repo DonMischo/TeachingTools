@@ -121,6 +121,12 @@ WERKZEUGE = {
             "winkel?": "Startdreieck als Winkel, z.B. {\"alpha\": 50, \"beta\": 60}",
         },
     },
+    "geometrie": {
+        "name": "Geometrie (Grundbegriffe)",
+        "config": {
+            "reiter?": "winkel|lage|saetze|symmetrie|koordinaten|uebungen|anwendungen|spiel",
+        },
+    },
     "rechenregeln": {
         "name": "Rechenregeln",
         "config": {

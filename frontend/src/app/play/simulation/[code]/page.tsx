@@ -19,6 +19,7 @@ import Gleichungswaage from "@/components/waage/Gleichungswaage";
 import Abakus from "@/components/simulationen/Abakus";
 import Bildformate from "@/components/simulationen/Bildformate";
 import Vierecke from "@/components/simulationen/Vierecke";
+import Geometrie from "@/components/grundbegriffe/Geometrie";
 import Binaerrechner from "@/components/simulationen/Binaerrechner";
 import FunktionenWerkzeug from "@/components/simulationen/FunktionenWerkzeug";
 import Rechenregeln from "@/components/simulationen/Rechenregeln";
@@ -67,6 +68,7 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   abacus: { title: "Abakus", icon: "🧮", node: <Abakus /> },
   bildformate: { title: "Bildformate", icon: "🖼️", node: <Bildformate /> },
   vierecke: { title: "Vierecke", icon: "📐", node: <Vierecke /> },
+  geometrie: { title: "Geometrie", icon: "📏", node: <Geometrie /> },
   binaerrechner: { title: "Binär-Rechner", icon: "◈", node: <Binaerrechner /> },
   funktionen: { title: "Funktionen und Koordinatensystem", icon: "📈", node: <FunktionenWerkzeug /> },
   rechenregeln: { title: "Rechenregeln", icon: "🍎", node: <Rechenregeln /> },
