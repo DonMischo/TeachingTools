@@ -64,6 +64,7 @@ export const STANDARD_FAECHER: Record<string, string[]> = {
   farbmodelle: ["Informatik", "Kunst", "Physik"],
   tippen: ["Informatik"],
   maus: ["Informatik"],
+  kikompass: ["Informatik", "Sozialkunde"],
   markieren: ["Informatik"],
   pcbau: ["Informatik"],
   klikk: ["Informatik", "Sozialkunde"],

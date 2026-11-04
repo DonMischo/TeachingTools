@@ -204,6 +204,13 @@ Jede Simulation trägt Fächer (auch mehrere, z. B. Geografie und Physik); die �
 - Prüfung je Teil: beim ersten Bestehen 5 Hauspunkte für die Klasse, Urkunde als Bild und PDF
 - Klassenübersicht für die Lehrkraft und Bestenlisten (Gäste mit Namen)
 
+### 🧭 KI-Kompass
+- Gemeinsamer Rahmen für KI-Kompetenz, in den Lernende (Kl. 5–10) und Lehrkräfte zusammen hineinwachsen, ab Stufe 0 »Einstieg«
+- Kompetenzraster nach Alles, Falck, Flick & Schulz (2025, CC BY-SA 4.0): Verstehen, Anwenden, Reflektieren, Mitgestalten × fünf Stufen als »Ich kann …«-Sätze; Spinne mit Messpunkten und Vorher/Nachher
+- KI-Führerschein: 14 Stationen in vier Modulen mit Erklärung, Auftrag, Selbst-Check und Reflexion; KI-Teil über AIS.chat (Thüringer Schulportal) mit Leitfaden und Systemtext-Vorschlägen für Lehrkräfte
+- Je Modul einmal 5 Hauspunkte, Urkunde als PDF, Portfolio mit KI-Nutzungserklärung als Word-Datei
+- Klassenübersicht mit Klassen-Spinne und Reflexionen (nur für die Lehrkraft); Recherche und Quellen in docs/ki-kompass-recherche.md
+
 ### 🖍️ Markieren & Bearbeiten
 - Anschluss an den Maus-Führerschein: Textbearbeitung in einem echten Textfeld, das sich wie Word verhält
 - 15 Lektionen, je eine Technik: Doppel- und Dreifachklick, Ziehen, Umschalt + Klick, Pos1/Ende, Umschalt + Pos1/Ende, Strg + Pfeil, Strg + Umschalt + Pfeil, Umschalt + Pfeil, Strg + A, Löschen, Überschreiben, Strg + C/V, Strg + X, Strg + Z — gezählt wird nur mit der geübten Technik

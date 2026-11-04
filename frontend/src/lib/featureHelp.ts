@@ -108,6 +108,18 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein). Das Wettschreiben hat seinen eigenen Code je Rennen." },
     ],
   },
+  kikompass: {
+    title: "KI-Kompass",
+    intro: "Ein gemeinsamer Rahmen, in den Lernende (Kl. 5–10) und Lehrkräfte hineinwachsen. Er beginnt bei Stufe 0 »Einstieg«, weil alle auf Basisniveau starten. Grundlage ist das KI-Kompetenzmodell von Alles, Falck, Flick & Schulz (2025, CC BY-SA 4.0).",
+    sections: [
+      { label: "🕸️ Kompetenzraster", text: "Vier Bereiche (Verstehen, Anwenden, Reflektieren, Mitgestalten) × fünf Stufen (0, Basis 1, Basis 2, Vertieft, Expertise) als »Ich kann …«-Sätze. Eine Stufe gilt ab zwei Dritteln angekreuzter Sätze, und nur, wenn alle Stufen darunter erreicht sind. »Messpunkt speichern« hält den Stand mit Datum fest. Die Spinne vergleicht ihn mit einem früheren Messpunkt." },
+      { label: "🪪 KI-Führerschein", text: "14 Stationen in vier Modulen, je Station: Erklärung, Auftrag, ggf. AIS.chat-Teil, Selbst-Check (2 von 3 richtig) und Reflexion (je Antwort mind. 20 Zeichen). Ist ein Modul fertig, bekommen Schülerkonten einmalig 5 Hauspunkte. Mit allen vier Modulen gibt es die Urkunde als PDF." },
+      { label: "🤖 AIS.chat", text: "Die echte KI läuft in AIS.chat (Thüringer Schulportal), nicht in TT. Die Lehrkraft legt je Station eine Lernumgebung an (Vorschlag für den Systemtext unter »Für Lehrkräfte«) und lädt per QR-Code ein. Lernende brauchen kein Konto und geben keine persönlichen Daten ein. In TT liegt nur ihre Reflexion." },
+      { label: "📒 Portfolio", text: "Alle Reflexionen und Messpunkte, dazu eine Vorlage für die KI-Nutzungserklärung. Export als Word-Datei." },
+      { label: "👩‍🏫 Klassenübersicht", text: "Unter »Für Lehrkräfte«: alle, die über deinen Code mitmachen, mit Stationen je Modul, Messpunkten und Reflexionen (nur für dich sichtbar). Die Klassen-Spinne zeigt den Mittelwert, gestrichelt die ersten Messpunkte. Aktualisiert sich alle zehn Sekunden." },
+      { label: "💾 Speichern", text: "Mit Konto liegt der Stand am Server, über alle Geräte und Sitzungen hinweg. Gäste über den QR behalten ihn je Namen in diesem Browser." },
+    ],
+  },
   maus: {
     title: "Maus-Führerschein",
     intro: "Grundkurs am Computer für Kinder ab etwa zehn Jahren — Teil 1 (Maus), Teil 2 (Tastatur, Dateien, Fenster, Speichern) und Teil 3 (Suchen, Apps, Bildschirmfoto, Aussehen), jede Stufe mit »Vorführen«, »Weiter« und 🔊 Vorlesen.",

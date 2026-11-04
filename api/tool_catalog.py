@@ -106,6 +106,9 @@ CATALOG: list[CatalogTool] = [
     # Maus-Führerschein rechnet im Browser: kein Hosten, kein Erstellen — die
     # Sitzung ist nur der Beitritts-Code (siehe routers/tool_sessions.py).
     CatalogTool("maus", "🐭 Maus-Führerschein", "🐭", "simulationen", {"use": _cap(True, True)}),
+    # KI-Kompass: Raster-Selbsteinschätzung + KI-Führerschein; der Stand liegt am Konto,
+    # die Sitzung spiegelt ihn für die Lehrkraft (routers/kikompass.py).
+    CatalogTool("kikompass", "🧭 KI-Kompass", "🧭", "simulationen", {"use": _cap(True, True)}),
     CatalogTool("markieren", "🖍️ Markieren & Bearbeiten", "🖍️", "simulationen", {"use": _cap(True, True)}),
     CatalogTool("pcbau", "🪛 PC-Werkstatt", "🪛", "simulationen", {"use": _cap(True, True)}),
     CatalogTool("klikk", "📱 Klikk", "📱", "simulationen", {"use": _cap(True, True)}),

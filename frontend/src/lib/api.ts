@@ -1289,6 +1289,13 @@ export type MausPruefungOut = { bestanden: boolean; punkte: number; schon_vergeb
 /** Beitritt über Code/QR; `token` nur für Gäste ohne Konto. */
 export type MausZugang = { code: string; token: string | null };
 
+/** KI-Kompass: Messpunkte im Raster + Stand der Führerschein-Stationen. */
+export type KiKompassStand = {
+  einschaetzungen: { datum: string; haken: string[] }[];
+  stationen: Record<string, { quiz: number; reflexion: string[]; erledigt_am?: string | null }>;
+};
+export type KiKompassZeile = KiKompassStand & { name: string; klasse: string | null; gast: boolean };
+
 // Bestenliste der Challenge in »Markieren & Bearbeiten« (siehe api/routers/markieren.py)
 export type MarkierModus = "markieren" | "bearbeiten" | "gemischt";
 export type MarkierEintrag = {
@@ -2016,6 +2023,23 @@ export const api = {
       }),
     uebersicht: (code: string) =>
       apiFetch<AlgoUebersichtZeile[]>(`algo/sitzung/${encodeURIComponent(code)}/uebersicht`),
+  },
+
+  // KI-Kompass: Stand am Konto, Spiegel in die Sitzung, Modul-Prüfung (siehe api/routers/kikompass.py)
+  kikompass: {
+    stand: () => apiFetch<KiKompassStand>("kikompass/stand"),
+    speichern: (body: KiKompassStand) =>
+      apiFetch<{ ok: boolean }>("kikompass/stand", { method: "PUT", body: JSON.stringify(body) }),
+    sitzungStand: (zugang: MausZugang, body: KiKompassStand) =>
+      apiFetch<{ ok: boolean }>(`kikompass/sitzung/${encodeURIComponent(zugang.code)}/stand`, {
+        method: "PUT",
+        body: JSON.stringify(body),
+        headers: zugang.token ? { Authorization: `Bearer ${zugang.token}` } : undefined,
+      }),
+    uebersicht: (code: string) =>
+      apiFetch<KiKompassZeile[]>(`kikompass/sitzung/${encodeURIComponent(code)}/uebersicht`),
+    pruefung: (body: { modul: string; code?: string | null }) =>
+      apiFetch<MausPruefungOut>("kikompass/pruefung", { method: "POST", body: JSON.stringify(body) }),
   },
 
   // Verkehrssicherheit (siehe api/routers/verkehr.py)

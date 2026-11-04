@@ -99,6 +99,8 @@ app.include_router(twofa_router.router)
 from .routers import maus as maus_router
 app.include_router(maus_router.router)
 app.include_router(maus_router.router_sitzung)
+from .routers import kikompass as kikompass_router
+app.include_router(kikompass_router.router)
 from .routers import markieren as markieren_router
 app.include_router(markieren_router.router)
 from .routers import klikk as klikk_router

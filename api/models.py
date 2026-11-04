@@ -2453,6 +2453,55 @@ class MausPruefung(Base):
     bestanden_am: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class KiKompassStand(Base):
+    """KI-Kompass: Selbsteinschätzungen im Kompetenzraster und Stand des
+    KI-Führerscheins (Selbst-Check + Reflexionstexte je Station).
+
+    Zeilen ohne ``session_id`` sind der eigene Stand eines Kontos über alle
+    Sitzungen hinweg (Messpunkte über Monate). Zeilen mit ``session_id``
+    spiegeln den Stand in eine Sitzung, damit die Lehrkraft ihn sieht. Gäste
+    haben nur solche Zeilen. Ausgaben der KI (AIS.chat) liegen hier nie,
+    nur die eigenen Reflexionen."""
+    __tablename__ = "ki_kompass_staende"
+    __table_args__ = (
+        UniqueConstraint("session_id", "student_id", name="uq_kikompass_student"),
+        UniqueConstraint("session_id", "teacher_id", name="uq_kikompass_teacher"),
+        UniqueConstraint("session_id", "guest_id", name="uq_kikompass_guest"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    session_id: Mapped[int | None] = mapped_column(
+        ForeignKey("tool_sessions.id", ondelete="CASCADE"), nullable=True, index=True
+    )
+    student_id: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"), nullable=True)
+    teacher_id: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="CASCADE"), nullable=True)
+    guest_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    klasse: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    gast: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
+    # [{"datum": "2026-11-04", "haken": ["v-0-1", ...]}, ...]
+    einschaetzungen: Mapped[list] = mapped_column(JSON, nullable=False, default=list, server_default="[]")
+    # {"<station_id>": {"quiz": int, "reflexion": [str, ...], "erledigt_am": str|None}}
+    stationen: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict, server_default="{}")
+    aktualisiert_am: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class KiKompassPruefung(Base):
+    """Bestandenes Modul des KI-Führerscheins: je Schüler·in und Modul genau
+    einmal, damit die Hauspunkte nicht doppelt vergeben werden."""
+    __tablename__ = "ki_kompass_pruefungen"
+    __table_args__ = (UniqueConstraint("student_id", "modul", name="uq_kikompass_pruefung"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    student_id: Mapped[int] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"), nullable=False)
+    modul: Mapped[str] = mapped_column(String(20), nullable=False)
+    punkte: Mapped[int] = mapped_column(Integer, nullable=False)
+    class_id: Mapped[int | None] = mapped_column(ForeignKey("classes.id", ondelete="SET NULL"), nullable=True)
+    bestanden_am: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class LebenStand(Base):
     """»Rock your Life«: Spielstand-Zusammenfassung und Protokoll einer Person in
     einer Sitzung — eine Zeile je Teilnehmer, damit die Lehrkraft sieht, wer wo

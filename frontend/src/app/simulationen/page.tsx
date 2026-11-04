@@ -341,6 +341,14 @@ const ALL_CARDS: Werkzeug[] = [
     color: "#fb7185",
   },
   {
+    slug: "kikompass",
+    href: "/simulationen/kikompass",
+    icon: "🧭",
+    title: "KI-Kompass",
+    description: "Gemeinsam in KI hineinwachsen: Kompetenzraster mit Spinne für Lernende und Lehrkräfte, KI-Führerschein mit 14 Stationen (Stufe 0 bis I) samt AIS.chat-Aufträgen, Portfolio und Klassenübersicht.",
+    color: "#1f6fb5",
+  },
+  {
     slug: "markieren",
     href: "/simulationen/markieren",
     icon: "🖍️",

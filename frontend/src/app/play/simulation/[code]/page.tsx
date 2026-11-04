@@ -56,6 +56,7 @@ import Stromkreis from "@/components/stromkreis/Stromkreis";
 import DiagrammWerkstatt from "@/components/diagramme/DiagrammWerkstatt";
 import Schichtenmodell from "@/components/schichten/Schichtenmodell";
 import Tippen from "@/components/tippen/Tippen";
+import KiKompass from "@/components/kikompass/KiKompass";
 import MausFuehrerschein, { schluesselFuerGast, schluesselFuerGastName } from "@/components/maus/MausFuehrerschein";
 import { SharedTimeline } from "@/components/timeline/SharedTimeline";
 import KartenQuizSpiel from "@/components/karten/KartenQuizSpiel";
@@ -107,6 +108,8 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   strukturformeln: { title: "Strukturformeln", icon: "⬡", node: <Strukturformeln /> },
   // Der Führerschein trägt in die Bestenliste ein — dafür braucht er Code und Gast-Token.
   maus: { title: "Maus-Führerschein", icon: "🐭", node: null },
+  // Der KI-Kompass spiegelt den Stand über Code und Gast-Token in die Übersicht der Lehrkraft.
+  kikompass: { title: "KI-Kompass", icon: "🧭", node: null },
   // Der Flug merkt sich Erforschtes je Code bzw. Konto — dafür braucht er den Code.
   sonnensystem: { title: "Sonnensystem", icon: "🪐", node: null },
   // Die Stadt ist ein Live-Raum je Code — dafür braucht sie Code und Gast-Token.
@@ -267,6 +270,16 @@ export default function SimulationJoinPage() {
                 ? `hp_algo_stand_konto-${auth.user_type}-${auth.student?.id ?? auth.teacher?.id ?? 0}`
                 : `hp_algo_stand_gast-${(guest.session?.name ?? code).trim().toLowerCase().replace(/\s+/g, " ")}`}
               onStand={s => { api.algo.fortschritt({ code, token: guest.token }, s).catch(() => { /* nur für die Übersicht */ }); }} />
+        : session.tool_slug === "kikompass"
+          ? <KiKompass
+              zugang={{ code, token: guest.token }}
+              name={auth?.student?.display_name ?? guest.session?.name ?? ""}
+              konto={!!auth}
+              // Gäste behalten ihren Stand je Namen in diesem Browser (wie beim Maus-Führerschein).
+              speicherSchluessel={auth
+                ? `konto-${auth.user_type}-${auth.student?.id ?? auth.teacher?.id ?? 0}`
+                : schluesselFuerGastName(guest.session?.name ?? "")
+                  ?? (guest.token ? schluesselFuerGast(code, guest.token) : `gast-${code}`)} />
         : session.tool_slug === "maus"
           ? <MausFuehrerschein
               zugang={{ code, token: guest.token }}
