@@ -24,7 +24,7 @@ export type Phase = {
   checkliste: string[];
   vorlagen: VorlageId[];
   /** Werkzeug im KI-Kompass, das hier hilft. */
-  werkzeug?: { titel: string; ziel: "raster" | "fuehrerschein" | "werkstatt" | "umbau" | "pruefen" | "projekte" | "uebersicht" };
+  werkzeug?: { titel: string; ziel: "raster" | "fuehrerschein" | "werkstatt" | "umbau" | "pruefen" | "pool" | "projekte" | "uebersicht" };
 };
 
 export const PHASEN: Phase[] = [
@@ -103,7 +103,7 @@ export const PHASEN: Phase[] = [
       "Ich bringe mich bei den Schulregeln oder beim Medienkonzept ein.",
     ],
     vorlagen: ["mini-fortbildung"],
-    werkzeug: { titel: "Projektkarten", ziel: "projekte" },
+    werkzeug: { titel: "Materialpool", ziel: "pool" },
   },
   {
     id: "E", buchstabe: "E", titel: "Evaluieren",

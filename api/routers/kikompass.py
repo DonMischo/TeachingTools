@@ -14,17 +14,19 @@
 Die Station-Ids je Modul spiegeln ``frontend/src/lib/kikompass/stationen.ts``.
 """
 import re
+from datetime import datetime
 from typing import Literal, Union
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field, field_validator
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from ..auth import Guest, get_current_teacher, get_current_user, get_player
 from ..availability import is_allowed, require_capability
 from ..database import get_db
 from ..display_names import short_name
-from ..models import KiKompassPruefung, KiKompassStand, Student, Teacher, ToolSession, Transaction
+from ..models import KiKompassMaterial, KiKompassPruefung, KiKompassStand, Student, Teacher, ToolSession, Transaction
 from .maus import _anzeigename, _buchende_lehrkraft, _haus_name, _teilnehmer
 
 router = APIRouter(prefix="/api/kikompass", tags=["kikompass"])
@@ -246,3 +248,156 @@ def pruefung(
     db.commit()
     return PruefungOut(bestanden=True, punkte=HAUSPUNKTE_JE_MODUL, schon_vergeben=False,
                        haus=_haus_name(db, user.class_id))
+
+
+# ───────────────────────────────────────────────────────── Materialpool ──
+# Für alle Lehrkräfte sichtbar, nicht für Schüler·innen oder Gäste.
+
+BEREICHE = {"verstehen", "anwenden", "reflektieren", "mitgestalten"}
+STUFEN = {"0", "Ia", "Ib", "II", "III"}
+DIMENSIONEN = {"mit", "ueber", "durch", "trotz", "ohne"}
+
+
+class MaterialIn(BaseModel):
+    titel: str = Field(min_length=1, max_length=200)
+    text: str = Field(default="", max_length=20000)
+    fach: str = Field(default="", max_length=60)
+    klassen: str = Field(default="", max_length=20)
+    bereich: str
+    stufe: str
+    dimension: str
+    art: str = Field(default="", max_length=80)
+    link: str | None = Field(default=None, max_length=500)
+
+    @field_validator("titel")
+    @classmethod
+    def _titel(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("Titel fehlt")
+        return v
+
+    @field_validator("bereich")
+    @classmethod
+    def _bereich(cls, v: str) -> str:
+        if v not in BEREICHE:
+            raise ValueError("Unbekannter Bereich")
+        return v
+
+    @field_validator("stufe")
+    @classmethod
+    def _stufe(cls, v: str) -> str:
+        if v not in STUFEN:
+            raise ValueError("Unbekannte Stufe")
+        return v
+
+    @field_validator("dimension")
+    @classmethod
+    def _dimension(cls, v: str) -> str:
+        if v not in DIMENSIONEN:
+            raise ValueError("Unbekannte Dimension")
+        return v
+
+    @field_validator("link")
+    @classmethod
+    def _link(cls, v: str | None) -> str | None:
+        v = (v or "").strip()
+        if not v:
+            return None
+        if not re.match(r"^https?://\S+$", v):
+            raise ValueError("Link muss mit http:// oder https:// beginnen")
+        return v
+
+
+class MaterialOut(BaseModel):
+    id: int
+    titel: str
+    text: str
+    fach: str
+    klassen: str
+    bereich: str
+    stufe: str
+    dimension: str
+    art: str
+    link: str | None
+    autor: str
+    eigen: bool
+    erstellt_am: datetime
+
+
+def _material_out(m: KiKompassMaterial, teacher: Teacher) -> MaterialOut:
+    return MaterialOut(
+        id=m.id, titel=m.titel, text=m.text, fach=m.fach, klassen=m.klassen, bereich=m.bereich,
+        stufe=m.stufe, dimension=m.dimension, art=m.art, link=m.link, autor=m.autor,
+        eigen=m.teacher_id == teacher.id, erstellt_am=m.erstellt_am,
+    )
+
+
+def _lehrkraft_darf(db: Session, teacher: Teacher) -> None:
+    if teacher.role != "admin" and not is_allowed(db, teacher, SLUG, "use"):
+        raise HTTPException(403, "Dieses Werkzeug ist für dich nicht freigeschaltet (kikompass/use).")
+
+
+def _eigenes_material(db: Session, material_id: int, teacher: Teacher) -> KiKompassMaterial:
+    m = db.get(KiKompassMaterial, material_id)
+    if m is None:
+        raise HTTPException(404, "Material nicht gefunden")
+    if m.teacher_id != teacher.id and teacher.role != "admin":
+        raise HTTPException(403, "Nur wer das Material eingestellt hat, darf es ändern.")
+    return m
+
+
+@router.get("/material", response_model=list[MaterialOut])
+def material_liste(
+    bereich: str | None = None,
+    stufe: str | None = None,
+    dimension: str | None = None,
+    q: str | None = None,
+    db: Session = Depends(get_db),
+    teacher: Teacher = Depends(get_current_teacher),
+):
+    _lehrkraft_darf(db, teacher)
+    query = db.query(KiKompassMaterial)
+    if bereich:
+        query = query.filter(KiKompassMaterial.bereich == bereich)
+    if stufe:
+        query = query.filter(KiKompassMaterial.stufe == stufe)
+    if dimension:
+        query = query.filter(KiKompassMaterial.dimension == dimension)
+    if q and q.strip():
+        muster = f"%{q.strip()[:100]}%"
+        query = query.filter(or_(
+            KiKompassMaterial.titel.ilike(muster), KiKompassMaterial.text.ilike(muster),
+            KiKompassMaterial.fach.ilike(muster),
+        ))
+    zeilen = query.order_by(KiKompassMaterial.erstellt_am.desc(), KiKompassMaterial.id.desc()).limit(500).all()
+    return [_material_out(m, teacher) for m in zeilen]
+
+
+@router.post("/material", response_model=MaterialOut, status_code=201)
+def material_anlegen(body: MaterialIn, db: Session = Depends(get_db), teacher: Teacher = Depends(get_current_teacher)):
+    _lehrkraft_darf(db, teacher)
+    autor, _, _ = _anzeigename(teacher)
+    m = KiKompassMaterial(teacher_id=teacher.id, autor=autor, **body.model_dump())
+    db.add(m)
+    db.commit()
+    db.refresh(m)
+    return _material_out(m, teacher)
+
+
+@router.put("/material/{material_id}", response_model=MaterialOut)
+def material_aendern(
+    material_id: int, body: MaterialIn, db: Session = Depends(get_db), teacher: Teacher = Depends(get_current_teacher),
+):
+    m = _eigenes_material(db, material_id, teacher)
+    for k, v in body.model_dump().items():
+        setattr(m, k, v)
+    db.commit()
+    db.refresh(m)
+    return _material_out(m, teacher)
+
+
+@router.delete("/material/{material_id}", status_code=204)
+def material_loeschen(material_id: int, db: Session = Depends(get_db), teacher: Teacher = Depends(get_current_teacher)):
+    db.delete(_eigenes_material(db, material_id, teacher))
+    db.commit()

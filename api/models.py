@@ -2488,6 +2488,29 @@ class KiKompassStand(Base):
     )
 
 
+class KiKompassMaterial(Base):
+    """Gemeinsamer Materialpool des KI-Kompass: Lehrkräfte teilen Material,
+    verschlagwortet nach Feld im Raster (Bereich × Stufe) und Dimension
+    (mit/über/durch/trotz/ohne KI). Sichtbar für alle Lehrkräfte; ändern darf
+    nur, wer es eingestellt hat, oder ein Admin."""
+    __tablename__ = "ki_kompass_material"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    teacher_id: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="SET NULL"), nullable=True, index=True)
+    autor: Mapped[str] = mapped_column(String(120), nullable=False)
+    titel: Mapped[str] = mapped_column(String(200), nullable=False)
+    text: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
+    fach: Mapped[str] = mapped_column(String(60), nullable=False, server_default="")
+    klassen: Mapped[str] = mapped_column(String(20), nullable=False, server_default="")
+    bereich: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
+    stufe: Mapped[str] = mapped_column(String(4), nullable=False)
+    dimension: Mapped[str] = mapped_column(String(10), nullable=False)
+    art: Mapped[str] = mapped_column(String(80), nullable=False, server_default="")
+    link: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    erstellt_am: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    geaendert_am: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
 class KiKompassPruefung(Base):
     """Bestandenes Modul des KI-Führerscheins: je Schüler·in und Modul genau
     einmal, damit die Hauspunkte nicht doppelt vergeben werden."""

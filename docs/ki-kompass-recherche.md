@@ -9,7 +9,7 @@ Grundlage sind die Quellen aus dem Workshop vom 03.11.2026. Stand der Recherche:
 
 | # | Quelle | Urheber·innen | Lizenz | Was wir übernehmen |
 |---|---|---|---|---|
-| Q1 | »KI-Kompetenzen für Lehrende und Lernende – Aus der Praxis für die Praxis – eine adaptierbare Basis« (13.03.2025, v2 18.03.2025), DOI [10.5281/zenodo.15047793](https://doi.org/10.5281/zenodo.15047793). Materialien auf der [TaskCards-Pinnwand](https://essen.taskcards.app/#/board/ba6226b4-e617-4134-8d6d-dc733dae8d9c/view?token=b490fc09-f845-4d6d-9ef7-9cc0ec548182) | Susanne Alles, Joscha Falck, Manuel Flick, Regina Schulz; Hg. VK:KIWA | Grafiken: **CC BY 4.0**. Beitragstext laut Impressum: **CC BY-SA 4.0** | Kompetenzraster (4 Bereiche × 3 Niveaustufen) als Daten, angepasst. **Namensnennung Pflicht.** Unsere Bearbeitung des Rasters steht unter CC BY-SA 4.0 (sicherste Lesart). |
+| Q1 | »KI-Kompetenzen für Lehrende und Lernende – Aus der Praxis für die Praxis – eine adaptierbare Basis« (13.03.2025, v2 18.03.2025), DOI [10.5281/zenodo.15047793](https://doi.org/10.5281/zenodo.15047793). Materialien auf der [TaskCards-Pinnwand](https://essen.taskcards.app/#/board/ba6226b4-e617-4134-8d6d-dc733dae8d9c/view?token=b490fc09-f845-4d6d-9ef7-9cc0ec548182) | Susanne Alles, Joscha Falck, Manuel Flick, Regina Schulz; Hg. VK:KIWA | Grafiken und Niveaustufen-Tabellen: **CC BY 4.0** (Vermerk auf jeder Grafik). Nur der Beitragstext (Zenodo-PDF, Impressum S. 15) steht unter CC BY-SA 4.0; den übernehmen wir nicht, nur paraphrasiert. | Kompetenzraster (4 Bereiche × 3 Niveaustufen) aus den Tabellen, angepasst. **Namensnennung Pflicht, Änderungen kennzeichnen.** (Korrigiert am 04.11.2026, vorher irrtümlich BY-SA.) |
 | Q2 | »Das AKTIV-Framework: KI souverän in Schule und Unterricht integrieren« (Blog, auch auf IQESonline), [manuelflick.de/blog/aktiv-framework](https://www.manuelflick.de/blog/aktiv-framework) | Manuel Flick | **Alle Rechte vorbehalten** | Nur die *Struktur* (Phasennamen, Idee). Alle Texte formulieren wir selbst und verlinken das Original. Kein Kopieren von Formulierungen oder Grafiken. |
 | Q3 | »Der Weg zur KI-Kompetenz in der Grundschule« (14.03.2025), [vom-labor-ins-klassenzimmer.de](https://vom-labor-ins-klassenzimmer.de/der-weg-zur-ki-kompetenz-in-der-grundschule/) | Kristin van der Meer & Jennifer Knellsen (Ulrike van der Meer in der Lizenzzeile) | **CC BY 4.0** | Idee einer **Vorstufe unter Niveau I** (Grundvoraussetzungen, Basiskompetenzen) und Aufteilung in kleine, realistische Schritte. Namensnennung. |
 | Q4 | »KI-Kompetenzen im Unterricht: Impulse für die Praxis« ([TaskCards-Pinnwand](https://www.taskcards.de/#/board/333906e3-30a1-4ebd-91a2-3e1847848f72/view?token=ae585604-8910-47f2-8f70-9d6b3adf5230)) | Andreas Fischer, Ulrike Friese, Katrin Minner, Sandra Ricker, Claus Zirwes; AK des VK:KIWA Thinktank (Leitung Dr. Melinda Veggian) | **nicht angegeben** → alle Rechte vorbehalten | Gliederung in 5 Lernbereiche und Aufgaben*ideen* (Titel als Anregung). Eigene Aufgaben schreiben, Pinnwand verlinken. |
@@ -18,7 +18,7 @@ Grundlage sind die Quellen aus dem Workshop vom 03.11.2026. Stand der Recherche:
 Weitere im Material zitierte Bezüge: KMK-Handlungsempfehlung zum Umgang mit KI (2024); Falck (2023), fünf Dimensionen *Lernen mit / über / durch / trotz / ohne KI*; Döbeli Honegger (2023); Weßels (2024), Begriff *AI Leadership*; EU-KI-Verordnung Art. 4 (KI-Kompetenzpflicht).
 
 **Pflicht-Namensnennung im Produkt** (Fußzeile jeder Raster-Ansicht):
-> Kompetenzraster nach Alles, Falck, Flick & Schulz (2025): *KI-Kompetenzen für Lehrende und Lernende*, VK:KIWA, DOI 10.5281/zenodo.15047793, CC BY-SA 4.0. Vorstufe angelehnt an van der Meer & Knellsen (2025), CC BY 4.0. Angepasst für TT.
+> Kompetenzraster nach Alles, Falck, Flick & Schulz (2025): *KI-Kompetenzen für Lehrende und Lernende*, VK:KIWA, DOI 10.5281/zenodo.15047793, CC BY 4.0. Vorstufe angelehnt an van der Meer & Knellsen (2025), CC BY 4.0. Für TT verändert (Ich-kann-Sätze, Niveau I geteilt, Stufe 0 ergänzt).
 
 ---
 
@@ -30,7 +30,7 @@ Weitere im Material zitierte Bezüge: KMK-Handlungsempfehlung zum Umgang mit KI 
 - Niveau I = Basis, II = vertieft, III = Expertise. Die Operatoren tragen die Stufe (benennen → vergleichen/erläutern → bewerten/entwickeln).
 - Zusatz-Tools der Autor·innen: Kompetenz-Analyzer (Selbsteinschätzung als **Kompetenzspinne**, Export csv/pdf/docx), Overlay mehrerer Spinnen für Gruppen, Flip-Cards mit Unterrichtsideen je Feld.
 
-**Raster (Q1, CC BY-SA 4.0, Operatoren fett wie im Original):**
+**Raster (Q1, CC BY 4.0, Operatoren fett wie im Original):**
 
 | | Niveau I | Niveau II | Niveau III |
 |---|---|---|---|

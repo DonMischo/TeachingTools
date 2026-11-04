@@ -12,8 +12,10 @@ import {
   type DimensionId, type EinsatzId, type MaterialWunsch, type Umbau,
 } from "@/lib/kikompass/werkstatt";
 import { baueDocx, herunterladen, type DocxBlock } from "@/lib/docx";
+import type { KiKompassMaterialIn } from "@/lib/api";
+import { Materialpool } from "./Materialpool";
 
-export type WerkstattTeil = "material" | "umbau" | "pruefen";
+export type WerkstattTeil = "material" | "umbau" | "pruefen" | "pool";
 
 function Kopieren({ text }: { text: string }) {
   const [ok, setOk] = useState(false);
@@ -55,21 +57,23 @@ function FeldWahl({ bereich, stufe, onBereich, onStufe }: {
 }
 
 export function Werkstatt({ teil, onTeil }: { teil: WerkstattTeil; onTeil: (t: WerkstattTeil) => void }) {
+  const [vorlage, setVorlage] = useState<KiKompassMaterialIn | null>(null);
   return (
     <div className="flex flex-col gap-4 max-w-3xl">
       <nav className="flex flex-wrap gap-2">
-        {([["material", "🧪 Material erstellen"], ["umbau", "🔁 Aufgabe umbauen"], ["pruefen", "📝 Prüfen & bewerten"]] as const).map(([id, l]) => (
+        {([["material", "🧪 Material erstellen"], ["umbau", "🔁 Aufgabe umbauen"], ["pruefen", "📝 Prüfen & bewerten"], ["pool", "📚 Materialpool"]] as const).map(([id, l]) => (
           <button key={id} className={teil === id ? "chip chip-on" : "chip"} onClick={() => onTeil(id)}>{l}</button>
         ))}
       </nav>
-      {teil === "material" && <Material />}
+      {teil === "material" && <Material onTeilen={v => { setVorlage(v); onTeil("pool"); }} />}
+      {teil === "pool" && <Materialpool key={vorlage ? "neu" : "liste"} vorlage={vorlage} onVorlageVerbraucht={() => setVorlage(null)} />}
       {teil === "umbau" && <Umbauer />}
       {teil === "pruefen" && <Pruefen />}
     </div>
   );
 }
 
-function Material() {
+function Material({ onTeilen }: { onTeilen: (v: KiKompassMaterialIn) => void }) {
   const [w, setW] = useState<MaterialWunsch>({
     fach: "", klasse: "7", thema: "", bereich: "reflektieren", stufe: "Ia", dimension: "ueber", art: MATERIALARTEN[0],
   });
@@ -104,6 +108,10 @@ function Material() {
         <button className="btn-secondary" onClick={async () => herunterladen(
           await baueDocx([...kopf(w.bereich, w.stufe, w.thema || "Arbeitsblatt"), { art: "text", text: "Hier das Material aus AIS.chat einfügen und überarbeiten." }]),
           "Arbeitsblatt_KI-Kompass.docx")}>⬇️ Leeres Arbeitsblatt mit Kompetenzkopf</button>
+        <button className="btn-secondary" onClick={() => onTeilen({
+          titel: w.thema, text: "", fach: w.fach, klassen: w.klasse, bereich: w.bereich, stufe: w.stufe,
+          dimension: w.dimension, art: w.art, link: null,
+        })}>📚 Ergebnis im Pool teilen</button>
       </div>
     </section>
   );

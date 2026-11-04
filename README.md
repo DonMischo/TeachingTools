@@ -206,13 +206,14 @@ Jede Simulation trägt Fächer (auch mehrere, z. B. Geografie und Physik); die �
 
 ### 🧭 KI-Kompass
 - Gemeinsamer Rahmen für KI-Kompetenz, in den Lernende (Kl. 5–10) und Lehrkräfte zusammen hineinwachsen, ab Stufe 0 »Einstieg«
-- Kompetenzraster nach Alles, Falck, Flick & Schulz (2025, CC BY-SA 4.0): Verstehen, Anwenden, Reflektieren, Mitgestalten × fünf Stufen als »Ich kann …«-Sätze; Spinne mit Messpunkten und Vorher/Nachher
+- Kompetenzraster nach Alles, Falck, Flick & Schulz (2025, CC BY 4.0): Verstehen, Anwenden, Reflektieren, Mitgestalten × fünf Stufen als »Ich kann …«-Sätze; Spinne mit Messpunkten und Vorher/Nachher
 - KI-Führerschein: 14 Stationen in vier Modulen mit Erklärung, Auftrag, Selbst-Check und Reflexion; KI-Teil über AIS.chat (Thüringer Schulportal) mit Leitfaden und Systemtext-Vorschlägen für Lehrkräfte
 - Je Modul einmal 5 Hauspunkte, Urkunde als PDF, Portfolio mit KI-Nutzungserklärung als Word-Datei
 - Klassenübersicht mit Klassen-Spinne und Reflexionen (nur für die Lehrkraft); Recherche und Quellen in docs/ki-kompass-recherche.md
 - AKTIV(ER)-Weg für Lehrkräfte (nach Manuel Flick, eigene Texte): acht Schritte mit Checkliste, Word-Vorlagen und Sprung ins passende Werkzeug
 - Material-Werkstatt: Prompt-Generator je Rasterfeld und Dimension (mit/über/durch/trotz/ohne KI), Aufgaben-Umbauer mit KI-Resilienz, Prüfungsformate und Erwartungshorizont mit Operatoren
 - Sechs Projektkarten für Stufe II mit Ablauf, AIS.chat-Teil und Bewertung als Word-Projektblatt
+- Gemeinsamer Materialpool für alle Lehrkräfte, verschlagwortet nach Feld im Raster und Dimension, mit Filter, Suche und Word-Export
 
 ### 🖍️ Markieren & Bearbeiten
 - Anschluss an den Maus-Führerschein: Textbearbeitung in einem echten Textfeld, das sich wie Word verhält

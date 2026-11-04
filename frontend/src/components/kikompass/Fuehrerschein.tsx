@@ -130,7 +130,7 @@ function Urkunde({ name, fertig, stande }: { name: string; fertig: boolean; stan
     g.fillStyle = "#222222"; g.font = "40px sans-serif";
     g.fillText(`Datum: ${datumDe(datum)}`, c.width / 2, 950);
     g.font = "26px sans-serif"; g.fillStyle = "#666666";
-    g.fillText("Kompetenzbereiche nach Alles, Falck, Flick & Schulz (2025), CC BY-SA 4.0 · TT – Teaching Tools", c.width / 2, 1120);
+    g.fillText("Kompetenzbereiche nach Alles, Falck, Flick & Schulz (2025), CC BY 4.0 · TT – Teaching Tools", c.width / 2, 1120);
     herunterladen(await leinwandAlsPdf(c), "KI-Fuehrerschein.pdf");
   }
 

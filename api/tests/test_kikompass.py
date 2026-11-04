@@ -128,3 +128,69 @@ def test_lehrkraft_besteht_ohne_hauspunkte(client, db, teacher_token):
     r = client.post("/api/kikompass/pruefung", json={"modul": "mitgestalten"}, headers=auth(teacher_token))
     assert r.status_code == 200, r.text
     assert r.json() == {"bestanden": True, "punkte": 0, "schon_vergeben": False, "haus": None}
+
+
+# ── Materialpool ────────────────────────────────────────────────────────────
+
+def _material(**rest) -> dict:
+    daten = {"titel": "Echt oder KI? Bildkarten", "text": "Acht Karten zum Sortieren.", "fach": "Deutsch",
+             "klassen": "5-6", "bereich": "reflektieren", "stufe": "Ia", "dimension": "ueber",
+             "art": "Sortieraufgabe", "link": "https://example.org/karten.pdf"}
+    daten.update(rest)
+    return daten
+
+
+def test_material_anlegen_und_fuer_alle_lehrkraefte_sichtbar(client, db, teacher_token):
+    r = client.post("/api/kikompass/material", json=_material(), headers=auth(teacher_token))
+    assert r.status_code == 201, r.text
+    assert r.json()["eigen"] is True
+    client.cookies.clear()
+    bert = _zweite_lehrkraft(db)
+    liste = client.get("/api/kikompass/material", headers=als(bert, "teacher")).json()
+    assert len(liste) == 1
+    assert liste[0]["eigen"] is False
+    assert liste[0]["titel"] == "Echt oder KI? Bildkarten"
+
+
+def test_material_filter_und_suche(client, teacher_token):
+    client.post("/api/kikompass/material", json=_material(), headers=auth(teacher_token))
+    client.post("/api/kikompass/material", json=_material(titel="Prompt-Formel", bereich="anwenden", stufe="Ib", dimension="mit"),
+                headers=auth(teacher_token))
+    h = auth(teacher_token)
+    assert len(client.get("/api/kikompass/material?bereich=anwenden", headers=h).json()) == 1
+    assert len(client.get("/api/kikompass/material?stufe=Ia&dimension=ueber", headers=h).json()) == 1
+    assert [m["titel"] for m in client.get("/api/kikompass/material?q=formel", headers=h).json()] == ["Prompt-Formel"]
+
+
+def test_material_nicht_fuer_schueler(client, db):
+    ada = schueler(db)
+    assert client.get("/api/kikompass/material", headers=als(ada)).status_code in (401, 403)
+    assert client.post("/api/kikompass/material", json=_material(), headers=als(ada)).status_code in (401, 403)
+
+
+def test_material_ungueltige_werte(client, teacher_token):
+    h = auth(teacher_token)
+    assert client.post("/api/kikompass/material", json=_material(bereich="x"), headers=h).status_code == 422
+    assert client.post("/api/kikompass/material", json=_material(stufe="IV"), headers=h).status_code == 422
+    assert client.post("/api/kikompass/material", json=_material(link="javascript:alert(1)"), headers=h).status_code == 422
+    assert client.post("/api/kikompass/material", json=_material(titel="   "), headers=h).status_code == 422
+
+
+def test_material_nur_eigenes_aendern_und_loeschen(client, db, teacher_token):
+    mid = client.post("/api/kikompass/material", json=_material(), headers=auth(teacher_token)).json()["id"]
+    client.cookies.clear()
+    bert = _zweite_lehrkraft(db)
+    assert client.put(f"/api/kikompass/material/{mid}", json=_material(titel="Fremd"), headers=als(bert, "teacher")).status_code == 403
+    assert client.delete(f"/api/kikompass/material/{mid}", headers=als(bert, "teacher")).status_code == 403
+
+    r = client.put(f"/api/kikompass/material/{mid}", json=_material(titel="Neu", link=""), headers=auth(teacher_token))
+    assert r.json()["titel"] == "Neu"
+    assert r.json()["link"] is None
+    assert client.delete(f"/api/kikompass/material/{mid}", headers=auth(teacher_token)).status_code == 204
+    assert client.get("/api/kikompass/material", headers=auth(teacher_token)).json() == []
+
+
+def test_admin_darf_fremdes_material_loeschen(client, db, teacher_token, admin_token):
+    mid = client.post("/api/kikompass/material", json=_material(), headers=auth(teacher_token)).json()["id"]
+    client.cookies.clear()
+    assert client.delete(f"/api/kikompass/material/{mid}", headers=auth(admin_token)).status_code == 204

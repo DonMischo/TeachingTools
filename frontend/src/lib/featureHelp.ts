@@ -110,7 +110,7 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
   },
   kikompass: {
     title: "KI-Kompass",
-    intro: "Ein gemeinsamer Rahmen, in den Lernende (Kl. 5–10) und Lehrkräfte hineinwachsen. Er beginnt bei Stufe 0 »Einstieg«, weil alle auf Basisniveau starten. Grundlage ist das KI-Kompetenzmodell von Alles, Falck, Flick & Schulz (2025, CC BY-SA 4.0).",
+    intro: "Ein gemeinsamer Rahmen, in den Lernende (Kl. 5–10) und Lehrkräfte hineinwachsen. Er beginnt bei Stufe 0 »Einstieg«, weil alle auf Basisniveau starten. Grundlage ist das KI-Kompetenzmodell von Alles, Falck, Flick & Schulz (2025, CC BY 4.0).",
     sections: [
       { label: "🕸️ Kompetenzraster", text: "Vier Bereiche (Verstehen, Anwenden, Reflektieren, Mitgestalten) × fünf Stufen (0, Basis 1, Basis 2, Vertieft, Expertise) als »Ich kann …«-Sätze. Eine Stufe gilt ab zwei Dritteln angekreuzter Sätze, und nur, wenn alle Stufen darunter erreicht sind. »Messpunkt speichern« hält den Stand mit Datum fest. Die Spinne vergleicht ihn mit einem früheren Messpunkt." },
       { label: "🪪 KI-Führerschein", text: "14 Stationen in vier Modulen, je Station: Erklärung, Auftrag, ggf. AIS.chat-Teil, Selbst-Check (2 von 3 richtig) und Reflexion (je Antwort mind. 20 Zeichen). Ist ein Modul fertig, bekommen Schülerkonten einmalig 5 Hauspunkte. Mit allen vier Modulen gibt es die Urkunde als PDF." },
@@ -120,6 +120,7 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "🚀 Projekte", text: "Sechs Projektkarten für Stufe II (etwa Kl. 9/10): Schulregeln, Erklärvideo, interaktive Geschichte, Schul-Umfrage, Zukunftsgeschichte, KI im Wunschberuf. Je Karte Ablauf, AIS.chat-Teil und Bewertungskriterien, als Word-Projektblatt." },
       { label: "🧭 AKTIV(ER)-Weg", text: "Unter »Für Lehrkräfte«: acht Schritte (Ausgangslage, A, K, T, I, V, E, R) nach dem Framework von Manuel Flick, mit Checkliste (bleibt im Browser), Vorlagen als Word (KI-Ampel, Elternbrief, Nutzungserklärung, Gesprächsleitfaden, Bewertungsbogen, Umfragefragen, Mikrofortbildung) und Sprung zum passenden Werkzeug." },
       { label: "🧪 Material-Werkstatt", text: "Material erstellen: Rasterfeld, Dimension (mit/über/durch/trotz/ohne KI) und Materialart wählen, dann ergibt sich ein Prompt für AIS.chat mit den Zielen des Feldes. Aufgabe umbauen: bestehende Aufgabe mit KI-Einsatz und Resilienz-Bausteinen, mit Warnhinweisen. Prüfen: Formate nach Aufsicht/zu Hause und Erwartungshorizont mit Operatoren als Word." },
+      { label: "📚 Materialpool", text: "Gemeinsamer Pool aller Lehrkräfte (Schüler·innen sehen ihn nicht): Material mit Titel, Inhalt, Fach, Klassen, Feld im Raster, Dimension und optionalem Link teilen, nach Bereich, Stufe, Dimension und Suchwort filtern, als Word herunterladen. »Ergebnis im Pool teilen« in »Material erstellen« übernimmt das gewählte Feld. Ändern und löschen kann nur, wer es eingestellt hat (und Admins)." },
       { label: "💾 Speichern", text: "Mit Konto liegt der Stand am Server, über alle Geräte und Sitzungen hinweg. Gäste über den QR behalten ihn je Namen in diesem Browser." },
     ],
   },

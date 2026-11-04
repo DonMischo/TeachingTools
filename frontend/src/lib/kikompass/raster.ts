@@ -3,7 +3,7 @@
  *
  * Grundlage: Alles, Falck, Flick & Schulz (2025), »KI-Kompetenzen für Lehrende
  * und Lernende – Aus der Praxis für die Praxis – eine adaptierbare Basis«,
- * VK:KIWA, DOI 10.5281/zenodo.15047793, CC BY-SA 4.0. Die Niveaus I–III sind
+ * VK:KIWA, DOI 10.5281/zenodo.15047793. Grafiken und Tabellen stehen unter CC BY 4.0. Die Niveaus I–III sind
  * dort beschrieben. Wir haben sie in »Ich kann …«-Sätze umformuliert und
  * Niveau I in zwei Schritte geteilt. Die Stufe 0 »Einstieg« ist neu und lehnt
  * sich an die Grundschul-Adaption von van der Meer & Knellsen (2025, CC BY 4.0) an.
@@ -194,5 +194,5 @@ export const GUELTIGE_SATZ_IDS = new Set(KANN_SAETZE.map(k => k.id));
 
 export const NAMENSNENNUNG =
   "Kompetenzraster nach Alles, Falck, Flick & Schulz (2025): »KI-Kompetenzen für Lehrende und Lernende«, VK:KIWA, " +
-  "DOI 10.5281/zenodo.15047793, CC BY-SA 4.0. Stufe 0 angelehnt an van der Meer & Knellsen (2025), CC BY 4.0. " +
-  "Für TT in »Ich kann …«-Sätze umformuliert, Niveau I geteilt; diese Bearbeitung steht unter CC BY-SA 4.0.";
+  "DOI 10.5281/zenodo.15047793, CC BY 4.0. Stufe 0 angelehnt an van der Meer & Knellsen (2025), CC BY 4.0. " +
+  "Für TT verändert: in »Ich kann …«-Sätze umformuliert, Niveau I in zwei Schritte geteilt, Stufe 0 ergänzt.";

@@ -42,7 +42,7 @@ export function Portfolio({ name, stande, einschaetzungen }: {
       { art: "umbruch" },
       { art: "ueberschrift", text: NUTZUNGSERKLAERUNG[0] },
       ...NUTZUNGSERKLAERUNG.slice(1).map(t => ({ art: "text" as const, text: t })),
-      { art: "text", text: "Kompetenzbereiche nach Alles, Falck, Flick & Schulz (2025), CC BY-SA 4.0.", klein: true, grau: true },
+      { art: "text", text: "Kompetenzbereiche nach Alles, Falck, Flick & Schulz (2025), CC BY 4.0.", klein: true, grau: true },
     ];
     herunterladen(await baueDocx(bloecke), "KI-Portfolio.docx");
   }

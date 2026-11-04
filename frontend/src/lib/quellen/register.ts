@@ -157,6 +157,20 @@ export const REGISTER: WerkzeugQuellen[] = [
     ],
   },
   {
+    slug: "kikompass", name: "🧭 KI-Kompass",
+    eintraege: [
+      { quelle: "KI-Kompetenzen für Lehrende und Lernende – eine adaptierbare Basis (DOI 10.5281/zenodo.15047793)", urheber: "Susanne Alles, Joscha Falck, Manuel Flick, Regina Schulz (VK:KIWA)", lizenz: "CC BY 4.0", url: "https://essen.taskcards.app/#/board/ba6226b4-e617-4134-8d6d-dc733dae8d9c/view?token=b490fc09-f845-4d6d-9ef7-9cc0ec548182", verwendung: "Kompetenzraster (4 Bereiche × Niveau I–III); verändert: »Ich kann …«-Sätze, Niveau I geteilt, Stufe 0 ergänzt" },
+      { quelle: "Der Weg zur KI-Kompetenz in der Grundschule", urheber: "Kristin van der Meer, Jennifer Knellsen", lizenz: "CC BY 4.0", url: "https://vom-labor-ins-klassenzimmer.de/der-weg-zur-ki-kompetenz-in-der-grundschule/", verwendung: "Idee der Vorstufe unter Niveau I (Stufe 0 »Einstieg«)" },
+      { quelle: "Das AKTIV-Framework", urheber: "Manuel Flick", lizenz: "alle Rechte vorbehalten (nur Gliederung übernommen, eigene Texte, verlinkt)", url: "https://www.manuelflick.de/blog/aktiv-framework", verwendung: "Gliederung des Lehrkräfte-Wegs A-K-T-I-V-E-R" },
+      { quelle: "KI-Kompetenzen im Unterricht: Impulse für die Praxis (TaskCards)", urheber: "A. Fischer, U. Friese, K. Minner, S. Ricker, C. Zirwes; VK:KIWA Thinktank (Leitung Dr. M. Veggian)", lizenz: "keine Angabe (nur Themen als Anregung, eigene Aufgaben)", url: "https://www.taskcards.de/#/board/333906e3-30a1-4ebd-91a2-3e1847848f72/view?token=ae585604-8910-47f2-8f70-9d6b3adf5230", verwendung: "Themen der Führerschein-Stationen und Projekte" },
+      { quelle: "CheckNews", urheber: "fög (Universität Zürich) und IQES online", lizenz: "alle Rechte vorbehalten (nur verlinkt)", url: "https://www.iqesonline.net/bildung-digital/checknews/", verwendung: "Link aus den Faktencheck-Stationen" },
+    ],
+    literatur: [
+      "Falck, J. (2023): Lernen mit, über, durch, trotz und ohne KI (fünf Dimensionen). joschafalck.de.",
+      "KMK (2024): Handlungsempfehlung für die Bildungsverwaltung zum Umgang mit Künstlicher Intelligenz in schulischen Bildungsprozessen.",
+    ],
+  },
+  {
     slug: "stromkreis", name: "💡 Stromkreise",
     eintraege: [
       { quelle: "Circuit Simulator (circuitjs1)", urheber: "Paul Falstad, Iain Sharp", lizenz: "GPL-2.0", url: "https://github.com/pfalstad/circuitjs1", verwendung: "Vorbild für Bedienung und Darstellung (Strompunkte, Potenzialfarben); Löser, Zeichnung und Bedienung neu in TypeScript geschrieben, kein Code übernommen" },

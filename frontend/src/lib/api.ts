@@ -1295,6 +1295,11 @@ export type KiKompassStand = {
   stationen: Record<string, { quiz: number; reflexion: string[]; erledigt_am?: string | null }>;
 };
 export type KiKompassZeile = KiKompassStand & { name: string; klasse: string | null; gast: boolean };
+export type KiKompassMaterialIn = {
+  titel: string; text: string; fach: string; klassen: string;
+  bereich: string; stufe: string; dimension: string; art: string; link: string | null;
+};
+export type KiKompassMaterial = KiKompassMaterialIn & { id: number; autor: string; eigen: boolean; erstellt_am: string };
 
 // Bestenliste der Challenge in »Markieren & Bearbeiten« (siehe api/routers/markieren.py)
 export type MarkierModus = "markieren" | "bearbeiten" | "gemischt";
@@ -2040,6 +2045,15 @@ export const api = {
       apiFetch<KiKompassZeile[]>(`kikompass/sitzung/${encodeURIComponent(code)}/uebersicht`),
     pruefung: (body: { modul: string; code?: string | null }) =>
       apiFetch<MausPruefungOut>("kikompass/pruefung", { method: "POST", body: JSON.stringify(body) }),
+    material: (filter: { bereich?: string; stufe?: string; dimension?: string; q?: string }) => {
+      const p = new URLSearchParams(Object.entries(filter).filter(([, v]) => v) as [string, string][]);
+      return apiFetch<KiKompassMaterial[]>(`kikompass/material${p.size ? `?${p}` : ""}`);
+    },
+    materialAnlegen: (body: KiKompassMaterialIn) =>
+      apiFetch<KiKompassMaterial>("kikompass/material", { method: "POST", body: JSON.stringify(body) }),
+    materialAendern: (id: number, body: KiKompassMaterialIn) =>
+      apiFetch<KiKompassMaterial>(`kikompass/material/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+    materialLoeschen: (id: number) => apiFetch<void>(`kikompass/material/${id}`, { method: "DELETE" }),
   },
 
   // Verkehrssicherheit (siehe api/routers/verkehr.py)
