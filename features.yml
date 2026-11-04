@@ -640,6 +640,9 @@ simulationen:
       - 5 Hauspunkte je Modul beim ersten Bestehen, Urkunde als PDF
       - Portfolio mit KI-Nutzungserklärung als .docx
       - Klassenübersicht mit Mittelwert-Spinne und Reflexionen, Stand am Konto über Sitzungen hinweg
+      - AKTIV(ER)-Weg für Lehrkräfte mit Checklisten und sieben Word-Vorlagen
+      - Material-Werkstatt (Prompt je Rasterfeld, Aufgaben-Umbauer, Erwartungshorizont)
+      - Sechs Projektkarten für Stufe II
   - id: markieren
     name: Markieren & Bearbeiten
     faehigkeiten: {use: [true, true]}

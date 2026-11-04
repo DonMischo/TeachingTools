@@ -10,37 +10,37 @@ import { api, type KiKompassZeile } from "@/lib/api";
 import { BEREICHE, mittelwerte, werte } from "@/lib/kikompass/raster";
 import { MODUL_REIHENFOLGE, STATIONEN, stationFertig, stationenVon } from "@/lib/kikompass/stationen";
 import { Spinne } from "./Spinne";
+import { AktivWeg, type Sprungziel } from "./AktivWeg";
+import { Werkstatt, type WerkstattTeil } from "./Werkstatt";
 import { datumDe } from "./Raster";
 
-const AKTIV = [
-  ["A", "Ausprobieren & Anwenden", "Selbst KI ausprobieren, z. B. jede Station des Führerscheins erst selbst machen."],
-  ["K", "Kommunizieren & Klarheit", "Mit der Klasse über KI-Nutzung reden und gemeinsam Regeln aufstellen (Station »Unsere KI-Regeln«)."],
-  ["T", "Transformieren von Lernprozessen", "Aufgaben bewusst mit, über, durch, trotz oder ohne KI planen."],
-  ["I", "Integrativ prüfen & bewerten", "Reflexion und Prozess mitbewerten, z. B. über das Portfolio und die Nutzungserklärung."],
-  ["V", "Verändern & Mitgestalten", "Erfahrungen im Kollegium teilen, Material weitergeben, am Medienkonzept mitarbeiten."],
-] as const;
+export type LehrUnter = "uebersicht" | "aktiv" | "werkstatt" | "ais";
 
-export function Lehrkraft({ code }: { code: string | null }) {
+export function Lehrkraft({ code, unter, onUnter, werkstattTeil, onWerkstattTeil, speicherSchluessel, onSprung }: {
+  code: string | null;
+  unter: LehrUnter;
+  onUnter: (u: LehrUnter) => void;
+  werkstattTeil: WerkstattTeil;
+  onWerkstattTeil: (t: WerkstattTeil) => void;
+  speicherSchluessel: string;
+  onSprung: (ziel: Sprungziel) => void;
+}) {
+  const UNTER: [LehrUnter, string][] = [
+    ["uebersicht", "👩‍🏫 Klassenübersicht"], ["aktiv", "🧭 AKTIV(ER)-Weg"], ["werkstatt", "🧪 Material-Werkstatt"], ["ais", "🤖 AIS.chat"],
+  ];
   return (
-    <div className="flex flex-col gap-8">
-      {code ? <Uebersicht code={code} /> : (
+    <div className="flex flex-col gap-4">
+      <nav className="flex flex-wrap gap-2 border-b border-line pb-2">
+        {UNTER.map(([id, l]) => (
+          <button key={id} className={unter === id ? "chip chip-on" : "chip"} onClick={() => onUnter(id)}>{l}</button>
+        ))}
+      </nav>
+      {unter === "uebersicht" && (code ? <Uebersicht code={code} /> : (
         <p className="card p-4 text-sm">Öffne »Zum Mitmachen« oben, damit deine Klasse über Code oder QR beitritt. Dann erscheint hier die Übersicht.</p>
-      )}
-      <AisLeitfaden />
-      <section className="flex flex-col gap-2 max-w-3xl">
-        <h3 className="text-lg font-semibold">🧭 Ihr eigener Weg: AKTIV(ER)</h3>
-        <p className="text-sm text-muted">
-          Gemeinsam wachsen heißt: Sie stufen sich im selben Raster ein wie Ihre Klasse (Reiter »Kompetenzraster«).
-          Für den Weg durch die Schulentwicklung orientiert sich der KI-Kompass am AKTIV(ER)-Framework von Manuel Flick
-          (<a className="underline" href="https://www.manuelflick.de/blog/aktiv-framework" target="_blank" rel="noreferrer">Originalbeitrag</a>).
-          Ausführliche Seiten je Phase folgen.
-        </p>
-        <ul className="grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(220px,1fr))]">
-          {AKTIV.map(([k, titel, text]) => (
-            <li key={k} className="card p-3 text-sm"><strong className="text-lg">{k}</strong> {titel}<p className="text-muted mt-1">{text}</p></li>
-          ))}
-        </ul>
-      </section>
+      ))}
+      {unter === "aktiv" && <AktivWeg speicherSchluessel={speicherSchluessel} onSprung={onSprung} />}
+      {unter === "werkstatt" && <Werkstatt teil={werkstattTeil} onTeil={onWerkstattTeil} />}
+      {unter === "ais" && <AisLeitfaden />}
     </div>
   );
 }

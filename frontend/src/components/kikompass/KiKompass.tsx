@@ -15,9 +15,12 @@ import type { StationStand } from "@/lib/kikompass/stationen";
 import { Raster } from "./Raster";
 import { Fuehrerschein } from "./Fuehrerschein";
 import { Portfolio } from "./Portfolio";
-import { Lehrkraft } from "./Lehrkraft";
+import { Lehrkraft, type LehrUnter } from "./Lehrkraft";
+import { Projekte } from "./Projekte";
+import type { Sprungziel } from "./AktivWeg";
+import type { WerkstattTeil } from "./Werkstatt";
 
-type Reiter = "start" | "raster" | "fuehrerschein" | "portfolio" | "lehrkraft";
+type Reiter = "start" | "raster" | "fuehrerschein" | "portfolio" | "projekte" | "lehrkraft";
 const LEER: KiKompassStand = { einschaetzungen: [], stationen: {} };
 
 function lokalLaden(schluessel: string): KiKompassStand {
@@ -41,6 +44,8 @@ export default function KiKompass({ action, name = "", konto, verwaltung = false
   speicherSchluessel: string;
 }) {
   const [reiter, setReiter] = useState<Reiter>("start");
+  const [lehrUnter, setLehrUnter] = useState<LehrUnter>("uebersicht");
+  const [werkstattTeil, setWerkstattTeil] = useState<WerkstattTeil>("material");
   const [stand, setStand] = useState<KiKompassStand>(LEER);
   // An den Zustand gebunden statt an ein Ref: so speichert StrictMode nie einen leeren Stand über einen geladenen.
   const [geladenFuer, setGeladenFuer] = useState<string | null>(null);
@@ -80,8 +85,15 @@ export default function KiKompass({ action, name = "", konto, verwaltung = false
   const setStation = (id: string, s: StationStand) =>
     setStand(alt => ({ ...alt, stationen: { ...alt.stationen, [id]: s } }));
 
+  function sprung(ziel: Sprungziel) {
+    if (ziel === "raster" || ziel === "fuehrerschein" || ziel === "projekte") { setReiter(ziel); return; }
+    if (ziel === "uebersicht") { setLehrUnter("uebersicht"); return; }
+    setLehrUnter("werkstatt");
+    setWerkstattTeil(ziel === "werkstatt" ? "material" : ziel);
+  }
+
   const REITER: [Reiter, string][] = [
-    ["start", "🧭 Start"], ["raster", "🕸️ Kompetenzraster"], ["fuehrerschein", "🪪 KI-Führerschein"], ["portfolio", "📒 Portfolio"],
+    ["start", "🧭 Start"], ["raster", "🕸️ Kompetenzraster"], ["fuehrerschein", "🪪 KI-Führerschein"], ["portfolio", "📒 Portfolio"], ["projekte", "🚀 Projekte"],
     ...(verwaltung ? [["lehrkraft", "👩‍🏫 Für Lehrkräfte"] as [Reiter, string]] : []),
   ];
 
@@ -109,7 +121,12 @@ export default function KiKompass({ action, name = "", konto, verwaltung = false
             <Fuehrerschein stande={stand.stationen} onStation={setStation} name={name} konto={konto} code={lehrCode} />
           )}
           {reiter === "portfolio" && <Portfolio name={name} stande={stand.stationen} einschaetzungen={stand.einschaetzungen} />}
-          {reiter === "lehrkraft" && verwaltung && <Lehrkraft code={lehrCode} />}
+          {reiter === "projekte" && <Projekte />}
+          {reiter === "lehrkraft" && verwaltung && (
+            <Lehrkraft code={lehrCode} unter={lehrUnter} onUnter={setLehrUnter}
+              werkstattTeil={werkstattTeil} onWerkstattTeil={setWerkstattTeil}
+              speicherSchluessel={speicherSchluessel} onSprung={sprung} />
+          )}
         </>
       )}
     </div>
@@ -136,7 +153,7 @@ function Start({ onWeiter }: { onWeiter: (r: Reiter) => void }) {
         <li><button className="underline" onClick={() => onWeiter("raster")}>Kompetenzraster</button>: Schätze dich ein. Die Spinne zeigt, wo du stehst.</li>
         <li><button className="underline" onClick={() => onWeiter("fuehrerschein")}>KI-Führerschein</button>: 14 Stationen in vier Modulen, von Stufe 0 bis Stufe I, mit AIS.chat.</li>
         <li><button className="underline" onClick={() => onWeiter("portfolio")}>Portfolio</button>: Deine Reflexionen sammeln sich hier.</li>
-        <li>Nach dem Führerschein: neuen Messpunkt im Raster setzen und vergleichen.</li>
+        <li>Nach dem Führerschein: neuen Messpunkt im Raster setzen und vergleichen, dann geht es mit den <button className="underline" onClick={() => onWeiter("projekte")}>Projekten</button> auf Stufe II weiter.</li>
       </ol>
       <details className="text-xs text-muted">
         <summary className="cursor-pointer">Quellen und Lizenzen</summary>
