@@ -4,7 +4,7 @@
  * anderen Satz an als den, der dasteht.
  */
 import { describe, it, expect } from "vitest";
-import { zerlege, schnitte, bewerte, VOKABULAR } from "@/lib/ki/tokenizer";
+import { zerlege, schnitte, bewerte, zeichen, VOKABULAR } from "@/lib/ki/tokenizer";
 
 const text = (s: string) => zerlege(s).map(t => t.text);
 
@@ -81,6 +81,59 @@ describe("Zerlegen", () => {
     const s = schnitte(zerlege("Katze schläft"));
     expect(s).not.toContain(0);
     expect(s.length).toBe(zerlege("Katze schläft").length - 1);
+  });
+});
+
+// Zerlegte Umlaute (u + Trema), wie sie aus macOS oder aus PDFs kopiert ankommen
+const NFD = (s: string) => s.normalize("NFD");
+
+describe("Umlaute und Leerraum", () => {
+  it("lässt zerlegte Umlaute im Wort, statt es dort zu schneiden", () => {
+    expect(text(NFD("Die müde Katze"))).toEqual(["Die ", NFD("müd"), "e ", "Katze"]);
+    expect(text(NFD("Größe Übung"))).toEqual([NFD("Größe "), NFD("Übung")]);
+  });
+
+  it("gibt zerlegten und fertigen Umlauten dieselben Nummern", () => {
+    const s = "Die müde Katze schläft über dem Kätzchen.";
+    expect(zerlege(NFD(s)).map(t => t.id)).toEqual(zerlege(s).map(t => t.id));
+    expect(zerlege(NFD(s)).every(t => t.bekannt)).toBe(true);
+  });
+
+  it("setzt zerlegte Umlaute wieder zum Original zusammen", () => {
+    const s = NFD("Ölfässer, Größe, Übermut – schläft.");
+    expect(zerlege(s).map(t => t.text).join("")).toBe(s);
+  });
+
+  it("schneidet nie zwischen Buchstabe und Trema", () => {
+    const s = NFD("Größe Übung schläft Kätzchen");
+    for (const i of schnitte(zerlege(s))) expect(s[i]).not.toMatch(/\p{M}/u);
+  });
+
+  it("hängt nur ein Leerzeichen an, keinen Zeilenumbruch oder Tab", () => {
+    const umbruch = String.fromCharCode(10);
+    const tab = String.fromCharCode(9);
+    expect(text(`Katze${umbruch}springt`)).toEqual(["Katze", umbruch, "spring", "t"]);
+    expect(text(`Katze.${tab}Die`)).toEqual(["Katze.", tab, "Die"]);
+    expect(text("Katze  springt")).toEqual(["Katze ", " ", "spring", "t"]);
+  });
+
+  it("lässt ein Apostroph im Wort", () => {
+    expect(text("geht's gut")).toEqual(["geht's ", "gut"]);
+    expect(text("geht’s gut")).toEqual(["geht’s ", "gut"]);
+  });
+});
+
+describe("Zeichen fürs Minispiel", () => {
+  it("hält Buchstabe und Trema als ein Zeichen zusammen", () => {
+    expect(zeichen(NFD("müd")).map(z => z.start)).toEqual([0, 1, 3]);
+    expect(zeichen(NFD("müd")).map(z => z.text).join("")).toBe(NFD("müd"));
+  });
+
+  it("zählt Positionen wie der Zerleger, auch hinter einem Emoji", () => {
+    const s = "a😀b";
+    expect(zeichen(s).map(z => z.start)).toEqual([0, 1, 3]);
+    // das Emoji hängt wie ein Satzzeichen am Wort davor; der Schnitt liegt bei 3
+    expect(schnitte(zerlege(s))).toEqual([3]);
   });
 });
 

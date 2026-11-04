@@ -40,7 +40,9 @@ export function woerterAus(text: string): string[] {
     const ende = SATZENDE.test(roh);
     // Anführungszeichen und Klammern fallen weg: sie verdoppelten sonst jedes
     // Wort (»Katze« und Katze wären zwei verschiedene).
-    const kern = roh
+    // NFC: zerlegte Umlaute (»a« + Trema, aus macOS/PDF kopiert) und fertige
+    // sollen dasselbe Wort sein, nicht zwei.
+    const kern = roh.normalize("NFC")
       .replace(SATZENDE, "")
       .replace(/^[«»"„“‚‘(\[]+/, "")
       .replace(/[«»"„“‚‘)\],;:]+$/, "");

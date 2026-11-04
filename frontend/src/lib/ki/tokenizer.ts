@@ -122,38 +122,49 @@ function fremdId(s: string): number {
  * Buchstaben.
  */
 function zerlegeWort(wort: string): string[] {
-  if (NACH_TEXT.has(wort)) return [wort];
+  if (NACH_TEXT.has(nfc(wort))) return [wort];
   for (let len = wort.length - 1; len > 1; len--) {
-    const vorne = wort.slice(0, len);
-    const rest = wort.slice(len);
-    if (!ANFAENGE.has(vorne)) continue;
-    if (ENDUNG.has(rest)) return [vorne, rest];
+    // Nie zwischen Buchstabe und Trema schneiden (»u« + »̈de«)
+    if (/\p{M}/u.test(wort[len])) continue;
+    const vorne = nfc(wort.slice(0, len));
+    const rest = nfc(wort.slice(len));
+    if (vorne.length < 2 || !ANFAENGE.has(vorne)) continue;
+    if (ENDUNG.has(rest)) return [wort.slice(0, len), wort.slice(len)];
     // Zusammengesetzte Nomen: nur hinter einem ganzen Nomen und mit einem Rest,
     // der selbst nach Wort aussieht — sonst wird »an« + »gst« daraus.
-    if (NOMEN_SET.has(vorne) && rest.length >= 3) return [vorne, rest];
+    if (NOMEN_SET.has(vorne) && rest.length >= 3) return [wort.slice(0, len), wort.slice(len)];
   }
   return [wort];
 }
 
+/**
+ * Umlaute kommen in zwei Schreibweisen an: fertig (»ü«) oder zerlegt als »u«
+ * plus Trema, etwa aus macOS oder aus PDFs kopiert. Nachgeschlagen wird immer
+ * die fertige Form; der Text der Stücke bleibt, wie er dasteht.
+ */
+const nfc = (s: string) => s.normalize("NFC");
+
 /** Nummer eines Stücks: Listenplatz plus Anhang, sonst eine ausgedachte. */
 function nummer(kern: string, anhang: string): { id: number; bekannt: boolean } {
-  const platz = NACH_TEXT.get(kern);
+  const platz = NACH_TEXT.get(nfc(kern));
   const nr = ANHANG_NR.get(anhang);
   if (platz !== undefined && nr !== undefined) {
     return { id: platz + nr * VOKABULAR.length, bekannt: true };
   }
-  return { id: fremdId(kern + anhang), bekannt: false };
+  return { id: fremdId(nfc(kern + anhang)), bekannt: false };
 }
 
 /**
- * Zerlegt einen Text. Erst in Wörter — Satzzeichen und ein Leerzeichen hängen
- * am Wort davor —, dann jedes Wort nach der Liste; der Anhang geht ans letzte
- * Stück (»kurz« + »en␣«). Es gilt immer: die Stücke wieder aneinandergehängt
- * ergeben genau den Eingabetext.
+ * Zerlegt einen Text. Erst in Wörter — Satzzeichen und *ein* Leerzeichen hängen
+ * am Wort davor (Zeilenumbrüche, Tabs und weitere Leerzeichen bleiben eigene
+ * Stücke) —, dann jedes Wort nach der Liste; der Anhang geht ans letzte Stück
+ * (»kurz« + »en␣«). Zum Wort gehören auch Tremas zerlegter Umlaute und ein
+ * Apostroph mitten im Wort (»geht's«). Es gilt immer: die Stücke wieder
+ * aneinandergehängt ergeben genau den Eingabetext.
  */
 export function zerlege(text: string): Token[] {
   const out: Token[] = [];
-  for (const m of text.matchAll(/([\p{L}\p{N}]+)([^\s\p{L}\p{N}]*\s?)|[^]/gu)) {
+  for (const m of text.matchAll(/([\p{L}\p{N}][\p{L}\p{M}\p{N}]*(?:['’][\p{L}\p{M}]+)*)([^\s\p{L}\p{N}]* ?)|[^]/gu)) {
     let start = m.index!;
     const kern = m[1] ?? m[0];
     const anhang = m[1] ? m[2] : "";
@@ -165,6 +176,15 @@ export function zerlege(text: string): Token[] {
     });
   }
   return out;
+}
+
+/**
+ * Der Text als sichtbare Zeichen fürs Minispiel, mit ihrer Position in
+ * derselben Zählung wie `Token.start`. Ein zerlegter Umlaut (»u« + Trema)
+ * bleibt ein Zeichen, und ein Emoji verschiebt die Positionen dahinter nicht.
+ */
+export function zeichen(text: string): { text: string; start: number }[] {
+  return [...text.matchAll(/\P{M}\p{M}*|\p{M}+/gu)].map(m => ({ text: m[0], start: m.index! }));
 }
 
 /**

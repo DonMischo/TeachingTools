@@ -9,7 +9,7 @@
  * von Zahlen — mehr bekommt das Modell nie zu sehen.
  */
 import { useMemo, useState } from "react";
-import { zerlege, schnitte, bewerte } from "@/lib/ki/tokenizer";
+import { zerlege, schnitte, bewerte, zeichen } from "@/lib/ki/tokenizer";
 
 /** Farben der Stücke — Tokens abwechselnd einfärben, damit die Grenzen springen. */
 const FARBEN = ["#38bdf8", "#f472b6", "#a3e635", "#fbbf24", "#c084fc", "#2dd4bf"];
@@ -88,7 +88,7 @@ export function Zerleger({ text, onWeiter }: { text: string; onWeiter: (quote: n
         {/* Umbrechen statt schieben: auf dem Telefon passt der Satz sonst nicht
             in eine Zeile, und wer scrollen muss, verliert die Übersicht. */}
         <div className="flex flex-wrap items-center font-mono text-lg leading-none">
-          {[...text].map((c, i) => (
+          {zeichen(text).map(({ text: c, start: i }) => (
             <span key={i} className="flex items-center">
               {i > 0 && <Balken zustand={zustand(i)} onClick={geprueft ? undefined : () => umschalten(i)} />}
               <span className={c === " " ? "text-muted" : ""}>

@@ -16,6 +16,8 @@ describe("Text in Wörter zerlegen", () => {
   it("macht aus jedem Satzzeichen ein eigenes Wort", () => {
     expect(woerterAus("Die Katze schläft.")).toEqual(["Die", "Katze", "schläft", "."]);
     expect(woerterAus("Wirklich? Ja!")).toEqual(["Wirklich", ".", "Ja", "."]);
+    // zerlegte Umlaute (aus macOS/PDF kopiert) zählen als dasselbe Wort
+    expect(woerterAus("Mädchen ".normalize("NFD") + "Mädchen")).toEqual(["Mädchen", "Mädchen"]);
   });
 
   it("wirft Anführungszeichen und Klammern weg", () => {
