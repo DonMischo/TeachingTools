@@ -1,8 +1,8 @@
 ﻿# Übungsinstanz für Online-Workshops, erreichbar über einen Cloudflare-Quick-Tunnel.
 #
-#   .\workshop.ps1 start [-Anzahl 30]   Instanz hochfahren, Zugänge anlegen, Tunnel öffnen
-#   .\workshop.ps1 stop                 Tunnel schließen, Instanz anhalten (Daten bleiben)
-#   .\workshop.ps1 reset                Alles löschen: Datenbank, Zugänge, Uploads
+#   workshop.bat start [-Anzahl 30]   Instanz hochfahren, Zugänge anlegen, Tunnel öffnen
+#   workshop.bat stop                 Tunnel schließen, Instanz anhalten (Daten bleiben)
+#   workshop.bat reset                Alles löschen: Datenbank, Zugänge, Uploads
 #
 # Eigene Datenbank und Port 1340, nur erfundene Daten. Die Schulinstanz (Port 1339)
 # läuft unberührt weiter. Nicht für den Produktivbetrieb: Der Tunnel lebt nur,
@@ -82,7 +82,7 @@ if ($Aktion -eq "start") {
     Write-Host ""
     Write-Host "Workshop-Adresse (in der Zwischenablage): $url"
     Write-Host "Zugänge: $(Join-Path $ws 'data\zugaenge.txt')   QR: $(Join-Path $ws 'data\workshop-qr.png')"
-    Write-Host "Beenden mit: .\workshop.ps1 stop"
+    Write-Host "Beenden mit: workshop.bat stop"
 }
 elseif ($Aktion -eq "stop") {
     Stop-Tunnel
