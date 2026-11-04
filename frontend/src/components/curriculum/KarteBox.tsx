@@ -9,7 +9,7 @@
  * Ziehen mehrerer Karten) stellt der Editor über `KartenAnsicht` bereit.
  */
 import { createContext, useContext } from "react";
-import { NIVEAUS, karteText, wortDiff, type Index, type KarteMitPlan, type Niveau, type Paar, type Status, statusVon } from "@/lib/curriculum/modell";
+import { NIVEAUS, NIVEAU_FARBE, karteText, wortDiff, type Index, type KarteMitPlan, type Niveau, type Paar, type Status, statusVon } from "@/lib/curriculum/modell";
 
 export const KartenAnsicht = createContext<{
   offen: (id: string) => boolean;
@@ -86,7 +86,11 @@ export function KarteBox({ karte, idx, niveaus, paar, woanders, onOpen, draggabl
       <div className={`flex items-center gap-1 flex-wrap ${auf ? "mb-1" : ""}`}>
         <button className="text-muted hover:text-fg w-4 shrink-0" title={auf ? "Zuklappen" : "Aufklappen"} aria-expanded={auf}
           onClick={e => { e.stopPropagation(); ansicht.umschalten(karte.id); }}>{auf ? "▾" : "▸"}</button>
-        <span className="font-mono text-[10px] px-1 rounded bg-page border border-line">{karte.plan.schulart}</span>
+        {/* In einer R- oder H-Zeile zeigt eine Regelschul-Karte ihr Niveau statt »RS« — samt dessen Wortlaut */}
+        {nurNiveau && (nurNiveau === "R" || nurNiveau === "H") && karte.plan.schulart === "RS"
+          ? <span className="font-mono text-[10px] px-1 rounded text-white" style={{ background: NIVEAU_FARBE[nurNiveau] }}
+              title={nurNiveau === "H" ? "Hauptschulniveau dieser Regelschul-Karte" : "Realschulniveau dieser Regelschul-Karte"}>{nurNiveau}</span>
+          : <span className="font-mono text-[10px] px-1 rounded bg-page border border-line">{karte.plan.schulart}</span>}
         {karte.bereich && !ohneBereich && (
           <span className="text-[10px] px-1 rounded bg-page border border-line text-muted" title="Bereich">{karte.bereich}</span>
         )}

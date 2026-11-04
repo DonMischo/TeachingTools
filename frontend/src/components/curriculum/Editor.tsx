@@ -22,7 +22,7 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "rea
 import { api, type CurriculumPlanOut } from "@/lib/api";
 import { useToast } from "@/contexts/ToastContext";
 import {
-  BLOECKE, KLASSEN_JE_BLOCK, NIVEAUS, NIVEAU_NAME, OHNE_BEREICH, bereicheVon, einheitenAusLehrplan, freieAlteKarten, index, loesen, nachBereich, neueId, niveauGilt,
+  BLOECKE, KLASSEN_JE_BLOCK, NIVEAUS, NIVEAU_FARBE, NIVEAU_NAME, OHNE_BEREICH, bereicheVon, einheitenAusLehrplan, freieAlteKarten, index, loesen, nachBereich, neueId, niveauGilt,
   offeneKarten, themaSicht, wochenSumme, zuordnen,
   type Block, type KarteMitPlan, type Klasse, type Niveau, type Thema,
 } from "@/lib/curriculum/modell";
@@ -38,10 +38,6 @@ type Offen =
 
 const POLL_MS = 4000;
 
-/** Zeilenfarben je Niveau (vom Kollegium so gewünscht: G dunkelrot, R blau, H grün). */
-export const NIVEAU_FARBE: Record<Niveau, string> = {
-  G: "#9b1c1c", R: "#2563eb", H: "#16a34a", LB: "#d97706", GE: "#7c3aed",
-};
 
 export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanOut; guestToken?: string }) {
   const { toast } = useToast();

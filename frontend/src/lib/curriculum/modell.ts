@@ -10,6 +10,10 @@
 
 export const NIVEAUS = ["G", "R", "H", "LB", "GE"] as const;
 export type Niveau = typeof NIVEAUS[number];
+/** Zeilenfarben je Niveau (vom Kollegium so gewünscht: G dunkelrot, R blau, H grün). */
+export const NIVEAU_FARBE: Record<Niveau, string> = {
+  G: "#9b1c1c", R: "#2563eb", H: "#16a34a", LB: "#d97706", GE: "#7c3aed",
+};
 export const NIVEAU_NAME: Record<Niveau, string> = {
   G: "Gymnasialniveau", R: "Realschulniveau", H: "Hauptschulniveau", LB: "Förderschwp. LB", GE: "Förderschwp. GE",
 };

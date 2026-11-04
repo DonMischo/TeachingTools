@@ -2,7 +2,8 @@ import { describe, it, expect, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { JsonEingabe } from "@/components/curriculum/JsonEingabe";
 import { KiDialog } from "@/components/curriculum/Dialoge";
-import { leereVorlage } from "@/lib/curriculum/modell";
+import { KarteBox } from "@/components/curriculum/KarteBox";
+import { index, leereVorlage } from "@/lib/curriculum/modell";
 
 describe("JsonEingabe", () => {
   it("liest eine gewählte Datei und zeigt ihren Namen", async () => {
@@ -49,5 +50,24 @@ describe("KiDialog", () => {
     render(<KiDialog doc={leereVorlage("Physik")} art="zuordnung" onClose={() => {}} />);
     expect(screen.getByText("KI-Prompt: Curriculum zuordnen")).toBeTruthy();
     expect(screen.queryByText("beide in einem JSON")).toBeNull();
+  });
+});
+
+describe("KarteBox in Niveau-Zeilen", () => {
+  const plan = { id: "rs", rolle: "neu" as const, schulart: "RS", karten: [] as any[] };
+  const karte = { id: "k1", block: "7/8" as const, titel: "Ohmsches Gesetz", niveaus: { R: "nachweisen und interpretieren", H: "experimentell nachweisen" }, plan };
+  plan.karten.push(karte);
+  const v = { ...leereVorlage("Physik"), lehrplaene: [plan] };
+
+  it("zeigt in der H-Zeile »H« und den H-Wortlaut, im Deck »RS«", () => {
+    const i = index(v);
+    const { unmount } = render(<KarteBox karte={karte} idx={i} niveaus={new Set(["R", "H"] as const)} nurNiveau="H" onOpen={() => {}} />);
+    expect(screen.getByText("H")).toBeTruthy();
+    expect(screen.queryByText("RS")).toBeNull();
+    expect(screen.getByText("experimentell nachweisen")).toBeTruthy();
+    expect(screen.queryByText("nachweisen und interpretieren")).toBeNull();
+    unmount();
+    render(<KarteBox karte={karte} idx={i} niveaus={new Set(["R", "H"] as const)} onOpen={() => {}} />);
+    expect(screen.getByText("RS")).toBeTruthy();
   });
 });
