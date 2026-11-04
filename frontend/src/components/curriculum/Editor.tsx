@@ -5,6 +5,8 @@
  *
  *   Unterrichtseinheit (Titel, Wochen)
  *   alter Lehrplan     — zugeordnete alte Karten, aufklappbar
+ * Klassen und Karten lassen sich auf- und zuklappen (Karten starten zu);
+ * »Endfassung« blendet Durchgestrichenes und Markierungen aus.
  *   G / R / H / LB / GE — unser Inhalt je Niveau + zugeordnete neue Karten
  *   neuer Lehrplan     — Vorschläge: Partner der alten Karten aus dem Abgleich
  *
@@ -24,7 +26,7 @@ import {
   offeneKarten, themaSicht, wochenSumme, zuordnen,
   type Block, type KarteMitPlan, type Klasse, type Niveau, type Thema,
 } from "@/lib/curriculum/modell";
-import { KarteBox, StatusChip } from "./KarteBox";
+import { KarteBox, KartenAnsicht, StatusChip } from "./KarteBox";
 import { ImportDialog, KarteDialog, KiDialog, TeilenDialog, ThemaDialog } from "./Dialoge";
 
 type Op = Record<string, unknown>;
@@ -48,7 +50,17 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
   const [niveaus, setNiveaus] = useState<Set<Niveau>>(new Set(NIVEAUS));
   const [schularten, setSchularten] = useState<Set<string>>(new Set(["RS", "GY"]));
   const [nurKonflikte, setNurKonflikte] = useState(false);
-  const [altOffen, setAltOffen] = useState(false);
+  // Karten: alle zu (Standard) oder alle auf, dazu einzeln umgeschaltete Ausnahmen.
+  const [kartenAuf, setKartenAuf] = useState(false);
+  const [ausnahmen, setAusnahmen] = useState<Set<string>>(new Set());
+  const [endfassung, setEndfassung] = useState(false);
+  const [zuKlassen, setZuKlassen] = useState<Set<number>>(new Set());
+  const ansicht = useMemo(() => ({
+    offen: (id: string) => kartenAuf !== ausnahmen.has(id),
+    umschalten: (id: string) => setAusnahmen(a => { const x = new Set(a); x.has(id) ? x.delete(id) : x.add(id); return x; }),
+    endfassung,
+  }), [kartenAuf, ausnahmen, endfassung]);
+  const alleKarten = (auf: boolean) => { setKartenAuf(auf); setAusnahmen(new Set()); };
   const [suche, setSuche] = useState("");
   const [ziehZiel, setZiehZiel] = useState<string | null>(null);
   const laeuft = useRef(false);
@@ -150,6 +162,7 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
     doc.curriculum.klassen.find(k => k.klasse === nr) ?? { klasse: nr, wochen_verfuegbar: 36, themen: [] };
 
   return (
+    <KartenAnsicht.Provider value={ansicht}>
     <div className="flex flex-col gap-3">
       {/* Werkzeugleiste */}
       <div className="flex flex-wrap items-center gap-2 sticky top-0 z-30 bg-page py-2 border-b border-line">
@@ -166,7 +179,12 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
               onClick={() => setSchularten(x => { const y = new Set(x); y.has(s) ? y.delete(s) : y.add(s); return y; })}>{s}-Karten</button>
           ))}
         </div>
-        <button className={`chip text-xs ${altOffen ? "chip-on" : ""}`} onClick={() => setAltOffen(v => !v)}>alte Karten aufklappen</button>
+        <div className="flex gap-1">
+          <button className="chip text-xs" onClick={() => alleKarten(true)} title="Alle Karten aufklappen">▾ alle auf</button>
+          <button className="chip text-xs" onClick={() => alleKarten(false)} title="Alle Karten zuklappen">▸ alle zu</button>
+        </div>
+        <button className={`chip text-xs ${endfassung ? "chip-on" : ""}`} onClick={() => setEndfassung(v => !v)}
+          title="Durchgestrichenes und Markierungen ausblenden — nur der neue Wortlaut">✓ Endfassung</button>
         <button className={`chip text-xs ${nurKonflikte ? "chip-on" : ""}`} onClick={() => setNurKonflikte(v => !v)}>⚠ nur Konflikte</button>
         <input className="input w-44 text-sm py-1" placeholder="Einheit suchen…" value={suche} onChange={e => setSuche(e.target.value)} />
         <span className="flex-1" />
@@ -196,6 +214,7 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
           onNewCode={async () => { try { setPlan(await api.curriculum.newGuestCode(plan.id)); } catch (e: any) { toast(e.message, "error"); } }} />
       )}
     </div>
+    </KartenAnsicht.Provider>
   );
 
   // Render-Funktionen statt innerer Komponenten: sonst baut React die Zellen bei
@@ -244,11 +263,17 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
     const zeilen = NIVEAUS.filter(n => niveaus.has(n));
     const spalten = `7.5rem repeat(${einheiten.length}, minmax(15rem, 19rem))`;
     const kopfZelle = "sticky left-0 z-10 bg-page border-r border-line px-2 py-1.5 text-xs font-semibold";
+    const zu = zuKlassen.has(nr);
+    const umklappen = () => setZuKlassen(z => { const x = new Set(z); x.has(nr) ? x.delete(nr) : x.add(nr); return x; });
 
     return (
       <div key={nr} className="border-t border-line">
         <div {...ziel(`k${nr}`, nr)} className={`flex flex-wrap items-center gap-2 px-3 py-1.5 text-sm ${hell(`k${nr}`)}`}>
-          <span className="font-semibold">Klasse {nr}</span>
+          <button className="font-semibold flex items-center gap-1" onClick={umklappen} aria-expanded={!zu}
+            title={zu ? "Klasse aufklappen" : "Klasse zuklappen"}>
+            <span className="text-muted w-4">{zu ? "▸" : "▾"}</span>Klasse {nr}
+          </button>
+          {zu && <span className="text-xs text-muted">· {kl.themen.length} Unterrichtseinheiten</span>}
           {ab && <span className="text-xs text-muted">· neuer Plan ab {ab}</span>}
           {nr > 9 && <span className="text-xs text-muted">· ohne Hauptschulniveau</span>}
           <span className="flex-1" />
@@ -261,7 +286,7 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
               setOffen({ art: "thema", klasse: nr, thema: { id: neueId(doc, nr), titel: "", wochen: null, inhalte: {}, karten: [] } })}>+ Unterrichtseinheit</button>
           )}
         </div>
-        {einheiten.length === 0 ? (
+        {zu ? null : einheiten.length === 0 ? (
           <div className="px-3 pb-2 text-xs text-muted">Keine Unterrichtseinheiten — hierher ziehen oder anlegen.</div>
         ) : (
           <div className="overflow-x-auto">
@@ -296,7 +321,7 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
                 const alt = s.alt.filter(sichtbar);
                 return (
                   <div key={t.id} {...ziel(`a${t.id}`, nr, t)} className={`border-r border-b border-line p-1.5 ${hell(`a${t.id}`)}`}>
-                    <details open={altOffen} key={String(altOffen)}>
+                    <details open={kartenAuf} key={String(kartenAuf)}>
                       <summary className="cursor-pointer text-xs text-muted flex flex-wrap items-center gap-1">
                         {alt.length} Karten
                         {[...new Set(alt.map(k => idx.paareAlt.get(k.id)?.[0]?.status ?? "entfallen"))].map(st => <StatusChip key={st} status={st} />)}
