@@ -12,7 +12,8 @@ import HelpButton from "@/components/HelpButton";
  * Methoden-Kompendium: Methoden aus Didaktik, Pädagogik und Psychologie mit
  * Ablauf, Evidenz und Quellen. Die Inhalte liegen als JSON + SVG in
  * public/kompendium und werden aus data/methoden_kompendium gebaut
- * (python data/methoden_kompendium/build.py && python …/svgs.py).
+ * (python data/methoden_kompendium/build.py && python …/svgs.py && python …/standalone.py;
+ * standalone.py legt die herunterladbare Offline-Fassung methoden_kompendium.html daneben).
  */
 
 type Evidenz = "stark" | "mittel" | "begrenzt" | "praxis" | "umstritten";
@@ -191,7 +192,13 @@ export default function KompendiumPage() {
             {daten.meta.total_mythen} Mythen · {daten.meta.total_quellen} Quellen · Stand {daten.meta.generated}
           </p>
         </div>
-        <HelpButton slug="kompendium" />
+        <div className="flex items-center gap-2 shrink-0">
+          <a href={BASIS + "methoden_kompendium.html"} download="Methoden-Kompendium.html" className="btn"
+            title="Das ganze Kompendium als eine HTML-Datei, offline im Browser lesbar">
+            ⬇ Als HTML herunterladen
+          </a>
+          <HelpButton slug="kompendium" />
+        </div>
       </div>
 
       <p className="text-xs text-muted max-w-4xl">

@@ -313,7 +313,8 @@ Das Lehrkraft-Werkzeugset. Standardmäßig nur für Lehrkräfte sichtbar.
 - Nachschlagewerk mit Methoden aus Didaktik, Pädagogik und Psychologie für Einstieg, Hauptteil und Abschluss, für Einzel- und Gruppensettings mit Kindern, Jugendlichen und Erwachsenen
 - Je Methode Ablauf, Varianten, Stolpersteine, Evidenzstufe, nötige Qualifikation und Quellen (DOIs geprüft); dazu Grundlagenkapitel, Grafiken und ein Mythen-Check
 - Persönliche Markierungen je Methode (Favorit, Einarbeiten, Brauch ich nicht) mit eigenem Filter; gespeichert im Konto
-- Inhalte liegen als YAML in `data/methoden_kompendium/`; `python build.py` und `python svgs.py` dort erzeugen JSON und Grafiken in `frontend/public/kompendium/`
+- Download als eigenständige HTML-Datei (offline lesbar, mit Suche, Filtern und Grafiken)
+- Inhalte liegen als YAML in `data/methoden_kompendium/`; `python build.py`, `python svgs.py` und `python standalone.py` dort erzeugen JSON, Grafiken und die Offline-HTML in `frontend/public/kompendium/`
 
 ### 🧭 Curriculinator
 - Schulinternes Curriculum gegen alten und neuen Lehrplan, dreispaltig je Klassenblock: alte Lehrplan-Karten | eigene Themen (G/R/H/LB/GE, Wochen) | neue Karten

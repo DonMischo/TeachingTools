@@ -872,6 +872,7 @@ tools:
       - Filter nach Setting, Zielgruppe, Anwendungsgebiet, Evidenz, Qualifikation
       - Grundlagenkapitel, Grafiken, Mythen-Check, Quellen mit DOI
       - Markieren als Favorit, Einarbeiten, Brauch ich nicht (im Konto gespeichert)
+      - Download als eigenständige Offline-HTML
   - id: curriculum
     name: Curriculinator
     faehigkeiten: {use: [true, false]}
