@@ -190,7 +190,7 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
         <span className="flex-1" />
         <span className="text-xs text-muted">{nurLesen ? "nur lesen · " : ""}v{plan.version}{plan.zuletzt_von ? ` · zuletzt ${plan.zuletzt_von}` : ""}</span>
         {!nurLesen && <button className="btn-secondary text-sm" onClick={alleVorschlaege} title="Partner der alten Karten in die Niveau-Zeilen übernehmen">⇣ Vorschläge übernehmen</button>}
-        <button className="btn-secondary text-sm" onClick={() => setOffen({ art: "ki" })}>🤖 KI-Prompt</button>
+        <button className="btn-secondary text-sm" onClick={() => setOffen({ art: "ki" })} title="KI ordnet den Unterrichtseinheiten Lehrplan-Karten zu">🤖 KI-Zuordnung</button>
         {!nurLesen && <button className="btn-secondary text-sm" onClick={() => setOffen({ art: "import" })}>⬆ Hochladen</button>}
         <button className="btn-secondary text-sm" onClick={() => setOffen({ art: "export" })}>⬇ Export</button>
         {!guestToken && <button className="btn-secondary text-sm" onClick={() => setOffen({ art: "teilen" })}>👥 Teilen</button>}
@@ -208,7 +208,7 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
         zuordnenOps={zuordnenOps} />}
       {offen?.art === "export" && <ExportDialog planId={plan.id} planName={plan.name} doc={doc} guestToken={guestToken}
         onJson={herunterladen} onClose={() => setOffen(null)} />}
-      {offen?.art === "ki" && <KiDialog doc={doc} onClose={() => setOffen(null)} />}
+      {offen?.art === "ki" && <KiDialog doc={doc} art="zuordnung" onClose={() => setOffen(null)} />}
       {offen?.art === "import" && <ImportDialog doc={doc} idx={idx} onOps={ops} onClose={() => setOffen(null)} />}
       {offen?.art === "teilen" && (
         <TeilenDialog plan={plan} onClose={() => setOffen(null)}

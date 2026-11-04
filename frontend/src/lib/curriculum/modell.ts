@@ -86,6 +86,14 @@ export type Vorlage = {
   curriculum: { stand: string; klassen: Klasse[] };
 };
 
+/** Leere Vorlage (wie leer() in api/curriculum_ops.py), z. B. für den KI-Prompt vor dem Anlegen. */
+export function leereVorlage(fach: string): Vorlage {
+  return {
+    format: "tt-curriculum/1", fach, niveaus: [...NIVEAUS], bloecke: [...BLOECKE],
+    lehrplaene: [], abgleich: [], curriculum: { stand: "", klassen: [] },
+  };
+}
+
 export type KarteMitPlan = Karte & { plan: Lehrplan };
 
 /** Nachschlagetabellen für eine Vorlage — einmal je Stand bauen. */

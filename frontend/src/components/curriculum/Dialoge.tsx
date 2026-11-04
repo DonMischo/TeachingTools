@@ -11,7 +11,8 @@ import {
   BLOECKE, NIVEAUS, NIVEAU_NAME, STATUS, blockVon, neueId, niveauGilt, zuordnen, type Block, type Index, type KarteMitPlan,
   type Karte, type Paar, type Status, type Thema, type Vorlage,
 } from "@/lib/curriculum/modell";
-import { antwortLesen, vergleichPrompt, zuordnungPrompt, type Schulart } from "@/lib/curriculum/kiPrompt";
+import { antwortLesen, vergleichPrompt, zuordnungPrompt, type KiArt, type Schulart } from "@/lib/curriculum/kiPrompt";
+import { JsonEingabe } from "./JsonEingabe";
 import { api, type CurriculumPlanOut } from "@/lib/api";
 
 type Op = Record<string, unknown>;
@@ -177,8 +178,13 @@ export function KarteDialog({ karte, idx, doc, onOps, onClose, nurLesen, zuordne
 
 // ── KI-Prompt ────────────────────────────────────────────────────────────────
 
-export function KiDialog({ doc, onClose }: { doc: Vorlage; onClose: () => void }) {
-  const [art, setArt] = useState<"vergleich" | "zuordnung">("vergleich");
+/**
+ * »vergleich« (Lehrpläne erfassen) sitzt auf der Startseite neben »Neuer Plan« —
+ * die Antwort wird dort als Vorlage-Datei angelegt. »zuordnung« braucht die
+ * Unterrichtseinheiten eines Plans und sitzt deshalb im Plan.
+ */
+export function KiDialog({ doc, art, onClose }: { doc: Vorlage; art: KiArt; onClose: () => void }) {
+  const alteErfasst = doc.lehrplaene.some(l => l.rolle === "alt" && l.karten.length);
   const [schularten, setSchularten] = useState<Schulart[]>(["RS"]);
   // Ohne alten Plan im Dokument (z. B. Physik nur 2026) ist »nur neue Pläne erfassen« die Voreinstellung.
   const [mitAlt, setMitAlt] = useState(doc.lehrplaene.some(l => l.rolle === "alt"));
@@ -196,17 +202,15 @@ export function KiDialog({ doc, onClose }: { doc: Vorlage; onClose: () => void }
     setTimeout(() => setStatus(""), 2500);
   };
   return (
-    <Fenster titel="KI-Prompt" onClose={onClose} breit>
+    <Fenster titel={art === "vergleich" ? `KI-Prompt: Lehrpläne ${doc.fach} erfassen` : "KI-Prompt: Curriculum zuordnen"} onClose={onClose} breit>
       <ol className="list-decimal pl-5 text-xs text-muted mb-3 leading-relaxed">
-        <li>Art wählen, Prompt kopieren und in einen KI-Chat einfügen.</li>
+        <li>Optionen wählen, Prompt kopieren und in einen KI-Chat einfügen.</li>
         {art === "vergleich" && <li>Die Lehrplan-PDFs im Chat anhängen — welche, steht im Prompt unter »Im Anhang«.</li>}
-        <li>Die Antwort (JSON) über »⬆ Hochladen« einfügen. Nur die mitgeschickten Teile werden ersetzt.</li>
+        {art === "vergleich"
+          ? <li>Die Antwort als .json-Datei speichern und unter »Neuer Plan« bei »Aus Vorlage-Datei« hochladen (oder in einem Plan über »⬆ Hochladen« ergänzen).</li>
+          : <li>Die Antwort als .json-Datei speichern und über »⬆ Hochladen« wählen. Vorhandene Zuordnungen bleiben.</li>}
         <li>Prüfen! Die KI kann Karten auslassen oder falsch zuordnen.</li>
       </ol>
-      <div className="flex flex-wrap gap-1 mb-3">
-        <button className={`chip ${art === "vergleich" ? "chip-on" : ""}`} onClick={() => setArt("vergleich")}>Lehrpläne erfassen / vergleichen</button>
-        <button className={`chip ${art === "zuordnung" ? "chip-on" : ""}`} onClick={() => setArt("zuordnung")}>Curriculum zuordnen</button>
-      </div>
       {art === "vergleich" ? (
         <div className="flex flex-wrap gap-3 items-center mb-3 text-sm">
           {([["RS"], ["GY"], ["RS", "GY"]] as Schulart[][]).map(a => (
@@ -215,7 +219,7 @@ export function KiDialog({ doc, onClose }: { doc: Vorlage; onClose: () => void }
           ))}
           <label className="flex items-center gap-1"><input type="checkbox" checked={mitAlt} onChange={e => setMitAlt(e.target.checked)} />
             mit altem Lehrplan vergleichen</label>
-          {mitAlt && (
+          {mitAlt && alteErfasst && (
             <label className="flex items-center gap-1"><input type="checkbox" checked={mit} onChange={e => setMit(e.target.checked)} />
               schon erfasste alte Karten mitschicken (ids bleiben gleich)</label>
           )}
@@ -281,13 +285,12 @@ export function ImportDialog({ doc, idx, onOps, onClose }: { doc: Vorlage; idx: 
     catch (e: any) { return { vorschau: null, fehler: String(e?.message ?? e) }; }
   }, [text, doc, idx]);
   return (
-    <Fenster titel="Vorlage hochladen" onClose={onClose} breit>
-      <p className="text-sm text-muted mb-2">JSON-Datei wählen oder die KI-Antwort einfügen. Lehrpläne werden nach id ersetzt, Abgleich und Curriculum nur, wenn sie mitkommen.</p>
-      <input type="file" accept=".json,application/json" className="mb-2 text-sm"
-        onChange={async e => { const f = e.target.files?.[0]; if (f) setText(await f.text()); }} />
-      <textarea className="input font-mono text-[11px] h-48 mb-2" value={text} placeholder="{ … } oder ```json … ```"
-        onChange={e => setText(e.target.value)} />
-      {vorschau ? <p className="text-sm text-ok mb-3">✓ {vorschau.text}</p> : fehler && <p className="text-sm text-bad mb-3">{fehler}</p>}
+    <Fenster titel="Hochladen" onClose={onClose} breit>
+      <p className="text-sm text-muted mb-3">Vorlage, Export oder gespeicherte KI-Antwort (z. B. eine Zuordnung). Lehrpläne werden nach id ersetzt, Abgleich und Curriculum nur, wenn sie mitkommen.</p>
+      <JsonEingabe onText={setText} />
+      <div className="mt-3">
+        {vorschau ? <p className="text-sm text-ok mb-3">✓ {vorschau.text}</p> : fehler && <p className="text-sm text-bad mb-3">{fehler}</p>}
+      </div>
       <button className="btn-primary" disabled={!vorschau} onClick={() => { onOps(vorschau!.ops); onClose(); }}>Übernehmen</button>
     </Fenster>
   );
