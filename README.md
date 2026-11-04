@@ -308,7 +308,7 @@ Das Lehrkraft-Werkzeugset. Standardmäßig nur für Lehrkräfte sichtbar.
 - Persönliche Markierungen je Methode (Favorit, Einarbeiten, Brauch ich nicht) mit eigenem Filter; gespeichert im Konto
 - Inhalte liegen als YAML in `data/methoden_kompendium/`; `python build.py` und `python svgs.py` dort erzeugen JSON und Grafiken in `frontend/public/kompendium/`
 
-### 🧭 Curriculum-Abgleich
+### 🧭 Curriculinator
 - Schulinternes Curriculum gegen alten und neuen Lehrplan, dreispaltig je Klassenblock: alte Lehrplan-Karten | eigene Themen (G/R/H/LB/GE, Wochen) | neue Karten
 - Abgleich alt ↔ neu je Karte (identisch, geändert mit Wort-Diff, verschoben, neu, entfällt), getrennt für Real- und Hauptschulniveau; Konflikte am Thema, offene neue Inhalte je Block, Wochensumme gegen verfügbare Wochen
 - Themen per Ziehen zwischen Klassen verschieben, Karten zuordnen, fehlende Niveaus ergänzen; ein gemeinsamer Stand je Fachschaft (Änderungen per Operation, `api/curriculum_ops.py`), Gastbeitritt per QR

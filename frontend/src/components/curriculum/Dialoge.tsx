@@ -1,6 +1,6 @@
 "use client";
 /**
- * Dialoge des Curriculum-Abgleichs: Thema, Karte (mit Paar), KI-Prompt,
+ * Dialoge des Curriculum-Abgleichs: Unterrichtseinheit, Karte (mit Paar), KI-Prompt,
  * Hochladen und Teilen (QR). Jeder Dialog gibt fertige Operationen an
  * `onOps` — geschrieben wird im Editor.
  */
@@ -8,8 +8,8 @@ import { useMemo, useRef, useState, type ReactNode } from "react";
 import { JoinQR } from "@/components/JoinQR";
 import { useLanUrl } from "@/hooks/useLanUrl";
 import {
-  BLOECKE, NIVEAUS, NIVEAU_NAME, STATUS, blockVon, niveauGilt, type Block, type Index, type KarteMitPlan,
-  type Paar, type Status, type Thema, type Vorlage,
+  BLOECKE, NIVEAUS, NIVEAU_NAME, STATUS, blockVon, neueId, niveauGilt, zuordnen, type Block, type Index, type KarteMitPlan,
+  type Karte, type Paar, type Status, type Thema, type Vorlage,
 } from "@/lib/curriculum/modell";
 import { antwortLesen, vergleichPrompt, zuordnungPrompt } from "@/lib/curriculum/kiPrompt";
 import type { CurriculumPlanOut } from "@/lib/api";
@@ -42,7 +42,7 @@ export function ThemaDialog({ thema, klasse, idx, onOps, onClose, nurLesen }: {
     onClose();
   };
   return (
-    <Fenster titel={`Thema · Klasse ${klasse}`} onClose={onClose} breit>
+    <Fenster titel={`Unterrichtseinheit · Klasse ${klasse}`} onClose={onClose} breit>
       <div className="grid grid-cols-[1fr_7rem_7rem] gap-2 mb-3">
         <label className="flex flex-col gap-1"><span className="label">Titel</span>
           <input className="input" value={t.titel} onChange={e => setT({ ...t, titel: e.target.value })} disabled={nurLesen} /></label>
@@ -56,16 +56,16 @@ export function ThemaDialog({ thema, klasse, idx, onOps, onClose, nurLesen }: {
       </div>
       {NIVEAUS.map(n => (
         <label key={n} className="flex flex-col gap-1 mb-2">
-          <span className="label">{NIVEAU_NAME[n]}{!niveauGilt(n, kl) && " (nach Kl. 9 kein Hauptschulniveau)"}</span>
+          <span className="label">Unser Inhalt · {NIVEAU_NAME[n]}{!niveauGilt(n, kl) && " (nach Kl. 9 kein Hauptschulniveau)"}</span>
           <textarea className="input min-h-[3.5rem] text-sm" value={t.inhalte[n] ?? ""} disabled={nurLesen}
             onChange={e => setT({ ...t, inhalte: { ...t.inhalte, [n]: e.target.value } })} />
         </label>
       ))}
       <label className="flex flex-col gap-1 mb-3"><span className="label">Notiz</span>
         <input className="input" value={t.notiz ?? ""} disabled={nurLesen} onChange={e => setT({ ...t, notiz: e.target.value })} /></label>
-      <div className="label mb-1">Zugeordnete Lehrplan-Karten</div>
+      <div className="label mb-1">Karten des alten Lehrplans</div>
       <div className="flex flex-wrap gap-1 mb-4">
-        {t.karten.length === 0 && <span className="text-xs text-muted">keine — Karten auf das Thema ziehen</span>}
+        {t.karten.length === 0 && <span className="text-xs text-muted">keine — alte Karten in die Spalte ziehen</span>}
         {t.karten.map(id => (
           <span key={id} className="chip text-xs">
             {idx.karten.get(id)?.plan.schulart} {idx.karten.get(id)?.plan.rolle} · {idx.karten.get(id)?.titel ?? id}
@@ -77,7 +77,7 @@ export function ThemaDialog({ thema, klasse, idx, onOps, onClose, nurLesen }: {
         <div className="flex gap-2">
           <button className="btn-primary" onClick={speichern}>Speichern</button>
           <span className="flex-1" />
-          <button className="btn-danger" onClick={() => { if (confirm(`Thema »${t.titel}« löschen?`)) { onOps([{ op: "thema_loeschen", id: t.id }]); onClose(); } }}>🗑 Löschen</button>
+          <button className="btn-danger" onClick={() => { if (confirm(`Unterrichtseinheit »${t.titel}« löschen?`)) { onOps([{ op: "thema_loeschen", id: t.id }]); onClose(); } }}>🗑 Löschen</button>
         </div>
       )}
     </Fenster>
@@ -86,10 +86,9 @@ export function ThemaDialog({ thema, klasse, idx, onOps, onClose, nurLesen }: {
 
 // ── Karte (+ Paar) ───────────────────────────────────────────────────────────
 
-export function KarteDialog({ karte, idx, doc, onOps, onClose, nurLesen, neuesThema }: {
+export function KarteDialog({ karte, idx, doc, onOps, onClose, nurLesen, zuordnenOps }: {
   karte: KarteMitPlan; idx: Index; doc: Vorlage; onOps: (ops: Op[]) => void; onClose: () => void; nurLesen: boolean;
-  /** neue Karte → Thema in Klasse anlegen */
-  neuesThema: (karte: KarteMitPlan, klasse: number, wochen: number | null) => void;
+  zuordnenOps: (thema: Thema, klasse: number, ids: string[]) => Op[];
 }) {
   const { plan, ...roh } = karte;
   const [k, setK] = useState(roh);
@@ -101,14 +100,19 @@ export function KarteDialog({ karte, idx, doc, onOps, onClose, nurLesen, neuesTh
   const [wochen, setWochen] = useState("");
 
   const speichern = () => {
-    const ops: Op[] = [{ op: "karte", lehrplan: plan.id, karte: { ...k, niveaus: Object.fromEntries(Object.entries(k.niveaus).filter(([, v]) => v?.trim())) } }];
-    ps.forEach((p, i) => { if (JSON.stringify(p) !== JSON.stringify(paare[i])) ops.push({ op: "paar", paar: p }); });
-    if (ziel.startsWith("t:")) {
-      const { kl, t } = themen.find(x => x.t.id === ziel.slice(2))!;
-      if (!t.karten.includes(karte.id)) ops.push({ op: "thema", klasse: kl, thema: { ...t, karten: [...t.karten, karte.id] } });
+    const niveaus = Object.fromEntries(Object.entries(k.niveaus).filter(([, v]) => v?.trim())) as Karte["niveaus"];
+    let wohin: { kl: number; t: Thema } | null = null;
+    if (ziel.startsWith("t:")) wohin = themen.find(x => x.t.id === ziel.slice(2)) ?? null;
+    if (ziel.startsWith("k:")) {
+      const kl = Number(ziel.slice(2));
+      wohin = { kl, t: { id: neueId(doc, kl), titel: k.titel ?? "Neue Unterrichtseinheit", wochen: wochen === "" ? null : Number(wochen), inhalte: {}, karten: [], notiz: "" } };
     }
+    // Zuordnen kopiert R nach H, wenn H fehlt — hier in die eigene Kartenänderung, damit Eingaben im Dialog bleiben.
+    if (wohin && plan.rolle === "neu" && niveaus.R && !niveaus.H && niveauGilt("H", wohin.kl)) niveaus.H = niveaus.R;
+    const ops: Op[] = [{ op: "karte", lehrplan: plan.id, karte: { ...k, niveaus } }];
+    ps.forEach((p, i) => { if (JSON.stringify(p) !== JSON.stringify(paare[i])) ops.push({ op: "paar", paar: p }); });
+    if (wohin) ops.push(...zuordnenOps(wohin.t, wohin.kl, [karte.id]).filter(o => o.op !== "karte"));
     onOps(ops);
-    if (ziel.startsWith("k:")) neuesThema({ ...k, plan }, Number(ziel.slice(2)), wochen === "" ? null : Number(wochen));
     onClose();
   };
   const partner = (p: Paar) => (plan.rolle === "alt" ? p.neu : p.alt).map(id => idx.karten.get(id)?.titel ?? id).join(", ");
@@ -158,7 +162,7 @@ export function KarteDialog({ karte, idx, doc, onOps, onClose, nurLesen, neuesTh
               <option value="">— nicht zuordnen —</option>
               {themen.map(({ kl, t }) => <option key={t.id} value={`t:${t.id}`}>zu Kl. {kl}: {t.titel}</option>)}
               {(karte.block === "5/6" ? [5, 6] : karte.block === "7/8" ? [7, 8] : [9, 10]).map(kl =>
-                <option key={kl} value={`k:${kl}`}>als neues Thema in Kl. {kl}</option>)}
+                <option key={kl} value={`k:${kl}`}>als neue Unterrichtseinheit in Kl. {kl}</option>)}
             </select>
             {ziel.startsWith("k:") && (
               <input className="input w-28" type="number" step="0.5" min="0" placeholder="Wochen" value={wochen} onChange={e => setWochen(e.target.value)} />
@@ -218,7 +222,7 @@ export function KiDialog({ doc, onClose }: { doc: Vorlage; onClose: () => void }
             <button key={r} className={`chip ${rolle === r ? "chip-on" : ""}`} onClick={() => setRolle(r)}>Karten des {r}en Plans</button>
           ))}
           <label className="flex items-center gap-1"><input type="checkbox" checked={nurOhne} onChange={e => setNurOhne(e.target.checked)} />
-            nur Themen ohne Karten</label>
+            nur Unterrichtseinheiten ohne Karten</label>
         </div>
       )}
       <div className="flex items-center gap-2 mb-2">
@@ -235,20 +239,26 @@ export function KiDialog({ doc, onClose }: { doc: Vorlage; onClose: () => void }
 // ── Hochladen ────────────────────────────────────────────────────────────────
 
 /** JSON (Datei oder KI-Antwort) → Operationen; »zuordnung« wird zu Thema-Änderungen. */
-export function importOps(daten: any, doc: Vorlage): { ops: Op[]; text: string } {
+export function importOps(daten: any, doc: Vorlage, idx: Index): { ops: Op[]; text: string } {
   if (!daten || typeof daten !== "object") throw new Error("Kein JSON-Objekt");
   if (Array.isArray(daten.zuordnung)) {
+    // Alte Karten kommen nach oben, neue verteilen sich auf ihre Niveaus (wie beim Ziehen).
     const ops: Op[] = [];
-    let n = 0;
+    let einheiten = 0, n = 0;
     for (const z of daten.zuordnung) {
       const kl = doc.curriculum.klassen.find(k => k.themen.some(t => t.id === z.thema));
-      const t = kl?.themen.find(t => t.id === z.thema);
+      let t = kl?.themen.find(t => t.id === z.thema);
       if (!kl || !t) continue;
-      const karten = [...new Set([...t.karten, ...(z.karten ?? [])])];
-      n += karten.length - t.karten.length;
-      ops.push({ op: "thema", klasse: kl.klasse, thema: { ...t, karten } });
+      const vorher = JSON.stringify(t);
+      for (const id of z.karten ?? []) {
+        const r = zuordnen(idx, t, id, kl.klasse);
+        if (r.karte) ops.push({ op: "karte", ...r.karte });
+        if (JSON.stringify(r.thema) !== JSON.stringify(t)) n++;
+        t = r.thema;
+      }
+      if (JSON.stringify(t) !== vorher) { einheiten++; ops.push({ op: "thema", klasse: kl.klasse, thema: t }); }
     }
-    return { ops, text: `${ops.length} Themen bekommen zusammen ${n} weitere Karten.` };
+    return { ops, text: `${einheiten} Unterrichtseinheiten bekommen zusammen ${n} weitere Karten.` };
   }
   const teile = [
     ...(daten.lehrplaene ?? []).map((l: any) => `Lehrplan ${l.id} (${l.karten?.length ?? 0} Karten)`),
@@ -259,13 +269,13 @@ export function importOps(daten: any, doc: Vorlage): { ops: Op[]; text: string }
   return { ops: [{ op: "import", daten }], text: teile.join(" · ") };
 }
 
-export function ImportDialog({ doc, onOps, onClose }: { doc: Vorlage; onOps: (ops: Op[]) => void; onClose: () => void }) {
+export function ImportDialog({ doc, idx, onOps, onClose }: { doc: Vorlage; idx: Index; onOps: (ops: Op[]) => void; onClose: () => void }) {
   const [text, setText] = useState("");
   const { vorschau, fehler } = useMemo(() => {
     if (!text.trim()) return { vorschau: null, fehler: "" };
-    try { return { vorschau: importOps(antwortLesen(text), doc), fehler: "" }; }
+    try { return { vorschau: importOps(antwortLesen(text), doc, idx), fehler: "" }; }
     catch (e: any) { return { vorschau: null, fehler: String(e?.message ?? e) }; }
-  }, [text, doc]);
+  }, [text, doc, idx]);
   return (
     <Fenster titel="Vorlage hochladen" onClose={onClose} breit>
       <p className="text-sm text-muted mb-2">JSON-Datei wählen oder die KI-Antwort einfügen. Lehrpläne werden nach id ersetzt, Abgleich und Curriculum nur, wenn sie mitkommen.</p>

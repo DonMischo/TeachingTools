@@ -863,7 +863,7 @@ tools:
       - Grundlagenkapitel, Grafiken, Mythen-Check, Quellen mit DOI
       - Markieren als Favorit, Einarbeiten, Brauch ich nicht (im Konto gespeichert)
   - id: curriculum
-    name: Curriculum-Abgleich
+    name: Curriculinator
     faehigkeiten: {use: [true, false]}
     kann:
       - Schulinternes Curriculum (G/R/H/LB/GE, Wochen je Thema) gegen alten und neuen Lehrplan

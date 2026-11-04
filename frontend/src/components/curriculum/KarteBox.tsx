@@ -4,7 +4,7 @@
  * Neue Karten zeigen den Unterschied zur alten Partnerkarte wortweise:
  * durchgestrichen = fällt weg, unterstrichen = kommt dazu.
  */
-import { NIVEAUS, wortDiff, type Index, type KarteMitPlan, type Niveau, type Paar, type Status, statusVon } from "@/lib/curriculum/modell";
+import { NIVEAUS, karteText, wortDiff, type Index, type KarteMitPlan, type Niveau, type Paar, type Status, statusVon } from "@/lib/curriculum/modell";
 
 export const STATUS_STIL: Record<Status, { name: string; cls: string }> = {
   identisch: { name: "identisch", cls: "bg-green-500/15 text-green-600 border-green-500/40" },
@@ -31,7 +31,7 @@ function DiffText({ alt, neu }: { alt: string; neu: string }) {
   );
 }
 
-export function KarteBox({ karte, idx, niveaus, paar, woanders, onOpen, draggable = true }: {
+export function KarteBox({ karte, idx, niveaus, paar, woanders, onOpen, draggable = true, nurNiveau, onLoesen }: {
   karte: KarteMitPlan;
   idx: Index;
   niveaus: Set<Niveau>;
@@ -41,13 +41,19 @@ export function KarteBox({ karte, idx, niveaus, paar, woanders, onOpen, draggabl
   woanders?: boolean;
   onOpen: () => void;
   draggable?: boolean;
+  /** in einer Niveau-Zeile: nur diesen Text zeigen */
+  nurNiveau?: Niveau;
+  /** ✕ zum Lösen aus der Zeile */
+  onLoesen?: () => void;
 }) {
-  const status = paar?.status ?? statusVon(idx, karte.id);
+  const p = paar ?? (karte.plan.rolle === "neu" ? (idx.paareNeu.get(karte.id) ?? [])[0] : undefined);
+  const status = p?.status ?? statusVon(idx, karte.id);
   // Vergleichstext je Niveau: erste alte Partnerkarte derselben Schulart mit Text für dieses Niveau.
-  const altePartner = paar && karte.plan.rolle === "neu"
-    ? paar.alt.map(id => idx.karten.get(id)).filter(k => k && k.plan.schulart === karte.plan.schulart) : [];
+  const altePartner = p && karte.plan.rolle === "neu"
+    ? p.alt.map(id => idx.karten.get(id)).filter(k => k && k.plan.schulart === karte.plan.schulart) : [];
   const altText = (n: Niveau) => altePartner.find(k => k?.niveaus[n])?.niveaus[n];
-  const zeilen = NIVEAUS.filter(n => niveaus.has(n) && karte.niveaus[n]);
+  const zeilen = nurNiveau ? [nurNiveau] : NIVEAUS.filter(n => niveaus.has(n) && karte.niveaus[n]);
+  const text = (n: Niveau) => (nurNiveau ? karteText(karte, n) : karte.niveaus[n]) ?? "";
   return (
     <div
       draggable={draggable}
@@ -62,20 +68,24 @@ export function KarteBox({ karte, idx, niveaus, paar, woanders, onOpen, draggabl
         <span className="font-medium flex-1 min-w-0">{karte.titel ?? karte.id}</span>
         {woanders && <span className="text-[10px] text-violet-500">→ Kl. {karte.block === "9/10" && karte.klasse ? karte.klasse : karte.block}</span>}
         <StatusChip status={status} />
+        {onLoesen && (
+          <button className="text-muted hover:text-bad px-1" title="Aus dieser Zeile lösen"
+            onClick={e => { e.stopPropagation(); onLoesen(); }}>✕</button>
+        )}
       </div>
       {zeilen.map(n => (
         <div key={n} className="flex gap-1 leading-snug mt-0.5">
-          <span className="font-mono text-[10px] text-muted w-5 shrink-0">{n}</span>
+          {!nurNiveau && <span className="font-mono text-[10px] text-muted w-5 shrink-0">{n}</span>}
           <span>
             {altText(n) && status !== "identisch"
-              ? <DiffText alt={altText(n)!} neu={karte.niveaus[n]!} />
-              : karte.niveaus[n]}
+              ? <DiffText alt={altText(n)!} neu={text(n)} />
+              : text(n)}
           </span>
         </div>
       ))}
       {zeilen.length === 0 && <div className="text-muted italic">kein Text für die gewählten Niveaus</div>}
-      {paar?.unterschied && karte.plan.rolle === "neu" && (
-        <div className="mt-1 text-[11px] text-amber-600">⚑ {paar.unterschied}</div>
+      {p?.unterschied && karte.plan.rolle === "neu" && (
+        <div className="mt-1 text-[11px] text-amber-600">⚑ {p.unterschied}</div>
       )}
     </div>
   );

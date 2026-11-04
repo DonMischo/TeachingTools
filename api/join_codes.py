@@ -75,7 +75,7 @@ JOIN_CODE_TOOLS: tuple[JoinCodeTool, ...] = (
     JoinCodeTool("fragmente", FragmentCollection, "guest_code", "🗂️ Pinnwand", "/fragmente/join?code={code}",
                  owner_column="owner_teacher_id"),
     # Curriculum-Abgleich: Kolleg·innen ohne Konto kommen per QR in den Fachschaftsplan.
-    JoinCodeTool("curriculum", CurriculumPlan, "guest_code", "🧭 Curriculum", "/tools/curriculum/join?code={code}",
+    JoinCodeTool("curriculum", CurriculumPlan, "guest_code", "🧭 Curriculinator", "/tools/curriculum/join?code={code}",
                  owner_column="owner_teacher_id"),
 )
 

@@ -67,7 +67,7 @@ const ALL_CARDS: Werkzeug[] = [
     slug: "curriculum",
     href: "/tools/curriculum",
     icon: "🧭",
-    title: "Curriculum-Abgleich",
+    title: "Curriculinator",
     description: "Schulcurriculum gegen alten und neuen Lehrplan: Konflikte, neue und verschobene Inhalte, Wochen je Klasse.",
     color: "#7c6ee6",
   },

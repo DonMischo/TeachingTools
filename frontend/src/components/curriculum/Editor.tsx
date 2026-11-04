@@ -1,14 +1,17 @@
 "use client";
 /**
- * Curriculum-Abgleich: drei Spalten je Klassenblock.
+ * Curriculum-Abgleich, transponiert: je Klasse eine Tabelle mit den
+ * Unterrichtseinheiten als Spalten und diesen Zeilen:
  *
- *   alter Lehrplan (Karten am Thema) | unser Curriculum | neuer Lehrplan
+ *   Unterrichtseinheit (Titel, Wochen)
+ *   alter Lehrplan     — zugeordnete alte Karten, aufklappbar
+ *   G / R / H / LB / GE — unser Inhalt je Niveau + zugeordnete neue Karten
+ *   neuer Lehrplan     — Vorschläge: Partner der alten Karten aus dem Abgleich
  *
- * Rechts stehen zu jedem Thema die Partner seiner alten Karten — gleich,
- * geändert (Wort-Diff) oder gestrichelt, wenn sie neu in einem anderen Block
- * liegen. Unter jedem Block folgen die neuen Karten, die noch kein Thema
- * abdeckt (neu oder hierher verschoben). Themen werden per Ziehen zwischen
- * Klassen verschoben, Karten per Ziehen einem Thema zugeordnet.
+ * Neue Karten zieht man in eine Spalte: GY landet in G, RS in R und H (fehlt
+ * der H-Text, wird R kopiert). Auf eine Niveau-Zeile gezogen landet sie nur
+ * dort. Unter jedem Block stehen die neuen Karten, die noch keine Einheit hat.
+ * Einheiten zieht man am Kopf in eine andere Spalte oder Klasse.
  *
  * Gespeichert wird über Operationen (api/curriculum_ops.py); alle paar
  * Sekunden fragt die Seite, ob jemand anderes etwas geändert hat.
@@ -17,10 +20,11 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "rea
 import { api, type CurriculumPlanOut } from "@/lib/api";
 import { useToast } from "@/contexts/ToastContext";
 import {
-  BLOECKE, KLASSEN_JE_BLOCK, NIVEAUS, freieAlteKarten, index, neueId, niveauGilt, offeneKarten,
-  themaSicht, wochenSumme, type Block, type KarteMitPlan, type Klasse, type Niveau, type Thema,
+  BLOECKE, KLASSEN_JE_BLOCK, NIVEAUS, NIVEAU_NAME, freieAlteKarten, index, loesen, neueId, niveauGilt,
+  offeneKarten, themaSicht, wochenSumme, zuordnen,
+  type Block, type KarteMitPlan, type Klasse, type Niveau, type Thema,
 } from "@/lib/curriculum/modell";
-import { KarteBox } from "./KarteBox";
+import { KarteBox, StatusChip } from "./KarteBox";
 import { ImportDialog, KarteDialog, KiDialog, TeilenDialog, ThemaDialog } from "./Dialoge";
 
 type Op = Record<string, unknown>;
@@ -32,13 +36,19 @@ type Offen =
 
 const POLL_MS = 4000;
 
+/** Zeilenfarben je Niveau (vom Kollegium so gewünscht: G dunkelrot, R blau, H grün). */
+export const NIVEAU_FARBE: Record<Niveau, string> = {
+  G: "#9b1c1c", R: "#2563eb", H: "#16a34a", LB: "#d97706", GE: "#7c3aed",
+};
+
 export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanOut; guestToken?: string }) {
   const { toast } = useToast();
   const [plan, setPlan] = useState(start);
   const [offen, setOffen] = useState<Offen>(null);
-  const [niveaus, setNiveaus] = useState<Set<Niveau>>(new Set(["G", "R", "H"]));
+  const [niveaus, setNiveaus] = useState<Set<Niveau>>(new Set(NIVEAUS));
   const [schularten, setSchularten] = useState<Set<string>>(new Set(["RS", "GY"]));
   const [nurKonflikte, setNurKonflikte] = useState(false);
+  const [altOffen, setAltOffen] = useState(false);
   const [suche, setSuche] = useState("");
   const [ziehZiel, setZiehZiel] = useState<string | null>(null);
   const laeuft = useRef(false);
@@ -71,6 +81,18 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
   const sichtbar = (k: KarteMitPlan) => schularten.has(k.plan.schulart);
   const passt = (t: Thema) => !suche.trim() || `${t.titel} ${Object.values(t.inhalte).join(" ")}`.toLowerCase().includes(suche.toLowerCase());
 
+  /** Mehrere Karten zuordnen → Operationen (Karten mit kopiertem H-Text zuerst). */
+  const zuordnenOps = (thema: Thema, klasse: number, ids: string[], nur?: Niveau): Op[] => {
+    const out: Op[] = [];
+    let t = thema;
+    for (const id of ids) {
+      const r = zuordnen(idx, t, id, klasse, nur);
+      t = r.thema;
+      if (r.karte) out.push({ op: "karte", ...r.karte });
+    }
+    return [...out, { op: "thema", klasse, thema: t }];
+  };
+
   // ── Ziehen & Ablegen ──────────────────────────────────────────────────────
   const findeThema = (id: string) => {
     for (const k of doc.curriculum.klassen) {
@@ -79,34 +101,37 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
     }
     return null;
   };
-  const ablegen = (daten: string, klasse: number, vorThema?: Thema) => {
+  const ablegen = (daten: string, klasse: number, thema?: Thema, nur?: Niveau) => {
     setZiehZiel(null);
     if (nurLesen) return;
-    const [art, id] = [daten.slice(0, daten.indexOf(":")), daten.slice(daten.indexOf(":") + 1)];
+    const art = daten.slice(0, daten.indexOf(":"));
+    const id = daten.slice(daten.indexOf(":") + 1);
     if (art === "thema") {
       const q = findeThema(id);
-      if (!q || q.thema.id === vorThema?.id) return;
+      if (!q || q.thema.id === thema?.id) return;
       const kl = doc.curriculum.klassen.find(k => k.klasse === klasse);
-      let pos = vorThema ? kl?.themen.findIndex(t => t.id === vorThema.id) ?? 0 : kl?.themen.length ?? 0;
+      let pos = thema ? kl?.themen.findIndex(t => t.id === thema.id) ?? 0 : kl?.themen.length ?? 0;
       if (q.klasse === klasse && q.pos < pos) pos -= 1;  // eigenes Herausnehmen verschiebt die Stelle
       ops([{ op: "thema", klasse, pos, thema: q.thema }]);
-    } else if (art === "karte" && vorThema) {
-      if (!vorThema.karten.includes(id)) ops([{ op: "thema", klasse, thema: { ...vorThema, karten: [...vorThema.karten, id] } }]);
+    } else if (art === "karte" && thema) {
+      ops(zuordnenOps(thema, klasse, [id], nur));
     }
   };
-  const ziel = (key: string, klasse: number, thema?: Thema) => ({
+  const ziel = (key: string, klasse: number, thema?: Thema, nur?: Niveau) => ({
     onDragOver: (e: React.DragEvent) => { e.preventDefault(); setZiehZiel(key); },
     onDragLeave: () => setZiehZiel(z => (z === key ? null : z)),
-    onDrop: (e: React.DragEvent) => { e.preventDefault(); ablegen(e.dataTransfer.getData("text/plain"), klasse, thema); },
+    onDrop: (e: React.DragEvent) => { e.preventDefault(); ablegen(e.dataTransfer.getData("text/plain"), klasse, thema, nur); },
   });
+  const hell = (key: string) => (ziehZiel === key ? "ring-2 ring-accent ring-inset" : "");
 
-  const neuesThema = (karte: KarteMitPlan, klasse: number, wochen: number | null) => {
-    const thema: Thema = {
-      id: neueId(doc, klasse), titel: karte.titel ?? "Neues Thema", wochen,
-      inhalte: Object.fromEntries(Object.entries(karte.niveaus).filter(([n]) => niveauGilt(n as Niveau, klasse))),
-      karten: [karte.id], notiz: "",
-    };
-    ops([{ op: "thema", klasse, thema }]);
+  const alleVorschlaege = () => {
+    if (!confirm("Alle Vorschläge aus dem Abgleich (gleicher Block) den Unterrichtseinheiten zuordnen?")) return;
+    const liste: Op[] = [];
+    for (const k of doc.curriculum.klassen) for (const t of k.themen) {
+      const ids = themaSicht(idx, t, k.klasse).vorschlaege.filter(v => !v.woanders).map(v => v.karte.id);
+      if (ids.length) liste.push(...zuordnenOps(t, k.klasse, ids));
+    }
+    ops(liste);
   };
 
   const herunterladen = () => {
@@ -121,17 +146,17 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
   const inkraft = (klasse: number) => [...new Set(doc.lehrplaene.filter(l => l.rolle === "neu" && l.inkraft?.[klasse])
     .map(l => l.inkraft![klasse]))].join(" / ");
 
-  // ── Darstellung ───────────────────────────────────────────────────────────
   const klasseVon = (nr: number): Klasse =>
     doc.curriculum.klassen.find(k => k.klasse === nr) ?? { klasse: nr, wochen_verfuegbar: 36, themen: [] };
 
   return (
     <div className="flex flex-col gap-3">
       {/* Werkzeugleiste */}
-      <div className="flex flex-wrap items-center gap-2 sticky top-0 z-20 bg-page py-2 border-b border-line">
-        <div className="flex gap-1" title="Welche Niveaus angezeigt werden">
+      <div className="flex flex-wrap items-center gap-2 sticky top-0 z-30 bg-page py-2 border-b border-line">
+        <div className="flex gap-1" title="Welche Niveau-Zeilen angezeigt werden">
           {NIVEAUS.map(n => (
-            <button key={n} className={`chip text-xs ${niveaus.has(n) ? "chip-on" : ""}`}
+            <button key={n} className="chip text-xs" title={NIVEAU_NAME[n]}
+              style={niveaus.has(n) ? { background: NIVEAU_FARBE[n], color: "#fff", borderColor: NIVEAU_FARBE[n] } : undefined}
               onClick={() => setNiveaus(s => { const x = new Set(s); x.has(n) ? x.delete(n) : x.add(n); return x; })}>{n}</button>
           ))}
         </div>
@@ -141,28 +166,30 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
               onClick={() => setSchularten(x => { const y = new Set(x); y.has(s) ? y.delete(s) : y.add(s); return y; })}>{s}-Karten</button>
           ))}
         </div>
+        <button className={`chip text-xs ${altOffen ? "chip-on" : ""}`} onClick={() => setAltOffen(v => !v)}>alte Karten aufklappen</button>
         <button className={`chip text-xs ${nurKonflikte ? "chip-on" : ""}`} onClick={() => setNurKonflikte(v => !v)}>⚠ nur Konflikte</button>
-        <input className="input w-44 text-sm py-1" placeholder="Thema suchen…" value={suche} onChange={e => setSuche(e.target.value)} />
+        <input className="input w-44 text-sm py-1" placeholder="Einheit suchen…" value={suche} onChange={e => setSuche(e.target.value)} />
         <span className="flex-1" />
         <span className="text-xs text-muted">{nurLesen ? "nur lesen · " : ""}v{plan.version}{plan.zuletzt_von ? ` · zuletzt ${plan.zuletzt_von}` : ""}</span>
+        {!nurLesen && <button className="btn-secondary text-sm" onClick={alleVorschlaege} title="Partner der alten Karten in die Niveau-Zeilen übernehmen">⇣ Vorschläge übernehmen</button>}
         <button className="btn-secondary text-sm" onClick={() => setOffen({ art: "ki" })}>🤖 KI-Prompt</button>
         {!nurLesen && <button className="btn-secondary text-sm" onClick={() => setOffen({ art: "import" })}>⬆ Hochladen</button>}
         <button className="btn-secondary text-sm" onClick={herunterladen}>⬇ JSON</button>
         {!guestToken && <button className="btn-secondary text-sm" onClick={() => setOffen({ art: "teilen" })}>👥 Teilen</button>}
       </div>
 
-      <div className="grid grid-cols-[1fr_1.3fr_1fr] gap-3 text-xs font-semibold text-muted px-1">
-        <div>ALT · {doc.lehrplaene.filter(l => l.rolle === "alt").map(l => l.titel ?? l.id).join(" · ")}</div>
-        <div>UNSER CURRICULUM {doc.curriculum.stand && `(Stand ${doc.curriculum.stand})`}</div>
-        <div>NEU · {doc.lehrplaene.filter(l => l.rolle === "neu").map(l => l.titel ?? l.id).join(" · ")}</div>
-      </div>
+      <p className="text-xs text-muted">
+        Alt: {doc.lehrplaene.filter(l => l.rolle === "alt").map(l => l.titel ?? l.id).join(" · ")} — Neu: {doc.lehrplaene.filter(l => l.rolle === "neu").map(l => l.titel ?? l.id).join(" · ")}
+        {doc.curriculum.stand && ` — Curriculum Stand ${doc.curriculum.stand}`}
+      </p>
 
       {BLOECKE.map(blockAbschnitt)}
 
       {offen?.art === "thema" && <ThemaDialog thema={offen.thema} klasse={offen.klasse} idx={idx} onOps={ops} onClose={() => setOffen(null)} nurLesen={nurLesen} />}
-      {offen?.art === "karte" && <KarteDialog karte={offen.karte} idx={idx} doc={doc} onOps={ops} onClose={() => setOffen(null)} nurLesen={nurLesen} neuesThema={neuesThema} />}
+      {offen?.art === "karte" && <KarteDialog karte={offen.karte} idx={idx} doc={doc} onOps={ops} onClose={() => setOffen(null)} nurLesen={nurLesen}
+        zuordnenOps={zuordnenOps} />}
       {offen?.art === "ki" && <KiDialog doc={doc} onClose={() => setOffen(null)} />}
-      {offen?.art === "import" && <ImportDialog doc={doc} onOps={ops} onClose={() => setOffen(null)} />}
+      {offen?.art === "import" && <ImportDialog doc={doc} idx={idx} onOps={ops} onClose={() => setOffen(null)} />}
       {offen?.art === "teilen" && (
         <TeilenDialog plan={plan} onClose={() => setOffen(null)}
           onPatch={async b => { try { setPlan(await api.curriculum.patch(plan.id, b)); } catch (e: any) { toast(e.message, "error"); } }}
@@ -171,7 +198,7 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
     </div>
   );
 
-  // Render-Funktionen statt innerer Komponenten: sonst baut React die Zeilen bei
+  // Render-Funktionen statt innerer Komponenten: sonst baut React die Zellen bei
   // jedem Render neu auf, und ein laufendes Ziehen bricht ab.
   function blockAbschnitt(block: Block) {
     const offeneNeu = offeneKarten(doc, idx, block).filter(o => sichtbar(o.karte));
@@ -179,104 +206,168 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
     return (
       <section key={block} className="rounded-xl border border-line">
         <h2 className="px-3 py-2 font-bold bg-surface rounded-t-xl">Klassen {block}</h2>
-        {KLASSEN_JE_BLOCK[block].map(nr => {
-          const kl = klasseVon(nr);
-          const summe = wochenSumme(kl);
-          const zuViel = summe > kl.wochen_verfuegbar;
-          const ab = inkraft(nr);
-          return (
-            <Fragment key={nr}>
-              <div {...ziel(`k${nr}`, nr)}
-                className={`flex items-center gap-2 px-3 py-1.5 border-t border-line text-sm ${ziehZiel === `k${nr}` ? "bg-accent/10" : ""}`}>
-                <span className="font-semibold">Klasse {nr}</span>
-                {ab && <span className="text-xs text-muted">· neuer Plan ab {ab}</span>}
-                {nr > 9 && <span className="text-xs text-muted">· ohne Hauptschulniveau</span>}
-                <span className="flex-1" />
-                <span className={`text-xs ${zuViel ? "text-bad font-semibold" : "text-muted"}`}>
-                  {summe.toLocaleString("de")} /
-                </span>
-                <input type="number" min={0} className="input w-16 py-0.5 text-xs" value={kl.wochen_verfuegbar} disabled={nurLesen}
-                  onChange={e => ops([{ op: "klasse", klasse: nr, wochen_verfuegbar: Number(e.target.value) }])} />
-                <span className="text-xs text-muted">Wochen</span>
-                {!nurLesen && (
-                  <button className="btn-secondary text-xs py-0.5" onClick={() =>
-                    setOffen({ art: "thema", klasse: nr, thema: { id: neueId(doc, nr), titel: "", wochen: null, inhalte: {}, karten: [] } })}>+ Thema</button>
-                )}
-              </div>
-              {kl.themen.length === 0 && <div className="px-3 pb-2 text-xs text-muted">Noch keine Themen — Themen hierher ziehen oder anlegen.</div>}
-              {kl.themen.filter(passt).map(t => {
-                const s = themaSicht(idx, t, nr);
-                if (nurKonflikte && s.konflikte.length === 0) return null;
-                return (
-                  <div key={t.id} {...ziel(t.id, nr, t)}
-                    className={`grid grid-cols-[1fr_1.3fr_1fr] gap-3 px-3 py-2 border-t border-line/50 ${ziehZiel === t.id ? "bg-accent/10" : ""}`}>
-                    <div className="flex flex-col gap-1">
-                      {s.alt.filter(sichtbar).map(k => <KarteBox key={k.id} karte={k} idx={idx} niveaus={niveaus} onOpen={() => setOffen({ art: "karte", karte: k })} />)}
-                    </div>
-                    {themaBox(t, nr, s.konflikte)}
-                    <div className="flex flex-col gap-1">
-                      {s.neu.filter(n => sichtbar(n.karte)).map(n => (
-                        <KarteBox key={n.karte.id} karte={n.karte} idx={idx} niveaus={niveaus} paar={n.paar} woanders={n.woanders}
-                          onOpen={() => setOffen({ art: "karte", karte: n.karte })} />
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </Fragment>
-          );
-        })}
+        {KLASSEN_JE_BLOCK[block].map(nr => klassenTabelle(klasseVon(nr)))}
         {(offeneNeu.length > 0 || freieAlt.length > 0) && !nurKonflikte && (
-          <div className="grid grid-cols-[1fr_1.3fr_1fr] gap-3 px-3 py-2 border-t-2 border-dashed border-line bg-surface/40 rounded-b-xl">
-            <details className="text-xs">
-              <summary className="cursor-pointer text-muted">{freieAlt.length} alte Karten ohne Thema</summary>
-              <div className="flex flex-col gap-1 mt-1">
-                {freieAlt.map(k => <KarteBox key={k.id} karte={k} idx={idx} niveaus={niveaus} onOpen={() => setOffen({ art: "karte", karte: k })} />)}
-              </div>
-            </details>
-            <div className="text-xs text-muted self-start">
-              <b className="text-fg">Offen in {block}:</b> {offeneNeu.length} Karten des neuen Plans deckt noch kein Thema ab —
-              neue Inhalte und solche, die aus einem anderen Block hierher wandern. Auf ein Thema ziehen oder per Klick
-              als neues Thema anlegen.
+          <div className="px-3 py-2 border-t-2 border-dashed border-line bg-surface/40 rounded-b-xl">
+            <div className="text-xs text-muted mb-2">
+              <b className="text-fg">Offen in {block}: {offeneNeu.length} Karten des neuen Lehrplans</b> hat noch keine
+              Unterrichtseinheit — neue Inhalte und solche, die aus einem anderen Block hierher wandern. In eine Spalte
+              oder Niveau-Zeile ziehen, oder anklicken und als neue Einheit anlegen.
             </div>
-            <div className="flex flex-col gap-1">
+            <div className="grid gap-1.5 [grid-template-columns:repeat(auto-fill,minmax(15rem,1fr))]">
               {offeneNeu.map(o => (
                 <KarteBox key={o.karte.id} karte={o.karte} idx={idx} niveaus={niveaus} paar={o.paar}
                   onOpen={() => setOffen({ art: "karte", karte: o.karte })} />
               ))}
             </div>
+            {freieAlt.length > 0 && (
+              <details className="text-xs mt-2">
+                <summary className="cursor-pointer text-muted">{freieAlt.length} Karten des alten Lehrplans ohne Unterrichtseinheit</summary>
+                <div className="grid gap-1.5 mt-1 [grid-template-columns:repeat(auto-fill,minmax(15rem,1fr))]">
+                  {freieAlt.map(k => <KarteBox key={k.id} karte={k} idx={idx} niveaus={niveaus} onOpen={() => setOffen({ art: "karte", karte: k })} />)}
+                </div>
+              </details>
+            )}
           </div>
         )}
       </section>
     );
   }
 
-  function themaBox(thema: Thema, klasse: number, konflikte: string[]) {
-    const zeilen = NIVEAUS.filter(n => niveaus.has(n) && thema.inhalte[n]?.trim());
+  function klassenTabelle(kl: Klasse) {
+    const nr = kl.klasse;
+    const summe = wochenSumme(kl);
+    const ab = inkraft(nr);
+    const einheiten = kl.themen.filter(passt)
+      .map(t => ({ t, s: themaSicht(idx, t, nr) }))
+      .filter(({ s }) => !nurKonflikte || s.konflikte.length > 0);
+    const zeilen = NIVEAUS.filter(n => niveaus.has(n));
+    const spalten = `7.5rem repeat(${einheiten.length}, minmax(15rem, 19rem))`;
+    const kopfZelle = "sticky left-0 z-10 bg-page border-r border-line px-2 py-1.5 text-xs font-semibold";
+
     return (
-      <div
-        draggable={!nurLesen}
-        onDragStart={e => { e.dataTransfer.setData("text/plain", `thema:${thema.id}`); e.dataTransfer.effectAllowed = "move"; }}
-        onClick={() => setOffen({ art: "thema", thema, klasse })}
-        className={`rounded-lg border-2 bg-page p-2 text-sm cursor-pointer hover:bg-surface-hover ${konflikte.length ? "border-bad/70" : "border-accent/50"}`}
-        title="Klicken zum Bearbeiten · ziehen zum Verschieben"
-      >
-        <div className="flex items-center gap-2 mb-1">
-          {!nurLesen && <span className="text-muted cursor-grab" aria-hidden>⠿</span>}
-          <span className="font-semibold flex-1">{thema.titel || "(ohne Titel)"}</span>
-          <span className="text-xs text-muted whitespace-nowrap">{thema.wochen != null ? `${thema.wochen.toLocaleString("de")} Wo.` : "? Wo."}</span>
+      <div key={nr} className="border-t border-line">
+        <div {...ziel(`k${nr}`, nr)} className={`flex flex-wrap items-center gap-2 px-3 py-1.5 text-sm ${hell(`k${nr}`)}`}>
+          <span className="font-semibold">Klasse {nr}</span>
+          {ab && <span className="text-xs text-muted">· neuer Plan ab {ab}</span>}
+          {nr > 9 && <span className="text-xs text-muted">· ohne Hauptschulniveau</span>}
+          <span className="flex-1" />
+          <span className={`text-xs ${summe > kl.wochen_verfuegbar ? "text-bad font-semibold" : "text-muted"}`}>{summe.toLocaleString("de")} /</span>
+          <input type="number" min={0} className="input w-16 py-0.5 text-xs" value={kl.wochen_verfuegbar} disabled={nurLesen}
+            onChange={e => ops([{ op: "klasse", klasse: nr, wochen_verfuegbar: Number(e.target.value) }])} />
+          <span className="text-xs text-muted">Wochen</span>
+          {!nurLesen && (
+            <button className="btn-secondary text-xs py-0.5" onClick={() =>
+              setOffen({ art: "thema", klasse: nr, thema: { id: neueId(doc, nr), titel: "", wochen: null, inhalte: {}, karten: [] } })}>+ Unterrichtseinheit</button>
+          )}
         </div>
-        {zeilen.map(n => (
-          <div key={n} className={`flex gap-1 text-xs leading-snug mt-0.5 ${niveauGilt(n, klasse) ? "" : "opacity-50 line-through"}`}>
-            <span className="font-mono text-[10px] text-muted w-5 shrink-0">{n}</span>
-            <span className="whitespace-pre-line">{thema.inhalte[n]}</span>
+        {einheiten.length === 0 ? (
+          <div className="px-3 pb-2 text-xs text-muted">Keine Unterrichtseinheiten — hierher ziehen oder anlegen.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <div className="grid min-w-full w-max text-sm" style={{ gridTemplateColumns: spalten }}>
+              {/* Kopf: Unterrichtseinheiten */}
+              <div className={`${kopfZelle} text-muted`}>Unterrichts&shy;einheit</div>
+              {einheiten.map(({ t, s }) => (
+                <div key={t.id} {...ziel(`h${t.id}`, nr, t)}
+                  draggable={!nurLesen}
+                  onDragStart={e => { e.dataTransfer.setData("text/plain", `thema:${t.id}`); e.dataTransfer.effectAllowed = "move"; }}
+                  onClick={() => setOffen({ art: "thema", thema: t, klasse: nr })}
+                  title="Klicken zum Bearbeiten · ziehen zum Verschieben · Karten hierher ziehen ordnet sie nach Niveau zu"
+                  className={`border-r border-b-2 border-line p-2 cursor-pointer hover:bg-surface-hover ${s.konflikte.length ? "bg-red-500/10" : "bg-surface"} ${hell(`h${t.id}`)}`}>
+                  <div className="flex items-start gap-1">
+                    {!nurLesen && <span className="text-muted cursor-grab" aria-hidden>⠿</span>}
+                    <span className="font-semibold flex-1 leading-tight">{t.titel || "(ohne Titel)"}</span>
+                    <span className="text-xs text-muted whitespace-nowrap">{t.wochen != null ? `${t.wochen.toLocaleString("de")} Wo.` : "? Wo."}</span>
+                  </div>
+                  {t.notiz && <div className="text-xs text-muted italic">{t.notiz}</div>}
+                  {s.konflikte.length > 0 && (
+                    <details className="text-xs text-bad mt-1" onClick={e => e.stopPropagation()}>
+                      <summary className="cursor-pointer">⚠ {s.konflikte.length} Konflikt{s.konflikte.length > 1 ? "e" : ""}</summary>
+                      {s.konflikte.map((k, i) => <div key={i}>• {k}</div>)}
+                    </details>
+                  )}
+                </div>
+              ))}
+
+              {/* Alter Lehrplan, aufklappbar */}
+              <div className={`${kopfZelle} text-muted`}>alter Lehrplan</div>
+              {einheiten.map(({ t, s }) => {
+                const alt = s.alt.filter(sichtbar);
+                return (
+                  <div key={t.id} {...ziel(`a${t.id}`, nr, t)} className={`border-r border-b border-line p-1.5 ${hell(`a${t.id}`)}`}>
+                    <details open={altOffen} key={String(altOffen)}>
+                      <summary className="cursor-pointer text-xs text-muted flex flex-wrap items-center gap-1">
+                        {alt.length} Karten
+                        {[...new Set(alt.map(k => idx.paareAlt.get(k.id)?.[0]?.status ?? "entfallen"))].map(st => <StatusChip key={st} status={st} />)}
+                      </summary>
+                      <div className="flex flex-col gap-1 mt-1">
+                        {alt.map(k => (
+                          <KarteBox key={k.id} karte={k} idx={idx} niveaus={niveaus} onOpen={() => setOffen({ art: "karte", karte: k })}
+                            onLoesen={nurLesen ? undefined : () => ops([{ op: "thema", klasse: nr, thema: loesen(t, k.id) }])} />
+                        ))}
+                      </div>
+                    </details>
+                  </div>
+                );
+              })}
+
+              {/* Niveau-Zeilen */}
+              {zeilen.map(n => (
+                <Fragment key={n}>
+                  <div className={`${kopfZelle} text-white`} style={{ background: NIVEAU_FARBE[n] }} title={NIVEAU_NAME[n]}>
+                    {n} <span className="font-normal opacity-80 hidden xl:inline">· {NIVEAU_NAME[n].replace("niveau", "")}</span>
+                  </div>
+                  {einheiten.map(({ t, s }) => {
+                    const gilt = niveauGilt(n, nr);
+                    const key = `${n}${t.id}`;
+                    return (
+                      <div key={t.id} {...(gilt ? ziel(key, nr, t, n) : {})}
+                        className={`border-r border-b border-line p-1.5 flex flex-col gap-1 ${hell(key)}`}
+                        style={{ background: `${NIVEAU_FARBE[n]}12` }}>
+                        {!gilt ? <span className="text-xs text-muted">— (Hauptschulniveau endet mit Kl. 9)</span> : (
+                          <>
+                            {t.inhalte[n]?.trim() && (
+                              <div className="text-xs whitespace-pre-line leading-snug cursor-pointer" onClick={() => setOffen({ art: "thema", thema: t, klasse: nr })}>
+                                {t.inhalte[n]}
+                              </div>
+                            )}
+                            {(s.niveau[n] ?? []).map(k => (
+                              <KarteBox key={k.id} karte={k} idx={idx} niveaus={niveaus} nurNiveau={n}
+                                onOpen={() => setOffen({ art: "karte", karte: k })}
+                                onLoesen={nurLesen ? undefined : () => ops([{ op: "thema", klasse: nr, thema: loesen(t, k.id, n) }])} />
+                            ))}
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
+                </Fragment>
+              ))}
+
+              {/* Neuer Lehrplan: Vorschläge */}
+              <div className={`${kopfZelle} text-muted`}>neuer Lehrplan<br /><span className="font-normal">Vorschläge</span></div>
+              {einheiten.map(({ t, s }) => {
+                const vs = s.vorschlaege.filter(v => sichtbar(v.karte));
+                const passend = vs.filter(v => !v.woanders).map(v => v.karte.id);
+                return (
+                  <div key={t.id} {...ziel(`n${t.id}`, nr, t)} className={`border-r border-line p-1.5 flex flex-col gap-1 ${hell(`n${t.id}`)}`}>
+                    {!nurLesen && passend.length > 1 && (
+                      <button className="btn-secondary text-xs py-0.5 self-start" onClick={() => ops(zuordnenOps(t, nr, passend))}>
+                        ⇡ alle {passend.length} zuordnen</button>
+                    )}
+                    {vs.map(v => (
+                      <KarteBox key={v.karte.id} karte={v.karte} idx={idx} niveaus={niveaus} paar={v.paar} woanders={v.woanders}
+                        onOpen={() => setOffen({ art: "karte", karte: v.karte })} />
+                    ))}
+                    {vs.length === 0 && <span className="text-xs text-muted">—</span>}
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        ))}
-        {thema.notiz && <div className="text-xs text-muted mt-1 italic">{thema.notiz}</div>}
-        {konflikte.map((k, i) => <div key={i} className="text-xs text-bad mt-1">⚠ {k}</div>)}
-        {thema.karten.length === 0 && <div className="text-xs text-muted mt-1">keine Lehrplan-Karte zugeordnet</div>}
+        )}
       </div>
     );
   }
 }
-

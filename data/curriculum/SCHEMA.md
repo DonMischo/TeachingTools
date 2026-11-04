@@ -86,7 +86,9 @@ beiden Wortlauten (`R` und `H` je vollständig ausformuliert).
 `verschoben` hat Vorrang: Wechselt eine Karte den Block **und** ändert sich der Inhalt, steht
 `verschoben` mit Inhaltsänderung in `unterschied`.
 
-## Klasse und Thema (curriculum)
+## Klasse und Unterrichtseinheit (curriculum)
+
+Im JSON heißt eine Unterrichtseinheit aus Kompatibilitätsgründen `thema` (Liste `themen`).
 
 ```jsonc
 {
@@ -98,7 +100,12 @@ beiden Wortlauten (`R` und `H` je vollständig ausformuliert).
       "titel": "Daten und Diagramme",
       "wochen": 4.5,                // eigene Schätzung; Bereich „4-5“ → Mittelwert
       "inhalte": { "G": "…", "R": "…", "H": "…", "LB": "…", "GE": "…" },
-      "karten": ["rs2011-56-stoch-01", "gy2018-56-stoch-01"],   // passende alte Karten
+      "karten": ["rs2011-56-stoch-01", "gy2018-56-stoch-01"],   // passende ALTE Karten
+      "zuordnung": {                // NEUE Karten je Kompetenzniveau
+        "G": ["gy2026-56-stoch-01"],
+        "R": ["rs2026-56-stoch-01"],
+        "H": ["rs2026-56-stoch-01"]  // RS-Karte ohne H-Text: R-Text wird beim Zuordnen nach H kopiert
+      },
       "notiz": ""
     }
   ]
@@ -107,8 +114,9 @@ beiden Wortlauten (`R` und `H` je vollständig ausformuliert).
 
 ## Zuordnung (nur zum Hochladen)
 
-Antwort des KI-Prompts »Curriculum zuordnen«; fügt den genannten Themen Karten hinzu
-(vorhandene bleiben):
+Antwort des KI-Prompts »Curriculum zuordnen«; fügt den genannten Unterrichtseinheiten Karten
+hinzu (vorhandene bleiben). Alte Karten landen in `karten`, neue verteilen sich auf
+`zuordnung`: GY → G, RS → R und H.
 
 ```jsonc
 { "format": "tt-curriculum/1", "zuordnung": [ { "thema": "k5-t1", "karten": ["rs2011-56-stoch-01"] } ] }
@@ -116,6 +124,7 @@ Antwort des KI-Prompts »Curriculum zuordnen«; fügt den genannten Themen Karte
 
 Das Tool leitet daraus ab:
 
-- **Konflikt**: Ein Thema hängt an einer Karte, deren Paar `entfallen` oder `verschoben` ist
-  (für die Klasse des Themas).
-- **Offen**: Neue Karten des Blocks, die an keinem Thema hängen (über `abgleich` oder direkt).
+- **Vorschläge**: Partner der alten Karten (über `abgleich`), die noch nicht zugeordnet sind.
+- **Konflikt**: Eine Unterrichtseinheit hängt an einer alten Karte, die `entfällt`, oder ein
+  Vorschlag bzw. eine zugeordnete Karte liegt neu in einer anderen Klasse (in 9/10 je Klassenstufe).
+- **Offen**: Neue Karten des Blocks, die keine Einheit hat — weder zugeordnet noch als Vorschlag.

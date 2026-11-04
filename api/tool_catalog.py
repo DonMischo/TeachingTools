@@ -300,7 +300,7 @@ CATALOG: list[CatalogTool] = [
         "use": _cap(True, False),
     }),
     # Curriculum-Abgleich der Fachschaft (nur Lehrkräfte).
-    CatalogTool("curriculum", "🧭 Curriculum-Abgleich", "🧭", "tools", {
+    CatalogTool("curriculum", "🧭 Curriculinator", "🧭", "tools", {
         "use": _cap(True, False),
     }),
     # Fragmente: students may USE boards shared with their class (default on);

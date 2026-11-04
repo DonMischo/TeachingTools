@@ -46,7 +46,7 @@ export default function CurriculumListe() {
   return (
     <div className="max-w-seite mx-auto p-6">
       <div className="flex items-center gap-3 mb-1">
-        <h1 className="text-2xl font-bold flex-1">🧭 Curriculum-Abgleich</h1>
+        <h1 className="text-2xl font-bold flex-1">🧭 Curriculinator</h1>
         <HelpButton slug="curriculum" />
       </div>
       <p className="text-muted mb-6">Schulinternes Curriculum gegen alten und neuen Lehrplan legen: Was bleibt, was ist neu, was wandert in eine andere Klasse — und wie viele Wochen bleiben dafür.</p>

@@ -84,14 +84,14 @@ export function zuordnungPrompt(v: Vorlage, o: { rolle: "alt" | "neu"; nurOhne: 
   const karten = v.lehrplaene.filter(l => l.rolle === o.rolle).flatMap(l =>
     l.karten.map(k => ({ id: k.id, block: k.block, titel: k.titel, text: Object.entries(k.niveaus).map(([n, t]) => `${n}: ${t}`).join(" | ") })));
   return [
-    `Ordne den Themen unseres schulinternen Curriculums (${v.fach}) die passenden Karten des ${o.rolle === "alt" ? "ALTEN" : "NEUEN"} Lehrplans zu.`,
-    `Ein Thema bekommt alle Karten, die es inhaltlich abdeckt (auf irgendeinem Niveau G/R/H). Karten aus einem anderen Klassenblock nur, wenn das Thema sie wirklich unterrichtet.`,
-    `Eine Karte darf mehreren Themen zugeordnet werden. Karten, die zu keinem Thema passen, weglassen.`,
+    `Ordne den Unterrichtseinheiten unseres schulinternen Curriculums (${v.fach}) die passenden Karten des ${o.rolle === "alt" ? "ALTEN" : "NEUEN"} Lehrplans zu.`,
+    `Eine Unterrichtseinheit bekommt alle Karten, die sie inhaltlich abdeckt (auf irgendeinem Niveau G/R/H). Karten aus einem anderen Klassenblock nur, wenn die Einheit sie wirklich unterrichtet. Die Niveaus verteilt das Tool selbst (GY → G, RS → R und H).`,
+    `Eine Karte darf mehreren Unterrichtseinheiten zugeordnet werden. Karten, die zu keiner Einheit passen, weglassen.`,
     ``,
     `Gib GENAU EINEN JSON-Codeblock zurück, ohne weiteren Text:`,
-    `{ "format": "tt-curriculum/1", "zuordnung": [ { "thema": "<thema-id>", "karten": ["<karten-id>", …] }, … ] }`,
+    `{ "format": "tt-curriculum/1", "zuordnung": [ { "thema": "<id der Unterrichtseinheit>", "karten": ["<karten-id>", …] }, … ] }`,
     ``,
-    `THEMEN (Klasse, id, Titel, Inhalte je Niveau):`,
+    `UNTERRICHTSEINHEITEN (Klasse, id, Titel, Inhalte je Niveau):`,
     ...themen.map(({ klasse, t }) =>
       `- Kl. ${klasse} · ${t.id} · ${t.titel}: ${Object.entries(t.inhalte).map(([n, x]) => `${n}: ${x.replace(/\n/g, "; ")}`).join(" | ")}`),
     ``,

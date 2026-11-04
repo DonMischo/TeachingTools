@@ -2,9 +2,10 @@
  * Curriculum-Abgleich: Datenmodell (Format tt-curriculum/1, wie api/curriculum_ops.py)
  * und was die Seite daraus ableitet — Konflikte, offene neue Karten, Wochensummen.
  *
- * Verknüpfung: Ein Thema nennt in `karten` die passenden Lehrplan-Karten (alte
- * und/oder neue). Der `abgleich` paart alte mit neuen Karten. Neue Karten eines
- * Themas sind also die direkt genannten plus die Partner seiner alten Karten.
+ * Verknüpfung: Eine Unterrichtseinheit (im JSON `thema`) nennt in `karten` die
+ * passenden Karten des alten Lehrplans; neue Karten ordnet man ihr je Niveau zu
+ * (`zuordnung`). Der `abgleich` paart alte mit neuen Karten — die Partner der
+ * alten Karten erscheinen als Vorschläge, bis sie zugeordnet sind.
  */
 
 export const NIVEAUS = ["G", "R", "H", "LB", "GE"] as const;
@@ -66,7 +67,10 @@ export type Thema = {
   titel: string;
   wochen: number | null;
   inhalte: Partial<Record<Niveau, string>>;
+  /** passende Karten des ALTEN Lehrplans (Abgleich-Grundlage) */
   karten: string[];
+  /** Karten des NEUEN Lehrplans je Kompetenzniveau */
+  zuordnung?: Partial<Record<Niveau, string[]>>;
   notiz?: string;
 };
 
@@ -112,7 +116,7 @@ export function statusVon(i: Index, id: string): Status | null {
 }
 
 /**
- * Liegt die Karte für ein Thema dieser Klasse woanders? 5/6 und 7/8 sind
+ * Liegt die Karte für eine Unterrichtseinheit dieser Klasse woanders? 5/6 und 7/8 sind
  * Doppeljahrgänge; in 9/10 unterscheiden die Lehrpläne Kl. 9 und Kl. 10.
  */
 export function woandersAls(k: Karte, klasse: number): string | null {
@@ -121,58 +125,117 @@ export function woandersAls(k: Karte, klasse: number): string | null {
   return null;
 }
 
+/** Neue Karten, die einer Unterrichtseinheit je Niveau zugeordnet sind. */
+export function zugeordnet(t: Thema): Set<string> {
+  return new Set(Object.values(t.zuordnung ?? {}).flat());
+}
+
 export type ThemaSicht = {
   alt: KarteMitPlan[];
-  /** neue Karten mit dem Paar, über das sie hierher kamen (null = direkt zugeordnet) */
-  neu: { karte: KarteMitPlan; paar: Paar | null; woanders: boolean }[];
+  /** neue Karten je Niveau, die der UE zugeordnet sind */
+  niveau: Partial<Record<Niveau, KarteMitPlan[]>>;
+  /** Vorschläge: Partner der alten Karten, noch nicht zugeordnet */
+  vorschlaege: { karte: KarteMitPlan; paar: Paar; woanders: boolean }[];
   konflikte: string[];
 };
 
-/** Was zu einem Thema links (alter Plan) und rechts (neuer Plan) steht. */
+/** Was zu einer Unterrichtseinheit oben (alter Plan), in den Niveau-Zeilen und unten (Vorschläge) steht. */
 export function themaSicht(i: Index, thema: Thema, klasse: number): ThemaSicht {
   const alt: KarteMitPlan[] = [];
-  const neu: ThemaSicht["neu"] = [];
-  const gesehen = new Set<string>();
+  const vorschlaege: ThemaSicht["vorschlaege"] = [];
   const konflikte: string[] = [];
+  const schon = zugeordnet(thema);
+  const gesehen = new Set<string>();
   for (const id of thema.karten) {
     const k = i.karten.get(id);
-    if (!k) continue;
-    if (k.plan.rolle === "alt") {
-      alt.push(k);
-      const paare = i.paareAlt.get(id) ?? [];
-      if (paare.length === 0 || paare.every(p => p.status === "entfallen")) {
-        konflikte.push(`»${k.titel ?? id}« entfällt im neuen Lehrplan (${k.plan.schulart})`);
+    if (!k || k.plan.rolle !== "alt") continue;
+    alt.push(k);
+    const paare = i.paareAlt.get(id) ?? [];
+    if (paare.length === 0 || paare.every(p => p.status === "entfallen")) {
+      konflikte.push(`»${k.titel ?? id}« entfällt im neuen Lehrplan (${k.plan.schulart})`);
+    }
+    for (const p of paare) {
+      for (const nid of p.neu) {
+        const nk = i.karten.get(nid);
+        if (!nk || gesehen.has(nid) || schon.has(nid)) continue;
+        gesehen.add(nid);
+        const ort = woandersAls(nk, klasse);
+        vorschlaege.push({ karte: nk, paar: p, woanders: !!ort });
+        if (ort) konflikte.push(`»${nk.titel ?? nid}« liegt neu in ${ort} (${nk.plan.schulart})`);
       }
-      for (const p of paare) {
-        for (const nid of p.neu) {
-          const nk = i.karten.get(nid);
-          if (!nk || gesehen.has(nid)) continue;
-          gesehen.add(nid);
-          const ort = woandersAls(nk, klasse);
-          neu.push({ karte: nk, paar: p, woanders: !!ort });
-          if (ort) konflikte.push(`»${nk.titel ?? nid}« liegt neu in ${ort} (${nk.plan.schulart})`);
-        }
-      }
-    } else if (!gesehen.has(id)) {
-      gesehen.add(id);
-      const ort = woandersAls(k, klasse);
-      neu.push({ karte: k, paar: null, woanders: !!ort });
-      if (ort) konflikte.push(`»${k.titel ?? id}« gehört neu in ${ort} (${k.plan.schulart})`);
     }
   }
-  return { alt, neu, konflikte };
+  const niveau: ThemaSicht["niveau"] = {};
+  for (const n of NIVEAUS) {
+    const liste = (thema.zuordnung?.[n] ?? []).map(id => i.karten.get(id)).filter((k): k is KarteMitPlan => !!k);
+    if (liste.length) niveau[n] = liste;
+    for (const k of liste) {
+      const ort = woandersAls(k, klasse);
+      if (ort) konflikte.push(`»${k.titel ?? k.id}« (${n}) gehört neu in ${ort}`);
+    }
+  }
+  return { alt, niveau, vorschlaege, konflikte: [...new Set(konflikte)] };
+}
+
+/** Text einer Karte für ein Niveau; H übernimmt R, wenn der Lehrplan nichts Eigenes sagt. */
+export function karteText(k: Karte, n: Niveau): string | undefined {
+  return k.niveaus[n] ?? (n === "H" ? k.niveaus.R : undefined) ?? (n === "LB" || n === "GE" ? k.niveaus.H ?? k.niveaus.R : undefined);
 }
 
 /**
- * Neue Karten eines Blocks, die kein Thema dieses Blocks abdeckt — weder direkt
- * noch über eine alte Karte. Das ist, was im Curriculum noch fehlt: echte neue
- * Inhalte und solche, die aus einem anderen Block hierher wandern.
+ * Karte einer Unterrichtseinheit zuordnen. Ohne `nur` verteilt sie sich auf
+ * ihre eigenen Niveaus: GY → G, RS → R und H. Fehlt der H-Text (und die Klasse
+ * hat noch Hauptschulniveau), wird R nach H kopiert — als Text in der Karte,
+ * damit er sich danach für H anpassen lässt. Alte Karten landen oben.
+ */
+export function zuordnen(i: Index, thema: Thema, karteId: string, klasse: number, nur?: Niveau): {
+  thema: Thema; karte?: { lehrplan: string; karte: Karte };
+} {
+  const k = i.karten.get(karteId);
+  if (!k) return { thema };
+  if (k.plan.rolle === "alt") {
+    return { thema: thema.karten.includes(karteId) ? thema : { ...thema, karten: [...thema.karten, karteId] } };
+  }
+  const { plan, ...roh } = k;
+  let karte: Karte | undefined;
+  let ziele: Niveau[];
+  if (nur) ziele = [nur];
+  else {
+    ziele = NIVEAUS.filter(n => (n === "G" || n === "R" || n === "H") && k.niveaus[n]);
+    if (k.niveaus.R && !k.niveaus.H && niveauGilt("H", klasse)) {
+      ziele.push("H");
+      karte = { ...roh, niveaus: { ...roh.niveaus, H: k.niveaus.R } };
+    }
+    if (!ziele.length) ziele = ["R"];
+  }
+  ziele = ziele.filter(n => niveauGilt(n, klasse));
+  const zuordnung = { ...(thema.zuordnung ?? {}) };
+  for (const n of ziele) {
+    const liste = zuordnung[n] ?? [];
+    if (!liste.includes(karteId)) zuordnung[n] = [...liste, karteId];
+  }
+  return { thema: { ...thema, zuordnung }, karte: karte && { lehrplan: plan.id, karte } };
+}
+
+/** Karte aus einer Niveau-Zeile (oder oben aus den alten) wieder lösen. */
+export function loesen(thema: Thema, karteId: string, n?: Niveau): Thema {
+  if (!n) return { ...thema, karten: thema.karten.filter(x => x !== karteId) };
+  return { ...thema, zuordnung: { ...thema.zuordnung, [n]: (thema.zuordnung?.[n] ?? []).filter(x => x !== karteId) } };
+}
+
+/**
+ * Neue Karten eines Blocks, die keine Unterrichtseinheit des Blocks hat —
+ * weder zugeordnet noch als Vorschlag über eine alte Karte. Das ist, was im
+ * Curriculum noch fehlt: echte neue Inhalte und solche, die hierher wandern.
  */
 export function offeneKarten(v: Vorlage, i: Index, block: Block): { karte: KarteMitPlan; paar: Paar | null }[] {
   const abgedeckt = new Set<string>();
   for (const k of v.curriculum.klassen) {
     if (blockVon(k.klasse) !== block) continue;
-    for (const t of k.themen) for (const n of themaSicht(i, t, k.klasse).neu) if (!n.woanders) abgedeckt.add(n.karte.id);
+    for (const t of k.themen) {
+      zugeordnet(t).forEach(id => abgedeckt.add(id));
+      for (const n of themaSicht(i, t, k.klasse).vorschlaege) if (!n.woanders) abgedeckt.add(n.karte.id);
+    }
   }
   const out: { karte: KarteMitPlan; paar: Paar | null }[] = [];
   for (const lp of v.lehrplaene) {
@@ -185,7 +248,7 @@ export function offeneKarten(v: Vorlage, i: Index, block: Block): { karte: Karte
   return out;
 }
 
-/** Alte Karten eines Blocks, die an keinem Thema hängen — Lücken im alten Curriculum. */
+/** Alte Karten eines Blocks, die an keiner Unterrichtseinheit hängen — Lücken im alten Curriculum. */
 export function freieAlteKarten(v: Vorlage, block: Block): KarteMitPlan[] {
   const genutzt = new Set(v.curriculum.klassen.flatMap(k => k.themen.flatMap(t => t.karten)));
   return v.lehrplaene.filter(lp => lp.rolle === "alt")
