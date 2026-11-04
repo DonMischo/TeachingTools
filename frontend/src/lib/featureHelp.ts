@@ -882,6 +882,7 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "↕ Zuordnen", text: "Karten in eine Spalte ziehen: GY landet in G, RS in R und H — fehlt ein eigener H-Text, wird der R-Text kopiert und lässt sich danach anpassen. Auf eine Niveau-Zeile gezogen landet die Karte nur dort; ✕ löst sie wieder. »⇣ Vorschläge übernehmen« ordnet alle Partner aus dem Abgleich auf einmal zu. Einheiten am ⠿ auf eine andere Einheit (davor) oder eine Klassenzeile ziehen." },
       { label: "✎ Niveaus", text: "Lehrpläne nennen meist nur Gymnasial- und Realschulniveau. Karten und Einheiten lassen sich anklicken und um H, LB, GE ergänzen. Hauptschulniveau endet mit Klasse 9." },
       { label: "🤖 KI-Prompt", text: "»Zwei Lehrpläne vergleichen« erzeugt Karten und Abgleich aus zwei PDFs; »Curriculum zuordnen« ordnet Themen Karten zu. Die JSON-Antwort über »⬆ Hochladen« einfügen — nur mitgeschickte Teile werden ersetzt." },
+      { label: "⬇ Export", text: "Word (.docx) und PDF für alle Klassen oder eine, SVG je Klasse: Endfassung wie eure Curricula — Unterrichtseinheiten mit Wochen als Zeilen, G | R | H | LB | GE als Spalten, euer Inhalt plus der Wortlaut der zugeordneten neuen Karten. Dazu die JSON-Vorlage zum Wiederhochladen." },
       { label: "👥 Teilen", text: "Alle Lehrkräfte sehen und bearbeiten jeden Plan; Änderungen anderer erscheinen nach wenigen Sekunden. Kolleg·innen ohne Konto kommen per QR als Gast (nur lesen oder mitbearbeiten). »⧉ Kopie« spielt eine Umstellung erst durch." },
     ],
   },

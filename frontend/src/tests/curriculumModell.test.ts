@@ -182,3 +182,20 @@ describe("Hochladen und KI", () => {
     expect(p).toContain("\"a1\"");
   });
 });
+
+describe("nur neue Karten (ohne alten Plan und Abgleich)", () => {
+  it("zeigt alles als offen, ohne Vorschläge und Konflikte", () => {
+    const v = vorlage();
+    v.lehrplaene = v.lehrplaene.filter(l => l.rolle === "neu");
+    v.abgleich = [];
+    const i = index(v);
+    const s = themaSicht(i, v.curriculum.klassen[0].themen[0], 5);
+    expect(s.alt).toEqual([]);
+    expect(s.vorschlaege).toEqual([]);
+    expect(s.konflikte).toEqual([]);
+    expect(offeneKarten(v, i, "5/6").map(o => o.karte.id)).toEqual(["n1", "n4", "g1"]);
+    expect(statusVon(i, "n1")).toBe("neu");
+    const t = zuordnen(i, v.curriculum.klassen[0].themen[0], "n1", 5).thema;
+    expect(t.zuordnung).toEqual({ R: ["n1"], H: ["n1"] });
+  });
+});

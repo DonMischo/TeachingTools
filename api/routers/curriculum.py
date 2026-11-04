@@ -9,8 +9,9 @@ import json
 import secrets
 from copy import deepcopy
 from typing import Optional, Union
+from urllib.parse import quote
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.security import HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
@@ -20,6 +21,7 @@ from ..auth import (
     guest_from_credentials, guest_token_minutes,
 )
 from ..availability import require_capability
+from .. import curriculum_export
 from ..curriculum_ops import OpFehler, anwenden, leer, pruefen
 from ..database import get_db
 from ..join_codes import code_taken
@@ -204,6 +206,31 @@ def aendern(plan_id: int, body: OpsIn, db: Session = Depends(get_db),
     db.commit()
     db.refresh(plan)
     return _out(plan, who)
+
+
+@router.get("/{plan_id}/export")
+def exportieren(plan_id: int, format: str, klasse: int | None = None, db: Session = Depends(get_db),
+                who: Principal = Depends(plan_principal)):
+    """Endfassung als DOCX/PDF (alle Klassen oder eine) bzw. SVG (eine Klasse)."""
+    if format not in curriculum_export.FORMATE:
+        raise HTTPException(422, "format: docx, pdf oder svg")
+    if format == "svg" and klasse is None:
+        raise HTTPException(422, "SVG gibt es je Klasse — bitte klasse angeben")
+    plan = _plan(db, plan_id)
+    if klasse is not None and not any(k["klasse"] == klasse for k in plan.data.get("curriculum", {}).get("klassen", [])):
+        raise HTTPException(404, f"Klasse {klasse} gibt es in diesem Plan nicht")
+    if format == "docx":
+        daten = curriculum_export.docx(plan.data, plan.name, klasse)
+    elif format == "pdf":
+        daten = curriculum_export.pdf(plan.data, plan.name, klasse)
+        if daten is None:
+            raise HTTPException(502, "PDF-Umwandlung fehlgeschlagen")
+    else:
+        daten = curriculum_export.svg(plan.data, plan.name, klasse)
+    mime, ext = curriculum_export.FORMATE[format]
+    name = f"{plan.name}{f' Klasse {klasse}' if klasse is not None else ''}{ext}"
+    return Response(daten, media_type=mime, headers={
+        "Content-Disposition": f"attachment; filename=\"curriculum{ext}\"; filename*=UTF-8''{quote(name)}"})
 
 
 @router.patch("/{plan_id}", response_model=PlanOut)

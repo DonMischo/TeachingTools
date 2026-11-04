@@ -27,13 +27,13 @@ import {
   type Block, type KarteMitPlan, type Klasse, type Niveau, type Thema,
 } from "@/lib/curriculum/modell";
 import { KarteBox, KartenAnsicht, StatusChip } from "./KarteBox";
-import { ImportDialog, KarteDialog, KiDialog, TeilenDialog, ThemaDialog } from "./Dialoge";
+import { ExportDialog, ImportDialog, KarteDialog, KiDialog, TeilenDialog, ThemaDialog } from "./Dialoge";
 
 type Op = Record<string, unknown>;
 type Offen =
   | { art: "thema"; thema: Thema; klasse: number }
   | { art: "karte"; karte: KarteMitPlan }
-  | { art: "ki" } | { art: "import" } | { art: "teilen" }
+  | { art: "ki" } | { art: "import" } | { art: "teilen" } | { art: "export" }
   | null;
 
 const POLL_MS = 4000;
@@ -192,7 +192,7 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
         {!nurLesen && <button className="btn-secondary text-sm" onClick={alleVorschlaege} title="Partner der alten Karten in die Niveau-Zeilen übernehmen">⇣ Vorschläge übernehmen</button>}
         <button className="btn-secondary text-sm" onClick={() => setOffen({ art: "ki" })}>🤖 KI-Prompt</button>
         {!nurLesen && <button className="btn-secondary text-sm" onClick={() => setOffen({ art: "import" })}>⬆ Hochladen</button>}
-        <button className="btn-secondary text-sm" onClick={herunterladen}>⬇ JSON</button>
+        <button className="btn-secondary text-sm" onClick={() => setOffen({ art: "export" })}>⬇ Export</button>
         {!guestToken && <button className="btn-secondary text-sm" onClick={() => setOffen({ art: "teilen" })}>👥 Teilen</button>}
       </div>
 
@@ -206,6 +206,8 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
       {offen?.art === "thema" && <ThemaDialog thema={offen.thema} klasse={offen.klasse} idx={idx} onOps={ops} onClose={() => setOffen(null)} nurLesen={nurLesen} />}
       {offen?.art === "karte" && <KarteDialog karte={offen.karte} idx={idx} doc={doc} onOps={ops} onClose={() => setOffen(null)} nurLesen={nurLesen}
         zuordnenOps={zuordnenOps} />}
+      {offen?.art === "export" && <ExportDialog planId={plan.id} planName={plan.name} doc={doc} guestToken={guestToken}
+        onJson={herunterladen} onClose={() => setOffen(null)} />}
       {offen?.art === "ki" && <KiDialog doc={doc} onClose={() => setOffen(null)} />}
       {offen?.art === "import" && <ImportDialog doc={doc} idx={idx} onOps={ops} onClose={() => setOffen(null)} />}
       {offen?.art === "teilen" && (

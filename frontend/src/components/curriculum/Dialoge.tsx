@@ -12,7 +12,7 @@ import {
   type Karte, type Paar, type Status, type Thema, type Vorlage,
 } from "@/lib/curriculum/modell";
 import { antwortLesen, vergleichPrompt, zuordnungPrompt } from "@/lib/curriculum/kiPrompt";
-import type { CurriculumPlanOut } from "@/lib/api";
+import { api, type CurriculumPlanOut } from "@/lib/api";
 
 type Op = Record<string, unknown>;
 
@@ -332,3 +332,74 @@ export function TeilenDialog({ plan, onPatch, onNewCode, onClose }: {
   );
 }
 
+
+// ── Export ───────────────────────────────────────────────────────────────────
+
+const EXPORT_FORMATE = [
+  { id: "docx", name: "Word (.docx)", info: "zum Weiterbearbeiten, A4 quer" },
+  { id: "pdf", name: "PDF", info: "zum Drucken und Verteilen" },
+  { id: "svg", name: "SVG", info: "Grafik einer Klasse, z. B. für Präsentationen" },
+  { id: "json", name: "JSON-Vorlage", info: "ganzer Plan mit Lehrplänen und Abgleich, zum Wiederhochladen" },
+] as const;
+type ExportFormat = typeof EXPORT_FORMATE[number]["id"];
+
+export function ExportDialog({ planId, planName, doc, guestToken, onJson, onClose }: {
+  planId: number; planName: string; doc: Vorlage; guestToken?: string; onJson: () => void; onClose: () => void;
+}) {
+  const klassen = doc.curriculum.klassen.map(k => k.klasse);
+  const [format, setFormat] = useState<ExportFormat>("pdf");
+  const [klasse, setKlasse] = useState<number | "alle">("alle");
+  const [laeuft, setLaeuft] = useState(false);
+  const [fehler, setFehler] = useState("");
+  const nurEine = format === "svg";
+  const gewaehlt = nurEine && klasse === "alle" ? klassen[0] : klasse;
+
+  const los = async () => {
+    if (format === "json") { onJson(); onClose(); return; }
+    setLaeuft(true); setFehler("");
+    try {
+      const k = gewaehlt === "alle" ? undefined : gewaehlt;
+      const blob = await api.curriculum.exportieren(planId, format, k, guestToken);
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `${planName}${k != null ? ` Klasse ${k}` : ""}.${format}`.replace(/[\/:*?"<>|]+/g, "_");
+      a.click();
+      URL.revokeObjectURL(a.href);
+      onClose();
+    } catch (e: any) {
+      setFehler(String(e?.message ?? e));
+      setLaeuft(false);
+    }
+  };
+
+  return (
+    <Fenster titel="Exportieren" onClose={onClose}>
+      <p className="text-sm text-muted mb-3">
+        Endfassung wie in euren Curricula: je Klasse eine Tabelle mit den Unterrichtseinheiten (Wochen) als Zeilen und
+        G | R | H | LB | GE als Spalten — euer Inhalt und darunter der Wortlaut der zugeordneten Karten des neuen Lehrplans.
+      </p>
+      <div className="flex flex-col gap-1 mb-3 text-sm">
+        {EXPORT_FORMATE.map(f => (
+          <label key={f.id} className="flex items-center gap-2">
+            <input type="radio" checked={format === f.id} onChange={() => setFormat(f.id)} />
+            <b>{f.name}</b> <span className="text-muted">· {f.info}</span>
+          </label>
+        ))}
+      </div>
+      {format !== "json" && (
+        <label className="flex items-center gap-2 mb-4 text-sm">
+          <span className="label">Umfang</span>
+          <select className="input w-48" value={String(gewaehlt)} onChange={e => setKlasse(e.target.value === "alle" ? "alle" : Number(e.target.value))}>
+            {!nurEine && <option value="alle">alle Klassen</option>}
+            {klassen.map(k => <option key={k} value={k}>Klasse {k}</option>)}
+          </select>
+          {nurEine && <span className="text-xs text-muted">SVG gibt es je Klasse</span>}
+        </label>
+      )}
+      {fehler && <p className="text-sm text-bad mb-3">{fehler}</p>}
+      <button className="btn-primary" disabled={laeuft || (nurEine && !klassen.length)} onClick={los}>
+        {laeuft ? (format === "pdf" ? "PDF wird erzeugt…" : "Erzeuge…") : "⬇ Herunterladen"}
+      </button>
+    </Fenster>
+  );
+}

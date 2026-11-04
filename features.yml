@@ -871,6 +871,7 @@ tools:
       - Konflikte am Thema, offene neue Inhalte je Klassenblock, Wochensumme je Klasse
       - Themen per Ziehen zwischen Klassen verschieben, Karten zuordnen, fehlende Niveaus ergänzen
       - KI-Prompt für Lehrplanvergleich und Zuordnung, JSON-Vorlage hoch- und herunterladen
+      - Export der Endfassung als DOCX, PDF (alle Klassen oder eine) und SVG je Klasse
       - gemeinsamer Stand der Fachschaft, Gastbeitritt per QR
   - id: snap
     name: Snap!

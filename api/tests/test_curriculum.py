@@ -194,3 +194,71 @@ def test_gastzugang_stellt_nur_besitzer_ein(client, teacher, teacher2):
     plan = _anlegen(client, teacher)
     r = client.patch(f"{PREFIX}/{plan['id']}", json={"allow_guests": True}, headers=t_auth(teacher2))
     assert r.status_code == 403
+
+
+# ── Nur neue Karten, Export ──────────────────────────────────────────────────
+
+def _nur_neu():
+    return {"format": "tt-curriculum/1",
+            "lehrplaene": [
+                {"id": "alt", "rolle": "alt", "schulart": "RS", "karten": []},
+                {"id": "neu", "rolle": "neu", "schulart": "RS", "karten": [
+                    {"id": "n1", "block": "5/6", "titel": "Zufall", "niveaus": {"R": "Zufallsexperimente <planen>"}},
+                    {"id": "n2", "block": "9/10", "klasse": 10, "titel": "Trigo", "niveaus": {"R": "Sinus & Kosinus"}}]},
+                {"id": "gy", "rolle": "neu", "schulart": "GY", "karten": [
+                    {"id": "g1", "block": "5/6", "titel": "Zufall GY", "niveaus": {"G": "Baumdiagramme"}}]}],
+            "curriculum": {"stand": "2026-11", "klassen": [
+                {"klasse": 5, "wochen_verfuegbar": 36, "themen": [
+                    {"id": "k5-t1", "titel": "Daten", "wochen": 4.5, "inhalte": {"H": "Strichlisten\nTabellen"},
+                     "karten": [], "zuordnung": {"G": ["g1"], "R": ["n1"], "H": ["n1"]}}]},
+                {"klasse": 10, "wochen_verfuegbar": 30, "themen": [
+                    {"id": "k10-t1", "titel": "Trigonometrie", "wochen": 6, "inhalte": {}, "karten": [],
+                     "zuordnung": {"R": ["n2"]}}]}]}}
+
+
+def test_import_nur_mit_neuen_karten(client, teacher):
+    """Ohne alten Plan (oder mit leerem) und ohne Abgleich geht Anlegen und Hochladen."""
+    client.cookies.clear()
+    d = _nur_neu()
+    d["lehrplaene"] = d["lehrplaene"][1:]  # ganz ohne alten Plan
+    plan = _anlegen(client, teacher, d)
+    assert [lp["id"] for lp in plan["data"]["lehrplaene"]] == ["neu", "gy"]
+    assert plan["data"]["abgleich"] == []
+    r = client.post(f"{PREFIX}/{plan['id']}/ops", headers=t_auth(teacher), json={"ops": [
+        {"op": "import", "daten": {"lehrplaene": [{"id": "alt", "rolle": "alt", "karten": []}]}}]})
+    assert r.status_code == 200
+    assert {lp["id"] for lp in r.json()["data"]["lehrplaene"]} == {"neu", "gy", "alt"}
+
+
+def test_export_inhalt_endfassung():
+    from api.curriculum_export import klassen
+    k5, k10 = klassen(_nur_neu())
+    zellen = k5["zeilen"][0]["zellen"]
+    assert zellen["G"] == [("• Baumdiagramme", True)]
+    assert zellen["H"] == [("Strichlisten", False), ("Tabellen", False), ("• Zufallsexperimente <planen>", True)]
+    assert zellen["LB"] == []
+    assert k5["zeilen"][0]["wochen"] == "4,5 Wochen"
+    assert k10["zeilen"][0]["zellen"]["H"] == [("—", False)]  # kein Hauptschulniveau in Kl. 10
+    assert "verplant 6 von 30 Wochen" in k10["kopf"]
+
+
+def test_export_formate(client, teacher):
+    import io, zipfile
+    client.cookies.clear()
+    plan = _anlegen(client, teacher, _nur_neu())
+    h = t_auth(teacher)
+    r = client.get(f"{PREFIX}/{plan['id']}/export", params={"format": "docx"}, headers=h)
+    assert r.status_code == 200
+    xml = zipfile.ZipFile(io.BytesIO(r.content)).read("word/document.xml").decode()
+    assert "Zufallsexperimente &lt;planen&gt;" in xml and 'w:orient="landscape"' in xml and "9B1C1C" in xml
+    assert "filename*=UTF-8''Mathe%20Sek%20I.docx" in r.headers["content-disposition"]
+
+    r = client.get(f"{PREFIX}/{plan['id']}/export", params={"format": "svg", "klasse": 5}, headers=h)
+    assert r.status_code == 200 and r.headers["content-type"].startswith("image/svg+xml")
+    assert b"Baumdiagramme" in r.content and b"<svg" in r.content
+    assert client.get(f"{PREFIX}/{plan['id']}/export", params={"format": "svg"}, headers=h).status_code == 422
+    assert client.get(f"{PREFIX}/{plan['id']}/export", params={"format": "svg", "klasse": 7}, headers=h).status_code == 404
+    assert client.get(f"{PREFIX}/{plan['id']}/export", params={"format": "odt"}, headers=h).status_code == 422
+
+    r = client.get(f"{PREFIX}/{plan['id']}/export", params={"format": "pdf", "klasse": 5}, headers=h)
+    assert r.status_code == 200 and r.content[:4] == b"%PDF"

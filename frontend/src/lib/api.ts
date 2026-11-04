@@ -3098,6 +3098,16 @@ export const api = {
       apiFetch<CurriculumPlanOut>(`curriculum/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
     newGuestCode: (id: number) => apiFetch<CurriculumPlanOut>(`curriculum/${id}/guest-code`, { method: "POST" }),
     copy: (id: number) => apiFetch<CurriculumPlanOut>(`curriculum/${id}/kopie`, { method: "POST" }),
+    /** Endfassung als Datei (docx/pdf: alle Klassen oder eine, svg: eine Klasse). */
+    exportieren: async (id: number, format: "docx" | "pdf" | "svg", klasse?: number, guestToken?: string): Promise<Blob> => {
+      const q = new URLSearchParams({ format, ...(klasse != null ? { klasse: String(klasse) } : {}) });
+      const res = await fetch(`/api/curriculum/${id}/export?${q}`, {
+        credentials: "include",
+        headers: guestToken ? { Authorization: `Bearer ${guestToken}` } : undefined,
+      });
+      if (!res.ok) throw new Error((await res.text()) || res.statusText);
+      return res.blob();
+    },
     remove: (id: number) => apiFetch<void>(`curriculum/${id}`, { method: "DELETE" }),
     guestStatus: (code: string) =>
       apiFetch<{ allow_guests: boolean; plan_id?: number; plan_name?: string; permission?: "read" | "edit" }>(
