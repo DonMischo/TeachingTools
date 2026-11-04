@@ -32,15 +32,21 @@ describe("KI-Kompass", () => {
     zeige();
     fireEvent.click(screen.getByRole("tab", { name: /KI-Führerschein/ }));
     fireEvent.click(screen.getByRole("button", { name: new RegExp(s.titel) }));
+    // Geführter Ablauf: über die Schrittleiste zum Selbst-Check.
+    fireEvent.click(screen.getByRole("button", { name: /Selbst-Check/ }));
     s.quiz.forEach(f => fireEvent.click(screen.getByLabelText(f.antworten[f.richtig])));
     fireEvent.click(screen.getByRole("button", { name: "Prüfen" }));
     expect(screen.getByText(/3 von 3 richtig/)).toBeInTheDocument();
 
+    fireEvent.click(screen.getByRole("button", { name: /Weiter: .*Reflexion/ }));
     const felder = screen.getAllByRole("textbox");
     felder.forEach((f, i) => fireEvent.change(f, { target: { value: `Meine eigene Antwort Nummer ${i + 1} dazu.` } }));
     fireEvent.click(screen.getByRole("button", { name: "Reflexion speichern" }));
     expect(stand().stationen[s.id].quiz).toBe(3);
     expect(stand().stationen[s.id].erledigt_am).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(screen.getByText(/Station geschafft/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Nächste Station/ }));
+    expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent(STATIONEN[1].titel);
 
     fireEvent.click(screen.getByRole("tab", { name: /Portfolio/ }));
     expect(screen.getByText("Meine eigene Antwort Nummer 1 dazu.")).toBeInTheDocument();

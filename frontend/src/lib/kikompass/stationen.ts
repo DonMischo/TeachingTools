@@ -26,6 +26,12 @@ export type AisTeil = {
   prompts?: string[];
 };
 
+/** Interaktive Teile im Schritt »Ausprobieren«. */
+export type InteraktivId =
+  | "sortieren:ki-alltag" | "sortieren:fachwoerter" | "sortieren:datenschutz" | "sortieren:ki-ampel" | "sortieren:ideen"
+  | "schwaerzen" | "prompt-baukasten" | "fehlerjagd" | "echt-oder-ki" | "hund-oder-wolf"
+  | "werkstatt:raten" | "werkstatt:zeichnen";
+
 export type Station = {
   id: string;
   modul: BereichId;
@@ -39,6 +45,8 @@ export type Station = {
   auftrag: string[];
   ais?: AisTeil;
   link?: { titel: string; url: string; quelle: string };
+  /** Interaktive Teile, direkt in der Station. */
+  interaktiv?: InteraktivId[];
   /** Interne Simulation zum Ausprobieren. */
   sim?: { titel: string; href: string };
   quiz: Frage[];
@@ -57,6 +65,7 @@ export const STATIONEN: Station[] = [
   // ───────────────────────────── Verstehen ──
   {
     id: "v-mensch-maschine", modul: "verstehen", stufe: "0", titel: "Mensch oder Maschine?", icon: "🤔", minuten: 20,
+    interaktiv: ["sortieren:ki-alltag"],
     kann: ["v-0-1", "v-0-2", "v-Ia-1"],
     erklaerung: [
       "KI steckt in vielen Dingen, die du jeden Tag benutzt: Sie schlägt dir Videos vor, erkennt Gesichter auf Fotos, übersetzt Texte oder beantwortet Fragen im Chat.",
@@ -79,6 +88,7 @@ export const STATIONEN: Station[] = [
   },
   {
     id: "v-daten", modul: "verstehen", stufe: "0", titel: "Daten sind das Futter", icon: "📊", minuten: 25,
+    interaktiv: ["werkstatt:zeichnen"],
     kann: ["v-0-2", "v-0-3", "v-Ia-2"],
     erklaerung: [
       "Eine KI lernt aus Daten. Daten sind gesammelte Beispiele, etwa Bilder mit der Beschriftung »Katze« oder »Hund«.",
@@ -103,6 +113,7 @@ export const STATIONEN: Station[] = [
   },
   {
     id: "v-naechstes-wort", modul: "verstehen", stufe: "I", titel: "Wie ein Chatbot schreibt", icon: "💬", minuten: 30,
+    interaktiv: ["werkstatt:raten"],
     kann: ["v-Ia-2", "v-Ib-1", "v-Ib-2", "v-Ib-3"],
     erklaerung: [
       "Ein Chatbot wie AIS.chat beruht auf einem Sprachmodell. Es wurde mit riesigen Textmengen trainiert und hat dabei gelernt, welches Wort wahrscheinlich als nächstes kommt.",
@@ -136,6 +147,7 @@ export const STATIONEN: Station[] = [
   },
   {
     id: "v-fachwoerter", modul: "verstehen", stufe: "I", titel: "Fachwörter-Kiste", icon: "🧰", minuten: 20,
+    interaktiv: ["sortieren:fachwoerter"],
     kann: ["v-Ia-2", "v-Ib-4", "v-Ia-3"],
     erklaerung: [
       "Daten: gesammelte Beispiele. Algorithmus: genaue Anleitung. Training: Lernen aus Daten. Modell: das Ergebnis des Trainings.",
@@ -159,6 +171,7 @@ export const STATIONEN: Station[] = [
   // ───────────────────────────── Anwenden ──
   {
     id: "a-datenschutz", modul: "anwenden", stufe: "0", titel: "Was nie in die KI gehört", icon: "🔒", minuten: 15,
+    interaktiv: ["sortieren:datenschutz", "schwaerzen"],
     kann: ["a-0-3", "a-Ia-3", "a-Ib-3"],
     erklaerung: [
       "Alles, was du in einen Chat tippst, wird an einen Server geschickt. Auch wenn AIS.chat datenschutzfreundlich ist: Persönliche Daten haben dort nichts zu suchen.",
@@ -212,6 +225,7 @@ export const STATIONEN: Station[] = [
   },
   {
     id: "a-prompt-formel", modul: "anwenden", stufe: "I", titel: "Die Prompt-Formel", icon: "🧪", minuten: 30,
+    interaktiv: ["prompt-baukasten"],
     kann: ["a-Ia-2", "a-Ib-1"],
     erklaerung: [
       "Gute Prompts haben oft vier Teile: Rolle (»Du bist …«), Aufgabe (»Erkläre …«), Hintergrund (»Ich bin in Klasse 7 und …«) und Form (»in einer Tabelle, 5 Punkte«).",
@@ -276,6 +290,7 @@ export const STATIONEN: Station[] = [
   // ───────────────────────────── Reflektieren ──
   {
     id: "r-echt-oder-ki", modul: "reflektieren", stufe: "0", titel: "Echt oder KI?", icon: "🎭", minuten: 25,
+    interaktiv: ["echt-oder-ki"],
     kann: ["r-0-2", "r-0-3", "r-Ia-2"],
     erklaerung: [
       "KI kann Texte, Bilder, Stimmen und Videos erzeugen, die echt wirken. Gefälschte Videos von echten Menschen heißen Deepfakes.",
@@ -308,6 +323,7 @@ export const STATIONEN: Station[] = [
   },
   {
     id: "r-ki-irrt", modul: "reflektieren", stufe: "I", titel: "Die KI irrt sich", icon: "❗", minuten: 30,
+    interaktiv: ["fehlerjagd"],
     kann: ["r-Ia-1", "r-Ib-1"],
     erklaerung: [
       "Chatbots klingen immer sicher, auch wenn sie falsch liegen. Sie erfinden manchmal Fakten, Zahlen oder Quellen (Halluzinationen).",
@@ -340,6 +356,7 @@ export const STATIONEN: Station[] = [
   },
   {
     id: "r-fair", modul: "reflektieren", stufe: "I", titel: "Fair oder verzerrt?", icon: "⚖️", minuten: 30,
+    interaktiv: ["hund-oder-wolf"],
     kann: ["r-Ia-3", "r-Ib-2", "v-Ib-4"],
     erklaerung: [
       "KI lernt aus Texten und Bildern von Menschen und übernimmt dabei auch ihre Vorurteile. Das nennt man Bias.",
@@ -372,6 +389,7 @@ export const STATIONEN: Station[] = [
   // ───────────────────────────── Mitgestalten ──
   {
     id: "m-ideen", modul: "mitgestalten", stufe: "0", titel: "Wo hilft KI bei uns?", icon: "💡", minuten: 20,
+    interaktiv: ["sortieren:ideen"],
     kann: ["m-0-1", "m-Ia-1"],
     erklaerung: [
       "KI kann vieles erleichtern, aber nicht alles soll sie übernehmen. Ihr entscheidet mit, wo KI sinnvoll ist.",
@@ -393,6 +411,7 @@ export const STATIONEN: Station[] = [
   },
   {
     id: "m-regeln", modul: "mitgestalten", stufe: "I", titel: "Unsere KI-Regeln", icon: "🚦", minuten: 45,
+    interaktiv: ["sortieren:ki-ampel"],
     kann: ["m-Ib-2", "m-Ib-1", "a-Ib-4"],
     erklaerung: [
       "Damit alle wissen, wann KI erlaubt ist, braucht die Klasse Regeln. Ein einfaches Modell ist die KI-Ampel:",

@@ -26,11 +26,17 @@ export function Fuehrerschein({ stande, onStation, name, konto, code }: {
   const [offen, setOffen] = useState<string | null>(null);
   const [meldung, setMeldung] = useState<Partial<Record<BereichId, MausPruefungOut | "fehler">>>({});
 
-  const station = offen ? MODUL_REIHENFOLGE.flatMap(stationenVon).find(s => s.id === offen) : null;
+  const alle = MODUL_REIHENFOLGE.flatMap(stationenVon);
+  const station = offen ? alle.find(s => s.id === offen) : null;
+  // Nächste noch offene Station nach dieser, sonst die erste offene überhaupt.
+  const naechste = station
+    ? [...alle.slice(alle.indexOf(station) + 1), ...alle].find(s => s.id !== station.id && !stationFertig(s, stande[s.id]))
+    : undefined;
   if (station) {
     return (
       <StationAnsicht key={station.id} station={station} stand={stande[station.id]}
-        onChange={s => onStation(station.id, s)} onZurueck={() => setOffen(null)} />
+        onChange={s => onStation(station.id, s)} onZurueck={() => setOffen(null)}
+        onNaechste={naechste ? () => setOffen(naechste.id) : undefined} />
     );
   }
 

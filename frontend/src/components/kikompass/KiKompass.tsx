@@ -7,7 +7,7 @@
  * Browser. Wer über einen Code beigetreten ist, spiegelt den Stand zusätzlich
  * in die Sitzung, damit die Lehrkraft ihn sieht.
  */
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api, type KiKompassStand, type MausZugang } from "@/lib/api";
 import { BEREICHE, NAMENSNENNUNG } from "@/lib/kikompass/raster";
@@ -50,6 +50,8 @@ export default function KiKompass({ action, name = "", konto, verwaltung = false
   // An den Zustand gebunden statt an ein Ref: so speichert StrictMode nie einen leeren Stand über einen geladenen.
   const [geladenFuer, setGeladenFuer] = useState<string | null>(null);
   const [fehler, setFehler] = useState(false);
+  // Zuletzt vom Server geladener bzw. dorthin gespeicherter Stand (JSON), um unnötige Speicherungen zu sparen.
+  const amServer = useRef<string | null>(null);
   const lokal = `hp_kikompass_${speicherSchluessel}`;
 
   const { data: eigeneSitzung } = useQuery({
@@ -67,16 +69,21 @@ export default function KiKompass({ action, name = "", konto, verwaltung = false
       return;
     }
     api.kikompass.stand()
-      .then(s => { if (aktiv) { setStand(s); setGeladenFuer(lokal); } })
+      .then(s => { if (aktiv) { amServer.current = JSON.stringify(s); setStand(s); setGeladenFuer(lokal); } })
       .catch(() => { if (aktiv) { setStand(lokalLaden(lokal)); setGeladenFuer(lokal); setFehler(true); } });
     return () => { aktiv = false; };
   }, [konto, lokal]);
 
   useEffect(() => {
     if (geladenFuer !== lokal) return;
-    try { localStorage.setItem(lokal, JSON.stringify(stand)); } catch { /* privat */ }
+    const json = JSON.stringify(stand);
+    try { localStorage.setItem(lokal, json); } catch { /* privat */ }
     const t = setTimeout(() => {
-      if (konto) api.kikompass.speichern(stand).then(() => setFehler(false)).catch(() => setFehler(true));
+      // Nur speichern, was sich geändert hat: Bloßes Öffnen legt keine Zeile an.
+      if (konto && json !== amServer.current) {
+        api.kikompass.speichern(stand).then(() => { amServer.current = json; setFehler(false); }).catch(() => setFehler(true));
+      }
+      // Der Spiegel in die Sitzung geht auch beim Öffnen raus: So sieht die Lehrkraft, wer beigetreten ist.
       if (zugang) api.kikompass.sitzungStand(zugang, stand).catch(() => { /* nur für die Übersicht */ });
     }, 800);
     return () => clearTimeout(t);
