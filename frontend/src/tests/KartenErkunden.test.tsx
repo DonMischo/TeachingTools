@@ -2,7 +2,7 @@
 // Sitzung (mit Gast-Token), Lehrkraft-Werkzeuge bleiben aus — auch für eine
 // Lehrkraft, die über den Code kommt.
 import { describe, expect, it, vi } from "vitest";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { Katalog } from "@/lib/karten/stil";
 
@@ -11,6 +11,8 @@ const KATALOG: Katalog = {
   ebenen: [
     { id: "de-laender", name: "Bundesländer", gruppe: "politisch", bereich: "de", geometrie: "flaeche", quiz: true, bytes: 1, quelle: { name: "BKG", lizenz: "dl-de/by-2.0", url: "" } },
     { id: "de-staedte", name: "Städte", gruppe: "politisch", bereich: "de", geometrie: "punkt", quiz: true, bytes: 1, quelle: { name: "BKG", lizenz: "dl-de/by-2.0", url: "" } },
+    { id: "de-dichte", name: "Bevölkerungsdichte", gruppe: "bevoelkerung", bereich: "de", geometrie: "flaeche", bytes: 1, quelle: { name: "BKG", lizenz: "dl-de/by-2.0", url: "" },
+      darstellung: { feld: "dichte", art: "kategorie", werte: [{ wert: "dicht", text: "sehr dicht", farbe: "#c00" }] } },
   ],
 };
 
@@ -34,7 +36,10 @@ vi.mock("@/contexts/AuthContext", () => {
   return { useAuth: () => wert };
 });
 vi.mock("@/components/karten/KartenAnsicht", () => ({
-  default: (p: { stil: { sources: Record<string, { data?: unknown }> }; gastToken?: string | null }) => { ansicht(p); return <div>Karte</div>; },
+  default: (p: { stil: { sources: Record<string, { data?: unknown }> }; gastToken?: string | null; legende?: React.ReactNode }) => {
+    ansicht(p);
+    return <div>Karte<div data-testid="karten-legende">{p.legende}</div></div>;
+  },
 }));
 vi.mock("@/components/karten/UebenListe", () => ({ default: () => <div>Üben-Liste</div> }));
 
@@ -77,5 +82,14 @@ describe("Karten erkunden per Code", () => {
     await zeige();
     expect(katalog).toHaveBeenCalled();
     expect(screen.getByText(/Auswählen/)).toBeTruthy();
+  });
+
+  it("die Legende geht an die Karte, nicht in die Seitenleiste", async () => {
+    await zeige();
+    expect(screen.queryByText("sehr dicht")).toBeNull();
+    fireEvent.click(screen.getByLabelText("Bevölkerungsdichte"));
+    const legende = screen.getByTestId("karten-legende");
+    expect(within(legende).getByText("sehr dicht")).toBeTruthy();
+    expect(screen.getAllByText("sehr dicht")).toHaveLength(1);
   });
 });
