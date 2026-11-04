@@ -315,7 +315,8 @@ const ALL_CARDS: Werkzeug[] = [
     title: "Farbmodelle",
     description: "RGB als Licht, CMYK als Druckfarbe, HSV und HSL mit Farbkreis: dieselbe Farbe in jedem Modell, mit Reglern und Bild, dazu alle Schreibweisen von #RRGGBB bis hsl(). Farbcodes zwischen Hex und Dezimal umrechnen, je Kanal mit Rechenweg, und im Spiel Hex-Farbmischer eine Zielfarbe nachmischen.",
     color: "#f97316",
-  },  {
+  },
+  {
     slug: "rechenregeln",
     href: "/simulationen/rechenregeln",
     icon: "🍎",
