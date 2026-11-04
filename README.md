@@ -313,7 +313,7 @@ Das Lehrkraft-Werkzeugset. Standardmäßig nur für Lehrkräfte sichtbar.
 - Abgleich alt ↔ neu je Karte (identisch, geändert mit Wort-Diff, verschoben, neu, entfällt), getrennt für Real- und Hauptschulniveau; Konflikte am Thema, offene neue Inhalte je Block, Wochensumme gegen verfügbare Wochen
 - Themen per Ziehen zwischen Klassen verschieben, Karten zuordnen, fehlende Niveaus ergänzen; ein gemeinsamer Stand je Fachschaft (Änderungen per Operation, `api/curriculum_ops.py`), Gastbeitritt per QR
 - Export der Endfassung als DOCX und PDF (A4 quer, alle Klassen oder eine) und als SVG je Klasse (`api/curriculum_export.py`; das DOCX wird direkt geschrieben, weil pandoc keine Zellfarben kann, das PDF macht LibreOffice daraus)
-- KI-Prompt für Lehrplanvergleich und Zuordnung; Vorlagen als JSON (`tt-curriculum/1`, Aufbau in `data/curriculum/SCHEMA.md`). Startvorlagen in `frontend/public/curriculum/`: Thüringer Mathe-Lehrpläne (RS 2011, GY 2018 → Erprobungsfassungen 2026, mit Abgleich) und Physik (RS + GY 2026, Kl. 7–10, ohne alten Plan). Der KI-Prompt erfasst eine oder beide Schularten in einem JSON, mit oder ohne alten Plan
+- KI-Prompt für Lehrplanvergleich und Zuordnung; Vorlagen als JSON (`tt-curriculum/1`, Aufbau in `data/curriculum/SCHEMA.md`). Startvorlagen in `frontend/public/curriculum/`: Thüringer Mathe-Lehrpläne (RS 2011, GY 2018 → Erprobungsfassungen 2026, mit Abgleich) Physik (RS + GY 2026, Kl. 7–10) und Medienbildung und Informatik (RS + GY 2026, Kl. 5–10), beide ohne alten Plan und mit leeren Unterrichtseinheiten je Lernbereich. Der KI-Prompt erfasst eine oder beide Schularten in einem JSON, mit oder ohne alten Plan
 
 ### 🧱 Snap!
 - Blockbasiertes Programmieren (Snap!, Berkeley) direkt in der Seite, komplett lokal, ohne Internet und ohne Konto
@@ -445,12 +445,12 @@ Beim ersten Start legt ein **Setup-Dialog** den ersten Admin und die Klassen an.
 
 ### Workshop-Instanz (online)
 
-Für Online-Workshops startet `workshop.ps1` eine zweite, getrennte Instanz und macht sie über einen [Cloudflare-Quick-Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/do-more-with-tunnels/trycloudflare/) aus dem Internet erreichbar, ohne Konto und ohne Portfreigabe (`winget install Cloudflare.cloudflared`).
+Für Online-Workshops startet `workshop.bat` (ruft `workshop.ps1` ohne Änderung der Ausführungsrichtlinie auf) eine zweite, getrennte Instanz und macht sie über einen [Cloudflare-Quick-Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/do-more-with-tunnels/trycloudflare/) aus dem Internet erreichbar, ohne Konto und ohne Portfreigabe (`winget install Cloudflare.cloudflared`).
 
-```powershell
-.\workshop.ps1 start -Anzahl 30   # Instanz auf Port 1340, Tunnel, Zugänge ws01–ws30 + moderation
-.\workshop.ps1 stop               # Tunnel zu, Instanz angehalten, Daten bleiben
-.\workshop.ps1 reset              # alles löschen
+```bat
+workshop.bat start -Anzahl 30   :: Instanz auf Port 1340, Tunnel, Zugänge ws01–ws30 + moderation
+workshop.bat stop               :: Tunnel zu, Instanz angehalten, Daten bleiben
+workshop.bat reset              :: alles löschen
 ```
 
 - Eigene Datenbank, eigener Port, eigener `SECRET_KEY`; die Schulinstanz läuft unberührt weiter.

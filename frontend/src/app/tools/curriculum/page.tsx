@@ -21,6 +21,7 @@ import { JsonEingabe } from "@/components/curriculum/JsonEingabe";
 const STARTVORLAGEN = {
   mathe: { fach: "Mathematik", datei: "/curriculum/mathematik_thueringen.json", text: "Thüringer Mathe-Lehrpläne (RS 2011 / GY 2018 → 2026) mit Abgleich" },
   physik: { fach: "Physik", datei: "/curriculum/physik_thueringen.json", text: "Thüringer Physik-Lehrpläne 2026 (RS + GY, Kl. 7–10), ohne alten Plan" },
+  mbi: { fach: "Medienbildung und Informatik", datei: "/curriculum/mbi_thueringen.json", text: "Thüringer Lehrpläne Medienbildung und Informatik 2026 (RS + GY, Kl. 5–10), ohne alten Plan" },
 } as const;
 type Start = keyof typeof STARTVORLAGEN;
 
@@ -115,7 +116,7 @@ export default function CurriculumListe() {
             <label className="flex flex-col gap-1"><span className="label">Fach</span>
               <input className="input" value={fach} onChange={e => setFach(e.target.value)} list="curriculum-faecher" />
               <datalist id="curriculum-faecher">
-                {["Mathematik", "Physik", "Chemie", "Biologie", "Deutsch", "Englisch", "Geografie", "Geschichte", "MNT"].map(f => <option key={f} value={f} />)}
+                {["Mathematik", "Physik", "Chemie", "Biologie", "Medienbildung und Informatik", "Deutsch", "Englisch", "Geografie", "Geschichte", "MNT"].map(f => <option key={f} value={f} />)}
               </datalist></label>
           </div>
           <div className="flex flex-col gap-1.5 mb-3 text-sm">
