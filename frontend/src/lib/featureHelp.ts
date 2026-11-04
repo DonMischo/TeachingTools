@@ -872,6 +872,18 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📖 Mehr", text: "»Grundlagen« erklärt Planungsmodelle und Theorie, »Grafiken« zeigt die Übersichten, »Mythen-Check« räumt mit Lernstilen & Co. auf, »Quellen« listet alle Belege mit DOI." },
     ],
   },
+  curriculum: {
+    title: "Curriculum-Abgleich",
+    intro: "Das schulinterne Curriculum zwischen altem und neuem Lehrplan: links die alten Lehrplan-Karten, in der Mitte unsere Themen, rechts der neue Plan.",
+    sections: [
+      { label: "🗂️ Aufbau", text: "Je Klassenblock (5/6, 7/8, 9/10) stehen die Themen jeder Klasse mit Wochen. Rechts erscheinen die neuen Karten zu den alten: grün identisch, gelb geändert (durchgestrichen fällt weg, blau kommt dazu), lila gestrichelt = liegt neu in einem anderen Block. Unter jedem Block: neue Inhalte, die noch kein Thema abdeckt." },
+      { label: "⚠ Konflikte", text: "Ein Thema ist rot umrandet, wenn eine seiner alten Karten entfällt oder der Inhalt neu in einen anderen Block gehört. »Nur Konflikte« blendet alles andere aus." },
+      { label: "↕ Verschieben", text: "Themen am ⠿ greifen und auf ein anderes Thema (davor einfügen) oder auf eine Klassenzeile ziehen. Karten auf ein Thema ziehen ordnet sie zu; im Kartendialog geht das auch per Auswahl oder als neues Thema mit Wochen." },
+      { label: "✎ Niveaus", text: "Lehrpläne nennen meist nur Gymnasial- und Realschulniveau. Karten und Themen lassen sich anklicken und um H, LB, GE ergänzen. Hauptschulniveau endet mit Klasse 9." },
+      { label: "🤖 KI-Prompt", text: "»Zwei Lehrpläne vergleichen« erzeugt Karten und Abgleich aus zwei PDFs; »Curriculum zuordnen« ordnet Themen Karten zu. Die JSON-Antwort über »⬆ Hochladen« einfügen — nur mitgeschickte Teile werden ersetzt." },
+      { label: "👥 Teilen", text: "Alle Lehrkräfte sehen und bearbeiten jeden Plan; Änderungen anderer erscheinen nach wenigen Sekunden. Kolleg·innen ohne Konto kommen per QR als Gast (nur lesen oder mitbearbeiten). »⧉ Kopie« spielt eine Umstellung erst durch." },
+    ],
+  },
   stundenplaner: {
     title: "Stundenplaner",
     intro: "Verlaufsplanungen erstellen, Phasen strukturieren und mit Kolleg·innen teilen.",

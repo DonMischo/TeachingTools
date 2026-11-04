@@ -64,6 +64,14 @@ const ALL_CARDS: Werkzeug[] = [
     color: "#2a9db0",
   },
   {
+    slug: "curriculum",
+    href: "/tools/curriculum",
+    icon: "🧭",
+    title: "Curriculum-Abgleich",
+    description: "Schulcurriculum gegen alten und neuen Lehrplan: Konflikte, neue und verschobene Inhalte, Wochen je Klasse.",
+    color: "#7c6ee6",
+  },
+  {
     slug: "stundenplaner",
     href: "/stundenplaner",
     icon: "📋",

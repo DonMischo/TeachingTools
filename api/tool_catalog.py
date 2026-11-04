@@ -299,6 +299,10 @@ CATALOG: list[CatalogTool] = [
     CatalogTool("kompendium", "📚 Methoden-Kompendium", "📚", "tools", {
         "use": _cap(True, False),
     }),
+    # Curriculum-Abgleich der Fachschaft (nur Lehrkräfte).
+    CatalogTool("curriculum", "🧭 Curriculum-Abgleich", "🧭", "tools", {
+        "use": _cap(True, False),
+    }),
     # Fragmente: students may USE boards shared with their class (default on);
     # creating a collection is teacher-only. Per-collection access is further
     # governed by the collection's own ACL grants.

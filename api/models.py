@@ -2890,3 +2890,33 @@ class KlikkDuell(Base):
     zuege: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
     sieger: Mapped[str | None] = mapped_column(String(1), nullable=True)
     erstellt_am: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class CurriculumPlan(Base):
+    """Schulinternes Curriculum + Lehrplanabgleich einer Fachschaft (Werkzeug »curriculum«).
+
+    Das ganze Dokument (Lehrplan-Karten, Abgleich, Themen je Klasse) liegt in
+    ``data`` im Format von api/curriculum_ops.py. Alle Lehrkräfte dürfen jeden
+    Plan bearbeiten — es ist ein gemeinsamer Stand der Fachschaft; Löschen und
+    Gastzugang bleiben bei der anlegenden Lehrkraft. ``version`` zählt jede
+    Änderung hoch, damit offene Seiten per Abfrage merken, dass es Neues gibt.
+    """
+    __tablename__ = "curriculum_plans"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    fach: Mapped[str] = mapped_column(String(100), nullable=False, default="Mathematik")
+    owner_teacher_id: Mapped[int] = mapped_column(
+        ForeignKey("teachers.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    data: Mapped[dict] = mapped_column(JSON, nullable=False)
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    zuletzt_von: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    # Gastzugang (QR / Beitrittslink) — z. B. für Kolleg·innen ohne TT-Konto.
+    allow_guests: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sql_expr.false())
+    guest_code: Mapped[str | None] = mapped_column(String(12), unique=True, nullable=True, index=True)
+    guest_permission: Mapped[str] = mapped_column(String(20), nullable=False, server_default="read")  # read | edit
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    owner: Mapped["Teacher"] = relationship()

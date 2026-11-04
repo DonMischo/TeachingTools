@@ -81,6 +81,9 @@ from .routers import standalone as standalone_router
 app.include_router(standalone_router.router)
 from .routers import fragments as fragments_router
 app.include_router(fragments_router.router)
+
+from .routers import curriculum as curriculum_router
+app.include_router(curriculum_router.router)
 from .routers import fragments_cards as fragments_cards_router
 app.include_router(fragments_cards_router.router)
 from .routers import snap as snap_router

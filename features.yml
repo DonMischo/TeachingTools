@@ -862,6 +862,16 @@ tools:
       - Filter nach Setting, Zielgruppe, Anwendungsgebiet, Evidenz, Qualifikation
       - Grundlagenkapitel, Grafiken, Mythen-Check, Quellen mit DOI
       - Markieren als Favorit, Einarbeiten, Brauch ich nicht (im Konto gespeichert)
+  - id: curriculum
+    name: Curriculum-Abgleich
+    faehigkeiten: {use: [true, false]}
+    kann:
+      - Schulinternes Curriculum (G/R/H/LB/GE, Wochen je Thema) gegen alten und neuen Lehrplan
+      - Karten je Lehrplanpunkt, Abgleich identisch/geändert/verschoben/neu/entfällt mit Wort-Diff
+      - Konflikte am Thema, offene neue Inhalte je Klassenblock, Wochensumme je Klasse
+      - Themen per Ziehen zwischen Klassen verschieben, Karten zuordnen, fehlende Niveaus ergänzen
+      - KI-Prompt für Lehrplanvergleich und Zuordnung, JSON-Vorlage hoch- und herunterladen
+      - gemeinsamer Stand der Fachschaft, Gastbeitritt per QR
   - id: snap
     name: Snap!
     faehigkeiten: {use: [true, false], create: [true, false]}

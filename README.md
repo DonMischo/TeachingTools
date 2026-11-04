@@ -308,6 +308,12 @@ Das Lehrkraft-Werkzeugset. Standardmäßig nur für Lehrkräfte sichtbar.
 - Persönliche Markierungen je Methode (Favorit, Einarbeiten, Brauch ich nicht) mit eigenem Filter; gespeichert im Konto
 - Inhalte liegen als YAML in `data/methoden_kompendium/`; `python build.py` und `python svgs.py` dort erzeugen JSON und Grafiken in `frontend/public/kompendium/`
 
+### 🧭 Curriculum-Abgleich
+- Schulinternes Curriculum gegen alten und neuen Lehrplan, dreispaltig je Klassenblock: alte Lehrplan-Karten | eigene Themen (G/R/H/LB/GE, Wochen) | neue Karten
+- Abgleich alt ↔ neu je Karte (identisch, geändert mit Wort-Diff, verschoben, neu, entfällt), getrennt für Real- und Hauptschulniveau; Konflikte am Thema, offene neue Inhalte je Block, Wochensumme gegen verfügbare Wochen
+- Themen per Ziehen zwischen Klassen verschieben, Karten zuordnen, fehlende Niveaus ergänzen; ein gemeinsamer Stand je Fachschaft (Änderungen per Operation, `api/curriculum_ops.py`), Gastbeitritt per QR
+- KI-Prompt für Lehrplanvergleich und Zuordnung; Vorlagen als JSON (`tt-curriculum/1`, Aufbau in `data/curriculum/SCHEMA.md`). Startvorlage mit den Thüringer Mathe-Lehrplänen (RS 2011, GY 2018 → Erprobungsfassungen 2026) in `frontend/public/curriculum/`
+
 ### 🧱 Snap!
 - Blockbasiertes Programmieren (Snap!, Berkeley) direkt in der Seite, komplett lokal, ohne Internet und ohne Konto
 - Programme werden in TT gespeichert; Lehrkraft-Programme mit Klasse werden zu Vorlagen, die die Klasse als eigene Kopie speichert

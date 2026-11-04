@@ -570,6 +570,25 @@ export const fragmentGuest = {
   },
 };
 
+/** Gast-Token je Curriculum-Plan (sessionStorage), gesetzt nach QR-/Link-Beitritt. */
+export const curriculumGuest = {
+  get: (planId: number): string | undefined =>
+    (typeof window !== "undefined" ? sessionStorage.getItem(`hp_cur_guest_${planId}`) : null) ?? undefined,
+  set: (planId: number, token: string) => {
+    if (typeof window !== "undefined") sessionStorage.setItem(`hp_cur_guest_${planId}`, token);
+  },
+};
+
+export type CurriculumPlanKurz = {
+  id: number; name: string; fach: string; owner_teacher_id: number; owner_name: string;
+  version: number; zuletzt_von: string | null; updated_at: string | null;
+};
+export type CurriculumPlanOut = CurriculumPlanKurz & {
+  data: import("./curriculum/modell").Vorlage;
+  allow_guests: boolean; guest_code: string | null; guest_permission: "read" | "edit";
+  darf_verwalten: boolean; darf_bearbeiten: boolean;
+};
+
 export type WettkampfParticipant = {
   id: number;
   name: string;
@@ -3064,6 +3083,28 @@ export const api = {
     calendarTags: () => apiFetch<{ name: string; color: string | null }[]>("slideshow/calendar-tags"),
     order: (ids: number[]) => apiFetch<void>("slideshow/order", { method: "PUT", body: JSON.stringify({ ids }) }),
     remove: (ids: number[]) => apiFetch<{ deleted: number }>("slideshow/items/delete", { method: "POST", body: JSON.stringify({ ids }) }),
+  },
+  curriculum: {
+    list: () => apiFetch<CurriculumPlanKurz[]>("curriculum"),
+    create: (body: { name: string; fach?: string; data?: unknown }) =>
+      apiFetch<CurriculumPlanOut>("curriculum", { method: "POST", body: JSON.stringify(body) }),
+    get: (id: number, guestToken?: string) => ffetch<CurriculumPlanOut>(`curriculum/${id}`, undefined, guestToken),
+    /** Liefert nur {version}, solange sich seit `version` nichts geändert hat. */
+    poll: (id: number, version: number, guestToken?: string) =>
+      ffetch<CurriculumPlanOut | { version: number }>(`curriculum/${id}?seit=${version}`, undefined, guestToken),
+    ops: (id: number, ops: unknown[], guestToken?: string) =>
+      ffetch<CurriculumPlanOut>(`curriculum/${id}/ops`, { method: "POST", body: JSON.stringify({ ops }) }, guestToken),
+    patch: (id: number, body: { name?: string; allow_guests?: boolean; guest_permission?: "read" | "edit" }) =>
+      apiFetch<CurriculumPlanOut>(`curriculum/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+    newGuestCode: (id: number) => apiFetch<CurriculumPlanOut>(`curriculum/${id}/guest-code`, { method: "POST" }),
+    copy: (id: number) => apiFetch<CurriculumPlanOut>(`curriculum/${id}/kopie`, { method: "POST" }),
+    remove: (id: number) => apiFetch<void>(`curriculum/${id}`, { method: "DELETE" }),
+    guestStatus: (code: string) =>
+      apiFetch<{ allow_guests: boolean; plan_id?: number; plan_name?: string; permission?: "read" | "edit" }>(
+        `curriculum/guest/status?code=${encodeURIComponent(code)}`),
+    guestJoin: (code: string, name: string) =>
+      apiFetch<{ token: string; name: string; plan_id: number; plan_name: string; permission: string }>(
+        "curriculum/guest/join", { method: "POST", body: JSON.stringify({ code, name }) }),
   },
   kompendium: {
     marken: () => apiFetch<Record<string, string>>("kompendium/marken"),

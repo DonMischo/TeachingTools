@@ -15,7 +15,7 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from .models import (
-    AuctionSession, BarometerSession, BingoSession, ExitGameSession,
+    AuctionSession, BarometerSession, BingoSession, CurriculumPlan, ExitGameSession,
     ExitTicketSession, FragmentCollection, LueckentextSession, QuizSession, SchreibraumRoom,
     ToolSession, WettschreibenSession,
 )
@@ -73,6 +73,9 @@ JOIN_CODE_TOOLS: tuple[JoinCodeTool, ...] = (
     # Pinnwaende sind keine Sitzung, sondern eine Sammlung mit dauerhaftem
     # Gastcode; ohne allow_guests weist der Gastbeitritt ab.
     JoinCodeTool("fragmente", FragmentCollection, "guest_code", "🗂️ Pinnwand", "/fragmente/join?code={code}",
+                 owner_column="owner_teacher_id"),
+    # Curriculum-Abgleich: Kolleg·innen ohne Konto kommen per QR in den Fachschaftsplan.
+    JoinCodeTool("curriculum", CurriculumPlan, "guest_code", "🧭 Curriculum", "/tools/curriculum/join?code={code}",
                  owner_column="owner_teacher_id"),
 )
 
