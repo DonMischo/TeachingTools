@@ -83,3 +83,6 @@ data/exitgames/7/assets/sword.jpg
 desktop.ini
 # Beschriftungspunkte je Ebene (API rechnet sie einmal, routers/karten.py)
 data/karten/ebenen/.namen/
+
+# Workshop-Instanz (workshop.ps1)
+.workshop/

@@ -443,6 +443,22 @@ Beim ersten Start legt ein **Setup-Dialog** den ersten Admin und die Klassen an.
 
 > Für den Produktivbetrieb in `.env` einen echten `SECRET_KEY` setzen, sonst sind gespeicherte Zugangsdaten nicht geschützt.
 
+### Workshop-Instanz (online)
+
+Für Online-Workshops startet `workshop.ps1` eine zweite, getrennte Instanz und macht sie über einen [Cloudflare-Quick-Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/do-more-with-tunnels/trycloudflare/) aus dem Internet erreichbar, ohne Konto und ohne Portfreigabe (`winget install Cloudflare.cloudflared`).
+
+```powershell
+.\workshop.ps1 start -Anzahl 30   # Instanz auf Port 1340, Tunnel, Zugänge ws01–ws30 + moderation
+.\workshop.ps1 stop               # Tunnel zu, Instanz angehalten, Daten bleiben
+.\workshop.ps1 reset              # alles löschen
+```
+
+- Eigene Datenbank, eigener Port, eigener `SECRET_KEY`; die Schulinstanz läuft unberührt weiter.
+- `data/` wird nur mit den versionierten Dateien nach `.workshop/data` kopiert, nicht versionierte Schuldaten kommen nicht mit.
+- Beispiele (Zeitstrahlen, Challenge, TaskCrawler) werden einmal hochgeladen. Zugangsliste und QR-Code liegen in `.workshop/data/`.
+- Die Adresse ist bei jedem Start neu und landet in der Zwischenablage. Die Moderation öffnet TT über diese Adresse, dann zeigen alle Beitritts-QRs auf den Tunnel.
+- Nicht für den Produktivbetrieb: Der Tunnel lebt nur, solange der Rechner läuft.
+
 ### Gestaltung
 
 Alle Farben und Grundbausteine stehen in `frontend/src/styles/theme.css`, die App und die Offline-Datei nutzen dieselbe Datei. Statt fester Farben (`text-gray-400`) oder `[var(--…)]` gibt es Tokens, die mit dem gewählten Theme wechseln: `bg-page`, `bg-surface`, `bg-surface-hover`, `text-fg`, `text-muted`, `border-line`, `bg-accent`/`text-accent-fg`, `text-ok`/`text-bad`, `max-w-seite`. Wiederkehrende Formen sind Bausteine: `.page`, `.card`, `.btn`, `.btn-primary`, `.btn-secondary`, `.btn-danger`, `.chip`/`.chip-on`, `.input`, `.label`. Tailwind-Klassen daneben überschreiben sie (z. B. `btn-primary px-3 py-1 text-xs`). Simulationen mit eigener Bühne (Sonnensystem, Rock your Life, Verkehr) behalten ihre festen Farben. Tailwind 4 braucht Chrome/Edge 111+, Firefox 128+ oder Safari 16.4+.

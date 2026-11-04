@@ -135,6 +135,10 @@ const server = http.createServer((req, res) => {
       res.writeHead(200, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
       res.end(JSON.stringify({ ip }));
     };
+    // Aufruf über einen Namen (z. B. Cloudflare-Tunnel): Links sollen genau diesen
+    // Namen tragen, nicht die LAN-IP. null lässt die Seiten window.location nehmen.
+    const host = (req.headers.host || "").replace(/:\d+$/, "");
+    if (/[a-z]/i.test(host) && host !== "localhost") { respond(null); return; }
     // Prefer HOST_IP injected by start.bat via docker-compose environment
     if (process.env.HOST_IP) { respond(process.env.HOST_IP); return; }
     const local = getLanIp();
