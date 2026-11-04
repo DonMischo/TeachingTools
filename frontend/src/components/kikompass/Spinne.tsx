@@ -13,17 +13,18 @@ const R = 110;
 const MITTE = 150;
 const MAX = STUFEN.length;
 
-function punkt(i: number, wert: number): [number, number] {
+function lage(i: number, r: number): [number, number] {
   // Verstehen oben, dann im Uhrzeigersinn.
   const winkel = -Math.PI / 2 + (i * 2 * Math.PI) / BEREICHE.length;
-  const r = (Math.max(0, Math.min(MAX, wert)) / MAX) * R;
   return [MITTE + r * Math.cos(winkel), MITTE + r * Math.sin(winkel)];
 }
 
-export function Spinne({ reihen, groesse = 300 }: { reihen: Reihe[]; groesse?: number }) {
+const punkt = (i: number, wert: number) => lage(i, (Math.max(0, Math.min(MAX, wert)) / MAX) * R);
+
+export function Spinne({ reihen, groesse = 340 }: { reihen: Reihe[]; groesse?: number }) {
   return (
     <figure className="flex flex-col items-center gap-2">
-      <svg viewBox="0 0 300 300" width={groesse} height={groesse} role="img"
+      <svg viewBox="-65 5 430 290" width={groesse} height={groesse * 290 / 430} role="img" className="max-w-full h-auto"
         aria-label={reihen.map(r => `${r.name}: ${BEREICHE.map(b => `${b.name} ${r.werte[b.id].toFixed(1)}`).join(", ")}`).join("; ")}>
         {STUFEN.map((s, k) => (
           <polygon key={s.id} fill="none" style={{ stroke: "var(--border)" }} strokeWidth={1}
@@ -31,7 +32,8 @@ export function Spinne({ reihen, groesse = 300 }: { reihen: Reihe[]; groesse?: n
         ))}
         {BEREICHE.map((b, i) => {
           const [x, y] = punkt(i, MAX);
-          const [lx, ly] = punkt(i, MAX + 0.75);
+          // Beschriftung außerhalb des Rings: oben/unten näher, links/rechts mit Platz für den Text.
+          const [lx, ly] = lage(i, R + (i % 2 ? 50 : 18));
           return (
             <g key={b.id}>
               <line x1={MITTE} y1={MITTE} x2={x} y2={y} style={{ stroke: "var(--border)" }} />
