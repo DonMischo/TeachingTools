@@ -22,7 +22,7 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "rea
 import { api, type CurriculumPlanOut } from "@/lib/api";
 import { useToast } from "@/contexts/ToastContext";
 import {
-  BLOECKE, KLASSEN_JE_BLOCK, NIVEAUS, NIVEAU_NAME, OHNE_BEREICH, bereicheVon, freieAlteKarten, index, loesen, nachBereich, neueId, niveauGilt,
+  BLOECKE, KLASSEN_JE_BLOCK, NIVEAUS, NIVEAU_NAME, OHNE_BEREICH, bereicheVon, einheitenAusLehrplan, freieAlteKarten, index, loesen, nachBereich, neueId, niveauGilt,
   offeneKarten, themaSicht, wochenSumme, zuordnen,
   type Block, type KarteMitPlan, type Klasse, type Niveau, type Thema,
 } from "@/lib/curriculum/modell";
@@ -93,6 +93,7 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
   }, [plan.id, version, guestToken, offen]);
 
   const bereichListe = useMemo(() => bereicheVon(doc), [doc]);
+  const mitAlt = doc.lehrplaene.some(l => l.rolle === "alt");
   const sichtbar = (k: KarteMitPlan) => schularten.has(k.plan.schulart)
     && (bereichFilter.size === 0 || bereichFilter.has(k.bereich || OHNE_BEREICH));
   const passt = (t: Thema) => !suche.trim() || `${t.titel} ${Object.values(t.inhalte).join(" ")}`.toLowerCase().includes(suche.toLowerCase());
@@ -139,6 +140,15 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
     onDrop: (e: React.DragEvent) => { e.preventDefault(); ablegen(e.dataTransfer.getData("text/plain"), klasse, thema, nur); },
   });
   const hell = (key: string) => (ziehZiel === key ? "ring-2 ring-accent ring-inset" : "");
+
+  const einheitenAnlegen = () => {
+    const neu = einheitenAusLehrplan(doc);
+    if (!neu.length) { toast("Nichts zu tun — zu jedem Lernbereich gibt es schon eine Unterrichtseinheit.", "info"); return; }
+    if (!confirm(`${neu.length} Unterrichtseinheiten anlegen? Je Lernbereich des neuen Lehrplans eine leere Einheit; `
+      + `die Karten bleiben unter »Offen« zum Hineinziehen. Einheiten aus Doppeljahrgängen (5/6, 7/8) kommen in beide Klassen — `
+      + `nicht benötigte danach löschen.`)) return;
+    ops(neu.map(a => ({ op: "thema", klasse: a.klasse, thema: a.thema })));
+  };
 
   const alleVorschlaege = () => {
     if (!confirm("Alle Vorschläge aus dem Abgleich (gleicher Block) den Unterrichtseinheiten zuordnen?")) return;
@@ -214,7 +224,8 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
         <input className="input w-44 text-sm py-1" placeholder="Einheit suchen…" value={suche} onChange={e => setSuche(e.target.value)} />
         <span className="flex-1" />
         <span className="text-xs text-muted">{nurLesen ? "nur lesen · " : ""}v{plan.version}{plan.zuletzt_von ? ` · zuletzt ${plan.zuletzt_von}` : ""}</span>
-        {!nurLesen && <button className="btn-secondary text-sm" onClick={alleVorschlaege} title="Partner der alten Karten in die Niveau-Zeilen übernehmen">⇣ Vorschläge übernehmen</button>}
+        {!nurLesen && <button className="btn-secondary text-sm" onClick={einheitenAnlegen} title="Je Lernbereich des neuen Lehrplans eine leere Unterrichtseinheit anlegen — die Karten bleiben im Deck">📚 Einheiten aus Lehrplan</button>}
+        {!nurLesen && doc.abgleich.length > 0 && <button className="btn-secondary text-sm" onClick={alleVorschlaege} title="Partner der alten Karten in die Niveau-Zeilen übernehmen">⇣ Vorschläge übernehmen</button>}
         <button className="btn-secondary text-sm" onClick={() => setOffen({ art: "ki" })} title="KI ordnet den Unterrichtseinheiten Lehrplan-Karten zu">🤖 KI-Zuordnung</button>
         {!nurLesen && <button className="btn-secondary text-sm" onClick={() => setOffen({ art: "import" })}>⬆ Hochladen</button>}
         <button className="btn-secondary text-sm" onClick={() => setOffen({ art: "export" })}>⬇ Export</button>
@@ -352,9 +363,9 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
                 </div>
               ))}
 
-              {/* Alter Lehrplan, aufklappbar */}
-              <div className={`${kopfZelle} text-muted`}>alter Lehrplan</div>
-              {einheiten.map(({ t, s }) => {
+              {/* Alter Lehrplan, aufklappbar — nur, wenn es einen gibt */}
+              {mitAlt && <div className={`${kopfZelle} text-muted`}>alter Lehrplan</div>}
+              {mitAlt && einheiten.map(({ t, s }) => {
                 const alt = s.alt.filter(sichtbar);
                 return (
                   <div key={t.id} {...ziel(`a${t.id}`, nr, t)} className={`border-r border-b border-line p-1.5 ${hell(`a${t.id}`)}`}>
@@ -407,9 +418,9 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
                 </Fragment>
               ))}
 
-              {/* Neuer Lehrplan: Vorschläge */}
-              <div className={`${kopfZelle} text-muted`}>neuer Lehrplan<br /><span className="font-normal">Vorschläge</span></div>
-              {einheiten.map(({ t, s }) => {
+              {/* Neuer Lehrplan: Vorschläge — kommen aus dem Abgleich, ohne alten Plan gibt es keine */}
+              {mitAlt && <div className={`${kopfZelle} text-muted`}>neuer Lehrplan<br /><span className="font-normal">Vorschläge</span></div>}
+              {mitAlt && einheiten.map(({ t, s }) => {
                 const vs = s.vorschlaege.filter(v => sichtbar(v.karte));
                 const passend = vs.filter(v => !v.woanders).map(v => v.karte.id);
                 return (

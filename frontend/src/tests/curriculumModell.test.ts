@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  bereicheVon, nachBereich, woandersAls, freieAlteKarten, index, karteText, loesen, neueId, offeneKarten, statusVon, themaSicht, wochenSumme,
+  bereicheVon, einheitenAusLehrplan, nachBereich, woandersAls, freieAlteKarten, index, karteText, loesen, neueId, offeneKarten, statusVon, themaSicht, wochenSumme,
   wortDiff, zuordnen, type Vorlage,
 } from "@/lib/curriculum/modell";
 import { importOps } from "@/components/curriculum/Dialoge";
@@ -238,5 +238,52 @@ describe("Bereiche", () => {
     expect(g.map(x => [x.bereich, x.eintraege.map(k => k.id)])).toEqual([
       ["Optik", ["n3"]], ["ohne Bereich", ["n4"]], ["Mechanik", ["n1"]],
     ]);
+  });
+});
+
+describe("einheitenAusLehrplan", () => {
+  function physik(): Vorlage {
+    return {
+      format: "tt-curriculum/1", fach: "Physik", niveaus: ["G", "R", "H", "LB", "GE"], bloecke: ["7/8", "9/10"],
+      lehrplaene: [
+        { id: "rs", rolle: "neu", schulart: "RS", karten: [
+          { id: "r1", block: "7/8", klasse: 8, lernbereich: "Wärmelehre", niveaus: { R: "Temperatur messen" } },
+          { id: "r2", block: "9/10", klasse: 9, lernbereich: "Elektrizitätslehre", niveaus: { R: "Ohm", H: "Ohm einfach" } },
+          { id: "r3", block: "9/10", klasse: 10, lernbereich: "Das Universum – Galaxien", niveaus: { R: "Galaxien" } },
+        ] },
+        { id: "gy", rolle: "neu", schulart: "GY", karten: [
+          { id: "g1", block: "7/8", klasse: 8, lernbereich: "Wärmelehre", niveaus: { G: "Wärme" } },
+          { id: "g2", block: "7/8", klasse: 8, lernbereich: "Elektrizitätslehre", niveaus: { G: "Stromkreis" } },
+        ] },
+      ],
+      abgleich: [],
+      curriculum: { stand: "", klassen: [{ klasse: 7, wochen_verfuegbar: 36, themen: [] }, { klasse: 8, wochen_verfuegbar: 36, themen: [] }] },
+    };
+  }
+
+  it("legt je Lernbereich eine leere Einheit an, 7/8 in beide Klassen, 9/10 nach Klasse", () => {
+    const v = physik();
+    const r = einheitenAusLehrplan(v);
+    expect(r.map(a => [a.klasse, a.thema.titel])).toEqual([
+      [7, "Wärmelehre"], [7, "Elektrizitätslehre"],
+      [8, "Wärmelehre"], [8, "Elektrizitätslehre"],
+      [9, "Elektrizitätslehre"], [10, "Das Universum"],
+    ]);
+    // Karten bleiben im Deck
+    expect(r.every(a => a.thema.karten.length === 0 && !a.thema.zuordnung)).toBe(true);
+    expect(new Set(r.map(a => a.thema.id)).size).toBe(6);
+  });
+
+  it("legt keine zweite Einheit gleichen Namens an — erneutes Anlegen ergänzt nur", () => {
+    const v = physik();
+    v.curriculum.klassen[0].themen = [{ id: "k7-t1", titel: "wärmelehre ", wochen: 3, inhalte: {}, karten: [] }];
+    const r = einheitenAusLehrplan(v);
+    expect(r.map(a => [a.klasse, a.thema.titel])).not.toContainEqual([7, "Wärmelehre"]);
+    expect(r.find(a => a.klasse === 7)!.thema.id).toBe("k7-t2");
+    for (const a of r) {
+      const kl = v.curriculum.klassen.find(k => k.klasse === a.klasse);
+      if (kl) kl.themen.push(a.thema); else v.curriculum.klassen.push({ klasse: a.klasse, wochen_verfuegbar: 36, themen: [a.thema] });
+    }
+    expect(einheitenAusLehrplan(v)).toEqual([]);
   });
 });

@@ -248,6 +248,45 @@ export function zuordnen(i: Index, thema: Thema, karteId: string, klasse: number
   return { thema: { ...thema, zuordnung }, karte: karte && { lehrplan: plan.id, karte } };
 }
 
+/** Name der Unterrichtseinheit zu einer Karte: Lernbereich ohne Unterabschnitt (»A – B« → »A«). */
+export function lernbereichKopf(k: Karte): string {
+  return (k.lernbereich || k.bereich || "Weitere Inhalte").split(" – ")[0].trim();
+}
+
+/**
+ * Unterrichtseinheiten aus dem neuen Lehrplan: je Lernbereich eine leere
+ * Einheit. Die Karten bleiben im Deck (»Offen«) — zugeordnet wird von Hand.
+ * In 5/6 und 7/8 nennt der Lehrplan nur das Ende des Doppeljahrgangs: die
+ * Einheit kommt in beide Klassen, überflüssige löscht die Fachschaft. In 9/10
+ * gilt die Klasse der Karte. Gibt es in der Klasse schon eine Einheit gleichen
+ * Namens, entsteht keine zweite — erneutes Anlegen ergänzt nur, was fehlt.
+ */
+export function einheitenAusLehrplan(v: Vorlage): { klasse: number; thema: Thema }[] {
+  const bloecke = v.bloecke?.length ? v.bloecke : BLOECKE;
+  const ziele = (k: Karte): number[] =>
+    k.block === "9/10" && (k.klasse === 9 || k.klasse === 10) ? [k.klasse] : KLASSEN_JE_BLOCK[k.block] ?? [];
+
+  // (Klasse, Lernbereich) in Lehrplan-Reihenfolge
+  const gruppen = new Map<string, { klasse: number; titel: string }>();
+  for (const lp of v.lehrplaene) {
+    if (lp.rolle !== "neu") continue;
+    for (const k of lp.karten) {
+      if (!bloecke.includes(k.block)) continue;
+      const titel = lernbereichKopf(k);
+      for (const kl of ziele(k)) gruppen.set(`${kl}|${titel.toLowerCase()}`, { klasse: kl, titel });
+    }
+  }
+
+  const vorhanden = new Set(v.curriculum.klassen.flatMap(k => k.themen.map(t => `${k.klasse}|${t.titel.trim().toLowerCase()}`)));
+  const ids = new Set(v.curriculum.klassen.flatMap(k => k.themen.map(t => t.id)));
+  const freieId = (kl: number) => { let n = 1; while (ids.has(`k${kl}-t${n}`)) n++; ids.add(`k${kl}-t${n}`); return `k${kl}-t${n}`; };
+  return [...gruppen.entries()]
+    .filter(([schluessel]) => !vorhanden.has(schluessel))
+    .map(([, g]) => g)
+    .sort((a, b) => a.klasse - b.klasse)
+    .map(g => ({ klasse: g.klasse, thema: { id: freieId(g.klasse), titel: g.titel, wochen: null, inhalte: {}, karten: [], notiz: "" } }));
+}
+
 /** Karte aus einer Niveau-Zeile (oder oben aus den alten) wieder lösen. */
 export function loesen(thema: Thema, karteId: string, n?: Niveau): Thema {
   if (!n) return { ...thema, karten: thema.karten.filter(x => x !== karteId) };
