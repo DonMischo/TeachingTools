@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  bereicheVon, einheitenAusLehrplan, nachBereich, woandersAls, freieAlteKarten, index, karteText, loesen, neueId, offeneKarten, statusVon, themaSicht, wochenSumme,
+  bereicheVon, einheitenAusLehrplan, mitEinheiten, nachBereich, woandersAls, freieAlteKarten, index, karteText, loesen, neueId, offeneKarten, statusVon, themaSicht, wochenSumme,
   wortDiff, zuordnen, type Vorlage,
 } from "@/lib/curriculum/modell";
 import { importOps } from "@/components/curriculum/Dialoge";
@@ -285,5 +285,28 @@ describe("einheitenAusLehrplan", () => {
       if (kl) kl.themen.push(a.thema); else v.curriculum.klassen.push({ klasse: a.klasse, wochen_verfuegbar: 36, themen: [a.thema] });
     }
     expect(einheitenAusLehrplan(v)).toEqual([]);
+  });
+});
+
+describe("mitEinheiten (neuer Plan)", () => {
+  const lehrplaene = [{ id: "rs", rolle: "neu" as const, schulart: "RS", karten: [
+    { id: "r1", block: "7/8" as const, klasse: 8, lernbereich: "Optik", niveaus: { R: "Licht" } },
+    { id: "r2", block: "9/10" as const, klasse: 10, lernbereich: "Kernphysik", niveaus: { R: "Zerfall" } },
+  ] }];
+
+  it("legt Einheiten an, wenn die Vorlage kein Curriculum mitbringt — Karten bleiben im Deck", () => {
+    const d = mitEinheiten({ format: "tt-curriculum/1", bloecke: ["7/8", "9/10"], lehrplaene }, "Physik");
+    expect(d.curriculum!.klassen.map(k => [k.klasse, k.themen.map(t => t.titel)])).toEqual([
+      [7, ["Optik"]], [8, ["Optik"]], [10, ["Kernphysik"]],
+    ]);
+    expect(d.curriculum!.klassen.every(k => k.themen.every(t => !t.zuordnung && t.karten.length === 0))).toBe(true);
+    expect(d.lehrplaene).toBe(lehrplaene);
+  });
+
+  it("behält leere Klassen mit ihren Wochen und lässt ein mitgebrachtes Curriculum in Ruhe", () => {
+    const leer = mitEinheiten({ bloecke: ["7/8"], lehrplaene, curriculum: { stand: "", klassen: [{ klasse: 7, wochen_verfuegbar: 30, themen: [] }] } }, "Physik");
+    expect(leer.curriculum!.klassen[0]).toMatchObject({ klasse: 7, wochen_verfuegbar: 30 });
+    const eigenes = { stand: "2025", klassen: [{ klasse: 7, wochen_verfuegbar: 36, themen: [{ id: "k7-t1", titel: "Eigen", wochen: 2, inhalte: {}, karten: [] }] }] };
+    expect(mitEinheiten({ lehrplaene, curriculum: eigenes }, "Physik").curriculum).toBe(eigenes);
   });
 });

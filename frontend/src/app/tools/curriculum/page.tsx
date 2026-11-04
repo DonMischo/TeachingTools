@@ -13,7 +13,7 @@ import { useToast } from "@/contexts/ToastContext";
 import { api } from "@/lib/api";
 import HelpButton from "@/components/HelpButton";
 import { antwortLesen } from "@/lib/curriculum/kiPrompt";
-import { leereVorlage } from "@/lib/curriculum/modell";
+import { leereVorlage, mitEinheiten, type Vorlage } from "@/lib/curriculum/modell";
 import { KiDialog } from "@/components/curriculum/Dialoge";
 import { JsonEingabe } from "@/components/curriculum/JsonEingabe";
 
@@ -75,6 +75,7 @@ export default function CurriculumListe() {
       let data: unknown;
       if (quelle in STARTVORLAGEN) data = await fetch(STARTVORLAGEN[quelle as Start].datei).then(r => { if (!r.ok) throw new Error("Startvorlage fehlt"); return r.json(); });
       if (quelle === "datei") data = datei && "daten" in datei ? { ...datei.daten, fach: fach.trim() } : undefined;
+      if (data) data = mitEinheiten(data as Partial<Vorlage>, fach.trim());
       const plan = await api.curriculum.create({ name: name.trim(), fach: fach.trim() || "Mathematik", data });
       qc.invalidateQueries({ queryKey: ["curriculum-plaene"] });
       router.push(`/tools/curriculum/${plan.id}`);

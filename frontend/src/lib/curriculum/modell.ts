@@ -287,6 +287,24 @@ export function einheitenAusLehrplan(v: Vorlage): { klasse: number; thema: Thema
     .map(g => ({ klasse: g.klasse, thema: { id: freieId(g.klasse), titel: g.titel, wochen: null, inhalte: {}, karten: [], notiz: "" } }));
 }
 
+/**
+ * Bringt die Vorlage kein Curriculum mit (Startvorlagen, reine Lehrplan-Dateien),
+ * bekommt der neue Plan gleich je Lernbereich eine leere Unterrichtseinheit —
+ * die Karten bleiben im Deck. Ein mitgebrachtes Curriculum bleibt unangetastet.
+ */
+export function mitEinheiten(daten: Partial<Vorlage>, fach: string): Partial<Vorlage> {
+  if (daten.curriculum?.klassen?.some(k => k.themen?.length)) return daten;
+  const v: Vorlage = { ...leereVorlage(fach), ...daten } as Vorlage;
+  v.curriculum = { stand: v.curriculum?.stand ?? "", klassen: [...(v.curriculum?.klassen ?? [])].map(k => ({ ...k, themen: [] })) };
+  for (const { klasse, thema } of einheitenAusLehrplan(v)) {
+    let kl = v.curriculum.klassen.find(k => k.klasse === klasse);
+    if (!kl) v.curriculum.klassen.push(kl = { klasse, wochen_verfuegbar: 36, themen: [] });
+    kl.themen.push(thema);
+  }
+  v.curriculum.klassen.sort((a, b) => a.klasse - b.klasse);
+  return { ...daten, curriculum: v.curriculum };
+}
+
 /** Karte aus einer Niveau-Zeile (oder oben aus den alten) wieder lösen. */
 export function loesen(thema: Thema, karteId: string, n?: Niveau): Thema {
   if (!n) return { ...thema, karten: thema.karten.filter(x => x !== karteId) };
