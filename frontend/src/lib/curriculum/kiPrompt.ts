@@ -58,6 +58,14 @@ const PAAR = `Paar (alte ↔ neue Karte, immer innerhalb EINER Schulart):
 - Paare dürfen mehrere Karten je Seite haben (aufgeteilt / zusammengelegt).
 - Ändert sich nur ein Niveau (z. B. nur Hauptschule), gehört das in "niveaus" und "unterschied".`;
 
+const EINHEITEN = `Klasse (curriculum) — je Klassenstufe die Unterrichtseinheiten, LEER (die Karten ordnet die Fachschaft selbst zu):
+{ "klasse": 7, "wochen_verfuegbar": 36, "themen": [
+  { "id": "k7-t1", "titel": <Name des Lernbereichs, ohne Unterabschnitt>, "wochen": null, "inhalte": {}, "karten": [], "notiz": "" }, …
+] }
+- Je Lernbereich des NEUEN Lehrplans eine Einheit, in der Reihenfolge des Lehrplans; gleicher Lernbereich in beiden Schularten = eine Einheit.
+- Doppeljahrgänge (5/6, 7/8): die Einheit in BEIDE Klassen. Bei 9 und 10 in die Klasse, die der Lehrplan nennt.
+- ids je Klasse fortlaufend: k<Klasse>-t1, k<Klasse>-t2, …`;
+
 export type KiArt = "vergleich" | "zuordnung";
 export type Schulart = "RS" | "GY";
 const SCHULART_NAME: Record<Schulart, string> = { RS: "Regelschule (Haupt- und Realschulabschluss)", GY: "Gymnasium" };
@@ -97,10 +105,12 @@ export function vergleichPrompt(v: Vorlage, o: { schularten: Schulart[]; mitAlt:
   "lehrplaene": [
 ${planZeilen.join(",\n")}
   ]${o.mitAlt ? `,
-  "abgleich": [Paar, …]` : ""}
+  "abgleich": [Paar, …]` : ""},
+  "curriculum": { "stand": "", "klassen": [Klasse, …] }
 }`,
     ``, karte(v), ``, `Niveaus:`, ...arten.map(s => (s === "GY" ? REGEL_GY : REGEL_RS)),
     ...(o.mitAlt ? [``, PAAR] : []),
+    ``, EINHEITEN,
     ``,
     `"inkraft": je Klassenstufe das Schuljahr, ab dem der neue Plan dort gilt (steht auf dem Deckblatt), z. B. "2026/27".`,
     beide

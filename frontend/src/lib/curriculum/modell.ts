@@ -217,7 +217,9 @@ export function karteText(k: Karte, n: Niveau): string | undefined {
  * Karte einer Unterrichtseinheit zuordnen. Ohne `nur` verteilt sie sich auf
  * ihre eigenen Niveaus: GY → G, RS → R und H. Fehlt der H-Text (und die Klasse
  * hat noch Hauptschulniveau), wird R nach H kopiert — als Text in der Karte,
- * damit er sich danach für H anpassen lässt. Alte Karten landen oben.
+ * damit er sich danach für H anpassen lässt. Mit `nur` landet sie nur in dieser
+ * Zeile — außer eine Regelschul-Karte auf R oder H: die teilt sich wie oben auf
+ * R und H auf. Alte Karten landen oben.
  */
 export function zuordnen(i: Index, thema: Thema, karteId: string, klasse: number, nur?: Niveau): {
   thema: Thema; karte?: { lehrplan: string; karte: Karte };
@@ -230,7 +232,9 @@ export function zuordnen(i: Index, thema: Thema, karteId: string, klasse: number
   const { plan, ...roh } = k;
   let karte: Karte | undefined;
   let ziele: Niveau[];
-  if (nur) ziele = [nur];
+  // Eine Regelschul-Karte auf R oder H gezogen gehört in beide Zeilen (R/H-Split wie beim Ziehen auf die Spalte).
+  const rsAufRH = (nur === "R" || nur === "H") && !!(k.niveaus.R || k.niveaus.H);
+  if (nur && !rsAufRH) ziele = [nur];
   else {
     ziele = NIVEAUS.filter(n => (n === "G" || n === "R" || n === "H") && k.niveaus[n]);
     if (k.niveaus.R && !k.niveaus.H && niveauGilt("H", klasse)) {
@@ -293,7 +297,7 @@ export function einheitenAusLehrplan(v: Vorlage): { klasse: number; thema: Thema
  * die Karten bleiben im Deck. Ein mitgebrachtes Curriculum bleibt unangetastet.
  */
 export function mitEinheiten(daten: Partial<Vorlage>, fach: string): Partial<Vorlage> {
-  if (daten.curriculum?.klassen?.some(k => k.themen?.length)) return daten;
+  if (daten.curriculum && !nurLeereEinheiten(daten.curriculum)) return daten;
   const v: Vorlage = { ...leereVorlage(fach), ...daten } as Vorlage;
   v.curriculum = { stand: v.curriculum?.stand ?? "", klassen: [...(v.curriculum?.klassen ?? [])].map(k => ({ ...k, themen: [] })) };
   for (const { klasse, thema } of einheitenAusLehrplan(v)) {
@@ -303,6 +307,32 @@ export function mitEinheiten(daten: Partial<Vorlage>, fach: string): Partial<Vor
   }
   v.curriculum.klassen.sort((a, b) => a.klasse - b.klasse);
   return { ...daten, curriculum: v.curriculum };
+}
+
+/**
+ * Besteht ein Curriculum nur aus leeren Einheiten (kein Inhalt, keine Karten,
+ * keine Wochen, keine Notiz)? So liefern es KI-Prompt und Lehrplan-Vorlagen;
+ * es trägt nichts, was beim Hochladen verloren gehen dürfte.
+ */
+export function nurLeereEinheiten(c: Partial<Vorlage["curriculum"]>): boolean {
+  return (c.klassen ?? []).every(k => (k.themen ?? []).every(t =>
+    !Object.values(t.inhalte ?? {}).some(x => x?.trim()) && !t.karten?.length && t.wochen == null && !t.notiz?.trim()
+    && !Object.values(t.zuordnung ?? {}).some(ids => ids?.length)));
+}
+
+/** Wie der Plan nach dem Hochladen von `daten` aussähe (wie _importieren in api/curriculum_ops.py). */
+export function nachImport(doc: Vorlage, daten: Partial<Vorlage>): Vorlage {
+  const lehrplaene = [...doc.lehrplaene];
+  for (const lp of daten.lehrplaene ?? []) {
+    const i = lehrplaene.findIndex(x => x.id === lp.id);
+    if (i >= 0) lehrplaene[i] = { ...lp, karten: lp.karten ?? [] }; else lehrplaene.push({ ...lp, karten: lp.karten ?? [] });
+  }
+  return {
+    ...doc, lehrplaene,
+    ...(daten.abgleich ? { abgleich: daten.abgleich } : {}),
+    ...(daten.curriculum ? { curriculum: { stand: daten.curriculum.stand ?? "", klassen: daten.curriculum.klassen ?? [] } } : {}),
+    ...(daten.bloecke ? { bloecke: daten.bloecke } : {}),
+  };
 }
 
 /** Karte aus einer Niveau-Zeile (oder oben aus den alten) wieder lösen. */

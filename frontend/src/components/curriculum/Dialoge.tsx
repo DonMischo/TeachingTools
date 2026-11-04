@@ -8,7 +8,8 @@ import { useMemo, useRef, useState, type ReactNode } from "react";
 import { JoinQR } from "@/components/JoinQR";
 import { useLanUrl } from "@/hooks/useLanUrl";
 import {
-  BLOECKE, NIVEAUS, NIVEAU_NAME, STATUS, blockVon, neueId, niveauGilt, zuordnen, type Block, type Index, type KarteMitPlan,
+  BLOECKE, NIVEAUS, NIVEAU_NAME, STATUS, blockVon, einheitenAusLehrplan, nachImport, neueId, niveauGilt, nurLeereEinheiten, zuordnen,
+  type Block, type Index, type KarteMitPlan,
   type Karte, type Paar, type Status, type Thema, type Vorlage,
 } from "@/lib/curriculum/modell";
 import { antwortLesen, vergleichPrompt, zuordnungPrompt, type KiArt, type Schulart } from "@/lib/curriculum/kiPrompt";
@@ -268,13 +269,25 @@ export function importOps(daten: any, doc: Vorlage, idx: Index): { ops: Op[]; te
     }
     return { ops, text: `${einheiten} Unterrichtseinheiten bekommen zusammen ${n} weitere Karten.` };
   }
+  // Ein Curriculum nur aus leeren Einheiten (KI-Antwort, Lehrplan-Vorlage) ersetzt nichts:
+  // stattdessen kommen die fehlenden Einheiten zum neuen Lehrplan dazu. Ein Curriculum mit
+  // Inhalt (eigene Vorlage, Export) ersetzt das bisherige wie gehabt.
+  const curriculumMitInhalt = !!daten.curriculum && !nurLeereEinheiten(daten.curriculum);
+  const { curriculum: _leer, ...ohneCurriculum } = daten;
+  const importDaten = curriculumMitInhalt ? daten : ohneCurriculum;
+  const bringtLehrplan = !!daten.lehrplaene?.length || !!daten.curriculum;
+  const einheiten = curriculumMitInhalt || !bringtLehrplan ? [] : einheitenAusLehrplan(nachImport(doc, importDaten));
   const teile = [
     ...(daten.lehrplaene ?? []).map((l: any) => `Lehrplan ${l.id} (${l.karten?.length ?? 0} Karten)`),
     ...(daten.abgleich ? [`Abgleich (${daten.abgleich.length} Paare) — ersetzt den bisherigen`] : []),
-    ...(daten.curriculum ? [`Curriculum (${daten.curriculum.klassen?.length ?? 0} Klassen) — ersetzt das bisherige`] : []),
+    ...(curriculumMitInhalt ? [`Curriculum (${daten.curriculum.klassen?.length ?? 0} Klassen) — ersetzt das bisherige`] : []),
+    ...(einheiten.length ? [`${einheiten.length} neue Unterrichtseinheiten (leer, Karten bleiben im Deck)`] : []),
   ];
   if (!teile.length) throw new Error("Weder lehrplaene, abgleich, curriculum noch zuordnung gefunden");
-  return { ops: [{ op: "import", daten }], text: teile.join(" · ") };
+  return {
+    ops: [{ op: "import", daten: importDaten }, ...einheiten.map(a => ({ op: "thema", klasse: a.klasse, thema: a.thema }))],
+    text: teile.join(" · "),
+  };
 }
 
 export function ImportDialog({ doc, idx, onOps, onClose }: { doc: Vorlage; idx: Index; onOps: (ops: Op[]) => void; onClose: () => void }) {

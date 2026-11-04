@@ -5,8 +5,8 @@
  * durchgestrichen = fällt weg, blau = kommt dazu. In der Endfassung fällt
  * beides weg: nur der neue Wortlaut bleibt.
  *
- * Auf- und Zuklappen sowie die Endfassung stellt der Editor für alle Karten
- * über `KartenAnsicht` ein; jede Karte hat zusätzlich ihren eigenen Knopf.
+ * Auf- und Zuklappen, Endfassung und Auswahl (Strg-Klick, für Strg+C/V und
+ * Ziehen mehrerer Karten) stellt der Editor über `KartenAnsicht` bereit.
  */
 import { createContext, useContext } from "react";
 import { NIVEAUS, karteText, wortDiff, type Index, type KarteMitPlan, type Niveau, type Paar, type Status, statusVon } from "@/lib/curriculum/modell";
@@ -15,7 +15,11 @@ export const KartenAnsicht = createContext<{
   offen: (id: string) => boolean;
   umschalten: (id: string) => void;
   endfassung: boolean;
-}>({ offen: () => true, umschalten: () => {}, endfassung: false });
+  gewaehlt: (id: string) => boolean;
+  waehlen: (id: string) => void;
+  /** ids, die ein Ziehen dieser Karte mitnimmt (die Auswahl, wenn sie dazugehört) */
+  ziehen: (id: string) => string[];
+}>({ offen: () => true, umschalten: () => {}, endfassung: false, gewaehlt: () => false, waehlen: () => {}, ziehen: id => [id] });
 
 export const STATUS_STIL: Record<Status, { name: string; cls: string }> = {
   identisch: { name: "identisch", cls: "bg-green-500/15 text-green-600 border-green-500/40" },
@@ -72,11 +76,12 @@ export function KarteBox({ karte, idx, niveaus, paar, woanders, onOpen, draggabl
   return (
     <div
       draggable={draggable}
-      onDragStart={e => { e.dataTransfer.setData("text/plain", `karte:${karte.id}`); e.dataTransfer.effectAllowed = "link"; }}
-      onClick={onOpen}
+      onDragStart={e => { e.dataTransfer.setData("text/plain", `karte:${ansicht.ziehen(karte.id).join(",")}`); e.dataTransfer.effectAllowed = "link"; }}
+      onClick={e => { if (e.ctrlKey || e.metaKey) ansicht.waehlen(karte.id); else onOpen(); }}
       className={`rounded-lg border bg-surface p-2 text-xs cursor-pointer hover:bg-surface-hover ${
-        woanders ? "border-dashed border-violet-500/60 opacity-80" : "border-line"}`}
-      title="Klicken zum Bearbeiten · in eine Unterrichtseinheit ziehen zum Zuordnen"
+        woanders ? "border-dashed border-violet-500/60 opacity-80" : "border-line"} ${
+        ansicht.gewaehlt(karte.id) ? "ring-2 ring-accent bg-accent/10" : ""}`}
+      title="Klicken zum Bearbeiten · Strg-Klick wählt aus (Strg+C, dann Zelle anklicken und Strg+V) · ziehen zum Zuordnen"
     >
       <div className={`flex items-center gap-1 flex-wrap ${auf ? "mb-1" : ""}`}>
         <button className="text-muted hover:text-fg w-4 shrink-0" title={auf ? "Zuklappen" : "Aufklappen"} aria-expanded={auf}

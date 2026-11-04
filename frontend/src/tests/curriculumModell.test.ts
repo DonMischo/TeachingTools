@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  bereicheVon, einheitenAusLehrplan, mitEinheiten, nachBereich, woandersAls, freieAlteKarten, index, karteText, loesen, neueId, offeneKarten, statusVon, themaSicht, wochenSumme,
+  bereicheVon, einheitenAusLehrplan, mitEinheiten, nachBereich, nurLeereEinheiten, woandersAls, freieAlteKarten, index, karteText, loesen, neueId, offeneKarten, statusVon, themaSicht, wochenSumme,
   wortDiff, zuordnen, type Vorlage,
 } from "@/lib/curriculum/modell";
 import { importOps } from "@/components/curriculum/Dialoge";
@@ -308,5 +308,79 @@ describe("mitEinheiten (neuer Plan)", () => {
     expect(leer.curriculum!.klassen[0]).toMatchObject({ klasse: 7, wochen_verfuegbar: 30 });
     const eigenes = { stand: "2025", klassen: [{ klasse: 7, wochen_verfuegbar: 36, themen: [{ id: "k7-t1", titel: "Eigen", wochen: 2, inhalte: {}, karten: [] }] }] };
     expect(mitEinheiten({ lehrplaene, curriculum: eigenes }, "Physik").curriculum).toBe(eigenes);
+  });
+});
+
+describe("Hochladen mit Unterrichtseinheiten", () => {
+  const neuerPlan = { id: "phy", rolle: "neu" as const, schulart: "RS", karten: [
+    { id: "p1", block: "5/6" as const, klasse: 6, lernbereich: "Optik", niveaus: { R: "Licht" } },
+  ] };
+
+  it("Lehrplan ohne Curriculum: fehlende Einheiten kommen dazu, vorhandene bleiben", () => {
+    const v = vorlage();
+    const { ops, text } = importOps({ lehrplaene: [neuerPlan] }, v, index(v));
+    expect(ops[0]).toEqual({ op: "import", daten: { lehrplaene: [neuerPlan] } });
+    const neu = ops.slice(1).map(o => [o.klasse, (o.thema as any).titel]);
+    expect(neu).toContainEqual([5, "Optik"]);
+    expect(neu).toContainEqual([6, "Optik"]);
+    expect(text).toContain("neue Unterrichtseinheiten");
+  });
+
+  it("leere Einheiten aus der Datei überschreiben kein Curriculum mit Inhalt", () => {
+    const v = vorlage();
+    const leer = { stand: "", klassen: [{ klasse: 5, wochen_verfuegbar: 36, themen: [{ id: "k5-t1", titel: "Optik", wochen: null, inhalte: {}, karten: [] }] }] };
+    const { ops, text } = importOps({ lehrplaene: [neuerPlan], curriculum: leer }, v, index(v));
+    expect((ops[0].daten as any).curriculum).toBeUndefined();
+    expect(text).not.toContain("ersetzt das bisherige");
+  });
+
+  it("ein Curriculum mit Inhalt ersetzt das bisherige wie gehabt", () => {
+    const v = vorlage();
+    const eigenes = { stand: "2026", klassen: [{ klasse: 5, wochen_verfuegbar: 36, themen: [{ id: "k5-t1", titel: "Optik", wochen: 4, inhalte: {}, karten: [] }] }] };
+    const { ops, text } = importOps({ curriculum: eigenes }, v, index(v));
+    expect(ops).toEqual([{ op: "import", daten: { curriculum: eigenes } }]);
+    expect(text).toContain("ersetzt das bisherige");
+  });
+
+  it("nurLeereEinheiten erkennt Inhalt, Karten, Wochen und Zuordnung", () => {
+    const t = { id: "x", titel: "A", wochen: null, inhalte: {}, karten: [] };
+    const c = (x: object) => ({ klassen: [{ klasse: 7, wochen_verfuegbar: 36, themen: [{ ...t, ...x }] }] });
+    expect(nurLeereEinheiten(c({}))).toBe(true);
+    expect(nurLeereEinheiten(c({ inhalte: { R: " " } }))).toBe(true);
+    expect(nurLeereEinheiten(c({ inhalte: { R: "Licht" } }))).toBe(false);
+    expect(nurLeereEinheiten(c({ wochen: 2 }))).toBe(false);
+    expect(nurLeereEinheiten(c({ zuordnung: { G: ["g1"] } }))).toBe(false);
+  });
+
+  it("neuer Plan aus KI-Antwort mit leeren Einheiten: Einheiten kommen aus den Lernbereichen", () => {
+    const d = mitEinheiten({ bloecke: ["5/6"], lehrplaene: [neuerPlan], curriculum: { stand: "", klassen: [
+      { klasse: 5, wochen_verfuegbar: 36, themen: [{ id: "k5-t1", titel: "optik (KI)", wochen: null, inhalte: {}, karten: [] }] }] } }, "Physik");
+    expect(d.curriculum!.klassen.map(k => [k.klasse, k.themen.map(t => t.titel)])).toEqual([[5, ["Optik"]], [6, ["Optik"]]]);
+  });
+
+  it("der Prompt verlangt ein curriculum mit leeren Einheiten", () => {
+    const p = vergleichPrompt(vorlage(), { schularten: ["RS", "GY"], mitAlt: false, alteKartenMit: false });
+    expect(p).toContain("\"curriculum\": { \"stand\": \"\", \"klassen\": [Klasse, …] }");
+    expect(p).toContain("Je Lernbereich des NEUEN Lehrplans eine Einheit");
+  });
+});
+
+describe("R/H-Split beim Ziehen auf eine Zeile", () => {
+  it("RS-Karte auf R oder H landet in beiden, H mit eigenem Text bzw. Kopie", () => {
+    const v = vorlage(); const i = index(v);
+    const leer = { id: "x", titel: "", wochen: null, inhalte: {}, karten: [] };
+    expect(zuordnen(i, leer, "n1", 5, "R").thema.zuordnung).toEqual({ R: ["n1"], H: ["n1"] });
+    expect(zuordnen(i, leer, "n1", 5, "H").thema.zuordnung).toEqual({ R: ["n1"], H: ["n1"] });
+    const ohneH = zuordnen(i, leer, "n4", 5, "R");
+    expect(ohneH.thema.zuordnung).toEqual({ R: ["n4"], H: ["n4"] });
+    expect(ohneH.karte?.karte.niveaus.H).toBe("Zufallsexperimente");
+  });
+
+  it("auf G, LB, GE und GY-Karten auf R bleiben bei der einen Zeile", () => {
+    const v = vorlage(); const i = index(v);
+    const leer = { id: "x", titel: "", wochen: null, inhalte: {}, karten: [] };
+    expect(zuordnen(i, leer, "n1", 5, "LB").thema.zuordnung).toEqual({ LB: ["n1"] });
+    expect(zuordnen(i, leer, "n1", 5, "G").thema.zuordnung).toEqual({ G: ["n1"] });
+    expect(zuordnen(i, leer, "g1", 5, "R").thema.zuordnung).toEqual({ R: ["g1"] });
   });
 });

@@ -57,11 +57,18 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
   const [ausnahmen, setAusnahmen] = useState<Set<string>>(new Set());
   const [endfassung, setEndfassung] = useState(false);
   const [zuKlassen, setZuKlassen] = useState<Set<number>>(new Set());
+  // Auswahl per Strg-Klick; Strg+C merkt sie, Strg+V setzt sie in die angeklickte Zelle.
+  const [auswahl, setAuswahl] = useState<Set<string>>(new Set());
+  const [kopiert, setKopiert] = useState<string[]>([]);
+  const [zielZelle, setZielZelle] = useState<{ themaId: string; klasse: number; niveau: Niveau } | null>(null);
   const ansicht = useMemo(() => ({
     offen: (id: string) => kartenAuf !== ausnahmen.has(id),
     umschalten: (id: string) => setAusnahmen(a => { const x = new Set(a); x.has(id) ? x.delete(id) : x.add(id); return x; }),
     endfassung,
-  }), [kartenAuf, ausnahmen, endfassung]);
+    gewaehlt: (id: string) => auswahl.has(id),
+    waehlen: (id: string) => setAuswahl(a => { const x = new Set(a); x.has(id) ? x.delete(id) : x.add(id); return x; }),
+    ziehen: (id: string) => (auswahl.has(id) ? [...auswahl] : [id]),
+  }), [kartenAuf, ausnahmen, endfassung, auswahl]);
   const alleKarten = (auf: boolean) => { setKartenAuf(auf); setAusnahmen(new Set()); };
   const [suche, setSuche] = useState("");
   const [ziehZiel, setZiehZiel] = useState<string | null>(null);
@@ -110,6 +117,31 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
     return [...out, { op: "thema", klasse, thema: t }];
   };
 
+  // ── Strg+C / Strg+V / Esc ─────────────────────────────────────────────────
+  useEffect(() => {
+    const taste = (e: KeyboardEvent) => {
+      const el = e.target instanceof Element ? e.target : null;
+      if (offen || el?.closest("input, textarea, select, [contenteditable='true']")) return;
+      if (e.key === "Escape") { setAuswahl(new Set()); setZielZelle(null); return; }
+      if (!(e.ctrlKey || e.metaKey)) return;
+      const k = e.key.toLowerCase();
+      if (k === "c" && auswahl.size) {
+        e.preventDefault();
+        setKopiert([...auswahl]);
+        toast(`${auswahl.size} Karten kopiert — Zelle anklicken, dann Strg+V`, "info");
+      } else if (k === "v" && kopiert.length && !nurLesen) {
+        e.preventDefault();
+        const z = zielZelle && findeThema(zielZelle.themaId);
+        if (!z || !zielZelle) { toast("Erst eine Zelle (Unterrichtseinheit × Niveau) anklicken, dann Strg+V", "info"); return; }
+        ops(zuordnenOps(z.thema, z.klasse, kopiert, zielZelle.niveau));
+        setAuswahl(new Set());
+        toast(`${kopiert.length} Karten in »${z.thema.titel}« (${zielZelle.niveau}) eingefügt`, "success");
+      }
+    };
+    window.addEventListener("keydown", taste);
+    return () => window.removeEventListener("keydown", taste);
+  });
+
   // ── Ziehen & Ablegen ──────────────────────────────────────────────────────
   const findeThema = (id: string) => {
     for (const k of doc.curriculum.klassen) {
@@ -131,7 +163,9 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
       if (q.klasse === klasse && q.pos < pos) pos -= 1;  // eigenes Herausnehmen verschiebt die Stelle
       ops([{ op: "thema", klasse, pos, thema: q.thema }]);
     } else if (art === "karte" && thema) {
-      ops(zuordnenOps(thema, klasse, [id], nur));
+      // mehrere ids, wenn eine ausgewählte Karte gezogen wurde
+      ops(zuordnenOps(thema, klasse, id.split(","), nur));
+      setAuswahl(new Set());
     }
   };
   const ziel = (key: string, klasse: number, thema?: Thema, nur?: Niveau) => ({
@@ -232,6 +266,17 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
         {!guestToken && <button className="btn-secondary text-sm" onClick={() => setOffen({ art: "teilen" })}>👥 Teilen</button>}
       </div>
 
+      {(auswahl.size > 0 || kopiert.length > 0 || zielZelle) && (
+        <div className="sticky top-12 z-20 flex flex-wrap items-center gap-2 text-xs rounded-lg border border-accent/50 bg-accent/10 px-3 py-1.5">
+          {auswahl.size > 0 && <span><b>{auswahl.size}</b> ausgewählt · Strg+C kopieren</span>}
+          {kopiert.length > 0 && <span><b>{kopiert.length}</b> kopiert · Zelle anklicken, Strg+V einfügen</span>}
+          {zielZelle && <span>Ziel: <b>{findeThema(zielZelle.themaId)?.thema.titel}</b> · {zielZelle.niveau} (Kl. {zielZelle.klasse})</span>}
+          <span className="flex-1" />
+          <button className="btn-secondary text-xs py-0.5" onClick={() => { setAuswahl(new Set()); setKopiert([]); setZielZelle(null); }}>
+            Auswahl aufheben (Esc)</button>
+        </div>
+      )}
+
       <p className="text-xs text-muted">
         Alt: {doc.lehrplaene.filter(l => l.rolle === "alt").map(l => l.titel ?? l.id).join(" · ")} — Neu: {doc.lehrplaene.filter(l => l.rolle === "neu").map(l => l.titel ?? l.id).join(" · ")}
         {doc.curriculum.stand && ` — Curriculum Stand ${doc.curriculum.stand}`}
@@ -272,15 +317,22 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
               oder Niveau-Zeile ziehen, oder anklicken und als neue Einheit anlegen.
             </div>
             {nachBereich(offeneNeu, o => o.karte, bereichListe).map(g => (
-              <div key={g.bereich} className="mb-2">
-                <div className="text-xs font-semibold mb-1">{g.bereich} <span className="text-muted font-normal">({g.eintraege.length})</span></div>
+              <details key={g.bereich} open className="mb-2 group">
+                <summary className="text-xs font-semibold mb-1 cursor-pointer select-none">
+                  {g.bereich} <span className="text-muted font-normal">({g.eintraege.length})</span>
+                  {!nurLesen && (
+                    <button className="ml-2 text-[11px] font-normal text-muted hover:text-fg" title="Alle Karten dieses Bereichs auswählen"
+                      onClick={e => { e.preventDefault(); setAuswahl(a => new Set([...a, ...g.eintraege.map(o => o.karte.id)])); }}>
+                      alle wählen</button>
+                  )}
+                </summary>
                 <div className="grid gap-1.5 [grid-template-columns:repeat(auto-fill,minmax(15rem,1fr))]">
                   {g.eintraege.map(o => (
                     <KarteBox key={o.karte.id} karte={o.karte} idx={idx} niveaus={niveaus} paar={o.paar} ohneBereich
                       onOpen={() => setOffen({ art: "karte", karte: o.karte })} />
                   ))}
                 </div>
-              </div>
+              </details>
             ))}
             {freieAlt.length > 0 && (
               <details className="text-xs mt-2">
@@ -396,7 +448,14 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
                     const key = `${n}${t.id}`;
                     return (
                       <div key={t.id} {...(gilt ? ziel(key, nr, t, n) : {})}
-                        className={`border-r border-b border-line p-1.5 flex flex-col gap-1 ${hell(key)}`}
+                        onClick={e => {
+                          // Zelle als Ziel für Strg+V merken — Klicks auf Karten zählen nicht
+                          if (!gilt || nurLesen || (e.target as HTMLElement).closest("[draggable='true'], button")) return;
+                          setZielZelle(z => (z?.themaId === t.id && z.niveau === n ? null : { themaId: t.id, klasse: nr, niveau: n }));
+                        }}
+                        title={gilt && !nurLesen ? "Anklicken = Ziel für Strg+V" : undefined}
+                        className={`border-r border-b border-line p-1.5 flex flex-col gap-1 min-h-[2.5rem] ${hell(key)} ${
+                          zielZelle?.themaId === t.id && zielZelle.niveau === n ? "ring-2 ring-sky-500 ring-inset" : ""}`}
                         style={{ background: `${NIVEAU_FARBE[n]}12` }}>
                         {!gilt ? <span className="text-xs text-muted">— (Hauptschulniveau endet mit Kl. 9)</span> : (
                           <>
