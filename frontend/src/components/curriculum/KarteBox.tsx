@@ -42,7 +42,7 @@ function DiffText({ alt, neu }: { alt: string; neu: string }) {
   );
 }
 
-export function KarteBox({ karte, idx, niveaus, paar, woanders, onOpen, draggable = true, nurNiveau, onLoesen }: {
+export function KarteBox({ karte, idx, niveaus, paar, woanders, onOpen, draggable = true, nurNiveau, onLoesen, ohneBereich }: {
   karte: KarteMitPlan;
   idx: Index;
   niveaus: Set<Niveau>;
@@ -56,6 +56,8 @@ export function KarteBox({ karte, idx, niveaus, paar, woanders, onOpen, draggabl
   nurNiveau?: Niveau;
   /** ✕ zum Lösen aus der Zeile */
   onLoesen?: () => void;
+  /** Bereich nicht als Chip zeigen (steht schon in der Gruppenüberschrift) */
+  ohneBereich?: boolean;
 }) {
   const p = paar ?? (karte.plan.rolle === "neu" ? (idx.paareNeu.get(karte.id) ?? [])[0] : undefined);
   const status = p?.status ?? statusVon(idx, karte.id);
@@ -80,6 +82,9 @@ export function KarteBox({ karte, idx, niveaus, paar, woanders, onOpen, draggabl
         <button className="text-muted hover:text-fg w-4 shrink-0" title={auf ? "Zuklappen" : "Aufklappen"} aria-expanded={auf}
           onClick={e => { e.stopPropagation(); ansicht.umschalten(karte.id); }}>{auf ? "▾" : "▸"}</button>
         <span className="font-mono text-[10px] px-1 rounded bg-page border border-line">{karte.plan.schulart}</span>
+        {karte.bereich && !ohneBereich && (
+          <span className="text-[10px] px-1 rounded bg-page border border-line text-muted" title="Bereich">{karte.bereich}</span>
+        )}
         <span className="font-medium flex-1 min-w-0">{karte.titel ?? karte.id}</span>
         {woanders && <span className="text-[10px] text-violet-500">→ Kl. {karte.block === "9/10" && karte.klasse ? karte.klasse : karte.block}</span>}
         <StatusChip status={status} />

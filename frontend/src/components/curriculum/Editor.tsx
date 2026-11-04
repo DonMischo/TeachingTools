@@ -22,7 +22,7 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "rea
 import { api, type CurriculumPlanOut } from "@/lib/api";
 import { useToast } from "@/contexts/ToastContext";
 import {
-  BLOECKE, KLASSEN_JE_BLOCK, NIVEAUS, NIVEAU_NAME, freieAlteKarten, index, loesen, neueId, niveauGilt,
+  BLOECKE, KLASSEN_JE_BLOCK, NIVEAUS, NIVEAU_NAME, OHNE_BEREICH, bereicheVon, freieAlteKarten, index, loesen, nachBereich, neueId, niveauGilt,
   offeneKarten, themaSicht, wochenSumme, zuordnen,
   type Block, type KarteMitPlan, type Klasse, type Niveau, type Thema,
 } from "@/lib/curriculum/modell";
@@ -50,6 +50,8 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
   const [niveaus, setNiveaus] = useState<Set<Niveau>>(new Set(NIVEAUS));
   const [schularten, setSchularten] = useState<Set<string>>(new Set(["RS", "GY"]));
   const [nurKonflikte, setNurKonflikte] = useState(false);
+  // leer = alle Bereiche
+  const [bereichFilter, setBereichFilter] = useState<Set<string>>(new Set());
   // Karten: alle zu (Standard) oder alle auf, dazu einzeln umgeschaltete Ausnahmen.
   const [kartenAuf, setKartenAuf] = useState(false);
   const [ausnahmen, setAusnahmen] = useState<Set<string>>(new Set());
@@ -90,7 +92,9 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
     return () => clearInterval(t);
   }, [plan.id, version, guestToken, offen]);
 
-  const sichtbar = (k: KarteMitPlan) => schularten.has(k.plan.schulart);
+  const bereichListe = useMemo(() => bereicheVon(doc), [doc]);
+  const sichtbar = (k: KarteMitPlan) => schularten.has(k.plan.schulart)
+    && (bereichFilter.size === 0 || bereichFilter.has(k.bereich || OHNE_BEREICH));
   const passt = (t: Thema) => !suche.trim() || `${t.titel} ${Object.values(t.inhalte).join(" ")}`.toLowerCase().includes(suche.toLowerCase());
 
   /** Mehrere Karten zuordnen → Operationen (Karten mit kopiertem H-Text zuerst). */
@@ -173,10 +177,12 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
               onClick={() => setNiveaus(s => { const x = new Set(s); x.has(n) ? x.delete(n) : x.add(n); return x; })}>{n}</button>
           ))}
         </div>
-        <div className="flex gap-1">
-          {["RS", "GY"].map(s => (
-            <button key={s} className={`chip text-xs ${schularten.has(s) ? "chip-on" : ""}`}
-              onClick={() => setSchularten(x => { const y = new Set(x); y.has(s) ? y.delete(s) : y.add(s); return y; })}>{s}-Karten</button>
+        <div className="flex items-center gap-1" title="Welche Lehrplan-Karten gezeigt werden — überall: alt, Niveau-Zeilen, Vorschläge, Offen">
+          <span className="text-xs text-muted">Karten:</span>
+          {([["RS", "GY"], ["RS"], ["GY"]] as string[][]).map(a => (
+            <button key={a.join()} className={`chip text-xs ${[...schularten].sort().join() === [...a].sort().join() ? "chip-on" : ""}`}
+              onClick={() => setSchularten(new Set(a))}>
+              {a.length > 1 ? "RS + GY" : a[0] === "RS" ? "nur Regelschule" : "nur Gymnasium"}</button>
           ))}
         </div>
         <div className="flex gap-1">
@@ -185,6 +191,25 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
         </div>
         <button className={`chip text-xs ${endfassung ? "chip-on" : ""}`} onClick={() => setEndfassung(v => !v)}
           title="Durchgestrichenes und Markierungen ausblenden — nur der neue Wortlaut">✓ Endfassung</button>
+        {bereichListe.length > 1 && (
+          <details className="relative">
+            <summary className={`chip text-xs list-none cursor-pointer ${bereichFilter.size ? "chip-on" : ""}`}>
+              Bereiche: {bereichFilter.size ? [...bereichFilter].join(", ") : "alle"} ▾
+            </summary>
+            <div className="absolute z-40 mt-1 card p-2 flex flex-col gap-1 text-sm min-w-[14rem] shadow-lg">
+              {bereichListe.map(b => (
+                <label key={b} className="flex items-center gap-2 whitespace-nowrap">
+                  <input type="checkbox" checked={bereichFilter.has(b)}
+                    onChange={() => setBereichFilter(f => { const x = new Set(f); x.has(b) ? x.delete(b) : x.add(b); return x; })} />
+                  {b}
+                </label>
+              ))}
+              {bereichFilter.size > 0 && (
+                <button className="btn-secondary text-xs py-0.5 mt-1" onClick={() => setBereichFilter(new Set())}>alle zeigen</button>
+              )}
+            </div>
+          </details>
+        )}
         <button className={`chip text-xs ${nurKonflikte ? "chip-on" : ""}`} onClick={() => setNurKonflikte(v => !v)}>⚠ nur Konflikte</button>
         <input className="input w-44 text-sm py-1" placeholder="Einheit suchen…" value={suche} onChange={e => setSuche(e.target.value)} />
         <span className="flex-1" />
@@ -235,18 +260,28 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
               Unterrichtseinheit — neue Inhalte und solche, die aus einem anderen Block hierher wandern. In eine Spalte
               oder Niveau-Zeile ziehen, oder anklicken und als neue Einheit anlegen.
             </div>
-            <div className="grid gap-1.5 [grid-template-columns:repeat(auto-fill,minmax(15rem,1fr))]">
-              {offeneNeu.map(o => (
-                <KarteBox key={o.karte.id} karte={o.karte} idx={idx} niveaus={niveaus} paar={o.paar}
-                  onOpen={() => setOffen({ art: "karte", karte: o.karte })} />
-              ))}
-            </div>
+            {nachBereich(offeneNeu, o => o.karte, bereichListe).map(g => (
+              <div key={g.bereich} className="mb-2">
+                <div className="text-xs font-semibold mb-1">{g.bereich} <span className="text-muted font-normal">({g.eintraege.length})</span></div>
+                <div className="grid gap-1.5 [grid-template-columns:repeat(auto-fill,minmax(15rem,1fr))]">
+                  {g.eintraege.map(o => (
+                    <KarteBox key={o.karte.id} karte={o.karte} idx={idx} niveaus={niveaus} paar={o.paar} ohneBereich
+                      onOpen={() => setOffen({ art: "karte", karte: o.karte })} />
+                  ))}
+                </div>
+              </div>
+            ))}
             {freieAlt.length > 0 && (
               <details className="text-xs mt-2">
                 <summary className="cursor-pointer text-muted">{freieAlt.length} Karten des alten Lehrplans ohne Unterrichtseinheit</summary>
-                <div className="grid gap-1.5 mt-1 [grid-template-columns:repeat(auto-fill,minmax(15rem,1fr))]">
-                  {freieAlt.map(k => <KarteBox key={k.id} karte={k} idx={idx} niveaus={niveaus} onOpen={() => setOffen({ art: "karte", karte: k })} />)}
-                </div>
+                {nachBereich(freieAlt, k => k, bereichListe).map(g => (
+                  <div key={g.bereich} className="mt-1">
+                    <div className="font-semibold mb-1">{g.bereich} <span className="text-muted font-normal">({g.eintraege.length})</span></div>
+                    <div className="grid gap-1.5 [grid-template-columns:repeat(auto-fill,minmax(15rem,1fr))]">
+                      {g.eintraege.map(k => <KarteBox key={k.id} karte={k} idx={idx} niveaus={niveaus} ohneBereich onOpen={() => setOffen({ art: "karte", karte: k })} />)}
+                    </div>
+                  </div>
+                ))}
               </details>
             )}
           </div>
@@ -359,7 +394,7 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
                                 {t.inhalte[n]}
                               </div>
                             )}
-                            {(s.niveau[n] ?? []).map(k => (
+                            {(s.niveau[n] ?? []).filter(sichtbar).map(k => (
                               <KarteBox key={k.id} karte={k} idx={idx} niveaus={niveaus} nurNiveau={n}
                                 onOpen={() => setOffen({ art: "karte", karte: k })}
                                 onLoesen={nurLesen ? undefined : () => ops([{ op: "thema", klasse: nr, thema: loesen(t, k.id, n) }])} />

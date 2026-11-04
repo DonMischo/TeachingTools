@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  woandersAls, freieAlteKarten, index, karteText, loesen, neueId, offeneKarten, statusVon, themaSicht, wochenSumme,
+  bereicheVon, nachBereich, woandersAls, freieAlteKarten, index, karteText, loesen, neueId, offeneKarten, statusVon, themaSicht, wochenSumme,
   wortDiff, zuordnen, type Vorlage,
 } from "@/lib/curriculum/modell";
 import { importOps } from "@/components/curriculum/Dialoge";
@@ -224,5 +224,19 @@ describe("nur neue Karten (ohne alten Plan und Abgleich)", () => {
     expect(statusVon(i, "n1")).toBe("neu");
     const t = zuordnen(i, v.curriculum.klassen[0].themen[0], "n1", 5).thema;
     expect(t.zuordnung).toEqual({ R: ["n1"], H: ["n1"] });
+  });
+});
+
+describe("Bereiche", () => {
+  it("listet Bereiche in Lehrplan-Reihenfolge und gruppiert danach", () => {
+    const v = vorlage();
+    v.lehrplaene[0].karten[0].bereich = "Optik";
+    v.lehrplaene[1].karten[0].bereich = "Mechanik";
+    v.lehrplaene[1].karten[1].bereich = "Optik";
+    expect(bereicheVon(v)).toEqual(["Optik", "ohne Bereich", "Mechanik"]);
+    const g = nachBereich(v.lehrplaene[1].karten, k => k, bereicheVon(v));
+    expect(g.map(x => [x.bereich, x.eintraege.map(k => k.id)])).toEqual([
+      ["Optik", ["n3"]], ["ohne Bereich", ["n4"]], ["Mechanik", ["n1"]],
+    ]);
   });
 });

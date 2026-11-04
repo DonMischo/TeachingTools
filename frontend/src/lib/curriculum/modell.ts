@@ -96,6 +96,29 @@ export function leereVorlage(fach: string): Vorlage {
 
 export type KarteMitPlan = Karte & { plan: Lehrplan };
 
+export const OHNE_BEREICH = "ohne Bereich";
+
+/** Bereiche (Mechanik, Optik … bzw. Zahl & Algebra …) in der Reihenfolge, in der die Lehrpläne sie nennen. */
+export function bereicheVon(v: Vorlage): string[] {
+  const out: string[] = [];
+  for (const lp of v.lehrplaene) for (const k of lp.karten) {
+    const b = k.bereich || OHNE_BEREICH;
+    if (!out.includes(b)) out.push(b);
+  }
+  return out;
+}
+
+/** Liste nach Bereich gruppieren, Gruppen in der Reihenfolge von `reihenfolge`. */
+export function nachBereich<T>(liste: T[], karte: (x: T) => Karte, reihenfolge: string[]): { bereich: string; eintraege: T[] }[] {
+  const gruppen = new Map<string, T[]>();
+  for (const x of liste) {
+    const b = karte(x).bereich || OHNE_BEREICH;
+    gruppen.set(b, [...(gruppen.get(b) ?? []), x]);
+  }
+  const rang = (b: string) => (reihenfolge.includes(b) ? reihenfolge.indexOf(b) : reihenfolge.length);
+  return [...gruppen.entries()].sort(([a], [b]) => rang(a) - rang(b)).map(([bereich, eintraege]) => ({ bereich, eintraege }));
+}
+
 /** Nachschlagetabellen für eine Vorlage — einmal je Stand bauen. */
 export function index(v: Vorlage) {
   const karten = new Map<string, KarteMitPlan>();
