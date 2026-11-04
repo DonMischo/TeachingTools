@@ -66,6 +66,9 @@ describe("Simulation", () => {
     expect((screen.getByLabelText("Farbcode") as HTMLInputElement).value).toBe("#FF80C8");
     fireEvent.change(screen.getByLabelText("Farbcode"), { target: { value: "#0a0" } });
     expect((screen.getByLabelText("Grün dezimal") as HTMLInputElement).value).toBe("170");
+    fireEvent.change(screen.getByLabelText("Rot Regler"), { target: { value: "200" } });
+    expect((screen.getByLabelText("Farbcode") as HTMLInputElement).value).toBe("#C8AA00");
+    expect((screen.getByLabelText("Rot dezimal") as HTMLInputElement).value).toBe("200");
     fireEvent.change(screen.getByLabelText("Zahl hexadezimal"), { target: { value: "FF" } });
     expect((screen.getByLabelText("Zahl dezimal") as HTMLInputElement).value).toBe("255");
 

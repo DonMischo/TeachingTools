@@ -45,7 +45,8 @@ function Kanal({ i, wert, setze }: { i: number; wert: number; setze: (n: number)
         <span><b>Hex → Dez:</b> <span className="font-mono">{ziffer(hoch)} · 16 + {ziffer(tief)} · 1 = {hoch} · 16 + {tief} = {hoch * 16} + {tief} = <b>{wert}</b></span></span>
         <span><b>Dez → Hex:</b> <span className="font-mono">{wert} : 16 = {hoch} Rest {tief}</span> → 16er-Stelle <b className="font-mono">{ziffer(hoch)}</b>, Einerstelle <b className="font-mono">{ziffer(tief)}</b></span>
       </div>
-      <div className="h-2 rounded-full bg-page overflow-hidden"><div className="h-full" style={{ width: `${(wert / 255) * 100}%`, background: k.farbe }} /></div>
+      <input type="range" min={0} max={255} value={wert} aria-label={`${k.name} Regler`} className="w-full" style={{ accentColor: k.farbe }}
+        onChange={e => setze(Number(e.target.value))} />
     </div>
   );
 }
