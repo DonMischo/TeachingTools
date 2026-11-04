@@ -216,6 +216,7 @@ simulationen:
       - "Anwendungsaufgaben: Garten einzäunen, Bad fliesen, Wand streichen, Drachen bauen, Dach decken, Grundstückspreis, Rasen säen, Sportplatz"
       - Übungen und Anwendungen als Word-Arbeitsblatt (.docx) mit Skizzen, Antwortlinien und Lösungen hinten
       - "Spiel Flächen-Duell: zwei Vierecke auf Kästchenpapier, das größere antippen; 60 s, Serienbonus, Flächen rücken mit der Serie zusammen"
+      - "Spiel Bauhof mit Levels und Sternen: Gehege bauen (Rechteck aufziehen, Zaun = Umfang reicht, Platz = Fläche genügt, Felsen/Wasser draußen; drei Sterne für das größtmögliche Gehege) und Wand streichen (Wand ohne Fenster und Tür mit möglichst wenigen Rechteck-Strichen, Summe der Teilflächen als Rechnung)"
   - id: geometrie
     name: Geometrie
     faehigkeiten: {use: [true, true]}

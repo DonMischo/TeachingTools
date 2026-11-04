@@ -16,7 +16,8 @@
  * »Umfang« rechnet am Rechteck weiter und sagt das auch.
  *
  * Dazu drei Blätter zum Üben: »Übungen« (gewürfelte Aufgaben), »Anwendungen«
- * (Sachaufgaben) — beide mit Word-Export — und das Spiel »Flächen-Duell«.
+ * (Sachaufgaben) — beide mit Word-Export — und die Spiele »Flächen-Duell« und
+ * »Bauhof« (Gehege bauen, Wand streichen).
  *
  * Gelegt wird durch Antippen; mit gedrückter Maus/Finger auch im Streichen.
  * Auf dem Smartboard ist das zuverlässiger als Ziehen und Ablegen.
@@ -30,9 +31,10 @@ import {
 import Herleitung from "@/components/simulationen/Herleitung";
 import Aufgabenblatt from "@/components/geometrie/Aufgabenblatt";
 import FlaechenDuell from "@/components/vierecke/FlaechenDuell";
+import Bauhof from "@/components/vierecke/Bauhof";
 import { ANWENDUNG_ARTEN, UEBUNG_ARTEN, erzeugeAnwendung, erzeugeUebung } from "@/lib/vierecke-aufgaben";
 
-type Tab = "formen" | "umfang" | "flaeche" | "uebungen" | "anwendungen" | "spiel";
+type Tab = "formen" | "umfang" | "flaeche" | "uebungen" | "anwendungen" | "spiel" | "bauhof";
 
 const VB = { w: 620, h: 420 };
 const PAD = { x: 74, y: 62 };
@@ -271,8 +273,9 @@ const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: "uebungen", label: "Übungen", icon: "✍️" },
   { id: "anwendungen", label: "Anwendungen", icon: "🏡" },
   { id: "spiel", label: "Flächen-Duell", icon: "⚔️" },
+  { id: "bauhof", label: "Bauhof", icon: "🏗️" },
 ];
-const UEBEN: Tab[] = ["uebungen", "anwendungen", "spiel"];
+const UEBEN: Tab[] = ["uebungen", "anwendungen", "spiel", "bauhof"];
 
 /**
  * `vorgabe` (TaskCrawler-Station): { form: "trapez", masse: { a: 8, c: 4, h: 3 }, blatt?: "formen" | "umfang" | "flaeche",
@@ -348,7 +351,7 @@ export default function Vierecke({ action, vorgabe }: { action?: ReactNode; vorg
           <h1 className="text-2xl font-black tracking-tight">📐 Vierecke</h1>
           <p className="text-muted text-sm mt-1">
             Sechs Vierecke mit Formeln und Eigenschaften, zwei Aufgaben zum Anfassen (Weide einzäunen,
-            Fläche auslegen), gewürfelte Übungen und Sachaufgaben mit Word-Export und das Flächen-Duell.
+            Fläche auslegen), gewürfelte Übungen und Sachaufgaben mit Word-Export, das Flächen-Duell und der Bauhof (Gehege bauen, Wand streichen).
           </p>
         </div>
         <div className="flex items-center gap-2">{action}</div>
@@ -374,6 +377,7 @@ export default function Vierecke({ action, vorgabe }: { action?: ReactNode; vorg
       {tab === "uebungen" && <Aufgabenblatt arten={UEBUNG_ARTEN} erzeuge={a => erzeugeUebung(a)} titel="Vierecke – Übungen" datei="Vierecke-Uebungen.docx" />}
       {tab === "anwendungen" && <Aufgabenblatt arten={ANWENDUNG_ARTEN} erzeuge={a => erzeugeAnwendung(a)} titel="Vierecke – Anwendungsaufgaben" datei="Vierecke-Anwendungen.docx" />}
       {tab === "spiel" && <FlaechenDuell />}
+      {tab === "bauhof" && <Bauhof />}
 
       {/* Formwahl — gilt für die Blätter Formen, Umfang, Fläche */}
       {!festeForm && !UEBEN.includes(tab) && <div className="flex flex-wrap gap-2">
