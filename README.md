@@ -313,7 +313,7 @@ Das Lehrkraft-Werkzeugset. Standardmäßig nur für Lehrkräfte sichtbar.
 - Abgleich alt ↔ neu je Karte (identisch, geändert mit Wort-Diff, verschoben, neu, entfällt), getrennt für Real- und Hauptschulniveau; Konflikte am Thema, offene neue Inhalte je Block, Wochensumme gegen verfügbare Wochen
 - Themen per Ziehen zwischen Klassen verschieben, Karten zuordnen, fehlende Niveaus ergänzen; ein gemeinsamer Stand je Fachschaft (Änderungen per Operation, `api/curriculum_ops.py`), Gastbeitritt per QR
 - Export der Endfassung als DOCX und PDF (A4 quer, alle Klassen oder eine) und als SVG je Klasse (`api/curriculum_export.py`; das DOCX wird direkt geschrieben, weil pandoc keine Zellfarben kann, das PDF macht LibreOffice daraus)
-- KI-Prompt für Lehrplanvergleich und Zuordnung; Vorlagen als JSON (`tt-curriculum/1`, Aufbau in `data/curriculum/SCHEMA.md`). Startvorlage mit den Thüringer Mathe-Lehrplänen (RS 2011, GY 2018 → Erprobungsfassungen 2026) in `frontend/public/curriculum/`
+- KI-Prompt für Lehrplanvergleich und Zuordnung; Vorlagen als JSON (`tt-curriculum/1`, Aufbau in `data/curriculum/SCHEMA.md`). Startvorlagen in `frontend/public/curriculum/`: Thüringer Mathe-Lehrpläne (RS 2011, GY 2018 → Erprobungsfassungen 2026, mit Abgleich) und Physik (RS + GY 2026, Kl. 7–10, ohne alten Plan). Der KI-Prompt erfasst eine oder beide Schularten in einem JSON, mit oder ohne alten Plan
 
 ### 🧱 Snap!
 - Blockbasiertes Programmieren (Snap!, Berkeley) direkt in der Seite, komplett lokal, ohne Internet und ohne Konto

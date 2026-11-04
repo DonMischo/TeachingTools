@@ -201,7 +201,7 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
         {doc.curriculum.stand && ` — Curriculum Stand ${doc.curriculum.stand}`}
       </p>
 
-      {BLOECKE.map(blockAbschnitt)}
+      {(doc.bloecke?.length ? BLOECKE.filter(b => doc.bloecke.includes(b)) : BLOECKE).map(blockAbschnitt)}
 
       {offen?.art === "thema" && <ThemaDialog thema={offen.thema} klasse={offen.klasse} idx={idx} onOps={ops} onClose={() => setOffen(null)} nurLesen={nurLesen} />}
       {offen?.art === "karte" && <KarteDialog karte={offen.karte} idx={idx} doc={doc} onOps={ops} onClose={() => setOffen(null)} nurLesen={nurLesen}

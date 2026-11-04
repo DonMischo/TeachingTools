@@ -10,8 +10,12 @@ import { api } from "@/lib/api";
 import HelpButton from "@/components/HelpButton";
 import { antwortLesen } from "@/lib/curriculum/kiPrompt";
 
-/** Öffentliche Lehrplan-Karten (Thüringen, Mathematik) als Startpunkt. */
-const START_MATHE = "/curriculum/mathematik_thueringen.json";
+/** Öffentliche Lehrplan-Karten (Thüringen) als Startpunkt. */
+const STARTVORLAGEN = {
+  mathe: { datei: "/curriculum/mathematik_thueringen.json", text: "Thüringer Mathe-Lehrpläne (RS 2011 / GY 2018 → 2026) mit Abgleich" },
+  physik: { datei: "/curriculum/physik_thueringen.json", text: "Thüringer Physik-Lehrpläne 2026 (RS + GY, Kl. 7–10), ohne alten Plan" },
+} as const;
+type Start = keyof typeof STARTVORLAGEN;
 
 export default function CurriculumListe() {
   const router = useRouter();
@@ -20,7 +24,7 @@ export default function CurriculumListe() {
   const { can, ready } = useAvailability();
   const { data: plaene } = useQuery({ queryKey: ["curriculum-plaene"], queryFn: api.curriculum.list });
   const [name, setName] = useState("");
-  const [quelle, setQuelle] = useState<"mathe" | "leer" | "datei">("mathe");
+  const [quelle, setQuelle] = useState<Start | "leer" | "datei">("mathe");
   const [datei, setDatei] = useState<File | null>(null);
   const [laeuft, setLaeuft] = useState(false);
 
@@ -32,7 +36,7 @@ export default function CurriculumListe() {
     setLaeuft(true);
     try {
       let data: unknown;
-      if (quelle === "mathe") data = await fetch(START_MATHE).then(r => { if (!r.ok) throw new Error("Startvorlage fehlt"); return r.json(); });
+      if (quelle in STARTVORLAGEN) data = await fetch(STARTVORLAGEN[quelle as Start].datei).then(r => { if (!r.ok) throw new Error("Startvorlage fehlt"); return r.json(); });
       if (quelle === "datei" && datei) data = antwortLesen(await datei.text());
       const plan = await api.curriculum.create({ name: name.trim(), fach: (data as any)?.fach ?? "Mathematik", data });
       qc.invalidateQueries({ queryKey: ["curriculum-plaene"] });
@@ -67,8 +71,10 @@ export default function CurriculumListe() {
         <label className="flex flex-col gap-1 mb-3"><span className="label">Name</span>
           <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="z. B. Mathematik Sek I" /></label>
         <div className="flex flex-col gap-1 mb-3 text-sm">
-          <label className="flex items-center gap-2"><input type="radio" checked={quelle === "mathe"} onChange={() => setQuelle("mathe")} />
-            Thüringer Mathe-Lehrpläne (RS 2011 / GY 2018 → 2026) als Karten, Curriculum leer</label>
+          {(Object.keys(STARTVORLAGEN) as Start[]).map(k => (
+            <label key={k} className="flex items-center gap-2"><input type="radio" checked={quelle === k} onChange={() => setQuelle(k)} />
+              {STARTVORLAGEN[k].text}, Curriculum leer</label>
+          ))}
           <label className="flex items-center gap-2"><input type="radio" checked={quelle === "leer"} onChange={() => setQuelle("leer")} />
             Leer (Lehrpläne später per KI-Prompt)</label>
           <label className="flex items-center gap-2"><input type="radio" checked={quelle === "datei"} onChange={() => setQuelle("datei")} />

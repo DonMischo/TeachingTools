@@ -11,7 +11,7 @@ import {
   BLOECKE, NIVEAUS, NIVEAU_NAME, STATUS, blockVon, neueId, niveauGilt, zuordnen, type Block, type Index, type KarteMitPlan,
   type Karte, type Paar, type Status, type Thema, type Vorlage,
 } from "@/lib/curriculum/modell";
-import { antwortLesen, vergleichPrompt, zuordnungPrompt } from "@/lib/curriculum/kiPrompt";
+import { antwortLesen, vergleichPrompt, zuordnungPrompt, type Schulart } from "@/lib/curriculum/kiPrompt";
 import { api, type CurriculumPlanOut } from "@/lib/api";
 
 type Op = Record<string, unknown>;
@@ -179,16 +179,16 @@ export function KarteDialog({ karte, idx, doc, onOps, onClose, nurLesen, zuordne
 
 export function KiDialog({ doc, onClose }: { doc: Vorlage; onClose: () => void }) {
   const [art, setArt] = useState<"vergleich" | "zuordnung">("vergleich");
-  const [schulart, setSchulart] = useState<"RS" | "GY">("RS");
+  const [schularten, setSchularten] = useState<Schulart[]>(["RS"]);
+  // Ohne alten Plan im Dokument (z. B. Physik nur 2026) ist »nur neue Pläne erfassen« die Voreinstellung.
+  const [mitAlt, setMitAlt] = useState(doc.lehrplaene.some(l => l.rolle === "alt"));
   const [rolle, setRolle] = useState<"alt" | "neu">("neu");
   const [mit, setMit] = useState(true);
   const [nurOhne, setNurOhne] = useState(false);
   const [status, setStatus] = useState("");
   const feld = useRef<HTMLTextAreaElement>(null);
-  const alt = doc.lehrplaene.find(l => l.rolle === "alt" && l.schulart === schulart)?.id ?? `${schulart.toLowerCase()}_alt`;
-  const neu = doc.lehrplaene.find(l => l.rolle === "neu" && l.schulart === schulart)?.id ?? `${schulart.toLowerCase()}_neu`;
   const prompt = art === "vergleich"
-    ? vergleichPrompt(doc, { schulart, altId: alt, neuId: neu, alteKartenMit: mit })
+    ? vergleichPrompt(doc, { schularten, mitAlt, alteKartenMit: mit })
     : zuordnungPrompt(doc, { rolle, nurOhne });
   const kopieren = async () => {
     try { await navigator.clipboard.writeText(prompt); setStatus("Kopiert ✓"); }
@@ -199,22 +199,26 @@ export function KiDialog({ doc, onClose }: { doc: Vorlage; onClose: () => void }
     <Fenster titel="KI-Prompt" onClose={onClose} breit>
       <ol className="list-decimal pl-5 text-xs text-muted mb-3 leading-relaxed">
         <li>Art wählen, Prompt kopieren und in einen KI-Chat einfügen.</li>
-        {art === "vergleich" && <li>Beide Lehrplan-PDFs (alt und neu) im Chat anhängen.</li>}
+        {art === "vergleich" && <li>Die Lehrplan-PDFs im Chat anhängen — welche, steht im Prompt unter »Im Anhang«.</li>}
         <li>Die Antwort (JSON) über »⬆ Hochladen« einfügen. Nur die mitgeschickten Teile werden ersetzt.</li>
         <li>Prüfen! Die KI kann Karten auslassen oder falsch zuordnen.</li>
       </ol>
       <div className="flex flex-wrap gap-1 mb-3">
-        <button className={`chip ${art === "vergleich" ? "chip-on" : ""}`} onClick={() => setArt("vergleich")}>Zwei Lehrpläne vergleichen</button>
+        <button className={`chip ${art === "vergleich" ? "chip-on" : ""}`} onClick={() => setArt("vergleich")}>Lehrpläne erfassen / vergleichen</button>
         <button className={`chip ${art === "zuordnung" ? "chip-on" : ""}`} onClick={() => setArt("zuordnung")}>Curriculum zuordnen</button>
       </div>
       {art === "vergleich" ? (
         <div className="flex flex-wrap gap-3 items-center mb-3 text-sm">
-          {(["RS", "GY"] as const).map(s => (
-            <button key={s} className={`chip ${schulart === s ? "chip-on" : ""}`} onClick={() => setSchulart(s)}>
-              {s === "RS" ? "Regelschule (R + H)" : "Gymnasium"}</button>
+          {([["RS"], ["GY"], ["RS", "GY"]] as Schulart[][]).map(a => (
+            <button key={a.join()} className={`chip ${schularten.join() === a.join() ? "chip-on" : ""}`} onClick={() => setSchularten(a)}>
+              {a.length > 1 ? "beide in einem JSON" : a[0] === "RS" ? "Regelschule (R + H)" : "Gymnasium"}</button>
           ))}
-          <label className="flex items-center gap-1"><input type="checkbox" checked={mit} onChange={e => setMit(e.target.checked)} />
-            vorhandene alte Karten mitschicken (ids bleiben gleich)</label>
+          <label className="flex items-center gap-1"><input type="checkbox" checked={mitAlt} onChange={e => setMitAlt(e.target.checked)} />
+            mit altem Lehrplan vergleichen</label>
+          {mitAlt && (
+            <label className="flex items-center gap-1"><input type="checkbox" checked={mit} onChange={e => setMit(e.target.checked)} />
+              schon erfasste alte Karten mitschicken (ids bleiben gleich)</label>
+          )}
         </div>
       ) : (
         <div className="flex flex-wrap gap-3 items-center mb-3 text-sm">

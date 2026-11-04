@@ -176,10 +176,37 @@ describe("Hochladen und KI", () => {
     expect(() => importOps({ foo: 1 }, v, index(v))).toThrow();
   });
 
-  it("Vergleichs-Prompt nennt die Hauptschul-Regeln und schickt alte Karten mit", () => {
-    const p = vergleichPrompt(vorlage(), { schulart: "RS", altId: "alt", neuId: "neu", alteKartenMit: true });
+  it("Vergleichs-Prompt: Hauptschul-Regeln, erfasster alter Plan bleibt draußen", () => {
+    const p = vergleichPrompt(vorlage(), { schularten: ["RS"], mitAlt: true, alteKartenMit: true });
     expect(p).toContain("Anspruchsebene I");
     expect(p).toContain("\"a1\"");
+    expect(p).toContain("Im Anhang (PDF): RS neu.");
+    // der alte Plan steht nicht im Aufbau — sonst würde ihn der Upload mit leeren Karten ersetzen
+    expect(p).not.toContain("\"rolle\": \"alt\"");
+    expect(p).toContain("\"abgleich\"");
+  });
+
+  it("Prompt für beide Schularten ohne alten Plan: nur neue Pläne, kein Abgleich", () => {
+    const v = vorlage();
+    v.fach = "Physik";
+    v.lehrplaene = v.lehrplaene.filter(l => l.rolle === "neu");
+    const p = vergleichPrompt(v, { schularten: ["RS", "GY"], mitAlt: false, alteKartenMit: true });
+    expect(p).toContain("Im Anhang (PDF): RS neu, GY neu.");
+    expect(p).toContain("\"id\": \"neu\", \"rolle\": \"neu\", \"schulart\": \"RS\"");
+    expect(p).toContain("\"id\": \"gyneu\", \"rolle\": \"neu\", \"schulart\": \"GY\"");
+    expect(p).toContain("\"fach\": \"Physik\"");
+    expect(p).not.toContain("abgleich");
+    expect(p).toContain("Gymnasium: nur");
+    expect(p).toContain("Anspruchsebene I");
+  });
+
+  it("Prompt für eine neue Schulart vergibt eine id", () => {
+    const v = vorlage();
+    v.lehrplaene = [];
+    const p = vergleichPrompt(v, { schularten: ["GY"], mitAlt: true, alteKartenMit: true });
+    expect(p).toContain("Im Anhang (PDF): GY alt, GY neu.");
+    expect(p).toContain("\"id\": \"gy_alt\"");
+    expect(p).not.toContain("Anspruchsebene");
   });
 });
 
