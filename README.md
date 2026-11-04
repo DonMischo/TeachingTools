@@ -455,7 +455,7 @@ workshop.bat reset              :: alles löschen
 
 - Eigene Datenbank, eigener Port, eigener `SECRET_KEY`; die Schulinstanz läuft unberührt weiter.
 - `data/` wird nur mit den versionierten Dateien nach `.workshop/data` kopiert, nicht versionierte Schuldaten kommen nicht mit.
-- Beispiele (Zeitstrahlen, Challenge, TaskCrawler) werden einmal hochgeladen. Zugangsliste und QR-Code liegen in `.workshop/data/`.
+- Beispiele (Zeitstrahlen, Challenge, TaskCrawler) werden einmal hochgeladen, dazu 360 erfundene Schülerinnen und Schüler in 5a–10c aus `data/workshop/schueler.csv`. Zugangsliste und QR-Code liegen in `.workshop/data/`.
 - Die Adresse ist bei jedem Start neu und landet in der Zwischenablage. Die Moderation öffnet TT über diese Adresse, dann zeigen alle Beitritts-QRs auf den Tunnel.
 - Nicht für den Produktivbetrieb: Der Tunnel lebt nur, solange der Rechner läuft.
 

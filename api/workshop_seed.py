@@ -1,4 +1,5 @@
-"""Workshop-Instanz befüllen: Moderations-Admin, Teilnehmer-Zugänge, Beispielinhalte.
+"""Workshop-Instanz befüllen: Moderations-Admin, Teilnehmer-Zugänge, Beispielinhalte
+und die erfundene Schülerliste data/workshop/schueler.csv (5a–10c).
 
 Nur für die Übungsinstanz aus workshop.ps1 gedacht (eigene Datenbank, erfundene
 Daten), nie für eine Schulinstanz. Läuft im API-Container:
@@ -20,12 +21,13 @@ from pathlib import Path
 
 from .auth import hash_password
 from .database import SessionLocal
-from .models import Teacher
+from .models import Student, Teacher
 from .password_gen import generate_password
 
 DATA = Path(__file__).parent.parent / "data"
 ZUGAENGE = DATA / "zugaenge.txt"
 MARKER = DATA / ".workshop-beispiele"
+SCHUELER = DATA / "workshop" / "schueler.csv"
 API = "http://127.0.0.1:8000"
 
 BEISPIELE = [
@@ -49,13 +51,23 @@ def _zugang(db, username: str, role: str, vorname: str, nachname: str) -> str | 
     return pw
 
 
-def _hochladen(token: str, pfad: str, datei: Path) -> None:
+def _hochladen(token: str, pfad: str, datei: Path, typ: str = "application/json") -> dict:
     grenze = uuid.uuid4().hex
     body = (f"--{grenze}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"{datei.name}\"\r\n"
-            "Content-Type: application/json\r\n\r\n").encode() + datei.read_bytes() + f"\r\n--{grenze}--\r\n".encode()
+            f"Content-Type: {typ}\r\n\r\n").encode() + datei.read_bytes() + f"\r\n--{grenze}--\r\n".encode()
     req = urllib.request.Request(API + pfad, data=body, method="POST", headers={
         "Authorization": f"Bearer {token}", "Content-Type": f"multipart/form-data; boundary={grenze}"})
-    urllib.request.urlopen(req, timeout=60).read()
+    return json.loads(urllib.request.urlopen(req, timeout=60).read())
+
+
+def _schueler_importieren(token: str) -> int:
+    """Wie im Admin-Bereich: Vorschau holen, dann alle neuen Zeilen übernehmen."""
+    diff = _hochladen(token, "/api/students/preview", SCHUELER, "text/csv")["diff"]
+    body = {"mode": "roster", "selected_keys": [d["key"] for d in diff],
+            "csv_data": {d["key"]: d["csv_data"] for d in diff}}
+    req = urllib.request.Request(API + "/api/students/apply", data=json.dumps(body).encode(), method="POST",
+                                 headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"})
+    return json.loads(urllib.request.urlopen(req, timeout=120).read())["applied"]
 
 
 def _login(username: str, pw: str) -> str:
@@ -79,6 +91,7 @@ def main() -> None:
     neu: list[tuple[str, str]] = []
     db = SessionLocal()
     try:
+        ohne_schueler = db.query(Student).count() == 0
         if pw := _zugang(db, "moderation", "admin", "Workshop", "Moderation"):
             neu.append(("moderation", pw))
         for i in range(1, args.anzahl + 1):
@@ -94,9 +107,11 @@ def main() -> None:
             f.writelines(f"{u}\t{p}\n" for u, p in neu)
     print(f"{len(neu)} neue Zugänge, Liste: .workshop/data/zugaenge.txt")
 
+    zugaenge = dict(z.split("\t") for z in ZUGAENGE.read_text(encoding="utf-8").split("\n") if z)
+    token = _login("moderation", zugaenge["moderation"]) if ohne_schueler or not MARKER.exists() else ""
+    if ohne_schueler:
+        print(_schueler_importieren(token), "Schülerinnen und Schüler importiert (erfunden)")
     if not MARKER.exists():
-        zugaenge = dict(z.split("\t") for z in ZUGAENGE.read_text(encoding="utf-8").split("\n") if z)
-        token = _login("moderation", zugaenge["moderation"])
         for pfad, datei in BEISPIELE:
             try:
                 _hochladen(token, pfad, DATA / datei)
