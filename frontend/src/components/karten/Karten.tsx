@@ -149,6 +149,13 @@ export default function Karten({ action, zugang }: { action?: ReactNode; zugang?
     setZiel(s?.inhalt.ausschnitt ?? null);
   };
 
+  // Legende über der Karte (KartenAnsicht): Themenebenen und Höhenstufen, die gerade an sind
+  const hoehen = katalog?.ebenen.find((e) => e.id === "de-hoehen");
+  const legende = [
+    ...(katalog?.ebenen.filter((e) => e.darstellung && inhalt.ebenen.includes(e.id)).map((e) => <Themenlegende key={e.id} ebene={e} />) ?? []),
+    ...(hoehen?.stufen && inhalt.ebenen.includes("de-hoehen") ? [<Hoehenlegende key="de-hoehen" ebene={hoehen} />] : []),
+  ];
+
   const quizEbenen = katalog?.ebenen.filter((e) => e.quiz && inhalt.ebenen.includes(e.id)) ?? [];
 
   return (
@@ -213,6 +220,7 @@ export default function Karten({ action, zugang }: { action?: ReactNode; zugang?
                 seite={inhalt.seite} setSeite={(seite) => setInhalt((v) => ({ ...v, seite }))}
                 kinderatlas={inhalt.kinderatlas} setKinderatlas={(kinderatlas) => setInhalt((v) => ({ ...v, kinderatlas }))}
                 kinderstil={inhalt.kinderstil} setKinderstil={(kinderstil) => setInhalt((v) => ({ ...v, kinderstil }))} />}
+              legende={legende.length > 0 && legende}
               ziel={ziel} onAusschnitt={(a) => { ausschnitt.current = a; }} bildRef={bildRef} fundort={fundort}
               partikel={partikelAn ? { ebenen: inhalt.ebenen, monat: monatVon(inhalt.filter, inhalt.ebenen.find((e) => katalog.ebenen.find((k) => k.id === e)?.monate) ?? "") } : null} />
             <Arbeitsblatt katalog={katalog} inhalt={inhalt} nummern={nummern} daten={daten} titel={satz?.titel ?? "Karte"}
@@ -249,8 +257,6 @@ export default function Karten({ action, zugang }: { action?: ReactNode; zugang?
                   schalte={schalteEbene} lehrkraft={lehrkraft} />
                 {bereich === "de" && <SiedlungsFilter ebenen={katalog.ebenen} inhalt={inhalt} setInhalt={setInhalt} />}
                 <Monatsregler ebenen={katalog.ebenen} inhalt={inhalt} setInhalt={setInhalt} partikel={partikelAn} setPartikel={setPartikelAn} />
-                {katalog.ebenen.filter((e) => e.darstellung && inhalt.ebenen.includes(e.id)).map((e) => <Themenlegende key={e.id} ebene={e} />)}
-                {inhalt.ebenen.includes("de-hoehen") && <Hoehenlegende ebene={katalog.ebenen.find((e) => e.id === "de-hoehen")} />}
               </>
             )}
           </aside>

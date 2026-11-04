@@ -60,7 +60,7 @@ export function startKamera(projektion: Projektion) {
 /** Liefert das Kartenbild als PNG-data-URL, sobald der aktuelle Stil fertig gezeichnet ist. */
 export type KartenBild = () => Promise<string>;
 
-export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, ziel, onAusschnitt, bildRef, gastToken, fundort, blick, partikel, projektion = "equalearth", menue, seite }: {
+export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, ziel, onAusschnitt, bildRef, gastToken, fundort, blick, partikel, projektion = "equalearth", menue, legende, seite }: {
   stil: StyleSpecification;
   katalog: Katalog;
   namenZeigen: boolean;
@@ -84,6 +84,8 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
   projektion?: Projektion;
   /** Bedienelemente oben links auf der Karte (☰-Menü) */
   menue?: ReactNode;
+  /** Legende: Knopf oben links, klappt als Seitenleiste über der Karte auf (leer/null = kein Knopf) */
+  legende?: ReactNode;
   /** A4-Seitenverhältnis der Kartenfläche (lib/karten/seite.ts) */
   seite?: Seite;
 }) {
@@ -91,6 +93,8 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
   const karte = useRef<MapLibreMap | null>(null);
   const popup = useRef<Popup | null>(null);
   const [bereit, setBereit] = useState(false);
+  const [legendeAuf, setLegendeAuf] = useState(true);
+  const [legendeRechts, setLegendeRechts] = useState(false);
   const verhaeltnis = verhaeltnisVon(seite);
   // Die Ereignis-Handler hängen einmal an der Karte; die aktuellen Props liest der Handler über Refs
   const aktuell = useRef({ namenZeigen, onKlick, onAusschnitt, gastToken, katalog, projektion });
@@ -323,7 +327,26 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
       <div ref={behaelter} className="w-full h-full" data-karte />
       <canvas ref={massstabRef} aria-label="Maßstab" className="absolute left-1.5 bottom-1.5 pointer-events-none" style={{ width: 240, height: 44 }} />
       {bereit && karte.current && partikel && <PartikelFluss karte={karte.current} ebenen={partikel.ebenen} monat={partikel.monat} projektion={projektion} />}
-      {menue && <div className="absolute left-2 top-2 z-10">{menue}</div>}
+      {menue && <div className="absolute left-2 top-2 z-20">{menue}</div>}
+      {legende && (
+        <button onClick={() => setLegendeAuf((x) => !x)} aria-label="Legende" aria-expanded={legendeAuf} title="Legende ein-/ausblenden"
+          className={`absolute ${menue ? "left-[52px]" : "left-2"} top-2 z-20 h-9 px-3 rounded-lg border border-black/20 shadow-sm text-sm font-bold ${
+            legendeAuf ? "bg-neutral-800 text-white" : "bg-white/95 text-neutral-800"}`}>🗂️ Legende</button>
+      )}
+      {legende && legendeAuf && (
+        <div className={`absolute top-[52px] bottom-14 ${legendeRechts ? "right-12" : "left-2"} z-10 w-64 max-w-[calc(100%-4rem)] overflow-y-auto
+          rounded-xl bg-surface border border-line shadow-lg p-3 flex flex-col gap-3 text-sm`} aria-label="Legende">
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-black">Legende</span>
+            <span className="flex gap-1">
+              <button onClick={() => setLegendeRechts((x) => !x)} title={legendeRechts ? "Nach links" : "Nach rechts"}
+                aria-label="Legende auf die andere Seite" className="px-1.5 rounded text-muted hover:text-fg">⇄</button>
+              <button onClick={() => setLegendeAuf(false)} aria-label="Legende schließen" className="px-1.5 rounded text-muted hover:text-fg">✕</button>
+            </span>
+          </div>
+          {legende}
+        </div>
+      )}
       <button onClick={() => einpassen(400)} title="Ganze Region einpassen" aria-label="Einpassen"
         className="absolute right-2.5 top-[76px] z-10 w-[29px] h-[29px] rounded bg-white shadow-[0_0_0_2px_rgba(0,0,0,0.1)] text-neutral-800 text-base leading-none hover:bg-neutral-100">⤢</button>
     </div>
