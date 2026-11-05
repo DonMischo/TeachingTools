@@ -362,9 +362,11 @@ export function krabbeln(opts: { quelle?: Element | null } = {}): void {
     dazu: (n: number) => { for (let i = 0; i < n && kaefer.length < 5; i++) kaefer.push(neuerKaefer(b, h)); },
     zeigeSerie: () => {
       if (serie < MUTMACHER_AB) return;
-      if (mut.style.display === 'none') mutText.textContent = MUTMACHER[Math.floor(Math.random() * MUTMACHER.length)];
+      if (serie === 42) mutText.textContent = 'DON’T PANIC. 42 ist die Antwort auf alles – nur nicht auf diese Aufgabe.';
+      else if (mut.style.display === 'none') mutText.textContent = MUTMACHER[Math.floor(Math.random() * MUTMACHER.length)];
       mut.style.display = 'block';
-      mutZahl.textContent = `${serie} Fehler in einer Minute`;
+      // die Serie reißt erst nach einer Minute ohne Fehler ab, kann also länger laufen
+      mutZahl.textContent = `${serie} Fehler in Folge`;
     },
   };
   laufend = zustand;
