@@ -100,6 +100,7 @@ aktivitaeten:
       - "Leistungsüberprüfung als Minispiel: Fakten per Klick oder Ziehen der passenden Challenge zuordnen, kein Multiple Choice"
       - Ein Satzformat für alle Spielarten (facts, challenges, decoys, Etappen), Import als .json/.zip mit Bildern, Vorlage, Bearbeiten per Formular oder JSON
       - Kombos (mehrere Fakten zusammen), falsche Fakten schwächen den Treffer (Malus), drei Fehlversuche führen zurück zur Karte mit Wissen zum Nachlesen
+      - Jede Frage zeigt in allen Spielarten, wie viele Fakten die Antwort braucht (🃏 je Fakt)
       - Vier Stufen mit eigenen Texten und Fragen je Stufe (levels), Stufe wechselt per Fuzzy-Anpassung; Tipps nur auf Stufe 1
       - "Wertung: jede Antwort zählt, Wiederholungen heben die Güte, 100 % nur ohne Fehler im ersten Anlauf; Spiel- und Wissenswertung getrennt"
       - Auswertung je Person (Lesetempo, geraten, Kombos, gewählte Ablenker), CSV, Hauspunkte als Klassenmittel (bis 100 je Person)

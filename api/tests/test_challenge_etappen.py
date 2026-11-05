@@ -32,6 +32,16 @@ def test_fakten_hoechstens_zwoelf_nötige_immer_dabei(name, stufe):
         assert len(ids) == len(b["fakten"]) <= max(eng.MAX_FAKTEN_JE_ETAPPE, len(noetig))
 
 
+def test_brett_nennt_anzahl_noetiger_fakten():
+    """»all« braucht jeden gelisteten Fakt, »any« genau einen."""
+    daten = vorlage(None)
+    lauf = lauf_logik.neuer_lauf(daten, 2, seed=7)
+    satz = {c["id"]: c for c in eng.satz_fuer_stufe(daten, 2)["challenges"]}
+    for c in lauf_logik.brett(daten, lauf)["challenges"]:
+        solve = satz[c["id"]]["solve"]
+        assert c["noetig"] == (len(solve["all"]) if "all" in solve else 1)
+
+
 def test_ablenker_zuerst_decoys_und_deterministisch():
     daten = BEISPIEL
     b1 = lauf_logik.brett(daten, lauf_logik.neuer_lauf(daten, 2, seed=3))

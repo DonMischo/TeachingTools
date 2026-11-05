@@ -495,7 +495,9 @@ export type AssetOut = { path: string; url: string };
 export type ChallengeSatzInfo = { id: number; title: string; subject: string | null; fakten: number; challenges: number; created_at: string; warnungen?: string[] };
 export type ChallengeFaktInfo = { text: string; source?: { label?: string; url?: string } };
 export type ChallengeFakt = { id: string; text: string; image: string | null; formula: string | null; info: ChallengeFaktInfo | null };
-export type ChallengeAufgabe = { id: string; text: string; image: string | null; formula: string | null; strength: number; erledigt: boolean; tip?: string | null };
+export type ChallengeAufgabe = { id: string; text: string; image: string | null; formula: string | null; strength: number; erledigt: boolean; tip?: string | null;
+  /** wie viele Fakten die Antwort braucht (»all«: alle gelisteten, »any«: einer) */
+  noetig?: number };
 export type ChallengeBrett = {
   stufe: number; etappe: number; leben: number; fertig: boolean;
   etappen: { nr: number; titel: string; erledigt: boolean }[];

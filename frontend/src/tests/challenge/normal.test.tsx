@@ -24,6 +24,13 @@ describe("Normal", () => {
     expect(within(fragen).getByRole("button", { name: /Frage Eins/ }).querySelector("[data-frage]")).not.toBeNull(); // hervorgehobene Frage
   });
 
+  it("zeigt an jeder Frage, wie viele Fakten nötig sind", () => {
+    const b = brett([{ ...ch("c1", "Frage Eins"), noetig: 2 }, { ...ch("c2", "Frage Zwei"), noetig: 1 }] as never);
+    render(<Normal brett={b as never} theme={THEMES.klassisch} skin="monster" lauf={mkLauf(true) as never} zurKarte={() => {}} />);
+    expect(screen.getByLabelText("2 Fakten nötig")).toHaveTextContent("🃏🃏");
+    expect(screen.getByLabelText("1 Fakt nötig")).toHaveTextContent("🃏");
+  });
+
   it("falsch beantwortete Frage wird rot markiert", async () => {
     const u = userEvent.setup();
     render(<Normal brett={brett() as never} theme={THEMES.klassisch} skin="monster" lauf={mkLauf(false) as never} zurKarte={() => {}} />);

@@ -319,13 +319,18 @@ export function krabbeln(opts: { quelle?: Element | null } = {}): void {
     return;
   }
 
+  // ohne Canvas (alte Browser, jsdom) keine Käfer und keine Sperre
+  const leinwand = document.createElement('canvas');
+  let ctx: CanvasRenderingContext2D | null = null;
+  try { ctx = leinwand.getContext('2d'); } catch { /* jsdom: nicht implementiert */ }
+  if (!ctx) return;
+
   const woerter = woerterSammeln(opts.quelle);
   (document.activeElement as HTMLElement | null)?.blur?.();
 
   const huelle = document.createElement('div');
   huelle.setAttribute('role', 'alert');
   huelle.style.cssText = 'position:fixed;inset:0;z-index:2147483000;cursor:not-allowed;background:rgba(0,0,0,.3);transition:opacity .3s';
-  const leinwand = document.createElement('canvas');
   leinwand.style.cssText = 'position:absolute;inset:0;width:100%;height:100%';
   const hinweis = document.createElement('div');
   hinweis.style.cssText = `position:absolute;left:50%;bottom:24px;transform:translateX(-50%);padding:6px 14px;border:1px solid ${NEON};background:rgba(0,0,0,.75);color:#fff;font:600 14px system-ui,sans-serif;border-radius:6px;white-space:nowrap`;
@@ -344,7 +349,6 @@ export function krabbeln(opts: { quelle?: Element | null } = {}): void {
   for (const t of tastenEvents) window.addEventListener(t, schlucken, true);
   for (const t of ['pointerdown', 'mousedown', 'click', 'touchstart', 'wheel', 'contextmenu']) huelle.addEventListener(t, schlucken);
 
-  const ctx = leinwand.getContext('2d')!;
   let b = 0, h = 0;
   const groesse = () => {
     const dpr = window.devicePixelRatio || 1;

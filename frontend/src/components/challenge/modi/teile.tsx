@@ -17,12 +17,24 @@ export function Inhalt({ x }: { x: Inh }) {
   );
 }
 
+/** Wie viele Fakten die Antwort braucht, als Kartensymbole (ab 5 als Zahl). */
+export function Noetig({ n }: { n: number }) {
+  const text = n === 1 ? "1 Fakt nötig" : `${n} Fakten nötig`;
+  return (
+    <span data-noetig title={text} aria-label={text}
+      className="shrink-0 ml-auto whitespace-nowrap rounded-full border border-line bg-surface px-2 py-0.5 text-sm font-semibold">
+      {n <= 4 ? "🃏".repeat(n) : `🃏×${n}`}
+    </span>
+  );
+}
+
 /** Die Frage bzw. Aufgabe einer Challenge: hebt sich in allen Spielarten deutlich von den Fakten ab. */
-export function Frage({ x, icon = "❓" }: { x: Inh; icon?: string }) {
+export function Frage({ x, icon = "❓" }: { x: Inh & { noetig?: number }; icon?: string }) {
   return (
     <div data-frage className="flex gap-2 items-start rounded-lg border-l-4 border-accent bg-accent/15 px-3 py-2 text-base font-bold text-left">
       <span aria-hidden>{icon}</span>
       <div className="min-w-0"><Inhalt x={x} /></div>
+      {x.noetig != null && <Noetig n={x.noetig} />}
     </div>
   );
 }

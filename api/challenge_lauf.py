@@ -117,7 +117,9 @@ def brett(daten: dict, lauf: dict, bild=lambda name: name, tipps: bool | None = 
 
     def challenge_out(c: dict) -> dict:
         aus = {"id": c["id"], "text": c["text"], "image": bild(c["image"]) if c.get("image") else None,
-               "formula": c.get("formula"), "strength": c.get("strength", 1), "erledigt": c["id"] in erledigt}
+               "formula": c.get("formula"), "strength": c.get("strength", 1), "erledigt": c["id"] in erledigt,
+               # wie viele Fakten die Antwort braucht: bei »all« jeden gelisteten, bei »any« einen
+               "noetig": len(c["solve"]["all"]) if "all" in c["solve"] else 1}
         if params["tipps"] if tipps is None else tipps:
             aus["tip"] = c.get("tip")
         return aus
