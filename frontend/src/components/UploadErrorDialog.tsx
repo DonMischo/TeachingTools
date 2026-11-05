@@ -7,7 +7,7 @@
 // wrote the file and gets a corrected version.
 
 import { useEffect, useState } from "react";
-import { UploadError } from "@/lib/uploadError";
+import { UploadError, reparaturPrompt } from "@/lib/uploadError";
 
 export function UploadErrorDialog({
   error, onClose, title = "Upload fehlgeschlagen",
@@ -27,12 +27,11 @@ export function UploadErrorDialog({
   }, [error, onClose]);
 
   if (!error) return null;
-
-  const asText = [error.message, ...error.errors].join("\n");
+  const prompt = reparaturPrompt(error);
 
   async function copy() {
     try {
-      await navigator.clipboard.writeText(asText);
+      await navigator.clipboard.writeText(prompt);
       setCopied(true);
     } catch {
       setCopied(false);
@@ -60,9 +59,14 @@ export function UploadErrorDialog({
           </>
         )}
 
+        <p className="text-xs text-muted">
+          »Für die KI kopieren« kopiert die Fehler mit dem Auftrag, genau diese Stellen zu reparieren. Füg das im
+          selben Chat ein, der die Datei geschrieben hat.
+        </p>
+
         <div className="flex items-center justify-end gap-2 pt-1">
           <button onClick={copy} className="text-sm px-3 py-1.5 rounded-lg border border-line hover:border-accent">
-            {copied ? "✓ Kopiert" : "Fehler kopieren"}
+            {copied ? "✓ Kopiert" : "📋 Für die KI kopieren"}
           </button>
           <button onClick={onClose} className="btn-primary text-sm py-1.5 px-4">Schließen</button>
         </div>

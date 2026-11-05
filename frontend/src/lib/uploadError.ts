@@ -20,6 +20,20 @@ function pydanticLine(entry: unknown): string {
   return where ? `${where}: ${msg}` : msg;
 }
 
+/** Was »Für die KI kopieren« liefert: die Fehler samt Auftrag, nur diese
+ *  Stellen zu reparieren — fürs Einfügen in den Chat, der die Datei schrieb. */
+export function reparaturPrompt(error: UploadError): string {
+  const kaputt = /json/i.test(error.message) && error.errors.length === 0;
+  return [
+    "Meine Datei wurde beim Hochladen abgelehnt. Korrigiere genau diese Stellen, ändere sonst nichts, "
+      + "und gib das vollständige JSON zurück (ohne die Felder, die mit _ beginnen):",
+    "",
+    error.message,
+    ...error.errors.map(e => `- ${e}`),
+    ...(kaputt ? ["", "Endet die Datei mitten drin, war deine Antwort zu lang: schreib sie Abschnitt für Abschnitt neu."] : []),
+  ].join("\n");
+}
+
 export function parseUploadError(err: unknown, fallback = "Upload fehlgeschlagen"): UploadError {
   const raw = err instanceof Error ? err.message : typeof err === "string" ? err : "";
   if (!raw.trim()) return { message: fallback, errors: [] };

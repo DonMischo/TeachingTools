@@ -7,6 +7,7 @@ import { api, ExitGameOut, GeneratorInfo } from "@/lib/api";
 import { useToast } from "@/contexts/ToastContext";
 import { useAvailability } from "@/hooks/useAvailability";
 import { UploadErrorDialog } from "@/components/UploadErrorDialog";
+import { VorlageInteraktivDialog } from "@/components/exitgame/VorlageInteraktivDialog";
 import { parseUploadError, UploadError } from "@/lib/uploadError";
 
 function GeneratorsHintPanel({ onClose }: { onClose: () => void }) {
@@ -79,6 +80,7 @@ export default function ExitgamePage() {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<UploadError | null>(null);
   const [showGenerators, setShowGenerators] = useState(false);
+  const [showVorlage, setShowVorlage] = useState(false);
 
   const { data: games = [], isLoading } = useQuery<ExitGameOut[]>({
     queryKey: ["exitgames"], queryFn: api.exitgame.list,
@@ -106,8 +108,8 @@ export default function ExitgamePage() {
   }
 
   /** Schlanke Vorlage (Folien) oder interaktive Vorlage (2.5D: Gebäude, Verlies, Stationen, Werkzeuge) */
-  async function handleTemplate(interaktiv = false) {
-    const tpl = interaktiv ? await api.exitgame.templateInteraktiv() : await api.exitgame.template();
+  async function handleTemplate(interaktiv = false, werkzeuge?: string[]) {
+    const tpl = interaktiv ? await api.exitgame.templateInteraktiv(werkzeuge) : await api.exitgame.template();
     const blob = new Blob([JSON.stringify(tpl, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -136,7 +138,7 @@ export default function ExitgamePage() {
               className="text-sm border border-line rounded-lg px-3 py-1.5 hover:border-accent">
               📄 Vorlage
             </button>
-            <button onClick={() => handleTemplate(true)} title="Vorlage für die 2.5D-Ansicht: Gebäude, Verlies, Ebene, Stationen, Monster, Werkzeuge"
+            <button onClick={() => setShowVorlage(true)} title="Vorlage für die 2.5D-Ansicht: Gebäude, Verlies, Ebene, Stationen, Monster, Werkzeuge"
               className="text-sm border border-line rounded-lg px-3 py-1.5 hover:border-accent">
               🏰 Vorlage interaktiv
             </button>
@@ -182,6 +184,10 @@ export default function ExitgamePage() {
 
       <UploadErrorDialog error={uploadError} onClose={() => setUploadError(null)} />
       {showGenerators && <GeneratorsHintPanel onClose={() => setShowGenerators(false)} />}
+      {showVorlage && (
+        <VorlageInteraktivDialog onClose={() => setShowVorlage(false)}
+          onDownload={w => { setShowVorlage(false); handleTemplate(true, w); }} />
+      )}
     </div>
   );
 }

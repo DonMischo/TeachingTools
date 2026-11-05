@@ -2747,7 +2747,9 @@ export const api = {
       ansichten: Record<string, string>; stile: Record<string, string>; objekte: Record<string, string>;
       werkzeuge: Record<string, { name: string; config?: Record<string, string>; hinweis?: string }>;
     }>("exitgames/katalog"),
-    templateInteraktiv: () => apiFetch<Record<string, unknown>>("exitgames/template-interaktiv"),
+    /** `werkzeuge` kürzt den Katalog auf diese Simulationen (z. B. die eines Fachs); ohne = alle. */
+    templateInteraktiv: (werkzeuge?: string[]) => apiFetch<Record<string, unknown>>(
+      "exitgames/template-interaktiv" + (werkzeuge ? `?werkzeuge=${encodeURIComponent(werkzeuge.join(","))}` : "")),
     delete: (id: number) => apiFetch<void>(`exitgames/${id}`, { method: "DELETE" }),
     update: (id: number, data: unknown) =>
       apiFetch<ExitGameOut>(`exitgames/${id}`, { method: "PUT", body: JSON.stringify(data) }),

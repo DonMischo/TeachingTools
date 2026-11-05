@@ -467,13 +467,23 @@ def list_exitgames(db: Session = Depends(get_db), current=Depends(get_current_us
     return [_to_out(g) for g in games]
 
 
+# Steht vorn in jeder Vorlage: Die KI soll Anleitung und Katalog nicht
+# zurückschicken. Das ist ein Drittel der Datei, und kostenlose Modelle brechen
+# lange Antworten ab — dann ist das JSON kaputt.
+AUSGABE = (
+    "Antworte nur mit dem fertigen JSON, ohne '_ai_instructions' und '_katalog': beide sind nur für dich "
+    "und werden beim Hochladen ignoriert, sie machen die Antwort bloß lang. Bricht deine Antwort trotzdem ab, "
+    "schreib erst einen kurzen Plan (Abschnitte, Aufgaben, Werkzeuge) und dann die slides Abschnitt für Abschnitt. "
+)
+
+
 @router.get("/api/exitgames/template")
 def download_template(_: Teacher = Depends(get_current_teacher)):
     """The Vorlage a teacher downloads and hands to an AI. It is a feature
     showcase: every element the format supports appears exactly once, so the
     instructions can stay short and the example carries the detail."""
     return {
-        "_ai_instructions": (
+        "_ai_instructions": AUSGABE + (
             "Fülle dieses JSON mit deinem eigenen Thema. Die Vorlage zeigt jeden Baustein des Formats genau "
             "einmal — kopiere, was du brauchst, und lösche den Rest. Pflicht sind nur title, subject, slides; "
             "subject/grade/tags sind Freitext (grade z.B. '7', '5,6,7' oder '5-10'), completion.code ist der "
@@ -824,14 +834,27 @@ def get_katalog(_=Depends(get_current_user)):
 
 
 @router.get("/api/exitgames/template-interaktiv")
-def download_template_interaktiv(teacher: Teacher = Depends(get_current_teacher)):
+def download_template_interaktiv(werkzeuge: str | None = None, teacher: Teacher = Depends(get_current_teacher)):
     """Die Vorlage für die 2.5D-Ansicht: ein spielbares Verlies mit Stationen,
     Monstern, Bossen und Werkzeugen. Die Anleitung besteht aus dem 2.5D-Teil
-    und den Grundlagen der schlanken Vorlage."""
-    grundlagen = download_template(teacher)["_ai_instructions"]
+    und den Grundlagen der schlanken Vorlage.
+
+    `werkzeuge` (kommagetrennt) kürzt den Katalog auf diese Werkzeuge, etwa die
+    eines Fachs: Mit jeder Simulation wächst er sonst weiter."""
+    grundlagen = download_template(teacher)["_ai_instructions"].removeprefix(AUSGABE)
+    kat, gekuerzt = katalog.KATALOG, ""
+    if werkzeuge is not None:
+        namen = [w for w in dict.fromkeys(x.strip() for x in werkzeuge.split(",")) if w in katalog.WERKZEUGE]
+        kat = {**kat, "task.sim": {w: katalog.WERKZEUGE[w] for w in namen}}
+        gekuerzt = (
+            f"--- NUR DIESE WERKZEUGE --- _katalog['task.sim'] ist auf {', '.join(namen)} gekürzt. Nimm nur diese; "
+            "die Werkzeuge im Beispiel zeigen bloß das Format. "
+            if namen else
+            "--- KEINE WERKZEUGE --- Für dieses Spiel gibt es keine Werkzeuge: lass 'sim' weg. "
+        )
     return {
-        "_ai_instructions": ANLEITUNG_25D + "--- GRUNDLAGEN --- " + grundlagen,
-        "_katalog": katalog.KATALOG,
+        "_ai_instructions": AUSGABE + gekuerzt + ANLEITUNG_25D + "--- GRUNDLAGEN --- " + grundlagen,
+        "_katalog": kat,
         "id": "vorlage-interaktiv",
         "title": "Vorlage interaktiv: Das Verlies der Rechenkünste",
         "description": "Ein Verlies mit zwei Ebenen: Monster, Bosse, Stationen und Werkzeuge.",

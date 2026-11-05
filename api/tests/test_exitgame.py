@@ -865,6 +865,27 @@ def test_interactive_template_is_a_valid_2_5d_game(client, teacher_token):
     assert r.status_code == 201, r.json()
 
 
+def test_templates_ask_the_ai_not_to_echo_instructions_and_catalog(client, teacher_token):
+    for pfad in ("template", "template-interaktiv"):
+        anleitung = client.get(f"/api/exitgames/{pfad}", headers=_auth(teacher_token)).json()["_ai_instructions"]
+        assert anleitung.startswith("Antworte nur mit dem fertigen JSON, ohne '_ai_instructions' und '_katalog'")
+        assert anleitung.count("Antworte nur mit dem fertigen JSON") == 1, pfad
+
+
+def test_interactive_template_catalog_can_be_cut_to_some_tools(client, teacher_token):
+    voll = client.get("/api/exitgames/template-interaktiv", headers=_auth(teacher_token)).json()
+    tpl = client.get("/api/exitgames/template-interaktiv?werkzeuge=stromkreis,pse,gibtsnicht,pse",
+                     headers=_auth(teacher_token)).json()
+    assert list(tpl["_katalog"]["task.sim"]) == ["stromkreis", "pse"]
+    assert tpl["_katalog"]["slide.station"] == voll["_katalog"]["slide.station"]
+    assert "auf stromkreis, pse gekürzt" in tpl["_ai_instructions"]
+    assert len(json.dumps(tpl)) < len(json.dumps(voll)) - 5000
+    leer = client.get("/api/exitgames/template-interaktiv?werkzeuge=", headers=_auth(teacher_token)).json()
+    assert leer["_katalog"]["task.sim"] == {} and "lass 'sim' weg" in leer["_ai_instructions"]
+    # Gekürzt lässt sich die Vorlage weiter so hochladen, wie sie ist.
+    assert _upload(client, teacher_token, tpl).status_code == 201
+
+
 def test_upload_validates_gebaeude(client, teacher_token):
     ok = {**SIMPLE_GAME, "gebaeude": {"ansicht": "ebene", "stil": "garten"}}
     assert _upload(client, teacher_token, ok).status_code == 201
