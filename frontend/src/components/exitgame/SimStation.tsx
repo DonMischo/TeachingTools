@@ -50,6 +50,23 @@ export const SIM_STATIONEN: Record<string, { name: string; icon: string; Kompone
   pse: { name: "Periodensystem", icon: "🧪", Komponente: laden(() => import("@/components/pse/Periodensystem")) },
   strukturformeln: { name: "Strukturformeln", icon: "⬡", Komponente: laden(() => import("@/components/struktur/Strukturformeln")) },
   schichten: { name: "Schichtenmodell", icon: "📶", Komponente: laden(() => import("@/components/schichten/Schichtenmodell")) },
+  atommodelle: { name: "Atommodelle", icon: "⚛️", Komponente: laden(() => import("@/components/pse/Periodensystem").then(m => ({ default: (p: { vorgabe?: Vorgabe }) => <m.default nur="modelle" {...p} /> }))) },
+  groessen: { name: "Größen & Einheiten", icon: "🪜", Komponente: laden(() => import("@/components/groessen/Groessen")) },
+  rechenzeichen: { name: "Rechenzeichen", icon: "➗", Komponente: laden(() => import("@/components/rechenzeichen/Rechenzeichen")) },
+  prozent: { name: "Prozent- und Zinsrechnung", icon: "💯", Komponente: laden(() => import("@/components/prozent/Prozent")) },
+  trigonometrie: { name: "Trigonometrie", icon: "🔺", Komponente: laden(() => import("@/components/trigonometrie/Trigonometrie")) },
+  stellenwert: { name: "Stellenwerttafeln", icon: "🔢", Komponente: laden(() => import("@/components/stellenwert/Stellenwert")) },
+  farbmodelle: { name: "Farbmodelle", icon: "🎨", Komponente: laden(() => import("@/components/farbmodelle/Farbmodelle")) },
+  markieren: { name: "Markieren & Bearbeiten", icon: "🖍️", Komponente: laden(() => import("@/components/markieren/Markieren")) },
+  pcbau: { name: "PC-Werkstatt", icon: "🪛", Komponente: laden(() => import("@/components/pcbau/PcWerkstatt")) },
+  algo: { name: "Algorithmen-Werkstatt", icon: "🔀", Komponente: laden(() => import("@/components/algo/Algorithmen")) },
+  stromkreis: { name: "Stromkreise", icon: "💡", Komponente: laden(() => import("@/components/stromkreis/Stromkreis")) },
+  diagramme: { name: "Diagramm-Werkstatt", icon: "🔀", Komponente: laden(() => import("@/components/diagramme/DiagrammWerkstatt")) },
+  baum: { name: "Baumleben", icon: "🌳", Komponente: laden(() => import("@/components/baum/Baumleben")) },
+  klikk: { name: "Klikk", icon: "📱", Komponente: laden(() => import("@/components/klikk/Klikk")) },
+  leviathan: { name: "Leviathan", icon: "🐋", Komponente: laden(() => import("@/components/leviathan/Leviathan")) },
+  // Stand nur im Browser, unter eigenem Schlüssel — die Station hängt an keiner Sitzung.
+  kikompass: { name: "KI-Kompass", icon: "🧭", Komponente: laden(() => import("@/components/kikompass/KiKompass").then(m => ({ default: (p: { vorgabe?: Vorgabe }) => <m.default konto={false} speicherSchluessel="taskcrawler" {...p} /> }))) },
 };
 
 export function SimKnopf({ sim, frage }: { sim: ExitGameSim; frage?: string }) {

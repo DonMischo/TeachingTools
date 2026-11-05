@@ -46,6 +46,9 @@ const OBJEKT_FUER_SIM: Record<string, Objekt> = {
   sonnensystem: "teleskop", erdaufbau: "globus", wilson: "globus", kueste: "globus", wfc: "computer",
   dla: "mikroskop", schichten: "computer", pse: "mikroskop", atommodelle: "mikroskop", strukturformeln: "tafel",
   stadt: "globus", erosion: "globus", vulkan: "globus",
+  groessen: "waage", rechenzeichen: "tafel", prozent: "tresor", trigonometrie: "teleskop", stellenwert: "abakus",
+  farbmodelle: "grafiktablett", markieren: "computer", pcbau: "computer", algo: "computer", stromkreis: "laborbank",
+  diagramme: "tafel", baum: "mikroskop", klikk: "smartphone", leviathan: "zeitung", kikompass: "laptop",
 };
 
 /** Reihum je Folienart — damit nicht jedes Zimmer Tafel oder Schreibtisch ist */

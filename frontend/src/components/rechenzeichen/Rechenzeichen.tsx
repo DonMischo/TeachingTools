@@ -9,6 +9,7 @@
  * Für die Oberstufe: ∫ als Summe dünner Streifen, f′ als Steigung der Tangente.
  */
 import { useState, type ReactNode } from "react";
+import { wahl, type Vorgabe } from "@/lib/vorgabe";
 import { AbspielKnopf, Dinge, Regler, Wuerfel, feld, useZaehler, wuerfelMass } from "@/components/groessen/bausteine";
 import { Ableitung, Integral } from "./Analysis";
 
@@ -353,8 +354,10 @@ function Zahlenstrahl({ anfang }: { anfang: "≤" | "≥" }) {
 
 /* ───────────────────────────────────────────── Werkzeug ── */
 
-export default function Rechenzeichen({ action }: { action?: ReactNode }) {
-  const [id, setId] = useState<Id>("plus");
+export default function Rechenzeichen({ action, vorgabe }: { action?: ReactNode; vorgabe?: Vorgabe }) {
+  // Station mit festem Reiter: ohne Reiterleiste, wie es der TaskCrawler verspricht.
+  const festerReiter = wahl(vorgabe, "reiter", ZEICHEN.map(x => x.id));
+  const [id, setId] = useState<Id>(festerReiter ?? "plus");
   const z = ZEICHEN.find(x => x.id === id)!;
   return (
     <div className="page">
@@ -368,7 +371,7 @@ export default function Rechenzeichen({ action }: { action?: ReactNode }) {
         <div className="flex items-center gap-2">{action}</div>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      {!festerReiter && <div className="flex flex-wrap gap-2">
         {ZEICHEN.map(x => (
           <button key={x.id} onClick={() => setId(x.id)} title={x.name}
             className={`min-w-14 px-3 py-1.5 rounded-xl border text-2xl font-black transition-colors ${
@@ -377,7 +380,7 @@ export default function Rechenzeichen({ action }: { action?: ReactNode }) {
             {x.zeichen}
           </button>
         ))}
-      </div>
+      </div>}
 
       <div className="card p-4 sm:p-6 flex flex-col gap-4" key={id}>
         <div className="text-xs font-bold uppercase tracking-wide text-muted">{z.zeichen} — {z.name}</div>

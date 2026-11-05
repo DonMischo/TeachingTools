@@ -38,7 +38,9 @@ const INHALT: Record<Blatt, (v?: Vorgabe) => ReactNode> = {
 };
 
 export default function Kreis({ action, vorgabe }: { action?: ReactNode; vorgabe?: Vorgabe }) {
-  const [blatt, setBlatt] = useState<Blatt>(wahl(vorgabe, "reiter", BLAETTER.map(b => b.id)) ?? "labor");
+  // Station mit festem Reiter: ohne Reiterleiste, wie es der TaskCrawler verspricht.
+  const festerReiter = wahl(vorgabe, "reiter", BLAETTER.map(b => b.id));
+  const [blatt, setBlatt] = useState<Blatt>(festerReiter ?? "labor");
   return (
     <div className="page">
       <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -52,7 +54,7 @@ export default function Kreis({ action, vorgabe }: { action?: ReactNode; vorgabe
         <div className="flex items-center gap-2">{action}</div>
       </div>
 
-      <div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface">
+      {!festerReiter && <div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface">
         {BLAETTER.map(b => (
           <button key={b.id} onClick={() => setBlatt(b.id)}
             className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${
@@ -61,7 +63,7 @@ export default function Kreis({ action, vorgabe }: { action?: ReactNode; vorgabe
             {b.icon} {b.label}
           </button>
         ))}
-      </div>
+      </div>}
 
       {INHALT[blatt](vorgabe)}
     </div>

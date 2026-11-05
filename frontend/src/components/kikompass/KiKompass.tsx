@@ -8,6 +8,7 @@
  * in die Sitzung, damit die Lehrkraft ihn sieht.
  */
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { wahl, type Vorgabe } from "@/lib/vorgabe";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, type KiKompassStand, type MausZugang } from "@/lib/api";
 import { BEREICHE, NAMENSNENNUNG } from "@/lib/kikompass/raster";
@@ -32,7 +33,7 @@ function lokalLaden(schluessel: string): KiKompassStand {
   return LEER;
 }
 
-export default function KiKompass({ action, name = "", konto, verwaltung = false, zugang, speicherSchluessel }: {
+export default function KiKompass({ action, name = "", konto, verwaltung = false, zugang, speicherSchluessel, vorgabe }: {
   action?: ReactNode;
   name?: string;
   /** Angemeldet: Stand liegt am Konto. */
@@ -43,8 +44,12 @@ export default function KiKompass({ action, name = "", konto, verwaltung = false
   zugang?: MausZugang;
   /** Schlüssel im Browser, für Gäste (und als Rückfall). */
   speicherSchluessel: string;
+  /** TaskCrawler-Station: { reiter } öffnet diesen Reiter. */
+  vorgabe?: Vorgabe;
 }) {
-  const [reiter, setReiter] = useState<Reiter>("start");
+  // Station mit festem Reiter: ohne Reiterleiste, wie es der TaskCrawler verspricht.
+  const festerReiter = wahl(vorgabe, "reiter", ["start", "raster", "fuehrerschein", "portfolio", "projekte"] as const);
+  const [reiter, setReiter] = useState<Reiter>(festerReiter ?? "start");
   const [lehrUnter, setLehrUnter] = useState<LehrUnter>("uebersicht");
   const [werkstattTeil, setWerkstattTeil] = useState<WerkstattTeil>("material");
   const [stand, setStand] = useState<KiKompassStand>(LEER);
@@ -120,12 +125,12 @@ export default function KiKompass({ action, name = "", konto, verwaltung = false
         <h1 className="text-2xl font-bold flex-1">🧭 KI-Kompass</h1>
         {action}
       </header>
-      <nav className="flex flex-wrap gap-2" role="tablist">
+      {!festerReiter && <nav className="flex flex-wrap gap-2" role="tablist">
         {REITER.map(([id, label]) => (
           <button key={id} role="tab" aria-selected={reiter === id}
             className={reiter === id ? "chip chip-on" : "chip"} onClick={() => setReiter(id)}>{label}</button>
         ))}
-      </nav>
+      </nav>}
       {fehler && <p className="text-sm text-bad">Der Server ist gerade nicht erreichbar. Dein Stand liegt vorerst nur in diesem Browser.</p>}
       {geladenFuer !== lokal ? <p className="text-sm text-muted">Lade deinen Stand …</p> : (
         <>

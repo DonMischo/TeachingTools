@@ -5,6 +5,10 @@ import Vierecke from "@/components/simulationen/Vierecke";
 import Rechenregeln from "@/components/simulationen/Rechenregeln";
 import Kreis from "@/components/kreis/Kreis";
 import Koerper from "@/components/koerper/Koerper";
+import Trigonometrie from "@/components/trigonometrie/Trigonometrie";
+import Prozent from "@/components/prozent/Prozent";
+import Stellenwert from "@/components/stellenwert/Stellenwert";
+import Groessen from "@/components/groessen/Groessen";
 import { SIM_STATIONEN } from "@/components/exitgame/SimStation";
 
 describe("Simulationen mit fester Vorgabe (TaskCrawler-Stationen)", () => {
@@ -55,19 +59,42 @@ describe("Simulationen mit fester Vorgabe (TaskCrawler-Stationen)", () => {
     expect(container.textContent).toMatch(/r = 7 cm/);
     unmount();
     render(<Kreis vorgabe={{ reiter: "teile" }} />);
-    expect(screen.getByRole("button", { name: /Kreisteile/ }).className).toMatch(/bg-accent/);
+    // fester Reiter: keine Reiterleiste
+    expect(screen.queryByRole("button", { name: /Kreis-Labor/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Rad-Rollen/ })).not.toBeInTheDocument();
   });
 
   it("Körper: Blatt, Körper und Maße aus der Vorgabe", () => {
     const { container } = render(<Koerper vorgabe={{ reiter: "netz", koerper: "zylinder", masse: { r: 3, h: 99 } }} />);
-    expect(screen.getByRole("button", { name: /Netz/ }).className).toMatch(/bg-accent/);
+    expect(screen.queryByRole("button", { name: /Körper-Labor/ })).not.toBeInTheDocument();
     expect(container.textContent).toMatch(/Zylinder/);
     // h = 99 liegt über der Reglergrenze und wird geklemmt
     expect(container.textContent).not.toMatch(/99 cm/);
   });
 
-  it("Kreis und Körper sind als Station anwählbar", () => {
-    expect(SIM_STATIONEN.kreis.name).toBe("Kreis");
-    expect(SIM_STATIONEN.koerper.name).toBe("Körper");
+  it("Kreis, Körper und die übrigen Sims sind als Station anwählbar", () => {
+    for (const s of ["kreis", "koerper", "groessen", "rechenzeichen", "prozent", "trigonometrie", "stellenwert", "farbmodelle",
+      "markieren", "pcbau", "algo", "stromkreis", "diagramme", "baum", "klikk", "leviathan", "kikompass", "atommodelle"]) {
+      expect(SIM_STATIONEN[s], s).toBeTruthy();
+    }
+  });
+
+  it("fester Reiter blendet die Reiterleiste aus, ohne Vorgabe bleibt sie", () => {
+    const { unmount } = render(<Trigonometrie vorgabe={{ reiter: "spiel" }} />);
+    expect(screen.queryByRole("button", { name: /Einheitskreis/ })).not.toBeInTheDocument();
+    unmount();
+    render(<Trigonometrie />);
+    expect(screen.getByRole("button", { name: /Einheitskreis/ })).toBeInTheDocument();
+  });
+
+  it("Prozent, Stellenwert und Größen öffnen den vorgegebenen Reiter", () => {
+    const a = render(<Prozent vorgabe={{ reiter: "zinsen" }} />);
+    expect(screen.queryByRole("button", { name: /Dreisatz/ })).not.toBeInTheDocument();
+    a.unmount();
+    const b = render(<Stellenwert vorgabe={{ reiter: "ueben" }} />);
+    expect(screen.queryByRole("button", { name: /Verstehen/ })).not.toBeInTheDocument();
+    b.unmount();
+    render(<Groessen vorgabe={{ reiter: "dimensionen" }} />);
+    expect(screen.queryByRole("button", { name: /Umrechnen/ })).not.toBeInTheDocument();
   });
 });

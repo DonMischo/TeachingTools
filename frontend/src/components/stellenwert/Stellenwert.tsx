@@ -7,6 +7,7 @@
  *   🎮 Spiele     Bit-Fall, Zählwerk-Rennen, Geheimbotschaft
  */
 import { useState, type ReactNode } from "react";
+import { wahl, type Vorgabe } from "@/lib/vorgabe";
 import Tafel from "./Tafel";
 import Verstehen from "./Verstehen";
 import Ueben from "./Ueben";
@@ -32,8 +33,10 @@ const INHALT: Record<Blatt, (p: Post) => ReactNode> = {
   spiele: p => <Spiele post={p.post} empfangen={p.empfangen} />,
 };
 
-export default function Stellenwert({ action, zugang }: { action?: ReactNode; zugang?: StellenwertZugang }) {
-  const [blatt, setBlatt] = useState<Blatt>("tafel");
+export default function Stellenwert({ action, zugang, vorgabe }: { action?: ReactNode; zugang?: StellenwertZugang; vorgabe?: Vorgabe }) {
+  // Station mit festem Reiter: ohne Reiterleiste, wie es der TaskCrawler verspricht.
+  const festerReiter = wahl(vorgabe, "reiter", BLAETTER.map(b => b.id));
+  const [blatt, setBlatt] = useState<Blatt>(festerReiter ?? "tafel");
   // Geheimpost: anwesend ist, wer die Simulation offen hat — egal welches Blatt
   const geheimpost = useGeheimpost(zugang);
   const post = geheimpost.code ? geheimpost : undefined;
@@ -51,7 +54,7 @@ export default function Stellenwert({ action, zugang }: { action?: ReactNode; zu
         <div className="flex items-center gap-2">{action}</div>
       </div>
 
-      <div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface">
+      {!festerReiter && <div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface">
         {BLAETTER.map(b => (
           <button key={b.id} onClick={() => setBlatt(b.id)}
             className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${
@@ -60,7 +63,7 @@ export default function Stellenwert({ action, zugang }: { action?: ReactNode; zu
             {b.icon} {b.label}
           </button>
         ))}
-      </div>
+      </div>}
 
       {post && <Eingang post={post} angenommen={e => { setEmpfangen(e); setBlatt("spiele"); }} />}
 

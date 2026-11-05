@@ -7,6 +7,7 @@
  * Jede Ansicht gibt es realistisch und als Schaltplan.
  */
 import { useState, type ReactNode } from "react";
+import { wahl, type Vorgabe } from "@/lib/vorgabe";
 import { GERAETE } from "@/lib/pcbau/geraete";
 import { BlickWahl, type Blick } from "./Ansichten";
 import Bauen from "./Bauen";
@@ -21,8 +22,10 @@ const BLAETTER = [
 ] as const;
 type Blatt = (typeof BLAETTER)[number]["id"];
 
-export default function PcWerkstatt({ action }: { action?: ReactNode }) {
-  const [blatt, setBlatt] = useState<Blatt>("bauen");
+export default function PcWerkstatt({ action, vorgabe }: { action?: ReactNode; vorgabe?: Vorgabe }) {
+  // Station mit festem Reiter: ohne Reiterleiste, wie es der TaskCrawler verspricht.
+  const festerReiter = wahl(vorgabe, "reiter", BLAETTER.map(b => b.id));
+  const [blatt, setBlatt] = useState<Blatt>(festerReiter ?? "bauen");
   const [geraetId, setGeraetId] = useState("pc");
   const [blick, setBlick] = useState<Blick>("real");
   const g = GERAETE.find(x => x.id === geraetId)!;
@@ -43,14 +46,14 @@ export default function PcWerkstatt({ action }: { action?: ReactNode }) {
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <div className="inline-flex flex-wrap rounded-xl border border-line p-1 bg-surface">
+        {!festerReiter && <div className="inline-flex flex-wrap rounded-xl border border-line p-1 bg-surface">
           {BLAETTER.map(b => (
             <button key={b.id} onClick={() => setBlatt(b.id)}
               className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${blatt === b.id ? "bg-accent text-accent-fg" : "text-muted hover:text-fg"}`}>
               {b.icon} {b.label}
             </button>
           ))}
-        </div>
+        </div>}
         {blatt !== "vergleich" && <BlickWahl blick={blick} setBlick={setBlick} />}
       </div>
 

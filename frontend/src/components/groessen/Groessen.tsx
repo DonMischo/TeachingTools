@@ -5,6 +5,7 @@
  *   📐 Länge · Fläche · Volumen  warum aus · 10 erst · 100 und dann · 1 000 wird
  */
 import { useState, type ReactNode } from "react";
+import { wahl, type Vorgabe } from "@/lib/vorgabe";
 import Umrechnen from "./Umrechnen";
 import Dimensionen from "./Dimensionen";
 
@@ -13,8 +14,10 @@ const BLAETTER = [
   { id: "dimensionen", icon: "📐", label: "Länge · Fläche · Volumen" },
 ] as const;
 
-export default function Groessen({ action }: { action?: ReactNode }) {
-  const [blatt, setBlatt] = useState<(typeof BLAETTER)[number]["id"]>("umrechnen");
+export default function Groessen({ action, vorgabe }: { action?: ReactNode; vorgabe?: Vorgabe }) {
+  // Station mit festem Reiter: ohne Reiterleiste, wie es der TaskCrawler verspricht.
+  const festerReiter = wahl(vorgabe, "reiter", BLAETTER.map(b => b.id));
+  const [blatt, setBlatt] = useState<(typeof BLAETTER)[number]["id"]>(festerReiter ?? "umrechnen");
   return (
     <div className="page">
       <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -28,7 +31,7 @@ export default function Groessen({ action }: { action?: ReactNode }) {
         <div className="flex items-center gap-2">{action}</div>
       </div>
 
-      <div className="inline-flex self-start rounded-xl border border-line p-1 bg-surface">
+      {!festerReiter && <div className="inline-flex self-start rounded-xl border border-line p-1 bg-surface">
         {BLAETTER.map(b => (
           <button key={b.id} onClick={() => setBlatt(b.id)}
             className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${
@@ -37,7 +40,7 @@ export default function Groessen({ action }: { action?: ReactNode }) {
             {b.icon} {b.label}
           </button>
         ))}
-      </div>
+      </div>}
 
       {blatt === "umrechnen" ? <Umrechnen /> : <Dimensionen />}
     </div>

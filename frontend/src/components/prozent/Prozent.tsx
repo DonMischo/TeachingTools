@@ -9,6 +9,7 @@
  *   🎮 Spiele      Prozent-Blitz, Saftbar, Handy-Check, Mein Kiosk
  */
 import { useState, type ReactNode } from "react";
+import { wahl, type Vorgabe } from "@/lib/vorgabe";
 import Anschauen from "./Anschauen";
 import Dreisatz from "./Dreisatz";
 import Denkwege from "./Denkwege";
@@ -35,8 +36,10 @@ const INHALT: Record<Blatt, () => ReactNode> = {
   spiel: () => <Spiele />,
 };
 
-export default function Prozent({ action }: { action?: ReactNode }) {
-  const [blatt, setBlatt] = useState<Blatt>("anschauen");
+export default function Prozent({ action, vorgabe }: { action?: ReactNode; vorgabe?: Vorgabe }) {
+  // Station mit festem Reiter: ohne Reiterleiste, wie es der TaskCrawler verspricht.
+  const festerReiter = wahl(vorgabe, "reiter", BLAETTER.map(b => b.id));
+  const [blatt, setBlatt] = useState<Blatt>(festerReiter ?? "anschauen");
   return (
     <div className="page">
       <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -50,7 +53,7 @@ export default function Prozent({ action }: { action?: ReactNode }) {
         <div className="flex items-center gap-2">{action}</div>
       </div>
 
-      <div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface">
+      {!festerReiter && <div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface">
         {BLAETTER.map(b => (
           <button key={b.id} onClick={() => setBlatt(b.id)}
             className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${
@@ -59,7 +62,7 @@ export default function Prozent({ action }: { action?: ReactNode }) {
             {b.icon} {b.label}
           </button>
         ))}
-      </div>
+      </div>}
 
       {INHALT[blatt]()}
     </div>

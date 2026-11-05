@@ -90,7 +90,9 @@ function Regler({ felder, m, setze }: { felder: { key: string; label: string; mi
 }
 
 export default function Koerper({ action, vorgabe }: { action?: ReactNode; vorgabe?: Vorgabe }) {
-  const [tab, setTab] = useState<Tab>(wahl(vorgabe, "reiter", TABS.map(t => t.id)) ?? "labor");
+  // Station mit festem Reiter: ohne Reiterleiste, wie es der TaskCrawler verspricht.
+  const festerReiter = wahl(vorgabe, "reiter", TABS.map(t => t.id));
+  const [tab, setTab] = useState<Tab>(festerReiter ?? "labor");
   const [key, setKey] = useState<KoerperKey>(wahl(vorgabe, "koerper", KOERPER_REIHE) ?? "quader");
   const [masseJe, setMasseJe] = useState<Partial<Record<KoerperKey, Masse>>>(() => {
     const k = wahl(vorgabe, "koerper", KOERPER_REIHE), m = zahlen(vorgabe, "masse");
@@ -173,14 +175,14 @@ export default function Koerper({ action, vorgabe }: { action?: ReactNode; vorga
         <div className="flex items-center gap-2">{action}</div>
       </div>
 
-      <div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface">
+      {!festerReiter && <div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface">
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
             className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${tab === t.id ? "bg-accent text-accent-fg" : "text-muted hover:text-fg"}`}>
             {t.icon} {t.label}
           </button>
         ))}
-      </div>
+      </div>}
 
       {tab === "uebungen" && <Aufgabenblatt arten={UEBUNG_ARTEN} erzeuge={a => erzeugeUebung(a)} titel="Körper – Übungen" datei="Koerper-Uebungen.docx" />}
       {tab === "anwendungen" && <Aufgabenblatt arten={ANWENDUNG_ARTEN} erzeuge={a => erzeugeAnwendung(a)} titel="Körper – Anwendungsaufgaben" datei="Koerper-Anwendungen.docx" />}

@@ -145,6 +145,14 @@ WERKZEUGE = {
         },
         "hinweis": "Das Labor zeigt V und O mit Rechenweg — für Rechenaufgaben netz oder linien wählen oder das Labor als Kontrolle nutzen.",
     },
+    "groessen": {"name": "Größen & Einheiten", "config": {"reiter?": "umrechnen|dimensionen"}},
+    "rechenzeichen": {
+        "name": "Rechenzeichen",
+        "config": {"reiter?": "plus|minus|mal|geteilt|quadrat|hoch3|wurzel|vergleich|zahlenstrahl|integral|ableitung"},
+    },
+    "prozent": {"name": "Prozent- und Zinsrechnung", "config": {"reiter?": "anschauen|dreisatz|denkwege|zinsen|ueben|spiel"}},
+    "trigonometrie": {"name": "Trigonometrie", "config": {"reiter?": "kreis|welle|recht|dreieck|aufgaben|anwendung|spiel"}},
+    "stellenwert": {"name": "Stellenwerttafeln", "config": {"reiter?": "tafel|verstehen|ueben|spiele"}},
     "rechenregeln": {
         "name": "Rechenregeln",
         "config": {
@@ -187,6 +195,16 @@ WERKZEUGE = {
             "raetsel?": "bei raetsel: alles|punkte|schach|labyrinth|rundwege",
         },
     },
+    "farbmodelle": {"name": "Farbmodelle", "config": {"reiter?": "modelle|hexdez|spiel"}},
+    "markieren": {"name": "Markieren & Bearbeiten", "config": {"reiter?": "techniken|challenge|quellen|beste|spick"}},
+    "pcbau": {"name": "PC-Werkstatt", "config": {"reiter?": "bauen|erkennen|vergleich"}},
+    "algo": {"name": "Algorithmen-Werkstatt", "config": {"reiter?": "automat|fluss|abenteuer"}},
+    "stromkreis": {"name": "Stromkreise", "config": {}, "hinweis": "Öffnet frei mit Batterie, Schalter und Lämpchen."},
+    "diagramme": {"name": "Diagramm-Werkstatt (D2)", "config": {}},
+    "baum": {"name": "Baumleben", "config": {}},
+    "klikk": {"name": "Klikk (Social Media)", "config": {}, "hinweis": "Spielstand nur in diesem Browser."},
+    "leviathan": {"name": "Leviathan", "config": {}, "hinweis": "Spielstand nur in diesem Browser, Standard-Einstellungen."},
+    "kikompass": {"name": "KI-Kompass", "config": {"reiter?": "start|raster|fuehrerschein|portfolio|projekte"}},
     "schichten": {
         "name": "Schichtenmodell",
         "config": {"reiter": "reise|weg|pakete|wissen|mission|fehler", "modell?": "osi|tcpip"},
