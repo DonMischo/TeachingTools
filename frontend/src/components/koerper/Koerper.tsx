@@ -14,9 +14,13 @@
  *   »Wer fasst mehr?« das Spiel.
  *
  * Ohne WebGL steht statt der 3D-Ansicht das Schrägbild da.
+ *
+ * `vorgabe` (TaskCrawler-Station): { reiter?: Tab, koerper?: KoerperKey, masse?: { a: 4, h: 6 … },
+ * zusammen?: ZKey } — öffnet dieses Blatt mit diesem Körper; Maße werden auf die Reglergrenzen geklemmt.
  */
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { z } from "@/lib/prozent";
+import { wahl, zahlen, type Vorgabe } from "@/lib/vorgabe";
 import { KOERPER, KOERPER_REIHE, euler, gl, masseIn, startMasse, type KoerperKey, type Masse } from "@/lib/koerper";
 import { skizzeKoerper, skizzeNetz } from "@/lib/koerper-skizze";
 import { ZUSAMMEN, Z_REIHE, skizzeZusammen, zStart, type ZKey } from "@/lib/koerper-zusammen";
@@ -85,10 +89,13 @@ function Regler({ felder, m, setze }: { felder: { key: string; label: string; mi
   );
 }
 
-export default function Koerper({ action }: { action?: ReactNode }) {
-  const [tab, setTab] = useState<Tab>("labor");
-  const [key, setKey] = useState<KoerperKey>("quader");
-  const [masseJe, setMasseJe] = useState<Partial<Record<KoerperKey, Masse>>>({});
+export default function Koerper({ action, vorgabe }: { action?: ReactNode; vorgabe?: Vorgabe }) {
+  const [tab, setTab] = useState<Tab>(wahl(vorgabe, "reiter", TABS.map(t => t.id)) ?? "labor");
+  const [key, setKey] = useState<KoerperKey>(wahl(vorgabe, "koerper", KOERPER_REIHE) ?? "quader");
+  const [masseJe, setMasseJe] = useState<Partial<Record<KoerperKey, Masse>>>(() => {
+    const k = wahl(vorgabe, "koerper", KOERPER_REIHE), m = zahlen(vorgabe, "masse");
+    return k && m ? { [k]: m } : {};
+  });
   const [auswahl, setAuswahl] = useState<string | null>(null);
   const [linien, setLinien] = useState<string[]>(["h"]);
   const [ecken, setEcken] = useState(false);
@@ -96,7 +103,7 @@ export default function Koerper({ action }: { action?: ReactNode }) {
   const [flaechen, setFlaechen] = useState(false);
   const [netzT, setNetzT] = useState(0.35);
   const [ziel, setZiel] = useState<number | null>(null);
-  const [zkey, setZkey] = useState<ZKey>("haus");
+  const [zkey, setZkey] = useState<ZKey>(wahl(vorgabe, "zusammen", Z_REIHE) ?? "haus");
   const [zMasse, setZMasse] = useState<Partial<Record<ZKey, Masse>>>({});
   const [auseinander, setAuseinander] = useState(0);
 

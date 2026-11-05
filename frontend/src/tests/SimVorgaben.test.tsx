@@ -3,6 +3,9 @@ import { render, screen } from "@testing-library/react";
 import Funktionen from "@/components/simulationen/Funktionen";
 import Vierecke from "@/components/simulationen/Vierecke";
 import Rechenregeln from "@/components/simulationen/Rechenregeln";
+import Kreis from "@/components/kreis/Kreis";
+import Koerper from "@/components/koerper/Koerper";
+import { SIM_STATIONEN } from "@/components/exitgame/SimStation";
 
 describe("Simulationen mit fester Vorgabe (TaskCrawler-Stationen)", () => {
   it("Funktionen: Term fest, keine Vorlagen", () => {
@@ -45,5 +48,26 @@ describe("Simulationen mit fester Vorgabe (TaskCrawler-Stationen)", () => {
     expect((screen.getByLabelText("erste Zahl") as HTMLInputElement).readOnly).toBe(true);
     expect(screen.queryByText("Lösung zeigen")).not.toBeInTheDocument();
     expect(screen.queryByText(/geteilt/)).not.toBeInTheDocument();
+  });
+
+  it("Kreis: Labor mit vorgegebenem Radius, sonst frei wählbares Blatt", () => {
+    const { container, unmount } = render(<Kreis vorgabe={{ r: 7 }} />);
+    expect(container.textContent).toMatch(/r = 7 cm/);
+    unmount();
+    render(<Kreis vorgabe={{ reiter: "teile" }} />);
+    expect(screen.getByRole("button", { name: /Kreisteile/ }).className).toMatch(/bg-accent/);
+  });
+
+  it("Körper: Blatt, Körper und Maße aus der Vorgabe", () => {
+    const { container } = render(<Koerper vorgabe={{ reiter: "netz", koerper: "zylinder", masse: { r: 3, h: 99 } }} />);
+    expect(screen.getByRole("button", { name: /Netz/ }).className).toMatch(/bg-accent/);
+    expect(container.textContent).toMatch(/Zylinder/);
+    // h = 99 liegt über der Reglergrenze und wird geklemmt
+    expect(container.textContent).not.toMatch(/99 cm/);
+  });
+
+  it("Kreis und Körper sind als Station anwählbar", () => {
+    expect(SIM_STATIONEN.kreis.name).toBe("Kreis");
+    expect(SIM_STATIONEN.koerper.name).toBe("Körper");
   });
 });

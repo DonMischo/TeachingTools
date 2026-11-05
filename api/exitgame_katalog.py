@@ -127,6 +127,24 @@ WERKZEUGE = {
             "reiter?": "winkel|lage|saetze|symmetrie|koordinaten|uebungen|anwendungen|spiel",
         },
     },
+    "kreis": {
+        "name": "Kreis",
+        "config": {
+            "reiter?": "labor|geraden|teile|uebungen|anwendungen|spiel",
+            "r?": "Radius im Kreis-Labor, 0.5 bis 10",
+        },
+        "hinweis": "Das Kreis-Labor zeigt u und A mit Rechenweg — als Kontrolle nutzen oder einen anderen Reiter wählen.",
+    },
+    "koerper": {
+        "name": "Körper",
+        "config": {
+            "reiter?": "labor|netz|linien|zusammen|uebungen|anwendungen|spiel|renovieren|fuellen",
+            "koerper?": "wuerfel|quader|prisma3|prisma6|zylinder|pyramide4|pyramide_r|kegel|kugel|halbkugel|pstumpf|kstumpf",
+            "masse?": "Maße in cm, z.B. beim Quader {\"a\": 4, \"b\": 3, \"c\": 6} (nur mit koerper; werden auf die Reglergrenzen geklemmt)",
+            "zusammen?": "bei reiter zusammen: haus|silo|turm|werkstueck|eistuete",
+        },
+        "hinweis": "Das Labor zeigt V und O mit Rechenweg — für Rechenaufgaben netz oder linien wählen oder das Labor als Kontrolle nutzen.",
+    },
     "rechenregeln": {
         "name": "Rechenregeln",
         "config": {

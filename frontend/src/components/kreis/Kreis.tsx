@@ -5,8 +5,12 @@
  * Kreisteile (Sektor, Bogen, Segment, Ring, Halb- und Viertelkreis),
  * gewürfelte Übungen und Sachaufgaben (beide mit Word-Export) und das Spiel
  * Rad-Rollen.
+ *
+ * `vorgabe` (TaskCrawler-Station): { reiter?: "labor" | "geraden" | "teile" | "uebungen" | "anwendungen" | "spiel",
+ * r?: Radius im Kreis-Labor } — öffnet dieses Blatt; die anderen bleiben erreichbar.
  */
 import { useState, type ReactNode } from "react";
+import { wahl, zahl, type Vorgabe } from "@/lib/vorgabe";
 import Aufgabenblatt from "@/components/geometrie/Aufgabenblatt";
 import { ANWENDUNG_ARTEN, UEBUNG_ARTEN, erzeugeAnwendung, erzeugeUebung } from "@/lib/kreis-aufgaben";
 import KreisLabor from "./KreisLabor";
@@ -24,8 +28,8 @@ const BLAETTER = [
 ] as const;
 type Blatt = (typeof BLAETTER)[number]["id"];
 
-const INHALT: Record<Blatt, () => ReactNode> = {
-  labor: () => <KreisLabor />,
+const INHALT: Record<Blatt, (v?: Vorgabe) => ReactNode> = {
+  labor: v => <KreisLabor startR={zahl(v, "r")} />,
   geraden: () => <Geraden />,
   teile: () => <Kreisteile />,
   uebungen: () => <Aufgabenblatt arten={UEBUNG_ARTEN} erzeuge={a => erzeugeUebung(a)} titel="Kreis – Übungen" datei="Kreis-Uebungen.docx" />,
@@ -33,8 +37,8 @@ const INHALT: Record<Blatt, () => ReactNode> = {
   spiel: () => <RadRollen />,
 };
 
-export default function Kreis({ action }: { action?: ReactNode }) {
-  const [blatt, setBlatt] = useState<Blatt>("labor");
+export default function Kreis({ action, vorgabe }: { action?: ReactNode; vorgabe?: Vorgabe }) {
+  const [blatt, setBlatt] = useState<Blatt>(wahl(vorgabe, "reiter", BLAETTER.map(b => b.id)) ?? "labor");
   return (
     <div className="page">
       <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -59,7 +63,7 @@ export default function Kreis({ action }: { action?: ReactNode }) {
         ))}
       </div>
 
-      {INHALT[blatt]()}
+      {INHALT[blatt](vorgabe)}
     </div>
   );
 }

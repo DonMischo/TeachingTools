@@ -23,8 +23,9 @@ function Zeile({ farbe, name, children }: { farbe: string; name: string; childre
   );
 }
 
-export default function KreisLabor() {
-  const [r, setR] = useState(4);
+/** `startR`: Radius beim Öffnen (TaskCrawler-Station), 0,5 bis 10. */
+export default function KreisLabor({ startR = 4 }: { startR?: number }) {
+  const [r, setR] = useState(() => Math.min(10, Math.max(0.5, startR)));
   const [w, setW] = useState(35);
   const zieht = useRef(false);
   const d = 2 * r, u = umfang(r), A = flaeche(r);
