@@ -2041,6 +2041,8 @@ export const api = {
         body: JSON.stringify(body),
         headers: zugang.token ? { Authorization: `Bearer ${zugang.token}` } : undefined,
       }),
+    /** Zuletzt genutzte offene Sitzung des Kontos (für Lernende ohne Code). */
+    meineSitzung: () => apiFetch<{ code: string; settings: Record<string, unknown> } | null>("kikompass/meine-sitzung"),
     uebersicht: (code: string) =>
       apiFetch<KiKompassZeile[]>(`kikompass/sitzung/${encodeURIComponent(code)}/uebersicht`),
     pruefung: (body: { modul: string; code?: string | null }) =>

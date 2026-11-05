@@ -194,3 +194,39 @@ def test_admin_darf_fremdes_material_loeschen(client, db, teacher_token, admin_t
     mid = client.post("/api/kikompass/material", json=_material(), headers=auth(teacher_token)).json()["id"]
     client.cookies.clear()
     assert client.delete(f"/api/kikompass/material/{mid}", headers=auth(admin_token)).status_code == 204
+
+
+# ── Eigene Sitzung (für Lernende, die den KI-Kompass direkt öffnen) ─────────
+
+def test_meine_sitzung_leer_ohne_beitritt(client, db):
+    ada = schueler(db)
+    r = client.get("/api/kikompass/meine-sitzung", headers=als(ada))
+    assert r.status_code == 200
+    assert r.json() is None
+
+
+def test_meine_sitzung_nach_beitritt_mit_ais_link(client, db, teacher_token):
+    code = _sitzung(client, teacher_token, slug="kikompass")
+    client.put(f"/api/tool-sessions/{code}/settings",
+               json={"ais": {"standard": "https://chat.example.org/x", "stationen": {}, "anzeige": "beides"}},
+               headers=auth(teacher_token))
+    client.cookies.clear()
+    ada = schueler(db)
+    client.put(f"/api/kikompass/sitzung/{code}/stand", json=_stand(), headers=als(ada))
+    r = client.get("/api/kikompass/meine-sitzung", headers=als(ada)).json()
+    assert r["code"] == code
+    assert r["settings"]["ais"]["standard"] == "https://chat.example.org/x"
+    # Andere Schüler·innen sehen fremde Sitzungen nicht.
+    bea = schueler(db, "Bea", "Beispiel")
+    assert client.get("/api/kikompass/meine-sitzung", headers=als(bea)).json() is None
+
+
+def test_meine_sitzung_nicht_wenn_geschlossen(client, db, teacher_token):
+    from api.models import ToolSession
+    code = _sitzung(client, teacher_token, slug="kikompass")
+    client.cookies.clear()
+    ada = schueler(db)
+    client.put(f"/api/kikompass/sitzung/{code}/stand", json=_stand(), headers=als(ada))
+    db.query(ToolSession).filter_by(code=code).update({"status": "closed"})
+    db.flush()
+    assert client.get("/api/kikompass/meine-sitzung", headers=als(ada)).json() is None

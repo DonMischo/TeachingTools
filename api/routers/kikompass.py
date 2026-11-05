@@ -198,6 +198,30 @@ def uebersicht(code: str, db: Session = Depends(get_db), teacher: Teacher = Depe
     ]
 
 
+class MeineSitzungOut(BaseModel):
+    code: str
+    settings: dict
+
+
+@router.get("/meine-sitzung", response_model=MeineSitzungOut | None)
+def meine_sitzung(db: Session = Depends(get_db), user: Union[Teacher, Student] = Depends(get_current_user)):
+    """Die zuletzt genutzte offene KI-Kompass-Sitzung dieses Kontos, also
+    die, in die es zuletzt über den Code seinen Stand gespiegelt hat. So sehen
+    Lernende den AIS.chat-Link der Lehrkraft auch, wenn sie den KI-Kompass
+    direkt öffnen statt über den Code."""
+    zeile = (
+        db.query(KiKompassStand, ToolSession)
+        .join(ToolSession, ToolSession.id == KiKompassStand.session_id)
+        .filter(ToolSession.tool_slug == SLUG, ToolSession.status != "closed")
+        .filter(*[getattr(KiKompassStand, k) == v for k, v in _teilnehmer(user).items()])
+        .order_by(KiKompassStand.aktualisiert_am.desc(), KiKompassStand.id.desc())
+        .first()
+    )
+    if zeile is None:
+        return None
+    return MeineSitzungOut(code=zeile[1].code, settings=zeile[1].settings or {})
+
+
 def _modul_fertig(stationen: dict, modul: str) -> bool:
     for sid in MODULE[modul]:
         s = stationen.get(sid)

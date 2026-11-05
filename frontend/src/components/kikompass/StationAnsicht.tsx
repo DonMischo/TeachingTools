@@ -17,13 +17,15 @@ import { Interaktiv } from "./interaktiv/Interaktiv";
 import { MitFachworten } from "@/components/ki/Fachwort";
 import { linkFuer, type AisEinstellungen } from "@/lib/kikompass/ais";
 import { AisZugang } from "./AisZugang";
+import { AisLinkFeld } from "./AisLinkFeld";
+import type { ToolSessionOut } from "@/lib/api";
 
 type Schritt = "worum" | "ausprobieren" | "ais" | "check" | "reflexion";
 const SCHRITT_TITEL: Record<Schritt, string> = {
   worum: "📖 Worum geht es?", ausprobieren: "🎮 Ausprobieren", ais: "🤖 AIS.chat", check: "✅ Selbst-Check", reflexion: "📝 Reflexion",
 };
 
-export function StationAnsicht({ station, stand, onChange, onZurueck, onNaechste, ais = null, lehrkraft = false }: {
+export function StationAnsicht({ station, stand, onChange, onZurueck, onNaechste, ais = null, lehrkraft = false, sitzung = null, onSitzung }: {
   station: Station;
   stand: StationStand | undefined;
   onChange: (neu: StationStand) => void;
@@ -32,6 +34,8 @@ export function StationAnsicht({ station, stand, onChange, onZurueck, onNaechste
   onNaechste?: () => void;
   ais?: AisEinstellungen | null;
   lehrkraft?: boolean;
+  sitzung?: ToolSessionOut | null;
+  onSitzung?: (s: ToolSessionOut) => void;
 }) {
   const bereich = BEREICHE.find(b => b.id === station.modul)!;
   const schritte: Schritt[] = ["worum", "ausprobieren", ...(station.ais ? ["ais" as const] : []), "check", "reflexion"];
@@ -140,9 +144,7 @@ export function StationAnsicht({ station, stand, onChange, onZurueck, onNaechste
           {ais && linkFuer(ais, station.id)
             ? <AisZugang ais={ais} stationId={station.id} gross={lehrkraft} />
             : <p className="text-sm text-muted">Deine Lehrkraft zeigt dir einen QR-Code oder Link zu AIS.chat. Ein eigenes Konto brauchst du nicht.</p>}
-          {lehrkraft && !(ais && linkFuer(ais, station.id)) && (
-            <p className="text-xs text-muted">Tipp für Lehrkräfte: Unter »Für Lehrkräfte → AIS.chat« kannst du den Link deiner Lernumgebung hinterlegen. Dann erscheint er hier als Link und QR-Code.</p>
-          )}
+          {lehrkraft && sitzung && onSitzung && <AisLinkFeld sitzung={sitzung} onSitzung={onSitzung} stationId={station.id} />}
           <ol className="list-decimal pl-5 flex flex-col gap-1">{station.ais.schritte.map((t, i) => <li key={i}>{t}</li>)}</ol>
           {station.ais.prompts && (
             <div className="flex flex-col gap-1">

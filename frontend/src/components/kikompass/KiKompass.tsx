@@ -7,7 +7,7 @@
  * Browser. Wer über einen Code beigetreten ist, spiegelt den Stand zusätzlich
  * in die Sitzung, damit die Lehrkraft ihn sieht.
  */
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { wahl, type Vorgabe } from "@/lib/vorgabe";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, type KiKompassStand, type MausZugang } from "@/lib/api";
@@ -33,7 +33,7 @@ function lokalLaden(schluessel: string): KiKompassStand {
   return LEER;
 }
 
-export default function KiKompass({ action, name = "", konto, verwaltung = false, zugang, speicherSchluessel, vorgabe }: {
+export default function KiKompass({ action, name = "", konto, verwaltung = false, zugang: beitritt, speicherSchluessel, vorgabe }: {
   action?: ReactNode;
   name?: string;
   /** Angemeldet: Stand liegt am Konto. */
@@ -59,6 +59,19 @@ export default function KiKompass({ action, name = "", konto, verwaltung = false
   // Zuletzt vom Server geladener bzw. dorthin gespeicherter Stand (JSON), um unnötige Speicherungen zu sparen.
   const amServer = useRef<string | null>(null);
   const lokal = `hp_kikompass_${speicherSchluessel}`;
+
+  // Lernende, die den KI-Kompass direkt öffnen (ohne Code), hängen an ihrer zuletzt genutzten Sitzung.
+  // So sehen sie den AIS.chat-Link der Lehrkraft, und die Lehrkraft sieht ihren Stand.
+  const { data: letzteSitzung } = useQuery({
+    queryKey: ["kikompass-meine-sitzung"],
+    queryFn: () => api.kikompass.meineSitzung(),
+    enabled: konto && !verwaltung && !beitritt,
+  });
+  const letzterCode = letzteSitzung?.code;
+  const zugang = useMemo<MausZugang | undefined>(
+    () => beitritt ?? (letzterCode ? { code: letzterCode, token: null } : undefined),
+    [beitritt, letzterCode],
+  );
 
   const { data: eigeneSitzung } = useQuery({
     queryKey: ["kikompass-sitzung"],
@@ -140,7 +153,8 @@ export default function KiKompass({ action, name = "", konto, verwaltung = false
               onChange={e => setStand(alt => ({ ...alt, einschaetzungen: e }))} />
           )}
           {reiter === "fuehrerschein" && (
-            <Fuehrerschein stande={stand.stationen} onStation={setStation} name={name} konto={konto} code={lehrCode} ais={ais} lehrkraft={verwaltung} />
+            <Fuehrerschein stande={stand.stationen} onStation={setStation} name={name} konto={konto} code={lehrCode} ais={ais} lehrkraft={verwaltung}
+              sitzung={verwaltung && !zugang ? eigeneSitzung ?? null : null} onSitzung={s => qc.setQueryData(["kikompass-sitzung"], s)} />
           )}
           {reiter === "portfolio" && <Portfolio name={name} stande={stand.stationen} einschaetzungen={stand.einschaetzungen} />}
           {reiter === "projekte" && <Projekte ais={ais} />}

@@ -5,7 +5,7 @@
  * Sind alle vier fertig, gibt es die Urkunde.
  */
 import { useRef, useState } from "react";
-import { api, type MausPruefungOut } from "@/lib/api";
+import { api, type MausPruefungOut, type ToolSessionOut } from "@/lib/api";
 import { BEREICHE, type BereichId } from "@/lib/kikompass/raster";
 import {
   MODUL_REIHENFOLGE, fuehrerscheinFertig, modulFertig, stationFertig, stationenVon, type StationStand,
@@ -16,7 +16,7 @@ import { StationAnsicht } from "./StationAnsicht";
 import type { AisEinstellungen } from "@/lib/kikompass/ais";
 import { datumDe, heute } from "./Raster";
 
-export function Fuehrerschein({ stande, onStation, name, konto, code, ais, lehrkraft = false }: {
+export function Fuehrerschein({ stande, onStation, name, konto, code, ais, lehrkraft = false, sitzung = null, onSitzung }: {
   stande: Record<string, StationStand>;
   onStation: (id: string, stand: StationStand) => void;
   name: string;
@@ -27,6 +27,9 @@ export function Fuehrerschein({ stande, onStation, name, konto, code, ais, lehrk
   ais: AisEinstellungen;
   /** Lehrkraft-Ansicht: großer QR zum Zeigen am Beamer. */
   lehrkraft?: boolean;
+  /** Eigene Sitzung der Lehrkraft: dann lässt sich der AIS.chat-Link direkt in der Station teilen. */
+  sitzung?: ToolSessionOut | null;
+  onSitzung?: (s: ToolSessionOut) => void;
 }) {
   const [offen, setOffen] = useState<string | null>(null);
   const [meldung, setMeldung] = useState<Partial<Record<BereichId, MausPruefungOut | "fehler">>>({});
@@ -41,7 +44,7 @@ export function Fuehrerschein({ stande, onStation, name, konto, code, ais, lehrk
     return (
       <StationAnsicht key={station.id} station={station} stand={stande[station.id]}
         onChange={s => onStation(station.id, s)} onZurueck={() => setOffen(null)}
-        onNaechste={naechste ? () => setOffen(naechste.id) : undefined} ais={ais} lehrkraft={lehrkraft} />
+        onNaechste={naechste ? () => setOffen(naechste.id) : undefined} ais={ais} lehrkraft={lehrkraft} sitzung={sitzung} onSitzung={onSitzung} />
     );
   }
 

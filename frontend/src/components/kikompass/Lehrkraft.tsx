@@ -31,7 +31,7 @@ export function Lehrkraft({ code, sitzung, onSitzung, unter, onUnter, werkstattT
   onSprung: (ziel: Sprungziel) => void;
 }) {
   const UNTER: [LehrUnter, string][] = [
-    ["uebersicht", "👩‍🏫 Klassenübersicht"], ["aktiv", "🧭 AKTIV(ER)-Weg"], ["werkstatt", "🧪 Material-Werkstatt"], ["ais", "🤖 AIS.chat"],
+    ["uebersicht", "👩‍🏫 Klassenübersicht"], ["aktiv", "🧭 AKTIV(ER)-Weg"], ["werkstatt", "🧪 Material-Werkstatt"], ["ais", "🤖 AIS.chat-Link & Leitfaden"],
   ];
   return (
     <div className="flex flex-col gap-4">
