@@ -8,10 +8,11 @@
  * in die Sitzung, damit die Lehrkraft ihn sieht.
  */
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, type KiKompassStand, type MausZugang } from "@/lib/api";
 import { BEREICHE, NAMENSNENNUNG } from "@/lib/kikompass/raster";
 import type { StationStand } from "@/lib/kikompass/stationen";
+import { aisAus } from "@/lib/kikompass/ais";
 import { Raster } from "./Raster";
 import { Fuehrerschein } from "./Fuehrerschein";
 import { Portfolio } from "./Portfolio";
@@ -60,6 +61,15 @@ export default function KiKompass({ action, name = "", konto, verwaltung = false
     enabled: verwaltung && !zugang,
   });
   const lehrCode = zugang?.code ?? eigeneSitzung?.code ?? null;
+  // Wer über den Code kommt, liest die Einstellungen der Lehrkraft (AIS.chat-Links) mit. Neue Links kommen nach spätestens 30 s an.
+  const { data: beigetreteneSitzung } = useQuery({
+    queryKey: ["kikompass-sitzung-zugang", zugang?.code],
+    queryFn: () => api.toolSessions.get(zugang!.code),
+    enabled: !!zugang,
+    refetchInterval: 30000,
+  });
+  const qc = useQueryClient();
+  const ais = aisAus((zugang ? beigetreteneSitzung : eigeneSitzung)?.settings);
 
   useEffect(() => {
     let aktiv = true;
@@ -125,12 +135,13 @@ export default function KiKompass({ action, name = "", konto, verwaltung = false
               onChange={e => setStand(alt => ({ ...alt, einschaetzungen: e }))} />
           )}
           {reiter === "fuehrerschein" && (
-            <Fuehrerschein stande={stand.stationen} onStation={setStation} name={name} konto={konto} code={lehrCode} />
+            <Fuehrerschein stande={stand.stationen} onStation={setStation} name={name} konto={konto} code={lehrCode} ais={ais} lehrkraft={verwaltung} />
           )}
           {reiter === "portfolio" && <Portfolio name={name} stande={stand.stationen} einschaetzungen={stand.einschaetzungen} />}
-          {reiter === "projekte" && <Projekte />}
+          {reiter === "projekte" && <Projekte ais={ais} />}
           {reiter === "lehrkraft" && verwaltung && (
-            <Lehrkraft code={lehrCode} unter={lehrUnter} onUnter={setLehrUnter}
+            <Lehrkraft code={lehrCode} sitzung={eigeneSitzung ?? null} onSitzung={s => qc.setQueryData(["kikompass-sitzung"], s)}
+              unter={lehrUnter} onUnter={setLehrUnter}
               werkstattTeil={werkstattTeil} onWerkstattTeil={setWerkstattTeil}
               speicherSchluessel={speicherSchluessel} onSprung={sprung} />
           )}

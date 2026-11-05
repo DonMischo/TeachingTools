@@ -6,7 +6,9 @@
  */
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { api, type KiKompassZeile } from "@/lib/api";
+import { api, type KiKompassZeile, type ToolSessionOut } from "@/lib/api";
+import { LINK_MAX, aisAus, mitAis, sichererLink, zuGross, type AisEinstellungen } from "@/lib/kikompass/ais";
+import { AisZugang } from "./AisZugang";
 import { BEREICHE, mittelwerte, werte } from "@/lib/kikompass/raster";
 import { MODUL_REIHENFOLGE, STATIONEN, stationFertig, stationenVon } from "@/lib/kikompass/stationen";
 import { Spinne } from "./Spinne";
@@ -16,8 +18,11 @@ import { datumDe } from "./Raster";
 
 export type LehrUnter = "uebersicht" | "aktiv" | "werkstatt" | "ais";
 
-export function Lehrkraft({ code, unter, onUnter, werkstattTeil, onWerkstattTeil, speicherSchluessel, onSprung }: {
+export function Lehrkraft({ code, sitzung, onSitzung, unter, onUnter, werkstattTeil, onWerkstattTeil, speicherSchluessel, onSprung }: {
   code: string | null;
+  /** Eigene Sitzung der Lehrkraft (für die AIS.chat-Links). */
+  sitzung: ToolSessionOut | null;
+  onSitzung: (s: ToolSessionOut) => void;
   unter: LehrUnter;
   onUnter: (u: LehrUnter) => void;
   werkstattTeil: WerkstattTeil;
@@ -40,7 +45,7 @@ export function Lehrkraft({ code, unter, onUnter, werkstattTeil, onWerkstattTeil
       ))}
       {unter === "aktiv" && <AktivWeg speicherSchluessel={speicherSchluessel} onSprung={onSprung} />}
       {unter === "werkstatt" && <Werkstatt teil={werkstattTeil} onTeil={onWerkstattTeil} />}
-      {unter === "ais" && <AisLeitfaden />}
+      {unter === "ais" && <AisLeitfaden key={sitzung?.code ?? "ohne"} sitzung={sitzung} onSitzung={onSitzung} />}
     </div>
   );
 }
@@ -119,11 +124,40 @@ function Uebersicht({ code }: { code: string }) {
   );
 }
 
-function AisLeitfaden() {
+function AisLeitfaden({ sitzung, onSitzung }: { sitzung: ToolSessionOut | null; onSitzung: (s: ToolSessionOut) => void }) {
   const [kopiert, setKopiert] = useState<string | null>(null);
+  const [entwurf, setEntwurf] = useState(() => {
+    const a = aisAus(sitzung?.settings);
+    return { standard: a.standard ?? "", stationen: { ...a.stationen } as Record<string, string>, anzeige: a.anzeige };
+  });
+  const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
+
   async function kopieren(id: string, text: string) {
     try { await navigator.clipboard.writeText(text); setKopiert(id); } catch { /* ohne Zwischenablage */ }
   }
+
+  const ungueltig = [entwurf.standard, ...Object.values(entwurf.stationen)].filter(v => v.trim() && !sichererLink(v)).length;
+
+  async function speichern() {
+    if (!sitzung) return;
+    setMeldung(null);
+    const ais: AisEinstellungen = {
+      standard: sichererLink(entwurf.standard),
+      stationen: Object.fromEntries(
+        Object.entries(entwurf.stationen).flatMap(([id, v]) => { const l = sichererLink(v); return l ? [[id, l]] : []; }),
+      ),
+      anzeige: entwurf.anzeige,
+    };
+    const settings = mitAis(sitzung.settings, ais);
+    if (zuGross(settings)) { setMeldung({ ok: false, text: "Zu viele oder zu lange Links. Nutze lieber einen Link für alle Stationen." }); return; }
+    try {
+      onSitzung(await api.toolSessions.einstellungen(sitzung.code, settings));
+      setMeldung({ ok: true, text: "Gespeichert. Alle, die über den Code mitmachen, sehen den Zugang jetzt in den AIS.chat-Schritten." });
+    } catch {
+      setMeldung({ ok: false, text: "Speichern hat nicht geklappt." });
+    }
+  }
+
   return (
     <section className="flex flex-col gap-3 max-w-3xl">
       <h3 className="text-lg font-semibold">🤖 AIS.chat im KI-Führerschein</h3>
@@ -140,9 +174,48 @@ function AisLeitfaden() {
           <a className="underline" href="https://ais.schule/ais-chat/" target="_blank" rel="noreferrer">ais.schule/ais-chat</a>, Support: ais.chat-support@thillm.de
         </p>
       </div>
+
+      <div className="card p-4 flex flex-col gap-3">
+        <h4 className="font-semibold">🔗 AIS.chat-Zugang in die Sitzung legen</h4>
+        {!sitzung ? (
+          <p className="text-sm text-muted">Einen Moment, die Sitzung wird geladen …</p>
+        ) : (
+          <>
+            <p className="text-sm text-muted">
+              Kopiere den Einladungslink deiner AIS.chat-Lernumgebung hierher. Wer über den Code {sitzung.code} mitmacht, sieht ihn in jedem
+              AIS.chat-Schritt und auf den Projektkarten. Für einzelne Stationen kannst du unten eine eigene Lernumgebung eintragen.
+              Den Link sieht jede·r mit dem Beitrittscode. Läuft die Freischaltung in AIS.chat ab, hilft auch der Link nicht mehr.
+            </p>
+            <label className="label">Link für alle Stationen
+              <input className="input w-full" placeholder="https://…" maxLength={LINK_MAX} value={entwurf.standard}
+                onChange={e => setEntwurf(a => ({ ...a, standard: e.target.value }))} />
+            </label>
+            <fieldset className="flex flex-wrap gap-4 text-sm">
+              <legend className="font-medium mb-1">Den Lernenden zeigen</legend>
+              {([["beides", "Link und QR-Code"], ["link", "nur Link"], ["qr", "nur QR-Code"]] as const).map(([id, l]) => (
+                <label key={id} className="flex items-center gap-2">
+                  <input type="radio" name="ais-anzeige" checked={entwurf.anzeige === id} onChange={() => setEntwurf(a => ({ ...a, anzeige: id }))} /> {l}
+                </label>
+              ))}
+            </fieldset>
+            {ungueltig > 0 && <p className="text-sm text-bad">{ungueltig} Link(s) sind ungültig (sie müssen mit https:// beginnen) und werden nicht gespeichert.</p>}
+            {meldung && <p className={`text-sm ${meldung.ok ? "text-ok" : "text-bad"}`}>{meldung.text}</p>}
+            <div className="flex flex-wrap gap-2">
+              <button className="btn-primary" onClick={speichern}>Speichern</button>
+              {aisAus(sitzung.settings).standard && (
+                <button className="btn-secondary" onClick={() => setEntwurf({ standard: "", stationen: {}, anzeige: entwurf.anzeige })}>Alle Links leeren</button>
+              )}
+            </div>
+            <AisZugang ais={aisAus(sitzung.settings)} gross />
+          </>
+        )}
+      </div>
+
       {STATIONEN.filter(s => s.ais).map(s => (
         <details key={s.id} className="card p-3">
-          <summary className="cursor-pointer font-medium">{s.icon} {s.titel} <span className="text-xs text-muted">· Stufe {s.stufe}</span></summary>
+          <summary className="cursor-pointer font-medium">
+            {s.icon} {s.titel} <span className="text-xs text-muted">· Stufe {s.stufe}{entwurf.stationen[s.id] ? " · eigener Link" : ""}</span>
+          </summary>
           <div className="mt-2 flex flex-col gap-2 text-sm">
             <p><strong>Vorbereiten:</strong> {s.ais!.lehrkraft}</p>
             <p className="font-medium">Vorschlag für den Auftrag bzw. Systemtext der Lernumgebung:</p>
@@ -150,9 +223,16 @@ function AisLeitfaden() {
             <button className="btn-secondary self-start" onClick={() => kopieren(s.id, s.ais!.systemtext)}>
               {kopiert === s.id ? "✓ kopiert" : "📋 Kopieren"}
             </button>
+            {sitzung && (
+              <label className="label">Eigener AIS.chat-Link für diese Station (optional, sonst gilt der Link für alle)
+                <input className="input w-full" placeholder="https://…" maxLength={LINK_MAX} value={entwurf.stationen[s.id] ?? ""}
+                  onChange={e => setEntwurf(a => ({ ...a, stationen: { ...a.stationen, [s.id]: e.target.value } }))} />
+              </label>
+            )}
           </div>
         </details>
       ))}
+      {sitzung && <button className="btn-primary self-start" onClick={speichern}>Links speichern</button>}
     </section>
   );
 }

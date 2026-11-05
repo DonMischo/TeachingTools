@@ -207,7 +207,7 @@ Jede Simulation trägt Fächer (auch mehrere, z. B. Geografie und Physik); die �
 ### 🧭 KI-Kompass
 - Gemeinsamer Rahmen für KI-Kompetenz, in den Lernende (Kl. 5–10) und Lehrkräfte zusammen hineinwachsen, ab Stufe 0 »Einstieg«
 - Kompetenzraster nach Alles, Falck, Flick & Schulz (2025, CC BY 4.0): Verstehen, Anwenden, Reflektieren, Mitgestalten × fünf Stufen als »Ich kann …«-Sätze; Spinne mit Messpunkten und Vorher/Nachher
-- KI-Führerschein: 14 Stationen in vier Modulen als geführter Ablauf in Schritten, mit Spielen ohne echte KI (Sortieren, Schwärzen, Prompt-Baukasten, Fehlerjagd, Echt oder KI, Mini-KI »Hund oder Wolf?« zu Bias, Spiele aus der KI-Werkstatt), Selbst-Check und Reflexion; KI-Teil über AIS.chat (Thüringer Schulportal) mit Leitfaden und Systemtext-Vorschlägen für Lehrkräfte
+- KI-Führerschein: 14 Stationen in vier Modulen als geführter Ablauf in Schritten, mit Spielen ohne echte KI (Sortieren, Schwärzen, Prompt-Baukasten, Fehlerjagd, Echt oder KI, Mini-KI »Hund oder Wolf?« zu Bias, Spiele aus der KI-Werkstatt), Selbst-Check und Reflexion; KI-Teil über AIS.chat (Thüringer Schulportal) mit Leitfaden und Systemtext-Vorschlägen für Lehrkräfte; der AIS.chat-Einladungslink lässt sich in die Sitzung legen (für alle oder je Station, als Link und/oder QR)
 - Je Modul einmal 5 Hauspunkte, Urkunde als PDF, Portfolio mit KI-Nutzungserklärung als Word-Datei
 - Klassenübersicht mit Klassen-Spinne und Reflexionen (nur für die Lehrkraft); Recherche und Quellen in docs/ki-kompass-recherche.md
 - AKTIV(ER)-Weg für Lehrkräfte (nach Manuel Flick, eigene Texte): acht Schritte mit Checkliste, Word-Vorlagen und Sprung ins passende Werkzeug

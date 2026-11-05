@@ -4,6 +4,8 @@ import { useState } from "react";
 import { BEREICHE, KANN_SAETZE } from "@/lib/kikompass/raster";
 import { PROJEKTE, type Projekt } from "@/lib/kikompass/projekte";
 import { baueDocx, herunterladen, type DocxBlock } from "@/lib/docx";
+import type { AisEinstellungen } from "@/lib/kikompass/ais";
+import { AisZugang } from "./AisZugang";
 
 async function blatt(p: Projekt) {
   const bloecke: DocxBlock[] = [
@@ -22,7 +24,7 @@ async function blatt(p: Projekt) {
   herunterladen(await baueDocx(bloecke), `Projekt_${p.id}.docx`);
 }
 
-export function Projekte() {
+export function Projekte({ ais }: { ais: AisEinstellungen }) {
   const [offen, setOffen] = useState<string | null>(null);
   return (
     <div className="flex flex-col gap-4">
@@ -42,6 +44,7 @@ export function Projekte() {
               <>
                 <ol className="list-decimal pl-5 text-sm flex flex-col gap-1">{p.ablauf.map(t => <li key={t}>{t}</li>)}</ol>
                 {p.ais && <p className="text-sm">🤖 {p.ais}</p>}
+                {p.ais && <AisZugang ais={ais} />}
                 <p className="text-sm font-medium">Bewertet wird:</p>
                 <ul className="list-disc pl-5 text-sm">{p.kriterien.map(k => <li key={k}>{k}</li>)}</ul>
               </>

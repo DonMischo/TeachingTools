@@ -15,19 +15,23 @@ import {
 import { heute } from "./Raster";
 import { Interaktiv } from "./interaktiv/Interaktiv";
 import { MitFachworten } from "@/components/ki/Fachwort";
+import { linkFuer, type AisEinstellungen } from "@/lib/kikompass/ais";
+import { AisZugang } from "./AisZugang";
 
 type Schritt = "worum" | "ausprobieren" | "ais" | "check" | "reflexion";
 const SCHRITT_TITEL: Record<Schritt, string> = {
   worum: "📖 Worum geht es?", ausprobieren: "🎮 Ausprobieren", ais: "🤖 AIS.chat", check: "✅ Selbst-Check", reflexion: "📝 Reflexion",
 };
 
-export function StationAnsicht({ station, stand, onChange, onZurueck, onNaechste }: {
+export function StationAnsicht({ station, stand, onChange, onZurueck, onNaechste, ais = null, lehrkraft = false }: {
   station: Station;
   stand: StationStand | undefined;
   onChange: (neu: StationStand) => void;
   onZurueck: () => void;
   /** Zur nächsten Station, falls es eine gibt. */
   onNaechste?: () => void;
+  ais?: AisEinstellungen | null;
+  lehrkraft?: boolean;
 }) {
   const bereich = BEREICHE.find(b => b.id === station.modul)!;
   const schritte: Schritt[] = ["worum", "ausprobieren", ...(station.ais ? ["ais" as const] : []), "check", "reflexion"];
@@ -133,7 +137,12 @@ export function StationAnsicht({ station, stand, onChange, onZurueck, onNaechste
       {aktuell === "ais" && station.ais && (
         <section className="card p-4 flex flex-col gap-2">
           <h3 className="font-semibold">{SCHRITT_TITEL.ais}</h3>
-          <p className="text-sm text-muted">Deine Lehrkraft zeigt dir einen QR-Code oder Link zu AIS.chat. Ein eigenes Konto brauchst du nicht.</p>
+          {ais && linkFuer(ais, station.id)
+            ? <AisZugang ais={ais} stationId={station.id} gross={lehrkraft} />
+            : <p className="text-sm text-muted">Deine Lehrkraft zeigt dir einen QR-Code oder Link zu AIS.chat. Ein eigenes Konto brauchst du nicht.</p>}
+          {lehrkraft && !(ais && linkFuer(ais, station.id)) && (
+            <p className="text-xs text-muted">Tipp für Lehrkräfte: Unter »Für Lehrkräfte → AIS.chat« kannst du den Link deiner Lernumgebung hinterlegen. Dann erscheint er hier als Link und QR-Code.</p>
+          )}
           <ol className="list-decimal pl-5 flex flex-col gap-1">{station.ais.schritte.map((t, i) => <li key={i}>{t}</li>)}</ol>
           {station.ais.prompts && (
             <div className="flex flex-col gap-1">

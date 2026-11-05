@@ -13,15 +13,20 @@ import {
 import { leinwandAlsPdf } from "@/lib/maus/pdf";
 import { herunterladen } from "@/lib/docx";
 import { StationAnsicht } from "./StationAnsicht";
+import type { AisEinstellungen } from "@/lib/kikompass/ais";
 import { datumDe, heute } from "./Raster";
 
-export function Fuehrerschein({ stande, onStation, name, konto, code }: {
+export function Fuehrerschein({ stande, onStation, name, konto, code, ais, lehrkraft = false }: {
   stande: Record<string, StationStand>;
   onStation: (id: string, stand: StationStand) => void;
   name: string;
   /** Nur Konten melden Module (Hauspunkte nur für Schülerkonten). */
   konto: boolean;
   code: string | null;
+  /** AIS.chat-Zugang aus der Sitzung. */
+  ais: AisEinstellungen;
+  /** Lehrkraft-Ansicht: großer QR zum Zeigen am Beamer. */
+  lehrkraft?: boolean;
 }) {
   const [offen, setOffen] = useState<string | null>(null);
   const [meldung, setMeldung] = useState<Partial<Record<BereichId, MausPruefungOut | "fehler">>>({});
@@ -36,7 +41,7 @@ export function Fuehrerschein({ stande, onStation, name, konto, code }: {
     return (
       <StationAnsicht key={station.id} station={station} stand={stande[station.id]}
         onChange={s => onStation(station.id, s)} onZurueck={() => setOffen(null)}
-        onNaechste={naechste ? () => setOffen(naechste.id) : undefined} />
+        onNaechste={naechste ? () => setOffen(naechste.id) : undefined} ais={ais} lehrkraft={lehrkraft} />
     );
   }
 
