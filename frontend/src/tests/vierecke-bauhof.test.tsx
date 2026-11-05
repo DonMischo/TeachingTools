@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import Vierecke from "@/components/simulationen/Vierecke";
 import {
-  aufziehen, besteFlaeche, bewerteGehege, flaeche, gehegeLevel, gierigeStriche, passt, umfang, wandLevel, wandSterne, zellen,
+  TIERE, aufziehen, besteFlaeche, tierFuer, bewerteGehege, flaeche, gehegeLevel, gierigeStriche, passt, umfang, wandLevel, wandSterne, zellen,
 } from "@/lib/vierecke-bauhof";
 
 function zufall(seed: number) {
@@ -48,8 +48,20 @@ describe("Gehege bauen", () => {
     }
   });
 
+  it("Tiere passen zur Gehegegröße: Pinguine klein, Elefanten groß", () => {
+    expect(tierFuer(4).name).toBe("Pinguine");
+    expect(tierFuer(13).name).toBe("Zebras");
+    expect(tierFuer(30).name).toBe("Elefanten");
+    const r = zufall(12);
+    for (let nr = 1; nr <= 60; nr++) {
+      const l = gehegeLevel(nr, r), i = TIERE.indexOf(l.tier);
+      expect(l.bedarf).toBeGreaterThanOrEqual(l.tier.ab);
+      if (i < TIERE.length - 1) expect(l.bedarf).toBeLessThan(TIERE[i + 1].ab);
+    }
+  });
+
   it("zu wenig Zaun, zu eng oder Felsen im Gehege: nicht ok", () => {
-    const l = { nr: 1, w: 6, h: 4, gitter: ["......", "..F...", "......", "......"], tier: { emoji: "🐐", name: "Ziegen" }, zaun: 10, bedarf: 4, beste: 6 };
+    const l = { nr: 1, w: 6, h: 4, gitter: ["......", "..F...", "......", "......"], tier: { emoji: "🐐", name: "Ziegen", ab: 0 }, zaun: 10, bedarf: 4, beste: 6 };
     expect(bewerteGehege(l, { x: 0, y: 0, b: 6, h: 1 }).ok).toBe(false); // u = 14 > 10
     expect(bewerteGehege(l, { x: 0, y: 0, b: 1, h: 3 }).ok).toBe(false); // A = 3 < 4
     expect(bewerteGehege(l, { x: 1, y: 0, b: 2, h: 2 }).ok).toBe(false); // Felsen

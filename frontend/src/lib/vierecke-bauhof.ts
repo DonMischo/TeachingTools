@@ -37,11 +37,16 @@ export const passt = (g: Gitter, r: Rechteck) => zellen(r).every(([x, y]) => fre
 
 /* ─────────────────────────────────────────────────────────── Gehege ── */
 
-export type Tier = { emoji: string; name: string };
+/** `ab`: so viele Kästchen braucht das Tier mindestens — kleine Tiere, kleine Gehege. */
+export type Tier = { emoji: string; name: string; ab: number };
 export const TIERE: Tier[] = [
-  { emoji: "🐐", name: "Ziegen" }, { emoji: "🦙", name: "Alpakas" }, { emoji: "🐧", name: "Pinguine" }, { emoji: "🦁", name: "Löwen" },
-  { emoji: "🦒", name: "Giraffen" }, { emoji: "🐘", name: "Elefanten" }, { emoji: "🦓", name: "Zebras" }, { emoji: "🐻", name: "Bären" },
+  { emoji: "🐧", name: "Pinguine", ab: 0 }, { emoji: "🐐", name: "Ziegen", ab: 6 }, { emoji: "🦙", name: "Alpakas", ab: 9 },
+  { emoji: "🦓", name: "Zebras", ab: 12 }, { emoji: "🐻", name: "Bären", ab: 15 }, { emoji: "🦁", name: "Löwen", ab: 18 },
+  { emoji: "🦒", name: "Giraffen", ab: 22 }, { emoji: "🐘", name: "Elefanten", ab: 26 },
 ];
+
+/** Das größte Tier, dem der Platzbedarf noch zusteht. */
+export const tierFuer = (bedarf: number): Tier => TIERE.filter(t => t.ab <= bedarf).at(-1)!;
 
 export type GehegeLevel = { nr: number; w: number; h: number; gitter: Gitter; tier: Tier; zaun: number; bedarf: number; beste: number };
 
@@ -78,7 +83,7 @@ export function gehegeLevel(nr: number, r: Zufall = Math.random): GehegeLevel {
   // Anfangs etwas Spielraum beim Zaun, später genau der Umfang der Lösung.
   const zaun = umfang(loes) + (nr < 3 ? 2 : nr < 6 ? ganz(r, 0, 1) * 2 : 0);
   const bedarf = Math.max(2, flaeche(loes) - (nr < 4 ? ganz(r, 1, 3) : 0));
-  return { nr, w, h, gitter, tier: TIERE[(nr - 1) % TIERE.length], zaun, bedarf, beste: besteFlaeche(gitter, zaun) };
+  return { nr, w, h, gitter, tier: tierFuer(bedarf), zaun, bedarf, beste: besteFlaeche(gitter, zaun) };
 }
 
 /** Bewertung eines gezogenen Geheges; `null`, solange etwas nicht passt. */
