@@ -792,6 +792,8 @@ simulationen:
       - "Sachaufgaben: Aquarium, Dose, Zelt, Eistüte, Pool, Schwimmbecken, Paket, Kerze"
       - Arbeitsblatt als Word-Datei (.docx) mit Schrägbildern, Antwortlinien und Lösungsseite
       - "Spiel »Wer fasst mehr?«: größeres Volumen antippen, Messbecher füllen sich; 60 s, Serienbonus, Rekord im Browser"
+      - "Spiel »Renovieren«: Raum als Netz, streichen/tapezieren/fliesen mit Fenstern und Türen je Wand, Boden zuschaltbar; Fläche bzw. Tapetenbahnen rechnen, einkaufen, Punkte für Rechnung, Reichen und Preis; freier Planer"
+      - "Spiel »Füllen«: Pool, Rundpool, Sprungbecken mit schrägem Boden, Ballon, Luftmatratze — schätzen (Auswahl), genau rechnen, Kopfsprung (Flachköpper/Land unter) bzw. Aufpumpen (schlapp/prall/Peng)"
   - id: stellenwert
     name: Stellenwerttafeln
     faehigkeiten: {use: [true, true]}

@@ -25,9 +25,11 @@ import Aufgabenblatt from "@/components/geometrie/Aufgabenblatt";
 import { SkizzenBild } from "@/components/geometrie/Skizze";
 import Raum3D from "./Raum3D";
 import FassDuell from "./FassDuell";
+import Renovieren from "./Renovieren";
+import Fuellen from "./Fuellen";
 import { FARBE, LINIENFARBE, type Ansicht, type ZAnsicht } from "./szene";
 
-type Tab = "labor" | "netz" | "linien" | "zusammen" | "uebungen" | "anwendungen" | "spiel";
+type Tab = "labor" | "netz" | "linien" | "zusammen" | "uebungen" | "anwendungen" | "spiel" | "renovieren" | "fuellen";
 const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: "labor", label: "Körper-Labor", icon: "🧊" },
   { id: "netz", label: "Netz", icon: "📂" },
@@ -36,6 +38,8 @@ const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: "uebungen", label: "Übungen", icon: "✍️" },
   { id: "anwendungen", label: "Anwendungen", icon: "🐠" },
   { id: "spiel", label: "Wer fasst mehr?", icon: "🚰" },
+  { id: "renovieren", label: "Renovieren", icon: "🖌️" },
+  { id: "fuellen", label: "Füllen", icon: "💧" },
 ];
 const LABOR: Tab[] = ["labor", "netz", "linien"];
 
@@ -174,6 +178,8 @@ export default function Koerper({ action }: { action?: ReactNode }) {
       {tab === "uebungen" && <Aufgabenblatt arten={UEBUNG_ARTEN} erzeuge={a => erzeugeUebung(a)} titel="Körper – Übungen" datei="Koerper-Uebungen.docx" />}
       {tab === "anwendungen" && <Aufgabenblatt arten={ANWENDUNG_ARTEN} erzeuge={a => erzeugeAnwendung(a)} titel="Körper – Anwendungsaufgaben" datei="Koerper-Anwendungen.docx" />}
       {tab === "spiel" && <FassDuell />}
+      {tab === "renovieren" && <Renovieren />}
+      {tab === "fuellen" && <Fuellen />}
 
       {LABOR.includes(tab) && (
         <>
