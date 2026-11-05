@@ -2,16 +2,14 @@
 /** Gericht (nach Ace Attorney): Kreuzverhör. Aussagen = falsche Behauptungen; mit Beweisen aus der Gerichtsakte »Einspruch!« erheben. */
 import { useEffect, useRef, useState } from "react";
 import type { ChallengeAntwort } from "@/lib/api";
-import { themeVon } from "@/lib/challenge/themes";
 import { BestenlisteKnopf } from "@/components/challenge/Bestenliste";
-import { Buehne } from "@/components/challenge/pixel/Buehne";
-import Npc from "@/components/challenge/pixel/Npc";
 import { useSpielwert } from "@/lib/challenge/useSpielwert";
 import { useAblage } from "@/lib/challenge/useAblage";
 import Papierkorb, { WegKnopf } from "@/components/challenge/Papierkorb";
 import type { ModusProps } from "./typen";
 import { Ablage, FaktKarte, Herzen, Frage, Inhalt, Treffermeldung } from "./teile";
 import { GerichtStil } from "./gericht/hilfen";
+import { Gerichtssaal } from "./gericht/Gerichtssaal";
 
 const ZEUGEN_SPRUCH = [
   "Äh … ja, genau das habe ich gesagt!", "Das ist die reine Wahrheit, Euer Ehren!", "Daran gibt es nichts zu rütteln!",
@@ -19,7 +17,6 @@ const ZEUGEN_SPRUCH = [
 ];
 
 export default function Gericht({ brett, lauf, zurKarte }: ModusProps) {
-  const saal = themeVon("antike");
   const [akte, setAkte] = useState(true);
   const [seite, setSeite] = useState(0);
   const [idx, setIdx] = useState(0);
@@ -119,21 +116,11 @@ export default function Gericht({ brett, lauf, zurKarte }: ModusProps) {
         <span className="text-muted text-sm" aria-live="polite">{musik}</span>
       </div>
       <div className={`relative ${burst ? "gr-schuettel" : ""}`}>
-        <Buehne wand bg={saal.hintergrund} farbe={saal.farben.boden} label="Gerichtssaal">
-          <Npc name="king" scale={4} label="Richter" className={`absolute left-1/2 -translate-x-1/2 top-2 ${daneben ? "gr-zittern" : ""}`} />
-          <span className={`absolute left-[58%] top-14 text-3xl origin-bottom-right ${hammer ? "gr-hammer" : ""}`} style={{ transform: hammer ? undefined : "rotate(-40deg)" }} aria-hidden>🔨</span>
-          {hammer && <span className="absolute left-[64%] top-20 font-black text-lg" aria-hidden>TOCK!</span>}
-          <Npc name="townsfolk_m" scale={4} label="Zeuge"
-            className={`absolute left-[12%] bottom-0 transition-transform ${stufe === 2 ? "gr-zittern" : ""}`} />
-          <span className="absolute left-[12%] bottom-24 text-2xl" aria-hidden>
-            {stufe === 1 && <span className="gr-tropf inline-block">💦</span>}
-            {stufe === 2 && "😰"}
-            {stufe === 3 && "😵"}
-          </span>
-          <span className="absolute left-[8%] bottom-28 text-xs font-bold bg-white text-black rounded px-1" role="status">
-            {["Selbstsicher", "Schwitzt", "Zittert", "Bricht zusammen!"][stufe]}
-          </span>
-        </Buehne>
+        <Gerichtssaal zeuge={stufe as 0 | 1 | 2 | 3} richterBoese={daneben} hammer={hammer}
+          jury={komplett ? "staunen" : daneben ? "kopfschuetteln" : "ruhig"} />
+        <span className="absolute left-[3%] top-[22%] text-xs font-bold bg-white text-black rounded px-1 shadow" role="status">
+          {["🙂 Selbstsicher", "💦 Schwitzt", "😰 Zittert", "😵 Bricht zusammen!"][stufe]}
+        </span>
         {burst && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none" role="alert">
             <svg viewBox="0 0 300 180" className="w-[80%] max-w-md gr-burst" aria-hidden>

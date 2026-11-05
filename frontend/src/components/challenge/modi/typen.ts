@@ -9,4 +9,6 @@ export type ModusProps = {
   skin: string;
   lauf: ChallengeLauf;
   zurKarte(): void;
+  /** Spielart wechseln (öffnet die Auswahl; die Etappe beginnt dann von vorn); fehlt bei nur einer Spielart. */
+  spielart?(): void;
 };

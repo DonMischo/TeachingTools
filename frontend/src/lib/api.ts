@@ -504,6 +504,8 @@ export type ChallengeBrett = {
   gesamt_etappen?: number; geschafft_etappen?: number;
   challenges: ChallengeAufgabe[]; fakten: ChallengeFakt[];
   spiel: string; deck: string[] | null;
+  /** Heiltränke, die in dieser Etappe noch übrig sind (je einer gibt ein Leben zurück) */
+  traenke?: number;
 };
 export type ChallengeInfo = {
   title: string; subject: string | null;
@@ -1901,6 +1903,8 @@ export const api = {
     deck: (code: string, faktIds: string[], token?: string | null) =>
       ffetch<ChallengeBrett>(`challenge/${encodeURIComponent(code)}/deck`,
         { method: "POST", body: JSON.stringify({ fakt_ids: faktIds }) }, token ?? undefined),
+    trank: (code: string, token?: string | null) =>
+      ffetch<ChallengeBrett>(`challenge/${encodeURIComponent(code)}/trank`, { method: "POST" }, token ?? undefined),
     antwort: (code: string, body: ChallengeAntwortIn, token?: string | null) =>
       ffetch<ChallengeAntwort>(`challenge/${encodeURIComponent(code)}/antwort`,
         { method: "POST", body: JSON.stringify(body) }, token ?? undefined),
@@ -2795,6 +2799,9 @@ export const api = {
         deck: (attemptId: number, slideId: string, faktIds: string[]) =>
           apiFetch<ChallengeBrett>(`exitgame-attempts/${attemptId}/boss/${encodeURIComponent(slideId)}/deck`,
             { method: "POST", headers: guestAuthHeaders(), body: JSON.stringify({ fakt_ids: faktIds }) }),
+        trank: (attemptId: number, slideId: string) =>
+          apiFetch<ChallengeBrett>(`exitgame-attempts/${attemptId}/boss/${encodeURIComponent(slideId)}/trank`,
+            { method: "POST", headers: guestAuthHeaders() }),
       },
       finish: (attemptId: number) =>
         apiFetch<ExitGameAbschluss>(

@@ -19,9 +19,10 @@ const brett = (o: Record<string, unknown> = {}) => ({
 });
 const antwort = (o = {}) => ({ qualitaet: 1, treffer: true, komplett: true, kombo: false, schaden: 20, falsch_gewaehlt: 0, leben: 3,
   zurueck_zur_karte: false, etappe_geschafft: false, fertig: false, stufe: 1, ...o });
-const mkLauf = (r = antwort()) => ({ deckSetzen: vi.fn().mockResolvedValue(undefined), spielwert: vi.fn(), waehle: vi.fn(), gelegt: vi.fn(), antworte: vi.fn().mockResolvedValue(r) });
-const zeige = (b: unknown, lauf: ReturnType<typeof mkLauf>, skin = "monster", zurKarte = vi.fn()) =>
-  render(<Boss brett={b as never} theme={THEMES.klassisch} skin={skin} lauf={lauf as never} zurKarte={zurKarte} />);
+const mkLauf = (r = antwort()) => ({ deckSetzen: vi.fn().mockResolvedValue(undefined), spielwert: vi.fn(), waehle: vi.fn(), gelegt: vi.fn(), antworte: vi.fn().mockResolvedValue(r),
+  trinken: vi.fn().mockResolvedValue(true) });
+const zeige = (b: unknown, lauf: ReturnType<typeof mkLauf>, skin = "monster", zurKarte = vi.fn(), spielart?: () => void) =>
+  render(<Boss brett={b as never} theme={THEMES.klassisch} skin={skin} lauf={lauf as never} zurKarte={zurKarte} spielart={spielart} />);
 
 const ruesteAus = async (u: ReturnType<typeof userEvent.setup>, namen?: RegExp[]) => {
   const reg = screen.getByRole("region", { name: "Ausrüsten" });
@@ -148,9 +149,9 @@ describe("Skins", () => {
 });
 
 describe("Kampfmenü", () => {
-  const arena = async (b = brett(), lauf = mkLauf(), zurKarte = vi.fn(), skin = "monster") => {
+  const arena = async (b = brett(), lauf = mkLauf(), zurKarte = vi.fn(), skin = "monster", spielart?: () => void) => {
     const u = userEvent.setup();
-    zeige(b, lauf, skin, zurKarte);
+    zeige(b, lauf, skin, zurKarte, spielart);
     await u.click(screen.getByRole("button", { name: "Alles einsammeln" }));
     await ruesteAus(u);
     return u;
@@ -178,9 +179,30 @@ describe("Kampfmenü", () => {
     await u.click(within(reg).getByRole("button", { name: /In den Kampf/ }));
     expect(lauf.deckSetzen).toHaveBeenLastCalledWith(["f1", "f2", "f3"]);
   });
-  it("Wechseln ist vorerst gesperrt", async () => {
+  it("Wechseln öffnet die Spielart-Wahl; ohne andere Spielart gesperrt", async () => {
     await arena(brett({ challenges: [ch("c1", "Frage Eins"), ch("c3", "Frage Drei")] }));
     expect(screen.getByRole("button", { name: "Wechseln" })).toBeDisabled();
+    document.body.innerHTML = "";
+    const spielart = vi.fn();
+    const u = await arena(brett(), mkLauf(), vi.fn(), "monster", spielart);
+    await u.click(screen.getByRole("button", { name: "Wechseln" }));
+    expect(spielart).toHaveBeenCalled();
+  });
+  it("Lebensbalken des Helden statt Herzen; Heiltrank aus der Tasche", async () => {
+    const lauf = mkLauf();
+    const u = await arena(brett({ leben: 2, traenke: 2 }), lauf);
+    expect(screen.getByRole("progressbar", { name: "Lebensbalken des Helden" })).toHaveAttribute("aria-valuenow", "2");
+    expect(screen.queryByRole("img", { name: /Leben/ })).toBeNull();
+    await u.click(screen.getByRole("button", { name: "Tasche" }));
+    expect(screen.getByText("🧪 Heiltrank ×2")).toBeInTheDocument();
+    await u.click(screen.getByRole("button", { name: "Trinken (+1 Leben)" }));
+    expect(lauf.trinken).toHaveBeenCalled();
+    expect(await screen.findByText(/ein Leben zurück/)).toBeInTheDocument();
+  });
+  it("Heiltrank gesperrt bei vollen Leben oder ohne Tränke", async () => {
+    const u = await arena(brett({ leben: 3, traenke: 2 }));
+    await u.click(screen.getByRole("button", { name: "Tasche" }));
+    expect(screen.getByRole("button", { name: "Trinken (+1 Leben)" })).toBeDisabled();
   });
   it("Tasche: Tipp und Wissen nachlesen", async () => {
     const b = brett({ challenges: [{ ...ch("c1", "Frage Eins"), tip: "Denk an Hebel" }], fakten: [{ ...fakt("f1", "Fakt Alpha"), info: { text: "Mehr zu Alpha" } }] });

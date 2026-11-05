@@ -39,7 +39,7 @@ function Tippe({ text }: { text: string }) {
   return <span aria-hidden>{text.slice(0, n)}</span>;
 }
 
-function Box({ name, hp, max, label, klasse, stil, kuerzel = "KP", farbe }: { name: string; hp: number; max: number; label?: string; klasse?: string; stil: CSSProperties; kuerzel?: string; farbe?: string }) {
+function Box({ name, hp, max, label, klasse, stil, kuerzel = "KP", farbe, ep }: { name: string; hp: number; max: number; label?: string; klasse?: string; stil: CSSProperties; kuerzel?: string; farbe?: string; /** zweite Zeile: EP-Balken */ ep?: { wert: number; max: number } }) {
   return (
     <div className={`absolute bg-surface border-2 border-line rounded-lg px-2 py-1 w-[200px] shadow ${klasse ?? ""}`} style={stil}>
       <div className="text-sm font-bold">{name}</div>
@@ -47,13 +47,20 @@ function Box({ name, hp, max, label, klasse, stil, kuerzel = "KP", farbe }: { na
         <span className="text-xs font-bold text-muted">{kuerzel}</span>
         <LebensBalken wert={hp} max={max} label={label} farbe={farbe} warnen={!farbe} className="h-3 flex-1 rounded" />
       </div>
+      {ep && (
+        <div className="flex items-center gap-1 mt-0.5">
+          <span className="text-xs font-bold text-muted">EP</span>
+          <LebensBalken wert={ep.wert} max={ep.max} label="Erfahrung des Helden" farbe="#60a5fa" className="h-1.5 flex-1 rounded" />
+        </div>
+      )}
     </div>
   );
 }
 
-export function Szene({ held, gegner, heldName, gegnerName, hp, hpMax, himmel, boden, introText, heldAnim, gegnerAnim, zahlen = [], onGegnerClick, heldEp, buehne, children }: {
+export function Szene({ held, gegner, heldName, gegnerName, hp, hpMax, himmel, boden, introText, heldAnim, gegnerAnim, zahlen = [], onGegnerClick, heldEp, heldKp, buehne, children }: {
   held: ReactNode; gegner: ReactNode; heldName: string; gegnerName: string; hp: number; hpMax: number;
   himmel?: string; boden?: string; introText?: string; heldAnim?: Anim; gegnerAnim?: Anim; zahlen?: Zahl[]; onGegnerClick?(): void; /** EP-Balken des Helden (statt voller KP). */ heldEp?: { wert: number; max: number };
+  /** Lebensbalken des Helden (Leben des Laufs); mit `heldEp` kommt die Erfahrung als zweite Zeile dazu. */ heldKp?: { wert: number; max: number };
   /** Eigene Bühne (3D-Arena) statt Boden und Pixelfiguren */ buehne?: ReactNode; children: ReactNode;
 }) {
   // 0 Blitz · 1 Streifen · 2 Figuren und Boxen gleiten ein, Text tippt · 3 fertig
@@ -93,7 +100,8 @@ export function Szene({ held, gegner, heldName, gegnerName, hp, hpMax, himmel, b
               style={{ right: 100 + (z.id % 3) * 24, top: 40 + (z.id % 2) * 16, color: z.heil ? "#16a34a" : "#ff3b30", textShadow: "0 0 3px #fff, 0 0 3px #fff, 0 0 3px #fff" }}>{z.heil ? `🧪 +${z.wert}` : `−${z.wert}`}</span>
           ))}
           {sichtbar && <Box name={gegnerName} hp={hp} max={hpMax} label="Lebensbalken des Gegners" klasse={ein("l")} stil={{ left: 12, top: 12 }} />}
-          {sichtbar && <Box name={heldName} hp={heldEp?.wert ?? 1} max={heldEp?.max ?? 1} kuerzel={heldEp ? "EP" : "KP"} farbe={heldEp ? "#60a5fa" : undefined} label={heldEp ? "Erfahrung des Helden" : undefined} klasse={ein("r")} stil={{ right: 12, bottom: 12 }} />}
+          {sichtbar && heldKp && <Box name={heldName} hp={heldKp.wert} max={heldKp.max} label="Lebensbalken des Helden" ep={heldEp} klasse={ein("r")} stil={{ right: 12, bottom: 12 }} />}
+          {sichtbar && !heldKp && <Box name={heldName} hp={heldEp?.wert ?? 1} max={heldEp?.max ?? 1} kuerzel={heldEp ? "EP" : "KP"} farbe={heldEp ? "#60a5fa" : undefined} label={heldEp ? "Erfahrung des Helden" : undefined} klasse={ein("r")} stil={{ right: 12, bottom: 12 }} />}
           {stufe === 0 && <div className="bs-blink absolute inset-0 bg-white pointer-events-none" />}
           {(stufe === 1 || stufe === 2) && (
             <div className="absolute inset-0 flex flex-col pointer-events-none" aria-hidden>

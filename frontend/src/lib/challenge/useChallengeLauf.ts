@@ -14,6 +14,8 @@ export type ChallengeQuelle = {
   start(spiel?: string): Promise<ChallengeBrett>;
   antwort(body: ChallengeAntwortIn): Promise<ChallengeAntwort>;
   deck(ids: string[]): Promise<ChallengeBrett>;
+  /** Heiltrank im Bosskampf: ein Leben zurück. */
+  trank(): Promise<ChallengeBrett>;
   /** Nur Sitzungen: Minispiel-Wert (Edelsteine) melden und Bestenliste holen; die Boss-Folie hat keine. */
   spielwert?(body: ChallengeSpielwertIn): Promise<{ gesamt: number; max: number }>;
   bestenliste?(spiel: string): Promise<ChallengeBestenlisteZeile[]>;
@@ -25,6 +27,7 @@ export const sitzungsQuelle = (code: string, token?: string | null): ChallengeQu
   start: (spiel) => api.challenge.start(code, token, spiel),
   antwort: (body) => api.challenge.antwort(code, body, token),
   deck: (ids) => api.challenge.deck(code, ids, token),
+  trank: () => api.challenge.trank(code, token),
   spielwert: (body) => api.challenge.spielwert(code, body, token),
   bestenliste: (spiel) => api.challenge.bestenliste(code, spiel, token),
 });
@@ -95,6 +98,11 @@ export function useChallengeLauf(quelle: ChallengeQuelle) {
     setBrett(await qRef.current.deck(ids));
   }, []);
 
+  /** false, wenn der Server ablehnt (z. B. 409: keine Tränke mehr oder schon alle Leben). */
+  const trinken = useCallback(async () => {
+    try { setBrett(await qRef.current.trank()); return true; } catch { return false; }
+  }, []);
+
   /** false, wenn der Server den Wechsel ablehnt (z. B. 409). */
   const spielWechseln = useCallback(async (spiel: string) => {
     try { await holeBrett(spiel); return true; } catch { return false; }
@@ -117,6 +125,6 @@ export function useChallengeLauf(quelle: ChallengeQuelle) {
 
   /** Wofür der Lauf läuft (Sitzung/Boss-Folie): Schlüssel für lokal Gemerktes. */
   const schluessel: string | undefined = key;
-  return { schluessel, info, brett, laden, fehler, waehle, gelegt, antworte, deckSetzen, spielWechseln, spielwert, bestenliste, hatBestenliste, meineEdelsteine };
+  return { schluessel, info, brett, laden, fehler, waehle, gelegt, antworte, deckSetzen, trinken, spielWechseln, spielwert, bestenliste, hatBestenliste, meineEdelsteine };
 }
 export type ChallengeLauf = ReturnType<typeof useChallengeLauf>;

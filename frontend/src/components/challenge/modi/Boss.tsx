@@ -8,7 +8,7 @@ import Papierkorb, { WegKnopf } from "@/components/challenge/Papierkorb";
 import type { ChallengeAntwort, ChallengeBrett } from "@/lib/api";
 import { PixelMatrix } from "@/components/challenge/pixel/Matrix";
 import type { ModusProps } from "./typen";
-import { Ablage, FaktKarte, Frage, Herzen, Treffermeldung } from "./teile";
+import { Ablage, FaktKarte, Frage, Treffermeldung } from "./teile";
 import { heiltrank } from "@/lib/challenge/heiltrank";
 import { skinVon } from "./boss/figuren";
 import Sammeln from "./boss/Sammeln";
@@ -19,8 +19,9 @@ import { EP_SIEG, anzahlMonster, bossSeed, epBalken } from "@/lib/challenge/boss
 type Ansicht = "menu" | "kontern" | "tasche";
 const FELDER = ["kontern", "tasche", "wechseln", "flucht"] as const;
 const nieAendern = () => () => {};
+const LEBEN = 3; // wie LEBEN in api/challenge_engine.py
 
-export default function Boss({ brett, theme, skin, lauf, zurKarte }: ModusProps) {
+export default function Boss({ brett, theme, skin, lauf, zurKarte, spielart }: ModusProps) {
   const sk = skinVon(skin);
   const mitGL = useSyncExternalStore(nieAendern, webglDa, () => false); // 3D-Arena nur mit WebGL, sonst Pixelbühne
   // Schon gesammelt (z. B. nach drei Fehlversuchen zurück zur Karte): direkt wieder zur Gepäck-Wahl, nicht noch einmal ins Verlies
@@ -34,7 +35,6 @@ export default function Boss({ brett, theme, skin, lauf, zurKarte }: ModusProps)
   const deckWar = useRef(!!brett.deck);
   const [gefunden, setGefunden] = useState<string[]>(() => (schonGesammelt ? brett.fakten.map((f) => f.id) : []));
   const korb = useAblage(brett.etappe);
-  const [idx, setIdx] = useState(0);
   const [ablage, setAblage] = useState<string[]>([]);
   const [tipp, setTipp] = useState(false);
   const [antwort, setAntwort] = useState<ChallengeAntwort | null>(null);
@@ -48,11 +48,12 @@ export default function Boss({ brett, theme, skin, lauf, zurKarte }: ModusProps)
   const [ansicht, setAnsicht] = useState<Ansicht>("menu");
   const [feld, setFeld] = useState(0);
   const [ep, setEp] = useState(0);
+  const [trankText, setTrankText] = useState("");
   const feldEl = useRef<(HTMLButtonElement | null)[]>([]);
   const epMax = anzahlMonster(brett.fakten.length) * EP_SIEG;
 
   const offene = brett.challenges.filter((c) => !c.erledigt);
-  const aktiv = offene.length ? offene[idx % offene.length] : null;
+  const aktiv = offene[0] ?? null;
   const gesammelt = brett.fakten.filter((f) => gefunden.includes(f.id) || (brett.deck ?? []).includes(f.id));
   const imGepaeck = gesammelt.filter((f) => !korb.istWeg(f.id));
   const ausruesten = phase === "arena" && brett.fakten.length > 0 && (!deck || neuWaehlen);
@@ -106,6 +107,7 @@ export default function Boss({ brett, theme, skin, lauf, zurKarte }: ModusProps)
     setSende(true);
     try {
       const r = await lauf.antworte(aktiv.id, ablage, tipp);
+      setTrankText("");
       setSchaden((s) => s + r.schaden);
       const n = Date.now();
       const h = heiltrank(r, max, Math.max(schaden + r.schaden, erledigt) - geheilt);
@@ -123,21 +125,28 @@ export default function Boss({ brett, theme, skin, lauf, zurKarte }: ModusProps)
     }
   };
 
+  const traenke = brett.traenke ?? 0;
+  const trinken = async () => {
+    if (await lauf.trinken()) {
+      setTrankText("🧪 Du trinkst einen Heiltrank – ein Leben zurück!");
+      setAnsicht("menu");
+    }
+  };
   const bg = theme.farben.himmel === "transparent" ? undefined : theme.farben.himmel;
   const boden = theme.farben.boden === "transparent" ? "#6b7a5a" : theme.farben.boden;
   const bal = epBalken(ep);
-  const zugNr = (brett.etappe + (aktiv ? idx : 0)) % sk.zuege.length;
+  const zugNr = brett.etappe % sk.zuege.length;
   const zug = sk.zuege[zugNr];
   const felder: { id: (typeof FELDER)[number]; text: string; icon: string; aus?: boolean }[] = [
     { id: "kontern", text: sk.kontern, icon: "⚔️" },
     { id: "tasche", text: "Tasche", icon: "🎒" },
-    { id: "wechseln", text: "Wechseln", icon: "🔄", aus: true }, // vorerst gesperrt
+    { id: "wechseln", text: "Wechseln", icon: "🔄", aus: !spielart }, // andere Spielart; die Etappe beginnt von vorn
     { id: "flucht", text: "Flucht", icon: "🏃" },
   ];
   const waehleFeld = (id: (typeof FELDER)[number]) => {
     if (id === "kontern") setAnsicht("kontern");
     else if (id === "tasche") setAnsicht("tasche");
-    else if (id === "wechseln") { setIdx(idx + 1); setAblage([]); setTipp(false); setAntwort(null); }
+    else if (id === "wechseln") spielart?.();
     else fliehen();
   };
   // Game-Boy-Menü: Pfeiltasten springen im 2×2-Raster
@@ -154,7 +163,6 @@ export default function Boss({ brett, theme, skin, lauf, zurKarte }: ModusProps)
   return (
     <>
       <div className="flex items-center justify-between">
-        <Herzen leben={brett.leben} />
         <strong>{sk.titel} · Lv. {bal.level} · Etappe {Math.min(gesamt, geschafft + 1)} von {gesamt}</strong>
         <div className="flex gap-2">
           <BestenlisteKnopf lauf={lauf} spiel="boss" hinweis="Erfahrung aus den Kämpfen gegen Mini-Monster" rechts />
@@ -184,10 +192,11 @@ export default function Boss({ brett, theme, skin, lauf, zurKarte }: ModusProps)
         <>
           {etappeBeat && <p className="card p-3 font-bold text-good" role="status">Etappe geschafft – der Drache flieht tiefer ins Verlies!</p>}
           <Treffermeldung antwort={antwort} heil={heil} />
+          {trankText && <p className="card p-3 font-bold" role="status">{trankText}</p>}
           <Szene introText={sk.intro} himmel={bg} boden={boden === "#6b7a5a" ? undefined : boden}
             held={<PixelMatrix bild={sk.held.bild} palette={sk.held.palette} scale={6} label={sk.held.name} />}
             gegner={<div style={{ transform: "scaleX(-1)" }}><PixelMatrix bild={sk.boss.bild} palette={sk.boss.palette} scale={7} label={sk.boss.name} /></div>}
-            heldName={`${sk.held.name} Lv. ${bal.level}`} heldEp={ep > 0 ? { wert: bal.wert, max: bal.max } : undefined} gegnerName={sk.boss.name} hp={hp} hpMax={max}
+            heldName={`${sk.held.name} Lv. ${bal.level}`} heldEp={ep > 0 ? { wert: bal.wert, max: bal.max } : undefined} heldKp={{ wert: brett.leben, max: LEBEN }} gegnerName={sk.boss.name} hp={hp} hpMax={max}
             heldAnim={heldAnim} gegnerAnim={offene.length === 0 ? { art: "weg", n: -1 } : gegnerAnim} zahlen={zahlen}
             buehne={mitGL ? <Arena3D skin={skin} himmel={bg} boden={boden === "#6b7a5a" ? undefined : boden} gegnerAnim={gegnerAnim}
               heldElement={sk.heldElement} bossElement={sk.zugElemente[zugNr]} weg={offene.length === 0} /> : undefined}>
@@ -225,6 +234,11 @@ export default function Boss({ brett, theme, skin, lauf, zurKarte }: ModusProps)
           {aktiv && ansicht === "tasche" && (
             <div className="card p-3 flex flex-col gap-2" role="region" aria-label="Tasche">
               <strong>🎒 Tasche</strong>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-bold">🧪 Heiltrank ×{traenke}</span>
+                <button className="btn-secondary" disabled={traenke <= 0 || brett.leben >= LEBEN} onClick={trinken}>Trinken (+1 Leben)</button>
+                {traenke > 0 && brett.leben >= LEBEN && <span className="text-muted text-sm">Du bist voll bei Kräften.</span>}
+              </div>
               {aktiv.tip ? (tipp ? <p className="text-muted">💡 {aktiv.tip}</p> : <button className="btn-secondary self-start" onClick={() => setTipp(true)}>💡 Tipp benutzen</button>)
                 : <p className="text-muted">Für diesen {sk.angriff} gibt es keinen Tipp.</p>}
               <strong className="text-sm">Im Gepäck ({inventar.length})</strong>

@@ -7,10 +7,11 @@ export function GerichtStil() {
       @keyframes gr-burst{0%{transform:scale(.2) rotate(-12deg);opacity:0}30%{transform:scale(1.25) rotate(-6deg);opacity:1}100%{transform:scale(1) rotate(-6deg);opacity:1}}
       @keyframes gr-hammer{0%,100%{transform:rotate(-40deg)}50%{transform:rotate(25deg) translateY(6px)}}
       @keyframes gr-zittern{0%,100%{transform:translateX(0)}50%{transform:translateX(3px)}}
+      @keyframes gr-kopf{0%,100%{transform:rotate(0)}25%{transform:rotate(-9deg)}75%{transform:rotate(9deg)}}
       @keyframes gr-tropf{0%{transform:translateY(0);opacity:1}100%{transform:translateY(20px);opacity:0}}
       .gr-schuettel{animation:gr-schuettel .55s 1}.gr-burst{animation:gr-burst .35s forwards}.gr-hammer{animation:gr-hammer .4s 3}
-      .gr-zittern{animation:gr-zittern .15s infinite}.gr-tropf{animation:gr-tropf 1s infinite}
-      @media (prefers-reduced-motion: reduce){.gr-schuettel,.gr-burst,.gr-hammer,.gr-zittern,.gr-tropf{animation:none!important}}
+      .gr-zittern{animation:gr-zittern .15s infinite}.gr-tropf{animation:gr-tropf 1s infinite}.gr-kopf{animation:gr-kopf .5s 3}
+      @media (prefers-reduced-motion: reduce){.gr-schuettel,.gr-burst,.gr-hammer,.gr-zittern,.gr-tropf,.gr-kopf{animation:none!important}}
     `}</style>
   );
 }

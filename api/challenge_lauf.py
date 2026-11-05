@@ -4,7 +4,7 @@ Der Router (api/routers/challenge.py) bildet die Spalten von ChallengeStand auf 
 TaskCrawler (Boss-Folie) kann dieselbe Logik ohne ChallengeStand-Zeile nutzen.
 
 lauf = {"stufe", "stufe_start", "seed", "spiel", "fertig",
-        "zustand": {"etappe", "reihenfolge" (nur gemischt: Etappen-Nummern in Spielreihenfolge), "leben", "erledigt", "deck": {etappe: [fakt_ids]}, "deck_ablenker": [fakt_ids]},
+        "zustand": {"etappe", "reihenfolge" (nur gemischt: Etappen-Nummern in Spielreihenfolge), "leben", "traenke" (Heiltränke der Etappe), "erledigt", "deck": {etappe: [fakt_ids]}, "deck_ablenker": [fakt_ids]},
         "fragen": [...], "verlauf": [...]}
 """
 import random
@@ -16,6 +16,7 @@ from . import challenge_engine as eng
 from . import dda
 
 STANDARD_STARTSTUFE = 2
+TRAENKE = 2  # Heiltränke je Etappe; jeder gibt ein Leben zurück
 SKINS = ("monster", "rap", "prinzessin", "einhorn")
 
 
@@ -68,14 +69,38 @@ def _ordne(daten: dict, lauf: dict, mischen: bool) -> None:
 
 
 def spiel_wechseln(daten: dict, lauf: dict, spiel: str) -> None:
-    """Spielart eines bestehenden Laufs; vom/zum Gerichtssaal nur, solange es noch keine Antworten gibt."""
+    """Spielart eines bestehenden Laufs, jederzeit. Die aktuelle Etappe beginnt von vorn (Gelöstes, Leben,
+    Tränke, Deck); frühere Etappen bleiben geschafft, alle Antworten zählen weiter für die Wertung."""
     if spiel == lauf["spiel"]:
         return
-    if "gericht" in (spiel, lauf["spiel"]) and lauf["fragen"]:
-        raise LaufFehler(409, "Der Gerichtssaal lässt sich nach der ersten Antwort nicht mehr wechseln")
+    if not lauf["fragen"] or lauf["fertig"]:
+        lauf["spiel"] = spiel
+        if not lauf["fragen"]:
+            _ordne(daten, lauf, "reihenfolge" in lauf["zustand"])
+        return
+    alt = _satz(daten, lauf)
+    nr = _etappe(alt, lauf)
     lauf["spiel"] = spiel
-    if not lauf["fragen"]:
-        _ordne(daten, lauf, "reihenfolge" in lauf["zustand"])
+    neu = _satz(daten, lauf)
+    # Gerichtssaal und die übrigen Spielarten haben verschiedene Aufgaben: beide Etappen leeren
+    raus = {c["id"] for c in _in_etappe(alt, nr) + _in_etappe(neu, nr)}
+    z = lauf["zustand"]
+    z["erledigt"] = [i for i in z["erledigt"] if i not in raus]
+    z["leben"], z["traenke"] = eng.LEBEN, TRAENKE
+    z.get("deck", {}).pop(str(nr), None)
+    if nr in _reihenfolge(neu, lauf):
+        z["etappe"] = nr
+
+
+def trank_trinken(lauf: dict) -> None:
+    """Heiltrank aus der Tasche: ein Leben zurück, höchstens TRAENKE je Etappe."""
+    z = lauf["zustand"]
+    if z.get("traenke", TRAENKE) <= 0:
+        raise LaufFehler(409, "Keine Heiltränke mehr in dieser Etappe")
+    if z["leben"] >= eng.LEBEN:
+        raise LaufFehler(409, "Du hast schon alle Leben")
+    z["traenke"] = z.get("traenke", TRAENKE) - 1
+    z["leben"] += 1
 
 
 def _in_etappe(satz: dict, nr: int) -> list[dict]:
@@ -126,6 +151,7 @@ def brett(daten: dict, lauf: dict, bild=lambda name: name, tipps: bool | None = 
 
     return {
         "stufe": lauf["stufe"], "etappe": etappe, "leben": lauf["zustand"]["leben"], "spiel": lauf["spiel"],
+        "traenke": lauf["zustand"].get("traenke", TRAENKE),
         "deck": lauf["zustand"].get("deck", {}).get(str(etappe)),
         "etappen": [{"nr": nr, "titel": titel.get(nr) or f"Etappe {nr}",
                      "erledigt": all(c["id"] in erledigt for c in _in_etappe(satz, nr))}
@@ -200,7 +226,7 @@ def _antworte(daten, lauf, challenge_id, fakt_ids, lese_ms, wahl_ms, tipp, kalib
             z["deck"].pop(str(etappe), None)  # neu zusammenstellen
     if all(c["id"] in z["erledigt"] for c in _in_etappe(satz, etappe)):
         etappe_geschafft = True
-        z["leben"] = eng.LEBEN
+        z["leben"], z["traenke"] = eng.LEBEN, TRAENKE
         reihe = _reihenfolge(satz, lauf)
         weitere = reihe[reihe.index(etappe) + 1:]
         if weitere:

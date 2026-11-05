@@ -74,19 +74,43 @@ def test_gericht_nutzt_behauptungen():
     assert l["fertig"] is True
 
 
-def test_spiel_wechseln_gericht_sperre():
+def test_spiel_wechseln_jederzeit_etappe_von_vorn():
     l = lauf.neuer_lauf(MIT_CLAIMS, 2, seed=1)
-    lauf.spiel_wechseln(MIT_CLAIMS, l, "gericht")
-    assert l["spiel"] == "gericht" and l["zustand"]["etappe"] == 1
+    lauf.antworte(MIT_CLAIMS, l, "c3", ["f4"], 8000, 5000, False)
+    lauf.antworte(MIT_CLAIMS, l, "c4", ["x1"], 8000, 5000, False)  # daneben: ein Leben weniger
+    l["zustand"]["traenke"] = 0
+    lauf.spiel_wechseln(MIT_CLAIMS, l, "gericht")  # auch nach Antworten
+    z = l["zustand"]
+    assert l["spiel"] == "gericht" and z["etappe"] == 1 and z["leben"] == eng.LEBEN and z["traenke"] == lauf.TRAENKE
+    assert "c3" not in z["erledigt"] and len(l["fragen"]) == 2  # Antworten zählen weiter für die Wertung
     lauf.antworte(MIT_CLAIMS, l, "k1", ["f2"], 8000, 5000, False)
-    with pytest.raises(lauf.LaufFehler) as e:
-        lauf.spiel_wechseln(MIT_CLAIMS, l, "normal")
-    assert e.value.status == 409
-    n = lauf.neuer_lauf(MIT_CLAIMS, 2, seed=1)
-    lauf.antworte(MIT_CLAIMS, n, "c3", ["f4"], 8000, 5000, False)
-    lauf.spiel_wechseln(MIT_CLAIMS, n, "karten")  # normal <-> karten frei
+    lauf.spiel_wechseln(MIT_CLAIMS, l, "normal")
+    assert "k1" not in l["zustand"]["erledigt"]
+
+
+def test_spiel_wechseln_behaelt_fruehere_etappen():
+    l = lauf.neuer_lauf(SATZ, 2, seed=1)
+    while l["zustand"]["etappe"] == 1:
+        c = next(c for c in lauf.brett(SATZ, l)["challenges"] if not c["erledigt"])
+        lauf.antworte(SATZ, l, c["id"], LOESUNG[c["id"]], 8000, 5000, False)
+    vorher = set(l["zustand"]["erledigt"])
+    lauf.spiel_wechseln(SATZ, l, "karten")
+    assert l["zustand"]["etappe"] == 2 and vorher <= set(l["zustand"]["erledigt"])
+
+
+def test_heiltrank_gibt_ein_leben_zurueck_zwei_je_etappe():
+    l = lauf.neuer_lauf(SATZ, 2, "boss", seed=1)
     with pytest.raises(lauf.LaufFehler):
-        lauf.spiel_wechseln(MIT_CLAIMS, n, "gericht")
+        lauf.trank_trinken(l)  # volle Leben: kein Trank nötig
+    for _ in range(2):
+        lauf.antworte(SATZ, l, "c4", ["x1"], 8000, 5000, False)
+    assert l["zustand"]["leben"] == 1
+    lauf.trank_trinken(l)
+    lauf.trank_trinken(l)
+    assert l["zustand"]["leben"] == 3 and lauf.brett(SATZ, l)["traenke"] == 0
+    lauf.antworte(SATZ, l, "c4", ["x1"], 8000, 5000, False)
+    with pytest.raises(lauf.LaufFehler):
+        lauf.trank_trinken(l)  # beide getrunken
 
 
 # ── Engine: Claims, Kalibrierung ─────────────────────────────────────
@@ -183,7 +207,7 @@ def test_gericht_start_ohne_claims_ist_400(client, db, teacher_token, klass):
     assert _start_mit(client, code, _tok(_schueler(db, klass)), "gericht").status_code == 400
 
 
-def test_gericht_spielen_und_wechselsperre(client, db, teacher_token, klass):
+def test_gericht_spielen_und_wechseln(client, db, teacher_token, klass):
     code = _sitzung(client, teacher_token, MIT_CLAIMS, spiele=["normal", "gericht"])
     tok = _tok(_schueler(db, klass))
     brett = _start_mit(client, code, tok, "gericht").json()
@@ -191,7 +215,8 @@ def test_gericht_spielen_und_wechselsperre(client, db, teacher_token, klass):
     r = client.post(f"/api/challenge/{code}/antwort", headers=_h(client, tok), json={
         "challenge_id": "k1", "fakt_ids": ["f2"], "lese_ms": 8000, "wahl_ms": 5000, "tipp": False})
     assert r.status_code == 200 and r.json()["komplett"] is True and r.json()["feedback"] == "Nein."
-    assert _start_mit(client, code, tok, "normal").status_code == 409
+    r = _start_mit(client, code, tok, "normal")  # Wechsel geht auch nach Antworten
+    assert r.status_code == 200 and r.json()["spiel"] == "normal" and not any(c["erledigt"] for c in r.json()["challenges"])
 
 
 def test_deck_endpunkt(client, db, teacher_token, klass):
@@ -210,6 +235,16 @@ def test_deck_endpunkt(client, db, teacher_token, klass):
     assert ueb["deck_ablenker"] == ["Schwere Körper fallen schneller"] and ueb["stand_id"] and ueb["student_id"]
     csv = client.get(f"/api/challenge/{code}/export.csv", headers=_h(client, teacher_token)).content.decode("utf-8-sig")
     assert "deck_ablenker" in csv.splitlines()[0] and "Schwere Körper fallen schneller" in csv
+
+
+def test_trank_endpunkt(client, db, teacher_token, klass):
+    code = _sitzung(client, teacher_token, spiele=["boss"])
+    tok = _tok(_schueler(db, klass))
+    assert _start(client, code, tok).json()["traenke"] == 2
+    assert client.post(f"/api/challenge/{code}/trank", headers=_h(client, tok)).status_code == 409  # volle Leben
+    _antwort(client, code, tok, "c2", ["x1"])
+    r = client.post(f"/api/challenge/{code}/trank", headers=_h(client, tok))
+    assert r.status_code == 200 and r.json()["leben"] == eng.LEBEN and r.json()["traenke"] == 1
 
 
 def test_deck_wird_bei_zurueck_zur_karte_geloescht(client, db, teacher_token, klass):

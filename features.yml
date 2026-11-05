@@ -101,6 +101,9 @@ aktivitaeten:
       - Ein Satzformat für alle Spielarten (facts, challenges, decoys, Etappen), Import als .json/.zip mit Bildern, Vorlage, Bearbeiten per Formular oder JSON
       - Kombos (mehrere Fakten zusammen), falsche Fakten schwächen den Treffer (Malus), drei Fehlversuche führen zurück zur Karte mit Wissen zum Nachlesen
       - Jede Frage zeigt in allen Spielarten, wie viele Fakten die Antwort braucht (🃏 je Fakt)
+      - Spielart jederzeit wechselbar (auch der Gerichtssaal, im Bosskampf über »Wechseln«); die aktuelle Etappe beginnt dann von vorn, geschaffte Etappen und alle Antworten bleiben
+      - "Bosskampf: Lebensbalken des Helden statt Herzen, zwei Heiltränke je Etappe in der Tasche (je ein Leben zurück)"
+      - "Gerichtssaal als Bild: Richter mit Hammer am Pult, Zeuge im Zeugenstand (schwitzt, zittert, bricht zusammen), Geschworene reagieren, vorn Verteidigung und Anklage"
       - Vier Stufen mit eigenen Texten und Fragen je Stufe (levels), Stufe wechselt per Fuzzy-Anpassung; Tipps nur auf Stufe 1
       - "Wertung: jede Antwort zählt, Wiederholungen heben die Güte, 100 % nur ohne Fehler im ersten Anlauf; Spiel- und Wissenswertung getrennt"
       - Auswertung je Person (Lesetempo, geraten, Kombos, gewählte Ablenker), CSV, Hauspunkte als Klassenmittel (bis 100 je Person)

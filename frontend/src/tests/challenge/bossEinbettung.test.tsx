@@ -21,6 +21,7 @@ describe("ChallengeSpiel mit eigener Quelle", () => {
       start: vi.fn().mockResolvedValue(brett),
       antwort: vi.fn().mockResolvedValue(antwort),
       deck: vi.fn(),
+      trank: vi.fn(),
     };
     const onAntwort = vi.fn(); const onFertig = vi.fn();
     const u = userEvent.setup();

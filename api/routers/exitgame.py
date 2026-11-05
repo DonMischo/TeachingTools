@@ -1545,6 +1545,19 @@ def boss_deck(
     return _boss_brett(attempt, slide, lauf)
 
 
+@router.post("/api/exitgame-attempts/{attempt_id}/boss/{slide_id}/trank")
+def boss_trank(
+    attempt_id: int, slide_id: str, request: Request,
+    db: Session = Depends(get_db), credentials: HTTPAuthorizationCredentials | None = Depends(bearer),
+):
+    attempt, _, slide = _boss_kontext(attempt_id, slide_id, request, credentials, db)
+    lauf = _boss_lauf(attempt, slide)
+    challenge_lauf.trank_trinken(lauf)
+    _boss_speichern(attempt, slide, lauf)
+    db.commit()
+    return _boss_brett(attempt, slide, lauf)
+
+
 @router.post("/api/exitgame-attempts/{attempt_id}/boss/{slide_id}/antwort")
 async def boss_antwort(
     attempt_id: int, slide_id: str, body: AntwortIn, request: Request,

@@ -460,6 +460,19 @@ def deck(code: str, body: DeckIn, db: Session = Depends(get_db), spieler=Depends
     return lauf_logik.brett(g.data, lauf, _bild(g.id))
 
 
+@router.post("/{code}/trank")
+def trank(code: str, db: Session = Depends(get_db), spieler=Depends(get_player)):
+    """Heiltrank aus der Tasche (Bosskampf): ein Leben zurück; zurück kommt das Brett."""
+    s = _offene_sitzung(db, code)
+    g = _satz(db, s)
+    st = _stand_oder_409(db, s, spieler)
+    lauf = _lauf(st)
+    lauf_logik.trank_trinken(lauf)
+    _speichern(st, lauf)
+    db.commit()
+    return lauf_logik.brett(g.data, lauf, _bild(g.id))
+
+
 @router.post("/{code}/antwort")
 def antwort(code: str, body: AntwortIn, db: Session = Depends(get_db), spieler=Depends(get_player)):
     s = _offene_sitzung(db, code)

@@ -13,4 +13,5 @@ export const bossQuelle = (attemptId: number, slide: ExitGameSlide): ChallengeQu
   start: (spiel) => api.exitgame.attempts.boss.start(attemptId, slide.id, spiel),
   antwort: (body) => api.exitgame.attempts.boss.antwort(attemptId, slide.id, body),
   deck: (ids) => api.exitgame.attempts.boss.deck(attemptId, slide.id, ids),
+  trank: () => api.exitgame.attempts.boss.trank(attemptId, slide.id),
 });

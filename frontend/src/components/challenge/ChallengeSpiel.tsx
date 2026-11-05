@@ -48,7 +48,8 @@ export default function ChallengeSpiel({ code = "", token, quelle, onAntwort, on
 
   const wechsle = async (spiel: string) => {
     setWechselFehler("");
-    if (await lauf.spielWechseln(spiel)) { setWaehlen(false); setHinweis(""); setAnsicht("karte"); }
+    const neu = !!brett && brett.spiel !== spiel;
+    if (await lauf.spielWechseln(spiel)) { setWaehlen(false); setHinweis(neu ? "🔄 Spielart gewechselt – diese Etappe beginnt von vorn." : ""); setAnsicht("karte"); }
     else setWechselFehler("Die Spielart lässt sich jetzt nicht wechseln.");
   };
 
@@ -67,6 +68,7 @@ export default function ChallengeSpiel({ code = "", token, quelle, onAntwort, on
             </button>
           ))}
         </div>
+        {brett && <p className="text-muted">Beim Wechsel beginnt die aktuelle Etappe von vorn; geschaffte Etappen bleiben geschafft.</p>}
         {wechselFehler && <p className="text-bad" role="alert">{wechselFehler}</p>}
         {brett && <button className="btn-secondary self-start" onClick={() => setWaehlen(false)}>Zurück</button>}
       </div>
@@ -173,7 +175,8 @@ export default function ChallengeSpiel({ code = "", token, quelle, onAntwort, on
       {ansicht === "kampf" && (
         <Suspense fallback={<p className="text-muted">Lade…</p>}>
           <Modus brett={brett} theme={theme} skin={info.settings.skin ?? "monster"} lauf={rahmenLauf}
-            zurKarte={() => { clearTimeout(uhr.current); setWartet(false); setHinweis(""); setAnsicht("karte"); }} />
+            zurKarte={() => { clearTimeout(uhr.current); setWartet(false); setHinweis(""); setAnsicht("karte"); }}
+            spielart={erlaubt.length > 1 ? () => { clearTimeout(uhr.current); setWartet(false); setWaehlen(true); } : undefined} />
         </Suspense>
       )}
     </div>
