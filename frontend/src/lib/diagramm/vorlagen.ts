@@ -69,6 +69,13 @@ export const RICHTUNGEN = [
   { id: "left", name: "← nach links" },
 ];
 
+/**
+ * Übergabe von anderen Werkzeugen (z. B. KI-Kompass-Workflows): `{ name, code }`
+ * unter diesem Schlüssel. Die Werkstatt legt beim Öffnen ein neues Blatt damit
+ * an und löscht den Schlüssel, sobald die Ablage gespeichert ist.
+ */
+export const DIAGRAMM_IMPORT = "hp_diagramm_import";
+
 /* --------------------------------------------------- Auftrag für eine KI */
 
 /**

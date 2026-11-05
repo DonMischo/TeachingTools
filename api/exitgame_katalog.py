@@ -204,7 +204,7 @@ WERKZEUGE = {
     "baum": {"name": "Baumleben", "config": {}},
     "klikk": {"name": "Klikk (Social Media)", "config": {}, "hinweis": "Spielstand nur in diesem Browser."},
     "leviathan": {"name": "Leviathan", "config": {}, "hinweis": "Spielstand nur in diesem Browser, Standard-Einstellungen."},
-    "kikompass": {"name": "KI-Kompass", "config": {"reiter?": "start|raster|fuehrerschein|portfolio|projekte"}},
+    "kikompass": {"name": "KI-Kompass", "config": {"reiter?": "start|raster|fuehrerschein|portfolio|projekte|workflows"}},
     "schichten": {
         "name": "Schichtenmodell",
         "config": {"reiter": "reise|weg|pakete|wissen|mission|fehler", "modell?": "osi|tcpip"},

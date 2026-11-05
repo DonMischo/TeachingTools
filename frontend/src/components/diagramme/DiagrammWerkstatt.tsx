@@ -17,7 +17,7 @@ import {
   parse, serialize, type Modell, type Pfeil,
 } from "@/lib/diagramm/d2modell";
 import { zeichne, fehlerLesen, type D2Fehler, type Ergebnis } from "@/lib/diagramm/d2laufzeit";
-import { FARBEN, FORMEN, RICHTUNGEN, THEMEN, VORLAGEN } from "@/lib/diagramm/vorlagen";
+import { DIAGRAMM_IMPORT, FARBEN, FORMEN, RICHTUNGEN, THEMEN, VORLAGEN } from "@/lib/diagramm/vorlagen";
 import { CodeFeld } from "./CodeFeld";
 import { Spickzettel } from "./Spickzettel";
 import { KiPrompt } from "./KiPrompt";
@@ -34,6 +34,20 @@ function neuesBlatt(name: string, code: string): Blatt {
 }
 
 function ladeAblage(): Ablage {
+  const ablage = ladeGespeichert();
+  // Übergabe aus einem anderen Werkzeug als neues, aktives Blatt. Der Schlüssel
+  // bleibt bis nach dem Speichern liegen: StrictMode ruft diese Funktion doppelt auf.
+  try {
+    const imp = JSON.parse(localStorage.getItem(DIAGRAMM_IMPORT) ?? "null") as { name?: unknown; code?: unknown } | null;
+    if (imp && typeof imp.code === "string") {
+      const b = neuesBlatt(typeof imp.name === "string" ? imp.name : "Übernommenes Diagramm", imp.code);
+      return { aktiv: b.id, liste: [b, ...ablage.liste] };
+    }
+  } catch { /* kaputt oder gesperrt */ }
+  return ablage;
+}
+
+function ladeGespeichert(): Ablage {
   try {
     const a = JSON.parse(localStorage.getItem(SPEICHER) ?? "null") as Ablage | null;
     if (a?.liste?.length) return a.liste.some(b => b.id === a.aktiv) ? a : { ...a, aktiv: a.liste[0].id };
@@ -87,7 +101,10 @@ export default function DiagrammWerkstatt({ action }: { action?: ReactNode }) {
   const dateiFeld = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    try { localStorage.setItem(SPEICHER, JSON.stringify(ablage)); } catch { /* voll oder gesperrt */ }
+    try {
+      localStorage.setItem(SPEICHER, JSON.stringify(ablage));
+      localStorage.removeItem(DIAGRAMM_IMPORT);
+    } catch { /* voll oder gesperrt */ }
   }, [ablage]);
 
   const modell = useMemo(() => parse(code), [code]);

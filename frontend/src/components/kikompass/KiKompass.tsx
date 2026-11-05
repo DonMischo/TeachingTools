@@ -18,11 +18,12 @@ import { Raster } from "./Raster";
 import { Fuehrerschein } from "./Fuehrerschein";
 import { Portfolio } from "./Portfolio";
 import { Lehrkraft, type LehrUnter } from "./Lehrkraft";
+import { Workflows } from "./Workflows";
 import { Projekte } from "./Projekte";
 import type { Sprungziel } from "./AktivWeg";
 import type { WerkstattTeil } from "./Werkstatt";
 
-type Reiter = "start" | "raster" | "fuehrerschein" | "portfolio" | "projekte" | "lehrkraft";
+type Reiter = "start" | "raster" | "fuehrerschein" | "portfolio" | "projekte" | "workflows" | "lehrkraft";
 const LEER: KiKompassStand = { einschaetzungen: [], stationen: {} };
 
 function lokalLaden(schluessel: string): KiKompassStand {
@@ -48,7 +49,7 @@ export default function KiKompass({ action, name = "", konto, verwaltung = false
   vorgabe?: Vorgabe;
 }) {
   // Station mit festem Reiter: ohne Reiterleiste, wie es der TaskCrawler verspricht.
-  const festerReiter = wahl(vorgabe, "reiter", ["start", "raster", "fuehrerschein", "portfolio", "projekte"] as const);
+  const festerReiter = wahl(vorgabe, "reiter", ["start", "raster", "fuehrerschein", "portfolio", "projekte", "workflows"] as const);
   const [reiter, setReiter] = useState<Reiter>(festerReiter ?? "start");
   const [lehrUnter, setLehrUnter] = useState<LehrUnter>("uebersicht");
   const [werkstattTeil, setWerkstattTeil] = useState<WerkstattTeil>("material");
@@ -128,7 +129,7 @@ export default function KiKompass({ action, name = "", konto, verwaltung = false
   }
 
   const REITER: [Reiter, string][] = [
-    ["start", "🧭 Start"], ["raster", "🕸️ Kompetenzraster"], ["fuehrerschein", "🪪 KI-Führerschein"], ["portfolio", "📒 Portfolio"], ["projekte", "🚀 Projekte"],
+    ["start", "🧭 Start"], ["raster", "🕸️ Kompetenzraster"], ["fuehrerschein", "🪪 KI-Führerschein"], ["portfolio", "📒 Portfolio"], ["projekte", "🚀 Projekte"], ["workflows", "🔀 Workflows"],
     ...(verwaltung ? [["lehrkraft", "👩‍🏫 Für Lehrkräfte"] as [Reiter, string]] : []),
   ];
 
@@ -158,6 +159,7 @@ export default function KiKompass({ action, name = "", konto, verwaltung = false
           )}
           {reiter === "portfolio" && <Portfolio name={name} stande={stand.stationen} einschaetzungen={stand.einschaetzungen} />}
           {reiter === "projekte" && <Projekte ais={ais} />}
+          {reiter === "workflows" && <Workflows lehrkraft={verwaltung} mitWerkstatt={!!konto || verwaltung} />}
           {reiter === "lehrkraft" && verwaltung && (
             <Lehrkraft code={lehrCode} sitzung={eigeneSitzung ?? null} onSitzung={s => qc.setQueryData(["kikompass-sitzung"], s)}
               unter={lehrUnter} onUnter={setLehrUnter}

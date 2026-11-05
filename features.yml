@@ -469,6 +469,7 @@ simulationen:
       - 20 Farbthemen, Richtung, Anordnung (dagre oder ELK), Handzeichnungs-Stil - im Code unter vars.d2-config
       - Prompt-Baukasten für KI-Chats (Mindmap, Ablaufdiagramm, frei; Thema, Stichworte, bisheriges Diagramm mitschicken) und Vorlage »Mit KI erstellen« mit demselben Auftrag als Kommentar; beim Einfügen wird nur der Codeblock der Antwort übernommen
       - Vorlagen (Mindmap, Ablaufdiagramm, Gruppen), Ablage im Browser, Rückgängig/Wiederholen, Export als PNG, SVG und .d2, .d2 öffnen
+      - Übernimmt Diagramme aus anderen Werkzeugen als neues Blatt (localStorage hp_diagramm_import, z. B. KI-Kompass-Workflows)
   - id: erfolge
     name: Erfolge (Übersicht)
     kann:
@@ -651,6 +652,7 @@ simulationen:
       - Material-Werkstatt (Prompt je Rasterfeld, Aufgaben-Umbauer, Erwartungshorizont)
       - Sechs Projektkarten für Stufe II
       - Materialpool aller Lehrkräfte mit Filter nach Bereich, Stufe, Dimension und Suche
+      - Workflow-Bibliothek (10 Abläufe für Lehrkräfte und Lernende, z. B. TT-Material mit KI füllen, Differenzieren, Feedback, Bild erzeugen, AIS.chat-Lernumgebung, KI-Agent als Rollenspiel, Faktencheck) - Schritte nach Akteur, Prompts mit Thema/Fach/Klasse, Checklisten, Schleifen; als D2-Flussdiagramm in die Diagramm-Werkstatt
   - id: markieren
     name: Markieren & Bearbeiten
     faehigkeiten: {use: [true, true]}
