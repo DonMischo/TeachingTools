@@ -74,7 +74,7 @@ describe("Simulationen mit fester Vorgabe (TaskCrawler-Stationen)", () => {
 
   it("Kreis, Körper und die übrigen Sims sind als Station anwählbar", () => {
     for (const s of ["kreis", "koerper", "groessen", "rechenzeichen", "prozent", "trigonometrie", "stellenwert", "farbmodelle",
-      "markieren", "pcbau", "algo", "stromkreis", "diagramme", "baum", "klikk", "leviathan", "kikompass", "atommodelle"]) {
+      "markieren", "pcbau", "algo", "stromkreis", "diagramme", "baum", "klikk", "medien", "leviathan", "kikompass", "atommodelle"]) {
       expect(SIM_STATIONEN[s], s).toBeTruthy();
     }
   });

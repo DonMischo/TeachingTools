@@ -87,16 +87,18 @@ export function BildStreifen({ bilder, nachweisFuer }: { bilder: FotoBild[]; nac
   );
 }
 
-export default function FotoGalerie({ bilder, bereiche, nachweisFuer, einleitung }: {
+export default function FotoGalerie({ bilder, bereiche, nachweisFuer, einleitung, gesperrt }: {
   bilder: FotoBild[];
   bereiche: FotoBereich[];
   nachweisFuer: Nachweise;
   einleitung: ReactNode;
+  /** Optional: Hinweis, wie man ein gesperrtes Foto freischaltet (null = frei) */
+  gesperrt?: (b: FotoBild) => string | null;
 }) {
   const [bereich, setBereich] = useState<string | null>(null);
   const [offen, setOffen] = useState<number | null>(null);
   const [nachweise, setNachweise] = useState(false);
-  const liste = bilder.filter(b => !bereich || b.bereich === bereich);
+  const liste = bilder.filter(b => (!bereich || b.bereich === bereich) && !gesperrt?.(b));
 
   return (
     <div className="flex flex-col gap-4">
@@ -116,7 +118,20 @@ export default function FotoGalerie({ bilder, bereiche, nachweisFuer, einleitung
         <section key={ber.id} className="flex flex-col gap-2">
           <h3 className="font-black">{ber.icon} {ber.name}</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {liste.filter(b => b.bereich === ber.id).map(b => (
+            {bilder.filter(b => b.bereich === ber.id && (!bereich || b.bereich === bereich)).map(b => {
+              const sperre = gesperrt?.(b);
+              if (sperre) return (
+                <div key={b.id} className="rounded-xl border border-dashed border-line bg-surface overflow-hidden" title={sperre}>
+                  <div className="w-full aspect-3/2 flex flex-col items-center justify-center bg-surface-hover text-muted gap-1">
+                    <span className="text-3xl">🔒</span>
+                  </div>
+                  <div className="p-2">
+                    <div className="text-sm font-bold leading-tight text-muted">???</div>
+                    <div className="text-xs text-muted mt-1 line-clamp-2">{sperre}</div>
+                  </div>
+                </div>
+              );
+              return (
               <button key={b.id} onClick={() => setOffen(liste.indexOf(b))}
                 className="text-left rounded-xl border border-line bg-surface overflow-hidden hover:border-accent transition-colors">
                 <Bild id={b.id} alt={b.titel} className="w-full aspect-3/2 object-cover" nachweisFuer={nachweisFuer} />
@@ -125,7 +140,8 @@ export default function FotoGalerie({ bilder, bereiche, nachweisFuer, einleitung
                   <div className="text-xs text-muted mt-1 line-clamp-2">{b.text}</div>
                 </div>
               </button>
-            ))}
+              );
+            })}
           </div>
         </section>
       ))}
@@ -134,7 +150,7 @@ export default function FotoGalerie({ bilder, bereiche, nachweisFuer, einleitung
         <button onClick={() => setNachweise(!nachweise)} className="font-black">📷 Bildnachweise {nachweise ? "▾" : "▸"}</button>
         {nachweise && (
           <ul className="mt-2 flex flex-col gap-1 text-xs text-muted">
-            {bilder.map(b => <li key={b.id}><b className="text-fg">{b.titel}:</b> <Nachweiszeile id={b.id} nachweisFuer={nachweisFuer} /></li>)}
+            {bilder.filter(b => !gesperrt?.(b)).map(b => <li key={b.id}><b className="text-fg">{b.titel}:</b> <Nachweiszeile id={b.id} nachweisFuer={nachweisFuer} /></li>)}
           </ul>
         )}
         <p className="text-xs text-muted mt-2">Alle Fotos stammen von Wikimedia Commons und stehen unter freien Lizenzen (gemeinfrei, CC0, CC BY, CC BY-SA). Sie liegen verkleinert auf dem Schulserver.</p>

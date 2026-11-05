@@ -64,6 +64,7 @@ export const SIM_STATIONEN: Record<string, { name: string; icon: string; Kompone
   diagramme: { name: "Diagramm-Werkstatt", icon: "🔀", Komponente: laden(() => import("@/components/diagramme/DiagrammWerkstatt")) },
   baum: { name: "Baumleben", icon: "🌳", Komponente: laden(() => import("@/components/baum/Baumleben")) },
   klikk: { name: "Klikk", icon: "📱", Komponente: laden(() => import("@/components/klikk/Klikk")) },
+  medien: { name: "Geschichte der Medien", icon: "📜", Komponente: laden(() => import("@/components/medien/Medien")) },
   leviathan: { name: "Leviathan", icon: "🐋", Komponente: laden(() => import("@/components/leviathan/Leviathan")) },
   // Stand nur im Browser, unter eigenem Schlüssel — die Station hängt an keiner Sitzung.
   kikompass: { name: "KI-Kompass", icon: "🧭", Komponente: laden(() => import("@/components/kikompass/KiKompass").then(m => ({ default: (p: { vorgabe?: Vorgabe }) => <m.default konto={false} speicherSchluessel="taskcrawler" {...p} /> }))) },

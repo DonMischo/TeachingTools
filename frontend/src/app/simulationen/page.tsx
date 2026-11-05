@@ -365,6 +365,14 @@ const ALL_CARDS: Werkzeug[] = [
     color: "#38bdf8",
   },
   {
+    slug: "medien",
+    href: "/simulationen/medien",
+    icon: "📜",
+    title: "Geschichte der Medien",
+    description: "Zeitreise in 51 Stationen von der Höhlenmalerei bis zum KI-Chatbot — immer mit der Frage, wie Information weiter, schneller und zu mehr Menschen kommt. Mit Mitmach-Demos (Morsetaste, Wählscheibe, Setzkasten, SMS-Tastatur …), Flop-Museum, Kuriosem und einer Fotogalerie, die sich Station für Station freischaltet.",
+    color: "#ca8a04",
+  },
+  {
     slug: "klikk",
     href: "/simulationen/klikk",
     icon: "📱",

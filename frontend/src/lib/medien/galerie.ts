@@ -1,0 +1,101 @@
+/**
+ * Galerie »Echte Medien«: Fotos von Wikimedia Commons. Jedes Foto gehört zu
+ * einer Station der Zeitreise und wird freigeschaltet, sobald die Station
+ * geschafft ist. Dateien und Lizenzen holt scripts/fetch-medien.mjs nach
+ * public/medien/galerie/ bzw. bilder.json — hier stehen nur die Texte.
+ */
+import nachweise from "./bilder.json";
+import type { FotoBereich, FotoBild, Nachweis } from "@/components/galerie/FotoGalerie";
+import { EPOCHEN } from "./medien";
+
+export const BEREICHE: FotoBereich[] = EPOCHEN.map(e => ({ id: e.id, name: e.name, icon: e.icon }));
+
+export interface MedienBild extends FotoBild {
+  /** Station, die das Foto freischaltet */
+  medium: string;
+}
+
+const b = (id: string, medium: string, bereich: string, titel: string, text: string): MedienBild => ({ id, medium, bereich, titel, text });
+
+export const GALERIE: MedienBild[] = [
+  b("lascaux", "hoehle", "urzeit", "Höhle von Lascaux (Frankreich)", "Rund 17 000 Jahre alt: Pferde, Rinder und Hirsche in Ocker und Schwarz. Die Höhle ist für Besucher gesperrt — der Atem vieler Menschen hätte die Bilder zerstört. Man besichtigt eine Kopie."),
+  b("cueva-manos", "hoehle", "urzeit", "Cueva de las Manos (Argentinien)", "Hunderte Handumrisse, vor etwa 9000 Jahren an die Wand gesprüht: Farbe in den Mund, über die Hand gepustet. Eine Art Unterschrift: »Ich war hier.«"),
+  b("sprechtrommel", "signale", "urzeit", "Sprechtrommel aus Westafrika", "Durch Drücken der Schnüre ändert sich die Tonhöhe. So ahmt die Trommel die Melodie der gesprochenen Sprache nach."),
+  b("rauchzeichen", "signale", "urzeit", "Rauchzeichen (Gemälde von Frederic Remington)", "Ein Gemälde von 1905: Reiter in der Prärie geben mit einer Decke Rauchzeichen."),
+  b("ea-nasir", "keilschrift", "antike", "Beschwerde an Ea-nasir", "Die älteste bekannte Kundenbeschwerde, um 1750 v. Chr. in Ur. Nanni ist sauer: schlechtes Kupfer, unhöflicher Händler."),
+  b("keilschrift", "keilschrift", "antike", "Tontafel mit Keilschrift", "Jeder Abdruck ist ein Keil. Gebrannter Ton hält Tausende Jahre — viel länger als Papier."),
+  b("uruk-tafel", "keilschrift", "antike", "Verwaltungstafel aus Uruk", "Eine der frühesten Schriftformen: Zahlenzeichen und Bilder für Waren. Buchhaltung, vor über 5000 Jahren."),
+  b("papyrus-ani", "hieroglyphen", "antike", "Papyrus des Ani", "Ein Totenbuch auf Papyrus, um 1250 v. Chr. Die Bildzeichen stehen für Laute und Wörter."),
+  b("rosetta", "hieroglyphen", "antike", "Stein von Rosetta", "Derselbe Text in Hieroglyphen, ägyptischer Alltagsschrift und Griechisch. Damit konnte Champollion 1822 die Hieroglyphen entziffern."),
+  b("leuchtfeuer", "leuchtfeuer", "antike", "Leuchtfeuer-Turm in Korea", "Solche Signaltürme (Bongsu) meldeten Feuer und Rauch von Berg zu Berg bis in die Hauptstadt. Ein Feuer = Frieden, mehr Feuer = Gefahr."),
+  b("phoenizisch", "alphabet", "antike", "Phönizische Inschriften", "Ein Vergleich von 1828: Aus diesen Zeichen wurden die griechischen und später unsere lateinischen Buchstaben."),
+  b("wachstafel", "wachstafel", "antike", "Römische Wachstafel mit Griffel", "Nachbau: ein Holzrahmen mit Wachs. Vorne Spitze zum Schreiben, hinten flach zum Löschen."),
+  b("pheidippides", "bote", "antike", "Der Läufer von Marathon", "Ein Gemälde von etwa 1913: Der Bote bringt Athen die Nachricht vom Sieg — so erzählt es die Sage."),
+  b("chaski", "bote", "antike", "Chaski der Inka", "Ein Inka-Läufer in einer alten Zeichnung. Die Chaski liefen in Staffeln, das Horn kündigte den nächsten Läufer an."),
+  b("taubenkapsel", "brieftaube", "antike", "Taubenpost-Kapsel aus dem Ersten Weltkrieg", "Die kleine Kapsel kam ans Bein der Taube, darin eine hauchdünne Nachricht."),
+  b("papier-cai-lun", "papier", "mittelalter", "Papierschöpfen in China", "Eine alte chinesische Darstellung: Der Faserbrei wird mit einem Sieb geschöpft — so, wie es Cai Lun um 105 beschrieben haben soll."),
+  b("moench", "handschrift", "mittelalter", "Mönch im Skriptorium", "Schreiben bei Tageslicht, Buchstabe für Buchstabe. Ein großes Buch dauerte oft mehr als ein Jahr."),
+  b("manesse", "handschrift", "mittelalter", "Codex Manesse (um 1300)", "Die berühmteste deutsche Liederhandschrift: Gedichte und Lieder mit prächtigen Bildern, heute in Heidelberg."),
+  b("diamant-sutra", "holzdruck", "mittelalter", "Diamant-Sutra (868)", "Das älteste datierte gedruckte Buch der Welt, eine Rolle aus China, gefunden in einer Höhle bei Dunhuang. Heute in der British Library."),
+  b("quipu", "quipu", "mittelalter", "Quipu der Inka", "Viele Schnüre an einer Hauptschnur, jede Knotengruppe eine Zahl. Lesen konnten das nur ausgebildete Knotenmeister."),
+  b("quipu-larco", "quipu", "mittelalter", "Quipu im Larco-Museum (Lima)", "Die Farben der Schnüre zeigen vermutlich, was gezählt wurde."),
+  b("gutenberg-bibel", "buchdruck", "mittelalter", "Gutenberg-Bibel", "Um 1454 in Mainz gedruckt. Von etwa 180 Exemplaren gibt es heute noch rund 49 — jedes ein Vermögen wert."),
+  b("lettern", "buchdruck", "mittelalter", "Bewegliche Lettern aus Metall", "Jeder Buchstabe ein eigenes Stück, spiegelverkehrt. Nach dem Druck kommen sie zurück in den Setzkasten — für die nächste Seite."),
+  b("druckerpresse", "buchdruck", "mittelalter", "Druckerpresse nach Gutenberg", "Eine Spindelpresse wie bei der Weinherstellung: Drehen, und das Papier wird auf die eingefärbten Lettern gedrückt."),
+  b("postreiter", "post", "neuzeit", "Postreiter (1728)", "Mit Posthorn und Tasche: Der Reiter wechselte an jeder Station das Pferd."),
+  b("postkutsche", "post", "neuzeit", "Postkutsche in Tirol", "Später reisten Briefe, Pakete und Fahrgäste gemeinsam in Postkutschen — nach Fahrplan."),
+  b("relation", "zeitung", "neuzeit", "»Relation« (1609)", "Die erste Zeitung der Welt aus Straßburg. Hier ein Jahrgang von 1609 mit Meldungen aus ganz Europa."),
+  b("chappe", "chappe", "neuzeit", "Chappe-Telegraf (Zeichnung)", "Balken und zwei Arme, gestellt über Seile und Kurbeln. Jede Stellung ist ein Zeichen."),
+  b("chappe-saverne", "chappe", "neuzeit", "Telegrafenturm in Saverne (Elsass)", "Ein erhaltener Turm der Linie Paris–Straßburg. Oben sieht man die Flügel."),
+  b("niepce", "fotografie", "industrie", "Blick aus dem Fenster in Le Gras", "Das älteste erhaltene Foto der Welt, 1826 oder 1827 von Niépce. Belichtet über viele Stunden — die Sonne scheint deshalb von beiden Seiten."),
+  b("boulevard-du-temple", "fotografie", "industrie", "Boulevard du Temple (1838)", "Die Straße war voller Menschen, aber nur einer stand lange genug still: unten links ein Mann beim Schuheputzen. Der erste Mensch auf einem Foto."),
+  b("bain-fax", "fax", "industrie", "Bains Bildtelegraf (1850)", "Eine Zeichnung von Alexander Bains verbessertem Gerät. Pendel tasten ein Bild Zeile für Zeile ab."),
+  b("fax-geraet", "fax", "industrie", "Faxgerät beim Drucken", "So sah das Fax in jedem Büro der 1990er aus: Papier rein, Nummer wählen, piep, kreisch."),
+  b("erstes-telegramm", "telegraf", "industrie", "Das erste Telegramm (1844)", "Samuel Morse an der Taste. Die Nachricht hatte Annie Ellsworth ausgesucht: »What hath God wrought?« (»Was hat Gott gewirkt?«)."),
+  b("seekabel-1858", "telegraf", "industrie", "Kabelverlegung durch den Atlantik (1858)", "Das Schiff HMS Agamemnon legt das erste Atlantik-Telegrafenkabel — auf dem Bild kreuzt ein Wal die Leine. Das Kabel hielt nur wenige Wochen."),
+  b("rohrpost-berlin", "rohrpost", "industrie", "Rohrpost in Berlin (1885)", "Postbeamte schicken Büchsen auf die Reise durchs Rohrnetz unter der Stadt."),
+  b("rohrpostbrief", "rohrpost", "industrie", "Rohrpostbrief", "Ein vorgedruckter Umschlag fürs Rohrnetz: klein und dünn, damit er in die Büchse passt."),
+  b("reis-telefon", "telefon", "industrie", "Telefon von Philipp Reis (Nachbau)", "Die Sprechseite: Man spricht in den Trichter, eine Membran schaltet den Strom im Takt der Stimme."),
+  b("vermittlung", "telefon", "industrie", "Telefonvermittlung", "Die »Fräulein vom Amt« verbinden jedes Gespräch per Steckkabel von Hand."),
+  b("phonograph", "schallplatte", "industrie", "Edisons Zinnfolien-Phonograph (1878)", "Kurbeln, in den Trichter sprechen — die Nadel ritzt den Schall in die Folie auf der Walze."),
+  b("grammophon", "schallplatte", "industrie", "Berliners Grammophon", "Statt einer Walze eine flache Platte: Man kann sie pressen wie Waffeln — Tausende Kopien."),
+  b("skladanowsky", "film", "industrie", "Die Brüder Skladanowsky mit dem Bioskop", "Mit diesem Doppelprojektor zeigten Max und Emil Skladanowsky am 1. November 1895 in Berlin die ersten Filme vor zahlendem Publikum."),
+  b("cinematographe", "film", "industrie", "Cinématographe der Brüder Lumière", "Kamera, Kopierer und Projektor in einem Kasten — mit Kurbel."),
+  b("telharmonium", "telharmonium", "modern", "Telharmonium (1897)", "Ein Blick auf einen Teil der riesigen Maschine. Die ganze Anlage füllte ein Stockwerk."),
+  b("radio-1920", "radio", "modern", "Radio mit Trichter-Lautsprecher (1920er)", "Frühe Radios hatten viele Knöpfe und einen Trichter — oder Kopfhörer für alle."),
+  b("volksempfaenger", "radio", "modern", "Volksempfänger VE 301", "Billig und einfach, damit möglichst viele die Propaganda der Nationalsozialisten hören. Ausländische Sender zu hören war verboten."),
+  b("nipkow-kamera", "fernsehen", "modern", "Fernsehkamera mit Lochscheibe (1931)", "Eine drehende Scheibe mit Löchern tastet das Bild Zeile für Zeile ab — Nipkows Idee von 1884."),
+  b("fernseher-1950", "fernsehen", "modern", "Fernseher der 1950er", "Ein kleiner, gewölbter Bildschirm in einer großen Holzkiste. Schwarzweiß, wenige Programme."),
+  b("fernschreiber", "fernschreiber", "modern", "Siemens-Fernschreiber (1933)", "Was hier getippt wird, tippt eine Maschine in einer anderen Stadt mit."),
+  b("magnetophon", "tonband", "modern", "AEG Magnetophon K4 (1939)", "Große Spulen mit Magnetband — Rundfunk konnte nun aufzeichnen und später senden."),
+  b("picturephone", "bildtelefon", "modern", "AT&T Picturephone (1969)", "Ein Bildtelefon für den Schreibtisch. Teuer, unscharf und kaum genutzt."),
+  b("telstar", "satellit", "modern", "Telstar 1 (Nachbau)", "Eine Kugel voller Solarzellen. 1962 brachte sie die ersten Live-Fernsehbilder über den Atlantik."),
+  b("kassette", "kassette", "modern", "Compact Cassette", "Tonband in einer Plastikhülle. Daneben eine kleine Diktier-Kassette."),
+  b("walkman", "kassette", "modern", "Sony Walkman TPS-L2 (1979)", "Der erste Walkman: Musik zum Mitnehmen — mit zwei Kopfhörerbuchsen zum Teilen."),
+  b("disketten", "diskette", "digital", "Disketten: 8, 5¼ und 3½ Zoll", "Von groß zu klein — und von wenig zu … immer noch wenig Speicher."),
+  b("tomlinson", "email", "digital", "Ray Tomlinson", "Der Erfinder der E-Mail und des @ in der Adresse."),
+  b("vhs-betamax", "videokassette", "digital", "VHS und Betamax", "Die größere VHS-Kassette und die kleinere Betamax. Betamax hatte das bessere Bild — und verlor."),
+  b("laserdisc", "laserdisc", "digital", "LaserDisc", "So groß wie eine Schallplatte, aber mit Film. Mitten im Film: umdrehen."),
+  b("cds", "cd", "digital", "Compact Discs", "Eine winzige Spur, über fünf Kilometer lang, voller Vertiefungen. Ein Laser liest sie berührungslos."),
+  b("btx", "btx", "digital", "Bildschirmtext-Seite", "Eine BTX-Seite der Polizei: Klötzchengrafik, wenige Farben, Seitennummern zum Eintippen."),
+  b("dynatac", "handy", "digital", "Motorola DynaTAC 8000X", "Das erste Handy zum Kaufen (1983): fast 800 Gramm, rund 30 Minuten Gesprächszeit."),
+  b("erster-webserver", "www", "digital", "Der erste Webserver der Welt", "Ein NeXT-Computer am CERN. Auf dem Zettel: »This machine is a server. DO NOT POWER IT DOWN!!«"),
+  b("akustikkoppler", "www", "digital", "Akustikkoppler", "Frühes Modem: Der Telefonhörer kommt in die Gummimuscheln, die Daten werden als Töne übertragen."),
+  b("nokia-3310", "sms", "digital", "Nokia 3310 (2000)", "Der Klassiker zum SMS-Schreiben: Ziffertasten, Snake und ein Akku, der eine Woche hielt."),
+  b("minidisc", "minidisc", "digital", "MiniDisc", "Klein, eckig, in einer Hülle — wie eine Diskette für Musik."),
+  b("pager", "pager", "digital", "Pager aus den 1990ern", "Ein kleines Display für eine Rückrufnummer oder kurzen Text."),
+  b("zip", "zip", "digital", "Zip-Laufwerk mit Disk (1994)", "100 Megabyte! Damals ein Riesenschritt."),
+  b("brandenburg", "mp3", "digital", "Karlheinz Brandenburg", "Er leitete die Entwicklung von MP3 am Fraunhofer-Institut in Erlangen."),
+  b("ipod", "mp3", "digital", "iPod (2001)", "»1000 Songs in deiner Tasche« — dank MP3-Kompression."),
+  b("glasfaser", "glasfaser", "digital", "Glasfaserkabel", "Viele haarfeine Glasfasern in einem Kabel. Jede trägt Lichtblitze."),
+  b("smartphone", "socialmedia", "heute", "Smartphone in der Hand", "Kamera, Bildschirm, Netz: Jeder kann senden und empfangen."),
+  b("hd-dvd", "hddvd", "heute", "HD-DVD-Player im Ausverkauf (2008)", "Nach dem Aus wurden die Player verramscht."),
+  b("ibm-simon", "smartphone", "heute", "IBM Simon (1994)", "Das erste Smartphone mit Touchscreen, E-Mail und Kalender — 13 Jahre vor dem iPhone, und ein Flop."),
+  b("iphone", "smartphone", "heute", "Das erste iPhone (2007)", "Ein Bildschirm, ein Knopf — und das Internet in der Hosentasche."),
+  b("google-glass", "googleglass", "heute", "Google Glass", "Ein winziger Bildschirm über dem rechten Auge und eine Kamera im Bügel."),
+  b("rechenzentrum", "ki", "heute", "Rechenzentrum", "Hier rechnen KI-Modelle: Tausende Server, die so viel Strom brauchen wie eine Kleinstadt."),
+];
+
+const alle = nachweise as Record<string, Nachweis>;
+export const nachweisFuer = (id: string): Nachweis | undefined => alle[id];
+export const bilderZu = (medium: string) => GALERIE.filter(g => g.medium === medium);

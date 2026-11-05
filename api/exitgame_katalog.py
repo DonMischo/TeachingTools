@@ -203,6 +203,7 @@ WERKZEUGE = {
     "diagramme": {"name": "Diagramm-Werkstatt (D2)", "config": {}},
     "baum": {"name": "Baumleben", "config": {}},
     "klikk": {"name": "Klikk (Social Media)", "config": {}, "hinweis": "Spielstand nur in diesem Browser."},
+    "medien": {"name": "Geschichte der Medien", "config": {"reiter?": "zeitreise|vergleich|flops|galerie|eilbote|sortieren"}, "hinweis": "Fortschritt der Zeitreise nur in diesem Browser."},
     "leviathan": {"name": "Leviathan", "config": {}, "hinweis": "Spielstand nur in diesem Browser, Standard-Einstellungen."},
     "kikompass": {"name": "KI-Kompass", "config": {"reiter?": "start|raster|fuehrerschein|portfolio|projekte|workflows"}},
     "schichten": {

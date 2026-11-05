@@ -675,6 +675,17 @@ simulationen:
       - Teile erkennen und Quiz für alle Geräte inklusive Smartphone
       - Smartphone in vier Schichten zerlegen (Rückseite, Bleche, Akku)
       - Damals & heute — Kennzahlen der Geräte im Vergleich
+  - id: medien
+    name: Geschichte der Medien
+    faehigkeiten: {use: [true, true]}
+    kann:
+      - Zeitreise in 51 Stationen von der Höhlenmalerei bis zum KI-Chatbot, Zeitstrahl nach Epochen
+      - Je Station Geschichte, Besser/Haken, Übertragungs-Profil mit Vergleich zur Station davor, Bildergeschichte zur Bedienung, Kurioses
+      - Frage je Station schaltet nächste Station und Galerie-Fotos frei (76 Commons-Fotos mit Nachweis)
+      - 14 Mitmach-Demos (Keilschrift, Hieroglyphen, Quipu, Feuerkette, Setzkasten, Chappe, Belichtung, Morse, Fax, Wählscheibe, Plattenspieler, Kassette, Diskette, SMS)
+      - Vergleich der Übertragungszeit für 1000 km und Profil-Duell zweier Medien
+      - Flop-Museum mit Grabsteinen und Gründen fürs Scheitern
+      - Spiele Eilbote (passendes Medium je Epoche) und Wer war zuerst? (sortieren)
   - id: klikk
     name: Klikk
     faehigkeiten: {use: [true, true]}

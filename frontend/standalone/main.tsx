@@ -29,6 +29,7 @@ import Stellenwert from "@/components/stellenwert/Stellenwert";
 import Farbmodelle from "@/components/farbmodelle/Farbmodelle";
 import Markieren from "@/components/markieren/Markieren";
 import PcWerkstatt from "@/components/pcbau/PcWerkstatt";
+import Medien from "@/components/medien/Medien";
 import Klikk from "@/components/klikk/Klikk";
 import ElemonSpiel from "@/components/elemon/ElemonSpiel";
 import KiWerkstatt from "@/components/ki/KiWerkstatt";
@@ -70,6 +71,7 @@ const TOOLS: { id: string; icon: string; label: string; node: ReactNode }[] = [
   { id: "farbmodelle", icon: "🎨", label: "Farbmodelle", node: <Farbmodelle /> },
   { id: "markieren", icon: "🖍️", label: "Markieren & Bearbeiten", node: <Markieren /> },
   { id: "pcbau", icon: "🪛", label: "PC-Werkstatt", node: <PcWerkstatt /> },
+  { id: "medien", icon: "📜", label: "Geschichte der Medien", node: <Medien /> },
   { id: "klikk", icon: "📱", label: "Klikk", node: <Klikk /> },
   // Ohne Sitzung keine Duelle; QR-Karten scannen geht trotzdem.
   { id: "elemon", icon: "🐾", label: "Elemon", node: <ElemonSpiel /> },

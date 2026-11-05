@@ -34,6 +34,7 @@ import Stellenwert from "@/components/stellenwert/Stellenwert";
 import Farbmodelle from "@/components/farbmodelle/Farbmodelle";
 import Markieren from "@/components/markieren/Markieren";
 import PcWerkstatt from "@/components/pcbau/PcWerkstatt";
+import Medien from "@/components/medien/Medien";
 import Klikk from "@/components/klikk/Klikk";
 import ElemonSpiel from "@/components/elemon/ElemonSpiel";
 import Uebung from "@/components/simulationen/Uebung";
@@ -88,6 +89,7 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   // Die Bestenliste braucht Code und Gast-Token.
   markieren: { title: "Markieren & Bearbeiten", icon: "🖍️", node: null },
   pcbau: { title: "PC-Werkstatt", icon: "🪛", node: <PcWerkstatt /> },
+  medien: { title: "Geschichte der Medien", icon: "📜", node: <Medien /> },
   klikk: { title: "Klikk", icon: "📱", node: null },
   // Duelle brauchen Code und Gast-Token
   elemon: { title: "Elemon", icon: "🐾", node: null },

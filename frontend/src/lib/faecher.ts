@@ -68,6 +68,7 @@ export const STANDARD_FAECHER: Record<string, string[]> = {
   markieren: ["Informatik"],
   pcbau: ["Informatik"],
   klikk: ["Informatik", "Sozialkunde"],
+  medien: ["Geschichte", "Informatik", "Deutsch"],
   elemon: ["Informatik", "Sozialkunde"],
 };
 

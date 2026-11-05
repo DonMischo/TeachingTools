@@ -157,6 +157,19 @@ export const REGISTER: WerkzeugQuellen[] = [
     ],
   },
   {
+    slug: "medien", name: "📜 Geschichte der Medien",
+    eintraege: [
+      { quelle: "Wikimedia Commons", urheber: "verschiedene (Nachweis an jedem Bild)", lizenz: "gemeinfrei, CC0, CC BY, CC BY-SA", url: "https://commons.wikimedia.org/", verwendung: "76 Fotos der Galerie, verkleinert; Urheber und Lizenz in src/lib/medien/bilder.json und unter jedem Bild" },
+      { quelle: "Egyptian Hieroglyphs (Unicode-Block U+13000)", lizenz: "Unicode-Zeichen, Darstellung über die Systemschrift (Segoe UI Historic bzw. Noto Sans Egyptian Hieroglyphs)", verwendung: "Namen in Hieroglyphen (Einkonsonantenzeichen nach Gardiner, vereinfacht)" },
+      { quelle: "»Alle meine Entchen«", lizenz: "Volkslied, gemeinfrei", verwendung: "Melodie im Plattenspieler-Demo" },
+    ],
+    literatur: [
+      "Hörisch, J. (2004): Eine Geschichte der Medien. Von der Oblate zum Internet. Frankfurt a. M.: Suhrkamp.",
+      "Standage, T. (1998): The Victorian Internet. New York: Walker.",
+      "RFC 1149 (1990): A Standard for the Transmission of IP Datagrams on Avian Carriers.",
+    ],
+  },
+  {
     slug: "kikompass", name: "🧭 KI-Kompass",
     eintraege: [
       { quelle: "KI-Kompetenzen für Lehrende und Lernende – eine adaptierbare Basis (DOI 10.5281/zenodo.15047793)", urheber: "Susanne Alles, Joscha Falck, Manuel Flick, Regina Schulz (VK:KIWA)", lizenz: "CC BY 4.0", url: "https://essen.taskcards.app/#/board/ba6226b4-e617-4134-8d6d-dc733dae8d9c/view?token=b490fc09-f845-4d6d-9ef7-9cc0ec548182", verwendung: "Kompetenzraster (4 Bereiche × Niveau I–III); verändert: »Ich kann …«-Sätze, Niveau I geteilt, Stufe 0 ergänzt" },

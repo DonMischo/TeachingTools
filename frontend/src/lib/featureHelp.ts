@@ -272,6 +272,21 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
     ],
   },
+  medien: {
+    title: "Geschichte der Medien",
+    intro: "Mediengeschichte von der Höhlenmalerei bis zum KI-Chatbot in 51 Stationen. Leitfrage jeder Station: Wie kommt eine Information weiter, schneller, haltbarer oder zu mehr Menschen? Auch Medien, die sich nicht durchgesetzt haben, sind dabei.",
+    sections: [
+      { label: "🕰️ Zeitreise", text: "Oben der Zeitstrahl nach Epochen, darunter die Station: Titel, Geschichte, »Besser fürs Übertragen« und »Der Haken«, ein Übertragungs-Profil (Reichweite, Tempo, Haltbarkeit, Publikum, Zugang) mit Pfeilen gegenüber der Station davor, eine Bildergeschichte »So benutzt man es« und eine kuriose Anekdote. Am Ende eine Frage: Richtig beantwortet schaltet sie die nächste Station und die Fotos der Station frei. Falsche Antworten werden durchgestrichen, man darf weiter raten." },
+      { label: "🎮 Ausprobieren", text: "14 Stationen haben eine Demo: Keile in Ton drücken, den eigenen Namen in Hieroglyphen, Quipu-Knoten, Feuerkette gegen Läufer, Setzkasten mit Spiegelschrift, Chappe-Telegraf mit Codebuch, Belichtung (stillhalten!), Morsetaste mit Ton, Fax als Lauflängen, Wählscheibe, Plattenspieler mit falscher Drehzahl, Kassette mit Bleistift, Disketten-Rechner und SMS-Tastatur von 1999." },
+      { label: "📈 Vergleich", text: "Wie lange braucht eine Nachricht für 1000 km — vom Läufer (Tage) bis zur Glasfaser (Millisekunden), logarithmisch. Dazu zwei beliebige Medien im Profil-Duell." },
+      { label: "🪦 Flop-Museum", text: "Grabsteine für Telharmonium, Bildtelefon, Betamax, LaserDisc, BTX, MiniDisc, Pager, Zip, HD DVD, Google Glass und die Rohrpost — mit Lebensdaten, Grabspruch und dem Grund, warum sie verloren haben." },
+      { label: "📷 Galerie", text: "76 Fotos von Wikimedia Commons mit Erklärung und Bildnachweis, nach Epochen. Gesperrte Fotos zeigen, welche Station sie freischaltet." },
+      { label: "🏃 Eilbote", text: "16 Aufträge aus der Geschichte (Bierquittung in Uruk, Troja, Reuters' Brieftauben, Mondlandung, Mixtape …): Welches der damals verfügbaren Medien bringt die Nachricht am besten ans Ziel? 100 Punkte im ersten, 40 im zweiten Versuch; falsche Wahl gibt eine witzige Rückmeldung." },
+      { label: "🧩 Wer war zuerst?", text: "Fünf Medien nach dem Jahr ordnen (oben das älteste). Zählt die Serie fehlerfreier Runden." },
+      { label: "💾 Speichern", text: "Fortschritt und Bestwerte bleiben nur in diesem Browser; »Fortschritt zurücksetzen« unter der Station sperrt alles wieder." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
+    ],
+  },
   klikk: {
     title: "Klikk",
     intro: "Eine Schulwoche (Mo–Fr, je ab 14 Uhr) mit einer erfundenen Social-Media-App. Die Simulation erklärt nichts von oben: Schüler·innen erleben Sog, Gruppendruck und Mobbing selbst und sehen erst am Ende, was dabei passiert ist.",
