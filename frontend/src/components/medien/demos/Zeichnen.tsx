@@ -84,12 +84,13 @@ export const Zeichenflaeche = forwardRef<ZeichenGriff, Props>(function Zeichenfl
     const ctx = striche.current?.getContext("2d");
     if (!ctx) return;
     const s = hoehe / 260;
-    const finger = [[-34, -62, 9, 34], [-14, -78, 9, 42], [6, -80, 9, 44], [25, -70, 8, 38], [44, -30, 9, 26]];
+    const finger = [[-34, -62, 9, 34], [-14, -78, 9, 42], [6, -80, 9, 44], [25, -70, 8, 38], [46, -6, 10, 28]];
     const inHand = (x: number, y: number) => {
       const dx = (x - p.x) / s, dy = (y - p.y) / s;
       if ((dx / 34) ** 2 + ((dy + 4) / 40) ** 2 < 1) return true;
       return finger.some(([fx, fy, rx, ry], i) => {
-        const w = i === 4 ? -0.7 : -0.12 + i * 0.08;
+        // Daumen: schräg nach außen oben (≈ 43°), sein Ansatz liegt im Handballen
+        const w = i === 4 ? 0.75 : -0.12 + i * 0.08;
         const ax = dx - fx, ay = dy - fy;
         const ux = ax * Math.cos(w) + ay * Math.sin(w), uy = -ax * Math.sin(w) + ay * Math.cos(w);
         return (ux / rx) ** 2 + (uy / ry) ** 2 < 1;
