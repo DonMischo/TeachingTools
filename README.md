@@ -211,6 +211,7 @@ Jede Simulation trägt Fächer (auch mehrere, z. B. Geografie und Physik); die �
 - Je Modul einmal 5 Hauspunkte, Urkunde als PDF, Portfolio mit KI-Nutzungserklärung als Word-Datei
 - Klassenübersicht mit Klassen-Spinne und Reflexionen (nur für die Lehrkraft); Recherche und Quellen in docs/ki-kompass-recherche.md
 - AKTIV(ER)-Weg für Lehrkräfte (nach Manuel Flick, eigene Texte): acht Schritte mit Checkliste, Word-Vorlagen und Sprung ins passende Werkzeug
+- Lernpfad für Lehrkräfte: 15 kurze Einheiten in fünf Etappen (Erste Schritte bis Workflows und Agenten) mit Auftrag, Prompt, Reflexionsnotiz und Sprung zum passenden Workflow; Workshop-Paket »Prompt-Werkstatt im Kollegium« (90 Min.) mit Ablaufplan und Handout als Word
 - Workflow-Bibliothek: 10 Abläufe mit KI für Lehrkräfte und Lernende (TT-Material mit KI füllen, Arbeitsblatt in drei Niveaus, Feedback zu Schülertexten, Aufgabe KI-resilient umbauen, Bild erzeugen, eigene AIS.chat-Lernumgebung, KI-Agent als Rollenspiel, Flussdiagramm mit KI, Recherche mit Faktencheck, Text mit KI-Feedback überarbeiten); Schritte nach Mensch/KI/Werkzeug, Prompts mit Thema, Fach und Klasse, Checklisten und Schleifen, jeder Ablauf als D2-Flussdiagramm in der Diagramm-Werkstatt
 - Material-Werkstatt: Prompt-Generator je Rasterfeld und Dimension (mit/über/durch/trotz/ohne KI), Aufgaben-Umbauer mit KI-Resilienz, Prüfungsformate und Erwartungshorizont mit Operatoren
 - Sechs Projektkarten für Stufe II mit Ablauf, AIS.chat-Teil und Bewertung als Word-Projektblatt

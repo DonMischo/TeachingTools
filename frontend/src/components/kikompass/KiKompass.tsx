@@ -121,6 +121,9 @@ export default function KiKompass({ action, name = "", konto, verwaltung = false
   const setStation = (id: string, s: StationStand) =>
     setStand(alt => ({ ...alt, stationen: { ...alt.stationen, [id]: s } }));
 
+  // Lernpfad → Workflow: öffnet den Reiter mit diesem Workflow.
+  const [wfStart, setWfStart] = useState<string | null>(null);
+
   function sprung(ziel: Sprungziel) {
     if (ziel === "raster" || ziel === "fuehrerschein" || ziel === "projekte") { setReiter(ziel); return; }
     if (ziel === "uebersicht") { setLehrUnter("uebersicht"); return; }
@@ -159,12 +162,13 @@ export default function KiKompass({ action, name = "", konto, verwaltung = false
           )}
           {reiter === "portfolio" && <Portfolio name={name} stande={stand.stationen} einschaetzungen={stand.einschaetzungen} />}
           {reiter === "projekte" && <Projekte ais={ais} />}
-          {reiter === "workflows" && <Workflows lehrkraft={verwaltung} mitWerkstatt={!!konto || verwaltung} />}
+          {reiter === "workflows" && <Workflows key={wfStart ?? ""} start={wfStart} lehrkraft={verwaltung} mitWerkstatt={!!konto || verwaltung} />}
           {reiter === "lehrkraft" && verwaltung && (
             <Lehrkraft code={lehrCode} sitzung={eigeneSitzung ?? null} onSitzung={s => qc.setQueryData(["kikompass-sitzung"], s)}
               unter={lehrUnter} onUnter={setLehrUnter}
               werkstattTeil={werkstattTeil} onWerkstattTeil={setWerkstattTeil}
-              speicherSchluessel={speicherSchluessel} onSprung={sprung} />
+              speicherSchluessel={speicherSchluessel} onSprung={sprung}
+              onWorkflow={id => { setWfStart(id); setReiter("workflows"); }} />
           )}
         </>
       )}

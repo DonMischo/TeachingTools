@@ -16,13 +16,15 @@ import {
 
 const stufeName = (id: string) => STUFEN.find(s => s.id === id)?.name ?? id;
 
-export function Workflows({ lehrkraft, mitWerkstatt }: {
+export function Workflows({ lehrkraft, mitWerkstatt, start = null }: {
   lehrkraft: boolean;
+  /** Gleich diesen Workflow öffnen (Sprung aus dem Lernpfad). */
+  start?: string | null;
   /** Diagramm-Werkstatt braucht ein Konto. */
   mitWerkstatt: boolean;
 }) {
   const [gruppe, setGruppe] = useState<Zielgruppe>(lehrkraft ? "lehrkraft" : "lernende");
-  const [offen, setOffen] = useState<string | null>(null);
+  const [offen, setOffen] = useState<string | null>(start);
   const w = WORKFLOWS.find(x => x.id === offen);
 
   if (w) return <WorkflowAnsicht w={w} mitWerkstatt={mitWerkstatt} onZurueck={() => setOffen(null)} />;

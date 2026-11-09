@@ -652,6 +652,7 @@ simulationen:
       - Material-Werkstatt (Prompt je Rasterfeld, Aufgaben-Umbauer, Erwartungshorizont)
       - Sechs Projektkarten für Stufe II
       - Materialpool aller Lehrkräfte mit Filter nach Bereich, Stufe, Dimension und Suche
+      - Lernpfad für Lehrkräfte (15 Einheiten, Stufe 0 bis III, Haken und Notizen im Browser) und Workshop »Prompt-Werkstatt im Kollegium« (90 Min.) mit Ablaufplan und Handout als .docx
       - Workflow-Bibliothek (10 Abläufe für Lehrkräfte und Lernende, z. B. TT-Material mit KI füllen, Differenzieren, Feedback, Bild erzeugen, AIS.chat-Lernumgebung, KI-Agent als Rollenspiel, Faktencheck) - Schritte nach Akteur, Prompts mit Thema/Fach/Klasse, Checklisten, Schleifen; als D2-Flussdiagramm in die Diagramm-Werkstatt
   - id: markieren
     name: Markieren & Bearbeiten

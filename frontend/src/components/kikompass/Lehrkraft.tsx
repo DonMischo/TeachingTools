@@ -14,11 +14,12 @@ import { MODUL_REIHENFOLGE, STATIONEN, stationFertig, stationenVon } from "@/lib
 import { Spinne } from "./Spinne";
 import { AktivWeg, type Sprungziel } from "./AktivWeg";
 import { Werkstatt, type WerkstattTeil } from "./Werkstatt";
+import { Lernpfad } from "./Lernpfad";
 import { datumDe } from "./Raster";
 
-export type LehrUnter = "uebersicht" | "aktiv" | "werkstatt" | "ais";
+export type LehrUnter = "uebersicht" | "lernpfad" | "aktiv" | "werkstatt" | "ais";
 
-export function Lehrkraft({ code, sitzung, onSitzung, unter, onUnter, werkstattTeil, onWerkstattTeil, speicherSchluessel, onSprung }: {
+export function Lehrkraft({ code, sitzung, onSitzung, unter, onUnter, werkstattTeil, onWerkstattTeil, speicherSchluessel, onSprung, onWorkflow }: {
   code: string | null;
   /** Eigene Sitzung der Lehrkraft (für die AIS.chat-Links). */
   sitzung: ToolSessionOut | null;
@@ -29,9 +30,10 @@ export function Lehrkraft({ code, sitzung, onSitzung, unter, onUnter, werkstattT
   onWerkstattTeil: (t: WerkstattTeil) => void;
   speicherSchluessel: string;
   onSprung: (ziel: Sprungziel) => void;
+  onWorkflow: (id: string) => void;
 }) {
   const UNTER: [LehrUnter, string][] = [
-    ["uebersicht", "👩‍🏫 Klassenübersicht"], ["aktiv", "🧭 AKTIV(ER)-Weg"], ["werkstatt", "🧪 Material-Werkstatt"], ["ais", "🤖 AIS.chat-Link & Leitfaden"],
+    ["uebersicht", "👩‍🏫 Klassenübersicht"], ["lernpfad", "🎓 Lernpfad & Workshop"], ["aktiv", "🧭 AKTIV(ER)-Weg"], ["werkstatt", "🧪 Material-Werkstatt"], ["ais", "🤖 AIS.chat-Link & Leitfaden"],
   ];
   return (
     <div className="flex flex-col gap-4">
@@ -43,6 +45,7 @@ export function Lehrkraft({ code, sitzung, onSitzung, unter, onUnter, werkstattT
       {unter === "uebersicht" && (code ? <Uebersicht code={code} /> : (
         <p className="card p-4 text-sm">Öffne »Zum Mitmachen« oben, damit deine Klasse über Code oder QR beitritt. Dann erscheint hier die Übersicht.</p>
       ))}
+      {unter === "lernpfad" && <Lernpfad speicherSchluessel={speicherSchluessel} onSprung={onSprung} onWorkflow={onWorkflow} />}
       {unter === "aktiv" && <AktivWeg speicherSchluessel={speicherSchluessel} onSprung={onSprung} />}
       {unter === "werkstatt" && <Werkstatt teil={werkstattTeil} onTeil={onWerkstattTeil} />}
       {unter === "ais" && <AisLeitfaden key={sitzung?.code ?? "ohne"} sitzung={sitzung} onSitzung={onSitzung} />}
