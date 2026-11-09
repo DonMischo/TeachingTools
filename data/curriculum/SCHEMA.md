@@ -99,14 +99,14 @@ Im JSON heißt eine Unterrichtseinheit aus Kompatibilitätsgründen `thema` (Lis
   "themen": [
     {
       "id": "k5-t1",
-      "titel": "Daten und Diagramme",
-      "wochen": 4.5,                // eigene Schätzung; Bereich „4-5“ → Mittelwert
+      "titel": "Beispiel-Einheit",
+      "wochen": 3,                  // eigene Schätzung; Bereich „2-4“ → Mittelwert
       "inhalte": { "G": "…", "R": "…", "H": "…", "LB": "…", "GE": "…" },
-      "karten": ["rs2011-56-stoch-01", "gy2018-56-stoch-01"],   // passende ALTE Karten
+      "karten": ["rs2011-56-xxx-01", "gy2018-56-xxx-01"],       // passende ALTE Karten
       "zuordnung": {                // NEUE Karten je Kompetenzniveau
-        "G": ["gy2026-56-stoch-01"],
-        "R": ["rs2026-56-stoch-01"],
-        "H": ["rs2026-56-stoch-01"]  // RS-Karte ohne H-Text: R-Text wird beim Zuordnen nach H kopiert
+        "G": ["gy2026-56-xxx-01"],
+        "R": ["rs2026-56-xxx-01"],
+        "H": ["rs2026-56-xxx-01"]  // RS-Karte ohne H-Text: R-Text wird beim Zuordnen nach H kopiert
       },
       "notiz": ""
     }
@@ -121,7 +121,7 @@ hinzu (vorhandene bleiben). Alte Karten landen in `karten`, neue verteilen sich 
 `zuordnung`: GY → G, RS → R und H.
 
 ```jsonc
-{ "format": "tt-curriculum/1", "zuordnung": [ { "thema": "k5-t1", "karten": ["rs2011-56-stoch-01"] } ] }
+{ "format": "tt-curriculum/1", "zuordnung": [ { "thema": "k5-t1", "karten": ["rs2011-56-xxx-01"] } ] }
 ```
 
 Das Tool leitet daraus ab:
