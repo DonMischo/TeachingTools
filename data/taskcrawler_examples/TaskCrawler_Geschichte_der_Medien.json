@@ -111,7 +111,7 @@
       "id": "steinzeit-aufgabe",
       "type": "task",
       "title": "Aufgabe: Höhlenmalerei",
-      "text": "Was war der Hauptzweck der Höhlenmalerei aus heutiger Sicht?",
+      "text": "Stell dir vor, du lebst vor 40.000 Jahren: Ob deine Gruppe satt wird, hängt von der Jagd ab. Schrift gibt es nicht – was du weißt, muss auf anderem Weg zu den anderen und zu den Kindern kommen.",
       "hints": [
         "Die Bilder zeigen oft Tiere und Jagdszenen.",
         "Sie hatten eine kommunikative Funktion."
@@ -208,7 +208,7 @@
       "id": "welt-orakelknochen",
       "type": "task",
       "title": "🌍 Weltweit (freiwillig): Orakelknochen in China",
-      "text": "Die ältesten bekannten chinesischen Schriftzeichen sind über 3000 Jahre alt (Shang-Dynastie, um 1250 v. Chr.). Wahrsager ritzten Fragen an die Ahnen ein – etwa zu Ernte, Wetter oder Krieg – und erhitzten das Material, bis Risse entstanden. Viele dieser Zeichen erkennt man in der heutigen chinesischen Schrift noch wieder.",
+      "text": "Die ältesten bekannten chinesischen Schriftzeichen sind über 3000 Jahre alt (Shang-Dynastie, um 1250 v. Chr.). Wahrsager ritzten Fragen an die Ahnen in Rinderschulterblätter und Schildkrötenpanzer – etwa zu Ernte, Wetter oder Krieg – und hielten heißes Metall daran, bis Risse entstanden. Viele dieser Zeichen erkennt man in der heutigen chinesischen Schrift noch wieder.",
       "station": "orakelknochen",
       "hints": [
         "Der Name der Aufgabe verrät es schon halb.",
@@ -249,7 +249,7 @@
       "id": "antike-schrift-aufgabe",
       "type": "task",
       "title": "Aufgabe: Die Geburt der Schrift",
-      "text": "Welches Material wurde in Ägypten zum Schreiben verwendet?",
+      "text": "Am Nil wuchs eine hohe Schilfpflanze. Ihr Mark schnitt man in Streifen, legte sie kreuzweise übereinander und presste sie. Die Bögen klebte man zu langen Rollen – leicht und biegsam, ganz anders als die schweren Tontafeln aus Mesopotamien.",
       "hints": [
         "Das Wort für Papier leitet sich davon ab.",
         "Es wurde aus einer Pflanze hergestellt."
@@ -329,7 +329,7 @@
       "id": "mittelalter-buch-aufgabe",
       "type": "task",
       "title": "Aufgabe: Das mittelalterliche Buch",
-      "text": "Welche Aussage über Bücher im Mittelalter ist richtig? (Mehrere Antworten möglich.)",
+      "text": "Geschrieben wurde auf Pergament aus Tierhaut – für eine große Bibel brauchte man die Häute von über hundert Kälbern. Anfangsbuchstaben malten die Mönche oft groß und bunt aus, manchmal mit Blattgold. Solche Bücher heißen »illuminiert«, also erleuchtet.",
       "hints": [
         "Die Herstellung war sehr aufwendig.",
         "Die Bücher waren oft reich verziert."
@@ -385,7 +385,7 @@
       "id": "welt-jikji",
       "type": "task",
       "title": "🌍 Weltweit (freiwillig): Gutenberg war nicht der Erste",
-      "text": "In China druckte man schon im 9. Jahrhundert ganze Bücher mit geschnitzten Holzplatten. Um 1040 erfand Bi Sheng dort bewegliche Lettern aus gebranntem Ton. Das älteste erhaltene Buch, das mit beweglichen Lettern aus Metall gedruckt wurde, heißt »Jikji«: eine Sammlung buddhistischer Lehren von 1377 – rund 80 Jahre vor Gutenbergs Bibel.",
+      "text": "In China druckte man schon im 9. Jahrhundert ganze Bücher mit geschnitzten Holzplatten. Um 1040 erfand Bi Sheng dort bewegliche Lettern aus gebranntem Ton. Das älteste erhaltene Buch, das mit beweglichen Lettern aus Metall gedruckt wurde, heißt »Jikji«: eine Sammlung buddhistischer Lehren, gedruckt 1377 im Kloster Heungdeoksa in Cheongju in Korea – rund 80 Jahre vor Gutenbergs Bibel. Das einzige erhaltene Exemplar liegt heute in der Nationalbibliothek in Paris.",
       "station": "buch",
       "hints": [
         "Das Land liegt zwischen China und Japan.",
@@ -426,7 +426,7 @@
       "id": "gutenberg-aufgabe",
       "type": "task",
       "title": "Aufgabe: Der Buchdruck",
-      "text": "Was war die wichtigste Folge des Buchdrucks?",
+      "text": "Ein Mönch brauchte für eine Bibel ein bis drei Jahre. Um 1500, nur 50 Jahre nach der ersten gedruckten Bibel, gab es in Europa schon schätzungsweise 8 bis 20 Millionen gedruckte Bücher.",
       "hints": [
         "Vorher waren Bücher teuer und selten.",
         "Die Reformation wurde durch den Druck gefördert."
@@ -468,7 +468,7 @@
       "id": "welt-maya",
       "type": "task",
       "title": "🌍 Weltweit (freiwillig): Die Faltbücher der Maya",
-      "text": "Die Maya in Mittelamerika hatten eine vollständige Schrift aus Hunderten Zeichen. Sie schrieben Bücher auf Papier aus der Rinde von Feigenbäumen, zickzack gefaltet wie ein Leporello. Nach der Eroberung durch die Spanier ließ der Mönch Diego de Landa 1562 viele davon verbrennen, weil er sie für Teufelswerk hielt. Eines der erhaltenen liegt heute in Dresden.",
+      "text": "Die Maya in Mittelamerika hatten eine vollständige Schrift aus Hunderten Zeichen. Sie schrieben Bücher auf Papier aus der Rinde von Feigenbäumen, zickzack gefaltet wie ein Leporello. Nach der Eroberung durch die Spanier ließ der Mönch Diego de Landa 1562 viele davon verbrennen, weil er sie für Teufelswerk hielt. Nur vier Maya-Bücher haben überlebt – eines davon liegt heute in Dresden.",
       "station": "faltbuch",
       "hints": [
         "Sehr, sehr wenige – man kann sie an einer Hand abzählen.",
@@ -547,7 +547,7 @@
       "id": "telegraph-aufgabe",
       "type": "task",
       "title": "Aufgabe: Der Telegraph",
-      "text": "Welchen entscheidenden Vorteil brachte der Telegraph gegenüber der Post?",
+      "text": "Ein Brief von Berlin nach Paris war um 1840 mit der Postkutsche rund eine Woche unterwegs. Ein Telegramm bezahlte man dagegen pro Wort – deshalb schrieb man knapp: »Ankomme Montag Stop«.",
       "task": {
         "kind": "single",
         "codeFragment": "TELEGRAMM",
@@ -596,7 +596,7 @@
       "id": "telefon-aufgabe",
       "type": "task",
       "title": "Aufgabe: Das Telefon",
-      "text": "Wer erfand das Telefon? (Bekanntester Name)",
+      "text": "Er war nicht der Einzige: Schon 1861 führte der Lehrer Philipp Reis aus Friedrichsdorf bei Frankfurt ein »Telephon« vor, und Elisha Gray reichte 1876 am selben Tag eine ähnliche Erfindung beim Patentamt ein. Bekannt wird oft, wer das Patent bekommt.",
       "task": {
         "kind": "single",
         "codeFragment": "TELEFON",
@@ -645,7 +645,7 @@
       "id": "welt-telenovela",
       "type": "task",
       "title": "🌍 Weltweit (freiwillig): Vom Radio zur Telenovela",
-      "text": "In Kuba liefen in den 1930er- und 40er-Jahren »Radionovelas«: Fortsetzungsgeschichten im Radio, die ganze Familien jeden Tag verfolgten. Mit dem Fernsehen wurden daraus Telenovelas. Sender aus Mexiko und Brasilien machten sie weltweit erfolgreich – heute laufen lateinamerikanische Telenovelas in über 100 Ländern.",
+      "text": "In Kuba liefen in den 1930er- und 40er-Jahren »Radionovelas«: Fortsetzungsgeschichten im Radio, die ganze Familien jeden Tag verfolgten. Mit dem Fernsehen wurden daraus Telenovelas. Anders als eine Soap, die jahrelang ohne Ende weiterläuft, erzählt eine Telenovela eine Geschichte mit festem Schluss – meist nach einigen Monaten, oft mit Hochzeit. Sender aus Mexiko und Brasilien machten sie weltweit erfolgreich.",
       "station": "radio",
       "task": {
         "kind": "single",
@@ -700,7 +700,7 @@
       "id": "film-aufgabe",
       "type": "task",
       "title": "Aufgabe: Film",
-      "text": "Welche Aussage über den frühen Film ist falsch?",
+      "text": "Der erste öffentliche Film der Lumières dauerte keine Minute. Gezeigt wurde er 1895 in einem Pariser Café gegen Eintritt – die Geburtsstunde des Kinos. Im Saal saß meist ein Pianist und spielte live dazu.",
       "task": {
         "kind": "single",
         "codeFragment": "FILM",
@@ -837,7 +837,7 @@
       "id": "internet-aufgabe",
       "type": "task",
       "title": "Aufgabe: Internet-Meilenstein",
-      "text": "Welche Aussage über das frühe Internet (ARPANET) ist richtig?",
+      "text": "Die Forscher wollten ein Netz, das weiterläuft, auch wenn einzelne Rechner oder Leitungen ausfallen. Deshalb hing jeder Knoten an mehreren anderen, und die Daten suchten sich ihren Weg selbst.",
       "task": {
         "kind": "single",
         "codeFragment": "INTERNET",
@@ -886,7 +886,7 @@
       "id": "www-aufgabe",
       "type": "task",
       "title": "Aufgabe: Das World Wide Web",
-      "text": "Das WWW machte das Internet für alle nutzbar.",
+      "text": "Die erste Website ist bis heute online: info.cern.ch. Ihr Erfinder arbeitete am Forschungszentrum CERN in Genf. 1993 gab das CERN die Technik frei – ohne Patent und ohne Gebühren. Darum darf jeder Websites bauen.",
       "task": {
         "kind": "single",
         "codeFragment": "WWW",
@@ -1001,7 +1001,7 @@
       "id": "soziale-medien-aufgabe",
       "type": "task",
       "title": "Aufgabe: Soziale Medien",
-      "text": "Was war ein gemeinsames Merkmal der ersten sozialen Netzwerke?",
+      "text": "Das erste YouTube-Video, »Me at the zoo« (2005), zeigt 19 Sekunden lang einen der Gründer vor den Elefanten. Gefilmt hat es ein Freund, kein Fernsehsender – inzwischen wurde es Hunderte Millionen Mal angeschaut.",
       "task": {
         "kind": "multi",
         "codeFragment": "SOCIAL",
@@ -1119,7 +1119,7 @@
       "id": "digital-aufgabe",
       "type": "task",
       "title": "Aufgabe: Digitale Gegenwart",
-      "text": "Welche Aussage über die heutige Medienwelt ist zutreffend?",
+      "text": "Zähl mal: Kamera, Telefon, Radio, Fernseher, Zeitung, Landkarte, Wecker, Taschenrechner, Fotoalbum, Briefkasten. Wie viele davon steckt heute in einem einzigen Smartphone?",
       "task": {
         "kind": "single",
         "codeFragment": "DIGITAL",
