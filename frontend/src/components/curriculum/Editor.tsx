@@ -38,6 +38,35 @@ type Offen =
 
 const POLL_MS = 4000;
 
+/** Unser Inhalt in einer Niveau-Zelle: ✎ bearbeitet ihn direkt in der Zelle, 🗑 löscht ihn. */
+export function InhaltText({ text, nurLesen, onSpeichern }: { text: string; nurLesen: boolean; onSpeichern: (text: string) => void }) {
+  const [entwurf, setEntwurf] = useState<string | null>(null);
+  if (entwurf !== null) {
+    const fertig = () => { if (entwurf !== text) onSpeichern(entwurf); setEntwurf(null); };
+    return (
+      <textarea autoFocus className="input text-xs leading-snug min-h-[4rem]" value={entwurf} aria-label="Inhalt bearbeiten"
+        onChange={e => setEntwurf(e.target.value)} onBlur={fertig}
+        onKeyDown={e => {
+          if (e.key === "Escape") { e.stopPropagation(); setEntwurf(null); }
+          if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) fertig();
+        }} />
+    );
+  }
+  return (
+    <div className="group/inhalt relative text-xs whitespace-pre-line leading-snug">
+      {text}
+      {!nurLesen && (
+        <span className="absolute -top-1 right-0 hidden group-hover/inhalt:flex gap-0.5 bg-page rounded shadow-sm">
+          <button className="px-1 text-muted hover:text-fg" title="Text bearbeiten (Strg+Enter speichert, Esc bricht ab)"
+            onClick={() => setEntwurf(text)}>✎</button>
+          <button className="px-1 text-muted hover:text-bad" title="Text löschen"
+            onClick={() => { if (confirm("Diesen Text löschen?")) onSpeichern(""); }}>🗑</button>
+        </span>
+      )}
+    </div>
+  );
+}
+
 
 export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanOut; guestToken?: string }) {
   const { toast } = useToast();
@@ -500,7 +529,7 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
                       <div key={t.id} {...(gilt ? ziel(key, nr, t) : {})}
                         onClick={e => {
                           // Zelle als Ziel für Strg+V merken — Klicks auf Karten zählen nicht
-                          if (!gilt || nurLesen || (e.target as HTMLElement).closest("[draggable='true'], button")) return;
+                          if (!gilt || nurLesen || (e.target as HTMLElement).closest("[draggable='true'], button, textarea")) return;
                           setZielZelle(z => (z?.themaId === t.id && z.niveau === n ? null : { themaId: t.id, klasse: nr, niveau: n }));
                         }}
                         title={gilt && !nurLesen ? "Anklicken = Ziel für Strg+V" : undefined}
@@ -510,9 +539,8 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
                         {!gilt ? <span className="text-xs text-muted">— (Hauptschulniveau endet mit Kl. 9)</span> : (
                           <>
                             {t.inhalte[n]?.trim() && (
-                              <div className="text-xs whitespace-pre-line leading-snug cursor-pointer" onClick={() => setOffen({ art: "thema", thema: t, klasse: nr })}>
-                                {t.inhalte[n]}
-                              </div>
+                              <InhaltText text={t.inhalte[n]!} nurLesen={nurLesen}
+                                onSpeichern={text => ops([{ op: "thema", klasse: nr, thema: { ...t, inhalte: { ...t.inhalte, [n]: text } } }])} />
                             )}
                             {(s.niveau[n] ?? []).filter(sichtbar).map(k => (
                               <KarteBox key={k.id} karte={k} idx={idx} niveaus={niveaus} nurNiveau={n} herkunft={t.id}

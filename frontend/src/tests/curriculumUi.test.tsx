@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { JsonEingabe } from "@/components/curriculum/JsonEingabe";
 import { Fenster, KiDialog } from "@/components/curriculum/Dialoge";
 import { KarteBox } from "@/components/curriculum/KarteBox";
+import { InhaltText } from "@/components/curriculum/Editor";
 import { index, leereVorlage } from "@/lib/curriculum/modell";
 
 describe("JsonEingabe", () => {
@@ -29,6 +30,29 @@ describe("JsonEingabe", () => {
     const { container } = render(<JsonEingabe onText={onText} />);
     fireEvent.change(container.querySelector("textarea")!, { target: { value: "```json\n{}\n```" } });
     expect(onText).toHaveBeenCalledWith("```json\n{}\n```", "");
+  });
+});
+
+describe("InhaltText", () => {
+  it("bearbeitet den Text in der Zelle und speichert beim Verlassen", () => {
+    const speichern = vi.fn();
+    render(<InhaltText text="alt" nurLesen={false} onSpeichern={speichern} />);
+    fireEvent.click(screen.getByTitle(/Text bearbeiten/));
+    const feld = screen.getByLabelText("Inhalt bearbeiten");
+    fireEvent.change(feld, { target: { value: "neu" } });
+    fireEvent.blur(feld);
+    expect(speichern).toHaveBeenCalledWith("neu");
+  });
+
+  it("löscht nach Rückfrage und bietet nur Lesenden nichts an", () => {
+    const speichern = vi.fn();
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    const { unmount } = render(<InhaltText text="alt" nurLesen={false} onSpeichern={speichern} />);
+    fireEvent.click(screen.getByTitle("Text löschen"));
+    expect(speichern).toHaveBeenCalledWith("");
+    unmount();
+    render(<InhaltText text="alt" nurLesen onSpeichern={speichern} />);
+    expect(screen.queryByTitle("Text löschen")).toBeNull();
   });
 });
 
