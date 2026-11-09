@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { existsSync } from "fs";
+import { existsSync, readFileSync } from "fs";
 import { join } from "path";
 import { EPOCHEN, MEDIEN, medium } from "@/lib/medien/medien";
 import { BEREICHE, GALERIE, nachweisFuer } from "@/lib/medien/galerie";
@@ -44,6 +44,17 @@ describe("Stationen der Zeitreise", () => {
     expect(erreichbarBis([])).toBe(0);
     expect(erreichbarBis([MEDIEN[0].id, MEDIEN[1].id])).toBe(2);
     expect(erreichbarBis(MEDIEN.map(m => m.id))).toBe(MEDIEN.length - 1);
+  });
+});
+
+describe("TaskCrawler »Zeitreise der Medien« passt zur Simulation", () => {
+  it("jede verlinkte Station gibt es", () => {
+    const spiel = JSON.parse(readFileSync(join(process.cwd(), "..", "data", "taskcrawler_examples", "TaskCrawler_Geschichte_der_Medien.json"), "utf8"));
+    type Sim = { tool: string; config?: { station?: string } };
+    const sims: Sim[] = spiel.slides.flatMap((s: { sim?: Sim; task?: { sim?: Sim } }) => [s.sim, s.task?.sim]).filter(Boolean);
+    const stationen = sims.filter(x => x.tool === "medien").map(x => x.config?.station);
+    expect(stationen.length).toBeGreaterThan(30);
+    for (const st of stationen) expect(medium(st!), st).toBeDefined();
   });
 });
 

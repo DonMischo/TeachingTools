@@ -7,6 +7,20 @@
     "lizenzUrl": "https://creativecommons.org/licenses/by-sa/2.0/fr/deed.en",
     "urheber": "Rama & Musée Bolo"
   },
+  "alexandria": {
+    "datei": "/medien/galerie/alexandria.webp",
+    "titel": "Ancientlibraryalex.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Ancientlibraryalex.jpg",
+    "lizenz": "Public domain",
+    "urheber": "O. Von Corven"
+  },
+  "arpanet-skizze": {
+    "datei": "/medien/galerie/arpanet-skizze.webp",
+    "titel": "Map of the 4 node arpanet, of 1969, drawn on a napkin.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Map_of_the_4_node_arpanet,_of_1969,_drawn_on_a_napkin.jpg",
+    "lizenz": "Public domain",
+    "urheber": "DARPA"
+  },
   "bain-fax": {
     "datei": "/medien/galerie/bain-fax.webp",
     "titel": "Bain improved facsimile 1850.png",
@@ -89,6 +103,21 @@
     "lizenzUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
     "urheber": "This file has been provided by the British Library from its digital collections. Links to the British Library's website may be broken as the library recovers from a October 2023 cyber attack, and will"
   },
+  "diffusion-schritte": {
+    "datei": "/medien/galerie/diffusion-schritte.webp",
+    "titel": "Stable Diffusion - Rhino X Y Plot to show different Steps.png",
+    "seite": "https://commons.wikimedia.org/wiki/File:Stable_Diffusion_-_Rhino_X_Y_Plot_to_show_different_Steps.png",
+    "lizenz": "Public domain",
+    "urheber": "Stable Diffusion WebUI - Automatic1111"
+  },
+  "digidoug": {
+    "datei": "/medien/galerie/digidoug.webp",
+    "titel": "DigiDoug DeepFake at TED2019.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:DigiDoug_DeepFake_at_TED2019.jpg",
+    "lizenz": "CC BY 2.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by/2.0",
+    "urheber": "Steve Jurvetson"
+  },
   "disketten": {
     "datei": "/medien/galerie/disketten.webp",
     "titel": "Floppy disks - 8 inch, 5.25 inch, 3.5 inch (17361863025).jpg",
@@ -96,6 +125,13 @@
     "lizenz": "CC BY 2.0",
     "lizenzUrl": "https://creativecommons.org/licenses/by/2.0",
     "urheber": "Kevin Savetz"
+  },
+  "dresdner-kodex": {
+    "datei": "/medien/galerie/dresdner-kodex.webp",
+    "titel": "Dresden codex, page 2.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Dresden_codex,_page_2.jpg",
+    "lizenz": "Public domain",
+    "urheber": "circa 1200date QS:P,+1200-00-00T00:00:00Z/9,P1480,Q5727902"
   },
   "druckerpresse": {
     "datei": "/medien/galerie/druckerpresse.webp",
@@ -120,6 +156,21 @@
     "lizenz": "CC BY 4.0",
     "lizenzUrl": "https://creativecommons.org/licenses/by/4.0",
     "urheber": "Joel Bellviure"
+  },
+  "emoji-ballen": {
+    "datei": "/medien/galerie/emoji-ballen.webp",
+    "titel": "Emoji bales (36765488293).jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Emoji_bales_(36765488293).jpg",
+    "lizenz": "CC BY 2.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by/2.0",
+    "urheber": "Tony Hisgett from Birmingham, UK"
+  },
+  "eniac": {
+    "datei": "/medien/galerie/eniac.webp",
+    "titel": "Glen Beck and Betty Snyder program the ENIAC in building 328 at the Ballistic Research Laboratory.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Glen_Beck_and_Betty_Snyder_program_the_ENIAC_in_building_328_at_the_Ballistic_Research_Laboratory.jpg",
+    "lizenz": "Public domain",
+    "urheber": "unbekannt"
   },
   "erster-webserver": {
     "datei": "/medien/galerie/erster-webserver.webp",
@@ -184,6 +235,13 @@
     "lizenz": "Public domain",
     "urheber": "Arthur Pryor"
   },
+  "griot": {
+    "datei": "/medien/galerie/griot.webp",
+    "titel": "Susu Griot, circa 1910, Conakry, Guinea.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Susu_Griot,_circa_1910,_Conakry,_Guinea.jpg",
+    "lizenz": "Public domain",
+    "urheber": "unknown photographer, c. 1910"
+  },
   "gutenberg-bibel": {
     "datei": "/medien/galerie/gutenberg-bibel.webp",
     "titel": "Gutenberg Bible, New York Public Library, USA. Pic 01.jpg",
@@ -208,6 +266,21 @@
     "lizenzUrl": "https://creativecommons.org/licenses/by/2.0",
     "urheber": "Michael Hicks from Saint Paul, MN, USA"
   },
+  "imp-log": {
+    "datei": "/medien/galerie/imp-log.webp",
+    "titel": "The IMP Log The Very First Message Sent on the Internet (6293913865).jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:The_IMP_Log_The_Very_First_Message_Sent_on_the_Internet_(6293913865).jpg",
+    "lizenz": "CC BY-SA 2.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "urheber": "Andrew \"FastLizard4\" Adams from United States"
+  },
+  "ipad-2010": {
+    "datei": "/medien/galerie/ipad-2010.webp",
+    "titel": "IPad-WiFi-1stGen.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:IPad-WiFi-1stGen.jpg",
+    "lizenz": "Public domain",
+    "urheber": "Evan-Amos"
+  },
   "iphone": {
     "datei": "/medien/galerie/iphone.webp",
     "titel": "Original iPhone docked.jpg",
@@ -223,6 +296,20 @@
     "lizenz": "CC BY 4.0",
     "lizenzUrl": "https://creativecommons.org/licenses/by/4.0",
     "urheber": "Alvy"
+  },
+  "jeschow-original": {
+    "datei": "/medien/galerie/jeschow-original.webp",
+    "titel": "Nikolai Yezhov with Stalin and Molotov along the Volga–Don Canal, original.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Nikolai_Yezhov_with_Stalin_and_Molotov_along_the_Volga%E2%80%93Don_Canal,_original.jpg",
+    "lizenz": "Public domain",
+    "urheber": "unbekannt"
+  },
+  "jeschow-retusche": {
+    "datei": "/medien/galerie/jeschow-retusche.webp",
+    "titel": "Stalin and Molotov along the Volga–Don Canal, Nikolai Yezhov removed.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Stalin_and_Molotov_along_the_Volga%E2%80%93Don_Canal,_Nikolai_Yezhov_removed.jpg",
+    "lizenz": "Public domain",
+    "urheber": "unbekannt"
   },
   "kassette": {
     "datei": "/medien/galerie/kassette.webp",
@@ -300,6 +387,22 @@
     "lizenz": "Public domain",
     "urheber": "unbekannt"
   },
+  "mpesa-nokia": {
+    "datei": "/medien/galerie/mpesa-nokia.webp",
+    "titel": "M-Pesa on Nokia 1100 20120430.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:M-Pesa_on_Nokia_1100_20120430.jpg",
+    "lizenz": "CC BY 2.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by/2.0",
+    "urheber": "Rosenfeld Media"
+  },
+  "netflix-umschlag": {
+    "datei": "/medien/galerie/netflix-umschlag.webp",
+    "titel": "Netflix envelope (2655128664).jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Netflix_envelope_(2655128664).jpg",
+    "lizenz": "CC BY 2.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by/2.0",
+    "urheber": "Marit & Toomas Hinnosaar"
+  },
   "niepce": {
     "datei": "/medien/galerie/niepce.webp",
     "titel": "View from the Window at Le Gras, Joseph Nicéphore Niépce.jpg",
@@ -321,6 +424,14 @@
     "lizenz": "Public domain",
     "urheber": "Michael Brandtner"
   },
+  "orakelknochen": {
+    "datei": "/medien/galerie/orakelknochen.webp",
+    "titel": "Shang Ox Scapula Oracle Bones 1.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Shang_Ox_Scapula_Oracle_Bones_1.jpg",
+    "lizenz": "CC0",
+    "lizenzUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "urheber": "Gary Lee Todd, Ph.D. Complete indexed photo collection at WorldHistoryPics.com."
+  },
   "pager": {
     "datei": "/medien/galerie/pager.webp",
     "titel": "Motorola Minicall Express Swedish 1990s pager.jpg",
@@ -335,6 +446,13 @@
     "seite": "https://commons.wikimedia.org/wiki/File:Five_Steps_of_Papermaking_-_Step_3_-_Casting_the_Paper_Pulp_-_As_described_by_Cai_Lun_in_105_CE.jpg",
     "lizenz": "Public domain",
     "urheber": "Unknown author from the time of Ming dynasty"
+  },
+  "papst-jacke": {
+    "datei": "/medien/galerie/papst-jacke.webp",
+    "titel": "Pope Francis in puffy winter jacket.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Pope_Francis_in_puffy_winter_jacket.jpg",
+    "lizenz": "Public domain",
+    "urheber": "Midjourney"
   },
   "papyrus-ani": {
     "datei": "/medien/galerie/papyrus-ani.webp",
@@ -566,6 +684,14 @@
     "lizenz": "CC BY-SA 3.0",
     "lizenzUrl": "https://creativecommons.org/licenses/by-sa/3.0",
     "urheber": "Anna Gerdén"
+  },
+  "wikipedia-2001": {
+    "datei": "/medien/galerie/wikipedia-2001.webp",
+    "titel": "German Wikipedia MainPage (2001-11-29).png",
+    "seite": "https://commons.wikimedia.org/wiki/File:German_Wikipedia_MainPage_(2001-11-29).png",
+    "lizenz": "CC BY-SA 3.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "urheber": "Various authors, screenshot taken by Kh80 (talk · contribs)"
   },
   "zip": {
     "datei": "/medien/galerie/zip.webp",

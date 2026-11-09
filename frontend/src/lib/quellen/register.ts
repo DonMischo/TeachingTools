@@ -159,7 +159,7 @@ export const REGISTER: WerkzeugQuellen[] = [
   {
     slug: "medien", name: "📜 Geschichte der Medien",
     eintraege: [
-      { quelle: "Wikimedia Commons", urheber: "verschiedene (Nachweis an jedem Bild)", lizenz: "gemeinfrei, CC0, CC BY, CC BY-SA", url: "https://commons.wikimedia.org/", verwendung: "76 Fotos der Galerie, verkleinert; Urheber und Lizenz in src/lib/medien/bilder.json und unter jedem Bild" },
+      { quelle: "Wikimedia Commons", urheber: "verschiedene (Nachweis an jedem Bild)", lizenz: "gemeinfrei, CC0, CC BY, CC BY-SA", url: "https://commons.wikimedia.org/", verwendung: "93 Fotos der Galerie, verkleinert; Urheber und Lizenz in src/lib/medien/bilder.json und unter jedem Bild" },
       { quelle: "Egyptian Hieroglyphs (Unicode-Block U+13000)", lizenz: "Unicode-Zeichen, Darstellung über die Systemschrift (Segoe UI Historic bzw. Noto Sans Egyptian Hieroglyphs)", verwendung: "Namen in Hieroglyphen (Einkonsonantenzeichen nach Gardiner, vereinfacht)" },
       { quelle: "»Alle meine Entchen«", lizenz: "Volkslied, gemeinfrei", verwendung: "Melodie im Plattenspieler-Demo" },
     ],

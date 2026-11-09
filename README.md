@@ -235,9 +235,9 @@ Jede Simulation trägt Fächer (auch mehrere, z. B. Geografie und Physik); die �
 - Tipp-Knopf, Fehlerzähler, Bestzeit im Browser
 
 ### 📜 Geschichte der Medien
-- Zeitreise in 51 Stationen von der Höhlenmalerei bis zum KI-Chatbot, nach Epochen auf einem Zeitstrahl; Leitfrage überall: Wie kommt Information weiter, schneller, haltbarer, zu mehr Menschen?
+- Zeitreise in 65 Stationen von der Höhlenmalerei bis zum KI-Chatbot, nach Epochen auf einem Zeitstrahl; Leitfrage überall: Wie kommt Information weiter, schneller, haltbarer, zu mehr Menschen?
 - Jede Station: Geschichte, »Besser fürs Übertragen« und »Der Haken«, Übertragungs-Profil (Reichweite, Tempo, Haltbarkeit, Publikum, Zugang) mit Pfeilen gegenüber der Station davor, Bildergeschichte »So benutzt man es«, Kurioses und Witze
-- Eine Frage je Station schaltet die nächste Station und ihre Fotos frei; Galerie mit 76 Commons-Fotos (Nachweise im Repo), gesperrte Fotos zeigen ihre Station
+- Eine Frage je Station schaltet die nächste Station und ihre Fotos frei; Galerie mit 93 Commons-Fotos (Nachweise im Repo), gesperrte Fotos zeigen ihre Station
 - 14 Mitmach-Demos: Keilschrift, Hieroglyphen-Name, Quipu, Feuerkette, Setzkasten, Chappe-Telegraf, Belichtung, Morsetaste, Fax-Lauflängen, Wählscheibe, Plattenspieler, Kassette mit Bleistift, Disketten-Rechner, SMS-Tastatur
 - Vergleich (1000 km vom Läufer bis zur Glasfaser, logarithmisch; Profil-Duell), Flop-Museum mit Grabsteinen (Telharmonium, Bildtelefon, Betamax, BTX, MiniDisc, HD DVD, Google Glass …)
 - Spiele: »Eilbote« (16 Aufträge aus der Geschichte, nur zeitgemäße Medien) und »Wer war zuerst?« (sortieren, Serie); Fortschritt wie beim TaskCrawler am Konto bzw. Gast-Zugang (offline im Browser); TaskCrawler-Station mit wählbarer Station des Zeitstrahls (öffnet dort, auch wenn noch gesperrt), Link `/simulationen/medien?station=telegraf`

@@ -94,6 +94,24 @@ export const BILDER = {
   "hd-dvd": "HD-DVD player deeply discounted in 2008.jpg",
   "google-glass": "Google Glass Explorer Edition.jpeg",
   "rechenzentrum": "Datacenter Server Racks (22370909788).jpg",
+  // ── nachgetragen aus dem TaskCrawler ──
+  "griot": "Susu Griot, circa 1910, Conakry, Guinea.jpg",
+  "orakelknochen": "Shang Ox Scapula Oracle Bones 1.jpg",
+  "alexandria": "Ancientlibraryalex.jpg",
+  "dresdner-kodex": "Dresden codex, page 2.jpg",
+  "eniac": "Glen Beck and Betty Snyder program the ENIAC in building 328 at the Ballistic Research Laboratory.jpg",
+  "arpanet-skizze": "Map of the 4 node arpanet, of 1969, drawn on a napkin.jpg",
+  "imp-log": "The IMP Log The Very First Message Sent on the Internet (6293913865).jpg",
+  "jeschow-original": "Nikolai Yezhov with Stalin and Molotov along the Volga–Don Canal, original.jpg",
+  "jeschow-retusche": "Stalin and Molotov along the Volga–Don Canal, Nikolai Yezhov removed.jpg",
+  "emoji-ballen": "Emoji bales (36765488293).jpg",
+  "wikipedia-2001": "German Wikipedia MainPage (2001-11-29).png",
+  "mpesa-nokia": "M-Pesa on Nokia 1100 20120430.jpg",
+  "netflix-umschlag": "Netflix envelope (2655128664).jpg",
+  "ipad-2010": "IPad-WiFi-1stGen.jpg",
+  "digidoug": "DigiDoug DeepFake at TED2019.jpg",
+  "papst-jacke": "Pope Francis in puffy winter jacket.jpg",
+  "diffusion-schritte": "Stable Diffusion - Rhino X Y Plot to show different Steps.png",
 };
 
 if (process.argv[1]?.endsWith("fetch-medien.mjs")) {

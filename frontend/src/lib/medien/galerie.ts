@@ -94,6 +94,23 @@ export const GALERIE: MedienBild[] = [
   b("iphone", "smartphone", "heute", "Das erste iPhone (2007)", "Ein Bildschirm, ein Knopf — und das Internet in der Hosentasche."),
   b("google-glass", "googleglass", "heute", "Google Glass", "Ein winziger Bildschirm über dem rechten Auge und eine Kamera im Bügel."),
   b("rechenzentrum", "ki", "heute", "Rechenzentrum", "Hier rechnen KI-Modelle: Tausende Server, die so viel Strom brauchen wie eine Kleinstadt."),
+  b("griot", "erzaehlen", "urzeit", "Griot in Guinea (um 1910)", "Griots sind Erzähler, Sänger und Gedächtnis ihrer Gemeinschaft in Westafrika. Sie kennen Familiengeschichten über viele Generationen auswendig."),
+  b("orakelknochen", "orakelknochen", "antike", "Orakelknochen aus der Shang-Zeit", "Ein Rinderschulterblatt mit eingeritzten Fragen. Die Risse vom heißen Metall waren die »Antwort« der Ahnen."),
+  b("alexandria", "bibliothek", "antike", "Die Bibliothek von Alexandria (Stich, 19. Jh.)", "So stellte man sich die Bibliothek im 19. Jahrhundert vor. Wie sie wirklich aussah, weiß niemand — es gibt kein Bild aus der Antike."),
+  b("dresdner-kodex", "maya", "mittelalter", "Dresdner Kodex", "Eine Seite aus einem der nur vier erhaltenen Maya-Bücher: Zahlen aus Punkten und Strichen, Götter und Kalenderzeichen auf Rindenpapier."),
+  b("eniac", "computer", "modern", "Programmieren am ENIAC", "Betty Snyder und Glen Beck stellen am ENIAC ein Programm ein — mit Schaltern und Steckkabeln statt Tastatur."),
+  b("arpanet-skizze", "internet", "modern", "Das ARPANET mit vier Knoten (1969)", "Eine Skizze der ersten vier Rechner im Netz: UCLA, Stanford Research Institute, Santa Barbara und Utah."),
+  b("imp-log", "internet", "modern", "Das Logbuch der ersten Nachricht", "Der Eintrag vom 29. Oktober 1969, 22:30 Uhr: »Talked to SRI host to host«. Gesendet wurde nur »LO« — dann stürzte der Rechner ab."),
+  b("jeschow-original", "bildbearbeitung", "digital", "Das Original: Stalin mit Jeschow", "Rechts neben Stalin steht der Geheimdienstchef Nikolai Jeschow. 1940 wurde er hingerichtet."),
+  b("jeschow-retusche", "bildbearbeitung", "digital", "Die Retusche: Jeschow ist weg", "Dasselbe Foto, nachträglich bearbeitet: Jeschow ist verschwunden. Bildfälschung ohne Computer — mit Pinsel, Schere und Fotolabor."),
+  b("emoji-ballen", "emoji", "digital", "Emoji-Strohballen", "Ein Bauer hat seine Heuballen als Emojis bemalt. Bild-Schriftzeichen versteht man auch ohne Handy."),
+  b("wikipedia-2001", "wikipedia", "heute", "Die deutsche Wikipedia im November 2001", "So sah die Hauptseite im ersten Jahr aus: viel Text, wenige Artikel, kein Logo. Heute hat die deutsche Ausgabe über drei Millionen Artikel."),
+  b("mpesa-nokia", "mpesa", "heute", "M-Pesa auf einem Nokia 1100", "Kein Smartphone nötig: Das Geldmenü läuft auf dem einfachsten Handy, über SMS."),
+  b("netflix-umschlag", "streaming", "heute", "Netflix im roten Umschlag", "Bevor Netflix streamte, kamen die Filme als DVD mit der Post — und gingen im selben Umschlag zurück."),
+  b("ipad-2010", "tablet", "heute", "Das erste iPad (2010)", "Ein Bildschirm, kein Deckel, keine Tasten: Bedient wird mit den Fingern."),
+  b("digidoug", "deepfake", "heute", "»DigiDoug« bei TED 2019", "Der Forscher Doug Roble steuert live sein digitales Doppel. Auf der Leinwand bewegt sich ein Gesicht, das es nicht gibt."),
+  b("papst-jacke", "bildgenerator", "heute", "Der Papst in der Daunenjacke (KI, 2023)", "Dieses Bild hat eine KI erzeugt (Midjourney). Im März 2023 hielten es Millionen Menschen für ein echtes Foto."),
+  b("diffusion-schritte", "bildgenerator", "heute", "Vom Rauschen zum Nashorn", "Dasselbe Bild nach unterschiedlich vielen Schritten: Mit jedem Schritt entfernt die KI etwas Rauschen."),
 ];
 
 const alle = nachweise as Record<string, Nachweis>;
