@@ -11,6 +11,9 @@ import { letzteInfo } from "@/components/exitgame/FolienTeile";
 vi.mock("@/lib/api", async (orig) => ({ ...(await orig<typeof import("@/lib/api")>()) }));
 import Medien from "@/components/medien/Medien";
 
+// jsdom kennt kein scrollIntoView (Zeitstrahl scrollt zur Station)
+Element.prototype.scrollIntoView = vi.fn();
+
 describe("Geschichte der Medien: Station als Vorgabe", () => {
   it("öffnet die Zeitreise am Telegrafen, obwohl er noch gesperrt wäre", () => {
     render(<Medien vorgabe={{ reiter: "zeitreise", station: "telegraf" }} />);

@@ -831,6 +831,20 @@ def test_upload_rejects_unknown_sim_tool_and_bad_config(client, teacher_token):
     assert any("sim.config" in e for e in r.json()["detail"]["errors"])
 
 
+def test_sim_an_erklaerung_und_beispiel(client, teacher_token):
+    sim = {"tool": "medien", "config": {"reiter": "zeitreise", "station": "telegraf"}}
+    game = {**SIMPLE_GAME, "slides": [{"id": "e", "type": "explanation", "text": "Morse", "sim": sim},
+                                      {"id": "b", "type": "example", "text": "SOS", "sim": {"tool": "medien"}},
+                                      *SIMPLE_GAME["slides"]]}
+    assert _upload(client, teacher_token, game).status_code == 201
+    falsch = {**game, "slides": [{**game["slides"][0], "sim": {"tool": "toaster"}}, *game["slides"][1:]]}
+    r = _upload(client, teacher_token, falsch)
+    assert r.status_code == 422 and any("sim.tool" in e for e in r.json()["detail"]["errors"])
+    # an einer Aufgaben-Folie gehört sim in die task
+    r = _upload(client, teacher_token, _mit_station({}, {"sim": sim}))
+    assert r.status_code == 422 and any("nur bei Erklärung und Beispiel" in e for e in r.json()["detail"]["errors"])
+
+
 def test_upload_rejects_unknown_station(client, teacher_token):
     r = _upload(client, teacher_token, _mit_station({}, {"station": "toaster"}))
     assert r.status_code == 422

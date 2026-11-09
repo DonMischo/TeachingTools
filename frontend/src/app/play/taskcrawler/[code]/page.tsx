@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useGuestSession } from "@/hooks/useGuestSession";
 import { GuestExpired } from "@/components/GuestExpired";
 import { PlayerIdentityForm } from "@/components/PlayerIdentityForm";
+import { SimKnopf } from "@/components/exitgame/SimStation";
 import { CompletionCard, FolienText, MediaView, TaskArea, letzteInfo, levelOf, styleVars } from "@/components/exitgame/FolienTeile";
 import BossArea from "@/components/exitgame/BossArea";
 import { STANDARD_AVATAR, TIERE, gespeicherterAvatar, speichereAvatar } from "@/components/gebaeude/avatar";
@@ -241,6 +242,7 @@ export default function ExitgamePlayPage() {
         </div>
         <FolienText slide={slide} />
         {slide.media && <MediaView media={slide.media} exitgameId={start.exitgame_id} />}
+        {slide.sim && <SimKnopf sim={slide.sim} frage={slide.title} zurueck="✓ Zurück zur Folie" />}
 
         {slide.type === "boss" ? (
           <BossArea slide={slide} attemptId={start.attempt.id} onSlideSolved={slideSolved} onFertig={advance} />

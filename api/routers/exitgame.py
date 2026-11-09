@@ -205,13 +205,7 @@ def _task_errors(task: dict, where: str) -> list[str]:
         errors.extend(timeline_engine.validate_game_spec(task.get("timeline"), f"{where}.timeline"))
     elif kind == "karte":
         errors.extend(karten_engine.pruefe_einbettung(task.get("karte"), f"{where}.karte"))
-    sim = task.get("sim")
-    if sim is not None:
-        if not isinstance(sim, dict) or sim.get("tool") not in SIM_TOOLS:
-            tool = sim.get("tool") if isinstance(sim, dict) else sim
-            errors.append(f"{where}: 'sim.tool' '{tool}' gibt es nicht (erlaubt: {', '.join(sorted(SIM_TOOLS))})")
-        elif sim.get("config") is not None and not isinstance(sim.get("config"), dict):
-            errors.append(f"{where}: 'sim.config' muss ein Objekt sein, z.B. {{\"gleichung\": \"3x + 4 = 19\"}}")
+    errors.extend(_sim_errors(task.get("sim"), where))
     fragment = task.get("codeFragment")
     if fragment is not None and (not isinstance(fragment, str) or not fragment.strip()):
         errors.append(f"{where}: 'codeFragment' muss ein nicht-leerer Text sein")
@@ -219,6 +213,18 @@ def _task_errors(task: dict, where: str) -> list[str]:
     if easier:
         errors.extend(_task_errors(easier, f"{where}.easierAlternative"))
     return errors
+
+
+def _sim_errors(sim, where: str) -> list[str]:
+    """'sim' an einer Aufgabe oder an Erklärung/Beispiel: ein Werkzeug aus dem Katalog."""
+    if sim is None:
+        return []
+    if not isinstance(sim, dict) or sim.get("tool") not in SIM_TOOLS:
+        tool = sim.get("tool") if isinstance(sim, dict) else sim
+        return [f"{where}: 'sim.tool' '{tool}' gibt es nicht (erlaubt: {', '.join(sorted(SIM_TOOLS))})"]
+    if sim.get("config") is not None and not isinstance(sim.get("config"), dict):
+        return [f"{where}: 'sim.config' muss ein Objekt sein, z.B. {{\"gleichung\": \"3x + 4 = 19\"}}"]
+    return []
 
 
 def _boss_standards(slide: dict) -> dict:
@@ -335,6 +341,12 @@ def _validate_exitgame(data: dict) -> list[str]:
         sicherung = slide.get("ergebnissicherung")
         if sicherung is not None and (not isinstance(sicherung, str) or not sicherung.strip() or len(sicherung) > 3000):
             errors.append(f"{where}: 'ergebnissicherung' muss ein Text sein (höchstens 3000 Zeichen)")
+        if slide.get("sim") is not None:
+            if stype in ("explanation", "example"):
+                errors.extend(_sim_errors(slide["sim"], where))
+            else:
+                errors.append(f"{where}: 'sim' direkt an der Folie gibt es nur bei Erklärung und Beispiel — "
+                              f"bei Aufgaben gehört es in die task")
         station = slide.get("station")
         if station is not None and station not in STATION_OBJECTS:
             errors.append(f"{where}: 'station' '{station}' gibt es nicht (erlaubt: {', '.join(sorted(STATION_OBJECTS))})")
@@ -796,6 +808,7 @@ ANLEITUNG_25D = (
     "Anleitung (Ansichten, Stile, Objekte, Werkzeuge mit ihren config-Schlüsseln). "
     "--- WERKZEUGE --- Eine Aufgabe kann eine Simulation als Werkzeug öffnen: "
     "\"sim\": {\"tool\": …, \"config\": {…}} in der task (Werkzeuge und Schlüssel: _katalog['task.sim']; "
+    "Erklärung und Beispiel dürfen dasselbe 'sim' direkt an der Folie tragen, zum Ausprobieren ohne Antwort; "
     "'?' = optional, 'a|b' = einer dieser Werte). Die Simulation öffnet sich dann nur mit dieser einen "
     "Vorgabe (keine anderen Aufgaben, kein Reiterwechsel); die Antwort tippt der Schüler danach wie "
     "gewohnt ein — also immer zusätzlich kind 'input' oder 'single' mit Lösung angeben. Beispiele: "

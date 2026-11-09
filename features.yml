@@ -78,6 +78,7 @@ aktivitaeten:
       - Codeschnipsel aus Aufgaben öffnen die Tür
       - "Krabbler bei falscher Antwort: Käfer sperren 10–45 s Maus und Tastatur, ab drei Fehlern pro Minute mit Mutmacher und Fehlerzahl, darunter der letzte Erklärtext zum Nachlesen, ohne Erklärung davor der Text der Station selbst (auch Challenge Normal, Bingo, Lückentext)"
       - Erklärtexte und Aufgaben mit 🔊 vorlesen (Frage, Antworten, Beispiel, Hinweise)
+      - Werkzeuge (Simulationen) an Aufgaben und auch an Erklärung/Beispiel zum Ausprobieren
       - Serverseitige Fuzzy-Anpassung der Schwierigkeit (Hinweise, Zeitlimits, leichtere Aufgaben)
       - Aufgaben aus Generatoren, eingebettete Lückentexte und Zeitstrahlen
       - Import als .json/.zip, Vorlage mit allen Bausteinen

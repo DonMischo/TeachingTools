@@ -17,6 +17,7 @@ import { bauePlan } from "@/lib/gebaeude/plan";
 import Gebaeude, { type GebaeudeArt, type Ort } from "@/components/gebaeude/Gebaeude";
 import type { RaumZustand, Stil } from "@/components/gebaeude/szene";
 import { FolienText, MediaView, TaskArea, letzteInfo, levelOf } from "./FolienTeile";
+import { SimKnopf } from "./SimStation";
 import BossArea from "./BossArea";
 
 interface Props {
@@ -165,6 +166,7 @@ export default function GebaeudeSpiel({
                 </div>
                 <FolienText slide={s} />
                 {s.media && <MediaView media={s.media} exitgameId={exitgameId} />}
+                {s.sim && <SimKnopf sim={s.sim} frage={s.title} zurueck="✓ Zurück zur Folie" />}
                 {s.type === "boss" && (
                   <BossArea slide={s} attemptId={attempt.id} onSlideSolved={onSlideSolved} onFertig={() => setOffen(null)} />
                 )}

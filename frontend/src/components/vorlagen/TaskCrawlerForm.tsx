@@ -1,7 +1,7 @@
 "use client";
 /** Formular für einen TaskCrawler (intern: Exitgame) im Upload-Format. */
 import { useQuery } from "@tanstack/react-query";
-import { api, type ExitGameData, type ExitGameSlide, type ExitGameTask } from "@/lib/api";
+import { api, type ExitGameData, type ExitGameSim, type ExitGameSlide, type ExitGameTask } from "@/lib/api";
 import { AntwortListe, BildFeld, Feld, Gruppe, Karte, ListenFeld, TextListe, ZeilenKnoepfe, eindeutigeId, move } from "./felder";
 import { LEERES_ZEITSTRAHL_SPIEL, ZeitstrahlSpielForm } from "./ZeitstrahlSpielForm";
 import { KarteFrageForm, LEERE_KARTE } from "./KarteFrageForm";
@@ -75,11 +75,58 @@ function ausText(t: string): unknown {
   return t;
 }
 
+/** Werkzeug (Simulation) zum Ausprobieren: Auswahl und Einstellungen — an Aufgaben, Erklärungen und Beispielen. */
+function SimFelder({ sim, katalog, onChange }: { sim?: ExitGameSim; katalog: Katalog; onChange: (sim: ExitGameSim | undefined) => void }) {
+  const werkzeug = sim ? katalog.werkzeuge[sim.tool] : undefined;
+  return (
+    <div className="grid gap-3 sm:grid-cols-2">
+      <Feld label="Werkzeug zum Ausprobieren (optional)" hint={werkzeug?.hinweis}>
+        <select className="input" value={sim?.tool ?? ""}
+          onChange={e => onChange(e.target.value ? { tool: e.target.value, config: {} } : undefined)}>
+          <option value="">— kein Werkzeug —</option>
+          {Object.entries(katalog.werkzeuge).map(([k, w]) => <option key={k} value={k}>{w.name}</option>)}
+        </select>
+      </Feld>
+      {sim && werkzeug?.config && Object.entries(werkzeug.config).map(([key, beschreibung]) => {
+        const k = key.replace(/\?$/, "");
+        // Geschichte der Medien: Station aus dem Zeitstrahl wählen statt Id tippen
+        if (sim.tool === "medien" && k === "station") return (
+          <Feld key={k} label="Station der Zeitreise" hint="Die Zeitreise öffnet genau dort — auch wenn die Station noch gesperrt wäre.">
+            <select className="input text-sm" value={alsText(sim.config?.station)}
+              onChange={e => {
+                const config = { ...sim.config, ...(e.target.value ? { station: e.target.value, reiter: "zeitreise" } : {}) };
+                if (!e.target.value) delete config.station;
+                onChange({ ...sim, config });
+              }}>
+              <option value="">— Anfang bzw. erste offene Station —</option>
+              {EPOCHEN.map(ep => (
+                <optgroup key={ep.id} label={`${ep.icon} ${ep.name}`}>
+                  {MEDIEN.filter(m => m.epoche === ep.id).map(m => <option key={m.id} value={m.id}>{m.icon} {m.name} ({m.jahrText})</option>)}
+                </optgroup>
+              ))}
+            </select>
+          </Feld>
+        );
+        return (
+          <Feld key={k} label={`Einstellung »${k}«`} hint={beschreibung}>
+            <input className="input text-sm" defaultValue={alsText(sim.config?.[k])}
+              onBlur={e => {
+                const config = { ...sim.config };
+                const v = ausText(e.target.value);
+                if (v === undefined) delete config[k]; else config[k] = v;
+                onChange({ ...sim, config });
+              }} />
+          </Feld>
+        );
+      })}
+    </div>
+  );
+}
+
 function AufgabeForm({ task, onChange, katalog, name, leichter = true }: {
   task: ExitGameTask; onChange: (t: ExitGameTask) => void; katalog?: Katalog; name: string; leichter?: boolean;
 }) {
   const sim = task.sim;
-  const werkzeug = sim ? katalog?.werkzeuge[sim.tool] : undefined;
   return (
     <div className="flex flex-col gap-3">
       <Feld label="Aufgabenart">
@@ -126,49 +173,7 @@ function AufgabeForm({ task, onChange, katalog, name, leichter = true }: {
           onChange={e => onChange({ ...task, codeFragment: e.target.value || undefined })} />
       </Feld>
 
-      {katalog && (
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Feld label="Werkzeug zum Ausprobieren (optional)" hint={werkzeug?.hinweis}>
-            <select className="input" value={sim?.tool ?? ""}
-              onChange={e => onChange({ ...task, sim: e.target.value ? { tool: e.target.value, config: {} } : undefined })}>
-              <option value="">— kein Werkzeug —</option>
-              {Object.entries(katalog.werkzeuge).map(([k, w]) => <option key={k} value={k}>{w.name}</option>)}
-            </select>
-          </Feld>
-          {sim && werkzeug?.config && Object.entries(werkzeug.config).map(([key, beschreibung]) => {
-            const k = key.replace(/\?$/, "");
-            // Geschichte der Medien: Station aus dem Zeitstrahl wählen statt Id tippen
-            if (sim.tool === "medien" && k === "station") return (
-              <Feld key={k} label="Station der Zeitreise" hint="Die Zeitreise öffnet genau dort — auch wenn die Station noch gesperrt wäre.">
-                <select className="input text-sm" value={alsText(sim.config?.station)}
-                  onChange={e => {
-                    const config = { ...sim.config, ...(e.target.value ? { station: e.target.value, reiter: "zeitreise" } : {}) };
-                    if (!e.target.value) delete config.station;
-                    onChange({ ...task, sim: { ...sim, config } });
-                  }}>
-                  <option value="">— Anfang bzw. erste offene Station —</option>
-                  {EPOCHEN.map(ep => (
-                    <optgroup key={ep.id} label={`${ep.icon} ${ep.name}`}>
-                      {MEDIEN.filter(m => m.epoche === ep.id).map(m => <option key={m.id} value={m.id}>{m.icon} {m.name} ({m.jahrText})</option>)}
-                    </optgroup>
-                  ))}
-                </select>
-              </Feld>
-            );
-            return (
-              <Feld key={k} label={`Einstellung »${k}«`} hint={beschreibung}>
-                <input className="input text-sm" defaultValue={alsText(sim.config?.[k])}
-                  onBlur={e => {
-                    const config = { ...sim.config };
-                    const v = ausText(e.target.value);
-                    if (v === undefined) delete config[k]; else config[k] = v;
-                    onChange({ ...task, sim: { ...sim, config } });
-                  }} />
-              </Feld>
-            );
-          })}
-        </div>
-      )}
+      {katalog && <SimFelder sim={sim} katalog={katalog} onChange={sim => onChange({ ...task, sim })} />}
 
       {task.variants && (
         <p className="text-xs text-muted">
@@ -286,6 +291,8 @@ function FolieForm({ slide, slides, onChange, katalog, name, bilder, exitgameId 
               if (type === "explanation" || type === "example") {
                 delete next.task; delete next.tasks; delete next.hints; delete next.onFailReview;
               }
+              // Ein eigenes Werkzeug haben nur Erklärung/Beispiel (Aufgaben tragen es an der Aufgabe).
+              else delete next.sim;
               onChange(next);
             }}>
             {FOLIEN_TYPEN.map(([v, icon, l]) => <option key={v} value={v}>{icon} {l}</option>)}
@@ -335,6 +342,14 @@ function FolieForm({ slide, slides, onChange, katalog, name, bilder, exitgameId 
           </Feld>
         )}
       </div>
+
+      {katalog && (slide.type === "explanation" || slide.type === "example") && (
+        <SimFelder sim={slide.sim} katalog={katalog} onChange={sim => {
+          const next = { ...slide, sim };
+          if (!sim) delete next.sim;
+          onChange(next);
+        }} />
+      )}
 
       {slide.type === "boss" && <BossForm slide={slide} onChange={onChange} exitgameId={exitgameId} />}
 

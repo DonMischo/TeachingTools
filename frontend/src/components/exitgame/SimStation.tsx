@@ -70,7 +70,8 @@ export const SIM_STATIONEN: Record<string, { name: string; icon: string; Kompone
   kikompass: { name: "KI-Kompass", icon: "🧭", Komponente: laden(() => import("@/components/kikompass/KiKompass").then(m => ({ default: (p: { vorgabe?: Vorgabe }) => <m.default konto={false} speicherSchluessel="taskcrawler" {...p} /> }))) },
 };
 
-export function SimKnopf({ sim, frage }: { sim: ExitGameSim; frage?: string }) {
+/** `zurueck`: Beschriftung des Schließen-Knopfs (an Erklärungen gibt es keine Antwort). */
+export function SimKnopf({ sim, frage, zurueck = "✓ Zur Antwort" }: { sim: ExitGameSim; frage?: string; zurueck?: string }) {
   const [offen, setOffen] = useState(false);
   const eintrag = SIM_STATIONEN[sim.tool];
 
@@ -98,7 +99,7 @@ export function SimKnopf({ sim, frage }: { sim: ExitGameSim; frage?: string }) {
             <div className="flex-1 min-w-0 text-sm">
               {frage ? <MathText text={frage} className="font-medium" /> : <b>{eintrag.name}</b>}
             </div>
-            <button onClick={() => setOffen(false)} className="btn-primary text-sm py-1.5 px-4 shrink-0 whitespace-nowrap">✓ Zur Antwort</button>
+            <button onClick={() => setOffen(false)} className="btn-primary text-sm py-1.5 px-4 shrink-0 whitespace-nowrap">{zurueck}</button>
           </div>
           <div className="flex-1 overflow-y-auto app-scroll">
             <Suspense fallback={<p className="p-6 text-sm text-muted">Lade {eintrag.name} …</p>}>

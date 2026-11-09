@@ -914,6 +914,8 @@ export type ExitGameSlide = {
   station?: string;
   // Merksatz fürs Ergebnissicherungs-PDF; der Server schickt ihn erst mit /finish.
   ergebnissicherung?: string;
+  // Erklärung/Beispiel: eine Simulation zum Ausprobieren (wie task.sim)
+  sim?: ExitGameSim;
   // type "boss": Spielerdaten (der Challenge-Satz selbst bleibt auf dem Server); in der Vorlage steht `challenge`
   bossFragment?: boolean;
   spiel?: string;
