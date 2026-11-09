@@ -2898,6 +2898,27 @@ class KlikkWoche(Base):
     aktualisiert_am: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 
+class MedienStand(Base):
+    """»Geschichte der Medien«: geschaffte Stationen der Zeitreise und die
+    Bestwerte der Spiele — eine Zeile je Konto bzw. Gast (wie beim
+    TaskCrawler liegt der Stand am Server, nicht im Browser)."""
+    __tablename__ = "medien_staende"
+    __table_args__ = (
+        UniqueConstraint("student_id", name="uq_medien_student"),
+        UniqueConstraint("teacher_id", name="uq_medien_teacher"),
+        UniqueConstraint("guest_id", name="uq_medien_guest"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    student_id: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"), nullable=True)
+    teacher_id: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="CASCADE"), nullable=True)
+    guest_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    geschafft: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    eilbote: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    sortieren: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
 class KlikkSpielstand(Base):
     """Bestwert in einem Handy-Spiel von »Klikk« (Blöcke, Sprung, Logik) —
     eine Zeile je Person und Spiel, mehr ist besser."""

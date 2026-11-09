@@ -283,7 +283,7 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📷 Galerie", text: "76 Fotos von Wikimedia Commons mit Erklärung und Bildnachweis, nach Epochen. Gesperrte Fotos zeigen, welche Station sie freischaltet." },
       { label: "🏃 Eilbote", text: "16 Aufträge aus der Geschichte (Bierquittung in Uruk, Troja, Reuters' Brieftauben, Mondlandung, Mixtape …): Welches der damals verfügbaren Medien bringt die Nachricht am besten ans Ziel? 100 Punkte im ersten, 40 im zweiten Versuch; falsche Wahl gibt eine witzige Rückmeldung." },
       { label: "🧩 Wer war zuerst?", text: "Fünf Medien nach dem Jahr ordnen (oben das älteste). Zählt die Serie fehlerfreier Runden." },
-      { label: "💾 Speichern", text: "Fortschritt und Bestwerte bleiben nur in diesem Browser; »Fortschritt zurücksetzen« unter der Station sperrt alles wieder." },
+      { label: "💾 Speichern", text: "Wie beim TaskCrawler liegt der Fortschritt am Server: bei Angemeldeten am Konto (auf jedem Gerät derselbe Stand), bei Gästen am Gast-Zugang ihrer Sitzung. Oben rechts steht, wo gespeichert wird. Nur die Offline-Datei und die TaskCrawler-Station speichern im Browser. »Fortschritt zurücksetzen« unter der Station sperrt alles wieder." },
       { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
     ],
   },

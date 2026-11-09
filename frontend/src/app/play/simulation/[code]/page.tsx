@@ -89,7 +89,8 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   // Die Bestenliste braucht Code und Gast-Token.
   markieren: { title: "Markieren & Bearbeiten", icon: "🖍️", node: null },
   pcbau: { title: "PC-Werkstatt", icon: "🪛", node: <PcWerkstatt /> },
-  medien: { title: "Geschichte der Medien", icon: "📜", node: <Medien /> },
+  // Fortschritt am Konto bzw. am Gast (wie beim TaskCrawler)
+  medien: { title: "Geschichte der Medien", icon: "📜", node: null },
   klikk: { title: "Klikk", icon: "📱", node: null },
   // Duelle brauchen Code und Gast-Token
   elemon: { title: "Elemon", icon: "🐾", node: null },
@@ -248,6 +249,8 @@ export default function SimulationJoinPage() {
                 : guest.token ? schluesselFuerGast(code, guest.token) : `gast-${code}`} />
         : session.tool_slug === "stromkreis"
           ? <Stromkreis code={code} />
+        : session.tool_slug === "medien"
+          ? <Medien speicher={auth ? "konto" : { code, token: guest.token }} />
         : session.tool_slug === "klikk"
           ? <Klikk zugang={{ code, token: auth ? null : guest.token }} konto={!!auth} />
         : session.tool_slug === "elemon"

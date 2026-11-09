@@ -7,12 +7,12 @@
 import { useState } from "react";
 import { PROFIL_ACHSEN, epoche, vorher, type Medium } from "@/lib/medien/medien";
 import { bilderZu, nachweisFuer } from "@/lib/medien/galerie";
-import { schaffe, type Fortschritt } from "@/lib/medien/fortschritt";
+import { mitStation, type Aenderung } from "@/lib/medien/fortschritt";
 import { BildStreifen } from "@/components/galerie/FotoGalerie";
 import { DEMOS } from "./demos";
 
-export default function Station({ m, geschafft, setFortschritt, weiter }: {
-  m: Medium; geschafft: boolean; setFortschritt: (f: Fortschritt) => void; weiter?: () => void;
+export default function Station({ m, geschafft, aendere, weiter }: {
+  m: Medium; geschafft: boolean; aendere: (a: Aenderung) => void; weiter?: () => void;
 }) {
   const e = epoche(m.epoche);
   const davor = vorher(m.id);
@@ -90,7 +90,7 @@ export default function Station({ m, geschafft, setFortschritt, weiter }: {
         </div>
       </section>
 
-      <Frage key={m.id} m={m} geschafft={geschafft} setFortschritt={setFortschritt} weiter={weiter} />
+      <Frage key={m.id} m={m} geschafft={geschafft} aendere={aendere} weiter={weiter} />
     </div>
   );
 }
@@ -126,13 +126,13 @@ function Profil({ m, davor, farbe }: { m: Medium; davor?: Medium; farbe: string 
   );
 }
 
-function Frage({ m, geschafft, setFortschritt, weiter }: { m: Medium; geschafft: boolean; setFortschritt: (f: Fortschritt) => void; weiter?: () => void }) {
+function Frage({ m, geschafft, aendere, weiter }: { m: Medium; geschafft: boolean; aendere: (a: Aenderung) => void; weiter?: () => void }) {
   const [falsch, setFalsch] = useState<number[]>([]);
   const [richtig, setRichtig] = useState(geschafft);
   const bilder = bilderZu(m.id);
   const antworte = (i: number) => {
     if (richtig) return;
-    if (i === m.frage.richtig) { setRichtig(true); setFortschritt(schaffe(m.id)); }
+    if (i === m.frage.richtig) { setRichtig(true); aendere(mitStation(m.id)); }
     else setFalsch(f => (f.includes(i) ? f : [...f, i]));
   };
   return (

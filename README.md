@@ -240,7 +240,7 @@ Jede Simulation trägt Fächer (auch mehrere, z. B. Geografie und Physik); die �
 - Eine Frage je Station schaltet die nächste Station und ihre Fotos frei; Galerie mit 76 Commons-Fotos (Nachweise im Repo), gesperrte Fotos zeigen ihre Station
 - 14 Mitmach-Demos: Keilschrift, Hieroglyphen-Name, Quipu, Feuerkette, Setzkasten, Chappe-Telegraf, Belichtung, Morsetaste, Fax-Lauflängen, Wählscheibe, Plattenspieler, Kassette mit Bleistift, Disketten-Rechner, SMS-Tastatur
 - Vergleich (1000 km vom Läufer bis zur Glasfaser, logarithmisch; Profil-Duell), Flop-Museum mit Grabsteinen (Telharmonium, Bildtelefon, Betamax, BTX, MiniDisc, HD DVD, Google Glass …)
-- Spiele: »Eilbote« (16 Aufträge aus der Geschichte, nur zeitgemäße Medien) und »Wer war zuerst?« (sortieren, Serie); Fortschritt im Browser; TaskCrawler-Station
+- Spiele: »Eilbote« (16 Aufträge aus der Geschichte, nur zeitgemäße Medien) und »Wer war zuerst?« (sortieren, Serie); Fortschritt wie beim TaskCrawler am Konto bzw. Gast-Zugang (offline im Browser); TaskCrawler-Station
 
 ### 📱 Klikk
 - Eine Schulwoche (Mo–Fr ab 14 Uhr) mit einer erfundenen Social-Media-App, daneben Hausaufgaben, Freunde und Schlaf — Zeit vergeht nur durch Handlungen

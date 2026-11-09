@@ -101,6 +101,8 @@ app.include_router(maus_router.router)
 app.include_router(maus_router.router_sitzung)
 from .routers import kikompass as kikompass_router
 app.include_router(kikompass_router.router)
+from .routers import medien as medien_router
+app.include_router(medien_router.router)
 from .routers import markieren as markieren_router
 app.include_router(markieren_router.router)
 from .routers import klikk as klikk_router

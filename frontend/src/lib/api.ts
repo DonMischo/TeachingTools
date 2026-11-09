@@ -1293,6 +1293,9 @@ export type MausPruefungOut = { bestanden: boolean; punkte: number; schon_vergeb
 /** Beitritt über Code/QR; `token` nur für Gäste ohne Konto. */
 export type MausZugang = { code: string; token: string | null };
 
+/** Geschichte der Medien: geschaffte Stationen + Bestwerte (api/routers/medien.py) */
+export type MedienStand = { geschafft: string[]; eilbote: number; sortieren: number };
+
 /** KI-Kompass: Messpunkte im Raster + Stand der Führerschein-Stationen. */
 export type KiKompassStand = {
   einschaetzungen: { datum: string; haken: string[] }[];
@@ -2034,6 +2037,20 @@ export const api = {
       }),
     uebersicht: (code: string) =>
       apiFetch<AlgoUebersichtZeile[]>(`algo/sitzung/${encodeURIComponent(code)}/uebersicht`),
+  },
+
+  // Geschichte der Medien: Fortschritt am Konto bzw. am Gast (siehe api/routers/medien.py)
+  medien: {
+    stand: (zugang?: MausZugang) =>
+      apiFetch<MedienStand>(zugang?.token ? `medien/sitzung/${encodeURIComponent(zugang.code)}/stand` : "medien/stand", {
+        headers: zugang?.token ? { Authorization: `Bearer ${zugang.token}` } : undefined,
+      }),
+    speichern: (body: MedienStand & { zuruecksetzen?: boolean }, zugang?: MausZugang) =>
+      apiFetch<MedienStand>(zugang?.token ? `medien/sitzung/${encodeURIComponent(zugang.code)}/stand` : "medien/stand", {
+        method: "PUT",
+        body: JSON.stringify(body),
+        headers: zugang?.token ? { Authorization: `Bearer ${zugang.token}` } : undefined,
+      }),
   },
 
   // KI-Kompass: Stand am Konto, Spiegel in die Sitzung, Modul-Prüfung (siehe api/routers/kikompass.py)

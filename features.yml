@@ -687,6 +687,7 @@ simulationen:
       - Vergleich der Übertragungszeit für 1000 km und Profil-Duell zweier Medien
       - Flop-Museum mit Grabsteinen und Gründen fürs Scheitern
       - Spiele Eilbote (passendes Medium je Epoche) und Wer war zuerst? (sortieren)
+      - Fortschritt am Server je Konto bzw. Gast (wie TaskCrawler), offline im Browser
   - id: klikk
     name: Klikk
     faehigkeiten: {use: [true, true]}

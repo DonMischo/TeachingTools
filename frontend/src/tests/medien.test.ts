@@ -5,7 +5,7 @@ import { EPOCHEN, MEDIEN, medium } from "@/lib/medien/medien";
 import { BEREICHE, GALERIE, nachweisFuer } from "@/lib/medien/galerie";
 import nachweise from "@/lib/medien/bilder.json";
 import { AUFTRAEGE, gabEs, punkteFuer, richtigPlatziert, sortierRunde } from "@/lib/medien/spiele";
-import { erreichbarBis } from "@/lib/medien/fortschritt";
+import { erreichbarBis, mitStation, sauber, vereinige } from "@/lib/medien/fortschritt";
 import { ausLauflaengen, ausMorse, buchstabe, inHieroglyphen, lauflaengen, quipuWert, tippZahl, zeichenAusDauer, zuMorse } from "@/lib/medien/codes";
 import { DEMOS } from "@/components/medien/demos";
 
@@ -28,6 +28,16 @@ describe("Stationen der Zeitreise", () => {
     const flops = MEDIEN.filter(m => m.flop);
     expect(flops.length).toBeGreaterThanOrEqual(8);
     for (const m of flops) for (const t of Object.values(m.flop!)) expect(t.length, m.id).toBeGreaterThan(3);
+  });
+
+  it("Fortschritt: unbekannte Stationen fliegen raus, Zusammenlegen verliert nichts", () => {
+    expect(sauber({ geschafft: ["hoehle", "gibtsnicht", "hoehle", 3], eilbote: "40" })).toEqual({ geschafft: ["hoehle"], eilbote: 40, sortieren: 0 });
+    expect(sauber(null).geschafft).toEqual([]);
+    const a = { geschafft: ["hoehle", "signale"], eilbote: 300, sortieren: 1 };
+    const b = { geschafft: ["hoehle", "keilschrift"], eilbote: 100, sortieren: 4 };
+    expect(vereinige(a, b)).toEqual({ geschafft: ["hoehle", "signale", "keilschrift"], eilbote: 300, sortieren: 4 });
+    expect(mitStation("signale")(a)).toBe(a);
+    expect(mitStation("alphabet")(a).geschafft).toEqual(["hoehle", "signale", "alphabet"]);
   });
 
   it("Weiter geht's nur bis zur ersten offenen Station", () => {

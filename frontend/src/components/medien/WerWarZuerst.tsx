@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { epoche, medium, type Medium } from "@/lib/medien/medien";
 import { richtigPlatziert, sortierRunde } from "@/lib/medien/spiele";
-import { aendere, type Fortschritt } from "@/lib/medien/fortschritt";
+import type { Aenderung } from "@/lib/medien/fortschritt";
 
 const ANZAHL = 5;
 /** Überraschungen, die oft falsch geraten werden */
@@ -14,7 +14,7 @@ const UEBERRASCHUNG: Record<string, string> = {
   telharmonium: "Musik-Streaming per Telefonleitung — schon 1906.",
 };
 
-export default function WerWarZuerst({ rekord, setFortschritt }: { rekord: number; setFortschritt: (f: Fortschritt) => void }) {
+export default function WerWarZuerst({ rekord, aendere }: { rekord: number; aendere: (a: Aenderung) => void }) {
   const [liste, setListe] = useState<Medium[]>(() => sortierRunde(ANZAHL));
   const [geprueft, setGeprueft] = useState<boolean[] | null>(null);
   const [serie, setSerie] = useState(0);
@@ -29,7 +29,7 @@ export default function WerWarZuerst({ rekord, setFortschritt }: { rekord: numbe
     const alle = r.every(Boolean);
     const neu = alle ? serie + 1 : 0;
     setSerie(neu);
-    if (neu > rekord) setFortschritt(aendere(f => ({ ...f, sortieren: Math.max(f.sortieren, neu) })));
+    if (neu > rekord) aendere(f => ({ ...f, sortieren: Math.max(f.sortieren, neu) }));
   };
   const neueRunde = () => { setListe(sortierRunde(ANZAHL)); setGeprueft(null); };
   const ueberraschung = geprueft ? liste.map(m => UEBERRASCHUNG[m.id]).find(Boolean) : undefined;

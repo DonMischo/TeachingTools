@@ -2,10 +2,10 @@
 /** Zeitstrahl oben, darunter die gewählte Station. Weiter geht's erst, wenn die Station geschafft ist. */
 import { useEffect, useRef, useState } from "react";
 import { EPOCHEN, MEDIEN, epoche } from "@/lib/medien/medien";
-import { erreichbarBis, zuruecksetzen, type Fortschritt } from "@/lib/medien/fortschritt";
+import { erreichbarBis, type Aenderung, type Fortschritt } from "@/lib/medien/fortschritt";
 import Station from "./Station";
 
-export default function Zeitreise({ fortschritt, setFortschritt }: { fortschritt: Fortschritt; setFortschritt: (f: Fortschritt) => void }) {
+export default function Zeitreise({ fortschritt, aendere, zuruecksetzen }: { fortschritt: Fortschritt; aendere: (a: Aenderung) => void; zuruecksetzen: () => void }) {
   const bis = erreichbarBis(fortschritt.geschafft);
   const [index, setIndex] = useState(0);
   const gewaehlt = useRef(false);
@@ -63,12 +63,12 @@ export default function Zeitreise({ fortschritt, setFortschritt }: { fortschritt
       </div>
 
       <Station key={m.id} m={m} geschafft={fortschritt.geschafft.includes(m.id)}
-        setFortschritt={f => { gewaehlt.current = true; setFortschritt(f); }}
+        aendere={a => { gewaehlt.current = true; aendere(a); }}
         weiter={index < MEDIEN.length - 1 ? () => { gewaehlt.current = true; setIndex(index + 1); } : undefined} />
 
       <div className="text-right">
         <button className="text-xs text-muted underline" onClick={() => {
-          if (confirm("Den ganzen Fortschritt der Zeitreise löschen? Die Fotos werden wieder gesperrt.")) { setFortschritt(zuruecksetzen()); gewaehlt.current = true; setIndex(0); }
+          if (confirm("Den ganzen Fortschritt der Zeitreise löschen? Die Fotos werden wieder gesperrt.")) { zuruecksetzen(); gewaehlt.current = true; setIndex(0); }
         }}>Fortschritt zurücksetzen</button>
       </div>
     </div>

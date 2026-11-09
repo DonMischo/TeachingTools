@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { epoche, jahrKurz, medium } from "@/lib/medien/medien";
 import { AUFTRAEGE, punkteFuer } from "@/lib/medien/spiele";
-import { aendere, type Fortschritt } from "@/lib/medien/fortschritt";
+import type { Aenderung } from "@/lib/medien/fortschritt";
 
-export default function Eilbote({ rekord, setFortschritt }: { rekord: number; setFortschritt: (f: Fortschritt) => void }) {
+export default function Eilbote({ rekord, aendere }: { rekord: number; aendere: (a: Aenderung) => void }) {
   const [nr, setNr] = useState(0);
   const [falsch, setFalsch] = useState<string[]>([]);
   const [geloest, setGeloest] = useState(false);
@@ -37,7 +37,7 @@ export default function Eilbote({ rekord, setFortschritt }: { rekord: number; se
   const weiter = () => {
     if (nr + 1 >= AUFTRAEGE.length) {
       setFertig(true);
-      setFortschritt(aendere(f => ({ ...f, eilbote: Math.max(f.eilbote, punkte) })));
+      aendere(f => ({ ...f, eilbote: Math.max(f.eilbote, punkte) }));
     } else { setNr(nr + 1); setFalsch([]); setGeloest(false); }
   };
   const zuletzt = falsch[falsch.length - 1];

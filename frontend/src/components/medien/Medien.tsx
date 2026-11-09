@@ -7,11 +7,12 @@
  * Kennenlernen: Zeitreise (Stationen nacheinander freischalten), Vergleich, Flop-Museum, Galerie
  * Anwenden:     Eilbote (welches Medium passt?), Wer war zuerst? (sortieren)
  */
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { api, type MausZugang } from "@/lib/api";
 import { wahl, type Vorgabe } from "@/lib/vorgabe";
 import { MEDIEN } from "@/lib/medien/medien";
 import { GALERIE, BEREICHE, nachweisFuer } from "@/lib/medien/galerie";
-import { lies, type Fortschritt } from "@/lib/medien/fortschritt";
+import { leer, lies, sauber, schreibe, vereinige, type Aenderung, type Fortschritt } from "@/lib/medien/fortschritt";
 import FotoGalerie from "@/components/galerie/FotoGalerie";
 import Zeitreise from "./Zeitreise";
 import Vergleich from "./Vergleich";
@@ -32,13 +33,50 @@ type Reiter = (typeof REITER)[number]["id"];
 const chip = (an: boolean) =>
   `px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${an ? "bg-accent text-accent-fg" : "text-muted hover:text-fg"}`;
 
-/** `vorgabe` (TaskCrawler-Station): { reiter?: "zeitreise" | "vergleich" | "flops" | "galerie" | "eilbote" | "sortieren" } */
-export default function Medien({ action, vorgabe }: { action?: ReactNode; vorgabe?: Vorgabe }) {
+/**
+ * `speicher`: wo der Fortschritt liegt — wie beim TaskCrawler am Server:
+ * "konto" für Angemeldete, der Gast-Zugang (Code + Token) für Gäste. Ohne
+ * (Offline-Datei, TaskCrawler-Station) bleibt er in diesem Browser.
+ *
+ * `vorgabe` (TaskCrawler-Station): { reiter?: "zeitreise" | "vergleich" | "flops" | "galerie" | "eilbote" | "sortieren" }
+ */
+export default function Medien({ action, vorgabe, speicher }: { action?: ReactNode; vorgabe?: Vorgabe; speicher?: "konto" | MausZugang }) {
   const fest = wahl(vorgabe, "reiter", REITER.map(r => r.id));
   const [reiter, setReiter] = useState<Reiter>(fest ?? "zeitreise");
-  const [f, setF] = useState<Fortschritt>({ geschafft: [], eilbote: 0, sortieren: 0 });
-  // Nur lesen; geschrieben wird in den Handlern (lib/medien/fortschritt.ts)
-  useEffect(() => { setF(lies()); }, []);
+  const [f, setF] = useState<Fortschritt>(leer);
+  const aktuell = useRef(f);
+  const [status, setStatus] = useState<"laedt" | "ok" | "fehler">("laedt");
+  const zugang = typeof speicher === "object" ? speicher : undefined;
+  const schluessel = speicher === undefined ? "browser" : zugang ? `${zugang.code}:${zugang.token ?? ""}` : "konto";
+
+  const zeige = (neu: Fortschritt) => { aktuell.current = neu; setF(neu); };
+  // Laden: nur lesen. Geschrieben wird in aendere()/zuruecksetzen() — kein Speicher-Effekt.
+  useEffect(() => {
+    if (speicher === undefined) { zeige(lies()); setStatus("ok"); return; }
+    let aus = false;
+    setStatus("laedt");
+    api.medien.stand(zugang)
+      .then(s => { if (!aus) { zeige(vereinige(aktuell.current, sauber(s))); setStatus("ok"); } })
+      .catch(() => { if (!aus) setStatus("fehler"); });
+    return () => { aus = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [schluessel]);
+
+  const sende = (body: Fortschritt & { zuruecksetzen?: boolean }) => {
+    api.medien.speichern(body, zugang)
+      // Der Server vereinigt; seine Antwort kommt zum Stand hier dazu (nichts geht verloren, falls schon weitergeklickt wurde)
+      .then(s => { zeige(body.zuruecksetzen ? sauber(s) : vereinige(aktuell.current, sauber(s))); setStatus("ok"); })
+      .catch(() => setStatus("fehler"));
+  };
+  const aendere = (aenderung: Aenderung) => {
+    const neu = aenderung(aktuell.current);
+    zeige(neu);
+    if (speicher === undefined) schreibe(neu); else sende(neu);
+  };
+  const zuruecksetzen = () => {
+    zeige(leer());
+    if (speicher === undefined) schreibe(leer()); else sende({ ...leer(), zuruecksetzen: true });
+  };
 
   const frei = GALERIE.filter(b => f.geschafft.includes(b.medium)).length;
   return (
@@ -63,10 +101,13 @@ export default function Medien({ action, vorgabe }: { action?: ReactNode; vorgab
         <div className="ml-auto flex gap-2 text-sm">
           <span className="chip" title="Geschaffte Stationen">🏁 {f.geschafft.length} / {MEDIEN.length}</span>
           <span className="chip" title="Freigeschaltete Fotos">📷 {frei} / {GALERIE.length}</span>
+          <span className={`chip ${status === "fehler" ? "text-bad" : ""}`} title="Wo dein Fortschritt gespeichert ist">
+            {speicher === undefined ? "💾 nur in diesem Browser" : status === "fehler" ? "⚠️ nicht gespeichert" : status === "laedt" ? "☁️ lädt …" : zugang?.token ? "☁️ gespeichert (Gast)" : "☁️ am Konto gespeichert"}
+          </span>
         </div>
       </div>
 
-      {reiter === "zeitreise" && <Zeitreise fortschritt={f} setFortschritt={setF} />}
+      {reiter === "zeitreise" && <Zeitreise fortschritt={f} aendere={aendere} zuruecksetzen={zuruecksetzen} />}
       {reiter === "vergleich" && <Vergleich />}
       {reiter === "flops" && <FlopMuseum geschafft={f.geschafft} />}
       {reiter === "galerie" && (
@@ -77,8 +118,8 @@ export default function Medien({ action, vorgabe }: { action?: ReactNode; vorgab
           }}
           einleitung={<>Echte Fotos der Medien aus {MEDIEN.length} Stationen. Jedes Foto wird freigeschaltet, sobald du die passende Station der Zeitreise geschafft hast. Bisher: <b>{frei} von {GALERIE.length}</b>.</>} />
       )}
-      {reiter === "eilbote" && <Eilbote rekord={f.eilbote} setFortschritt={setF} />}
-      {reiter === "sortieren" && <WerWarZuerst rekord={f.sortieren} setFortschritt={setF} />}
+      {reiter === "eilbote" && <Eilbote rekord={f.eilbote} aendere={aendere} />}
+      {reiter === "sortieren" && <WerWarZuerst rekord={f.sortieren} aendere={aendere} />}
     </div>
   );
 }

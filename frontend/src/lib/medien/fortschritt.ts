@@ -1,39 +1,52 @@
 /**
- * Fortschritt der Zeitreise im Browser: welche Stationen geschafft sind
- * (schaltet Galerie-Fotos und die nächste Station frei) und die Bestwerte
- * der Spiele. Jede Änderung liest frisch und schreibt sofort — kein
- * Speicher-Effekt, der unter StrictMode den Stand überschreiben könnte.
+ * Fortschritt der Zeitreise: welche Stationen geschafft sind (schaltet
+ * Galerie-Fotos und die nächste Station frei) und die Bestwerte der Spiele.
+ *
+ * Wo gespeichert wird, entscheidet components/medien/Medien.tsx: mit Konto
+ * oder Gast-Zugang am Server (wie beim TaskCrawler, api/routers/medien.py),
+ * sonst — Offline-Datei, TaskCrawler-Station — hier im Browser. Die beiden
+ * Wege mischen sich nie: An Schul-PCs teilen sich viele Konten einen Browser.
  */
 import { MEDIEN } from "./medien";
 
 const SCHLUESSEL = "hp_medien_fortschritt";
 
 export interface Fortschritt { geschafft: string[]; eilbote: number; sortieren: number }
-const leer = (): Fortschritt => ({ geschafft: [], eilbote: 0, sortieren: 0 });
+export const leer = (): Fortschritt => ({ geschafft: [], eilbote: 0, sortieren: 0 });
+
+/** Nur bekannte Stationen, Zahlen als Zahlen */
+export function sauber(roh: unknown): Fortschritt {
+  if (!roh || typeof roh !== "object") return leer();
+  const r = roh as Record<string, unknown>;
+  const ids = new Set(MEDIEN.map(m => m.id));
+  return {
+    geschafft: Array.isArray(r.geschafft) ? [...new Set(r.geschafft.filter((x): x is string => typeof x === "string" && ids.has(x)))] : [],
+    eilbote: Number(r.eilbote) || 0,
+    sortieren: Number(r.sortieren) || 0,
+  };
+}
 
 export function lies(): Fortschritt {
-  try {
-    const roh = JSON.parse(localStorage.getItem(SCHLUESSEL) ?? "null");
-    if (!roh || typeof roh !== "object") return leer();
-    const ids = new Set(MEDIEN.map(m => m.id));
-    return {
-      geschafft: Array.isArray(roh.geschafft) ? roh.geschafft.filter((x: unknown) => typeof x === "string" && ids.has(x)) : [],
-      eilbote: Number(roh.eilbote) || 0,
-      sortieren: Number(roh.sortieren) || 0,
-    };
-  } catch {
-    return leer();
-  }
+  try { return sauber(JSON.parse(localStorage.getItem(SCHLUESSEL) ?? "null")); } catch { return leer(); }
 }
 
-export function aendere(f: (alt: Fortschritt) => Fortschritt): Fortschritt {
-  const neu = f(lies());
-  try { localStorage.setItem(SCHLUESSEL, JSON.stringify(neu)); } catch { /* privates Fenster */ }
-  return neu;
+export function schreibe(f: Fortschritt): Fortschritt {
+  try { localStorage.setItem(SCHLUESSEL, JSON.stringify(f)); } catch { /* privates Fenster */ }
+  return f;
 }
 
-export const schaffe = (id: string) => aendere(a => (a.geschafft.includes(id) ? a : { ...a, geschafft: [...a.geschafft, id] }));
-export const zuruecksetzen = () => aendere(() => leer());
+/** Zwei Stände zusammenlegen: Stationen vereinigen, Bestwerte behalten (wie der Server) */
+export function vereinige(a: Fortschritt, b: Fortschritt): Fortschritt {
+  return {
+    geschafft: [...a.geschafft, ...b.geschafft.filter(id => !a.geschafft.includes(id))],
+    eilbote: Math.max(a.eilbote, b.eilbote),
+    sortieren: Math.max(a.sortieren, b.sortieren),
+  };
+}
+
+/** Änderungen beschreiben die Komponenten als Funktion vom alten Stand */
+export type Aenderung = (alt: Fortschritt) => Fortschritt;
+export const mitStation = (id: string): Aenderung => a => (a.geschafft.includes(id) ? a : { ...a, geschafft: [...a.geschafft, id] });
 
 /** Bis zu welcher Station (Index in MEDIEN) darf man reisen? Alle geschafften plus die nächste. */
 export function erreichbarBis(geschafft: string[]): number {
