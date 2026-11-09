@@ -9,16 +9,16 @@
  * Ziehen mehrerer Karten) stellt der Editor über `KartenAnsicht` bereit.
  */
 import { createContext, useContext } from "react";
-import { NIVEAUS, NIVEAU_FARBE, karteText, wortDiff, type Index, type KarteMitPlan, type Niveau, type Paar, type Status, statusVon } from "@/lib/curriculum/modell";
+import { NIVEAUS, NIVEAU_FARBE, gleicherText, karteText, wortDiff, type Index, type KarteMitPlan, type Niveau, type Paar, type Status, statusVon } from "@/lib/curriculum/modell";
 
 export const KartenAnsicht = createContext<{
   offen: (id: string) => boolean;
   umschalten: (id: string) => void;
   endfassung: boolean;
-  gewaehlt: (id: string) => boolean;
-  waehlen: (id: string) => void;
+  gewaehlt: (id: string, herkunft?: string) => boolean;
+  waehlen: (id: string, herkunft?: string) => void;
   /** ids, die ein Ziehen dieser Karte mitnimmt (die Auswahl, wenn sie dazugehört) */
-  ziehen: (id: string) => string[];
+  ziehen: (id: string, herkunft?: string) => string[];
 }>({ offen: () => true, umschalten: () => {}, endfassung: false, gewaehlt: () => false, waehlen: () => {}, ziehen: id => [id] });
 
 export const STATUS_STIL: Record<Status, { name: string; cls: string }> = {
@@ -46,7 +46,7 @@ function DiffText({ alt, neu }: { alt: string; neu: string }) {
   );
 }
 
-export function KarteBox({ karte, idx, niveaus, paar, woanders, onOpen, draggable = true, nurNiveau, onLoesen, ohneBereich }: {
+export function KarteBox({ karte, idx, niveaus, paar, woanders, onOpen, draggable = true, nurNiveau, onLoesen, ohneBereich, herkunft }: {
   karte: KarteMitPlan;
   idx: Index;
   niveaus: Set<Niveau>;
@@ -62,6 +62,8 @@ export function KarteBox({ karte, idx, niveaus, paar, woanders, onOpen, draggabl
   onLoesen?: () => void;
   /** Bereich nicht als Chip zeigen (steht schon in der Gruppenüberschrift) */
   ohneBereich?: boolean;
+  /** Einheit, in der die Karte hier steht (für Auswahl und Strg+X); fehlt im Deck */
+  herkunft?: string;
 }) {
   const p = paar ?? (karte.plan.rolle === "neu" ? (idx.paareNeu.get(karte.id) ?? [])[0] : undefined);
   const status = p?.status ?? statusVon(idx, karte.id);
@@ -71,26 +73,36 @@ export function KarteBox({ karte, idx, niveaus, paar, woanders, onOpen, draggabl
   const altePartner = p && karte.plan.rolle === "neu"
     ? p.alt.map(id => idx.karten.get(id)).filter(k => k && k.plan.schulart === karte.plan.schulart) : [];
   const altText = (n: Niveau) => altePartner.find(k => k?.niveaus[n])?.niveaus[n];
-  const zeilen = nurNiveau ? [nurNiveau] : NIVEAUS.filter(n => niveaus.has(n) && karte.niveaus[n]);
+  // Nur zeigen, was obendrauf kommt: R entfällt, wenn es wortgleich mit H ist, G, wenn es wortgleich mit R bzw. H ist.
+  const darunter = (n: Niveau) => (n === "R" ? karte.niveaus.H : n === "G" ? karte.niveaus.R ?? karte.niveaus.H : undefined);
+  const zeilen = nurNiveau ? [nurNiveau]
+    : NIVEAUS.filter(n => niveaus.has(n) && karte.niveaus[n] && !gleicherText(karte.niveaus[n], darunter(n)));
   const text = (n: Niveau) => (nurNiveau ? karteText(karte, n) : karte.niveaus[n]) ?? "";
+  // Zusammengeführte Karten sind ausgedünnt: R und G nennen nur, was über das Niveau darunter hinausgeht.
+  const zusatz = (n: Niveau) => !!karte.voll && ((n === "R" && !!karte.niveaus.H) || (n === "G" && !!(karte.niveaus.R || karte.niveaus.H)));
+  const stufen = (["H", "R", "G"] as Niveau[]).filter(n => karte.niveaus[n]);
   return (
     <div
       draggable={draggable}
-      onDragStart={e => { e.dataTransfer.setData("text/plain", `karte:${ansicht.ziehen(karte.id).join(",")}`); e.dataTransfer.effectAllowed = "link"; }}
-      onClick={e => { if (e.ctrlKey || e.metaKey) ansicht.waehlen(karte.id); else onOpen(); }}
+      onDragStart={e => { e.dataTransfer.setData("text/plain", `karte:${ansicht.ziehen(karte.id, herkunft).join(",")}`); e.dataTransfer.effectAllowed = "link"; }}
+      onClick={e => { if (e.ctrlKey || e.metaKey) ansicht.waehlen(karte.id, herkunft); else onOpen(); }}
       className={`rounded-lg border bg-surface p-2 text-xs cursor-pointer hover:bg-surface-hover ${
         woanders ? "border-dashed border-violet-500/60 opacity-80" : "border-line"} ${
-        ansicht.gewaehlt(karte.id) ? "ring-2 ring-accent bg-accent/10" : ""}`}
-      title="Klicken zum Bearbeiten · Strg-Klick wählt aus (Strg+C, dann Zelle anklicken und Strg+V) · ziehen zum Zuordnen"
+        ansicht.gewaehlt(karte.id, herkunft) ? "ring-2 ring-accent bg-accent/10" : ""}`}
+      title="Klicken zum Bearbeiten · Strg-Klick wählt aus (Strg+C/X, Zelle anklicken, Strg+V; Strg+Z macht rückgängig) · in eine Spalte ziehen verteilt auf G/R/H"
     >
       <div className={`flex items-center gap-1 flex-wrap ${auf ? "mb-1" : ""}`}>
         <button className="text-muted hover:text-fg w-4 shrink-0" title={auf ? "Zuklappen" : "Aufklappen"} aria-expanded={auf}
           onClick={e => { e.stopPropagation(); ansicht.umschalten(karte.id); }}>{auf ? "▾" : "▸"}</button>
-        {/* In einer R- oder H-Zeile zeigt eine Regelschul-Karte ihr Niveau statt »RS« — samt dessen Wortlaut */}
-        {nurNiveau && (nurNiveau === "R" || nurNiveau === "H") && karte.plan.schulart === "RS"
+        {/* In einer Niveau-Zeile zeigt die Karte das Niveau der Zeile; im Deck eine zusammengeführte Karte ihre Niveaus */}
+        {nurNiveau && (karte.plan.schulart !== "GY" || nurNiveau === "G") && (nurNiveau === "G" || nurNiveau === "R" || nurNiveau === "H")
           ? <span className="font-mono text-[10px] px-1 rounded text-white" style={{ background: NIVEAU_FARBE[nurNiveau] }}
-              title={nurNiveau === "H" ? "Hauptschulniveau dieser Regelschul-Karte" : "Realschulniveau dieser Regelschul-Karte"}>{nurNiveau}</span>
-          : <span className="font-mono text-[10px] px-1 rounded bg-page border border-line">{karte.plan.schulart}</span>}
+              title={`${nurNiveau === "H" ? "Hauptschul" : nurNiveau === "R" ? "Realschul" : "Gymnasial"}niveau dieser Karte`}>{nurNiveau}</span>
+          : karte.plan.schulart === "RS+GY"
+            ? <span className="flex gap-px" title="Niveaus dieser Karte (zusammengeführt aus Regelschule und Gymnasium)">
+                {stufen.map(n => <span key={n} className="font-mono text-[10px] px-1 rounded text-white" style={{ background: NIVEAU_FARBE[n] }}>{n}</span>)}
+              </span>
+            : <span className="font-mono text-[10px] px-1 rounded bg-page border border-line">{karte.plan.schulart}</span>}
         {karte.bereich && !ohneBereich && (
           <span className="text-[10px] px-1 rounded bg-page border border-line text-muted" title="Bereich">{karte.bereich}</span>
         )}
@@ -106,6 +118,7 @@ export function KarteBox({ karte, idx, niveaus, paar, woanders, onOpen, draggabl
         <div key={n} className="flex gap-1 leading-snug mt-0.5">
           {!nurNiveau && <span className="font-mono text-[10px] text-muted w-5 shrink-0">{n}</span>}
           <span>
+            {zusatz(n) && <b className="mr-0.5" title="Zusatz gegenüber dem Niveau darunter">+</b>}
             {altText(n) && status !== "identisch" && !ansicht.endfassung
               ? <DiffText alt={altText(n)!} neu={text(n)} />
               : text(n)}

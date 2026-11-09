@@ -126,13 +126,22 @@ export function KarteDialog({ karte, idx, doc, onOps, onClose, nurLesen, zuordne
       <p className="text-xs text-muted mb-2">
         {karte.lernbereich}{karte.seite ? ` · S. ${karte.seite}` : ""}. Fehlt ein Niveau (oft H, LB, GE), hier ergänzen.
       </p>
+      {k.voll && <p className="text-xs text-muted mb-2">Zusammengeführt aus Regelschule und Gymnasium: R und G enthalten nur, was über das Niveau darunter hinausgeht.</p>}
       {NIVEAUS.map(n => (
         <label key={n} className="flex flex-col gap-1 mb-2">
-          <span className="label">{NIVEAU_NAME[n]}</span>
+          <span className="label">{NIVEAU_NAME[n]}{k.voll && (n === "R" || n === "G") ? " — nur der Zusatz" : ""}</span>
           <textarea className="input min-h-[3rem] text-sm" value={k.niveaus[n] ?? ""} disabled={nurLesen}
             onChange={e => setK({ ...k, niveaus: { ...k.niveaus, [n]: e.target.value } })} />
         </label>
       ))}
+      {k.voll && (
+        <details className="mb-2 text-sm">
+          <summary className="cursor-pointer text-muted">Originalwortlaut der Lehrpläne</summary>
+          {(["H", "R", "G"] as const).filter(n => k.voll?.[n]).map(n => (
+            <p key={n} className="text-xs mt-1"><b>{n}:</b> {k.voll![n]}</p>
+          ))}
+        </details>
+      )}
 
       {ps.length > 0 && <div className="label mt-3 mb-1">Abgleich</div>}
       {ps.map((p, i) => (

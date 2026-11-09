@@ -22,7 +22,7 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "rea
 import { api, type CurriculumPlanOut } from "@/lib/api";
 import { useToast } from "@/contexts/ToastContext";
 import {
-  BLOECKE, KLASSEN_JE_BLOCK, NIVEAUS, NIVEAU_FARBE, NIVEAU_NAME, OHNE_BEREICH, bereicheVon, einheitenAusLehrplan, freieAlteKarten, index, loesen, nachBereich, neueId, niveauGilt,
+  BLOECKE, KLASSEN_JE_BLOCK, NIVEAUS, NIVEAU_FARBE, NIVEAU_NAME, OHNE_BEREICH, bereicheVon, einheitenAusLehrplan, entfernen, freieAlteKarten, schulartenVon, umkehrOps, index, loesen, nachBereich, neueId, niveauGilt,
   offeneKarten, themaSicht, wochenSumme, zuordnen,
   type Block, type KarteMitPlan, type Klasse, type Niveau, type Thema,
 } from "@/lib/curriculum/modell";
@@ -53,17 +53,24 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
   const [ausnahmen, setAusnahmen] = useState<Set<string>>(new Set());
   const [endfassung, setEndfassung] = useState(false);
   const [zuKlassen, setZuKlassen] = useState<Set<number>>(new Set());
-  // Auswahl per Strg-Klick; Strg+C merkt sie, Strg+V setzt sie in die angeklickte Zelle.
+  // Auswahl per Strg-Klick — Schlüssel »<Einheit oder deck>|<Karte>«, damit Strg+X weiß, woraus es ausschneidet.
+  // Strg+C/X merkt die Karten, Strg+V setzt sie in die Einheit der angeklickten Zelle.
   const [auswahl, setAuswahl] = useState<Set<string>>(new Set());
   const [kopiert, setKopiert] = useState<string[]>([]);
   const [zielZelle, setZielZelle] = useState<{ themaId: string; klasse: number; niveau: Niveau } | null>(null);
+  const schluessel = (id: string, herkunft?: string) => `${herkunft ?? "deck"}|${id}`;
+  const ausgewaehlteIds = (a: Set<string>) => [...new Set([...a].map(x => x.slice(x.indexOf("|") + 1)))];
   const ansicht = useMemo(() => ({
     offen: (id: string) => kartenAuf !== ausnahmen.has(id),
     umschalten: (id: string) => setAusnahmen(a => { const x = new Set(a); x.has(id) ? x.delete(id) : x.add(id); return x; }),
     endfassung,
-    gewaehlt: (id: string) => auswahl.has(id),
-    waehlen: (id: string) => setAuswahl(a => { const x = new Set(a); x.has(id) ? x.delete(id) : x.add(id); return x; }),
-    ziehen: (id: string) => (auswahl.has(id) ? [...auswahl] : [id]),
+    gewaehlt: (id: string, herkunft?: string) => auswahl.has(schluessel(id, herkunft)),
+    waehlen: (id: string, herkunft?: string) => setAuswahl(a => {
+      const x = new Set(a), k = schluessel(id, herkunft);
+      if (x.has(k)) x.delete(k); else x.add(k);
+      return x;
+    }),
+    ziehen: (id: string, herkunft?: string) => (auswahl.has(schluessel(id, herkunft)) ? ausgewaehlteIds(auswahl) : [id]),
   }), [kartenAuf, ausnahmen, endfassung, auswahl]);
   const alleKarten = (auf: boolean) => { setKartenAuf(auf); setAusnahmen(new Set()); };
   const [suche, setSuche] = useState("");
@@ -74,13 +81,30 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
   const idx = useMemo(() => index(doc), [doc]);
   const nurLesen = !plan.darf_bearbeiten;
 
-  const ops = useCallback(async (liste: Op[]) => {
+  // Strg+Z: zu jeder eigenen Änderung die Umkehrung merken (Stand vor der Änderung).
+  const docRef = useRef(doc);
+  docRef.current = doc;
+  const rueck = useRef<Op[][]>([]);
+  const [rueckAnzahl, setRueckAnzahl] = useState(0);
+  const ops = useCallback(async (liste: Op[], rueckgaengig = false) => {
     if (!liste.length) return;
+    if (!rueckgaengig) {
+      const umkehr = umkehrOps(docRef.current, liste);
+      if (umkehr) rueck.current = [...rueck.current, umkehr].slice(-50);
+      setRueckAnzahl(rueck.current.length);
+    }
     laeuft.current = true;
     try { setPlan(await api.curriculum.ops(plan.id, liste, guestToken)); }
     catch (e: any) { toast(e.message ?? "Speichern fehlgeschlagen", "error"); }
     finally { laeuft.current = false; }
   }, [plan.id, guestToken, toast]);
+  const rueckgaengig = () => {
+    const letzte = rueck.current.pop();
+    setRueckAnzahl(rueck.current.length);
+    if (!letzte) { toast("Nichts rückgängig zu machen.", "info"); return; }
+    ops(letzte, true);
+    toast("Rückgängig gemacht.", "info");
+  };
 
   // Änderungen anderer abholen (nicht während eines eigenen Schreibens / offenen Dialogs).
   const version = plan.version;
@@ -97,23 +121,23 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
 
   const bereichListe = useMemo(() => bereicheVon(doc), [doc]);
   const mitAlt = doc.lehrplaene.some(l => l.rolle === "alt");
-  const sichtbar = (k: KarteMitPlan) => schularten.has(k.plan.schulart)
+  const sichtbar = (k: KarteMitPlan) => [...schulartenVon(k)].some(s => schularten.has(s))
     && (bereichFilter.size === 0 || bereichFilter.has(k.bereich || OHNE_BEREICH));
   const passt = (t: Thema) => !suche.trim() || `${t.titel} ${Object.values(t.inhalte).join(" ")}`.toLowerCase().includes(suche.toLowerCase());
 
-  /** Mehrere Karten zuordnen → Operationen (Karten mit kopiertem H-Text zuerst). */
-  const zuordnenOps = (thema: Thema, klasse: number, ids: string[], nur?: Niveau): Op[] => {
+  /** Mehrere Karten einer Einheit zuordnen → Operationen (Karten mit kopiertem H-Text zuerst). */
+  const zuordnenOps = (thema: Thema, klasse: number, ids: string[]): Op[] => {
     const out: Op[] = [];
     let t = thema;
     for (const id of ids) {
-      const r = zuordnen(idx, t, id, klasse, nur);
+      const r = zuordnen(idx, t, id, klasse);
       t = r.thema;
       if (r.karte) out.push({ op: "karte", ...r.karte });
     }
     return [...out, { op: "thema", klasse, thema: t }];
   };
 
-  // ── Strg+C / Strg+V / Esc ─────────────────────────────────────────────────
+  // ── Strg+C / Strg+X / Strg+V / Strg+Z / Esc ───────────────────────────────
   useEffect(() => {
     const taste = (e: KeyboardEvent) => {
       const el = e.target instanceof Element ? e.target : null;
@@ -121,17 +145,36 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
       if (e.key === "Escape") { setAuswahl(new Set()); setZielZelle(null); return; }
       if (!(e.ctrlKey || e.metaKey)) return;
       const k = e.key.toLowerCase();
-      if (k === "c" && auswahl.size) {
+      if (k === "z" && !nurLesen) {
         e.preventDefault();
-        setKopiert([...auswahl]);
-        toast(`${auswahl.size} Karten kopiert — Zelle anklicken, dann Strg+V`, "info");
+        rueckgaengig();
+      } else if ((k === "c" || k === "x") && auswahl.size) {
+        e.preventDefault();
+        const ids = ausgewaehlteIds(auswahl);
+        setKopiert(ids);
+        if (k === "x" && !nurLesen) {
+          // aus den Einheiten nehmen, aus denen die Auswahl stammt — Karten im Deck bleiben, wo sie sind
+          const jeEinheit = new Map<string, string[]>();
+          for (const x of auswahl) {
+            const herkunft = x.slice(0, x.indexOf("|")), id = x.slice(x.indexOf("|") + 1);
+            if (herkunft !== "deck") jeEinheit.set(herkunft, [...(jeEinheit.get(herkunft) ?? []), id]);
+          }
+          const liste: Op[] = [];
+          for (const [themaId, karten] of jeEinheit) {
+            const q = findeThema(themaId);
+            if (q) liste.push({ op: "thema", klasse: q.klasse, thema: karten.reduce(entfernen, q.thema) });
+          }
+          ops(liste);
+          setAuswahl(new Set());
+        }
+        toast(`${ids.length} Karten ${k === "x" ? "ausgeschnitten" : "kopiert"} — Zelle der Ziel-Einheit anklicken, dann Strg+V`, "info");
       } else if (k === "v" && kopiert.length && !nurLesen) {
         e.preventDefault();
         const z = zielZelle && findeThema(zielZelle.themaId);
-        if (!z || !zielZelle) { toast("Erst eine Zelle (Unterrichtseinheit × Niveau) anklicken, dann Strg+V", "info"); return; }
-        ops(zuordnenOps(z.thema, z.klasse, kopiert, zielZelle.niveau));
+        if (!z) { toast("Erst eine Zelle der Ziel-Unterrichtseinheit anklicken, dann Strg+V", "info"); return; }
+        ops(zuordnenOps(z.thema, z.klasse, kopiert));
         setAuswahl(new Set());
-        toast(`${kopiert.length} Karten in »${z.thema.titel}« (${zielZelle.niveau}) eingefügt`, "success");
+        toast(`${kopiert.length} Karten in »${z.thema.titel}« eingefügt (auf G/R/H verteilt)`, "success");
       }
     };
     window.addEventListener("keydown", taste);
@@ -146,7 +189,8 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
     }
     return null;
   };
-  const ablegen = (daten: string, klasse: number, thema?: Thema, nur?: Niveau) => {
+  /** Wohin in der Spalte eine Karte fällt, ist egal — sie verteilt sich selbst auf G/R/H. */
+  const ablegen = (daten: string, klasse: number, thema?: Thema) => {
     setZiehZiel(null);
     if (nurLesen) return;
     const art = daten.slice(0, daten.indexOf(":"));
@@ -160,14 +204,14 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
       ops([{ op: "thema", klasse, pos, thema: q.thema }]);
     } else if (art === "karte" && thema) {
       // mehrere ids, wenn eine ausgewählte Karte gezogen wurde
-      ops(zuordnenOps(thema, klasse, id.split(","), nur));
+      ops(zuordnenOps(thema, klasse, id.split(",")));
       setAuswahl(new Set());
     }
   };
-  const ziel = (key: string, klasse: number, thema?: Thema, nur?: Niveau) => ({
+  const ziel = (key: string, klasse: number, thema?: Thema) => ({
     onDragOver: (e: React.DragEvent) => { e.preventDefault(); setZiehZiel(key); },
     onDragLeave: () => setZiehZiel(z => (z === key ? null : z)),
-    onDrop: (e: React.DragEvent) => { e.preventDefault(); ablegen(e.dataTransfer.getData("text/plain"), klasse, thema, nur); },
+    onDrop: (e: React.DragEvent) => { e.preventDefault(); ablegen(e.dataTransfer.getData("text/plain"), klasse, thema); },
   });
   const hell = (key: string) => (ziehZiel === key ? "ring-2 ring-accent ring-inset" : "");
 
@@ -258,6 +302,7 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
         {!nurLesen && doc.abgleich.length > 0 && <button className="btn-secondary text-sm" onClick={alleVorschlaege} title="Partner der alten Karten in die Niveau-Zeilen übernehmen">⇣ Vorschläge übernehmen</button>}
         <button className="btn-secondary text-sm" onClick={() => setOffen({ art: "ki" })} title="KI ordnet den Unterrichtseinheiten Lehrplan-Karten zu">🤖 KI-Zuordnung</button>
         {!nurLesen && <button className="btn-secondary text-sm" onClick={() => setOffen({ art: "import" })}>⬆ Hochladen</button>}
+        {!nurLesen && <button className="btn-secondary text-sm" disabled={!rueckAnzahl} onClick={rueckgaengig} title="Letzte eigene Änderung rückgängig machen (Strg+Z)">↶ Rückgängig</button>}
         <button className="btn-secondary text-sm" onClick={() => setOffen({ art: "export" })}>⬇ Export</button>
         {!guestToken && <button className="btn-secondary text-sm" onClick={() => setOffen({ art: "teilen" })}>👥 Teilen</button>}
       </div>
@@ -424,7 +469,7 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
                       </summary>
                       <div className="flex flex-col gap-1 mt-1">
                         {alt.map(k => (
-                          <KarteBox key={k.id} karte={k} idx={idx} niveaus={niveaus} onOpen={() => setOffen({ art: "karte", karte: k })}
+                          <KarteBox key={k.id} karte={k} idx={idx} niveaus={niveaus} herkunft={t.id} onOpen={() => setOffen({ art: "karte", karte: k })}
                             onLoesen={nurLesen ? undefined : () => ops([{ op: "thema", klasse: nr, thema: loesen(t, k.id) }])} />
                         ))}
                       </div>
@@ -443,7 +488,7 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
                     const gilt = niveauGilt(n, nr);
                     const key = `${n}${t.id}`;
                     return (
-                      <div key={t.id} {...(gilt ? ziel(key, nr, t, n) : {})}
+                      <div key={t.id} {...(gilt ? ziel(key, nr, t) : {})}
                         onClick={e => {
                           // Zelle als Ziel für Strg+V merken — Klicks auf Karten zählen nicht
                           if (!gilt || nurLesen || (e.target as HTMLElement).closest("[draggable='true'], button")) return;
@@ -461,7 +506,7 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
                               </div>
                             )}
                             {(s.niveau[n] ?? []).filter(sichtbar).map(k => (
-                              <KarteBox key={k.id} karte={k} idx={idx} niveaus={niveaus} nurNiveau={n}
+                              <KarteBox key={k.id} karte={k} idx={idx} niveaus={niveaus} nurNiveau={n} herkunft={t.id}
                                 onOpen={() => setOffen({ art: "karte", karte: k })}
                                 onLoesen={nurLesen ? undefined : () => ops([{ op: "thema", klasse: nr, thema: loesen(t, k.id, n) }])} />
                             ))}

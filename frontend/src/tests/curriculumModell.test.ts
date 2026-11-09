@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  bereicheVon, einheitenAusLehrplan, mitEinheiten, nachBereich, nurLeereEinheiten, woandersAls, freieAlteKarten, index, karteText, loesen, neueId, offeneKarten, statusVon, themaSicht, wochenSumme,
+  bereicheVon, einheitenAusLehrplan, entfernen, mitEinheiten, schulartenVon, umkehrOps, nachBereich, nurLeereEinheiten, woandersAls, freieAlteKarten, index, karteText, loesen, neueId, offeneKarten, statusVon, themaSicht, wochenSumme,
   wortDiff, zuordnen, type Vorlage,
 } from "@/lib/curriculum/modell";
 import { importOps } from "@/components/curriculum/Dialoge";
@@ -68,19 +68,44 @@ describe("themaSicht", () => {
 });
 
 describe("zuordnen", () => {
-  it("verteilt eine RS-Karte auf R und H, eine GY-Karte auf G", () => {
+  it("nur was obendrauf kommt: gleicher R-Text bleibt bei H, GY-Karte in G", () => {
     const v = vorlage(); const i = index(v);
     let t = v.curriculum.klassen[0].themen[0];
-    t = zuordnen(i, t, "n1", 5).thema;
-    t = zuordnen(i, t, "g1", 5).thema;
-    expect(t.zuordnung).toEqual({ R: ["n1"], H: ["n1"], G: ["g1"] });
+    t = zuordnen(i, t, "n1", 5).thema;   // R und H wortgleich → nur H
+    t = zuordnen(i, t, "g1", 5).thema;   // reine GY-Karte → G
+    expect(t.zuordnung).toEqual({ H: ["n1"], G: ["g1"] });
   });
 
-  it("kopiert R nach H, wenn die Karte keinen H-Text hat", () => {
+  it("verschiedene R- und H-Texte landen in beiden", () => {
+    const v = vorlage();
+    v.lehrplaene[1].karten[0].niveaus = { H: "Teilbarkeit durch 2", R: "Teilbarkeit durch 2, 3, 5" };
+    const t = zuordnen(index(v), v.curriculum.klassen[0].themen[0], "n1", 5).thema;
+    expect(t.zuordnung).toEqual({ H: ["n1"], R: ["n1"] });
+  });
+
+  it("kopiert R nach H, wenn die Karte keinen H-Text hat — R kommt dann nicht dazu", () => {
     const v = vorlage(); const i = index(v);
     const r = zuordnen(i, v.curriculum.klassen[0].themen[0], "n4", 5);
-    expect(r.thema.zuordnung).toEqual({ R: ["n4"], H: ["n4"] });
+    expect(r.thema.zuordnung).toEqual({ H: ["n4"] });
     expect(r.karte).toEqual({ lehrplan: "neu", karte: expect.objectContaining({ id: "n4", niveaus: { R: "Zufallsexperimente", H: "Zufallsexperimente" } }) });
+  });
+
+  it("zusammengeführte Karte: H Basis, R und G nur mit Zusatz, keine H-Kopie", () => {
+    const v = vorlage();
+    v.lehrplaene.push({ id: "m", rolle: "neu", schulart: "RS+GY", karten: [
+      { id: "m1", block: "5/6", niveaus: { H: "Brüche addieren", R: "auch ungleichnamige", G: "auch Doppelbrüche" }, voll: { H: "a", R: "b", G: "c" } },
+      { id: "m2", block: "5/6", niveaus: { H: "Daten erfassen" }, voll: { H: "Daten erfassen", R: "Daten erfassen", G: "Daten erfassen" } },
+      { id: "m3", block: "5/6", niveaus: { R: "Quartile" }, voll: { R: "Quartile" } },
+    ] });
+    const i = index(v);
+    const leer = { id: "x", titel: "", wochen: null, inhalte: {}, karten: [] };
+    expect(zuordnen(i, leer, "m1", 5).thema.zuordnung).toEqual({ H: ["m1"], R: ["m1"], G: ["m1"] });
+    expect(zuordnen(i, leer, "m2", 5).thema.zuordnung).toEqual({ H: ["m2"] });
+    const m3 = zuordnen(i, leer, "m3", 5);
+    expect(m3.thema.zuordnung).toEqual({ R: ["m3"] });
+    expect(m3.karte).toBeUndefined();
+    expect([...schulartenVon(i.karten.get("m1")!)].sort()).toEqual(["GY", "RS"]);
+    expect([...schulartenVon(i.karten.get("m3")!)]).toEqual(["RS"]);
   });
 
   it("legt in Klasse 10 kein Hauptschulniveau an", () => {
@@ -90,14 +115,16 @@ describe("zuordnen", () => {
     expect(r.karte).toBeUndefined();
   });
 
-  it("auf eine Zeile gezogen nur dorthin; alte Karten nach oben; lösen", () => {
+  it("alte Karten nach oben; lösen und ganz entfernen (Strg+X)", () => {
     const v = vorlage(); const i = index(v);
-    let t = zuordnen(i, v.curriculum.klassen[0].themen[1], "g1", 5, "LB").thema;
-    expect(t.zuordnung).toEqual({ LB: ["g1"] });
+    let t = zuordnen(i, v.curriculum.klassen[0].themen[1], "g1", 5).thema;
     t = zuordnen(i, t, "a4", 5).thema;
     expect(t.karten).toEqual(["a3", "a4"]);
-    expect(loesen(t, "g1", "LB").zuordnung).toEqual({ LB: [] });
+    expect(loesen(t, "g1", "G").zuordnung).toEqual({ G: [] });
     expect(loesen(t, "a4").karten).toEqual(["a3"]);
+    const weg = entfernen(entfernen(t, "g1"), "a3");
+    expect(weg.zuordnung).toEqual({ G: [] });
+    expect(weg.karten).toEqual(["a4"]);
   });
 
   it("Text je Niveau fällt auf das nächste Niveau zurück", () => {
@@ -167,7 +194,7 @@ describe("Hochladen und KI", () => {
     const { ops, text } = importOps({ zuordnung: [{ thema: "k5-t1", karten: ["a1", "a4", "n4"] }, { thema: "gibtsnicht", karten: ["x"] }] }, v, index(v));
     expect(ops.map(o => o.op)).toEqual(["karte", "thema"]);
     expect((ops[1].thema as any).karten).toEqual(["a1", "a2", "a4"]);
-    expect((ops[1].thema as any).zuordnung).toEqual({ R: ["n4"], H: ["n4"] });
+    expect((ops[1].thema as any).zuordnung).toEqual({ H: ["n4"] });
     expect(text).toBe("1 Unterrichtseinheiten bekommen zusammen 2 weitere Karten.");
   });
 
@@ -223,7 +250,7 @@ describe("nur neue Karten (ohne alten Plan und Abgleich)", () => {
     expect(offeneKarten(v, i, "5/6").map(o => o.karte.id)).toEqual(["n1", "n4", "g1"]);
     expect(statusVon(i, "n1")).toBe("neu");
     const t = zuordnen(i, v.curriculum.klassen[0].themen[0], "n1", 5).thema;
-    expect(t.zuordnung).toEqual({ R: ["n1"], H: ["n1"] });
+    expect(t.zuordnung).toEqual({ H: ["n1"] });
   });
 });
 
@@ -365,22 +392,27 @@ describe("Hochladen mit Unterrichtseinheiten", () => {
   });
 });
 
-describe("R/H-Split beim Ziehen auf eine Zeile", () => {
-  it("RS-Karte auf R oder H landet in beiden, H mit eigenem Text bzw. Kopie", () => {
-    const v = vorlage(); const i = index(v);
-    const leer = { id: "x", titel: "", wochen: null, inhalte: {}, karten: [] };
-    expect(zuordnen(i, leer, "n1", 5, "R").thema.zuordnung).toEqual({ R: ["n1"], H: ["n1"] });
-    expect(zuordnen(i, leer, "n1", 5, "H").thema.zuordnung).toEqual({ R: ["n1"], H: ["n1"] });
-    const ohneH = zuordnen(i, leer, "n4", 5, "R");
-    expect(ohneH.thema.zuordnung).toEqual({ R: ["n4"], H: ["n4"] });
-    expect(ohneH.karte?.karte.niveaus.H).toBe("Zufallsexperimente");
+describe("Strg+Z: umkehrOps", () => {
+  it("stellt Einheiten, Karten und Wochen wieder her und löscht Neues", () => {
+    const v = vorlage();
+    const t1 = v.curriculum.klassen[0].themen[0];
+    const neu = { id: "k5-t9", titel: "Neu", wochen: null, inhalte: {}, karten: [] };
+    const karte = { ...v.lehrplaene[1].karten[2], niveaus: { R: "x", H: "x" } };
+    const ops = [
+      { op: "karte", lehrplan: "neu", karte },
+      { op: "thema", klasse: 6, pos: 0, thema: { ...t1, titel: "verschoben" } },
+      { op: "thema", klasse: 5, thema: neu },
+      { op: "klasse", klasse: 5, wochen_verfuegbar: 20 },
+    ];
+    const z = umkehrOps(v, ops)!;
+    expect(z).toContainEqual({ op: "karte", lehrplan: "neu", karte: v.lehrplaene[1].karten[2] });
+    expect(z).toContainEqual({ op: "klasse", klasse: 5, wochen_verfuegbar: 36 });
+    expect(z).toContainEqual({ op: "thema_loeschen", id: "k5-t9" });
+    expect(z).toContainEqual({ op: "thema", klasse: 5, pos: 0, thema: t1 });
   });
 
-  it("auf G, LB, GE und GY-Karten auf R bleiben bei der einen Zeile", () => {
-    const v = vorlage(); const i = index(v);
-    const leer = { id: "x", titel: "", wochen: null, inhalte: {}, karten: [] };
-    expect(zuordnen(i, leer, "n1", 5, "LB").thema.zuordnung).toEqual({ LB: ["n1"] });
-    expect(zuordnen(i, leer, "n1", 5, "G").thema.zuordnung).toEqual({ G: ["n1"] });
-    expect(zuordnen(i, leer, "g1", 5, "R").thema.zuordnung).toEqual({ R: ["g1"] });
+  it("Hochladen lässt sich nicht umkehren", () => {
+    expect(umkehrOps(vorlage(), [{ op: "import", daten: {} }])).toBeNull();
   });
 });
+

@@ -38,6 +38,10 @@ export type Karte = {
   titel?: string;
   niveaus: Partial<Record<Niveau, string>>;
   seite?: number;
+  /** Zusammengeführte Karte (RS + GY): voller Originalwortlaut je Niveau; `niveaus` enthält dann nur, was jedes Niveau über das darunter hinaus verlangt. */
+  voll?: Partial<Record<Niveau, string>>;
+  /** Herkunft einer zusammengeführten Karte */
+  quellen?: { rs?: string[]; gy?: string[] };
 };
 
 export type Lehrplan = {
@@ -217,15 +221,30 @@ export function karteText(k: Karte, n: Niveau): string | undefined {
   return k.niveaus[n] ?? (n === "H" ? k.niveaus.R : undefined) ?? (n === "LB" || n === "GE" ? k.niveaus.H ?? k.niveaus.R : undefined);
 }
 
+/** Gleicher Inhalt? Vergleicht ohne Groß-/Kleinschreibung, Satzzeichen und Leerraum. */
+export function gleicherText(a?: string, b?: string): boolean {
+  const n = (x?: string) => (x ?? "").toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
+  return !!a && !!b && n(a) === n(b);
+}
+
+/** Schularten einer Karte — eine zusammengeführte (»RS+GY«) gehört zu denen, deren Niveaus sie hat. */
+export function schulartenVon(k: KarteMitPlan): Set<string> {
+  if (k.plan.schulart !== "RS+GY") return new Set([k.plan.schulart]);
+  const n = { ...k.voll, ...k.niveaus };
+  return new Set([...(n.R || n.H ? ["RS"] : []), ...(n.G ? ["GY"] : [])]);
+}
+
 /**
- * Karte einer Unterrichtseinheit zuordnen. Ohne `nur` verteilt sie sich auf
- * ihre eigenen Niveaus: GY → G, RS → R und H. Fehlt der H-Text (und die Klasse
- * hat noch Hauptschulniveau), wird R nach H kopiert — als Text in der Karte,
- * damit er sich danach für H anpassen lässt. Mit `nur` landet sie nur in dieser
- * Zeile — außer eine Regelschul-Karte auf R oder H: die teilt sich wie oben auf
- * R und H auf. Alte Karten landen oben.
+ * Karte einer Unterrichtseinheit zuordnen. Wo sie abgelegt wird, ist egal: sie
+ * verteilt sich auf G, R und H, und zwar nur so weit, wie jedes Niveau etwas
+ * über das darunter hinaus verlangt — H ist die Basis, R kommt nur dazu, wenn
+ * es mehr sagt als H, G nur, wenn es mehr sagt als R (bzw. H). Fehlt einer
+ * einfachen Regelschul-Karte der H-Text (und die Klasse hat noch Hauptschul-
+ * niveau), wird R nach H kopiert — als Text in der Karte, damit er sich für H
+ * anpassen lässt. Zusammengeführte Karten sind schon ausgedünnt und werden
+ * nicht kopiert. Alte Karten landen oben.
  */
-export function zuordnen(i: Index, thema: Thema, karteId: string, klasse: number, nur?: Niveau): {
+export function zuordnen(i: Index, thema: Thema, karteId: string, klasse: number): {
   thema: Thema; karte?: { lehrplan: string; karte: Karte };
 } {
   const k = i.karten.get(karteId);
@@ -235,25 +254,77 @@ export function zuordnen(i: Index, thema: Thema, karteId: string, klasse: number
   }
   const { plan, ...roh } = k;
   let karte: Karte | undefined;
-  let ziele: Niveau[];
-  // Eine Regelschul-Karte auf R oder H gezogen gehört in beide Zeilen (R/H-Split wie beim Ziehen auf die Spalte).
-  const rsAufRH = (nur === "R" || nur === "H") && !!(k.niveaus.R || k.niveaus.H);
-  if (nur && !rsAufRH) ziele = [nur];
-  else {
-    ziele = NIVEAUS.filter(n => (n === "G" || n === "R" || n === "H") && k.niveaus[n]);
-    if (k.niveaus.R && !k.niveaus.H && niveauGilt("H", klasse)) {
-      ziele.push("H");
-      karte = { ...roh, niveaus: { ...roh.niveaus, H: k.niveaus.R } };
-    }
-    if (!ziele.length) ziele = ["R"];
+  let h = k.niveaus.H;
+  const r = k.niveaus.R, g = k.niveaus.G;
+  if (r && !h && !k.voll && niveauGilt("H", klasse)) {
+    h = r;
+    karte = { ...roh, niveaus: { ...roh.niveaus, H: r } };
   }
-  ziele = ziele.filter(n => niveauGilt(n, klasse));
+  let ziele: Niveau[] = [
+    ...(h ? ["H" as const] : []),
+    ...(r && !gleicherText(r, h) ? ["R" as const] : []),
+    ...(g && !gleicherText(g, r ?? h) ? ["G" as const] : []),
+  ].filter(n => niveauGilt(n, klasse));
+  if (!ziele.length) ziele = NIVEAUS.filter(n => k.niveaus[n] && niveauGilt(n, klasse)).slice(0, 1);
   const zuordnung = { ...(thema.zuordnung ?? {}) };
   for (const n of ziele) {
     const liste = zuordnung[n] ?? [];
     if (!liste.includes(karteId)) zuordnung[n] = [...liste, karteId];
   }
   return { thema: { ...thema, zuordnung }, karte: karte && { lehrplan: plan.id, karte } };
+}
+
+/** Karte ganz aus einer Unterrichtseinheit nehmen (alte Karten oben und alle Niveau-Zeilen) — für Strg+X. */
+export function entfernen(thema: Thema, karteId: string): Thema {
+  const zuordnung = thema.zuordnung && Object.fromEntries(
+    Object.entries(thema.zuordnung).map(([n, ids]) => [n, (ids ?? []).filter(x => x !== karteId)]));
+  return { ...thema, karten: thema.karten.filter(x => x !== karteId), ...(zuordnung ? { zuordnung } : {}) };
+}
+
+type Op = Record<string, unknown>;
+
+/**
+ * Operationen, die eine Änderung rückgängig machen (für Strg+Z): jedes berührte
+ * Thema, jede Karte, jedes Paar und jede Klasse kommt auf den Stand vor der
+ * Änderung zurück — was es vorher nicht gab, wird gelöscht. Hochladen (import)
+ * lässt sich so nicht umkehren: dann `null`.
+ */
+export function umkehrOps(vorher: Vorlage, ops: Op[]): Op[] | null {
+  if (ops.some(o => o.op === "import")) return null;
+  const themaOrt = new Map<string, { klasse: number; pos: number; thema: Thema }>();
+  vorher.curriculum.klassen.forEach(k => k.themen.forEach((t, pos) => themaOrt.set(t.id, { klasse: k.klasse, pos, thema: t })));
+  const kartenVorher = new Map<string, Karte>();
+  vorher.lehrplaene.forEach(lp => lp.karten.forEach(k => kartenVorher.set(`${lp.id}|${k.id}`, k)));
+  const themen = new Set<string>(), karten = new Map<string, { lehrplan: string; id: string }>(),
+    paare = new Set<string>(), klassen = new Set<number>();
+  for (const o of ops) {
+    if (o.op === "thema") themen.add((o.thema as Thema).id);
+    else if (o.op === "thema_loeschen") themen.add(o.id as string);
+    else if (o.op === "karte") karten.set(`${o.lehrplan}|${(o.karte as Karte).id}`, { lehrplan: o.lehrplan as string, id: (o.karte as Karte).id });
+    else if (o.op === "karte_loeschen") karten.set(`${o.lehrplan}|${o.id}`, { lehrplan: o.lehrplan as string, id: o.id as string });
+    else if (o.op === "paar") paare.add((o.paar as Paar).id);
+    else if (o.op === "paar_loeschen") paare.add(o.id as string);
+    else if (o.op === "klasse") klassen.add(o.klasse as number);
+  }
+  const zurueck: Op[] = [];
+  for (const [key, { lehrplan, id }] of karten) {
+    const alt = kartenVorher.get(key);
+    zurueck.push(alt ? { op: "karte", lehrplan, karte: alt } : { op: "karte_loeschen", lehrplan, id });
+  }
+  for (const id of paare) {
+    const alt = vorher.abgleich.find(p => p.id === id);
+    zurueck.push(alt ? { op: "paar", paar: alt } : { op: "paar_loeschen", id });
+  }
+  for (const nr of klassen) {
+    const alt = vorher.curriculum.klassen.find(k => k.klasse === nr);
+    if (alt) zurueck.push({ op: "klasse", klasse: nr, wochen_verfuegbar: alt.wochen_verfuegbar });
+  }
+  // erst entfernen, was neu war, dann die alten Einheiten an ihre Stelle (aufsteigend, damit die Positionen stimmen)
+  for (const id of themen) if (!themaOrt.has(id)) zurueck.push({ op: "thema_loeschen", id });
+  [...themen].map(id => themaOrt.get(id)).filter((x): x is NonNullable<typeof x> => !!x)
+    .sort((a, b) => a.klasse - b.klasse || a.pos - b.pos)
+    .forEach(o => zurueck.push({ op: "thema", klasse: o.klasse, pos: o.pos, thema: o.thema }));
+  return zurueck;
 }
 
 /** Name der Unterrichtseinheit zu einer Karte: Lernbereich ohne Unterabschnitt (»A – B« → »A«). */
