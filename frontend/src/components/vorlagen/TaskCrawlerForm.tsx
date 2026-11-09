@@ -9,6 +9,7 @@ import { mediaUrl } from "@/components/exitgame/FolienTeile";
 import { ChallengeForm, type ChallengeJson } from "./ChallengeForm";
 import { SPIELARTEN } from "@/lib/challenge/spielarten";
 import { THEMES } from "@/lib/challenge/themes";
+import { EPOCHEN, MEDIEN } from "@/lib/medien/medien";
 
 /** Bild hochladen (landet in data/exitgames/{id}/assets) und Vorschau-Adresse. */
 type Bilder = { upload: (file: File) => Promise<{ path: string }>; url: (src: string) => string };
@@ -136,6 +137,24 @@ function AufgabeForm({ task, onChange, katalog, name, leichter = true }: {
           </Feld>
           {sim && werkzeug?.config && Object.entries(werkzeug.config).map(([key, beschreibung]) => {
             const k = key.replace(/\?$/, "");
+            // Geschichte der Medien: Station aus dem Zeitstrahl wählen statt Id tippen
+            if (sim.tool === "medien" && k === "station") return (
+              <Feld key={k} label="Station der Zeitreise" hint="Die Zeitreise öffnet genau dort — auch wenn die Station noch gesperrt wäre.">
+                <select className="input text-sm" value={alsText(sim.config?.station)}
+                  onChange={e => {
+                    const config = { ...sim.config, ...(e.target.value ? { station: e.target.value, reiter: "zeitreise" } : {}) };
+                    if (!e.target.value) delete config.station;
+                    onChange({ ...task, sim: { ...sim, config } });
+                  }}>
+                  <option value="">— Anfang bzw. erste offene Station —</option>
+                  {EPOCHEN.map(ep => (
+                    <optgroup key={ep.id} label={`${ep.icon} ${ep.name}`}>
+                      {MEDIEN.filter(m => m.epoche === ep.id).map(m => <option key={m.id} value={m.id}>{m.icon} {m.name} ({m.jahrText})</option>)}
+                    </optgroup>
+                  ))}
+                </select>
+              </Feld>
+            );
             return (
               <Feld key={k} label={`Einstellung »${k}«`} hint={beschreibung}>
                 <input className="input text-sm" defaultValue={alsText(sim.config?.[k])}

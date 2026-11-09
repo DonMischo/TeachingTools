@@ -1,5 +1,5 @@
 "use client";
-/** Normal-Modus: Fakten auf Challenges legen (Klick oder Ziehen) und angreifen. Gelöste Fragen grün, zuletzt falsch beantwortete rot. */
+/** Normal-Modus: Fakten auf Challenges legen (Klick oder Ziehen) und antworten. Gelöste Fragen grün, zuletzt falsch beantwortete rot. */
 import { useState } from "react";
 import type { ChallengeAntwort } from "@/lib/api";
 import type { ModusProps } from "./typen";
@@ -72,7 +72,7 @@ export default function Normal({ brett, lauf, zurKarte }: ModusProps) {
         <div className="card p-3 flex flex-col gap-2">
           <Ablage karten={ablage.map((id) => fakten.get(id)!)} onLege={legeAuf} onNimm={(id) => setAblage(ablage.filter((x) => x !== id))} />
           <div className="flex flex-wrap gap-2">
-            <button className="btn-primary" disabled={!ablage.length || sende} onClick={angreifen}>Angreifen</button>
+            <button className="btn-primary" disabled={!ablage.length || sende} onClick={angreifen}>Antworten</button>
             {challenge.tip && (tipp
               ? <span className="text-muted self-center">💡 {challenge.tip}</span>
               : <button className="btn-secondary" onClick={() => setTipp(true)}>💡 Tipp</button>)}

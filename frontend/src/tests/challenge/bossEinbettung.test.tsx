@@ -32,7 +32,7 @@ describe("ChallengeSpiel mit eigener Quelle", () => {
     await u.click(await screen.findByRole("button", { name: "Los" }));
     await u.click(await screen.findByText("Was ist eine Wippe?"));
     await u.click(screen.getByText("Zweiseitiger Hebel"));
-    await u.click(screen.getByRole("button", { name: "Angreifen" }));
+    await u.click(screen.getByRole("button", { name: "Antworten" }));
     await waitFor(() => expect(quelle.antwort).toHaveBeenCalledWith(expect.objectContaining({ challenge_id: "c1", fakt_ids: ["f1"] })));
     expect(onAntwort).toHaveBeenCalledWith(expect.objectContaining({ fertig: true }));
     expect(await screen.findByText("Boss besiegt! Alle Etappen geschafft", {}, { timeout: 3000 })).toBeTruthy(); // der Rahmen zeigt erst das Ergebnis der Antwort

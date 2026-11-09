@@ -7,8 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useGuestSession } from "@/hooks/useGuestSession";
 import { GuestExpired } from "@/components/GuestExpired";
 import { PlayerIdentityForm } from "@/components/PlayerIdentityForm";
-import { MathText } from "@/components/MathText";
-import { CompletionCard, MediaView, TaskArea, levelOf, styleVars } from "@/components/exitgame/FolienTeile";
+import { CompletionCard, FolienText, MediaView, TaskArea, letzteInfo, levelOf, styleVars } from "@/components/exitgame/FolienTeile";
 import BossArea from "@/components/exitgame/BossArea";
 import { STANDARD_AVATAR, TIERE, gespeicherterAvatar, speichereAvatar } from "@/components/gebaeude/avatar";
 import GebaeudeSpiel from "@/components/exitgame/GebaeudeSpiel";
@@ -240,8 +239,7 @@ export default function ExitgamePlayPage() {
         <div className="text-xs text-muted">
           {slide.type === "explanation" ? "📖 Erklärung" : slide.type === "example" ? "💡 Beispiel" : slide.type === "task" ? "✏️ Aufgabe" : slide.type === "boss" ? "⚔️ Boss" : "🚪 Tür"}
         </div>
-        {slide.title && <h2 className="font-semibold">{slide.title}</h2>}
-        {slide.text && <MathText text={slide.text} blockEquations className="text-sm whitespace-pre-line" />}
+        <FolienText slide={slide} />
         {slide.media && <MediaView media={slide.media} exitgameId={start.exitgame_id} />}
 
         {slide.type === "boss" ? (
@@ -249,7 +247,7 @@ export default function ExitgamePlayPage() {
         ) : isTaskSlide ? (
           <TaskArea key={slide.id} slide={slide} attemptId={start.attempt.id} solvedSlideIds={solvedSlideIds}
             variantChoices={start.variant_choices ?? {}}
-            level={levelOf(adaptation)} fragments={fragments}
+            level={levelOf(adaptation)} fragments={fragments} info={letzteInfo(data.slides, slide.id)}
             onSlideSolved={slideSolved}
             onAdaptation={(a) => { if (a) setAdaptation(a); }}
             onReview={jumpToReview}

@@ -4,7 +4,7 @@
  * Abschluss. Genutzt von der Folienansicht (play/taskcrawler/[code]) und vom
  * Gebäude (GebaeudeSpiel).
  */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import {
   api, ExitGameSlide, ExitGameStyle, ExitGameTask, ExitGameAttemptSummary,
@@ -20,6 +20,7 @@ import KartenBrett from "@/components/karten/KartenBrett";
 import type { KartenAntwort, KartenBrettDaten } from "@/lib/karten/quiz";
 import type { SicherungsAbschnitt } from "@/lib/taskcrawler/ergebnisPdf";
 import { SimKnopf } from "./SimStation";
+import { Vorlesen } from "@/components/maus/Stufenkopf";
 
 // ── Theming ────────────────────────────────────────────────────────────────
 // Presets override the app's standard CSS variables, scoped to the player
@@ -106,6 +107,34 @@ function mergeVariant(task: ExitGameTask, variantIdx: number | undefined): ExitG
 
 // A media src is either an absolute URL or the name of a file from the
 // assets/ folder of the uploaded ZIP, which the API serves per game.
+/**
+ * Text der letzten Erklärung bzw. des letzten Beispiels vor dieser Folie —
+ * die Krabbler zeigen ihn während der Sperre zum Nachlesen. Formel-Dollar weg.
+ */
+export function letzteInfo(slides: ExitGameSlide[], slideId: string): string | undefined {
+  for (let i = slides.findIndex(s => s.id === slideId) - 1; i >= 0; i--) {
+    const s = slides[i];
+    if ((s.type === "explanation" || s.type === "example") && (s.title || s.text))
+      return [s.title, s.text].filter(Boolean).join("\n\n").replace(/\$\$?/g, "");
+  }
+  return undefined;
+}
+
+/** Überschrift und Text einer Folie mit Vorlese-Knopf. */
+export function FolienText({ slide }: { slide: ExitGameSlide }) {
+  const ref = useRef<HTMLDivElement>(null);
+  if (!slide.title && !slide.text) return null;
+  return (
+    <div className="flex items-start gap-2">
+      <div ref={ref} className="flex-1 min-w-0 flex flex-col gap-3">
+        {slide.title && <h2 className="font-semibold">{slide.title}</h2>}
+        {slide.text && <MathText text={slide.text} blockEquations className="text-sm whitespace-pre-line" />}
+      </div>
+      <Vorlesen ziel={ref} titel="Text vorlesen" />
+    </div>
+  );
+}
+
 export function mediaUrl(src: string, exitgameId: number): string {
   if (/^(https?:)?\/\//.test(src) || src.startsWith("/") || src.startsWith("data:")) return src;
   return `/uploads/exitgames/${exitgameId}/assets/${src}`;
@@ -136,10 +165,10 @@ export function MediaView({ media, exitgameId }: {
 // ── Single task widget ───────────────────────────────────────────────────
 
 function SingleTaskWidget({
-  task, taskIndex, slideId, hints, attemptId, alreadySolved, level, extraExample, onSolved, onAttemptChange,
+  task, taskIndex, slideId, hints, attemptId, alreadySolved, level, extraExample, info, onSolved, onAttemptChange,
 }: {
   task: ExitGameTask; taskIndex: number; slideId: string; hints: string[]; attemptId: number; alreadySolved: boolean;
-  level: DdaLevel | null; extraExample?: string;
+  level: DdaLevel | null; extraExample?: string; info?: string;
   onSolved: (attempt: ExitGameAttemptSummary, fragments: ExitGameFragment[]) => void;
   onAttemptChange: (attempts: number, hintsShown: number, adaptation: DdaAdaptation | null) => void;
 }) {
@@ -160,6 +189,7 @@ function SingleTaskWidget({
   const hintBudget = levelNumber(level, "hintCount") ?? 2;
   const richtzeit = levelNumber(level, "timeLimitSeconds");
   const [secondsLeft, setSecondsLeft] = useState<number | null>(richtzeit);
+  const vorleseRef = useRef<HTMLDivElement>(null);
 
   // Richtzeit is a guide, never a deadline: nothing is lost when it runs out,
   // it just releases a hint early for students who are stuck but not guessing.
@@ -181,7 +211,7 @@ function SingleTaskWidget({
         onSolved(res.attempt, res.code_fragments);
       } else {
         setFeedback("wrong");
-        krabbeln();
+        krabbeln({ info });
         setAttempts(a => a + 1);
         onAttemptChange(attempts + 1, hintsShown, res.adaptation);
         const mayTakeEasier = levelOf(res.adaptation)?.offerEasier !== false;
@@ -237,8 +267,14 @@ function SingleTaskWidget({
   }
 
   return (
-    <div className="rounded-xl border border-line p-3 flex flex-col gap-2">
-      {activeTask.question && <MathText text={activeTask.question} blockEquations className="text-sm font-medium" />}
+    <div ref={vorleseRef} className="rounded-xl border border-line p-3 flex flex-col gap-2">
+      {/* Vorlesen: Frage, Antworten, Beispiel und Hinweise (data-vorlesen), keine Knöpfe wie »Prüfen« */}
+      <div className="flex items-start gap-2">
+        <div className="flex-1 min-w-0">
+          {activeTask.question && <span data-vorlesen><MathText text={activeTask.question} blockEquations className="text-sm font-medium" /></span>}
+        </div>
+        <Vorlesen ziel={vorleseRef} titel="Aufgabe vorlesen" />
+      </div>
       {activeTask.sim && <SimKnopf sim={activeTask.sim} frage={activeTask.question} />}
 
       {(activeTask.kind === "single" || activeTask.kind === "true_false") && (
@@ -247,7 +283,7 @@ function SingleTaskWidget({
             <button key={a.text} onClick={() => submitSingle(a.text)}
               className={`text-sm px-3 py-1.5 rounded-lg border transition-colors ${
                 selected === a.text && feedback === "wrong" ? "border-red-400 text-red-400" : "border-line hover:border-accent"
-              }`}>
+              }`} data-vorlesen>
               <MathText text={a.text} />
             </button>
           ))}
@@ -257,7 +293,7 @@ function SingleTaskWidget({
       {activeTask.kind === "multi" && (
         <div className="flex flex-col gap-1.5">
           {answerOptions.map(a => (
-            <label key={a.text} className="flex items-center gap-2 text-sm cursor-pointer">
+            <label key={a.text} className="flex items-center gap-2 text-sm cursor-pointer" data-vorlesen>
               <input type="checkbox" checked={multiSelected.has(a.text)}
                 onChange={() => setMultiSelected(prev => {
                   const next = new Set(prev);
@@ -322,8 +358,8 @@ function SingleTaskWidget({
 
       {extraExample && level?.extraExample === true && (attempts > 0 || timeUp) && (
         <div className="rounded-lg border border-line p-2 text-xs flex flex-col gap-1">
-          <span className="text-muted">Noch ein Beispiel:</span>
-          <MathText text={extraExample} blockEquations />
+          <span className="text-muted" data-vorlesen>Noch ein Beispiel:</span>
+          <span data-vorlesen><MathText text={extraExample} blockEquations /></span>
         </div>
       )}
 
@@ -334,7 +370,7 @@ function SingleTaskWidget({
         </button>
       )}
       {hints.slice(0, hintsShown).map((h, i) => (
-        <p key={i} className="text-xs text-muted italic">💡 {h}</p>
+        <p key={i} className="text-xs text-muted italic" data-vorlesen>💡 Hinweis: {h}</p>
       ))}
 
       {showEasierOffer && (
@@ -426,9 +462,11 @@ function DoorCodePanel({
 // ── Task area (a task/door slide, possibly a worksheet of several tasks) ──
 
 export function TaskArea({
-  slide, attemptId, solvedSlideIds, variantChoices, level, fragments, onSlideSolved, onAdaptation, onReview,
+  slide, attemptId, solvedSlideIds, variantChoices, level, fragments, info, onSlideSolved, onAdaptation, onReview,
 }: {
   slide: ExitGameSlide; attemptId: number; solvedSlideIds: string[];
+  /** letzter Erklärtext (letzteInfo) — bei falscher Antwort zum Nachlesen eingeblendet */
+  info?: string;
   variantChoices: Record<string, number>; level: DdaLevel | null; fragments: ExitGameFragment[];
   onSlideSolved: (attempt: ExitGameAttemptSummary, fragments: ExitGameFragment[]) => void;
   onAdaptation: (adaptation: DdaAdaptation | null) => void;
@@ -448,7 +486,7 @@ export function TaskArea({
       {tasks.map((t, i) => (
         <SingleTaskWidget key={i} task={t} taskIndex={i} slideId={slide.id} hints={slide.hints ?? []} attemptId={attemptId}
           alreadySolved={wasAlreadySolved || solvedIndices.has(i)}
-          level={level} extraExample={slide.extraExample}
+          level={level} extraExample={slide.extraExample} info={info}
           onSolved={(attempt, frags) => {
             setSolvedIndices(prev => new Set(prev).add(i));
             // The answer response's attempt already reflects the solved state

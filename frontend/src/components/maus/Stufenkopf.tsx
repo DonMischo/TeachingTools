@@ -14,7 +14,8 @@ import { useMausKontext } from "./MausKontext";
  */
 export function vorlesbarerText(el: HTMLElement): string {
   const kopie = el.cloneNode(true) as HTMLElement;
-  kopie.querySelectorAll("[data-zusatz]").forEach(z => z.remove());
+  // Formeln (KaTeX): nur die MathML-Fassung behalten, sonst käme jede Formel doppelt
+  kopie.querySelectorAll("[data-zusatz], .katex-html, annotation").forEach(z => z.remove());
   return (kopie.textContent ?? "")
     // Emojis samt Variations-Selektor (FE0F) und Verbinder (200D).
     .replace(/\p{Extended_Pictographic}|\uFE0F|\u200D/gu, "")
@@ -26,7 +27,11 @@ export function vorlesbarerText(el: HTMLElement): string {
  * Liest den Auftrag mit der Stimme des Browsers vor — für Kinder, die noch
  * langsam lesen oder gerade Deutsch lernen. Kein Server, keine Kosten.
  */
-export function Vorlesen({ ziel }: { ziel: RefObject<HTMLElement | null> }) {
+/**
+ * Tragen Elemente im Ziel `data-vorlesen`, werden nur sie gelesen, mit Pause
+ * dazwischen (z. B. Frage und Antwortknöpfe ohne »Prüfen«).
+ */
+export function Vorlesen({ ziel, titel = "Auftrag vorlesen" }: { ziel: RefObject<HTMLElement | null>; titel?: string }) {
   const [moeglich, setMoeglich] = useState(false);
   const [spricht, setSpricht] = useState(false);
 
@@ -40,7 +45,10 @@ export function Vorlesen({ ziel }: { ziel: RefObject<HTMLElement | null> }) {
   function umschalten() {
     const synth = window.speechSynthesis;
     if (spricht) { synth.cancel(); setSpricht(false); return; }
-    const text = ziel.current ? vorlesbarerText(ziel.current) : "";
+    const teile = ziel.current ? [...ziel.current.querySelectorAll<HTMLElement>("[data-vorlesen]")] : [];
+    const text = !ziel.current ? "" : teile.length
+      ? teile.map(vorlesbarerText).filter(Boolean).map(t => /[.!?:]$/.test(t) ? t : `${t}.`).join(" ")
+      : vorlesbarerText(ziel.current);
     if (!text) return;
     const satz = new SpeechSynthesisUtterance(text);
     satz.lang = "de-DE";
@@ -59,7 +67,8 @@ export function Vorlesen({ ziel }: { ziel: RefObject<HTMLElement | null> }) {
       type="button"
       onClick={umschalten}
       aria-pressed={spricht}
-      title={spricht ? "Vorlesen stoppen" : "Auftrag vorlesen"}
+      title={spricht ? "Vorlesen stoppen" : titel}
+      aria-label={spricht ? "Vorlesen stoppen" : titel}
       className="shrink-0 text-lg rounded-lg w-9 h-9 border border-line hover:border-accent"
     >
       {spricht ? "⏹" : "🔊"}

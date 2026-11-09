@@ -9,7 +9,6 @@ import { useEffect, useMemo, useState } from "react";
 import {
   api, type DdaAdaptation, type ExitGameAttemptSummary, type ExitGameData, type ExitGameFragment,
 } from "@/lib/api";
-import { MathText } from "@/components/MathText";
 import { abschnitte, seedAus, stationsObjekt } from "@/lib/gebaeude/exitgame";
 import AvatarWahl from "@/components/gebaeude/AvatarWahl";
 import { STANDARD_AVATAR, gespeicherterAvatar, ladeAvatar, type Avatar } from "@/components/gebaeude/avatar";
@@ -17,7 +16,7 @@ import { OBJEKT_NAME, OBJEKT_STIMME } from "@/lib/gebaeude/objekte";
 import { bauePlan } from "@/lib/gebaeude/plan";
 import Gebaeude, { type GebaeudeArt, type Ort } from "@/components/gebaeude/Gebaeude";
 import type { RaumZustand, Stil } from "@/components/gebaeude/szene";
-import { MediaView, TaskArea, levelOf } from "./FolienTeile";
+import { FolienText, MediaView, TaskArea, letzteInfo, levelOf } from "./FolienTeile";
 import BossArea from "./BossArea";
 
 interface Props {
@@ -164,15 +163,14 @@ export default function GebaeudeSpiel({
                   </span>
                   <button onClick={() => setOffen(null)} className="text-sm px-2 rounded-sm hover:bg-surface-hover" aria-label="Zimmer verlassen">✕</button>
                 </div>
-                {s.title && <h2 className="font-semibold">{s.title}</h2>}
-                {s.text && <MathText text={s.text} blockEquations className="text-sm whitespace-pre-line" />}
+                <FolienText slide={s} />
                 {s.media && <MediaView media={s.media} exitgameId={exitgameId} />}
                 {s.type === "boss" && (
                   <BossArea slide={s} attemptId={attempt.id} onSlideSolved={onSlideSolved} onFertig={() => setOffen(null)} />
                 )}
                 {(s.type === "task" || s.type === "door") && (
                   <TaskArea key={s.id} slide={s} attemptId={attempt.id} solvedSlideIds={geloest}
-                    variantChoices={variantChoices} level={levelOf(adaptation)} fragments={fragments}
+                    variantChoices={variantChoices} level={levelOf(adaptation)} fragments={fragments} info={letzteInfo(slides, s.id)}
                     onSlideSolved={onSlideSolved} onAdaptation={a => { if (a) onAdaptation(a); }}
                     onReview={rueckblick} />
                 )}

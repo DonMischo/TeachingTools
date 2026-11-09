@@ -42,7 +42,7 @@ async function zumKampf() {
 describe("ChallengeSpiel", () => {
   it("sendet die Antwort mit Zeiten und meldet »Daneben«", async () => {
     const u = await zumKampf();
-    await u.click(screen.getByRole("button", { name: "Angreifen" }));
+    await u.click(screen.getByRole("button", { name: "Antworten" }));
     await waitFor(() => expect(m.antwort).toHaveBeenCalled());
     const body = m.antwort.mock.calls[0][1];
     expect(body).toMatchObject({ challenge_id: "c1", fakt_ids: ["f1"], tipp: false });
@@ -54,7 +54,7 @@ describe("ChallengeSpiel", () => {
   it("wechselt nach drei Fehlversuchen zur Karte", async () => {
     m.antwort.mockResolvedValue(antwort({ zurueck_zur_karte: true, leben: 3 }));
     const u = await zumKampf();
-    await u.click(screen.getByRole("button", { name: "Angreifen" }));
+    await u.click(screen.getByRole("button", { name: "Antworten" }));
     expect(await screen.findByText(/Drei Fehlversuche/)).toBeTruthy();
     expect(screen.getByRole("button", { name: "Los" })).toBeTruthy();
   });
@@ -93,7 +93,7 @@ describe("ChallengeSpiel", () => {
   it("zeigt am Ende das Ergebnis", async () => {
     m.antwort.mockResolvedValue(antwort({ treffer: true, komplett: true, fertig: true }));
     const u = await zumKampf();
-    await u.click(screen.getByRole("button", { name: "Angreifen" }));
+    await u.click(screen.getByRole("button", { name: "Antworten" }));
     expect(await screen.findByText("80 %")).toBeTruthy();
   });
 });

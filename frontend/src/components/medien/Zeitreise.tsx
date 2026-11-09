@@ -5,10 +5,12 @@ import { EPOCHEN, MEDIEN, epoche } from "@/lib/medien/medien";
 import { erreichbarBis, type Aenderung, type Fortschritt } from "@/lib/medien/fortschritt";
 import Station from "./Station";
 
-export default function Zeitreise({ fortschritt, aendere, zuruecksetzen }: { fortschritt: Fortschritt; aendere: (a: Aenderung) => void; zuruecksetzen: () => void }) {
-  const bis = erreichbarBis(fortschritt.geschafft);
-  const [index, setIndex] = useState(0);
-  const gewaehlt = useRef(false);
+/** `start`: Id einer Station (TaskCrawler-Vorgabe, Link ?station=) — dort öffnen, auch wenn sie noch gesperrt wäre. */
+export default function Zeitreise({ fortschritt, aendere, zuruecksetzen, start }: { fortschritt: Fortschritt; aendere: (a: Aenderung) => void; zuruecksetzen: () => void; start?: string }) {
+  const startIndex = start ? MEDIEN.findIndex(x => x.id === start) : -1;
+  const bis = Math.max(erreichbarBis(fortschritt.geschafft), startIndex);
+  const [index, setIndex] = useState(Math.max(0, startIndex));
+  const gewaehlt = useRef(startIndex >= 0);
   // Beim Laden des gespeicherten Stands zur ersten offenen Station springen — nicht mehr, sobald man selbst wählt oder antwortet
   useEffect(() => { if (!gewaehlt.current) setIndex(bis); }, [bis]);
   const leiste = useRef<HTMLDivElement>(null);

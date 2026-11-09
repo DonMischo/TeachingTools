@@ -3,7 +3,8 @@
    aus (Vorbild: »Crawlers« von rybinfx). Gegen blindes Durchklicken: jede
    weitere falsche Antwort kurz danach verlängert die Sperre und bringt einen
    Käfer mehr. Ab dem dritten Fehler binnen einer Minute steht in der Mitte
-   ein Mutmacher mit der Fehlerzahl, und die Käfer kreisen um ihn.
+   ein Mutmacher mit der Fehlerzahl, und die Käfer kreisen um ihn. Mit `info`
+   steht darunter der letzte Erklärtext — die Sperrzeit zum Nachlesen nutzen.
 
    Aufruf ohne React-Gerüst, damit es überall geht:  krabbeln()  */
 
@@ -32,11 +33,12 @@ type Wort = { text: string; x: number; y: number; vx: number; vy: number; dreh: 
 
 let serie = 0;
 let letzterFehler = 0;
-let laufend: { ende: number; dazu: (n: number) => void; zeigeSerie: () => void } | null = null;
+type Laufend = { ende: number; info?: string; dazu: (n: number) => void; zeigeSerie: () => void };
+let laufend: Laufend | null = null;
 
-/** Sperrdauer für die n-te falsche Antwort in Folge (1, 2, 3 …): 10 s bis 20 s. */
+/** Sperrdauer für die n-te falsche Antwort in Folge (1, 2, 3 …): 10 s, je Fehler 5 s mehr, höchstens 45 s. */
 export function sperrDauer(n: number): number {
-  return Math.min(10_000 + (n - 1) * 2500, 20_000);
+  return Math.min(10_000 + (n - 1) * 5000, 45_000);
 }
 
 function woerterSammeln(quelle?: Element | null): string[] {
@@ -304,8 +306,8 @@ function zeichneKaefer(ctx: CanvasRenderingContext2D, k: Kaefer) {
   ctx.restore();
 }
 
-/** Lässt die Krabbler los. Wörter kommen aus `quelle` (sonst <main>). */
-export function krabbeln(opts: { quelle?: Element | null } = {}): void {
+/** Lässt die Krabbler los. Wörter kommen aus `quelle` (sonst <main>); `info` = Text zum Nachlesen unter dem Mutmacher. */
+export function krabbeln(opts: { quelle?: Element | null; info?: string } = {}): void {
   if (typeof document === 'undefined') return;
   const jetzt = performance.now();
   serie = jetzt - letzterFehler < SERIE_FENSTER_MS ? serie + 1 : 1;
@@ -314,6 +316,7 @@ export function krabbeln(opts: { quelle?: Element | null } = {}): void {
 
   if (laufend) {
     laufend.ende = Math.max(laufend.ende, jetzt + dauer);
+    if (opts.info) laufend.info = opts.info;
     laufend.dazu(1);
     laufend.zeigeSerie();
     return;
@@ -336,11 +339,14 @@ export function krabbeln(opts: { quelle?: Element | null } = {}): void {
   hinweis.style.cssText = `position:absolute;left:50%;bottom:24px;transform:translateX(-50%);padding:6px 14px;border:1px solid ${NEON};background:rgba(0,0,0,.75);color:#fff;font:600 14px system-ui,sans-serif;border-radius:6px;white-space:nowrap`;
   // Mutmacher in der Mitte, erst ab dem dritten Fehler sichtbar
   const mut = document.createElement('div');
-  mut.style.cssText = `position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);max-width:min(420px,80vw);padding:20px 28px;border:2px solid ${NEON};box-shadow:0 0 24px ${GLUT};background:rgba(10,0,20,.9);color:#fff;font:600 20px system-ui,sans-serif;text-align:center;border-radius:12px;display:none`;
+  mut.style.cssText = `position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);max-width:min(560px,86vw);padding:20px 28px;border:2px solid ${NEON};box-shadow:0 0 24px ${GLUT};background:rgba(10,0,20,.9);color:#fff;font:600 20px system-ui,sans-serif;text-align:center;border-radius:12px;display:none`;
   const mutText = document.createElement('div');
   const mutZahl = document.createElement('div');
   mutZahl.style.cssText = `margin-top:10px;font-size:15px;color:${NEON}`;
-  mut.append(mutText, mutZahl);
+  // der letzte Erklärtext zum Nachlesen, solange die Sperre läuft
+  const mutInfo = document.createElement('div');
+  mutInfo.style.cssText = `margin-top:14px;padding-top:12px;border-top:1px solid ${NEON};font:400 15px/1.45 system-ui,sans-serif;text-align:left;white-space:pre-line;max-height:45vh;overflow:hidden`;
+  mut.append(mutText, mutZahl, mutInfo);
   huelle.append(leinwand, mut, hinweis);
   document.body.append(huelle);
 
@@ -361,16 +367,28 @@ export function krabbeln(opts: { quelle?: Element | null } = {}): void {
 
   const kaefer: Kaefer[] = [];
   const fliegende: Wort[] = [];
-  const zustand = {
+  const zustand: Laufend = {
     ende: jetzt + dauer,
+    info: opts.info,
     dazu: (n: number) => { for (let i = 0; i < n && kaefer.length < 5; i++) kaefer.push(neuerKaefer(b, h)); },
     zeigeSerie: () => {
-      if (serie < MUTMACHER_AB) return;
-      if (serie === 42) mutText.textContent = 'DON’T PANIC. 42 ist die Antwort auf alles – nur nicht auf diese Aufgabe.';
-      else if (mut.style.display === 'none') mutText.textContent = MUTMACHER[Math.floor(Math.random() * MUTMACHER.length)];
+      const mutmacher = serie >= MUTMACHER_AB;
+      if (!mutmacher && !zustand.info) return;
+      mutText.style.display = mutZahl.style.display = mutmacher ? 'block' : 'none';
+      if (mutmacher) {
+        if (serie === 42) mutText.textContent = 'DON’T PANIC. 42 ist die Antwort auf alles – nur nicht auf diese Aufgabe.';
+        else if (!mutText.textContent) mutText.textContent = MUTMACHER[Math.floor(Math.random() * MUTMACHER.length)];
+        // die Serie reißt erst nach einer Minute ohne Fehler ab, kann also länger laufen
+        mutZahl.textContent = `${serie} Fehler in Folge`;
+      }
+      mutInfo.style.display = zustand.info ? 'block' : 'none';
+      if (zustand.info) {
+        // ohne Mutmacher darüber keine Trennlinie
+        mutInfo.style.marginTop = mutInfo.style.paddingTop = mutmacher ? '' : '0';
+        mutInfo.style.borderTopStyle = mutmacher ? 'solid' : 'none';
+        mutInfo.textContent = `📖 Nochmal lesen:\n${zustand.info}`;
+      }
       mut.style.display = 'block';
-      // die Serie reißt erst nach einer Minute ohne Fehler ab, kann also länger laufen
-      mutZahl.textContent = `${serie} Fehler in Folge`;
     },
   };
   laufend = zustand;

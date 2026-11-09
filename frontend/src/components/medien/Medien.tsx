@@ -38,10 +38,12 @@ const chip = (an: boolean) =>
  * "konto" für Angemeldete, der Gast-Zugang (Code + Token) für Gäste. Ohne
  * (Offline-Datei, TaskCrawler-Station) bleibt er in diesem Browser.
  *
- * `vorgabe` (TaskCrawler-Station): { reiter?: "zeitreise" | "vergleich" | "flops" | "galerie" | "eilbote" | "sortieren" }
+ * `vorgabe` (TaskCrawler-Station, Link ?station=): { reiter?: "zeitreise" | "vergleich" | "flops" | "galerie" | "eilbote" | "sortieren",
+ *   station?: Id einer Station — die Zeitreise öffnet dort, auch wenn sie noch gesperrt wäre }
  */
 export default function Medien({ action, vorgabe, speicher }: { action?: ReactNode; vorgabe?: Vorgabe; speicher?: "konto" | MausZugang }) {
   const fest = wahl(vorgabe, "reiter", REITER.map(r => r.id));
+  const station = wahl(vorgabe, "station", MEDIEN.map(m => m.id));
   const [reiter, setReiter] = useState<Reiter>(fest ?? "zeitreise");
   const [f, setF] = useState<Fortschritt>(leer);
   const aktuell = useRef(f);
@@ -107,7 +109,7 @@ export default function Medien({ action, vorgabe, speicher }: { action?: ReactNo
         </div>
       </div>
 
-      {reiter === "zeitreise" && <Zeitreise fortschritt={f} aendere={aendere} zuruecksetzen={zuruecksetzen} />}
+      {reiter === "zeitreise" && <Zeitreise fortschritt={f} aendere={aendere} zuruecksetzen={zuruecksetzen} start={station} />}
       {reiter === "vergleich" && <Vergleich />}
       {reiter === "flops" && <FlopMuseum geschafft={f.geschafft} />}
       {reiter === "galerie" && (

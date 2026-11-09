@@ -36,7 +36,7 @@ describe("Normal", () => {
     render(<Normal brett={brett() as never} theme={THEMES.klassisch} skin="monster" lauf={mkLauf(false) as never} zurKarte={() => {}} />);
     await u.click(screen.getByRole("button", { name: /Frage Eins/ }));
     await u.click(screen.getByRole("button", { name: "Fakt Alpha" }));
-    await u.click(screen.getByRole("button", { name: "Angreifen" }));
+    await u.click(screen.getByRole("button", { name: "Antworten" }));
     expect(await screen.findByRole("button", { name: /Falsch beantwortet:\s*Frage Eins/ })).toHaveAttribute("data-zustand", "falsch");
   });
 });
