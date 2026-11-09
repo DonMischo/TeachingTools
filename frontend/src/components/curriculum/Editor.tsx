@@ -53,6 +53,7 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
   const [ausnahmen, setAusnahmen] = useState<Set<string>>(new Set());
   const [endfassung, setEndfassung] = useState(false);
   const [zuKlassen, setZuKlassen] = useState<Set<number>>(new Set());
+  const [zuBloecke, setZuBloecke] = useState<Set<Block>>(new Set());
   // Auswahl per Strg-Klick — Schlüssel »<Einheit oder deck>|<Karte>«, damit Strg+X weiß, woraus es ausschneidet.
   // Strg+C/X merkt die Karten, Strg+V setzt sie in die Einheit der angeklickten Zelle.
   const [auswahl, setAuswahl] = useState<Set<string>>(new Set());
@@ -346,11 +347,19 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
   function blockAbschnitt(block: Block) {
     const offeneNeu = offeneKarten(doc, idx, block, zuKlassen).filter(o => sichtbar(o.karte));
     const freieAlt = freieAlteKarten(doc, block).filter(sichtbar);
+    const zu = zuBloecke.has(block);
+    const umklappen = () => setZuBloecke(z => { const x = new Set(z); x.has(block) ? x.delete(block) : x.add(block); return x; });
     return (
       <section key={block} className="rounded-xl border border-line">
-        <h2 className="px-3 py-2 font-bold bg-surface rounded-t-xl">Klassen {block}</h2>
-        {KLASSEN_JE_BLOCK[block].map(nr => klassenTabelle(klasseVon(nr)))}
-        {(offeneNeu.length > 0 || freieAlt.length > 0) && !nurKonflikte && (
+        <h2 className={`bg-surface ${zu ? "rounded-xl" : "rounded-t-xl"}`}>
+          <button className="w-full text-left px-3 py-2 font-bold flex items-center gap-1" onClick={umklappen} aria-expanded={!zu}
+            title={zu ? "Block aufklappen" : "Block zuklappen"}>
+            <span className="text-muted w-4">{zu ? "▸" : "▾"}</span>Klassen {block}
+            {zu && <span className="text-xs text-muted font-normal">· {offeneNeu.length} offene Karten</span>}
+          </button>
+        </h2>
+        {!zu && KLASSEN_JE_BLOCK[block].map(nr => klassenTabelle(klasseVon(nr)))}
+        {!zu && (offeneNeu.length > 0 || freieAlt.length > 0) && !nurKonflikte && (
           <div className="px-3 py-2 border-t-2 border-dashed border-line bg-surface/40 rounded-b-xl">
             <div className="text-xs text-muted mb-2">
               <b className="text-fg">Offen in {block}: {offeneNeu.length} Karten des neuen Lehrplans</b> hat noch keine
