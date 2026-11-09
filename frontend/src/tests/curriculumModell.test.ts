@@ -65,6 +65,22 @@ describe("themaSicht", () => {
     expect(s.niveau.R?.map(k => k.id)).toEqual(["n1"]);
     expect(s.vorschlaege).toHaveLength(0);
   });
+
+  it("schlägt keine Karte vor, die schon in einer anderen Klasse zugeordnet ist", () => {
+    const v = vorlage();
+    v.curriculum.klassen.push({ klasse: 6, wochen_verfuegbar: 36, themen: [
+      { id: "k6-t1", titel: "Teiler", wochen: 2, inhalte: {}, karten: [], zuordnung: { H: ["n1"] } },
+    ] });
+    const i = index(v);
+    expect(themaSicht(i, v.curriculum.klassen[0].themen[0], 5).vorschlaege).toEqual([]);
+    expect(offeneKarten(v, i, "5/6").map(o => o.karte.id)).not.toContain("n1");
+  });
+
+  it("legt die Vorschläge einer eingeklappten Klasse zurück in die Kartenbank", () => {
+    const v = vorlage(); const i = index(v);
+    expect(offeneKarten(v, i, "5/6").map(o => o.karte.id)).not.toContain("n1");
+    expect(offeneKarten(v, i, "5/6", new Set([5])).map(o => o.karte.id)).toContain("n1");
+  });
 });
 
 describe("zuordnen", () => {

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { JsonEingabe } from "@/components/curriculum/JsonEingabe";
-import { KiDialog } from "@/components/curriculum/Dialoge";
+import { Fenster, KiDialog } from "@/components/curriculum/Dialoge";
 import { KarteBox } from "@/components/curriculum/KarteBox";
 import { index, leereVorlage } from "@/lib/curriculum/modell";
 
@@ -29,6 +29,15 @@ describe("JsonEingabe", () => {
     const { container } = render(<JsonEingabe onText={onText} />);
     fireEvent.change(container.querySelector("textarea")!, { target: { value: "```json\n{}\n```" } });
     expect(onText).toHaveBeenCalledWith("```json\n{}\n```", "");
+  });
+});
+
+describe("Fenster", () => {
+  it("schließt mit Esc", () => {
+    const zu = vi.fn();
+    render(<Fenster titel="Karte" onClose={zu}><textarea /></Fenster>);
+    fireEvent.keyDown(screen.getByRole("textbox"), { key: "Escape" });
+    expect(zu).toHaveBeenCalledTimes(1);
   });
 });
 

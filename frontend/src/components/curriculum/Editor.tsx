@@ -344,7 +344,7 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
   // Render-Funktionen statt innerer Komponenten: sonst baut React die Zellen bei
   // jedem Render neu auf, und ein laufendes Ziehen bricht ab.
   function blockAbschnitt(block: Block) {
-    const offeneNeu = offeneKarten(doc, idx, block).filter(o => sichtbar(o.karte));
+    const offeneNeu = offeneKarten(doc, idx, block, zuKlassen).filter(o => sichtbar(o.karte));
     const freieAlt = freieAlteKarten(doc, block).filter(sichtbar);
     return (
       <section key={block} className="rounded-xl border border-line">

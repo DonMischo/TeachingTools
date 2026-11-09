@@ -137,7 +137,9 @@ export function index(v: Vorlage) {
     for (const a of p.alt) paareAlt.set(a, [...(paareAlt.get(a) ?? []), p]);
     for (const n of p.neu) paareNeu.set(n, [...(paareNeu.get(n) ?? []), p]);
   }
-  return { karten, paareAlt, paareNeu };
+  // Irgendwo im Curriculum zugeordnete Karten — die schlägt keine andere Einheit mehr vor.
+  const vergeben = new Set((v.curriculum?.klassen ?? []).flatMap(k => k.themen.flatMap(t => [...zugeordnet(t)])));
+  return { karten, paareAlt, paareNeu, vergeben };
 }
 export type Index = ReturnType<typeof index>;
 
@@ -196,7 +198,7 @@ export function themaSicht(i: Index, thema: Thema, klasse: number): ThemaSicht {
     for (const p of paare) {
       for (const nid of p.neu) {
         const nk = i.karten.get(nid);
-        if (!nk || gesehen.has(nid) || schon.has(nid)) continue;
+        if (!nk || gesehen.has(nid) || schon.has(nid) || i.vergeben.has(nid)) continue;
         gesehen.add(nid);
         const ort = woandersAls(nk, klasse);
         vorschlaege.push({ karte: nk, paar: p, woanders: !!ort });
@@ -460,12 +462,15 @@ export function loesen(thema: Thema, karteId: string, n?: Niveau): Thema {
  * weder zugeordnet noch als Vorschlag über eine alte Karte. Das ist, was im
  * Curriculum noch fehlt: echte neue Inhalte und solche, die hierher wandern.
  */
-export function offeneKarten(v: Vorlage, i: Index, block: Block): { karte: KarteMitPlan; paar: Paar | null }[] {
+/** Neue Karten eines Blocks ohne Unterrichtseinheit. Eingeklappte Klassen (`zu`) behalten ihre
+ *  Vorschläge nicht — die liegen dann wieder in der Kartenbank, bis die Klasse aufgeht. */
+export function offeneKarten(v: Vorlage, i: Index, block: Block, zu: ReadonlySet<number> = new Set()): { karte: KarteMitPlan; paar: Paar | null }[] {
   const abgedeckt = new Set<string>();
   for (const k of v.curriculum.klassen) {
     if (blockVon(k.klasse) !== block) continue;
     for (const t of k.themen) {
       zugeordnet(t).forEach(id => abgedeckt.add(id));
+      if (zu.has(k.klasse)) continue;
       for (const n of themaSicht(i, t, k.klasse).vorschlaege) if (!n.woanders) abgedeckt.add(n.karte.id);
     }
   }

@@ -4,7 +4,7 @@
  * Hochladen und Teilen (QR). Jeder Dialog gibt fertige Operationen an
  * `onOps` — geschrieben wird im Editor.
  */
-import { useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { JoinQR } from "@/components/JoinQR";
 import { useLanUrl } from "@/hooks/useLanUrl";
 import {
@@ -19,6 +19,11 @@ import { api, type CurriculumPlanOut } from "@/lib/api";
 type Op = Record<string, unknown>;
 
 export function Fenster({ titel, onClose, children, breit }: { titel: string; onClose: () => void; children: ReactNode; breit?: boolean }) {
+  useEffect(() => {
+    const taste = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", taste);
+    return () => window.removeEventListener("keydown", taste);
+  }, [onClose]);
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-start justify-center p-4 overflow-y-auto" onMouseDown={onClose}>
       <div className={`card w-full ${breit ? "max-w-3xl" : "max-w-xl"} mt-10 p-5`} onMouseDown={e => e.stopPropagation()}>
