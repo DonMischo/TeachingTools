@@ -1680,6 +1680,20 @@ def _boss_ergebnis(a: ExitGameAttempt, data: dict, anzahl: dict) -> float | None
     return round(sum(werte) / len(werte), 4) if werte else None
 
 
+@router.get("/api/exitgame-sessions/{code}/ergebnissicherung")
+def get_session_ergebnissicherung(code: str, db: Session = Depends(get_db), current: Teacher = Depends(get_current_teacher)):
+    """Die Merksätze für das Live-Dashboard (PDF zum Drucken/Austeilen). Nur
+    die Lehrkraft der Sitzung — Lernende bekommen sie erst mit /finish."""
+    s = db.query(ExitGameSession).filter_by(join_code=code).first()
+    if not s:
+        raise HTTPException(404, "Session nicht gefunden")
+    require_session_owner(s, current)
+    data = s.exitgame.data
+    akzent = ((data.get("style") or {}).get("customVars") or {}).get("--accent")
+    return {"title": data.get("title") or "", "ergebnissicherung": _ergebnissicherung(data),
+            "akzent": akzent if isinstance(akzent, str) else None}
+
+
 @router.get("/api/exitgame-sessions/{code}/report")
 def get_session_report(code: str, fmt: str = "json", db: Session = Depends(get_db), current: Teacher = Depends(get_current_teacher)):
     s = db.query(ExitGameSession).filter_by(join_code=code).first()

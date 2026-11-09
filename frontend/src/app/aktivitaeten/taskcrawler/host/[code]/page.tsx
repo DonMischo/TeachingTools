@@ -11,6 +11,34 @@ import { useLanUrl } from "@/hooks/useLanUrl";
 import { MathText } from "@/components/MathText";
 import { SelbstSpielenKnopf } from "@/components/LehrkraftSpielt";
 
+/** Ergebnissicherung (Merksätze aller Aufgaben) als PDF — wie am Ende des Spiels, zum Drucken oder Austeilen. */
+function ErgebnisPdfKnopf({ code }: { code: string }) {
+  const [status, setStatus] = useState<"" | "laedt" | "leer" | "fehler">("");
+  async function laden() {
+    setStatus("laedt");
+    try {
+      const d = await api.exitgame.sessions.ergebnissicherung(code);
+      if (!d.ergebnissicherung.length) { setStatus("leer"); return; }
+      const { speichereErgebnisPdf } = await import("@/lib/taskcrawler/ergebnisPdf");
+      await speichereErgebnisPdf({ titel: d.title, abschnitte: d.ergebnissicherung, akzent: d.akzent ?? undefined });
+      setStatus("");
+    } catch {
+      setStatus("fehler");
+    }
+  }
+  return (
+    <div className="flex flex-col items-end gap-0.5">
+      <button onClick={laden} disabled={status === "laedt"}
+        title="Die Merksätze aller Aufgaben, je Abschnitt — dasselbe PDF, das die Lernenden am Ende bekommen"
+        className="text-sm border border-line rounded-lg px-3 py-1.5 hover:border-accent disabled:opacity-60">
+        {status === "laedt" ? "⏳ PDF wird erstellt …" : "📄 Ergebnissicherung (PDF)"}
+      </button>
+      {status === "leer" && <span className="text-[11px] text-muted max-w-56 text-right">Dieser TaskCrawler hat keine Ergebnissicherung (Feld »ergebnissicherung« an den Folien).</span>}
+      {status === "fehler" && <span className="text-[11px] text-bad">PDF ging nicht — bitte noch einmal.</span>}
+    </div>
+  );
+}
+
 /** Render one log event as a human-readable German sentence. */
 function describeEvent(e: ExitGameLogEvent): { icon: string; text: string } {
   const p = e.payload as Record<string, unknown>;
@@ -107,6 +135,7 @@ export default function ExitgameHostPage() {
           <a href={api.exitgame.sessions.reportCsvUrl(code)} className="text-sm border border-line rounded-lg px-3 py-1.5 hover:border-accent">
             📊 Ergebnisse (CSV)
           </a>
+          <ErgebnisPdfKnopf code={code} />
         </div>
       </div>
 

@@ -2,6 +2,7 @@ import type {
   TimelineBoard, TimelineGameSpec, TimelineSetDetail, TimelineSetOut,
 } from "@/components/timeline/types";
 import type { SlideshowEvent, SlideshowItem } from "@/lib/slideshow";
+import type { SicherungsAbschnitt } from "@/lib/taskcrawler/ergebnisPdf";
 import type { Ebene as KartenEbene, Katalog as KartenKatalog } from "@/lib/karten/stil";
 import type { KartenExportIn, KartenSatz, KartenSatzIn, KartenSatzKurz, SatzInhalt as SatzInhaltKarten, SuchTreffer } from "@/lib/karten/satz";
 import type { QuizAntwortOut, QuizSpiel, QuizUebersicht, SelbstUebenKurz, SelbstUebenSatz, UebenAntwortOut, UebenAufgabe } from "@/lib/karten/quiz";
@@ -2788,6 +2789,9 @@ export const api = {
       delete: (code: string) => apiFetch<void>(`exitgame-sessions/${code}`, { method: "DELETE" }),
       report: (code: string) => apiFetch<ExitGameReport>(`exitgame-sessions/${code}/report`),
       reportCsvUrl: (code: string) => `/api/exitgame-sessions/${code}/report?fmt=csv`,
+      /** Merksätze für das PDF im Live-Dashboard (nur die Lehrkraft der Sitzung) */
+      ergebnissicherung: (code: string) =>
+        apiFetch<{ title: string; ergebnissicherung: SicherungsAbschnitt[]; akzent: string | null }>(`exitgame-sessions/${code}/ergebnissicherung`),
     },
     // Guest players carry a Bearer token on every attempt call. Set once by the
     // play page (see setActiveGuestToken) so child widgets need no token prop.

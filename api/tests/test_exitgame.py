@@ -1035,6 +1035,19 @@ def test_ergebnissicherung_comes_only_with_finish(client, db, teacher_token, kla
     assert again["ergebnissicherung"] == fin["ergebnissicherung"]
 
 
+def test_ergebnissicherung_fuer_lehrkraft_im_dashboard(client, db, teacher_token, klass):
+    """Die Lehrkraft der Sitzung holt die Merksätze jederzeit (PDF im Dashboard), Lernende nicht."""
+    student_token, s, aid = _start_attempt(client, db, teacher_token, klass, SICHERUNG_GAME)
+    client.cookies.clear()
+    r = client.get(f"/api/exitgame-sessions/{s['join_code']}/ergebnissicherung", headers=_auth(teacher_token))
+    assert r.status_code == 200
+    assert r.json()["title"] == "Testspiel"
+    assert [len(a["eintraege"]) for a in r.json()["ergebnissicherung"]] == [2, 1]
+    client.cookies.clear()
+    assert client.get(f"/api/exitgame-sessions/{s['join_code']}/ergebnissicherung", headers=_auth(student_token)).status_code == 403
+    assert client.get("/api/exitgame-sessions/NOPE99/ergebnissicherung", headers=_auth(teacher_token)).status_code == 404
+
+
 def test_upload_validates_ergebnissicherung(client, teacher_token):
     for falsch in ("", "   ", 42, "x" * 3001):
         game = {**SIMPLE_GAME, "slides": [{**SIMPLE_GAME["slides"][0], "ergebnissicherung": falsch}, *SIMPLE_GAME["slides"][1:]]}
