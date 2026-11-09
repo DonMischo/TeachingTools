@@ -19,6 +19,8 @@ import Vergleich from "./Vergleich";
 import FlopMuseum from "./FlopMuseum";
 import Eilbote from "./Eilbote";
 import WerWarZuerst from "./WerWarZuerst";
+import Posteingang from "./Posteingang";
+import { MedienLiveKontext, useMedienLive, type LiveZugang } from "@/lib/medien/live";
 
 const REITER = [
   { id: "zeitreise", ebene: "kennen", icon: "🕰️", label: "Zeitreise" },
@@ -41,7 +43,9 @@ const chip = (an: boolean) =>
  * `vorgabe` (TaskCrawler-Station, Link ?station=): { reiter?: "zeitreise" | "vergleich" | "flops" | "galerie" | "eilbote" | "sortieren",
  *   station?: Id einer Station — die Zeitreise öffnet dort, auch wenn sie noch gesperrt wäre }
  */
-export default function Medien({ action, vorgabe, speicher }: { action?: ReactNode; vorgabe?: Vorgabe; speicher?: "konto" | MausZugang }) {
+export default function Medien({ action, vorgabe, speicher, live }: { action?: ReactNode; vorgabe?: Vorgabe; speicher?: "konto" | MausZugang; live?: LiveZugang }) {
+  // Live-Raum der Sitzung: Nachrichten an andere, gemeinsame Höhlenwand (nur mit Code)
+  const raum = useMedienLive(live ?? null);
   const fest = wahl(vorgabe, "reiter", REITER.map(r => r.id));
   const station = wahl(vorgabe, "station", MEDIEN.map(m => m.id));
   const [reiter, setReiter] = useState<Reiter>(fest ?? "zeitreise");
@@ -82,6 +86,7 @@ export default function Medien({ action, vorgabe, speicher }: { action?: ReactNo
 
   const frei = GALERIE.filter(b => f.geschafft.includes(b.medium)).length;
   return (
+    <MedienLiveKontext.Provider value={live ? raum : null}>
     <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-seite mx-auto w-full" data-sim="medien">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
@@ -101,6 +106,7 @@ export default function Medien({ action, vorgabe, speicher }: { action?: ReactNo
           {REITER.filter(r => r.ebene === "anwenden").map(r => <button key={r.id} onClick={() => setReiter(r.id)} className={chip(reiter === r.id)}>{r.icon} {r.label}</button>)}
         </div>}
         <div className="ml-auto flex gap-2 text-sm">
+          {live && <Posteingang />}
           <span className="chip" title="Geschaffte Stationen">🏁 {f.geschafft.length} / {MEDIEN.length}</span>
           <span className="chip" title="Freigeschaltete Fotos">📷 {frei} / {GALERIE.length}</span>
           <span className={`chip ${status === "fehler" ? "text-bad" : ""}`} title="Wo dein Fortschritt gespeichert ist">
@@ -123,5 +129,6 @@ export default function Medien({ action, vorgabe, speicher }: { action?: ReactNo
       {reiter === "eilbote" && <Eilbote rekord={f.eilbote} aendere={aendere} />}
       {reiter === "sortieren" && <WerWarZuerst rekord={f.sortieren} aendere={aendere} />}
     </div>
+    </MedienLiveKontext.Provider>
   );
 }

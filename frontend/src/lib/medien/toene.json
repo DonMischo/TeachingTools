@@ -1,0 +1,16 @@
+{
+  "mixtape": {
+    "datei": "/medien/ton/mixtape.mp3",
+    "titel": "Steve Combs - 02 - News Breaks And Shortly After So Do I The Pop Song",
+    "urheber": "Steve Combs",
+    "lizenz": "CC BY 4.0",
+    "quelle": "https://commons.wikimedia.org/wiki/File:Steve_Combs_-_02_-_News_Breaks_And_Shortly_After_So_Do_I_The_Pop_Song.ogg"
+  },
+  "schellack": {
+    "datei": "/medien/ton/schellack.mp3",
+    "titel": "\"Marching Through Georgia\" by Henry C. Work – sung by Harlan & Stanley (1904)",
+    "urheber": "Byron G. Harlan and Frank C. Stanley",
+    "lizenz": "Public domain",
+    "quelle": "https://commons.wikimedia.org/wiki/File:%22Marching_Through_Georgia%22_by_Henry_C._Work_%E2%80%93_sung_by_Harlan_%26_Stanley_(1904).ogg"
+  }
+}

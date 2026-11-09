@@ -47,7 +47,8 @@ export const PROFIL_ACHSEN: { id: keyof Profil; name: string; icon: string; frag
 export interface Frage { text: string; optionen: string[]; richtig: number; erklaerung: string }
 export interface Flop { lebte: string; warum: string; grabspruch: string }
 export type DemoId = "hieroglyphen" | "keilschrift" | "quipu" | "leuchtfeuer" | "setzkasten" | "chappe" | "morse" | "fax"
-  | "waehlscheibe" | "platte" | "kassette" | "diskette" | "sms" | "belichtung";
+  | "waehlscheibe" | "platte" | "kassette" | "diskette" | "sms" | "belichtung"
+  | "satellit" | "modem" | "pager" | "hoehlenwand";
 
 export interface Medium {
   id: string;
@@ -84,7 +85,7 @@ const MIN = 60, STD = 3600, TAG = 86400;
 const ROH: Medium[] = [
   // ───────────── Urzeit ─────────────
   {
-    id: "hoehle", name: "Höhlenmalerei", icon: "🦬", jahr: -40000, jahrText: "vor über 40 000 Jahren", epoche: "urzeit", art: "Bild", unsicher: true,
+    id: "hoehle", name: "Höhlenmalerei", icon: "🦬", jahr: -40000, jahrText: "vor über 40 000 Jahren", epoche: "urzeit", art: "Bild", demo: "hoehlenwand", unsicher: true,
     kurz: "Bilder an der Felswand — die ältesten Botschaften, die wir noch lesen können.",
     geschichte: "In Höhlen in Indonesien, Spanien und Frankreich (Lascaux, Chauvet) malten Menschen Tiere, Jagdszenen und Hände. Die Farben waren Ocker, Holzkohle und Tierfett. Wir wissen nicht genau, wozu: Jagdzauber, Unterricht, Erzählung — vielleicht alles.",
     besser: "Zum ersten Mal überlebt eine Botschaft ihren Absender: Das Bild ist noch da, wenn der Maler längst tot ist — bis heute, Zehntausende Jahre.",
@@ -572,7 +573,7 @@ const ROH: Medium[] = [
     frage: { text: "Warum floppte das Bildtelefon zuerst?", optionen: ["Bilder brauchen viel mehr Daten, als die Leitungen damals schafften", "Niemand hatte Augen", "Es war verboten"], richtig: 0, erklaerung: "Bilder sind Datenmassen. Ein Medium setzt sich oft erst durch, wenn der »Transportweg« dick genug ist." },
   },
   {
-    id: "satellit", name: "Nachrichtensatellit", icon: "🛰️", jahr: 1962, jahrText: "1962, Telstar", epoche: "modern", art: "Signal", dauer1000km: 0.3,
+    id: "satellit", name: "Nachrichtensatellit", icon: "🛰️", jahr: 1962, jahrText: "1962, Telstar", epoche: "modern", art: "Signal", demo: "satellit", dauer1000km: 0.3,
     kurz: "Ein Spiegel im Weltall wirft Fernsehbilder über den Ozean.",
     geschichte: "Am 10. Juli 1962 startete Telstar, und zum ersten Mal gingen Live-Fernsehbilder über den Atlantik. Weil Telstar die Erde schnell umkreiste, ging das nur etwa 20 Minuten pro Umlauf. Heute stehen Satelliten in 36 000 km Höhe scheinbar fest über einem Punkt — und Tausende kleine Satelliten bringen Internet aufs Land und aufs Meer.",
     besser: "Über Ozeane, Wüsten und Gebirge ohne Kabel — live für die ganze Welt.",
@@ -720,7 +721,7 @@ const ROH: Medium[] = [
     frage: { text: "Was änderte das Handy beim Telefonieren grundlegend?", optionen: ["Man ruft eine Person an, nicht einen Ort", "Gespräche wurden länger", "Man konnte Briefe faxen"], richtig: 0, erklaerung: "Die Nachricht findet den Menschen, wo er gerade ist. Vorher klingelte ein Telefon im Flur, und vielleicht war niemand da." },
   },
   {
-    id: "www", name: "World Wide Web", icon: "🌐", jahr: 1991, jahrText: "1989 Idee, 1991 öffentlich", epoche: "digital", art: "Daten", dauer1000km: 0.05,
+    id: "www", name: "World Wide Web", icon: "🌐", jahr: 1991, jahrText: "1989 Idee, 1991 öffentlich", epoche: "digital", art: "Daten", demo: "modem", dauer1000km: 0.05,
     kurz: "Seiten mit Links — und jeder darf welche machen.",
     geschichte: "Tim Berners-Lee arbeitete am Forschungszentrum CERN bei Genf und wollte, dass Forschende ihre Dokumente leicht teilen. 1989 schlug er Webseiten mit Links (HTML), Adressen (URLs) und Browser vor, 1991 ging das Web öffentlich. CERN gab es 1993 frei für alle. Erst per Modem über die Telefonleitung, heute per Glasfaser und Funk.",
     besser: "Alles auf einmal: Text, Bild, Ton, Video — weltweit, sofort, gespeichert, für alle, und jeder kann selbst veröffentlichen.",
@@ -769,7 +770,7 @@ const ROH: Medium[] = [
     frage: { text: "Was hat die MiniDisc verdrängt?", optionen: ["MP3-Dateien, die auf jedem Computer liefen", "Die Schallplatte", "Das Radio"], richtig: 0, erklaerung: "Daten, die nicht an ein Gerät gebunden sind, gewinnen: Eine MP3-Datei läuft überall." },
   },
   {
-    id: "pager", name: "Pager (»Piepser«)", icon: "📟", jahr: 1990, jahrText: "Massenmarkt 1990er", epoche: "digital", art: "Zeichen",
+    id: "pager", name: "Pager (»Piepser«)", icon: "📟", jahr: 1990, jahrText: "Massenmarkt 1990er", epoche: "digital", art: "Zeichen", demo: "pager",
     kurz: "Ein Gerät, das nur eines kann: piepen und eine Nummer zeigen.",
     geschichte: "Pager empfangen kurze Funknachrichten — erst nur eine Rückrufnummer, später Text. In den 1990ern waren sie bei Jugendlichen kurz Kult, weil sie billiger als Handys waren. Wer angepiept wurde, suchte die nächste Telefonzelle.",
     besser: "Erreichbar sein für wenig Geld, mit sehr zuverlässigem Funk.",

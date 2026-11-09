@@ -162,6 +162,8 @@ export const REGISTER: WerkzeugQuellen[] = [
       { quelle: "Wikimedia Commons", urheber: "verschiedene (Nachweis an jedem Bild)", lizenz: "gemeinfrei, CC0, CC BY, CC BY-SA", url: "https://commons.wikimedia.org/", verwendung: "93 Fotos der Galerie, verkleinert; Urheber und Lizenz in src/lib/medien/bilder.json und unter jedem Bild" },
       { quelle: "Egyptian Hieroglyphs (Unicode-Block U+13000)", lizenz: "Unicode-Zeichen, Darstellung über die Systemschrift (Segoe UI Historic bzw. Noto Sans Egyptian Hieroglyphs)", verwendung: "Namen in Hieroglyphen (Einkonsonantenzeichen nach Gardiner, vereinfacht)" },
       { quelle: "»Alle meine Entchen«", lizenz: "Volkslied, gemeinfrei", verwendung: "Melodie im Plattenspieler-Demo" },
+      { quelle: "»News Breaks And Shortly After So Do I The Pop Song« (Wikimedia Commons)", urheber: "Steve Combs", lizenz: "CC BY 4.0", url: "https://commons.wikimedia.org/wiki/File:Steve_Combs_-_02_-_News_Breaks_And_Shortly_After_So_Do_I_The_Pop_Song.ogg", verwendung: "Musik auf der Kassette (als MP3, Tempo schwankt absichtlich)" },
+      { quelle: "»Marching Through Georgia« (1904, Wikimedia Commons)", urheber: "Byron G. Harlan und Frank C. Stanley", lizenz: "gemeinfrei", url: "https://commons.wikimedia.org/wiki/File:%22Marching_Through_Georgia%22_by_Henry_C._Work_%E2%80%93_sung_by_Harlan_%26_Stanley_(1904).ogg", verwendung: "Schellackplatte im Plattenspieler-Demo" },
     ],
     literatur: [
       "Hörisch, J. (2004): Eine Geschichte der Medien. Von der Oblate zum Internet. Frankfurt a. M.: Suhrkamp.",

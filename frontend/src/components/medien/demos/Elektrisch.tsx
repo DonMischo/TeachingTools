@@ -2,7 +2,10 @@
 /** Mitmach-Demos mit Strom: Morsetaste, Fax, Wählscheibe, Plattenspieler */
 import { useEffect, useRef, useState } from "react";
 import { MORSE, ausMorse, ausLauflaengen, lauflaengen, zeichenAusDauer, zuMorse } from "@/lib/medien/codes";
-import { dauerton, ton } from "./ton";
+import TOENE from "@/lib/medien/toene.json";
+import { useMedienLiveKontext } from "@/lib/medien/live";
+import { SendenLeiste } from "./Live";
+import { dauerton, klingeln, ton } from "./ton";
 
 // ── Morsetaste ──
 const PUNKT = 0.09;
@@ -15,7 +18,7 @@ function spieleMorse(code: string) {
   }
 }
 
-export function MorseDemo() {
+export function MorseDemo({ an, antwortAuf }: { an?: string; antwortAuf?: string } = {}) {
   const [zeichen, setZeichen] = useState("");
   const [text, setText] = useState("");
   const [gedrueckt, setGedrueckt] = useState(false);
@@ -69,7 +72,8 @@ export function MorseDemo() {
           {Object.entries(MORSE).map(([k, v]) => <div key={k} className="rounded bg-surface-hover px-1.5 py-1"><b>{k}</b> {v.replace(/\./g, "·").replace(/-/g, "−")}</div>)}
         </div>
       )}
-      <p className="text-xs text-muted">Gedrückt halten: kurz unter ¼ Sekunde ist ein Punkt, länger ein Strich. Eine Pause beendet den Buchstaben. Auch mit der Leertaste.</p>
+      <SendenLeiste art="morse" inhalt={() => ({ code: zuMorse(text) })} bereit={text.trim().length > 0} an={an} antwortAuf={antwortAuf} nachSenden={() => setText("")} />
+      <p className="text-xs text-muted">Gedrückt halten: kurz unter ¼ Sekunde ist ein Punkt, länger ein Strich. Eine Pause beendet den Buchstaben. Auch mit der Leertaste. Verschickt wird nur der Code — entschlüsseln muss der Empfänger.</p>
     </div>
   );
 }
@@ -81,7 +85,7 @@ const SMILEY = [
   "100000000001", "101000000101", "010110011010", "010001100010", "001100001100", "000011110000",
 ].map(z => [...z].map(Number) as (0 | 1)[]);
 
-export function FaxDemo() {
+export function FaxDemo({ an, antwortAuf }: { an?: string; antwortAuf?: string } = {}) {
   const [bild, setBild] = useState(SMILEY);
   const [zeile, setZeile] = useState(-1);
   const uhr = useRef<number | null>(null);
@@ -120,13 +124,16 @@ export function FaxDemo() {
         <button className="btn-secondary" onClick={() => { setBild(Array.from({ length: N }, () => Array(N).fill(0))); setZeile(-1); }}>Leeres Blatt</button>
         <span className="text-muted">{N * N} Kästchen, gesendet als {zahlen} Zahlen — gleiche Farben am Stück zu zählen spart Platz.</span>
       </div>
+      <SendenLeiste art="fax" inhalt={() => ({ zeilen: codes })} bereit={bild.some(r => r.some(Boolean))} an={an} antwortAuf={antwortAuf} />
     </div>
   );
 }
 
 // ── Wählscheibe ──
 const ZIFFERN = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
-export function WaehlscheibeDemo() {
+export function WaehlscheibeDemo({ an, antwortAuf }: { an?: string; antwortAuf?: string } = {}) {
+  const live = useMedienLiveKontext();
+  const [sagen, setSagen] = useState("");
   const [nummer, setNummer] = useState("");
   const [dreh, setDreh] = useState(0);
   const [rueck, setRueck] = useState(0.1);
@@ -140,7 +147,18 @@ export function WaehlscheibeDemo() {
     window.setTimeout(() => {
       setRueck(zurueck); setDreh(0);
       for (let k = 0; k <= i; k++) ton(420, 0.03, k * 0.1, "square", 0.05);
-      window.setTimeout(() => { setNummer(n => n + z); setZeit(t => t + 0.4 + zurueck); setAktiv(false); }, zurueck * 1000);
+      window.setTimeout(() => {
+        setNummer(n => {
+          const neu = n + z;
+          // In einer Sitzung: nach vier Ziffern klingelt es — oder die Ansage kommt
+          if (live && !an && neu.length === 4) {
+            if (live.spieler.some(s => s.nummer === neu)) klingeln(0.3);
+            else { ton(950, 0.33, 0.3); ton(1400, 0.33, 0.63); ton(1800, 0.33, 0.96); }
+          }
+          return neu;
+        });
+        setZeit(t => t + 0.4 + zurueck); setAktiv(false);
+      }, zurueck * 1000);
     }, 400);
   };
   const lage = (grad: number, r: number) => ({ x: Math.cos((grad * Math.PI) / 180) * r, y: Math.sin((grad * Math.PI) / 180) * r });
@@ -169,9 +187,30 @@ export function WaehlscheibeDemo() {
         <p>Klick eine Ziffer: Die Scheibe dreht bis zum Anschlag und läuft zurück. Beim Zurücklaufen klickt sie — einmal für die 1, zehnmal für die 0. Diese Klicks sind die Signale für die Vermittlung.</p>
         <p className="text-2xl font-mono font-black">{nummer || "—"}</p>
         <p className="text-muted">Wählzeit: {zeit.toFixed(1)} s{nummer.endsWith("0") && nummer.length > 3 ? " — Nullen sind am langsamsten. Telefonnummern mit vielen Nullen waren unbeliebt!" : ""}</p>
-        <button className="btn-secondary self-start" onClick={() => { setNummer(""); setZeit(0); }}>Auflegen</button>
+        <button className="btn-secondary self-start" onClick={() => { setNummer(""); setZeit(0); setSagen(""); }}>Auflegen</button>
+        {live && <Anruf live={live} nummer={nummer} an={an} antwortAuf={antwortAuf} sagen={sagen} setSagen={setSagen} />}
         <p className="text-xs text-muted">Wer sich verwählt hatte, musste auflegen und neu anfangen. Rückgängig gab es nicht.</p>
       </div>
+    </div>
+  );
+}
+
+/** Telefonieren in der Sitzung: Nummer wählen, dann sagen (tippen), was der andere hören soll */
+function Anruf({ live, nummer, an, antwortAuf, sagen, setSagen }: {
+  live: NonNullable<ReturnType<typeof useMedienLiveKontext>>; nummer: string; an?: string; antwortAuf?: string; sagen: string; setSagen: (s: string) => void;
+}) {
+  const ziel = an ? live.spieler.find(s => s.key === an) : live.spieler.find(s => s.nummer === nummer);
+  return (
+    <div className="rounded-xl border border-line p-2 flex flex-col gap-2 text-sm bg-surface">
+      <div className="text-xs">Deine Nummer: <b className="font-mono">{live.nummer ?? "…"}</b> · Telefonbuch: {live.spieler.length ? live.spieler.map(s => `${s.name} ${s.nummer}`).join(", ") : "noch niemand da"}</div>
+      {ziel ? (
+        <>
+          <p className="font-bold">{an ? `Rückruf an ${ziel.name}` : `Es klingelt bei ${ziel.name} …`} Was sagst du?</p>
+          <input className="input" value={sagen} maxLength={200} onChange={e => setSagen(e.target.value)} placeholder="Hallo, hier ist …" aria-label="Was du sagst" />
+          <SendenLeiste art="telefon" inhalt={() => ({ text: sagen })} bereit={sagen.trim().length > 0} an={ziel.key} antwortAuf={antwortAuf} nachSenden={() => setSagen("")} />
+        </>
+      ) : nummer.length >= 4 ? <p className="text-bad font-bold">»Kein Anschluss unter dieser Nummer.« Auflegen und neu wählen.</p>
+        : <p className="text-xs text-muted">Wähl die Nummer von jemandem aus dem Telefonbuch.</p>}
     </div>
   );
 }
@@ -184,6 +223,21 @@ const DREHZAHLEN = [{ rpm: 33, text: "33⅓ — LP" }, { rpm: 45, text: "45 — 
 export function PlatteDemo() {
   const [rpm, setRpm] = useState<number>(45);
   const [spielt, setSpielt] = useState(false);
+  const [echt, setEcht] = useState(false);
+  const platte = useRef<HTMLAudioElement | null>(null);
+  useEffect(() => () => platte.current?.pause(), []);
+  /** Echte Schellackplatte von 1904, aufgenommen mit 78 Umdrehungen — falsche Drehzahl = falsche Tonhöhe */
+  const schellack = () => {
+    if (echt) { platte.current?.pause(); setEcht(false); setSpielt(false); return; }
+    const a = platte.current ?? new Audio(TOENE.schellack.datei);
+    platte.current = a;
+    (a as HTMLAudioElement & { preservesPitch?: boolean }).preservesPitch = false;
+    a.playbackRate = (rpm === 33 ? 33.33 : rpm) / 78;
+    a.currentTime = 0;
+    a.onended = () => { setEcht(false); setSpielt(false); };
+    void a.play().then(() => { setEcht(true); setSpielt(true); }).catch(() => {});
+  };
+  useEffect(() => { if (platte.current) platte.current.playbackRate = (rpm === 33 ? 33.33 : rpm) / 78; }, [rpm]);
   const spiele = () => {
     const faktor = rpm / 45;
     const schlag = 0.28 / faktor;
@@ -216,9 +270,15 @@ export function PlatteDemo() {
         <div className="flex flex-wrap gap-2">
           {DREHZAHLEN.map(d => <button key={d.rpm} className={`chip ${rpm === d.rpm ? "chip-on" : ""}`} onClick={() => setRpm(d.rpm)}>{d.text}</button>)}
         </div>
-        <button className="btn-primary self-start" onClick={spiele} disabled={spielt}>▶ Nadel auflegen</button>
-        <p className="font-bold">{rpm === 45 ? "Genau richtig." : rpm > 45 ? "Mickymaus-Stimme! Zu schnell = zu hoch." : "Brummbär! Zu langsam = zu tief."}</p>
+        <div className="flex flex-wrap gap-2">
+          <button className="btn-primary" onClick={spiele} disabled={spielt}>▶ Nadel auflegen</button>
+          <button className="btn-secondary" onClick={schellack} disabled={spielt && !echt}>{echt ? "⏹ Stopp" : "🎙️ Echte Platte von 1904 (78er)"}</button>
+        </div>
+        <p className="font-bold">{echt
+          ? (rpm === 78 ? "Richtig: 78 Umdrehungen — so klang es 1904. Das Knistern ist echt." : "Falsche Drehzahl! Die Sänger klingen wie Brummbären — die Platte will 78.")
+          : rpm === 45 ? "Genau richtig." : rpm > 45 ? "Mickymaus-Stimme! Zu schnell = zu hoch." : "Brummbär! Zu langsam = zu tief."}</p>
         <p className="text-xs text-muted">Die Information steckt in der Rille: Wie sie wackelt, so wackelt die Nadel, so schwingt die Luft. Das Tempo des Abspielens muss zum Tempo der Aufnahme passen.</p>
+        <p className="text-[11px] text-muted">Aufnahme: <a className="underline" href={TOENE.schellack.quelle} target="_blank" rel="noreferrer">»Marching Through Georgia«</a>, gesungen von {TOENE.schellack.urheber} (1904), gemeinfrei.</p>
       </div>
     </div>
   );

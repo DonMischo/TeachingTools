@@ -250,7 +250,7 @@ export default function SimulationJoinPage() {
         : session.tool_slug === "stromkreis"
           ? <Stromkreis code={code} />
         : session.tool_slug === "medien"
-          ? <Medien speicher={auth ? "konto" : { code, token: guest.token }} />
+          ? <Medien speicher={auth ? "konto" : { code, token: guest.token }} live={{ code, token: auth ? null : guest.token }} />
         : session.tool_slug === "klikk"
           ? <Klikk zugang={{ code, token: auth ? null : guest.token }} konto={!!auth} />
         : session.tool_slug === "elemon"

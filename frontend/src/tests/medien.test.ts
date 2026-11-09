@@ -8,6 +8,7 @@ import { AUFTRAEGE, gabEs, punkteFuer, richtigPlatziert, sortierRunde } from "@/
 import { erreichbarBis, mitStation, sauber, vereinige } from "@/lib/medien/fortschritt";
 import { ausLauflaengen, ausMorse, buchstabe, inHieroglyphen, lauflaengen, quipuWert, tippZahl, zeichenAusDauer, zuMorse } from "@/lib/medien/codes";
 import { DEMOS } from "@/components/medien/demos";
+import { t9Code, t9Vorschlaege } from "@/lib/medien/t9";
 
 describe("Stationen der Zeitreise", () => {
   it("eindeutige Ids, chronologisch, vollständige Inhalte", () => {
@@ -123,6 +124,14 @@ describe("Codes der Demos", () => {
     expect(inHieroglyphen("Schmidt").map(g => g.laut)).toEqual(["sch", "m", "i", "d", "t"]);
     // doppelte Buchstaben nur einmal
     expect(inHieroglyphen("Anna").map(g => g.laut)).toEqual(["a", "n", "a"]);
+  });
+
+  it("T9: ein Druck pro Buchstabe, gleiche Folge = mehrere Wörter", () => {
+    expect(t9Code("hallo")).toBe("42556");
+    expect(t9Vorschlaege("42556")).toEqual(expect.arrayContaining(["hallo", "gallo"]));
+    expect(t9Code("gut")).toBe(t9Code("hut"));
+    expect(t9Code("schön")).toBe("72466");
+    expect(t9Vorschlaege("99")[0]).toHaveLength(2); // unbekannt: Buchstaben geraten
   });
 
   it("Quipu, Handy-Tasten, Fax", () => {

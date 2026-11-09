@@ -4,7 +4,7 @@
  * Übertragungs-Profil im Vergleich zur Station davor, Bildergeschichte
  * zur Bedienung, Mitmach-Demo, Kurioses — und die Frage, die weiterschaltet.
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PROFIL_ACHSEN, epoche, vorher, type Medium } from "@/lib/medien/medien";
 import { bilderZu, nachweisFuer } from "@/lib/medien/galerie";
 import { mitStation, type Aenderung } from "@/lib/medien/fortschritt";
@@ -126,10 +126,19 @@ function Profil({ m, davor, farbe }: { m: Medium; davor?: Medium; farbe: string 
   );
 }
 
+function mischen<T>(a: T[]): T[] {
+  const b = [...a];
+  for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; }
+  return b;
+}
+
 function Frage({ m, geschafft, aendere, weiter }: { m: Medium; geschafft: boolean; aendere: (a: Aenderung) => void; weiter?: () => void }) {
   const [falsch, setFalsch] = useState<number[]>([]);
   const [richtig, setRichtig] = useState(geschafft);
   const bilder = bilderZu(m.id);
+  // Antworten gemischt — in den Daten steht die richtige oft vorn. Erst nach dem Laden mischen (Server-Rendern kennt keinen Zufall).
+  const [reihe, setReihe] = useState(() => m.frage.optionen.map((_, i) => i));
+  useEffect(() => { setReihe(mischen(m.frage.optionen.map((_, i) => i))); }, [m.frage.optionen]);
   const antworte = (i: number) => {
     if (richtig) return;
     if (i === m.frage.richtig) { setRichtig(true); aendere(mitStation(m.id)); }
@@ -142,7 +151,8 @@ function Frage({ m, geschafft, aendere, weiter }: { m: Medium; geschafft: boolea
         <p className="text-sm mt-1 font-bold">{m.frage.text}</p>
       </div>
       <div className="grid sm:grid-cols-3 gap-2">
-        {m.frage.optionen.map((o, i) => {
+        {reihe.map(i => {
+          const o = m.frage.optionen[i];
           const istRichtig = richtig && i === m.frage.richtig, istFalsch = falsch.includes(i);
           return (
             <button key={i} onClick={() => antworte(i)} disabled={richtig || istFalsch}
