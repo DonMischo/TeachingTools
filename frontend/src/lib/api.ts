@@ -804,7 +804,7 @@ export type AuctionSetOut = {
 // ---------------------------------------------------------------------------
 
 export type ToolLink = {
-  type: "schreibraum" | "bingo" | "barometer" | "exit-ticket" | "classroom" | "caputh" | "zeitstrahl" | "auction" | "exitgame" | "link";
+  type: "schreibraum" | "bingo" | "barometer" | "exit-ticket" | "classroom" | "caputh" | "zeitstrahl" | "auction" | "exitgame" | "simulation" | "fragmente" | "link";
   ref_id: string | null;
   // Only for type "link": an arbitrary external URL opened directly.
   url?: string | null;

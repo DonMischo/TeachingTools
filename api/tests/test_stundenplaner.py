@@ -576,6 +576,46 @@ class TestToolRefs:
             assert isinstance(t["uses_class"], bool)
             assert isinstance(t["items"], list)
 
+    def test_simulation_lists_catalog_and_opens_page(self, client, teacher_token):
+        r = client.get("/api/stundenplaner/tool-refs", headers=_auth(teacher_token))
+        items = _items_for(r.json(), "simulation")
+        namen = [i["label"].split(" ", 1)[1] for i in items]
+        assert namen == sorted(namen, key=str.casefold)
+        sims = {i["ref_id"] for i in items}
+        assert {"dreiecke", "prozent", "stromkreis", "vierecke"} <= sims
+        # die alten Einzel-Einträge stehen nicht mehr in der Auswahl, starten aber weiter
+        assert "vierecke" not in {t["type"] for t in r.json()}
+        r = client.post("/api/stundenplaner/tools/vierecke/launch", json={}, headers=_auth(teacher_token))
+        assert r.json()["host_url"] == "/simulationen/vierecke"
+        r = client.post("/api/stundenplaner/tools/simulation/launch", json={"ref_id": "prozent"}, headers=_auth(teacher_token))
+        assert r.json()["host_url"] == "/simulationen/prozent"
+        r = client.post("/api/stundenplaner/tools/simulation/launch", json={"ref_id": "gibtsnicht"}, headers=_auth(teacher_token))
+        assert r.status_code == 404
+
+    def test_fragmente_lists_readable_boards_and_entries(self, client, db, teacher, teacher2, teacher_token):
+        from api.models import FragmentCollection, Fragment, ResearchItem
+
+        eigen = FragmentCollection(name="Bruchrechnen", owner_teacher_id=teacher.id)
+        fremd = FragmentCollection(name="Geheim", owner_teacher_id=teacher2.id)
+        db.add_all([eigen, fremd])
+        db.flush()
+        f = Fragment(collection_id=eigen.id, tab="snippets", title="Einstieg Pizza")
+        clip = ResearchItem(collection_id=eigen.id, tab="research", title="Erklärvideo", url="https://example.org/v")
+        db.add_all([f, clip])
+        db.commit()
+        r = client.get("/api/stundenplaner/tool-refs", headers=_auth(teacher_token))
+        items = {i["ref_id"]: i["label"] for i in _items_for(r.json(), "fragmente")}
+        assert f"c{eigen.id}" in items and f"c{fremd.id}" not in items
+        assert items[f"c{eigen.id}:f{f.id}"] == "Bruchrechnen › Einstieg Pizza"
+        assert "Erklärvideo" in items[f"c{eigen.id}:r{clip.id}"]
+
+        r = client.post("/api/stundenplaner/tools/fragmente/launch", json={"ref_id": f"c{eigen.id}:r{clip.id}"},
+                        headers=_auth(teacher_token))
+        assert r.json()["host_url"] == f"/fragmente/{eigen.id}?tab=research&eintrag=r{clip.id}"
+        r = client.post("/api/stundenplaner/tools/fragmente/launch", json={"ref_id": f"c{fremd.id}"},
+                        headers=_auth(teacher_token))
+        assert r.status_code == 404
+
     def test_classroom_always_present(self, client, teacher_token):
         r = client.get("/api/stundenplaner/tool-refs", headers=_auth(teacher_token))
         classroom = next(t for t in r.json() if t["type"] == "classroom")

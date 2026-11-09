@@ -8,8 +8,9 @@
  * Auf- und Zuklappen, Endfassung und Auswahl (Strg-Klick, für Strg+C/V und
  * Ziehen mehrerer Karten) stellt der Editor über `KartenAnsicht` bereit.
  */
+import { Verknuepfungen } from "./Verknuepfungen";
 import { createContext, useContext } from "react";
-import { NIVEAUS, NIVEAU_FARBE, gleichWie, gleicherText, karteText, wortDiff, type Index, type KarteMitPlan, type Niveau, type Paar, type Status, statusVon } from "@/lib/curriculum/modell";
+import { NIVEAUS, NIVEAU_FARBE, gleichWie, gleicherText, karteText, wortDiff, type Index, type KarteMitPlan, type Niveau, type Verknuepfung, type Paar, type Status, statusVon } from "@/lib/curriculum/modell";
 
 export const KartenAnsicht = createContext<{
   offen: (id: string) => boolean;
@@ -19,6 +20,8 @@ export const KartenAnsicht = createContext<{
   waehlen: (id: string, herkunft?: string) => void;
   /** ids, die ein Ziehen dieser Karte mitnimmt (die Auswahl, wenn sie dazugehört) */
   ziehen: (id: string, herkunft?: string) => string[];
+  /** Material einer Karte ändern; fehlt → nur lesen */
+  material?: (karte: KarteMitPlan, links: Verknuepfung[]) => void;
 }>({ offen: () => true, umschalten: () => {}, endfassung: false, gewaehlt: () => false, waehlen: () => {}, ziehen: id => [id] });
 
 export const STATUS_STIL: Record<Status, { name: string; cls: string }> = {
@@ -108,6 +111,7 @@ export function KarteBox({ karte, idx, niveaus, paar, woanders, onOpen, draggabl
         )}
         <span className="font-medium flex-1 min-w-0">{karte.titel ?? karte.id}</span>
         {woanders && <span className="text-[10px] text-violet-500">→ Kl. {karte.block === "9/10" && karte.klasse ? karte.klasse : karte.block}</span>}
+        {!!karte.links?.length && !auf && <span className="text-[10px] text-muted" title={karte.links.map(l => l.label).join(" · ")}>📎{karte.links.length}</span>}
         <StatusChip status={status} />
         {onLoesen && (
           <button className="text-muted hover:text-bad px-1" title="Aus dieser Zeile lösen"
@@ -136,6 +140,9 @@ export function KarteBox({ karte, idx, niveaus, paar, woanders, onOpen, draggabl
         );
       })}
       {auf && zeilen.length === 0 && <div className="text-muted italic">kein Text für die gewählten Niveaus</div>}
+      {auf && (!!karte.links?.length || ansicht.material) && !ansicht.endfassung && (
+        <div className="mt-1"><Verknuepfungen links={karte.links} klein onChange={ansicht.material && (links => ansicht.material!(karte, links))} /></div>
+      )}
       {auf && !ansicht.endfassung && p?.unterschied && karte.plan.rolle === "neu" && (
         <div className="mt-1 text-[11px] text-amber-600">⚑ {p.unterschied}</div>
       )}

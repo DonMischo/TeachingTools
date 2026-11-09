@@ -42,7 +42,12 @@ export type Karte = {
   voll?: Partial<Record<Niveau, string>>;
   /** Herkunft einer zusammengeführten Karte */
   quellen?: { rs?: string[]; gy?: string[] };
+  /** Material: Simulationen, Werkzeuge, Fragmente, Links (wie im Stundenplaner) */
+  links?: Verknuepfung[];
 };
+
+/** Entspricht ToolLink aus dem Stundenplaner (type = Registry-Typ oder "link"). */
+export type Verknuepfung = { type: string; ref_id: string | null; url?: string | null; label: string };
 
 export type Lehrplan = {
   id: string;
@@ -80,6 +85,7 @@ export type Thema = {
   /** Karten des NEUEN Lehrplans je Kompetenzniveau */
   zuordnung?: Partial<Record<Niveau, string[]>>;
   notiz?: string;
+  links?: Verknuepfung[];
 };
 
 export type Klasse = { klasse: number; wochen_verfuegbar: number; themen: Thema[] };
@@ -92,6 +98,8 @@ export type Vorlage = {
   lehrplaene: Lehrplan[];
   abgleich: Paar[];
   curriculum: { stand: string; klassen: Klasse[] };
+  /** Fragmente-Sammlung für »+ Material« (fehlt/null = alle lesbaren) */
+  sammlung?: number | null;
 };
 
 /** Leere Vorlage (wie leer() in api/curriculum_ops.py), z. B. für den KI-Prompt vor dem Anlegen. */
@@ -348,6 +356,7 @@ export function umkehrOps(vorher: Vorlage, ops: Op[]): Op[] | null {
     else if (o.op === "klasse") klassen.add(o.klasse as number);
   }
   const zurueck: Op[] = [];
+  if (ops.some(o => o.op === "sammlung")) zurueck.push({ op: "sammlung", id: vorher.sammlung ?? null });
   for (const [key, { lehrplan, id }] of karten) {
     const alt = kartenVorher.get(key);
     zurueck.push(alt ? { op: "karte", lehrplan, karte: alt } : { op: "karte_loeschen", lehrplan, id });

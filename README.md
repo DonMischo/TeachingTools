@@ -321,6 +321,7 @@ Das Lehrkraft-Werkzeugset. Standardmäßig nur für Lehrkräfte sichtbar.
 - Materialien anhängen; Office-Dateien werden per LibreOffice zusätzlich als PDF abgelegt
 - JSON-Import, Planungen mit Kolleginnen und Kollegen teilen
 - Je Phase bis zu 5 Methoden aus dem Methoden-Kompendium verknüpfen (Verweis öffnet die Methode)
+- Je Phase ein Werkzeug einbinden (`api/tool_registry.py`): Spiele und Umfragen, jede Simulation, Fragmente bis auf die einzelne Karte oder das Clipping (die Pinnwand öffnet sich im Tab des Eintrags und hebt ihn hervor) oder ein Link
 - Export als Dokument (PDF, Word, LaTeX) mit Inhaltsverzeichnis, Verlaufstabelle, Phasen im Detail samt Kompendium-Methoden und nummerierten Quellen; verknüpfte Caputh-, TaskCrawler- und Challenge-Inhalte erscheinen mit Aufgaben, Lösungen und ihrer Differenzierung (DDA-Stufen und Fuzzy-Regeln). Läuft über pandoc und LibreOffice (`api/stundenplan_export.py`)
 
 ### 📚 Methoden-Kompendium
@@ -334,6 +335,7 @@ Das Lehrkraft-Werkzeugset. Standardmäßig nur für Lehrkräfte sichtbar.
 - Schulinternes Curriculum gegen alten und neuen Lehrplan, dreispaltig je Klassenblock: alte Lehrplan-Karten | eigene Themen (G/R/H/LB/GE, Wochen) | neue Karten
 - Abgleich alt ↔ neu je Karte (identisch, geändert mit Wort-Diff, verschoben, neu, entfällt), getrennt für Real- und Hauptschulniveau; Konflikte am Thema, offene neue Inhalte je Block, Wochensumme gegen verfügbare Wochen
 - Themen per Ziehen zwischen Klassen verschieben, Karten zuordnen, fehlende Niveaus ergänzen; ein gemeinsamer Stand je Fachschaft (Änderungen per Operation, `api/curriculum_ops.py`), Gastbeitritt per QR
+- Material an Unterrichtseinheiten und Karten: Simulationen, Werkzeuge (TaskCrawler, Caputh …), Fragmente (Pinnwand, Karte, Clipping) und Links, dieselbe Auswahl wie im Stundenplaner; Werkzeuge mit Klassenbindung fragen beim Öffnen nach der Klasse. Je Plan lässt sich eine Fragmente-Sammlung festlegen, dann stehen nur deren Karten und Clippings zur Auswahl
 - Export der Endfassung als DOCX und PDF (A4 quer, alle Klassen oder eine) und als SVG je Klasse (`api/curriculum_export.py`; das DOCX wird direkt geschrieben, weil pandoc keine Zellfarben kann, das PDF macht LibreOffice daraus)
 - KI-Prompt für Lehrplanvergleich und Zuordnung; Vorlagen als JSON (`tt-curriculum/1`, Aufbau in `data/curriculum/SCHEMA.md`). Startvorlagen in `frontend/public/curriculum/`: Thüringer Mathe-Lehrpläne (RS 2011, GY 2018 → Erprobungsfassungen 2026, mit Abgleich; die neuen Pläne RS + GY zu einer dreifach differenzierten Karte je Kompetenz zusammengeführt, R/G nur mit ihrem Zusatz) Physik (RS + GY 2026, Kl. 7–10) und Medienbildung und Informatik (RS + GY 2026, Kl. 5–10), beide ohne alten Plan und mit leeren Unterrichtseinheiten je Lernbereich. Der KI-Prompt erfasst eine oder beide Schularten in einem JSON, mit oder ohne alten Plan
 

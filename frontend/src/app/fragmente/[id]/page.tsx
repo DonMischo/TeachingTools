@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   api, fragmentGuest, FragmentCollectionOut, FragmentOut, FragmentTabs,
@@ -483,7 +483,17 @@ export default function FragmentBoardPage() {
   // Guest mode: no logged-in user, but a collection-scoped guest token from a QR/link join.
   const guestToken = auth ? undefined : fragmentGuest.get(collectionId);
 
-  const [activeTab, setActiveTab] = useState<string>("snippets");
+  // Verknüpfung aus Stundenplaner/Curriculinator: ?tab=…&eintrag=f12 | r7 öffnet den Tab
+  // und hebt den Eintrag hervor.
+  const suche = useSearchParams();
+  const eintrag = suche.get("eintrag");
+  const [activeTab, setActiveTab] = useState<string>(suche.get("tab") || "snippets");
+  const gesprungen = useRef(false);
+  useEffect(() => {
+    if (!eintrag || gesprungen.current) return;
+    const el = document.querySelector(`[data-eintrag="${eintrag}"]`);
+    if (el) { el.scrollIntoView({ block: "center" }); gesprungen.current = true; }
+  });
   const [clippingModal, setClippingModal] = useState<null | { item: ResearchItemOut | null; tab?: string }>(null);
   const [view, setView] = useState<"grid" | "list" | "columns">("grid");
   const [dragId, setDragId] = useState<number | null>(null);
@@ -594,6 +604,9 @@ export default function FragmentBoardPage() {
   if (!collection) {
     return <div className="mx-auto max-w-md p-6 mt-10 text-center text-sm text-muted">Einen Moment …</div>;
   }
+
+  const markiert = (id: string, karte: React.ReactNode) =>
+    id === eintrag ? <div key={id} data-eintrag={id} className="rounded-xl ring-2 ring-accent">{karte}</div> : karte;
 
   const tabFragments = fragments.filter(f => effTab(f.tab) === activeTab);
   const tabResearch = research.filter(r => effTab(r.tab) === activeTab);
@@ -788,8 +801,8 @@ export default function FragmentBoardPage() {
                     <p className="text-[11px] text-muted text-center py-6">Leer</p>
                   ) : (
                     <>
-                      {colFrags.map(f => <FragmentCard key={`f${f.id}`} frag={f} layout="list" />)}
-                      {colRes.map(item => (
+                      {colFrags.map(f => markiert(`f${f.id}`, <FragmentCard key={`f${f.id}`} frag={f} layout="list" />))}
+                      {colRes.map(item => markiert(`r${item.id}`,
                         <ClippingCard key={`r${item.id}`} item={item} onEdit={() => item.can_edit && setClippingModal({ item })} />
                       ))}
                     </>
@@ -805,11 +818,11 @@ export default function FragmentBoardPage() {
         </p>
       ) : (
         <div className={view === "grid" ? "grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "flex flex-col gap-2"}>
-          {shownFragments.map(f => (
+          {shownFragments.map(f => markiert(`f${f.id}`,
             <FragmentCard key={`f${f.id}`} frag={f} layout={view === "grid" ? "grid" : "list"} canReorder={canManage}
               onDragStartCard={() => setDragId(f.id)} onDropCard={() => reorderTo(f.id)} />
           ))}
-          {shownResearch.map(item => (
+          {shownResearch.map(item => markiert(`r${item.id}`,
             <ClippingCard key={`r${item.id}`} item={item} onEdit={() => item.can_edit && setClippingModal({ item })} />
           ))}
         </div>

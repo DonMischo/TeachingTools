@@ -63,6 +63,14 @@ def test_thema_in_neue_klasse_legt_klasse_sortiert_an():
     assert [k["klasse"] for k in d["curriculum"]["klassen"]] == [4, 5, 6, 7]
 
 
+def test_sammlung_setzen_und_loeschen():
+    d = anwenden(_doc(), {"op": "sammlung", "id": 7})
+    assert d["sammlung"] == 7
+    assert anwenden(d, {"op": "sammlung", "id": None})["sammlung"] is None
+    with pytest.raises(OpFehler):
+        anwenden(d, {"op": "sammlung", "id": "x"})
+
+
 def test_anwenden_aendert_das_original_nicht():
     orig = _doc()
     anwenden(orig, {"op": "thema_loeschen", "id": "a"})

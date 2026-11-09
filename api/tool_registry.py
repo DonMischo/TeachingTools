@@ -15,6 +15,7 @@ launch context (the lesson plan's `klasse`, or the class picker on the
 tool's own page) and bind their session to it, so points earned by
 correctness are credited to that class.
 """
+import re
 from dataclasses import dataclass
 from typing import Callable
 
@@ -25,7 +26,7 @@ from sqlalchemy.orm import Session
 from .models import (
     Teacher, Class, Quiz, BingoSet, AuctionSet,
     BarometerSession, ExitTicketSession, SchreibraumRoom, SchreibraumAccess, ExitGame,
-    TimelineSet, ChallengeSet,
+    TimelineSet, ChallengeSet, FragmentCollection, Fragment, ResearchItem,
 )
 
 
@@ -44,6 +45,8 @@ class ToolDescriptor:
     uses_class: bool           # True → launch binds a class (points/access)
     list_refs: Callable[[Session, Teacher], list[dict]]
     launch: Callable[[Session, Teacher, "str | None", "str | None"], LaunchResult]
+    # False → startet noch (alte Verknüpfungen), steht aber nicht mehr in der Auswahl
+    waehlbar: bool = True
 
 
 def _parse_content_id(ref_id: str | None) -> int:
@@ -303,6 +306,65 @@ def _vierecke_launch(db: Session, teacher: Teacher, ref_id: str | None, klasse: 
     return LaunchResult(host_url="/simulationen/vierecke", join_url="/simulationen/vierecke", code=None)
 
 
+# ── simulation ────────────────────────────────────────────────────────────────
+# Alle Simulationen aus dem Katalog; ref_id = Slug, die Seite ist /simulationen/<slug>.
+
+def _simulation_refs(db: Session, teacher: Teacher) -> list[dict]:
+    from .tool_catalog import CATALOG
+    sims = [t for t in CATALOG if t.surface == "simulationen"]
+    # alphabetisch nach Namen, ohne das Emoji davor
+    sims.sort(key=lambda t: re.sub(r"^\W+", "", t.label).casefold())
+    return [{"ref_id": t.slug, "label": t.label} for t in sims]
+
+
+def _simulation_launch(db: Session, teacher: Teacher, ref_id: str | None, klasse: str | None) -> LaunchResult:
+    from .tool_catalog import CATALOG
+    if not any(t.slug == ref_id and t.surface == "simulationen" for t in CATALOG):
+        raise HTTPException(404, "Unbekannte Simulation")
+    url = f"/simulationen/{ref_id}"
+    return LaunchResult(host_url=url, join_url=url, code=None)
+
+
+# ── fragmente ─────────────────────────────────────────────────────────────────
+# Eine Pinnwand ("c<id>") oder ein Eintrag darin: Karte ("c<id>:f<id>") oder
+# Clipping ("c<id>:r<id>"). Geöffnet wird die Pinnwand im Tab des Eintrags,
+# der dort hervorgehoben wird.
+
+def _fragmente_refs(db: Session, teacher: Teacher) -> list[dict]:
+    from .fragment_access import resolve_permission, at_least
+    out: list[dict] = []
+    for c in db.query(FragmentCollection).order_by(FragmentCollection.name).all():
+        if not at_least(resolve_permission(teacher, c), "read"):
+            continue
+        out.append({"ref_id": f"c{c.id}", "label": f"🗂️ {c.name}"})
+        for f in db.query(Fragment).filter_by(collection_id=c.id).order_by(Fragment.tab, Fragment.order_index):
+            titel = f.title or ((f.content or "").strip().splitlines() or [""])[0][:60] or "(leere Karte)"
+            out.append({"ref_id": f"c{c.id}:f{f.id}", "label": f"{c.name} › {titel}"})
+        for r in db.query(ResearchItem).filter_by(collection_id=c.id).order_by(ResearchItem.created_at):
+            titel = r.title or r.url_title or r.url or "(Clipping)"
+            out.append({"ref_id": f"c{c.id}:r{r.id}", "label": f"{c.name} › ✂ {titel[:60]}"})
+    return out
+
+
+def _fragmente_launch(db: Session, teacher: Teacher, ref_id: str | None, klasse: str | None) -> LaunchResult:
+    from .fragment_access import resolve_permission, at_least
+    teile = (ref_id or "").split(":")
+    try:
+        cid = int(teile[0].removeprefix("c"))
+    except ValueError:
+        raise HTTPException(400, "Ungültige Fragmente-Referenz")
+    c = db.get(FragmentCollection, cid)
+    if not c or not at_least(resolve_permission(teacher, c), "read"):
+        raise HTTPException(404, "Pinnwand nicht gefunden")
+    url = f"/fragmente/{cid}"
+    if len(teile) > 1 and teile[1][:1] in ("f", "r"):
+        modell = Fragment if teile[1][0] == "f" else ResearchItem
+        eintrag = db.get(modell, int(teile[1][1:])) if teile[1][1:].isdigit() else None
+        if eintrag and eintrag.collection_id == cid:
+            url += f"?tab={eintrag.tab}&eintrag={teile[1]}"
+    return LaunchResult(host_url=url, join_url=None, code=None)
+
+
 # ── registry ──────────────────────────────────────────────────────────────────
 
 REGISTRY: dict[str, ToolDescriptor] = {
@@ -318,8 +380,12 @@ REGISTRY: dict[str, ToolDescriptor] = {
         ToolDescriptor("zeitstrahl", "📏 Zeitstrahl", True, False, _zeitstrahl_refs, _zeitstrahl_launch),
         ToolDescriptor("challenge", "⚔️ Challenge", True, False, _challenge_refs, _challenge_launch),
         ToolDescriptor("classroom", "🖥️ Classroom", False, False, _classroom_refs, _classroom_launch),
-        ToolDescriptor("bildformate", "🖼️ Bildformate", False, False, _bildformate_refs, _bildformate_launch),
-        ToolDescriptor("gleichungswaage", "⚖️ Gleichungswaage", False, False, _gleichungswaage_refs, _gleichungswaage_launch),
-        ToolDescriptor("vierecke", "📐 Vierecke", False, False, _vierecke_refs, _vierecke_launch),
+        ToolDescriptor("bildformate", "🖼️ Bildformate", False, False, _bildformate_refs, _bildformate_launch, waehlbar=False),
+        ToolDescriptor("gleichungswaage", "⚖️ Gleichungswaage", False, False, _gleichungswaage_refs, _gleichungswaage_launch, waehlbar=False),
+        ToolDescriptor("vierecke", "📐 Vierecke", False, False, _vierecke_refs, _vierecke_launch, waehlbar=False),
+        # Bildformate, Gleichungswaage und Vierecke stehen dort mit drin; ihre eigenen
+        # Einträge oben bleiben nur für ältere Phasen, die sie schon verknüpfen.
+        ToolDescriptor("simulation", "🔬 Simulation", True, False, _simulation_refs, _simulation_launch),
+        ToolDescriptor("fragmente", "🗂️ Fragmente", True, False, _fragmente_refs, _fragmente_launch),
     ]
 }

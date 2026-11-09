@@ -440,6 +440,7 @@ def tool_refs(
             "items": d.list_refs(db, teacher),
         }
         for d in REGISTRY.values()
+        if d.waehlbar
     ]
 
 

@@ -892,6 +892,7 @@ tools:
       - Materialien anhängen, Office-Dateien zusätzlich als PDF
       - JSON-Import, teilen
       - Methoden aus dem Kompendium je Phase verknüpfen
+      - Werkzeug je Phase einbinden: Spiele, Simulationen, Fragmente (auch einzelne Karte oder Clipping), Links
       - Export als PDF, Word, LaTeX mit Inhaltsverzeichnis und Quellen
       - Spielinhalte im Export mit Aufgaben, Lösungen und DDA-Differenzierung
   - id: kompendium
@@ -912,6 +913,7 @@ tools:
       - Konflikte am Thema, offene neue Inhalte je Klassenblock, Wochensumme je Klasse
       - Themen per Ziehen zwischen Klassen verschieben, Karten zuordnen, fehlende Niveaus ergänzen
       - KI-Prompt für Lehrplanvergleich und Zuordnung, JSON-Vorlage hoch- und herunterladen
+      - Material an Einheiten und Karten: Simulationen, Werkzeuge, Fragmente, Links
       - Export der Endfassung als DOCX, PDF (alle Klassen oder eine) und SVG je Klasse
       - gemeinsamer Stand der Fachschaft, Gastbeitritt per QR
   - id: snap

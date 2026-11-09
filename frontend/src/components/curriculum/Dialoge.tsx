@@ -14,6 +14,7 @@ import {
 } from "@/lib/curriculum/modell";
 import { antwortLesen, vergleichPrompt, zuordnungPrompt, type KiArt, type Schulart } from "@/lib/curriculum/kiPrompt";
 import { JsonEingabe } from "./JsonEingabe";
+import { Verknuepfungen } from "./Verknuepfungen";
 import { api, type CurriculumPlanOut } from "@/lib/api";
 
 type Op = Record<string, unknown>;
@@ -70,6 +71,10 @@ export function ThemaDialog({ thema, klasse, idx, onOps, onClose, nurLesen }: {
       ))}
       <label className="flex flex-col gap-1 mb-3"><span className="label">Notiz</span>
         <input className="input" value={t.notiz ?? ""} disabled={nurLesen} onChange={e => setT({ ...t, notiz: e.target.value })} /></label>
+      <div className="label mb-1">Material</div>
+      <div className="mb-3">
+        <Verknuepfungen links={t.links} klasse={kl} onChange={nurLesen ? undefined : links => setT({ ...t, links })} />
+      </div>
       <div className="label mb-1">Karten des alten Lehrplans</div>
       <div className="flex flex-wrap gap-1 mb-4">
         {t.karten.length === 0 && <span className="text-xs text-muted">keine — alte Karten in die Spalte ziehen</span>}
@@ -165,6 +170,9 @@ export function KarteDialog({ karte, idx, doc, onOps, onClose, nurLesen, zuordne
           ))}
         </details>
       )}
+
+      <div className="label mt-3 mb-1">Material</div>
+      <Verknuepfungen links={k.links} onChange={nurLesen ? undefined : links => setK({ ...k, links })} />
 
       {ps.length > 0 && <div className="label mt-3 mb-1">Abgleich</div>}
       {ps.map((p, i) => (

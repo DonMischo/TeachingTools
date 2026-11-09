@@ -19,14 +19,15 @@
  * Sekunden fragt die Seite, ob jemand anderes etwas geändert hat.
  */
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { api, type CurriculumPlanOut } from "@/lib/api";
+import { api, type CurriculumPlanOut, type FragmentCollectionOut } from "@/lib/api";
 import { useToast } from "@/contexts/ToastContext";
 import {
   BLOECKE, KLASSEN_JE_BLOCK, NIVEAUS, NIVEAU_FARBE, NIVEAU_NAME, OHNE_BEREICH, bereicheVon, einheitenAusLehrplan, entfernen, freieAlteKarten, gleichWie, schulartenVon, umkehrOps, index, loesen, nachBereich, neueId, niveauGilt,
   offeneKarten, themaSicht, wochenSumme, zuordnen,
-  type Block, type KarteMitPlan, type Klasse, type Niveau, type Thema,
+  type Block, type KarteMitPlan, type Klasse, type Niveau, type Thema, type Verknuepfung,
 } from "@/lib/curriculum/modell";
 import { KarteBox, KartenAnsicht, StatusChip } from "./KarteBox";
+import { MaterialSammlung, Verknuepfungen } from "./Verknuepfungen";
 import { ExportDialog, ImportDialog, KarteDialog, KiDialog, TeilenDialog, ThemaDialog } from "./Dialoge";
 
 type Op = Record<string, unknown>;
@@ -82,6 +83,7 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
   const [ausnahmen, setAusnahmen] = useState<Set<string>>(new Set());
   const [endfassung, setEndfassung] = useState(false);
   const [zuKlassen, setZuKlassen] = useState<Set<number>>(new Set());
+  const [sammlungen, setSammlungen] = useState<FragmentCollectionOut[] | null>(null);
   const [zuBloecke, setZuBloecke] = useState<Set<Block>>(new Set());
   // Auswahl per Strg-Klick — Schlüssel »<Einheit oder deck>|<Karte>«, damit Strg+X weiß, woraus es ausschneidet.
   // Strg+C/X merkt die Karten, Strg+V setzt sie in die Einheit der angeklickten Zelle.
@@ -108,6 +110,10 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
   const laeuft = useRef(false);
 
   const doc = plan.data;
+  // Fragmente-Sammlungen für die Auswahl »Material aus …« (nur Lehrkräfte)
+  useEffect(() => {
+    if (!guestToken) api.fragments.listCollections().then(setSammlungen, () => setSammlungen([]));
+  }, [guestToken]);
   const idx = useMemo(() => index(doc), [doc]);
   const nurLesen = !plan.darf_bearbeiten;
 
@@ -128,6 +134,14 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
     catch (e: any) { toast(e.message ?? "Speichern fehlgeschlagen", "error"); }
     finally { laeuft.current = false; }
   }, [plan.id, guestToken, toast]);
+  // Material direkt an der Karte ändern (aufgeklappte Karte, »+ Material«)
+  const ansichtMitMaterial = useMemo(() => ({
+    ...ansicht,
+    material: nurLesen ? undefined : (karte: KarteMitPlan, links: Verknuepfung[]) => {
+      const { plan, ...roh } = karte;
+      ops([{ op: "karte", lehrplan: plan.id, karte: { ...roh, links } }]);
+    },
+  }), [ansicht, nurLesen, ops]);
   const rueckgaengig = () => {
     const letzte = rueck.current.pop();
     setRueckAnzahl(rueck.current.length);
@@ -280,7 +294,8 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
     doc.curriculum.klassen.find(k => k.klasse === nr) ?? { klasse: nr, wochen_verfuegbar: 36, themen: [] };
 
   return (
-    <KartenAnsicht.Provider value={ansicht}>
+    <MaterialSammlung.Provider value={doc.sammlung ?? null}>
+    <KartenAnsicht.Provider value={ansichtMitMaterial}>
     <div className="flex flex-col gap-3">
       {/* Werkzeugleiste */}
       <div className="flex flex-wrap items-center gap-2 sticky top-0 z-30 bg-page py-2 border-b border-line">
@@ -333,6 +348,15 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
         <button className="btn-secondary text-sm" onClick={() => setOffen({ art: "ki" })} title="KI ordnet den Unterrichtseinheiten Lehrplan-Karten zu">🤖 KI-Zuordnung</button>
         {!nurLesen && <button className="btn-secondary text-sm" onClick={() => setOffen({ art: "import" })}>⬆ Hochladen</button>}
         {!nurLesen && <button className="btn-secondary text-sm" disabled={!rueckAnzahl} onClick={rueckgaengig} title="Letzte eigene Änderung rückgängig machen (Strg+Z)">↶ Rückgängig</button>}
+        {!nurLesen && !guestToken && (
+          <select className="input text-sm py-1 w-auto max-w-[14rem]" value={doc.sammlung ?? ""} title="Fragmente-Sammlung für »+ Material«: nur ihre Karten und Clippings stehen zur Auswahl"
+            aria-label="Fragmente-Sammlung für Material"
+            onChange={e => ops([{ op: "sammlung", id: e.target.value ? Number(e.target.value) : null }])}>
+            <option value="">🗂️ Material: alle Sammlungen</option>
+            {(sammlungen ?? []).map(c => <option key={c.id} value={c.id}>🗂️ {c.name}</option>)}
+            {doc.sammlung != null && !sammlungen?.some(c => c.id === doc.sammlung) && <option value={doc.sammlung}>🗂️ Sammlung {doc.sammlung}</option>}
+          </select>
+        )}
         <button className="btn-secondary text-sm" onClick={() => setOffen({ art: "export" })}>⬇ Export</button>
         {!guestToken && <button className="btn-secondary text-sm" onClick={() => setOffen({ art: "teilen" })}>👥 Teilen</button>}
       </div>
@@ -369,6 +393,7 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
       )}
     </div>
     </KartenAnsicht.Provider>
+    </MaterialSammlung.Provider>
   );
 
   // Render-Funktionen statt innerer Komponenten: sonst baut React die Zellen bei
@@ -485,6 +510,10 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
                     <span className="text-xs text-muted whitespace-nowrap">{t.wochen != null ? `${t.wochen.toLocaleString("de")} Wo.` : "? Wo."}</span>
                   </div>
                   {t.notiz && <div className="text-xs text-muted italic">{t.notiz}</div>}
+                  {(!!t.links?.length || !nurLesen) && (
+                    <div className="mt-1"><Verknuepfungen links={t.links} klasse={nr} klein
+                      onChange={nurLesen ? undefined : links => ops([{ op: "thema", klasse: nr, thema: { ...t, links } }])} /></div>
+                  )}
                   {s.konflikte.length > 0 && (
                     <details className="text-xs text-bad mt-1" onClick={e => e.stopPropagation()}>
                       <summary className="cursor-pointer">⚠ {s.konflikte.length} Konflikt{s.konflikte.length > 1 ? "e" : ""}</summary>

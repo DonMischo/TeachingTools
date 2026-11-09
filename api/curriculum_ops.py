@@ -168,6 +168,13 @@ def anwenden(doc: dict, op: dict) -> dict:
     elif art == "paar_loeschen":
         doc["abgleich"] = [p for p in doc["abgleich"] if p.get("id") != op.get("id")]
 
+    elif art == "sammlung":
+        # Fragmente-Sammlung, aus der »+ Material« Karten und Clippings anbietet (None = alle)
+        sid = op.get("id")
+        if sid is not None and (isinstance(sid, bool) or not isinstance(sid, int)):
+            raise OpFehler("Sammlung braucht eine Zahl oder null")
+        doc["sammlung"] = sid
+
     elif art == "import":
         _importieren(doc, op.get("daten"))
 
