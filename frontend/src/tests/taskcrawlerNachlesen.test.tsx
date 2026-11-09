@@ -39,6 +39,15 @@ describe("Krabbler: Sperre und Nachlesen", () => {
     ] as ExitGameSlide[];
     expect(letzteInfo(slides, "t1")).toBe("Brüche\n\nEin Bruch \\frac{a}{b} teilt.");
     expect(letzteInfo(slides, "t2")).toBe("3/4 von 8 sind 6.");
-    expect(letzteInfo(slides, "e1")).toBeUndefined();
+  });
+
+  it("letzteInfo: ohne Erklärung davor die Station selbst (Info und Frage auf einer Folie)", () => {
+    const slides = [
+      { id: "t1", type: "task", title: "Der Telegraf", text: "Morse sendete $1844$ die erste Nachricht." },
+      { id: "t2", type: "task" },
+    ] as ExitGameSlide[];
+    expect(letzteInfo(slides, "t1")).toBe("Der Telegraf\n\nMorse sendete 1844 die erste Nachricht.");
+    expect(letzteInfo(slides, "t2")).toBe("Der Telegraf\n\nMorse sendete 1844 die erste Nachricht.");
+    expect(letzteInfo([{ id: "t3", type: "task" }] as ExitGameSlide[], "t3")).toBeUndefined();
   });
 });

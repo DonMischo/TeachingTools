@@ -109,14 +109,18 @@ function mergeVariant(task: ExitGameTask, variantIdx: number | undefined): ExitG
 // assets/ folder of the uploaded ZIP, which the API serves per game.
 /**
  * Text der letzten Erklärung bzw. des letzten Beispiels vor dieser Folie —
- * die Krabbler zeigen ihn während der Sperre zum Nachlesen. Formel-Dollar weg.
+ * die Krabbler zeigen ihn während der Sperre zum Nachlesen. Gibt es keine,
+ * die Station selbst bzw. die letzte davor mit Text (manche Stationen bringen
+ * Info und Frage auf einer Folie). Formel-Dollar weg.
  */
 export function letzteInfo(slides: ExitGameSlide[], slideId: string): string | undefined {
-  for (let i = slides.findIndex(s => s.id === slideId) - 1; i >= 0; i--) {
+  const text = (s: ExitGameSlide) => [s.title, s.text].filter(Boolean).join("\n\n").replace(/\$\$?/g, "");
+  const ab = slides.findIndex(s => s.id === slideId);
+  for (let i = ab - 1; i >= 0; i--) {
     const s = slides[i];
-    if ((s.type === "explanation" || s.type === "example") && (s.title || s.text))
-      return [s.title, s.text].filter(Boolean).join("\n\n").replace(/\$\$?/g, "");
+    if ((s.type === "explanation" || s.type === "example") && (s.title || s.text)) return text(s);
   }
+  for (let i = ab; i >= 0; i--) if (slides[i].title || slides[i].text) return text(slides[i]);
   return undefined;
 }
 
