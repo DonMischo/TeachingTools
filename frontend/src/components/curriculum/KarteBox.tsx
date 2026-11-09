@@ -9,7 +9,7 @@
  * Ziehen mehrerer Karten) stellt der Editor über `KartenAnsicht` bereit.
  */
 import { createContext, useContext } from "react";
-import { NIVEAUS, NIVEAU_FARBE, gleicherText, karteText, wortDiff, type Index, type KarteMitPlan, type Niveau, type Paar, type Status, statusVon } from "@/lib/curriculum/modell";
+import { NIVEAUS, NIVEAU_FARBE, gleichWie, gleicherText, karteText, wortDiff, type Index, type KarteMitPlan, type Niveau, type Paar, type Status, statusVon } from "@/lib/curriculum/modell";
 
 export const KartenAnsicht = createContext<{
   offen: (id: string) => boolean;
@@ -125,6 +125,16 @@ export function KarteBox({ karte, idx, niveaus, paar, woanders, onOpen, draggabl
           </span>
         </div>
       ))}
+      {/* R/G ohne eigenen Zusatz: Hinweis statt Wiederholung */}
+      {auf && !nurNiveau && (["R", "G"] as Niveau[]).filter(n => niveaus.has(n) && !zeilen.includes(n)).map(n => {
+        const wie = gleichWie(karte, n);
+        return wie && (
+          <div key={`gleich-${n}`} className="flex gap-1 leading-snug mt-0.5 text-muted" title={`${n} verlangt hier nichts über ${wie} hinaus`}>
+            <span className="font-mono text-[10px] w-5 shrink-0">{n}</span>
+            <span className="italic">= wie {wie}</span>
+          </div>
+        );
+      })}
       {auf && zeilen.length === 0 && <div className="text-muted italic">kein Text für die gewählten Niveaus</div>}
       {auf && !ansicht.endfassung && p?.unterschied && karte.plan.rolle === "neu" && (
         <div className="mt-1 text-[11px] text-amber-600">⚑ {p.unterschied}</div>

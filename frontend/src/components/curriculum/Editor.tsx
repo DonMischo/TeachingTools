@@ -22,7 +22,7 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "rea
 import { api, type CurriculumPlanOut } from "@/lib/api";
 import { useToast } from "@/contexts/ToastContext";
 import {
-  BLOECKE, KLASSEN_JE_BLOCK, NIVEAUS, NIVEAU_FARBE, NIVEAU_NAME, OHNE_BEREICH, bereicheVon, einheitenAusLehrplan, entfernen, freieAlteKarten, schulartenVon, umkehrOps, index, loesen, nachBereich, neueId, niveauGilt,
+  BLOECKE, KLASSEN_JE_BLOCK, NIVEAUS, NIVEAU_FARBE, NIVEAU_NAME, OHNE_BEREICH, bereicheVon, einheitenAusLehrplan, entfernen, freieAlteKarten, gleichWie, schulartenVon, umkehrOps, index, loesen, nachBereich, neueId, niveauGilt,
   offeneKarten, themaSicht, wochenSumme, zuordnen,
   type Block, type KarteMitPlan, type Klasse, type Niveau, type Thema,
 } from "@/lib/curriculum/modell";
@@ -510,6 +510,18 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
                                 onOpen={() => setOffen({ art: "karte", karte: k })}
                                 onLoesen={nurLesen ? undefined : () => ops([{ op: "thema", klasse: nr, thema: loesen(t, k.id, n) }])} />
                             ))}
+                            {/* Karten darunter, die hier nichts dazulegen: »= H · Titel« bzw. »= R · Titel« */}
+                            {(n === "R" || n === "G") && [...new Set((n === "R" ? ["H"] : ["R", "H"]).flatMap(u => s.niveau[u as Niveau] ?? []))]
+                              .filter(k => sichtbar(k) && !(s.niveau[n] ?? []).includes(k))
+                              .map(k => ({ k, wie: gleichWie(k, n) }))
+                              .filter((x): x is { k: KarteMitPlan; wie: Niveau } => !!x.wie)
+                              .map(({ k, wie }) => (
+                                <div key={`gleich-${k.id}`} className="text-[11px] text-muted flex items-center gap-1 leading-snug"
+                                  title={`${k.titel ?? k.id}: ${n} verlangt nichts über ${wie} hinaus`}>
+                                  <span className="font-mono text-[10px] px-1 rounded text-white shrink-0" style={{ background: NIVEAU_FARBE[wie] }}>= {wie}</span>
+                                  <span className="truncate">{k.titel ?? k.id}</span>
+                                </div>
+                              ))}
                           </>
                         )}
                       </div>

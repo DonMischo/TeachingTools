@@ -8,7 +8,7 @@ import { useMemo, useRef, useState, type ReactNode } from "react";
 import { JoinQR } from "@/components/JoinQR";
 import { useLanUrl } from "@/hooks/useLanUrl";
 import {
-  BLOECKE, NIVEAUS, NIVEAU_NAME, STATUS, blockVon, einheitenAusLehrplan, nachImport, neueId, niveauGilt, nurLeereEinheiten, zuordnen,
+  BLOECKE, NIVEAUS, NIVEAU_NAME, STATUS, blockVon, einheitenAusLehrplan, nachImport, neueId, neuVerteilen, niveauGilt, nurLeereEinheiten, zielNiveaus, zuordnen,
   type Block, type Index, type KarteMitPlan,
   type Karte, type Paar, type Status, type Thema, type Vorlage,
 } from "@/lib/curriculum/modell";
@@ -110,10 +110,28 @@ export function KarteDialog({ karte, idx, doc, onOps, onClose, nurLesen, zuordne
       wohin = { kl, t: { id: neueId(doc, kl), titel: k.titel ?? "Neue Unterrichtseinheit", wochen: wochen === "" ? null : Number(wochen), inhalte: {}, karten: [], notiz: "" } };
     }
     // Zuordnen kopiert R nach H, wenn H fehlt — hier in die eigene Kartenänderung, damit Eingaben im Dialog bleiben.
-    if (wohin && plan.rolle === "neu" && niveaus.R && !niveaus.H && niveauGilt("H", wohin.kl)) niveaus.H = niveaus.R;
-    const ops: Op[] = [{ op: "karte", lehrplan: plan.id, karte: { ...k, niveaus } }];
+    if (wohin && plan.rolle === "neu" && !k.voll && niveaus.R && !niveaus.H && niveauGilt("H", wohin.kl)) niveaus.H = niveaus.R;
+    const gespeichert: Karte = { ...k, niveaus };
+    const ops: Op[] = [{ op: "karte", lehrplan: plan.id, karte: gespeichert }];
     ps.forEach((p, i) => { if (JSON.stringify(p) !== JSON.stringify(paare[i])) ops.push({ op: "paar", paar: p }); });
-    if (wohin) ops.push(...zuordnenOps(wohin.t, wohin.kl, [karte.id]).filter(o => o.op !== "karte"));
+    if (plan.rolle === "neu") {
+      // In allen Einheiten, in denen die Karte liegt, nach dem neuen Text auf G/R/H verteilen …
+      const themenNeu = new Map<string, { kl: number; t: Thema }>();
+      for (const kl of doc.curriculum.klassen) for (const t of kl.themen) {
+        const t2 = neuVerteilen(t, gespeichert, kl.klasse);
+        if (t2 !== t) themenNeu.set(t.id, { kl: kl.klasse, t: t2 });
+      }
+      // … und, falls gewählt, in die Ziel-Einheit dazu.
+      if (wohin) {
+        const basis = themenNeu.get(wohin.t.id)?.t ?? wohin.t;
+        const z = { ...(basis.zuordnung ?? {}) };
+        for (const n of zielNiveaus(gespeichert, wohin.kl)) if (!z[n]?.includes(karte.id)) z[n] = [...(z[n] ?? []), karte.id];
+        themenNeu.set(wohin.t.id, { kl: wohin.kl, t: { ...basis, zuordnung: z } });
+      }
+      for (const { kl, t } of themenNeu.values()) ops.push({ op: "thema", klasse: kl, thema: t });
+    } else if (wohin) {
+      ops.push(...zuordnenOps(wohin.t, wohin.kl, [karte.id]).filter(o => o.op !== "karte"));
+    }
     onOps(ops);
     onClose();
   };

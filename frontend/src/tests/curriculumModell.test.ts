@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  bereicheVon, einheitenAusLehrplan, entfernen, mitEinheiten, schulartenVon, umkehrOps, nachBereich, nurLeereEinheiten, woandersAls, freieAlteKarten, index, karteText, loesen, neueId, offeneKarten, statusVon, themaSicht, wochenSumme,
+  bereicheVon, einheitenAusLehrplan, entfernen, gleichWie, mitEinheiten, neuVerteilen, schulartenVon, umkehrOps, nachBereich, nurLeereEinheiten, woandersAls, freieAlteKarten, index, karteText, loesen, neueId, offeneKarten, statusVon, themaSicht, wochenSumme,
   wortDiff, zuordnen, type Vorlage,
 } from "@/lib/curriculum/modell";
 import { importOps } from "@/components/curriculum/Dialoge";
@@ -416,3 +416,35 @@ describe("Strg+Z: umkehrOps", () => {
   });
 });
 
+
+describe("gleichWie (Hinweis »= wie H«)", () => {
+  const k = (niveaus: object, voll?: object) => ({ id: "x", block: "7/8" as const, niveaus, voll } as any);
+  it("R gleich H, G gleich R oder H", () => {
+    expect(gleichWie(k({ H: "Brüche", R: "Brüche" }), "R")).toBe("H");
+    expect(gleichWie(k({ H: "Brüche", R: "auch gemischte" }), "R")).toBeNull();
+    // zusammengeführt: R und G ausgelassen, weil gleich
+    expect(gleichWie(k({ H: "Brüche" }, { H: "a", R: "a", G: "a" }), "R")).toBe("H");
+    expect(gleichWie(k({ H: "Brüche" }, { H: "a", R: "a", G: "a" }), "G")).toBe("H");
+    expect(gleichWie(k({ H: "Brüche", R: "auch gemischte" }, { H: "a", R: "b", G: "b" }), "G")).toBe("R");
+    expect(gleichWie(k({ H: "Brüche", G: "Doppelbrüche" }, { H: "a", G: "c" }), "G")).toBeNull();
+  });
+  it("kein Hinweis, wo die Karte nicht gilt", () => {
+    expect(gleichWie(k({ H: "Ohm", R: "Ohm" }), "G")).toBeNull();      // Regelschul-Karte
+    expect(gleichWie(k({ G: "Ohm" }), "R")).toBeNull();                 // Gymnasial-Karte
+    expect(gleichWie(k({ R: "nur R" }), "R")).toBeNull();               // ohne H
+  });
+});
+
+describe("neuVerteilen nach Kartenänderung", () => {
+  const t = (zuordnung: object) => ({ id: "u", titel: "U", wochen: null, inhalte: {}, karten: [], zuordnung } as any);
+  it("H vereinfacht, R bekommt den alten Text: Karte kommt zusätzlich in R", () => {
+    const k = { id: "m1", block: "5/6" as const, niveaus: { H: "einfache Brüche", R: "Brüche addieren" } };
+    expect(neuVerteilen(t({ H: ["m1"], LB: ["m1"] }), k, 5).zuordnung).toEqual({ H: ["m1"], R: ["m1"], LB: ["m1"] });
+  });
+  it("R wieder gleich H: Karte verlässt R; nicht eingeordnete Einheiten bleiben gleich", () => {
+    const k = { id: "m1", block: "5/6" as const, niveaus: { H: "Brüche", R: "Brüche" } };
+    expect(neuVerteilen(t({ H: ["m1"], R: ["m1", "x"] }), k, 5).zuordnung).toEqual({ H: ["m1"], R: ["x"] });
+    const ohne = t({ H: ["x"] });
+    expect(neuVerteilen(ohne, k, 5)).toBe(ohne);
+  });
+});

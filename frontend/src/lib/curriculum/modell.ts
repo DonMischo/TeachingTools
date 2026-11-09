@@ -227,6 +227,26 @@ export function gleicherText(a?: string, b?: string): boolean {
   return !!a && !!b && n(a) === n(b);
 }
 
+/**
+ * Gilt die Karte für Niveau R bzw. G, verlangt dort aber nichts über das Niveau
+ * darunter hinaus? Dann das Niveau, dem sie gleicht (»= wie H«), sonst null.
+ * Gilt die Karte für das Niveau gar nicht (Regelschul-Karte und G), auch null.
+ */
+export function gleichWie(k: Karte, n: Niveau): Niveau | null {
+  const { G: g, R: r, H: h } = k.niveaus;
+  if (n === "R") {
+    const gilt = !!(r || k.voll?.R);
+    return gilt && h && (!r || gleicherText(r, h)) ? "H" : null;
+  }
+  if (n === "G") {
+    const gilt = !!(g || k.voll?.G);
+    const rEigen = !!r && !gleicherText(r, h);
+    const darunter: Niveau | null = rEigen ? "R" : h ? "H" : r ? "R" : null;
+    return gilt && darunter && (!g || gleicherText(g, r ?? h)) ? darunter : null;
+  }
+  return null;
+}
+
 /** Schularten einer Karte — eine zusammengeführte (»RS+GY«) gehört zu denen, deren Niveaus sie hat. */
 export function schulartenVon(k: KarteMitPlan): Set<string> {
   if (k.plan.schulart !== "RS+GY") return new Set([k.plan.schulart]);
@@ -255,23 +275,42 @@ export function zuordnen(i: Index, thema: Thema, karteId: string, klasse: number
   const { plan, ...roh } = k;
   let karte: Karte | undefined;
   let h = k.niveaus.H;
-  const r = k.niveaus.R, g = k.niveaus.G;
+  const r = k.niveaus.R;
   if (r && !h && !k.voll && niveauGilt("H", klasse)) {
     h = r;
     karte = { ...roh, niveaus: { ...roh.niveaus, H: r } };
   }
-  let ziele: Niveau[] = [
-    ...(h ? ["H" as const] : []),
-    ...(r && !gleicherText(r, h) ? ["R" as const] : []),
-    ...(g && !gleicherText(g, r ?? h) ? ["G" as const] : []),
-  ].filter(n => niveauGilt(n, klasse));
-  if (!ziele.length) ziele = NIVEAUS.filter(n => k.niveaus[n] && niveauGilt(n, klasse)).slice(0, 1);
   const zuordnung = { ...(thema.zuordnung ?? {}) };
-  for (const n of ziele) {
+  for (const n of zielNiveaus({ ...roh, niveaus: { ...roh.niveaus, ...(h ? { H: h } : {}) } }, klasse)) {
     const liste = zuordnung[n] ?? [];
     if (!liste.includes(karteId)) zuordnung[n] = [...liste, karteId];
   }
   return { thema: { ...thema, zuordnung }, karte: karte && { lehrplan: plan.id, karte } };
+}
+
+/** Wohin eine Karte gehört: H als Basis, R und G nur mit eigenem Zusatz (Klasse 10 ohne H). */
+export function zielNiveaus(k: Karte, klasse: number): Niveau[] {
+  const { H: h, R: r, G: g } = k.niveaus;
+  const ziele: Niveau[] = [
+    ...(h ? ["H" as const] : []),
+    ...(r && !gleicherText(r, h) ? ["R" as const] : []),
+    ...(g && !gleicherText(g, r ?? h) ? ["G" as const] : []),
+  ].filter(n => niveauGilt(n, klasse));
+  return ziele.length ? ziele : NIVEAUS.filter(n => k.niveaus[n] && niveauGilt(n, klasse)).slice(0, 1);
+}
+
+/**
+ * Karte nach einer Textänderung in einer Unterrichtseinheit neu verteilen: aus
+ * G/R/H heraus und nach dem gespeicherten Text wieder hinein (LB/GE bleiben).
+ * Liegt die Karte in der Einheit gar nicht auf G/R/H, bleibt die Einheit gleich.
+ */
+export function neuVerteilen(thema: Thema, karte: Karte, klasse: number): Thema {
+  const z = thema.zuordnung ?? {};
+  if (!(["G", "R", "H"] as Niveau[]).some(n => z[n]?.includes(karte.id))) return thema;
+  const zuordnung: Partial<Record<Niveau, string[]>> = { ...z };
+  for (const n of ["G", "R", "H"] as Niveau[]) if (zuordnung[n]) zuordnung[n] = zuordnung[n]!.filter(x => x !== karte.id);
+  for (const n of zielNiveaus(karte, klasse)) zuordnung[n] = [...(zuordnung[n] ?? []), karte.id];
+  return { ...thema, zuordnung };
 }
 
 /** Karte ganz aus einer Unterrichtseinheit nehmen (alte Karten oben und alle Niveau-Zeilen) — für Strg+X. */
