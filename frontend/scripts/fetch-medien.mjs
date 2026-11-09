@@ -112,6 +112,25 @@ export const BILDER = {
   "digidoug": "DigiDoug DeepFake at TED2019.jpg",
   "papst-jacke": "Pope Francis in puffy winter jacket.jpg",
   "diffusion-schritte": "Stable Diffusion - Rhino X Y Plot to show different Steps.png",
+  // ── Projektoren, Kuriositäten, jüngere Medien ──
+  "laterna-projektion": "Neuenrade Laterna Magica Projektion.jpg",
+  "laterna-glasbilder": "Laterna Magica slides.jpg",
+  "litfasssaeule": "Düsseldorf, Litfaßsäule -- 2015 -- 8222.jpg",
+  "phonautograph": "Phonautograph 1859.jpg",
+  "hirmondo-stentor": "Telefon Hirmondo - Stentor reading the day's news.jpg",
+  "hirmondo-zuhause": "Telefon Hirmondo - Home subscriber (1901).jpg",
+  "polaroid-95": "Polaroid Land Camera Model 95 - MIT Museum - DSC03766.JPG",
+  "carousel": "Kodak Carousel 4400 projector with 140-slide tray.jpg",
+  "overhead": "Overhead Projector (Medium 2036).jpg",
+  "sasson": "Kodak Sasson BL.jpg",
+  "teletekst": "Start NOS Teletekst op VU Amsterdam Max Euwe (rechts) en prof RD vd Riet bij een beeldscherm.jpg",
+  "qr-schild": "SaniSale.com Quick Response code, Groningen (2019) 01.jpg",
+  "podcast-mikro": "Microphone in SPNN Podcast studio.jpg",
+  "whatsapp": "Whatsapp texting.jpg",
+  "echo-dot": "Amazon Echo Dot (virtual digital assistant) with normal coffee mug as size comparison.jpg",
+  "3d-brillen": "Barack and Michelle Obama looking the 2009 Superbowl with 3-D glasses.jpg",
+  "tiktok": "TikTok app.jpg",
+  "onlineteacher": "Onlineteacher.jpg",
 };
 
 if (process.argv[1]?.endsWith("fetch-medien.mjs")) {

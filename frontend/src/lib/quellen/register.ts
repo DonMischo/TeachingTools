@@ -159,7 +159,7 @@ export const REGISTER: WerkzeugQuellen[] = [
   {
     slug: "medien", name: "📜 Geschichte der Medien",
     eintraege: [
-      { quelle: "Wikimedia Commons", urheber: "verschiedene (Nachweis an jedem Bild)", lizenz: "gemeinfrei, CC0, CC BY, CC BY-SA", url: "https://commons.wikimedia.org/", verwendung: "93 Fotos der Galerie, verkleinert; Urheber und Lizenz in src/lib/medien/bilder.json und unter jedem Bild" },
+      { quelle: "Wikimedia Commons", urheber: "verschiedene (Nachweis an jedem Bild)", lizenz: "gemeinfrei, CC0, CC BY, CC BY-SA", url: "https://commons.wikimedia.org/", verwendung: "111 Fotos der Galerie, verkleinert; Urheber und Lizenz in src/lib/medien/bilder.json und unter jedem Bild" },
       { quelle: "Egyptian Hieroglyphs (Unicode-Block U+13000)", lizenz: "Unicode-Zeichen, Darstellung über die Systemschrift (Segoe UI Historic bzw. Noto Sans Egyptian Hieroglyphs)", verwendung: "Namen in Hieroglyphen (Einkonsonantenzeichen nach Gardiner, vereinfacht)" },
       { quelle: "»Alle meine Entchen«", lizenz: "Volkslied, gemeinfrei", verwendung: "Melodie im Plattenspieler-Demo" },
       { quelle: "»News Breaks And Shortly After So Do I The Pop Song« (Wikimedia Commons)", urheber: "Steve Combs", lizenz: "CC BY 4.0", url: "https://commons.wikimedia.org/wiki/File:Steve_Combs_-_02_-_News_Breaks_And_Shortly_After_So_Do_I_The_Pop_Song.ogg", verwendung: "Musik auf der Kassette (als MP3, Tempo schwankt absichtlich)" },

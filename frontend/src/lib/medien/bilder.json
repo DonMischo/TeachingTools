@@ -1,4 +1,12 @@
 {
+  "3d-brillen": {
+    "datei": "/medien/galerie/3d-brillen.webp",
+    "titel": "Barack and Michelle Obama looking the 2009 Superbowl with 3-D glasses.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Barack_and_Michelle_Obama_looking_the_2009_Superbowl_with_3-D_glasses.jpg",
+    "lizenz": "CC BY 2.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by/2.0",
+    "urheber": "Pete Souza"
+  },
   "akustikkoppler": {
     "datei": "/medien/galerie/akustikkoppler.webp",
     "titel": "Acoustic coupler-IMG 7282-7283.jpg",
@@ -50,6 +58,14 @@
     "lizenz": "CC BY-SA 3.0",
     "lizenzUrl": "https://creativecommons.org/licenses/by-sa/3.0",
     "urheber": "Infobroschüre des Bundesministerium für das Post- und Fernmeldewesen, Referat für Öffentlichkeitsarbeit, Juli 1985, S. 11.jpg"
+  },
+  "carousel": {
+    "datei": "/medien/galerie/carousel.webp",
+    "titel": "Kodak Carousel 4400 projector with 140-slide tray.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Kodak_Carousel_4400_projector_with_140-slide_tray.jpg",
+    "lizenz": "CC BY-SA 4.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "urheber": "Steve Morgan"
   },
   "cds": {
     "datei": "/medien/galerie/cds.webp",
@@ -157,6 +173,14 @@
     "lizenzUrl": "https://creativecommons.org/licenses/by/4.0",
     "urheber": "Joel Bellviure"
   },
+  "echo-dot": {
+    "datei": "/medien/galerie/echo-dot.webp",
+    "titel": "Amazon Echo Dot (virtual digital assistant) with normal coffee mug as size comparison.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Amazon_Echo_Dot_(virtual_digital_assistant)_with_normal_coffee_mug_as_size_comparison.jpg",
+    "lizenz": "CC BY-SA 4.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "urheber": "Pittigrilli"
+  },
   "emoji-ballen": {
     "datei": "/medien/galerie/emoji-ballen.webp",
     "titel": "Emoji bales (36765488293).jpg",
@@ -258,6 +282,20 @@
     "lizenzUrl": "https://creativecommons.org/licenses/by-sa/4.0",
     "urheber": "Barnards.tar.gz"
   },
+  "hirmondo-stentor": {
+    "datei": "/medien/galerie/hirmondo-stentor.webp",
+    "titel": "Telefon Hirmondo - Stentor reading the day's news.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Telefon_Hirmondo_-_Stentor_reading_the_day%27s_news.jpg",
+    "lizenz": "Public domain",
+    "urheber": "World's Work"
+  },
+  "hirmondo-zuhause": {
+    "datei": "/medien/galerie/hirmondo-zuhause.webp",
+    "titel": "Telefon Hirmondo - Home subscriber (1901).jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Telefon_Hirmondo_-_Home_subscriber_(1901).jpg",
+    "lizenz": "Public domain",
+    "urheber": "Article author is Leopold Katscher"
+  },
   "ibm-simon": {
     "datei": "/medien/galerie/ibm-simon.webp",
     "titel": "IBM Simon Personal Communicator (1993) - the first smartphone - Computer History Museum.jpg",
@@ -341,6 +379,22 @@
     "lizenzUrl": "https://creativecommons.org/licenses/by/2.0",
     "urheber": "Windell Oskay"
   },
+  "laterna-glasbilder": {
+    "datei": "/medien/galerie/laterna-glasbilder.webp",
+    "titel": "Laterna Magica slides.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Laterna_Magica_slides.jpg",
+    "lizenz": "CC BY 4.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by/4.0",
+    "urheber": "Sammlung der Medien und Wissenschaft"
+  },
+  "laterna-projektion": {
+    "datei": "/medien/galerie/laterna-projektion.webp",
+    "titel": "Neuenrade Laterna Magica Projektion.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Neuenrade_Laterna_Magica_Projektion.jpg",
+    "lizenz": "CC BY-SA 3.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "urheber": "Michael Kramer"
+  },
   "lettern": {
     "datei": "/medien/galerie/lettern.webp",
     "titel": "Metal movable type.jpg",
@@ -356,6 +410,14 @@
     "lizenz": "CC BY-SA 4.0",
     "lizenzUrl": "https://creativecommons.org/licenses/by-sa/4.0",
     "urheber": "문화재청 (공공누리 제1유형)"
+  },
+  "litfasssaeule": {
+    "datei": "/medien/galerie/litfasssaeule.webp",
+    "titel": "Düsseldorf, Litfaßsäule -- 2015 -- 8222.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:D%C3%BCsseldorf,_Litfa%C3%9Fs%C3%A4ule_--_2015_--_8222.jpg",
+    "lizenz": "CC BY-SA 4.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "urheber": "Dietmar Rabich"
   },
   "magnetophon": {
     "datei": "/medien/galerie/magnetophon.webp",
@@ -424,6 +486,14 @@
     "lizenz": "Public domain",
     "urheber": "Michael Brandtner"
   },
+  "onlineteacher": {
+    "datei": "/medien/galerie/onlineteacher.webp",
+    "titel": "Onlineteacher.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Onlineteacher.jpg",
+    "lizenz": "CC BY 2.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by/2.0",
+    "urheber": "Phil Roeder from Des Moines, IA, USA"
+  },
   "orakelknochen": {
     "datei": "/medien/galerie/orakelknochen.webp",
     "titel": "Shang Ox Scapula Oracle Bones 1.jpg",
@@ -431,6 +501,14 @@
     "lizenz": "CC0",
     "lizenzUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
     "urheber": "Gary Lee Todd, Ph.D. Complete indexed photo collection at WorldHistoryPics.com."
+  },
+  "overhead": {
+    "datei": "/medien/galerie/overhead.webp",
+    "titel": "Overhead Projector (Medium 2036).jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Overhead_Projector_(Medium_2036).jpg",
+    "lizenz": "CC BY-SA 4.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "urheber": "CatalinaDurhan"
   },
   "pager": {
     "datei": "/medien/galerie/pager.webp",
@@ -475,6 +553,13 @@
     "lizenz": "Public domain",
     "urheber": "Hendrik Arent Hamaker"
   },
+  "phonautograph": {
+    "datei": "/medien/galerie/phonautograph.webp",
+    "titel": "Phonautograph 1859.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Phonautograph_1859.jpg",
+    "lizenz": "Public domain",
+    "urheber": "Édouard-Léon Scott de Martinville (1817–1879)"
+  },
   "phonograph": {
     "datei": "/medien/galerie/phonograph.webp",
     "titel": "Tinfoil phonograph, 1878, invented by Thomas Alva Edison - National Museum of American History - DSC06217.JPG",
@@ -491,6 +576,22 @@
     "lizenzUrl": "https://creativecommons.org/licenses/by-sa/4.0",
     "urheber": "DogsRNice"
   },
+  "podcast-mikro": {
+    "datei": "/medien/galerie/podcast-mikro.webp",
+    "titel": "Microphone in SPNN Podcast studio.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Microphone_in_SPNN_Podcast_studio.jpg",
+    "lizenz": "CC BY 4.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by/4.0",
+    "urheber": "Myotus"
+  },
+  "polaroid-95": {
+    "datei": "/medien/galerie/polaroid-95.webp",
+    "titel": "Polaroid Land Camera Model 95 - MIT Museum - DSC03766.JPG",
+    "seite": "https://commons.wikimedia.org/wiki/File:Polaroid_Land_Camera_Model_95_-_MIT_Museum_-_DSC03766.JPG",
+    "lizenz": "CC0",
+    "lizenzUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "urheber": "Daderot"
+  },
   "postkutsche": {
     "datei": "/medien/galerie/postkutsche.webp",
     "titel": "Georg Hemmrich Postkutsche in Tirol.jpg",
@@ -504,6 +605,14 @@
     "seite": "https://commons.wikimedia.org/wiki/File:Postreiter_1728.jpg",
     "lizenz": "Public domain",
     "urheber": "unbekannt"
+  },
+  "qr-schild": {
+    "datei": "/medien/galerie/qr-schild.webp",
+    "titel": "SaniSale.com Quick Response code, Groningen (2019) 01.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:SaniSale.com_Quick_Response_code,_Groningen_(2019)_01.jpg",
+    "lizenz": "CC BY-SA 4.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "urheber": "Donald Trung Quoc Don (Chữ Hán: 徵國單) - Wikimedia Commons.(Want to use this image?)"
   },
   "quipu": {
     "datei": "/medien/galerie/quipu.webp",
@@ -578,6 +687,14 @@
     "lizenz": "Public domain",
     "urheber": "Book: Sir Ernest Alfred Wallis (1857-1934) Photo: Donald Macbeth"
   },
+  "sasson": {
+    "datei": "/medien/galerie/sasson.webp",
+    "titel": "Kodak Sasson BL.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Kodak_Sasson_BL.jpg",
+    "lizenz": "CC BY-SA 4.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "urheber": "Bertrand Labévue"
+  },
   "seekabel-1858": {
     "datei": "/medien/galerie/seekabel-1858.webp",
     "titel": "H.M.S. Agamemnon Laying the Atlantic Telegraph Cable in 1858- a Whale Crosses the Line MET DP801262.jpg",
@@ -616,6 +733,14 @@
     "lizenz": "Public domain",
     "urheber": "unbekannt"
   },
+  "teletekst": {
+    "datei": "/medien/galerie/teletekst.webp",
+    "titel": "Start NOS Teletekst op VU Amsterdam Max Euwe (rechts) en prof RD vd Riet bij een beeldscherm.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Start_NOS_Teletekst_op_VU_Amsterdam_Max_Euwe_(rechts)_en_prof_RD_vd_Riet_bij_een_beeldscherm.jpg",
+    "lizenz": "CC0",
+    "lizenzUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "urheber": "Koen Suyk / Anefo"
+  },
   "telharmonium": {
     "datei": "/medien/galerie/telharmonium.webp",
     "titel": "Teleharmonium1897.jpg",
@@ -630,6 +755,14 @@
     "lizenz": "CC BY 4.0",
     "lizenzUrl": "https://creativecommons.org/licenses/by/4.0",
     "urheber": "This file comes from Science Museum Collections, a website operated by Science Museum Group, a non-departmental public body in the UK. This tag does not indicate the copyright status of the attached w"
+  },
+  "tiktok": {
+    "datei": "/medien/galerie/tiktok.webp",
+    "titel": "TikTok app.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:TikTok_app.jpg",
+    "lizenz": "CC BY-SA 2.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "urheber": "Solen Feyissa"
   },
   "tomlinson": {
     "datei": "/medien/galerie/tomlinson.webp",
@@ -684,6 +817,14 @@
     "lizenz": "CC BY-SA 3.0",
     "lizenzUrl": "https://creativecommons.org/licenses/by-sa/3.0",
     "urheber": "Anna Gerdén"
+  },
+  "whatsapp": {
+    "datei": "/medien/galerie/whatsapp.webp",
+    "titel": "Whatsapp texting.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Whatsapp_texting.jpg",
+    "lizenz": "CC BY-SA 4.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "urheber": "Helar Lukats"
   },
   "wikipedia-2001": {
     "datei": "/medien/galerie/wikipedia-2001.webp",
