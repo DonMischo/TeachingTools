@@ -7,7 +7,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { element } from "@/lib/elemente";
-import { GRUPPEN, mischText, phaseVon, stoff, STOFFE, type Phase, type Stoff } from "@/lib/atome/stoffe";
+import { GRUPPEN, kugelFarbe, mischText, phaseVon, stoff, STOFFE, type Phase, type Stoff } from "@/lib/atome/stoffe";
 import {
   atomZahl, BREITE, einzelSzene, HOEHE, mischSzene, REAKTIONEN, reaktionsSzene, schritt, stoffZahl, zuende, zuendStelle,
   type Szene,
@@ -111,13 +111,15 @@ export default function Teilchenmodell() {
   const [T, setT] = useState(20);
   const [laufen, setLaufen] = useState(true);
   const [pfeile, setPfeile] = useState(false);
+  // »Kugeln«: das Teilchenmodell der Schule — ein Stoff, eine Kugelsorte. Sonst Moleküle aus Atomen.
+  const [kugeln, setKugeln] = useState(false);
   const [zeitlupe, setZeitlupe] = useState(1);
   const [, setTakt] = useState(0);
   const leinwand = useRef<HTMLCanvasElement>(null);
   const sz = useRef<Szene | null>(null);
   const start = useRef<Record<string, number>>({});
-  const opt = useRef({ laufen, pfeile, zeitlupe });
-  opt.current = { laufen, pfeile, zeitlupe };
+  const opt = useRef({ laufen, pfeile, zeitlupe, kugeln });
+  opt.current = { laufen, pfeile, zeitlupe, kugeln };
 
   const reaktion = REAKTIONEN.find(r => r.id === rid)!;
 
@@ -213,8 +215,22 @@ export default function Teilchenmodell() {
           ctx.strokeStyle = farben.muted; ctx.lineWidth = 1;
           ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.vx * 0.08, p.y - p.vy * 0.08); ctx.stroke();
         }
-        const cos = Math.cos(p.phi), sin = Math.sin(p.phi);
         const verkohlt = st.schmelz !== null && phaseVon(st, s.T) === "zersetzt";
+        if (opt.current.kugeln) {
+          // Eine Kugel je Teilchen, Farbe und Größe nach Stoff, mit etwas Glanz.
+          const g = ctx.createRadialGradient(p.x - st.r * 0.35, p.y - st.r * 0.35, st.r * 0.1, p.x, p.y, st.r);
+          g.addColorStop(0, "#ffffffcc");
+          g.addColorStop(0.35, verkohlt ? "#5b3a1a" : kugelFarbe(st));
+          g.addColorStop(1, verkohlt ? "#2a1a0a" : kugelFarbe(st));
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, st.r * 0.95, 0, Math.PI * 2);
+          ctx.fillStyle = g;
+          ctx.fill();
+          ctx.strokeStyle = "#0008"; ctx.lineWidth = 0.8;
+          ctx.stroke();
+          continue;
+        }
+        const cos = Math.cos(p.phi), sin = Math.sin(p.phi);
         for (const [sym, dx, dy, g] of form.atome) {
           const x = p.x + (dx * cos - dy * sin) * st.r, y = p.y + (dx * sin + dy * cos) * st.r;
           ctx.beginPath();
@@ -320,6 +336,14 @@ export default function Teilchenmodell() {
               ➶ Geschwindigkeit
             </button>
             <button onClick={neu} className="px-2 py-1 rounded-lg border border-line text-xs text-muted hover:text-fg">↺ neu</button>
+            <div className="inline-flex rounded-lg border border-line p-0.5" role="group" aria-label="Darstellung der Teilchen">
+              {([[true, "⚪ Kugeln"], [false, "⚛️ Atome"]] as const).map(([k, label]) => (
+                <button key={label} onClick={() => setKugeln(k)}
+                  className={`px-2 py-0.5 rounded-md text-xs ${kugeln === k ? "bg-accent text-accent-fg font-bold" : "text-muted hover:text-fg"}`}>
+                  {label}
+                </button>
+              ))}
+            </div>
             <label className="flex items-center gap-1 text-xs text-muted">
               Tempo
               <input type="range" min={0.1} max={1.5} step={0.1} value={zeitlupe} onChange={e => setZeitlupe(Number(e.target.value))}
@@ -327,6 +351,11 @@ export default function Teilchenmodell() {
             </label>
           </div>
 
+          <p className="text-[11px] text-muted -mt-1">
+            {kugeln
+              ? "Teilchenmodell: jeder Stoff besteht aus einer Sorte Kugeln — gleich innerhalb eines Stoffs, verschieden in Farbe und Größe zwischen Stoffen. Wie ein Teilchen gebaut ist, sagt das Modell nicht."
+              : "Atomdarstellung: jedes Teilchen zeigt seine Atome (Kugelfarben nach CPK) — Ionenverbindungen als abwechselnde Ionen."}
+          </p>
           {modus === "zustand" && (
             <>
               {GRUPPEN.map(g => (

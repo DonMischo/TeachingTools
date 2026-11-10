@@ -20,7 +20,7 @@ export type Stoff = {
   id: string;
   name: string;
   formel: string;
-  gruppe: "Metalle" | "Nichtmetalle" | "Verbindungen";
+  gruppe: "Metalle" | "Nichtmetalle" | "Anorganische Verbindungen" | "Organische Stoffe";
   /** °C; null = wird bei Normaldruck nie fest (Helium). */
   schmelz: number | null;
   /** °C; null = zersetzt sich vorher. */
@@ -90,28 +90,36 @@ export const STOFFE: Stoff[] = [
   { id: "c", name: "Kohlenstoff (Graphit)", formel: "C", gruppe: "Nichtmetalle", schmelz: 3642, siede: 3642, dichte: 2.26, masse: 12.0, art: "unpolar", r: 7, formen: [kugel("C")], hinweis: "Sublimiert bei Normaldruck: aus fest wird direkt gasförmig." },
 
   // ── Verbindungen ──
-  { id: "h2o", name: "Wasser", formel: "H2O", gruppe: "Verbindungen", schmelz: 0, siede: 100, dichte: 1.00, masse: 18.0, art: "polar", r: 7.5, formen: [{ atome: [["O", 0, -0.12, 0.78], ["H", -0.62, 0.42, 0.5], ["H", 0.62, 0.42, 0.5]] }] },
-  { id: "ethanol", name: "Ethanol (Alkohol)", formel: "C2H5OH", gruppe: "Verbindungen", schmelz: -114.1, siede: 78.4, dichte: 0.79, masse: 46.1, art: "beide", r: 9.5, formen: [{ atome: [["C", -0.62, 0.1, 0.48], ["C", 0, -0.18, 0.48], ["O", 0.6, 0.12, 0.44], ["H", 0.95, -0.2, 0.28]] }] },
-  { id: "methanol", name: "Methanol", formel: "CH3OH", gruppe: "Verbindungen", schmelz: -97.6, siede: 64.7, dichte: 0.79, masse: 32.0, art: "polar", r: 8.5, formen: [{ atome: [["C", -0.35, 0, 0.55], ["O", 0.35, 0, 0.5], ["H", 0.78, -0.35, 0.32]] }] },
-  { id: "aceton", name: "Aceton", formel: "C3H6O", gruppe: "Verbindungen", schmelz: -94.7, siede: 56.1, dichte: 0.79, masse: 58.1, art: "beide", r: 10, formen: [{ atome: [["C", -0.7, 0.25, 0.42], ["C", 0, 0, 0.45], ["C", 0.7, 0.25, 0.42], ["O", 0, -0.7, 0.42]] }] },
-  { id: "glycerin", name: "Glycerin", formel: "C3H8O3", gruppe: "Verbindungen", schmelz: 17.8, siede: 290, dichte: 1.26, masse: 92.1, art: "polar", r: 10.5, formen: [{ atome: [["C", -0.6, 0, 0.38], ["C", 0, 0.15, 0.38], ["C", 0.6, 0, 0.38], ["O", -0.6, -0.65, 0.34], ["O", 0, 0.8, 0.34], ["O", 0.6, -0.65, 0.34]] }] },
-  { id: "hexan", name: "Hexan (Benzin)", formel: "C6H14", gruppe: "Verbindungen", schmelz: -95.3, siede: 68.7, dichte: 0.66, masse: 86.2, art: "unpolar", r: 11, formen: [kette(6)] },
-  { id: "oel", name: "Speiseöl", formel: "C57H104O6", gruppe: "Verbindungen", schmelz: -10, siede: null, zersetzt: 300, dichte: 0.92, masse: 885, art: "unpolar", r: 12, formen: [kette(7, [["O", 0.2, 0.55, 0.3]])], hinweis: "Ein Gemisch aus Fetten — über etwa 300 °C (Rauchpunkt) zersetzt es sich, statt zu sieden." },
-  { id: "paraffin", name: "Kerzenwachs (Paraffin)", formel: "C25H52", gruppe: "Verbindungen", schmelz: 55, siede: 370, dichte: 0.90, masse: 352, art: "unpolar", r: 12, formen: [kette(8)] },
-  { id: "co2", name: "Kohlenstoffdioxid", formel: "CO2", gruppe: "Verbindungen", schmelz: -78.5, siede: -78.5, dichte: 1.56, masse: 44.0, art: "unpolar", r: 8.5, formen: [{ atome: [["O", -0.72, 0, 0.55], ["C", 0, 0, 0.58], ["O", 0.72, 0, 0.55]] }], hinweis: "Sublimiert bei Normaldruck: Trockeneis wird direkt zu Gas. Flüssig gibt es CO₂ nur unter Druck." },
-  { id: "nh3", name: "Ammoniak", formel: "NH3", gruppe: "Verbindungen", schmelz: -77.7, siede: -33.3, dichte: 0.68, masse: 17.0, art: "polar", r: 7.5, formen: [{ atome: [["N", 0, 0, 0.72], ["H", 0, -0.72, 0.42], ["H", -0.65, 0.42, 0.42], ["H", 0.65, 0.42, 0.42]] }] },
-  { id: "ch4", name: "Methan (Erdgas)", formel: "CH4", gruppe: "Verbindungen", schmelz: -182.5, siede: -161.5, dichte: 0.42, masse: 16.0, art: "unpolar", r: 7.5, formen: [{ atome: [["C", 0, 0, 0.62], ["H", -0.6, -0.6, 0.38], ["H", 0.6, -0.6, 0.38], ["H", -0.6, 0.6, 0.38], ["H", 0.6, 0.6, 0.38]] }] },
-  { id: "butan", name: "Butan (Feuerzeuggas)", formel: "C4H10", gruppe: "Verbindungen", schmelz: -138.3, siede: -0.5, dichte: 0.60, masse: 58.1, art: "unpolar", r: 10, formen: [kette(4)] },
-  { id: "hcl", name: "Chlorwasserstoff", formel: "HCl", gruppe: "Verbindungen", schmelz: -114.2, siede: -85.1, dichte: 1.19, masse: 36.5, art: "polar", r: 8, formen: [{ atome: [["H", -0.55, 0, 0.5], ["Cl", 0.22, 0, 0.82]] }] },
-  { id: "nacl", name: "Kochsalz", formel: "NaCl", gruppe: "Verbindungen", schmelz: 801, siede: 1465, dichte: 2.16, masse: 58.4, art: "ionisch", loeslichIn: "polar", loeslichkeit: 0.35, r: 8, formen: [ion("Na", "+", 0.75), ion("Cl", "−", 1)], hinweis: "Ein Ionengitter: Natrium-Ionen (+) und Chlorid-Ionen (−) wechseln sich ab." },
-  { id: "zucker", name: "Zucker (Saccharose)", formel: "C12H22O11", gruppe: "Verbindungen", schmelz: 186, siede: null, zersetzt: 186, dichte: 1.59, masse: 342.3, art: "polar", loeslichIn: "polar", loeslichkeit: 1.5, r: 11, formen: [{ atome: [...ring("C", 5, 0.5, 0.3).atome, ["O", 0, 0, 0.3], ["O", -0.85, 0.3, 0.26], ["O", 0.85, 0.3, 0.26]] }], hinweis: "Schmilzt nicht sauber, sondern karamellisiert und verkohlt ab etwa 186 °C." },
-  { id: "sio2", name: "Sand (Quarz)", formel: "SiO2", gruppe: "Verbindungen", schmelz: 1713, siede: 2950, dichte: 2.65, masse: 60.1, art: "polar", r: 8.5, formen: [{ atome: [["Si", 0, 0, 0.6], ["O", -0.7, 0.2, 0.42], ["O", 0.7, 0.2, 0.42]] }], hinweis: "Löst sich in Wasser nicht — es sinkt zu Boden." },
-  { id: "caco3", name: "Kalk (Calciumcarbonat)", formel: "CaCO3", gruppe: "Verbindungen", schmelz: null, siede: null, zersetzt: 825, dichte: 2.71, masse: 100.1, art: "ionisch", r: 9, formen: [ion("Ca", "2+", 0.8), { atome: [["C", 0, 0, 0.4], ["O", 0, -0.6, 0.38], ["O", -0.55, 0.35, 0.38], ["O", 0.55, 0.35, 0.38]], ladung: "2−" }] },
-  { id: "cao", name: "Branntkalk (Calciumoxid)", formel: "CaO", gruppe: "Verbindungen", schmelz: 2613, siede: 2850, dichte: 3.34, masse: 56.1, art: "ionisch", r: 8.5, formen: [ion("Ca", "2+", 0.8), ion("O", "2−", 0.9)] },
-  { id: "fes", name: "Eisensulfid", formel: "FeS", gruppe: "Verbindungen", schmelz: 1194, siede: null, zersetzt: 1194, dichte: 4.84, masse: 87.9, art: "ionisch", r: 8.5, formen: [ion("Fe", "2+", 0.8), ion("S", "2−", 1)] },
-  { id: "mgo", name: "Magnesiumoxid", formel: "MgO", gruppe: "Verbindungen", schmelz: 2852, siede: 3600, dichte: 3.58, masse: 40.3, art: "ionisch", r: 8, formen: [ion("Mg", "2+", 0.75), ion("O", "2−", 0.9)] },
-  { id: "cuo", name: "Kupferoxid", formel: "CuO", gruppe: "Verbindungen", schmelz: 1326, siede: null, zersetzt: 1326, dichte: 6.31, masse: 79.5, art: "ionisch", r: 8, formen: [ion("Cu", "2+", 0.75), ion("O", "2−", 0.9)] },
-  { id: "nh4cl", name: "Salmiak (Ammoniumchlorid)", formel: "NH4Cl", gruppe: "Verbindungen", schmelz: null, siede: null, zersetzt: 338, dichte: 1.53, masse: 53.5, art: "ionisch", loeslichIn: "polar", loeslichkeit: 0.35, r: 8.5, formen: [{ atome: [["N", 0, 0, 0.6], ["H", -0.55, -0.55, 0.32], ["H", 0.55, -0.55, 0.32], ["H", -0.55, 0.55, 0.32], ["H", 0.55, 0.55, 0.32]], ladung: "+" }, ion("Cl", "−", 1)] },
+  { id: "h2o", name: "Wasser", formel: "H2O", gruppe: "Anorganische Verbindungen", schmelz: 0, siede: 100, dichte: 1.00, masse: 18.0, art: "polar", r: 7.5, formen: [{ atome: [["O", 0, -0.12, 0.78], ["H", -0.62, 0.42, 0.5], ["H", 0.62, 0.42, 0.5]] }] },
+  { id: "ethanol", name: "Ethanol (Alkohol)", formel: "C2H5OH", gruppe: "Organische Stoffe", schmelz: -114.1, siede: 78.4, dichte: 0.79, masse: 46.1, art: "beide", r: 9.5, formen: [{ atome: [["C", -0.62, 0.1, 0.48], ["C", 0, -0.18, 0.48], ["O", 0.6, 0.12, 0.44], ["H", 0.95, -0.2, 0.28]] }] },
+  { id: "methanol", name: "Methanol", formel: "CH3OH", gruppe: "Organische Stoffe", schmelz: -97.6, siede: 64.7, dichte: 0.79, masse: 32.0, art: "polar", r: 8.5, formen: [{ atome: [["C", -0.35, 0, 0.55], ["O", 0.35, 0, 0.5], ["H", 0.78, -0.35, 0.32]] }] },
+  { id: "aceton", name: "Aceton", formel: "C3H6O", gruppe: "Organische Stoffe", schmelz: -94.7, siede: 56.1, dichte: 0.79, masse: 58.1, art: "beide", r: 10, formen: [{ atome: [["C", -0.7, 0.25, 0.42], ["C", 0, 0, 0.45], ["C", 0.7, 0.25, 0.42], ["O", 0, -0.7, 0.42]] }] },
+  { id: "glycerin", name: "Glycerin", formel: "C3H8O3", gruppe: "Organische Stoffe", schmelz: 17.8, siede: 290, dichte: 1.26, masse: 92.1, art: "polar", r: 10.5, formen: [{ atome: [["C", -0.6, 0, 0.38], ["C", 0, 0.15, 0.38], ["C", 0.6, 0, 0.38], ["O", -0.6, -0.65, 0.34], ["O", 0, 0.8, 0.34], ["O", 0.6, -0.65, 0.34]] }] },
+  { id: "hexan", name: "Hexan (Benzin)", formel: "C6H14", gruppe: "Organische Stoffe", schmelz: -95.3, siede: 68.7, dichte: 0.66, masse: 86.2, art: "unpolar", r: 11, formen: [kette(6)] },
+  { id: "oel", name: "Speiseöl", formel: "C57H104O6", gruppe: "Organische Stoffe", schmelz: -10, siede: null, zersetzt: 300, dichte: 0.92, masse: 885, art: "unpolar", r: 12, formen: [kette(7, [["O", 0.2, 0.55, 0.3]])], hinweis: "Ein Gemisch aus Fetten — über etwa 300 °C (Rauchpunkt) zersetzt es sich, statt zu sieden." },
+  { id: "paraffin", name: "Kerzenwachs (Paraffin)", formel: "C25H52", gruppe: "Organische Stoffe", schmelz: 55, siede: 370, dichte: 0.90, masse: 352, art: "unpolar", r: 12, formen: [kette(8)] },
+  { id: "co2", name: "Kohlenstoffdioxid", formel: "CO2", gruppe: "Anorganische Verbindungen", schmelz: -78.5, siede: -78.5, dichte: 1.56, masse: 44.0, art: "unpolar", r: 8.5, formen: [{ atome: [["O", -0.72, 0, 0.55], ["C", 0, 0, 0.58], ["O", 0.72, 0, 0.55]] }], hinweis: "Sublimiert bei Normaldruck: Trockeneis wird direkt zu Gas. Flüssig gibt es CO₂ nur unter Druck." },
+  { id: "nh3", name: "Ammoniak", formel: "NH3", gruppe: "Anorganische Verbindungen", schmelz: -77.7, siede: -33.3, dichte: 0.68, masse: 17.0, art: "polar", r: 7.5, formen: [{ atome: [["N", 0, 0, 0.72], ["H", 0, -0.72, 0.42], ["H", -0.65, 0.42, 0.42], ["H", 0.65, 0.42, 0.42]] }] },
+  { id: "ch4", name: "Methan (Erdgas)", formel: "CH4", gruppe: "Organische Stoffe", schmelz: -182.5, siede: -161.5, dichte: 0.42, masse: 16.0, art: "unpolar", r: 7.5, formen: [{ atome: [["C", 0, 0, 0.62], ["H", -0.6, -0.6, 0.38], ["H", 0.6, -0.6, 0.38], ["H", -0.6, 0.6, 0.38], ["H", 0.6, 0.6, 0.38]] }] },
+  { id: "butan", name: "Butan (Feuerzeuggas)", formel: "C4H10", gruppe: "Organische Stoffe", schmelz: -138.3, siede: -0.5, dichte: 0.60, masse: 58.1, art: "unpolar", r: 10, formen: [kette(4)] },
+  { id: "hcl", name: "Chlorwasserstoff", formel: "HCl", gruppe: "Anorganische Verbindungen", schmelz: -114.2, siede: -85.1, dichte: 1.19, masse: 36.5, art: "polar", r: 8, formen: [{ atome: [["H", -0.55, 0, 0.5], ["Cl", 0.22, 0, 0.82]] }] },
+  { id: "nacl", name: "Kochsalz", formel: "NaCl", gruppe: "Anorganische Verbindungen", schmelz: 801, siede: 1465, dichte: 2.16, masse: 58.4, art: "ionisch", loeslichIn: "polar", loeslichkeit: 0.35, r: 8, formen: [ion("Na", "+", 0.75), ion("Cl", "−", 1)], hinweis: "Ein Ionengitter: Natrium-Ionen (+) und Chlorid-Ionen (−) wechseln sich ab." },
+  { id: "zucker", name: "Zucker (Saccharose)", formel: "C12H22O11", gruppe: "Organische Stoffe", schmelz: 186, siede: null, zersetzt: 186, dichte: 1.59, masse: 342.3, art: "polar", loeslichIn: "polar", loeslichkeit: 1.5, r: 11, formen: [{ atome: [...ring("C", 5, 0.5, 0.3).atome, ["O", 0, 0, 0.3], ["O", -0.85, 0.3, 0.26], ["O", 0.85, 0.3, 0.26]] }], hinweis: "Schmilzt nicht sauber, sondern karamellisiert und verkohlt ab etwa 186 °C." },
+  { id: "sio2", name: "Sand (Quarz)", formel: "SiO2", gruppe: "Anorganische Verbindungen", schmelz: 1713, siede: 2950, dichte: 2.65, masse: 60.1, art: "polar", r: 8.5, formen: [{ atome: [["Si", 0, 0, 0.6], ["O", -0.7, 0.2, 0.42], ["O", 0.7, 0.2, 0.42]] }], hinweis: "Löst sich in Wasser nicht — es sinkt zu Boden." },
+  { id: "caco3", name: "Kalk (Calciumcarbonat)", formel: "CaCO3", gruppe: "Anorganische Verbindungen", schmelz: null, siede: null, zersetzt: 825, dichte: 2.71, masse: 100.1, art: "ionisch", r: 9, formen: [ion("Ca", "2+", 0.8), { atome: [["C", 0, 0, 0.4], ["O", 0, -0.6, 0.38], ["O", -0.55, 0.35, 0.38], ["O", 0.55, 0.35, 0.38]], ladung: "2−" }] },
+  { id: "cao", name: "Branntkalk (Calciumoxid)", formel: "CaO", gruppe: "Anorganische Verbindungen", schmelz: 2613, siede: 2850, dichte: 3.34, masse: 56.1, art: "ionisch", r: 8.5, formen: [ion("Ca", "2+", 0.8), ion("O", "2−", 0.9)] },
+  { id: "fes", name: "Eisensulfid", formel: "FeS", gruppe: "Anorganische Verbindungen", schmelz: 1194, siede: null, zersetzt: 1194, dichte: 4.84, masse: 87.9, art: "ionisch", r: 8.5, formen: [ion("Fe", "2+", 0.8), ion("S", "2−", 1)] },
+  { id: "mgo", name: "Magnesiumoxid", formel: "MgO", gruppe: "Anorganische Verbindungen", schmelz: 2852, siede: 3600, dichte: 3.58, masse: 40.3, art: "ionisch", r: 8, formen: [ion("Mg", "2+", 0.75), ion("O", "2−", 0.9)] },
+  { id: "cuo", name: "Kupferoxid", formel: "CuO", gruppe: "Anorganische Verbindungen", schmelz: 1326, siede: null, zersetzt: 1326, dichte: 6.31, masse: 79.5, art: "ionisch", r: 8, formen: [ion("Cu", "2+", 0.75), ion("O", "2−", 0.9)] },
+  { id: "nh4cl", name: "Salmiak (Ammoniumchlorid)", formel: "NH4Cl", gruppe: "Anorganische Verbindungen", schmelz: null, siede: null, zersetzt: 338, dichte: 1.53, masse: 53.5, art: "ionisch", loeslichIn: "polar", loeslichkeit: 0.35, r: 8.5, formen: [{ atome: [["N", 0, 0, 0.6], ["H", -0.55, -0.55, 0.32], ["H", 0.55, -0.55, 0.32], ["H", -0.55, 0.55, 0.32], ["H", 0.55, 0.55, 0.32]], ladung: "+" }, ion("Cl", "−", 1)] },
+  // ── weitere organische Stoffe ──
+  { id: "propan", name: "Propan", formel: "C3H8", gruppe: "Organische Stoffe", schmelz: -187.7, siede: -42.1, dichte: 0.58, masse: 44.1, art: "unpolar", r: 9, formen: [kette(3)], hinweis: "Flüssiggas für Grill und Campingkocher — unter Druck in der Flasche flüssig." },
+  { id: "pentan", name: "Pentan", formel: "C5H12", gruppe: "Organische Stoffe", schmelz: -129.7, siede: 36.1, dichte: 0.63, masse: 72.2, art: "unpolar", r: 10.5, formen: [kette(5)] },
+  { id: "octan", name: "Octan (Benzin)", formel: "C8H18", gruppe: "Organische Stoffe", schmelz: -56.8, siede: 125.6, dichte: 0.70, masse: 114.2, art: "unpolar", r: 11.5, formen: [kette(8)], hinweis: "Je länger die Kette, desto stärker die Van-der-Waals-Kräfte — und desto höher der Siedepunkt: Methan −162 °C, Butan −0,5 °C, Octan 126 °C." },
+  { id: "benzol", name: "Benzol", formel: "C6H6", gruppe: "Organische Stoffe", schmelz: 5.5, siede: 80.1, dichte: 0.88, masse: 78.1, art: "unpolar", r: 10, formen: [ring("C", 6, 0.6, 0.33)] },
+  { id: "essigsaeure", name: "Essigsäure", formel: "CH3COOH", gruppe: "Organische Stoffe", schmelz: 16.6, siede: 118.1, dichte: 1.05, masse: 60.1, art: "polar", r: 9, formen: [{ atome: [["C", -0.55, 0.1, 0.45], ["C", 0.1, -0.05, 0.45], ["O", 0.55, -0.55, 0.4], ["O", 0.6, 0.45, 0.4], ["H", 1.0, 0.65, 0.25]] }], hinweis: "Reine Essigsäure erstarrt schon bei 16,6 °C zu »Eisessig«." },
+  { id: "ether", name: "Diethylether", formel: "C4H10O", gruppe: "Organische Stoffe", schmelz: -116.3, siede: 34.6, dichte: 0.71, masse: 74.1, art: "unpolar", r: 10.5, formen: [kette(4, [["O", 0, 0.55, 0.3]])], hinweis: "Siedet schon bei 34,6 °C — ohne OH-Gruppe gibt es keine Wasserstoffbrücken, anders als beim gleich schweren Butanol (118 °C)." },
+  { id: "butanol", name: "Butanol", formel: "C4H9OH", gruppe: "Organische Stoffe", schmelz: -89.8, siede: 117.7, dichte: 0.81, masse: 74.1, art: "beide", r: 10.5, formen: [kette(4, [["O", 1.05, 0.2, 0.3]])] },
 ];
 
 export const stoff = (id: string): Stoff => {
@@ -168,4 +176,22 @@ export function mischText(a: Stoff, b: Stoff, T: number): string {
   return `${f.name} löst sich in ${l.name} nicht. Es ${f.dichte > l.dichte ? "liegt am Boden" : "bleibt als fester Block liegen, auch wenn es leichter ist"} — die Teilchen bleiben in ihrem Gitter.`;
 }
 
-export const GRUPPEN = ["Metalle", "Nichtmetalle", "Verbindungen"] as const;
+export const GRUPPEN = ["Metalle", "Nichtmetalle", "Anorganische Verbindungen", "Organische Stoffe"] as const;
+
+/**
+ * Farbe eines Stoffs im reinen Teilchenmodell (eine Kugelsorte je Stoff).
+ * Wo es geht, die Farbe des Stoffs selbst; sonst eine gut unterscheidbare.
+ */
+const KUGELFARBE: Record<string, string> = {
+  fe: "#8b8f99", cu: "#c87533", al: "#d4d8dd", au: "#f2c230", ag: "#e5e7eb", pb: "#6b7280", sn: "#bfc5cc",
+  zn: "#a8b3bd", hg: "#c0c7d0", w: "#7d8590", na: "#d9d9e8", mg: "#c9ccd1", ga: "#b8c4d6", ti: "#9aa3ad",
+  h2: "#f1f5f9", he: "#fde68a", ne: "#fb7185", ar: "#c4b5fd", n2: "#93c5fd", o2: "#f87171", cl2: "#bef264",
+  br2: "#b45309", i2: "#7c3aed", s8: "#facc15", s: "#facc15", p4: "#fef3c7", c: "#57534e",
+  h2o: "#38bdf8", ethanol: "#fda4af", methanol: "#f9a8d4", aceton: "#fdba74", glycerin: "#a5f3fc",
+  hexan: "#fcd34d", oel: "#eab308", paraffin: "#fef9c3", co2: "#a3a3a3", nh3: "#a78bfa", ch4: "#86efac",
+  butan: "#4ade80", hcl: "#d9f99d", nacl: "#f8fafc", zucker: "#fde7c4", sio2: "#d6c7a1", caco3: "#e7e5e4",
+  cao: "#fafaf9", fes: "#78716c", mgo: "#f5f5f4", cuo: "#3f3f46", nh4cl: "#e2e8f0",
+  propan: "#34d399", pentan: "#fde047", octan: "#f59e0b", benzol: "#fb923c", essigsaeure: "#fca5a5",
+  ether: "#e9d5ff", butanol: "#f472b6",
+};
+export const kugelFarbe = (s: Stoff): string => KUGELFARBE[s.id] ?? "#9ca3af";

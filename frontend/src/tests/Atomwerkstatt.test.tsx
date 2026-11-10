@@ -18,7 +18,8 @@ describe("Atomwerkstatt", { timeout: 40_000 }, () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Lewis-Labor/ }));
     expect(screen.getByLabelText(/Lewis-Labor/)).toBeTruthy();
-    expect(screen.getByRole("button", { name: "CH₄" })).toBeTruthy();
+    expect(screen.getAllByRole("button", { name: "CH₄" })).toHaveLength(2);
+    expect(screen.getByRole("button", { name: /Kräfte zwischen Molekülen/ })).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: /Teilchenmodell/ }));
     expect(screen.getByLabelText("Temperatur")).toBeTruthy();

@@ -3,7 +3,7 @@
  * Lösen — und Reaktionen, bei denen kein Atom verloren geht.
  */
 import { describe, expect, it } from "vitest";
-import { loestSichIn, mischbar, mischText, phaseVon, stoff, STOFFE } from "@/lib/atome/stoffe";
+import { kugelFarbe, loestSichIn, mischbar, mischText, phaseVon, stoff, STOFFE } from "@/lib/atome/stoffe";
 import {
   atomZahl, einzelSzene, mischSzene, REAKTIONEN, reaktionsSzene, schritt, stoffZahl, zuende, type Szene,
 } from "@/lib/atome/teilchen";
@@ -28,6 +28,8 @@ describe("Zustände", () => {
       expect(s.dichte).toBeGreaterThan(0);
     }
     expect(new Set(STOFFE.map(s => s.id)).size).toBe(STOFFE.length);
+    // Im Kugelmodell hat jeder Stoff seine eigene Farbe.
+    expect(STOFFE.every(s => kugelFarbe(s) !== "#9ca3af")).toBe(true);
   });
 
   it("Eis liegt im Gitter, Wasserdampf fliegt", () => {

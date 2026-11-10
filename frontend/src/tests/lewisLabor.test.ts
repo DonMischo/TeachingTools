@@ -4,8 +4,8 @@
  */
 import { describe, expect, it } from "vitest";
 import {
-  BINDE, elektronenUm, entferne, fuegeHinzu, grad, molekuele, neuesLabor, schritt, seitenBelegung,
-  type LewisLabor,
+  BINDE, elektronenUm, entferne, fuegeHinzu, fuegeMolekuelEin, grad, molekuele, MOLEKUELE, neuesLabor, schritt,
+  seitenBelegung, teilladungen, type LewisLabor,
 } from "@/lib/atome/lewis";
 
 /** Fester Zufall, damit jeder Lauf gleich ausgeht. */
@@ -95,5 +95,62 @@ describe("Binden", () => {
     expect(lab.bindungen).toHaveLength(0);
     expect(elektronenUm(lab, b)).toBe(7);
     expect(lab.el.filter(e => e.atom === b.id)).toHaveLength(7);
+  });
+});
+
+const vorlage = (label: string) => MOLEKUELE.find(m => m.label === label)!;
+
+describe("Fertige Moleküle", () => {
+  it.each(MOLEKUELE.map(m => [m.label, m] as const))("%s ist vollständig gebunden", (_l, m) => {
+    const lab = neuesLabor(800, 500);
+    fuegeMolekuelEin(lab, m, 400, 250, 0.3);
+    const ms = molekuele(lab);
+    expect(ms).toHaveLength(1);
+    expect(ms[0].offen).toEqual([]);
+    expect(lab.gruppen.filter(g => g.el.length === 1)).toEqual([]);
+    laufe(lab, 1);
+    expect(molekuele(lab)).toHaveLength(1);
+  });
+});
+
+describe("Teilladungen", () => {
+  it("Wasser: O δ−, H δ+; Methan unpolar", () => {
+    const lab = neuesLabor(800, 500);
+    const [o, h] = fuegeMolekuelEin(lab, vorlage("H₂O"), 200, 250);
+    const [c] = fuegeMolekuelEin(lab, vorlage("CH₄"), 600, 250);
+    const q = teilladungen(lab);
+    expect(q.get(o.id)!).toBeLessThan(0);
+    expect(q.get(h.id)!).toBeGreaterThan(0);
+    expect(q.get(c.id)).toBeUndefined();
+  });
+});
+
+describe("Kräfte zwischen Molekülen", () => {
+  it("zwei Wassermoleküle bilden eine Wasserstoffbrücke", () => {
+    const lab = neuesLabor(800, 500);
+    lab.optionen.zwischen = true;
+    fuegeMolekuelEin(lab, vorlage("H₂O"), 330, 250);
+    fuegeMolekuelEin(lab, vorlage("H₂O"), 450, 250, Math.PI);
+    laufe(lab, 3);
+    expect(lab.kontakte.some(k => k.art === "bruecke")).toBe(true);
+    expect(molekuele(lab)).toHaveLength(2);
+  });
+
+  it("Methan hat nur Van-der-Waals-Kräfte", () => {
+    const lab = neuesLabor(800, 500);
+    lab.optionen.zwischen = true;
+    fuegeMolekuelEin(lab, vorlage("CH₄"), 340, 250);
+    fuegeMolekuelEin(lab, vorlage("CH₄"), 460, 250);
+    laufe(lab, 2);
+    expect(lab.kontakte.length).toBeGreaterThan(0);
+    expect(lab.kontakte.every(k => k.art === "london")).toBe(true);
+  });
+
+  it("Wärmebewegung reißt keine Atombindung", () => {
+    const lab = neuesLabor(800, 500);
+    lab.optionen.waerme = 1;
+    fuegeMolekuelEin(lab, vorlage("C₂H₅OH"), 400, 250);
+    laufe(lab, 3);
+    expect(molekuele(lab)).toHaveLength(1);
   });
 });

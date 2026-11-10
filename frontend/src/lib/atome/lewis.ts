@@ -36,6 +36,8 @@ export type LAtom = {
   x: number; y: number; vx: number; vy: number;
   /** Wird gerade mit der Maus gezogen — dann bewegt es nur die Maus. */
   gehalten: boolean;
+  /** Elektronegativität nach Pauling. */
+  en: number;
 };
 export type LElektron = { id: number; atom: number; x: number; y: number; vx: number; vy: number };
 /** Ein freies Elektron oder ein freies Paar an einem Atom. */
@@ -45,14 +47,39 @@ export type LBindung = { a: number; b: number; ea: number; eb: number; reife: nu
 /** Zwei einzelne Elektronen, die einander anziehen, aber noch nicht gebunden sind. */
 export type LZug = { a: number; b: number; ga: number; gb: number; t: number };
 
+/** Eine Kraft zwischen zwei Molekülen, zum Zeichnen. Bei Brücken ist a das H, b der Partner. */
+export type Kontakt = { a: number; b: number; art: "bruecke" | "dipol" | "london"; t: number };
+
+export type Optionen = {
+  /** Teilladungen zeigen; die bindenden Paare rücken zum elektronegativeren Partner. */
+  polar: boolean;
+  /** Kräfte zwischen Molekülen: Wasserstoffbrücken, Dipol-Dipol, Van der Waals. */
+  zwischen: boolean;
+  /** Wärmebewegung 0–1: jedes Molekül wird als Ganzes zufällig angestoßen. */
+  waerme: number;
+};
+
 export type LewisLabor = {
   W: number; H: number;
   atome: LAtom[]; el: LElektron[]; gruppen: LGruppe[]; bindungen: LBindung[]; zug: LZug[];
+  kontakte: Kontakt[];
+  optionen: Optionen;
   nId: number; farbe: number;
 };
 
-export const neuesLabor = (W: number, H: number): LewisLabor =>
-  ({ W, H, atome: [], el: [], gruppen: [], bindungen: [], zug: [], nId: 1, farbe: 0 });
+export const neuesLabor = (W: number, H: number): LewisLabor => ({
+  W, H, atome: [], el: [], gruppen: [], bindungen: [], zug: [], kontakte: [],
+  optionen: { polar: false, zwischen: false, waerme: 0 }, nId: 1, farbe: 0,
+});
+
+/** Ab diesem Unterschied der Elektronegativität gilt eine Bindung als polar (Schulregel). */
+export const POLAR_AB = 0.5;
+/** Nur H an diesen Atomen bildet Wasserstoffbrücken — und nur diese nehmen sie an. */
+const STARK = new Set(["N", "O", "F"]);
+/** Wie leicht sich die Elektronenhülle verformen lässt — Maß für die Van-der-Waals-Kraft. */
+const POL: Record<string, number> = {
+  H: 0.4, He: 0.2, B: 0.9, C: 1, N: 0.9, O: 0.8, F: 0.6, Ne: 0.3, Si: 1.6, P: 1.6, S: 1.7, Cl: 1.8, Br: 2.4, I: 3,
+};
 
 /** Außenelektronen und Ziel eines Elements; null, wenn es kein Hauptgruppenelement ist. */
 export function lewisArt(symbol: string): { valenz: number; ziel: number } | null {
@@ -83,6 +110,7 @@ export function fuegeHinzu(lab: LewisLabor, symbol: string, x: number, y: number
   const a: LAtom = {
     id: lab.nId++, symbol, farbe: ATOMFARBE[lab.farbe++ % ATOMFARBE.length],
     valenz: art.valenz, ziel: art.ziel, x, y, vx: 0, vy: 0, gehalten: false,
+    en: pseElement(symbol)?.en ?? 2,
   };
   lab.atome.push(a);
   seitenBelegung(art.valenz, art.ziel).forEach((zahl, i) => {
@@ -204,6 +232,16 @@ export function schritt(lab: LewisLabor, dt: number, zufall: () => number = Math
     gezogen.set(z.ga, { ziel: w, t: z.t });
     gezogen.set(z.gb, { ziel: w + Math.PI, t: z.t });
   }
+  // Bei einer Wasserstoffbrücke dreht der Partner ein freies Paar zum H.
+  const ausrichten = new Map<number, { ziel: number; t: number }>();
+  for (const k of lab.kontakte) {
+    if (k.art !== "bruecke") continue;
+    const Hh = atom.get(k.a), X = atom.get(k.b);
+    const paare = X ? lab.gruppen.filter(g => g.atom === X.id && g.el.length === 2) : [];
+    if (!Hh || !X || !paare.length) continue;
+    const w = Math.atan2(Hh.y - X.y, Hh.x - X.x);
+    ausrichten.set(naechste(paare, w).id, { ziel: w, t: 0.7 * k.t });
+  }
   for (const A of lab.atome) {
     const fest = partnerWinkel(A);
     const gs = lab.gruppen.filter(g => g.atom === A.id);
@@ -213,7 +251,7 @@ export function schritt(lab: LewisLabor, dt: number, zufall: () => number = Math
         const d = wickle(g.winkel - w);
         dreh += Math.sign(d) * (Math.PI - Math.abs(d)) ** 2 * 1.4;
       }
-      const z = gezogen.get(g.id);
+      const z = gezogen.get(g.id) ?? ausrichten.get(g.id);
       if (z) dreh += 9 * z.t * Math.sin(wickle(z.ziel - g.winkel));
       g.winkel = wickle(g.winkel + Math.max(-6, Math.min(6, dreh)) * dt);
     }
@@ -258,6 +296,73 @@ export function schritt(lab: LewisLabor, dt: number, zufall: () => number = Math
       fb.x += dx / d * f; fb.y += dy / d * f;
     }
   }
+  // Zu welchem Molekül gehört ein Atom?
+  const molId = new Map<number, number>();
+  for (const A of lab.atome) {
+    if (molId.has(A.id)) continue;
+    const stapel = [A.id];
+    molId.set(A.id, A.id);
+    while (stapel.length) {
+      const id = stapel.pop()!;
+      for (const n of nachbarn.get(id)!) if (!molId.has(n)) { molId.set(n, A.id); stapel.push(n); }
+    }
+  }
+
+  // Zwischen den Molekülen: Wasserstoffbrücken, Dipol-Dipol, Van der Waals.
+  lab.kontakte = [];
+  if (lab.optionen.zwischen) {
+    const q = teilladungen(lab);
+    const spender = (A: LAtom) => A.symbol === "H" && [...nachbarn.get(A.id)!].some(n => STARK.has(atom.get(n)!.symbol));
+    const nimmt = (X: LAtom) => STARK.has(X.symbol) && lab.gruppen.some(g => g.atom === X.id && g.el.length === 2);
+    const bruecke = new Map<number, number>();
+    for (const A of lab.atome) {
+      if (!spender(A)) continue;
+      let best: LAtom | null = null, bestD = 150;
+      for (const X of lab.atome) {
+        if (molId.get(X.id) === molId.get(A.id) || !nimmt(X)) continue;
+        const d = abstand(A, X);
+        if (d < bestD) { best = X; bestD = d; }
+      }
+      if (!best) continue;
+      bruecke.set(A.id, best.id);
+      // Etwa anderthalb Bindungslängen: länger und schwächer als eine echte Bindung.
+      schiebe(A, best, Math.max(-300, Math.min(300, 8 * (bestD - 95))));
+      lab.kontakte.push({ a: A.id, b: best.id, art: "bruecke", t: Math.min(1, Math.max(0.2, (150 - bestD) / 55)) });
+    }
+    const klemme = (x: number) => Math.max(-1.2, Math.min(1.2, x));
+    for (let i = 0; i < lab.atome.length; i++) for (let j = i + 1; j < lab.atome.length; j++) {
+      const A = lab.atome[i], B = lab.atome[j];
+      if (molId.get(A.id) === molId.get(B.id) || bruecke.get(A.id) === B.id || bruecke.get(B.id) === A.id) continue;
+      const d = abstand(A, B);
+      if (d > 130) continue;
+      // Die Anziehung darf zwei Moleküle nicht ineinanderschieben.
+      if (d < 56) schiebe(A, B, -150 * (56 - d));
+      const nah = 1 - d / 130;
+      const qa = q.get(A.id) ?? 0, qb = q.get(B.id) ?? 0;
+      if (Math.abs(qa) >= 0.4 && Math.abs(qb) >= 0.4) {
+        // Ungleiche Teilladungen ziehen sich an, gleiche stoßen sich ab.
+        const f = -klemme(qa) * klemme(qb) * 60 * nah;
+        schiebe(A, B, f);
+        if (f > 4) lab.kontakte.push({ a: A.id, b: B.id, art: "dipol", t: Math.min(1, f / 50) });
+      } else {
+        const f = 30 * (POL[A.symbol] ?? 1) * (POL[B.symbol] ?? 1) * nah;
+        schiebe(A, B, f);
+        if (f > 5) lab.kontakte.push({ a: A.id, b: B.id, art: "london", t: Math.min(1, f / 40) });
+      }
+    }
+  }
+  // Wärmebewegung: jedes Molekül bekommt als Ganzes zufällige Stöße.
+  if (lab.optionen.waerme > 0) {
+    const stoss = new Map<number, { x: number; y: number }>();
+    for (const A of lab.atome) {
+      const m = molId.get(A.id)!;
+      if (!stoss.has(m)) stoss.set(m, { x: zufall() - 0.5, y: zufall() - 0.5 });
+      const st = stoss.get(m)!, f = kraft.get(A.id)!;
+      f.x += st.x * lab.optionen.waerme * 50000;
+      f.y += st.y * lab.optionen.waerme * 50000;
+    }
+  }
+
   const daempf = Math.exp(-6 * dt);
   for (const A of lab.atome) {
     if (A.gehalten) { A.vx = 0; A.vy = 0; continue; }
@@ -303,7 +408,10 @@ export function schritt(lab: LewisLabor, dt: number, zufall: () => number = Math
       const mx = (A.x + B.x) / 2, my = (A.y + B.y) / 2;
       // Mehrfachbindungen liegen nebeneinander quer zur Achse, die zwei Punkte eines Paares längs.
       const quer = (k - (liste.length - 1) / 2) * 11;
-      const ox = mx - uy * quer, oy = my + ux * quer;
+      // Polar: das Paar rückt zum elektronegativeren Partner.
+      const dEN = B.en - A.en;
+      const ruck = lab.optionen.polar && Math.abs(dEN) >= POLAR_AB ? Math.max(-2, Math.min(2, dEN)) * 4 : 0;
+      const ox = mx - uy * quer + ux * ruck, oy = my + ux * quer + uy * ruck;
       ziel.set(b.ea, { x: ox - ux * 4.5, y: oy - uy * 4.5, zitter: 0.6 });
       ziel.set(b.eb, { x: ox + ux * 4.5, y: oy + uy * 4.5, zitter: 0.6 });
     });
@@ -384,3 +492,109 @@ export const BAUSAETZE: { label: string; symbole: string[] }[] = [
   { label: "HCN", symbole: ["H", "C", "N"] },
   { label: "C₂H₄", symbole: ["C", "C", "H", "H", "H", "H"] },
 ];
+
+/**
+ * Teilladungen: je polarer Bindung (ΔEN ≥ 0,5) wandert Elektronendichte zum
+ * elektronegativeren Partner. Positiv = δ+, negativ = δ−. Die Zahl ist die
+ * Summe der ΔEN-Werte — ein Maß zum Vergleichen, keine echte Ladung.
+ */
+export function teilladungen(lab: LewisLabor): Map<number, number> {
+  const atom = new Map(lab.atome.map(a => [a.id, a]));
+  const q = new Map<number, number>();
+  for (const b of lab.bindungen) {
+    const A = atom.get(b.a), B = atom.get(b.b);
+    if (!A || !B) continue;
+    const d = B.en - A.en;
+    if (Math.abs(d) < POLAR_AB) continue;
+    q.set(A.id, (q.get(A.id) ?? 0) + d);
+    q.set(B.id, (q.get(B.id) ?? 0) - d);
+  }
+  return q;
+}
+
+/** Ein fertiges Molekül: Atome in Bindungslängen, Bindungen mit Grad. */
+export type Vorlage = {
+  label: string; name: string; gruppe: "Anorganisch" | "Organisch";
+  /** Siedepunkt bei Normaldruck in °C — zeigt, wie stark die Moleküle zusammenhalten. */
+  sdp: number;
+  atome: [string, number, number][];
+  bindungen: [number, number, number][];
+};
+
+/** Kohlenstoffkette mit allen H, waagerecht. */
+function kette(n: number): Pick<Vorlage, "atome" | "bindungen"> {
+  const atome: [string, number, number][] = [];
+  const bindungen: [number, number, number][] = [];
+  for (let i = 0; i < n; i++) atome.push(["C", i - (n - 1) / 2, 0]);
+  for (let i = 0; i + 1 < n; i++) bindungen.push([i, i + 1, 1]);
+  const h = (c: number, x: number, y: number) => { atome.push(["H", x, y]); bindungen.push([c, atome.length - 1, 1]); };
+  for (let i = 0; i < n; i++) {
+    const x = atome[i][1];
+    h(i, x, -1); h(i, x, 1);
+    if (i === 0) h(i, x - 1, 0);
+    if (i === n - 1) h(i, x + 1, 0);
+  }
+  return { atome, bindungen };
+}
+
+export const MOLEKUELE: Vorlage[] = [
+  { label: "H₂O", name: "Wasser", gruppe: "Anorganisch", sdp: 100, atome: [["O", 0, 0], ["H", -0.8, 0.6], ["H", 0.8, 0.6]], bindungen: [[0, 1, 1], [0, 2, 1]] },
+  { label: "NH₃", name: "Ammoniak", gruppe: "Anorganisch", sdp: -33, atome: [["N", 0, 0], ["H", -0.95, 0.3], ["H", 0.95, 0.3], ["H", 0, 1]], bindungen: [[0, 1, 1], [0, 2, 1], [0, 3, 1]] },
+  { label: "HF", name: "Fluorwasserstoff", gruppe: "Anorganisch", sdp: 20, atome: [["F", 0, 0], ["H", 1, 0]], bindungen: [[0, 1, 1]] },
+  { label: "HCl", name: "Chlorwasserstoff", gruppe: "Anorganisch", sdp: -85, atome: [["Cl", 0, 0], ["H", 1, 0]], bindungen: [[0, 1, 1]] },
+  { label: "H₂S", name: "Schwefelwasserstoff", gruppe: "Anorganisch", sdp: -60, atome: [["S", 0, 0], ["H", -0.8, 0.6], ["H", 0.8, 0.6]], bindungen: [[0, 1, 1], [0, 2, 1]] },
+  { label: "CO₂", name: "Kohlenstoffdioxid", gruppe: "Anorganisch", sdp: -78, atome: [["C", 0, 0], ["O", -1, 0], ["O", 1, 0]], bindungen: [[0, 1, 2], [0, 2, 2]] },
+  { label: "N₂", name: "Stickstoff", gruppe: "Anorganisch", sdp: -196, atome: [["N", 0, 0], ["N", 1, 0]], bindungen: [[0, 1, 3]] },
+  { label: "O₂", name: "Sauerstoff", gruppe: "Anorganisch", sdp: -183, atome: [["O", 0, 0], ["O", 1, 0]], bindungen: [[0, 1, 2]] },
+  { label: "Cl₂", name: "Chlor", gruppe: "Anorganisch", sdp: -34, atome: [["Cl", 0, 0], ["Cl", 1, 0]], bindungen: [[0, 1, 1]] },
+  { label: "CH₄", name: "Methan", gruppe: "Organisch", sdp: -162, ...kette(1) },
+  { label: "C₂H₆", name: "Ethan", gruppe: "Organisch", sdp: -89, ...kette(2) },
+  { label: "C₃H₈", name: "Propan", gruppe: "Organisch", sdp: -42, ...kette(3) },
+  { label: "C₄H₁₀", name: "Butan", gruppe: "Organisch", sdp: -0.5, ...kette(4) },
+  { label: "C₂H₄", name: "Ethen", gruppe: "Organisch", sdp: -104,
+    atome: [["C", -0.5, 0], ["C", 0.5, 0], ["H", -1.2, -0.8], ["H", -1.2, 0.8], ["H", 1.2, -0.8], ["H", 1.2, 0.8]],
+    bindungen: [[0, 1, 2], [0, 2, 1], [0, 3, 1], [1, 4, 1], [1, 5, 1]] },
+  { label: "C₂H₂", name: "Ethin", gruppe: "Organisch", sdp: -84,
+    atome: [["H", -1.5, 0], ["C", -0.5, 0], ["C", 0.5, 0], ["H", 1.5, 0]], bindungen: [[0, 1, 1], [1, 2, 3], [2, 3, 1]] },
+  { label: "CH₃Cl", name: "Chlormethan", gruppe: "Organisch", sdp: -24,
+    atome: [["C", 0, 0], ["Cl", 1, 0], ["H", -1, 0], ["H", 0, -1], ["H", 0, 1]], bindungen: [[0, 1, 1], [0, 2, 1], [0, 3, 1], [0, 4, 1]] },
+  { label: "CH₃OH", name: "Methanol", gruppe: "Organisch", sdp: 65,
+    atome: [["C", 0, 0], ["O", 1, 0], ["H", 1.6, 0.8], ["H", -1, 0], ["H", 0, -1], ["H", 0, 1]],
+    bindungen: [[0, 1, 1], [1, 2, 1], [0, 3, 1], [0, 4, 1], [0, 5, 1]] },
+  { label: "C₂H₅OH", name: "Ethanol", gruppe: "Organisch", sdp: 78,
+    atome: [["C", -1, 0], ["C", 0, 0], ["O", 1, 0], ["H", 1.6, 0.8], ["H", -2, 0], ["H", -1, -1], ["H", -1, 1], ["H", 0, -1], ["H", 0, 1]],
+    bindungen: [[0, 1, 1], [1, 2, 1], [2, 3, 1], [0, 4, 1], [0, 5, 1], [0, 6, 1], [1, 7, 1], [1, 8, 1]] },
+  { label: "CH₃NH₂", name: "Methylamin", gruppe: "Organisch", sdp: -6,
+    atome: [["C", 0, 0], ["N", 1, 0], ["H", 1.5, 0.85], ["H", 1.5, -0.85], ["H", -1, 0], ["H", 0, -1], ["H", 0, 1]],
+    bindungen: [[0, 1, 1], [1, 2, 1], [1, 3, 1], [0, 4, 1], [0, 5, 1], [0, 6, 1]] },
+  { label: "HCHO", name: "Methanal (Formaldehyd)", gruppe: "Organisch", sdp: -19,
+    atome: [["C", 0, 0], ["O", 1, 0], ["H", -0.7, -0.8], ["H", -0.7, 0.8]], bindungen: [[0, 1, 2], [0, 2, 1], [0, 3, 1]] },
+  { label: "Aceton", name: "Aceton (Propanon)", gruppe: "Organisch", sdp: 56,
+    atome: [["C", -1, 0.4], ["C", 0, 0], ["C", 1, 0.4], ["O", 0, -1],
+      ["H", -2, 0.4], ["H", -1, 1.4], ["H", -1.3, -0.5], ["H", 2, 0.4], ["H", 1, 1.4], ["H", 1.3, -0.5]],
+    bindungen: [[0, 1, 1], [1, 2, 1], [1, 3, 2], [0, 4, 1], [0, 5, 1], [0, 6, 1], [2, 7, 1], [2, 8, 1], [2, 9, 1]] },
+  { label: "Essigsäure", name: "Essigsäure (Ethansäure)", gruppe: "Organisch", sdp: 118,
+    atome: [["C", -1, 0], ["C", 0, 0], ["O", 0.5, -0.9], ["O", 1, 0.4], ["H", 1.9, 0.1],
+      ["H", -2, 0], ["H", -1, -1], ["H", -1, 1]],
+    bindungen: [[0, 1, 1], [1, 2, 2], [1, 3, 1], [3, 4, 1], [0, 5, 1], [0, 6, 1], [0, 7, 1]] },
+];
+
+/** Setzt ein fertiges Molekül ein, um (x, y) und um `winkel` gedreht. */
+export function fuegeMolekuelEin(lab: LewisLabor, m: Vorlage, x: number, y: number, winkel = 0): LAtom[] {
+  const c = Math.cos(winkel), s = Math.sin(winkel);
+  const atome = m.atome.map(([sym, dx, dy]) =>
+    fuegeHinzu(lab, sym, x + (dx * c - dy * s) * L_BIND, y + (dx * s + dy * c) * L_BIND)!);
+  const einzelne = (A: LAtom) => lab.gruppen.filter(g => g.atom === A.id && g.el.length === 1);
+  const naechste = (gs: LGruppe[], w: number) =>
+    gs.reduce((best, g) => Math.abs(wickle(g.winkel - w)) < Math.abs(wickle(best.winkel - w)) ? g : best);
+  for (const [i, j, n] of m.bindungen) {
+    const A = atome[i], B = atome[j];
+    for (let k = 0; k < n; k++) {
+      const w = Math.atan2(B.y - A.y, B.x - A.x);
+      const ga = naechste(einzelne(A), w), gb = naechste(einzelne(B), w + Math.PI);
+      lab.gruppen = lab.gruppen.filter(g => g !== ga && g !== gb);
+      lab.bindungen.push({ a: A.id, b: B.id, ea: ga.el[0], eb: gb.el[0], reife: 1 });
+    }
+  }
+  return atome;
+}
