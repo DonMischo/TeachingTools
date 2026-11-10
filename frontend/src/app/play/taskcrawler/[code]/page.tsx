@@ -7,7 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useGuestSession } from "@/hooks/useGuestSession";
 import { GuestExpired } from "@/components/GuestExpired";
 import { PlayerIdentityForm } from "@/components/PlayerIdentityForm";
-import { SimKnopf } from "@/components/exitgame/SimStation";
+import { SimKnopf, SimZugang } from "@/components/exitgame/SimStation";
 import { CompletionCard, FolienText, MediaView, TaskArea, letzteInfo, levelOf, styleVars } from "@/components/exitgame/FolienTeile";
 import BossArea from "@/components/exitgame/BossArea";
 import { STANDARD_AVATAR, TIERE, gespeicherterAvatar, speichereAvatar } from "@/components/gebaeude/avatar";
@@ -201,8 +201,13 @@ export default function ExitgamePlayPage() {
     </select>
   );
 
+  // Werkzeuge an den Stationen (z. B. Geschichte der Medien) treffen sich im Live-Raum dieser Sitzung
+  const mitZugang = (inhalt: React.ReactNode) => (
+    <SimZugang.Provider value={{ code, token: isGuest ? guest.token : null }}>{inhalt}</SimZugang.Provider>
+  );
+
   if (aktiv !== "folien") {
-    return (
+    return mitZugang(
       <div className="h-full overflow-y-auto flex flex-col gap-3 p-4 max-w-seite mx-auto w-full rounded-2xl" style={styleVars(data.style)}>
         <div className="flex items-center justify-between text-xs text-muted">
           <span>{data.title}</span>
@@ -221,7 +226,7 @@ export default function ExitgamePlayPage() {
   const solvedSlideIds = start.attempt.solved_slide_ids;
   const isTaskSlide = slide.type === "task" || slide.type === "door";
 
-  return (
+  return mitZugang(
     // Boss-Folie: das Challenge-Spiel bekommt die volle Breite
     <div className={`h-full overflow-y-auto flex flex-col gap-5 p-6 mx-auto w-full rounded-2xl ${slide.type === "boss" ? "max-w-seite" : "max-w-xl"}`} style={styleVars(data.style)}>
       <div className="flex items-center justify-between text-xs text-muted">

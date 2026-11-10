@@ -131,3 +131,25 @@ def test_malen_raten_und_loeschen(client, teacher, teacher_token):
                     assert (await bis(b, "weg"))["id"] == von_b["id"]
 
     asyncio.run(lauf())
+
+
+def test_taskcrawler_sitzung_oeffnet_eigenen_raum(client, teacher_token, klass):
+    """Die Sim an einer TaskCrawler-Station: alle aus demselben Lauf treffen sich im Raum des TaskCrawler-Codes."""
+    from .test_exitgame import _upload
+    gid = _upload(client, teacher_token).json()["id"]
+    s = client.post(f"/api/exitgames/{gid}/sessions", json={"class_id": klass.id}, headers=auth(teacher_token)).json()
+    code = s["join_code"]
+    client.cookies.clear()
+
+    async def lauf():
+        async with connect_ws(app, _gast(code, "Bo")) as a:
+            await bis(a, "willkommen")
+            async with connect_ws(app, _gast(code, "Ida")) as b:
+                wb = await bis(b, "willkommen")
+                ziel = next(x["key"] for x in wb["spieler"] if x["name"] == "Bo")
+                await b.send_json({"typ": "senden", "an": ziel, "art": "sms", "inhalt": {"text": "hdl"}})
+                n = await bis(a, "nachricht")
+                assert n["vonName"] == "Ida" and n["inhalt"] == {"text": "hdl"}
+        assert f"tc:{code}" not in medien_live._raeume  # Raum weg, als alle gingen
+
+    asyncio.run(lauf())

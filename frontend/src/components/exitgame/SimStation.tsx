@@ -10,12 +10,23 @@
  * (z. B. genau eine Gleichung, nur ein Reiter), entscheidet sie selbst; wer
  * `vorgabe` noch nicht kennt, öffnet sich frei.
  */
-import { Suspense, lazy, useEffect, useState, type ComponentType, type LazyExoticComponent } from "react";
+import { Suspense, createContext, lazy, useContext, useEffect, useState, type ComponentType, type LazyExoticComponent } from "react";
 import { createPortal } from "react-dom";
 import type { ExitGameSim } from "@/lib/api";
 import { MathText } from "@/components/MathText";
 
 export type Vorgabe = Record<string, unknown>;
+
+/**
+ * Code und Gast-Token der TaskCrawler-Sitzung. Werkzeuge mit Live-Raum (Geschichte
+ * der Medien: Nachrichten, Höhlenwand) treffen dort alle aus demselben Lauf.
+ */
+export const SimZugang = createContext<{ code: string; token?: string | null } | null>(null);
+
+function MedienMitRaum({ Medien, ...p }: { Medien: ComponentType<{ vorgabe?: Vorgabe; live?: { code: string; token?: string | null } }>; vorgabe?: Vorgabe }) {
+  const zugang = useContext(SimZugang);
+  return <Medien {...p} live={zugang ?? undefined} />;
+}
 type SimKomponente = ComponentType<{ vorgabe?: Vorgabe }>;
 
 const laden = (f: () => Promise<{ default: unknown }>): LazyExoticComponent<SimKomponente> =>
@@ -64,7 +75,7 @@ export const SIM_STATIONEN: Record<string, { name: string; icon: string; Kompone
   diagramme: { name: "Diagramm-Werkstatt", icon: "🔀", Komponente: laden(() => import("@/components/diagramme/DiagrammWerkstatt")) },
   baum: { name: "Baumleben", icon: "🌳", Komponente: laden(() => import("@/components/baum/Baumleben")) },
   klikk: { name: "Klikk", icon: "📱", Komponente: laden(() => import("@/components/klikk/Klikk")) },
-  medien: { name: "Geschichte der Medien", icon: "📜", Komponente: laden(() => import("@/components/medien/Medien")) },
+  medien: { name: "Geschichte der Medien", icon: "📜", Komponente: laden(() => import("@/components/medien/Medien").then(m => ({ default: (p: { vorgabe?: Vorgabe }) => <MedienMitRaum Medien={m.default} {...p} /> }))) },
   leviathan: { name: "Leviathan", icon: "🐋", Komponente: laden(() => import("@/components/leviathan/Leviathan")) },
   // Stand nur im Browser, unter eigenem Schlüssel — die Station hängt an keiner Sitzung.
   kikompass: { name: "KI-Kompass", icon: "🧭", Komponente: laden(() => import("@/components/kikompass/KiKompass").then(m => ({ default: (p: { vorgabe?: Vorgabe }) => <m.default konto={false} speicherSchluessel="taskcrawler" {...p} /> }))) },

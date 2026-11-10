@@ -24,7 +24,7 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..display_names import short_name
-from ..models import Student, Teacher, ToolSession
+from ..models import ExitGameSession, Student, Teacher, ToolSession
 from ..ws_auth import ws_guest, ws_identity
 from ..ws_manager import receive_json, reject
 
@@ -134,23 +134,30 @@ async def _an_alle(raum: Raum, msg: dict) -> None:
 @router.websocket("/{code}/ws")
 async def medien_ws(code: str, websocket: WebSocket, db: Session = Depends(get_db)):
     code = code.upper()
+    # Eine Medien-Sitzung (Lehrkraft startet die Sim) — oder eine TaskCrawler-Sitzung,
+    # deren Station die Sim öffnet: dann treffen sich alle aus diesem TaskCrawler-Lauf.
     sitzung = db.query(ToolSession).filter_by(code=code, tool_slug="medien").first()
-    if not sitzung:
+    taskcrawler = None if sitzung else db.query(ExitGameSession).filter_by(join_code=code).first()
+    if not sitzung and not taskcrawler:
         await reject(websocket, 4004)
         return
+    besitzer = sitzung.created_by if sitzung else taskcrawler.teacher_id
+    status = sitzung.status if sitzung else taskcrawler.status
+    # Codes beider Sorten könnten gleich sein — die Räume bleiben getrennt
+    raum_id = code if sitzung else f"tc:{code}"
     identity = ws_identity(websocket, db)
     guest = ws_guest(websocket, code, db) if not identity else None
     if not identity and not guest:
         await reject(websocket, 4001)
         return
-    if sitzung.status == "closed" and not identity:
+    if status == "closed" and not identity:
         await reject(websocket, 4003)
         return
 
     lehrkraft = False
     if identity and identity[0] == "teacher":
         teacher = db.get(Teacher, identity[1])
-        lehrkraft = bool(teacher and (sitzung.created_by == teacher.id or teacher.role == "admin"))
+        lehrkraft = bool(teacher and (besitzer == teacher.id or teacher.role == "admin"))
         key = f"l{identity[1]}"
         name = (" ".join(x for x in [f"{teacher.first_name[:1]}." if teacher.first_name else "", teacher.last_name] if x)
                 if teacher else "Lehrkraft")
@@ -161,7 +168,7 @@ async def medien_ws(code: str, websocket: WebSocket, db: Session = Depends(get_d
         key, name = f"g{guest.id}", guest.name
 
     await websocket.accept()
-    raum = _raeume.setdefault(code, Raum())
+    raum = _raeume.setdefault(raum_id, Raum())
     raum.namen[key] = name
     raum.lehrkraefte[key] = lehrkraft
     if key not in raum.nummern:
@@ -258,7 +265,7 @@ async def medien_ws(code: str, websocket: WebSocket, db: Session = Depends(get_d
             raum.verbindungen.pop(key, None)
             if not raum.verbindungen:
                 # Letzte Person weg: der Raum ist weg, mitsamt Wand und Nummern.
-                if _raeume.get(code) is raum:
-                    _raeume.pop(code, None)
+                if _raeume.get(raum_id) is raum:
+                    _raeume.pop(raum_id, None)
             else:
                 await _an_alle(raum, {"typ": "spieler", "spieler": _spieler(raum)})
