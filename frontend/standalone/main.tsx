@@ -48,6 +48,7 @@ import Vulkan from "@/components/vulkan/Vulkan";
 import Baumleben from "@/components/baum/Baumleben";
 import Stromkreis from "@/components/stromkreis/Stromkreis";
 import Periodensystem from "@/components/pse/Periodensystem";
+import Atomwerkstatt from "@/components/atome/Atomwerkstatt";
 import Strukturformeln from "@/components/struktur/Strukturformeln";
 import Schichtenmodell from "@/components/schichten/Schichtenmodell";
 
@@ -95,7 +96,7 @@ const TOOLS: { id: string; icon: string; label: string; node: ReactNode }[] = [
   // Ohne Sitzung keine Vorgabe der Lehrkraft; Speichern und Öffnen als JSON-Datei gehen.
   { id: "stromkreis", icon: "💡", label: "Stromkreise", node: <Stromkreis /> },
   { id: "pse", icon: "🧪", label: "Periodensystem", node: <Periodensystem /> },
-  { id: "atommodelle", icon: "⚛️", label: "Atommodelle", node: <Periodensystem nur="modelle" /> },
+  { id: "atommodelle", icon: "⚛️", label: "Atommodelle", node: <Atomwerkstatt /> },
   { id: "strukturformeln", icon: "⬡", label: "Strukturformeln", node: <Strukturformeln /> },
   { id: "schichten", icon: "📶", label: "Schichtenmodell", node: <Schichtenmodell /> },
 ];

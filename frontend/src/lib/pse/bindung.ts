@@ -62,7 +62,7 @@ const valenzVon = (e: PseElement): number =>
   e.z === 2 ? 2 : e.hauptgruppe ?? 0;
 
 /** Namen der Verbindungen, die im Unterricht vorkommen. */
-const NAMEN: Record<string, string> = {
+export const NAMEN: Record<string, string> = {
   BF3: "Bortrifluorid", BCl3: "Bortrichlorid", BH3: "Boran", BBr3: "Bortribromid",
   BN: "Bornitrid", AlCl3: "Aluminiumchlorid",
   H2: "Wasserstoff", O2: "Sauerstoff", N2: "Stickstoff", F2: "Fluor", Cl2: "Chlor",

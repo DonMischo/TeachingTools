@@ -201,7 +201,7 @@ const ALL_CARDS: Werkzeug[] = [
     href: "/simulationen/atommodelle",
     icon: "⚛️",
     title: "Atommodelle",
-    description: "Wie stellt man sich ein Atom vor? Fünf Modelle nacheinander — vom Teilchenmodell bis zu den Orbitalen, jedes erklärt mehr als das vorige. Dazu das Bindungslabor: bis zu acht Atome zusammenstecken und zusehen, wie die gemeinsamen Elektronen um beide Kerne laufen.",
+    description: "Wie stellt man sich ein Atom vor? Fünf Modelle vom Teilchenmodell bis zu den Orbitalen, dazu das Bindungslabor, ein Lewis-Labor (Symbole zusammenschieben, die Elektronen binden wie Magnete) und das Teilchenmodell mit Temperaturregler: fest, flüssig, gasförmig, Mischen, Lösen und Reaktionen.",
     color: "#8b5cf6",
   },
   {

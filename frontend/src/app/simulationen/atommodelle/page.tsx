@@ -1,13 +1,12 @@
 "use client";
-import Periodensystem from "@/components/pse/Periodensystem";
+import Atomwerkstatt from "@/components/atome/Atomwerkstatt";
 import { ToolSessionBar } from "@/components/ToolSessionBar";
 import { RequireAccount } from "@/components/RequireAccount";
 
 export default function AtommodellePage() {
   return (
     <RequireAccount icon="⚛️" title="Atommodelle">
-      <Periodensystem nur="modelle"
-        action={<ToolSessionBar tool="atommodelle" title="Atommodelle" />} />
+      <Atomwerkstatt action={<ToolSessionBar tool="atommodelle" title="Atommodelle" />} />
     </RequireAccount>
   );
 }

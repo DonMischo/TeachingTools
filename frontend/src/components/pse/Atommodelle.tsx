@@ -31,8 +31,13 @@ const BOR_TEXT = [
   "Bor ist außerdem das Halbmetall, mit dem man Glas hitzebeständig macht (Borosilicatglas) und Silicium dotiert.",
 ];
 
-export default function Atommodelle({ e, onWahl }: { e: PseElement; onWahl: (e: PseElement) => void }) {
-  const [blick, setBlick] = useState<"atom" | "bindung">("atom");
+export default function Atommodelle({ e, onWahl, blickFest }: {
+  e: PseElement; onWahl: (e: PseElement) => void;
+  /** Nur eine der beiden Ansichten, ohne Umschalter — so nutzt sie die eigene Simulation. */
+  blickFest?: "atom" | "bindung";
+}) {
+  const [blickWahl, setBlick] = useState<"atom" | "bindung">("atom");
+  const blick = blickFest ?? blickWahl;
   const [modell, setModell] = useState<ModellId>("schalen");
   const [laufen, setLaufen] = useState(true);
   // Drei Ansichten derselben Verbindung: die gemeinsamen Paare laufend oder
@@ -58,7 +63,7 @@ export default function Atommodelle({ e, onWahl }: { e: PseElement; onWahl: (e: 
         )}
       </div>
 
-      <div className="inline-flex self-start rounded-xl border border-line p-1 bg-surface">
+      {!blickFest && <div className="inline-flex self-start rounded-xl border border-line p-1 bg-surface">
         {([["atom", "Ein Atom"], ["bindung", "Verbindungen"]] as const).map(([id, label]) => (
           <button key={id} onClick={() => setBlick(id)}
             className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${
@@ -66,7 +71,7 @@ export default function Atommodelle({ e, onWahl }: { e: PseElement; onWahl: (e: 
             {label}
           </button>
         ))}
-      </div>
+      </div>}
 
       {blick === "atom" ? (
         <>

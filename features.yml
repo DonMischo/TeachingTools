@@ -508,7 +508,13 @@ simulationen:
   - id: atommodelle
     name: Atommodelle
     kann:
-      - "Eigene Simulation (/simulationen/atommodelle): dasselbe Raster, aber nur zum Auswählen des Elements — ohne Reiterleiste"
+      - "Eigene Simulation (/simulationen/atommodelle) mit vier Reitern: Atommodelle, Verbindungen, Lewis-Labor, Teilchenmodell — statt des großen Rasters ein kleines Periodensystem zum Auswählen; im Periodensystem bleibt der Reiter, wie er ist"
+      - "Lewis-Labor: Elementsymbole mit ihren Außenelektronen als Punkte (erst je eins pro Seite, dann gepaart) frei zusammenschieben; nahe einzelne Elektronen drehen sich zueinander, zittern und ziehen die Atome wie Magnete an, dann springen sie als bindendes Paar in die Mitte — auch Doppel- und Dreifachbindungen nacheinander"
+      - "Lewis-Labor: freie Paare weichen den Bindungen aus (Wasser gewinkelt), Elektronenzähler je Atom mit Oktett-/Duett-Haken, Molekülliste mit Summenformel und Name; schnelles Auseinanderziehen reißt die Bindung, Doppelklick entfernt, Schütteln, Valenzstriche einblendbar, 12 Bausätze"
+      - "Teilchenmodell: Temperaturregler von −273 bis 4000 °C (um 0 °C fein), getöntes Gefäß, Heizplatte mit Flammen bzw. Eis, Phasenleiste je Stoff zum Anklicken; 48 Stoffe (Metalle, Nichtmetalle, Verbindungen) mit echten Schmelz-/Siedepunkten, Sublimation (CO₂) und Zersetzung (Zucker, Kalk)"
+      - "Teilchenmodell: fest = Teilchen am Gitterplatz, schwingen stärker je näher am Schmelzpunkt; Kristall wächst beim Erstarren von unten; flüssig = dicht und verschiebbar; gasförmig = schnell, füllen den Raum; Moleküle als Atomkugeln (CPK), Ionengitter abwechselnd"
+      - "Mischen mit Trennwand: Gase diffundieren, gleich gebaute Flüssigkeiten mischen sich, Öl/Benzin schichten sich nach Dichte über Wasser, Salz und Zucker lösen sich bis zur Sättigung (Bodensatz), Iod in Benzin, Sand bleibt liegen; 10 Vorlagen"
+      - "Reaktionen im Teilchenbild (11, von Knallgas über Eisen + Schwefel bis Kalkbrennen und Haber-Bosch mit Rückreaktion): Funke oder Heizen über die Starttemperatur, Wärme pflanzt sich als Flammenfront fort; Atombilanz vorher/nachher zeigt die Massenerhaltung"
       - "Fünf Modelle nacheinander: Teilchen (Dalton), Kern-Hülle (Rutherford), Schalen (Bohr), Energiestufen (Bohr/Sommerfeld), Orbitale (Schrödinger); je Modell, was es erklärt und wo es aufhört"
       - Animiert per CSS (drehende Schalen, zitternder Kern, atmende Orbitale), anhaltbar, mit Rücksicht auf »Bewegung reduzieren«
       - Bor im Mittelpunkt: dreibindig, Elektronensextett statt Oktett, daher die Gier nach einem fremden Elektronenpaar
