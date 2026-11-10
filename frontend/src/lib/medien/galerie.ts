@@ -129,6 +129,8 @@ export const GALERIE: MedienBild[] = [
   b("3d-brillen", "dreidtv", "heute", "3D-Brillen beim Superbowl 2009", "Sogar im Weißen Haus setzte man 2009 die Pappbrillen auf — für einen 3D-Werbespot im Fernsehen."),
   b("tiktok", "kurzvideo", "heute", "TikTok zwischen den Messengern", "Ein App-Symbol unter vielen — und doch die App, in der viele Jugendliche am meisten Zeit verbringen."),
   b("onlineteacher", "videokonferenz", "heute", "Unterricht per Video", "Die Lehrerin sitzt im leeren Klassenzimmer, ihre Klasse in kleinen Kacheln auf dem Laptop."),
+  b("initiale-b", "handschrift", "mittelalter", "Prachtinitiale B mit dem Erzengel Michael", "Ausgeschnitten aus einem großen Chorbuch: Im Anfangsbuchstaben kämpft der Erzengel Michael, ringsum Ranken und Blattgold. Für so eine Initiale brauchte ein Buchmaler Tage."),
+  b("lobbes-a", "handschrift", "mittelalter", "Initiale A aus der Bibel von Lobbes (1084)", "Geschrieben und bemalt im Kloster Lobbes im heutigen Belgien: Das A beginnt das Buch Daniel und zeigt Daniel in der Löwengrube. Rote Überschriften (»Rubriken«) und ein Bild im Buchstaben — so fand man im Buch, wo ein Kapitel anfängt."),
 ];
 
 const alle = nachweise as Record<string, Nachweis>;

@@ -131,6 +131,8 @@ export const BILDER = {
   "3d-brillen": "Barack and Michelle Obama looking the 2009 Superbowl with 3-D glasses.jpg",
   "tiktok": "TikTok app.jpg",
   "onlineteacher": "Onlineteacher.jpg",
+  "initiale-b": "Manuscript Leaf Cutting from a Choir Book with an Illuminated Initial B and the Archangel Michael MET DP164984.jpg",
+  "lobbes-a": "Historiated initial A (Lobbes Bible).jpg",
 };
 
 if (process.argv[1]?.endsWith("fetch-medien.mjs")) {
