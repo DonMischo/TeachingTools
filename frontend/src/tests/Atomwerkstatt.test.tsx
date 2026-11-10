@@ -24,6 +24,13 @@ describe("Atomwerkstatt", { timeout: 40_000 }, () => {
     fireEvent.click(screen.getByRole("button", { name: /Teilchenmodell/ }));
     expect(screen.getByLabelText("Temperatur")).toBeTruthy();
     expect(screen.getByText(/Wasser ist bei 20 °C flüssig/)).toBeTruthy();
+    // Jeder Reiter des Teilchenmodells rendert — auch im Augenblick des Wechsels.
+    fireEvent.click(screen.getByRole("button", { name: /Trennen/ }));
+    expect(screen.getByText(/Destillation — nach Siedetemperatur/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /Diffusion & Osmose/ }));
+    expect(screen.getByText(/Konzentrationsprofil/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /Osmose \(Zuckerwasser\)/ }));
+    expect(screen.getByText(/Pegel links/)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /Reaktion/ }));
     expect(screen.getByText("2 H₂ + O₂ → 2 H₂O")).toBeTruthy();
   });

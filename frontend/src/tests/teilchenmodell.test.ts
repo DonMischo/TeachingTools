@@ -5,7 +5,7 @@
 import { describe, expect, it } from "vitest";
 import { kugelFarbe, loestSichIn, mischbar, mischText, phaseVon, stoff, STOFFE } from "@/lib/atome/stoffe";
 import {
-  atomZahl, BREITE, einzelSzene, phasenZahl, stoffTemperatur, waermeZufuehren, TRENNUNGEN, trennSzene, verteilung, mischSzene, REAKTIONEN, reaktionsSzene, schritt, stoffZahl, zuende, type Szene,
+  atomZahl, BREITE, DIFFUSIONEN, diffusionsSzene, druckHpa, einzelSzene, pegel, profil, phasenZahl, stoffTemperatur, waermeZufuehren, TRENNUNGEN, trennSzene, verteilung, mischSzene, REAKTIONEN, reaktionsSzene, schritt, stoffZahl, zuende, type Szene,
 } from "@/lib/atome/teilchen";
 
 const zufall = (() => { let s = 11; return () => ((s = (s * 16807) % 2147483647) / 2147483647); })();
@@ -47,7 +47,8 @@ describe("Zustände", () => {
   it("Wasser gefriert wieder von unten zum Gitter", () => {
     const w = einzelSzene("h2o", 20, zufall);
     laufe(w, 1);
-    expect(anteil(w, "fluessig")).toBe(1);
+    // Ein paar Teilchen sind verdunstet — der Rest ist flüssig.
+    expect(anteil(w, "fluessig")).toBeGreaterThan(0.97);
     w.T = -20;
     // Erst muss die Erstarrungswärme abgegeben werden.
     laufe(w, 14);
@@ -169,7 +170,7 @@ describe("Fester Stoff im Gitter", () => {
     laufe(sz, 8);
     const wasser = sz.t.filter(p => p.s === 0), ethanol = sz.t.filter(p => p.s === 1);
     expect(wasser.filter(p => p.bewegung === "gitter").length / wasser.length).toBeGreaterThan(0.9);
-    expect(ethanol.every(p => p.bewegung === "fluessig")).toBe(true);
+    expect(ethanol.filter(p => p.bewegung === "fluessig").length / ethanol.length).toBeGreaterThan(0.97);
   });
 
   it("Kristallteilchen bleiben nah an ihrem Platz", () => {
@@ -187,7 +188,7 @@ describe("Fester Stoff im Gitter", () => {
 describe("Trennen", () => {
   const trenn = (id: string) => TRENNUNGEN.find(t => t.id === id)!;
 
-  it("Destillation: aus Wein geht nur das Ethanol in die Vorlage", () => {
+  it("Destillation: der Alkohol wird in der Vorlage angereichert", () => {
     const t = trenn("wein");
     const sz = trennSzene(t, 20, zufall);
     laufe(sz, 1);
@@ -196,7 +197,9 @@ describe("Trennen", () => {
     laufe(sz, 40);
     const [kolben, vorlage] = verteilung(sz);
     expect(vorlage[1] / (kolben[1] + vorlage[1])).toBeGreaterThan(0.6);
-    expect(vorlage[0]).toBe(0);
+    // Etwas Wasser verdunstet mit, aber im Destillat ist viel mehr Alkohol als im Wein.
+    const anteilWein = (kolben[1] + vorlage[1]) / (kolben[0] + kolben[1] + vorlage[0] + vorlage[1]);
+    expect(vorlage[1] / (vorlage[0] + vorlage[1])).toBeGreaterThan(anteilWein * 1.5);
   });
 
   it("Destillation: aus Salzwasser kommt salzfreies Wasser", () => {
@@ -270,5 +273,83 @@ describe("Wärme", () => {
     }
     expect(gesehen).toBe(true);
     expect(stoffTemperatur(sz, 0)!).toBeGreaterThan(0);
+  });
+});
+
+describe("Kräfte und Gefälle", () => {
+  const diff = (id: string) => DIFFUSIONEN.find(d => d.id === id)!;
+
+  it("Wasser verdunstet auch unter 100 °C — wärmer mehr", () => {
+    const dampf = (T: number) => {
+      const sz = einzelSzene("h2o", T, zufall);
+      laufe(sz, 8);
+      return phasenZahl(sz, 0).gas;
+    };
+    const kalt = dampf(20), warm = dampf(70);
+    expect(kalt).toBeGreaterThan(0);
+    expect(warm).toBeGreaterThan(kalt * 3);
+  });
+
+  it("Farbstoff breitet sich auch kalt von selbst aus", () => {
+    const sz = diffusionsSzene(diff("tinte"), 5, zufall);
+    const breite = () => {
+      const f = sz.t.filter(p => p.s === 1), m = f.reduce((a, p) => a + p.x, 0) / f.length;
+      return Math.sqrt(f.reduce((a, p) => a + (p.x - m) ** 2, 0) / f.length);
+    };
+    const vorher = breite();
+    laufe(sz, 8);
+    expect(breite()).toBeGreaterThan(vorher * 1.5);
+  });
+
+  it("warm wandern die Teilchen einer Flüssigkeit viel weiter als kalt", () => {
+    // Mittlere quadratische Verschiebung aller Teilchen in 5 s — das Maß der Diffusion.
+    const weg = (T: number) => {
+      const sz = einzelSzene("h2o", T, zufall);
+      laufe(sz, 3);
+      const start = new Map(sz.t.map(p => [p.id, [p.x, p.y]]));
+      laufe(sz, 5);
+      const f = sz.t.filter(p => p.bewegung === "fluessig");
+      return f.reduce((a, p) => { const [x, y] = start.get(p.id)!; return a + (p.x - x) ** 2 + (p.y - y) ** 2; }, 0) / f.length;
+    };
+    expect(weg(80)).toBeGreaterThan(weg(5) * 3);
+  });
+
+  it("das Konzentrationsprofil flacht ab", () => {
+    const sz = diffusionsSzene(diff("tinte"), 60, zufall);
+    const spitze = Math.max(...profil(sz, 1));
+    laufe(sz, 15);
+    expect(Math.max(...profil(sz, 1))).toBeLessThan(spitze * 0.75);
+  });
+
+  it("Osmose: Wasser wandert zum Zucker, der Pegel dort steigt; Zucker bleibt rechts", () => {
+    const sz = diffusionsSzene(diff("osmose"), 20, zufall);
+    laufe(sz, 3);
+    const [l0, r0] = pegel(sz);
+    laufe(sz, 20);
+    const [l1, r1] = pegel(sz);
+    expect(r1 - l1).toBeGreaterThan(r0 - l0 + 20);
+    expect(sz.t.filter(p => p.s === 1 && p.x < BREITE / 2).length).toBe(0);
+  });
+
+  it("Gasdruck wächst mit der Temperatur (bei gleicher Teilchenzahl)", () => {
+    const druck = (T: number) => { const sz = einzelSzene("n2", T, zufall); laufe(sz, 4); return druckHpa(sz); };
+    const kalt = druck(20), heiss = druck(200);
+    expect(kalt).toBeGreaterThan(800);
+    expect(kalt).toBeLessThan(1250);
+    expect(heiss / kalt).toBeGreaterThan(1.4);
+  });
+
+  it("Umrühren löst Salz schneller (das Gefälle am Kristall wird weggetragen)", () => {
+    const geloest = (ruehren: boolean) => {
+      const sz = mischSzene("nacl", "h2o", 20, zufall);
+      laufe(sz, 1);
+      sz.wand = false;
+      for (let k = 0; k < 16; k++) {
+        if (ruehren) for (const p of sz.t) if (p.bewegung === "fluessig") { p.vx += (zufall() - 0.5) * 600; p.vy -= zufall() * 300; }
+        laufe(sz, 0.5);
+      }
+      return sz.t.filter(p => p.geloest).length;
+    };
+    expect(geloest(true)).toBeGreaterThan(geloest(false));
   });
 });

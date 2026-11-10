@@ -111,6 +111,7 @@ export const STOFFE: Stoff[] = [
   { id: "fes", name: "Eisensulfid", formel: "FeS", gruppe: "Anorganische Verbindungen", schmelz: 1194, siede: null, zersetzt: 1194, dichte: 4.84, masse: 87.9, art: "ionisch", r: 8.5, formen: [ion("Fe", "2+", 0.8), ion("S", "2−", 1)] },
   { id: "mgo", name: "Magnesiumoxid", formel: "MgO", gruppe: "Anorganische Verbindungen", schmelz: 2852, siede: 3600, dichte: 3.58, masse: 40.3, art: "ionisch", r: 8, formen: [ion("Mg", "2+", 0.75), ion("O", "2−", 0.9)] },
   { id: "cuo", name: "Kupferoxid", formel: "CuO", gruppe: "Anorganische Verbindungen", schmelz: 1326, siede: null, zersetzt: 1326, dichte: 6.31, masse: 79.5, art: "ionisch", r: 8, formen: [ion("Cu", "2+", 0.75), ion("O", "2−", 0.9)] },
+  { id: "kmno4", name: "Kaliumpermanganat (Farbstoff)", formel: "KMnO4", gruppe: "Anorganische Verbindungen", schmelz: null, siede: null, zersetzt: 240, dichte: 2.7, masse: 158, art: "ionisch", loeslichIn: "polar", loeslichkeit: 0.06, r: 7.5, formen: [ion("K", "+", 0.8), { atome: [["Mn", 0, 0, 0.45], ["O", 0, -0.6, 0.35], ["O", 0.6, 0, 0.35], ["O", 0, 0.6, 0.35], ["O", -0.6, 0, 0.35]], ladung: "−" }], hinweis: "Schon ein Körnchen färbt viel Wasser tiefviolett — gut, um Diffusion zu sehen." },
   { id: "nh4cl", name: "Salmiak (Ammoniumchlorid)", formel: "NH4Cl", gruppe: "Anorganische Verbindungen", schmelz: null, siede: null, zersetzt: 338, dichte: 1.53, masse: 53.5, art: "ionisch", loeslichIn: "polar", loeslichkeit: 0.35, r: 8.5, formen: [{ atome: [["N", 0, 0, 0.6], ["H", -0.55, -0.55, 0.32], ["H", 0.55, -0.55, 0.32], ["H", -0.55, 0.55, 0.32], ["H", 0.55, 0.55, 0.32]], ladung: "+" }, ion("Cl", "−", 1)] },
   // ── weitere organische Stoffe ──
   { id: "propan", name: "Propan", formel: "C3H8", gruppe: "Organische Stoffe", schmelz: -187.7, siede: -42.1, dichte: 0.58, masse: 44.1, art: "unpolar", r: 9, formen: [kette(3)], hinweis: "Flüssiggas für Grill und Campingkocher — unter Druck in der Flasche flüssig." },
@@ -192,6 +193,6 @@ const KUGELFARBE: Record<string, string> = {
   butan: "#4ade80", hcl: "#d9f99d", nacl: "#f8fafc", zucker: "#fde7c4", sio2: "#d6c7a1", caco3: "#e7e5e4",
   cao: "#fafaf9", fes: "#78716c", mgo: "#f5f5f4", cuo: "#3f3f46", nh4cl: "#e2e8f0",
   propan: "#34d399", pentan: "#fde047", octan: "#f59e0b", benzol: "#fb923c", essigsaeure: "#fca5a5",
-  ether: "#e9d5ff", butanol: "#f472b6",
+  ether: "#e9d5ff", butanol: "#f472b6", kmno4: "#7e22ce",
 };
 export const kugelFarbe = (s: Stoff): string => KUGELFARBE[s.id] ?? "#9ca3af";

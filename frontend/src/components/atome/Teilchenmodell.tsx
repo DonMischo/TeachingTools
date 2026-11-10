@@ -11,9 +11,10 @@ import { GRUPPEN, kugelFarbe, mischText, phaseVon, stoff, STOFFE, type Phase, ty
 import {
   atomZahl, BREITE, einzelSzene, HOEHE, mischSzene, REAKTIONEN, reaktionsSzene, schritt, stoffZahl, TRENNUNGEN,
   phasenZahl, stoffTemperatur, trennSzene, verteilung, waermeZufuehren, zuende, zuendStelle, type Szene,
+  DIFFUSIONEN, diffusionsSzene, druckHpa, pegel, profil,
 } from "@/lib/atome/teilchen";
 
-type Modus = "zustand" | "mischen" | "trennen" | "reaktion";
+type Modus = "zustand" | "mischen" | "trennen" | "diffusion" | "reaktion";
 const PLATTE = 26;
 const AUSWAHL = STOFFE.filter(s => !s.nurReaktion);
 
@@ -121,6 +122,9 @@ export default function Teilchenmodell() {
   const [b, setB] = useState("oel");
   const [rid, setRid] = useState("knallgas");
   const [tid, setTid] = useState("wein");
+  const [did, setDid] = useState("tinte");
+  // Konzentrationskarte: wie viel vom markierten Stoff in jedem Feld ist.
+  const [konz, setKonz] = useState(false);
   const [T, setT] = useState(20);
   const [laufen, setLaufen] = useState(true);
   const [pfeile, setPfeile] = useState(false);
@@ -136,11 +140,14 @@ export default function Teilchenmodell() {
   // Gedrückt halten ins Gefäß: dort Wärme zuführen oder entziehen.
   const [werkzeug, setWerkzeug] = useState<"heiss" | "kalt">("heiss");
   const druck = useRef<{ x: number; y: number } | null>(null);
-  const opt = useRef({ laufen, pfeile, zeitlupe, kugeln, waerme, werkzeug });
-  opt.current = { laufen, pfeile, zeitlupe, kugeln, waerme, werkzeug };
+  // Welcher Stoff in der Konzentrationskarte zählt: der zweite (gelöst bzw. wandernd).
+  const markiert = modus === "diffusion" || modus === "mischen" ? 1 : modus === "trennen" ? -2 : -1;
+  const opt = useRef({ laufen, pfeile, zeitlupe, kugeln, waerme, werkzeug, konz, markiert });
+  opt.current = { laufen, pfeile, zeitlupe, kugeln, waerme, werkzeug, konz, markiert };
 
   const reaktion = REAKTIONEN.find(r => r.id === rid)!;
   const trennung = TRENNUNGEN.find(t => t.id === tid)!;
+  const diffusion = DIFFUSIONEN.find(d => d.id === did)!;
 
   // Neue Szene, wenn sich Stoff, Gemisch oder Reaktion ändert — nicht bei der Temperatur.
   const Tjetzt = useRef(T);
@@ -150,11 +157,12 @@ export default function Teilchenmodell() {
     sz.current = modus === "zustand" ? einzelSzene(a, T0)
       : modus === "mischen" ? mischSzene(a, b, T0)
       : modus === "trennen" ? trennSzene(trennung, T0)
+      : modus === "diffusion" ? diffusionsSzene(diffusion, T0)
       : reaktionsSzene(reaktion, T0);
     start.current = atomZahl(sz.current);
     setTakt(t => t + 1);
   };
-  useEffect(neu, [modus, a, b, rid, tid]);
+  useEffect(neu, [modus, a, b, rid, tid, did]);
   useEffect(() => { if (sz.current) sz.current.T = T; }, [T]);
 
   useEffect(() => {
@@ -251,6 +259,34 @@ export default function Teilchenmodell() {
         ctx.fillStyle = farben.muted; ctx.font = "14px system-ui"; ctx.textAlign = "center"; ctx.textBaseline = "top";
         ctx.fillText("Kolben (geheizt)", BREITE / 4, s.wandOben + 6);
         ctx.fillText(`Vorlage (gekühlt, ${s.kuehler} °C)`, BREITE * 0.75, s.wandOben + 6);
+      }
+      if (s.membran) {
+        // Membran: Poren, durch die nur das Lösemittel passt.
+        ctx.save();
+        ctx.strokeStyle = "#a3a3a3"; ctx.lineWidth = 3; ctx.setLineDash([6, 5]);
+        ctx.beginPath(); ctx.moveTo(s.membran.x, 0); ctx.lineTo(s.membran.x, HOEHE); ctx.stroke();
+        ctx.restore();
+        ctx.fillStyle = farben.muted; ctx.font = "14px system-ui"; ctx.textAlign = "center"; ctx.textBaseline = "top";
+        ctx.fillText("Membran", s.membran.x, 6);
+      }
+      // Konzentrationskarte: Anteil des markierten Stoffs je Feld (bei der
+      // Trennung: der gelösten Teilchen).
+      if (opt.current.konz && opt.current.markiert !== -1) {
+        const F = 50, nx = Math.ceil(BREITE / F), ny = Math.ceil(HOEHE / F);
+        const alle = new Int32Array(nx * ny), davon = new Int32Array(nx * ny);
+        for (const p of s.t) {
+          const k = Math.min(ny - 1, Math.floor(p.y / F)) * nx + Math.min(nx - 1, Math.floor(p.x / F));
+          alle[k]++;
+          if (opt.current.markiert === -2 ? p.geloest : p.s === opt.current.markiert) davon[k]++;
+        }
+        const farbe = opt.current.markiert >= 0 && s.stoffe[opt.current.markiert] ? kugelFarbe(s.stoffe[opt.current.markiert]) : "#a855f7";
+        for (let k = 0; k < alle.length; k++) {
+          if (!alle[k] || !davon[k]) continue;
+          ctx.globalAlpha = Math.min(0.75, 0.15 + 0.8 * davon[k] / alle[k]);
+          ctx.fillStyle = farbe;
+          ctx.fillRect((k % nx) * F, Math.floor(k / nx) * F, F, F);
+        }
+        ctx.globalAlpha = 1;
       }
       if (s.filter !== null) {
         // Filterpapier: gestrichelt — die Lücken sind die Poren.
@@ -358,7 +394,7 @@ export default function Teilchenmodell() {
   return (
     <div className="flex flex-col gap-3">
       <div className="inline-flex self-start rounded-xl border border-line p-1 bg-surface">
-        {([["zustand", "🧊 Aggregatzustände"], ["mischen", "🥤 Mischen"], ["trennen", "⚗️ Trennen"], ["reaktion", "💥 Reaktion"]] as const).map(([id, label]) => (
+        {([["zustand", "🧊 Aggregatzustände"], ["mischen", "🥤 Mischen"], ["trennen", "⚗️ Trennen"], ["diffusion", "🧫 Diffusion & Osmose"], ["reaktion", "💥 Reaktion"]] as const).map(([id, label]) => (
           <button key={id} onClick={() => {
             setModus(id);
             if (id === "mischen" && a === b) setB(a === "h2o" ? "oel" : "h2o");
@@ -433,6 +469,13 @@ export default function Teilchenmodell() {
               className={`px-2 py-1 rounded-lg border text-xs ${waerme ? "border-accent bg-accent/15 font-bold" : "border-line text-muted hover:text-fg"}`}>
               🌡 Wärme zeigen
             </button>
+            {markiert !== -1 && (
+              <button onClick={() => setKonz(k => !k)}
+                title="Färbt das Gefäß feldweise nach dem Anteil des gelösten bzw. wandernden Stoffs — so sieht man das Konzentrationsgefälle"
+                className={`px-2 py-1 rounded-lg border text-xs ${konz ? "border-accent bg-accent/15 font-bold" : "border-line text-muted hover:text-fg"}`}>
+                📊 Konzentration
+              </button>
+            )}
             <button onClick={neu} className="px-2 py-1 rounded-lg border border-line text-xs text-muted hover:text-fg">↺ neu</button>
             <div className="inline-flex rounded-lg border border-line p-0.5" role="group" aria-label="Darstellung der Teilchen">
               {([[true, "⚪ Kugeln"], [false, "⚛️ Atome"]] as const).map(([k, label]) => (
@@ -518,6 +561,52 @@ export default function Teilchenmodell() {
                   gelöste Stoff zurück und kristallisiert wieder.
                 </p>
               )}
+            </>
+          )}
+
+          {s && s.t.some(p => p.bewegung === "gas") && (
+            <div className="text-xs rounded-lg border border-line px-3 py-1.5 flex items-baseline justify-between gap-2"
+              title="Aus Zahl und Geschwindigkeit der Gasteilchen (kinetische Gastheorie): mehr Teilchen oder wärmer heißt mehr Druck">
+              <span className="text-muted">Gasdruck im Gefäß</span>
+              <strong className="tabular-nums">≈ {Math.round(druckHpa(s)).toLocaleString("de-DE")} hPa</strong>
+            </div>
+          )}
+
+          {/* Die Szene wird erst im Effekt gebaut — bis dahin kann noch die alte mit einem Stoff da sein. */}
+          {modus === "diffusion" && s && s.stoffe.length > 1 && (
+            <>
+              <div className="flex flex-wrap gap-1">
+                {DIFFUSIONEN.map(d => (
+                  <button key={d.id} onClick={() => { setT(d.T); setDid(d.id); setKonz(true); }}
+                    className={`px-2 py-0.5 rounded-lg border text-xs ${did === d.id ? "border-accent bg-accent/15 font-bold" : "border-line text-muted hover:text-fg"}`}>
+                    {d.titel}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs">{diffusion.text}</p>
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[11px] text-muted">
+                  Konzentrationsprofil: Anteil {s.stoffe[1].name.replace(/ \(.*\)/, "")} von links nach rechts
+                </span>
+                <svg viewBox="0 0 200 50" className="w-full h-14 rounded bg-black/5 dark:bg-white/5" role="img" aria-label="Konzentrationsprofil">
+                  {profil(s, 1).map((c, k) => (
+                    <rect key={k} x={k * 10 + 1} y={50 - Math.min(1, c * 2) * 48} width={8} height={Math.min(1, c * 2) * 48}
+                      fill={kugelFarbe(s.stoffe[1])} />
+                  ))}
+                  {s.membran && <line x1={100} y1={0} x2={100} y2={50} stroke="#a3a3a3" strokeDasharray="3 3" />}
+                </svg>
+              </div>
+              {s.membran && (() => {
+                const [l, r] = pegel(s);
+                return (
+                  <p className="text-xs">
+                    Pegel links <strong className="tabular-nums">{Math.round(l)}</strong> · rechts{" "}
+                    <strong className="tabular-nums">{Math.round(r)}</strong> · Unterschied{" "}
+                    <strong className="tabular-nums">{Math.round(r - l)}</strong> (Bildpunkte)
+                  </p>
+                );
+              })()}
+              <p className="text-[11px] text-muted">Mit dem Temperaturregler vergleichen: warm geht alles schneller.</p>
             </>
           )}
 

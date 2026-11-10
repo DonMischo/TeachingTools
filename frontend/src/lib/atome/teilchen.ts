@@ -110,6 +110,10 @@ export type Szene = {
   kuehler: number | null;
   /** Höhe eines Filters (y), der nur Flüssiges und Gelöstes durchlässt; sonst null. */
   filter: number | null;
+  /** Halbdurchlässige Membran bei x: nur die genannten Stoffe kommen durch (und nichts Gelöstes). */
+  membran: { x: number; durch: number[] } | null;
+  /** Gasdruck aus den Stößen gegen die Wände, geglättet (Einheiten der Rechnung). */
+  druck: number;
   reaktion: Reaktion | null;
   umsatz: number;
   rueck: number;
@@ -284,7 +288,7 @@ const mischeReihe = <T,>(a: T[], z: Zufall): T[] => {
 
 function leereSzene(stoffe: Stoff[], T: number): Szene {
   return {
-    stoffe, t: [], T, wand: false, heiss: [], plaetze: new Map(), wandOben: 0, kuehler: null, filter: null,
+    stoffe, t: [], T, wand: false, heiss: [], plaetze: new Map(), wandOben: 0, kuehler: null, filter: null, membran: null, druck: 0,
     reaktion: null, umsatz: 0, rueck: 0, nId: 1,
   };
 }
@@ -350,7 +354,7 @@ export type Trennung = {
 
 export const TRENNUNGEN: Trennung[] = [
   { id: "wein", art: "destillation", titel: "Wein → Alkohol", stoffe: [["h2o", 0.3], ["ethanol", 0.2]], ziel: 95,
-    text: "Wasser und Ethanol sind gemischt. Ethanol siedet bei 78 °C, Wasser erst bei 100 °C: zwischen beiden verdampft nur das Ethanol, steigt über die Wand, kühlt in der Vorlage ab und kondensiert. Das Wasser bleibt im Kolben. (Vereinfacht: in Wirklichkeit geht immer etwas Wasser mit.)" },
+    text: "Wasser und Ethanol sind gemischt. Ethanol siedet bei 78 °C, Wasser erst bei 100 °C: dazwischen siedet das Ethanol, steigt über die Wand, kühlt in der Vorlage ab und kondensiert. Das meiste Wasser bleibt im Kolben — etwas verdunstet aber mit: das Destillat ist angereichert, nicht rein. Für mehr Alkohol destilliert man es ein zweites Mal." },
   { id: "salzwasser-d", art: "destillation", titel: "Salzwasser → reines Wasser", stoffe: [["h2o", 0.4], ["nacl", 0.06]], geloest: ["nacl"], ziel: 105,
     text: "Über 100 °C verdampft das Wasser, die gelösten Salzteilchen nicht. In der Vorlage sammelt sich reines Wasser (destilliertes Wasser); im Kolben bleibt das Salz zurück und kristallisiert, sobald das Wasser fehlt." },
   { id: "erdoel", art: "destillation", titel: "Benzin aus Erdöl", stoffe: [["hexan", 0.22], ["octan", 0.22]], ziel: 95,
@@ -362,6 +366,81 @@ export const TRENNUNGEN: Trennung[] = [
   { id: "sand-salz", art: "filtration", titel: "Sand + Salzwasser", stoffe: [["sio2", 0.06], ["h2o", 0.22], ["nacl", 0.03]], geloest: ["nacl"], ziel: 20,
     text: "Der Filter hält den Sand zurück, das Salzwasser läuft durch. Um auch das Salz zu bekommen, dampft man das Filtrat anschließend ein." },
 ];
+
+/**
+ * Gasdruck in hPa: so geeicht, dass Stickstoff bei 20 °C im vollen Gefäß
+ * etwa Normaldruck zeigt. Ein Modell — die Zahl soll Vergleiche erlauben,
+ * keine Messung ersetzen.
+ */
+export const druckHpa = (sz: Szene): number => sz.druck * DRUCK_EICHUNG;
+const DRUCK_EICHUNG = 3.1;
+
+export type Diffusion = {
+  id: string;
+  titel: string;
+  /** Lösemittel bzw. Gas, das den Raum füllt, und der Stoff, der wandert. */
+  traeger: string;
+  wandert: string;
+  /** Osmose: Membran in der Mitte, das Gelöste rechts. */
+  membran?: boolean;
+  T: number;
+  text: string;
+};
+
+export const DIFFUSIONEN: Diffusion[] = [
+  { id: "tinte", titel: "Farbstoff in Wasser", traeger: "h2o", wandert: "kmno4", T: 20,
+    text: "Ein Tropfen Farbstoff breitet sich im Wasser aus, ohne Umrühren. Kein Teilchen »will« dorthin, wo weniger sind — jedes stößt zufällig herum. Aber wo viele sind, wandern mehr hinaus als hinein: so gleicht sich das Konzentrationsgefälle aus. Warm geht es schneller, weil die Teilchen schneller sind." },
+  { id: "duft", titel: "Duftstoff in Luft", traeger: "n2", wandert: "nh3", T: 20,
+    text: "Ammoniak riecht man bald im ganzen Raum: In Gasen sind die Teilchen weit auseinander und schnell — Diffusion geht dort viel schneller als in Flüssigkeiten." },
+  { id: "osmose", titel: "Osmose (Zuckerwasser)", traeger: "h2o", wandert: "zucker", membran: true, T: 20,
+    text: "Die Membran in der Mitte lässt Wasserteilchen durch, Zuckerteilchen nicht. Rechts sind zwischen den Wasserteilchen Zuckerteilchen — dort treffen weniger Wasserteilchen von rechts auf die Membran als von links. Netto wandert Wasser nach rechts, und der Pegel rechts steigt, bis sein Gewicht dagegenhält (osmotischer Druck). So nehmen Pflanzenwurzeln Wasser auf." },
+];
+
+export function diffusionsSzene(d: Diffusion, T: number, z: Zufall = Math.random): Szene {
+  const traeger = stoff(d.traeger), wandert = stoff(d.wandert);
+  const sz = leereSzene([traeger, wandert], T);
+  const gas = phaseVon(traeger, T) === "gasförmig";
+  // Gas dünn: in Luft sind die Teilchen weit auseinander, sonst wäre die freie Weglänge zu kurz.
+  const n = anzahl(traeger, gas ? 0.15 : 0.75);
+  lege(sz, Array.from({ length: n }, () => ({ s: 0, form: 0 })), 0, BREITE, 0, z);
+  // Gemischt flüssig, nicht im Gitter.
+  for (const p of sz.t) if (p.platz) { sz.plaetze.delete(p.platz); p.platz = null; p.bewegung = "fluessig"; }
+  // Ein Teil der Trägerteilchen wird zum wandernden Stoff — so liegt nichts übereinander.
+  const wahl = (p: Teilchen) => d.membran ? p.x > BREITE / 2 + 2 * traeger.r
+    : gas ? p.x < BREITE * 0.2
+    : Math.hypot(p.x - BREITE * 0.15, p.y - (HOEHE - 60)) < 70;
+  const kandidaten = sz.t.filter(wahl);
+  const zahl = d.membran ? Math.round(kandidaten.length * 0.25) : kandidaten.length;
+  for (const p of mischeReihe(kandidaten, z).slice(0, zahl)) {
+    p.s = 1;
+    p.form = Math.floor(z() * wandert.formen.length);
+    p.phase = gas ? "gas" : "fluessig";
+    p.geloest = !gas;
+  }
+  if (d.membran) sz.membran = { x: BREITE / 2, durch: [0] };
+  return sz;
+}
+
+/** Anteil eines Stoffs in senkrechten Streifen von links nach rechts — das Konzentrationsprofil. */
+export function profil(sz: Szene, s: number, streifen = 20): number[] {
+  const alle = new Array(streifen).fill(0), davon = new Array(streifen).fill(0);
+  for (const p of sz.t) {
+    const k = Math.min(streifen - 1, Math.floor(p.x / BREITE * streifen));
+    alle[k]++;
+    if (p.s === s) davon[k]++;
+  }
+  return davon.map((d, k) => (alle[k] ? d / alle[k] : 0));
+}
+
+/** Pegel der Flüssigkeit links und rechts (Höhe über dem Boden in Bildpunkten). */
+export function pegel(sz: Szene): [number, number] {
+  const seite = (links: boolean) => {
+    const ys = sz.t.filter(p => p.bewegung !== "gas" && (p.x < BREITE / 2) === links).map(p => p.y).sort((a, b) => a - b);
+    if (!ys.length) return 0;
+    return HOEHE - ys[Math.floor(ys.length * 0.05)];
+  };
+  return [seite(true), seite(false)];
+}
 
 export function trennSzene(t: Trennung, T: number, z: Zufall = Math.random): Szene {
   const sz = leereSzene(t.stoffe.map(([id]) => stoff(id)), T);
@@ -504,6 +583,9 @@ function wandle(p: Teilchen, s: Stoff): void {
     return;
   }
   const hoch = stufe[ziel] > stufe[p.phase];
+  // Dampf unter dem Siedepunkt darf es geben (Verdunsten). Er kondensiert erst,
+  // wenn er auf Flüssigkeit oder eine Wand trifft — das regelt `schritt`.
+  if (!hoch && p.phase === "gas") return;
   // Die Grenze, an der die Umwandlung stattfindet, und wie viel Wärme sie braucht.
   let grenze: number, bedarf: number, naechste: Teilchen["phase"];
   if (hoch) {
@@ -592,6 +674,8 @@ export function schritt(sz: Szene, dt: number, z: Zufall = Math.random): Ereigni
   const dichteVon = (p: Teilchen, s: Stoff) => (p.geloest ? 1 : s.dichte);
   // Gas mitten in einer Flüssigkeit: eine Blase, die aufsteigt.
   const nass = new Uint8Array(n);
+  // Wie viele flüssige oder feste Nachbarn — wenige heißt: an der Oberfläche.
+  const nachbarnDicht = new Int32Array(n);
   const gleich = new Int32Array(n), stuetze = new Uint8Array(n), loeser = new Uint8Array(n), angriff = new Uint8Array(n);
 
   // Nicht mischbare Flüssigkeiten: jede bekommt ihre Schicht, die dichteste
@@ -655,6 +739,8 @@ export function schritt(sz: Szene, dt: number, z: Zufall = Math.random): Ereigni
         dTemp[i] += k; dTemp[j] -= k;
       }
       if (d < rr * 1.3) {
+        if (bi !== "gas") nachbarnDicht[j]++;
+        if (bj !== "gas") nachbarnDicht[i]++;
         if (bi === "gas" && bj === "fluessig") nass[i] = 1;
         if (bj === "gas" && bi === "fluessig") nass[j] = 1;
       }
@@ -697,18 +783,75 @@ export function schritt(sz: Szene, dt: number, z: Zufall = Math.random): Ereigni
     loesemittel[k] = sz.t.filter(q => q.bewegung === "fluessig" && !q.geloest && loestSichIn(s, sz.stoffe[q.s])).length;
   });
 
+  // Örtliche Sättigung (Noyes-Whitney): gelöst wird umso schneller, je weiter
+  // die Lösung direkt am Kristall von der Sättigung entfernt ist, (cₛ − c)/cₛ.
+  // Um den Kristall sammelt sich gelöster Stoff und bremst; erst wenn er
+  // wegdiffundiert oder umgerührt wird, geht es weiter. Dieses
+  // Konzentrationsgefälle treibt das Lösen an.
+  const untersaettigung = (i: number): number => {
+    const p = sz.t[i], s = st[i], radius = 4 * s.r;
+    let geloestHier = 0, loeserHier = 0;
+    const cx = zx(p.x), cy = zy(p.y), w = Math.ceil(radius / zelle);
+    for (let ey = cy - w; ey <= cy + w; ey++) for (let ex = cx - w; ex <= cx + w; ex++) {
+      if (ex < 0 || ey < 0 || ex >= nx || ey >= ny) continue;
+      for (let j = kopf[ey * nx + ex]; j !== -1; j = weiter[j]) {
+        const q = sz.t[j];
+        if (Math.hypot(q.x - p.x, q.y - p.y) > radius) continue;
+        if (q.geloest && q.s === p.s) geloestHier++;
+        else if (q.bewegung === "fluessig" && !q.geloest && loestSichIn(s, st[j])) loeserHier++;
+      }
+    }
+    const cs = s.loeslichkeit ?? 0;
+    return cs > 0 ? Math.max(0, 1 - geloestHier / Math.max(1, loeserHier) / cs) : 0;
+  };
+
   // Wie hoch die Flüssigkeit jedes Stoffs steht — so weit reicht die Umwälzströmung.
   const hoehe = sz.stoffe.map(() => 0);
   for (const p of sz.t) {
     if (p.bewegung === "fluessig") hoehe[p.s] += ((2 * sz.stoffe[p.s].r) ** 2 * 0.9) / (sz.wand ? BREITE / 2 : BREITE);
   }
 
+  // Kinetische Gastheorie: Die Wandstöße der Gasteilchen ergeben den Druck,
+  // im Mittel p·A = ½·Σ m·v² (in der Ebene). Direkt gezählte Stöße rauschen
+  // zu stark, das Mittel ist dieselbe Physik.
+  let energie = 0;
+  // Osmose: wo auf einer Seite der Membran mehr gelöst ist, wird das
+  // Lösemittel an der Membran dorthin gezogen (Triebkraft nach van 't Hoff,
+  // proportional zum Konzentrationsunterschied und zur Temperatur). Der
+  // steigende Pegel drückt zurück, bis beides gleich ist.
+  let osmose = 0;
+  if (sz.membran) {
+    const c = [0, 0], fl = [0, 0];
+    for (const q of sz.t) {
+      if (q.bewegung === "gas") continue;
+      const k = q.x < sz.membran.x ? 0 : 1;
+      fl[k]++;
+      if (q.geloest) c[k]++;
+    }
+    osmose = (c[1] / Math.max(1, fl[1]) - c[0] / Math.max(1, fl[0])) * 6000 * Math.max(0, K(sz.T)) / 293;
+  }
   for (let i = 0; i < n; i++) {
     const p = sz.t[i], s = st[i], T = Tl[i];
+    if (osmose && sz.membran && !p.geloest && p.bewegung === "fluessig" && sz.membran.durch.includes(p.s)
+      && Math.abs(p.x - sz.membran.x) < 4 * s.r) fx[i] += osmose;
     const band = p.bewegung === "fluessig" && !p.geloest ? schicht.get(p.s) : undefined;
     if (band) {
       if (p.y < band[0] - s.r) fy[i] += 900;
       else if (p.y > band[1] + s.r) fy[i] -= 900;
+    }
+    // Verdunsten: an der Oberfläche entkommt ab und zu ein Teilchen, auch weit
+    // unter dem Siedepunkt — umso öfter, je wärmer (Clausius-Clapeyron mit der
+    // Regel von Trouton, L/R ≈ 10,5·Tₛ). Dampf kondensiert, wo er auf
+    // Flüssigkeit, Feststoff oder Wand trifft. So stellt sich über jeder
+    // Flüssigkeit ein Dampfdruck ein.
+    if (s.siede !== null && T < s.siede && !p.geloest && p.umw === 0) {
+      if (p.phase === "fluessig" && !p.platz && nachbarnDicht[i] <= 3) {
+        const rate = 0.6 * Math.exp(-10.5 * (K(s.siede) / Math.max(1, K(T)) - 1));
+        if (z() < rate * dt) p.phase = "gas";
+      } else if (p.phase === "gas") {
+        const anWand = p.x < 1.3 * s.r || p.x > BREITE - 1.3 * s.r || p.y < 1.3 * s.r || p.y > HOEHE - 1.3 * s.r;
+        if ((nachbarnDicht[i] > 0 && z() < 6 * dt) || (anWand && z() < 1.5 * dt)) p.phase = "fluessig";
+      }
     }
     const fest = p.phase === "fest" && !p.geloest;
 
@@ -716,7 +859,7 @@ export function schritt(sz: Szene, dt: number, z: Zufall = Math.random): Ereigni
     if (p.platz) {
       if (!fest) { sz.plaetze.delete(p.platz); p.platz = null; }
       if (p.platz && angriff[i] && geloest[p.s] < (s.loeslichkeit ?? 0) * loesemittel[p.s]
-        && z() < dt * 0.8 * (1 + Math.max(0, T) / 50)) {
+        && z() < dt * 2.5 * (1 + Math.max(0, T) / 50) * untersaettigung(i)) {
         sz.plaetze.delete(p.platz); p.platz = null; p.geloest = true; geloest[p.s]++;
       }
     } else if (fest) {
@@ -767,7 +910,9 @@ export function schritt(sz: Szene, dt: number, z: Zufall = Math.random): Ereigni
         // Wärmebad: Reibung plus Zufallsstöße je Teilchen. Eine gemeinsame
         // Strömung wird so gedämpft — die Flüssigkeit schwappt nicht, sie zittert.
         // Je näher am Siedepunkt, desto heftiger.
-        const reib = 4, vth = v0 * 0.35, stoss = vth * Math.sqrt(2 * reib * dt);
+        // Zähigkeit: kalte Flüssigkeiten sind zäh, warme dünnflüssig (Wasser bei
+        // 80 °C viermal dünner als bei 5 °C) — darum diffundiert es warm viel schneller.
+        const reib = 4 * Math.min(3, (293 / Math.max(150, K(T))) ** 2), vth = v0 * 0.35, stoss = vth * Math.sqrt(2 * reib * dt);
         // Konvektion: unten in der Mitte heizt der Brenner. Je näher am Siedepunkt, desto stärker.
         const oben = s.siede ?? s.zersetzt ?? (s.schmelz ?? 0) + 300;
         const stark = Math.max(0, Math.min(1, (T - (s.schmelz ?? -273)) / Math.max(1, oben - (s.schmelz ?? -273))));
@@ -798,10 +943,17 @@ export function schritt(sz: Szene, dt: number, z: Zufall = Math.random): Ereigni
 
     // Wände.
     const r = s.r, e = p.bewegung === "gas" ? 1 : 0.3;
+    if (p.bewegung === "gas") energie += s.masse * (p.vx * p.vx + p.vy * p.vy);
     if (p.x < r) { p.x = r; p.vx = Math.abs(p.vx) * e; }
     if (p.x > BREITE - r) { p.x = BREITE - r; p.vx = -Math.abs(p.vx) * e; }
     if (p.y < r) { p.y = r; p.vy = Math.abs(p.vy) * e; }
     if (p.y > HOEHE - r) { p.y = HOEHE - r; p.vy = -Math.abs(p.vy) * e; }
+    // Membran: das Lösemittel kommt durch, Gelöstes und andere Stoffe nicht.
+    if (sz.membran && (p.geloest || !sz.membran.durch.includes(p.s))) {
+      const mx = sz.membran.x;
+      if (altX < mx && p.x > mx - r) { p.x = mx - r; p.vx = -Math.abs(p.vx) * e; }
+      if (altX >= mx && p.x < mx + r) { p.x = mx + r; p.vx = Math.abs(p.vx) * e; }
+    }
     // Trennwand: bei der Destillation nur bis `wandOben` — darüber ist der Durchgang.
     if (sz.wand && p.y + r > sz.wandOben) {
       if (altX < BREITE / 2 && p.x > BREITE / 2 - 3 - r) { p.x = BREITE / 2 - 3 - r; p.vx = -Math.abs(p.vx) * e; }
@@ -819,6 +971,9 @@ export function schritt(sz: Szene, dt: number, z: Zufall = Math.random): Ereigni
 
   const ereignisse = sz.reaktion ? reagiere(sz, dt, z) : [];
 
+  // Druck geglättet über etwa eine Sekunde.
+  const a = Math.min(1, dt);
+  sz.druck = sz.druck * (1 - a) + a * energie / 2 / (BREITE * HOEHE);
   const lage = new Map(sz.t.map(p => [p.id, p]));
   for (const h of sz.heiss) {
     h.t += dt;
