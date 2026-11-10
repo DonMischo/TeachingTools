@@ -5,7 +5,7 @@
 import { describe, expect, it } from "vitest";
 import { kugelFarbe, loestSichIn, mischbar, mischText, phaseVon, stoff, STOFFE } from "@/lib/atome/stoffe";
 import {
-  atomZahl, einzelSzene, mischSzene, REAKTIONEN, reaktionsSzene, schritt, stoffZahl, zuende, type Szene,
+  atomZahl, BREITE, einzelSzene, mischSzene, REAKTIONEN, reaktionsSzene, schritt, stoffZahl, zuende, type Szene,
 } from "@/lib/atome/teilchen";
 
 const zufall = (() => { let s = 11; return () => ((s = (s * 16807) % 2147483647) / 2147483647); })();
@@ -116,5 +116,40 @@ describe("Reaktionen", () => {
     sz.wand = false;
     laufe(sz, 4);
     expect(sz.umsatz).toBeGreaterThan(0);
+  });
+});
+
+describe("Flüssigkeit", () => {
+  /** Wasser einschwingen lassen, dann 10 s lang messen. */
+  const messe = (T: number) => {
+    const sz = einzelSzene("h2o", T, zufall);
+    laufe(sz, 3);
+    const schwerpunkt: number[] = [], lose: number[] = [], mitte: number[] = [], rand: number[] = [];
+    for (let k = 0; k < 40; k++) {
+      for (let i = 0; i < 15; i++) schritt(sz, 1 / 60, zufall);
+      const f = sz.t.filter(p => p.bewegung === "fluessig");
+      schwerpunkt.push(f.reduce((a, p) => a + p.x, 0) / f.length);
+      lose.push(f.filter(p => !f.some(q => q !== p && Math.hypot(q.x - p.x, q.y - p.y) < 20)).length);
+      const m = f.filter(p => Math.abs(p.x - BREITE / 2) < BREITE * 0.15);
+      const r = f.filter(p => Math.abs(p.x - BREITE / 2) > BREITE * 0.35);
+      mitte.push(m.reduce((a, p) => a + p.vy, 0) / m.length);
+      rand.push(r.reduce((a, p) => a + p.vy, 0) / r.length);
+    }
+    const mittel = (a: number[]) => a.reduce((x, y) => x + y, 0) / a.length;
+    const streuung = Math.sqrt(mittel(schwerpunkt.map(x => (x - mittel(schwerpunkt)) ** 2)));
+    return { streuung, lose: mittel(lose), mitte: mittel(mitte), rand: mittel(rand) };
+  };
+
+  it("schwappt nicht und bleibt beisammen", () => {
+    const m = messe(20);
+    expect(m.streuung).toBeLessThan(6);
+    expect(m.lose).toBeLessThan(6);
+  });
+
+  it("wälzt sich nahe am Siedepunkt um: in der Mitte hoch, am Rand runter", () => {
+    const m = messe(85);
+    // y wächst nach unten.
+    expect(m.mitte).toBeLessThan(-10);
+    expect(m.rand).toBeGreaterThan(10);
   });
 });

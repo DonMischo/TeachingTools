@@ -49,6 +49,8 @@ export type Teilchen = {
   /** Links (0) oder rechts (1) der Trennwand. */
   seite: 0 | 1;
   bewegung: Bewegung;
+  /** Wärme aus dem Brenner, 0–1 — nur zum Einfärben, damit man die Umwälzung sieht. */
+  w: number;
 };
 
 export type Heiss = {
@@ -154,7 +156,7 @@ function neuesTeilchen(sz: Szene, s: number, form: number, x: number, y: number,
   const v = tempo(sz.T, st.masse), w = z() * Math.PI * 2;
   return {
     id: sz.nId++, s, form, x, y, vx: Math.cos(w) * v, vy: Math.sin(w) * v, phi: z() * Math.PI * 2, om: 0,
-    platz: null, los: 0, warte: 0, geloest: false, ohne: 0, seite, bewegung: "gas",
+    platz: null, los: 0, warte: 0, geloest: false, ohne: 0, seite, bewegung: "gas", w: 0,
   };
 }
 
@@ -205,7 +207,7 @@ function leereSzene(stoffe: Stoff[], T: number): Szene {
 }
 
 const anzahl = (s: Stoff, anteil: number) =>
-  Math.round(Math.max(30, Math.min(150, (BREITE * HOEHE * 0.2 * anteil) / (4 * s.r * s.r))) / s.formen.length) * s.formen.length;
+  Math.round(Math.max(40, Math.min(240, (BREITE * HOEHE * 0.3 * anteil) / (4 * s.r * s.r))) / s.formen.length) * s.formen.length;
 
 export function einzelSzene(id: string, T: number, z: Zufall = Math.random): Szene {
   const s = stoff(id);
@@ -380,7 +382,7 @@ export function schritt(sz: Szene, dt: number, z: Zufall = Math.random): Ereigni
         if (p.s === q.s) aff = p.geloest || q.geloest ? 0.05 : 1;
         else if ((p.geloest && loestSichIn(st[i], st[j])) || (q.geloest && loestSichIn(st[j], st[i]))) aff = 1.2;
         else aff = mischbar(st[i], st[j]) ? 0.9 : 0.08;
-        f = 200 * aff;
+        f = 420 * aff;
       }
       fx[i] += ux * f; fy[i] += uy * f;
       fx[j] -= ux * f; fy[j] -= uy * f;
@@ -394,6 +396,12 @@ export function schritt(sz: Szene, dt: number, z: Zufall = Math.random): Ereigni
     if (!s.loeslichIn) return;
     loesemittel[k] = sz.t.filter(q => q.bewegung === "fluessig" && !q.geloest && loestSichIn(s, sz.stoffe[q.s])).length;
   });
+
+  // Wie hoch die Flüssigkeit jedes Stoffs steht — so weit reicht die Umwälzströmung.
+  const hoehe = sz.stoffe.map(() => 0);
+  for (const p of sz.t) {
+    if (p.bewegung === "fluessig") hoehe[p.s] += ((2 * sz.stoffe[p.s].r) ** 2 * 0.9) / (sz.wand ? BREITE / 2 : BREITE);
+  }
 
   for (let i = 0; i < n; i++) {
     const p = sz.t[i], s = st[i], T = Tl[i];
@@ -442,21 +450,47 @@ export function schritt(sz: Szene, dt: number, z: Zufall = Math.random): Ereigni
       const gas = p.bewegung === "gas";
       const dichte = p.geloest ? 1 : s.dichte;
       const g = gas ? 15 : 500 * (0.4 + 0.6 * Math.min(1, dichte / rhoMax));
-      p.vx += fx[i] * dt;
       // Leichter als die Umgebung: steigt auf; schwerer: sinkt (Öl auf Wasser).
       const auftrieb = !gas && umZahl[i] ? 4000 * (umDichte[i] / umZahl[i] - dichte) / (umDichte[i] / umZahl[i]) : 0;
-      p.vy += (fy[i] + g - auftrieb) * dt;
-      const ziel = gas ? v0 : v0 * 0.6;
-      const tempoJetzt = Math.hypot(p.vx, p.vy);
-      if (tempoJetzt < 1) { const w = z() * Math.PI * 2; p.vx = Math.cos(w) * ziel; p.vy = Math.sin(w) * ziel; }
-      else {
-        const k = 1 + (gas ? 0.03 : 0.08) * (ziel / tempoJetzt - 1);
-        p.vx *= k; p.vy *= k;
+      if (gas) {
+        p.vx += fx[i] * dt;
+        p.vy += (fy[i] + g) * dt;
+        const tempoJetzt = Math.hypot(p.vx, p.vy);
+        if (tempoJetzt < 1) { const w = z() * Math.PI * 2; p.vx = Math.cos(w) * v0; p.vy = Math.sin(w) * v0; }
+        else { const k = 1 + 0.03 * (v0 / tempoJetzt - 1); p.vx *= k; p.vy *= k; }
+      } else {
+        // Wärmebad: Reibung plus Zufallsstöße je Teilchen. Eine gemeinsame
+        // Strömung wird so gedämpft — die Flüssigkeit schwappt nicht, sie zittert.
+        // Je näher am Siedepunkt, desto heftiger.
+        const reib = 4, vth = v0 * 0.35, stoss = vth * Math.sqrt(2 * reib * dt);
+        // Konvektion: unten in der Mitte heizt der Brenner. Je näher am Siedepunkt, desto stärker.
+        const oben = s.siede ?? s.zersetzt ?? (s.schmelz ?? 0) + 300;
+        const stark = Math.max(0, Math.min(1, (T - (s.schmelz ?? -273)) / Math.max(1, oben - (s.schmelz ?? -273))));
+        if (p.y > HOEHE - 3 * s.r && Math.abs(p.x - BREITE / 2) < BREITE * 0.2) p.w += (1 - p.w) * Math.min(1, 3 * dt);
+        else p.w -= p.w * Math.min(1, 0.4 * dt);
+        // Die Strömung: zwei Walzen in der Flüssigkeit (Stromfunktion
+        // ψ = A·sin(2πx/b)·sin(πy/h)), oben und unten ohne Senkrechtanteil —
+        // so bleibt die Oberfläche glatt. Als Auftriebskraft gerechnet, gäbe es
+        // eine Fontäne, die die Oberfläche hochdrückt. Die Reibung zieht jedes
+        // Teilchen zur Strömung hin.
+        const [x0, x1] = sz.wand ? (p.seite === 0 ? [0, BREITE / 2] : [BREITE / 2, BREITE]) : [0, BREITE];
+        const b = x1 - x0, h = Math.max(4 * s.r, hoehe[p.s]), oberkante = HOEHE - h;
+        let ux = 0, uy = 0;
+        if (p.y > oberkante && stark > 0) {
+          const sx = (2 * Math.PI) / b, sy = Math.PI / h;
+          // Geschwindigkeit in der Walzenmitte: bis 90 px/s.
+          const A = (90 * stark) / sx;
+          // uy < 0 heißt nach oben: in der Mitte (cos = −1) steigt es auf.
+          ux = -A * sy * Math.sin(sx * (p.x - x0)) * Math.cos(sy * (p.y - oberkante));
+          uy = A * sx * Math.cos(sx * (p.x - x0)) * Math.sin(sy * (p.y - oberkante));
+        }
+        p.vx += (fx[i] - reib * (p.vx - ux)) * dt + stoss * gauss(z);
+        p.vy += (fy[i] + g - auftrieb - reib * (p.vy - uy)) * dt + stoss * gauss(z);
       }
-      if (!gas) { p.vx += gauss(z) * ziel * 0.4 * Math.sqrt(dt); p.vy += gauss(z) * ziel * 0.4 * Math.sqrt(dt); }
       p.om += gauss(z) * (gas ? 8 : 3) * dt;
       p.om = Math.max(-8, Math.min(8, p.om * (gas ? 0.999 : 0.97)));
     }
+    if (p.bewegung !== "fluessig") p.w = 0;
     p.x += p.vx * dt; p.y += p.vy * dt; p.phi += p.om * dt;
 
     // Wände.

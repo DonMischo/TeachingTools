@@ -118,8 +118,10 @@ export default function Teilchenmodell() {
   const leinwand = useRef<HTMLCanvasElement>(null);
   const sz = useRef<Szene | null>(null);
   const start = useRef<Record<string, number>>({});
-  const opt = useRef({ laufen, pfeile, zeitlupe, kugeln });
-  opt.current = { laufen, pfeile, zeitlupe, kugeln };
+  // Erwärmte Teilchen einfärben, damit man die Konvektion sieht.
+  const [waerme, setWaerme] = useState(false);
+  const opt = useRef({ laufen, pfeile, zeitlupe, kugeln, waerme });
+  opt.current = { laufen, pfeile, zeitlupe, kugeln, waerme };
 
   const reaktion = REAKTIONEN.find(r => r.id === rid)!;
 
@@ -174,10 +176,11 @@ export default function Teilchenmodell() {
         : `rgb(${120 - 60 * kalt},${150 + 30 * kalt},${200 + 55 * kalt})`;
       ctx.fillRect(0, HOEHE + 4, BREITE, PLATTE - 4);
       if (s.T > 60) {
-        // Flämmchen, mehr und höher je heißer.
-        const zahl = Math.min(24, Math.round(4 + glut * 20));
+        // Der Brenner sitzt in der Mitte — dort heizt auch die Simulation, und
+        // darüber steigt die Flüssigkeit auf. Mehr und höhere Flammen je heißer.
+        const zahl = Math.min(12, Math.round(3 + glut * 9));
         for (let i = 0; i < zahl; i++) {
-          const fx = (i + 0.5) * BREITE / zahl, h = 6 + glut * 12 * (0.7 + 0.3 * Math.sin(flacker * 9 + i * 1.7));
+          const fx = BREITE * 0.3 + (i + 0.5) * BREITE * 0.4 / zahl, h = 6 + glut * 12 * (0.7 + 0.3 * Math.sin(flacker * 9 + i * 1.7));
           ctx.beginPath();
           ctx.moveTo(fx - 5, HOEHE + PLATTE);
           ctx.quadraticCurveTo(fx, HOEHE + PLATTE - h * 2, fx + 5, HOEHE + PLATTE);
@@ -208,7 +211,14 @@ export default function Teilchenmodell() {
         ctx.fillRect(BREITE / 2 - 3, 0, 6, HOEHE);
       }
 
-      // Die Teilchen.
+      // Die Teilchen; mit »Wärme zeigen« glühen die vom Brenner erwärmten nach.
+      const glueh = (p: { x: number; y: number; w: number }, r: number) => {
+        if (!opt.current.waerme || p.w < 0.05) return;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,70,0,${0.75 * p.w})`;
+        ctx.fill();
+      };
       for (const p of s.t) {
         const st = s.stoffe[p.s], form = st.formen[p.form];
         if (opt.current.pfeile) {
@@ -228,6 +238,7 @@ export default function Teilchenmodell() {
           ctx.fill();
           ctx.strokeStyle = "#0008"; ctx.lineWidth = 0.8;
           ctx.stroke();
+          glueh(p, st.r * 0.95);
           continue;
         }
         const cos = Math.cos(p.phi), sin = Math.sin(p.phi);
@@ -244,6 +255,7 @@ export default function Teilchenmodell() {
           ctx.fillStyle = "#000"; ctx.font = "bold 8px system-ui"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
           ctx.fillText(form.ladung, p.x, p.y + 0.5);
         }
+        glueh(p, st.r * 0.8);
       }
 
       for (let i = blitze.length - 1; i >= 0; i--) {
@@ -334,6 +346,11 @@ export default function Teilchenmodell() {
             <button onClick={() => setPfeile(p => !p)}
               className={`px-2 py-1 rounded-lg border text-xs ${pfeile ? "border-accent bg-accent/15 font-bold" : "border-line text-muted hover:text-fg"}`}>
               ➶ Geschwindigkeit
+            </button>
+            <button onClick={() => setWaerme(w => !w)}
+              title="Teilchen, die der Brenner erwärmt hat, leuchten orange — so sieht man die Umwälzung (Konvektion)"
+              className={`px-2 py-1 rounded-lg border text-xs ${waerme ? "border-accent bg-accent/15 font-bold" : "border-line text-muted hover:text-fg"}`}>
+              🌡 Wärme zeigen
             </button>
             <button onClick={neu} className="px-2 py-1 rounded-lg border border-line text-xs text-muted hover:text-fg">↺ neu</button>
             <div className="inline-flex rounded-lg border border-line p-0.5" role="group" aria-label="Darstellung der Teilchen">
