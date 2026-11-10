@@ -10,6 +10,7 @@ import { ausLauflaengen, ausMorse, buchstabe, inHieroglyphen, lauflaengen, quipu
 import { DEMOS } from "@/components/medien/demos";
 import { t9Code, t9Vorschlaege } from "@/lib/medien/t9";
 import { genauigkeit } from "@/components/medien/demos/Antike";
+import { dauer, einzelBote, staffel, stand } from "@/lib/medien/boten";
 
 describe("Stationen der Zeitreise", () => {
   it("eindeutige Ids, chronologisch, vollständige Inhalte", () => {
@@ -124,6 +125,19 @@ describe("Codes der Demos", () => {
     expect(genauigkeit(1, 1)).toBe(0); // alles vollgekritzelt
     expect(genauigkeit(0, 0)).toBe(0);
     expect(genauigkeit(1.4, -0.2)).toBe(100);
+  });
+
+  it("Boten: Staffel mit Herodots Stationen gut eine Woche, allein Wochen; Schlaf heißt Stillstand", () => {
+    const tage = (h: number) => h / 24;
+    expect(tage(dauer(staffel(111)))).toBeGreaterThan(6);
+    expect(tage(dauer(staffel(111)))).toBeLessThan(10);
+    expect(tage(dauer(einzelBote(6, 10)))).toBeCloseTo(2500 / 60, 0);
+    expect(dauer(staffel(1))).toBeCloseTo(dauer(einzelBote(15, 6)), 5); // eine Staffel aus einem Reiter = Reiter allein
+    expect(dauer(staffel(30))).toBeLessThan(dauer(staffel(5)));
+    const lauf = einzelBote(6, 10);
+    expect(stand(lauf, 5).tun).toBe("unterwegs");
+    expect(stand(lauf, 12)).toEqual({ km: 60, tun: "pause" }); // nach 10 h: 60 km, Nachtruhe
+    expect(stand(lauf, dauer(lauf) + 1).tun).toBe("angekommen");
   });
 
   it("Hieroglyphen-Namen", () => {

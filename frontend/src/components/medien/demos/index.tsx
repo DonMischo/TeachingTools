@@ -7,11 +7,12 @@ import { DisketteDemo, KassetteDemo, ModemDemo, SmsDemo } from "./Modern";
 import { SatellitDemo } from "./Satellit";
 import { HoehlenwandDemo, PagerDemo } from "./Live";
 import { DiaDemo } from "./Dia";
+import { BotenDemo } from "./Boten";
 
 export const DEMOS: Record<DemoId, ComponentType> = {
   keilschrift: KeilschriftDemo, hieroglyphen: HieroglyphenDemo, quipu: QuipuDemo, leuchtfeuer: LeuchtfeuerDemo,
   setzkasten: SetzkastenDemo, chappe: ChappeDemo, belichtung: BelichtungDemo,
   morse: MorseDemo, fax: FaxDemo, waehlscheibe: WaehlscheibeDemo, platte: PlatteDemo,
   kassette: KassetteDemo, diskette: DisketteDemo, sms: SmsDemo,
-  satellit: SatellitDemo, modem: ModemDemo, pager: PagerDemo, hoehlenwand: HoehlenwandDemo, dia: DiaDemo,
+  satellit: SatellitDemo, modem: ModemDemo, pager: PagerDemo, hoehlenwand: HoehlenwandDemo, dia: DiaDemo, boten: BotenDemo,
 };

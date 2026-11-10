@@ -48,7 +48,7 @@ export interface Frage { text: string; optionen: string[]; richtig: number; erkl
 export interface Flop { lebte: string; warum: string; grabspruch: string }
 export type DemoId = "hieroglyphen" | "keilschrift" | "quipu" | "leuchtfeuer" | "setzkasten" | "chappe" | "morse" | "fax"
   | "waehlscheibe" | "platte" | "kassette" | "diskette" | "sms" | "belichtung"
-  | "satellit" | "modem" | "pager" | "hoehlenwand" | "dia";
+  | "satellit" | "modem" | "pager" | "hoehlenwand" | "dia" | "boten";
 
 export interface Medium {
   id: string;
@@ -182,7 +182,7 @@ const ROH: Medium[] = [
     frage: { text: "Warum war das Alphabet so ein Fortschritt?", optionen: ["Man konnte schneller schreiben", "Mit wenigen Zeichen konnten viel mehr Menschen schreiben lernen", "Es war schöner"], richtig: 1, erklaerung: "22 statt Hunderte Zeichen: Schreiben wurde lernbar für viele. Mehr Schreibende heißt mehr Nachrichten." },
   },
   {
-    id: "bote", name: "Läufer & Reitboten", icon: "🏃", jahr: -500, jahrText: "Persien um 500 v. Chr., Inka um 1450", epoche: "antike", art: "Gegenstand", dauer1000km: 5 * TAG,
+    id: "bote", name: "Läufer & Reitboten", icon: "🏃", jahr: -500, jahrText: "Persien um 500 v. Chr., Inka um 1450", epoche: "antike", art: "Gegenstand", dauer1000km: 5 * TAG, demo: "boten",
     kurz: "Ein Netz aus Stationen: Der Bote wechselt, die Nachricht rast weiter.",
     geschichte: "Das Perserreich baute die »Königsstraße« mit Stationen alle paar Stunden: Dort warteten frische Reiter und Pferde. Die Inka hatten Läufer (Chaski), die sich alle paar Kilometer abwechselten. Die Römer organisierten den »cursus publicus«.",
     besser: "Die Staffel ist der Trick: Kein einzelner Mensch muss die ganze Strecke schaffen. So kommt eine Nachricht Tag und Nacht voran — wie später die Pakete im Internet von Router zu Router.",
