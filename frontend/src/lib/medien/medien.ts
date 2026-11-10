@@ -48,7 +48,7 @@ export interface Frage { text: string; optionen: string[]; richtig: number; erkl
 export interface Flop { lebte: string; warum: string; grabspruch: string }
 export type DemoId = "hieroglyphen" | "keilschrift" | "quipu" | "leuchtfeuer" | "setzkasten" | "chappe" | "morse" | "fax"
   | "waehlscheibe" | "platte" | "kassette" | "diskette" | "sms" | "belichtung"
-  | "satellit" | "modem" | "pager" | "hoehlenwand";
+  | "satellit" | "modem" | "pager" | "hoehlenwand" | "dia";
 
 export interface Medium {
   id: string;
@@ -1227,7 +1227,7 @@ const ROH: Medium[] = [
     frage: { text: "Was war bei der Sofortbildkamera besser als beim normalen Film?", optionen: ["Man hatte das fertige Foto nach Minuten statt nach Tagen", "Man konnte beliebig viele Abzüge machen", "Die Bilder waren schärfer als alle anderen"], richtig: 0, erklaerung: "Tempo! Statt den Film zum Entwickeln zu bringen, hatte man das Bild sofort — ein Vorgeschmack auf die Digitalkamera." },
   },
   {
-    id: "dia", name: "Diaprojektor", icon: "📽️", jahr: 1936, jahrText: "1936 Farbdia, Diaabende ab den 1950ern", epoche: "modern", art: "Bild",
+    id: "dia", name: "Diaprojektor", icon: "📽️", jahr: 1936, jahrText: "1936 Farbdia, Diaabende ab den 1950ern", epoche: "modern", art: "Bild", demo: "dia",
     kurz: "Urlaubsfotos als Lichtbild an der Wohnzimmerwand — der berühmte Diaabend.",
     geschichte: "1936 kam der Farbfilm Kodachrome für Kleinbildkameras heraus. Die Bilder wurden nicht auf Papier gedruckt, sondern als durchsichtiges Dia in einen kleinen Rahmen gesteckt. Mit dem Diaprojektor warf man sie groß an die Wand oder auf die Leinwand. Ab den 1950ern lud man Freunde zum »Diaabend« ein, in Schulen und Hörsälen zeigten Lehrkräfte Dias zum Unterricht. Kodak baute 2004 den letzten Projektor.",
     besser: "Leuchtende Farben, riesengroß, für alle im Raum. Und ein Dia passt in eine kleine Box — Hunderte Bilder im Schuhkarton.",

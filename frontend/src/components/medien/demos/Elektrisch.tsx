@@ -139,12 +139,51 @@ export function WaehlscheibeDemo({ an, antwortAuf }: { an?: string; antwortAuf?:
   const [rueck, setRueck] = useState(0.1);
   const [aktiv, setAktiv] = useState(false);
   const [zeit, setZeit] = useState(0);
-  const waehle = (z: string, i: number) => {
+  const [hinweis, setHinweis] = useState<string | null>(null);
+  const scheibe = useRef<SVGSVGElement>(null);
+  /** Gerade gezogen: welches Loch, wie weit (Grad), letzter Mauswinkel */
+  const zug = useRef<{ i: number; z: string; grad: number; winkel: number; seit: number } | null>(null);
+  // Loch i liegt bei 30° − i·30° (im Uhrzeigersinn ab 3 Uhr), der Anschlag bei 60°: bis dahin sind es (i+1)·30°
+  const bisAnschlag = (i: number) => (i + 1) * 30;
+  const mausWinkel = (e: React.PointerEvent) => {
+    const r = scheibe.current!.getBoundingClientRect();
+    return (Math.atan2(e.clientY - (r.top + r.height / 2), e.clientX - (r.left + r.width / 2)) * 180) / Math.PI;
+  };
+  const greifen = (e: React.PointerEvent, z: string, i: number) => {
     if (aktiv || nummer.length >= 12) return;
-    // Loch i liegt bei 30° − i·30° (im Uhrzeigersinn ab 3 Uhr), der Anschlag bei 60°
-    setAktiv(true); setDreh((i + 1) * 30);
+    e.preventDefault();
+    scheibe.current?.setPointerCapture(e.pointerId);
+    zug.current = { i, z, grad: 0, winkel: mausWinkel(e), seit: performance.now() };
+    setRueck(0); setHinweis(null);
+  };
+  const ziehen = (e: React.PointerEvent) => {
+    const g = zug.current;
+    if (!g) return;
+    const w = mausWinkel(e);
+    let d = w - g.winkel;
+    if (d > 180) d -= 360;
+    if (d < -180) d += 360;
+    g.winkel = w;
+    // Nur im Uhrzeigersinn, und am Anschlag ist Schluss
+    g.grad = Math.max(0, Math.min(bisAnschlag(g.i), g.grad + d));
+    setDreh(g.grad);
+  };
+  const loslassen = () => {
+    const g = zug.current;
+    if (!g) return;
+    zug.current = null;
+    if (g.grad < bisAnschlag(g.i) - 4) {
+      // Nicht bis zum Anschlag: die Scheibe läuft zurück, gewählt ist nichts
+      setRueck(Math.max(0.15, g.grad / 300)); setDreh(0);
+      setHinweis("Nicht bis zum Anschlag gedreht — nichts gewählt. Zieh das Loch bis zum Metallbügel.");
+      return;
+    }
+    waehle(g.z, g.i, (performance.now() - g.seit) / 1000);
+  };
+  const waehle = (z: string, i: number, hinDauer: number) => {
+    setAktiv(true);
     const zurueck = (i + 1) * 0.1; // ein Impuls je 0,1 s
-    window.setTimeout(() => {
+    {
       setRueck(zurueck); setDreh(0);
       for (let k = 0; k <= i; k++) ton(420, 0.03, k * 0.1, "square", 0.05);
       window.setTimeout(() => {
@@ -157,22 +196,24 @@ export function WaehlscheibeDemo({ an, antwortAuf }: { an?: string; antwortAuf?:
           }
           return neu;
         });
-        setZeit(t => t + 0.4 + zurueck); setAktiv(false);
+        setZeit(t => t + hinDauer + zurueck); setAktiv(false);
       }, zurueck * 1000);
-    }, 400);
+    }
   };
   const lage = (grad: number, r: number) => ({ x: Math.cos((grad * Math.PI) / 180) * r, y: Math.sin((grad * Math.PI) / 180) * r });
   const stopp = lage(60, 72);
   return (
     <div className="flex flex-col sm:flex-row gap-4 items-center">
-      <svg viewBox="-110 -110 220 220" className="w-56 shrink-0 select-none" role="img" aria-label="Wählscheibe">
+      <svg ref={scheibe} viewBox="-110 -110 220 220" className="w-56 shrink-0 select-none touch-none" role="img" aria-label="Wählscheibe"
+        onPointerMove={ziehen} onPointerUp={loslassen} onPointerCancel={loslassen}>
         <circle r="104" fill="#111827" />
-        <g style={{ transform: `rotate(${dreh}deg)`, transition: `transform ${dreh ? 0.35 : rueck}s ${dreh ? "ease-out" : "linear"}` }}>
+        <g style={{ transform: `rotate(${dreh}deg)`, transition: zug.current ? "none" : `transform ${rueck}s linear` }}>
           <circle r="98" fill="#1f2937" />
           {ZIFFERN.map((z, i) => {
             const { x, y } = lage(30 - i * 30, 72);
             return (
-              <g key={z} onClick={() => waehle(z, i)} className="cursor-pointer" role="button" aria-label={`Ziffer ${z}`}>
+              <g key={z} onPointerDown={e => greifen(e, z, i)} className="cursor-grab" role="button" aria-label={`Ziffer ${z}`}
+                tabIndex={0} onKeyDown={e => { if ((e.key === "Enter" || e.key === " ") && !aktiv && nummer.length < 12) { e.preventDefault(); setDreh(bisAnschlag(i)); window.setTimeout(() => waehle(z, i, 0.4), 350); } }}>
                 <circle cx={x} cy={y} r="16" fill="#f9fafb" stroke="#9ca3af" />
                 <text x={x} y={y + 6} textAnchor="middle" fontSize="17" fontWeight="bold" fill="#111827">{z}</text>
               </g>
@@ -184,7 +225,8 @@ export function WaehlscheibeDemo({ an, antwortAuf }: { an?: string; antwortAuf?:
         <path d={`M ${stopp.x * 1.35} ${stopp.y * 1.35} L ${stopp.x * 1.05} ${stopp.y * 1.05}`} stroke="#d1d5db" strokeWidth="6" strokeLinecap="round" />
       </svg>
       <div className="flex flex-col gap-2 text-sm">
-        <p>Klick eine Ziffer: Die Scheibe dreht bis zum Anschlag und läuft zurück. Beim Zurücklaufen klickt sie — einmal für die 1, zehnmal für die 0. Diese Klicks sind die Signale für die Vermittlung.</p>
+        <p>Finger ins Loch der Ziffer und im Uhrzeigersinn bis zum Metallbügel ziehen, dann loslassen. Beim Zurücklaufen klickt die Scheibe — einmal für die 1, zehnmal für die 0. Diese Klicks sind die Signale für die Vermittlung.</p>
+        {hinweis && <p className="text-bad text-xs">{hinweis}</p>}
         <p className="text-2xl font-mono font-black">{nummer || "—"}</p>
         <p className="text-muted">Wählzeit: {zeit.toFixed(1)} s{nummer.endsWith("0") && nummer.length > 3 ? " — Nullen sind am langsamsten. Telefonnummern mit vielen Nullen waren unbeliebt!" : ""}</p>
         <button className="btn-secondary self-start" onClick={() => { setNummer(""); setZeit(0); setSagen(""); }}>Auflegen</button>
