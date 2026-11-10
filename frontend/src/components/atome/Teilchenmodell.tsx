@@ -10,7 +10,7 @@ import { element } from "@/lib/elemente";
 import { GRUPPEN, kugelFarbe, mischText, phaseVon, stoff, STOFFE, type Phase, type Stoff } from "@/lib/atome/stoffe";
 import {
   atomZahl, BREITE, einzelSzene, HOEHE, mischSzene, REAKTIONEN, reaktionsSzene, schritt, stoffZahl, TRENNUNGEN,
-  trennSzene, verteilung, zuende, zuendStelle, type Szene,
+  phasenZahl, stoffTemperatur, trennSzene, verteilung, waermeZufuehren, zuende, zuendStelle, type Szene,
 } from "@/lib/atome/teilchen";
 
 type Modus = "zustand" | "mischen" | "trennen" | "reaktion";
@@ -61,7 +61,12 @@ function themaFarben(el: HTMLElement) {
 }
 
 /** Phasenleiste: Temperaturachse mit fest/flüssig/gasförmig für einen Stoff — anklickbar. */
-function Leiste({ s, T, setT }: { s: Stoff; T: number; setT: (T: number) => void }) {
+function Leiste({ s, T, setT, ist, zahl }: {
+  s: Stoff; T: number; setT: (T: number) => void;
+  /** Mittlere Temperatur der Teilchen — hängt beim Schmelzen und Sieden am Haltepunkt. */
+  ist: number | null;
+  zahl: { fest: number; fluessig: number; gas: number };
+}) {
   const W = 300;
   const x = (t: number) => zuRegler(t) * W;
   const grenzen: [number, number, Phase][] = [];
@@ -85,7 +90,14 @@ function Leiste({ s, T, setT }: { s: Stoff; T: number; setT: (T: number) => void
           <rect key={ph} x={x(a)} y={3} width={Math.max(0, x(b) - x(a))} height={12} fill={PHASEN[ph].farbe} opacity={0.7} />
         ))}
         <rect x={x(T) - 1.5} y={0} width={3} height={18} fill="currentColor" />
+        {ist !== null && <circle cx={x(ist)} cy={9} r={4} fill="#ef4444" stroke="white" strokeWidth={1.2} />}
       </svg>
+      {ist !== null && (
+        <div className="text-[11px] text-muted tabular-nums">
+          <span className="text-[#ef4444]">●</span> im Stoff {Math.round(ist).toLocaleString("de-DE")} °C
+          {" · "}fest {zahl.fest} · flüssig {zahl.fluessig} · gasförmig {zahl.gas}
+        </div>
+      )}
     </div>
   );
 }
@@ -121,8 +133,11 @@ export default function Teilchenmodell() {
   const start = useRef<Record<string, number>>({});
   // Erwärmte Teilchen einfärben, damit man die Konvektion sieht.
   const [waerme, setWaerme] = useState(false);
-  const opt = useRef({ laufen, pfeile, zeitlupe, kugeln, waerme });
-  opt.current = { laufen, pfeile, zeitlupe, kugeln, waerme };
+  // Gedrückt halten ins Gefäß: dort Wärme zuführen oder entziehen.
+  const [werkzeug, setWerkzeug] = useState<"heiss" | "kalt">("heiss");
+  const druck = useRef<{ x: number; y: number } | null>(null);
+  const opt = useRef({ laufen, pfeile, zeitlupe, kugeln, waerme, werkzeug });
+  opt.current = { laufen, pfeile, zeitlupe, kugeln, waerme, werkzeug };
 
   const reaktion = REAKTIONEN.find(r => r.id === rid)!;
   const trennung = TRENNUNGEN.find(t => t.id === tid)!;
@@ -155,6 +170,9 @@ export default function Teilchenmodell() {
       zuletzt = jetzt;
       const s = sz.current;
       if (!s) { id = requestAnimationFrame(bild); return; }
+      if (druck.current) {
+        waermeZufuehren(s, druck.current.x, druck.current.y, (opt.current.werkzeug === "heiss" ? 1500 : -900) * dt);
+      }
       if (opt.current.laufen) {
         const schritte = Math.max(1, Math.min(4, Math.round(dt * opt.current.zeitlupe * 120)));
         for (let i = 0; i < schritte; i++) {
@@ -246,12 +264,16 @@ export default function Teilchenmodell() {
         ctx.fillText("Filtrat", 8, HOEHE - 4);
       }
 
-      // Die Teilchen; mit »Wärme zeigen« glühen die vom Brenner erwärmten nach.
-      const glueh = (p: { x: number; y: number; w: number }, r: number) => {
-        if (!opt.current.waerme || p.w < 0.05) return;
+      // Die Teilchen; mit »Wärme zeigen« nach ihrer eigenen Temperatur gefärbt:
+      // wärmer als das Gefäß rot, kälter blau.
+      const glueh = (p: { x: number; y: number; temp: number }, r: number) => {
+        if (!opt.current.waerme) return;
+        const d = p.temp - s.T;
+        const staerke = d > 0 ? Math.min(0.8, d / 250) : Math.min(0.8, -d / 120);
+        if (staerke < 0.05) return;
         ctx.beginPath();
         ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255,70,0,${0.75 * p.w})`;
+        ctx.fillStyle = d > 0 ? `rgba(255,60,0,${staerke})` : `rgba(40,120,255,${staerke})`;
         ctx.fill();
       };
       for (const p of s.t) {
@@ -309,11 +331,20 @@ export default function Teilchenmodell() {
     return () => cancelAnimationFrame(id);
   }, []);
 
-  const klick = (ev: React.MouseEvent<HTMLCanvasElement>) => {
-    if (modus !== "reaktion" || !sz.current) return;
+  const lage = (ev: React.PointerEvent<HTMLCanvasElement>) => {
     const r = ev.currentTarget.getBoundingClientRect();
-    zuende(sz.current, (ev.clientX - r.left) * BREITE / r.width, (ev.clientY - r.top) * (HOEHE + PLATTE) / r.height);
+    return { x: (ev.clientX - r.left) * BREITE / r.width, y: (ev.clientY - r.top) * (HOEHE + PLATTE) / r.height };
   };
+  const runter = (ev: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!sz.current) return;
+    const p = lage(ev);
+    if (modus === "reaktion") { zuende(sz.current, p.x, p.y); return; }
+    ev.currentTarget.setPointerCapture(ev.pointerId);
+    druck.current = p;
+    setWaerme(true);
+  };
+  const ziehe = (ev: React.PointerEvent<HTMLCanvasElement>) => { if (druck.current) druck.current = lage(ev); };
+  const los = () => { druck.current = null; };
   const ruehren = () => {
     for (const p of sz.current?.t ?? []) if (p.bewegung !== "gitter") { p.vx += (Math.random() - 0.5) * 500; p.vy -= Math.random() * 250; }
   };
@@ -340,9 +371,22 @@ export default function Teilchenmodell() {
 
       <div className="flex flex-col lg:flex-row gap-4 items-start">
         <div className="w-full lg:flex-1 min-w-0 flex flex-col gap-2">
-          <canvas ref={leinwand} onClick={klick} aria-label="Teilchenmodell"
+          <canvas ref={leinwand} aria-label="Teilchenmodell"
+            onPointerDown={runter} onPointerMove={ziehe} onPointerUp={los} onPointerCancel={los}
             style={{ aspectRatio: `${BREITE} / ${HOEHE + PLATTE}` }}
-            className={`w-full rounded-xl bg-black/10 dark:bg-white/5 ${modus === "reaktion" ? "cursor-crosshair" : ""}`} />
+            className="w-full rounded-xl bg-black/10 dark:bg-white/5 cursor-crosshair" />
+          {modus !== "reaktion" && (
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <span className="text-muted">Ins Gefäß drücken und halten:</span>
+              {([["heiss", "🔥 erhitzen"], ["kalt", "❄ kühlen"]] as const).map(([id, label]) => (
+                <button key={id} onClick={() => setWerkzeug(id)}
+                  className={`px-2 py-0.5 rounded-lg border ${werkzeug === id ? "border-accent bg-accent/15 font-bold" : "border-line text-muted hover:text-fg"}`}>
+                  {label}
+                </button>
+              ))}
+              <span className="text-muted">— die Wärme wandert dann von Teilchen zu Teilchen.</span>
+            </div>
+          )}
 
           {/* Temperatur */}
           <div className="card p-3 flex flex-col gap-2">
@@ -361,7 +405,9 @@ export default function Teilchenmodell() {
               ))}
               <button onClick={() => setT(-273)} className="px-2 py-0.5 rounded-lg border border-line text-xs text-muted hover:text-fg">absoluter Nullpunkt</button>
             </div>
-            {s?.stoffe.filter(x => !x.nurReaktion || modus === "reaktion").map(x => <Leiste key={x.id} s={x} T={T} setT={setT} />)}
+            {s?.stoffe.map((x, k) => ({ x, k })).filter(({ x }) => !x.nurReaktion || modus === "reaktion").map(({ x, k }) => (
+              <Leiste key={x.id} s={x} T={T} setT={setT} ist={stoffTemperatur(s, k)} zahl={phasenZahl(s, k)} />
+            ))}
             <div className="flex gap-3 text-[11px] text-muted flex-wrap">
               {(Object.keys(PHASEN) as Phase[]).map(p => (
                 <span key={p} className="inline-flex items-center gap-1">
@@ -383,7 +429,7 @@ export default function Teilchenmodell() {
               ➶ Geschwindigkeit
             </button>
             <button onClick={() => setWaerme(w => !w)}
-              title="Teilchen, die der Brenner erwärmt hat, leuchten orange — so sieht man die Umwälzung (Konvektion)"
+              title="Jedes Teilchen in seiner Temperatur: wärmer als das Gefäß rot, kälter blau"
               className={`px-2 py-1 rounded-lg border text-xs ${waerme ? "border-accent bg-accent/15 font-bold" : "border-line text-muted hover:text-fg"}`}>
               🌡 Wärme zeigen
             </button>

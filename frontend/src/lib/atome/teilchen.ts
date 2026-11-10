@@ -55,8 +55,17 @@ export type Teilchen = {
   /** Links (0) oder rechts (1) der Trennwand. */
   seite: 0 | 1;
   bewegung: Bewegung;
-  /** Wärme aus dem Brenner, 0–1 — nur zum Einfärben, damit man die Umwälzung sieht. */
-  w: number;
+  /** Eigene Temperatur in °C: Wärme kommt über Boden, Wände und Nachbarn. */
+  temp: number;
+  /** Eigener Zustand — wechselt erst, wenn genug Umwandlungswärme aufgenommen bzw. abgegeben ist. */
+  phase: "fest" | "fluessig" | "gas";
+  /**
+   * Umwandlungswärme in Kelvin-Gleichwert: positiv auf dem Weg zum nächsten
+   * Zustand (Schmelzen, Sieden), negativ auf dem Weg zurück (Erstarren,
+   * Kondensieren). Solange sie sich füllt, bleibt die Temperatur am
+   * Schmelz- bzw. Siedepunkt stehen — der Haltepunkt der Heizkurve.
+   */
+  umw: number;
 };
 
 export type Heiss = {
@@ -136,9 +145,33 @@ export const REAKTIONEN: Reaktion[] = [
 
 const K = (T: number) => T + 273.15;
 
-/** Typische Geschwindigkeit eines Teilchens bei T (°C) in Bildpunkten je Sekunde. */
+/**
+ * Typische Geschwindigkeit eines Teilchens bei T (°C) in Bildpunkten je
+ * Sekunde. Am absoluten Nullpunkt null — dann steht alles still.
+ */
 export const tempo = (T: number, masse: number): number =>
-  Math.max(4, Math.min(650, 150 * Math.sqrt(Math.max(0, K(T)) / 300) * (30 / masse) ** 0.25));
+  Math.min(650, 150 * Math.sqrt(Math.max(0, K(T)) / 300) * (30 / masse) ** 0.25);
+
+/** Der Zustand, den ein Teilchen bei T von selbst annimmt (ohne Umwandlungswärme). */
+function phaseBei(s: Stoff, T: number): Teilchen["phase"] {
+  const ph = phaseVon(s, T);
+  if (ph === "gasförmig") return "gas";
+  if (ph === "fest" || (ph === "zersetzt" && s.schmelz === null)) return "fest";
+  return "fluessig";
+}
+
+/**
+ * Umwandlungswärme im Kelvin-Gleichwert: Schmelzen nach der Regel von
+ * Richards (L ≈ R·Tₛ, bei 3R Wärmekapazität ein Drittel von Tₛ), Sieden nach
+ * Trouton (≈ 3,5·Tₛ). Beides ist hier auf die Hälfte bzw. ein Siebtel
+ * gekürzt — sonst dauert das Schmelzen im Unterricht Minuten.
+ */
+const schmelzWaerme = (s: Stoff) => K(s.schmelz ?? 0) / 6;
+const siedeWaerme = (s: Stoff) => K(s.siede ?? 0) / 2;
+
+/** Wie gut der Stoff Wärme an Nachbarn weitergibt (je Sekunde). */
+const leitung = (a: Stoff, b: Stoff, gas: boolean): number =>
+  gas ? 0.8 : a.art === "metall" && b.art === "metall" ? 4 : 1.5;
 
 /** Gitterabstand eines Stoffs: knapp ein Durchmesser — der Feststoff liegt dicht. */
 const gitterAbstand = (s: Stoff): number => s.r * 2.04;
@@ -191,7 +224,8 @@ function neuesTeilchen(sz: Szene, s: number, form: number, x: number, y: number,
   const v = tempo(sz.T, st.masse), w = z() * Math.PI * 2;
   return {
     id: sz.nId++, s, form, x, y, vx: Math.cos(w) * v, vy: Math.sin(w) * v, phi: z() * Math.PI * 2, om: 0,
-    platz: null, los: 0, warte: 0, geloest: false, ohne: 0, seite, bewegung: "gas", w: 0,
+    platz: null, los: 0, warte: 0, geloest: false, ohne: 0, seite, bewegung: "gas",
+    temp: sz.T, phase: phaseBei(st, sz.T), umw: 0,
   };
 }
 
@@ -315,7 +349,7 @@ export type Trennung = {
 };
 
 export const TRENNUNGEN: Trennung[] = [
-  { id: "wein", art: "destillation", titel: "Wein → Alkohol", stoffe: [["h2o", 0.3], ["ethanol", 0.2]], ziel: 85,
+  { id: "wein", art: "destillation", titel: "Wein → Alkohol", stoffe: [["h2o", 0.3], ["ethanol", 0.2]], ziel: 95,
     text: "Wasser und Ethanol sind gemischt. Ethanol siedet bei 78 °C, Wasser erst bei 100 °C: zwischen beiden verdampft nur das Ethanol, steigt über die Wand, kühlt in der Vorlage ab und kondensiert. Das Wasser bleibt im Kolben. (Vereinfacht: in Wirklichkeit geht immer etwas Wasser mit.)" },
   { id: "salzwasser-d", art: "destillation", titel: "Salzwasser → reines Wasser", stoffe: [["h2o", 0.4], ["nacl", 0.06]], geloest: ["nacl"], ziel: 105,
     text: "Über 100 °C verdampft das Wasser, die gelösten Salzteilchen nicht. In der Vorlage sammelt sich reines Wasser (destilliertes Wasser); im Kolben bleibt das Salz zurück und kristallisiert, sobald das Wasser fehlt." },
@@ -390,6 +424,31 @@ export function ortsTemperatur(sz: Szene, x: number, y: number): number {
   return T;
 }
 
+/** Erwärmt (dT > 0) oder kühlt die Teilchen um (x, y) — die Wärme verteilt sich dann von selbst. */
+export function waermeZufuehren(sz: Szene, x: number, y: number, dT: number, radius = 30): number {
+  let zahl = 0;
+  for (const p of sz.t) {
+    const d = Math.hypot(p.x - x, p.y - y);
+    if (d > radius) continue;
+    p.temp = Math.max(-273.15, p.temp + dT * (1 - 0.5 * d / radius));
+    zahl++;
+  }
+  return zahl;
+}
+
+/** Mittlere Temperatur der Teilchen eines Stoffs — das Thermometer im Stoff. */
+export function stoffTemperatur(sz: Szene, s: number): number | null {
+  const ps = sz.t.filter(p => p.s === s);
+  return ps.length ? ps.reduce((a, p) => a + p.temp, 0) / ps.length : null;
+}
+
+/** Wie viele Teilchen eines Stoffs fest, flüssig und gasförmig sind. */
+export function phasenZahl(sz: Szene, s: number): { fest: number; fluessig: number; gas: number } {
+  const z = { fest: 0, fluessig: 0, gas: 0 };
+  for (const p of sz.t) if (p.s === s) z[p.geloest ? "fluessig" : p.phase]++;
+  return z;
+}
+
 export function zuende(sz: Szene, x: number, y: number, dT = 1800): void {
   sz.heiss.push({ x, y, r: 110, dT, t: 0, dauer: 1 });
 }
@@ -422,11 +481,57 @@ export function stoffZahl(sz: Szene): number[] {
 
 export type Ereignis = { x: number; y: number; waerme: number };
 
-/** Will das Teilchen bei T fest sein? */
-const willFest = (st: Stoff, T: number) => {
-  const ph = phaseVon(st, T);
-  return ph === "fest" || (ph === "zersetzt" && st.schmelz === null);
-};
+/**
+ * Der Zustand folgt der Temperatur nicht sofort: am Schmelz- bzw. Siedepunkt
+ * bleibt die Temperatur stehen, und die überschüssige Wärme füllt erst die
+ * Umwandlungswärme. Ist sie voll, wechselt der Zustand. Beim Abkühlen
+ * umgekehrt: das Teilchen gibt die Wärme ab, bevor es erstarrt.
+ */
+function wandle(p: Teilchen, s: Stoff): void {
+  const ziel = phaseBei(s, p.temp);
+  const stufe = { fest: 0, fluessig: 1, gas: 2 } as const;
+  if (ziel === p.phase) {
+    // Halb geschmolzen und wieder kälter: die Wärme kommt zurück.
+    if (p.umw > 0) {
+      const grenze = p.phase === "fest" ? s.schmelz ?? s.siede ?? p.temp : s.siede ?? p.temp;
+      const zurueck = Math.min(p.umw, Math.max(0, grenze - p.temp));
+      p.umw -= zurueck; p.temp += zurueck;
+    } else if (p.umw < 0) {
+      const grenze = p.phase === "gas" ? s.siede ?? p.temp : s.schmelz ?? p.temp;
+      const zurueck = Math.min(-p.umw, Math.max(0, p.temp - grenze));
+      p.umw += zurueck; p.temp -= zurueck;
+    }
+    return;
+  }
+  const hoch = stufe[ziel] > stufe[p.phase];
+  // Die Grenze, an der die Umwandlung stattfindet, und wie viel Wärme sie braucht.
+  let grenze: number, bedarf: number, naechste: Teilchen["phase"];
+  if (hoch) {
+    if (p.phase === "fest") {
+      const sublimiert = s.schmelz === null || s.schmelz === s.siede;
+      grenze = s.schmelz ?? s.zersetzt ?? p.temp;
+      naechste = sublimiert && s.siede !== null ? "gas" : "fluessig";
+      bedarf = schmelzWaerme(s) + (naechste === "gas" ? siedeWaerme(s) : 0);
+    } else {
+      grenze = s.siede ?? p.temp; naechste = "gas"; bedarf = siedeWaerme(s);
+    }
+    p.umw += p.temp - grenze;
+    p.temp = grenze;
+    if (p.umw >= bedarf) { p.phase = naechste; p.temp += p.umw - bedarf; p.umw = 0; }
+  } else {
+    if (p.phase === "gas") {
+      const sublimiert = s.schmelz === s.siede;
+      grenze = s.siede ?? p.temp;
+      naechste = sublimiert ? "fest" : "fluessig";
+      bedarf = siedeWaerme(s) + (sublimiert ? schmelzWaerme(s) : 0);
+    } else {
+      grenze = s.schmelz ?? p.temp; naechste = "fest"; bedarf = schmelzWaerme(s);
+    }
+    p.umw -= grenze - p.temp;
+    p.temp = grenze;
+    if (-p.umw >= bedarf) { p.phase = naechste; p.temp -= -p.umw - bedarf; p.umw = 0; }
+  }
+}
 
 /** Der nächste freie Platz im Gitter des eigenen Stoffs; `weit` sucht im größeren Umkreis. */
 function gitterplatzFuer(sz: Szene, p: Teilchen, weit: boolean): string | null {
@@ -467,7 +572,19 @@ const stossGroesse = (p: Teilchen): number =>
 export function schritt(sz: Szene, dt: number, z: Zufall = Math.random): Ereignis[] {
   const n = sz.t.length;
   const st = sz.t.map(p => sz.stoffe[p.s]);
-  const Tl = sz.t.map(p => ortsTemperatur(sz, p.x, p.y));
+  // Wärme vom Gefäß: über den Boden (Heizplatte, in der Mitte der Brenner),
+  // schwächer über die Wände und kaum über die Luft. Heiße Flecken
+  // (Funke, Flamme) und die gekühlte Vorlage geben ihre Temperatur stark ab.
+  for (const p of sz.t) {
+    const r = sz.stoffe[p.s].r;
+    let rate = 0.4;
+    if (p.y > HOEHE - 2.5 * r) rate = Math.abs(p.x - (sz.wand ? BREITE / 4 : BREITE / 2)) < BREITE * 0.2 ? 6 : 3;
+    else if (p.x < 2.5 * r || p.x > BREITE - 2.5 * r || p.y < 2.5 * r) rate = 1.5;
+    if (sz.kuehler !== null && p.x > BREITE / 2) rate = Math.max(rate, 2.5);
+    if (sz.heiss.some(h => Math.hypot(p.x - h.x, p.y - h.y) < h.r)) rate = 10;
+    p.temp += (ortsTemperatur(sz, p.x, p.y) - p.temp) * Math.min(1, rate * dt);
+  }
+  const dTemp = new Float64Array(n);
   const rhoMax = Math.max(...sz.stoffe.map(s => s.dichte));
   const fx = new Float64Array(n), fy = new Float64Array(n);
   // Dichte der flüssigen Nachbarschaft — daraus der Auftrieb.
@@ -532,6 +649,11 @@ export function schritt(sz: Szene, dt: number, z: Zufall = Math.random): Ereigni
         if (bj === "fluessig" && !q.geloest && loestSichIn(st[i], st[j])) { loeser[i] = 1; if (bi === "gitter") angriff[i] = 1; }
         if (bi === "fluessig" && !p.geloest && loestSichIn(st[j], st[i])) { loeser[j] = 1; if (bj === "gitter") angriff[j] = 1; }
       }
+      if (d < rr * 1.15) {
+        // Wärmeleitung: wer sich berührt, gleicht seine Temperatur an.
+        const k = Math.min(0.12, leitung(st[i], st[j], bi === "gas" || bj === "gas") * dt) * (q.temp - p.temp);
+        dTemp[i] += k; dTemp[j] -= k;
+      }
       if (d < rr * 1.3) {
         if (bi === "gas" && bj === "fluessig") nass[i] = 1;
         if (bj === "gas" && bi === "fluessig") nass[j] = 1;
@@ -557,6 +679,16 @@ export function schritt(sz: Szene, dt: number, z: Zufall = Math.random): Ereigni
     }
   }
 
+  // Temperatur übernehmen und Zustand nachführen — mit Umwandlungswärme.
+  const Tl: number[] = [];
+  for (let i = 0; i < n; i++) {
+    const p = sz.t[i], s = st[i];
+    p.temp = Math.max(-273.15, p.temp + dTemp[i]);
+    if (p.geloest) { p.umw = 0; Tl.push(p.temp); continue; }
+    wandle(p, s);
+    Tl.push(p.temp);
+  }
+
   // Lösen: nur bis zur Sättigung.
   const geloest = sz.stoffe.map(() => 0), loesemittel = sz.stoffe.map(() => 0);
   for (const p of sz.t) if (p.geloest) geloest[p.s]++;
@@ -578,12 +710,11 @@ export function schritt(sz: Szene, dt: number, z: Zufall = Math.random): Ereigni
       if (p.y < band[0] - s.r) fy[i] += 900;
       else if (p.y > band[1] + s.r) fy[i] -= 900;
     }
-    const fest = willFest(s, T) && !p.geloest;
+    const fest = p.phase === "fest" && !p.geloest;
 
     // Zustandswechsel.
     if (p.platz) {
-      if (fest) p.los = 0.15 + z() * 0.7;
-      else if ((p.los -= dt) <= 0) { sz.plaetze.delete(p.platz); p.platz = null; }
+      if (!fest) { sz.plaetze.delete(p.platz); p.platz = null; }
       if (p.platz && angriff[i] && geloest[p.s] < (s.loeslichkeit ?? 0) * loesemittel[p.s]
         && z() < dt * 0.8 * (1 + Math.max(0, T) / 50)) {
         sz.plaetze.delete(p.platz); p.platz = null; p.geloest = true; geloest[p.s]++;
@@ -600,18 +731,19 @@ export function schritt(sz: Szene, dt: number, z: Zufall = Math.random): Ereigni
     } else p.warte = 0;
     if (p.geloest) {
       p.ohne = loeser[i] ? 0 : p.ohne + dt;
-      if (p.ohne > 0.8) { p.geloest = false; p.ohne = 0; }
+      if (p.ohne > 0.8) { p.geloest = false; p.ohne = 0; p.phase = phaseBei(s, p.temp); }
     }
-    p.bewegung = p.platz ? "gitter" : phaseVon(s, T) === "gasförmig" && !p.geloest ? "gas" : "fluessig";
+    p.bewegung = p.platz ? "gitter" : p.phase === "gas" && !p.geloest ? "gas" : "fluessig";
 
     // Bewegung.
     const v0 = tempo(T, s.masse);
     if (p.bewegung === "gitter") {
       const q = platzLage(sz, p.platz!);
       const schmelzK = K(s.schmelz ?? s.zersetzt ?? 1000);
-      // Schwingungsweite: am Schmelzpunkt etwa ein Zehntel des Abstands
+      // Schwingungsweite wächst mit √T (die Energie mit T): am absoluten
+      // Nullpunkt null, am Schmelzpunkt etwa ein Zehntel des Abstands
       // (Lindemann-Kriterium, hier etwas weniger) — mehr, und der Kristall sähe flüssig aus.
-      const A = s.r * (0.015 + 0.1 * Math.min(1, K(T) / Math.max(50, schmelzK)));
+      const A = s.r * 0.115 * Math.sqrt(Math.max(0, K(T)) / Math.max(50, schmelzK));
       const sigma = A * Math.sqrt(2 * 12 * 600);
       p.vx += (600 * (q.x - p.x) - 12 * p.vx + fx[i] * 0.3) * dt + sigma * gauss(z) * Math.sqrt(dt);
       p.vy += (600 * (q.y - p.y) - 12 * p.vy + fy[i] * 0.3) * dt + sigma * gauss(z) * Math.sqrt(dt);
@@ -639,9 +771,6 @@ export function schritt(sz: Szene, dt: number, z: Zufall = Math.random): Ereigni
         // Konvektion: unten in der Mitte heizt der Brenner. Je näher am Siedepunkt, desto stärker.
         const oben = s.siede ?? s.zersetzt ?? (s.schmelz ?? 0) + 300;
         const stark = Math.max(0, Math.min(1, (T - (s.schmelz ?? -273)) / Math.max(1, oben - (s.schmelz ?? -273))));
-        const brenner = sz.wand ? BREITE / 4 : BREITE / 2, breit = sz.wand ? 0.1 : 0.2;
-        if (p.y > HOEHE - 3 * s.r && Math.abs(p.x - brenner) < BREITE * breit) p.w += (1 - p.w) * Math.min(1, 3 * dt);
-        else p.w -= p.w * Math.min(1, 0.4 * dt);
         // Die Strömung: zwei Walzen in der Flüssigkeit (Stromfunktion
         // ψ = A·sin(2πx/b)·sin(πy/h)), oben und unten ohne Senkrechtanteil —
         // so bleibt die Oberfläche glatt. Als Auftriebskraft gerechnet, gäbe es
@@ -661,10 +790,9 @@ export function schritt(sz: Szene, dt: number, z: Zufall = Math.random): Ereigni
         p.vx += (fx[i] - reib * (p.vx - ux)) * dt + stoss * gauss(z);
         p.vy += (fy[i] + g - auftrieb - reib * (p.vy - uy)) * dt + stoss * gauss(z);
       }
-      p.om += gauss(z) * (gas ? 8 : 3) * dt;
+      p.om += gauss(z) * (gas ? 8 : 3) * Math.sqrt(Math.max(0, K(T)) / 300) * dt;
       p.om = Math.max(-8, Math.min(8, p.om * (gas ? 0.999 : 0.97)));
     }
-    if (p.bewegung !== "fluessig") p.w = 0;
     const altX = p.x, altY = p.y;
     p.x += p.vx * dt; p.y += p.vy * dt; p.phi += p.om * dt;
 
@@ -682,7 +810,7 @@ export function schritt(sz: Szene, dt: number, z: Zufall = Math.random): Ereigni
     // Filter: Flüssiges und Gelöstes läuft durch, Feststoffe bleiben liegen.
     // Was durch ist, kommt nicht wieder hoch (außer als Gas).
     if (sz.filter !== null) {
-      const durch = p.bewegung === "gas" || (p.bewegung === "fluessig" && (p.geloest || !willFest(s, T)));
+      const durch = p.bewegung === "gas" || (p.bewegung === "fluessig" && (p.geloest || p.phase !== "fest"));
       if (altY < sz.filter && !durch && p.y + r > sz.filter) { p.y = sz.filter - r; p.vy = -Math.abs(p.vy) * 0.2; }
       if (altY >= sz.filter && p.bewegung !== "gas" && p.y - r < sz.filter) { p.y = sz.filter + r; p.vy = Math.abs(p.vy) * 0.2; }
     }
@@ -715,7 +843,7 @@ function reagiere(sz: Szene, dt: number, z: Zufall): Ereignis[] {
     for (const p of mischeReihe(sz.t, z)) {
       if (weg.has(p.id) || !braucht.has(p.s)) continue;
       if (z() > dt * rate) continue;
-      if (ortsTemperatur(sz, p.x, p.y) < ab) continue;
+      if (p.temp < ab) continue;
       const fehlt = new Map(braucht);
       fehlt.set(p.s, fehlt.get(p.s)! - 1);
       const genommen = [p];
@@ -732,7 +860,7 @@ function reagiere(sz: Szene, dt: number, z: Zufall): Ereignis[] {
       let cx = 0, cy = 0;
       for (const q of genommen) { weg.add(q.id); cx += q.x; cy += q.y; if (q.platz) sz.plaetze.delete(q.platz); }
       cx /= genommen.length; cy /= genommen.length;
-      const Tneu = ortsTemperatur(sz, cx, cy) + Math.max(0, waerme);
+      const Tneu = genommen.reduce((a, q) => a + q.temp, 0) / genommen.length + waerme;
       for (const [id, k] of zu) {
         const s = idx(id), st = sz.stoffe[s];
         for (let i = 0; i < k * st.formen.length; i++) {
@@ -740,6 +868,8 @@ function reagiere(sz: Szene, dt: number, z: Zufall): Ereignis[] {
           const t = neuesTeilchen(sz, s, i % st.formen.length,
             Math.max(st.r, Math.min(BREITE - st.r, cx + Math.cos(w) * rad)),
             Math.max(st.r, Math.min(HOEHE - st.r, cy + Math.sin(w) * rad)), genommen[0].seite, z);
+          t.temp = Math.max(-273.15, Tneu);
+          t.phase = phaseBei(st, t.temp);
           const v = tempo(Tneu, st.masse);
           t.vx = Math.cos(w) * v; t.vy = Math.sin(w) * v;
           neu.push(t);

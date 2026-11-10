@@ -5,7 +5,7 @@
 import { describe, expect, it } from "vitest";
 import { kugelFarbe, loestSichIn, mischbar, mischText, phaseVon, stoff, STOFFE } from "@/lib/atome/stoffe";
 import {
-  atomZahl, BREITE, einzelSzene, TRENNUNGEN, trennSzene, verteilung, mischSzene, REAKTIONEN, reaktionsSzene, schritt, stoffZahl, zuende, type Szene,
+  atomZahl, BREITE, einzelSzene, phasenZahl, stoffTemperatur, waermeZufuehren, TRENNUNGEN, trennSzene, verteilung, mischSzene, REAKTIONEN, reaktionsSzene, schritt, stoffZahl, zuende, type Szene,
 } from "@/lib/atome/teilchen";
 
 const zufall = (() => { let s = 11; return () => ((s = (s * 16807) % 2147483647) / 2147483647); })();
@@ -37,7 +37,10 @@ describe("Zustände", () => {
     laufe(eis, 1);
     expect(anteil(eis, "gitter")).toBe(1);
     eis.T = 150;
+    // Schmelzen und Sieden brauchen Wärme — das dauert.
     laufe(eis, 3);
+    expect(anteil(eis, "gas")).toBeLessThan(1);
+    laufe(eis, 12);
     expect(anteil(eis, "gas")).toBe(1);
   });
 
@@ -46,7 +49,8 @@ describe("Zustände", () => {
     laufe(w, 1);
     expect(anteil(w, "fluessig")).toBe(1);
     w.T = -20;
-    laufe(w, 6);
+    // Erst muss die Erstarrungswärme abgegeben werden.
+    laufe(w, 14);
     expect(anteil(w, "gitter")).toBeGreaterThan(0.9);
   });
 });
@@ -189,7 +193,7 @@ describe("Trennen", () => {
     laufe(sz, 1);
     expect(verteilung(sz)[1]).toEqual([0, 0]);
     sz.T = t.ziel;
-    laufe(sz, 30);
+    laufe(sz, 40);
     const [kolben, vorlage] = verteilung(sz);
     expect(vorlage[1] / (kolben[1] + vorlage[1])).toBeGreaterThan(0.6);
     expect(vorlage[0]).toBe(0);
@@ -217,5 +221,54 @@ describe("Trennen", () => {
     laufe(sz, 8);
     const [oben, unten] = verteilung(sz);
     expect(unten[1]).toBeGreaterThan(oben[1] * 3);
+  });
+});
+
+describe("Wärme", () => {
+  const abstand = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.hypot(a.x - b.x, a.y - b.y);
+
+  it("am absoluten Nullpunkt bewegt sich nichts", () => {
+    const sz = einzelSzene("fe", -273.15, zufall);
+    laufe(sz, 1);
+    expect(Math.max(...sz.t.map(p => Math.hypot(p.vx, p.vy)))).toBeLessThan(0.5);
+  });
+
+  it("ein erhitztes Teilchen gibt Wärme an die Nachbarn weiter, und die schwingen stärker", () => {
+    const sz = einzelSzene("fe", 20, zufall);
+    laufe(sz, 1);
+    const mitte = sz.t.reduce((a, p) => (abstand(p, { x: BREITE / 2, y: 480 }) < abstand(a, { x: BREITE / 2, y: 480 }) ? p : a));
+    waermeZufuehren(sz, mitte.x, mitte.y, 1400, 25);
+    laufe(sz, 0.5);
+    // Der Ring direkt außerhalb der erhitzten Stelle.
+    const nah = sz.t.filter(p => abstand(p, mitte) > 25 && abstand(p, mitte) < 45);
+    const fern = sz.t.filter(p => abstand(p, mitte) > 200);
+    const mittelT = (ps: typeof sz.t) => ps.reduce((a, p) => a + p.temp, 0) / ps.length;
+    expect(mittelT(nah)).toBeGreaterThan(mittelT(fern) + 50);
+    // Wärmer heißt heftiger: Schwingung wächst mit √T. Über eine halbe Sekunde
+    // gemittelt — ein einzelner Augenblick ist bei Schwingungen Zufall.
+    const tempo = (ps: typeof sz.t) => ps.reduce((a, p) => a + Math.hypot(p.vx, p.vy), 0) / ps.length;
+    let tNah = 0, tFern = 0;
+    for (let i = 0; i < 30; i++) { schritt(sz, 1 / 60, zufall); tNah += tempo(nah); tFern += tempo(fern); }
+    expect(tNah).toBeGreaterThan(tFern * 1.08);
+  });
+
+  it("beim Schmelzen bleibt das Eis bei 0 °C stehen, bis es ganz geschmolzen ist (Haltepunkt)", () => {
+    const sz = einzelSzene("h2o", -20, zufall);
+    sz.T = 40;
+    let gesehen = false;
+    for (let k = 0; k < 40; k++) {
+      laufe(sz, 0.25);
+      const z = phasenZahl(sz, 0);
+      if (z.fest > 20 && z.fluessig > 20) {
+        gesehen = true;
+        // Kein festes Teilchen ist wärmer als der Schmelzpunkt.
+        const fest = sz.t.filter(p => p.phase === "fest");
+        expect(Math.max(...fest.map(p => p.temp))).toBeLessThanOrEqual(0.001);
+        // Einige sind mittendrin: sie haben schon Schmelzwärme aufgenommen.
+        expect(fest.some(p => p.umw > 0)).toBe(true);
+      }
+    }
+    expect(gesehen).toBe(true);
+    expect(stoffTemperatur(sz, 0)!).toBeGreaterThan(0);
   });
 });
