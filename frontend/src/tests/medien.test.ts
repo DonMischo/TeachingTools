@@ -9,6 +9,7 @@ import { erreichbarBis, mitStation, sauber, vereinige } from "@/lib/medien/forts
 import { ausLauflaengen, ausMorse, buchstabe, inHieroglyphen, lauflaengen, quipuWert, tippZahl, zeichenAusDauer, zuMorse } from "@/lib/medien/codes";
 import { DEMOS } from "@/components/medien/demos";
 import { t9Code, t9Vorschlaege } from "@/lib/medien/t9";
+import { genauigkeit } from "@/components/medien/demos/Antike";
 
 describe("Stationen der Zeitreise", () => {
   it("eindeutige Ids, chronologisch, vollständige Inhalte", () => {
@@ -115,6 +116,14 @@ describe("Codes der Demos", () => {
     expect(zuMorse("Bär")).toBe(zuMorse("BAER"));
     expect(zeichenAusDauer(100)).toBe(".");
     expect(zeichenAusDauer(400)).toBe("-");
+  });
+
+  it("Hieroglyphen nachmalen: Genauigkeitspunkte = getroffen × (1 − daneben)", () => {
+    expect(genauigkeit(1, 0)).toBe(100);
+    expect(genauigkeit(0.8, 0.25)).toBe(60);
+    expect(genauigkeit(1, 1)).toBe(0); // alles vollgekritzelt
+    expect(genauigkeit(0, 0)).toBe(0);
+    expect(genauigkeit(1.4, -0.2)).toBe(100);
   });
 
   it("Hieroglyphen-Namen", () => {

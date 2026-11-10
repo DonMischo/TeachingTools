@@ -89,28 +89,54 @@ export function HieroglyphenDemo() {
  * nachmalen. Bewertet wird, wie viel der Vorlage bedeckt ist und wie viel
  * daneben geht. Am Ende steht der Name aus den eigenen Zeichen in der Kartusche.
  */
+/**
+ * Genauigkeitspunkte (0–100): wie viel der Vorlage übermalt ist, mal wie viel
+ * der eigenen Striche auf der Vorlage liegt. Alles vollkritzeln bringt also nichts.
+ */
+export function genauigkeit(abgedeckt: number, daneben: number): number {
+  return Math.round(100 * Math.max(0, Math.min(1, abgedeckt)) * (1 - Math.max(0, Math.min(1, daneben))));
+}
+function Balken({ name, wert, farbe }: { name: string; wert: number; farbe: string }) {
+  const prozent = Math.round(wert * 100);
+  return (
+    <div className="text-xs">
+      <div className="flex justify-between"><span>{name}</span><b>{prozent} %</b></div>
+      <div className="h-2 rounded-full bg-surface-hover overflow-hidden"><div className="h-full rounded-full" style={{ width: `${prozent}%`, background: farbe }} /></div>
+    </div>
+  );
+}
+const sterne = (p: number) => (p >= 60 ? "⭐⭐⭐" : p >= 40 ? "⭐⭐" : "⭐");
+
 function SelbstSchreiben({ zeichen }: { zeichen: ReturnType<typeof inHieroglyphen> }) {
   const [nr, setNr] = useState(0);
   const [bilder, setBilder] = useState<(string | null)[]>(() => zeichen.map(() => null));
-  const [urteil, setUrteil] = useState<string | null>(null);
+  /** Bestwert je Zeichen */
+  const [punkte, setPunkte] = useState<(number | null)[]>(() => zeichen.map(() => null));
+  const [urteil, setUrteil] = useState<{ abgedeckt: number; daneben: number; punkte: number } | null>(null);
+  const [leer, setLeer] = useState(false);
   const flaeche = useRef<ZeichenGriff>(null);
   const g = zeichen[nr];
   const fertig = () => {
     const f = flaeche.current;
-    if (!f || f.leer()) { setUrteil("Erst malen — der Pinsel liegt bereit."); return; }
-    const t = f.treffer();
-    const note = t ? Math.round(t.abgedeckt * 100 * (1 - t.daneben * 0.7)) : 0;
-    setUrteil(note >= 55 ? `⭐⭐⭐ ${note} Punkte — der Pharao wäre zufrieden!` : note >= 35 ? `⭐⭐ ${note} Punkte — ein ordentlicher Schreiberlehrling.` : `⭐ ${note} Punkte — Schreiberschüler übten jahrelang. Noch mal?`);
-    setBilder(b => b.map((x, i) => (i === nr ? f.bild() : x)));
+    if (!f || f.leer()) { setLeer(true); return; }
+    const t = f.treffer() ?? { abgedeckt: 0, daneben: 1 };
+    const p = genauigkeit(t.abgedeckt, t.daneben);
+    setLeer(false);
+    setUrteil({ ...t, punkte: p });
+    setPunkte(alt => alt.map((x, i) => (i === nr ? Math.max(x ?? 0, p) : x)));
+    // Die Kartusche zeigt den besten Versuch
+    if (p >= (punkte[nr] ?? -1)) setBilder(b => b.map((x, i) => (i === nr ? f.bild() : x)));
   };
-  const weiter = (i: number) => { setNr(i); setUrteil(null); flaeche.current?.leeren(); };
+  const weiter = (i: number) => { setNr(i); setUrteil(null); setLeer(false); flaeche.current?.leeren(); };
+  const gemacht = punkte.filter((x): x is number => x !== null);
+  const summe = gemacht.reduce((a, b) => a + b, 0);
   return (
     <div className="card p-3 flex flex-col gap-3">
       <div className="font-black">✍️ Selbst schreiben wie ein Schreiber</div>
       <div className="flex flex-wrap gap-1.5">
         {zeichen.map((z, i) => (
           <button key={i} onClick={() => weiter(i)} className={`chip ${i === nr ? "chip-on" : ""}`} title={z.name}>
-            <span style={{ fontFamily: "'Segoe UI Historic', 'Noto Sans Egyptian Hieroglyphs', serif" }}>{z.zeichen}</span> {z.laut}{bilder[i] ? " ✓" : ""}
+            <span style={{ fontFamily: "'Segoe UI Historic', 'Noto Sans Egyptian Hieroglyphs', serif" }}>{z.zeichen}</span> {z.laut}{punkte[i] !== null ? ` · ${punkte[i]}` : ""}
           </button>
         ))}
       </div>
@@ -123,15 +149,27 @@ function SelbstSchreiben({ zeichen }: { zeichen: ReturnType<typeof inHieroglyphe
           <p>Mal das Zeichen <b>{g.laut}</b> ({g.name}) mit dem Binsenpinsel nach. Schwarz war Ruß, Rot zeigte Überschriften und Anfänge.</p>
           <div className="flex flex-wrap gap-2">
             <button className="btn-primary" onClick={fertig}>Fertig</button>
-            <button className="btn-secondary" onClick={() => { flaeche.current?.leeren(); setUrteil(null); }}>Abwaschen</button>
+            <button className="btn-secondary" onClick={() => { flaeche.current?.leeren(); setUrteil(null); setLeer(false); }}>Abwaschen</button>
             {nr < zeichen.length - 1 && <button className="btn-secondary" onClick={() => weiter(nr + 1)}>Nächstes Zeichen ›</button>}
           </div>
-          {urteil && <p className="font-bold">{urteil}</p>}
+          {leer && <p className="text-bad text-xs">Erst malen — der Pinsel liegt bereit.</p>}
+          {urteil && (
+            <div className="flex flex-col gap-1.5" aria-live="polite">
+              <Balken name="Vorlage getroffen" wert={urteil.abgedeckt} farbe="var(--color-ok)" />
+              <Balken name="Daneben gemalt" wert={urteil.daneben} farbe="var(--color-bad)" />
+              <p className="font-black text-lg">{sterne(urteil.punkte)} {urteil.punkte} Genauigkeitspunkte</p>
+              <p className="text-xs text-muted">
+                {urteil.punkte >= 60 ? "Der Pharao wäre zufrieden!" : urteil.punkte >= 40 ? "Ein ordentlicher Schreiberlehrling."
+                  : urteil.abgedeckt < 0.4 ? "Zu wenig von der Vorlage erwischt — mal die Linien ganz nach." : "Zu viel daneben — langsamer und genauer malen."}
+                {" "}Punkte = getroffen × (1 − daneben). Bestwert zählt.
+              </p>
+            </div>
+          )}
         </div>
       </div>
       {bilder.some(Boolean) && (
         <div className="flex flex-col gap-1">
-          <span className="text-xs text-muted">Deine Kartusche — mit deinen eigenen Zeichen:</span>
+          <span className="text-xs text-muted">Deine Kartusche — mit deinen eigenen Zeichen · <b>{summe} von {zeichen.length * 100} Genauigkeitspunkten</b>{gemacht.length === zeichen.length ? ` (${sterne(Math.round(summe / zeichen.length))} im Schnitt ${Math.round(summe / zeichen.length)})` : ` · noch ${zeichen.length - gemacht.length} Zeichen`}</span>
           <div className="self-start flex items-center gap-1 rounded-full border-4 px-4 py-2" style={{ borderColor: "#7c5a1e", background: "#f3e3b5" }}>
             {bilder.map((b, i) => b
               ? <img key={i} src={b} alt={zeichen[i].laut} className="w-12 h-12 rounded" />
