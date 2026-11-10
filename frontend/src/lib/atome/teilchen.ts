@@ -24,8 +24,14 @@
  */
 import { loestSichIn, mischbar, phaseVon, stoff, type Stoff } from "./stoffe";
 
-export const BREITE = 640;
-export const HOEHE = 360;
+/**
+ * Das Gefäß in Bildpunkten der Rechnung. Größer als die Leinwand, die es
+ * zeigt — so werden die Kugeln auf dem Bildschirm kleiner und es passen mehr hinein.
+ */
+export const BREITE = 1000;
+export const HOEHE = 560;
+/** Wie viel Fläche gegenüber dem ersten Gefäß (640 × 360) — für die Mengen der Reaktionen. */
+const FLAECHE = (BREITE * HOEHE) / (640 * 360);
 
 export type Bewegung = "gitter" | "fluessig" | "gas";
 
@@ -87,9 +93,14 @@ export type Szene = {
   T: number;
   wand: boolean;
   heiss: Heiss[];
+  /** Belegte Gitterplätze: Schlüssel »Stoff:Zeile,Spalte« → Teilchen. Jeder Stoff hat sein eigenes Gitter. */
   plaetze: Map<string, number>;
-  /** Gitterabstand. */
-  a: number;
+  /** Oberkante der Trennwand (y); 0 = bis ganz oben. Bei der Destillation bleibt darüber ein Durchgang. */
+  wandOben: number;
+  /** Rechte Hälfte gekühlt (°C) — die Vorlage der Destillation; sonst null. */
+  kuehler: number | null;
+  /** Höhe eines Filters (y), der nur Flüssiges und Gelöstes durchlässt; sonst null. */
+  filter: number | null;
   reaktion: Reaktion | null;
   umsatz: number;
   rueck: number;
@@ -129,20 +140,44 @@ const K = (T: number) => T + 273.15;
 export const tempo = (T: number, masse: number): number =>
   Math.max(4, Math.min(650, 150 * Math.sqrt(Math.max(0, K(T)) / 300) * (30 / masse) ** 0.25));
 
-/** Gitterplätze: Sechseckgitter, Zeile 0 liegt am Boden. */
-export function platzLage(a: number, key: string): { x: number; y: number } {
-  const [k, m] = key.split(",").map(Number);
+/** Gitterabstand eines Stoffs: knapp ein Durchmesser — der Feststoff liegt dicht. */
+const gitterAbstand = (s: Stoff): number => s.r * 2.04;
+
+/**
+ * Gitterplätze: Sechseckgitter, Zeile 0 liegt am Boden. Jeder Stoff hat sein
+ * eigenes, passend zu seiner Kugelgröße — ein gemeinsames Gitter nach der
+ * größten Kugel wäre für die kleineren zu weit: es gäbe weniger Plätze als
+ * Teilchen, und die übrigen blieben flüssig.
+ */
+export function platzLage(sz: Szene, key: string): { x: number; y: number } {
+  const [s, k, m] = key.split(/[:,]/).map(Number);
+  const a = gitterAbstand(sz.stoffe[s]);
   return { x: a / 2 + (k % 2) * a / 2 + m * a, y: HOEHE - a / 2 - k * a * 0.866 };
 }
 
-function freieGitterplaetze(sz: Szene, x0: number, x1: number): string[] {
+/**
+ * Liegt dort schon ein festes Teilchen eines anderen Stoffs? Die Gitter
+ * dürfen sich nicht überlappen. Beim Auslegen (`alle`) zählt jedes Teilchen.
+ */
+function fremdBelegt(sz: Szene, s: number, x: number, y: number, alle = false): boolean {
+  const r = sz.stoffe[s].r;
+  for (const q of sz.t) {
+    if (q.s === s || (!alle && q.bewegung !== "gitter")) continue;
+    const rr = (r + sz.stoffe[q.s].r) * 0.9;
+    if (Math.abs(q.x - x) < rr && Math.abs(q.y - y) < rr && Math.hypot(q.x - x, q.y - y) < rr) return true;
+  }
+  return false;
+}
+
+function freieGitterplaetze(sz: Szene, s: number, x0: number, x1: number): string[] {
+  const a = gitterAbstand(sz.stoffe[s]);
   const aus: string[] = [];
-  for (let k = 0; HOEHE - sz.a / 2 - k * sz.a * 0.866 > sz.a / 2; k++) {
+  for (let k = 0; HOEHE - a / 2 - k * a * 0.866 > a / 2; k++) {
     for (let m = 0; ; m++) {
-      const key = `${k},${m}`;
-      const p = platzLage(sz.a, key);
-      if (p.x > BREITE - sz.a / 2) break;
-      if (p.x < x0 + sz.a / 2 || p.x > x1 - sz.a / 2 || sz.plaetze.has(key)) continue;
+      const key = `${s}:${k},${m}`;
+      const p = platzLage(sz, key);
+      if (p.x > BREITE - a / 2) break;
+      if (p.x < x0 + a / 2 || p.x > x1 - a / 2 || sz.plaetze.has(key)) continue;
       aus.push(key);
     }
   }
@@ -162,30 +197,42 @@ function neuesTeilchen(sz: Szene, s: number, form: number, x: number, y: number,
 
 /** Legt Teilchen aus: Feststoffe ins Gitter, Flüssigkeiten unten hin, Gase irgendwohin. */
 function lege(sz: Szene, liste: { s: number; form: number }[], x0: number, x1: number, seite: 0 | 1, z: Zufall) {
-  const frei = freieGitterplaetze(sz, x0, x1);
+  // Freie Plätze je Stoff, von unten nach oben; ein Zeiger je Stoff.
+  const frei = new Map<number, string[]>(), zeiger = new Map<number, number>();
+  const naechsterPlatz = (s: number): string | null => {
+    if (!frei.has(s)) { frei.set(s, freieGitterplaetze(sz, s, x0, x1)); zeiger.set(s, 0); }
+    const liste = frei.get(s)!;
+    let i = zeiger.get(s)!;
+    while (i < liste.length) {
+      const key = liste[i++];
+      const p = platzLage(sz, key);
+      if (!fremdBelegt(sz, s, p.x, p.y, true)) { zeiger.set(s, i); return key; }
+    }
+    zeiger.set(s, i);
+    return null;
+  };
   // Ionen sollen sich im Gitter abwechseln: die Form richtet sich nach dem
   // Platz, solange von ihr noch welche übrig sind — die Summe bleibt gleich.
   const rest = new Map<string, number>();
   for (const { s, form } of liste) rest.set(`${s}:${form}`, (rest.get(`${s}:${form}`) ?? 0) + 1);
-  let i = 0;
   for (const eintrag of liste) {
     const { s } = eintrag;
     let { form } = eintrag;
     const ph = phaseVon(sz.stoffe[s], sz.T);
-    if (sz.stoffe[s].formen.length === 2 && ph !== "gasförmig" && i < frei.length) {
-      const [k, m] = frei[i].split(",").map(Number);
+    const key = ph === "gasförmig" ? null : naechsterPlatz(s);
+    if (sz.stoffe[s].formen.length === 2 && key) {
+      const [, k, m] = key.split(/[:,]/).map(Number);
       const will = (m + Math.floor(k / 2)) % 2;
       if ((rest.get(`${s}:${will}`) ?? 0) > 0) form = will;
       else if ((rest.get(`${s}:${form}`) ?? 0) <= 0) form = 1 - form;
     }
     rest.set(`${s}:${form}`, (rest.get(`${s}:${form}`) ?? 0) - 1);
-    if (ph === "gasförmig" || i >= frei.length) {
+    if (!key) {
       const r = sz.stoffe[s].r;
       sz.t.push(neuesTeilchen(sz, s, form, x0 + r + z() * (x1 - x0 - 2 * r), r + z() * (HOEHE * 0.6), seite, z));
       continue;
     }
-    const key = frei[i++];
-    const p = platzLage(sz.a, key);
+    const p = platzLage(sz, key);
     const t = neuesTeilchen(sz, s, form, p.x, p.y, seite, z);
     t.vx *= 0.2; t.vy *= 0.2;
     if (ph === "fest" || (ph === "zersetzt" && sz.stoffe[s].schmelz === null)) {
@@ -202,12 +249,14 @@ const mischeReihe = <T,>(a: T[], z: Zufall): T[] => {
 };
 
 function leereSzene(stoffe: Stoff[], T: number): Szene {
-  const rmax = Math.max(...stoffe.map(s => s.r));
-  return { stoffe, t: [], T, wand: false, heiss: [], plaetze: new Map(), a: rmax * 2.04, reaktion: null, umsatz: 0, rueck: 0, nId: 1 };
+  return {
+    stoffe, t: [], T, wand: false, heiss: [], plaetze: new Map(), wandOben: 0, kuehler: null, filter: null,
+    reaktion: null, umsatz: 0, rueck: 0, nId: 1,
+  };
 }
 
 const anzahl = (s: Stoff, anteil: number) =>
-  Math.round(Math.max(40, Math.min(240, (BREITE * HOEHE * 0.3 * anteil) / (4 * s.r * s.r))) / s.formen.length) * s.formen.length;
+  Math.round(Math.max(60, Math.min(520, (BREITE * HOEHE * 0.3 * anteil) / (4 * s.r * s.r))) / s.formen.length) * s.formen.length;
 
 export function einzelSzene(id: string, T: number, z: Zufall = Math.random): Szene {
   const s = stoff(id);
@@ -237,7 +286,7 @@ export function reaktionsSzene(r: Reaktion, T: number, z: Zufall = Math.random):
   sz.reaktion = r;
   const teile = (id: string, n: number) => {
     const s = ids.indexOf(id), st = sz.stoffe[s];
-    return Array.from({ length: Math.round(n * r.menge * (r.extra?.[id] ?? 1)) * st.formen.length }, (_, i) => ({ s, form: i % st.formen.length }));
+    return Array.from({ length: Math.round(n * r.menge * (r.extra?.[id] ?? 1) * FLAECHE) * st.formen.length }, (_, i) => ({ s, form: i % st.formen.length }));
   };
   if (r.getrennt) {
     sz.wand = true;
@@ -252,9 +301,88 @@ export function reaktionsSzene(r: Reaktion, T: number, z: Zufall = Math.random):
   return sz;
 }
 
+export type Trennung = {
+  id: string;
+  art: "destillation" | "filtration";
+  titel: string;
+  /** Stoff und Anteil am Gefäß (wie beim Mischen). */
+  stoffe: [string, number][];
+  /** Diese Stoffe liegen gelöst vor. */
+  geloest?: string[];
+  /** Bis hierhin heizen — dann trennt es sich. */
+  ziel: number;
+  text: string;
+};
+
+export const TRENNUNGEN: Trennung[] = [
+  { id: "wein", art: "destillation", titel: "Wein → Alkohol", stoffe: [["h2o", 0.3], ["ethanol", 0.2]], ziel: 85,
+    text: "Wasser und Ethanol sind gemischt. Ethanol siedet bei 78 °C, Wasser erst bei 100 °C: zwischen beiden verdampft nur das Ethanol, steigt über die Wand, kühlt in der Vorlage ab und kondensiert. Das Wasser bleibt im Kolben. (Vereinfacht: in Wirklichkeit geht immer etwas Wasser mit.)" },
+  { id: "salzwasser-d", art: "destillation", titel: "Salzwasser → reines Wasser", stoffe: [["h2o", 0.4], ["nacl", 0.06]], geloest: ["nacl"], ziel: 105,
+    text: "Über 100 °C verdampft das Wasser, die gelösten Salzteilchen nicht. In der Vorlage sammelt sich reines Wasser (destilliertes Wasser); im Kolben bleibt das Salz zurück und kristallisiert, sobald das Wasser fehlt." },
+  { id: "erdoel", art: "destillation", titel: "Benzin aus Erdöl", stoffe: [["hexan", 0.22], ["octan", 0.22]], ziel: 95,
+    text: "Kürzere Ketten haben schwächere Van-der-Waals-Kräfte und sieden früher: Hexan bei 69 °C, Octan bei 126 °C. Bei 95 °C geht nur das Hexan über — so trennt die Raffinerie Erdöl in Fraktionen." },
+  { id: "sand", art: "filtration", titel: "Sand + Wasser", stoffe: [["sio2", 0.08], ["h2o", 0.22]], ziel: 20,
+    text: "Die Wasserteilchen passen durch die Poren des Filters, die festen Sandkörner nicht — sie bleiben als Filterkuchen liegen. Unten kommt klares Wasser an (Filtrat)." },
+  { id: "salzwasser-f", art: "filtration", titel: "Salzwasser", stoffe: [["h2o", 0.24], ["nacl", 0.04]], geloest: ["nacl"], ziel: 20,
+    text: "Gelöstes Salz läuft mit durch: die Salzteilchen schwimmen einzeln zwischen den Wasserteilchen und sind so klein wie diese. Eine Lösung lässt sich nicht filtrieren — dafür braucht es Eindampfen oder Destillieren." },
+  { id: "sand-salz", art: "filtration", titel: "Sand + Salzwasser", stoffe: [["sio2", 0.06], ["h2o", 0.22], ["nacl", 0.03]], geloest: ["nacl"], ziel: 20,
+    text: "Der Filter hält den Sand zurück, das Salzwasser läuft durch. Um auch das Salz zu bekommen, dampft man das Filtrat anschließend ein." },
+];
+
+export function trennSzene(t: Trennung, T: number, z: Zufall = Math.random): Szene {
+  const sz = leereSzene(t.stoffe.map(([id]) => stoff(id)), T);
+  const liste = mischeReihe(t.stoffe.flatMap(([id, anteil], s) => {
+    const st = sz.stoffe[s];
+    return Array.from({ length: anzahl(st, anteil) }, (_, i) => ({ s, form: i % st.formen.length }));
+  }), z);
+  const loese = (p: Teilchen) => {
+    if (!t.geloest?.includes(sz.stoffe[p.s].id)) return;
+    if (p.platz) sz.plaetze.delete(p.platz);
+    p.platz = null; p.geloest = true; p.bewegung = "fluessig";
+  };
+  if (t.art === "destillation") {
+    // Links der Kolben (geheizt), rechts die Vorlage (gekühlt); oben ein Durchgang.
+    sz.wand = true;
+    sz.wandOben = HOEHE * 0.3;
+    sz.kuehler = 5;
+    lege(sz, liste, 0, BREITE / 2 - 3, 0, z);
+    // Gemischt, nicht geschichtet: die Plätze gelten nur als Startlage.
+    for (const p of sz.t) {
+      if (phaseVon(sz.stoffe[p.s], T) !== "fest" && p.platz) { sz.plaetze.delete(p.platz); p.platz = null; p.bewegung = "fluessig"; }
+      loese(p);
+    }
+  } else {
+    // Ein Filter quer durchs Gefäß; das Gemisch liegt locker darüber und fällt darauf.
+    sz.filter = HOEHE * 0.55;
+    const rmax = Math.max(...sz.stoffe.map(x => x.r));
+    const a = rmax * 2.15, plaetze: [number, number][] = [];
+    for (let y = sz.filter - a; y > a / 2; y -= a * 0.87) {
+      for (let x = a / 2; x < BREITE - a / 2; x += a) plaetze.push([x, y]);
+    }
+    liste.slice(0, plaetze.length).forEach(({ s, form }, i) => {
+      const p = neuesTeilchen(sz, s, form, plaetze[i][0], plaetze[i][1], 0, z);
+      p.vx *= 0.1; p.vy *= 0.1;
+      p.bewegung = "fluessig";
+      sz.t.push(p);
+      loese(p);
+    });
+  }
+  return sz;
+}
+
+/** Wie viele Teilchen je Stoff links/rechts (Destillation) bzw. über/unter dem Filter liegen. */
+export function verteilung(sz: Szene): [number[], number[]] {
+  const a = sz.stoffe.map(() => 0), b = sz.stoffe.map(() => 0);
+  for (const p of sz.t) {
+    const zweite = sz.filter !== null ? p.y > sz.filter : p.x > BREITE / 2;
+    (zweite ? b : a)[p.s] += 1 / sz.stoffe[p.s].formen.length;
+  }
+  return [a.map(Math.round), b.map(Math.round)];
+}
+
 /** Örtliche Temperatur: Gefäß plus heiße Flecken. */
 export function ortsTemperatur(sz: Szene, x: number, y: number): number {
-  let T = sz.T;
+  let T = sz.kuehler !== null && x > BREITE / 2 ? sz.kuehler : sz.T;
   for (const h of sz.heiss) {
     const d = Math.hypot(x - h.x, y - h.y);
     if (d < h.r) T += h.dT * (1 - h.t / h.dauer) * (1 - d / h.r);
@@ -300,25 +428,41 @@ const willFest = (st: Stoff, T: number) => {
   return ph === "fest" || (ph === "zersetzt" && st.schmelz === null);
 };
 
-function gitterplatzFuer(sz: Szene, p: Teilchen): string | null {
-  const a = sz.a;
+/** Der nächste freie Platz im Gitter des eigenen Stoffs; `weit` sucht im größeren Umkreis. */
+function gitterplatzFuer(sz: Szene, p: Teilchen, weit: boolean): string | null {
+  const a = gitterAbstand(sz.stoffe[p.s]);
+  const R = weit ? 3 : 1;
   const k0 = Math.round((HOEHE - a / 2 - p.y) / (a * 0.866));
-  let best: string | null = null, bestD = a * 1.3;
-  for (let k = Math.max(0, k0 - 1); k <= k0 + 1; k++) {
+  let best: string | null = null, bestD = a * (weit ? 3.2 : 1.3);
+  for (let k = Math.max(0, k0 - R); k <= k0 + R; k++) {
     const m0 = Math.round((p.x - a / 2 - (k % 2) * a / 2) / a);
-    for (let m = m0 - 1; m <= m0 + 1; m++) {
+    for (let m = m0 - R; m <= m0 + R; m++) {
       if (m < 0) continue;
-      const key = `${k},${m}`;
+      const key = `${p.s}:${k},${m}`;
       if (sz.plaetze.has(key)) continue;
-      const q = platzLage(a, key);
+      const q = platzLage(sz, key);
       if (q.x > BREITE - a / 2 || q.y < a / 2) continue;
-      if (sz.wand && (p.seite === 0 ? q.x > BREITE / 2 - a / 2 : q.x < BREITE / 2 + a / 2)) continue;
       const d = Math.hypot(q.x - p.x, q.y - p.y);
-      if (d < bestD) { best = key; bestD = d; }
+      if (d >= bestD) continue;
+      // Nicht durch die Trennwand und nicht durch den Filter hindurch.
+      if (sz.wand && q.y + a / 2 > sz.wandOben && (p.x < BREITE / 2) !== (q.x < BREITE / 2)) continue;
+      if (sz.wand && q.y + a / 2 > sz.wandOben && Math.abs(q.x - BREITE / 2) < a / 2 + 3) continue;
+      if (sz.filter !== null && (p.y < sz.filter) !== (q.y < sz.filter)) continue;
+      if (sz.filter !== null && Math.abs(q.y - sz.filter) < a / 2) continue;
+      if (fremdBelegt(sz, p.s, q.x, q.y)) continue;
+      best = key; bestD = d;
     }
   }
   return best;
 }
+
+/**
+ * Flüssigkeitsteilchen stoßen auf leicht verschiedene Abstände — sonst packen
+ * sich gleich große Kugeln von selbst sechseckig wie ein Kristall. Gezeichnet
+ * werden alle Kugeln eines Stoffs gleich groß.
+ */
+const stossGroesse = (p: Teilchen): number =>
+  p.bewegung === "fluessig" ? 0.78 + 0.44 * ((p.id * 0.6180339887) % 1) : 1;
 
 export function schritt(sz: Szene, dt: number, z: Zufall = Math.random): Ereignis[] {
   const n = sz.t.length;
@@ -329,6 +473,8 @@ export function schritt(sz: Szene, dt: number, z: Zufall = Math.random): Ereigni
   // Dichte der flüssigen Nachbarschaft — daraus der Auftrieb.
   const umDichte = new Float64Array(n), umZahl = new Int32Array(n);
   const dichteVon = (p: Teilchen, s: Stoff) => (p.geloest ? 1 : s.dichte);
+  // Gas mitten in einer Flüssigkeit: eine Blase, die aufsteigt.
+  const nass = new Uint8Array(n);
   const gleich = new Int32Array(n), stuetze = new Uint8Array(n), loeser = new Uint8Array(n), angriff = new Uint8Array(n);
 
   // Nicht mischbare Flüssigkeiten: jede bekommt ihre Schicht, die dichteste
@@ -349,13 +495,30 @@ export function schritt(sz: Szene, dt: number, z: Zufall = Math.random): Ereigni
     }
   }
 
-  // Paare: Abstoßung, Anziehung in Flüssigkeiten, Nachbarn zählen.
+  // Paare: Abstoßung, Anziehung in Flüssigkeiten, Nachbarn zählen. Gesucht
+  // wird nur in den Nachbarzellen eines Rasters — bei 500 Teilchen sonst
+  // 125 000 Paare je Schritt.
+  const zelle = Math.max(...sz.stoffe.map(x => x.r)) * 2 * 1.6 * 1.14;
+  const nx = Math.ceil(BREITE / zelle) + 1, ny = Math.ceil(HOEHE / zelle) + 1;
+  const kopf = new Int32Array(nx * ny).fill(-1), weiter = new Int32Array(n);
+  const zx = (x: number) => Math.max(0, Math.min(nx - 1, Math.floor(x / zelle)));
+  const zy = (y: number) => Math.max(0, Math.min(ny - 1, Math.floor(y / zelle)));
+  for (let i = 0; i < n; i++) {
+    const c = zy(sz.t[i].y) * nx + zx(sz.t[i].x);
+    weiter[i] = kopf[c]; kopf[c] = i;
+  }
+  const groesse = sz.t.map(stossGroesse);
   for (let i = 0; i < n; i++) {
     const p = sz.t[i];
-    for (let j = i + 1; j < n; j++) {
+    const cx = zx(p.x), cy = zy(p.y);
+    for (let oy = -1; oy <= 1; oy++) for (let ox = -1; ox <= 1; ox++) {
+    const ex = cx + ox, ey = cy + oy;
+    if (ex < 0 || ey < 0 || ex >= nx || ey >= ny) continue;
+    for (let j = kopf[ey * nx + ex]; j !== -1; j = weiter[j]) {
+      if (j <= i) continue;
       const q = sz.t[j];
       const dx = q.x - p.x, dy = q.y - p.y;
-      const rr = st[i].r + st[j].r;
+      const rr = st[i].r * groesse[i] + st[j].r * groesse[j];
       if (Math.abs(dx) > rr * 1.6 || Math.abs(dy) > rr * 1.6) continue;
       const d = Math.max(0.5, Math.hypot(dx, dy));
       if (d > rr * 1.6) continue;
@@ -368,6 +531,10 @@ export function schritt(sz: Szene, dt: number, z: Zufall = Math.random): Ereigni
         // Lösemittel in der Nähe?
         if (bj === "fluessig" && !q.geloest && loestSichIn(st[i], st[j])) { loeser[i] = 1; if (bi === "gitter") angriff[i] = 1; }
         if (bi === "fluessig" && !p.geloest && loestSichIn(st[j], st[i])) { loeser[j] = 1; if (bj === "gitter") angriff[j] = 1; }
+      }
+      if (d < rr * 1.3) {
+        if (bi === "gas" && bj === "fluessig") nass[i] = 1;
+        if (bj === "gas" && bi === "fluessig") nass[j] = 1;
       }
       if (bi === "fluessig" && bj === "fluessig") {
         umDichte[i] += dichteVon(q, st[j]); umZahl[i]++;
@@ -386,6 +553,7 @@ export function schritt(sz: Szene, dt: number, z: Zufall = Math.random): Ereigni
       }
       fx[i] += ux * f; fy[i] += uy * f;
       fx[j] -= ux * f; fy[j] -= uy * f;
+    }
     }
   }
 
@@ -422,9 +590,11 @@ export function schritt(sz: Szene, dt: number, z: Zufall = Math.random): Ereigni
       }
     } else if (fest) {
       p.warte += dt;
-      const amBoden = p.y > HOEHE - sz.a * 0.9;
+      const a = gitterAbstand(s);
+      const amBoden = p.y > HOEHE - a * 0.9
+        || (sz.filter !== null && p.y < sz.filter && p.y > sz.filter - a * 1.1);
       if (amBoden || stuetze[i] || (p.warte > 1.5 && gleich[i] >= 2)) {
-        const key = gitterplatzFuer(sz, p);
+        const key = gitterplatzFuer(sz, p, p.warte > 3);
         if (key) { p.platz = key; sz.plaetze.set(key, p.id); p.warte = 0; p.los = 0.5; }
       }
     } else p.warte = 0;
@@ -437,9 +607,11 @@ export function schritt(sz: Szene, dt: number, z: Zufall = Math.random): Ereigni
     // Bewegung.
     const v0 = tempo(T, s.masse);
     if (p.bewegung === "gitter") {
-      const q = platzLage(sz.a, p.platz!);
+      const q = platzLage(sz, p.platz!);
       const schmelzK = K(s.schmelz ?? s.zersetzt ?? 1000);
-      const A = s.r * (0.05 + 0.4 * Math.min(1, K(T) / Math.max(50, schmelzK)));
+      // Schwingungsweite: am Schmelzpunkt etwa ein Zehntel des Abstands
+      // (Lindemann-Kriterium, hier etwas weniger) — mehr, und der Kristall sähe flüssig aus.
+      const A = s.r * (0.015 + 0.1 * Math.min(1, K(T) / Math.max(50, schmelzK)));
       const sigma = A * Math.sqrt(2 * 12 * 600);
       p.vx += (600 * (q.x - p.x) - 12 * p.vx + fx[i] * 0.3) * dt + sigma * gauss(z) * Math.sqrt(dt);
       p.vy += (600 * (q.y - p.y) - 12 * p.vy + fy[i] * 0.3) * dt + sigma * gauss(z) * Math.sqrt(dt);
@@ -454,7 +626,8 @@ export function schritt(sz: Szene, dt: number, z: Zufall = Math.random): Ereigni
       const auftrieb = !gas && umZahl[i] ? 4000 * (umDichte[i] / umZahl[i] - dichte) / (umDichte[i] / umZahl[i]) : 0;
       if (gas) {
         p.vx += fx[i] * dt;
-        p.vy += (fy[i] + g) * dt;
+        // Eine Gasblase in der Flüssigkeit steigt auf — so verlässt der Dampf beim Sieden die Flüssigkeit.
+        p.vy += (fy[i] + g - (nass[i] ? 2500 : 0)) * dt;
         const tempoJetzt = Math.hypot(p.vx, p.vy);
         if (tempoJetzt < 1) { const w = z() * Math.PI * 2; p.vx = Math.cos(w) * v0; p.vy = Math.sin(w) * v0; }
         else { const k = 1 + 0.03 * (v0 / tempoJetzt - 1); p.vx *= k; p.vy *= k; }
@@ -466,7 +639,8 @@ export function schritt(sz: Szene, dt: number, z: Zufall = Math.random): Ereigni
         // Konvektion: unten in der Mitte heizt der Brenner. Je näher am Siedepunkt, desto stärker.
         const oben = s.siede ?? s.zersetzt ?? (s.schmelz ?? 0) + 300;
         const stark = Math.max(0, Math.min(1, (T - (s.schmelz ?? -273)) / Math.max(1, oben - (s.schmelz ?? -273))));
-        if (p.y > HOEHE - 3 * s.r && Math.abs(p.x - BREITE / 2) < BREITE * 0.2) p.w += (1 - p.w) * Math.min(1, 3 * dt);
+        const brenner = sz.wand ? BREITE / 4 : BREITE / 2, breit = sz.wand ? 0.1 : 0.2;
+        if (p.y > HOEHE - 3 * s.r && Math.abs(p.x - brenner) < BREITE * breit) p.w += (1 - p.w) * Math.min(1, 3 * dt);
         else p.w -= p.w * Math.min(1, 0.4 * dt);
         // Die Strömung: zwei Walzen in der Flüssigkeit (Stromfunktion
         // ψ = A·sin(2πx/b)·sin(πy/h)), oben und unten ohne Senkrechtanteil —
@@ -491,16 +665,28 @@ export function schritt(sz: Szene, dt: number, z: Zufall = Math.random): Ereigni
       p.om = Math.max(-8, Math.min(8, p.om * (gas ? 0.999 : 0.97)));
     }
     if (p.bewegung !== "fluessig") p.w = 0;
+    const altX = p.x, altY = p.y;
     p.x += p.vx * dt; p.y += p.vy * dt; p.phi += p.om * dt;
 
     // Wände.
     const r = s.r, e = p.bewegung === "gas" ? 1 : 0.3;
-    let lo = r, hi = BREITE - r;
-    if (sz.wand) { if (p.seite === 0) hi = BREITE / 2 - 3 - r; else lo = BREITE / 2 + 3 + r; }
-    if (p.x < lo) { p.x = lo; p.vx = Math.abs(p.vx) * e; }
-    if (p.x > hi) { p.x = hi; p.vx = -Math.abs(p.vx) * e; }
+    if (p.x < r) { p.x = r; p.vx = Math.abs(p.vx) * e; }
+    if (p.x > BREITE - r) { p.x = BREITE - r; p.vx = -Math.abs(p.vx) * e; }
     if (p.y < r) { p.y = r; p.vy = Math.abs(p.vy) * e; }
     if (p.y > HOEHE - r) { p.y = HOEHE - r; p.vy = -Math.abs(p.vy) * e; }
+    // Trennwand: bei der Destillation nur bis `wandOben` — darüber ist der Durchgang.
+    if (sz.wand && p.y + r > sz.wandOben) {
+      if (altX < BREITE / 2 && p.x > BREITE / 2 - 3 - r) { p.x = BREITE / 2 - 3 - r; p.vx = -Math.abs(p.vx) * e; }
+      if (altX >= BREITE / 2 && p.x < BREITE / 2 + 3 + r) { p.x = BREITE / 2 + 3 + r; p.vx = Math.abs(p.vx) * e; }
+    }
+    // Filter: Flüssiges und Gelöstes läuft durch, Feststoffe bleiben liegen.
+    // Was durch ist, kommt nicht wieder hoch (außer als Gas).
+    if (sz.filter !== null) {
+      const durch = p.bewegung === "gas" || (p.bewegung === "fluessig" && (p.geloest || !willFest(s, T)));
+      if (altY < sz.filter && !durch && p.y + r > sz.filter) { p.y = sz.filter - r; p.vy = -Math.abs(p.vy) * 0.2; }
+      if (altY >= sz.filter && p.bewegung !== "gas" && p.y - r < sz.filter) { p.y = sz.filter + r; p.vy = Math.abs(p.vy) * 0.2; }
+    }
+    p.seite = p.x < BREITE / 2 ? 0 : 1;
   }
 
   const ereignisse = sz.reaktion ? reagiere(sz, dt, z) : [];

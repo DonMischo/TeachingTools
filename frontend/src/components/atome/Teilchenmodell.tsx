@@ -9,11 +9,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { element } from "@/lib/elemente";
 import { GRUPPEN, kugelFarbe, mischText, phaseVon, stoff, STOFFE, type Phase, type Stoff } from "@/lib/atome/stoffe";
 import {
-  atomZahl, BREITE, einzelSzene, HOEHE, mischSzene, REAKTIONEN, reaktionsSzene, schritt, stoffZahl, zuende, zuendStelle,
-  type Szene,
+  atomZahl, BREITE, einzelSzene, HOEHE, mischSzene, REAKTIONEN, reaktionsSzene, schritt, stoffZahl, TRENNUNGEN,
+  trennSzene, verteilung, zuende, zuendStelle, type Szene,
 } from "@/lib/atome/teilchen";
 
-type Modus = "zustand" | "mischen" | "reaktion";
+type Modus = "zustand" | "mischen" | "trennen" | "reaktion";
 const PLATTE = 26;
 const AUSWAHL = STOFFE.filter(s => !s.nurReaktion);
 
@@ -108,6 +108,7 @@ export default function Teilchenmodell() {
   const [a, setA] = useState("h2o");
   const [b, setB] = useState("oel");
   const [rid, setRid] = useState("knallgas");
+  const [tid, setTid] = useState("wein");
   const [T, setT] = useState(20);
   const [laufen, setLaufen] = useState(true);
   const [pfeile, setPfeile] = useState(false);
@@ -124,17 +125,21 @@ export default function Teilchenmodell() {
   opt.current = { laufen, pfeile, zeitlupe, kugeln, waerme };
 
   const reaktion = REAKTIONEN.find(r => r.id === rid)!;
+  const trennung = TRENNUNGEN.find(t => t.id === tid)!;
 
   // Neue Szene, wenn sich Stoff, Gemisch oder Reaktion ändert — nicht bei der Temperatur.
   const Tjetzt = useRef(T);
   Tjetzt.current = T;
   const neu = () => {
     const T0 = Tjetzt.current;
-    sz.current = modus === "zustand" ? einzelSzene(a, T0) : modus === "mischen" ? mischSzene(a, b, T0) : reaktionsSzene(reaktion, T0);
+    sz.current = modus === "zustand" ? einzelSzene(a, T0)
+      : modus === "mischen" ? mischSzene(a, b, T0)
+      : modus === "trennen" ? trennSzene(trennung, T0)
+      : reaktionsSzene(reaktion, T0);
     start.current = atomZahl(sz.current);
     setTakt(t => t + 1);
   };
-  useEffect(neu, [modus, a, b, rid]);
+  useEffect(neu, [modus, a, b, rid, tid]);
   useEffect(() => { if (sz.current) sz.current.T = T; }, [T]);
 
   useEffect(() => {
@@ -168,6 +173,11 @@ export default function Teilchenmodell() {
       const warm = Math.max(-1, Math.min(1, s.T / 1000)), kalt = Math.max(0, Math.min(1, -s.T / 200));
       ctx.fillStyle = s.T >= 0 ? `rgba(255,110,40,${0.04 + 0.16 * warm})` : `rgba(90,160,255,${0.05 + 0.18 * kalt})`;
       ctx.fillRect(0, 0, BREITE, HOEHE);
+      // Destillation: rechts die gekühlte Vorlage.
+      if (s.kuehler !== null) {
+        ctx.fillStyle = "rgba(90,160,255,0.16)";
+        ctx.fillRect(BREITE / 2, 0, BREITE / 2, HOEHE);
+      }
 
       // Heizplatte bzw. Kühlung unter dem Gefäß.
       const glut = Math.max(0, Math.min(1, (s.T - 20) / 900));
@@ -175,12 +185,21 @@ export default function Teilchenmodell() {
         ? `rgb(${80 + 175 * glut},${70 + 40 * glut},${60 - 30 * glut})`
         : `rgb(${120 - 60 * kalt},${150 + 30 * kalt},${200 + 55 * kalt})`;
       ctx.fillRect(0, HOEHE + 4, BREITE, PLATTE - 4);
+      if (s.kuehler !== null) {
+        // Unter der Vorlage: Kühlung.
+        ctx.fillStyle = "rgb(110,160,215)";
+        ctx.fillRect(BREITE / 2, HOEHE + 4, BREITE / 2, PLATTE - 4);
+        ctx.fillStyle = "#ffffffcc";
+        ctx.font = "13px system-ui"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        for (let i = 0; i < 6; i++) ctx.fillText("❄", BREITE / 2 + (i + 0.5) * BREITE / 12, HOEHE + PLATTE / 2 + 2);
+      }
       if (s.T > 60) {
-        // Der Brenner sitzt in der Mitte — dort heizt auch die Simulation, und
-        // darüber steigt die Flüssigkeit auf. Mehr und höhere Flammen je heißer.
+        // Der Brenner sitzt in der Mitte (bei der Destillation unter dem Kolben)
+        // — dort heizt auch die Simulation. Mehr und höhere Flammen je heißer.
         const zahl = Math.min(12, Math.round(3 + glut * 9));
+        const von = s.kuehler !== null ? 0.05 : 0.3, breit = 0.4;
         for (let i = 0; i < zahl; i++) {
-          const fx = BREITE * 0.3 + (i + 0.5) * BREITE * 0.4 / zahl, h = 6 + glut * 12 * (0.7 + 0.3 * Math.sin(flacker * 9 + i * 1.7));
+          const fx = BREITE * von + (i + 0.5) * BREITE * breit / zahl, h = 6 + glut * 12 * (0.7 + 0.3 * Math.sin(flacker * 9 + i * 1.7));
           ctx.beginPath();
           ctx.moveTo(fx - 5, HOEHE + PLATTE);
           ctx.quadraticCurveTo(fx, HOEHE + PLATTE - h * 2, fx + 5, HOEHE + PLATTE);
@@ -208,7 +227,23 @@ export default function Teilchenmodell() {
 
       if (s.wand) {
         ctx.fillStyle = farben.muted;
-        ctx.fillRect(BREITE / 2 - 3, 0, 6, HOEHE);
+        ctx.fillRect(BREITE / 2 - 3, s.wandOben, 6, HOEHE - s.wandOben);
+      }
+      if (s.kuehler !== null) {
+        ctx.fillStyle = farben.muted; ctx.font = "14px system-ui"; ctx.textAlign = "center"; ctx.textBaseline = "top";
+        ctx.fillText("Kolben (geheizt)", BREITE / 4, s.wandOben + 6);
+        ctx.fillText(`Vorlage (gekühlt, ${s.kuehler} °C)`, BREITE * 0.75, s.wandOben + 6);
+      }
+      if (s.filter !== null) {
+        // Filterpapier: gestrichelt — die Lücken sind die Poren.
+        ctx.save();
+        ctx.strokeStyle = "#d6cfa8"; ctx.lineWidth = 4; ctx.setLineDash([10, 4]);
+        ctx.beginPath(); ctx.moveTo(0, s.filter); ctx.lineTo(BREITE, s.filter); ctx.stroke();
+        ctx.restore();
+        ctx.fillStyle = farben.muted; ctx.font = "14px system-ui"; ctx.textAlign = "left"; ctx.textBaseline = "top";
+        ctx.fillText("Filter", 8, s.filter + 6);
+        ctx.textBaseline = "bottom";
+        ctx.fillText("Filtrat", 8, HOEHE - 4);
       }
 
       // Die Teilchen; mit »Wärme zeigen« glühen die vom Brenner erwärmten nach.
@@ -292,7 +327,7 @@ export default function Teilchenmodell() {
   return (
     <div className="flex flex-col gap-3">
       <div className="inline-flex self-start rounded-xl border border-line p-1 bg-surface">
-        {([["zustand", "🧊 Aggregatzustände"], ["mischen", "🥤 Mischen"], ["reaktion", "💥 Reaktion"]] as const).map(([id, label]) => (
+        {([["zustand", "🧊 Aggregatzustände"], ["mischen", "🥤 Mischen"], ["trennen", "⚗️ Trennen"], ["reaktion", "💥 Reaktion"]] as const).map(([id, label]) => (
           <button key={id} onClick={() => {
             setModus(id);
             if (id === "mischen" && a === b) setB(a === "h2o" ? "oel" : "h2o");
@@ -437,6 +472,54 @@ export default function Teilchenmodell() {
                   gelöste Stoff zurück und kristallisiert wieder.
                 </p>
               )}
+            </>
+          )}
+
+          {modus === "trennen" && s && (
+            <>
+              {(["destillation", "filtration"] as const).map(art => (
+                <div key={art} className="flex flex-col gap-1">
+                  <span className="text-xs text-muted">{art === "destillation" ? "Destillation — nach Siedetemperatur" : "Filtration — nach fest und flüssig"}</span>
+                  <div className="flex flex-wrap gap-1">
+                    {TRENNUNGEN.filter(t => t.art === art).map(t => (
+                      <button key={t.id} onClick={() => { setT(20); setTid(t.id); }}
+                        className={`px-2 py-0.5 rounded-lg border text-xs ${tid === t.id ? "border-accent bg-accent/15 font-bold" : "border-line text-muted hover:text-fg"}`}>
+                        {t.titel}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              <p className="text-xs">{trennung.text}</p>
+              {trennung.art === "destillation" && (
+                <button onClick={() => setT(trennung.ziel)} className="self-start px-3 py-1 rounded-lg bg-accent text-accent-fg text-xs font-bold">
+                  🔥 Kolben auf {trennung.ziel} °C heizen
+                </button>
+              )}
+              <table className="text-xs w-full">
+                <thead>
+                  <tr className="text-muted">
+                    <th className="text-left font-normal">Stoff</th>
+                    <th className="text-right font-normal">{trennung.art === "destillation" ? "Kolben" : "über dem Filter"}</th>
+                    <th className="text-right font-normal">{trennung.art === "destillation" ? "Vorlage" : "Filtrat"}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(() => {
+                    const [a1, b1] = verteilung(s);
+                    return s.stoffe.map((x, k) => (
+                      <tr key={x.id} className="border-b border-line/50">
+                        <td className="py-0.5">
+                          <span className="inline-block w-2.5 h-2.5 rounded-full mr-1 align-middle" style={{ background: kugelFarbe(x) }} />
+                          {x.name}{trennung.geloest?.includes(x.id) ? " (gelöst)" : ""}
+                        </td>
+                        <td className="text-right tabular-nums">{a1[k]}</td>
+                        <td className="text-right tabular-nums font-bold">{b1[k]}</td>
+                      </tr>
+                    ));
+                  })()}
+                </tbody>
+              </table>
             </>
           )}
 
