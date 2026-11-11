@@ -7,10 +7,12 @@
  * Teile verbinden zwei Knoten (`a` → `b`) oder hängen an einem (`a`).
  */
 
-export type Medium = "wasser" | "luft";
+export type Medium = "wasser" | "oel" | "luft";
 
 export const MEDIEN: Record<Medium, { name: string; dichte: number; zaehigkeit: number }> = {
   wasser: { name: "Wasser", dichte: 1000, zaehigkeit: 1.0e-3 },
+  /** Zähes Hydrauliköl: strömt in Rohren laminar — dort gilt Hagen-Poiseuille (r⁴). */
+  oel: { name: "Hydrauliköl", dichte: 870, zaehigkeit: 0.05 },
   luft: { name: "Luft", dichte: 1.2, zaehigkeit: 1.8e-5 },
 };
 

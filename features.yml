@@ -458,6 +458,8 @@ simulationen:
       - Wasserturm & Röhren - verbundene Gefäße live, Haus mit Stockwerken und Hähnen, Stromkreis einblendbar
       - Hydraulische Presse - Wagenheber mit Pumpstößen, Kraft gegen Weg, Luftblase in der Bremse
       - Luftdruck - Saugrohr mit 10-m-Grenze, Torricelli, Berg-Orte; Saugheber mit Abriss
+      - Rohrnetz - Pumpe mit bis zu drei Zweigen und Engstelle, Wasser turbulent oder Öl laminar (r⁴), Pumpen- und Anlagenkennlinie, Stromkreis einblendbar
+      - Venturi - Kontinuität und Bernoulli mit Steigrohren, Wasserstrahlpumpe, Kavitation, Zerstäuber
   - id: baum
     name: Baumleben
     kann:

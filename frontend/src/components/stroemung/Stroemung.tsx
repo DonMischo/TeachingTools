@@ -14,6 +14,8 @@ import Tauchen from "./Tauchen";
 import Wasserturm from "./Wasserturm";
 import Presse from "./Presse";
 import Luftdruck from "./Luftdruck";
+import Rohrnetz from "./Rohrnetz";
+import Venturi from "./Venturi";
 
 /** Fertige Stationen; was hier fehlt, zeigt eine Vorschau. */
 const STATION_INHALT: Record<string, () => ReactNode> = {
@@ -21,6 +23,8 @@ const STATION_INHALT: Record<string, () => ReactNode> = {
   roehren: () => <Wasserturm />,
   hydraulik: () => <Presse />,
   luftdruck: () => <Luftdruck />,
+  rohrnetz: () => <Rohrnetz />,
+  venturi: () => <Venturi />,
 };
 
 export default function Stroemung({ action, vorgabe }: { action?: ReactNode; vorgabe?: Vorgabe }) {
