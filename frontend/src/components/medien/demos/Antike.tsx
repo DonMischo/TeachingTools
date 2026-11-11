@@ -92,11 +92,15 @@ export function HieroglyphenDemo() {
  * daneben geht. Am Ende steht der Name aus den eigenen Zeichen in der Kartusche.
  */
 /**
- * Genauigkeitspunkte (0–100): wie viel der Vorlage übermalt ist, mal wie viel
- * der eigenen Striche auf der Vorlage liegt. Alles vollkritzeln bringt also nichts.
+ * Genauigkeitspunkte (0–100): wie viel vom Umriss der Vorlage nachgefahren ist,
+ * mal wie viel der eigenen Striche beim Zeichen liegt. Großzügig für die Maus:
+ * 85 % Umriss zählen voll, die ersten 10 % daneben kosten nichts.
+ * Alles vollkritzeln bringt trotzdem nichts.
  */
 export function genauigkeit(abgedeckt: number, daneben: number): number {
-  return Math.round(100 * Math.max(0, Math.min(1, abgedeckt)) * (1 - Math.max(0, Math.min(1, daneben))));
+  const getroffen = Math.min(1, Math.max(0, abgedeckt) / 0.85);
+  const abzug = Math.min(1, Math.max(0, daneben - 0.1) / 0.9);
+  return Math.round(100 * getroffen * (1 - abzug));
 }
 function Balken({ name, wert, farbe }: { name: string; wert: number; farbe: string }) {
   const prozent = Math.round(wert * 100);
@@ -160,13 +164,13 @@ function SelbstSchreiben({ zeichen }: { zeichen: ReturnType<typeof inHieroglyphe
           {leer && <p className="text-bad text-xs">Erst malen — der Pinsel liegt bereit.</p>}
           {urteil && (
             <div className="flex flex-col gap-1.5" aria-live="polite">
-              <Balken name="Vorlage getroffen" wert={urteil.abgedeckt} farbe="var(--color-ok)" />
+              <Balken name="Umriss getroffen" wert={urteil.abgedeckt} farbe="var(--color-ok)" />
               <Balken name="Daneben gemalt" wert={urteil.daneben} farbe="var(--color-bad)" />
               <p className="font-black text-lg">{sterne(urteil.punkte)} {urteil.punkte} Genauigkeitspunkte</p>
               <p className="text-xs text-muted">
                 {urteil.punkte >= 60 ? "Der Pharao wäre zufrieden!" : urteil.punkte >= 40 ? "Ein ordentlicher Schreiberlehrling."
                   : urteil.abgedeckt < 0.4 ? "Zu wenig von der Vorlage erwischt — mal die Linien ganz nach." : "Zu viel daneben — langsamer und genauer malen."}
-                {" "}Punkte = getroffen × (1 − daneben). Bestwert zählt.
+                {" "}Es reicht, den Umriss nachzufahren. 85 % getroffen zählen voll, ein bisschen daneben ist erlaubt. Bestwert zählt.
               </p>
             </div>
           )}

@@ -116,25 +116,39 @@ export const Zeichenflaeche = forwardRef<ZeichenGriff, Props>(function Zeichenfl
     leer: () => !gemalt.current,
     treffer: () => {
       if (!vorlage || !striche.current) return null;
-      // Vorlage allein in eine eigene Fläche, etwas dicker, damit leicht danebengemalte Striche zählen
-      const v = document.createElement("canvas");
-      v.width = breite; v.height = hoehe;
-      const vc = v.getContext("2d");
-      const sc = striche.current.getContext("2d");
-      if (!vc || !sc) return null;
-      vc.font = `${hoehe * 0.78}px ${VORLAGE_SCHRIFT}`;
-      vc.textAlign = "center"; vc.textBaseline = "middle";
-      vc.strokeStyle = "#000"; vc.lineWidth = 10; vc.fillStyle = "#000";
-      vc.fillText(vorlage, breite / 2, hoehe / 2);
-      vc.strokeText(vorlage, breite / 2, hoehe / 2);
-      const vd = vc.getImageData(0, 0, breite, hoehe).data, sd = sc.getImageData(0, 0, breite, hoehe).data;
-      let vorlagePx = 0, abgedeckt = 0, strichPx = 0, daneben = 0;
-      for (let i = 3; i < vd.length; i += 16) {
-        const istV = vd[i] > 40, istS = sd[i] > 40;
-        if (istV) { vorlagePx++; if (istS) abgedeckt++; }
-        if (istS) { strichPx++; if (!istV) daneben++; }
+      // Großzügig, weil mit der Maus gemalt wird:
+      // - »getroffen« zählt den UMRISS der Vorlage — Nachfahren der Kontur reicht, ausmalen muss man nicht;
+      //   ein Umrisspunkt gilt als getroffen, wenn ein Strich bis zu TOLERANZ Pixel daneben liegt.
+      // - »daneben« zählt nur Striche außerhalb eines breiten Bands um das Zeichen.
+      const TOLERANZ = 9;
+      const flaeche = (zeichne: (c: CanvasRenderingContext2D) => void) => {
+        const c = document.createElement("canvas");
+        c.width = breite; c.height = hoehe;
+        const x = c.getContext("2d");
+        if (!x) return null;
+        x.font = `${hoehe * 0.78}px ${VORLAGE_SCHRIFT}`;
+        x.textAlign = "center"; x.textBaseline = "middle";
+        x.strokeStyle = "#000"; x.fillStyle = "#000";
+        zeichne(x);
+        return x.getImageData(0, 0, breite, hoehe).data;
+      };
+      const umriss = flaeche(x => { x.lineWidth = 3; x.strokeText(vorlage, breite / 2, hoehe / 2); });
+      const band = flaeche(x => { x.lineWidth = 2 * 14; x.fillText(vorlage, breite / 2, hoehe / 2); x.strokeText(vorlage, breite / 2, hoehe / 2); });
+      // Striche verdicken: die Strichfläche in alle Richtungen um TOLERANZ verschoben übereinanderlegen
+      const dick = flaeche(x => {
+        for (let w = 0; w < 16; w++) {
+          for (const r of [TOLERANZ / 2, TOLERANZ]) x.drawImage(striche.current!, Math.cos((w * Math.PI) / 8) * r, Math.sin((w * Math.PI) / 8) * r);
+        }
+        x.drawImage(striche.current!, 0, 0);
+      });
+      const sd = striche.current.getContext("2d")?.getImageData(0, 0, breite, hoehe).data;
+      if (!umriss || !band || !dick || !sd) return null;
+      let umrissPx = 0, abgedeckt = 0, strichPx = 0, daneben = 0;
+      for (let i = 3; i < sd.length; i += 16) {
+        if (umriss[i] > 40) { umrissPx++; if (dick[i] > 40) abgedeckt++; }
+        if (sd[i] > 40) { strichPx++; if (band[i] <= 40) daneben++; }
       }
-      return { abgedeckt: vorlagePx ? abgedeckt / vorlagePx : 0, daneben: strichPx ? daneben / strichPx : 0 };
+      return { abgedeckt: umrissPx ? abgedeckt / umrissPx : 0, daneben: strichPx ? daneben / strichPx : 0 };
     },
   }));
 
