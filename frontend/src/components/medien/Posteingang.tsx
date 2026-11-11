@@ -9,9 +9,11 @@ import { useMedienLiveKontext, type Art, type Nachricht } from "@/lib/medien/liv
 import { ART_ICON, ART_NAME, Empfang, PagerDemo } from "./demos/Live";
 import { FaxDemo, MorseDemo, WaehlscheibeDemo } from "./demos/Elektrisch";
 import { SmsDemo } from "./demos/Modern";
+import { EmailDemo } from "./demos/Email";
+import { QrDemo } from "./demos/Qr";
 
 const ANTWORT: Record<Art, ComponentType<{ an?: string; antwortAuf?: string }>> = {
-  morse: MorseDemo, fax: FaxDemo, telefon: WaehlscheibeDemo, pager: PagerDemo, sms: SmsDemo,
+  morse: MorseDemo, fax: FaxDemo, telefon: WaehlscheibeDemo, pager: PagerDemo, sms: SmsDemo, email: EmailDemo, qr: QrDemo,
 };
 
 export default function Posteingang() {

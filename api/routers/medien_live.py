@@ -30,7 +30,7 @@ from ..ws_manager import receive_json, reject
 
 router = APIRouter(prefix="/api/medien", tags=["medien-live"])
 
-ARTEN = {"morse", "fax", "telefon", "pager", "sms"}
+ARTEN = {"morse", "fax", "telefon", "pager", "sms", "email", "qr"}
 INHALT_MAX = 20_000
 BILD_MAX = 200_000
 BILD_PRAEFIX = ("data:image/png;base64,", "data:image/webp;base64,")

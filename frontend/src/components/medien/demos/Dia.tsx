@@ -5,54 +5,19 @@
  * an der Wand stehen soll, muss es also auf den Kopf stellen — und darf es
  * nicht wenden, sonst ist die Schrift spiegelverkehrt.
  */
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
+import bilder from "@/lib/medien/demo-bilder.json";
 import { rauschen, ton } from "./ton";
 import { useErprobt } from "@/lib/medien/erprobt";
 
 type Lage = { dreh: 0 | 90 | 180 | 270; gewendet: boolean };
 
-const BILDER: { titel: string; motiv: ReactNode }[] = [
-  {
-    titel: "Gardasee 1978",
-    motiv: (
-      <>
-        <rect width="160" height="110" fill="#7dd3fc" />
-        <circle cx="128" cy="24" r="12" fill="#fde047" />
-        <path d="M 0 70 L 40 30 L 70 62 L 100 22 L 160 74 L 160 110 L 0 110 Z" fill="#64748b" />
-        <path d="M 30 42 L 40 30 L 50 40 Z M 92 31 L 100 22 L 108 30 Z" fill="#f8fafc" />
-        <rect y="78" width="160" height="32" fill="#0369a1" />
-        <text x="8" y="102" fontSize="13" fontWeight="bold" fill="#fff">Gardasee 1978</text>
-      </>
-    ),
-  },
-  {
-    titel: "Oma mit Eis",
-    motiv: (
-      <>
-        <rect width="160" height="110" fill="#fef3c7" />
-        <circle cx="62" cy="38" r="16" fill="#fcd9b6" />
-        <path d="M 46 30 Q 62 8 78 30" fill="#d1d5db" />
-        <rect x="44" y="54" width="36" height="46" rx="8" fill="#be185d" />
-        <path d="M 96 44 L 104 74 L 112 44 Z" fill="#d97706" />
-        <circle cx="104" cy="40" r="9" fill="#f9a8d4" />
-        <text x="8" y="104" fontSize="12" fontWeight="bold" fill="#78350f">Oma, Rimini</text>
-      </>
-    ),
-  },
-  {
-    titel: "Klassenfahrt",
-    motiv: (
-      <>
-        <rect width="160" height="110" fill="#bbf7d0" />
-        <rect x="18" y="40" width="96" height="42" rx="8" fill="#facc15" />
-        {[30, 52, 74, 96].map(x => <rect key={x} x={x - 8} y="48" width="16" height="14" rx="2" fill="#e0f2fe" />)}
-        <circle cx="38" cy="84" r="8" fill="#1f2937" /><circle cx="96" cy="84" r="8" fill="#1f2937" />
-        <path d="M 128 82 L 140 30 L 152 82 Z" fill="#15803d" />
-        <text x="8" y="22" fontSize="12" fontWeight="bold" fill="#14532d">KLASSE 8b → HARZ</text>
-      </>
-    ),
-  },
+const BILDER: { titel: string; id: string }[] = [
+  { titel: "Dolomiten 1978", id: "dia_dolomiten" },
+  { titel: "Nordsee 1981", id: "dia_dorum" },
+  { titel: "Cornwall 1983", id: "dia_godrevy" },
 ];
+const NACHWEISE = bilder as Record<string, { datei: string; titel: string; urheber: string; lizenz: string; quelle: string }>;
 
 const RICHTIG: Lage = { dreh: 180, gewendet: false };
 const zufallsLage = (): Lage => {
@@ -61,11 +26,16 @@ const zufallsLage = (): Lage => {
 };
 const form = (l: Lage) => `rotate(${l.dreh}deg) scaleX(${l.gewendet ? -1 : 1})`;
 
-function Dia({ motiv, lage, gross }: { motiv: ReactNode; lage: Lage; gross?: boolean }) {
+function Dia({ id, titel, lage, gross }: { id: string; titel: string; lage: Lage; gross?: boolean }) {
   return (
     <div className={gross ? "w-full" : "w-44"} style={{ transform: form(lage), transition: "transform .35s" }}>
-      <div className={`rounded ${gross ? "" : "p-2 bg-stone-100 shadow-md"}`}>
-        <svg viewBox="0 0 160 110" className="w-full block" aria-hidden>{motiv}</svg>
+      <div className={`relative rounded-sm ${gross ? "" : "p-2 bg-stone-100 shadow-md"}`}>
+        {!gross && <span className="absolute left-1 top-1 h-2 w-2 rounded-full bg-red-500" aria-hidden />}
+        <div className="relative">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={NACHWEISE[id].datei} alt="" className="w-full block aspect-[3/2] object-cover" style={{ filter: "sepia(.35) saturate(1.3) contrast(.95)" }} draggable={false} />
+          <span className="absolute left-2 bottom-1 font-bold italic text-white" style={{ fontFamily: "'Segoe Script','Bradley Hand','Comic Sans MS',cursive", fontSize: gross ? "1.4rem" : "0.8rem", textShadow: "0 1px 3px #000" }}>{titel}</span>
+        </div>
       </div>
     </div>
   );
@@ -99,7 +69,7 @@ export function DiaDemo() {
       <div className="grid sm:grid-cols-[auto_1fr] gap-4 items-center">
         <div className="flex flex-col items-center gap-2">
           <span className="text-xs text-muted">Das Dia in deiner Hand (du schaust zur Leinwand)</span>
-          <div className="h-48 w-48 grid place-items-center"><Dia motiv={b.motiv} lage={lage} /></div>
+          <div className="h-48 w-48 grid place-items-center"><Dia id={b.id} titel={b.titel} lage={lage} /></div>
           <div className="flex gap-2">
             <button className="btn-secondary" onClick={() => { setLage(l => ({ ...l, dreh: (((l.dreh + 90) % 360) as Lage["dreh"]) })); setGezeigt(null); }}>↻ drehen</button>
             <button className="btn-secondary" onClick={() => { setLage(l => ({ ...l, gewendet: !l.gewendet })); setGezeigt(null); }}>⇋ wenden</button>
@@ -110,7 +80,7 @@ export function DiaDemo() {
           <span className="text-xs text-muted">Leinwand im Wohnzimmer</span>
           <div className="rounded-lg p-3 aspect-[16/10] grid place-items-center overflow-hidden" style={{ background: wand ? "#f5f5f4" : "#1c1917", boxShadow: wand ? "0 0 40px rgba(253,224,71,.35) inset" : "none" }}>
             {/* Auf der Seite liegend ist das Bild hochkant — kleiner, damit es auf die Leinwand passt */}
-            {wand ? <div className={wand.dreh % 180 ? "w-[45%]" : "w-3/4"}><Dia motiv={b.motiv} lage={wand} gross /></div> : <span className="text-stone-500 text-sm">Licht aus … gleich geht's los</span>}
+            {wand ? <div className={wand.dreh % 180 ? "w-[45%]" : "w-3/4"}><Dia id={b.id} titel={b.titel} lage={wand} gross /></div> : <span className="text-stone-500 text-sm">Licht aus … gleich geht's los</span>}
           </div>
           {kommentar && <p className={`font-bold ${richtig ? "text-ok" : "text-bad"}`}>{kommentar}</p>}
           <div className="flex flex-wrap items-center gap-3 text-sm">
@@ -119,6 +89,7 @@ export function DiaDemo() {
           </div>
         </div>
       </div>
+      <p className="text-[11px] text-muted">Fotos (Wikimedia Commons): {Object.entries(NACHWEISE).filter(([k]) => k.startsWith("dia_")).map(([, n]) => `${n.titel.replace(/[.]jpe?g$/i, "")} — ${n.urheber}, ${n.lizenz}`).join(" · ")}</p>
       <p className="text-xs text-muted">Die Linse stellt das Bild auf den Kopf und vertauscht links und rechts. Profi-Trick: Dia so halten, dass es richtig aussieht, dann auf den Kopf drehen (nicht wenden!) — und mit dem Daumen auf der Markierung in der Ecke ins Magazin stecken. Darum hatten viele Dias einen Punkt in der Ecke.</p>
     </div>
   );

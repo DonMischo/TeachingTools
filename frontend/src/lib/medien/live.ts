@@ -7,7 +7,7 @@ import { createContext, useCallback, useContext, useRef, useState } from "react"
 import { useLiveSocket } from "@/hooks/useLiveSocket";
 
 export type LiveZugang = { code: string; token?: string | null };
-export type Art = "morse" | "fax" | "telefon" | "pager" | "sms";
+export type Art = "morse" | "fax" | "telefon" | "pager" | "sms" | "email" | "qr";
 export type LiveSpieler = { key: string; name: string; nummer: string; lehrkraft: boolean };
 export type Nachricht = {
   id: string; von: string; vonName: string; vonNummer: string; art: Art;

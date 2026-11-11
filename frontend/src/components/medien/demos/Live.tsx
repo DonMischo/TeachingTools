@@ -10,9 +10,10 @@ import { useErprobt } from "@/lib/medien/erprobt";
 import { MORSE, ausLauflaengen, ausMorse } from "@/lib/medien/codes";
 import { dtmf, klingeln, ton } from "./ton";
 import { Zeichenflaeche, fels, type ZeichenGriff } from "./Zeichnen";
+import { QRCodeSVG } from "qrcode.react";
 
-const ART_NAME: Record<Art, string> = { morse: "Telegramm (Morse)", fax: "Fax", telefon: "Anruf", pager: "Pager", sms: "SMS" };
-export const ART_ICON: Record<Art, string> = { morse: "⚡", fax: "📠", telefon: "☎️", pager: "📟", sms: "💬" };
+const ART_NAME: Record<Art, string> = { morse: "Telegramm (Morse)", fax: "Fax", telefon: "Anruf", pager: "Pager", sms: "SMS", email: "E-Mail", qr: "QR-Code" };
+export const ART_ICON: Record<Art, string> = { morse: "⚡", fax: "📠", telefon: "☎️", pager: "📟", sms: "💬", email: "📧", qr: "🔲" };
 
 /** Empfänger wählen und abschicken. `an` wählt jemanden vor (Antworten). */
 export function SendenLeiste({ art, inhalt, bereit, an, antwortAuf, nachSenden }: {
@@ -60,7 +61,9 @@ export function Empfang({ n }: { n: Nachricht }) {
   if (n.art === "morse") return <MorseEmpfang code={text(n.inhalt, "code")} />;
   if (n.art === "fax") return <FaxEmpfang zeilen={(n.inhalt as { zeilen?: number[][] })?.zeilen ?? []} />;
   if (n.art === "telefon") return <AnrufEmpfang text={text(n.inhalt, "text")} von={n.vonName} />;
-  if (n.art === "pager") return <PagerAnzeige ziffern={text(n.inhalt, "ziffern")} piepen />;
+  if (n.art === "pager") return <PagerAnzeige ziffern={text(n.inhalt, "ziffern")} nr={1} />;
+  if (n.art === "email") return <MailAnsicht von={`${n.vonName} (☎ ${n.vonNummer})`} an="dich" mail={{ betreff: text(n.inhalt, "betreff"), text: text(n.inhalt, "text") }} zeit={n.t} />;
+  if (n.art === "qr") return <QrEmpfang text={text(n.inhalt, "text")} />;
   return <SmsEmpfang text={text(n.inhalt, "text")} von={n.vonName} />;
 }
 
@@ -118,6 +121,37 @@ function AnrufEmpfang({ text, von }: { text: string; von: string }) {
     : <button className="btn-primary self-start animate-pulse" onClick={abheben}>☎️ Es klingelt! Abheben</button>;
 }
 
+/** Eine Mail so, wie ein Mailprogramm sie zeigt */
+export type Mail = { betreff: string; text: string };
+
+export function MailAnsicht({ von, an, mail, zeit }: { von: string; an: string; mail: Mail; zeit?: number }) {
+  return (
+    <div className="rounded-xl border border-line bg-surface text-sm overflow-hidden">
+      <div className="bg-surface-hover px-3 py-2 grid grid-cols-[auto_1fr] gap-x-2 text-xs">
+        <span className="text-muted">Von:</span><span className="font-mono">{von}</span>
+        <span className="text-muted">An:</span><span className="font-mono">{an}</span>
+        <span className="text-muted">Betreff:</span><b>{mail.betreff || "(kein Betreff)"}</b>
+        {zeit && <><span className="text-muted">Datum:</span><span>{new Date(zeit * 1000).toLocaleString("de-DE")}</span></>}
+      </div>
+      <p className="px-3 py-2 whitespace-pre-wrap">{mail.text}</p>
+    </div>
+  );
+}
+
+/** Ein QR-Code kommt an: erst nur das Muster — mit dem Handy scannen oder aufdecken */
+function QrEmpfang({ text: inhalt }: { text: string }) {
+  const [offen, setOffen] = useState(false);
+  return (
+    <div className="flex flex-wrap items-center gap-3 text-sm">
+      <div className="bg-white p-2 rounded-lg"><QRCodeSVG value={inhalt || " "} size={140} level="M" /></div>
+      <div className="flex flex-col gap-1">
+        <span>📱 Halt die Handykamera drauf — sie zeigt den Text.</span>
+        {offen ? <b>»{inhalt}«</b> : <button className="underline text-xs self-start" onClick={() => setOffen(true)}>Ohne Handy aufdecken</button>}
+      </div>
+    </div>
+  );
+}
+
 function SmsEmpfang({ text, von }: { text: string; von: string }) {
   useEffect(() => { ton(1320, 0.12, 0, "square", 0.04); ton(1760, 0.12, 0.15, "square", 0.04); ton(1320, 0.12, 0.3, "square", 0.04); }, []);
   return (
@@ -135,15 +169,17 @@ const PAGER_CODES: [string, string][] = [
   ["110", "Notfall — melde dich sofort!"], ["555", "Ruf mich an"], ["0815", "Langweilig hier …"], ["4711", "Kölnisch Wasser? Ich riech dich schon"],
 ];
 
-function PagerAnzeige({ ziffern, piepen }: { ziffern: string; piepen?: boolean }) {
-  useEffect(() => { if (piepen) for (let i = 0; i < 3; i++) ton(3000, 0.08, i * 0.18, "square", 0.04); }, [piepen, ziffern]);
+/** Das Gerät: zweizeiliges Display, 16 Ziffern passen. `nr` zählt Empfänge — jeder piept neu. */
+function PagerAnzeige({ ziffern, nr }: { ziffern: string; nr?: number }) {
+  useEffect(() => { if (nr) for (let i = 0; i < 3; i++) ton(3000, 0.08, i * 0.18, "square", 0.04); }, [nr]);
   const bedeutung = PAGER_CODES.find(([c]) => c === ziffern)?.[1];
   return (
     <div className="flex flex-col gap-1">
-      <div className="w-48 rounded-xl p-3" style={{ background: "#1f2937" }}>
-        <div className="rounded px-2 py-1 font-mono text-2xl tracking-widest text-right" style={{ background: "#a3b18a", color: "#1b2a12", minHeight: "2.4rem" }}>{ziffern || "—"}</div>
+      <div className="w-56 rounded-xl p-3" style={{ background: "#1f2937" }}>
+        <div className="rounded px-2 py-1 font-mono text-xl tracking-widest text-right break-all leading-snug overflow-hidden"
+          style={{ background: "#a3b18a", color: "#1b2a12", minHeight: "2.4rem", maxHeight: "4.2rem" }} aria-live="polite">{ziffern || "—"}</div>
       </div>
-      {piepen && bedeutung && <span className="text-xs text-muted">Code-Tabelle: {ziffern} = {bedeutung}</span>}
+      {nr !== undefined && nr > 0 && bedeutung && <span className="text-xs text-muted">Code-Tabelle: {ziffern} = {bedeutung}</span>}
     </div>
   );
 }
@@ -151,7 +187,8 @@ function PagerAnzeige({ ziffern, piepen }: { ziffern: string; piepen?: boolean }
 const PAGER_TASTEN = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "*", "0", "#"];
 export function PagerDemo({ an, antwortAuf }: { an?: string; antwortAuf?: string } = {}) {
   const [ziffern, setZiffern] = useState("");
-  const [selbst, setSelbst] = useState<string | null>(null);
+  /** zuletzt am eigenen Pager angekommen (ohne Sitzung) */
+  const [empfangen, setEmpfangen] = useState<{ text: string; nr: number }>({ text: "", nr: 0 });
   const erprobt = useErprobt();
   const live = useMedienLiveKontext();
   const tippe = (t: string) => {
@@ -164,13 +201,14 @@ export function PagerDemo({ an, antwortAuf }: { an?: string; antwortAuf?: string
       <div className="flex flex-col sm:flex-row gap-4 items-start">
         <div className="flex flex-col gap-2">
           <div className="text-xs text-muted">Am Telefon: Zahlen für den Pager eintippen (* löscht)</div>
+          <div className="w-44 rounded-lg border border-line bg-surface px-2 py-1 font-mono text-sm truncate" title="Deine Eingabe">{ziffern || <span className="text-muted">Eingabe …</span>}</div>
           <div className="grid grid-cols-3 gap-1.5 w-44">
             {PAGER_TASTEN.map(t => <button key={t} onClick={() => tippe(t)} className="rounded-lg py-2 font-black bg-surface-hover border border-line active:scale-95">{t}</button>)}
           </div>
         </div>
         <div className="flex flex-col gap-2 text-sm flex-1">
-          <PagerAnzeige ziffern={selbst ?? ziffern} piepen={selbst !== null} />
-          {!live && <button className="btn-secondary self-start" disabled={!ziffern} onClick={() => { setSelbst(ziffern); erprobt("pager"); }}>📟 An meinen eigenen Pager</button>}
+          <PagerAnzeige ziffern={empfangen.text} nr={empfangen.nr} />
+          {!live && <button className="btn-secondary self-start" disabled={!ziffern} onClick={() => { setEmpfangen(e => ({ text: ziffern, nr: e.nr + 1 })); setZiffern(""); erprobt("pager"); }}>📟 An meinen eigenen Pager</button>}
           <div className="text-xs">
             <div className="font-bold mb-1">Code-Tabelle (abgemacht unter Freunden)</div>
             <ul className="grid sm:grid-cols-2 gap-x-3">{PAGER_CODES.map(([c, b]) => <li key={c}><button className="underline font-mono" onClick={() => setZiffern(c)}>{c}</button> {b}</li>)}</ul>

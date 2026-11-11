@@ -1,0 +1,44 @@
+{
+  "film": {
+    "datei": "/medien/kino-radio/film.webm",
+    "titel": "Arrival of a Train at La Ciotat (The Lumière Brothers, 1895)",
+    "urheber": "Lumière brothers",
+    "lizenz": "Public domain",
+    "quelle": "https://commons.wikimedia.org/wiki/File:Arrival_of_a_Train_at_La_Ciotat_(The_Lumi%C3%A8re_Brothers,_1895).webm"
+  },
+  "apollo": {
+    "datei": "/medien/kino-radio/apollo.mp3",
+    "titel": "Armstrong Small Step",
+    "urheber": "Neil Armstrong/NASA",
+    "lizenz": "Public domain",
+    "quelle": "https://commons.wikimedia.org/wiki/File:Armstrong_Small_Step.ogg"
+  },
+  "edison": {
+    "datei": "/medien/kino-radio/edison.mp3",
+    "titel": "Thomas Edison Mary had lamb",
+    "urheber": "unbekannt",
+    "lizenz": "Public domain",
+    "quelle": "https://commons.wikimedia.org/wiki/File:Thomas_Edison_Mary_had_lamb.ogg"
+  },
+  "sullivan": {
+    "datei": "/medien/kino-radio/sullivan.mp3",
+    "titel": "Arthur Sullivan - wax cylinder recording",
+    "urheber": "George Gouraud (Speech by Arthur Sullivan)",
+    "lizenz": "Public domain",
+    "quelle": "https://commons.wikimedia.org/wiki/File:Arthur_Sullivan_-_wax_cylinder_recording.ogg"
+  },
+  "tschai": {
+    "datei": "/medien/kino-radio/tschai.mp3",
+    "titel": "Tchaikowsky & Anton Rubinstein & friends(1890)",
+    "urheber": "Julius Block (1858–1934)",
+    "lizenz": "Public domain",
+    "quelle": "https://commons.wikimedia.org/wiki/File:Tchaikowsky_%26_Anton_Rubinstein_%26_friends(1890).ogg"
+  },
+  "zeit": {
+    "datei": "/medien/kino-radio/zeit.mp3",
+    "titel": "WWV time signal - 20090503",
+    "urheber": "National Institute of Standards and Technology; recorded by Streetbuilder at de.wikipedia.",
+    "lizenz": "Public domain",
+    "quelle": "https://commons.wikimedia.org/wiki/File:WWV_time_signal_-_20090503.ogg"
+  }
+}

@@ -48,7 +48,8 @@ export interface Frage { text: string; optionen: string[]; richtig: number; erkl
 export interface Flop { lebte: string; warum: string; grabspruch: string }
 export type DemoId = "hieroglyphen" | "keilschrift" | "quipu" | "leuchtfeuer" | "setzkasten" | "chappe" | "morse" | "fax"
   | "waehlscheibe" | "platte" | "kassette" | "diskette" | "sms" | "belichtung"
-  | "satellit" | "modem" | "pager" | "hoehlenwand" | "dia" | "boten";
+  | "satellit" | "modem" | "pager" | "hoehlenwand" | "dia" | "boten"
+  | "rohrpost" | "litfass" | "kino" | "radio" | "fernsehen" | "cd" | "videotext" | "tonband" | "overhead" | "polaroid" | "email" | "qrcode";
 
 export interface Medium {
   id: string;
@@ -409,7 +410,7 @@ const ROH: Medium[] = [
     frage: { text: "Was war die große Revolution des elektrischen Telegrafen?", optionen: ["Information reist schneller als jeder Mensch, jedes Pferd und jedes Schiff","Er konnte erstmals Bilder und Töne senden, was vorher unmöglich war","Er war für alle kostenlos und ersetzte deshalb sofort die Post"], richtig: 0, erklaerung: "Information und Transport werden getrennt: Die Nachricht muss nicht mehr getragen werden, sie fließt als Strom. Das ist der Anfang aller modernen Netze." },
   },
   {
-    id: "rohrpost", name: "Rohrpost", icon: "📨", jahr: 1853, jahrText: "1853 London, Berlin 1865 – 1976", epoche: "industrie", art: "Gegenstand",
+    id: "rohrpost", name: "Rohrpost", icon: "📨", jahr: 1853, jahrText: "1853 London, Berlin 1865 – 1976", epoche: "industrie", art: "Gegenstand", demo: "rohrpost",
     kurz: "Briefe sausen mit Druckluft unter der Stadt hindurch.",
     geschichte: "In London, Paris, Prag und Berlin schossen Druckluft-Röhren Briefe in Büchsen zwischen den Postämtern hin und her. Berlin hatte ein Netz von etwa 400 km, im Osten der Stadt fuhr es bis 1976. Heute schickt man so in Krankenhäusern Blutproben ins Labor.",
     besser: "Echte Papiere (mit Unterschrift!) in Minuten quer durch die Stadt, ohne Stau.",
@@ -458,7 +459,7 @@ const ROH: Medium[] = [
     frage: { text: "Was wurde mit der Schallplatte zum ersten Mal möglich?", optionen: ["Ton zu speichern und zu vervielfältigen","Ton über große Entfernungen per Kabel zu übertragen","Musik von Hand zu notieren und weltweit zu verbreiten"], richtig: 0, erklaerung: "Speichern + Kopieren für den Ton — was der Buchdruck für die Schrift war, war die Platte für die Musik." },
   },
   {
-    id: "film", name: "Film & Kino", icon: "🎞️", jahr: 1895, jahrText: "1895, Berlin und Paris", epoche: "industrie", art: "Bewegtbild",
+    id: "film", name: "Film & Kino", icon: "🎞️", jahr: 1895, jahrText: "1895, Berlin und Paris", epoche: "industrie", art: "Bewegtbild", demo: "kino",
     kurz: "Bilder lernen laufen.",
     geschichte: "Am 1. November 1895 zeigten die Brüder Skladanowsky im Berliner Wintergarten bewegte Bilder, im Dezember die Brüder Lumière in Paris. 24 (anfangs 16) Einzelbilder pro Sekunde täuschen das Auge: Es sieht Bewegung. Ab 1927 kam der Ton dazu, später Farbe.",
     besser: "Bewegung und Handlung lassen sich zeigen — Nachrichten (Wochenschau), Geschichten und Wissen für ein ganzes Kino auf einmal.",
@@ -492,7 +493,7 @@ const ROH: Medium[] = [
   },
   // ───────────── 20. Jahrhundert ─────────────
   {
-    id: "radio", name: "Radio", icon: "📻", jahr: 1923, jahrText: "Funk ab 1896, Rundfunk Deutschland 1923", epoche: "modern", art: "Ton", dauer1000km: 0.01,
+    id: "radio", name: "Radio", icon: "📻", jahr: 1923, jahrText: "Funk ab 1896, Rundfunk Deutschland 1923", epoche: "modern", art: "Ton", demo: "radio", dauer1000km: 0.01,
     kurz: "Ein Sender spricht — Millionen hören zu. Ganz ohne Kabel.",
     geschichte: "Guglielmo Marconi funkte ab 1896 Morsezeichen ohne Draht, 1901 über den Atlantik. Am 29. Oktober 1923 begann in Berlin das erste deutsche Rundfunkprogramm. Bald stand in fast jedem Wohnzimmer ein Radio. Die Nationalsozialisten verkauften den billigen »Volksempfänger«, um ihre Propaganda in jedes Haus zu bringen.",
     besser: "Live, kabellos und an alle gleichzeitig — auch an Menschen, die nicht lesen können.",
@@ -524,7 +525,7 @@ const ROH: Medium[] = [
     frage: { text: "Was hatte der Fernschreiber dem Telefon voraus?", optionen: ["Die Nachricht lag am Ziel schriftlich vor","Er war viel leiser als das Telefon und störte niemanden im Büro","Man konnte bereits mit dem Gegenüber sprechen und gleichzeitig tippen"], richtig: 0, erklaerung: "Schnell UND haltbar: Das Papier konnte man ablegen und weiterreichen. E-Mail und Chat sind seine Nachfahren." },
   },
   {
-    id: "fernsehen", name: "Fernsehen", icon: "📺", jahr: 1935, jahrText: "Nipkow 1884, Programm Berlin 1935", epoche: "modern", art: "Bewegtbild", dauer1000km: 0.01,
+    id: "fernsehen", name: "Fernsehen", icon: "📺", jahr: 1935, jahrText: "Nipkow 1884, Programm Berlin 1935", epoche: "modern", art: "Bewegtbild", demo: "fernsehen", dauer1000km: 0.01,
     kurz: "Kino live ins Wohnzimmer.",
     geschichte: "Paul Nipkow ließ sich 1884 eine Lochscheibe patentieren, die Bilder in Zeilen zerlegt. 1935 startete in Berlin das erste regelmäßige Fernsehprogramm der Welt — geschaut wurde meist in öffentlichen »Fernsehstuben«. Ab den 1950ern kam der Fernseher in die Wohnzimmer, 1967 in Westdeutschland in Farbe.",
     besser: "Bewegte Bilder live an Millionen. Die Mondlandung 1969 sahen etwa 600 Millionen Menschen gleichzeitig.",
@@ -540,7 +541,7 @@ const ROH: Medium[] = [
     frage: { text: "Wie wird ein Fernsehbild übertragen?", optionen: ["Zeile für Zeile, sehr schnell hintereinander","Als ganzes Foto auf einmal, das alle zwei Sekunden wechselt","Als Film auf Band, der jeden Abend per Post an alle Sender geliefert wird"], richtig: 0, erklaerung: "Wie beim Fax: Das Bild wird zerlegt, nacheinander geschickt und wieder zusammengesetzt — nur 25-mal pro Sekunde." },
   },
   {
-    id: "tonband", name: "Tonband", icon: "🎙️", jahr: 1935, jahrText: "1935, AEG Berlin", epoche: "modern", art: "Ton",
+    id: "tonband", name: "Tonband", icon: "🎙️", jahr: 1935, jahrText: "1935, AEG Berlin", epoche: "modern", art: "Ton", demo: "tonband",
     kurz: "Ton aufnehmen, löschen, neu aufnehmen — auf Magnetband.",
     geschichte: "Auf der Funkausstellung 1935 zeigte AEG das »Magnetophon«: Ein Band mit Eisenoxid wird magnetisiert und speichert so den Ton. Rundfunk und Musikstudios konnten jetzt aufnehmen, schneiden und senden, wann sie wollten. Aus dem Band wurden später Kassette, Videoband und sogar Computerspeicher.",
     besser: "Selbst aufnehmen, schneiden und wieder löschen — Speichern wird flexibel.",
@@ -622,7 +623,7 @@ const ROH: Medium[] = [
     frage: { text: "Was ist der Vorteil digitaler Kopien, z. B. auf Diskette?", optionen: ["Jede Kopie ist exakt gleich, ohne Rauschen","Die Kopien werden mit jedem Mal etwas leiser und rauschen stärker","Sie sind sofort in jedes Land übertragbar, ohne Datenträger zu brauchen"], richtig: 0, erklaerung: "Bits sind nur 0 oder 1 — eine Kopie ist perfekt. Bei Kassetten rauschte jede Kopie mehr." },
   },
   {
-    id: "email", name: "E-Mail", icon: "📧", jahr: 1971, jahrText: "1971, Ray Tomlinson", epoche: "digital", art: "Schrift", dauer1000km: 5,
+    id: "email", name: "E-Mail", icon: "📧", jahr: 1971, jahrText: "1971, Ray Tomlinson", epoche: "digital", art: "Schrift", demo: "email", dauer1000km: 5,
     kurz: "Der Brief ohne Briefträger — mit @.",
     geschichte: "Ray Tomlinson verschickte 1971 im ARPANET, dem Vorläufer des Internets, die erste Nachricht von einem Computer zu einem anderen. Er wählte das @-Zeichen, um Name und Rechner zu trennen: name@rechner. Ab den 1990ern hatte bald jede und jeder eine E-Mail-Adresse.",
     besser: "In Sekunden um die Welt, an einen oder an tausend Empfänger, mit Anhängen und gespeichert.",
@@ -672,7 +673,7 @@ const ROH: Medium[] = [
     frage: { text: "Warum setzte sich die LaserDisc nicht durch?", optionen: ["Teuer und man konnte nicht selbst aufnehmen","Das Bild war unscharf, weil die Scheibe nicht digital war","Die Scheibe war zu klein, sodass kein ganzer Film darauf passte"], richtig: 0, erklaerung: "Qualität allein reicht nicht: Zugang (Preis) und Mitmachen (aufnehmen) entscheiden mit." },
   },
   {
-    id: "cd", name: "Compact Disc", icon: "💿", jahr: 1982, jahrText: "1982, Philips und Sony", epoche: "digital", art: "Daten",
+    id: "cd", name: "Compact Disc", icon: "💿", jahr: 1982, jahrText: "1982, Philips und Sony", epoche: "digital", art: "Daten", demo: "cd",
     kurz: "Musik als Zahlen, gelesen von einem Laser.",
     geschichte: "Die CD speichert Musik digital: 44 100 Messwerte pro Sekunde, als winzige Vertiefungen in einer Spur. Ein Laser liest sie berührungslos. Ab 1985 auch für Computerdaten (CD-ROM), später zum Selberbrennen.",
     besser: "Kein Rauschen, kein Abnutzen, Lieder direkt anwählen — und 700 Megabyte Daten statt 1,44.",
@@ -1161,7 +1162,7 @@ const ROH: Medium[] = [
     frage: { text: "Was war das Neue an der Laterna magica?", optionen: ["Ein Bild konnten viele Menschen gleichzeitig groß sehen","Die Bilder bewegten sich wie im Kino von selbst","Sie konnte Bilder über weite Strecken senden"], richtig: 0, erklaerung: "Projizieren heißt: ein kleines Bild groß machen, für ein ganzes Publikum. Genau das tun Dia, Overhead und Beamer bis heute." },
   },
   {
-    id: "litfass", name: "Litfaßsäule", icon: "🗞️", jahr: 1855, jahrText: "1855, Berlin", epoche: "industrie", art: "Schrift",
+    id: "litfass", name: "Litfaßsäule", icon: "🗞️", jahr: 1855, jahrText: "1855, Berlin", epoche: "industrie", art: "Schrift", demo: "litfass",
     kurz: "Eine runde Säule nur für Plakate — damit nicht mehr jede Hauswand vollgeklebt wird.",
     geschichte: "In Berlin klebten Leute Plakate an jede Wand und jeden Baum. Der Drucker Ernst Litfaß schlug der Stadt eine Lösung vor: runde Säulen, nur für Anschläge. 1855 standen die ersten 100. Hier las man Theaterprogramme, Bekanntmachungen der Stadt — und in Kriegszeiten die neuesten Nachrichten. Bis heute stehen Litfaßsäulen in vielen Städten.",
     besser: "Alle Neuigkeiten an einem festen Ort, den jeder kennt — mitten auf der Straße, kostenlos zu lesen, für alle, die vorbeigehen.",
@@ -1211,7 +1212,7 @@ const ROH: Medium[] = [
     frage: { text: "Was hatte die Telefon-Zeitung schon mit dem späteren Radio gemeinsam?", optionen: ["Ein festes Programm, das viele gleichzeitig live hören","Es funktionierte ganz ohne Kabel, nur über die Luft","Man konnte selbst zurücksprechen und mit dem Sprecher diskutieren"], richtig: 0, erklaerung: "Einer spricht, viele hören zu, nach Programm: Das ist Rundfunk. Der Hírmondó machte es nur über Telefonleitungen." },
   },
   {
-    id: "polaroid", name: "Sofortbild (Polaroid)", icon: "🖼️", jahr: 1948, jahrText: "1948, Edwin Land", epoche: "modern", art: "Bild",
+    id: "polaroid", name: "Sofortbild (Polaroid)", icon: "🖼️", jahr: 1948, jahrText: "1948, Edwin Land", epoche: "modern", art: "Bild", demo: "polaroid",
     kurz: "Abdrücken, kurz warten — das fertige Foto kommt direkt aus der Kamera.",
     geschichte: "Die Tochter des Erfinders Edwin Land fragte 1943, warum sie das Urlaubsfoto nicht sofort sehen könne. Land entwickelte eine Kamera, in der Chemikalien das Bild gleich in der Kamera entwickeln. 1948 kam die erste Polaroid-Kamera in den Handel, ab 1972 schob die SX-70 das Bild automatisch heraus. Das Unternehmen ging 2008 fast unter — heute gibt es Sofortbildkameras wieder als Kultobjekt.",
     besser: "Kein Labor, keine Woche Warten: Das Bild ist nach Minuten in der Hand. Man sieht sofort, ob es gelungen ist.",
@@ -1243,7 +1244,7 @@ const ROH: Medium[] = [
     frage: { text: "Warum steckt man ein Dia auf dem Kopf in den Projektor?", optionen: ["Weil die Linse das Bild umdreht — an der Wand steht es dann richtig","Damit das Dia im warmen Licht der Lampe nicht aus dem Projektor fällt","Weil Dias bei der Entwicklung immer falsch herum belichtet werden"], richtig: 0, erklaerung: "Eine Sammellinse stellt das Bild auf den Kopf und vertauscht links und rechts — wie bei der Lochkamera. Wer das Dia vorher umdreht, sieht es an der Wand richtig." },
   },
   {
-    id: "overhead", name: "Overheadprojektor", icon: "🔦", jahr: 1960, jahrText: "in Schulen ab den 1960ern", epoche: "modern", art: "Bild",
+    id: "overhead", name: "Overheadprojektor", icon: "🔦", jahr: 1960, jahrText: "in Schulen ab den 1960ern", epoche: "modern", art: "Bild", demo: "overhead",
     kurz: "Folie auf die Glasplatte, Licht an — die Tafel, die man auch von hinten sieht.",
     geschichte: "Ursprünglich für Polizei und Militär gedacht, eroberte der Overheadprojektor ab den 1960ern die Klassenzimmer und Hörsäle. Unter der Glasplatte leuchtet eine helle Lampe, ein Spiegelkopf wirft das Bild der Folie an die Wand hinter der Lehrkraft. Man konnte live auf die Folie schreiben, ohne der Klasse den Rücken zuzudrehen. In den 2000ern verdrängten Beamer und digitale Tafeln den »Polylux«, wie er in der DDR hieß.",
     besser: "Vorbereitete Folien, live ergänzen, und die Lehrkraft schaut dabei die Klasse an. Bilder aus Büchern ließen sich auf Folie kopieren und groß zeigen.",
@@ -1275,7 +1276,7 @@ const ROH: Medium[] = [
     frage: { text: "Warum war die Digitalkamera für Kodak gefährlich, obwohl Kodak sie erfunden hatte?", optionen: ["Kodak verdiente am Film — und digitale Fotos brauchen keinen","Digitalkameras waren verboten, weil sie Fotos fälschen konnten","Sie konnte keine Farben aufnehmen und war daher unbrauchbar"], richtig: 0, erklaerung: "Ein neues Medium kann das Geschäft mit dem alten zerstören. Kodak hielt am Film fest — andere Firmen machten das Geschäft mit der Digitalkamera." },
   },
   {
-    id: "videotext", name: "Videotext", icon: "📟", jahr: 1980, jahrText: "1980 in Deutschland (1974 Ceefax in England)", epoche: "digital", art: "Schrift",
+    id: "videotext", name: "Videotext", icon: "📟", jahr: 1980, jahrText: "1980 in Deutschland (1974 Ceefax in England)", epoche: "digital", art: "Schrift", demo: "videotext",
     kurz: "Nachrichten als Klötzchen-Text im Fernseher — Seite 100, bitte.",
     geschichte: "In England startete 1974 »Ceefax«, in Deutschland 1980 der Videotext von ARD und ZDF. Die Textseiten werden in unsichtbaren Zeilen des Fernsehbilds mitgesendet; der Fernseher fängt sie auf und zeigt sie auf Knopfdruck. Nachrichten, Wetter, Sport, Fernsehprogramm, Börsenkurse — mit drei Ziffern auf der Fernbedienung. Den Videotext gibt es bis heute.",
     besser: "Aktuelle Nachrichten jederzeit, ohne Zeitung und ohne auf die Nachrichtensendung zu warten — und kostenlos mit dem Fernseher.",
@@ -1291,7 +1292,7 @@ const ROH: Medium[] = [
     frage: { text: "Warum muss man beim Videotext manchmal auf eine Seite warten?", optionen: ["Die Seiten werden nacheinander im Kreis gesendet, bis die gewünschte wieder dran ist","Der Fernseher muss die Seite erst ausdrucken, was einige Sekunden dauert","Jemand tippt die Seite gerade ab und schickt sie dann los"], richtig: 0, erklaerung: "Der Sender schickt alle Seiten reihum, wie ein Karussell. Der Fernseher fängt die gewünschte ab, sobald sie vorbeikommt." },
   },
   {
-    id: "qrcode", name: "QR-Code", icon: "🔲", jahr: 1994, jahrText: "1994, Denso Wave (Japan)", epoche: "digital", art: "Zeichen",
+    id: "qrcode", name: "QR-Code", icon: "🔲", jahr: 1994, jahrText: "1994, Denso Wave (Japan)", epoche: "digital", art: "Zeichen", demo: "qrcode",
     kurz: "Ein Quadrat aus Punkten, das die Kamera in Sekundenbruchteilen liest.",
     geschichte: "Der Ingenieur Masahiro Hara entwickelte 1994 bei der Firma Denso Wave einen Code, mit dem Autofabriken von Toyota Bauteile schneller erfassen konnten. Ein Strichcode fasst nur etwa 20 Zeichen, ein QR-Code bis zu 4000 — und wird aus jeder Richtung gelesen. Die drei großen Quadrate in den Ecken zeigen der Kamera, wo der Code liegt. Seit Handykameras ihn lesen können, steht er überall: auf Plakaten, Tickets, Speisekarten.",
     besser: "Von Papier ins Netz mit einem Blick: Keine lange Adresse abtippen. Und selbst wenn ein Teil verdeckt oder verschmutzt ist, lässt er sich noch lesen.",

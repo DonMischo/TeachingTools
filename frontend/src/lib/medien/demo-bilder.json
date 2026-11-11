@@ -1,0 +1,51 @@
+{
+  "dia_dolomiten": {
+    "datei": "/medien/demo/dia_dolomiten.webp",
+    "titel": "Lech de Crespëina Parc Naturel Puez.jpg",
+    "lizenz": "CC BY-SA 3.0",
+    "urheber": "Wolfgang Moroder",
+    "quelle": "https://commons.wikimedia.org/wiki/File:Lech_de_Cresp%C3%ABina_Parc_Naturel_Puez.jpg"
+  },
+  "dia_dorum": {
+    "datei": "/medien/demo/dia_dorum.webp",
+    "titel": "Sunset at Dorum with Obereversand lighthouse.jpg",
+    "lizenz": "CC BY-SA 3.0",
+    "urheber": "Steffen Flor",
+    "quelle": "https://commons.wikimedia.org/wiki/File:Sunset_at_Dorum_with_Obereversand_lighthouse.jpg"
+  },
+  "dia_godrevy": {
+    "datei": "/medien/demo/dia_godrevy.webp",
+    "titel": "Godrevy Lighthouse July 2026 02.jpg",
+    "lizenz": "CC BY-SA 4.0",
+    "urheber": "ArildV",
+    "quelle": "https://commons.wikimedia.org/wiki/File:Godrevy_Lighthouse_July_2026_02.jpg"
+  },
+  "polaroid_hund": {
+    "datei": "/medien/demo/polaroid_hund.webp",
+    "titel": "Labrador Retriever portrait.jpg",
+    "lizenz": "Public domain",
+    "urheber": "Herwig Kavallar",
+    "quelle": "https://commons.wikimedia.org/wiki/File:Labrador_Retriever_portrait.jpg"
+  },
+  "polaroid_katze": {
+    "datei": "/medien/demo/polaroid_katze.webp",
+    "titel": "Domestic shorthair cat portrait in grass.jpg",
+    "lizenz": "CC0",
+    "urheber": "&lt;a href=\"https://pixnio.com/media/grey-domestic-cat-nose-mouth-whiskers\"&gt;Photo&lt;/a&gt; by &lt;a href=\"https://pixnio.com/author/milim84\"&gt;Marko Milivojevic&lt;/a&gt; on &lt;a href=\"https://p",
+    "quelle": "https://commons.wikimedia.org/wiki/File:Domestic_shorthair_cat_portrait_in_grass.jpg"
+  },
+  "polaroid_leuchtturm": {
+    "datei": "/medien/demo/polaroid_leuchtturm.webp",
+    "titel": "Cape May Lighthouse September 2020 002.jpg",
+    "lizenz": "CC BY-SA 4.0",
+    "urheber": "King of Hearts",
+    "quelle": "https://commons.wikimedia.org/wiki/File:Cape_May_Lighthouse_September_2020_002.jpg"
+  },
+  "diskette_laufwerk": {
+    "datei": "/medien/demo/diskette_laufwerk.mp3",
+    "titel": "Floppy drive sounds",
+    "urheber": "AlepouTheFox",
+    "lizenz": "CC0",
+    "quelle": "https://commons.wikimedia.org/wiki/File:Floppy_drive_sounds.ogg"
+  }
+}
