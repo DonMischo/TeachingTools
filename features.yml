@@ -448,6 +448,12 @@ simulationen:
       - 16 Beispielschaltungen; Speichern und Öffnen als JSON-Datei
       - Lehrkraft gibt Schaltung und Arbeitsauftrag an die Sitzung; Beitretende starten mit einer eigenen Kopie
       - Wassermodell - Fass, Rohre, Ventile (einzeln, Reihe, parallel), Rückrohr mit Pumpe und Hahn als Schalter; Regler blendet Batterie, Widerstände, Ströme und Potenziale darüber
+  - id: stroemung
+    name: Druck & Strömung
+    kann:
+      - Löser für Rohrnetze wie ein Stromkreis - Gesamtdruck p + ρgh, Rohre laminar oder turbulent, Pumpe mit Kennlinie, Rückschlagventil, Netzanschluss, Auslass
+      - Speicher - offener Behälter, Druckkessel, Gaspolster nach Boyle; Zylinder nach Pascal; Wasser oder Luft
+      - Reiter nach Stufen (Kl. 7/8 Druck, Kl. 9/10 Strömung, Technik & Beruf, Baukasten); Stationen in Arbeit
   - id: baum
     name: Baumleben
     kann:

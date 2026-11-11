@@ -48,6 +48,7 @@ import Erosion from "@/components/erosion/Erosion";
 import Vulkan from "@/components/vulkan/Vulkan";
 import Baumleben from "@/components/baum/Baumleben";
 import Stromkreis from "@/components/stromkreis/Stromkreis";
+import Stroemung from "@/components/stroemung/Stroemung";
 import Periodensystem from "@/components/pse/Periodensystem";
 import Atomwerkstatt from "@/components/atome/Atomwerkstatt";
 import Strukturformeln from "@/components/struktur/Strukturformeln";
@@ -97,6 +98,7 @@ const TOOLS: { id: string; icon: string; label: string; node: ReactNode }[] = [
   { id: "baum", icon: "🌳", label: "Baumleben", node: <Baumleben /> },
   // Ohne Sitzung keine Vorgabe der Lehrkraft; Speichern und Öffnen als JSON-Datei gehen.
   { id: "stromkreis", icon: "💡", label: "Stromkreise", node: <Stromkreis /> },
+  { id: "stroemung", icon: "💧", label: "Druck & Strömung", node: <Stroemung /> },
   { id: "pse", icon: "🧪", label: "Periodensystem", node: <Periodensystem /> },
   { id: "atommodelle", icon: "⚛️", label: "Atommodelle", node: <Atomwerkstatt /> },
   { id: "strukturformeln", icon: "⬡", label: "Strukturformeln", node: <Strukturformeln /> },

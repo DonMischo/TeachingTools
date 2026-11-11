@@ -44,6 +44,7 @@ export const STANDARD_FAECHER: Record<string, string[]> = {
   vulkan: ["Geografie", "Chemie", "Physik"],
   baum: ["Biologie", "Chemie", "Geografie"],
   stromkreis: ["Physik"],
+  stroemung: ["Physik", "Technik"],
   diagramme: ["Informatik"],
   dla: ["Physik", "Chemie", "Mathematik", "Biologie", "Informatik"],
   schichten: ["Informatik"],

@@ -240,6 +240,10 @@ CATALOG: list[CatalogTool] = [
     CatalogTool("stromkreis", "💡 Stromkreise", "💡", "simulationen", {
         "use": _cap(True, True),
     }),
+    # Druck & Strömung: Wasser und Luft in Rohren, Behältern, Zylindern (rechnet wie ein Stromkreis).
+    CatalogTool("stroemung", "💧 Druck & Strömung", "💧", "simulationen", {
+        "use": _cap(True, True),
+    }),
     # Baumleben: Lebenslauf eines Baumes, Stoffströme, Fotosynthese, Bäume bestimmen, Spiel.
     CatalogTool("baum", "🌳 Baumleben", "🌳", "simulationen", {
         "use": _cap(True, True),

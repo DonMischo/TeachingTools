@@ -601,6 +601,14 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet). Unter »Für die Klasse« geben Sie die aktuelle Schaltung samt Arbeitsauftrag an die Sitzung: Wer beitritt, startet damit und baut an einer eigenen Kopie weiter." },
     ],
   },
+  stroemung: {
+    title: "Druck & Strömung",
+    intro: "Wasser und Luft in Behältern, Rohren und Zylindern. Gerechnet wird ein Rohrnetz wie ein Stromkreis (Knotenrechnung): Druck ≙ Spannung, Volumenstrom ≙ Strom, Strömungswiderstand ≙ Widerstand, Pumpe ≙ Quelle, Behälter ≙ Kondensator. Dazu Schweredruck (p = ρ·g·h), Hagen-Poiseuille und turbulente Reibung, Boyle für Gaspolster und Kessel, Pascal für Zylinder.",
+    sections: [
+      { label: "🧭 Stationen", text: "Oben die Reiter nach Stufen: Kl. 7/8 Druck (Tauchen, Wasserturm & Röhren, Hydraulische Presse, Luftdruck), Kl. 9/10 Strömung (Rohrnetz, Venturi), Technik & Beruf (Heizkreis, Hausanschluss, Druckluft) und der Baukasten. Stationen, die noch in Arbeit sind, zeigen, was dort kommt." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet)." },
+    ],
+  },
   baum: {
     title: "Baumleben",
     intro: "Ein Baum vom Samen bis zum Humus, in fünf Reitern. Alle Zahlen sind gerundete Modellwerte für den Unterricht; die Bäume wachsen prozedural und rechnen ganz im Browser.",

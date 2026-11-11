@@ -173,6 +173,14 @@ const ALL_CARDS: Werkzeug[] = [
     color: "#ca8a04",
   },
   {
+    slug: "stroemung",
+    href: "/simulationen/stroemung",
+    icon: "💧",
+    title: "Druck & Strömung",
+    description: "Wasser und Luft in Behältern, Rohren und Zylindern: Schweredruck, Wasserturm, hydraulische Presse, Luftdruck, Rohrreibung, Venturi — bis zu Heizkreis, Hausanschluss und Druckluft. Rechnet wie ein Stromkreis, den man darüberblenden kann.",
+    color: "#0369a1",
+  },
+  {
     slug: "baum",
     href: "/simulationen/baum",
     icon: "🌳",

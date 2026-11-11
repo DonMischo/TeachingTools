@@ -28,6 +28,7 @@ import Rechenzeichen from "@/components/rechenzeichen/Rechenzeichen";
 import Prozent from "@/components/prozent/Prozent";
 import Trigonometrie from "@/components/trigonometrie/Trigonometrie";
 import Quadratisch from "@/components/quadratisch/Quadratisch";
+import Stroemung from "@/components/stroemung/Stroemung";
 import Dreiecke from "@/components/dreiecke/Dreiecke";
 import Kreis from "@/components/kreis/Kreis";
 import Koerper from "@/components/koerper/Koerper";
@@ -84,6 +85,7 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   dreiecke: { title: "Dreiecke", icon: "△", node: <Dreiecke /> },
   trigonometrie: { title: "Trigonometrie", icon: "🔺", node: <Trigonometrie /> },
   quadratisch: { title: "Quadratische Funktionen", icon: "⛲", node: <Quadratisch /> },
+  stroemung: { title: "Druck & Strömung", icon: "💧", node: <Stroemung /> },
   kreis: { title: "Kreis", icon: "⭕", node: <Kreis /> },
   koerper: { title: "Körper", icon: "🧊", node: <Koerper /> },
   stellenwert: { title: "Stellenwerttafeln", icon: "🔢", node: <Stellenwert /> },
