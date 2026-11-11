@@ -92,20 +92,32 @@ export default function Wassermodell() {
     ventile.push({ cx: 500, cy: 245, r: e.ventil1, i: z.i1, u: z.u1, p: z.p1, nr: "₁" }, { cx: 500, cy: 355, r: e.ventil2, i: z.i2, u: z.u2, p: z.p2, nr: "₂" });
   }
 
-  // Fließendes Wasser: Strichmuster wandern mit v ∝ I / A, ohne React neu zu rendern.
+  // Schaltplan-Ansicht: eigene Leitungen, die Batterie sitzt im Steigrohr (oben +, unten −).
+  const yBat = (tb + RUECK) / 2;
+  const mitteFass2 = FASS2.y + FASS2.h / 2;
+  const leitungen: Rohrstueck[] = [
+    { key: "e:zu", pts: [[PUMPE.x, yBat - 10], [PUMPE.x, tb - 20], [230, tb - 20], [230, Y], [400, Y]], phi: (U + z.phi.vor) / 2, strom: z.strom },
+    ...stuecke.filter(s => !["steig", "zu", "ab", "rueck1", "rueck2"].includes(s.key)).map(s => ({ ...s, key: `e:${s.key}` })),
+    { key: "e:ab", pts: [[600, Y], [880, Y], [880, mitteFass2]], phi: (z.phi.nach + z.phi.fass) / 2, strom: z.strom },
+    { key: "e:r1", pts: [[880, mitteFass2], [880, RUECK], [522, RUECK]], phi: offen ? U : z.phi.fass * 0.75, strom: z.strom },
+    { key: "e:r2", pts: [[478, RUECK], [PUMPE.x, RUECK], [PUMPE.x, yBat + 10]], phi: offen ? 0 : z.phi.fass * 0.25, strom: z.strom },
+  ];
+
+  // Fließendes Wasser und Strompunkte wandern, ohne React neu zu rendern:
+  // Wasser mit v ∝ I / A (dünnes Rohr = schneller), Punkte im Draht mit v ∝ I.
   const striche = useRef(new Map<string, SVGPathElement>());
-  const lage = useRef({ stuecke, rohr: e.rohr });
-  lage.current = { stuecke, rohr: e.rohr };
+  const lage = useRef({ alle: [...stuecke, ...leitungen], rohr: e.rohr });
+  lage.current = { alle: [...stuecke, ...leitungen], rohr: e.rohr };
   useEffect(() => {
     const phase = new Map<string, number>();
     let vorher = performance.now(), id = 0;
     const schritt = (jetzt: number) => {
       const dt = Math.min(0.1, (jetzt - vorher) / 1000);
       vorher = jetzt;
-      const { stuecke: st, rohr } = lage.current;
-      for (const s of st) {
-        const v = Math.min(400, (160 * s.strom) / (rohr * rohr));
-        const p = ((phase.get(s.key) ?? 0) + v * dt) % 1000;
+      const { alle, rohr } = lage.current;
+      for (const s of alle) {
+        const v = s.key.startsWith("e:") ? Math.min(300, 45 * s.strom) : Math.min(400, (160 * s.strom) / (rohr * rohr));
+        const p = ((phase.get(s.key) ?? 0) + v * dt) % 1100;
         phase.set(s.key, p);
         striche.current.get(s.key)?.setAttribute("stroke-dashoffset", String(-p));
       }
@@ -114,22 +126,48 @@ export default function Wassermodell() {
     id = requestAnimationFrame(schritt);
     return () => cancelAnimationFrame(id);
   }, []);
+  const merke = (key: string) => (el: SVGPathElement | null) => { if (el) striche.current.set(key, el); else striche.current.delete(key); };
 
-  const wasserDeckung = 1 - 0.7 * mix;
+  // Wasser verblasst zur Andeutung, die Elektrik kommt dazu.
+  const wasserDeckung = 1 - 0.85 * mix;
   const text = { fill: "var(--text)" } as const;
   const muted = { fill: "var(--text-muted)" } as const;
-  const elek = { fill: "#e0a000", fontWeight: 700 } as const;
+  const DRAHT = "var(--text)";
+
+  /** Beschriftung der Elektrik: Wert auf einer Pille, in beiden Farbschemata lesbar. */
+  const pille = (x: number, y: number, t: string, key: string, gross = false) => {
+    const fs = gross ? 16 : 14;
+    const w = t.length * fs * 0.56 + 16;
+    return (
+      <g key={key}>
+        <rect x={x - w / 2} y={y - fs + 1} width={w} height={fs + 8} rx={(fs + 8) / 2} style={{ fill: "var(--surface)" }} stroke="#e0a000" strokeWidth={1.5} />
+        <text x={x} y={y + 3} textAnchor="middle" fontSize={fs} fontWeight={700} style={text}>
+          {/* »U_R« → U mit tiefgestelltem R */}
+          {t.split(/_(\w)/).map((teil, i) => (i % 2 ? <tspan key={i} fontSize={fs * 0.7} dy={3}>{teil}</tspan> : <tspan key={i} dy={i ? -3 : 0}>{teil}</tspan>))}
+        </text>
+      </g>
+    );
+  };
 
   const manometer = (x: number, phi: number, name: string) => {
     const w = (-135 + 270 * Math.min(1, Math.max(0, phi / U_MAX))) * Math.PI / 180;
     const cy = Y - W / 2 - 34;
+    const vy = Y - 46;
     return (
       <g key={name}>
-        <line x1={x} y1={Y - W / 2} x2={x} y2={cy + 14} stroke="#7b8794" strokeWidth={4} />
-        <circle cx={x} cy={cy} r={15} fill="#f8f8f4" stroke="#56616d" strokeWidth={2.5} />
-        <line x1={x} y1={cy} x2={x + 11 * Math.sin(w)} y2={cy - 11 * Math.cos(w)} stroke="#c0392b" strokeWidth={2} strokeLinecap="round" />
-        <text x={x} y={cy - 20} textAnchor="middle" fontSize={11} style={{ ...muted, opacity: wasserDeckung }}>{zahl(phi)} m</text>
-        <text x={x} y={cy - 20} textAnchor="middle" fontSize={12} style={{ ...elek, opacity: mix }}>φ = {zahl(phi)} V</text>
+        <g style={{ opacity: wasserDeckung }}>
+          <line x1={x} y1={Y - W / 2} x2={x} y2={cy + 14} stroke="#7b8794" strokeWidth={4} />
+          <circle cx={x} cy={cy} r={15} fill="#f8f8f4" stroke="#56616d" strokeWidth={2.5} />
+          <line x1={x} y1={cy} x2={x + 11 * Math.sin(w)} y2={cy - 11 * Math.cos(w)} stroke="#c0392b" strokeWidth={2} strokeLinecap="round" />
+          <text x={x} y={cy - 20} textAnchor="middle" fontSize={11} style={muted}>{zahl(phi)} m</text>
+        </g>
+        {/* Spannungsmesser gegen den Minuspol */}
+        <g style={{ opacity: mix }}>
+          <line x1={x} y1={Y} x2={x} y2={vy + 14} style={{ stroke: DRAHT }} strokeWidth={1.5} strokeDasharray="3 3" />
+          <circle cx={x} cy={vy} r={14} style={{ fill: "var(--surface)", stroke: "var(--text)" }} strokeWidth={2} />
+          <text x={x} y={vy + 5} textAnchor="middle" fontSize={14} fontWeight={700} style={text}>V</text>
+          {pille(x, vy - 26, `${zahl(phi)} V`, `p${name}`)}
+        </g>
       </g>
     );
   };
@@ -173,7 +211,7 @@ export default function Wassermodell() {
         <div className="card p-2 min-w-0">
           <svg viewBox="0 0 1000 560" className="w-full h-auto select-none" role="img" aria-label="Wassermodell des Stromkreises">
             {/* Boden */}
-            <line x1={0} y1={BODEN} x2={1000} y2={BODEN} stroke="#8d7b62" strokeWidth={3} />
+            <line x1={0} y1={BODEN} x2={1000} y2={BODEN} stroke="#8d7b62" strokeWidth={3} style={{ opacity: wasserDeckung }} />
 
             {/* ── Wasserbild ── */}
             <g style={{ opacity: wasserDeckung }}>
@@ -182,116 +220,117 @@ export default function Wassermodell() {
               <line x1={72} y1={tb + 8} x2={58} y2={BODEN} stroke="#8b5a2b" strokeWidth={8} />
               <line x1={188} y1={tb + 8} x2={202} y2={BODEN} stroke="#8b5a2b" strokeWidth={8} />
               {tb < BODEN - 60 && <path d={`M70 ${tb + 30} L195 ${BODEN - 10} M190 ${tb + 30} L65 ${BODEN - 10}`} stroke="#a0703c" strokeWidth={4} />}
-              {/* Fass oben */}
               <Fass x={70} y={tb - 90} w={120} h={90} pegel={0.85} />
               <text x={130} y={tb - 100} textAnchor="middle" fontSize={13} style={text}>Fass (Quelle)</text>
-              {/* Höhenpfeil */}
-              <line x1={30} y1={tb} x2={30} y2={Y} stroke="#56616d" strokeWidth={1.5} markerStart="url(#pfeilA)" markerEnd="url(#pfeilB)" />
-              <text x={38} y={(tb + Y) / 2} fontSize={12} style={text}>h = {zahl(e.hoehe)} m</text>
-              {/* Sammelfass */}
               <Fass x={FASS2.x} y={FASS2.y} w={FASS2.w} h={FASS2.h} pegel={0.5} />
               <text x={FASS2.x + FASS2.w / 2} y={FASS2.y + FASS2.h + 46} textAnchor="middle" fontSize={12} style={text}>zurück ins Fass</text>
               <text x={320} y={Y - W / 2 - 60} textAnchor="middle" fontSize={12} style={muted}>Weites Rohr</text>
               <text x={740} y={Y - W / 2 - 10} textAnchor="middle" fontSize={12} style={muted}>Weites Rohr</text>
               <text x={330} y={RUECK + 26} textAnchor="middle" fontSize={12} style={muted}>Rückrohr</text>
               <text x={PUMPE.x} y={RUECK + 42} textAnchor="middle" fontSize={12} style={text}>Pumpe</text>
+              {stuecke.map(s => (
+                <g key={s.key}>
+                  <path d={pfad(s.pts)} fill="none" stroke="#7b8794" strokeWidth={W} strokeLinejoin="round" />
+                  <path d={pfad(s.pts)} fill="none" stroke={wasserFarbe(s.phi)} strokeWidth={W - 5} strokeLinejoin="round" />
+                  <path ref={merke(s.key)} d={pfad(s.pts)} fill="none" stroke="#ffffff" strokeOpacity={s.strom > 1e-6 ? 0.7 : 0} strokeWidth={Math.max(2, W / 5)} strokeDasharray="6 14" strokeLinecap="round" />
+                </g>
+              ))}
+              <circle cx={PUMPE.x} cy={PUMPE.y} r={22} fill="#56616d" stroke="#2f3740" strokeWidth={3} />
+              <Laufrad x={PUMPE.x} y={PUMPE.y} drehen={z.strom > 1e-6} sichtbar={1} />
+            </g>
+            {/* Höhenpfeil = Spannung der Quelle */}
+            <line x1={30} y1={tb} x2={30} y2={Y} stroke="#56616d" strokeWidth={1.5} markerStart="url(#pfeilA)" markerEnd="url(#pfeilB)" style={{ opacity: wasserDeckung }} />
+            <text x={38} y={(tb + Y) / 2} fontSize={12} style={{ ...text, opacity: wasserDeckung }}>h = {zahl(e.hoehe)} m</text>
+
+            {/* ── Schaltplan ── */}
+            <g style={{ opacity: mix }} pointerEvents="none">
+              {leitungen.map(s => (
+                <g key={s.key}>
+                  {/* Leitung im Potenzial gefärbt, darüber die Strompunkte (technische Richtung) */}
+                  <path d={pfad(s.pts)} fill="none" stroke={potFarbe(s.phi, U)} strokeWidth={6} strokeLinejoin="round" strokeLinecap="round" />
+                  <path ref={merke(s.key)} d={pfad(s.pts)} fill="none" stroke="#ffd23f" strokeWidth={7} strokeDasharray="0 22" strokeLinecap="round" />
+                </g>
+              ))}
+              {e.aufbau === "parallel" && [415, 585].map(x => <circle key={x} cx={x} cy={Y} r={7} style={{ fill: "var(--text)" }} />)}
+
+              {/* Batterie: langer Strich = Pluspol */}
+              <line x1={PUMPE.x - 26} y1={yBat - 10} x2={PUMPE.x + 26} y2={yBat - 10} style={{ stroke: "var(--text)" }} strokeWidth={3} />
+              <line x1={PUMPE.x - 13} y1={yBat + 10} x2={PUMPE.x + 13} y2={yBat + 10} style={{ stroke: "var(--text)" }} strokeWidth={9} />
+              <text x={PUMPE.x + 34} y={yBat - 4} fontSize={20} fontWeight={700} fill="#2e9e3e">+</text>
+              <text x={PUMPE.x + 34} y={yBat + 22} fontSize={20} fontWeight={700} fill="#d64541">−</text>
+              {pille(PUMPE.x - 72, yBat + 6, `U = ${zahl(U)} V`, "quelle", true)}
+
+              {/* Schalter im Rückleiter */}
+              <circle cx={478} cy={RUECK} r={5} style={{ fill: "var(--text)" }} />
+              <circle cx={522} cy={RUECK} r={5} style={{ fill: "var(--text)" }} />
+              <line x1={522} y1={RUECK} x2={offen ? 484 : 478} y2={offen ? RUECK - 24 : RUECK} style={{ stroke: "var(--text)" }} strokeWidth={4} strokeLinecap="round" />
+
+              {/* Strompfeile und Werte */}
+              {pille(315, Y + 34, `I = ${zahl(z.strom)} A →`, "i-zu", true)}
+              {pille(330, RUECK - 22, `← I = ${zahl(z.strom)} A`, "i-rueck", true)}
+              {pille(740, Y + 34, `Leiter ${ohm(z.rAb)}: −${zahl(z.uAb)} V`, "l-ab")}
+              {pille(315, Y + 62, `Leiter ${ohm(z.rZu)}: −${zahl(z.uZu)} V`, "l-zu")}
+              {pille(700, RUECK - 22, `Rückleiter ${ohm(z.rRueck)}: −${zahl(z.uRueck)} V`, "l-rueck")}
+              {pille(500, RUECK + 34, offen ? `Schalter offen: an ihm liegen ${zahl(U)} V` : "Schalter geschlossen", "schalter")}
+              {pille(880, FASS2.y + FASS2.h + 62, "zum Minuspol (−)", "minus")}
+              {e.aufbau === "parallel" && pille(500, 355 + W / 2 + 62, `Knoten: ${zahl(z.strom)} A = ${zahl(z.i1)} A + ${zahl(z.i2)} A`, "knoten", true)}
             </g>
 
-            {/* Rohre (bleiben sichtbar, die Elektrik legt sich darüber) */}
-            {stuecke.map(s => (
-              <g key={s.key}>
-                <path d={pfad(s.pts)} fill="none" stroke="#7b8794" strokeWidth={W} strokeLinejoin="round" />
-                <path d={pfad(s.pts)} fill="none" stroke={wasserFarbe(s.phi)} strokeWidth={W - 5} strokeLinejoin="round" />
-                <path
-                  ref={el => { if (el) striche.current.set(s.key, el); else striche.current.delete(s.key); }}
-                  d={pfad(s.pts)} fill="none" stroke="#ffffff" strokeOpacity={s.strom > 1e-6 ? 0.7 : 0}
-                  strokeWidth={Math.max(2, W / 5)} strokeDasharray="6 14" strokeLinecap="round"
-                />
-                <path d={pfad(s.pts)} fill="none" stroke={potFarbe(s.phi, U)} strokeWidth={5} strokeLinejoin="round" style={{ opacity: mix }} />
-              </g>
-            ))}
-            {e.aufbau === "parallel" && [415, 585].map(x => (
-              <circle key={x} cx={x} cy={Y} r={7} fill="#e0a000" style={{ opacity: mix }} />
-            ))}
-
-            {/* Pumpe */}
-            <g>
-              <circle cx={PUMPE.x} cy={PUMPE.y} r={22} fill="#56616d" stroke="#2f3740" strokeWidth={3} style={{ opacity: wasserDeckung }} />
-              <Laufrad x={PUMPE.x} y={PUMPE.y} drehen={z.strom > 1e-6} sichtbar={wasserDeckung} />
-            </g>
-
-            {/* Ventile */}
+            {/* Ventile = Widerstände */}
             {ventile.map((v, n) => {
               const o = ventilOffen(v.r);
               const glut = Math.min(0.85, v.p / 15);
               return (
                 <g key={n}>
+                  {/* Wärme: an der Engstelle wie im Widerstand */}
                   <circle cx={v.cx} cy={v.cy} r={34} fill="#ff7a1a" opacity={glut * 0.5} />
-                  <rect x={v.cx - 40} y={v.cy - W / 2 - 4} width={8} height={W + 8} fill="#56616d" />
-                  <rect x={v.cx + 32} y={v.cy - W / 2 - 4} width={8} height={W + 8} fill="#56616d" />
-                  <rect x={v.cx - 32} y={v.cy - W / 2 - 6} width={64} height={W + 12} rx={8} fill="#8a949e" stroke="#4a545e" strokeWidth={2} />
-                  <path
-                    d={`M${v.cx - 30} ${v.cy - (W - 5) / 2} L${v.cx - 8} ${v.cy - (W - 5) / 2} L${v.cx} ${v.cy - (W - 5) * o / 2} L${v.cx + 8} ${v.cy - (W - 5) / 2} L${v.cx + 30} ${v.cy - (W - 5) / 2}
-                        L${v.cx + 30} ${v.cy + (W - 5) / 2} L${v.cx + 8} ${v.cy + (W - 5) / 2} L${v.cx} ${v.cy + (W - 5) * o / 2} L${v.cx - 8} ${v.cy + (W - 5) / 2} L${v.cx - 30} ${v.cy + (W - 5) / 2} Z`}
-                    fill={wasserFarbe((z.phi.vor + z.phi.nach) / 2)}
-                  />
-                  <line x1={v.cx} y1={v.cy - W / 2 - 6} x2={v.cx} y2={v.cy - W / 2 - 22} stroke="#4a545e" strokeWidth={4} />
-                  <g transform={`rotate(${o * 270} ${v.cx} ${v.cy - W / 2 - 26})`}>
-                    <circle cx={v.cx} cy={v.cy - W / 2 - 26} r={13} fill="none" stroke="#b03a2e" strokeWidth={4} />
-                    <path d={`M${v.cx - 13} ${v.cy - W / 2 - 26} H${v.cx + 13} M${v.cx} ${v.cy - W / 2 - 39} V${v.cy - W / 2 - 13}`} stroke="#b03a2e" strokeWidth={2.5} />
+                  <g style={{ opacity: wasserDeckung }}>
+                    <rect x={v.cx - 40} y={v.cy - W / 2 - 4} width={8} height={W + 8} fill="#56616d" />
+                    <rect x={v.cx + 32} y={v.cy - W / 2 - 4} width={8} height={W + 8} fill="#56616d" />
+                    <rect x={v.cx - 32} y={v.cy - W / 2 - 6} width={64} height={W + 12} rx={8} fill="#8a949e" stroke="#4a545e" strokeWidth={2} />
+                    <path
+                      d={`M${v.cx - 30} ${v.cy - (W - 5) / 2} L${v.cx - 8} ${v.cy - (W - 5) / 2} L${v.cx} ${v.cy - (W - 5) * o / 2} L${v.cx + 8} ${v.cy - (W - 5) / 2} L${v.cx + 30} ${v.cy - (W - 5) / 2}
+                          L${v.cx + 30} ${v.cy + (W - 5) / 2} L${v.cx + 8} ${v.cy + (W - 5) / 2} L${v.cx} ${v.cy + (W - 5) * o / 2} L${v.cx - 8} ${v.cy + (W - 5) / 2} L${v.cx - 30} ${v.cy + (W - 5) / 2} Z`}
+                      fill={wasserFarbe((z.phi.vor + z.phi.nach) / 2)}
+                    />
+                    <line x1={v.cx} y1={v.cy - W / 2 - 6} x2={v.cx} y2={v.cy - W / 2 - 22} stroke="#4a545e" strokeWidth={4} />
+                    <g transform={`rotate(${o * 270} ${v.cx} ${v.cy - W / 2 - 26})`}>
+                      <circle cx={v.cx} cy={v.cy - W / 2 - 26} r={13} fill="none" stroke="#b03a2e" strokeWidth={4} />
+                      <path d={`M${v.cx - 13} ${v.cy - W / 2 - 26} H${v.cx + 13} M${v.cx} ${v.cy - W / 2 - 39} V${v.cy - W / 2 - 13}`} stroke="#b03a2e" strokeWidth={2.5} />
+                    </g>
+                    <text x={v.cx} y={v.cy + W / 2 + 22} textAnchor="middle" fontSize={12} style={muted}>Ventil{v.nr} · −{zahl(v.u)} m</text>
                   </g>
-                  <text x={v.cx} y={v.cy + W / 2 + 22} textAnchor="middle" fontSize={12} style={{ ...muted, opacity: wasserDeckung }}>Ventil{v.nr} · −{zahl(v.u)} m</text>
-                  {/* Elektrik: Widerstand nach DIN */}
+                  {/* Widerstand nach DIN: Rechteck */}
                   <g style={{ opacity: mix }}>
-                    <rect x={v.cx - 26} y={v.cy - 10} width={52} height={20} fill="var(--surface)" stroke="#e0a000" strokeWidth={3} />
-                    <text x={v.cx} y={v.cy + 5} textAnchor="middle" fontSize={12} style={elek}>R{v.nr}</text>
-                    <text x={v.cx} y={v.cy + W / 2 + 22} textAnchor="middle" fontSize={12} style={elek}>{ohm(v.r)} · U{v.nr ? v.nr : "_R"} = {zahl(v.u)} V</text>
-                    <text x={v.cx} y={v.cy + W / 2 + 37} textAnchor="middle" fontSize={11} style={elek}>I{v.nr} = {zahl(v.i)} A · P = {zahl(v.p)} W</text>
+                    <rect x={v.cx - 48} y={v.cy - 13} width={96} height={26} style={{ fill: "var(--surface)", stroke: "var(--text)" }} strokeWidth={3} />
+                    <text x={v.cx} y={v.cy + 5} textAnchor="middle" fontSize={13} fontWeight={700} style={text}>R{v.nr} = {ohm(v.r)}</text>
+                    {e.aufbau === "parallel" && pille(v.cx, v.cy - 30, `I${v.nr} = ${zahl(v.i)} A`, `i${n}`)}
+                    {/* In Reihe stehen die Ventile dicht: das erste oben, das zweite unten beschriften. */}
+                    {e.aufbau === "reihe" && n === 0
+                      ? pille(495, v.cy - 30, `U₁ = ${zahl(v.u)} V · P = ${zahl(v.p)} W`, `u${n}`)
+                      : pille(v.cx, v.cy + 36, `U${v.nr || "_R"} = ${zahl(v.u)} V · P = ${zahl(v.p)} W`, `u${n}`)}
                   </g>
                 </g>
               );
             })}
 
-            {/* Absperrhahn im Rückrohr = Schalter */}
+            {/* Absperrhahn im Rückrohr = Schalter (klickbar) */}
             <g onClick={() => set({ geschlossen: !e.geschlossen })} style={{ cursor: "pointer" }}>
-              <rect x={478} y={RUECK - W / 2 - 4} width={44} height={W + 8} rx={6} fill="#8a949e" stroke="#4a545e" strokeWidth={2} />
-              <rect x={484} y={RUECK - (W - 5) / 2} width={32} height={W - 5} fill={offen ? "#8a949e" : wasserFarbe(z.phi.fass / 2)} />
-              <line x1={500} y1={RUECK - W / 2 - 4} x2={500} y2={RUECK - W / 2 - 16} stroke="#4a545e" strokeWidth={4} />
-              <line x1={offen ? 500 : 482} y1={RUECK - W / 2 - 18} x2={offen ? 500 : 518} y2={offen ? RUECK - W / 2 - 40 : RUECK - W / 2 - 18} stroke="#b03a2e" strokeWidth={6} strokeLinecap="round" />
-              <text x={500} y={RUECK + W / 2 + 18} textAnchor="middle" fontSize={11} style={{ ...muted, opacity: wasserDeckung }}>{offen ? "Hahn zu" : "Hahn offen"} (klicken)</text>
-              <text x={500} y={RUECK + W / 2 + 18} textAnchor="middle" fontSize={11} style={{ ...elek, opacity: mix }}>{offen ? `Schalter offen: U = ${zahl(U)} V` : "Schalter geschlossen"}</text>
+              <rect x={470} y={RUECK - 30} width={60} height={50} fill="transparent" />
+              <g style={{ opacity: wasserDeckung }}>
+                <rect x={478} y={RUECK - W / 2 - 4} width={44} height={W + 8} rx={6} fill="#8a949e" stroke="#4a545e" strokeWidth={2} />
+                <rect x={484} y={RUECK - (W - 5) / 2} width={32} height={W - 5} fill={offen ? "#8a949e" : wasserFarbe(z.phi.fass / 2)} />
+                <line x1={500} y1={RUECK - W / 2 - 4} x2={500} y2={RUECK - W / 2 - 16} stroke="#4a545e" strokeWidth={4} />
+                <line x1={offen ? 500 : 482} y1={RUECK - W / 2 - 18} x2={offen ? 500 : 518} y2={offen ? RUECK - W / 2 - 40 : RUECK - W / 2 - 18} stroke="#b03a2e" strokeWidth={6} strokeLinecap="round" />
+                <text x={500} y={RUECK + W / 2 + 18} textAnchor="middle" fontSize={11} style={muted}>{offen ? "Hahn zu" : "Hahn offen"} (klicken)</text>
+              </g>
             </g>
 
-            {/* Manometer = Potenziale */}
+            {/* Manometer = Spannungsmesser */}
             {manometer(255, U, "A")}
             {manometer(385, z.phi.vor, "B")}
             {manometer(615, z.phi.nach, "C")}
             {manometer(800, z.phi.fass, "D")}
-
-            {/* ── Elektrische Bedeutung ── */}
-            <g style={{ opacity: mix }} pointerEvents="none">
-              {/* Batterie am Steigrohr: langer Strich = Plus */}
-              <rect x={PUMPE.x - 26} y={PUMPE.y - 98} width={52} height={36} fill="var(--surface)" />
-              <line x1={PUMPE.x - 22} y1={PUMPE.y - 88} x2={PUMPE.x + 22} y2={PUMPE.y - 88} stroke="#e0a000" strokeWidth={3} />
-              <line x1={PUMPE.x - 11} y1={PUMPE.y - 72} x2={PUMPE.x + 11} y2={PUMPE.y - 72} stroke="#e0a000" strokeWidth={7} />
-              <text x={PUMPE.x + 30} y={PUMPE.y - 84} fontSize={14} style={elek}>+</text>
-              <text x={PUMPE.x + 30} y={PUMPE.y - 64} fontSize={14} style={elek}>−</text>
-              <text x={PUMPE.x} y={RUECK + 58} textAnchor="middle" fontSize={12} style={elek}>Quelle U = {zahl(U)} V</text>
-              <text x={38} y={(tb + Y) / 2 + 16} fontSize={12} style={elek}>U = {zahl(U)} V</text>
-              {/* Ströme */}
-              <text x={320} y={Y + W / 2 + 18} textAnchor="middle" fontSize={13} style={elek}>I = {zahl(z.strom)} A →</text>
-              <text x={330} y={RUECK - W / 2 - 8} textAnchor="middle" fontSize={13} style={elek}>← I = {zahl(z.strom)} A</text>
-              {/* Leiter */}
-              <text x={320} y={Y + W / 2 + 34} textAnchor="middle" fontSize={11} style={elek}>Leiter {ohm(z.rZu)} · −{zahl(z.uZu)} V</text>
-              <text x={740} y={Y + W / 2 + 18} textAnchor="middle" fontSize={11} style={elek}>Leiter {ohm(z.rAb)} · −{zahl(z.uAb)} V</text>
-              <text x={330} y={RUECK + W / 2 + 34} textAnchor="middle" fontSize={11} style={elek}>Rückleiter {ohm(z.rRueck)} · −{zahl(z.uRueck)} V</text>
-              <text x={FASS2.x + FASS2.w / 2} y={FASS2.y + FASS2.h + 62} textAnchor="middle" fontSize={12} style={elek}>zum Minuspol (−)</text>
-              {e.aufbau === "parallel" && (
-                <text x={500} y={355 + W / 2 + 56} textAnchor="middle" fontSize={12} style={elek}>
-                  Knoten: {zahl(z.strom)} A = {zahl(z.i1)} A + {zahl(z.i2)} A
-                </text>
-              )}
-            </g>
 
             {fokus && FOKUS[fokus].map((r, i) => markierung(...r, `${fokus}${i}`))}
 
