@@ -10,6 +10,7 @@ import { bilderZu, nachweisFuer } from "@/lib/medien/galerie";
 import { mitStation, type Aenderung } from "@/lib/medien/fortschritt";
 import { BildStreifen } from "@/components/galerie/FotoGalerie";
 import { DEMOS } from "./demos";
+import { krabbeln } from "@/lib/krabbler";
 
 export default function Station({ m, geschafft, aendere, weiter }: {
   m: Medium; geschafft: boolean; aendere: (a: Aenderung) => void; weiter?: () => void;
@@ -142,7 +143,11 @@ function Frage({ m, geschafft, aendere, weiter }: { m: Medium; geschafft: boolea
   const antworte = (i: number) => {
     if (richtig) return;
     if (i === m.frage.richtig) { setRichtig(true); aendere(mitStation(m.id)); }
-    else setFalsch(f => (f.includes(i) ? f : [...f, i]));
+    else {
+      // Wie im TaskCrawler: Käfer sperren kurz, darunter steht, was man nachlesen sollte
+      krabbeln({ info: `${m.icon} ${m.name}\n\n${m.besser}\n\n${m.haken}` });
+      setFalsch(f => (f.includes(i) ? f : [...f, i]));
+    }
   };
   return (
     <section className="card p-4 flex flex-col gap-3 border-2 border-accent/50">

@@ -56,8 +56,8 @@ export function BotenDemo() {
   useEffect(() => () => { if (bild.current) cancelAnimationFrame(bild.current); }, []);
   const start = () => {
     if (bild.current) cancelAnimationFrame(bild.current);
-    // Der Langsamste soll in etwa 20 Sekunden ankommen
-    const proSekunde = ende / 20;
+    // 5 Sekunden je Tag: Man sieht Tag und Nacht, Pausen und Wechsel
+    const proSekunde = 24 / 5;
     const angekommen = new Set<string>();
     const t0 = performance.now();
     setLaeuft(true);

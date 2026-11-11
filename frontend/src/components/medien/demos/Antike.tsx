@@ -93,13 +93,13 @@ export function HieroglyphenDemo() {
  */
 /**
  * Genauigkeitspunkte (0–100): wie viel vom Umriss der Vorlage nachgefahren ist,
- * mal wie viel der eigenen Striche beim Zeichen liegt. Großzügig für die Maus:
- * 85 % Umriss zählen voll, die ersten 10 % daneben kosten nichts.
+ * mal wie viel der eigenen Striche beim Zeichen liegt. Etwas Spielraum für die Maus:
+ * 90 % Umriss zählen voll, die ersten 5 % daneben kosten nichts.
  * Alles vollkritzeln bringt trotzdem nichts.
  */
 export function genauigkeit(abgedeckt: number, daneben: number): number {
-  const getroffen = Math.min(1, Math.max(0, abgedeckt) / 0.85);
-  const abzug = Math.min(1, Math.max(0, daneben - 0.1) / 0.9);
+  const getroffen = Math.min(1, Math.max(0, abgedeckt) / 0.9);
+  const abzug = Math.min(1, Math.max(0, daneben - 0.05) / 0.95);
   return Math.round(100 * getroffen * (1 - abzug));
 }
 function Balken({ name, wert, farbe }: { name: string; wert: number; farbe: string }) {
@@ -111,7 +111,7 @@ function Balken({ name, wert, farbe }: { name: string; wert: number; farbe: stri
     </div>
   );
 }
-const sterne = (p: number) => (p >= 60 ? "⭐⭐⭐" : p >= 40 ? "⭐⭐" : "⭐");
+const sterne = (p: number) => (p >= 80 ? "⭐⭐⭐" : p >= 50 ? "⭐⭐" : "⭐");
 
 function SelbstSchreiben({ zeichen }: { zeichen: ReturnType<typeof inHieroglyphen> }) {
   const [nr, setNr] = useState(0);
@@ -131,7 +131,7 @@ function SelbstSchreiben({ zeichen }: { zeichen: ReturnType<typeof inHieroglyphe
     setLeer(false);
     setUrteil({ ...t, punkte: p });
     setPunkte(alt => alt.map((x, i) => (i === nr ? Math.max(x ?? 0, p) : x)));
-    if (p >= 60) erprobt("hieroglyphen");
+    if (p >= 80) erprobt("hieroglyphen");
     if (punkte.every((x, i) => i === nr || x !== null)) erprobt("kartusche");
     // Die Kartusche zeigt den besten Versuch
     if (p >= (punkte[nr] ?? -1)) setBilder(b => b.map((x, i) => (i === nr ? f.bild() : x)));
@@ -168,9 +168,9 @@ function SelbstSchreiben({ zeichen }: { zeichen: ReturnType<typeof inHieroglyphe
               <Balken name="Daneben gemalt" wert={urteil.daneben} farbe="var(--color-bad)" />
               <p className="font-black text-lg">{sterne(urteil.punkte)} {urteil.punkte} Genauigkeitspunkte</p>
               <p className="text-xs text-muted">
-                {urteil.punkte >= 60 ? "Der Pharao wäre zufrieden!" : urteil.punkte >= 40 ? "Ein ordentlicher Schreiberlehrling."
+                {urteil.punkte >= 80 ? "Der Pharao wäre zufrieden!" : urteil.punkte >= 50 ? "Ein ordentlicher Schreiberlehrling."
                   : urteil.abgedeckt < 0.4 ? "Zu wenig von der Vorlage erwischt — mal die Linien ganz nach." : "Zu viel daneben — langsamer und genauer malen."}
-                {" "}Es reicht, den Umriss nachzufahren. 85 % getroffen zählen voll, ein bisschen daneben ist erlaubt. Bestwert zählt.
+                {" "}Es reicht, den Umriss nachzufahren. 90 % getroffen zählen voll, ein kleines bisschen daneben ist erlaubt. ⭐⭐⭐ ab 80. Bestwert zählt.
               </p>
             </div>
           )}

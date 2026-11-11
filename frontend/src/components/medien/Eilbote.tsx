@@ -5,6 +5,7 @@ import { epoche, jahrKurz, medium } from "@/lib/medien/medien";
 import { AUFTRAEGE, punkteFuer } from "@/lib/medien/spiele";
 import type { Aenderung } from "@/lib/medien/fortschritt";
 import SoGehts from "./SoGehts";
+import { krabbeln } from "@/lib/krabbler";
 
 export default function Eilbote({ rekord, aendere }: { rekord: number; aendere: (a: Aenderung) => void }) {
   const [nr, setNr] = useState(0);
@@ -33,7 +34,10 @@ export default function Eilbote({ rekord, aendere }: { rekord: number; aendere: 
     if (id === a.richtig) {
       setGeloest(true);
       setPunkte(p => p + punkteFuer(falsch.length + 1));
-    } else setFalsch(f => [...f, id]);
+    } else {
+      krabbeln({ info: `${a.text}\n\n${a.daneben[id] ?? ""}` });
+      setFalsch(f => [...f, id]);
+    }
   };
   const weiter = () => {
     if (nr + 1 >= AUFTRAEGE.length) {

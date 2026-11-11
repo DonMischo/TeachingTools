@@ -145,10 +145,10 @@ describe("Codes der Demos", () => {
     expect(zeichenAusDauer(400)).toBe("-");
   });
 
-  it("Hieroglyphen nachmalen: großzügige Genauigkeitspunkte (Maus!)", () => {
+  it("Hieroglyphen nachmalen: Genauigkeitspunkte mit etwas Spielraum für die Maus", () => {
     expect(genauigkeit(1, 0)).toBe(100);
-    expect(genauigkeit(0.85, 0.1)).toBe(100); // 85 % Umriss, 10 % daneben: volle Punkte
-    expect(genauigkeit(0.8, 0.25)).toBe(78);
+    expect(genauigkeit(0.9, 0.05)).toBe(100); // 90 % Umriss, 5 % daneben: volle Punkte
+    expect(genauigkeit(0.8, 0.25)).toBe(70);
     expect(genauigkeit(1, 1)).toBe(0); // alles vollgekritzelt
     expect(genauigkeit(0, 0)).toBe(0);
     expect(genauigkeit(1.4, -0.2)).toBe(100);

@@ -120,7 +120,7 @@ export const Zeichenflaeche = forwardRef<ZeichenGriff, Props>(function Zeichenfl
       // - »getroffen« zählt den UMRISS der Vorlage — Nachfahren der Kontur reicht, ausmalen muss man nicht;
       //   ein Umrisspunkt gilt als getroffen, wenn ein Strich bis zu TOLERANZ Pixel daneben liegt.
       // - »daneben« zählt nur Striche außerhalb eines breiten Bands um das Zeichen.
-      const TOLERANZ = 9;
+      const TOLERANZ = 6;
       const flaeche = (zeichne: (c: CanvasRenderingContext2D) => void) => {
         const c = document.createElement("canvas");
         c.width = breite; c.height = hoehe;
@@ -133,7 +133,7 @@ export const Zeichenflaeche = forwardRef<ZeichenGriff, Props>(function Zeichenfl
         return x.getImageData(0, 0, breite, hoehe).data;
       };
       const umriss = flaeche(x => { x.lineWidth = 3; x.strokeText(vorlage, breite / 2, hoehe / 2); });
-      const band = flaeche(x => { x.lineWidth = 2 * 14; x.fillText(vorlage, breite / 2, hoehe / 2); x.strokeText(vorlage, breite / 2, hoehe / 2); });
+      const band = flaeche(x => { x.lineWidth = 2 * 9; x.fillText(vorlage, breite / 2, hoehe / 2); x.strokeText(vorlage, breite / 2, hoehe / 2); });
       // Striche verdicken: die Strichfläche in alle Richtungen um TOLERANZ verschoben übereinanderlegen
       const dick = flaeche(x => {
         for (let w = 0; w < 16; w++) {
