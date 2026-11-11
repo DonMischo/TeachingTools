@@ -338,7 +338,7 @@ Das Lehrkraft-Werkzeugset. Standardmäßig nur für Lehrkräfte sichtbar.
 - Schulinternes Curriculum gegen alten und neuen Lehrplan, dreispaltig je Klassenblock: alte Lehrplan-Karten | eigene Themen (G/R/H/LB/GE, Wochen) | neue Karten
 - Abgleich alt ↔ neu je Karte (identisch, geändert mit Wort-Diff, verschoben, neu, entfällt), getrennt für Real- und Hauptschulniveau; Konflikte am Thema, offene neue Inhalte je Block, Wochensumme gegen verfügbare Wochen
 - Themen per Ziehen zwischen Klassen verschieben, Karten zuordnen, fehlende Niveaus ergänzen; ein gemeinsamer Stand je Fachschaft (Änderungen per Operation, `api/curriculum_ops.py`), Gastbeitritt per QR
-- Material an Unterrichtseinheiten und Karten: Simulationen, Werkzeuge (TaskCrawler, Caputh …), Fragmente (Pinnwand, Karte, Clipping) und Links, dieselbe Auswahl wie im Stundenplaner; Werkzeuge mit Klassenbindung fragen beim Öffnen nach der Klasse. Je Plan lässt sich eine Fragmente-Sammlung festlegen, dann stehen nur deren Karten und Clippings zur Auswahl
+- Material an Unterrichtseinheiten und Karten: Simulationen, Werkzeuge (TaskCrawler, Caputh …), Fragmente (Pinnwand, Karte, Clipping) und Links, dieselbe Auswahl wie im Stundenplaner; Werkzeuge mit Klassenbindung fragen beim Öffnen nach der Klasse. Je Plan lässt sich eine Fragmente-Sammlung festlegen (für alle, die den Plan bearbeiten), dann stehen nur deren Karten und Clippings zur Auswahl. »🗂️ Sammlung anlegen« legt eine Materialsammlung für alle Lehrkräfte an: Tabs Unterrichtsmaterial und Leistungskontrollen, Klassen und Unterrichtseinheiten des Plans als Kategorien; »↻ Kategorien abgleichen« zieht später neue Einheiten nach
 - Export der Endfassung als DOCX und PDF (A4 quer, alle Klassen oder eine) und als SVG je Klasse (`api/curriculum_export.py`; das DOCX wird direkt geschrieben, weil pandoc keine Zellfarben kann, das PDF macht LibreOffice daraus)
 - KI-Prompt für Lehrplanvergleich und Zuordnung; Vorlagen als JSON (`tt-curriculum/1`, Aufbau in `data/curriculum/SCHEMA.md`). Startvorlagen in `frontend/public/curriculum/`: Thüringer Mathe-Lehrpläne (RS 2011, GY 2018 → Erprobungsfassungen 2026, mit Abgleich; die neuen Pläne RS + GY zu einer dreifach differenzierten Karte je Kompetenz zusammengeführt, R/G nur mit ihrem Zusatz) Physik (RS + GY 2026, Kl. 7–10) und Medienbildung und Informatik (RS + GY 2026, Kl. 5–10), beide ohne alten Plan und mit leeren Unterrichtseinheiten je Lernbereich. Der KI-Prompt erfasst eine oder beide Schularten in einem JSON, mit oder ohne alten Plan
 
@@ -393,6 +393,8 @@ Das Lehrkraft-Werkzeugset. Standardmäßig nur für Lehrkräfte sichtbar.
 ## 🗂️ Fragmente
 
 - Pinnwände im Stil von TaskCards: Textfragmente und Recherche-Clips mit Link-Vorschau
+- Clippings tragen Bilder, PDFs und Textdokumente (md, txt, csv, rtf, doc/docx, odt, xls/xlsx, ods, ppt/pptx, odp) sowie ein Werkzeug mit Einstellungen wie an TaskCrawler-Aufgaben (Reiter, Station, Aufgabe …); es öffnet sich im Vollbild
+- Art je Sammlung: Standard oder Materialsammlung; eine Materialsammlung löscht nur ein Admin. Sammlungen mit Kategorien (aus dem Curriculinator) ordnen Karten und Clippings nach Klasse und Unterrichtseinheit ein, Filterchips zeigen nur eine Klasse oder Einheit, und neue Einträge übernehmen den aktiven Filter
 - Zugriff pro Sammlung in drei Stufen: lesen, beitragen, verwalten; vergeben an Lehrkräfte, Klassen oder A/B-Gruppen
 - Gäste treten per QR bei
 - Tabs innerhalb einer Sammlung

@@ -19,12 +19,13 @@ const PERM_LABEL: Record<FragmentPermission, string> = {
 // ── Collection card ────────────────────────────────────────────────────────────
 
 function CollectionCard({
-  coll, onOpen, onEdit, onDelete,
+  coll, onOpen, onEdit, onDelete, isAdmin,
 }: {
   coll: FragmentCollectionOut;
   onOpen: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  isAdmin: boolean;
 }) {
   const canManage = coll.my_permission === "manage";
   const audience = coll.grants.length === 0
@@ -40,6 +41,9 @@ function CollectionCard({
         <button className="text-left flex-1 min-w-0" onClick={onOpen}>
           <div className="font-semibold truncate">{coll.name}</div>
           {coll.subject && <div className="text-xs text-muted">{coll.subject}</div>}
+          {coll.art === "materialsammlung" && (
+            <div className="text-[10px] text-accent" title="Materialsammlung: kann nur ein Admin löschen">📚 Materialsammlung</div>
+          )}
         </button>
         {coll.my_permission !== "manage" && (
           <span className="text-[10px] shrink-0 px-2 py-0.5 rounded-full bg-surface-hover text-muted">
@@ -65,7 +69,9 @@ function CollectionCard({
             <button className="text-xs px-2 py-1 rounded-sm hover:bg-surface-hover" onClick={onEdit}
               title="Einstellungen" aria-label="Einstellungen">⚙️</button>
           )}
-          {coll.is_owner && <button className="text-xs px-2 py-1 rounded-sm hover:bg-red-500/10 text-red-500" onClick={onDelete}>Löschen</button>}
+          {(coll.art === "materialsammlung" ? isAdmin : coll.is_owner || isAdmin) && (
+            <button className="text-xs px-2 py-1 rounded-sm hover:bg-red-500/10 text-red-500" onClick={onDelete}>Löschen</button>
+          )}
         </div>
       </div>
     </div>
@@ -175,7 +181,7 @@ export default function FragmentsLandingPage() {
       ) : (
         <div className={view === "grid" ? "grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "flex flex-col gap-2"}>
           {shown.map(c => (
-            <CollectionCard key={c.id} coll={c}
+            <CollectionCard key={c.id} coll={c} isAdmin={auth?.role === "admin"}
               onOpen={() => router.push(`/fragmente/${c.id}`)}
               onEdit={() => setModal({ collection: c })}
               onDelete={() => setConfirmDel(c)}

@@ -85,6 +85,7 @@ class CollectionUpdate(BaseModel):
     subject: str | None = None
     allow_guests: bool | None = None
     guest_permission: str | None = None
+    art: str | None = None
 
 
 class CollectionOut(BaseModel):
@@ -102,6 +103,8 @@ class CollectionOut(BaseModel):
     grants: list[GrantOut]
     fragment_count: int
     research_count: int
+    art: str = "standard"
+    kategorien: list = []
 
 
 # ── Serialization ───────────────────────────────────────────────────────────────
@@ -151,6 +154,8 @@ def _collection_out(coll: FragmentCollection, user, db: Session) -> CollectionOu
         grants=[_grant_out(g) for g in coll.grants] if at_least(perm, "manage") else [],
         fragment_count=frag_n,
         research_count=res_n,
+        art=coll.art or "standard",
+        kategorien=coll.kategorien or [],
     )
 
 
@@ -253,6 +258,13 @@ def update_collection(
         if body.guest_permission not in ("read", "contribute"):
             raise HTTPException(400, "guest_permission muss 'read' oder 'contribute' sein")
         coll.guest_permission = body.guest_permission
+    if body.art is not None and body.art != coll.art:
+        if body.art not in ("standard", "materialsammlung"):
+            raise HTTPException(400, "art muss 'standard' oder 'materialsammlung' sein")
+        # Zurück zur Standard-Sammlung nur durch einen Admin — sonst wäre die Löschsperre umgehbar.
+        if coll.art == "materialsammlung" and not (isinstance(user, Teacher) and user.role == "admin"):
+            raise HTTPException(403, "Nur ein Admin kann eine Materialsammlung wieder zur Standard-Sammlung machen")
+        coll.art = body.art
     if body.allow_guests is not None:
         coll.allow_guests = body.allow_guests
         if body.allow_guests and not coll.guest_code:
@@ -276,6 +288,8 @@ def delete_collection(
     is_owner = isinstance(user, Teacher) and user.id == coll.owner_teacher_id
     if not (is_admin or is_owner):
         raise HTTPException(403, "Nur der Ersteller darf die Sammlung löschen")
+    if coll.art == "materialsammlung" and not is_admin:
+        raise HTTPException(403, "Eine Materialsammlung kann nur ein Admin löschen")
     db.delete(coll)
     db.commit()
 

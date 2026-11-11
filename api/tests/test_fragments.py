@@ -387,3 +387,61 @@ def test_group_grant_needs_an_existing_group(client, teacher):
         "grants": [{"grantee_type": "group", "group_id": 999999, "permission": "read"}],
     }, headers=teacher_auth(teacher))
     assert r.status_code == 400
+
+
+# ── Materialsammlung + Einordnung nach Klasse/Einheit ────────────────────────
+
+def test_materialsammlung_loescht_nur_admin(client, teacher, admin):
+    client.cookies.clear()
+    cid = client.post(f"{PREFIX}/collections", json={"name": "Mathe – Material"}, headers=teacher_auth(teacher)).json()["id"]
+    r = client.patch(f"{PREFIX}/collections/{cid}", json={"art": "materialsammlung"}, headers=teacher_auth(teacher))
+    assert r.json()["art"] == "materialsammlung"
+    assert client.delete(f"{PREFIX}/collections/{cid}", headers=teacher_auth(teacher)).status_code == 403
+    # zurück zur Standard-Sammlung darf die Besitzerin nicht (sonst wäre die Sperre umgehbar)
+    assert client.patch(f"{PREFIX}/collections/{cid}", json={"art": "standard"}, headers=teacher_auth(teacher)).status_code == 403
+    assert client.delete(f"{PREFIX}/collections/{cid}", headers=teacher_auth(admin)).status_code == 204
+
+
+def test_karten_und_clippings_tragen_klasse_und_einheit(client, teacher):
+    client.cookies.clear()
+    cid = client.post(f"{PREFIX}/collections", json={"name": "Material"}, headers=teacher_auth(teacher)).json()["id"]
+    f = client.post(f"{PREFIX}/collections/{cid}/fragments", json={"title": "AB Brüche", "klasse": 6, "einheit": "k6-t4"},
+                    headers=teacher_auth(teacher)).json()
+    assert (f["klasse"], f["einheit"]) == (6, "k6-t4")
+    f = client.patch(f"{PREFIX}/items/{f['id']}", json={"einheit": None}, headers=teacher_auth(teacher)).json()
+    assert (f["klasse"], f["einheit"]) == (6, None)
+    r = client.post(f"{PREFIX}/collections/{cid}/research", json={"title": "Test", "klasse": 5, "einheit": "k5-t1"},
+                    headers=teacher_auth(teacher)).json()
+    assert (r["klasse"], r["einheit"]) == (5, "k5-t1")
+    r = client.patch(f"{PREFIX}/research/{r['id']}", json={"klasse": None}, headers=teacher_auth(teacher)).json()
+    assert r["klasse"] is None
+
+
+def test_clipping_mit_werkzeug_wie_im_taskcrawler(client, teacher):
+    client.cookies.clear()
+    cid = client.post(f"{PREFIX}/collections", json={"name": "Material"}, headers=teacher_auth(teacher)).json()["id"]
+    sim = {"tool": "gleichungswaage", "config": {"gleichung": "3x + 4 = 19"}}
+    r = client.post(f"{PREFIX}/collections/{cid}/research", json={"title": "Waage", "sim": sim},
+                    headers=teacher_auth(teacher)).json()
+    assert r["sim"] == sim
+    bad = client.post(f"{PREFIX}/collections/{cid}/research", json={"title": "x", "sim": {"tool": "gibtsnicht"}},
+                      headers=teacher_auth(teacher))
+    assert bad.status_code == 422
+    r = client.patch(f"{PREFIX}/research/{r['id']}", json={"sim": None}, headers=teacher_auth(teacher)).json()
+    assert r["sim"] is None
+
+
+def test_clipping_nimmt_textdokumente(client, teacher, tmp_path, monkeypatch):
+    from api.routers import fragments_cards
+    monkeypatch.setattr(fragments_cards, "MEDIA_BASE", tmp_path)
+    client.cookies.clear()
+    cid = client.post(f"{PREFIX}/collections", json={"name": "Material"}, headers=teacher_auth(teacher)).json()["id"]
+    rid = client.post(f"{PREFIX}/collections/{cid}/research", json={"title": "Doku"}, headers=teacher_auth(teacher)).json()["id"]
+    for name in ("notizen.md", "brief.txt", "AB.docx", "Tabelle.ods"):
+        r = client.post(f"{PREFIX}/research/{rid}/media", files={"file": (name, b"Hallo")}, headers=teacher_auth(teacher))
+        assert r.status_code == 200, r.text
+    media = r.json()["media"]
+    assert [(m["kind"], m["name"]) for m in media] == [
+        ("file", "notizen.md"), ("file", "brief.txt"), ("file", "AB.docx"), ("file", "Tabelle.ods")]
+    assert client.post(f"{PREFIX}/research/{rid}/media", files={"file": ("x.html", b"<script>")},
+                       headers=teacher_auth(teacher)).status_code == 400

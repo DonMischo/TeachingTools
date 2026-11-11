@@ -270,3 +270,29 @@ def test_export_formate(client, teacher):
 
     r = client.get(f"{PREFIX}/{plan['id']}/export", params={"format": "pdf", "klasse": 5}, headers=h)
     assert r.status_code == 200 and r.content[:4] == b"%PDF"
+
+
+# ── Materialsammlung ─────────────────────────────────────────────────────────
+
+def test_materialsammlung_anlegen_und_abgleichen(client, teacher, teacher2):
+    client.cookies.clear()
+    pid = _anlegen(client, teacher)["id"]
+    r = client.post(f"{PREFIX}/{pid}/sammlung", headers=t_auth(teacher))
+    assert r.status_code == 200
+    sid = r.json()["data"]["sammlung"]
+    c = client.get(f"/api/fragments/collections/{sid}", headers=t_auth(teacher2)).json()
+    assert c["art"] == "materialsammlung" and c["my_permission"] == "contribute"
+    assert c["kategorien"] == [
+        {"klasse": 5, "einheiten": [{"id": "a", "titel": "A"}, {"id": "b", "titel": "B"}]},
+        {"klasse": 6, "einheiten": [{"id": "c", "titel": "C"}]},
+    ]
+    tabs = client.get(f"/api/fragments/collections/{sid}/tabs", headers=t_auth(teacher)).json()["custom"]
+    assert tabs == ["Unterrichtsmaterial", "Leistungskontrollen"]
+
+    # neue Einheit im Plan → erneut gedrückt gleicht die Kategorien ab, ohne neue Sammlung
+    client.post(f"{PREFIX}/{pid}/ops", json={"ops": [{"op": "thema", "klasse": 6, "thema": {"id": "d", "titel": "D"}}]},
+                headers=t_auth(teacher))
+    r = client.post(f"{PREFIX}/{pid}/sammlung", headers=t_auth(teacher))
+    assert r.json()["data"]["sammlung"] == sid
+    c = client.get(f"/api/fragments/collections/{sid}", headers=t_auth(teacher)).json()
+    assert [e["id"] for e in c["kategorien"][1]["einheiten"]] == ["c", "d"]

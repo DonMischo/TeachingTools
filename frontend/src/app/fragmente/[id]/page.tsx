@@ -1,12 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { SimFelder, type Katalog } from "@/components/vorlagen/SimFelder";
+import { SimKnopf } from "@/components/exitgame/SimStation";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   api, fragmentGuest, FragmentCollectionOut, FragmentOut, FragmentTabs,
-  ResearchItemOut,
+  ResearchItemOut, FragmentOrt, ExitGameSim,
 } from "@/lib/api";
+import { Einordnung, OrtWahl, ortText } from "@/components/fragmente/Einordnung";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { JoinQR } from "@/components/JoinQR";
@@ -156,7 +159,8 @@ function FragmentCard({
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const editable = frag.can_edit;
 
-  const save = (patch: Partial<{ title: string | null; content: string | null; category: string | null }>) =>
+  const { kategorien } = useContext(Einordnung);
+  const save = (patch: Partial<{ title: string | null; content: string | null; category: string | null } & FragmentOrt>) =>
     api.fragments.updateFragment(frag.id, patch).catch((e: any) => toast(e.message ?? "Fehler", "error"));
 
   const scheduleSave = (next: string) => {
@@ -214,6 +218,10 @@ function FragmentCard({
             <button className="opacity-0 group-hover:opacity-100 hover:text-fg transition-opacity"
               onClick={() => setEditingCat(true)}>+ Label</button>
           ) : null}
+          {editable
+            ? <OrtWahl wert={frag} onChange={o => save(o).then(() => qc.invalidateQueries({ queryKey: ["fragments", frag.collection_id] }))}
+                className="bg-transparent text-[10px] max-w-[9rem] truncate" />
+            : ortText(kategorien, frag) && <span className="truncate">{ortText(kategorien, frag)}</span>}
           <span className="truncate">{frag.author_name ?? ""}</span>
         </div>
         {editable && (
@@ -251,8 +259,15 @@ function ClippingModal({
   const [url, setUrl] = useState(initial?.url ?? "");
   const [text, setText] = useState(initial?.text_content ?? "");
   const [tags, setTags] = useState<string[]>(initial?.tags ?? []);
+  const { vorgabe } = useContext(Einordnung);
+  const [ort, setOrt] = useState<FragmentOrt>(initial ? { klasse: initial.klasse, einheit: initial.einheit } : vorgabe);
   const [tagInput, setTagInput] = useState("");
   const [files, setFiles] = useState<File[]>([]);
+  const [sim, setSim] = useState<ExitGameSim | null>(initial?.sim ?? null);
+  // Werkzeug-Liste mit Einstellungen wie im TaskCrawler (Gäste wählen keine Werkzeuge)
+  const { data: katalog } = useQuery<Katalog>({
+    queryKey: ["exitgame-katalog"], queryFn: api.exitgame.katalog, staleTime: Infinity, enabled: !guestToken,
+  });
   const invalidate = () => qc.invalidateQueries({ queryKey: ["research", collectionId] });
 
   const addTag = () => {
@@ -263,7 +278,7 @@ function ClippingModal({
 
   const save = useMutation({
     mutationFn: async () => {
-      const payload = { title: title.trim() || null, url: url.trim() || null, text_content: text.trim() || null, tags };
+      const payload = { title: title.trim() || null, url: url.trim() || null, text_content: text.trim() || null, tags, ...ort, ...(guestToken ? {} : { sim }) };
       const item = isEdit
         ? await api.fragments.updateResearch(initial!.id, payload)
         : await api.fragments.createResearch(collectionId, { ...payload, tab }, guestToken);
@@ -274,7 +289,7 @@ function ClippingModal({
     onError: (e: any) => toast(e.message ?? "Fehler", "error"),
   });
 
-  const canSave = !save.isPending && (!!title.trim() || !!url.trim() || !!text.trim() || files.length > 0 || (initial?.media.length ?? 0) > 0);
+  const canSave = !save.isPending && (!!title.trim() || !!url.trim() || !!text.trim() || !!sim || files.length > 0 || (initial?.media.length ?? 0) > 0);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
@@ -290,6 +305,7 @@ function ClippingModal({
               <p className="text-[10px] text-muted mt-0.5">Titel & Vorschau werden automatisch geladen.</p>
             </div>
           )}
+          <OrtWahl wert={ort} onChange={setOrt} className="input" />
           <div><label className="label">Text</label><textarea className="input min-h-[80px] resize-y" value={text} onChange={e => setText(e.target.value)} placeholder="Zitat, Notiz…" /></div>
           <div>
             <label className="label">Tags</label>
@@ -309,12 +325,13 @@ function ClippingModal({
             )}
           </div>
           <div>
-            <label className="label">Bilder / PDFs</label>
-            <input type="file" multiple accept="image/*,application/pdf"
+            <label className="label">Bilder / PDFs / Dokumente</label>
+            <input type="file" multiple accept={`image/*,application/pdf,${DOKUMENTE}`}
               onChange={e => setFiles(Array.from(e.target.files ?? []))}
               className="text-xs text-muted" />
             {files.length > 0 && <p className="text-[10px] text-muted mt-1">{files.length} Datei(en) ausgewählt</p>}
           </div>
+          {katalog && <SimFelder sim={sim ?? undefined} katalog={katalog} onChange={s => setSim(s ?? null)} />}
         </div>
         <div className="mt-6 flex gap-2 justify-end">
           <button className="px-4 py-2 text-sm rounded-lg border border-line hover:bg-surface-hover" onClick={onClose}>Abbrechen</button>
@@ -327,6 +344,9 @@ function ClippingModal({
     </div>
   );
 }
+
+// Textdokumente, die ein Clipping als Datei anhängen kann (wie _MEDIA_DOC_EXT im Backend)
+const DOKUMENTE = ".txt,.md,.csv,.rtf,.tex,.doc,.docx,.odt,.ott,.xls,.xlsx,.ods,.ppt,.pptx,.odp,.odg";
 
 // ── Clipping card ─────────────────────────────────────────────────────────────
 
@@ -365,6 +385,7 @@ function PdfModal({ url, onClose }: { url: string; onClose: () => void }) {
 
 function ClippingCard({ item, onEdit }: { item: ResearchItemOut; onEdit: () => void }) {
   const qc = useQueryClient();
+  const { kategorien } = useContext(Einordnung);
   const { toast } = useToast();
   const [activeIdx, setActiveIdx] = useState(0);
   const [lightbox, setLightbox] = useState(false);
@@ -453,6 +474,18 @@ function ClippingCard({ item, onEdit }: { item: ResearchItemOut; onEdit: () => v
           ))}
         </div>
       )}
+      {item.media.some(m => m.kind === "file") && (
+        <div className="flex flex-wrap gap-1">
+          {item.media.filter(m => m.kind === "file").map(m => (
+            <span key={m.id} className="inline-flex items-center gap-1 text-[10px] bg-surface-hover px-2 py-0.5 rounded-sm max-w-full">
+              <a href={m.path} download={m.name ?? undefined} className="hover:underline truncate" title="Herunterladen">📝 {m.name ?? "Dokument"}</a>
+              {item.can_edit && <button onClick={() => delMedia.mutate(m.id)} className="hover:text-red-500">×</button>}
+            </span>
+          ))}
+        </div>
+      )}
+      {item.sim && <SimKnopf sim={item.sim} zurueck="✕ Schließen" />}
+      {ortText(kategorien, item) && <div className="text-[10px] text-muted">📍 {ortText(kategorien, item)}</div>}
       {item.tags.length > 0 && (
         <div className="flex flex-wrap gap-1">
           {item.tags.map(t => <span key={t} className="text-[10px] bg-accent/15 text-accent px-1.5 py-0.5 rounded-full">{t}</span>)}
@@ -464,6 +497,7 @@ function ClippingCard({ item, onEdit }: { item: ResearchItemOut; onEdit: () => v
           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
             <button className="text-[10px] text-muted hover:text-accent" onClick={() => pickFile("image/*")} title="Bild anhängen">+ Bild</button>
             <button className="text-[10px] text-muted hover:text-accent" onClick={() => pickFile("application/pdf")} title="PDF anhängen">+ PDF</button>
+            <button className="text-[10px] text-muted hover:text-accent" onClick={() => pickFile(DOKUMENTE)} title="Textdokument anhängen (md, txt, docx, odt …)">+ Datei</button>
           </div>
         )}
       </div>
@@ -498,6 +532,8 @@ export default function FragmentBoardPage() {
   const [view, setView] = useState<"grid" | "list" | "columns">("grid");
   const [dragId, setDragId] = useState<number | null>(null);
   const [tagFilter, setTagFilter] = useState<string | null>(null);
+  // Filter nach Klasse / Unterrichtseinheit (nur bei Sammlungen mit Kategorien)
+  const [ortFilter, setOrtFilter] = useState<FragmentOrt>({ klasse: null, einheit: null });
   const [addTabOpen, setAddTabOpen] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -546,7 +582,7 @@ export default function FragmentBoardPage() {
   const effTab = (t: string) => (allTabs.includes(t) ? t : allTabs[0]);
 
   const addFragment = useMutation({
-    mutationFn: (tab: string) => api.fragments.createFragment(collectionId, { tab, content: "" }, guestToken),
+    mutationFn: (tab: string) => api.fragments.createFragment(collectionId, { tab, content: "", ...ortFilter }, guestToken),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["fragments", collectionId] }),
     onError: (e: any) => toast(e.message ?? "Fehler", "error"),
   });
@@ -608,14 +644,19 @@ export default function FragmentBoardPage() {
   const markiert = (id: string, karte: React.ReactNode) =>
     id === eintrag ? <div key={id} data-eintrag={id} className="rounded-xl ring-2 ring-accent">{karte}</div> : karte;
 
-  const tabFragments = fragments.filter(f => effTab(f.tab) === activeTab);
-  const tabResearch = research.filter(r => effTab(r.tab) === activeTab);
+  const kategorien = collection.kategorien ?? [];
+  const passtOrt = (e: FragmentOrt) =>
+    (ortFilter.klasse == null || e.klasse === ortFilter.klasse) && (ortFilter.einheit == null || e.einheit === ortFilter.einheit);
+  const ortFrags = fragments.filter(passtOrt);
+  const ortRes = research.filter(passtOrt);
+  const tabFragments = ortFrags.filter(f => effTab(f.tab) === activeTab);
+  const tabResearch = ortRes.filter(r => effTab(r.tab) === activeTab);
   const isColumns = view === "columns";
   // Tag chips filter clippings (tags are clipping-only); an active tag hides fragments.
   // In column view the chips span the whole board, not just the active tab.
   const tabTags = Array.from(new Set(tabResearch.flatMap(r => r.tags))).sort();
   const visibleTags = isColumns
-    ? Array.from(new Set(research.flatMap(r => r.tags))).sort()
+    ? Array.from(new Set(ortRes.flatMap(r => r.tags))).sort()
     : tabTags;
   const shownResearch = tagFilter ? tabResearch.filter(r => r.tags.includes(tagFilter)) : tabResearch;
   const shownFragments = tagFilter ? [] : tabFragments;
@@ -647,6 +688,7 @@ export default function FragmentBoardPage() {
   };
 
   return (
+    <Einordnung.Provider value={{ kategorien, vorgabe: ortFilter }}>
     <div className="mx-auto w-[92%] max-w-seite p-6">
       <button className="text-sm text-muted hover:text-fg mb-2" onClick={() => router.push("/fragmente")}>← Sammlungen</button>
       <div className="flex items-center justify-between gap-4 mb-4">
@@ -756,6 +798,34 @@ export default function FragmentBoardPage() {
         </div>
       </div>
 
+      {/* Klasse / Unterrichtseinheit — neue Karten und Clippings übernehmen die Auswahl */}
+      {kategorien.length > 0 && (
+        <div className="flex flex-col gap-1.5 mb-3">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[11px] text-muted w-16">Klasse</span>
+            {[null, ...kategorien.map(k => k.klasse)].map(k => (
+              <button key={k ?? "alle"} onClick={() => setOrtFilter({ klasse: k, einheit: null })}
+                className={`text-[11px] px-2.5 py-0.5 rounded-full border transition-colors ${
+                  ortFilter.klasse === k ? "bg-accent text-black border-accent" : "border-line text-muted hover:bg-surface-hover"}`}>
+                {k == null ? "alle" : k}
+              </button>
+            ))}
+          </div>
+          {ortFilter.klasse != null && (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[11px] text-muted w-16">Einheit</span>
+              {[{ id: null as string | null, titel: "alle" }, ...(kategorien.find(k => k.klasse === ortFilter.klasse)?.einheiten ?? [])].map(e => (
+                <button key={e.id ?? "alle"} onClick={() => setOrtFilter({ klasse: ortFilter.klasse, einheit: e.id })}
+                  className={`text-[11px] px-2.5 py-0.5 rounded-full border transition-colors ${
+                    ortFilter.einheit === e.id ? "bg-accent text-black border-accent" : "border-line text-muted hover:bg-surface-hover"}`}>
+                  {e.titel}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Tag filter chips — from the active tab, or the whole board in column view */}
       {visibleTags.length > 0 && (
         <div className="flex items-center gap-1.5 flex-wrap mb-3">
@@ -778,8 +848,8 @@ export default function FragmentBoardPage() {
       {isColumns ? (
         <div className="flex gap-4 overflow-x-auto pb-4 items-start">
           {allTabs.map(t => {
-            const colFrags = tagFilter ? [] : fragments.filter(f => effTab(f.tab) === t);
-            const colRes = research.filter(r => effTab(r.tab) === t && (!tagFilter || r.tags.includes(tagFilter)));
+            const colFrags = tagFilter ? [] : ortFrags.filter(f => effTab(f.tab) === t);
+            const colRes = ortRes.filter(r => effTab(r.tab) === t && (!tagFilter || r.tags.includes(tagFilter)));
             const empty = colFrags.length === 0 && colRes.length === 0;
             return (
               <div key={t} className="shrink-0 w-80 rounded-xl border border-line bg-surface-hover/30 p-3 flex flex-col gap-3">
@@ -833,5 +903,6 @@ export default function FragmentBoardPage() {
           tab={clippingModal.tab ?? activeTab} guestToken={guestToken} onClose={() => setClippingModal(null)} />
       )}
     </div>
+    </Einordnung.Provider>
   );
 }

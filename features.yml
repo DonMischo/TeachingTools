@@ -948,6 +948,7 @@ tools:
       - Themen per Ziehen zwischen Klassen verschieben, Karten zuordnen, fehlende Niveaus ergänzen
       - KI-Prompt für Lehrplanvergleich und Zuordnung, JSON-Vorlage hoch- und herunterladen
       - Material an Einheiten und Karten: Simulationen, Werkzeuge, Fragmente, Links
+      - Materialsammlung je Plan anlegen: Tabs Unterrichtsmaterial/Leistungskontrollen, Klassen und Einheiten als Kategorien
       - Export der Endfassung als DOCX, PDF (alle Klassen oder eine) und SVG je Klasse
       - gemeinsamer Stand der Fachschaft, Gastbeitritt per QR
   - id: snap
@@ -983,8 +984,10 @@ verwaltung:
     faehigkeiten: {use: [true, true], create: [true, false]}
     kann:
       - Pinnwände mit Textfragmenten und Recherche-Clips samt Link-Vorschau
+      - Clippings mit Bildern, PDFs, Textdokumenten (md, txt, docx, odt …) und einem Werkzeug samt Einstellungen wie im TaskCrawler
       - Zugriff je Sammlung (lesen, beitragen, verwalten) für Lehrkräfte, Klassen, A/B-Gruppen
       - Gastbeitritt per QR, Tabs
+      - Materialsammlung (nur Admin löscht), Einordnung nach Klasse und Unterrichtseinheit mit Filterchips
   - id: klassenverwaltung
     name: Klassenverwaltung
     kann:

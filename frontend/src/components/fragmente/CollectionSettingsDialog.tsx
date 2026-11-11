@@ -10,6 +10,7 @@ import {
   StudentGroupOut,
 } from "@/lib/api";
 import { useToast } from "@/contexts/ToastContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { JoinQR } from "@/components/JoinQR";
 import { useLanUrl } from "@/hooks/useLanUrl";
 
@@ -98,6 +99,10 @@ export function CollectionModal({
   const [name, setName] = useState(initial?.name ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [subject, setSubject] = useState(initial?.subject ?? "");
+  const [art, setArt] = useState<"standard" | "materialsammlung">(initial?.art ?? "standard");
+  const { auth } = useAuth();
+  // Eine Materialsammlung macht nur ein Admin wieder zur Standard-Sammlung (sonst wäre die Löschsperre umgehbar).
+  const artGesperrt = initial?.art === "materialsammlung" && auth?.role !== "admin";
   const [grants, setGrants] = useState<GrantRow[]>(
     initial?.grants.map(g => ({
       grantee_type: g.grantee_type, class_id: g.class_id, teacher_id: g.teacher_id,
@@ -141,6 +146,7 @@ export function CollectionModal({
         subject: subject.trim() || null,
         allow_guests: allowGuests,
         guest_permission: guestPermission,
+        ...(art !== initial!.art ? { art } : {}),
       });
       await api.fragments.setGrants(id, grants);
       return api.fragments.getCollection(id);
@@ -199,6 +205,16 @@ export function CollectionModal({
               <label className="label">Fach (optional)</label>
               <input className="input" value={subject} onChange={e => setSubject(e.target.value)} placeholder="z. B. Geschichte" />
             </div>
+            {isEdit && (
+              <div>
+                <label className="label">Art</label>
+                <select className="input" value={art} disabled={artGesperrt} onChange={e => setArt(e.target.value as typeof art)}
+                  title={artGesperrt ? "Nur ein Admin kann eine Materialsammlung wieder zur Standard-Sammlung machen" : undefined}>
+                  <option value="standard">Standard</option>
+                  <option value="materialsammlung">Materialsammlung (nur Admin löscht)</option>
+                </select>
+              </div>
+            )}
           </div>
           <div>
             <label className="label">Beschreibung (optional)</label>

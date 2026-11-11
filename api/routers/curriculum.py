@@ -25,7 +25,8 @@ from .. import curriculum_export
 from ..curriculum_ops import OpFehler, anwenden, leer, pruefen
 from ..database import get_db
 from ..join_codes import code_taken
-from ..models import CurriculumPlan, Teacher
+from ..fragment_access import at_least, resolve_permission
+from ..models import CurriculumPlan, FragmentCollection, FragmentCollectionGrant, Teacher
 
 router = APIRouter(prefix="/api/curriculum", tags=["curriculum"])
 
@@ -263,6 +264,53 @@ def neuer_gastcode(plan_id: int, db: Session = Depends(get_db), t: Teacher = Dep
         raise HTTPException(403, "Nur die anlegende Lehrkraft")
     plan.guest_code = _new_guest_code(db)
     plan.allow_guests = True
+    db.commit()
+    db.refresh(plan)
+    return _out(plan, t)
+
+
+MATERIAL_TABS = ["Unterrichtsmaterial", "Leistungskontrollen"]
+
+
+def _kategorien(doc: dict) -> list[dict]:
+    """Klassen und ihre Unterrichtseinheiten als Filter-Kategorien der Fragmente-Pinnwand."""
+    return [
+        {"klasse": k["klasse"], "einheiten": [{"id": t["id"], "titel": t.get("titel") or "(ohne Titel)"} for t in k["themen"]]}
+        for k in sorted(doc.get("curriculum", {}).get("klassen", []), key=lambda k: k["klasse"])
+        if k.get("themen")
+    ]
+
+
+@router.post("/{plan_id}/sammlung", response_model=PlanOut)
+def materialsammlung(plan_id: int, db: Session = Depends(get_db), t: Teacher = Depends(get_current_teacher)):
+    """Fragmente-Sammlung für das Material des Plans anlegen — oder, wenn der Plan schon eine
+    hat, deren Kategorien (Klassen, Unterrichtseinheiten) und Tabs auf den Stand des Plans
+    bringen. Neue Sammlungen sind Materialsammlungen (nur ein Admin löscht sie) und für alle
+    Lehrkräfte zum Mitarbeiten freigegeben."""
+    plan = db.query(CurriculumPlan).filter(CurriculumPlan.id == plan_id).with_for_update().first()
+    if not plan:
+        raise HTTPException(404, "Plan nicht gefunden")
+    if not _bearbeiten(plan, t):
+        raise HTTPException(403, "Nur lesen")
+    kategorien = _kategorien(plan.data)
+    sid = plan.data.get("sammlung")
+    coll = db.get(FragmentCollection, sid) if sid else None
+    if coll is None:
+        coll = FragmentCollection(
+            name=f"{plan.name} – Material"[:200], subject=plan.fach, owner_teacher_id=t.id,
+            art="materialsammlung", fragment_tabs=list(MATERIAL_TABS), kategorien=kategorien,
+        )
+        coll.grants.append(FragmentCollectionGrant(grantee_type="all_teachers", permission="contribute"))
+        db.add(coll)
+        db.flush()
+        plan.data = anwenden(plan.data, {"op": "sammlung", "id": coll.id})
+        plan.version += 1
+        plan.zuletzt_von = _name(t)
+    else:
+        if not at_least(resolve_permission(t, coll), "manage"):
+            raise HTTPException(403, "Die Kategorien dieser Sammlung darf nur ändern, wer sie verwaltet")
+        coll.kategorien = kategorien
+        coll.fragment_tabs = list(coll.fragment_tabs or []) + [x for x in MATERIAL_TABS if x not in (coll.fragment_tabs or [])]
     db.commit()
     db.refresh(plan)
     return _out(plan, t)

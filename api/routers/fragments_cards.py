@@ -19,9 +19,10 @@ from urllib.parse import urlparse
 
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File
 from fastapi.security import HTTPAuthorizationCredentials
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session, selectinload
 
+from .. import exitgame_katalog
 from ..database import get_db
 from ..auth import get_current_user, get_current_user_optional, guest_from_credentials, bearer, Guest
 from ..models import (
@@ -44,6 +45,13 @@ BUILTIN_TABS = LEADING_TABS + TRAILING_TABS  # reserved names (can't be custom)
 MEDIA_BASE = Path(__file__).parent.parent.parent / "data" / "fragments"
 _MEDIA_IMAGE_EXT = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".avif"}
 _MEDIA_PDF_EXT = {".pdf"}
+# Textdokumente: werden nur als Datei angehängt (Download), nie im Board gerendert.
+# Kein .html/.svg — die würden vom selben Ursprung ausgeliefert Skripte ausführen.
+_MEDIA_DOC_EXT = {
+    ".txt", ".md", ".csv", ".rtf", ".tex",
+    ".doc", ".docx", ".odt", ".ott",
+    ".xls", ".xlsx", ".ods", ".ppt", ".pptx", ".odp", ".odg",
+}
 
 # ── Abuse limits ─────────────────────────────────────────────────────────────
 # Per-hour creation caps to blunt spam:
@@ -161,6 +169,8 @@ class FragmentCreate(BaseModel):
     content: Optional[str] = ""
     category: Optional[str] = None
     order_index: int = 0
+    klasse: Optional[int] = None
+    einheit: Optional[str] = Field(default=None, max_length=100)
 
 
 class FragmentUpdate(BaseModel):
@@ -169,6 +179,8 @@ class FragmentUpdate(BaseModel):
     content: Optional[str] = None
     category: Optional[str] = None
     order_index: Optional[int] = None
+    klasse: Optional[int] = None
+    einheit: Optional[str] = Field(default=None, max_length=100)
 
 
 class FragmentOut(BaseModel):
@@ -179,6 +191,8 @@ class FragmentOut(BaseModel):
     content: Optional[str]
     category: Optional[str]
     order_index: int
+    klasse: Optional[int] = None
+    einheit: Optional[str] = None
     author_kind: Optional[str]
     author_id: Optional[int]
     author_name: Optional[str]
@@ -256,6 +270,10 @@ def update_fragment(
         raise HTTPException(400, f"Unbekannter Tab '{body.tab}'")
     for k, v in body.model_dump(exclude_none=True).items():
         setattr(frag, k, v)
+    # Klasse/Einheit lassen sich auch wieder leeren (null) — gesendet heißt gemeint.
+    for k in ("klasse", "einheit"):
+        if k in body.model_fields_set:
+            setattr(frag, k, getattr(body, k))
     db.commit()
     db.refresh(frag)
     return _frag_out(frag, perm, user)
@@ -390,9 +408,23 @@ class ResearchMediaOut(BaseModel):
     id: int
     kind: str
     path: str
+    name: Optional[str] = None
     order_index: int
 
     model_config = {"from_attributes": True}
+
+
+class ResearchSim(BaseModel):
+    """Werkzeug wie an einer TaskCrawler-Station (Werte: exitgame_katalog.WERKZEUGE)."""
+    tool: str
+    config: dict = {}
+
+    @field_validator("tool")
+    @classmethod
+    def _bekannt(cls, v: str) -> str:
+        if v not in exitgame_katalog.WERKZEUGE:
+            raise ValueError(f"Unbekanntes Werkzeug: {v}")
+        return v
 
 
 class ResearchItemCreate(BaseModel):
@@ -401,6 +433,9 @@ class ResearchItemCreate(BaseModel):
     url: Optional[str] = None
     text_content: Optional[str] = None
     tags: list[str] = []
+    klasse: Optional[int] = None
+    einheit: Optional[str] = Field(default=None, max_length=100)
+    sim: Optional[ResearchSim] = None
 
 
 class ResearchItemUpdate(BaseModel):
@@ -409,6 +444,9 @@ class ResearchItemUpdate(BaseModel):
     url: Optional[str] = None
     text_content: Optional[str] = None
     tags: Optional[list[str]] = None
+    klasse: Optional[int] = None
+    einheit: Optional[str] = Field(default=None, max_length=100)
+    sim: Optional[ResearchSim] = None
 
 
 class ResearchItemOut(BaseModel):
@@ -422,6 +460,9 @@ class ResearchItemOut(BaseModel):
     url_image: Optional[str]
     text_content: Optional[str]
     tags: list[str]
+    klasse: Optional[int] = None
+    einheit: Optional[str] = None
+    sim: Optional[dict] = None
     media: list[ResearchMediaOut]
     author_kind: Optional[str]
     author_id: Optional[int]
@@ -477,7 +518,8 @@ async def create_research(
         tab=body.tab, title=body.title, url=url,
         url_title=meta.get("url_title"), url_description=meta.get("url_description"),
         url_image=meta.get("url_image"),
-        text_content=body.text_content, tags=body.tags,
+        text_content=body.text_content, tags=body.tags, klasse=body.klasse, einheit=body.einheit,
+        sim=body.sim.model_dump() if body.sim else None,
         author_kind=kind, author_id=uid, author_name=author_name_of(user),
     )
     db.add(item)
@@ -596,6 +638,8 @@ async def upload_research_media(
         kind = "image"
     elif ext in _MEDIA_PDF_EXT:
         kind = "pdf"
+    elif ext in _MEDIA_DOC_EXT:
+        kind = "file"
     else:
         raise HTTPException(400, f"Dateityp nicht erlaubt: {ext}")
     max_bytes = TEACHER_MAX_BYTES if isinstance(user, Teacher) else STUDENT_MAX_BYTES
@@ -612,6 +656,7 @@ async def upload_research_media(
     media = ResearchMedia(
         research_item_id=item.id, kind=kind,
         path=_media_url(item.collection_id, safe_name), order_index=next_idx,
+        name=Path(file.filename or "").name[:255] or None,
     )
     db.add(media)
     db.commit()

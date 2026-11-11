@@ -337,12 +337,19 @@ def _fragmente_refs(db: Session, teacher: Teacher) -> list[dict]:
         if not at_least(resolve_permission(teacher, c), "read"):
             continue
         out.append({"ref_id": f"c{c.id}", "label": f"🗂️ {c.name}"})
+        titel_von = {e["id"]: e["titel"] for k in (c.kategorien or []) for e in k.get("einheiten", [])}
+
+        def ort(e) -> str:
+            # »Kl. 6 · Brüche › « vor dem Titel, wenn der Eintrag eingeordnet ist
+            teile = ([f"Kl. {e.klasse}"] if e.klasse else []) + ([titel_von.get(e.einheit, e.einheit)] if e.einheit else [])
+            return " · ".join(teile) + " › " if teile else ""
+
         for f in db.query(Fragment).filter_by(collection_id=c.id).order_by(Fragment.tab, Fragment.order_index):
             titel = f.title or ((f.content or "").strip().splitlines() or [""])[0][:60] or "(leere Karte)"
-            out.append({"ref_id": f"c{c.id}:f{f.id}", "label": f"{c.name} › {titel}"})
+            out.append({"ref_id": f"c{c.id}:f{f.id}", "label": f"{c.name} › {ort(f)}{titel}"})
         for r in db.query(ResearchItem).filter_by(collection_id=c.id).order_by(ResearchItem.created_at):
             titel = r.title or r.url_title or r.url or "(Clipping)"
-            out.append({"ref_id": f"c{c.id}:r{r.id}", "label": f"{c.name} › ✂ {titel[:60]}"})
+            out.append({"ref_id": f"c{c.id}:r{r.id}", "label": f"{c.name} › {ort(r)}✂ {titel[:60]}"})
     return out
 
 

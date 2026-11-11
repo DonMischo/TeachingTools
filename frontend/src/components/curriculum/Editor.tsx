@@ -278,6 +278,17 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
     ops(liste);
   };
 
+  const materialsammlung = async () => {
+    try {
+      const neu = await api.curriculum.materialsammlung(plan.id);
+      setPlan(neu);
+      api.fragments.listCollections().then(setSammlungen, () => {});
+      toast(doc.sammlung == null ? "Materialsammlung angelegt" : "Kategorien übernommen", "success");
+    } catch (e: any) {
+      toast(e.message ?? "Fehler", "error");
+    }
+  };
+
   const herunterladen = () => {
     const blob = new Blob([JSON.stringify(doc, null, 1)], { type: "application/json" });
     const a = document.createElement("a");
@@ -356,6 +367,17 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
             {(sammlungen ?? []).map(c => <option key={c.id} value={c.id}>🗂️ {c.name}</option>)}
             {doc.sammlung != null && !sammlungen?.some(c => c.id === doc.sammlung) && <option value={doc.sammlung}>🗂️ Sammlung {doc.sammlung}</option>}
           </select>
+        )}
+        {!nurLesen && !guestToken && (
+          <button className="btn-secondary text-sm" onClick={materialsammlung}
+            title={doc.sammlung == null
+              ? "Fragmente-Sammlung für diesen Plan anlegen: je Klasse und Unterrichtseinheit einordnen, Tabs Unterrichtsmaterial und Leistungskontrollen, für alle Lehrkräfte"
+              : "Klassen und Unterrichtseinheiten des Plans als Kategorien in die Sammlung übernehmen"}>
+            {doc.sammlung == null ? "🗂️ Sammlung anlegen" : "↻ Kategorien abgleichen"}
+          </button>
+        )}
+        {doc.sammlung != null && !guestToken && (
+          <a className="btn-secondary text-sm" href={`/fragmente/${doc.sammlung}`} target="_blank" rel="noreferrer" title="Sammlung öffnen">🗂️ ↗</a>
         )}
         <button className="btn-secondary text-sm" onClick={() => setOffen({ art: "export" })}>⬇ Export</button>
         {!guestToken && <button className="btn-secondary text-sm" onClick={() => setOffen({ art: "teilen" })}>👥 Teilen</button>}

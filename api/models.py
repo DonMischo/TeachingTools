@@ -1886,6 +1886,11 @@ class FragmentCollection(Base):
     subject: Mapped[str | None] = mapped_column(String(100), nullable=True)
     # Custom tab names (JSON list of strings); the builtin tabs live in code.
     fragment_tabs: Mapped[list] = mapped_column(JSON, nullable=False, server_default="[]")
+    # 'standard' | 'materialsammlung'. Eine Materialsammlung (z. B. aus dem
+    # Curriculinator) darf nur ein Admin löschen oder wieder zur Standard-Sammlung machen.
+    art: Mapped[str] = mapped_column(String(20), nullable=False, server_default="standard", default="standard")
+    # Filter-Kategorien der Pinnwand: [{"klasse": 5, "einheiten": [{"id": "k5-t1", "titel": "…"}]}]
+    kategorien: Mapped[list] = mapped_column(JSON, nullable=False, server_default="[]", default=list)
     # Guest (QR / join-link) access — opt-in, with a stable join code.
     allow_guests: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sql_expr.false())
     guest_code: Mapped[str | None] = mapped_column(String(12), unique=True, nullable=True, index=True)
@@ -1956,6 +1961,9 @@ class Fragment(Base):
     title: Mapped[str | None] = mapped_column(String(255), nullable=True)
     content: Mapped[str | None] = mapped_column(Text, nullable=True, server_default="")
     category: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    # Einordnung in die Kategorien der Sammlung (Klasse und Unterrichtseinheit, beides optional)
+    klasse: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    einheit: Mapped[str | None] = mapped_column(String(100), nullable=True)
     order_index: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
     # Author — lets 'contribute' grants restrict editing to a card's own creator.
     # kind = 'teacher' | 'student' | 'guest'; author_id is teacher/student PK (NULL for guests).
@@ -1987,6 +1995,10 @@ class ResearchItem(Base):
     url_image: Mapped[str | None] = mapped_column(Text, nullable=True)
     text_content: Mapped[str | None] = mapped_column(Text, nullable=True)
     tags: Mapped[list] = mapped_column(JSON, nullable=False, server_default="[]")
+    klasse: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    einheit: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    # Werkzeug zum Öffnen wie an einer TaskCrawler-Station: {"tool", "config"}
+    sim: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     # Author — same scheme as Fragment.
     author_kind: Mapped[str | None] = mapped_column(String(10), nullable=True)
     author_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -2003,15 +2015,17 @@ class ResearchItem(Base):
 
 
 class ResearchMedia(Base):
-    """One image or PDF attached to a ResearchItem (multiple per item allowed)."""
+    """One image, PDF or text document attached to a ResearchItem (multiple per item allowed)."""
     __tablename__ = "research_media"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     research_item_id: Mapped[int] = mapped_column(
         ForeignKey("research_items.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    kind: Mapped[str] = mapped_column(String(10), nullable=False)  # 'image' | 'pdf'
+    kind: Mapped[str] = mapped_column(String(10), nullable=False)  # 'image' | 'pdf' | 'file'
     path: Mapped[str] = mapped_column(String(500), nullable=False)
+    # Ursprünglicher Dateiname (für Dokumente: Anzeige und Download-Name)
+    name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     order_index: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 

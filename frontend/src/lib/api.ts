@@ -1496,8 +1496,15 @@ export type FragmentCollectionOut = {
   grants: FragmentGrant[];
   fragment_count: number;
   research_count: number;
+  /** "materialsammlung" darf nur ein Admin löschen */
+  art: "standard" | "materialsammlung";
+  /** Filter-Kategorien: Klassen mit ihren Unterrichtseinheiten (aus dem Curriculinator) */
+  kategorien: FragmentKategorie[];
 };
-export type FragmentOut = {
+export type FragmentKategorie = { klasse: number; einheiten: { id: string; titel: string }[] };
+/** Einordnung eines Eintrags; null = nicht eingeordnet */
+export type FragmentOrt = { klasse: number | null; einheit: string | null };
+export type FragmentOut = FragmentOrt & {
   id: number;
   collection_id: number;
   tab: string;
@@ -1510,8 +1517,8 @@ export type FragmentOut = {
   author_name: string | null;
   can_edit: boolean;
 };
-export type ResearchMediaOut = { id: number; kind: "image" | "pdf"; path: string; order_index: number };
-export type ResearchItemOut = {
+export type ResearchMediaOut = { id: number; kind: "image" | "pdf" | "file"; path: string; name?: string | null; order_index: number };
+export type ResearchItemOut = FragmentOrt & {
   id: number;
   collection_id: number;
   tab: string;
@@ -1522,6 +1529,8 @@ export type ResearchItemOut = {
   url_image: string | null;
   text_content: string | null;
   tags: string[];
+  /** Werkzeug wie an einer TaskCrawler-Station */
+  sim: ExitGameSim | null;
   media: ResearchMediaOut[];
   author_kind: string | null;
   author_id: number | null;
@@ -2222,7 +2231,7 @@ export const api = {
     getCollection: (id: number, guestToken?: string) => ffetch<FragmentCollectionOut>(`fragments/collections/${id}`, undefined, guestToken),
     createCollection: (body: { name: string; description?: string | null; subject?: string | null; grants?: FragmentGrantIn[] }) =>
       apiFetch<FragmentCollectionOut>("fragments/collections", { method: "POST", body: JSON.stringify(body) }),
-    updateCollection: (id: number, body: Partial<{ name: string; description: string | null; subject: string | null; allow_guests: boolean; guest_permission: "read" | "contribute" }>) =>
+    updateCollection: (id: number, body: Partial<{ name: string; description: string | null; subject: string | null; allow_guests: boolean; guest_permission: "read" | "contribute"; art: "standard" | "materialsammlung" }>) =>
       apiFetch<FragmentCollectionOut>(`fragments/collections/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
     deleteCollection: (id: number) => apiFetch<void>(`fragments/collections/${id}`, { method: "DELETE" }),
     setGrants: (id: number, grants: FragmentGrantIn[]) =>
@@ -2242,9 +2251,9 @@ export const api = {
 
     listFragments: (id: number, tab?: string, guestToken?: string) =>
       ffetch<FragmentOut[]>(`fragments/collections/${id}/fragments${tab ? `?tab=${encodeURIComponent(tab)}` : ""}`, undefined, guestToken),
-    createFragment: (id: number, body: Partial<{ tab: string; title: string | null; content: string | null; category: string | null; order_index: number }>, guestToken?: string) =>
+    createFragment: (id: number, body: Partial<{ tab: string; title: string | null; content: string | null; category: string | null; order_index: number } & FragmentOrt>, guestToken?: string) =>
       ffetch<FragmentOut>(`fragments/collections/${id}/fragments`, { method: "POST", body: JSON.stringify(body) }, guestToken),
-    updateFragment: (fragmentId: number, body: Partial<{ tab: string; title: string | null; content: string | null; category: string | null; order_index: number }>) =>
+    updateFragment: (fragmentId: number, body: Partial<{ tab: string; title: string | null; content: string | null; category: string | null; order_index: number } & FragmentOrt>) =>
       apiFetch<FragmentOut>(`fragments/items/${fragmentId}`, { method: "PATCH", body: JSON.stringify(body) }),
     deleteFragment: (fragmentId: number) => apiFetch<void>(`fragments/items/${fragmentId}`, { method: "DELETE" }),
     importFragments: (id: number, files: File[]) => {
@@ -2255,9 +2264,9 @@ export const api = {
     },
 
     listResearch: (id: number, guestToken?: string) => ffetch<ResearchItemOut[]>(`fragments/collections/${id}/research`, undefined, guestToken),
-    createResearch: (id: number, body: Partial<{ tab: string; title: string | null; url: string | null; text_content: string | null; tags: string[] }>, guestToken?: string) =>
+    createResearch: (id: number, body: Partial<{ tab: string; title: string | null; url: string | null; text_content: string | null; tags: string[]; sim: ExitGameSim | null } & FragmentOrt>, guestToken?: string) =>
       ffetch<ResearchItemOut>(`fragments/collections/${id}/research`, { method: "POST", body: JSON.stringify(body) }, guestToken),
-    updateResearch: (itemId: number, body: Partial<{ tab: string; title: string | null; url: string | null; text_content: string | null; tags: string[] }>) =>
+    updateResearch: (itemId: number, body: Partial<{ tab: string; title: string | null; url: string | null; text_content: string | null; tags: string[]; sim: ExitGameSim | null } & FragmentOrt>) =>
       apiFetch<ResearchItemOut>(`fragments/research/${itemId}`, { method: "PATCH", body: JSON.stringify(body) }),
     deleteResearch: (itemId: number) => apiFetch<void>(`fragments/research/${itemId}`, { method: "DELETE" }),
     refetchUrl: (itemId: number) => apiFetch<ResearchItemOut>(`fragments/research/${itemId}/fetch-url`, { method: "POST" }),
@@ -3160,6 +3169,8 @@ export const api = {
   },
   curriculum: {
     list: () => apiFetch<CurriculumPlanKurz[]>("curriculum"),
+    /** Materialsammlung anlegen bzw. ihre Kategorien auf den Stand des Plans bringen */
+    materialsammlung: (id: number) => apiFetch<CurriculumPlanOut>(`curriculum/${id}/sammlung`, { method: "POST" }),
     create: (body: { name: string; fach?: string; data?: unknown }) =>
       apiFetch<CurriculumPlanOut>("curriculum", { method: "POST", body: JSON.stringify(body) }),
     get: (id: number, guestToken?: string) => ffetch<CurriculumPlanOut>(`curriculum/${id}`, undefined, guestToken),

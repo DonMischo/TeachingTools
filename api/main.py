@@ -290,6 +290,14 @@ def _run_migrations(db_engine):
         # Fragments: specific-teacher grants und Freigaben an eine A/B-Gruppe.
         # Spalten anlegen und das alte Unique fallen lassen, damit das breitere
         # (unten) an seine Stelle treten kann.
+        "ALTER TABLE fragment_collections ADD COLUMN IF NOT EXISTS art VARCHAR(20) NOT NULL DEFAULT 'standard'",
+        "ALTER TABLE fragment_collections ADD COLUMN IF NOT EXISTS kategorien JSON NOT NULL DEFAULT '[]'",
+        "ALTER TABLE fragments ADD COLUMN IF NOT EXISTS klasse INTEGER",
+        "ALTER TABLE fragments ADD COLUMN IF NOT EXISTS einheit VARCHAR(100)",
+        "ALTER TABLE research_items ADD COLUMN IF NOT EXISTS klasse INTEGER",
+        "ALTER TABLE research_items ADD COLUMN IF NOT EXISTS einheit VARCHAR(100)",
+        "ALTER TABLE research_items ADD COLUMN IF NOT EXISTS sim JSON",
+        "ALTER TABLE research_media ADD COLUMN IF NOT EXISTS name VARCHAR(255)",
         "ALTER TABLE fragment_collection_grants ADD COLUMN IF NOT EXISTS teacher_id INTEGER REFERENCES teachers(id) ON DELETE CASCADE",
         "ALTER TABLE fragment_collection_grants ADD COLUMN IF NOT EXISTS group_id INTEGER REFERENCES student_groups(id) ON DELETE CASCADE",
         "ALTER TABLE fragment_collection_grants DROP CONSTRAINT IF EXISTS uq_fragment_grant",
