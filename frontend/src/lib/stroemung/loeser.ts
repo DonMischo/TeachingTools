@@ -25,7 +25,12 @@ const G_QUELLE = 1e2;
 /** Rohrreibungszahl für turbulente Strömung in glatten Rohren. */
 const LAMBDA = 0.03;
 
-interface Linear { teil: string; i: number; j: number; pRef: number; g: number; c: number }
+/**
+ * Linearisiertes Teil. Normal: Q = g·(P_i − P_j) + c (j = −1: P_ref statt P_j).
+ * `geregelt`: Q = g·(P_ref − P_j) fließt von i nach j — so hält ein Druckminderer
+ * den Druck hinter sich, egal wie hoch er vor ihm ist.
+ */
+interface Linear { teil: string; i: number; j: number; pRef: number; g: number; c: number; geregelt?: boolean }
 
 export class Stroemung {
   readonly medium: Netz["medium"];
@@ -111,6 +116,11 @@ export class Stroemung {
       const b = new Array<number>(n).fill(0);
       for (let i = 0; i < n; i++) { A[i][i] += G_MIN; b[i] += G_MIN * this.rho * G * this.z[i]; }
       for (const l of lin) {
+        if (l.geregelt) {
+          A[l.i][l.j] -= l.g; b[l.i] -= l.g * l.pRef;
+          A[l.j][l.j] += l.g; b[l.j] += l.g * l.pRef;
+          continue;
+        }
         A[l.i][l.i] += l.g;
         b[l.i] -= l.c;
         if (l.j >= 0) {
@@ -132,7 +142,7 @@ export class Stroemung {
 
     this.fluesse.clear();
     for (const l of lin) {
-      const q = l.g * (P[l.i] - (l.j >= 0 ? P[l.j] : l.pRef)) + l.c;
+      const q = l.geregelt ? l.g * (l.pRef - P[l.j]) : l.g * (P[l.i] - (l.j >= 0 ? P[l.j] : l.pRef)) + l.c;
       this.fluesse.set(l.teil, q);
     }
     for (const t of this.teile) this.speichere(t, this.fluss(t.id), dt);
@@ -157,6 +167,15 @@ export class Stroemung {
         case "drossel":
           if (Number.isFinite(t.widerstand)) zwei(gasFaktor() / t.widerstand);
           break;
+        case "druckminderer": {
+          const j = this.knoten(t.b);
+          const soll = t.druck + rg * this.z[j];
+          if (P[i] >= soll) {
+            // Genug Vordruck: regelt — hinten genau der Sollwert, solange dort etwas abgenommen wird.
+            if (P[j] <= soll) aus.push({ teil: t.id, i, j, pRef: soll, g: G_QUELLE, c: 0, geregelt: true });
+          } else if (P[i] > P[j]) zwei(gasFaktor() / t.widerstand);   // zu wenig Vordruck: steht ganz offen
+          break;
+        }
         case "rueckschlag":
           if (P[i] > P[this.knoten(t.b)]) zwei(gasFaktor() / t.widerstand);
           break;

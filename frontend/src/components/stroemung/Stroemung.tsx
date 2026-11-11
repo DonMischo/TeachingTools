@@ -16,6 +16,9 @@ import Presse from "./Presse";
 import Luftdruck from "./Luftdruck";
 import Rohrnetz from "./Rohrnetz";
 import Venturi from "./Venturi";
+import Heizkreis from "./Heizkreis";
+import Hausanschluss from "./Hausanschluss";
+import Druckluft from "./Druckluft";
 
 /** Fertige Stationen; was hier fehlt, zeigt eine Vorschau. */
 const STATION_INHALT: Record<string, () => ReactNode> = {
@@ -25,6 +28,9 @@ const STATION_INHALT: Record<string, () => ReactNode> = {
   luftdruck: () => <Luftdruck />,
   rohrnetz: () => <Rohrnetz />,
   venturi: () => <Venturi />,
+  heizung: () => <Heizkreis />,
+  hausanschluss: () => <Hausanschluss />,
+  druckluft: () => <Druckluft />,
 };
 
 export default function Stroemung({ action, vorgabe }: { action?: ReactNode; vorgabe?: Vorgabe }) {

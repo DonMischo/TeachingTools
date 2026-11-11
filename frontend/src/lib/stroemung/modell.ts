@@ -32,6 +32,8 @@ export type Teil =
   | (ZweiPol & { art: "drossel"; widerstand: number })
   /** Pumpe/Verdichter, fördert von a nach b: Δp = p0·(1 − Q/qmax). */
   | (ZweiPol & { art: "pumpe"; foerderdruck: number; maxFluss: number })
+  /** Druckminderer: hält hinter sich (b) den Überdruck `druck`; reicht der Vordruck nicht, steht er offen (Widerstand R). */
+  | (ZweiPol & { art: "druckminderer"; druck: number; widerstand: number })
   /** Rückschlagventil: lässt nur a → b durch. */
   | (ZweiPol & { art: "rueckschlag"; widerstand: number })
   /** Netzanschluss: hält den Knoten auf dem Überdruck p (Hausanschluss, Druckluftnetz). */

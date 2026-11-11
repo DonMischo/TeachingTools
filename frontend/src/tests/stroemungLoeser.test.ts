@@ -139,6 +139,26 @@ describe("Druck & Strömung — Löser", () => {
     expect(s.druck("oben")).toBeLessThan(0);   // Unterdruck: dort käme kein Wasser an
   });
 
+  it("Druckminderer hält hinten den Sollwert, reicht der Vordruck nicht, gibt er weiter, rückwärts nichts", () => {
+    const mit = (vordruck: number, rueckwaerts = false) => {
+      const s = netz([k("q"), k("o")], [
+        { id: "netz", art: "druckquelle", a: rueckwaerts ? "o" : "q", druck: vordruck },
+        { id: "dm", art: "druckminderer", a: "q", b: "o", druck: 3e5, widerstand: 1e7 },
+        { id: "hahn", art: "auslass", a: rueckwaerts ? "q" : "o", widerstand: 1e9 },
+      ]);
+      s.schritt(0.01);
+      return s;
+    };
+    const hoch = mit(6e5);
+    expect(hoch.druck("o")).toBeCloseTo(3e5, -1);
+    expect(hoch.fluss("dm") / (3e5 / 1e9)).toBeCloseTo(1, 4);
+    expect(hoch.fluss("hahn") / hoch.fluss("dm")).toBeCloseTo(1, 4);
+    const niedrig = mit(2e5);
+    expect(niedrig.druck("o")).toBeLessThan(2e5);
+    expect(niedrig.druck("o")).toBeGreaterThan(1.9e5);
+    expect(mit(6e5, true).fluss("dm")).toBe(0);
+  });
+
   it("Rückschlagventil sperrt die Gegenrichtung", () => {
     const fluss = (a: string, b: string) => {
       const s = netz([k("q"), k("o")], [
