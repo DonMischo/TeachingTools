@@ -139,7 +139,7 @@ pages.append(f"""<section class="page title">
 <h1 class="big">Mathe&#8209;Grundlagen<br><span style="color:{ACC}">von null auf Parabel</span></h1>
 <p class="lead">Du hast seit Klasse 5 viel vergessen? Kein Problem. Dieses Heft fängt ganz vorne an:
 Zeichen lesen, Koordinatensystem, Quadratzahlen und Wurzeln, Wertetabellen und Funktionen
-bis zur Parabel und zur p&#8209;q&#8209;Formel. Jede Seite hat ein <b>So&nbsp;geht's</b>, ein Beispiel und ein Video.</p></div>
+bis zur Parabel, Scheitelpunktform, p&#8209;q&#8209;Formel und Schnittpunkten. Jede Seite hat ein <b>So&nbsp;geht's</b>, ein Beispiel und ein Video.</p></div>
 <div class="grid2">
 <div class="card"><div class="boxt">📚 Inhalt</div>
 <ol class="toc">
@@ -147,14 +147,16 @@ bis zur Parabel und zur p&#8209;q&#8209;Formel. Jede Seite hat ein <b>So&nbsp;ge
 <li>Quadratzahlen und Wurzeln</li><li>Wertetabellen von Hand</li><li>Wertetabellen mit dem Casio fx-87</li>
 <li>Lineare Funktionen</li><li>Die Normalparabel <span class="m">y = x²</span></li><li>Verschieben mit <span class="m">+c</span></li>
 <li>Strecken, Stauchen, Spiegeln mit <span class="m">a</span></li><li>Alles zusammen: <span class="m">y = ax² + c</span></li>
-<li>Weiterführend: <span class="m">y = ax² + bx + c</span> und p-q-Formel</li><li>Übungen und Lösungen</li></ol></div>
+<li>Klammern quadrieren: jedes mal jedes</li><li>Die binomischen Formeln</li>
+<li>Die Scheitelpunktform <span class="m">y = a(x + d)² + e</span></li><li>Quadratische Ergänzung</li>
+<li>Nullstellen mit der p-q-Formel</li><li>Schnittpunkte berechnen</li><li>Übungen und Lösungen</li></ol></div>
 <div class="card"><div class="boxt">🎨 Der Farbcode – gilt im ganzen Heft</div>
 <table class="legend">
 <tr><td>{col(X,'x')}</td><td>die Eingabe, was du einsetzt (wie im Funktionen-Tool)</td></tr>
 <tr><td>{col(Y,'y')}</td><td>das Ergebnis, der Funktionswert</td></tr>
 <tr><td>{col(A,'a')} / {col(A,'m')}</td><td>die Zahl <b>vor</b> dem x: macht steil, flach oder dreht um</td></tr>
-<tr><td>{col(C,'c')} / {col(C,'n')}</td><td>die Zahl <b>allein</b>: schiebt nach oben oder unten</td></tr>
-<tr><td>{col(B,'b')} / {col(B,'p')}</td><td>Zahl vor dem einfachen x (nur Seite 13)</td></tr>
+<tr><td>{col(C,'c')} / {col(C,'n')} / {col(C,'e')}</td><td>die Zahl <b>allein</b>: schiebt nach oben oder unten</td></tr>
+<tr><td>{col(B,'b')} / {col(B,'p')} / {col(B,'d')}</td><td>Zahl vor dem einfachen x, links/rechts (ab Seite 13)</td></tr>
 <tr><td><span class="sw" style="background:{ACC}"></span></td><td>der Graph</td></tr>
 <tr><td><span class="sw" style="background:{MARK};border-radius:50%"></span></td><td>ein markierter Punkt</td></tr></table>
 <div class="boxlegend">
@@ -510,14 +512,204 @@ page("11", "🎯", "Alles zusammen: y = ax² + c",
 <tr><th style='color:{Y}'>y</th><td>−0,5</td><td>2</td><td>3,5</td><td><b>4</b></td><td>3,5</td><td>2</td><td>−0,5</td></tr></table>
 {box("merk", "Steckbrief einer Parabel", f"<p>Sag zu jeder Parabel drei Dinge:</p><p>1. <b>Scheitelpunkt</b> S(0|{col(C,'c')})<br>2. <b>Öffnung</b> nach oben / unten (Vorzeichen von {col(A,'a')})<br>3. <b>Form</b> gestreckt / normal / gestaucht (Betrag von {col(A,'a')})</p>")}
 </div>
-<div><div class="card graphcard">{g11}<p class="cap">Die blauen Punkte sind die <b>Nullstellen</b>: dort ist y = 0. → nächste Seite</p></div>
+<div><div class="card graphcard">{g11}<p class="cap">Die blauen Punkte sind die <b>Nullstellen</b>: dort ist y = 0. → Seite 17</p></div>
 {box("tool", "Probier's aus", "<p>Funktionen-Tool: <span class='m'>-0.5x^2+4</span>. Prüfe deine Tabelle mit der Tool-Tabelle. Dann <span class='m'>2x^2-3</span>: Steckbrief zuerst im Kopf, dann nachschauen.</p>")}
 {box("achtung", "Fehlerfalle", "<p>Erst c, dann a vergessen – oder umgekehrt. Immer <b>beide</b> Zahlen ablesen, bevor du zeichnest.</p>")}
 </div></div>
 {tool("ac", "Prüfe den Steckbrief: S(0|4), nach unten offen, breiter als die Normalparabel.")}
 <div class="videos">{video("w4uGBMebiTg", "Quadratische Funktionen zeichnen – eine Übersicht")}{video("9jPuMJhEt0o", "y=(x−2)² und y=(x−2)²−2 – Parabeln zeichnen (Ausblick)")}</div>""")
 
-# ── 12 pq-Formel ─────────────────────────────────────────────────────────
+# ── 12 Klammern quadrieren (Bögen wie in »Umrechnen«) ────────────────────
+def boegen(t, prod, farben):
+    """(t0 t1)·(t2 t3) mit vier Bögen: oben vorne·vorne, vorne·hinten; unten hinten·vorne, hinten·hinten."""
+    W, H, ym = 276, 206, 103
+    xs = [44, 102, 178, 236]
+    o = [f'<svg class="boegen" viewBox="0 0 {W} {H}" width="{W}" height="{H}" xmlns="http://www.w3.org/2000/svg"><defs>']
+    for c in dict.fromkeys(farben):
+        o.append(f'<marker id="bg{c[1:]}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="{c}"/></marker>')
+    o.append('</defs>')
+    # Klammern, Malpunkt, Glieder
+    for x, ch in [(20, "("), (126, ")"), (140, "·"), (154, "("), (260, ")")]:
+        o.append(f'<text x="{x}" y="{ym}" text-anchor="middle" dominant-baseline="central" font-size="30" fill="{MUT}" font-family="Cambria Math, Cambria, serif">{ch}</text>')
+    for i, (x, tt) in enumerate(zip(xs, t)):
+        c = X if tt == "x" else B
+        o.append(f'<text x="{x}" y="{ym}" text-anchor="middle" dominant-baseline="central" font-size="23" font-weight="700" fill="{c}" font-family="Cambria Math, Cambria, serif">{tt}</text>')
+    schilder = []
+    def bogen(i, j, oben, hoehe, label, farbe, nr):
+        y = ym - 16 if oben else ym + 16
+        x1, x2 = xs[i], xs[j]   # Start und Ziel mittig über bzw. unter dem Glied
+        cy = y - hoehe if oben else y + hoehe
+        mx = (x1 + x2) / 2
+        o.append(f'<path d="M {x1} {y} Q {mx} {cy} {x2} {y}" fill="none" stroke="{farbe}" stroke-width="2.3" marker-end="url(#bg{farbe[1:]})"/>')
+        ly = (y + cy) / 2
+        w = 13 + 7.2 * len(label)
+        schilder.append(f'<rect x="{mx - w/2}" y="{ly - 10}" width="{w}" height="20" rx="6" fill="#fff" stroke="{farbe}" stroke-width="1"/>'
+                        f'<text x="{mx}" y="{ly + 0.5}" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="800" fill="{farbe}">{nr} {label}</text>')
+    bogen(0, 2, True, 30, prod[0], farben[0], "①")
+    bogen(0, 3, True, 136, prod[1], farben[1], "②")
+    bogen(1, 2, False, 30, prod[2], farben[2], "③")
+    bogen(1, 3, False, 136, prod[3], farben[3], "④")
+    o += schilder
+    o.append('</svg>')
+    return "".join(o)
+
+def fall(titel, t, prod, glieder, ergebnis, hinweis):
+    farben = [X, B, B, A]
+    zeile = " ".join(f'<span style="color:{c}">{g}</span>' for g, c in zip(glieder, farben))
+    return f"""<div class="card fall"><div class="boxt">{titel}</div>
+<div class="center">{boegen(t, prod, farben)}</div>
+<p class="m">= {zeile}</p><p class="m">= <b>{ergebnis}</b></p><p class="small mut">{hinweis}</p></div>"""
+
+page("12", "🌈", "Klammern quadrieren: jedes mal jedes",
+     "(x + d)² heißt: die Klammer mal sich selbst. Mit vier Bögen vergisst du kein Produkt – und bei Minus kein Vorzeichen.", f"""
+<div class="formula">({col(X,'x')} + {col(B,'d')})² = ({col(X,'x')} + {col(B,'d')}) · ({col(X,'x')} + {col(B,'d')})</div>
+<div class="grid2">
+{box("so", "So geht's: vier Bögen", steps(
+  f"<b>Quadrat ausschreiben:</b> die Klammer zweimal hinschreiben, Malpunkt dazwischen.",
+  f"{col(X,'① vorne mal vorne')} – Bogen oben, kurz",
+  f"{col(B,'② vorne mal hinten')} – Bogen oben, weit",
+  f"{col(B,'③ hinten mal vorne')} – Bogen unten, kurz",
+  f"{col(A,'④ hinten mal hinten')} – Bogen unten, weit",
+  "<b>Zusammenfassen:</b> ② und ③ sind gleichartig (beide mit x) – zusammenzählen."))}
+<div>{box("merk", "Vorzeichen gehören zum Glied", "<p>Das Rechenzeichen <b>vor</b> einer Zahl reist mit: in (x − 3) ist das hintere Glied <b>−3</b>.</p><p class='m'>plus · plus = plus &nbsp; minus · minus = <b>plus</b><br>plus · minus = minus</p>")}
+{box("achtung", "Fehlerfalle", "<p class='m'>(x + 3)² ≠ x² + 9</p><p>So fehlen die Bögen ② und ③ – das mittlere Glied 6x. Quadrieren heißt nicht: jedes Glied einzeln hoch 2.</p>")}
+</div></div>
+<div class="grid3 faelle">
+{fall("Fall 1: (x + 3)²", ["x", "+3", "x", "+3"], ["x·x", "x·3", "3·x", "3·3"], ["x²", "+ 3x", "+ 3x", "+ 9"], "x² + 6x + 9", "Alles plus: das mittlere Glied ist doppelt da.")}
+{fall("Fall 2: (x − 3)²", ["x", "−3", "x", "−3"], ["x·x", "x·(−3)", "(−3)·x", "(−3)·(−3)"], ["x²", "− 3x", "− 3x", "+ 9"], "x² − 6x + 9", "Minus mal minus gibt plus: hinten steht +9.")}
+{fall("Fall 3: (x + 3)(x − 3)", ["x", "+3", "x", "−3"], ["x·x", "x·(−3)", "3·x", "3·(−3)"], ["x²", "− 3x", "+ 3x", "− 9"], "x² − 9", "② und ③ heben sich auf: die Mitte fällt weg.")}
+</div>
+<div class="videos">{video("X5E2bqby8f0", "Ausmultiplizieren – Klammern auflösen")}{video("jiIii_3DwUw", "1. binomische Formel mit Übungen")}</div>""")
+
+# ── 13 Binomische Formeln + Geometrie ────────────────────────────────────
+def quadrat_1(x=118, d=50):
+    """(x + d)²: großes Quadrat = x² + d·x + d·x + d²"""
+    m, W = 26, 26 + x + d + 8
+    o = [f'<svg viewBox="0 0 {W} {W}" width="{W}" height="{W}" xmlns="http://www.w3.org/2000/svg" font-family="Cambria Math, Cambria, serif">']
+    felder = [(0, 0, x, x, X, "x²"), (x, 0, d, x, B, "d·x"), (0, x, x, d, B, "d·x"), (x, x, d, d, A, "d²")]
+    for fx, fy, fw, fh, c, t in felder:
+        o.append(f'<rect x="{m+fx}" y="{m+fy}" width="{fw}" height="{fh}" fill="{c}" fill-opacity=".18" stroke="{c}" stroke-width="2"/>'
+                 f'<text x="{m+fx+fw/2}" y="{m+fy+fh/2}" text-anchor="middle" dominant-baseline="central" font-size="{18 if fw > 60 and fh > 60 else 14}" font-weight="700" fill="{c}">{t}</text>')
+    for a, b, t, c in [(0, x, "x", X), (x, x + d, "d", B)]:
+        o.append(f'<text x="{m+(a+b)/2}" y="{m-8}" text-anchor="middle" font-size="15" font-weight="700" fill="{c}">{t}</text>'
+                 f'<text x="{m-9}" y="{m+(a+b)/2}" text-anchor="middle" dominant-baseline="central" font-size="15" font-weight="700" fill="{c}">{t}</text>')
+    o.append('</svg>')
+    return "".join(o)
+
+def quadrat_2(x=150, d=44):
+    """(x − d)²: vom x²-Quadrat zwei Streifen d·x weg, die doppelt weggenommene Ecke d² zurück."""
+    m, W = 26, 26 + x + 8
+    k = x - d
+    o = [f'<svg viewBox="0 0 {W} {W}" width="{W}" height="{W}" xmlns="http://www.w3.org/2000/svg" font-family="Cambria Math, Cambria, serif">',
+         f'<rect x="{m}" y="{m}" width="{x}" height="{x}" fill="none" stroke="{MUT}" stroke-width="1.5" stroke-dasharray="4 3"/>',
+         f'<rect x="{m}" y="{m}" width="{k}" height="{k}" fill="{X}" fill-opacity=".2" stroke="{X}" stroke-width="2.2"/>',
+         f'<text x="{m+k/2}" y="{m+k/2}" text-anchor="middle" dominant-baseline="central" font-size="16" font-weight="700" fill="{X}">(x − d)²</text>',
+         f'<rect x="{m+k}" y="{m}" width="{d}" height="{x}" fill="{B}" fill-opacity=".14" stroke="{B}" stroke-width="1.5"/>',
+         f'<rect x="{m}" y="{m+k}" width="{x}" height="{d}" fill="{B}" fill-opacity=".14" stroke="{B}" stroke-width="1.5"/>',
+         f'<rect x="{m+k}" y="{m+k}" width="{d}" height="{d}" fill="{A}" fill-opacity=".3" stroke="{A}" stroke-width="2"/>',
+         f'<text x="{m+k+d/2}" y="{m+k/2}" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="700" fill="{B}">− d·x</text>',
+         f'<text x="{m+k/2}" y="{m+k+d/2}" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="700" fill="{B}">− d·x</text>',
+         f'<text x="{m+k+d/2}" y="{m+k+d/2}" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="700" fill="{A}">+d²</text>',
+         f'<text x="{m+x/2}" y="{m-8}" text-anchor="middle" font-size="15" font-weight="700" fill="{X}">x</text>',
+         f'<text x="{m-9}" y="{m+x/2}" text-anchor="middle" dominant-baseline="central" font-size="15" font-weight="700" fill="{X}">x</text>',
+         '</svg>']
+    return "".join(o)
+
+page("13", "📐", "Die binomischen Formeln",
+     "Die drei Fälle von der letzten Seite kommen so oft vor, dass sie Namen haben. Hier sind sie – und warum sie stimmen.", f"""
+<table class="symtab binom"><thead><tr><th>Name</th><th>Formel</th><th>Beispiel (von Seite 13)</th><th>Merkmal</th></tr></thead><tbody>
+<tr><td><b>1. binomische Formel</b></td><td class="m">({col(X,'x')} + {col(B,'d')})² = {col(X,'x²')} + {col(B,'2·d·x')} + {col(A,'d²')}</td><td class="m">(x + 3)² = x² + 6x + 9</td><td>alles plus</td></tr>
+<tr><td><b>2. binomische Formel</b></td><td class="m">({col(X,'x')} − {col(B,'d')})² = {col(X,'x²')} − {col(B,'2·d·x')} + {col(A,'d²')}</td><td class="m">(x − 3)² = x² − 6x + 9</td><td>Mitte minus, hinten plus</td></tr>
+<tr><td><b>3. binomische Formel</b></td><td class="m">({col(X,'x')} + {col(B,'d')})({col(X,'x')} − {col(B,'d')}) = {col(X,'x²')} − {col(A,'d²')}</td><td class="m">(x + 3)(x − 3) = x² − 9</td><td>Mitte fällt weg</td></tr>
+</tbody></table>
+{box("merk", "Merksatz für 1 und 2", f"<p><b>{col(X,'Erstes Quadrat')} – {col(B,'doppeltes Produkt')} – {col(A,'zweites Quadrat')}.</b> Das Vorzeichen in der Mitte ist das aus der Klammer, hinten steht immer <b>plus</b>.</p>")}
+<div class="grid2">
+<div class="card geo"><div class="boxt">🟪 Warum die 1. Formel stimmt</div><div class="center">{quadrat_1()}</div>
+<p>Ein Quadrat mit der Seite <b>x + d</b> hat die Fläche (x + d)². Zerschneide es: ein Quadrat {col(X,'x²')}, zwei Rechtecke {col(B,'d·x')}, ein kleines Quadrat {col(A,'d²')}.</p>
+<p class="m center">(x + d)² = {col(X,'x²')} + {col(B,'2·d·x')} + {col(A,'d²')}</p></div>
+<div class="card geo"><div class="boxt">🟪 Warum die 2. Formel stimmt</div><div class="center">{quadrat_2()}</div>
+<p>Vom Quadrat {col(X,'x²')} zwei Streifen {col(B,'d·x')} abschneiden. Dabei ist die Ecke {col(A,'d²')} <b>doppelt</b> weg – einmal zurücklegen.</p>
+<p class="m center">(x − d)² = {col(X,'x²')} − {col(B,'2·d·x')} + {col(A,'d²')}</p></div>
+</div>
+<div class="grid2">
+{box("tool", "Kopfrechnen-Trick", "<p class='m'>21² = (20 + 1)² = 400 + 40 + 1 = <b>441</b><br>19² = (20 − 1)² = 400 − 40 + 1 = <b>361</b><br>19 · 21 = (20 − 1)(20 + 1) = 400 − 1 = <b>399</b></p>")}
+{box("achtung", "Fehlerfallen", "<p>• Das <b>doppelte</b> Produkt: bei (x + 5)² ist die Mitte 2·5·x = <b>10x</b>, nicht 5x.</p><p>• Hinten bei der 2. Formel: <b>+</b>d², nicht −d².</p><p>• Weißt du's nicht mehr: einfach die vier Bögen von Seite 13 machen.</p>")}
+</div>
+<div class="videos">{video("Q0KXX4MkFVE", "1. binomische Formel – zeichnerisch und rechnerisch")}{video("jiIii_3DwUw", "1. binomische Formel mit Übungen")}</div>""")
+
+# ── 14 Scheitelpunktform ─────────────────────────────────────────────────
+def pfeile(sx, sy, wege):
+    """Verschiebe-Pfeile vom Ursprung: [(x0, y0, x1, y1, farbe, text, dx, dy), …]"""
+    o = []
+    for x0, y0, x1, y1, c, t, dx, dy in wege:
+        mid = "pf" + c.lstrip("#")   # eine Pfeilspitze je Farbe
+        o.append(f'<defs><marker id="{mid}" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="{c}"/></marker></defs>')
+        o.append(f'<line x1="{sx(x0)}" y1="{sy(y0)}" x2="{sx(x1)}" y2="{sy(y1)}" stroke="{c}" stroke-width="3" marker-end="url(#{mid})"/>')
+        o.append(f'<text x="{(sx(x0)+sx(x1))/2+dx}" y="{(sy(y0)+sy(y1))/2+dy}" fill="{c}" font-size="10.5" font-weight="800" '
+                 f'paint-order="stroke" stroke="#fff" stroke-width="3.5" text-anchor="middle">{t}</text>')
+    return "".join(o)
+
+g_spf = graph([{"f": lambda x: x * x, "color": MUT, "dash": True, "width": 1.8, "label": "x²", "label_at": (2.3, 5.0)},
+               {"f": lambda x: (x - 1) ** 2 - 4, "label": "y = (x − 1)² − 4", "label_at": (3.9, 4.6), "anchor": "end"}],
+              xr=(-3, 5), yr=(-5, 6), w=280, h=300,
+              points=[{"x": 1, "y": -4, "label": "S(1|−4)", "color": MARK, "r": 5, "off": (9, 5)}],
+              extra=lambda sx, sy: pfeile(sx, sy, [(0, 0, 1, 0, B, "1 rechts", 0, -7), (1, 0, 1, -4, C, "4 runter", -26, 0)]))
+
+weg = f"""<div class="card" style="padding:8px 12px;margin-bottom:8px"><div class="boxt">🔁 Zwei Formen – ein Graph</div>
+<div class="wege"><div class="form-k"><b>Scheitelpunktform</b><span class="m">y = {col(A,'a')}(x + {col(B,'d')})² + {col(C,'e')}</span><span class="mut small">S sofort ablesen</span></div>
+<div class="pfeile"><span>ausmultiplizieren →</span><span>← quadratische Ergänzung</span></div>
+<div class="form-k"><b>Normalform</b><span class="m">y = {col(A,'a')}x² + {col(B,'b')}x + {col(C,'c')}</span><span class="mut small">für p-q und Schnittpunkte</span></div></div></div>"""
+
+page("14", "📍", "Die Scheitelpunktform",
+     "In y = a(x + d)² + e steht der Scheitelpunkt schon drin (Schreibweise wie im Tafelwerk). Und mit den binomischen Formeln kommst du zur Normalform.", f"""
+<div class="formula">y = {col(A,'a')} · ({col(X,'x')} + {col(B,'d')})² + {col(C,'e')} &nbsp;⟹&nbsp; S(−{col(B,'d')} | {col(C,'e')})</div>
+{weg}
+<div class="grid2">
+<div>{box("merk", "Was bedeuten d und e?", f"<p>{col(B,'d')}: verschiebt nach links oder rechts – aber <b>andersherum</b>: d positiv → <b>links</b>, d negativ → <b>rechts</b>. Der Scheitelpunkt liegt bei x = −{col(B,'d')}.</p>"
+  f"<p>{col(C,'e')}: so weit nach <b>oben</b> (e negativ: nach unten) – wie das c von Seite 10.</p>"
+  f"<p>{col(A,'a')}: Öffnung und Form, genau wie bisher.</p>")}
+{box("achtung", "Fehlerfalle: Vorzeichen in der Klammer", f"<p class='m'>(x <b>+</b> 3)² → d = 3 &nbsp;→ S bei x = <b>−3</b> → links<br>(x <b>−</b> 2)² → d = −2 → S bei x = <b>+2</b> → rechts</p>"
+  f"<p>Die x-Koordinate von S ist immer das <b>Gegenteil</b> von {col(B,'d')}. Trick: Was muss man für x einsetzen, damit die Klammer 0 wird? Das ist die x-Koordinate von S.</p>")}
+{box("so", "So geht's: Scheitelpunktform → Normalform", steps(
+  "<b>Klammer quadrieren</b> – vier Bögen (Seite 13) oder binomische Formel (Seite 14):<br><span class='m'>(x + d)² = x² + 2·d·x + d²</span><br>Steht ein Minus drin, die 2. Formel: <span class='m'>(x − 1)² = x² − 2x + 1</span>",
+  f"<b>Mit {col(A,'a')} ausmultiplizieren</b> – jedes Glied in der Klammer!",
+  f"<b>Zusammenfassen:</b> die Zahlen ohne x mit {col(C,'e')} verrechnen."))}
+{box("achtung", "Fehlerfallen beim Ausmultiplizieren", "<p>• (x − 1)² ist <b>nicht</b> x² − 1² – das mittlere Glied −2x fehlt dann. Immer die binomische Formel!</p>"
+  "<p>• 2·(x² + 2x + 1): das <b>+1</b> am Ende auch mal 2 nehmen → +2.</p>")}
+</div>
+<div><div class="card graphcard">{g_spf}<p class="cap">Normalparabel 1 nach rechts, 4 nach unten → S(1|−4)</p></div>
+{box("so", "Beispiel 1: y = (x − 1)² − 4", "<p class='m'>= (x² − 2·1·x + 1²) − 4<br>= x² − 2x + 1 − 4<br>= <b>x² − 2x − 3</b></p><p class='small'>d = −1, e = −4 → <b>S(1 | −4)</b></p><p class='small mut'>Genau die Funktion von der p-q-Seite (Seite 17).</p>")}
+{box("so", "Beispiel 2: y = 2(x + 1)² − 3", f"<p class='m'>= 2·(x² + 2x + 1) − 3<br>= 2x² + 4x + 2 − 3<br>= <b>2x² + 4x − 1</b></p><p class='small'>d = 1, e = −3 → <b>S(−1 | −3)</b></p>")}
+</div></div>
+<div class="videos">{video("J6pEEA7B9-g", "Parabel – Scheitelpunkt ablesen")}{video("9jPuMJhEt0o", "y=(x−2)² und y=(x−2)²−2 – Parabeln zeichnen")}</div>""")
+
+# ── 13 Quadratische Ergänzung ────────────────────────────────────────────
+g_qe = graph([{"f": lambda x: x * x - 6 * x + 5, "label": "y = x² − 6x + 5", "label_at": (6.6, 5.2), "anchor": "end"}],
+             xr=(-1, 7), yr=(-5, 6), w=270, h=290,
+             points=[{"x": 3, "y": -4, "label": "S(3|−4)", "color": MARK, "r": 5, "off": (9, 5)},
+                     {"x": 1, "y": 0, "color": Y, "r": 4.5}, {"x": 5, "y": 0, "color": Y, "r": 4.5}])
+page("15", "🧩", "Quadratische Ergänzung: Normalform → Scheitelpunktform",
+     "Der Trick: Man ergänzt die Zahl, die zur binomischen Formel fehlt – und zieht sie gleich wieder ab. Dann steht S da.", f"""
+<div class="grid2 wide-left">
+<div>{box("so", "So geht's – Beispiel y = x² − 6x + 5", steps(
+  f"<b>Halbe Zahl vor x</b> nehmen, mit Vorzeichen: {col(B,'−6')} : 2 = {col(B,'−3')}.<br>Das ist {col(B,'d')} – es kommt in die Klammer (x + d) = (x − 3).",
+  f"<b>Quadrat davon ergänzen und gleich wieder abziehen:</b> ({col(B,'−3')})² = 9<br><span class='m'>y = x² − 6x <b>+ 9 − 9</b> + 5</span>",
+  "<b>Binomische Formel rückwärts:</b> die ersten drei Glieder werden eine Klammer<br><span class='m'>y = (x − 3)² − 9 + 5</span>",
+  f"<b>Zusammenfassen:</b> <span class='m'>y = (x − 3)² − 4</span><br>d = −3, e = −4 &nbsp;⟹&nbsp; <b>S(−d | e) = S(3 | −4)</b>"))}
+{box("so", "Wenn vor x² eine Zahl steht – Beispiel y = 2x² + 8x + 3", steps(
+  f"<b>{col(A,'a')} ausklammern</b>, aber nur aus den x-Gliedern:<br><span class='m'>y = 2(x² + 4x) + 3</span>",
+  "<b>In der Klammer ergänzen:</b> d = 4 : 2 = 2, d² = 4<br><span class='m'>y = 2(x² + 4x + 4 − 4) + 3</span>",
+  "<b>Klammer bilden:</b><br><span class='m'>y = 2((x + 2)² − 4) + 3</span>",
+  f"<b>Die −4 mit {col(A,'a')} herausholen:</b><br><span class='m'>y = 2(x + 2)² − 8 + 3</span><br><span class='m'>y = 2(x + 2)² − 5</span> &nbsp;⟹&nbsp; d = 2: <b>S(−2 | −5)</b>"))}
+</div>
+<div><div class="card graphcard">{g_qe}<p class="cap">x² − 6x + 5 = (x − 3)² − 4 &nbsp;·&nbsp; blaue Punkte: Nullstellen 1 und 5</p></div>
+{box("merk", "Merke", "<p>Ergänzen heißt: <b>+ Zahl − Zahl</b>. Insgesamt hast du 0 dazugezählt – der Term bleibt gleich, er sieht nur anders aus.</p>")}
+{box("achtung", "Fehlerfallen", "<p>• Nur ergänzen, nicht abziehen → falscher Term.</p><p>• Bei a ≠ 1: die abgezogene Zahl steht in der Klammer und muss <b>mal a</b> heraus (−4 · 2 = −8).</p><p>• Halbieren vergessen: bei −6x ist d = −3, nicht −6.</p><p>• S falsch abgelesen: bei (x − 3)² ist S bei x = <b>+3</b>.</p>")}
+{box("tool", "Kontrolle", "<p>Probe durch Ausmultiplizieren (vier Bögen, Seite 13). Oder im Funktionen-Tool: Term eingeben, auf <b>Scheitelpunktform</b> klicken – das Tool formt um und zeigt S.</p>")}
+</div></div>
+<div class="videos">{video("0DXjdwpJ3S0", "Quadratische Ergänzung – von der Normalform zur Scheitelpunktform")}{video("jiIii_3DwUw", "1. binomische Formel mit Übungen")}</div>""")
+
+# ── 14 pq-Formel ─────────────────────────────────────────────────────────
 g12 = graph([{"f": lambda x: x * x - 2 * x - 3, "label": "y = x² − 2x − 3", "label_at": (3.35, 4.5), "anchor": "end"}],
             xr=(-3, 5), yr=(-5, 6), w=270, h=290,
             points=[{"x": -1, "y": 0, "label": "x₁ = −1", "color": Y, "r": 5, "off": (-6, -8), "anchor": "end", "lcolor": Y},
@@ -525,8 +717,8 @@ g12 = graph([{"f": lambda x: x * x - 2 * x - 3, "label": "y = x² − 2x − 3",
                     {"x": 1, "y": -4, "label": "S(1|−4)", "color": MARK, "r": 5, "off": (8, 4)}])
 def mini(f, t):
     return '<div class="minig">' + graph([{"f": f}], xr=(-2, 4), yr=(-4, 4), w=150, h=130, labels_every=2) + f"<p class='cap'>{t}</p></div>"
-page("12", "🚀", "Weiterführend: y = ax² + bx + c und die p-q-Formel",
-     "Kommt noch ein x ohne Quadrat dazu, wandert die Parabel auch nach links/rechts. Nullstellen findest du mit der p-q-Formel.", f"""
+page("16", "🚀", "Nullstellen mit der p-q-Formel",
+     "Kommt ein x ohne Quadrat dazu (y = ax² + bx + c), hilft Ablesen nicht mehr. Die Nullstellen liefert die p-q-Formel.", f"""
 <div class="grid2 wide-left">
 <div>{box("merk", "Was sind Nullstellen?", f"<p>Die Stellen, an denen die Parabel die <b>x-Achse</b> schneidet. Dort ist {col(Y,'y = 0')}. Man setzt also den Term = 0 und löst nach {col(X,'x')} auf.</p>")}
 <div class="card" style="padding:9px 12px;margin-bottom:8px"><div class="boxt">📏 Die p-q-Formel</div>
@@ -548,7 +740,33 @@ page("12", "🚀", "Weiterführend: y = ax² + bx + c und die p-q-Formel",
 {tool("pq", "In der f(x)-Zeile steht bei x = −1 und bei x = 3 eine 0. Das sind die Nullstellen – wie mit der p-q-Formel berechnet.")}
 <div class="videos">{video("EwITpDN5W1w", "PQ-Formel – Nullstellen berechnen")}{video("MA3Gma66Jvw", "Quadratische Funktion – Nullstellen berechnen")}{video("RWK9MJj_3CU", "Keine Nullstelle – warum keine Wurzel aus negativen Zahlen")}</div>""")
 
-# ── 13 Übungen ───────────────────────────────────────────────────────────
+# ── 15 Schnittpunkte ─────────────────────────────────────────────────────
+g_sp = graph([{"f": lambda x: x * x - 1, "label": "f(x) = x² − 1", "label_at": (-1.7, 5.4)},
+              {"f": lambda x: x + 1, "color": Y, "label": "g(x) = x + 1", "label_at": (3.9, 3.7), "anchor": "end"}],
+             xr=(-3, 4), yr=(-2, 6), w=270, h=290,
+             points=[{"x": -1, "y": 0, "label": "S₁(−1|0)", "color": MARK, "r": 5, "off": (-10, -8), "anchor": "end"},
+                     {"x": 2, "y": 3, "label": "S₂(2|3)", "color": MARK, "r": 5, "off": (-9, -8), "anchor": "end"}])
+page("17", "✖️", "Schnittpunkte berechnen",
+     "Wo sich zwei Graphen schneiden, haben beide Funktionen denselben y-Wert. Also: gleichsetzen und nach x auflösen.", f"""
+<div class="formula">f(x) = g(x)</div>
+<div class="grid2 wide-left">
+<div>{box("so", "So geht's – Parabel und Gerade: f(x) = x² − 1, g(x) = x + 1", steps(
+  "<b>Gleichsetzen:</b> <span class='m'>x² − 1 = x + 1</span>",
+  "<b>Alles auf eine Seite</b>, rechts bleibt 0: <span class='m'>x² − 1 − x − 1 = 0 → x² − x − 2 = 0</span>",
+  f"<b>p-q-Formel</b> (Seite 17): {col(B,'p = −1')}, {col(C,'q = −2')}<br><span class='m'>x = 0,5 ± √(0,25 + 2) = 0,5 ± 1,5</span> &nbsp;→&nbsp; {col(X,'x₁ = −1')}, {col(X,'x₂ = 2')}",
+  f"<b>y ausrechnen:</b> x in eine der beiden Funktionen einsetzen (die Gerade ist leichter):<br><span class='m'>g(−1) = 0, &nbsp;g(2) = 3</span>",
+  "<b>Antwort mit Punkten:</b> <span class='m'><b>S₁(−1 | 0)</b>, &nbsp;<b>S₂(2 | 3)</b></span>",
+  "<b>Probe</b> mit der anderen Funktion: f(2) = 4 − 1 = 3 ✔"))}
+{box("so", "Zwei Geraden: f(x) = 2x + 1, g(x) = −x + 4", "<p class='m'>2x + 1 = −x + 4 &nbsp;| + x − 1<br>3x = 3 &nbsp;| : 3<br>x = 1 → y = 2·1 + 1 = 3 → <b>S(1 | 3)</b></p><p class='small mut'>Kein x²: keine p-q-Formel nötig, nur umstellen.</p>")}
+</div>
+<div><div class="card graphcard">{g_sp}</div>
+{box("merk", "Wie viele Schnittpunkte?", "<p>Das sagt die Diskriminante D der Gleichung nach Schritt 2:</p><p>D &gt; 0: <b>zwei</b> &nbsp;·&nbsp; D = 0: <b>einer</b> (die Gerade berührt nur) &nbsp;·&nbsp; D &lt; 0: <b>keiner</b></p>")}
+{box("achtung", "Fehlerfallen", "<p>• Nur x angeben – ein Schnittpunkt braucht <b>x und y</b>.</p><p>• Beim Rüberbringen Vorzeichen drehen: aus <b>+ x</b> rechts wird <b>− x</b> links.</p><p>• Zwei Parabeln: x² kann wegfallen (x² − x² = 0) – dann einfach linear weiter.</p>")}
+{box("tool", "Probier's aus", "<p>Funktionen-Tool: f = <span class='m'>x^2-1</span>, mit »＋ weitere Funktion« g = <span class='m'>x+1</span>. Das Tool markiert S1 und S2 und schreibt die Koordinaten in die Legende.</p>")}
+</div></div>
+<div class="videos">{video("i361KL1OumQ", "Gleichsetzungsverfahren – Gleichungssysteme lösen")}{video("HFMpd5EjahE", "Lineare Funktionen – gibt es einen Schnittpunkt?")}{video("aGmxlKRxT8w", "PQ-Formel – schwierige Aufgaben")}</div>""")
+
+# ── 16 Übungen ───────────────────────────────────────────────────────────
 ex = [
  ("Symbole", "Setze &lt;, &gt; oder = ein: &nbsp;a) −4 ☐ −7 &nbsp; b) 3² ☐ 2³ &nbsp; c) (−2)² ☐ −2²"),
  ("Koordinaten", "Zeichne ein Koordinatensystem von −5 bis 5 und trage ein: A(4|1), B(−3|2), C(−1|−4), D(0|3)."),
@@ -556,7 +774,11 @@ ex = [
  ("Wertetabelle", "Erstelle von Hand eine Wertetabelle für y = x² − 2 (x von −3 bis 3). Prüfe mit dem Casio."),
  ("Linear", "Zeichne y = 3x − 2 und y = −x + 4 mit Steigungsdreieck. Wo schneiden sie sich (ablesen)?"),
  ("Steckbrief", "Gib S, Öffnung und Form an: a) y = 3x² − 1 &nbsp; b) y = −¼x² + 2 &nbsp; c) y = −x² − 3"),
+ ("Klammern quadrieren", "Mit den vier Bögen: a) (x + 4)² &nbsp; b) (x − 5)² &nbsp; c) (x + 6)(x − 6) &nbsp; d) 31² im Kopf"),
+ ("Scheitelpunktform", "S ablesen, in Normalform umformen: a) y = (x − 3)² + 1 &nbsp; b) y = −(x + 2)² + 5 &nbsp; c) y = 3(x − 1)² − 4"),
+ ("Quadr. Ergänzung", "In Scheitelpunktform bringen, S angeben: a) y = x² + 4x + 1 &nbsp; b) y = x² − 10x + 20 &nbsp; c) y = 2x² − 12x + 7"),
  ("p-q-Formel", "Berechne die Nullstellen: a) x² − 6x + 5 = 0 &nbsp; b) 2x² + 4x − 16 = 0 &nbsp; c) x² + 2x + 5 = 0"),
+ ("Schnittpunkte", "Berechne die Schnittpunkte: a) f(x) = x² − 3, g(x) = 2x &nbsp; b) f(x) = x² + 1, g(x) = 2x &nbsp; c) f(x) = x² + 2, g(x) = x"),
 ]
 sol = [
  "a) −4 &gt; −7 &nbsp; b) 9 &gt; 8 &nbsp; c) 4 &gt; −4",
@@ -565,14 +787,18 @@ sol = [
  "x: −3 −2 −1 0 1 2 3 → y: 7 2 −1 −2 −1 2 7",
  "Schnittpunkt (1,5|2,5): 3·1,5 − 2 = 2,5 und −1,5 + 4 = 2,5 ✔",
  "a) S(0|−1), oben, gestreckt &nbsp; b) S(0|2), unten, gestaucht &nbsp; c) S(0|−3), unten, normal",
+ "a) x² + 8x + 16 &nbsp; b) x² − 10x + 25 &nbsp; c) x² − 36 &nbsp; d) (30 + 1)² = 900 + 60 + 1 = 961",
+ "a) S(3|1): x² − 6x + 10 &nbsp; b) S(−2|5): −x² − 4x + 1 &nbsp; c) S(1|−4): 3x² − 6x − 1",
+ "a) (x + 2)² − 3, S(−2|−3) &nbsp; b) (x − 5)² − 5, S(5|−5) &nbsp; c) 2(x − 3)² − 11, S(3|−11)",
  "a) p=−6, q=5: x = 3 ± 2 → 1 und 5 &nbsp; b) |:2 → x²+2x−8=0: x = −1 ± 3 → −4 und 2 &nbsp; c) D = 1 − 5 = −4 &lt; 0 → keine Nullstelle",
+ "a) x² − 2x − 3 = 0 → x = 1 ± 2: S₁(−1|−2), S₂(3|6) &nbsp; b) x² − 2x + 1 = 0, D = 0: Berührpunkt (1|2) &nbsp; c) x² − x + 2 = 0, D = −1,75: kein Schnittpunkt",
 ]
-page("13", "✍️", "Übungen und Lösungen",
+page("18", "✍️", "Übungen und Lösungen",
      "Schritt 4 und 5 aus dem Lernkreislauf: selber machen – dann vergleichen. Lösungen erst danach anschauen!", f"""
 <ol class="ex">{"".join(f"<li><b>{t}:</b> {a}</li>" for t, a in ex)}</ol>
 <div class="card sol"><div class="boxt">✅ Lösungen zum Vergleichen</div><ol class="ex small">{"".join(f"<li>{s}</li>" for s in sol)}</ol></div>
 <div class="grid2">
-{box("tool", "Prüfen mit dem Funktionen-Tool", "<p>Aufgaben 4–7 kannst du im Funktionen-Tool kontrollieren: Term eingeben, Tabelle vergleichen, Scheitelpunkt und Nullstellen im Graphen ablesen (über den Graphen fahren zeigt den Punkt).</p>")}
+{box("tool", "Prüfen mit dem Funktionen-Tool", "<p>Aufgaben 4–11 kannst du im Funktionen-Tool kontrollieren: Term eingeben, Tabelle vergleichen, Scheitelpunkt und Nullstellen im Graphen ablesen (über den Graphen fahren zeigt den Punkt).</p>")}
 {box("merk", "Wenn etwas nicht klappt", "<p>1. Zurück zur passenden Seite in diesem Heft.<br>2. Das Video dazu anschauen.<br>3. Die Aufgabe noch einmal ohne Hilfe.<br>4. Immer noch nicht? Frag nach – mit genau der Zeile, wo du hängst.</p>")}
 </div>""")
 
@@ -661,6 +887,16 @@ ol.ex.small {{ font-size:10.2px; }} ol.ex.small li {{ margin:3px 0; }}
 .boxlegend {{ margin-top:8px; }}
 .cycle {{ max-width:100%; height:auto; }}
 .katex {{ font-size:1.05em; }}
+.faelle .fall {{ padding:7px 9px; }}
+.fall .boegen {{ width:100%; height:auto; max-width:276px; }}
+.fall p.m {{ margin:1px 0; font-size:14px; }}
+.binom td {{ font-size:11px; }} .binom td.m {{ font-size:14px; white-space:nowrap; }}
+.geo {{ padding:8px 12px; }} .geo p {{ margin:4px 0; }}
+ol.steps .m {{ white-space:nowrap; }}
+.wege {{ display:grid; grid-template-columns: 1fr auto 1fr; gap:10px; align-items:center; }}
+.form-k {{ display:flex; flex-direction:column; align-items:center; gap:2px; background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:6px; }}
+.form-k .m {{ font-size:15px; }}
+.pfeile {{ display:flex; flex-direction:column; gap:4px; font-weight:800; font-size:10.5px; color:var(--accent); text-align:center; }}
 .toolpanel {{ padding:8px 12px 8px; margin-bottom:8px; border-color:{X}; }}
 .tphead {{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:4px; }}
 .tpterm {{ background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:2px 12px; font-size:12px; }}
