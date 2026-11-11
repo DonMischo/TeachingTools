@@ -301,6 +301,14 @@ const ALL_CARDS: Werkzeug[] = [
     color: "#ef4444",
   },
   {
+    slug: "quadratisch",
+    href: "/simulationen/quadratisch",
+    icon: "⛲",
+    title: "Quadratische Funktionen",
+    description: "Eine ganze Unterrichtseinheit Schritt für Schritt: Normalparabel, verschieben mit e und d, Faktor a, Scheitelpunktform y = a(x + d)² + e wie im Tafelwerk, Klammern quadrieren mit vier Bögen und binomische Formeln am Flächenbild, Umformen, p-q-Formel und Schnittpunkte. Übungen nach Thema und Stufe, Prüfungsaufgaben mit Word-Export und das Spiel Korbwurf.",
+    color: "#0891b2",
+  },
+  {
     slug: "stellenwert",
     href: "/simulationen/stellenwert",
     icon: "🔢",

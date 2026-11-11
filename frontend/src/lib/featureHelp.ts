@@ -379,6 +379,19 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
     ],
   },
+  quadratisch: {
+    title: "Quadratische Funktionen",
+    intro: "Eine Unterrichtseinheit in elf Blättern, Schritt für Schritt von y = x² bis zu Nullstellen und Schnittpunkten. Schreibweise wie im Tafelwerk: y = a(x + d)² + e mit S(−d | e). Farben: x violett, a pink, d türkis, e grün.",
+    sections: [
+      { label: "1–4 Verstehen", text: "🔵 Normalparabel mit Wertetabelle (über eine Spalte fahren zeigt den Punkt) und Treppe 1-3-5. ↕️ Verschieben in drei Stufen: erst + e, dann (x + d)² – »andersherum« mit dem Klammer-wird-0-Trick –, dann beides; Pfeile zeigen den Weg des Scheitels, die Normalparabel bleibt gestrichelt stehen. 🔀 Faktor a mit Öffnung, Form und Treppe a·1, a·3, a·5. 📍 Scheitelpunktform mit allen drei Reglern, Steckbrief und »Parabel treffen« (Zielparabel nachstellen)." },
+      { label: "🌈 Klammern & Binome", text: "(x + d)², (x − d)² und (x + d)(x − d) mit vier Bögen ausmultiplizieren – ① vorne·vorne, ② vorne·hinten, ③ hinten·vorne, ④ hinten·hinten –, Bogen für Bogen aufdecken. Erst danach bekommt der Fall seinen Namen (1., 2., 3. binomische Formel). Daneben das Flächenbild mit Regler für d." },
+      { label: "5–8 Rechnen", text: "🧩 Umformen: Scheitelpunktform → Normalform (ausmultiplizieren) und Normalform → Scheitelpunktform (quadratische Ergänzung, auch mit a ≠ 1). 🎯 Nullstellen mit der p-q-Formel und Diskriminante. ✖️ Schnittpunkte von Parabel und Gerade (oder zwei Parabeln). Eigene Zahlen eintippen oder 🎲; der Rechenweg deckt sich Schritt für Schritt auf, der Graph zeigt das Ergebnis." },
+      { label: "✍️ Üben", text: "Themen an- und abwählen (S ablesen, Verschiebung, Faktor a, Term zum Graphen, Werte & Punktprobe, Klammern quadrieren, SPF → Normalform, quadratische Ergänzung, Nullstellen, Schnittpunkte), drei Stufen. Tipps einzeln, Lösungsweg mit Graph; nur der erste Versuch ohne Hilfe zählt." },
+      { label: "📝 Prüfungsaufgaben", text: "Mehrteilige Sachaufgaben mit Bewertungseinheiten: Brückenbogen, Basketball, Springbrunnen, Gewinn, Gehege an der Mauer, Wasserstrahl & Rampe – mit neuen Zahlen auf Knopfdruck, je Teilaufgabe prüfbar. »📄 Arbeitsblatt (.docx)« baut 1–6 Aufgaben als Word-Datei, auf Wunsch mit Graph und Lösungen hinten." },
+      { label: "🏀 Korbwurf", text: "Spiel: den Scheitelpunkt der Wurfbahn setzen, der Term y = a(x + d)² + e steht live dabei, dann werfen. Acht Würfe mit Verteidigern und Hallendecken. Stufen: mit Vorschau, ohne Vorschau, Term eintippen (d und e selbst – Vorzeichen!). Bestwert je Stufe bleibt im Browser." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto." },
+    ],
+  },
   trigonometrie: {
     title: "Trigonometrie",
     intro: "Winkelfunktionen sehen, im Dreieck anwenden und an Sachaufgaben üben — sieben Blätter.",

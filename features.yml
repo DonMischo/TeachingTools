@@ -812,6 +812,17 @@ simulationen:
       - "Sachaufgaben: Turm, Leiter, Fluss, Triangulieren, Wanderweg, Steigung, Doppelpeilung, Dach, Sonnenstand"
       - Arbeitsblatt als Word-Datei (.docx) mit Bildern, Antwortlinien und Lösungsseite
       - "Spiel Küstenwache: Peilung → Kurs und Strecke → Rettungsboot, drei Stufen"
+  - id: quadratisch
+    name: Quadratische Funktionen
+    faehigkeiten: {use: [true, true]}
+    kann:
+      - "Unterrichtseinheit in Schritten: Normalparabel, + e, (x + d)², Faktor a, Scheitelpunktform y = a(x + d)² + e mit S(−d | e) wie im Tafelwerk"
+      - "Verschiebe-Pfeile, gestrichelte Normalparabel, Treppe a·1, a·3, a·5, Steckbrief und »Parabel treffen«"
+      - "Klammern quadrieren mit vier Bögen, die drei binomischen Formeln und ihr Flächenbild"
+      - "Umformen (ausmultiplizieren, quadratische Ergänzung), Nullstellen mit p-q, Schnittpunkte – Rechenweg Schritt für Schritt"
+      - "Üben: zehn Themen an- und abwählbar, drei Stufen, Tipps, Lösungsweg mit Graph"
+      - "Prüfungsaufgaben mit Teilaufgaben und BE (Brücke, Basketball, Springbrunnen, Gewinn, Gehege, Rampe), Word-Export mit Graph und Lösungen"
+      - "Spiel Korbwurf: Scheitelpunkt der Wurfbahn setzen, Hindernisse, Stufen mit/ohne Vorschau und Term eintippen"
   - id: kreis
     name: Kreis
     faehigkeiten: {use: [true, true]}

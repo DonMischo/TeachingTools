@@ -22,6 +22,7 @@ import Groessen from "@/components/groessen/Groessen";
 import Rechenzeichen from "@/components/rechenzeichen/Rechenzeichen";
 import Prozent from "@/components/prozent/Prozent";
 import Trigonometrie from "@/components/trigonometrie/Trigonometrie";
+import Quadratisch from "@/components/quadratisch/Quadratisch";
 import Dreiecke from "@/components/dreiecke/Dreiecke";
 import Kreis from "@/components/kreis/Kreis";
 import Koerper from "@/components/koerper/Koerper";
@@ -66,6 +67,7 @@ const TOOLS: { id: string; icon: string; label: string; node: ReactNode }[] = [
   { id: "prozent", icon: "💯", label: "Prozent- und Zinsrechnung", node: <Prozent /> },
   { id: "dreiecke", icon: "△", label: "Dreiecke", node: <Dreiecke /> },
   { id: "trigonometrie", icon: "🔺", label: "Trigonometrie", node: <Trigonometrie /> },
+  { id: "quadratisch", icon: "⛲", label: "Quadratische Funktionen", node: <Quadratisch /> },
   { id: "kreis", icon: "⭕", label: "Kreis", node: <Kreis /> },
   { id: "koerper", icon: "🧊", label: "Körper", node: <Koerper /> },
   { id: "stellenwert", icon: "🔢", label: "Stellenwerttafeln", node: <Stellenwert /> },

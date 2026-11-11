@@ -58,6 +58,7 @@ export const STANDARD_FAECHER: Record<string, string[]> = {
   prozent: ["Mathematik", "Wirtschaft und Recht"],
   dreiecke: ["Mathematik"],
   trigonometrie: ["Mathematik", "Physik", "Geografie"],
+  quadratisch: ["Mathematik", "Physik", "Wirtschaft und Recht"],
   kreis: ["Mathematik"],
   koerper: ["Mathematik"],
   stellenwert: ["Mathematik", "Informatik"],
