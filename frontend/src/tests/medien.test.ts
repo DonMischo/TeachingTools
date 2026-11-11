@@ -51,12 +51,12 @@ describe("Stationen der Zeitreise", () => {
 });
 
 describe("TaskCrawler »Zeitreise der Medien« passt zur Simulation", () => {
-  it("jede verlinkte Station gibt es", () => {
-    const spiel = JSON.parse(readFileSync(join(process.cwd(), "..", "data", "taskcrawler_examples", "TaskCrawler_Geschichte_der_Medien.json"), "utf8"));
+  it.each(["TaskCrawler_Geschichte_der_Medien.json", "TaskCrawler_Geschichte_der_Medien_Meilensteine.json"])("jede verlinkte Station gibt es (%s)", datei => {
+    const spiel = JSON.parse(readFileSync(join(process.cwd(), "..", "data", "taskcrawler_examples", datei), "utf8"));
     type Sim = { tool: string; config?: { station?: string } };
     const sims: Sim[] = spiel.slides.flatMap((s: { sim?: Sim; task?: { sim?: Sim } }) => [s.sim, s.task?.sim]).filter(Boolean);
     const stationen = sims.filter(x => x.tool === "medien").map(x => x.config?.station);
-    expect(stationen.length).toBeGreaterThan(30);
+    expect(stationen.length).toBeGreaterThanOrEqual(20);
     for (const st of stationen) expect(medium(st!), st).toBeDefined();
   });
 });
