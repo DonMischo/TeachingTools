@@ -453,7 +453,11 @@ simulationen:
     kann:
       - Löser für Rohrnetze wie ein Stromkreis - Gesamtdruck p + ρgh, Rohre laminar oder turbulent, Pumpe mit Kennlinie, Rückschlagventil, Netzanschluss, Auslass
       - Speicher - offener Behälter, Druckkessel, Gaspolster nach Boyle; Zylinder nach Pascal; Wasser oder Luft
-      - Reiter nach Stufen (Kl. 7/8 Druck, Kl. 9/10 Strömung, Technik & Beruf, Baukasten); Stationen in Arbeit
+      - Reiter nach Stufen (Kl. 7/8 Druck, Kl. 9/10 Strömung, Technik & Beruf, Baukasten)
+      - Tauchen - Schweredruck in fünf Flüssigkeiten, Druckpfeile, Ballon nach Boyle, hydrostatisches Paradoxon
+      - Wasserturm & Röhren - verbundene Gefäße live, Haus mit Stockwerken und Hähnen, Stromkreis einblendbar
+      - Hydraulische Presse - Wagenheber mit Pumpstößen, Kraft gegen Weg, Luftblase in der Bremse
+      - Luftdruck - Saugrohr mit 10-m-Grenze, Torricelli, Berg-Orte; Saugheber mit Abriss
   - id: baum
     name: Baumleben
     kann:

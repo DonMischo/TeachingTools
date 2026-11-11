@@ -34,7 +34,7 @@ export type Teil =
   | (ZweiPol & { art: "rueckschlag"; widerstand: number })
   /** Netzanschluss: hält den Knoten auf dem Überdruck p (Hausanschluss, Druckluftnetz). */
   | (EinPol & { art: "druckquelle"; druck: number })
-  /** Auslass ins Freie (Zapfstelle, Düse) mit Widerstand R. */
+  /** Auslass ins Freie (Zapfstelle, Düse) mit Widerstand R; lässt nur hinaus (Infinity = zu). */
   | (EinPol & { art: "auslass"; widerstand: number })
   /** Offener Behälter, `a` ist der Boden. Füllhöhe in m. */
   | (EinPol & { art: "behaelter"; flaeche: number; hoehe: number; fuellung: number })

@@ -125,6 +125,20 @@ describe("Druck & Strömung — Löser", () => {
     expect(fluss(4e5, false) / fluss(1e5, false)).toBeCloseTo(4, 4);
   });
 
+  it("Zapfstelle über dem Wasserspiegel gibt nichts, darunter läuft sie", () => {
+    const s = netz([k("turm", 20), k("unten", 0), k("oben", 30)], [
+      { id: "quelle", art: "druckquelle", a: "turm", druck: 5 * 1000 * G },   // Spiegel auf 25 m
+      rohr("r1", "turm", "unten", 0.05, 20),
+      rohr("r2", "unten", "oben", 0.05, 30),
+      { id: "hahnUnten", art: "auslass", a: "unten", widerstand: 1e9 },
+      { id: "hahnOben", art: "auslass", a: "oben", widerstand: 1e9 },
+    ]);
+    s.schritt(0.01);
+    expect(s.fluss("hahnUnten")).toBeGreaterThan(0);
+    expect(s.fluss("hahnOben")).toBe(0);
+    expect(s.druck("oben")).toBeLessThan(0);   // Unterdruck: dort käme kein Wasser an
+  });
+
   it("Rückschlagventil sperrt die Gegenrichtung", () => {
     const fluss = (a: string, b: string) => {
       const s = netz([k("q"), k("o")], [

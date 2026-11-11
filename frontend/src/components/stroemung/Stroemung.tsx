@@ -10,9 +10,18 @@
 import { useState, type ReactNode } from "react";
 import { wahl, type Vorgabe } from "@/lib/vorgabe";
 import { STATIONEN, STUFEN, type Station } from "@/lib/stroemung/stationen";
+import Tauchen from "./Tauchen";
+import Wasserturm from "./Wasserturm";
+import Presse from "./Presse";
+import Luftdruck from "./Luftdruck";
 
 /** Fertige Stationen; was hier fehlt, zeigt eine Vorschau. */
-const STATION_INHALT: Record<string, () => ReactNode> = {};
+const STATION_INHALT: Record<string, () => ReactNode> = {
+  tauchen: () => <Tauchen />,
+  roehren: () => <Wasserturm />,
+  hydraulik: () => <Presse />,
+  luftdruck: () => <Luftdruck />,
+};
 
 export default function Stroemung({ action, vorgabe }: { action?: ReactNode; vorgabe?: Vorgabe }) {
   // Station mit festem Reiter (TaskCrawler): ohne Reiterleiste.

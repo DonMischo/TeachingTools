@@ -169,6 +169,8 @@ export class Stroemung {
           eins(G_QUELLE, t.druck + rg * this.z[i]);
           break;
         case "auslass":
+          // Aus dem Hahn kommt nur etwas heraus — liegt der Druck unter der Luft, fließt nichts.
+          if (P[i] <= rg * this.z[i]) break;
           eins((this.gas ? this.mittlererAbsDruck(t.a, t.a, P) / P_LUFT : 1) / t.widerstand, rg * this.z[i]);
           break;
         case "behaelter": {
