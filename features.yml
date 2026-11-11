@@ -447,6 +447,7 @@ simulationen:
       - Schaltplan mit DIN-Schaltzeichen oder realistische Ansicht wie im Experimentierkasten
       - 16 Beispielschaltungen; Speichern und Öffnen als JSON-Datei
       - Lehrkraft gibt Schaltung und Arbeitsauftrag an die Sitzung; Beitretende starten mit einer eigenen Kopie
+      - Wassermodell - Fass, Rohre, Ventile (einzeln, Reihe, parallel), Rückrohr mit Pumpe und Hahn als Schalter; Regler blendet Batterie, Widerstände, Ströme und Potenziale darüber
   - id: baum
     name: Baumleben
     kann:

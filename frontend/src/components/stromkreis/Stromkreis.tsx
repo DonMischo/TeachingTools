@@ -22,6 +22,7 @@ import Palette from "./Palette";
 import Inspektor, { type Stand } from "./Inspektor";
 import Oszilloskop from "./Oszilloskop";
 import KlassenVorgabe from "./KlassenVorgabe";
+import Wassermodell from "./Wassermodell";
 
 const TEMPI = [
   { wert: 1, label: "Echtzeit" },
@@ -47,6 +48,7 @@ export default function Stromkreis({ action, start, code, lehrkraft = false }: P
   const [auswahl, setAuswahl] = useState<Auswahl | null>(null);
   const [werkzeug, setWerkzeug] = useState<Werkzeug>("auswahl");
   const [anzeige, setAnzeige] = useState<Anzeige>({ laufend: true, tempo: 1, elektronen: false, farbig: true, stil: "schaltplan", punktTempo: 1 });
+  const [wasser, setWasser] = useState(false);
   const [einpassen, setEinpassen] = useState(0);
   const [neustart, setNeustart] = useState(0);
   const [osziId, setOsziId] = useState<string | null>(null);
@@ -213,9 +215,11 @@ export default function Stromkreis({ action, start, code, lehrkraft = false }: P
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="inline-flex rounded-xl border border-line p-1 bg-surface">
-          <button className={chip(anzeige.stil === "schaltplan")} onClick={() => setAnzeige(a => ({ ...a, stil: "schaltplan" }))}>Schaltplan</button>
-          <button className={chip(anzeige.stil === "realistisch")} onClick={() => setAnzeige(a => ({ ...a, stil: "realistisch" }))}>Realistisch</button>
+          <button className={chip(!wasser && anzeige.stil === "schaltplan")} onClick={() => { setWasser(false); setAnzeige(a => ({ ...a, stil: "schaltplan" })); }}>Schaltplan</button>
+          <button className={chip(!wasser && anzeige.stil === "realistisch")} onClick={() => { setWasser(false); setAnzeige(a => ({ ...a, stil: "realistisch" })); }}>Realistisch</button>
+          <button className={chip(wasser)} onClick={() => setWasser(true)} title="Der Stromkreis als Wasserkreislauf, mit einblendbarer Elektrik">💧 Wassermodell</button>
         </div>
+        {!wasser && <>
         <button className="btn btn-primary" onClick={() => setAnzeige(a => ({ ...a, laufend: !a.laufend }))}>
           {anzeige.laufend ? "⏸ Anhalten" : "▶ Weiter"}
         </button>
@@ -258,7 +262,10 @@ export default function Stromkreis({ action, start, code, lehrkraft = false }: P
           <button className="btn btn-secondary" onClick={() => setEinpassen(n => n + 1)} title="Ganze Schaltung zeigen">⤢</button>
           <button className="btn btn-danger" onClick={() => laden({ version: 1, bauteile: [], draehte: [] })} title="Alles löschen">🗑</button>
         </div>
+        </>}
       </div>
+
+      {wasser ? <Wassermodell /> : <>
 
       {dateiFehler && (
         <div className="rounded-lg border border-bad p-2 text-sm text-bad flex justify-between gap-2">
@@ -313,6 +320,7 @@ export default function Stromkreis({ action, start, code, lehrkraft = false }: P
           )}
         </div>
       </div>
+      </>}
       <p className="text-xs text-muted">
         Vorbild: <a className="underline" href="https://github.com/pfalstad/circuitjs1" target="_blank" rel="noreferrer">Circuit Simulator</a> von Paul Falstad (GPL-2.0) — neu geschrieben. Vereinfacht für die Schule: ideale Leitungen, Quellen mit Innenwiderstand, Trafo ohne Kernverluste.
       </p>
