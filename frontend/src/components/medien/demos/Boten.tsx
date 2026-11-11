@@ -6,6 +6,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ROUTE, STRECKE_KM, dauer, einzelBote, staffel, stand, type Plan, type Tun } from "@/lib/medien/boten";
 import { ton } from "./ton";
+import { useErprobt } from "@/lib/medien/erprobt";
 
 const B = 660, H = 300;
 const xy = (lat: number, lon: number) => ({ x: (lon - 27) * 30, y: (41 - lat) * 30 });
@@ -40,6 +41,7 @@ export function BotenDemo() {
   const [stationen, setStationen] = useState(111);
   const [mit, setMit] = useState({ laeufer: true, reiter: true, staffel: true });
   const [t, setT] = useState(0); // Stunden seit Aufbruch
+  const erprobt = useErprobt();
   const [laeuft, setLaeuft] = useState(false);
   const bild = useRef<number | null>(null);
   const punkt = useMemo(aufRoute, []);
@@ -62,7 +64,9 @@ export function BotenDemo() {
     const schritt = (jetzt: number) => {
       const h = Math.min(ende, ((jetzt - t0) / 1000) * proSekunde);
       setT(h);
-      for (const b of boten) if (!angekommen.has(b.id) && h >= dauer(b.plan)) { angekommen.add(b.id); ton(880, 0.15, 0, "triangle", 0.08); ton(1320, 0.2, 0.15, "triangle", 0.08); }
+      for (const b of boten) if (!angekommen.has(b.id) && h >= dauer(b.plan)) {
+        angekommen.add(b.id);
+        if (b.id === "staffel" && dauer(b.plan) < 240) erprobt("boten"); ton(880, 0.15, 0, "triangle", 0.08); ton(1320, 0.2, 0.15, "triangle", 0.08); }
       if (h < ende) bild.current = requestAnimationFrame(schritt); else setLaeuft(false);
     };
     bild.current = requestAnimationFrame(schritt);

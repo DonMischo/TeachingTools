@@ -12,7 +12,10 @@ import { api, type MausZugang } from "@/lib/api";
 import { wahl, type Vorgabe } from "@/lib/vorgabe";
 import { MEDIEN } from "@/lib/medien/medien";
 import { GALERIE, BEREICHE, nachweisFuer } from "@/lib/medien/galerie";
-import { leer, lies, sauber, schreibe, vereinige, type Aenderung, type Fortschritt } from "@/lib/medien/fortschritt";
+import { leer, lies, mitErprobt, sauber, schreibe, vereinige, type Aenderung, type Fortschritt } from "@/lib/medien/fortschritt";
+import { ErprobtKontext, type ErprobtId } from "@/lib/medien/erprobt";
+import { ERFOLGE, erreichte } from "@/lib/medien/erfolge";
+import Erfolge from "./Erfolge";
 import FotoGalerie from "@/components/galerie/FotoGalerie";
 import Zeitreise from "./Zeitreise";
 import Vergleich from "./Vergleich";
@@ -29,7 +32,11 @@ const REITER = [
   { id: "galerie", ebene: "kennen", icon: "📷", label: "Galerie" },
   { id: "eilbote", ebene: "anwenden", icon: "🏃", label: "Eilbote" },
   { id: "sortieren", ebene: "anwenden", icon: "🧩", label: "Wer war zuerst?" },
+  { id: "erfolge", ebene: "anwenden", icon: "🏆", label: "Erfolge" },
 ] as const;
+
+/** Für die Übersicht /erfolge: Stand je Identität spiegeln (nur gelesen, nie zurückgeladen) */
+const SPIEGEL = "hp_medien_spiegel:";
 type Reiter = (typeof REITER)[number]["id"];
 
 const chip = (an: boolean) =>
@@ -55,7 +62,11 @@ export default function Medien({ action, vorgabe, speicher, live }: { action?: R
   const zugang = typeof speicher === "object" ? speicher : undefined;
   const schluessel = speicher === undefined ? "browser" : zugang ? `${zugang.code}:${zugang.token ?? ""}` : "konto";
 
-  const zeige = (neu: Fortschritt) => { aktuell.current = neu; setF(neu); };
+  const [neuerErfolg, setNeuerErfolg] = useState<(typeof ERFOLGE)[number] | null>(null);
+  const zeige = (neu: Fortschritt) => {
+    aktuell.current = neu; setF(neu);
+    if (speicher !== undefined) { try { localStorage.setItem(SPIEGEL + schluessel, JSON.stringify(neu)); } catch { /* egal */ } }
+  };
   // Laden: nur lesen. Geschrieben wird in aendere()/zuruecksetzen() — kein Speicher-Effekt.
   useEffect(() => {
     if (speicher === undefined) { zeige(lies()); setStatus("ok"); return; }
@@ -75,7 +86,12 @@ export default function Medien({ action, vorgabe, speicher, live }: { action?: R
       .catch(() => setStatus("fehler"));
   };
   const aendere = (aenderung: Aenderung) => {
+    const vorher = erreichte(aktuell.current);
     const neu = aenderung(aktuell.current);
+    if (neu === aktuell.current) return;
+    // Neu erreichter Erfolg? Kurz einblenden.
+    const frisch = ERFOLGE.find(e => !vorher.has(e.id) && e.wert(neu) >= e.ziel);
+    if (frisch) { setNeuerErfolg(frisch); window.setTimeout(() => setNeuerErfolg(x => (x?.id === frisch.id ? null : x)), 5000); }
     zeige(neu);
     if (speicher === undefined) schreibe(neu); else sende(neu);
   };
@@ -87,6 +103,7 @@ export default function Medien({ action, vorgabe, speicher, live }: { action?: R
   const frei = GALERIE.filter(b => f.geschafft.includes(b.medium)).length;
   return (
     <MedienLiveKontext.Provider value={live ? raum : null}>
+    <ErprobtKontext.Provider value={(id: ErprobtId) => aendere(mitErprobt(id))}>
     <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-seite mx-auto w-full" data-sim="medien">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
@@ -109,6 +126,7 @@ export default function Medien({ action, vorgabe, speicher, live }: { action?: R
           {live && <Posteingang />}
           <span className="chip" title="Geschaffte Stationen">🏁 {f.geschafft.length} / {MEDIEN.length}</span>
           <span className="chip" title="Freigeschaltete Fotos">📷 {frei} / {GALERIE.length}</span>
+          <button className="chip" title="Erfolge" onClick={() => setReiter("erfolge")}>🏆 {erreichte(f).size} / {ERFOLGE.length}</button>
           <span className={`chip ${status === "fehler" ? "text-bad" : ""}`} title="Wo dein Fortschritt gespeichert ist">
             {speicher === undefined ? "💾 nur in diesem Browser" : status === "fehler" ? "⚠️ nicht gespeichert" : status === "laedt" ? "☁️ lädt …" : zugang?.token ? "☁️ gespeichert (Gast)" : "☁️ am Konto gespeichert"}
           </span>
@@ -128,7 +146,15 @@ export default function Medien({ action, vorgabe, speicher, live }: { action?: R
       )}
       {reiter === "eilbote" && <Eilbote rekord={f.eilbote} aendere={aendere} />}
       {reiter === "sortieren" && <WerWarZuerst rekord={f.sortieren} aendere={aendere} />}
+      {reiter === "erfolge" && <Erfolge f={f} />}
+      {neuerErfolg && (
+        <button onClick={() => { setReiter("erfolge"); setNeuerErfolg(null); }} className="fixed bottom-4 left-4 z-50 card p-3 shadow-xl text-sm text-left max-w-xs border-2 border-accent">
+          🏆 <b>Erfolg:</b> {neuerErfolg.icon} {neuerErfolg.name}
+          <div className="text-xs text-muted">{neuerErfolg.text}</div>
+        </button>
+      )}
     </div>
+    </ErprobtKontext.Provider>
     </MedienLiveKontext.Provider>
   );
 }

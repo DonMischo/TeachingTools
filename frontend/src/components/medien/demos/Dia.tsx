@@ -5,8 +5,9 @@
  * an der Wand stehen soll, muss es also auf den Kopf stellen — und darf es
  * nicht wenden, sonst ist die Schrift spiegelverkehrt.
  */
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { rauschen, ton } from "./ton";
+import { useErprobt } from "@/lib/medien/erprobt";
 
 type Lage = { dreh: 0 | 90 | 180 | 270; gewendet: boolean };
 
@@ -76,6 +77,9 @@ export function DiaDemo() {
   const [gezeigt, setGezeigt] = useState<Lage | null>(null);
   const [versuche, setVersuche] = useState(0);
   const [richtigeDias, setRichtigeDias] = useState(0);
+  const erprobt = useErprobt();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (richtigeDias >= 3) erprobt("dia"); }, [richtigeDias]);
   const b = BILDER[nr];
   const richtig = gezeigt !== null && gezeigt.dreh === RICHTIG.dreh && gezeigt.gewendet === RICHTIG.gewendet;
   const einlegen = () => {

@@ -6,6 +6,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { useMedienLiveKontext, type Art, type Nachricht, type WandBild } from "@/lib/medien/live";
+import { useErprobt } from "@/lib/medien/erprobt";
 import { MORSE, ausLauflaengen, ausMorse } from "@/lib/medien/codes";
 import { dtmf, klingeln, ton } from "./ton";
 import { Zeichenflaeche, fels, type ZeichenGriff } from "./Zeichnen";
@@ -18,6 +19,7 @@ export function SendenLeiste({ art, inhalt, bereit, an, antwortAuf, nachSenden }
   art: Art; inhalt: () => unknown; bereit: boolean; an?: string; antwortAuf?: string; nachSenden?: () => void;
 }) {
   const live = useMedienLiveKontext();
+  const erprobt = useErprobt();
   const [ziel, setZiel] = useState(an ?? "");
   const [gesendet, setGesendet] = useState<string | null>(null);
   if (!live) return <p className="text-xs text-muted">👥 In einer Sitzung (Code von der Lehrkraft) kannst du das an andere aus deiner Klasse schicken — und sie antworten dir.</p>;
@@ -31,7 +33,7 @@ export function SendenLeiste({ art, inhalt, bereit, an, antwortAuf, nachSenden }
         {andere.map(s => <option key={s.key} value={s.key}>{s.name}{s.lehrkraft ? " (Lehrkraft)" : ""} · ☎ {s.nummer}</option>)}
       </select>
       <button className="btn-primary py-1" disabled={!bereit || !ziel || !live.verbunden}
-        onClick={() => { live.senden(ziel, art, inhalt(), antwortAuf); setGesendet(name ?? null); nachSenden?.(); }}>
+        onClick={() => { live.senden(ziel, art, inhalt(), antwortAuf); setGesendet(name ?? null); erprobt("nachricht"); if (art === "pager") erprobt("pager"); nachSenden?.(); }}>
         {ART_ICON[art]} Abschicken
       </button>
       {gesendet && <span className="text-ok text-xs">✓ an {gesendet} unterwegs</span>}
@@ -150,6 +152,7 @@ const PAGER_TASTEN = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "*", "0", "#"
 export function PagerDemo({ an, antwortAuf }: { an?: string; antwortAuf?: string } = {}) {
   const [ziffern, setZiffern] = useState("");
   const [selbst, setSelbst] = useState<string | null>(null);
+  const erprobt = useErprobt();
   const live = useMedienLiveKontext();
   const tippe = (t: string) => {
     dtmf(t);
@@ -167,7 +170,7 @@ export function PagerDemo({ an, antwortAuf }: { an?: string; antwortAuf?: string
         </div>
         <div className="flex flex-col gap-2 text-sm flex-1">
           <PagerAnzeige ziffern={selbst ?? ziffern} piepen={selbst !== null} />
-          {!live && <button className="btn-secondary self-start" disabled={!ziffern} onClick={() => setSelbst(ziffern)}>📟 An meinen eigenen Pager</button>}
+          {!live && <button className="btn-secondary self-start" disabled={!ziffern} onClick={() => { setSelbst(ziffern); erprobt("pager"); }}>📟 An meinen eigenen Pager</button>}
           <div className="text-xs">
             <div className="font-bold mb-1">Code-Tabelle (abgemacht unter Freunden)</div>
             <ul className="grid sm:grid-cols-2 gap-x-3">{PAGER_CODES.map(([c, b]) => <li key={c}><button className="underline font-mono" onClick={() => setZiffern(c)}>{c}</button> {b}</li>)}</ul>
@@ -191,6 +194,7 @@ export function HoehlenwandDemo() {
   const flaeche = useRef<ZeichenGriff>(null);
   const [loesung, setLoesung] = useState("");
   const [eigene, setEigene] = useState<string[]>([]);
+  const erprobt = useErprobt();
   const [hinweis, setHinweis] = useState<string | null>(null);
   const malen = () => {
     const f = flaeche.current;
@@ -201,6 +205,7 @@ export function HoehlenwandDemo() {
       live.malen(bild, loesung.trim());
     } else setEigene(e => [bild, ...e].slice(0, 6));
     setHinweis(null); setLoesung(""); f.leeren();
+    erprobt("hoehlenwand");
   };
   return (
     <div className="flex flex-col gap-3">

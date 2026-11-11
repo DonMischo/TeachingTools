@@ -8,11 +8,13 @@
  * Wege mischen sich nie: An Schul-PCs teilen sich viele Konten einen Browser.
  */
 import { MEDIEN } from "./medien";
+import { ERPROBT_IDS, type ErprobtId } from "./erprobt";
 
 const SCHLUESSEL = "hp_medien_fortschritt";
 
-export interface Fortschritt { geschafft: string[]; eilbote: number; sortieren: number }
-export const leer = (): Fortschritt => ({ geschafft: [], eilbote: 0, sortieren: 0 });
+/** `erprobt`: gelöste Mitmach-Demos (lib/medien/erprobt.ts), für die Erfolge */
+export interface Fortschritt { geschafft: string[]; erprobt: string[]; eilbote: number; sortieren: number }
+export const leer = (): Fortschritt => ({ geschafft: [], erprobt: [], eilbote: 0, sortieren: 0 });
 
 /** Nur bekannte Stationen, Zahlen als Zahlen */
 export function sauber(roh: unknown): Fortschritt {
@@ -21,6 +23,7 @@ export function sauber(roh: unknown): Fortschritt {
   const ids = new Set(MEDIEN.map(m => m.id));
   return {
     geschafft: Array.isArray(r.geschafft) ? [...new Set(r.geschafft.filter((x): x is string => typeof x === "string" && ids.has(x)))] : [],
+    erprobt: Array.isArray(r.erprobt) ? [...new Set(r.erprobt.filter((x): x is string => typeof x === "string" && ERPROBT_IDS.has(x)))] : [],
     eilbote: Number(r.eilbote) || 0,
     sortieren: Number(r.sortieren) || 0,
   };
@@ -39,6 +42,7 @@ export function schreibe(f: Fortschritt): Fortschritt {
 export function vereinige(a: Fortschritt, b: Fortschritt): Fortschritt {
   return {
     geschafft: [...a.geschafft, ...b.geschafft.filter(id => !a.geschafft.includes(id))],
+    erprobt: [...a.erprobt, ...b.erprobt.filter(id => !a.erprobt.includes(id))],
     eilbote: Math.max(a.eilbote, b.eilbote),
     sortieren: Math.max(a.sortieren, b.sortieren),
   };
@@ -47,6 +51,7 @@ export function vereinige(a: Fortschritt, b: Fortschritt): Fortschritt {
 /** Änderungen beschreiben die Komponenten als Funktion vom alten Stand */
 export type Aenderung = (alt: Fortschritt) => Fortschritt;
 export const mitStation = (id: string): Aenderung => a => (a.geschafft.includes(id) ? a : { ...a, geschafft: [...a.geschafft, id] });
+export const mitErprobt = (id: ErprobtId): Aenderung => a => (a.erprobt.includes(id) ? a : { ...a, erprobt: [...a.erprobt, id] });
 
 /** Bis zu welcher Station (Index in MEDIEN) darf man reisen? Alle geschafften plus die nächste. */
 export function erreichbarBis(geschafft: string[]): number {

@@ -98,7 +98,7 @@ const ROH: Medium[] = [
     ],
     witz: "Die ersten Emojis der Menschheit: 🐎🦬🦌🖐️. Mehr hatte die Tastatur nicht. Und die Datei lässt sich nicht verschieben — das Speichermedium wiegt ein paar Millionen Tonnen.",
     profil: { reichweite: 1, tempo: 1, haltbar: 5, publikum: 2, einfach: 3 },
-    frage: { text: "Was konnte die Höhlenmalerei, was ein gerufenes Wort nicht kann?", optionen: ["Sie war schneller", "Sie blieb erhalten, auch als der Maler weg war", "Sie reichte weiter"], richtig: 1, erklaerung: "Ein Ruf ist sofort weg. Das Bild speichert die Botschaft — das ist der erste große Schritt: Information wird haltbar." },
+    frage: { text: "Was konnte die Höhlenmalerei, was ein gerufenes Wort nicht kann?", optionen: ["Sie erreichte mehr Menschen auf einmal, weil man sie weit sehen konnte","Sie blieb erhalten, auch als der Maler weg war","Sie konnte genauer erklären, was gemeint war, weil sie Wörter enthielt"], richtig: 1, erklaerung: "Ein Ruf ist sofort weg. Das Bild speichert die Botschaft — das ist der erste große Schritt: Information wird haltbar." },
   },
   {
     id: "signale", name: "Trommeln & Rauchzeichen", icon: "🥁", jahr: -40000, jahrText: "uralt, überall auf der Welt", epoche: "urzeit", art: "Signal", unsicher: true,
@@ -114,7 +114,7 @@ const ROH: Medium[] = [
     ],
     witz: "Rauchzeichen bei Regen? Funkloch. Rauchzeichen bei Wind? Autokorrektur. Rauchzeichen nachts? Akku leer.",
     profil: { reichweite: 2, tempo: 4, haltbar: 1, publikum: 3, einfach: 4 },
-    frage: { text: "Warum versteht man ein Rauchzeichen nur, wenn man es vorher verabredet hat?", optionen: ["Weil Rauch nur wenige Zeichen kennt", "Weil Rauch giftig ist", "Weil nur Häuptlinge Rauch lesen durften"], richtig: 0, erklaerung: "Rauch kann nur »Wölkchen ja/nein« — sehr wenig Information. Die Bedeutung muss vorher ausgemacht sein, wie bei einem Code." },
+    frage: { text: "Warum versteht man ein Rauchzeichen nur, wenn man es vorher verabredet hat?", optionen: ["Weil Rauch nur wenige Zeichen kennt","Weil der Wind den Rauch immer in die falsche Richtung trägt und man ihn deshalb nur mit Hilfe versteht","Weil jeder Stamm seine eigene Rauchfarbe hatte, die andere nie sehen konnten"], richtig: 0, erklaerung: "Rauch kann nur »Wölkchen ja/nein« — sehr wenig Information. Die Bedeutung muss vorher ausgemacht sein, wie bei einem Code." },
   },
   // ───────────── Antike ─────────────
   {
@@ -131,7 +131,7 @@ const ROH: Medium[] = [
     ],
     witz: "Älteste Kundenbeschwerde der Welt (um 1750 v. Chr.): Nanni schimpft auf einer Tontafel, Händler Ea-nasir habe ihm schlechtes Kupfer verkauft und seinen Boten unhöflich behandelt. Bewertung: ⭐☆☆☆☆. Die Tafel liegt heute im British Museum.",
     profil: { reichweite: 2, tempo: 1, haltbar: 5, publikum: 1, einfach: 1 },
-    frage: { text: "Wofür wurde die Schrift zuerst gebraucht?", optionen: ["Für Liebesbriefe", "Für Buchhaltung: Getreide, Bier, Schafe", "Für Romane"], richtig: 1, erklaerung: "Die ältesten Tafeln sind Listen. Wer viel verwaltet, kann sich nicht alles merken — die Schrift ist das erste »Speichermedium« für Daten." },
+    frage: { text: "Wofür wurde die Schrift zuerst gebraucht?", optionen: ["Für Gedichte und Geschichten, damit die Herrscher berühmt werden","Für Buchhaltung: Getreide, Bier, Schafe","Für Briefe an Verwandte in fernen Städten, weil Boten zu unzuverlässig waren"], richtig: 1, erklaerung: "Die ältesten Tafeln sind Listen. Wer viel verwaltet, kann sich nicht alles merken — die Schrift ist das erste »Speichermedium« für Daten." },
   },
   {
     id: "hieroglyphen", name: "Hieroglyphen & Papyrus", icon: "𓂀", jahr: -3200, jahrText: "um 3200 v. Chr., Ägypten", epoche: "antike", art: "Schrift", demo: "hieroglyphen",
@@ -147,7 +147,7 @@ const ROH: Medium[] = [
     ],
     witz: "1822 entzifferte Jean-François Champollion die Hieroglyphen mit dem Stein von Rosetta. Er soll ins Büro seines Bruders gerannt sein, »Ich hab's!« gerufen haben — und in Ohnmacht gefallen sein. Erster dokumentierter Fall von Decoder-Überlastung.",
     profil: { reichweite: 2, tempo: 1, haltbar: 4, publikum: 1, einfach: 1 },
-    frage: { text: "Was war am Papyrus besser als an der Tontafel?", optionen: ["Leichter und platzsparender", "Haltbarer", "Feuerfest"], richtig: 0, erklaerung: "Leicht, rollbar, viel Text auf wenig Platz. Haltbarer war der gebrannte Ton — es gibt immer einen Tausch." },
+    frage: { text: "Was war am Papyrus besser als an der Tontafel?", optionen: ["Leichter und platzsparender","Haltbarer, weil sich Papyrus nicht zerstören ließ, wenn man ihn einmal beschrieben hatte","Billiger, weil man ihn überall im Land einfach vom Boden aufheben konnte"], richtig: 0, erklaerung: "Leicht, rollbar, viel Text auf wenig Platz. Haltbarer war der gebrannte Ton — es gibt immer einen Tausch." },
   },
   {
     id: "leuchtfeuer", name: "Leuchtfeuer-Kette", icon: "🔥", jahr: -1200, jahrText: "Sage um 1200 v. Chr., genutzt bis ins 19. Jh.", epoche: "antike", art: "Signal", demo: "leuchtfeuer", dauer1000km: 1 * STD, unsicher: true,
@@ -163,7 +163,7 @@ const ROH: Medium[] = [
     ],
     witz: "Problem jeder Feuerkette: Ein Wächter grillt Würstchen. 50 km weiter bricht Panik aus. Fehlalarm — das erste Fake-News-Problem der Netzwerk-Geschichte.",
     profil: { reichweite: 4, tempo: 4, haltbar: 1, publikum: 2, einfach: 3 },
-    frage: { text: "Wie viel Information schafft eine Feuerkette?", optionen: ["Ganze Briefe", "Nur ein verabredetes Ja oder Nein", "Nur Zahlen bis 100"], richtig: 1, erklaerung: "Ein Feuer brennt oder brennt nicht — ein Bit. Schnell und weit, aber fast ohne Inhalt. Die Kunst der nächsten 3000 Jahre: schnell UND viel." },
+    frage: { text: "Wie viel Information schafft eine Feuerkette?", optionen: ["Ganze Briefe, wenn die Wächter schnell genug Holz nachlegten","Nur ein verabredetes Ja oder Nein","Einzelne Buchstaben, die man mit der Zahl der Feuer zusammensetzte"], richtig: 1, erklaerung: "Ein Feuer brennt oder brennt nicht — ein Bit. Schnell und weit, aber fast ohne Inhalt. Die Kunst der nächsten 3000 Jahre: schnell UND viel." },
   },
   {
     id: "alphabet", name: "Das Alphabet", icon: "🔤", jahr: -1050, jahrText: "um 1050 v. Chr., Phönizien", epoche: "antike", art: "Schrift",
@@ -179,7 +179,7 @@ const ROH: Medium[] = [
     ],
     witz: "»Alphabet« kommt von Alpha + Beta, den ersten zwei griechischen Buchstaben. Das deutsche Wort »ABC« ist also dieselbe Idee — die Menschheit ist seit 3000 Jahren zu faul, sich einen Namen auszudenken.",
     profil: { reichweite: 2, tempo: 2, haltbar: 4, publikum: 2, einfach: 4 },
-    frage: { text: "Warum war das Alphabet so ein Fortschritt?", optionen: ["Man konnte schneller schreiben", "Mit wenigen Zeichen konnten viel mehr Menschen schreiben lernen", "Es war schöner"], richtig: 1, erklaerung: "22 statt Hunderte Zeichen: Schreiben wurde lernbar für viele. Mehr Schreibende heißt mehr Nachrichten." },
+    frage: { text: "Warum war das Alphabet so ein Fortschritt?", optionen: ["Man konnte viel schneller schreiben, weil jedes Zeichen ein ganzes Wort war","Mit wenigen Zeichen konnten viel mehr Menschen schreiben lernen","Es war das erste Schriftsystem, das ohne Bilder auskam und deshalb schön aussah"], richtig: 1, erklaerung: "22 statt Hunderte Zeichen: Schreiben wurde lernbar für viele. Mehr Schreibende heißt mehr Nachrichten." },
   },
   {
     id: "bote", name: "Läufer & Reitboten", icon: "🏃", jahr: -500, jahrText: "Persien um 500 v. Chr., Inka um 1450", epoche: "antike", art: "Gegenstand", dauer1000km: 5 * TAG, demo: "boten",
@@ -195,7 +195,7 @@ const ROH: Medium[] = [
     ],
     witz: "Laut einer Sage lief ein Bote 490 v. Chr. von Marathon nach Athen, rief »Wir haben gesiegt!« und fiel tot um. Erste Nachricht der Geschichte mit Akkuproblem. Der Marathonlauf erinnert daran — die Ziellinie hat heute zum Glück Sanitäter.",
     profil: { reichweite: 4, tempo: 2, haltbar: 2, publikum: 1, einfach: 1 },
-    frage: { text: "Warum ist eine Staffel von Boten schneller als ein einzelner Bote?", optionen: ["Weil frische Boten keine Pause brauchen", "Weil sie Abkürzungen kennen", "Weil Pferde schneller als Menschen sind"], richtig: 0, erklaerung: "An jeder Station übernimmt jemand Ausgeruhtes — die Nachricht muss nie schlafen. Das gleiche Prinzip nutzen Router im Internet." },
+    frage: { text: "Warum ist eine Staffel von Boten schneller als ein einzelner Bote?", optionen: ["Weil frische Boten keine Pause brauchen","Weil jeder Bote seine Strecke besser kennt und keine Umwege reitet","Weil mehrere Boten zusammen schneller laufen als einer allein, da sie sich gegenseitig antreiben"], richtig: 0, erklaerung: "An jeder Station übernimmt jemand Ausgeruhtes — die Nachricht muss nie schlafen. Das gleiche Prinzip nutzen Router im Internet." },
   },
   {
     id: "wachstafel", name: "Wachstafel", icon: "📝", jahr: -700, jahrText: "Griechen und Römer", epoche: "antike", art: "Schrift",
@@ -211,7 +211,7 @@ const ROH: Medium[] = [
     ],
     witz: "Die Römer hatten schon Strg+Z: Griffel umdrehen. Das lateinische »stilus« (Griffel) steckt übrigens im Wort »Stil« — wer gut schrieb, hatte einen guten Griffel.",
     profil: { reichweite: 2, tempo: 2, haltbar: 2, publikum: 1, einfach: 4 },
-    frage: { text: "Wofür war die Wachstafel besonders gut?", optionen: ["Für Notizen, die man wieder löschen kann", "Für Gesetze für die Ewigkeit", "Für Bücher mit vielen Seiten"], richtig: 0, erklaerung: "Löschbar und wiederverwendbar: das Schmierheft der Antike. Nicht jede Information muss ewig halten." },
+    frage: { text: "Wofür war die Wachstafel besonders gut?", optionen: ["Für Notizen, die man wieder löschen kann","Für Gesetze, die auf Dauer festgehalten werden sollten, weil Wachs nie weich wird","Für dicke Bücher mit vielen Seiten, die man leicht transportieren konnte"], richtig: 0, erklaerung: "Löschbar und wiederverwendbar: das Schmierheft der Antike. Nicht jede Information muss ewig halten." },
   },
   {
     id: "brieftaube", name: "Brieftaube", icon: "🕊️", jahr: -400, jahrText: "seit der Antike, Nachrichtendienst bis ins 20. Jh.", epoche: "antike", art: "Gegenstand", dauer1000km: 15 * STD, unsicher: true,
@@ -227,7 +227,7 @@ const ROH: Medium[] = [
     ],
     witz: "2009 trat in Südafrika die Taube Winston gegen das Internet an: Sie flog eine Speicherkarte 80 km in gut einer Stunde. Die Internetleitung hatte in dieser Zeit nur einen kleinen Teil derselben Daten geschafft. Und 1990 erschien als Aprilscherz ein echtes Internet-Dokument: RFC 1149, »IP über Vogelträger«.",
     profil: { reichweite: 4, tempo: 3, haltbar: 2, publikum: 1, einfach: 2 },
-    frage: { text: "Was ist der große Haken der Brieftaube?", optionen: ["Sie fliegt nur zu ihrem Heimatschlag", "Sie ist langsamer als ein Läufer", "Sie kann nur nachts fliegen"], richtig: 0, erklaerung: "Eine Einbahnstraße: Absender muss vorher Tauben vom Empfänger bekommen haben. Ein Netz nur in eine Richtung." },
+    frage: { text: "Was ist der große Haken der Brieftaube?", optionen: ["Sie fliegt nur zu ihrem Heimatschlag","Sie ist langsamer als ein guter Läufer, weil sie oft Pausen braucht","Sie verliert unterwegs fast immer die Nachricht, weil die Kapsel zu schwer ist"], richtig: 0, erklaerung: "Eine Einbahnstraße: Absender muss vorher Tauben vom Empfänger bekommen haben. Ein Netz nur in eine Richtung." },
   },
   // ───────────── Mittelalter ─────────────
   {
@@ -244,7 +244,7 @@ const ROH: Medium[] = [
     ],
     witz: "Die Chinesen waren uns auch beim Klopapier voraus: Ein Gelehrter erwähnte es schon im 6. Jahrhundert — und schrieb, dass er Papier mit Weisheiten darauf aus Respekt NICHT dafür benutze. Datenschutz auf Chinesisch.",
     profil: { reichweite: 2, tempo: 2, haltbar: 4, publikum: 1, einfach: 4 },
-    frage: { text: "Was machte das Papier für die Medien so wichtig?", optionen: ["Es war billig — viel mehr konnte aufgeschrieben werden", "Es war unzerstörbar", "Es leuchtete im Dunkeln"], richtig: 0, erklaerung: "Billiges Speichermedium = mehr Texte für mehr Menschen. Das gleiche passierte später mit billigem Festplattenspeicher." },
+    frage: { text: "Was machte das Papier für die Medien so wichtig?", optionen: ["Es war billig — viel mehr konnte aufgeschrieben werden","Es war haltbarer als Stein, deshalb blieben Nachrichten für immer erhalten","Es ließ sich mehrmals beschreiben und wieder abwischen, wie eine Wachstafel"], richtig: 0, erklaerung: "Billiges Speichermedium = mehr Texte für mehr Menschen. Das gleiche passierte später mit billigem Festplattenspeicher." },
   },
   {
     id: "handschrift", name: "Handschrift im Kloster", icon: "🖋️", jahr: 800, jahrText: "um 800, Klöster in Europa", epoche: "mittelalter", art: "Schrift",
@@ -260,7 +260,7 @@ const ROH: Medium[] = [
     ],
     witz: "Mönche kritzelten Beschwerden an den Rand: »Das Pergament ist haarig«, »Meine Hand tut weh«, »Gott sei Dank wird es bald dunkel«. Die ersten Kommentarspalten der Welt.",
     profil: { reichweite: 2, tempo: 1, haltbar: 4, publikum: 1, einfach: 1 },
-    frage: { text: "Warum blieben Bücher im Mittelalter so selten?", optionen: ["Jedes Buch musste von Hand kopiert werden", "Lesen war verboten", "Es gab keine Tinte"], richtig: 0, erklaerung: "Kopieren war Handarbeit: langsam, teuer, fehleranfällig. Genau das löste der Buchdruck." },
+    frage: { text: "Warum blieben Bücher im Mittelalter so selten?", optionen: ["Jedes Buch musste von Hand kopiert werden","Die Kirche hatte Lesen für das einfache Volk verboten, deshalb brauchte man kaum Bücher","Es gab kein Papier und Tinte musste aus dem Ausland geholt werden"], richtig: 0, erklaerung: "Kopieren war Handarbeit: langsam, teuer, fehleranfällig. Genau das löste der Buchdruck." },
   },
   {
     id: "holzdruck", name: "Holzdruck", icon: "🪵", jahr: 868, jahrText: "Diamant-Sutra 868, China", epoche: "mittelalter", art: "Schrift",
@@ -276,7 +276,7 @@ const ROH: Medium[] = [
     ],
     witz: "In der Diamant-Sutra steht, ein gewisser Wang Jie habe sie »zur kostenlosen Verteilung« drucken lassen. Das älteste datierte gedruckte Buch der Welt war also ein Gratis-Download.",
     profil: { reichweite: 2, tempo: 2, haltbar: 4, publikum: 3, einfach: 2 },
-    frage: { text: "Was war beim Holzdruck besser als beim Abschreiben?", optionen: ["Jede Kopie war gleich und ohne neue Fehler", "Er ging ohne Papier", "Man brauchte keine Tinte"], richtig: 0, erklaerung: "Die Kopie ist exakt — bei Information das Wichtigste: Sie kommt an, wie sie gemeint war." },
+    frage: { text: "Was war beim Holzdruck besser als beim Abschreiben?", optionen: ["Jede Kopie war gleich und ohne neue Fehler","Man konnte jede Seite beliebig ändern, ohne den Druckstock neu zu schnitzen","Man brauchte keine Schreibkenntnisse mehr, weil Bilder die Schrift ersetzten"], richtig: 0, erklaerung: "Die Kopie ist exakt — bei Information das Wichtigste: Sie kommt an, wie sie gemeint war." },
   },
   {
     id: "quipu", name: "Quipu (Knotenschnur)", icon: "🪢", jahr: 1450, jahrText: "Inka-Reich, 15. Jh.", epoche: "mittelalter", art: "Zeichen", demo: "quipu",
@@ -292,7 +292,7 @@ const ROH: Medium[] = [
     ],
     witz: "Die Inka-Buchhaltung war wörtlich »verknotet«. Wer sich verzählt hat, konnte immerhin sagen: »Moment, da ist ein Knoten drin.«",
     profil: { reichweite: 4, tempo: 2, haltbar: 3, publikum: 1, einfach: 2 },
-    frage: { text: "Wie speichert ein Quipu Zahlen?", optionen: ["Farbe = Ziffer", "Lage des Knotens = Stelle, Anzahl = Ziffer", "Länge der Schnur = Zahl"], richtig: 1, erklaerung: "Ein Stellenwertsystem aus Knoten — genau wie unsere Ziffernschreibweise mit Einern, Zehnern, Hundertern." },
+    frage: { text: "Wie speichert ein Quipu Zahlen?", optionen: ["Die Farbe einer Schnur gibt die Ziffer an, zum Beispiel Rot für 1","Lage des Knotens = Stelle, Anzahl = Ziffer","Die Länge der Schnur zeigt, wie groß die Zahl ist"], richtig: 1, erklaerung: "Ein Stellenwertsystem aus Knoten — genau wie unsere Ziffernschreibweise mit Einern, Zehnern, Hundertern." },
   },
   {
     id: "buchdruck", name: "Buchdruck mit beweglichen Lettern", icon: "📚", jahr: 1450, jahrText: "um 1450, Mainz", epoche: "mittelalter", art: "Schrift", demo: "setzkasten",
@@ -308,7 +308,7 @@ const ROH: Medium[] = [
     ],
     witz: "Der Druckfehlerteufel kam gleich mit: In einer englischen Bibel von 1631 fehlte im Gebot ein einziges Wort — dort stand nun »Du sollst ehebrechen«. Die Drucker mussten eine riesige Strafe zahlen, die Bibel heißt bis heute »Wicked Bible«.",
     profil: { reichweite: 3, tempo: 2, haltbar: 4, publikum: 4, einfach: 3 },
-    frage: { text: "Was hat der Buchdruck vor allem verbessert?", optionen: ["Dass Nachrichten schneller reisen", "Dass viele Menschen dieselbe Information bekommen", "Dass Bücher länger halten"], richtig: 1, erklaerung: "Vervielfältigung! Eine Information erreicht jetzt Tausende — das erste Massenmedium. Schneller reiste sie aber erst mit dem Telegrafen." },
+    frage: { text: "Was hat der Buchdruck vor allem verbessert?", optionen: ["Dass Nachrichten schneller über weite Strecken reisen","Dass viele Menschen dieselbe Information bekommen","Dass Bücher aus haltbarerem Material bestehen und länger halten"], richtig: 1, erklaerung: "Vervielfältigung! Eine Information erreicht jetzt Tausende — das erste Massenmedium. Schneller reiste sie aber erst mit dem Telegrafen." },
   },
   // ───────────── Frühe Neuzeit ─────────────
   {
@@ -325,7 +325,7 @@ const ROH: Medium[] = [
     ],
     witz: "Das Posthorn war die erste Push-Benachrichtigung: Tröööt — Sie haben Post! Stummschalten ging nicht.",
     profil: { reichweite: 4, tempo: 2, haltbar: 3, publikum: 2, einfach: 4 },
-    frage: { text: "Was war neu an der Post von Thurn und Taxis?", optionen: ["Briefe flogen mit Tauben", "Ein festes Netz mit Stationen, das alle gegen Gebühr nutzen konnten", "Sie war kostenlos"], richtig: 1, erklaerung: "Ein öffentliches Netz mit Regeln und Preisen — so wie heute das Internet für alle offen ist." },
+    frage: { text: "Was war neu an der Post von Thurn und Taxis?", optionen: ["Briefe wurden von Tauben getragen, die an Stationen ausgewechselt wurden","Ein festes Netz mit Stationen, das alle gegen Gebühr nutzen konnten","Die Post war für alle Bürger gratis, weil sie der Kaiser bezahlte"], richtig: 1, erklaerung: "Ein öffentliches Netz mit Regeln und Preisen — so wie heute das Internet für alle offen ist." },
   },
   {
     id: "zeitung", name: "Zeitung", icon: "📰", jahr: 1605, jahrText: "1605, Straßburg", epoche: "neuzeit", art: "Schrift",
@@ -341,7 +341,7 @@ const ROH: Medium[] = [
     ],
     witz: "Breaking News von 1605: »Wie wir aus Prag erfahren, ist vor drei Wochen etwas passiert.« Damals galt das als top-aktuell.",
     profil: { reichweite: 3, tempo: 2, haltbar: 3, publikum: 4, einfach: 3 },
-    frage: { text: "Was brachte die Zeitung Neues?", optionen: ["Regelmäßige Neuigkeiten für viele Leser", "Nachrichten in Echtzeit", "Bilder in Farbe"], richtig: 0, erklaerung: "Regelmäßigkeit und Masse: Jede Woche, für alle. Aktuell war sie aber nur so, wie Briefe schnell waren." },
+    frage: { text: "Was brachte die Zeitung Neues?", optionen: ["Regelmäßige Neuigkeiten für viele Leser","Nachrichten in Echtzeit, weil sie direkt am Ereignisort gedruckt wurden","Farbfotos von aktuellen Ereignissen, die vorher nur Maler zeigen konnten"], richtig: 0, erklaerung: "Regelmäßigkeit und Masse: Jede Woche, für alle. Aktuell war sie aber nur so, wie Briefe schnell waren." },
   },
   {
     id: "chappe", name: "Optischer Telegraf", icon: "🗼", jahr: 1794, jahrText: "1794, Frankreich", epoche: "neuzeit", art: "Signal", demo: "chappe", dauer1000km: 2 * STD,
@@ -357,7 +357,7 @@ const ROH: Medium[] = [
     ],
     witz: "1834 bestachen zwei Bankiers, die Brüder Blanc, Wärter einer Linie: Diese bauten heimlich Börsenkurse als absichtliche »Fehler« in die Signale ein. Der erste Hackerangriff auf ein Datennetz — zwei Jahre lang unentdeckt.",
     profil: { reichweite: 4, tempo: 4, haltbar: 1, publikum: 1, einfach: 1 },
-    frage: { text: "Was konnte der optische Telegraf besser als die Feuerkette?", optionen: ["Er funktionierte auch nachts", "Er konnte ganze Texte übertragen, nicht nur ja/nein", "Er war billiger"], richtig: 1, erklaerung: "Viele Armstellungen = viele Zeichen. Schnell UND inhaltsreich — nur nicht nachts und nicht bei Nebel." },
+    frage: { text: "Was konnte der optische Telegraf besser als die Feuerkette?", optionen: ["Er funktionierte auch bei Nacht und Nebel, weil er beleuchtet war","Er konnte ganze Texte übertragen, nicht nur ja/nein","Er brauchte keine Wächter, weil die Türme sich selbst bedienten"], richtig: 1, erklaerung: "Viele Armstellungen = viele Zeichen. Schnell UND inhaltsreich — nur nicht nachts und nicht bei Nebel." },
   },
   // ───────────── Industriezeit ─────────────
   {
@@ -374,7 +374,7 @@ const ROH: Medium[] = [
     ],
     witz: "Auf Daguerres Straßenfoto von 1838 sieht man die belebte Straße leer — alle Kutschen und Leute waren zu schnell. Nur ein Mann, der sich die Schuhe putzen ließ, stand lange genug still. Er ist der erste fotografierte Mensch. Und darum lächelt auf alten Fotos niemand: Versuch mal, eine Minute zu grinsen.",
     profil: { reichweite: 2, tempo: 2, haltbar: 4, publikum: 2, einfach: 2 },
-    frage: { text: "Was ist das Neue an der Fotografie für die Information?", optionen: ["Das Bild entsteht von selbst durch Licht und zeigt genau, was war", "Sie ist schneller als ein Brief", "Sie hat Ton"], richtig: 0, erklaerung: "Eine Aufnahme statt einer Deutung. Die Information kommt »ungefiltert« vom Gegenstand — dachte man. Heute weiß man: Auch Fotos kann man fälschen." },
+    frage: { text: "Was ist das Neue an der Fotografie für die Information?", optionen: ["Das Bild entsteht von selbst durch Licht und zeigt genau, was war","Sie ist schneller als jeder Brief, weil man das Foto sofort verschicken kann","Sie zeigt Bilder in Farbe und mit Ton, was ein Gemälde nicht kann"], richtig: 0, erklaerung: "Eine Aufnahme statt einer Deutung. Die Information kommt »ungefiltert« vom Gegenstand — dachte man. Heute weiß man: Auch Fotos kann man fälschen." },
   },
   {
     id: "fax", name: "Fax", icon: "📠", jahr: 1843, jahrText: "Patent 1843, beliebt in den 1980ern", epoche: "industrie", art: "Bild", demo: "fax", dauer1000km: 1 * MIN,
@@ -390,7 +390,7 @@ const ROH: Medium[] = [
     ],
     witz: "Das Fax wurde 33 Jahre VOR dem Telefon erfunden. Und in manchen deutschen Ämtern und Arztpraxen ist es bis heute nicht ausgestorben — es ist also gleichzeitig zu früh und zu spät dran.",
     profil: { reichweite: 5, tempo: 4, haltbar: 2, publikum: 1, einfach: 3 },
-    frage: { text: "Wie überträgt ein Fax ein Bild?", optionen: ["Als Foto per Post", "Zeile für Zeile als Folge von hell und dunkel", "Als Text, den jemand abtippt"], richtig: 1, erklaerung: "Rasterung! Das Bild wird in Punkte zerlegt — genau so funktionieren auch Pixel im Bildschirm." },
+    frage: { text: "Wie überträgt ein Fax ein Bild?", optionen: ["Als Foto, das per Post sofort ankommt","Zeile für Zeile als Folge von hell und dunkel","Als Text, den die Maschine erkennt und beim Empfänger neu abtippt"], richtig: 1, erklaerung: "Rasterung! Das Bild wird in Punkte zerlegt — genau so funktionieren auch Pixel im Bildschirm." },
   },
   {
     id: "telegraf", name: "Elektrischer Telegraf", icon: "⚡", jahr: 1844, jahrText: "1837 Gauß/Weber in Göttingen, 1844 Morse", epoche: "industrie", art: "Signal", demo: "morse", dauer1000km: 5 * MIN,
@@ -406,7 +406,7 @@ const ROH: Medium[] = [
     ],
     witz: "Weil jedes Wort Geld kostete, schrieben alle wie heute im Chat: »ANKOMME MONTAG STOP GELD ALLE STOP SCHICK WAS STOP«. Statt Punkten schrieb man »STOP«, weil Satzzeichen oft extra kosteten oder verloren gingen — der erste Telegramm-Slang.",
     profil: { reichweite: 5, tempo: 5, haltbar: 1, publikum: 1, einfach: 2 },
-    frage: { text: "Was war die große Revolution des elektrischen Telegrafen?", optionen: ["Information reist schneller als jeder Mensch, jedes Pferd und jedes Schiff", "Er konnte Bilder senden", "Er war kostenlos"], richtig: 0, erklaerung: "Information und Transport werden getrennt: Die Nachricht muss nicht mehr getragen werden, sie fließt als Strom. Das ist der Anfang aller modernen Netze." },
+    frage: { text: "Was war die große Revolution des elektrischen Telegrafen?", optionen: ["Information reist schneller als jeder Mensch, jedes Pferd und jedes Schiff","Er konnte erstmals Bilder und Töne senden, was vorher unmöglich war","Er war für alle kostenlos und ersetzte deshalb sofort die Post"], richtig: 0, erklaerung: "Information und Transport werden getrennt: Die Nachricht muss nicht mehr getragen werden, sie fließt als Strom. Das ist der Anfang aller modernen Netze." },
   },
   {
     id: "rohrpost", name: "Rohrpost", icon: "📨", jahr: 1853, jahrText: "1853 London, Berlin 1865 – 1976", epoche: "industrie", art: "Gegenstand",
@@ -423,7 +423,7 @@ const ROH: Medium[] = [
     witz: "Rohrpost ist das einzige Netz, bei dem man »Paket stecken geblieben« wörtlich nehmen muss: Dann wurde die Straße aufgegraben.",
     profil: { reichweite: 2, tempo: 4, haltbar: 3, publikum: 1, einfach: 3 },
     flop: { lebte: "1853 – 1976 (Berlin), in Kliniken bis heute", warum: "Nur für eine Stadt und teuer zu bauen. Telefon, Fernschreiber und Fax machten sie überflüssig.", grabspruch: "Hier ruht die Rohrpost. Sie hatte immer Druck." },
-    frage: { text: "Warum setzte sich die Rohrpost nicht für ganze Länder durch?", optionen: ["Röhren über Hunderte km wären viel zu teuer — Strom im Draht war billiger", "Die Büchsen waren zu klein", "Die Luft war verboten"], richtig: 0, erklaerung: "Gegenstände zu verschicken ist aufwendig. Information als Signal zu schicken ist billiger — darum gewann der Draht." },
+    frage: { text: "Warum setzte sich die Rohrpost nicht für ganze Länder durch?", optionen: ["Röhren über Hunderte km wären viel zu teuer — Strom im Draht war billiger","Die Büchsen waren zu klein, sodass nur Postkarten hineinpassten","Die Luft in den Rohren ging nach wenigen Kilometern aus und die Post blieb stecken"], richtig: 0, erklaerung: "Gegenstände zu verschicken ist aufwendig. Information als Signal zu schicken ist billiger — darum gewann der Draht." },
   },
   {
     id: "telefon", name: "Telefon", icon: "☎️", jahr: 1876, jahrText: "1861 Reis, 1876 Bell", epoche: "industrie", art: "Ton", demo: "waehlscheibe", dauer1000km: 30,
@@ -439,7 +439,7 @@ const ROH: Medium[] = [
     ],
     witz: "Reis' erster Testsatz: »Das Pferd frisst keinen Gurkensalat« — gewählt, weil man Unsinn nicht erraten kann. Und Bell wollte, dass man sich am Telefon mit »Ahoy!« meldet. Edison setzte »Hello« durch. Ahoy hätte Stil gehabt.",
     profil: { reichweite: 5, tempo: 5, haltbar: 1, publikum: 1, einfach: 4 },
-    frage: { text: "Was konnte das Telefon, was der Telegraf nicht konnte?", optionen: ["Jeder konnte ohne Code direkt sprechen und sofort antworten", "Es war schneller als Strom", "Es speicherte Gespräche"], richtig: 0, erklaerung: "Kein Umweg über Codes und Fachleute: Die Technik verschwindet, der Mensch spricht direkt. Einfacher Zugang ist auch ein Fortschritt." },
+    frage: { text: "Was konnte das Telefon, was der Telegraf nicht konnte?", optionen: ["Jeder konnte ohne Code direkt sprechen und sofort antworten","Es war schneller als der Telegraf, weil Sprache sich mit Lichtgeschwindigkeit ausbreitet","Es speicherte Gespräche, damit man sie später nachlesen konnte"], richtig: 0, erklaerung: "Kein Umweg über Codes und Fachleute: Die Technik verschwindet, der Mensch spricht direkt. Einfacher Zugang ist auch ein Fortschritt." },
   },
   {
     id: "schallplatte", name: "Phonograph & Schallplatte", icon: "🎶", jahr: 1877, jahrText: "1877 Edison, 1887 Berliner", epoche: "industrie", art: "Ton", demo: "platte",
@@ -455,7 +455,7 @@ const ROH: Medium[] = [
     ],
     witz: "Schon 1860 zeichnete der Franzose Scott de Martinville Schall als Wellenlinie auf — konnte ihn aber nicht abspielen. Erst 2008 machten Forscher die Aufnahme am Computer hörbar: ein Mann singt »Au clair de la lune«. 148 Jahre Wartezeit — der längste Ladebalken der Geschichte.",
     profil: { reichweite: 3, tempo: 1, haltbar: 4, publikum: 4, einfach: 3 },
-    frage: { text: "Was wurde mit der Schallplatte zum ersten Mal möglich?", optionen: ["Ton zu speichern und zu vervielfältigen", "Ton über Kabel zu schicken", "Musik zu komponieren"], richtig: 0, erklaerung: "Speichern + Kopieren für den Ton — was der Buchdruck für die Schrift war, war die Platte für die Musik." },
+    frage: { text: "Was wurde mit der Schallplatte zum ersten Mal möglich?", optionen: ["Ton zu speichern und zu vervielfältigen","Ton über große Entfernungen per Kabel zu übertragen","Musik von Hand zu notieren und weltweit zu verbreiten"], richtig: 0, erklaerung: "Speichern + Kopieren für den Ton — was der Buchdruck für die Schrift war, war die Platte für die Musik." },
   },
   {
     id: "film", name: "Film & Kino", icon: "🎞️", jahr: 1895, jahrText: "1895, Berlin und Paris", epoche: "industrie", art: "Bewegtbild",
@@ -471,7 +471,7 @@ const ROH: Medium[] = [
     ],
     witz: "Der erste Kino-Hit der Skladanowskys: ein boxendes Känguru. Und die Geschichte, dass bei der »Ankunft eines Zuges« der Lumières das Publikum panisch flüchtete, ist vermutlich selbst ein Film-Mythos.",
     profil: { reichweite: 3, tempo: 1, haltbar: 3, publikum: 4, einfach: 3 },
-    frage: { text: "Warum sieht man im Film Bewegung?", optionen: ["Weil viele Einzelbilder schnell hintereinander gezeigt werden", "Weil die Leinwand wackelt", "Weil Licht sich bewegt"], richtig: 0, erklaerung: "Das Auge ist zu langsam für schnelle Bildwechsel und »rechnet« Bewegung dazu. Video und Spiele nutzen das bis heute." },
+    frage: { text: "Warum sieht man im Film Bewegung?", optionen: ["Weil viele Einzelbilder schnell hintereinander gezeigt werden","Weil die Leinwand durch den Projektor leicht hin- und herschwingt","Weil sich die Bilder im Auge selbst bewegen, während der Film stillsteht"], richtig: 0, erklaerung: "Das Auge ist zu langsam für schnelle Bildwechsel und »rechnet« Bewegung dazu. Video und Spiele nutzen das bis heute." },
   },
   {
     id: "telharmonium", name: "Telharmonium", icon: "🎹", jahr: 1906, jahrText: "1897 Patent, 1906 New York", epoche: "modern", art: "Ton",
@@ -488,7 +488,7 @@ const ROH: Medium[] = [
     witz: "Erste »Warteschleifenmusik« der Welt — nur unfreiwillig: Wer 1907 in New York telefonierte, hörte manchmal mitten im Gespräch eine Orgel. Beschwerdehotline? Leider auch besetzt.",
     profil: { reichweite: 2, tempo: 5, haltbar: 1, publikum: 2, einfach: 1 },
     flop: { lebte: "1906 – 1914", warum: "Zu groß, zu teuer, störte die Telefone — und dann kam das Radio, das Musik ohne Leitung an alle schickte.", grabspruch: "200 Tonnen Klang. Leider nur leise." },
-    frage: { text: "Warum hat das Radio das Telharmonium verdrängt?", optionen: ["Radio sendet ohne Leitung an alle gleichzeitig", "Radio hatte bessere Musiker", "Das Telharmonium war zu leise"], richtig: 0, erklaerung: "Funk statt Draht: Ein Sender erreicht beliebig viele Empfänger, ohne für jeden eine Leitung zu legen." },
+    frage: { text: "Warum hat das Radio das Telharmonium verdrängt?", optionen: ["Radio sendet ohne Leitung an alle gleichzeitig","Radio hatte bessere Musiker, weil die Sender die besten Orchester bezahlten","Das Telharmonium konnte nur ein einziges Lied spielen, immer wieder"], richtig: 0, erklaerung: "Funk statt Draht: Ein Sender erreicht beliebig viele Empfänger, ohne für jeden eine Leitung zu legen." },
   },
   // ───────────── 20. Jahrhundert ─────────────
   {
@@ -505,7 +505,7 @@ const ROH: Medium[] = [
     ],
     witz: "1938 lief in den USA das Hörspiel »Krieg der Welten« über eine Marsianer-Landung. Zeitungen berichteten danach von einer Massenpanik — die es so wohl gar nicht gab. Also: Fake News über ein Fake-News-Hörspiel. Respekt.",
     profil: { reichweite: 5, tempo: 5, haltbar: 1, publikum: 5, einfach: 4 },
-    frage: { text: "Was ist der große Vorteil — und zugleich die Gefahr — des Radios?", optionen: ["Ein Sender erreicht alle gleichzeitig, und wer ihn kontrolliert, bestimmt, was alle hören", "Es ist sehr teuer", "Man braucht ein Kabel"], richtig: 0, erklaerung: "Eins-an-viele ist mächtig: für Information, aber auch für Propaganda. Darum ist freier, vielfältiger Rundfunk so wichtig." },
+    frage: { text: "Was ist der große Vorteil — und zugleich die Gefahr — des Radios?", optionen: ["Ein Sender erreicht alle gleichzeitig, und wer ihn kontrolliert, bestimmt, was alle hören","Jeder Hörer kann selbst senden, deshalb kommen viele falsche Nachrichten in Umlauf","Es braucht für jeden Hörer ein eigenes Kabel, daher kann der Staat alle Hörer überwachen"], richtig: 0, erklaerung: "Eins-an-viele ist mächtig: für Information, aber auch für Propaganda. Darum ist freier, vielfältiger Rundfunk so wichtig." },
   },
   {
     id: "fernschreiber", name: "Fernschreiber (Telex)", icon: "⌨️", jahr: 1933, jahrText: "Telex-Netz ab 1933", epoche: "modern", art: "Schrift", dauer1000km: 2 * MIN,
@@ -521,7 +521,7 @@ const ROH: Medium[] = [
     ],
     witz: "Der Fernschreiber war der Großvater des Chats — inklusive Tippfehlern, die für immer auf dem Papier standen. »SORRY VERTIPPT« kostete extra.",
     profil: { reichweite: 5, tempo: 5, haltbar: 3, publikum: 1, einfach: 2 },
-    frage: { text: "Was hatte der Fernschreiber dem Telefon voraus?", optionen: ["Die Nachricht lag am Ziel schriftlich vor", "Er war leiser", "Man konnte sprechen"], richtig: 0, erklaerung: "Schnell UND haltbar: Das Papier konnte man ablegen und weiterreichen. E-Mail und Chat sind seine Nachfahren." },
+    frage: { text: "Was hatte der Fernschreiber dem Telefon voraus?", optionen: ["Die Nachricht lag am Ziel schriftlich vor","Er war viel leiser als das Telefon und störte niemanden im Büro","Man konnte bereits mit dem Gegenüber sprechen und gleichzeitig tippen"], richtig: 0, erklaerung: "Schnell UND haltbar: Das Papier konnte man ablegen und weiterreichen. E-Mail und Chat sind seine Nachfahren." },
   },
   {
     id: "fernsehen", name: "Fernsehen", icon: "📺", jahr: 1935, jahrText: "Nipkow 1884, Programm Berlin 1935", epoche: "modern", art: "Bewegtbild", dauer1000km: 0.01,
@@ -537,7 +537,7 @@ const ROH: Medium[] = [
     ],
     witz: "Fernbedienung? Gab es lange nicht. Die Fernbedienung der 1960er hieß »Kind, schalt mal um!«.",
     profil: { reichweite: 5, tempo: 5, haltbar: 1, publikum: 5, einfach: 4 },
-    frage: { text: "Wie wird ein Fernsehbild übertragen?", optionen: ["Zeile für Zeile, sehr schnell hintereinander", "Als ganzes Foto auf einmal", "Per Post"], richtig: 0, erklaerung: "Wie beim Fax: Das Bild wird zerlegt, nacheinander geschickt und wieder zusammengesetzt — nur 25-mal pro Sekunde." },
+    frage: { text: "Wie wird ein Fernsehbild übertragen?", optionen: ["Zeile für Zeile, sehr schnell hintereinander","Als ganzes Foto auf einmal, das alle zwei Sekunden wechselt","Als Film auf Band, der jeden Abend per Post an alle Sender geliefert wird"], richtig: 0, erklaerung: "Wie beim Fax: Das Bild wird zerlegt, nacheinander geschickt und wieder zusammengesetzt — nur 25-mal pro Sekunde." },
   },
   {
     id: "tonband", name: "Tonband", icon: "🎙️", jahr: 1935, jahrText: "1935, AEG Berlin", epoche: "modern", art: "Ton",
@@ -553,7 +553,7 @@ const ROH: Medium[] = [
     ],
     witz: "Erfunden wurde das Magnetband-Prinzip übrigens auf Papier: Fritz Pfleumer beschichtete Papierstreifen mit Eisenpulver — ursprünglich, weil er Metallstreifen für Zigarettenmundstücke herstellte. Rauchen gefährdet die Gesundheit, Tonbänder nicht.",
     profil: { reichweite: 2, tempo: 1, haltbar: 3, publikum: 2, einfach: 2 },
-    frage: { text: "Was war am Tonband neu gegenüber der Schallplatte?", optionen: ["Man konnte selbst aufnehmen, schneiden und löschen", "Es klang immer schlechter", "Es lief ohne Strom"], richtig: 0, erklaerung: "Schreiben, nicht nur lesen: Ein wiederbeschreibbarer Speicher — wie später Festplatte und USB-Stick." },
+    frage: { text: "Was war am Tonband neu gegenüber der Schallplatte?", optionen: ["Man konnte selbst aufnehmen, schneiden und löschen","Der Ton klang besser, weil das Band nie rauscht, und man musste nie neu aufnehmen","Es kam ohne Strom aus, weil man es von Hand abspielen konnte"], richtig: 0, erklaerung: "Schreiben, nicht nur lesen: Ein wiederbeschreibbarer Speicher — wie später Festplatte und USB-Stick." },
   },
   {
     id: "bildtelefon", name: "Bildtelefon", icon: "📹", jahr: 1936, jahrText: "1936 Berlin–Leipzig, 1970 USA", epoche: "modern", art: "Bewegtbild",
@@ -570,7 +570,7 @@ const ROH: Medium[] = [
     witz: "Videocall mit Anfahrt: Erst eine halbe Stunde zur Post laufen, dann drei Minuten flimmern sehen. Kamera aus ging nicht — dafür musste man nicht aufräumen.",
     profil: { reichweite: 3, tempo: 5, haltbar: 1, publikum: 1, einfach: 1 },
     flop: { lebte: "1936 – 1940, 1970 – 1974", warum: "Die Leitungen waren für Bilder viel zu dünn, die Preise riesig. Erst mit schnellem Internet und Handykameras wurde der Videocall alltäglich.", grabspruch: "Er sah die Zukunft — nur leider sehr unscharf." },
-    frage: { text: "Warum floppte das Bildtelefon zuerst?", optionen: ["Bilder brauchen viel mehr Daten, als die Leitungen damals schafften", "Niemand hatte Augen", "Es war verboten"], richtig: 0, erklaerung: "Bilder sind Datenmassen. Ein Medium setzt sich oft erst durch, wenn der »Transportweg« dick genug ist." },
+    frage: { text: "Warum floppte das Bildtelefon zuerst?", optionen: ["Bilder brauchen viel mehr Daten, als die Leitungen damals schafften","Die Geräte waren so groß, dass sie in keine normale Wohnung passten","Es war nur auf Kurzstrecken möglich, weil das Bild über Funk gesendet wurde"], richtig: 0, erklaerung: "Bilder sind Datenmassen. Ein Medium setzt sich oft erst durch, wenn der »Transportweg« dick genug ist." },
   },
   {
     id: "satellit", name: "Nachrichtensatellit", icon: "🛰️", jahr: 1962, jahrText: "1962, Telstar", epoche: "modern", art: "Signal", demo: "satellit", dauer1000km: 0.3,
@@ -586,7 +586,7 @@ const ROH: Medium[] = [
     ],
     witz: "Telstar war so berühmt, dass ein Instrumental-Song namens »Telstar« 1962 in England und den USA auf Platz 1 landete. Welcher Satellit hat heute noch einen eigenen Hit?",
     profil: { reichweite: 5, tempo: 5, haltbar: 1, publikum: 5, einfach: 2 },
-    frage: { text: "Was macht ein Nachrichtensatellit?", optionen: ["Er empfängt Signale von der Erde und funkt sie an einen weit entfernten Ort zurück", "Er speichert Filme", "Er macht Wetter"], richtig: 0, erklaerung: "Ein Relais im All — wie ein Turm des optischen Telegrafen, nur 36 000 km hoch und für die halbe Erde sichtbar." },
+    frage: { text: "Was macht ein Nachrichtensatellit?", optionen: ["Er empfängt Signale von der Erde und funkt sie an einen weit entfernten Ort zurück","Er speichert Filme und Telefongespräche und schickt sie später zur Erde","Er misst nur das Wetter und gibt es an Fernsehsender weiter"], richtig: 0, erklaerung: "Ein Relais im All — wie ein Turm des optischen Telegrafen, nur 36 000 km hoch und für die halbe Erde sichtbar." },
   },
   {
     id: "kassette", name: "Kassette & Walkman", icon: "📼", jahr: 1963, jahrText: "1963 Kassette, 1979 Walkman", epoche: "modern", art: "Ton", demo: "kassette",
@@ -602,7 +602,7 @@ const ROH: Medium[] = [
     ],
     witz: "Ein Bleistift war das wichtigste Kassetten-Zubehör: Damit spulte man ohne Batterie und rettete Bandsalat. Der erste Walkman hatte zwei Kopfhörerbuchsen und einen »Hotline«-Knopf, mit dem man trotz Musik miteinander reden konnte — Teilen und Chatten schon 1979.",
     profil: { reichweite: 2, tempo: 1, haltbar: 3, publikum: 2, einfach: 5 },
-    frage: { text: "Was machte die Kassette für normale Leute so wichtig?", optionen: ["Jeder konnte billig selbst aufnehmen und kopieren", "Sie klang besser als jede CD", "Sie lief ewig ohne Abnutzung"], richtig: 0, erklaerung: "Medien in Nutzerhand: Nicht nur Firmen, sondern alle konnten Inhalte machen und weitergeben — ein Vorläufer von YouTube und Co." },
+    frage: { text: "Was machte die Kassette für normale Leute so wichtig?", optionen: ["Jeder konnte billig selbst aufnehmen und kopieren","Sie klang besser als jede Schallplatte, weil das Band den Ton nicht verfälscht","Sie hielt ewig, weil sich das Band beim Abspielen nicht abnutzte"], richtig: 0, erklaerung: "Medien in Nutzerhand: Nicht nur Firmen, sondern alle konnten Inhalte machen und weitergeben — ein Vorläufer von YouTube und Co." },
   },
   // ───────────── Digital ─────────────
   {
@@ -619,7 +619,7 @@ const ROH: Medium[] = [
     ],
     witz: "Das Speichern-Symbol in fast jedem Programm ist immer noch eine Diskette. Viele Kinder kennen die Diskette nur als »das 3D-gedruckte Speichern-Symbol«.",
     profil: { reichweite: 2, tempo: 2, haltbar: 2, publikum: 1, einfach: 3 },
-    frage: { text: "Was ist der Vorteil digitaler Kopien, z. B. auf Diskette?", optionen: ["Jede Kopie ist exakt gleich, ohne Rauschen", "Sie sind größer", "Sie halten 1000 Jahre"], richtig: 0, erklaerung: "Bits sind nur 0 oder 1 — eine Kopie ist perfekt. Bei Kassetten rauschte jede Kopie mehr." },
+    frage: { text: "Was ist der Vorteil digitaler Kopien, z. B. auf Diskette?", optionen: ["Jede Kopie ist exakt gleich, ohne Rauschen","Die Kopien werden mit jedem Mal etwas leiser und rauschen stärker","Sie sind sofort in jedes Land übertragbar, ohne Datenträger zu brauchen"], richtig: 0, erklaerung: "Bits sind nur 0 oder 1 — eine Kopie ist perfekt. Bei Kassetten rauschte jede Kopie mehr." },
   },
   {
     id: "email", name: "E-Mail", icon: "📧", jahr: 1971, jahrText: "1971, Ray Tomlinson", epoche: "digital", art: "Schrift", dauer1000km: 5,
@@ -635,7 +635,7 @@ const ROH: Medium[] = [
     ],
     witz: "Woran die erste E-Mail stand, weiß Tomlinson selbst nicht mehr — vermutlich etwas wie »QWERTYUIOP«. Die erste Spam-Mail kam 1978: Werbung für Computer an rund 400 Leute. Seitdem läuft das Problem mit Lichtgeschwindigkeit.",
     profil: { reichweite: 5, tempo: 5, haltbar: 4, publikum: 3, einfach: 4 },
-    frage: { text: "Was vereint die E-Mail, was früher getrennt war?", optionen: ["Schnell wie der Telegraf und gespeichert wie ein Brief", "Ton und Bild", "Radio und Fernsehen"], richtig: 0, erklaerung: "Tempo + Haltbarkeit + viele Empfänger — fast alle Profilwerte gleichzeitig hoch. Das gab's vorher nie." },
+    frage: { text: "Was vereint die E-Mail, was früher getrennt war?", optionen: ["Schnell wie der Telegraf und gespeichert wie ein Brief","Gesprochenes Wort und Bild wie beim Fernsehen","Die Reichweite des Radios und die Qualität eines Fotos"], richtig: 0, erklaerung: "Tempo + Haltbarkeit + viele Empfänger — fast alle Profilwerte gleichzeitig hoch. Das gab's vorher nie." },
   },
   {
     id: "videokassette", name: "VHS gegen Betamax", icon: "📼", jahr: 1975, jahrText: "1975 Betamax, 1976 VHS", epoche: "digital", art: "Bewegtbild",
@@ -652,7 +652,7 @@ const ROH: Medium[] = [
     witz: "»Bitte zurückspulen« stand auf jeder Leihkassette. Wer es vergaß, zahlte Strafe. Die erste Gebühr für vergessenen Ladezustand.",
     profil: { reichweite: 2, tempo: 1, haltbar: 3, publikum: 2, einfach: 4 },
     flop: { lebte: "Betamax 1975 – 2016 (letzte Kassetten)", warum: "Bessere Technik, aber zu kurze Spielzeit und zu wenige Partner. VHS hatte die Filme in der Videothek.", grabspruch: "Betamax: Schöneres Bild. Kürzeres Leben." },
-    frage: { text: "Warum gewann VHS trotz schlechterem Bild?", optionen: ["Ein ganzer Film passte drauf, und es gab mehr Filme dafür", "VHS war bunter", "Betamax war verboten"], richtig: 0, erklaerung: "Für Nutzer zählt, was das Medium transportieren kann: einen ganzen Film. Speicherplatz schlug Bildqualität." },
+    frage: { text: "Warum gewann VHS trotz schlechterem Bild?", optionen: ["Ein ganzer Film passte drauf, und es gab mehr Filme dafür","VHS hatte das schärfere Bild und wurde deshalb von Filmstudios bevorzugt","Betamax ließ sich nicht kopieren, deshalb mochten Kunden es nicht"], richtig: 0, erklaerung: "Für Nutzer zählt, was das Medium transportieren kann: einen ganzen Film. Speicherplatz schlug Bildqualität." },
   },
   {
     id: "laserdisc", name: "LaserDisc", icon: "📀", jahr: 1978, jahrText: "1978", epoche: "digital", art: "Bewegtbild",
@@ -669,7 +669,7 @@ const ROH: Medium[] = [
     witz: "Die LaserDisc war wie eine Pizza mit Film drauf: groß, rund, man musste sie wenden — nur satt wurde man nicht.",
     profil: { reichweite: 2, tempo: 1, haltbar: 4, publikum: 2, einfach: 2 },
     flop: { lebte: "1978 – 2009 (letzte Player)", warum: "Teurer als VHS, nicht bespielbar. Als die kleine DVD kam, war sie erledigt.", grabspruch: "Zu groß für diese Welt." },
-    frage: { text: "Warum setzte sich die LaserDisc nicht durch?", optionen: ["Teuer und man konnte nicht selbst aufnehmen", "Das Bild war schlecht", "Sie war zu klein"], richtig: 0, erklaerung: "Qualität allein reicht nicht: Zugang (Preis) und Mitmachen (aufnehmen) entscheiden mit." },
+    frage: { text: "Warum setzte sich die LaserDisc nicht durch?", optionen: ["Teuer und man konnte nicht selbst aufnehmen","Das Bild war unscharf, weil die Scheibe nicht digital war","Die Scheibe war zu klein, sodass kein ganzer Film darauf passte"], richtig: 0, erklaerung: "Qualität allein reicht nicht: Zugang (Preis) und Mitmachen (aufnehmen) entscheiden mit." },
   },
   {
     id: "cd", name: "Compact Disc", icon: "💿", jahr: 1982, jahrText: "1982, Philips und Sony", epoche: "digital", art: "Daten",
@@ -685,7 +685,7 @@ const ROH: Medium[] = [
     ],
     witz: "Angeblich sind CDs 74 Minuten lang, damit Beethovens 9. Sinfonie draufpasst. Ob das stimmt, ist umstritten — aber Beethoven war damit der erste Mensch, der eine Speichergröße festgelegt hat. Vielleicht.",
     profil: { reichweite: 3, tempo: 1, haltbar: 4, publikum: 4, einfach: 4 },
-    frage: { text: "Was bedeutet »digital« bei der CD?", optionen: ["Musik wird als Zahlen gespeichert", "Musik wird mit Fingern gespielt", "Musik ist lauter"], richtig: 0, erklaerung: "Messwerte als Zahlen — und Zahlen kann man perfekt kopieren und über Netze schicken. Das bereitete MP3 und Streaming vor." },
+    frage: { text: "Was bedeutet »digital« bei der CD?", optionen: ["Musik wird als Zahlen gespeichert","Musik wird mit den Fingern auf Tasten gespielt und direkt aufgezeichnet","Musik ist lauter als bei der Schallplatte, weil sie digital verstärkt wird"], richtig: 0, erklaerung: "Messwerte als Zahlen — und Zahlen kann man perfekt kopieren und über Netze schicken. Das bereitete MP3 und Streaming vor." },
   },
   {
     id: "btx", name: "Bildschirmtext (BTX)", icon: "🟦", jahr: 1983, jahrText: "1983, Deutsche Bundespost", epoche: "digital", art: "Daten",
@@ -702,7 +702,7 @@ const ROH: Medium[] = [
     witz: "1984 nutzte der Chaos Computer Club eine Sicherheitslücke im BTX: Über Nacht buchte das System der Hamburger Sparkasse 134 000 DM an den Club — der Club meldete es selbst der Presse und gab das Geld zurück. Der erste »ethische Hack«, der in Deutschland Schlagzeilen machte.",
     profil: { reichweite: 4, tempo: 3, haltbar: 2, publikum: 2, einfach: 1 },
     flop: { lebte: "1983 – 2001 (Reste bis 2007)", warum: "Zu teuer, zu geschlossen: Nur ausgewählte Anbieter, Gebühren für jede Seite. Das offene, billige Internet überholte es.", grabspruch: "Hier ruht BTX. Bitte Seite *R.I.P.# wählen. Kostet 9 Pfennig." },
-    frage: { text: "Warum verlor BTX gegen das Internet?", optionen: ["Es war geschlossen und teuer, das Internet offen und billig", "Es hatte keine Farben", "Es war zu schnell"], richtig: 0, erklaerung: "Offene Netze, in denen jeder anbieten darf, wachsen schneller als ein Netz, das einer kontrolliert." },
+    frage: { text: "Warum verlor BTX gegen das Internet?", optionen: ["Es war geschlossen und teuer, das Internet offen und billig","Es hatte keine Farben und wurde deshalb von der Mehrheit abgelehnt","Es war zu schnell für die damaligen Computer, die die Daten nicht verarbeiten konnten"], richtig: 0, erklaerung: "Offene Netze, in denen jeder anbieten darf, wachsen schneller als ein Netz, das einer kontrolliert." },
   },
   {
     id: "handy", name: "Handy", icon: "📱", jahr: 1983, jahrText: "1983 erstes Handy, 1992 GSM in Deutschland", epoche: "digital", art: "Ton", dauer1000km: 30,
@@ -718,7 +718,7 @@ const ROH: Medium[] = [
     ],
     witz: "Wegen seiner Form hieß das DynaTAC »der Knochen«. Man konnte damit telefonieren — oder sich gegen Wölfe verteidigen.",
     profil: { reichweite: 5, tempo: 5, haltbar: 1, publikum: 1, einfach: 3 },
-    frage: { text: "Was änderte das Handy beim Telefonieren grundlegend?", optionen: ["Man ruft eine Person an, nicht einen Ort", "Gespräche wurden länger", "Man konnte Briefe faxen"], richtig: 0, erklaerung: "Die Nachricht findet den Menschen, wo er gerade ist. Vorher klingelte ein Telefon im Flur, und vielleicht war niemand da." },
+    frage: { text: "Was änderte das Handy beim Telefonieren grundlegend?", optionen: ["Man ruft eine Person an, nicht einen Ort","Gespräche konnten viel länger geführt werden, weil die Leitung stabiler wurde","Man konnte erstmals Briefe per Funk verschicken, ohne zur Post zu gehen"], richtig: 0, erklaerung: "Die Nachricht findet den Menschen, wo er gerade ist. Vorher klingelte ein Telefon im Flur, und vielleicht war niemand da." },
   },
   {
     id: "www", name: "World Wide Web", icon: "🌐", jahr: 1991, jahrText: "1989 Idee, 1991 öffentlich", epoche: "digital", art: "Daten", demo: "modem", dauer1000km: 0.05,
@@ -734,7 +734,7 @@ const ROH: Medium[] = [
     ],
     witz: "Auf dem ersten Webserver der Welt klebte ein Zettel: »Dieser Rechner ist ein Server. NICHT AUSSCHALTEN!!« Es war ein einziger Computer, und wenn ihn jemand ausgeschaltet hätte, wäre das ganze Web aus gewesen.",
     profil: { reichweite: 5, tempo: 5, haltbar: 4, publikum: 5, einfach: 4 },
-    frage: { text: "Was unterscheidet das Web vom Radio und Fernsehen?", optionen: ["Jeder kann nicht nur empfangen, sondern auch selbst senden", "Es ist langsamer", "Es kann nur Text"], richtig: 0, erklaerung: "Viele-an-viele statt Einer-an-alle. Das ist die vielleicht größte Medien-Revolution seit Gutenberg." },
+    frage: { text: "Was unterscheidet das Web vom Radio und Fernsehen?", optionen: ["Jeder kann nicht nur empfangen, sondern auch selbst senden","Es ist langsamer als das Fernsehen, weil es nur auf Kabeln läuft","Es kann nur Text darstellen, weil es für Wissenschaftler gebaut wurde"], richtig: 0, erklaerung: "Viele-an-viele statt Einer-an-alle. Das ist die vielleicht größte Medien-Revolution seit Gutenberg." },
   },
   {
     id: "sms", name: "SMS", icon: "💬", jahr: 1992, jahrText: "1992", epoche: "digital", art: "Schrift", demo: "sms", dauer1000km: 5,
@@ -750,7 +750,7 @@ const ROH: Medium[] = [
     ],
     witz: "Weil jede SMS Geld kostete und nur 160 Zeichen hatte, erfanden Jugendliche Abkürzungen: »hdl« (hab dich lieb), »gn8« (gute Nacht), »lol«. Eure Eltern haben das erfunden. Ja, wirklich.",
     profil: { reichweite: 5, tempo: 5, haltbar: 3, publikum: 1, einfach: 4 },
-    frage: { text: "Was ist der Vorteil einer SMS gegenüber einem Anruf?", optionen: ["Die Nachricht wartet, bis der Empfänger Zeit hat", "Sie ist länger", "Sie hat Ton"], richtig: 0, erklaerung: "Zeitversetzt: Absender und Empfänger müssen nicht gleichzeitig da sein — wie beim Brief, nur sofort." },
+    frage: { text: "Was ist der Vorteil einer SMS gegenüber einem Anruf?", optionen: ["Die Nachricht wartet, bis der Empfänger Zeit hat","Sie darf beliebig lang sein und kostet nichts","Sie überträgt auch Bilder und Ton, was ein Anruf nicht kann"], richtig: 0, erklaerung: "Zeitversetzt: Absender und Empfänger müssen nicht gleichzeitig da sein — wie beim Brief, nur sofort." },
   },
   {
     id: "minidisc", name: "MiniDisc", icon: "🟪", jahr: 1992, jahrText: "1992, Sony", epoche: "digital", art: "Ton",
@@ -767,7 +767,7 @@ const ROH: Medium[] = [
     witz: "Die MiniDisc war die coolste Technik, die niemand in deiner Klasse hatte. Heute ist sie so retro, dass es wieder Fans gibt.",
     profil: { reichweite: 2, tempo: 1, haltbar: 4, publikum: 1, einfach: 2 },
     flop: { lebte: "1992 – 2013 (Player), Rohlinge bis 2025", warum: "Gute Technik, aber eigenes teures Format — gebrannte CDs und MP3-Dateien waren billiger und passten überall.", grabspruch: "Zu klein, um gesehen zu werden." },
-    frage: { text: "Was hat die MiniDisc verdrängt?", optionen: ["MP3-Dateien, die auf jedem Computer liefen", "Die Schallplatte", "Das Radio"], richtig: 0, erklaerung: "Daten, die nicht an ein Gerät gebunden sind, gewinnen: Eine MP3-Datei läuft überall." },
+    frage: { text: "Was hat die MiniDisc verdrängt?", optionen: ["MP3-Dateien, die auf jedem Computer liefen","Die Schallplatte, weil sie wieder in Mode kam und viele Leute ihr Radio zuhause ließen","Das Radio, weil es auf Reisen keine Geräte mehr brauchte"], richtig: 0, erklaerung: "Daten, die nicht an ein Gerät gebunden sind, gewinnen: Eine MP3-Datei läuft überall." },
   },
   {
     id: "pager", name: "Pager (»Piepser«)", icon: "📟", jahr: 1990, jahrText: "Massenmarkt 1990er", epoche: "digital", art: "Zeichen", demo: "pager",
@@ -784,7 +784,7 @@ const ROH: Medium[] = [
     witz: "Jugendliche schickten Zahlencodes: 143 = »I love you« (1, 4, 3 Buchstaben). 07734 heißt umgedreht gelesen »hello«. Zahlen-Emojis!",
     profil: { reichweite: 4, tempo: 5, haltbar: 1, publikum: 1, einfach: 3 },
     flop: { lebte: "1990er – heute (Kliniken, Feuerwehr)", warum: "Für alle anderen machte das Handy ihn überflüssig. Bei Rettungskräften lebt er weiter: Sein Funk kommt auch durch, wenn das Handynetz überlastet ist.", grabspruch: "Er ist nicht tot. Er piept nur leiser." },
-    frage: { text: "Warum nutzen Feuerwehren noch Pager?", optionen: ["Der Pager-Funk kommt auch an, wenn das Handynetz überlastet ist", "Sie sind cool", "Feuerwehrleute haben keine Handys"], richtig: 0, erklaerung: "Zuverlässigkeit ist auch ein Profilwert: Im Notfall zählt, dass die Nachricht sicher ankommt." },
+    frage: { text: "Warum nutzen Feuerwehren noch Pager?", optionen: ["Der Pager-Funk kommt auch an, wenn das Handynetz überlastet ist","Er funktioniert auch unter Wasser, und Feuerwehrleute werden im Einsatz oft nass","Er zeigt auch Videos der Einsatzstelle, sodass jeder sofort alles sieht"], richtig: 0, erklaerung: "Zuverlässigkeit ist auch ein Profilwert: Im Notfall zählt, dass die Nachricht sicher ankommt." },
   },
   {
     id: "zip", name: "Zip-Diskette", icon: "🗜️", jahr: 1994, jahrText: "1994, Iomega", epoche: "digital", art: "Daten",
@@ -801,7 +801,7 @@ const ROH: Medium[] = [
     witz: "Ein Speichermedium, das zum Abschied klickt wie eine Uhr — das ist kein Feature, das ist Horror.",
     profil: { reichweite: 2, tempo: 2, haltbar: 2, publikum: 1, einfach: 2 },
     flop: { lebte: "1994 – ca. 2003", warum: "Eigene Laufwerke, Fehler, dann kamen CD-Rohlinge und USB-Sticks, die überall passten.", grabspruch: "Klick. Klick. Klick." },
-    frage: { text: "Was hat die Zip-Diskette verdrängt?", optionen: ["USB-Sticks und CD-Rohlinge, die an jeden Computer passten", "Die Schallplatte", "Die Brieftaube"], richtig: 0, erklaerung: "Wieder: Was überall passt (Standard), gewinnt gegen Spezialgeräte." },
+    frage: { text: "Was hat die Zip-Diskette verdrängt?", optionen: ["USB-Sticks und CD-Rohlinge, die an jeden Computer passten","Die Schallplatte, weil man Daten damit schneller speichern konnte","Die Brieftaube, weil Daten damit schneller übertragen wurden"], richtig: 0, erklaerung: "Wieder: Was überall passt (Standard), gewinnt gegen Spezialgeräte." },
   },
   {
     id: "mp3", name: "MP3", icon: "🎧", jahr: 1995, jahrText: "1995, Fraunhofer-Institut Erlangen", epoche: "digital", art: "Daten",
@@ -817,7 +817,7 @@ const ROH: Medium[] = [
     ],
     witz: "Brandenburg testete sein Verfahren immer wieder mit dem Lied »Tom's Diner« von Suzanne Vega, weil man an ihrer Stimme jeden Fehler hört. Deshalb heißt sie »Mutter des MP3«. Sie hat das Lied wohl öfter gehört als ihre eigenen Fans.",
     profil: { reichweite: 5, tempo: 4, haltbar: 4, publikum: 4, einfach: 5 },
-    frage: { text: "Wie macht MP3 Musik so klein?", optionen: ["Es lässt weg, was das Ohr kaum hört", "Es spielt schneller", "Es löscht jedes zweite Lied"], richtig: 0, erklaerung: "Kompression: Weniger Daten für fast dieselbe Information. So passt mehr durch dieselbe Leitung — wie bei JPEG für Bilder." },
+    frage: { text: "Wie macht MP3 Musik so klein?", optionen: ["Es lässt weg, was das Ohr kaum hört","Es spielt das Lied etwas schneller ab, damit weniger Daten anfallen","Es löscht jedes zweite Lied, damit mehr Platz bleibt"], richtig: 0, erklaerung: "Kompression: Weniger Daten für fast dieselbe Information. So passt mehr durch dieselbe Leitung — wie bei JPEG für Bilder." },
   },
   {
     id: "glasfaser", name: "Glasfaser & Seekabel", icon: "🔆", jahr: 1988, jahrText: "1988 erstes Glasfaser-Seekabel durch den Atlantik", epoche: "digital", art: "Daten", dauer1000km: 0.005,
@@ -833,7 +833,7 @@ const ROH: Medium[] = [
     ],
     witz: "Haie haben Seekabel angeknabbert — wahrscheinlich, weil sie schwache elektrische Felder spüren. Manche Kabel bekamen deshalb eine Schutzhülle. Das Internet hat also offiziell ein Haiproblem.",
     profil: { reichweite: 5, tempo: 5, haltbar: 1, publikum: 5, einfach: 3 },
-    frage: { text: "Wie reisen die meisten Daten zwischen Kontinenten?", optionen: ["Durch Glasfaser-Seekabel auf dem Meeresgrund", "Über Satelliten", "Mit Flugzeugen"], richtig: 0, erklaerung: "Kabel schaffen viel mehr Daten mit weniger Verzögerung. Satelliten sind für abgelegene Orte. Mehr dazu in der Sim »Schichtenmodell«." },
+    frage: { text: "Wie reisen die meisten Daten zwischen Kontinenten?", optionen: ["Durch Glasfaser-Seekabel auf dem Meeresgrund","Über Satelliten, die die Daten blitzschnell zwischen den Kontinenten weiterreichen","Mit Flugzeugen, die Festplatten mit den Daten von Kontinent zu Kontinent fliegen"], richtig: 0, erklaerung: "Kabel schaffen viel mehr Daten mit weniger Verzögerung. Satelliten sind für abgelegene Orte. Mehr dazu in der Sim »Schichtenmodell«." },
   },
   // ───────────── Heute ─────────────
   {
@@ -850,7 +850,7 @@ const ROH: Medium[] = [
     ],
     witz: "Das erste YouTube-Video (2005) heißt »Me at the zoo«, dauert 19 Sekunden und die wichtigste Erkenntnis ist: Elefanten haben echt lange Rüssel. Inzwischen hat es Hunderte Millionen Aufrufe. Hoffnung für uns alle.",
     profil: { reichweite: 5, tempo: 5, haltbar: 3, publikum: 5, einfach: 5 },
-    frage: { text: "Wer entscheidet in sozialen Medien, was du siehst?", optionen: ["Vor allem ein Algorithmus, der deine Aufmerksamkeit misst", "Eine Redaktion wie bei der Zeitung", "Niemand, alles ist zufällig"], richtig: 0, erklaerung: "Kein Redakteur prüft — ein Programm sortiert nach dem, was dich festhält. Darum: selbst prüfen, wer etwas behauptet." },
+    frage: { text: "Wer entscheidet in sozialen Medien, was du siehst?", optionen: ["Vor allem ein Algorithmus, der deine Aufmerksamkeit misst","Eine Redaktion, die jeden Beitrag prüft und nach Wichtigkeit sortiert","Der Zufall, denn jeder Beitrag wird jedem gleich oft angezeigt"], richtig: 0, erklaerung: "Kein Redakteur prüft — ein Programm sortiert nach dem, was dich festhält. Darum: selbst prüfen, wer etwas behauptet." },
   },
   {
     id: "hddvd", name: "HD DVD", icon: "📀", jahr: 2006, jahrText: "2006 – 2008", epoche: "heute", art: "Bewegtbild",
@@ -867,7 +867,7 @@ const ROH: Medium[] = [
     witz: "Der HD-DVD-Player war 2008 im Ausverkauf so billig, dass Leute ihn als ziemlich guten DVD-Player kauften. Ein Flop mit Trostpreis.",
     profil: { reichweite: 2, tempo: 1, haltbar: 3, publikum: 2, einfach: 3 },
     flop: { lebte: "2006 – 2008", warum: "Die Filmstudios wählten Blu-ray. Ein Medium ohne Inhalte ist nur eine glänzende Scheibe.", grabspruch: "Zwei Jahre HD. Dann Schwarzbild." },
-    frage: { text: "Warum verlor die HD DVD?", optionen: ["Die meisten Filme erschienen nur noch auf Blu-ray", "Sie war viereckig", "Sie hatte kein Bild"], richtig: 0, erklaerung: "Ein Medium ist nur so gut wie das, was man darauf bekommt. Inhalte entscheiden den Formatkrieg." },
+    frage: { text: "Warum verlor die HD DVD?", optionen: ["Die meisten Filme erschienen nur noch auf Blu-ray","Sie hatte kein scharfes Bild und fasste weniger Daten als die DVD","Sie ließ sich nur in Japan abspielen, deshalb kaufte sie im Westen niemand"], richtig: 0, erklaerung: "Ein Medium ist nur so gut wie das, was man darauf bekommt. Inhalte entscheiden den Formatkrieg." },
   },
   {
     id: "smartphone", name: "Smartphone", icon: "📲", jahr: 2007, jahrText: "1994 IBM Simon, 2007 iPhone", epoche: "heute", art: "Daten",
@@ -883,7 +883,7 @@ const ROH: Medium[] = [
     ],
     witz: "2007 lachte Microsoft-Chef Steve Ballmer über das iPhone: Es sei zu teuer und habe keine Tastatur, keine Chance. Heute haben Tastaturen-Handys keine Chance.",
     profil: { reichweite: 5, tempo: 5, haltbar: 4, publikum: 5, einfach: 5 },
-    frage: { text: "Was ist das Besondere am Smartphone in der Mediengeschichte?", optionen: ["Es vereint fast alle früheren Medien in einem Gerät", "Es ist das erste Telefon", "Es kann nur telefonieren"], richtig: 0, erklaerung: "Konvergenz: Alles wird zu Daten, und ein Gerät spielt alle Daten ab. Schau dir die Profilbalken an — alle auf Maximum." },
+    frage: { text: "Was ist das Besondere am Smartphone in der Mediengeschichte?", optionen: ["Es vereint fast alle früheren Medien in einem Gerät","Es ist das erste Telefon, das ohne Kabel funktioniert","Es war das erste Gerät, das Fotos aufnehmen konnte"], richtig: 0, erklaerung: "Konvergenz: Alles wird zu Daten, und ein Gerät spielt alle Daten ab. Schau dir die Profilbalken an — alle auf Maximum." },
   },
   {
     id: "googleglass", name: "Datenbrille Google Glass", icon: "🥽", jahr: 2013, jahrText: "2013", epoche: "heute", art: "Daten",
@@ -900,7 +900,7 @@ const ROH: Medium[] = [
     witz: "Wer die Brille trug, bekam bald einen fiesen Spitznamen, eine Mischung aus »Glass« und einem Schimpfwort. Kein Gerät wurde schneller zum Meme.",
     profil: { reichweite: 5, tempo: 5, haltbar: 2, publikum: 1, einfach: 1 },
     flop: { lebte: "2013 – 2015 für alle, für Firmen bis 2023", warum: "Zu teuer, zu seltsam, und die Menschen in der Umgebung wollten nicht heimlich gefilmt werden. Akzeptanz ist auch Technik.", grabspruch: "Sie sah alles. Darum wollte sie keiner sehen." },
-    frage: { text: "Warum floppte Google Glass vor allem?", optionen: ["Andere Menschen wollten nicht ungefragt gefilmt werden", "Die Brille war zu schwer", "Es gab kein Internet"], richtig: 0, erklaerung: "Ein Medium betrifft nicht nur die Nutzer, sondern auch die Umgebung. Privatsphäre entscheidet mit." },
+    frage: { text: "Warum floppte Google Glass vor allem?", optionen: ["Andere Menschen wollten nicht ungefragt gefilmt werden","Die Brille lief nur in Japan, weil sie ein besonderes Funknetz brauchte","Es gab nicht genug Internet in den Städten, um die Brille zu nutzen"], richtig: 0, erklaerung: "Ein Medium betrifft nicht nur die Nutzer, sondern auch die Umgebung. Privatsphäre entscheidet mit." },
   },
   {
     id: "ki", name: "KI-Chatbots", icon: "🤖", jahr: 2022, jahrText: "2022, ChatGPT", epoche: "heute", art: "Daten",
@@ -916,7 +916,7 @@ const ROH: Medium[] = [
     ],
     witz: "KI kann jetzt auch Witze schreiben. Alle Witze in dieser Simulation sind aber von Menschen — darum sind sie so schlecht.",
     profil: { reichweite: 5, tempo: 5, haltbar: 3, publikum: 5, einfach: 5 },
-    frage: { text: "Was ist neu an KI-Chatbots als Medium?", optionen: ["Sie überbringen nicht nur, sie erzeugen selbst neue Texte — die man prüfen muss", "Sie sind langsamer als Briefe", "Sie funktionieren ohne Strom"], richtig: 0, erklaerung: "Bisher transportierten Medien, was Menschen sagten. Die KI erzeugt Inhalte selbst. Darum wird die Frage »Woher stammt das, stimmt das?« wichtiger denn je." },
+    frage: { text: "Was ist neu an KI-Chatbots als Medium?", optionen: ["Sie überbringen nicht nur, sie erzeugen selbst neue Texte — die man prüfen muss","Sie speichern alle Texte der Welt wörtlich und geben sie unverändert wieder","Sie sind immer richtig, weil sie nur Fakten nachschlagen"], richtig: 0, erklaerung: "Bisher transportierten Medien, was Menschen sagten. Die KI erzeugt Inhalte selbst. Darum wird die Frage »Woher stammt das, stimmt das?« wichtiger denn je." },
   },
   // ───────────── Nachgetragen aus dem TaskCrawler »Zeitreise der Medien« ─────────────
   {
@@ -933,7 +933,7 @@ const ROH: Medium[] = [
     ],
     witz: "Das Spiel »Stille Post« beweist: Schon nach zehn Ohren wird aus »Die Mammuts ziehen nach Norden« ganz sicher »Der Mann im Mond hat Sorgen«. Fehlerkorrektur: keine.",
     profil: { reichweite: 1, tempo: 2, haltbar: 2, publikum: 2, einfach: 5 },
-    frage: { text: "Was ist die größte Schwäche der mündlichen Überlieferung?", optionen: ["Bei jeder Weitergabe kann sich die Nachricht verändern", "Man braucht teures Werkzeug", "Nur Könige durften erzählen"], richtig: 0, erklaerung: "Das Gedächtnis ist kein Speicher, der genau kopiert. Erst Bild und Schrift halten eine Botschaft unverändert fest." },
+    frage: { text: "Was ist die größte Schwäche der mündlichen Überlieferung?", optionen: ["Bei jeder Weitergabe kann sich die Nachricht verändern","Es braucht viel teures Werkzeug, um Geschichten zu merken","Nur Könige durften erzählen, deshalb ging viel Wissen verloren"], richtig: 0, erklaerung: "Das Gedächtnis ist kein Speicher, der genau kopiert. Erst Bild und Schrift halten eine Botschaft unverändert fest." },
   },
   {
     id: "orakelknochen", name: "Orakelknochen in China", icon: "🦴", jahr: -1250, jahrText: "um 1250 v. Chr., Shang-Dynastie", epoche: "antike", art: "Schrift",
@@ -949,7 +949,7 @@ const ROH: Medium[] = [
     ],
     witz: "Bis 1899 kauften Apotheker die Knochen als »Drachenknochen«, mahlten sie zu Pulver und verkauften sie als Medizin. Ein Gelehrter entdeckte die Schrift auf seiner eigenen Arznei — wer weiß, wie viele Kapitel Geschichte als Hustensaft geschluckt wurden.",
     profil: { reichweite: 1, tempo: 1, haltbar: 5, publikum: 1, einfach: 1 },
-    frage: { text: "Wozu dienten die Schriftzeichen auf den Orakelknochen?", optionen: ["Sie hielten Fragen an die Ahnen und die Antworten fest", "Man schickte damit Briefe", "Es waren Preisschilder auf dem Markt"], richtig: 0, erklaerung: "Die Knochen waren Werkzeug der Wahrsagerei — und ganz nebenbei ein Archiv. So wurde das Schreiben auch in China zum Speichern genutzt." },
+    frage: { text: "Wozu dienten die Schriftzeichen auf den Orakelknochen?", optionen: ["Sie hielten Fragen an die Ahnen und die Antworten fest","Man schickte damit Nachrichten an Verwandte in anderen Dörfern","Es waren Preislisten für Händler, die auf dem Markt Waren tauschten"], richtig: 0, erklaerung: "Die Knochen waren Werkzeug der Wahrsagerei — und ganz nebenbei ein Archiv. So wurde das Schreiben auch in China zum Speichern genutzt." },
   },
   {
     id: "bibliothek", name: "Bibliothek von Alexandria", icon: "🏛️", jahr: -290, jahrText: "um 290 v. Chr., Ägypten", epoche: "antike", art: "Schrift",
@@ -965,7 +965,7 @@ const ROH: Medium[] = [
     ],
     witz: "Laut einem antiken Bericht behielt die Bibliothek beschlagnahmte Bücher von Schiffen — die Besitzer bekamen nur die Abschrift zurück. Der älteste Fall von »Wir haben Ihre Datei aktualisiert«.",
     profil: { reichweite: 2, tempo: 1, haltbar: 3, publikum: 2, einfach: 1 },
-    frage: { text: "Was zeigt das Ende der Bibliothek über das Speichern von Wissen?", optionen: ["Wissen an nur einem Ort kann auf einmal verloren gehen — Kopien an vielen Orten sind sicherer", "Papyrus brennt nicht", "Bibliotheken braucht man nicht"], richtig: 0, erklaerung: "Ein Speicher ohne Sicherungskopie ist riskant. Darum verteilt man heute Daten auf viele Rechenzentren." },
+    frage: { text: "Was zeigt das Ende der Bibliothek über das Speichern von Wissen?", optionen: ["Wissen an nur einem Ort kann auf einmal verloren gehen — Kopien an vielen Orten sind sicherer","Papyrus brennt nicht, deshalb war das Feuer ein Zufall und kein Risiko","Bibliotheken braucht man nicht, weil Wissen im Kopf sicherer ist als auf Papyrus"], richtig: 0, erklaerung: "Ein Speicher ohne Sicherungskopie ist riskant. Darum verteilt man heute Daten auf viele Rechenzentren." },
   },
   {
     id: "maya", name: "Faltbücher der Maya", icon: "📖", jahr: 1200, jahrText: "erhaltene Bücher um 1200 – 1500, Mittelamerika", epoche: "mittelalter", art: "Schrift",
@@ -981,7 +981,7 @@ const ROH: Medium[] = [
     ],
     witz: "Der Dresdner Kodex überlebte die Spanier, den Weg über den Atlantik und 1945 die Bombennacht von Dresden — dann stand er im Keller unter Wasser. Er hat mehr erlebt als die meisten Handys, die nach zwei Jahren im Klo landen.",
     profil: { reichweite: 1, tempo: 1, haltbar: 3, publikum: 1, einfach: 1 },
-    frage: { text: "Warum ist so wenig Wissen der Maya erhalten?", optionen: ["Es gab nur wenige handgeschriebene Bücher, und die meisten wurden verbrannt", "Die Maya kannten keine Schrift", "Ihre Bücher waren aus Stein"], richtig: 0, erklaerung: "Ohne viele Kopien reicht ein Feuer, um ein ganzes Wissen auszulöschen. Der Buchdruck in Europa machte Bücher gerade deshalb so sicher: Es gab Tausende Exemplare." },
+    frage: { text: "Warum ist so wenig Wissen der Maya erhalten?", optionen: ["Es gab nur wenige handgeschriebene Bücher, und die meisten wurden verbrannt","Die Maya hatten keine Schrift und gaben alles mündlich weiter","Ihre Bücher waren aus Stein und sind im Dschungel zerfallen"], richtig: 0, erklaerung: "Ohne viele Kopien reicht ein Feuer, um ein ganzes Wissen auszulöschen. Der Buchdruck in Europa machte Bücher gerade deshalb so sicher: Es gab Tausende Exemplare." },
   },
   {
     id: "computer", name: "Computer", icon: "🖥️", jahr: 1945, jahrText: "1941 Zuse Z3, 1945 ENIAC", epoche: "modern", art: "Daten",
@@ -997,7 +997,7 @@ const ROH: Medium[] = [
     ],
     witz: "1947 fand das Team von Grace Hopper eine echte Motte im Rechner Mark II und klebte sie ins Logbuch: »First actual case of bug being found«. Seitdem heißt jeder Fehler »Bug« — und jeder Programmierer sucht Käfer.",
     profil: { reichweite: 1, tempo: 5, haltbar: 3, publikum: 1, einfach: 1 },
-    frage: { text: "Was kann der Computer, was Telegraf und Telefon nicht konnten?", optionen: ["Er verarbeitet Information selbst — rechnen, speichern, ordnen", "Er sendet Signale über Kabel", "Er ist besonders klein"], richtig: 0, erklaerung: "Bisherige Medien transportierten Information nur. Der Computer verwandelt sie in Zahlen und arbeitet damit. Das ist die Grundlage für Internet, Smartphone und KI." },
+    frage: { text: "Was kann der Computer, was Telegraf und Telefon nicht konnten?", optionen: ["Er verarbeitet Information selbst — rechnen, speichern, ordnen","Er sendet Signale über Kabel viel schneller als der Telegraf","Er ist handlich genug, um Gespräche in alle Welt zu übertragen"], richtig: 0, erklaerung: "Bisherige Medien transportierten Information nur. Der Computer verwandelt sie in Zahlen und arbeitet damit. Das ist die Grundlage für Internet, Smartphone und KI." },
   },
   {
     id: "internet", name: "Internet (ARPANET)", icon: "🕸️", jahr: 1969, jahrText: "29. Oktober 1969, USA", epoche: "modern", art: "Daten", dauer1000km: 1,
@@ -1013,7 +1013,7 @@ const ROH: Medium[] = [
     ],
     witz: "Die erste Nachricht sollte »LOGIN« heißen. Nach »LO« stürzte der Rechner in Stanford ab. Die erste Botschaft des Internets war also »LO« — und gleich danach der erste Absturz.",
     profil: { reichweite: 5, tempo: 5, haltbar: 3, publikum: 4, einfach: 2 },
-    frage: { text: "Warum funktioniert das Internet weiter, wenn eine Leitung ausfällt?", optionen: ["Die Pakete suchen sich einfach einen anderen Weg", "Es gibt eine Ersatz-Zentrale", "Ohne Leitung geht es über Satellit"], richtig: 0, erklaerung: "Es gibt keine Zentrale: Die Daten reisen in Paketen über viele mögliche Wege. Fällt einer weg, nehmen sie einen anderen." },
+    frage: { text: "Warum funktioniert das Internet weiter, wenn eine Leitung ausfällt?", optionen: ["Die Pakete suchen sich einfach einen anderen Weg","Es gibt eine Ersatz-Zentrale, die alle Daten spiegelt und übernimmt","Ohne Leitung geht es automatisch über Satellit weiter"], richtig: 0, erklaerung: "Es gibt keine Zentrale: Die Daten reisen in Paketen über viele mögliche Wege. Fällt einer weg, nehmen sie einen anderen." },
   },
   {
     id: "bildbearbeitung", name: "Bildbearbeitung (Photoshop)", icon: "🖌️", jahr: 1990, jahrText: "1990 Adobe Photoshop", epoche: "digital", art: "Bild",
@@ -1029,7 +1029,7 @@ const ROH: Medium[] = [
     ],
     witz: "»Photoshoppen« ist längst ein Verb. Adobe bittet trotzdem höflich, es nicht so zu benutzen — das Wort ist ein Markenname. Hat leider nicht geklappt, man hat es wohl wegretuschiert.",
     profil: { reichweite: 2, tempo: 4, haltbar: 4, publikum: 2, einfach: 3 },
-    frage: { text: "Wann wird eine Bildbearbeitung zur Fälschung?", optionen: ["Wenn sich die Aussage des Bildes ändert", "Sobald man die Helligkeit verstellt", "Nur wenn das Bild schwarzweiß ist"], richtig: 0, erklaerung: "Etwas heller machen ändert nichts am Inhalt. Eine Person weglassen oder dazusetzen schon — dann zeigt das Bild etwas, das so nicht passiert ist." },
+    frage: { text: "Wann wird eine Bildbearbeitung zur Fälschung?", optionen: ["Wenn sich die Aussage des Bildes ändert","Sobald man die Helligkeit und die Farben verstellt","Nur wenn das Bild später schwarzweiß gedruckt wird"], richtig: 0, erklaerung: "Etwas heller machen ändert nichts am Inhalt. Eine Person weglassen oder dazusetzen schon — dann zeigt das Bild etwas, das so nicht passiert ist." },
   },
   {
     id: "emoji", name: "Emoji", icon: "😀", jahr: 1999, jahrText: "1999, Japan", epoche: "digital", art: "Zeichen",
@@ -1045,7 +1045,7 @@ const ROH: Medium[] = [
     ],
     witz: "2015 wählte das Oxford-Wörterbuch ein Emoji zum »Wort des Jahres«: 😂. Damit hat die Menschheit nach 40 000 Jahren den Kreis geschlossen — von Bildern an der Höhlenwand zu Bildern auf dem Display.",
     profil: { reichweite: 5, tempo: 5, haltbar: 3, publikum: 3, einfach: 5 },
-    frage: { text: "Warum erfand Kurita die Emojis?", optionen: ["Auf den kleinen Handy-Displays passte wenig Text, und Bildchen zeigen schnell, wie etwas gemeint ist", "Weil Japaner keine Buchstaben haben", "Als Spiel für Kinder"], richtig: 0, erklaerung: "Wenige Pixel, viel Bedeutung: Ein Zeichen spart Platz und transportiert ein Gefühl, das in kurzen Texten oft verloren geht." },
+    frage: { text: "Warum erfand Kurita die Emojis?", optionen: ["Auf den kleinen Handy-Displays passte wenig Text, und Bildchen zeigen schnell, wie etwas gemeint ist","Weil Japaner keine Buchstaben haben und Bildzeichen deshalb schon immer lieber nutzen als Wörter","Als Spiel für Kinder, damit sie Handys schon früh leichter bedienen lernen konnten"], richtig: 0, erklaerung: "Wenige Pixel, viel Bedeutung: Ein Zeichen spart Platz und transportiert ein Gefühl, das in kurzen Texten oft verloren geht." },
   },
   {
     id: "wikipedia", name: "Wikipedia", icon: "📗", jahr: 2001, jahrText: "15. Januar 2001", epoche: "heute", art: "Schrift",
@@ -1061,7 +1061,7 @@ const ROH: Medium[] = [
     ],
     witz: "Der erfundene »Bicholim-Konflikt« zwischen Portugal und Indien stand über fünf Jahre lang in der englischen Wikipedia — mit Quellen, die es nicht gab. Er wurde sogar als guter Artikel ausgezeichnet. Seither lesen viele Profis die Fußnoten zuerst.",
     profil: { reichweite: 5, tempo: 5, haltbar: 4, publikum: 5, einfach: 5 },
-    frage: { text: "Woran erkennst du in der Wikipedia, ob eine Aussage belegt ist?", optionen: ["An der Quellenangabe (Einzelnachweis) dazu", "Daran, dass sie fett gedruckt ist", "Daran, dass sie ganz oben steht"], richtig: 0, erklaerung: "Jeder kann mitschreiben — das ist Stärke und Risiko. Die Belege machen das Wissen überprüfbar." },
+    frage: { text: "Woran erkennst du in der Wikipedia, ob eine Aussage belegt ist?", optionen: ["An der Quellenangabe (Einzelnachweis) dazu","Daran, dass der Satz fett gedruckt ist, weil Autoren Belege so markieren","Daran, dass die Aussage ganz oben im Artikel steht, weil dort die geprüften Fakten stehen"], richtig: 0, erklaerung: "Jeder kann mitschreiben — das ist Stärke und Risiko. Die Belege machen das Wissen überprüfbar." },
   },
   {
     id: "mpesa", name: "Geld per SMS (M-Pesa)", icon: "💸", jahr: 2007, jahrText: "2007, Kenia", epoche: "heute", art: "Daten",
@@ -1077,7 +1077,7 @@ const ROH: Medium[] = [
     ],
     witz: "Schon vor M-Pesa schickten sich Leute in Kenia Handy-Guthaben hin und her und tauschten es gegen Bargeld. Die Kundschaft hatte das Produkt erfunden — die Firma musste es nur noch bauen.",
     profil: { reichweite: 4, tempo: 5, haltbar: 3, publikum: 2, einfach: 5 },
-    frage: { text: "Warum wurde M-Pesa in Kenia so schnell erfolgreich?", optionen: ["Viele hatten kein Bankkonto, aber ein Handy — und SMS ging mit jedem Gerät", "Weil Handys dort verboten waren", "Weil es nur in Städten funktionierte"], richtig: 0, erklaerung: "Ein Medium, das fast alle schon haben, bekommt eine neue Aufgabe: Statt Worten überträgt die SMS Geld." },
+    frage: { text: "Warum wurde M-Pesa in Kenia so schnell erfolgreich?", optionen: ["Viele hatten kein Bankkonto, aber ein Handy — und SMS ging mit jedem Gerät","Es lief nur über Smartphones mit schnellem Internet, die sich viele leisten konnten","Es war ein staatliches Programm, das alle Bürger zur Nutzung verpflichtete"], richtig: 0, erklaerung: "Ein Medium, das fast alle schon haben, bekommt eine neue Aufgabe: Statt Worten überträgt die SMS Geld." },
   },
   {
     id: "streaming", name: "Streaming", icon: "🎬", jahr: 2008, jahrText: "2008 Spotify, 2007 Netflix-Streaming", epoche: "heute", art: "Bewegtbild",
@@ -1093,7 +1093,7 @@ const ROH: Medium[] = [
     ],
     witz: "Netflix fing 1998 damit an, DVDs per Post zu verschicken — im roten Umschlag. Die erfolgreichste Streaming-Firma der Welt war am Anfang also: ein Briefträger.",
     profil: { reichweite: 5, tempo: 5, haltbar: 2, publikum: 5, einfach: 4 },
-    frage: { text: "Was ist beim Streaming anders als bei CD oder DVD?", optionen: ["Man besitzt die Musik oder den Film nicht, sondern ruft sie über das Netz ab", "Die Qualität ist immer schlechter", "Man braucht einen Plattenspieler"], richtig: 0, erklaerung: "Das Medium ist nicht mehr der Datenträger, sondern die Leitung. Dafür hängt alles am Netz und am Abo." },
+    frage: { text: "Was ist beim Streaming anders als bei CD oder DVD?", optionen: ["Man besitzt die Musik oder den Film nicht, sondern ruft sie über das Netz ab","Man lädt alles dauerhaft auf den eigenen Computer und besitzt es danach","Die Daten kommen per Radiowellen, deshalb braucht man gar kein Internet"], richtig: 0, erklaerung: "Das Medium ist nicht mehr der Datenträger, sondern die Leitung. Dafür hängt alles am Netz und am Abo." },
   },
   {
     id: "tablet", name: "Tablet", icon: "🔳", jahr: 2010, jahrText: "2010 iPad", epoche: "heute", art: "Daten",
@@ -1109,7 +1109,7 @@ const ROH: Medium[] = [
     ],
     witz: "In »Star Trek« trugen die Leute schon 1987 Tablets mit sich herum, die »PADDs«. Die Zukunft hat 23 Jahre gebraucht, um die Requisite nachzubauen — den Warp-Antrieb suchen wir noch.",
     profil: { reichweite: 5, tempo: 5, haltbar: 3, publikum: 3, einfach: 4 },
-    frage: { text: "Warum setzte sich das Tablet erst 2010 durch, obwohl es die Idee länger gab?", optionen: ["Erst dann passten Fingerbedienung, Akku, Netz und viele Apps zusammen", "Weil es vorher keine Bildschirme gab", "Weil Tablets vorher verboten waren"], richtig: 0, erklaerung: "Ein Medium braucht passende Technik drumherum: Netz, Programme, Akku. Fehlt eins, floppt auch die beste Idee — wie beim Apple Newton." },
+    frage: { text: "Warum setzte sich das Tablet erst 2010 durch, obwohl es die Idee länger gab?", optionen: ["Erst dann passten Fingerbedienung, Akku, Netz und viele Apps zusammen","Vorher gab es keine flachen Bildschirme und deshalb keine Geräte in dieser Größe","Tablets waren verboten, weil Behörden die Daten kontrollieren wollten"], richtig: 0, erklaerung: "Ein Medium braucht passende Technik drumherum: Netz, Programme, Akku. Fehlt eins, floppt auch die beste Idee — wie beim Apple Newton." },
   },
   {
     id: "deepfake", name: "Deepfakes", icon: "🎭", jahr: 2017, jahrText: "2017", epoche: "heute", art: "Bewegtbild",
@@ -1125,7 +1125,7 @@ const ROH: Medium[] = [
     ],
     witz: "1917 fotografierten zwei Mädchen in England »echte Feen« — ausgeschnittene Papierfiguren. Sogar Sherlock-Holmes-Autor Arthur Conan Doyle glaubte daran. Fälschungen brauchen keine KI. KI macht sie nur billiger.",
     profil: { reichweite: 5, tempo: 5, haltbar: 3, publikum: 5, einfach: 3 },
-    frage: { text: "Was hilft am meisten, einen Deepfake zu entlarven?", optionen: ["Nach der Quelle fragen und prüfen, ob andere seriöse Medien berichten", "Das Video lauter stellen", "Es möglichst schnell teilen"], richtig: 0, erklaerung: "Bildfehler werden immer seltener. Die Frage nach Herkunft und Bestätigung bleibt das sicherste Werkzeug." },
+    frage: { text: "Was hilft am meisten, einen Deepfake zu entlarven?", optionen: ["Nach der Quelle fragen und prüfen, ob andere seriöse Medien berichten","Das Video lauter stellen, weil man die Stimme dann leichter als falsch erkennt","Es möglichst schnell teilen, damit andere es prüfen können"], richtig: 0, erklaerung: "Bildfehler werden immer seltener. Die Frage nach Herkunft und Bestätigung bleibt das sicherste Werkzeug." },
   },
   {
     id: "bildgenerator", name: "Bilder aus Text (KI)", icon: "🖼️", jahr: 2022, jahrText: "2022 DALL·E 2, Midjourney, Stable Diffusion", epoche: "heute", art: "Bild",
@@ -1141,7 +1141,7 @@ const ROH: Medium[] = [
     ],
     witz: "Die ersten Bildgeneratoren konnten alles malen — außer Händen. Sechs Finger, sieben Finger, Finger, die in Gabeln übergehen. Die KI hatte offenbar nie Handarbeit.",
     profil: { reichweite: 5, tempo: 5, haltbar: 3, publikum: 4, einfach: 5 },
-    frage: { text: "Womit beginnt ein Bildgenerator, wenn er ein neues Bild erzeugt?", optionen: ["Mit zufälligem Rauschen, aus dem Schritt für Schritt das Bild wird", "Mit einem Foto aus dem Internet", "Mit einer Bleistiftskizze"], richtig: 0, erklaerung: "Das Diffusionsmodell hat gelernt, Rauschen zu entfernen. Der Text lenkt, was dabei entsteht — es gibt kein Original, das kopiert wird." },
+    frage: { text: "Womit beginnt ein Bildgenerator, wenn er ein neues Bild erzeugt?", optionen: ["Mit zufälligem Rauschen, aus dem Schritt für Schritt das Bild wird","Mit einem Foto aus dem Internet, das nach deinem Text verändert wird","Mit einer groben Zeichnung, die das Programm dann ausmalt"], richtig: 0, erklaerung: "Das Diffusionsmodell hat gelernt, Rauschen zu entfernen. Der Text lenkt, was dabei entsteht — es gibt kein Original, das kopiert wird." },
   },
   // ───────────── Nachgetragen: Projektoren, Kuriositäten, jüngere Medien ─────────────
   {
@@ -1158,7 +1158,7 @@ const ROH: Medium[] = [
     ],
     witz: "Die Phantasmagorie-Vorführer ließen Geister aus Rauch auftauchen und auf das Publikum zufliegen. Ein Zeitungsbericht erzählt, dass Zuschauer ihre Stöcke nach den Gespenstern schlugen. Die ersten Jump-Scares — 200 Jahre vor Horrorfilmen.",
     profil: { reichweite: 1, tempo: 2, haltbar: 3, publikum: 3, einfach: 2 },
-    frage: { text: "Was war das Neue an der Laterna magica?", optionen: ["Ein Bild konnten viele Menschen gleichzeitig groß sehen", "Die Bilder bewegten sich von selbst wie im Kino", "Sie konnte Bilder über weite Strecken senden"], richtig: 0, erklaerung: "Projizieren heißt: ein kleines Bild groß machen, für ein ganzes Publikum. Genau das tun Dia, Overhead und Beamer bis heute." },
+    frage: { text: "Was war das Neue an der Laterna magica?", optionen: ["Ein Bild konnten viele Menschen gleichzeitig groß sehen","Die Bilder bewegten sich wie im Kino von selbst","Sie konnte Bilder über weite Strecken senden"], richtig: 0, erklaerung: "Projizieren heißt: ein kleines Bild groß machen, für ein ganzes Publikum. Genau das tun Dia, Overhead und Beamer bis heute." },
   },
   {
     id: "litfass", name: "Litfaßsäule", icon: "🗞️", jahr: 1855, jahrText: "1855, Berlin", epoche: "industrie", art: "Schrift",
@@ -1174,7 +1174,7 @@ const ROH: Medium[] = [
     ],
     witz: "Weil immer neue Plakate auf die alten kamen, wurden manche Säulen von Jahr zu Jahr dicker. Bei der Renovierung fand man Schichten von mehreren Zentimetern — ein Papier-Archiv wie die Jahresringe eines Baums.",
     profil: { reichweite: 2, tempo: 2, haltbar: 2, publikum: 4, einfach: 5 },
-    frage: { text: "Welches Problem löste Ernst Litfaß mit seiner Säule?", optionen: ["Plakate klebten wild überall — jetzt gab es einen festen Ort dafür", "Zeitungen waren zu teuer zum Drucken", "Briefe kamen nicht rechtzeitig an"], richtig: 0, erklaerung: "Ein fester, bekannter Ort für Nachrichten macht sie leichter zu finden — ein bisschen wie eine Startseite im Internet." },
+    frage: { text: "Welches Problem löste Ernst Litfaß mit seiner Säule?", optionen: ["Plakate klebten wild überall — jetzt gab es einen festen Ort dafür","Zeitungen waren zu teuer zum Drucken, deshalb gab es nun kostenlose Aushänge","Briefe kamen nicht pünktlich an, deshalb gab es nun eine Anlaufstelle"], richtig: 0, erklaerung: "Ein fester, bekannter Ort für Nachrichten macht sie leichter zu finden — ein bisschen wie eine Startseite im Internet." },
   },
   {
     id: "phonautograph", name: "Phonautograph", icon: "〰️", jahr: 1857, jahrText: "1857, Édouard-Léon Scott de Martinville", epoche: "industrie", art: "Ton",
@@ -1191,7 +1191,7 @@ const ROH: Medium[] = [
     witz: "Die älteste Tonaufnahme der Welt lag 150 Jahre im Archiv, bevor jemand sie hörte. Zuerst dachte man, eine Frau oder ein Kind singe. Später stellte sich heraus: Das Tempo war falsch berechnet — vermutlich sang Scott selbst, nur doppelt so schnell abgespielt.",
     profil: { reichweite: 1, tempo: 1, haltbar: 4, publikum: 1, einfach: 1 },
     flop: { lebte: "1857 – um 1880 (nur in Labors)", warum: "Er konnte aufzeichnen, aber nicht abspielen. Edisons Phonograph konnte beides.", grabspruch: "Ich hab alles mitgeschrieben. Hören konnte es keiner." },
-    frage: { text: "Was konnte der Phonautograph nicht?", optionen: ["Die aufgezeichneten Töne wieder abspielen", "Schall aufzeichnen", "Auf Papier schreiben"], richtig: 0, erklaerung: "Speichern allein reicht nicht — ein Medium muss die Information auch wieder ausgeben können. Das schaffte erst der Phonograph." },
+    frage: { text: "Was konnte der Phonautograph nicht?", optionen: ["Die aufgezeichneten Töne wieder abspielen","Schallwellen sichtbar auf Papier festhalten","Mit einer Membran auf Schall reagieren"], richtig: 0, erklaerung: "Speichern allein reicht nicht — ein Medium muss die Information auch wieder ausgeben können. Das schaffte erst der Phonograph." },
   },
   {
     id: "hirmondo", name: "Telefon-Zeitung (Hírmondó)", icon: "📞", jahr: 1893, jahrText: "1893 – 1944, Budapest", epoche: "industrie", art: "Ton",
@@ -1208,7 +1208,7 @@ const ROH: Medium[] = [
     witz: "Die Sprecher heißen »Stentoren«, nach dem Krieger Stentor mit der lauten Stimme aus der griechischen Sage. Sie mussten so laut und deutlich sprechen, dass es durch das ganze Kabelnetz reichte — einen Lautsprecher gab es ja nicht.",
     profil: { reichweite: 2, tempo: 5, haltbar: 1, publikum: 3, einfach: 2 },
     flop: { lebte: "1893 – 1944", warum: "Das Radio brachte dasselbe ohne Kabel in jedes Haus.", grabspruch: "Ich war Radio. Nur mit Schnur." },
-    frage: { text: "Was hatte die Telefon-Zeitung schon mit dem späteren Radio gemeinsam?", optionen: ["Ein festes Programm, das viele gleichzeitig live hören", "Sie funktionierte ohne Kabel", "Man konnte selbst zurücksprechen"], richtig: 0, erklaerung: "Einer spricht, viele hören zu, nach Programm: Das ist Rundfunk. Der Hírmondó machte es nur über Telefonleitungen." },
+    frage: { text: "Was hatte die Telefon-Zeitung schon mit dem späteren Radio gemeinsam?", optionen: ["Ein festes Programm, das viele gleichzeitig live hören","Es funktionierte ganz ohne Kabel, nur über die Luft","Man konnte selbst zurücksprechen und mit dem Sprecher diskutieren"], richtig: 0, erklaerung: "Einer spricht, viele hören zu, nach Programm: Das ist Rundfunk. Der Hírmondó machte es nur über Telefonleitungen." },
   },
   {
     id: "polaroid", name: "Sofortbild (Polaroid)", icon: "🖼️", jahr: 1948, jahrText: "1948, Edwin Land", epoche: "modern", art: "Bild",
@@ -1224,7 +1224,7 @@ const ROH: Medium[] = [
     ],
     witz: "Viele schüttelten das Bild, damit es schneller fertig wird. Polaroid erklärte: Bringt nichts, schadet eher. Die Band OutKast sang trotzdem »Shake it like a Polaroid picture« — und alle schüttelten weiter.",
     profil: { reichweite: 1, tempo: 3, haltbar: 3, publikum: 1, einfach: 4 },
-    frage: { text: "Was war bei der Sofortbildkamera besser als beim normalen Film?", optionen: ["Man hatte das fertige Foto nach Minuten statt nach Tagen", "Man konnte beliebig viele Abzüge machen", "Die Bilder waren schärfer als alle anderen"], richtig: 0, erklaerung: "Tempo! Statt den Film zum Entwickeln zu bringen, hatte man das Bild sofort — ein Vorgeschmack auf die Digitalkamera." },
+    frage: { text: "Was war bei der Sofortbildkamera besser als beim normalen Film?", optionen: ["Man hatte das fertige Foto nach Minuten statt nach Tagen","Man konnte beliebig viele Abzüge vom selben Bild machen","Die Bilder waren schärfer als alle anderen Fotos"], richtig: 0, erklaerung: "Tempo! Statt den Film zum Entwickeln zu bringen, hatte man das Bild sofort — ein Vorgeschmack auf die Digitalkamera." },
   },
   {
     id: "dia", name: "Diaprojektor", icon: "📽️", jahr: 1936, jahrText: "1936 Farbdia, Diaabende ab den 1950ern", epoche: "modern", art: "Bild", demo: "dia",
@@ -1240,7 +1240,7 @@ const ROH: Medium[] = [
     ],
     witz: "Der Diaabend wurde zum Inbegriff von Langeweile: 400 Bilder vom Campingurlaub, und bei jedem »Ach, das ist auch noch schön«. Wer zu früh ging, galt als unhöflich. Die Lösung von heute heißt »Story«: 15 Sekunden, dann ist es vorbei.",
     profil: { reichweite: 1, tempo: 2, haltbar: 4, publikum: 3, einfach: 3 },
-    frage: { text: "Warum steckt man ein Dia auf dem Kopf in den Projektor?", optionen: ["Weil die Linse das Bild umdreht — an der Wand steht es dann richtig", "Damit es nicht herausfällt", "Weil Dias immer falsch herum entwickelt werden"], richtig: 0, erklaerung: "Eine Sammellinse stellt das Bild auf den Kopf und vertauscht links und rechts — wie bei der Lochkamera. Wer das Dia vorher umdreht, sieht es an der Wand richtig." },
+    frage: { text: "Warum steckt man ein Dia auf dem Kopf in den Projektor?", optionen: ["Weil die Linse das Bild umdreht — an der Wand steht es dann richtig","Damit das Dia im warmen Licht der Lampe nicht aus dem Projektor fällt","Weil Dias bei der Entwicklung immer falsch herum belichtet werden"], richtig: 0, erklaerung: "Eine Sammellinse stellt das Bild auf den Kopf und vertauscht links und rechts — wie bei der Lochkamera. Wer das Dia vorher umdreht, sieht es an der Wand richtig." },
   },
   {
     id: "overhead", name: "Overheadprojektor", icon: "🔦", jahr: 1960, jahrText: "in Schulen ab den 1960ern", epoche: "modern", art: "Bild",
@@ -1256,7 +1256,7 @@ const ROH: Medium[] = [
     ],
     witz: "Jede Klasse kennt den Moment, in dem eine Fliege über die Glasplatte läuft: An der Wand erscheint ein Monster in Elefantengröße. Der Unterricht ist dann für fünf Minuten vorbei.",
     profil: { reichweite: 1, tempo: 4, haltbar: 2, publikum: 3, einfach: 4 },
-    frage: { text: "Was war der große Vorteil des Overheadprojektors im Unterricht?", optionen: ["Man konnte live schreiben und dabei zur Klasse schauen", "Er funktionierte ohne Strom", "Er zeigte bewegte Filme"], richtig: 0, erklaerung: "Die Folie liegt vor der Lehrkraft, das Bild erscheint hinter ihr. So bleibt der Blickkontakt — ein Grund, warum er jahrzehntelang beliebt war." },
+    frage: { text: "Was war der große Vorteil des Overheadprojektors im Unterricht?", optionen: ["Man konnte live schreiben und dabei zur Klasse schauen","Er funktionierte auch ohne Strom und Lampe","Er zeigte bewegte Filme und Ton für die ganze Klasse"], richtig: 0, erklaerung: "Die Folie liegt vor der Lehrkraft, das Bild erscheint hinter ihr. So bleibt der Blickkontakt — ein Grund, warum er jahrzehntelang beliebt war." },
   },
   {
     id: "digitalkamera", name: "Digitalkamera", icon: "📸", jahr: 1975, jahrText: "1975 Prototyp, ab Mitte der 1990er im Laden", epoche: "digital", art: "Bild",
@@ -1272,7 +1272,7 @@ const ROH: Medium[] = [
     ],
     witz: "Kodak erfand die Digitalkamera — und ging an ihr zugrunde. Ein Manager soll zu Sasson gesagt haben: »Das ist niedlich, aber erzähl es niemandem.« Die teuerste Geheimhaltung der Fotogeschichte.",
     profil: { reichweite: 3, tempo: 4, haltbar: 3, publikum: 2, einfach: 4 },
-    frage: { text: "Warum war die Digitalkamera für Kodak gefährlich, obwohl Kodak sie erfunden hatte?", optionen: ["Kodak verdiente am Film — und digitale Fotos brauchen keinen", "Sie war verboten", "Sie konnte keine Farben"], richtig: 0, erklaerung: "Ein neues Medium kann das Geschäft mit dem alten zerstören. Kodak hielt am Film fest — andere Firmen machten das Geschäft mit der Digitalkamera." },
+    frage: { text: "Warum war die Digitalkamera für Kodak gefährlich, obwohl Kodak sie erfunden hatte?", optionen: ["Kodak verdiente am Film — und digitale Fotos brauchen keinen","Digitalkameras waren verboten, weil sie Fotos fälschen konnten","Sie konnte keine Farben aufnehmen und war daher unbrauchbar"], richtig: 0, erklaerung: "Ein neues Medium kann das Geschäft mit dem alten zerstören. Kodak hielt am Film fest — andere Firmen machten das Geschäft mit der Digitalkamera." },
   },
   {
     id: "videotext", name: "Videotext", icon: "📟", jahr: 1980, jahrText: "1980 in Deutschland (1974 Ceefax in England)", epoche: "digital", art: "Schrift",
@@ -1288,7 +1288,7 @@ const ROH: Medium[] = [
     ],
     witz: "Videotext-Grafiker malten Bilder aus Klötzchen, die nur 2 × 3 Punkte groß waren. Daraus wurde eine eigene Kunst — es gibt Videotext-Kunstfestivals. Pixel-Art, bevor es Pixel-Art hieß.",
     profil: { reichweite: 4, tempo: 4, haltbar: 1, publikum: 5, einfach: 4 },
-    frage: { text: "Warum muss man beim Videotext manchmal auf eine Seite warten?", optionen: ["Die Seiten werden nacheinander im Kreis gesendet, bis die gewünschte wieder dran ist", "Der Fernseher muss die Seite erst ausdrucken", "Jemand tippt die Seite gerade ab"], richtig: 0, erklaerung: "Der Sender schickt alle Seiten reihum, wie ein Karussell. Der Fernseher fängt die gewünschte ab, sobald sie vorbeikommt." },
+    frage: { text: "Warum muss man beim Videotext manchmal auf eine Seite warten?", optionen: ["Die Seiten werden nacheinander im Kreis gesendet, bis die gewünschte wieder dran ist","Der Fernseher muss die Seite erst ausdrucken, was einige Sekunden dauert","Jemand tippt die Seite gerade ab und schickt sie dann los"], richtig: 0, erklaerung: "Der Sender schickt alle Seiten reihum, wie ein Karussell. Der Fernseher fängt die gewünschte ab, sobald sie vorbeikommt." },
   },
   {
     id: "qrcode", name: "QR-Code", icon: "🔲", jahr: 1994, jahrText: "1994, Denso Wave (Japan)", epoche: "digital", art: "Zeichen",
@@ -1304,7 +1304,7 @@ const ROH: Medium[] = [
     ],
     witz: "Ein QR-Code verkraftet, dass bis zu 30 % fehlen — deshalb kleben Firmen ihr Logo mitten hinein, und er funktioniert trotzdem. Schüler finden damit heraus, wie viel man von den Hausaufgaben weglassen kann. (Funktioniert dort leider nicht.)",
     profil: { reichweite: 3, tempo: 5, haltbar: 3, publikum: 4, einfach: 5 },
-    frage: { text: "Wozu dienen die drei großen Quadrate in den Ecken eines QR-Codes?", optionen: ["Die Kamera erkennt daran Lage, Größe und Richtung des Codes", "Sie sind nur Verzierung", "Darin steht der Name der Firma"], richtig: 0, erklaerung: "Die Ecken sind Orientierungsmarken. Deshalb liest die Kamera den Code auch schräg oder auf dem Kopf." },
+    frage: { text: "Wozu dienen die drei großen Quadrate in den Ecken eines QR-Codes?", optionen: ["Die Kamera erkennt daran Lage, Größe und Richtung des Codes","Sie sind nur Verzierung und enthalten keine Information","Darin steht der Name der Firma, die den Code erzeugt hat"], richtig: 0, erklaerung: "Die Ecken sind Orientierungsmarken. Deshalb liest die Kamera den Code auch schräg oder auf dem Kopf." },
   },
   {
     id: "podcast", name: "Podcast", icon: "🎙️", jahr: 2004, jahrText: "2004, Name aus »iPod« und »Broadcast«", epoche: "heute", art: "Ton",
@@ -1320,7 +1320,7 @@ const ROH: Medium[] = [
     ],
     witz: "Viele Podcast-Fans hören auf 1,5- oder 2-facher Geschwindigkeit. Wer seinen Lieblingspodcaster dann im echten Leben trifft, wundert sich: Der redet ja in Zeitlupe!",
     profil: { reichweite: 5, tempo: 3, haltbar: 4, publikum: 4, einfach: 5 },
-    frage: { text: "Was unterscheidet einen Podcast vom klassischen Radio?", optionen: ["Man hört ihn auf Abruf und jeder kann einen machen", "Er läuft nur nachts", "Man braucht ein Kabel dafür"], richtig: 0, erklaerung: "Kein fester Sendeplan, kein Sender nötig: Wie beim Streaming bestimmen die Hörenden, wann sie hören." },
+    frage: { text: "Was unterscheidet einen Podcast vom klassischen Radio?", optionen: ["Man hört ihn auf Abruf und jeder kann einen machen","Er läuft nur nachts und braucht eine feste Sendezeit","Man braucht ein Kabel dafür und einen Sendeplatz im Radio"], richtig: 0, erklaerung: "Kein fester Sendeplan, kein Sender nötig: Wie beim Streaming bestimmen die Hörenden, wann sie hören." },
   },
   {
     id: "messenger", name: "Messenger (WhatsApp & Co.)", icon: "🟢", jahr: 2009, jahrText: "1996 ICQ, 2009 WhatsApp", epoche: "heute", art: "Daten",
@@ -1336,7 +1336,7 @@ const ROH: Medium[] = [
     ],
     witz: "Die blauen Haken erfanden eine neue Form von Drama: »Gelesen um 14:32 — und nicht geantwortet!« Früher konnte man behaupten, der Brief sei nie angekommen.",
     profil: { reichweite: 5, tempo: 5, haltbar: 3, publikum: 4, einfach: 5 },
-    frage: { text: "Warum verdrängten Messenger die SMS so schnell?", optionen: ["Sie liefen übers Internet: kostenlos, mit Bildern und Gruppen", "Weil die SMS verboten wurde", "Weil man für Messenger kein Handy braucht"], richtig: 0, erklaerung: "Mehr Möglichkeiten zum gleichen oder besseren Preis — genau wie damals E-Mail gegen Brief." },
+    frage: { text: "Warum verdrängten Messenger die SMS so schnell?", optionen: ["Sie liefen übers Internet: kostenlos, mit Bildern und Gruppen","Die SMS wurde per Gesetz verboten und musste ersetzt werden","Man brauchte für Messenger kein Handy und keinen Vertrag"], richtig: 0, erklaerung: "Mehr Möglichkeiten zum gleichen oder besseren Preis — genau wie damals E-Mail gegen Brief." },
   },
   {
     id: "sprachassistent", name: "Sprachassistent", icon: "🔊", jahr: 2011, jahrText: "2011 Siri, 2014 Alexa", epoche: "heute", art: "Ton",
@@ -1352,7 +1352,7 @@ const ROH: Medium[] = [
     ],
     witz: "Familien mit einer Tochter namens Alexa haben ein Problem: Jedes Mal, wenn jemand sie ruft, antwortet der Lautsprecher. Viele Eltern berichten, dass der Name seit 2014 deutlich seltener vergeben wird.",
     profil: { reichweite: 4, tempo: 5, haltbar: 1, publikum: 1, einfach: 5 },
-    frage: { text: "Für wen ist ein Sprachassistent besonders hilfreich?", optionen: ["Für Menschen, die nicht gut sehen, lesen oder schreiben können", "Nur für Programmierer", "Für Leute ohne Internet"], richtig: 0, erklaerung: "Sprechen statt tippen senkt die Hürde: Information wird für mehr Menschen erreichbar. Der Preis ist das Mikrofon, das mithört." },
+    frage: { text: "Für wen ist ein Sprachassistent besonders hilfreich?", optionen: ["Für Menschen, die nicht gut sehen, lesen oder schreiben können","Nur für Programmierer, die Code per Sprache diktieren wollen","Für Leute ohne Internet, weil er komplett ohne Verbindung läuft"], richtig: 0, erklaerung: "Sprechen statt tippen senkt die Hürde: Information wird für mehr Menschen erreichbar. Der Preis ist das Mikrofon, das mithört." },
   },
   {
     id: "dreidtv", name: "3D-Fernsehen", icon: "🕶️", jahr: 2010, jahrText: "2010 – 2017", epoche: "heute", art: "Bewegtbild",
@@ -1369,7 +1369,7 @@ const ROH: Medium[] = [
     witz: "Ein 3D-Fernseher konnte auch Sendungen in 2D zeigen. Das war die Funktion, die am meisten benutzt wurde.",
     profil: { reichweite: 4, tempo: 5, haltbar: 2, publikum: 3, einfach: 2 },
     flop: { lebte: "2010 – 2017", warum: "Kaum Inhalte, teure und unbequeme Brillen, Schwindel — und keiner wollte beim Fernsehen eine Brille tragen.", grabspruch: "Ich war tiefgründig. Keiner hat hingeschaut." },
-    frage: { text: "Warum setzte sich 3D-Fernsehen nicht durch, obwohl die Technik funktionierte?", optionen: ["Es gab wenig Inhalte, und die Brillen waren lästig", "Weil 3D verboten wurde", "Weil die Bilder schwarzweiß waren"], richtig: 0, erklaerung: "Ein Medium braucht Inhalte und muss bequem sein. Mehr Technik allein überzeugt niemanden — siehe auch Bildtelefon und Google Glass." },
+    frage: { text: "Warum setzte sich 3D-Fernsehen nicht durch, obwohl die Technik funktionierte?", optionen: ["Es gab wenig Inhalte, und die Brillen waren lästig","3D-Fernsehen wurde per Gesetz verboten","Die Bilder waren schwarzweiß und flimmerten stark"], richtig: 0, erklaerung: "Ein Medium braucht Inhalte und muss bequem sein. Mehr Technik allein überzeugt niemanden — siehe auch Bildtelefon und Google Glass." },
   },
   {
     id: "kurzvideo", name: "Kurzvideos (TikTok & Co.)", icon: "🎵", jahr: 2016, jahrText: "2013 Vine, 2016 TikTok", epoche: "heute", art: "Bewegtbild",
@@ -1385,7 +1385,7 @@ const ROH: Medium[] = [
     ],
     witz: "Vine-Videos durften nur sechs Sekunden lang sein. TikTok erlaubt inzwischen zehn Minuten — und die beliebtesten Videos haben trotzdem oft unter 30 Sekunden. Unsere Geduld wurde kürzer, die Videos länger.",
     profil: { reichweite: 5, tempo: 5, haltbar: 2, publikum: 5, einfach: 5 },
-    frage: { text: "Was entscheidet bei TikTok vor allem, welche Videos man sieht?", optionen: ["Ein Algorithmus, der misst, wie lange man was anschaut", "Eine Redaktion, die alle Videos prüft", "Der Zufall"], richtig: 0, erklaerung: "Nicht die Freundesliste, sondern das eigene Verhalten steuert den Feed. Darum fühlt er sich so persönlich an — und darum ist es schwer aufzuhören." },
+    frage: { text: "Was entscheidet bei TikTok vor allem, welche Videos man sieht?", optionen: ["Ein Algorithmus, der misst, wie lange man was anschaut","Eine Redaktion, die alle Videos prüft und für jeden auswählt","Der Zufall, denn jedes Video wird gleich oft gezeigt"], richtig: 0, erklaerung: "Nicht die Freundesliste, sondern das eigene Verhalten steuert den Feed. Darum fühlt er sich so persönlich an — und darum ist es schwer aufzuhören." },
   },
   {
     id: "videokonferenz", name: "Videokonferenz", icon: "💻", jahr: 2020, jahrText: "2020: Schule und Arbeit per Video", epoche: "heute", art: "Bewegtbild",
@@ -1401,7 +1401,7 @@ const ROH: Medium[] = [
     ],
     witz: "Der meistgesagte Satz des Jahres 2020: »Du bist noch stumm!« Auf Platz zwei: »Könnt ihr meinen Bildschirm sehen?« Ein Anwalt in den USA erschien 2021 vor Gericht versehentlich als Katze und sagte: »Ich bin keine Katze.«",
     profil: { reichweite: 5, tempo: 5, haltbar: 1, publikum: 3, einfach: 3 },
-    frage: { text: "Warum setzte sich Videotelefonie erst um 2020 richtig durch, obwohl es Bildtelefone schon 1936 gab?", optionen: ["Erst dann hatten fast alle schnelles Internet, Kameras — und durch die Pandemie einen Grund", "Weil Kameras vorher verboten waren", "Weil es vorher keine Bildschirme gab"], richtig: 0, erklaerung: "Technik, Verbreitung und Bedarf müssen zusammenkommen. Das Bildtelefon war zu früh; 2020 passte alles." },
+    frage: { text: "Warum setzte sich Videotelefonie erst um 2020 richtig durch, obwohl es Bildtelefone schon 1936 gab?", optionen: ["Erst dann hatten fast alle schnelles Internet, Kameras — und durch die Pandemie einen Grund","Weil Kameras vorher in Büros und Schulen verboten waren und erst später erlaubt wurden","Weil es vorher keine Bildschirme gab, die Videos in guter Qualität zeigen konnten"], richtig: 0, erklaerung: "Technik, Verbreitung und Bedarf müssen zusammenkommen. Das Bildtelefon war zu früh; 2020 passte alles." },
   },
 ];
 

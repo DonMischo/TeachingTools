@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { MORSE, ausMorse, ausLauflaengen, lauflaengen, zeichenAusDauer, zuMorse } from "@/lib/medien/codes";
 import TOENE from "@/lib/medien/toene.json";
 import { useMedienLiveKontext } from "@/lib/medien/live";
+import { useErprobt } from "@/lib/medien/erprobt";
 import { SendenLeiste } from "./Live";
 import { dauerton, klingeln, ton } from "./ton";
 
@@ -21,6 +22,9 @@ function spieleMorse(code: string) {
 export function MorseDemo({ an, antwortAuf }: { an?: string; antwortAuf?: string } = {}) {
   const [zeichen, setZeichen] = useState("");
   const [text, setText] = useState("");
+  const erprobt = useErprobt();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (text.includes("SOS")) erprobt("morse"); }, [text]);
   const [gedrueckt, setGedrueckt] = useState(false);
   const [tabelle, setTabelle] = useState(false);
   const seit = useRef(0), stopp = useRef<() => void>(() => {}), pause = useRef<number | null>(null);
@@ -87,11 +91,13 @@ const SMILEY = [
 
 export function FaxDemo({ an, antwortAuf }: { an?: string; antwortAuf?: string } = {}) {
   const [bild, setBild] = useState(SMILEY);
+  const erprobt = useErprobt();
   const [zeile, setZeile] = useState(-1);
   const uhr = useRef<number | null>(null);
   useEffect(() => () => { if (uhr.current) clearInterval(uhr.current); }, []);
   const kippe = (y: number, x: number) => { if (zeile < 0 || zeile >= N) setBild(b => b.map((r, i) => (i === y ? r.map((p, j) => (j === x ? ((1 - p) as 0 | 1) : p)) : r))); };
   const sende = () => {
+    erprobt("fax");
     let z = 0; setZeile(0);
     if (uhr.current) clearInterval(uhr.current);
     uhr.current = window.setInterval(() => { z++; setZeile(z); ton(1400 + (z % 2) * 400, 0.12, 0, "square", 0.04); if (z >= N) clearInterval(uhr.current!); }, 380);
@@ -134,6 +140,7 @@ const ZIFFERN = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
 export function WaehlscheibeDemo({ an, antwortAuf }: { an?: string; antwortAuf?: string } = {}) {
   const live = useMedienLiveKontext();
   const [sagen, setSagen] = useState("");
+  const erprobt = useErprobt();
   const [nummer, setNummer] = useState("");
   const [dreh, setDreh] = useState(0);
   const [rueck, setRueck] = useState(0.1);
@@ -197,6 +204,7 @@ export function WaehlscheibeDemo({ an, antwortAuf }: { an?: string; antwortAuf?:
           return neu;
         });
         setZeit(t => t + hinDauer + zurueck); setAktiv(false);
+        if (nummer.length + 1 >= 4) erprobt("waehlscheibe");
       }, zurueck * 1000);
     }
   };
@@ -266,6 +274,7 @@ export function PlatteDemo() {
   const [rpm, setRpm] = useState<number>(45);
   const [spielt, setSpielt] = useState(false);
   const [echt, setEcht] = useState(false);
+  const erprobt = useErprobt();
   const platte = useRef<HTMLAudioElement | null>(null);
   useEffect(() => () => platte.current?.pause(), []);
   /** Echte Schellackplatte von 1904, aufgenommen mit 78 Umdrehungen — falsche Drehzahl = falsche Tonhöhe */
@@ -277,7 +286,7 @@ export function PlatteDemo() {
     a.playbackRate = (rpm === 33 ? 33.33 : rpm) / 78;
     a.currentTime = 0;
     a.onended = () => { setEcht(false); setSpielt(false); };
-    void a.play().then(() => { setEcht(true); setSpielt(true); }).catch(() => {});
+    void a.play().then(() => { setEcht(true); setSpielt(true); if (rpm === 78) erprobt("platte"); }).catch(() => {});
   };
   useEffect(() => { if (platte.current) platte.current.playbackRate = (rpm === 33 ? 33.33 : rpm) / 78; }, [rpm]);
   const spiele = () => {

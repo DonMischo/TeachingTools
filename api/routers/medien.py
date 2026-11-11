@@ -26,12 +26,14 @@ SLUG = "medien"
 
 class StandOut(BaseModel):
     geschafft: list[str]
+    erprobt: list[str] = Field(default_factory=list)
     eilbote: int
     sortieren: int
 
 
 class StandIn(BaseModel):
     geschafft: list[str] = Field(default_factory=list, max_length=200)
+    erprobt: list[str] = Field(default_factory=list, max_length=100)
     eilbote: int = Field(default=0, ge=0, le=100_000)
     sortieren: int = Field(default=0, ge=0, le=100_000)
     zuruecksetzen: bool = False
@@ -46,8 +48,8 @@ def _darf(db: Session, spieler) -> None:
 
 def _aus(zeile: MedienStand | None) -> StandOut:
     if zeile is None:
-        return StandOut(geschafft=[], eilbote=0, sortieren=0)
-    return StandOut(geschafft=list(zeile.geschafft or []), eilbote=zeile.eilbote, sortieren=zeile.sortieren)
+        return StandOut(geschafft=[], erprobt=[], eilbote=0, sortieren=0)
+    return StandOut(geschafft=list(zeile.geschafft or []), erprobt=list(zeile.erprobt or []), eilbote=zeile.eilbote, sortieren=zeile.sortieren)
 
 
 def _laden(db: Session, spieler) -> MedienStand | None:
@@ -59,13 +61,16 @@ def _speichern(db: Session, spieler, body: StandIn) -> StandOut:
     ids = [i[:40] for i in dict.fromkeys(x.strip() for x in body.geschafft) if i]
     zeile = _laden(db, spieler)
     if zeile is None:
-        zeile = MedienStand(geschafft=[], eilbote=0, sortieren=0, **_teilnehmer(spieler))
+        zeile = MedienStand(geschafft=[], erprobt=[], eilbote=0, sortieren=0, **_teilnehmer(spieler))
         db.add(zeile)
+    erprobt = [i[:40] for i in dict.fromkeys(x.strip() for x in body.erprobt) if i]
     if body.zuruecksetzen:
-        zeile.geschafft, zeile.eilbote, zeile.sortieren = ids, body.eilbote, body.sortieren
+        zeile.geschafft, zeile.erprobt, zeile.eilbote, zeile.sortieren = ids, erprobt, body.eilbote, body.sortieren
     else:
         alt = list(zeile.geschafft or [])
         zeile.geschafft = alt + [i for i in ids if i not in alt]
+        schon = list(zeile.erprobt or [])
+        zeile.erprobt = schon + [i for i in erprobt if i not in schon]
         zeile.eilbote = max(zeile.eilbote or 0, body.eilbote)
         zeile.sortieren = max(zeile.sortieren or 0, body.sortieren)
     db.commit()

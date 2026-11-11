@@ -7,15 +7,15 @@ from api.tests.test_maus import als, schueler, _gast, _sitzung
 
 def test_konto_stand_leer_vereinigt_und_zuruecksetzen(client, db):
     ada = schueler(db)
-    assert client.get("/api/medien/stand", headers=als(ada)).json() == {"geschafft": [], "eilbote": 0, "sortieren": 0}
-    r = client.put("/api/medien/stand", json={"geschafft": ["hoehle", "signale"], "eilbote": 300}, headers=als(ada))
+    assert client.get("/api/medien/stand", headers=als(ada)).json() == {"geschafft": [], "erprobt": [], "eilbote": 0, "sortieren": 0}
+    r = client.put("/api/medien/stand", json={"geschafft": ["hoehle", "signale"], "erprobt": ["morse"], "eilbote": 300}, headers=als(ada))
     assert r.status_code == 200, r.text
     # Ein älterer Stand (anderer Tab, anderer Browser) löscht nichts.
-    r = client.put("/api/medien/stand", json={"geschafft": ["hoehle", "keilschrift"], "eilbote": 100, "sortieren": 2}, headers=als(ada))
-    assert r.json() == {"geschafft": ["hoehle", "signale", "keilschrift"], "eilbote": 300, "sortieren": 2}
+    r = client.put("/api/medien/stand", json={"geschafft": ["hoehle", "keilschrift"], "erprobt": ["dia", "morse"], "eilbote": 100, "sortieren": 2}, headers=als(ada))
+    assert r.json() == {"geschafft": ["hoehle", "signale", "keilschrift"], "erprobt": ["morse", "dia"], "eilbote": 300, "sortieren": 2}
     assert client.get("/api/medien/stand", headers=als(ada)).json()["geschafft"] == ["hoehle", "signale", "keilschrift"]
     r = client.put("/api/medien/stand", json={"zuruecksetzen": True}, headers=als(ada))
-    assert r.json() == {"geschafft": [], "eilbote": 0, "sortieren": 0}
+    assert r.json() == {"geschafft": [], "erprobt": [], "eilbote": 0, "sortieren": 0}
 
 
 def test_anonym_und_gesperrt(client, db):

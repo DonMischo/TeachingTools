@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { ton } from "./ton";
+import { useErprobt } from "@/lib/medien/erprobt";
 
 const C_KMS = 299792;
 const GEO_KM = 42164;
@@ -30,6 +31,7 @@ export function SatellitDemo() {
   const wrap = useRef<HTMLDivElement>(null);
   const api = useRef<{ signal: () => void; telstar: () => void } | null>(null);
   const [fallback, setFallback] = useState(false);
+  const erprobt = useErprobt();
   const [hud, setHud] = useState<Hud>(null);
   const [busy, setBusy] = useState(false);
 
@@ -389,7 +391,7 @@ export function SatellitDemo() {
         {!fallback && (
           <>
             <div className="absolute left-3 right-3 top-3 flex flex-wrap items-center gap-2">
-              <button type="button" className="btn-primary" disabled={busy} onClick={() => api.current?.signal()}>
+              <button type="button" className="btn-primary" disabled={busy} onClick={() => { api.current?.signal(); erprobt("satellit"); }}>
                 📡 Signal senden
               </button>
               <button type="button" className="btn-secondary" disabled={busy} onClick={() => api.current?.telstar()}>

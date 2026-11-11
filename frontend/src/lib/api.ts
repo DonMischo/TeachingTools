@@ -1297,7 +1297,7 @@ export type MausPruefungOut = { bestanden: boolean; punkte: number; schon_vergeb
 export type MausZugang = { code: string; token: string | null };
 
 /** Geschichte der Medien: geschaffte Stationen + Bestwerte (api/routers/medien.py) */
-export type MedienStand = { geschafft: string[]; eilbote: number; sortieren: number };
+export type MedienStand = { geschafft: string[]; erprobt?: string[]; eilbote: number; sortieren: number };
 
 /** KI-Kompass: Messpunkte im Raster + Stand der Führerschein-Stationen. */
 export type KiKompassStand = {

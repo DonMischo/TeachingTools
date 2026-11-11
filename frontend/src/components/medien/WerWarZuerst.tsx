@@ -4,6 +4,7 @@ import { useState } from "react";
 import { epoche, medium, type Medium } from "@/lib/medien/medien";
 import { richtigPlatziert, sortierRunde } from "@/lib/medien/spiele";
 import type { Aenderung } from "@/lib/medien/fortschritt";
+import SoGehts from "./SoGehts";
 
 const ANZAHL = 5;
 /** Überraschungen, die oft falsch geraten werden */
@@ -36,6 +37,9 @@ export default function WerWarZuerst({ rekord, aendere }: { rekord: number; aend
 
   return (
     <div className="flex flex-col gap-4 max-w-2xl">
+      <SoGehts ziel="Bring fünf Medien in die Reihenfolge, in der sie erfunden wurden."
+        schritte={["Schieb die Karten mit ▲ und ▼ nach oben oder unten — oben das älteste.", "Drück »Prüfen«: Grün steht richtig, Rot an der falschen Stelle.", "Alles richtig? Deine Serie wächst um 1 — weiter mit »Neue Runde«. Ein Fehler setzt die Serie auf 0."]}
+        punkte="Gezählt wird die längste Serie fehlerfreier Runden — ab 3 und ab 10 gibt es einen Erfolg." />
       <div className="flex items-center justify-between text-sm">
         <p>Bring die Medien in die richtige Reihenfolge: <b>oben das älteste</b>.</p>
         <span className="font-black whitespace-nowrap">🔥 Serie {serie} {rekord > 0 && <span className="text-muted font-normal">· Rekord {Math.max(rekord, serie)}</span>}</span>

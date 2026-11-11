@@ -4,6 +4,7 @@ import { useState } from "react";
 import { epoche, jahrKurz, medium } from "@/lib/medien/medien";
 import { AUFTRAEGE, punkteFuer } from "@/lib/medien/spiele";
 import type { Aenderung } from "@/lib/medien/fortschritt";
+import SoGehts from "./SoGehts";
 
 export default function Eilbote({ rekord, aendere }: { rekord: number; aendere: (a: Aenderung) => void }) {
   const [nr, setNr] = useState(0);
@@ -44,6 +45,11 @@ export default function Eilbote({ rekord, aendere }: { rekord: number; aendere: 
 
   return (
     <div className="flex flex-col gap-4">
+      {nr === 0 && !geloest && !falsch.length && (
+        <SoGehts ziel="Bring jede Nachricht aus der Geschichte mit dem besten Medium ans Ziel — aber nur mit Medien, die es damals schon gab."
+          schritte={["Lies Jahr, Ort und Auftrag.", "Wähl eins der drei Medien: Was ist schnell genug, reicht weit genug, erreicht die Richtigen?", "Falsch? Du bekommst einen Hinweis und darfst noch einmal wählen.", `Nach ${AUFTRAEGE.length} Aufträgen kommt die Auswertung.`]}
+          punkte="100 Punkte im ersten Versuch, 40 im zweiten, danach keine. Dein Bestwert zählt für die Erfolge." />
+      )}
       <div className="flex items-center justify-between text-sm">
         <span className="text-muted">Auftrag {nr + 1} von {AUFTRAEGE.length}</span>
         <span className="font-black">🏅 {punkte} Punkte {rekord > 0 && <span className="text-muted font-normal">· Bestwert {rekord}</span>}</span>

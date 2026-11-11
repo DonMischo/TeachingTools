@@ -1,11 +1,15 @@
 "use client";
 /** Mitmach-Demos: Setzkasten (Buchdruck), Chappe-Telegraf, Belichtung (Fotografie) */
 import { useEffect, useRef, useState } from "react";
+import { useErprobt } from "@/lib/medien/erprobt";
 
 // ── Setzkasten ──
 export function SetzkastenDemo() {
   const [wort, setWort] = useState("WISSEN");
   const [abzuege, setAbzuege] = useState(0);
+  const erprobt = useErprobt();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (abzuege >= 3) erprobt("setzkasten"); }, [abzuege]);
   const [druckt, setDruckt] = useState(false);
   const lettern = [...wort.toUpperCase().replace(/[^A-ZÄÖÜ0-9 !?.]/g, "")].slice(0, 12);
   const drucke = () => { setDruckt(true); window.setTimeout(() => { setDruckt(false); setAbzuege(a => a + 1); }, 700); };
@@ -53,6 +57,10 @@ const winkel = (pos: number) => pos * 45; // 0 … 7 · 45°, 7 Stellungen benut
 
 export function ChappeDemo() {
   const [balken, setBalken] = useState<0 | 1>(0);
+  const erprobt = useErprobt();
+  const [gestellt, setGestellt] = useState(0);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (gestellt >= 5) erprobt("chappe"); }, [gestellt]);
   const [links, setLinks] = useState(1);
   const [rechts, setRechts] = useState(1);
   // 7 × 7 × 2 = 98 Stellungen
@@ -74,9 +82,9 @@ export function ChappeDemo() {
       </svg>
       <div className="flex flex-col gap-2 text-sm">
         <div className="flex flex-wrap gap-2">
-          <button className="btn-secondary" onClick={() => setBalken(b => (b ? 0 : 1))}>↻ Balken</button>
-          <button className="btn-secondary" onClick={() => setLinks(dreh)}>↻ linker Arm</button>
-          <button className="btn-secondary" onClick={() => setRechts(dreh)}>↻ rechter Arm</button>
+          <button className="btn-secondary" onClick={() => { setBalken(b => (b ? 0 : 1)); setGestellt(n => n + 1); }}>↻ Balken</button>
+          <button className="btn-secondary" onClick={() => { setLinks(dreh); setGestellt(n => n + 1); }}>↻ linker Arm</button>
+          <button className="btn-secondary" onClick={() => { setRechts(dreh); setGestellt(n => n + 1); }}>↻ rechter Arm</button>
         </div>
         <p className="text-lg font-black">Stellung Nr. {nr} von 98</p>
         <p>Codebuch: <b>{CODEBUCH[nr] ?? "— (im Buch nachschlagen)"}</b></p>
@@ -92,6 +100,9 @@ export function BelichtungDemo() {
   const [laeuft, setLaeuft] = useState(false);
   const [rest, setRest] = useState(DAUER);
   const [wackler, setWackler] = useState<number | null>(null);
+  const erprobt = useErprobt();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (wackler !== null && wackler < 30) erprobt("belichtung"); }, [wackler]);
   const weg = useRef(0), letzte = useRef<{ x: number; y: number } | null>(null);
   useEffect(() => {
     if (!laeuft) return;

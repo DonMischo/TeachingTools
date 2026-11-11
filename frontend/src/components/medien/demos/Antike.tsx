@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { inHieroglyphen, quipuWert } from "@/lib/medien/codes";
 import { rauschen } from "./ton";
+import { useErprobt } from "@/lib/medien/erprobt";
 import { Zeichenflaeche, papyrus, type ZeichenGriff } from "./Zeichnen";
 
 // ── Keilschrift: Griffel in Ton drücken ──
@@ -20,6 +21,7 @@ export function KeilschriftDemo() {
   const [art, setArt] = useState<(typeof KEILE)[number]["id"]>("rechts");
   const [keile, setKeile] = useState<{ x: number; y: number; d: number }[]>([]);
   const [gebrannt, setGebrannt] = useState(false);
+  const erprobt = useErprobt();
   const druecke = (e: React.MouseEvent<SVGSVGElement>) => {
     if (gebrannt) return;
     const r = e.currentTarget.getBoundingClientRect();
@@ -49,7 +51,7 @@ export function KeilschriftDemo() {
         <span className="label">Griffel halten:</span>
         {KEILE.map(k => <button key={k.id} className={`chip ${art === k.id ? "chip-on" : ""}`} onClick={() => setArt(k.id)}>{k.label}</button>)}
         <button className="btn-secondary" disabled={gebrannt} onClick={() => setKeile([])}>🤚 Glattstreichen</button>
-        <button className="btn-secondary" disabled={!keile.length || gebrannt} onClick={() => setGebrannt(true)}>🔥 Im Ofen brennen</button>
+        <button className="btn-secondary" disabled={!keile.length || gebrannt} onClick={() => { setGebrannt(true); if (keile.length >= 8) erprobt("keilschrift"); }}>🔥 Im Ofen brennen</button>
         <p className="text-xs text-muted max-w-56">
           {gebrannt ? "Gebrannt! Jetzt hält die Tafel Jahrtausende — ändern geht aber nicht mehr. Speichern für immer." : `${keile.length} Keile. Das Keilschrift-Zeichen für »Bier« (KAŠ) hatte rund ein Dutzend.`}
         </p>
@@ -115,6 +117,7 @@ function SelbstSchreiben({ zeichen }: { zeichen: ReturnType<typeof inHieroglyphe
   const [urteil, setUrteil] = useState<{ abgedeckt: number; daneben: number; punkte: number } | null>(null);
   const [leer, setLeer] = useState(false);
   const flaeche = useRef<ZeichenGriff>(null);
+  const erprobt = useErprobt();
   const g = zeichen[nr];
   const fertig = () => {
     const f = flaeche.current;
@@ -124,6 +127,8 @@ function SelbstSchreiben({ zeichen }: { zeichen: ReturnType<typeof inHieroglyphe
     setLeer(false);
     setUrteil({ ...t, punkte: p });
     setPunkte(alt => alt.map((x, i) => (i === nr ? Math.max(x ?? 0, p) : x)));
+    if (p >= 60) erprobt("hieroglyphen");
+    if (punkte.every((x, i) => i === nr || x !== null)) erprobt("kartusche");
     // Die Kartusche zeigt den besten Versuch
     if (p >= (punkte[nr] ?? -1)) setBilder(b => b.map((x, i) => (i === nr ? f.bild() : x)));
   };
@@ -192,6 +197,9 @@ export function QuipuDemo() {
   const wert = quipuWert(knoten);
   const setze = (stelle: number, d: number) => setKnoten(k => k.map((v, i) => (i === stelle ? Math.max(0, Math.min(9, v + d)) : v)));
   const geschafft = wert === ziel;
+  const erprobt = useErprobt();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (geschafft) erprobt("quipu"); }, [geschafft]);
   return (
     <div className="flex flex-col sm:flex-row gap-4 items-start">
       <svg viewBox="0 0 220 270" className="w-56 shrink-0" role="img" aria-label={`Quipu mit dem Wert ${wert}`}>
@@ -237,6 +245,7 @@ const SEK_ECHT = 6; // so lange dauert die Vorführung
 
 export function LeuchtfeuerDemo() {
   const [minuten, setMinuten] = useState(-1);
+  const erprobt = useErprobt();
   const bild = useRef<number | null>(null);
   useEffect(() => () => { if (bild.current) cancelAnimationFrame(bild.current); }, []);
   const start = () => {
@@ -247,6 +256,7 @@ export function LeuchtfeuerDemo() {
     const schritt = (t: number) => {
       const min = Math.min(ENDE_MIN, ((t - t0) / 1000 / SEK_ECHT) * ENDE_MIN);
       setMinuten(min);
+      if (min >= ENDE_MIN) erprobt("leuchtfeuer");
       if (min < ENDE_MIN) bild.current = requestAnimationFrame(schritt);
     };
     bild.current = requestAnimationFrame(schritt);

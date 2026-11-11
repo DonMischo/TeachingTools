@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { TASTEN, buchstabe } from "@/lib/medien/codes";
 import { t9Vorschlaege } from "@/lib/medien/t9";
+import { useErprobt } from "@/lib/medien/erprobt";
 import { SendenLeiste } from "./Live";
 import TOENE from "@/lib/medien/toene.json";
 import { dtmf, fsk, rauschen, ton } from "./ton";
@@ -12,6 +13,7 @@ const LIEDER = [{ name: "Intro", bei: 0 }, { name: "Sommerhit", bei: 22 }, { nam
 
 export function KassetteDemo() {
   const [pos, setPos] = useState(100);
+  const erprobt = useErprobt();
   const [akku, setAkku] = useState(100);
   const [salat, setSalat] = useState(false);
   const [stifte, setStifte] = useState(0);
@@ -54,6 +56,8 @@ export function KassetteDemo() {
   };
   const links = 12 + (pos / 100) * 16, rechts = 12 + ((100 - pos) / 100) * 16;
   const da = Math.abs(100 - pos - ziel.bei) <= 4;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (da && !salat) erprobt("kassette"); }, [da, salat]);
   return (
     <div className="flex flex-col sm:flex-row gap-4 items-center">
       <svg viewBox="0 0 240 150" className="w-64 shrink-0" role="img" aria-label="Kassette">
@@ -131,6 +135,9 @@ export function ModemDemo() {
   const stufe = [...EINWAHL].reverse().find(e => zeit >= e.ab);
   const an: readonly string[] = stufe?.lampen ?? [];
   const verbunden = zeit >= ENDE_EINWAHL;
+  const erprobt = useErprobt();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (verbunden) erprobt("modem"); }, [verbunden]);
   const waehlt = zeit >= 0 && !verbunden;
   const MB = 4; // ein Handyfoto
   const dauer = (bitS: number) => { const s = (MB * 8e6) / bitS; return s >= 60 ? `${(s / 60).toLocaleString("de-DE", { maximumFractionDigits: 1 })} Minuten` : `${s.toLocaleString("de-DE", { maximumFractionDigits: 2 })} Sekunden`; };
@@ -178,6 +185,9 @@ const zahl = (n: number) => n.toLocaleString("de-DE", { maximumFractionDigits: n
 
 export function DisketteDemo() {
   const [wahl, setWahl] = useState(2);
+  const erprobt = useErprobt();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (DINGE[wahl].bytes >= 1e11) erprobt("diskette"); }, [wahl]);
   const d = DINGE[wahl];
   const anzahl = Math.ceil(d.bytes / DISKETTE);
   const hoehe = anzahl * 3.3 / 1000; // m
@@ -206,6 +216,7 @@ export function SmsDemo({ an, antwortAuf }: { an?: string; antwortAuf?: string }
   const [t9, setT9] = useState(false);
   const [folge, setFolge] = useState(""); // T9: Tasten des Worts, das gerade entsteht
   const [wahl, setWahl] = useState(0);
+  const erprobt = useErprobt();
   const letzte = useRef<{ taste: string; mal: number; zeit: number } | null>(null);
   const [cursor, setCursor] = useState(false);
   useEffect(() => { const t = window.setInterval(() => setCursor(c => !c), 500); return () => clearInterval(t); }, []);
@@ -219,7 +230,7 @@ export function SmsDemo({ an, antwortAuf }: { an?: string; antwortAuf?: string }
     if (t9) {
       if (taste === "*") setWahl(w => w + 1); // nächster Vorschlag
       else if (taste === "#") { if (folge) { setFolge(f => f.slice(0, -1)); setWahl(0); } else setText(t => t.slice(0, -1)); }
-      else if (taste === "0") { setText(t => (t + wort + " ").slice(0, 160)); setFolge(""); setWahl(0); }
+      else if (taste === "0") { setText(t => (t + wort + " ").slice(0, 160)); setFolge(""); setWahl(0); if (wort && text.trim()) erprobt("sms"); }
       else if (taste === "1") { setText(t => (t + wort + ".").slice(0, 160)); setFolge(""); setWahl(0); }
       else if (fertig.length < 160) { setFolge(f => f + taste); setWahl(0); }
       return;

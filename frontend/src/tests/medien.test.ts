@@ -5,7 +5,9 @@ import { EPOCHEN, MEDIEN, medium } from "@/lib/medien/medien";
 import { BEREICHE, GALERIE, nachweisFuer } from "@/lib/medien/galerie";
 import nachweise from "@/lib/medien/bilder.json";
 import { AUFTRAEGE, gabEs, punkteFuer, richtigPlatziert, sortierRunde } from "@/lib/medien/spiele";
-import { erreichbarBis, mitStation, sauber, vereinige } from "@/lib/medien/fortschritt";
+import { erreichbarBis, mitErprobt, mitStation, sauber, vereinige } from "@/lib/medien/fortschritt";
+import { ERFOLGE, erreichte } from "@/lib/medien/erfolge";
+import { ERPROBT } from "@/lib/medien/erprobt";
 import { ausLauflaengen, ausMorse, buchstabe, inHieroglyphen, lauflaengen, quipuWert, tippZahl, zeichenAusDauer, zuMorse } from "@/lib/medien/codes";
 import { DEMOS } from "@/components/medien/demos";
 import { t9Code, t9Vorschlaege } from "@/lib/medien/t9";
@@ -27,6 +29,19 @@ describe("Stationen der Zeitreise", () => {
     }
   });
 
+  it("Fragen: Die richtige Antwort verrät sich nicht durch ihre Länge", () => {
+    // Schüler merkten: »die längste ist richtig«. Falsche Antworten müssen ähnlich ausführlich sein.
+    let laengste = 0;
+    for (const m of MEDIEN) {
+      const r = m.frage.optionen[m.frage.richtig].length;
+      const falsch = m.frage.optionen.filter((_, i) => i !== m.frage.richtig).map(o => o.length);
+      expect(r, `${m.id}: richtige Antwort viel länger als alle falschen`).toBeLessThanOrEqual(Math.max(...falsch) * 1.25);
+      expect(Math.min(...falsch), `${m.id}: eine falsche Antwort ist auffällig kurz`).toBeGreaterThanOrEqual(r * 0.5);
+      if (r > Math.max(...falsch)) laengste++;
+    }
+    expect(laengste / MEDIEN.length, "zu oft ist die richtige Antwort die längste").toBeLessThanOrEqual(0.45);
+  });
+
   it("Flops haben Lebensdaten, Grund und Grabspruch", () => {
     const flops = MEDIEN.filter(m => m.flop);
     expect(flops.length).toBeGreaterThanOrEqual(8);
@@ -34,13 +49,24 @@ describe("Stationen der Zeitreise", () => {
   });
 
   it("Fortschritt: unbekannte Stationen fliegen raus, Zusammenlegen verliert nichts", () => {
-    expect(sauber({ geschafft: ["hoehle", "gibtsnicht", "hoehle", 3], eilbote: "40" })).toEqual({ geschafft: ["hoehle"], eilbote: 40, sortieren: 0 });
+    expect(sauber({ geschafft: ["hoehle", "gibtsnicht", "hoehle", 3], erprobt: ["morse", "quatsch"], eilbote: "40" })).toEqual({ geschafft: ["hoehle"], erprobt: ["morse"], eilbote: 40, sortieren: 0 });
     expect(sauber(null).geschafft).toEqual([]);
-    const a = { geschafft: ["hoehle", "signale"], eilbote: 300, sortieren: 1 };
-    const b = { geschafft: ["hoehle", "keilschrift"], eilbote: 100, sortieren: 4 };
-    expect(vereinige(a, b)).toEqual({ geschafft: ["hoehle", "signale", "keilschrift"], eilbote: 300, sortieren: 4 });
+    const a = { geschafft: ["hoehle", "signale"], erprobt: ["dia"], eilbote: 300, sortieren: 1 };
+    const b = { geschafft: ["hoehle", "keilschrift"], erprobt: ["morse", "dia"], eilbote: 100, sortieren: 4 };
+    expect(vereinige(a, b)).toEqual({ geschafft: ["hoehle", "signale", "keilschrift"], erprobt: ["dia", "morse"], eilbote: 300, sortieren: 4 });
     expect(mitStation("signale")(a)).toBe(a);
     expect(mitStation("alphabet")(a).geschafft).toEqual(["hoehle", "signale", "alphabet"]);
+  });
+
+  it("Erfolge: Stationen, Epochen, ausprobierte Demos und Spiele", () => {
+    expect(new Set(ERFOLGE.map(e => e.id)).size).toBe(ERFOLGE.length);
+    const leerStand = sauber(null);
+    expect(erreichte(leerStand).size).toBe(0);
+    const viel = { ...leerStand, geschafft: MEDIEN.map(m => m.id), erprobt: ERPROBT.map(d => d.id), eilbote: 1600, sortieren: 12 };
+    expect(erreichte(viel).size).toBe(ERFOLGE.length);
+    const einer = mitErprobt("morse")(leerStand);
+    expect(erreichte(einer).has("demo-morse")).toBe(true);
+    expect(mitErprobt("morse")(einer)).toBe(einer);
   });
 
   it("Weiter geht's nur bis zur ersten offenen Station", () => {

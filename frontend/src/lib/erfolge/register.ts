@@ -27,6 +27,8 @@ import { RAETSEL } from "@/lib/regeln/lehrgang";
 import { KLIKK_ERFOLGE } from "@/lib/klikk/erfolge";
 import { ergaenze } from "@/lib/klikk/motor";
 import type { Stand } from "@/lib/klikk/typen";
+import { ERFOLGE as MEDIEN_ERFOLGE } from "@/lib/medien/erfolge";
+import { leer as medienLeer, sauber as medienSauber, type Fortschritt as MedienStand } from "@/lib/medien/fortschritt";
 
 /** Ein Erfolg, wie ihn die Übersicht zeigt — unabhängig davon, woher er kommt. */
 export interface SchauErfolg {
@@ -217,8 +219,26 @@ function klikk(): SchauErfolg[] {
   }));
 }
 
+/**
+ * Geschichte der Medien: Mit Konto oder Gast-Zugang liegt der Stand am Server —
+ * die Sim spiegelt ihn je Identität unter »hp_medien_spiegel:…«; offline und an
+ * TaskCrawler-Stationen steht er unter »hp_medien_fortschritt«.
+ */
+function medien(): SchauErfolg[] {
+  const aus = (f: MedienStand): SchauErfolg[] => MEDIEN_ERFOLGE.map(e => ({
+    id: e.id, icon: e.icon, name: e.name, text: e.text, gruppe: e.gruppe,
+    wert: Math.min(e.wert(f), e.ziel), ziel: e.ziel, erreicht: e.wert(f) >= e.ziel,
+  }));
+  const profile = ["hp_medien_fortschritt", ...schluesselMit("hp_medien_spiegel:")]
+    .map(k => json<unknown>(k, null))
+    .filter(Boolean)
+    .map(roh => aus(medienSauber(roh)));
+  return bestesVon(profile, aus(medienLeer()));
+}
+
 export const WERKZEUGE: WerkzeugErfolge[] = [
   { slug: "klikk", name: "Klikk", icon: "📱", bereich: "Simulationen", lies: klikk },
+  { slug: "medien", name: "Geschichte der Medien", icon: "📜", bereich: "Simulationen", lies: medien },
   { slug: "pse", name: "Periodensystem", icon: "🧪", bereich: "Simulationen", lies: pse },
   { slug: "sonnensystem", name: "Sonnensystem", icon: "🪐", bereich: "Simulationen", lies: sonnensystem },
   { slug: "schichten", name: "Schichtenmodell", icon: "📶", bereich: "Simulationen", lies: schichten },
