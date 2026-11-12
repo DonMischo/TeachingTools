@@ -314,7 +314,7 @@ export default function Stromkreis({ action, start, code, lehrkraft = false }: P
           />
           {lehrkraft && code && (
             <KlassenVorgabe
-              key={vorgabeAbruf} vorgabe={vorgabe}
+              key={vorgabeAbruf} vorgabe={vorgabe && { aufgabe: vorgabe.aufgabe, anzahl: vorgabe.schaltung.bauteile.length }}
               festlegen={festlegen} entfernen={entfernen} laden={() => vorgabe && laden(vorgabe.schaltung)}
             />
           )}

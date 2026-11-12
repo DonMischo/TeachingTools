@@ -93,6 +93,13 @@ export class Stroemung {
     return q / querschnitt(t.durchmesser);
   }
 
+  /** Stand der Speicher (Füllhöhe, Gasmenge, Kolbenweg …) je Teil — zum Übernehmen in ein neu gebautes Netz. */
+  stand(): Map<string, number> { return new Map(this.speicher); }
+  /** Übernimmt Speicherstände für Teile, die es hier gibt (gleiche Id und Art vorausgesetzt). */
+  setzeStand(stand: Map<string, number>, ausser: Set<string> = new Set()) {
+    for (const [id, v] of stand) if (this.speicher.has(id) && !ausser.has(id)) this.speicher.set(id, v);
+  }
+
   /** Kenngröße eines Teils ändern (Regler), ohne die Speicher zurückzusetzen. */
   setze(teil: string, name: string, wert: number) {
     const t = this.teil(teil) as unknown as Record<string, number>;

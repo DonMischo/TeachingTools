@@ -5,7 +5,7 @@
  * und arbeitet an einer eigenen Kopie weiter.
  */
 import { useState } from "react";
-import { AUFGABE_MAX, type Vorgabe } from "@/lib/stromkreis/datei";
+import { AUFGABE_MAX } from "@/lib/stromkreis/datei";
 
 /** Fehlertext aus der API: {"detail": "…"} oder roher Text. */
 export function fehlertext(e: unknown): string {
@@ -18,13 +18,22 @@ export function fehlertext(e: unknown): string {
 }
 
 interface Props {
-  vorgabe: Vorgabe | null;
+  /** Was gerade an der Sitzung hängt: Arbeitsauftrag und Zahl der Bauteile. */
+  vorgabe: { aufgabe: string; anzahl: number } | null;
+  /** Wortlaut fürs Werkzeug — Voreinstellung: Stromkreise. */
+  was?: string;
+  leer?: string;
+  platzhalter?: string;
   festlegen: (aufgabe: string) => Promise<void>;
   entfernen: () => Promise<void>;
   laden: () => void;
 }
 
-export default function KlassenVorgabe({ vorgabe, festlegen, entfernen, laden }: Props) {
+export default function KlassenVorgabe({
+  vorgabe, festlegen, entfernen, laden, was = "Schaltung",
+  leer = "Noch keine Vorgabe: Wer beitritt, beginnt mit dem einfachen Stromkreis.",
+  platzhalter = "z. B. Baue die Schaltung so um, dass beide Lämpchen unabhängig voneinander schaltbar sind.",
+}: Props) {
   const [aufgabe, setAufgabe] = useState(vorgabe?.aufgabe ?? "");
   const [laeuft, setLaeuft] = useState(false);
   const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
@@ -41,19 +50,19 @@ export default function KlassenVorgabe({ vorgabe, festlegen, entfernen, laden }:
       <div className="font-bold">👩‍🏫 Für die Klasse</div>
       <p className="text-sm text-muted">
         {vorgabe
-          ? `Wer über den Code beitritt, beginnt mit Ihrer Schaltung (${vorgabe.schaltung.bauteile.length} Bauteile) und baut an einer eigenen Kopie weiter.`
-          : "Noch keine Vorgabe: Wer beitritt, beginnt mit dem einfachen Stromkreis."}
+          ? `Wer über den Code beitritt, beginnt mit Ihrer ${was} (${vorgabe.anzahl} Bauteile) und baut an einer eigenen Kopie weiter.`
+          : leer}
       </p>
       <label className="flex flex-col gap-1">
         <span className="label">Arbeitsauftrag (optional)</span>
         <textarea
           className="input min-h-20" maxLength={AUFGABE_MAX} value={aufgabe}
           onChange={e => setAufgabe(e.target.value)}
-          placeholder="z. B. Baue die Schaltung so um, dass beide Lämpchen unabhängig voneinander schaltbar sind."
+          placeholder={platzhalter}
         />
       </label>
-      <button className="btn btn-primary" disabled={laeuft} onClick={() => tu(() => festlegen(aufgabe), "Die Klasse bekommt jetzt diese Schaltung.")}>
-        Diese Schaltung an die Klasse geben
+      <button className="btn btn-primary" disabled={laeuft} onClick={() => tu(() => festlegen(aufgabe), `Die Klasse bekommt jetzt diese ${was}.`)}>
+        Diese {was} an die Klasse geben
       </button>
       {vorgabe && (
         <div className="flex flex-wrap gap-2">
