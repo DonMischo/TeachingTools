@@ -41,8 +41,20 @@ function zeichnePlakat(d: Design): HTMLCanvasElement | null {
   return c;
 }
 
-type Api = { kleistern: () => void; ankleben: (i: number) => void; drehen: (d: number) => void };
+type Api = { kleistern: () => void; ankleben: (i: number, sofort?: boolean, stelle?: number) => number; drehen: (d: number) => void };
 const DICKE = 0.012;
+
+type Geklebt = { d: number; c: number };
+const SPEICHER = "hp_medien_litfass";
+function ladeStapel(): Geklebt[] {
+  try {
+    const roh = JSON.parse(localStorage.getItem(SPEICHER) ?? "[]");
+    return Array.isArray(roh) ? roh.filter((x): x is Geklebt => x && Number.isInteger(x.d) && x.d >= 0 && x.d < PLAKATE.length && typeof x.c === "number").slice(-40) : [];
+  } catch { return []; }
+}
+function speichereStapel(s: Geklebt[]) {
+  try { localStorage.setItem(SPEICHER, JSON.stringify(s)); } catch { /* privates Fenster */ }
+}
 
 export function LitfassDemo() {
   const erprobt = useErprobt();
@@ -52,7 +64,9 @@ export function LitfassDemo() {
   const [bereit, setBereit] = useState(false);
   const [wahl, setWahl] = useState<number | null>(null);
   const [kleister, setKleister] = useState(false);
-  const [stapel, setStapel] = useState<number[]>([]);
+  // Geklebte Plakate bleiben: Design und Stelle an der Säule, im Browser gespeichert
+  const [stapel, setStapel] = useState<Geklebt[]>(ladeStapel);
+  const [szene, setSzene] = useState(0);
   const schichten = stapel.length;
 
   useEffect(() => {
@@ -170,7 +184,8 @@ export function LitfassDemo() {
             flecken.mesh.geometry.dispose();
             (flecken.mesh.material as { dispose: () => void }).dispose();
           }
-          const c = -ry;
+          // Zielwinkel statt aktuellem Animationsstand: das Plakat landet dort, wohin die Säule gerade gedreht wird
+          const c = -ziel;
           const m = new THREE.Mesh(
             stueck(1 + DICKE * n + 0.003, c),
             new THREE.MeshStandardMaterial({ color: 0xe8d9a0, transparent: true, opacity: 0.6, roughness: 0.05, metalness: 0.1, side: THREE.DoubleSide }),
@@ -181,10 +196,10 @@ export function LitfassDemo() {
           flecken = { mesh: m, c, y: OBEN };
           anim.push({ m, t: 0, dauer: 0.5 });
         },
-        ankleben: i => {
+        ankleben: (i, sofort = false, stelle?: number) => {
           const tex = texturen[i];
           const fl = flecken;
-          const c = fl ? fl.c : -ry;
+          const c = stelle ?? (fl ? fl.c : -ziel);
           n += 1;
           koerper.scale.set(1 + DICKE * n, 1, 1 + DICKE * n);
           if (fl) {
@@ -202,11 +217,14 @@ export function LitfassDemo() {
           schnipsel.push(mat);
           const m = new THREE.Mesh(stueck(1 + DICKE * n + 0.004, c), mat);
           m.position.y = OBEN;
-          m.scale.y = 0.001;
+          m.scale.y = sofort ? 1 : 0.001;
           saeule.add(m);
-          anim.push({ m, t: 0, dauer: 0.8 });
+          if (!sofort) anim.push({ m, t: 0, dauer: 0.8 });
+          return c;
         },
       };
+      // Was schon klebte, kommt ohne Animation wieder an seine Stelle
+      for (const g of ladeStapel()) api.current.ankleben(g.d, true, g.c);
 
       // Ziehen mit Zeiger
       let zieht = false;
@@ -290,7 +308,8 @@ export function LitfassDemo() {
       stopped = true;
       cleanup();
     };
-  }, []);
+    // `szene` zählt hoch, wenn die Säule abgekratzt wird — dann alles neu aufbauen
+  }, [szene]);
 
   const kannBedienen = bereit || fallback;
   const kleistern = () => {
@@ -302,10 +321,11 @@ export function LitfassDemo() {
   const ankleben = () => {
     if (wahl === null || !kleister) return;
     ton(160, 0.12, 0, "triangle", 0.12);
-    api.current?.ankleben(wahl);
+    const c = api.current?.ankleben(wahl) ?? 0;
     setKleister(false);
-    const neu = [...stapel, wahl];
+    const neu = [...stapel, { d: wahl, c }].slice(-40);
     setStapel(neu);
+    speichereStapel(neu);
     if (neu.length >= 3) erprobt("litfass");
   };
 
@@ -330,16 +350,16 @@ export function LitfassDemo() {
             const w = 80 * (1 + DICKE * (i + 1));
             return (
               <g key={i} transform={`translate(${150 - w / 2 + (i % 2 ? 8 : -8)} ${68 + i * 4})`}>
-                <rect width={w} height={110} fill={PLAKATE[p].bg} stroke={PLAKATE[p].fg} strokeWidth="2" />
-                <text x={w / 2} y="34" textAnchor="middle" fontSize="12" fontWeight="bold" fill={PLAKATE[p].fg}>{PLAKATE[p].zeilen[0]}</text>
-                <text x={w / 2} y="54" textAnchor="middle" fontSize="12" fontWeight="bold" fill={PLAKATE[p].fg}>{PLAKATE[p].zeilen[1]}</text>
+                <rect width={w} height={110} fill={PLAKATE[p.d].bg} stroke={PLAKATE[p.d].fg} strokeWidth="2" />
+                <text x={w / 2} y="34" textAnchor="middle" fontSize="12" fontWeight="bold" fill={PLAKATE[p.d].fg}>{PLAKATE[p.d].zeilen[0]}</text>
+                <text x={w / 2} y="54" textAnchor="middle" fontSize="12" fontWeight="bold" fill={PLAKATE[p.d].fg}>{PLAKATE[p.d].zeilen[1]}</text>
               </g>
             );
           })}
           {kleister && <rect x="110" y="68" width="80" height="110" fill="#e8d9a0" opacity="0.5" />}
         </svg>
       ) : (
-        <div ref={wrap} className="h-[320px] w-full overflow-hidden rounded bg-surface-hover sm:h-[380px]" aria-label="3D-Litfaßsäule, mit der Maus drehbar" />
+        <div key={szene} ref={wrap} className="h-[320px] w-full overflow-hidden rounded bg-surface-hover sm:h-[380px]" aria-label="3D-Litfaßsäule, mit der Maus drehbar" />
       )}
 
       <div className="flex flex-wrap items-center gap-2">
@@ -348,6 +368,12 @@ export function LitfassDemo() {
         <button type="button" className="btn-secondary" disabled={wahl === null || !kannBedienen || kleister} onClick={kleistern}>🪣 Kleister</button>
         <button type="button" className="btn-primary" disabled={wahl === null || !kleister} onClick={ankleben}>Ankleben</button>
         <span className="chip chip-on">Schichten: {schichten}</span>
+        {schichten > 0 && (
+          <button type="button" className="btn-secondary" onClick={() => {
+            if (!confirm("Alle Plakate von der Säule abkratzen?")) return;
+            speichereStapel([]); setStapel([]); setKleister(false); setBereit(false); setSzene(z => z + 1);
+          }}>🧽 Abkratzen</button>
+        )}
       </div>
 
       <p className="text-xs text-muted" aria-live="polite">

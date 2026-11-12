@@ -112,7 +112,8 @@ export function BelichtungDemo() {
     }), 1000);
     return () => clearInterval(t);
   }, [laeuft]);
-  const start = () => { weg.current = 0; letzte.current = null; setWackler(null); setRest(DAUER); setLaeuft(true); };
+  // Der Auslöser liegt im Bild: Wer klickt, hat die Maus schon dort, wo sie stillhalten muss
+  const start = (e: React.MouseEvent) => { weg.current = 0; letzte.current = { x: e.clientX, y: e.clientY }; setWackler(null); setRest(DAUER); setLaeuft(true); };
   const bewege = (e: React.PointerEvent) => {
     if (!laeuft) return;
     const p = { x: e.clientX, y: e.clientY };
@@ -128,12 +129,14 @@ export function BelichtungDemo() {
         {laeuft ? (
           <div className="text-center"><div className="text-5xl font-black">{rest}</div><div className="text-sm">Maus im Bild — nicht bewegen!</div></div>
         ) : (
-          <span className="text-8xl" style={{ filter: `blur(${unschaerfe}px) sepia(1)`, opacity: wackler === null ? 0.25 : 1 }}>🧑‍🎩</span>
+          <>
+            <span className="text-8xl" style={{ filter: `blur(${unschaerfe}px) sepia(1)`, opacity: wackler === null ? 0.25 : 1 }}>🧑‍🎩</span>
+            <button className="btn-primary absolute bottom-3 left-1/2 -translate-x-1/2 shadow-lg whitespace-nowrap" onClick={start}>📷 Deckel ab!</button>
+          </>
         )}
       </div>
       <div className="flex flex-col gap-2 text-sm max-w-sm">
-        <p>Um 1840 dauerte ein Porträt bis zu einer Minute. Hier nur {DAUER} Sekunden: Starte, fahr mit der Maus (oder dem Finger) aufs Bild und halte <b>absolut still</b>.</p>
-        <button className="btn-primary self-start" onClick={start} disabled={laeuft}>📷 Deckel ab!</button>
+        <p>Um 1840 dauerte ein Porträt bis zu einer Minute. Hier nur {DAUER} Sekunden: Klick im Bild auf <b>»Deckel ab!«</b> und halte die Maus (oder den Finger) genau dort <b>absolut still</b>.</p>
         {urteil && <p className="font-bold">{urteil}</p>}
         <p className="text-xs text-muted">Fotografen hatten dafür Kopfhalter aus Eisen hinter dem Stuhl. Lächeln? Eine Minute lang? Keine Chance.</p>
       </div>
