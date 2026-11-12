@@ -85,7 +85,8 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   dreiecke: { title: "Dreiecke", icon: "△", node: <Dreiecke /> },
   trigonometrie: { title: "Trigonometrie", icon: "🔺", node: <Trigonometrie /> },
   quadratisch: { title: "Quadratische Funktionen", icon: "⛲", node: <Quadratisch /> },
-  stroemung: { title: "Druck & Strömung", icon: "💧", node: <Stroemung /> },
+  // Druck & Strömung holt über den Code das Rohrnetz der Lehrkraft für den Baukasten.
+  stroemung: { title: "Druck & Strömung", icon: "💧", node: null },
   kreis: { title: "Kreis", icon: "⭕", node: <Kreis /> },
   koerper: { title: "Körper", icon: "🧊", node: <Koerper /> },
   stellenwert: { title: "Stellenwerttafeln", icon: "🔢", node: <Stellenwert /> },
@@ -254,6 +255,8 @@ export default function SimulationJoinPage() {
                 : guest.token ? schluesselFuerGast(code, guest.token) : `gast-${code}`} />
         : session.tool_slug === "stromkreis"
           ? <Stromkreis code={code} />
+        : session.tool_slug === "stroemung"
+          ? <Stroemung code={code} />
         : session.tool_slug === "medien"
           ? <Medien speicher={auth ? "konto" : { code, token: guest.token }} live={{ code, token: auth ? null : guest.token }} />
         : session.tool_slug === "klikk"

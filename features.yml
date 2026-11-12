@@ -463,6 +463,7 @@ simulationen:
       - Heizkreis - drei Heizkörper, Thermostatventile mit Voreinstellung, hydraulischer Abgleich per Knopf, Wärmeleistung je Raum
       - Hausanschluss - Netzdruck, Zähler, Rückflussverhinderer, Druckminderer, Steigleitung mit sechs Zapfstellen
       - Druckluft - Kompressor mit Druckschalter, Kessel, Druckregler, 3/2-Wegeventil, Drosseln, Zylinder; Schaltzeichen nach DIN ISO 1219
+      - Baukasten - eigene Rohrnetze mit 13 Teilen auf dem Raster, Wasser/Öl/Luft, Höhe zählt, sieben Beispiele, JSON speichern/öffnen, Vorgabe der Lehrkraft per Sitzung
   - id: baum
     name: Baumleben
     kann:

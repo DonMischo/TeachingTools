@@ -7,7 +7,7 @@
  * Reiter nach Stufen: Kl. 7/8 Druck, Kl. 9/10 Strömung, Technik & Beruf,
  * dazu der Baukasten. Fertige Stationen hängen in STATION_INHALT.
  */
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { wahl, type Vorgabe } from "@/lib/vorgabe";
 import { STATIONEN, STUFEN, type Station } from "@/lib/stroemung/stationen";
 import Tauchen from "./Tauchen";
@@ -19,6 +19,9 @@ import Venturi from "./Venturi";
 import Heizkreis from "./Heizkreis";
 import Hausanschluss from "./Hausanschluss";
 import Druckluft from "./Druckluft";
+import Baukasten from "./Baukasten";
+import { vorgabeAus, type Vorgabe as BaukastenVorgabe } from "@/lib/stroemung/baukastenDatei";
+import { api } from "@/lib/api";
 
 /** Fertige Stationen; was hier fehlt, zeigt eine Vorschau. */
 const STATION_INHALT: Record<string, () => ReactNode> = {
@@ -33,10 +36,34 @@ const STATION_INHALT: Record<string, () => ReactNode> = {
   druckluft: () => <Druckluft />,
 };
 
-export default function Stroemung({ action, vorgabe }: { action?: ReactNode; vorgabe?: Vorgabe }) {
+interface Props {
+  action?: ReactNode;
+  /** TaskCrawler: fester Reiter. */
+  vorgabe?: Vorgabe;
+  /** Sitzungscode: Die Lehrkraft gibt darüber ein Rohrnetz für den Baukasten vor, Schüler·innen bekommen es. */
+  code?: string | null;
+  lehrkraft?: boolean;
+}
+
+export default function Stroemung({ action, vorgabe, code, lehrkraft = false }: Props) {
   // Station mit festem Reiter (TaskCrawler): ohne Reiterleiste.
   const fest = wahl(vorgabe, "reiter", STATIONEN.map(s => s.id));
   const [id, setId] = useState(fest ?? STATIONEN[0].id);
+  const [netzVorgabe, setNetzVorgabe] = useState<BaukastenVorgabe | null>(null);
+  const [vorgabeNr, setVorgabeNr] = useState(0);
+  useEffect(() => {
+    if (!code) return;
+    let aktiv = true;
+    api.toolSessions.get(code).then(sitzung => {
+      if (!aktiv) return;
+      const v = vorgabeAus(sitzung.settings);
+      setNetzVorgabe(v);
+      setVorgabeNr(n => n + 1);
+      // Wer mit einer Vorgabe beitritt, landet gleich im Baukasten.
+      if (v && !lehrkraft && !fest) setId("baukasten");
+    }).catch(() => { /* ohne Vorgabe geht es auch */ });
+    return () => { aktiv = false; };
+  }, [code, lehrkraft, fest]);
   const station = STATIONEN.find(s => s.id === id) ?? STATIONEN[0];
   const chip = (an: boolean) => `px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${an ? "bg-accent text-accent-fg" : "text-muted hover:text-fg"}`;
 
@@ -68,7 +95,9 @@ export default function Stroemung({ action, vorgabe }: { action?: ReactNode; vor
         </div>
       )}
 
-      {STATION_INHALT[station.id]?.() ?? <Vorschau station={station} />}
+      {station.id === "baukasten"
+        ? <Baukasten key={vorgabeNr} code={code} lehrkraft={lehrkraft} vorgabe={netzVorgabe} setVorgabe={setNetzVorgabe} />
+        : STATION_INHALT[station.id]?.() ?? <Vorschau station={station} />}
     </div>
   );
 }
