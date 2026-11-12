@@ -6,8 +6,9 @@
  * (Wasserstrahlpumpe), unter dem Dampfdruck kavitiert es. Luft: Zerstäuber —
  * der Unterdruck hebt Flüssigkeit aus dem Fläschchen.
  */
-import { useRef, useState } from "react";
-import { steighoehe, venturi } from "@/lib/stroemung/venturi";
+import { useEffect, useRef, useState } from "react";
+import { VERLUST, steighoehe, venturi } from "@/lib/stroemung/venturi";
+import { ABSCHNITT, STEIGROHR_X, VenturiSzene, radiusBei, saeulenOben, type Schild, type VenturiZustand } from "./venturiSzene";
 import { MEDIEN, P_LUFT } from "@/lib/stroemung/modell";
 import { Analogie, Karte, Pille, Regler, StationRahmen, Wahl, Werte, bar, muted, text, useTakt, zahl } from "./rahmen";
 
@@ -20,6 +21,8 @@ export default function Venturi() {
   const [q, setQ] = useState(1.0);       // L/s
   const [d2, setD2] = useState(20);      // mm
   const [p3, setP3] = useState(0.3e5);   // Pa Gegendruck (nur Wasser)
+  const [ansicht, setAnsicht] = useState<"3d" | "2d">("3d");
+  const drei = ansicht === "3d";
 
   const luft = medium === "luft";
   const rho = MEDIEN[medium].dichte;
@@ -45,6 +48,7 @@ export default function Venturi() {
   const tropfen = useRef<{ x: number; y: number; vx: number; vy: number }[]>([]);
   const PX_JE_MS = luft ? 3 : 40;
   useTakt(dt => {
+    if (drei) return;
     for (const t of teilchen.current) {
       const v = (q / 1000) / (Math.PI * (radius(t.x) / 1.2 / 1000) ** 2 / 4);
       t.x += Math.min(600, v * PX_JE_MS) * dt;
@@ -54,7 +58,7 @@ export default function Venturi() {
     tropfen.current = tropfen.current
       .map(d => { const vx = Math.min(500, d.vx + 900 * dt); return { x: d.x + vx * dt, y: d.y + d.vy * dt, vx, vy: d.vy * 0.97 }; })
       .filter(d => d.x < 1000).slice(-60);
-  });
+  }, !drei);
 
   const SK = 50;   // px je m Wassersäule im Steigrohr
   const steigrohr = (x: number, p: number, name: string) => {
@@ -69,6 +73,35 @@ export default function Venturi() {
     );
   };
 
+  // 3D: Druck p(x) entlang des Rohrs, Verlust im Diffusor
+  const vBei = (x: number) => (q / 1000) / (Math.PI * (radiusBei(x, D1, d2) / radiusBei(ABSCHNITT.a, D1, D1) * D1 / 1000) ** 2 / 4);
+  const druck = (x: number) => {
+    const v = vBei(x);
+    const verlust = x <= ABSCHNITT.d ? 0 : Math.min(1, (x - ABSCHNITT.d) / (ABSCHNITT.e - ABSCHNITT.d));
+    return r.p1 - 0.5 * rho * (v * v - r.v1 * r.v1) - verlust * VERLUST * r.dp;
+  };
+  const [x1, x2] = STEIGROHR_X, R1s = radiusBei(x1, D1, d2), R2s = radiusBei(x2, D1, d2);
+  const mbar = (p: number) => `${zahl(p / 100, 1)} mbar`;
+  const rot = (p: number) => (p < 0 ? "#d64541" : "#e0a000");
+  const schilder: Schild[] = luft ? [
+    { id: "p1", text: `p₁ = ${mbar(r.p1)}`, pos: [x1, R1s + 0.5, 0] },
+    { id: "p2", text: `p₂ = ${mbar(r.p2)}`, pos: [x2, R2s + 0.55, 0], farbe: rot(r.p2) },
+    { id: "v1", text: `v₁ = ${zahl(r.v1, 1)} m/s`, pos: [x1, -R1s - 0.5, 0], gross: true },
+    { id: "v2", text: `v₂ = ${zahl(r.v2, 1)} m/s`, pos: [1.6, -R2s - 0.55, 0], gross: true },
+    { id: "zs", text: spruehen ? "zerstäubt!" : `steigt ${zahl(hoch * 100, 1)} cm von 10 cm`, pos: [x2 + 1.9, -1.75, 0.4], farbe: spruehen ? "#c0399a" : undefined },
+  ] : [
+    ...[r.p1, r.p2, r.p3].map((p, i): Schild => ({ id: `p${i + 1}`, text: `p${"₁₂₃"[i]}: ${bar(p)}`, pos: [STEIGROHR_X[i], saeulenOben(STEIGROHR_X[i], p, rho, D1, d2) + 0.35, 0], farbe: rot(p) })),
+    { id: "v1", text: `v₁ = ${zahl(r.v1, 1)} m/s`, pos: [x1, -R1s - 0.5, 0], gross: true },
+    { id: "v2", text: `v₂ = ${zahl(r.v2, 1)} m/s`, pos: [x2, -R2s - 0.55, 0], gross: true },
+    ...(saugt ? [{ id: "saugt", text: "saugt Luft an", pos: [x2 + 1.2, 3.6, 0], farbe: "#d64541" } as Schild] : []),
+    ...(kavitation ? [{ id: "kav", text: "Kavitation: Dampfblasen", pos: [1.4, -R2s - 1.15, 0], farbe: "#d64541" } as Schild] : []),
+  ];
+  const pWerte = [r.p1, r.p2, r.p3, druck(ABSCHNITT.d)];
+  const zustand3d: VenturiZustand = {
+    luft, q, d1: D1, d2, druck, pMin: Math.min(...pWerte), pMax: Math.max(...pWerte), saeulen: [r.p1, r.p2, r.p3], dichte: rho,
+    saugt, kavitation, steigt: luft ? Math.min(1, hoch / 0.1) : 0, spruehen, schilder,
+  };
+
   const versuche = [
     { name: "Engstelle", idee: "Halber Durchmesser heißt ein Viertel der Fläche: Das Wasser muss viermal so schnell durch — und in der Engstelle steht das Steigrohr am niedrigsten.", los: () => { setMedium("wasser"); setQ(1); setD2(20); setP3(0.3e5); } },
     { name: "Wasserstrahlpumpe", idee: "Wird es schnell genug, fällt der Druck in der Engstelle unter den Luftdruck: Das Steigrohr läuft leer und saugt Luft an. So arbeitet die Wasserstrahlpumpe im Chemieraum.", los: () => { setMedium("wasser"); setQ(1.6); setD2(18); setP3(0.1e5); } },
@@ -79,7 +112,7 @@ export default function Venturi() {
   return (
     <StationRahmen
       versuche={versuche}
-      bild={
+      bild={drei ? <Venturi3D zustand={zustand3d} ohneGl={() => setAnsicht("2d")} /> :
         <svg viewBox="0 0 1000 470" className="w-full h-auto select-none" role="img" aria-label="Venturi-Rohr">
           <path d={`M${oben.join(" L")} L${unten.join(" L")} Z`} fill={luft ? "hsl(200 30% 85%)" : "hsl(205 80% 60%)"} opacity={luft ? 0.35 : 0.9} />
           <path d={`M${oben.join(" L")}`} fill="none" stroke="#56616d" strokeWidth={5} />
@@ -117,6 +150,7 @@ export default function Venturi() {
       }
       seite={<>
         <Karte>
+          <Wahl werte={[{ id: "3d", label: "🧊 3D" }, { id: "2d", label: "✏️ 2D" }]} wert={ansicht} setze={setAnsicht} />
           <Wahl werte={[{ id: "wasser", label: "💧 Wasser" }, { id: "luft", label: "💨 Luft" }]} wert={medium} setze={m => { setMedium(m); setQ(m === "luft" ? 4 : 1); }} />
           <Regler label={`Durchfluss: ${zahl(q, 1)} L/s`} min={0} max={luft ? 10 : 3} step={0.1} wert={q} setze={setQ} />
           <Regler label={`Engstelle: ⌀ ${d2} mm`} min={8} max={40} step={1} wert={d2} setze={setD2} />
@@ -139,5 +173,27 @@ export default function Venturi() {
         winzig, eine »Engstelle« im Draht senkt die Spannung nicht durch Geschwindigkeit, sondern nur durch ihren Widerstand.
       </Analogie>}
     />
+  );
+}
+
+/** Die three.js-Szene samt Farblegende; ohne WebGL schaltet sie auf 2D zurück. */
+function Venturi3D({ zustand, ohneGl }: { zustand: VenturiZustand; ohneGl: () => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const szene = useRef<VenturiSzene | null>(null);
+  useEffect(() => {
+    try { szene.current = new VenturiSzene(ref.current!); } catch { ohneGl(); return; }
+    return () => { szene.current?.entsorgen(); szene.current = null; };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { szene.current?.setze(zustand); });
+  return (
+    <div ref={ref} className="relative w-full aspect-[1000/560] rounded-xl overflow-hidden select-none" role="img" aria-label="Venturi-Rohr in 3D, mit der Maus drehbar"
+      style={{ background: "radial-gradient(ellipse at 50% 35%, color-mix(in srgb, var(--surface) 70%, hsl(200 60% 75%)), var(--surface) 75%)" }}>
+      <div className="absolute left-3 bottom-3 flex items-center gap-2 text-xs font-semibold rounded-full px-3 py-1" style={{ background: "var(--surface)", color: "var(--text)", boxShadow: "0 1px 4px rgb(0 0 0 / .15)" }}>
+        Druck <span className="text-muted">niedrig</span>
+        <span className="inline-block h-2.5 w-24 rounded-full" style={{ background: "linear-gradient(90deg, hsl(250 75% 62%), hsl(190 85% 60%), hsl(28 95% 58%))" }} />
+        <span className="text-muted">hoch</span>
+      </div>
+      <div className="absolute right-3 top-3 text-xs text-muted">ziehen: drehen · Rad: zoomen</div>
+    </div>
   );
 }
