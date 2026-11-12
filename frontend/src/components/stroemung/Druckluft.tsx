@@ -8,7 +8,8 @@
 import { useRef, useState } from "react";
 import { A_KOLBEN, D_KOLBEN, Druckluft as Anlage, FEDER, HUB, type Einstellung } from "@/lib/stroemung/druckluft";
 import { P_LUFT } from "@/lib/stroemung/modell";
-import { Analogie, Karte, Pille, Regler, StationRahmen, Werte, bar, muted, text, useTakt, zahl } from "./rahmen";
+import { Analogie, Karte, Pille, Regler, StationRahmen, Werte, bar, text, useTakt, zahl } from "./rahmen";
+import { FARBE, KitDefs, Manometer, Rohr, useFliessen } from "./kit";
 
 export default function Druckluft() {
   const [e, setE] = useState<Einstellung>({ regler: 6e5, last: 400, zuluft: 50, abluft: 50 });
@@ -39,50 +40,111 @@ export default function Druckluft() {
   // Geometrie
   const Y = 250;
   const wd = 1 - 0.85 * mix;
-  const kolbenX = 700 + (weg / HUB) * 160;
+  const kolbenX = 630 + (weg / HUB) * 100;
+  const BODEN = 330;
+  const zeit = performance.now() / 1000;
+  const abluft = Math.abs(s.fluss("abluft")) * 3e3;
+  const tempo = (q: number) => (Math.abs(q) < 1e-6 ? 0 : Math.sign(q) * Math.min(160, 20 + Math.abs(q) * 3e5));
+  const merke = useFliessen(() => new Map([
+    ["rv", tempo(anlage.current!.sim.fluss("rv"))], ["regler", tempo(anlage.current!.sim.fluss("regler"))],
+    ["regler2", tempo(anlage.current!.sim.fluss("regler"))], ["zu", tempo(anlage.current!.sim.fluss("zu"))],
+  ]));
 
   return (
     <StationRahmen
       versuche={versuche}
       bild={
-        <svg viewBox="0 0 1000 470" className="w-full h-auto select-none" role="img" aria-label="Druckluftanlage mit Zylinder">
-          {/* Leitungen */}
-          <path d={`M130 ${Y} H600`} fill="none" stroke="#7b8794" strokeWidth={8} />
+        <svg viewBox="0 40 1000 350" className="w-full h-auto select-none" role="img" aria-label="Druckluftanlage mit Zylinder">
+          <KitDefs />
+          <defs>
+            <linearGradient id="dlWand" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#dfe4e8" /><stop offset="1" stopColor="#c3cad0" /></linearGradient>
+            <linearGradient id="dlRot" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ef6b5e" /><stop offset="0.5" stopColor="#d64541" /><stop offset="1" stopColor="#8e2a22" /></linearGradient>
+            <linearGradient id="dlBlau" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#6fa8e8" /><stop offset="1" stopColor="#1d4f8f" /></linearGradient>
+            <linearGradient id="dlHolz" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#c99a5b" /><stop offset="1" stopColor="#8a5d30" /></linearGradient>
+          </defs>
+          {/* Werkstatt: Wand, Boden */}
+          <rect x={0} y={0} width={1000} height={BODEN} fill="url(#dlWand)" />
+          <path d={Array.from({ length: 12 }, (_, i) => `M0 ${30 + i * 26} H1000`).join(" ")} stroke="#b5bdc4" strokeWidth={1} opacity={0.6} />
+          <rect x={0} y={BODEN} width={1000} height={470 - BODEN} fill="#7d858c" />
+          <path d={Array.from({ length: 11 }, (_, i) => `M${i * 100} ${BODEN} L${i * 100 - 40} 470`).join(" ")} stroke="#6a7279" strokeWidth={2} />
+          <rect x={0} y={BODEN} width={1000} height={5} fill="#5d656c" />
+
+          {/* Leitungen mit Luftbläschen */}
+          <Rohr d={`M130 ${Y} H190`} w={10} fluessig={FARBE.luft} merke={merke("rv")} />
+          <Rohr d={`M320 ${Y} H390`} w={10} fluessig={FARBE.luft} merke={merke("regler")} />
+          <Rohr d={`M420 ${Y} H500`} w={10} fluessig={FARBE.luft} merke={merke("regler2")} />
+          <Rohr d={`M550 ${Y} H630`} w={10} fluessig={FARBE.luft} merke={merke("zu")} />
           <g style={{ opacity: wd }}>
-            {/* Kompressor */}
-            <rect x={40} y={Y - 50} width={90} height={100} rx={10} fill="#d64541" stroke="#7b241c" strokeWidth={3} />
-            <circle cx={85} cy={Y} r={28} fill="#f2f4f6" stroke="#7b241c" strokeWidth={3} />
-            <g style={{ transformOrigin: `85px ${Y}px` }} className={z.kompressor ? "animate-spin" : undefined}>
-              <line x1={85} y1={Y - 22} x2={85} y2={Y + 22} stroke="#7b241c" strokeWidth={4} /><line x1={63} y1={Y} x2={107} y2={Y} stroke="#7b241c" strokeWidth={4} />
+            {/* Kompressor: Motor, Riemen, Schwungrad */}
+            <rect x={36} y={Y + 10} width={98} height={BODEN - Y - 10} rx={8} fill="url(#dlRot)" stroke="#7b241c" strokeWidth={2.5} filter="url(#kit-schatten)" />
+            {Array.from({ length: 5 }, (_, i) => <line key={i} x1={48} y1={Y + 22 + i * 7} x2={122} y2={Y + 22 + i * 7} stroke="#7b241c" strokeWidth={2} opacity={0.6} />)}
+            <rect x={50} y={Y - 34} width={44} height={44} rx={5} fill="url(#kit-metall)" stroke={FARBE.gehaeuse} strokeWidth={2} />
+            {Array.from({ length: 4 }, (_, i) => <line key={i} x1={50} y1={Y - 26 + i * 9} x2={94} y2={Y - 26 + i * 9} stroke={FARBE.gehaeuse} strokeWidth={2} />)}
+            <circle cx={116} cy={Y - 10} r={18} fill="#2f3740" />
+            <g className={z.kompressor ? "animate-spin" : undefined} style={{ transformOrigin: `116px ${Y - 10}px`, animationDuration: "0.35s" }}>
+              <circle cx={116} cy={Y - 10} r={15} fill="none" stroke="#c7cdd3" strokeWidth={3} />
+              {[0, 60, 120].map(w => <line key={w} x1={116 - 15 * Math.cos(w * Math.PI / 180)} y1={Y - 10 - 15 * Math.sin(w * Math.PI / 180)} x2={116 + 15 * Math.cos(w * Math.PI / 180)} y2={Y - 10 + 15 * Math.sin(w * Math.PI / 180)} stroke="#c7cdd3" strokeWidth={2.5} />)}
             </g>
-            <text x={85} y={Y + 72} textAnchor="middle" fontSize={13} style={text}>Kompressor {z.kompressor ? "läuft" : "aus"}</text>
-            {/* Kessel */}
-            <rect x={180} y={Y - 45} width={150} height={90} rx={40} fill="#9aa5b1" stroke="#56616d" strokeWidth={3} />
-            <text x={255} y={Y + 5} textAnchor="middle" fontSize={14} fontWeight={700} fill="#1f2a35">Kessel 20 L</text>
-            {/* Druckregler */}
-            <rect x={380} y={Y - 30} width={50} height={60} rx={6} fill="#f2f4f6" stroke="#56616d" strokeWidth={3} />
-            <text x={405} y={Y + 5} textAnchor="middle" fontSize={20}>⚙️</text>
-            <text x={405} y={Y + 55} textAnchor="middle" fontSize={12} style={muted}>Druckregler</text>
-            {/* Wegeventil */}
-            <g onClick={() => schalte(!ventil)} style={{ cursor: "pointer" }}>
-              <rect x={490} y={Y - 32} width={70} height={64} rx={6} fill={ventil ? "#2e9e3e" : "#8a949e"} stroke="#4a545e" strokeWidth={3} />
-              <text x={525} y={Y + 6} textAnchor="middle" fontSize={13} fontWeight={700} fill="#fff">{ventil ? "Druck" : "Entl."}</text>
-              <text x={525} y={Y + 55} textAnchor="middle" fontSize={12} style={muted}>3/2-Ventil (klick)</text>
+            <rect x={72} y={Y - 52} width={6} height={18} fill={FARBE.gehaeuse} />
+            <circle cx={75} cy={Y - 58} r={9} fill="url(#kit-metall)" stroke={FARBE.gehaeuse} strokeWidth={1.5} />
+            <text x={85} y={BODEN + 24} textAnchor="middle" fontSize={13} fontWeight={700} fill="#f2f4f6">Kompressor {z.kompressor ? "läuft" : "aus"}</text>
+            {/* Kessel auf Füßen mit Manometer */}
+            <rect x={180} y={Y - 45} width={150} height={90} rx={44} fill="url(#kit-metall)" stroke={FARBE.gehaeuse} strokeWidth={2.5} filter="url(#kit-schatten)" />
+            <rect x={196} y={Y - 30} width={118} height={10} rx={5} fill="#fff" opacity={0.35} />
+            {[205, 305].map(x => <path key={x} d={`M${x - 10} ${Y + 38} L${x - 14} ${BODEN} H${x + 14} L${x + 10} ${Y + 38}`} fill={FARBE.gehaeuse} />)}
+            <text x={255} y={Y + 10} textAnchor="middle" fontSize={14} fontWeight={800} fill="#1f2a35">Kessel 20 L</text>
+            <line x1={255} y1={Y - 45} x2={255} y2={Y - 62} stroke={FARBE.gehaeuse} strokeWidth={5} />
+            <Manometer x={255} y={Y - 86} r={24} wert={pKessel / 1e5} max={10} />
+            {/* Druckregler mit Drehknopf und Manometer */}
+            <rect x={385} y={Y - 26} width={40} height={52} rx={6} fill="url(#dlBlau)" stroke="#123a6b" strokeWidth={2} filter="url(#kit-schatten)" />
+            <rect x={393} y={Y - 44} width={24} height={18} rx={4} fill="#2f3740" />
+            <path d={`M397 ${Y - 44} v18 M403 ${Y - 44} v18 M409 ${Y - 44} v18 M415 ${Y - 44} v18`} stroke="#56616d" strokeWidth={1.5} />
+            <line x1={425} y1={Y - 12} x2={440} y2={Y - 12} stroke={FARBE.gehaeuse} strokeWidth={4} />
+            <Manometer x={452} y={Y - 30} r={16} wert={pRegler / 1e5} max={10} />
+            <text x={405} y={BODEN + 24} textAnchor="middle" fontSize={12} fontWeight={700} fill="#f2f4f6">Druckregler</text>
+            {/* 3/2-Wegeventil mit Taster */}
+            <g onClick={() => schalte(!ventil)} style={{ cursor: "pointer" }} role="button" aria-label="Ventil betätigen">
+              <title>Ventil betätigen / entlüften</title>
+              <rect x={490} y={Y - 24} width={70} height={48} rx={6} fill="url(#dlBlau)" stroke="#123a6b" strokeWidth={2} filter="url(#kit-schatten)" />
+              <rect x={476} y={Y - 12} width={14} height={24} rx={3} fill={FARBE.gehaeuse} />
+              <rect x={ventil ? 470 : 462} y={Y - 16} width={12} height={32} rx={5} fill={ventil ? FARBE.gruen : FARBE.rot} stroke="#2f3740" strokeWidth={1.5} style={{ transition: "x 0.15s" }} />
+              <text x={525} y={Y + 5} textAnchor="middle" fontSize={12} fontWeight={800} fill="#fff">{ventil ? "Druck" : "Entl."}</text>
+              <text x={525} y={BODEN + 24} textAnchor="middle" fontSize={12} fontWeight={700} fill="#f2f4f6">3/2-Ventil (klick)</text>
             </g>
-            {!ventil && <path d={`M525 ${Y + 32} v30`} stroke="#9aa5b1" strokeWidth={6} strokeDasharray="4 6" />}
+            {/* Schalldämpfer mit Abluftwolke */}
+            <rect x={519} y={Y + 24} width={12} height={16} rx={3} fill="#2f3740" />
+            {!ventil && abluft > 0.02 && [0, 1, 2].map(k => {
+              const t = (zeit + k / 3) % 1;
+              return <circle key={k} cx={525 + (k - 1) * 8 * t} cy={Y + 44 + t * 30} r={4 + t * 14} fill="#fff" opacity={(1 - t) * 0.7 * Math.min(1, abluft)} />;
+            })}
+            {/* Drossel */}
+            <circle cx={598} cy={Y} r={9} fill={FARBE.messing} stroke="#7a5f10" strokeWidth={2} />
+            <line x1={598} y1={Y} x2={598} y2={Y - 18} stroke="#7a5f10" strokeWidth={4} strokeLinecap="round" />
           </g>
-          {/* Zylinder mit Kolben, Feder und Last */}
-          <rect x={620} y={Y - 40} width={200} height={80} rx={6} fill="#c7cdd3" stroke="#56616d" strokeWidth={3} />
-          <rect x={620} y={Y - 36} width={Math.max(4, kolbenX - 620)} height={72} fill={`hsl(195 70% ${Math.round(85 - 30 * Math.min(1, pZyl / 8e5))}%)`} />
-          <rect x={kolbenX} y={Y - 36} width={14} height={72} fill="#56616d" />
-          <path d={Array.from({ length: 9 }, (_, i) => `${i ? "L" : "M"}${kolbenX + 14 + (i * (820 - kolbenX - 14)) / 8} ${Y + (i % 2 ? -24 : 24)}`).join(" ")} fill="none" stroke="#7b8794" strokeWidth={3} />
-          <rect x={kolbenX + 14} y={Y - 6} width={190} height={12} fill="#8a949e" />
-          <rect x={kolbenX + 204} y={Y - 50} width={60} height={100} rx={6} fill="#a0703c" stroke="#5c3a1a" strokeWidth={3} />
-          <text x={kolbenX + 234} y={Y + 6} textAnchor="middle" fontSize={13} fontWeight={700} fill="#fff">{zahl(e.last, 0)} N</text>
-          <Pille x={720} y={Y - 60} t={`F = p·A = ${zahl(Math.max(0, pZyl) * A_KOLBEN, 0)} N · nötig ${zahl(FEDER + e.last, 0)} N`} />
-          <Pille x={720} y={Y + 72} t={`Weg ${zahl(weg * 100, 1)} von ${HUB * 100} cm · Hübe ${z.huebe}`} />
-          <Pille x={255} y={Y - 70} t={`Kessel ${bar(pKessel, 1)}`} gross />
-          <Pille x={405} y={Y - 50} t={bar(pRegler, 1)} />
+          {/* Zylinder im Schnitt: Luft, Kolben, Feder, Stange, Last */}
+          <rect x={616} y={Y - 44} width={168} height={88} rx={8} fill="url(#kit-metall)" stroke={FARBE.gehaeuse} strokeWidth={2.5} filter="url(#kit-schatten)" />
+          <rect x={622} y={Y - 36} width={156} height={72} fill="#2b2f33" />
+          <rect x={622} y={Y - 36} width={Math.max(2, kolbenX - 622)} height={72} fill={`hsl(195 70% ${Math.round(80 - 35 * Math.min(1, pZyl / 8e5))}%)`} />
+          {Array.from({ length: 10 }, (_, i) => (
+            <circle key={i} cx={626 + ((i * 37 + zeit * 40 * (pZyl > 0.1e5 ? 1 : 0)) % Math.max(4, kolbenX - 630))} cy={Y - 28 + ((i * 23) % 56)} r={1.8 + Math.min(1, pZyl / 6e5)} fill="#fff" opacity={0.6} />
+          ))}
+          <path d={Array.from({ length: 9 }, (_, i) => `${i ? "L" : "M"}${kolbenX + 14 + (i * (778 - kolbenX - 14)) / 8} ${Y + (i % 2 ? -26 : 26)}`).join(" ")} fill="none" stroke="#c7cdd3" strokeWidth={3.5} />
+          <rect x={kolbenX} y={Y - 36} width={14} height={72} rx={2} fill="url(#kit-metallQuer)" stroke={FARBE.gehaeuse} />
+          <rect x={kolbenX + 14} y={Y - 6} width={166} height={12} fill="url(#kit-metall)" stroke={FARBE.gehaeuse} />
+          <rect x={784} y={Y - 12} width={8} height={24} rx={2} fill={FARBE.gehaeuse} />
+          {/* Last: Kiste auf Rollen */}
+          <g filter="url(#kit-schatten)">
+            <rect x={kolbenX + 180} y={BODEN - 92} width={74} height={80} rx={4} fill="url(#dlHolz)" stroke="#5c3a1a" strokeWidth={2.5} />
+            <path d={`M${kolbenX + 180} ${BODEN - 92} l74 80 M${kolbenX + 254} ${BODEN - 92} l-74 80`} stroke="#5c3a1a" strokeWidth={2} opacity={0.5} />
+            <circle cx={kolbenX + 196} cy={BODEN - 6} r={6} fill="#2f3740" /><circle cx={kolbenX + 238} cy={BODEN - 6} r={6} fill="#2f3740" />
+          </g>
+          <rect x={kolbenX + 176} y={Y - 6} width={6} height={12} fill={FARBE.gehaeuse} />
+          <rect x={kolbenX + 192} y={BODEN - 62} width={50} height={20} rx={4} fill="#fff" opacity={0.9} />
+          <text x={kolbenX + 217} y={BODEN - 47} textAnchor="middle" fontSize={13} fontWeight={800} fill="#3f2d1a">{zahl(e.last, 0)} N</text>
+          <Pille x={720} y={Y - 64} t={`F = p·A = ${zahl(Math.max(0, pZyl) * A_KOLBEN, 0)} N · nötig ${zahl(FEDER + e.last, 0)} N`} />
+          <Pille x={720} y={BODEN + 30} t={`Weg ${zahl(weg * 100, 1)} von ${HUB * 100} cm · Hübe ${z.huebe}`} />
+          <Pille x={255} y={Y - 128} t={`Kessel ${bar(pKessel, 1)}`} gross />
+          <Pille x={452} y={Y - 60} t={bar(pRegler, 1)} />
 
           {/* ── Schaltzeichen nach DIN ISO 1219 ── */}
           <g style={{ opacity: mix }} pointerEvents="none">
@@ -108,10 +170,10 @@ export default function Druckluft() {
               {/* Drossel: zwei Bögen */}
               <path d={`M590 ${Y - 12} q8 12 0 24 M606 ${Y - 12} q-8 12 0 24`} />
               {/* Zylinder einfach wirkend mit Feder */}
-              <rect x={620} y={Y - 25} width={200} height={50} style={{ fill: "var(--surface)" }} />
+              <rect x={620} y={Y - 25} width={160} height={50} style={{ fill: "var(--surface)" }} />
               <line x1={kolbenX} y1={Y - 25} x2={kolbenX} y2={Y + 25} strokeWidth={5} />
-              <line x1={kolbenX} y1={Y} x2={kolbenX + 210} y2={Y} strokeWidth={4} />
-              <path d={Array.from({ length: 7 }, (_, i) => `${i ? "L" : "M"}${kolbenX + (i * (820 - kolbenX)) / 6} ${Y + (i % 2 ? -14 : 14)}`).join(" ")} strokeWidth={1.5} />
+              <line x1={kolbenX} y1={Y} x2={kolbenX + 180} y2={Y} strokeWidth={4} />
+              <path d={Array.from({ length: 7 }, (_, i) => `${i ? "L" : "M"}${kolbenX + (i * (780 - kolbenX)) / 6} ${Y + (i % 2 ? -14 : 14)}`).join(" ")} strokeWidth={1.5} />
             </g>
             <text x={85} y={Y + 72} textAnchor="middle" fontSize={13} style={text}>Verdichter</text>
             <text x={255} y={Y + 46} textAnchor="middle" fontSize={13} style={text}>Speicher</text>

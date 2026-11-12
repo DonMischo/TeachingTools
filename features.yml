@@ -454,12 +454,12 @@ simulationen:
       - Löser für Rohrnetze wie ein Stromkreis - Gesamtdruck p + ρgh, Rohre laminar oder turbulent, Pumpe mit Kennlinie, Rückschlagventil, Netzanschluss, Auslass
       - Speicher - offener Behälter, Druckkessel, Gaspolster nach Boyle; Zylinder nach Pascal; Wasser oder Luft
       - Reiter nach Stufen (Kl. 7/8 Druck, Kl. 9/10 Strömung, Technik & Beruf, Baukasten)
-      - Tauchen - Schweredruck in fünf Flüssigkeiten, Druckpfeile, Ballon nach Boyle, hydrostatisches Paradoxon
+      - Tauchen - Taucherin zum Ziehen, Schweredruck in fünf Flüssigkeiten, Druckpfeile, Ballon nach Boyle, wachsende Ausatemblasen, hydrostatisches Paradoxon
       - Wasserturm & Röhren - verbundene Gefäße live, Haus mit Stockwerken und Hähnen, Stromkreis einblendbar
-      - Hydraulische Presse - Wagenheber mit Pumpstößen, Kraft gegen Weg, Luftblase in der Bremse
-      - Luftdruck - Saugrohr mit 10-m-Grenze, Torricelli, Berg-Orte; Saugheber mit Abriss
+      - Hydraulische Presse - Wagenheber mit Pumphebel zum Ziehen, Ölvorrat und Ventilkugeln, Kraft gegen Weg, Luftblase in der Bremse
+      - Luftdruck - Saugrohr mit Kolbenpumpe zum Selbstziehen, 10-m-Grenze, Torricelli, Berg-Orte; Saugheber mit Abriss
       - Rohrnetz - Pumpe mit bis zu drei Zweigen und Engstelle, Wasser turbulent oder Öl laminar (r⁴), Pumpen- und Anlagenkennlinie, Stromkreis einblendbar
-      - Venturi - Kontinuität und Bernoulli mit Steigrohren, Wasserstrahlpumpe, Kavitation, Zerstäuber
+      - Venturi - in 3D (three.js, 2D als Rückfall), Kontinuität und Bernoulli mit Steigrohren, Wasserstrahlpumpe, Kavitation, Zerstäuber
       - Heizkreis - drei Heizkörper, Thermostatventile mit Voreinstellung, hydraulischer Abgleich per Knopf, Wärmeleistung je Raum
       - Hausanschluss - Netzdruck, Zähler, Rückflussverhinderer, Druckminderer, Steigleitung mit sechs Zapfstellen
       - Druckluft - Kompressor mit Druckschalter, Kessel, Druckregler, 3/2-Wegeventil, Drosseln, Zylinder; Schaltzeichen nach DIN ISO 1219
