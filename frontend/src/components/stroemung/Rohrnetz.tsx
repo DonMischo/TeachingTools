@@ -9,6 +9,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Stroemung } from "@/lib/stroemung/loeser";
 import { querschnitt, type Knoten, type Medium, type Teil } from "@/lib/stroemung/modell";
 import { Analogie, Karte, Pille, Regler, StationRahmen, Wahl, Werte, bar, muted, text, zahl } from "./rahmen";
+import { Handrad, KitDefs, Manometer, Muffe, Pumpe, Rohr } from "./kit";
 
 interface Einstellung {
   medium: Extract<Medium, "wasser" | "oel">;
@@ -129,6 +130,7 @@ export default function Rohrnetz() {
           const p = ((phase.get(k) ?? 0) + v * dt) % 1000;
           phase.set(k, p);
           striche.current.get(k)?.setAttribute("stroke-dashoffset", String(-p));
+          if (art === "w") striche.current.get(k)?.setAttribute("stroke-opacity", Math.abs(s.q) > 1e-7 ? "0.6" : "0");
         }
       }
       id = requestAnimationFrame(los);
@@ -146,12 +148,17 @@ export default function Rohrnetz() {
       versuche={versuche}
       bild={
         <svg viewBox="0 0 1000 540" className="w-full h-auto select-none" role="img" aria-label="Rohrnetz mit Pumpe">
+          <KitDefs />
+          <defs>
+            <linearGradient id="rnWand" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#eef1f4" /><stop offset="1" stopColor="#cfd6dd" /></linearGradient>
+            <pattern id="rnRaster" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0 H0 V40" fill="none" stroke="#c3ccd4" strokeWidth={1} /></pattern>
+          </defs>
+          <rect width={1000} height={540} fill="url(#rnWand)" />
+          <rect width={1000} height={540} fill="url(#rnRaster)" opacity={0.6} />
           {stuecke.map(s => (
             <g key={s.key}>
               <g style={{ opacity: wd }}>
-                <path d={pfad(s.pts)} fill="none" stroke="#7b8794" strokeWidth={breite(s.dmm) + 5} strokeLinejoin="round" />
-                <path d={pfad(s.pts)} fill="none" stroke={wasser(s.p)} strokeWidth={breite(s.dmm)} strokeLinejoin="round" />
-                <path ref={merke(`w${s.key}`)} d={pfad(s.pts)} fill="none" stroke="#fff" strokeOpacity={s.q > 1e-7 ? 0.7 : 0} strokeWidth={Math.max(2, breite(s.dmm) / 4)} strokeDasharray="6 14" strokeLinecap="round" />
+                <Rohr d={pfad(s.pts)} w={breite(s.dmm)} fluessig={wasser(s.p)} merke={merke(`w${s.key}`)} />
               </g>
               <g style={{ opacity: mix }}>
                 <path d={pfad(s.pts)} fill="none" stroke={pot(s.p)} strokeWidth={6} strokeLinejoin="round" strokeLinecap="round" />
@@ -159,44 +166,49 @@ export default function Rohrnetz() {
               </g>
             </g>
           ))}
-          {/* Pumpe = Quelle */}
+          {/* Muffen an Knoten und Abzweigen */}
           <g style={{ opacity: wd }}>
-            <circle cx={PX} cy={305} r={30} fill="#56616d" stroke="#2f3740" strokeWidth={3} />
-            <path d={`M${PX - 14} ${318} L${PX} ${286} L${PX + 14} ${318} Z`} fill="#d8dee4" />
-            <text x={PX + 40} y={310} fontSize={14} style={text}>Pumpe</text>
+            {Array.from({ length: e.zweige }, (_, i) => [X1, X2].map(x => <Muffe key={`${i}${x}`} x={x} y={yZ(i)} w={breite(D_HAUPT)} />))}
+            {e.engstelle !== null && <Muffe x={545} y={yZ(0)} w={breite(e.d[0])} />}
+            <Pumpe x={PX} y={305} r={30} laeuft={r.q > 1e-7} />
+            <text x={PX + 40} y={300} fontSize={14} fontWeight={700} fill="#2f3740">Pumpe</text>
+            <text x={PX + 40} y={318} fontSize={12} fill="#56616d">+{bar(r.p.po - r.p.pu)}</text>
           </g>
           <g style={{ opacity: mix }}>
             <rect x={PX - 30} y={285} width={60} height={42} style={{ fill: "var(--surface)" }} />
             <line x1={PX - 26} y1={296} x2={PX + 26} y2={296} style={{ stroke: "var(--text)" }} strokeWidth={3} />
             <line x1={PX - 13} y1={314} x2={PX + 13} y2={314} style={{ stroke: "var(--text)" }} strokeWidth={9} />
-            <Pille x={PX + 95} y={310} t={`U ≙ ${bar(r.p.po - r.p.pu)}`} />
+            <Pille x={PX + 95} y={350} t={`U ≙ ${bar(r.p.po - r.p.pu)}`} />
           </g>
-          {/* Knoten */}
-          {e.zweige > 1 && [X1, X2].map(x => <circle key={x} cx={x} cy={Y_OBEN} r={8} style={{ fill: "var(--text)", opacity: 0.4 + 0.6 * mix }} />)}
-          {/* Zweige: Beschriftung, Ventil, Widerstand */}
+          {/* Manometer an beiden Knoten */}
+          {[{ x: X1, p: r.p.k1, n: "K₁" }, { x: X2, p: r.p.k2, n: "K₂" }].map(m => (
+            <g key={m.n}>
+              <line x1={m.x} y1={Y_OBEN} x2={m.x} y2={Y_OBEN - 34} stroke="#3f4a55" strokeWidth={5} />
+              <Manometer x={m.x} y={Y_OBEN - 62} r={26} wert={m.p / 1e5} max={3} />
+              <Pille x={m.x + (m.x === X1 ? -84 : 84)} y={Y_OBEN - 60} t={`${m.n}: ${bar(m.p)}`} />
+            </g>
+          ))}
+          {/* Zweige: Handrad zum Öffnen/Schließen, Beschriftung, Widerstand */}
           {Array.from({ length: e.zweige }, (_, i) => {
             const y = yZ(i), q = r.zweig[i];
             const zu = !e.offen[i];
             const rx = i === 0 && e.engstelle !== null ? 650 : 545;
             return (
               <g key={i}>
-                <g onClick={() => set({ offen: e.offen.map((o, k) => (k === i ? !o : o)) as Einstellung["offen"] })} style={{ cursor: "pointer" }}>
-                  <rect x={X1 + 30} y={y - 16} width={34} height={32} rx={6} fill={zu ? "#b03a2e" : "#2e9e3e"} />
-                  <text x={X1 + 47} y={y + 5} textAnchor="middle" fontSize={12} fill="#fff">{zu ? "zu" : "auf"}</text>
-                </g>
-                <Pille x={545} y={y - 26} t={`Zweig ${i + 1}: ⌀ ${e.d[i]} mm${i === 0 && e.engstelle !== null ? ` → ${e.engstelle} mm` : ""} · ${lmin(q)}`} />
+                <Handrad x={X1 + 62} y={y - 30} r={14} offen={zu ? 0 : 1}
+                  onClick={() => set({ offen: e.offen.map((o, k) => (k === i ? !o : o)) as Einstellung["offen"] })}
+                  titel={zu ? `Zweig ${i + 1} öffnen` : `Zweig ${i + 1} schließen`} />
+                <Pille x={560} y={y - 28} t={`Zweig ${i + 1}: ⌀ ${e.d[i]} mm${i === 0 && e.engstelle !== null ? ` → ${e.engstelle} mm` : ""} · ${zu ? "zu" : lmin(q)}`} farbe={zu ? "#d64541" : "#e0a000"} />
                 <g style={{ opacity: mix }}>
                   {!zu && <rect x={rx - 40} y={y - 12} width={80} height={24} style={{ fill: "var(--surface)", stroke: "var(--text)" }} strokeWidth={3} />}
                   {!zu && <text x={rx} y={y + 5} textAnchor="middle" fontSize={13} fontWeight={700} style={text}>R{i + 1}</text>}
-                  {!zu && q > 1e-7 && <Pille x={545} y={y + 36} t={`R = Δp/Q = ${zahl(zweigDp / 1e5 / (q * 60000) * 100, 2)} bar je 100 L/min`} />}
+                  {!zu && q > 1e-7 && <Pille x={560} y={y + 36} t={`R = Δp/Q = ${zahl(zweigDp / 1e5 / (q * 60000) * 100, 2)} bar je 100 L/min`} />}
                 </g>
               </g>
             );
           })}
-          <Pille x={X1} y={Y_OBEN - 30} t={`K₁: ${bar(r.p.k1)}`} />
-          <Pille x={X2} y={Y_OBEN - 30} t={`K₂: ${bar(r.p.k2)}`} />
-          <Pille x={(PX + X2) / 2} y={Y_UNTEN + 36} t={`Q = ${lmin(r.q)}${e.zweige > 1 ? ` = ${r.zweig.slice(0, e.zweige).map(lmin).join(" + ")}` : ""}`} gross />
-          <text x={PX} y={Y_UNTEN + 46} fontSize={12} style={muted}>Systemdruck 1 bar</text>
+          <Pille x={(PX + X2) / 2} y={Y_UNTEN + 38} t={`Q = ${lmin(r.q)}${e.zweige > 1 ? ` = ${r.zweig.slice(0, e.zweige).map(lmin).join(" + ")}` : ""}`} gross />
+          <text x={PX - 40} y={Y_UNTEN + 44} fontSize={12} style={muted}>Systemdruck 1 bar</text>
         </svg>
       }
       seite={<>
