@@ -140,13 +140,39 @@ export function MailAnsicht({ von, an, mail, zeit }: { von: string; an: string; 
 
 /** Ein QR-Code kommt an: erst nur das Muster — mit dem Handy scannen oder aufdecken */
 function QrEmpfang({ text: inhalt }: { text: string }) {
-  const [offen, setOffen] = useState(false);
+  const erprobt = useErprobt();
+  return <QrLesen inhalt={inhalt} onRichtig={() => erprobt("qrcode")} />;
+}
+
+/** Groß-/Kleinschreibung und Leerzeichen egal — das Handy zeigt den Text, getippt wird von Hand */
+export const gleicherText = (a: string, b: string) => a.trim().replace(/\s+/g, " ").toLowerCase() === b.trim().replace(/\s+/g, " ").toLowerCase();
+
+/**
+ * Einen QR-Code mit dem Handy lesen und den Text eintragen: Stimmt er, ist der
+ * Code geknackt. Wer vorher aufdeckt, bekommt die Lösung — aber keinen Erfolg.
+ */
+export function QrLesen({ inhalt, onRichtig, groesse = 140 }: { inhalt: string; onRichtig: () => void; groesse?: number }) {
+  const [tipp, setTipp] = useState("");
+  const [stand, setStand] = useState<"offen" | "falsch" | "richtig" | "aufgedeckt">("offen");
+  const pruefe = () => {
+    if (gleicherText(tipp, inhalt)) { setStand("richtig"); onRichtig(); ton(880, 0.12); ton(1320, 0.15, 0.12); }
+    else setStand("falsch");
+  };
   return (
     <div className="flex flex-wrap items-center gap-3 text-sm">
-      <div className="bg-white p-2 rounded-lg"><QRCodeSVG value={inhalt || " "} size={140} level="M" /></div>
-      <div className="flex flex-col gap-1">
-        <span>📱 Halt die Handykamera drauf — sie zeigt den Text.</span>
-        {offen ? <b>»{inhalt}«</b> : <button className="underline text-xs self-start" onClick={() => setOffen(true)}>Ohne Handy aufdecken</button>}
+      <div className="bg-white p-2 rounded-lg"><QRCodeSVG value={inhalt || " "} size={groesse} level="M" /></div>
+      <div className="flex flex-col gap-1.5 min-w-0">
+        <span>📱 Halt die Handykamera drauf und schreib ab, was sie anzeigt:</span>
+        {stand === "richtig" ? <b className="text-ok">✅ Richtig gelesen: »{inhalt}«</b>
+          : stand === "aufgedeckt" ? <span>Aufgedeckt: <b>»{inhalt}«</b> <span className="text-xs text-muted">(ohne Erfolg — beim nächsten Code mit dem Handy!)</span></span>
+            : (
+              <form className="flex flex-wrap gap-1.5" onSubmit={e => { e.preventDefault(); pruefe(); }}>
+                <input className="input py-1 w-44 font-mono" value={tipp} maxLength={40} onChange={e => { setTipp(e.target.value); setStand("offen"); }} placeholder="gelesener Text" aria-label="Gelesener Text" />
+                <button className="btn-primary py-1" disabled={!tipp.trim()}>Prüfen</button>
+                {stand === "falsch" && <span className="text-bad text-xs self-center">Stimmt nicht — noch mal scannen.</span>}
+              </form>
+            )}
+        {stand !== "richtig" && stand !== "aufgedeckt" && <button className="underline text-xs text-muted self-start" onClick={() => setStand("aufgedeckt")}>Kein Handy? Aufdecken</button>}
       </div>
     </div>
   );

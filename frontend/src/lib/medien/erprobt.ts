@@ -39,7 +39,7 @@ export const ERPROBT = [
   { id: "polaroid", icon: "🖼️", name: "Sofortbild", text: "Mach ein Sofortbild und warte, bis es fertig ist." },
   { id: "email", icon: "📧", name: "Post ohne Briefträger", text: "Schick eine E-Mail." },
   { id: "diskettenlaufwerk", icon: "💾", name: "Klack — eingelegt", text: "Leg die Diskette ins Laufwerk und speichere eine Datei." },
-  { id: "qrcode", icon: "🔲", name: "Code gebaut", text: "Erzeug einen QR-Code und lies ihn mit dem Handy — oder schick ihn jemandem." },
+  { id: "qrcode", icon: "🔲", name: "Code geknackt", text: "Lies einen QR-Code mit dem Handy und trag den Text richtig ein — einen geschickten oder den Geheimcode." },
   { id: "nachricht", icon: "📬", name: "Post für dich", text: "Schick in einer Sitzung jemandem eine Nachricht mit einem alten Medium." },
 ] as const;
 export type ErprobtId = (typeof ERPROBT)[number]["id"];
