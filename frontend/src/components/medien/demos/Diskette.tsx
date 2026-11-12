@@ -149,11 +149,27 @@ export function DisketteStationDemo() {
   const disk = (
     <svg viewBox="0 0 200 200" className="w-40 h-40 block select-none" role="img" aria-label="3,5-Zoll-Diskette">
       <path d="M 4 4 H 176 L 196 24 V 196 H 4 Z" fill="#1e293b" stroke="#0f172a" strokeWidth="2" />
-      {/* Metallschieber (ziehbar) */}
+      {/* Fenster im Gehäuse: dahinter liegt die Magnetscheibe. Der Schieber verdeckt es, solange er zu ist. */}
+      <defs>
+        <clipPath id="disk-fenster"><rect x={96 + SCHIEBER_MAX} y="12" width="20" height="46" rx="2" /></clipPath>
+      </defs>
+      <rect x={96 + SCHIEBER_MAX} y="12" width="20" height="46" rx="2" fill="#020617" />
+      <g clipPath="url(#disk-fenster)">
+        {/* braune Kunststoffscheibe mit Magnetschicht, Spuren als feine Ringe */}
+        <circle cx="100" cy="104" r="84" fill="#5b3a1e" />
+        {[80, 74, 68, 62, 56, 50, 44, 38].map(r => <circle key={r} cx="100" cy="104" r={r} fill="none" stroke="#7c5230" strokeWidth="0.8" opacity="0.8" />)}
+        <circle cx="100" cy="104" r="84" fill="url(#disk-glanz)" />
+      </g>
+      <defs>
+        <linearGradient id="disk-glanz" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0.35" stopColor="#fff" stopOpacity="0" /><stop offset="0.5" stopColor="#fff" stopOpacity="0.18" /><stop offset="0.65" stopColor="#fff" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      {/* Metallschieber (ziehbar) — mit eigenem Loch, das beim Öffnen genau über dem Fenster liegt */}
       <g style={{ transform: `translateX(${schieber}px)`, transition: loslassen ? "transform .18s cubic-bezier(.3,1.8,.5,1)" : "none", cursor: "ew-resize", touchAction: "none" }}
         data-testid="schieber" onPointerDown={schieberDown} onPointerMove={schieberMove} onPointerUp={schieberUp} onPointerCancel={schieberUp}>
-        <rect x="52" y="4" width="76" height="62" rx="3" fill="#cbd5e1" stroke="#64748b" strokeWidth="2" />
-        <rect x="96" y="12" width="20" height="46" rx="2" fill="#475569" />
+        <path fillRule="evenodd" fill="#cbd5e1" stroke="#64748b" strokeWidth="2"
+          d="M 55 4 H 143 Q 146 4 146 7 V 63 Q 146 66 143 66 H 55 Q 52 66 52 63 V 7 Q 52 4 55 4 Z M 98 12 H 114 Q 116 12 116 14 V 56 Q 116 58 114 58 H 98 Q 96 58 96 56 V 14 Q 96 12 98 12 Z" />
         <rect x="58" y="8" width="8" height="54" fill="#e2e8f0" opacity=".7" />
       </g>
       {/* Etikett */}
@@ -175,6 +191,7 @@ export function DisketteStationDemo() {
       <div className="grid sm:grid-cols-2 gap-4 items-start">
         <div className="flex flex-col items-center gap-2">
           <span className="text-xs text-muted">Die Diskette (Schieber ziehen — die Feder holt ihn zurück)</span>
+          {schieber > SCHIEBER_MAX - 4 && <span className="text-xs">🟤 Durchs Fenster siehst du die Magnetscheibe: dünne Kunststofffolie mit Eisenoxid. Der Lesekopf berührt sie — Finger weg, ein Fingerabdruck kann Daten zerstören!</span>}
           <div className="h-44 grid place-items-center">
             {!drin ? (
               <div style={{ transform: `translate(${zug.x}px, ${zug.y}px)`, transition: zug.aktiv ? "none" : "transform .25s", touchAction: "none", cursor: "grab" }}
