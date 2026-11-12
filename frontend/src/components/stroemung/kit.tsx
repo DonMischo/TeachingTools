@@ -137,6 +137,8 @@ export function GlasTank({ x, y, breite, hoehe, fuell, farbe = FARBE.wasser, zuf
   return (
     <g>
       <rect x={x - 3} y={y} width={breite + 6} height={hoehe + 4} rx={8} fill="#000" opacity={0.18} transform="translate(3 5)" />
+      {/* Grundschicht in SVG: sichtbar auch ohne WebGL oder Animation; die WebGL-Flüssigkeit legt sich darüber */}
+      <rect x={x + 2} y={y + hoehe * (1 - Math.max(0, Math.min(1, fuell)))} width={breite - 4} height={hoehe * Math.max(0, Math.min(1, fuell))} rx={4} fill={farbe} opacity={0.75} />
       <foreignObject x={x} y={y} width={breite} height={hoehe}>
         <Fluessigkeit farbe={farbe} fuellstand={fuell} breite={breite} hoehe={hoehe} wirbel={wirbel} zufluss={zufluss} />
       </foreignObject>
