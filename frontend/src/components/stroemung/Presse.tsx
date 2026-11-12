@@ -136,7 +136,7 @@ export default function Presse() {
           <rect x={DREH.x - 8} y={DREH.y} width={16} height={205} fill="url(#kit-metallQuer)" stroke={FARBE.gehaeuse} />
           <line x1={DREH.x} y1={DREH.y} x2={griff.x} y2={griff.y} stroke="#2f3740" strokeWidth={11} strokeLinecap="round" />
           <circle cx={DREH.x} cy={DREH.y} r={8} fill={FARBE.messing} stroke="#7a5f10" strokeWidth={2} />
-          <g onPointerDown={ev => { greift.current = true; setAuto(null); (ev.target as Element).setPointerCapture?.(ev.pointerId); }} style={{ cursor: "ns-resize" }}>
+          <g onPointerDown={ev => { greift.current = true; setAuto(null); try { (ev.target as Element).setPointerCapture(ev.pointerId); } catch { /* Zeiger schon weg */ } }} style={{ cursor: "ns-resize" }}>
             <circle cx={griff.x} cy={griff.y} r={30} fill="transparent" />
             <rect x={griff.x - 10} y={griff.y - 24} width={20} height={48} rx={9} fill={h.blockiert ? "#d64541" : "#e0a000"} stroke="#7a5f10" strokeWidth={2} />
           </g>
