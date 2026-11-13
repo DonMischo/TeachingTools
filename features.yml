@@ -1007,7 +1007,7 @@ verwaltung:
       - Workflows: Ablauf in Markdown plus Bild oder D2-Diagramm, KI-Prompt erstellt das Diagramm aus dem Text
       - Zugriff je Sammlung (lesen, beitragen, verwalten) für Lehrkräfte, Klassen, A/B-Gruppen
       - Gastbeitritt per QR, Tabs
-      - Materialsammlung (nur Admin löscht), Einordnung nach Klasse und Unterrichtseinheit mit Filterchips
+      - Materialsammlung (nur Admin löscht), Einordnung erst nach Kategorie (Allgemein, Unterrichtsmaterial, Leistungskontrollen), dann Klasse und Unterrichtseinheit, mit Filterchips
   - id: klassenverwaltung
     name: Klassenverwaltung
     kann:

@@ -9,7 +9,7 @@ import {
   api, fragmentGuest, FragmentCollectionOut, FragmentOut, FragmentTabs,
   ResearchItemOut, FragmentOrt, ExitGameSim,
 } from "@/lib/api";
-import { Einordnung, OrtWahl, ortText } from "@/components/fragmente/Einordnung";
+import { ALLGEMEIN, Einordnung, EinordnenWahl, OHNE_ORT, ortText, tabName } from "@/components/fragmente/Einordnung";
 import { WorkflowCard, WorkflowModal } from "@/components/fragmente/Workflow";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
@@ -17,8 +17,6 @@ import { JoinQR } from "@/components/JoinQR";
 import { useLanUrl } from "@/hooks/useLanUrl";
 import { CollectionModal } from "@/components/fragmente/CollectionSettingsDialog";
 
-const TAB_LABEL: Record<string, string> = { snippets: "Schnipsel", archive: "Archiv" };
-const tabLabel = (t: string) => TAB_LABEL[t] ?? t;
 
 // ── Small reusable dialogs ────────────────────────────────────────────────────
 
@@ -87,6 +85,8 @@ function TabBar({
   onAdd?: () => void;
   canManage: boolean;
 }) {
+  const { art } = useContext(Einordnung);
+  const tabLabel = (t: string) => tabName(t, art);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -161,7 +161,7 @@ function FragmentCard({
   const editable = frag.can_edit;
 
   const { kategorien } = useContext(Einordnung);
-  const save = (patch: Partial<{ title: string | null; content: string | null; category: string | null } & FragmentOrt>) =>
+  const save = (patch: Partial<{ tab: string; title: string | null; content: string | null; category: string | null } & FragmentOrt>) =>
     api.fragments.updateFragment(frag.id, patch).catch((e: any) => toast(e.message ?? "Fehler", "error"));
 
   const scheduleSave = (next: string) => {
@@ -220,7 +220,8 @@ function FragmentCard({
               onClick={() => setEditingCat(true)}>+ Label</button>
           ) : null}
           {editable
-            ? <OrtWahl wert={frag} onChange={o => save(o).then(() => qc.invalidateQueries({ queryKey: ["fragments", frag.collection_id] }))}
+            ? <EinordnenWahl tab={frag.tab} ort={frag}
+                onChange={(tab, o) => save({ tab, ...o }).then(() => qc.invalidateQueries({ queryKey: ["fragments", frag.collection_id] }))}
                 className="bg-transparent text-[10px] max-w-[9rem] truncate" />
             : ortText(kategorien, frag) && <span className="truncate">{ortText(kategorien, frag)}</span>}
           <span className="truncate">{frag.author_name ?? ""}</span>
@@ -261,7 +262,8 @@ function ClippingModal({
   const [text, setText] = useState(initial?.text_content ?? "");
   const [tags, setTags] = useState<string[]>(initial?.tags ?? []);
   const { vorgabe } = useContext(Einordnung);
-  const [ort, setOrt] = useState<FragmentOrt>(initial ? { klasse: initial.klasse, einheit: initial.einheit } : vorgabe);
+  const [kat, setKat] = useState(initial?.tab ?? tab);
+  const [ort, setOrt] = useState<FragmentOrt>(initial ? { klasse: initial.klasse, einheit: initial.einheit } : kat === ALLGEMEIN ? OHNE_ORT : vorgabe);
   const [tagInput, setTagInput] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [sim, setSim] = useState<ExitGameSim | null>(initial?.sim ?? null);
@@ -279,10 +281,10 @@ function ClippingModal({
 
   const save = useMutation({
     mutationFn: async () => {
-      const payload = { title: title.trim() || null, url: url.trim() || null, text_content: text.trim() || null, tags, ...ort, ...(guestToken ? {} : { sim }) };
+      const payload = { title: title.trim() || null, url: url.trim() || null, text_content: text.trim() || null, tags, tab: kat, ...ort, ...(guestToken ? {} : { sim }) };
       const item = isEdit
         ? await api.fragments.updateResearch(initial!.id, payload)
-        : await api.fragments.createResearch(collectionId, { ...payload, tab }, guestToken);
+        : await api.fragments.createResearch(collectionId, payload, guestToken);
       for (const f of files) await api.fragments.uploadMedia(item.id, f, guestToken);
       return item;
     },
@@ -306,7 +308,7 @@ function ClippingModal({
               <p className="text-[10px] text-muted mt-0.5">Titel & Vorschau werden automatisch geladen.</p>
             </div>
           )}
-          <OrtWahl wert={ort} onChange={setOrt} className="input" />
+          <EinordnenWahl tab={kat} ort={ort} onChange={(t, o) => { setKat(t); setOrt(o); }} className="input" />
           <div><label className="label">Text</label><textarea className="input min-h-[80px] resize-y" value={text} onChange={e => setText(e.target.value)} placeholder="Zitat, Notiz…" /></div>
           <div>
             <label className="label">Tags</label>
@@ -587,7 +589,7 @@ export default function FragmentBoardPage() {
   const effTab = (t: string) => (allTabs.includes(t) ? t : allTabs[0]);
 
   const addFragment = useMutation({
-    mutationFn: (tab: string) => api.fragments.createFragment(collectionId, { tab, content: "", ...ortFilter }, guestToken),
+    mutationFn: (tab: string) => api.fragments.createFragment(collectionId, { tab, content: "", ...(tab === ALLGEMEIN ? {} : ortFilter) }, guestToken),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["fragments", collectionId] }),
     onError: (e: any) => toast(e.message ?? "Fehler", "error"),
   });
@@ -650,7 +652,9 @@ export default function FragmentBoardPage() {
     id === eintrag ? <div key={id} data-eintrag={id} className="rounded-xl ring-2 ring-accent">{karte}</div> : karte;
 
   const kategorien = collection.kategorien ?? [];
-  const passtOrt = (e: FragmentOrt) =>
+  const tabLabel = (t: string) => tabName(t, collection.art);
+  // Allgemein hat keine Aufteilung — der Klassen-/Einheitenfilter lässt es aus.
+  const passtOrt = (e: FragmentOrt & { tab: string }) => effTab(e.tab) === ALLGEMEIN ||
     (ortFilter.klasse == null || e.klasse === ortFilter.klasse) && (ortFilter.einheit == null || e.einheit === ortFilter.einheit);
   const ortFrags = fragments.filter(passtOrt);
   const ortRes = research.filter(passtOrt);
@@ -693,7 +697,7 @@ export default function FragmentBoardPage() {
   };
 
   return (
-    <Einordnung.Provider value={{ kategorien, vorgabe: ortFilter }}>
+    <Einordnung.Provider value={{ kategorien, vorgabe: ortFilter, tabs: allTabs, art: collection.art }}>
     <div className="mx-auto w-[92%] max-w-seite p-6">
       <button className="text-sm text-muted hover:text-fg mb-2" onClick={() => router.push("/fragmente")}>← Sammlungen</button>
       <div className="flex items-center justify-between gap-4 mb-4">
@@ -808,7 +812,7 @@ export default function FragmentBoardPage() {
       </div>
 
       {/* Klasse / Unterrichtseinheit — neue Karten und Clippings übernehmen die Auswahl */}
-      {kategorien.length > 0 && (
+      {kategorien.length > 0 && (isColumns || activeTab !== ALLGEMEIN) && (
         <div className="flex flex-col gap-1.5 mb-3">
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="text-[11px] text-muted w-16">Klasse</span>

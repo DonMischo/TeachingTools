@@ -397,8 +397,8 @@ Das Lehrkraft-Werkzeugset. Standardmäßig nur für Lehrkräfte sichtbar.
 
 - Pinnwände im Stil von TaskCards: Textfragmente und Recherche-Clips mit Link-Vorschau
 - Clippings tragen Bilder, PDFs und Textdokumente (md, txt, csv, rtf, doc/docx, odt, xls/xlsx, ods, ppt/pptx, odp) sowie ein Werkzeug mit Einstellungen wie an TaskCrawler-Aufgaben (Reiter, Station, Aufgabe …); es öffnet sich im Vollbild
-- Workflows: Ablauf in Markdown (Überschriften, Schritte, Aufgaben-Checkboxen) plus Bild oder D2-Diagramm wie in der Diagramm-Werkstatt; ein KI-Prompt baut das Diagramm aus dem Text, »In der Diagramm-Werkstatt bearbeiten« öffnet es dort
-- Art je Sammlung: Standard oder Materialsammlung; eine Materialsammlung löscht nur ein Admin. Sammlungen mit Kategorien (aus dem Curriculinator) ordnen Karten und Clippings nach Klasse und Unterrichtseinheit ein, Filterchips zeigen nur eine Klasse oder Einheit, und neue Einträge übernehmen den aktiven Filter
+- Workflows: Ablauf in einem Markdown-Feld, das beim Tippen formatiert (Überschriften, Schritte, Aufgaben-Checkboxen; Quelltext umschaltbar) plus Bild oder D2-Diagramm wie in der Diagramm-Werkstatt; ein KI-Prompt baut das Diagramm aus dem Text, »In der Diagramm-Werkstatt bearbeiten« öffnet es dort
+- Art je Sammlung: Standard oder Materialsammlung; eine Materialsammlung löscht nur ein Admin. Sammlungen mit Kategorien (aus dem Curriculinator) ordnen Karten und Clippings nach Klasse und Unterrichtseinheit ein, Filterchips zeigen nur eine Klasse oder Einheit, und neue Einträge übernehmen den aktiven Filter. Einordnen heißt: erst die Kategorie (Tab) wählen, dann Klasse und Einheit; der Tab »Schnipsel« heißt in Materialsammlungen »Allgemein« und hat keine Aufteilung
 - Zugriff pro Sammlung in drei Stufen: lesen, beitragen, verwalten; vergeben an Lehrkräfte, Klassen oder A/B-Gruppen
 - Gäste treten per QR bei
 - Tabs innerhalb einer Sammlung

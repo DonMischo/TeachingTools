@@ -11,12 +11,13 @@ import { createPortal } from "react-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, type FragmentOrt, type ResearchItemOut } from "@/lib/api";
 import { useToast } from "@/contexts/ToastContext";
+import { MarkdownFeld } from "@/components/MarkdownFeld";
 import { Markdown } from "@/lib/markdown";
 import { kopiereText } from "@/lib/zwischenablage";
 import { DIAGRAMM_IMPORT, KI_ARTEN, kiPrompt, type KiArt } from "@/lib/diagramm/vorlagen";
 import { codeAusAntwort } from "@/lib/diagramm/hervorheben";
 import { CodeFeld } from "@/components/diagramme/CodeFeld";
-import { Einordnung, OrtWahl, ortText } from "./Einordnung";
+import { ALLGEMEIN, Einordnung, EinordnenWahl, OHNE_ORT, ortText } from "./Einordnung";
 
 const BEISPIEL = `direction: down
 start: Start { shape: oval }
@@ -81,7 +82,8 @@ export function D2Bild({ code, gross = false, onFehler }: { code: string; gross?
       {fehler.length > 0 && <p className="text-[11px] text-red-500">⚠ {fehler[0]} (zeigt den letzten gültigen Stand)</p>}
       {zoom && (
         <Gross onClose={() => setZoom(false)}>
-          <div className="[&_svg]:max-w-[90vw] [&_svg]:max-h-[85vh] [&_svg]:w-auto [&_svg]:h-auto" dangerouslySetInnerHTML={{ __html: svg }} />
+          {/* D2-SVGs tragen nur eine viewBox — feste Maße, sonst schrumpft das Bild auf ein Quadrat */}
+          <div className="[&>svg]:block [&>svg]:w-[88vw] [&>svg]:h-[84vh]" dangerouslySetInnerHTML={{ __html: svg.replace('preserveAspectRatio="xMinYMin meet"', 'preserveAspectRatio="xMidYMid meet"') }} />
         </Gross>
       )}
     </>
@@ -135,8 +137,8 @@ export function WorkflowModal({ collectionId, initial, tab, guestToken, onClose 
   const { vorgabe } = useContext(Einordnung);
   const [title, setTitle] = useState(initial?.title ?? "");
   const [text, setText] = useState(initial?.text_content ?? "");
-  const [vorschau, setVorschau] = useState(false);
-  const [ort, setOrt] = useState<FragmentOrt>(initial ? { klasse: initial.klasse, einheit: initial.einheit } : vorgabe);
+  const [kat, setKat] = useState(initial?.tab ?? tab);
+  const [ort, setOrt] = useState<FragmentOrt>(initial ? { klasse: initial.klasse, einheit: initial.einheit } : kat === ALLGEMEIN ? OHNE_ORT : vorgabe);
   const hatBilder = (initial?.media ?? []).some(m => m.kind === "image");
   const [bild, setBild] = useState<"d2" | "bild">(initial && !initial.d2 && hatBilder ? "bild" : "d2");
   // Neue Workflows starten mit dem Beispiel-Ablauf, bestehende mit ihrem Code
@@ -153,12 +155,12 @@ export function WorkflowModal({ collectionId, initial, tab, guestToken, onClose 
   const save = useMutation({
     mutationFn: async () => {
       const payload = {
-        title: title.trim() || null, text_content: text.trim() || null, ...ort,
+        title: title.trim() || null, text_content: text.trim() || null, tab: kat, ...ort,
         d2: bild === "d2" && d2.trim() ? d2 : null,
       };
       const item = initial
         ? await api.fragments.updateResearch(initial.id, payload)
-        : await api.fragments.createResearch(collectionId, { ...payload, tab, art: "workflow" }, guestToken);
+        : await api.fragments.createResearch(collectionId, { ...payload, art: "workflow" }, guestToken);
       if (bild === "bild") for (const f of files) await api.fragments.uploadMedia(item.id, f, guestToken);
       return item;
     },
@@ -184,20 +186,12 @@ export function WorkflowModal({ collectionId, initial, tab, guestToken, onClose 
         <div className="space-y-4">
           <div><label className="label" htmlFor="wf-titel">Titel</label>
             <input id="wf-titel" className="input" value={title} onChange={e => setTitle(e.target.value)} placeholder="z. B. Versuchsprotokoll schreiben" /></div>
-          <OrtWahl wert={ort} onChange={setOrt} className="input" />
+          <EinordnenWahl tab={kat} ort={ort} onChange={(t, o) => { setKat(t); setOrt(o); }} className="input" />
 
           <div>
-            <div className="flex items-center justify-between">
-              <label className="label" htmlFor="wf-text">Ablauf (Markdown)</label>
-              <button type="button" className="text-xs text-muted hover:text-fg" onClick={() => setVorschau(v => !v)}>
-                {vorschau ? "✎ Bearbeiten" : "👁 Vorschau"}
-              </button>
-            </div>
-            {vorschau
-              ? <div className="rounded-lg border border-line p-3 text-sm min-h-[120px]"><Markdown text={text || "_(leer)_"} /></div>
-              : <textarea id="wf-text" className="input min-h-[160px] resize-y font-mono text-sm" value={text} onChange={e => setText(e.target.value)}
-                  placeholder={"## Vorbereitung\n1. Material bereitlegen\n2. **Sicherheit** prüfen\n\n## Durchführung\n- [ ] Messen\n- [ ] Notieren"} />}
-            <p className="text-[10px] text-muted mt-0.5"># Überschrift · 1. Schritt · - Punkt · - [ ] Aufgabe · **fett** · *kursiv* · [Link](https://…)</p>
+            <span className="label">Ablauf</span>
+            <MarkdownFeld id="wf-text" label="Ablauf (Markdown)" wert={text} onChange={setText} />
+            <p className="text-[10px] text-muted mt-0.5">Tippen formatiert sofort: »## « Überschrift · »1. « Schritt · »- « Punkt · »[ ] « Aufgabe · **fett** · *kursiv*</p>
           </div>
 
           <div>

@@ -5,6 +5,8 @@ import { api, type ResearchItemOut } from "@/lib/api";
 import { Markdown } from "@/lib/markdown";
 import { kiPrompt } from "@/lib/diagramm/vorlagen";
 import { WorkflowCard, WorkflowModal } from "@/components/fragmente/Workflow";
+import { MarkdownFeld } from "@/components/MarkdownFeld";
+import { Einordnung, EinordnenWahl, tabName } from "@/components/fragmente/Einordnung";
 
 vi.mock("@/contexts/ToastContext", () => ({ useToast: () => ({ toast: vi.fn() }) }));
 // Der echte D2-Übersetzer ist WASM — hier reicht ein Bild mit dem Code als Text.
@@ -55,6 +57,7 @@ describe("Workflow", () => {
     const zu = vi.fn();
     mitQuery(<WorkflowModal collectionId={1} initial={null} tab="snippets" onClose={zu} />);
     fireEvent.change(screen.getByLabelText("Titel"), { target: { value: "Versuch" } });
+    fireEvent.click(screen.getByTitle("Markdown-Quelltext bearbeiten"));
     fireEvent.change(screen.getByLabelText("Ablauf (Markdown)"), { target: { value: "1. Hypothese" } });
     expect(await screen.findByTestId("d2-bild")).toBeTruthy();
     fireEvent.click(screen.getByText("Speichern"));
@@ -76,5 +79,48 @@ describe("Workflow", () => {
     expect(screen.getByText(/Versuch$/, { selector: "button" })).toBeTruthy();
     expect((await screen.findByTestId("d2-bild")).textContent).toBe("a -> b");
     expect(screen.getByText("Versuch", { selector: "strong" })).toBeTruthy();
+  });
+});
+
+describe("Markdown-Feld", () => {
+  it("zeigt Markdown formatiert und gibt es unverändert zurück", async () => {
+    const aendern = vi.fn();
+    const text = ["## Ablauf", "", "1. Erst", "2. **Dann**", "", "- [ ] offen", "- [x] erledigt"].join("\n");
+    const { container } = render(<MarkdownFeld label="Ablauf" wert={text} onChange={aendern} />);
+    await waitFor(() => expect(container.querySelector("h2")?.textContent).toBe("Ablauf"));
+    expect(container.querySelectorAll("ol li")).toHaveLength(2);
+    expect(container.querySelectorAll("ul[data-type=taskList] > li")).toHaveLength(2);
+    // Quelltext-Ansicht zeigt das Markdown, Änderungen landen im Feld
+    fireEvent.click(screen.getByTitle("Markdown-Quelltext bearbeiten"));
+    expect((screen.getByLabelText("Ablauf") as HTMLTextAreaElement).value).toBe(text);
+    fireEvent.change(screen.getByLabelText("Ablauf"), { target: { value: "- [ ] neu" } });
+    expect(aendern).toHaveBeenCalledWith("- [ ] neu");
+  });
+});
+
+describe("Einordnen", () => {
+  const kategorien = [{ klasse: 6, einheiten: [{ id: "k6-t2", titel: "Brüche" }] }];
+  const wert = (tabs: string[]) => ({ kategorien, vorgabe: { klasse: null, einheit: null }, tabs, art: "materialsammlung" });
+
+  it("wählt erst die Kategorie; Allgemein hat keine Klassen", () => {
+    const aendern = vi.fn();
+    const tabs = ["snippets", "Unterrichtsmaterial", "Leistungskontrollen", "archive"];
+    const { rerender } = render(<Einordnung.Provider value={wert(tabs)}>
+      <EinordnenWahl tab="snippets" ort={{ klasse: null, einheit: null }} onChange={aendern} /></Einordnung.Provider>);
+    const kat = screen.getByLabelText("Kategorie") as HTMLSelectElement;
+    expect([...kat.options].map(o => o.text)).toEqual(["Allgemein", "Unterrichtsmaterial", "Leistungskontrollen"]);
+    expect(screen.queryByLabelText("Klasse und Unterrichtseinheit")).toBeNull();
+    fireEvent.change(kat, { target: { value: "Leistungskontrollen" } });
+    expect(aendern).toHaveBeenLastCalledWith("Leistungskontrollen", { klasse: null, einheit: null });
+    rerender(<Einordnung.Provider value={wert(tabs)}>
+      <EinordnenWahl tab="Leistungskontrollen" ort={{ klasse: 6, einheit: "k6-t2" }} onChange={aendern} /></Einordnung.Provider>);
+    fireEvent.change(screen.getByLabelText("Kategorie"), { target: { value: "snippets" } });
+    expect(aendern).toHaveBeenLastCalledWith("snippets", { klasse: null, einheit: null });
+  });
+
+  it("nennt Schnipsel nur in Materialsammlungen »Allgemein«", () => {
+    expect(tabName("snippets", "materialsammlung")).toBe("Allgemein");
+    expect(tabName("snippets", "standard")).toBe("Schnipsel");
+    expect(tabName("Leistungskontrollen", "materialsammlung")).toBe("Leistungskontrollen");
   });
 });
