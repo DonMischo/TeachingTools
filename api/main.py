@@ -298,6 +298,8 @@ def _run_migrations(db_engine):
         "ALTER TABLE research_items ADD COLUMN IF NOT EXISTS klasse INTEGER",
         "ALTER TABLE research_items ADD COLUMN IF NOT EXISTS einheit VARCHAR(100)",
         "ALTER TABLE research_items ADD COLUMN IF NOT EXISTS sim JSON",
+        "ALTER TABLE research_items ADD COLUMN IF NOT EXISTS art VARCHAR(20) NOT NULL DEFAULT 'clipping'",
+        "ALTER TABLE research_items ADD COLUMN IF NOT EXISTS d2 TEXT",
         "ALTER TABLE research_media ADD COLUMN IF NOT EXISTS name VARCHAR(255)",
         "ALTER TABLE fragment_collection_grants ADD COLUMN IF NOT EXISTS teacher_id INTEGER REFERENCES teachers(id) ON DELETE CASCADE",
         "ALTER TABLE fragment_collection_grants ADD COLUMN IF NOT EXISTS group_id INTEGER REFERENCES student_groups(id) ON DELETE CASCADE",

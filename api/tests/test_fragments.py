@@ -445,3 +445,20 @@ def test_clipping_nimmt_textdokumente(client, teacher, tmp_path, monkeypatch):
         ("file", "notizen.md"), ("file", "brief.txt"), ("file", "AB.docx"), ("file", "Tabelle.ods")]
     assert client.post(f"{PREFIX}/research/{rid}/media", files={"file": ("x.html", b"<script>")},
                        headers=teacher_auth(teacher)).status_code == 400
+
+
+def test_workflow_ist_ein_clipping_mit_d2(client, teacher):
+    client.cookies.clear()
+    cid = client.post(f"{PREFIX}/collections", json={"name": "Material"}, headers=teacher_auth(teacher)).json()["id"]
+    w = client.post(f"{PREFIX}/collections/{cid}/research",
+                    json={"art": "workflow", "title": "Experiment", "text_content": "1. Hypothese\n2. Versuch",
+                          "d2": "a -> b"}, headers=teacher_auth(teacher)).json()
+    assert (w["art"], w["d2"], w["text_content"]) == ("workflow", "a -> b", "1. Hypothese\n2. Versuch")
+    w = client.patch(f"{PREFIX}/research/{w['id']}", json={"d2": None}, headers=teacher_auth(teacher)).json()
+    assert w["d2"] is None and w["art"] == "workflow"
+    # ein gewöhnliches Clipping trägt keinen D2-Code
+    c = client.post(f"{PREFIX}/collections/{cid}/research", json={"title": "Link", "d2": "x -> y"},
+                    headers=teacher_auth(teacher)).json()
+    assert (c["art"], c["d2"]) == ("clipping", None)
+    assert client.post(f"{PREFIX}/collections/{cid}/research", json={"art": "quatsch"},
+                       headers=teacher_auth(teacher)).status_code == 422

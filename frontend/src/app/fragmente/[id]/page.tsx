@@ -10,6 +10,7 @@ import {
   ResearchItemOut, FragmentOrt, ExitGameSim,
 } from "@/lib/api";
 import { Einordnung, OrtWahl, ortText } from "@/components/fragmente/Einordnung";
+import { WorkflowCard, WorkflowModal } from "@/components/fragmente/Workflow";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { JoinQR } from "@/components/JoinQR";
@@ -528,7 +529,11 @@ export default function FragmentBoardPage() {
     const el = document.querySelector(`[data-eintrag="${eintrag}"]`);
     if (el) { el.scrollIntoView({ block: "center" }); gesprungen.current = true; }
   });
-  const [clippingModal, setClippingModal] = useState<null | { item: ResearchItemOut | null; tab?: string }>(null);
+  const [clippingModal, setClippingModal] = useState<null | { item: ResearchItemOut | null; tab?: string; workflow?: boolean }>(null);
+  // Clipping oder Workflow — beide sind Einträge der Recherche-Liste
+  const eintragKarte = (item: ResearchItemOut) => item.art === "workflow"
+    ? <WorkflowCard key={`r${item.id}`} item={item} onEdit={() => item.can_edit && setClippingModal({ item })} />
+    : <ClippingCard key={`r${item.id}`} item={item} onEdit={() => item.can_edit && setClippingModal({ item })} />;
   const [view, setView] = useState<"grid" | "list" | "columns">("grid");
   const [dragId, setDragId] = useState<number | null>(null);
   const [tagFilter, setTagFilter] = useState<string | null>(null);
@@ -780,6 +785,10 @@ export default function FragmentBoardPage() {
           <button className="px-3 py-1.5 text-sm rounded-lg border border-line hover:bg-surface-hover"
             onClick={() => setClippingModal({ item: null, tab: activeTab })}>+ Clipping</button>
         )}
+        {canContribute && !isColumns && (
+          <button className="px-3 py-1.5 text-sm rounded-lg border border-line hover:bg-surface-hover"
+            onClick={() => setClippingModal({ item: null, tab: activeTab, workflow: true })}>+ Workflow</button>
+        )}
         {canManage && isColumns && (
           <button className="px-3 py-1.5 text-sm rounded-lg border border-line hover:bg-surface-hover"
             onClick={() => setAddTabOpen(true)}>+ Tab</button>
@@ -864,6 +873,8 @@ export default function FragmentBoardPage() {
                       disabled={addFragment.isPending} onClick={() => addFragment.mutate(t)}>+ Karte</button>
                     <button className="flex-1 px-2 py-1 text-xs rounded-lg border border-line bg-page hover:bg-surface-hover"
                       onClick={() => setClippingModal({ item: null, tab: t })}>+ Clipping</button>
+                    <button className="flex-1 px-2 py-1 text-xs rounded-lg border border-line bg-page hover:bg-surface-hover"
+                      onClick={() => setClippingModal({ item: null, tab: t, workflow: true })}>+ Workflow</button>
                   </div>
                 )}
                 <div className="flex flex-col gap-2">
@@ -872,9 +883,7 @@ export default function FragmentBoardPage() {
                   ) : (
                     <>
                       {colFrags.map(f => markiert(`f${f.id}`, <FragmentCard key={`f${f.id}`} frag={f} layout="list" />))}
-                      {colRes.map(item => markiert(`r${item.id}`,
-                        <ClippingCard key={`r${item.id}`} item={item} onEdit={() => item.can_edit && setClippingModal({ item })} />
-                      ))}
+                      {colRes.map(item => markiert(`r${item.id}`, eintragKarte(item)))}
                     </>
                   )}
                 </div>
@@ -892,13 +901,15 @@ export default function FragmentBoardPage() {
             <FragmentCard key={`f${f.id}`} frag={f} layout={view === "grid" ? "grid" : "list"} canReorder={canManage}
               onDragStartCard={() => setDragId(f.id)} onDropCard={() => reorderTo(f.id)} />
           ))}
-          {shownResearch.map(item => markiert(`r${item.id}`,
-            <ClippingCard key={`r${item.id}`} item={item} onEdit={() => item.can_edit && setClippingModal({ item })} />
-          ))}
+          {shownResearch.map(item => markiert(`r${item.id}`, eintragKarte(item)))}
         </div>
       )}
 
-      {clippingModal && (
+      {clippingModal && (clippingModal.workflow || clippingModal.item?.art === "workflow") && (
+        <WorkflowModal collectionId={collectionId} initial={clippingModal.item}
+          tab={clippingModal.tab ?? activeTab} guestToken={guestToken} onClose={() => setClippingModal(null)} />
+      )}
+      {clippingModal && !(clippingModal.workflow || clippingModal.item?.art === "workflow") && (
         <ClippingModal collectionId={collectionId} initial={clippingModal.item}
           tab={clippingModal.tab ?? activeTab} guestToken={guestToken} onClose={() => setClippingModal(null)} />
       )}

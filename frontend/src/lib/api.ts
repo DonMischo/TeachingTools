@@ -1531,6 +1531,9 @@ export type ResearchItemOut = FragmentOrt & {
   tags: string[];
   /** Werkzeug wie an einer TaskCrawler-Station */
   sim: ExitGameSim | null;
+  /** »workflow«: Ablauf in Markdown (text_content) plus Bild oder D2-Diagramm */
+  art: "clipping" | "workflow";
+  d2: string | null;
   media: ResearchMediaOut[];
   author_kind: string | null;
   author_id: number | null;
@@ -2264,9 +2267,9 @@ export const api = {
     },
 
     listResearch: (id: number, guestToken?: string) => ffetch<ResearchItemOut[]>(`fragments/collections/${id}/research`, undefined, guestToken),
-    createResearch: (id: number, body: Partial<{ tab: string; title: string | null; url: string | null; text_content: string | null; tags: string[]; sim: ExitGameSim | null } & FragmentOrt>, guestToken?: string) =>
+    createResearch: (id: number, body: Partial<{ tab: string; art: "clipping" | "workflow"; d2: string | null; title: string | null; url: string | null; text_content: string | null; tags: string[]; sim: ExitGameSim | null } & FragmentOrt>, guestToken?: string) =>
       ffetch<ResearchItemOut>(`fragments/collections/${id}/research`, { method: "POST", body: JSON.stringify(body) }, guestToken),
-    updateResearch: (itemId: number, body: Partial<{ tab: string; title: string | null; url: string | null; text_content: string | null; tags: string[]; sim: ExitGameSim | null } & FragmentOrt>) =>
+    updateResearch: (itemId: number, body: Partial<{ tab: string; d2: string | null; title: string | null; url: string | null; text_content: string | null; tags: string[]; sim: ExitGameSim | null } & FragmentOrt>) =>
       apiFetch<ResearchItemOut>(`fragments/research/${itemId}`, { method: "PATCH", body: JSON.stringify(body) }),
     deleteResearch: (itemId: number) => apiFetch<void>(`fragments/research/${itemId}`, { method: "DELETE" }),
     refetchUrl: (itemId: number) => apiFetch<ResearchItemOut>(`fragments/research/${itemId}/fetch-url`, { method: "POST" }),

@@ -1999,6 +1999,10 @@ class ResearchItem(Base):
     einheit: Mapped[str | None] = mapped_column(String(100), nullable=True)
     # Werkzeug zum Öffnen wie an einer TaskCrawler-Station: {"tool", "config"}
     sim: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    # 'clipping' | 'workflow' — ein Workflow zeigt text_content als Markdown und
+    # als Bild entweder hochgeladene Bilder oder ein D2-Diagramm (Quelltext in d2).
+    art: Mapped[str] = mapped_column(String(20), nullable=False, server_default="clipping")
+    d2: Mapped[str | None] = mapped_column(Text, nullable=True)
     # Author — same scheme as Fragment.
     author_kind: Mapped[str | None] = mapped_column(String(10), nullable=True)
     author_id: Mapped[int | None] = mapped_column(Integer, nullable=True)

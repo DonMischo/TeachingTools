@@ -119,7 +119,8 @@ export const KI_ARTEN: Record<KiArt, { name: string; wort: string; regeln: strin
   },
 };
 
-export function kiPrompt({ art, thema, zusatz, bisher }: { art: KiArt; thema: string; zusatz?: string; bisher?: string }): string {
+/** `text`: Beschreibung, aus der die KI das Diagramm baut (z. B. die Schritte eines Workflows). */
+export function kiPrompt({ art, thema, zusatz, bisher, text }: { art: KiArt; thema: string; zusatz?: string; bisher?: string; text?: string }): string {
   const a = KI_ARTEN[art];
   const zeilen = [
     `Erstelle ${a.wort} in der Diagrammsprache D2 (https://d2lang.com).`,
@@ -127,6 +128,7 @@ export function kiPrompt({ art, thema, zusatz, bisher }: { art: KiArt; thema: st
     `Thema: ${thema.trim() || "(bitte Thema eintragen)"}`,
   ];
   if (zusatz?.trim()) zeilen.push(`Das soll vorkommen: ${zusatz.trim()}`);
+  if (text?.trim()) zeilen.push("", "Grundlage ist diese Beschreibung — bilde jeden Schritt ab, erfinde nichts dazu:", '"""', text.trim(), '"""');
   zeilen.push(
     "",
     "Antworte nur mit dem D2-Code in einem Codeblock (```d2 … ```), ohne Erklärung davor oder danach.",

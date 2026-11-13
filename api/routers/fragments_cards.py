@@ -14,7 +14,7 @@ import socket
 import uuid
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
-from typing import Optional, Union
+from typing import Literal, Optional, Union
 from urllib.parse import urlparse
 
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File
@@ -429,6 +429,8 @@ class ResearchSim(BaseModel):
 
 class ResearchItemCreate(BaseModel):
     tab: str = "snippets"
+    art: Literal["clipping", "workflow"] = "clipping"
+    d2: Optional[str] = Field(default=None, max_length=50_000)
     title: Optional[str] = None
     url: Optional[str] = None
     text_content: Optional[str] = None
@@ -447,6 +449,7 @@ class ResearchItemUpdate(BaseModel):
     klasse: Optional[int] = None
     einheit: Optional[str] = Field(default=None, max_length=100)
     sim: Optional[ResearchSim] = None
+    d2: Optional[str] = Field(default=None, max_length=50_000)
 
 
 class ResearchItemOut(BaseModel):
@@ -463,6 +466,8 @@ class ResearchItemOut(BaseModel):
     klasse: Optional[int] = None
     einheit: Optional[str] = None
     sim: Optional[dict] = None
+    art: str = "clipping"
+    d2: Optional[str] = None
     media: list[ResearchMediaOut]
     author_kind: Optional[str]
     author_id: Optional[int]
@@ -520,6 +525,7 @@ async def create_research(
         url_image=meta.get("url_image"),
         text_content=body.text_content, tags=body.tags, klasse=body.klasse, einheit=body.einheit,
         sim=body.sim.model_dump() if body.sim else None,
+        art=body.art, d2=body.d2 if body.art == "workflow" else None,
         author_kind=kind, author_id=uid, author_name=author_name_of(user),
     )
     db.add(item)

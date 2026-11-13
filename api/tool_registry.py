@@ -349,7 +349,8 @@ def _fragmente_refs(db: Session, teacher: Teacher) -> list[dict]:
             out.append({"ref_id": f"c{c.id}:f{f.id}", "label": f"{c.name} › {ort(f)}{titel}"})
         for r in db.query(ResearchItem).filter_by(collection_id=c.id).order_by(ResearchItem.created_at):
             titel = r.title or r.url_title or r.url or "(Clipping)"
-            out.append({"ref_id": f"c{c.id}:r{r.id}", "label": f"{c.name} › {ort(r)}✂ {titel[:60]}"})
+            zeichen = "🔀" if r.art == "workflow" else "✂"
+            out.append({"ref_id": f"c{c.id}:r{r.id}", "label": f"{c.name} › {ort(r)}{zeichen} {titel[:60]}"})
     return out
 
 
