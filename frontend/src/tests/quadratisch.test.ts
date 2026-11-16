@@ -7,7 +7,7 @@ import { describe, it, expect } from "vitest";
 import {
   ABWURF, KORB_HOEHE, LEVELS, PRUEF_ARTEN, UEB_ARTEN, ausmultiplizieren, boegen, ergaenzen, erzeugePruefung,
   erzeugeUebung, feldStimmt, leseZahl, nfText, nfZuSpf, pqFormel, scheitel, schnitt, spfText, spfWert, spfZuNf,
-  steckbrief, wert, wirf, wurfbahn, zahl, type Feld, type NF, type Stufe,
+  sprungHoehe, steckbrief, wert, wirf, wurfbahn, zahl, type Feld, type NF, type Stufe,
 } from "@/lib/quadratisch";
 
 describe("Zahlen", () => {
@@ -190,7 +190,9 @@ describe("Korbwurf", () => {
       for (let x = 0.5; x < lv.korbX && !geht; x += 0.1) {
         for (let y = 2.2; y < 7 && !geht; y += 0.05) {
           const s = wurfbahn({ x, y });
-          if (s && wirf(s, lv).treffer) geht = true;
+          // nur Bahnen nahe am Ring durch die Physik schicken, sonst dauert der Test
+          if (!s || Math.abs(spfWert(s, lv.korbX) - KORB_HOEHE) > 0.25) continue;
+          if ([0, 0.7, 1.4].some(t0 => wirf(s, lv, t0).treffer)) geht = true;
         }
       }
       expect(geht, `Level ${i + 1}`).toBe(true);
@@ -202,6 +204,40 @@ describe("Korbwurf", () => {
     const decke = LEVELS[3];
     expect(wirf(wurfbahn({ x: 3, y: 8 })!, decke).grund).toBe("an die Decke");
     expect(KORB_HOEHE).toBe(3.05);
+  });
+  it("sichtbar durch den Ring zählt, auch wenn die Mitte f(korbX) nicht genau 3,05 ist", () => {
+    // steile Bahn fällt knapp vor der Ringmitte durch 3,05 – früher wegen f(4) ≈ 2,8 kein Treffer
+    const lv = LEVELS[0], S = { x: 2.1, y: 6.4 };
+    const s = wurfbahn(S)!;
+    const xKreuz = S.x + Math.sqrt((KORB_HOEHE - S.y) / s.a);
+    expect(Math.abs(xKreuz - lv.korbX)).toBeLessThan(0.08);
+    expect(Math.abs(spfWert(s, lv.korbX) - KORB_HOEHE)).toBeGreaterThan(0.18);
+    expect(wirf(s, lv).grund).toBe("Korb!");
+  });
+  it("flache Würfe prallen ab, steile gehen rein", () => {
+    const lv = LEVELS[0];
+    let flach = 0, flachRein = 0;
+    for (let x = 2.5; x < 4; x += 0.1) for (let y = 2.2; y < 3.6; y += 0.05) {
+      const s = wurfbahn({ x, y });
+      if (!s || Math.abs(spfWert(s, lv.korbX) - KORB_HOEHE) > 0.1) continue;
+      flach++; if (wirf(s, lv).treffer) flachRein++;
+    }
+    expect(flach).toBeGreaterThan(5);
+    expect(flachRein / flach).toBeLessThan(0.25);
+  });
+  it("springende Verteidiger: Höhe ist eine Zeit-Parabel, Abwurfzeit zählt", () => {
+    const h = LEVELS[2].hindernisse[0];
+    const dauer = 2 * Math.sqrt((2 * h.sprung!.hoehe) / 9.81);
+    expect(sprungHoehe(h, 0)).toBe(0);
+    expect(sprungHoehe(h, dauer / 2)).toBeCloseTo(h.sprung!.hoehe, 9);
+    expect(sprungHoehe(h, dauer + 0.01)).toBe(0);
+    expect(sprungHoehe(h, h.sprung!.periode + dauer / 2)).toBeCloseTo(h.sprung!.hoehe, 9);
+    // eine flache Bahn über den stehenden Verteidiger wird im Sprung geblockt
+    const s = wurfbahn({ x: 2.8, y: 2.6 })!;
+    const grund = (t0: number) => wirf(s, LEVELS[2], t0).grund;
+    const zeiten = Array.from({ length: 22 }, (_, i) => i / 10);
+    expect(zeiten.some(t0 => grund(t0) === "vom Verteidiger geblockt")).toBe(true);
+    expect(zeiten.some(t0 => wirf(s, LEVELS[2], t0).treffer)).toBe(true);
   });
 });
 

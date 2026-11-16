@@ -11,6 +11,8 @@
  * Prüfungsaufgaben sowie die Wurfbahn des Spiels Korbwurf.
  */
 
+import { G, rechteck, schritt, startAufParabel, stoss, type Koerper, type Strecke } from "./wurfphysik";
+
 export type SPF = { a: number; d: number; e: number };
 export type NF = { a: number; b: number; c: number };
 export type Punkt = { x: number; y: number };
@@ -627,19 +629,29 @@ export function erzeugePruefung(art: PruefArt, r: Zufall = Math.random): Pruefun
 export const KORB_HOEHE = 3.05;
 export const ABWURF: Punkt = { x: 0, y: 2 };
 
-export type Hindernis = { x0: number; x1: number; y0: number; y1: number; name: string };
+/** `sprung`: springt alle `periode` s um `hoehe` m hoch (y0/y1 gelten im Stand). */
+export type Hindernis = { x0: number; x1: number; y0: number; y1: number; name: string; sprung?: { hoehe: number; periode: number; versatz?: number } };
 export type Level = { korbX: number; hindernisse: Hindernis[]; decke?: number; text: string };
 
 export const LEVELS: Level[] = [
   { korbX: 4, hindernisse: [], text: "Freier Wurf aus 4 m." },
   { korbX: 5.5, hindernisse: [], text: "Etwas weiter weg." },
-  { korbX: 4.5, hindernisse: [{ x0: 1.2, x1: 1.6, y0: 0, y1: 2.9, name: "Verteidiger" }], text: "Ein Verteidiger springt hoch – über ihn hinweg!" },
+  { korbX: 4.5, hindernisse: [{ x0: 1.2, x1: 1.6, y0: 0, y1: 2.3, name: "Verteidiger", sprung: { hoehe: 0.6, periode: 2.2 } }], text: "Ein Verteidiger springt immer wieder hoch – drüber oder den Moment abpassen!" },
   { korbX: 6.5, hindernisse: [], decke: 5, text: "Halle mit niedriger Decke (5 m)." },
   { korbX: 5, hindernisse: [{ x0: 1, x1: 1.4, y0: 0, y1: 3.2, name: "Center" }], decke: 5.2, text: "Großer Center und niedrige Decke." },
-  { korbX: 7, hindernisse: [{ x0: 3, x1: 3.4, y0: 0, y1: 3.4, name: "Verteidiger" }], text: "Dreier-Distanz mit Block in der Mitte." },
+  { korbX: 7, hindernisse: [{ x0: 3, x1: 3.4, y0: 0, y1: 2.6, name: "Verteidiger", sprung: { hoehe: 0.8, periode: 2.6 } }], text: "Dreier-Distanz mit Block in der Mitte." },
   { korbX: 3.5, hindernisse: [], decke: 4, text: "Kurz, aber die Decke hängt tief (4 m)." },
-  { korbX: 6, hindernisse: [{ x0: 1.5, x1: 1.9, y0: 0, y1: 3.4, name: "Center" }, { x0: 4.2, x1: 4.6, y0: 0, y1: 3.6, name: "Springer" }], decke: 6, text: "Zwei Verteidiger – hoch und weit." },
+  { korbX: 6, hindernisse: [{ x0: 1.5, x1: 1.9, y0: 0, y1: 3.4, name: "Center" }, { x0: 4.2, x1: 4.6, y0: 0, y1: 2.7, name: "Springer", sprung: { hoehe: 0.9, periode: 1.9, versatz: 0.7 } }], decke: 6, text: "Zwei Verteidiger – hoch und weit." },
 ];
+
+/** Wie hoch ist das Hindernis zur Zeit t gerade gesprungen? Ein echter Sprung: Parabel in der Zeit. */
+export function sprungHoehe(h: Hindernis, t: number): number {
+  if (!h.sprung) return 0;
+  const { hoehe, periode, versatz = 0 } = h.sprung;
+  const dauer = 2 * Math.sqrt((2 * hoehe) / G);
+  const u = (((t + versatz) % periode) + periode) % periode;
+  return u < dauer ? 4 * hoehe * (u / dauer) * (1 - u / dauer) : 0;
+}
 
 /** Bahn durch den Abwurfpunkt mit Scheitel S: a so, dass f(ABWURF.x) = ABWURF.y. */
 export function wurfbahn(S: Punkt): SPF | null {
@@ -649,19 +661,68 @@ export function wurfbahn(S: Punkt): SPF | null {
   return { a: (ABWURF.y - S.y) / (dx * dx), d: glatt(-S.x), e: glatt(S.y) };
 }
 
-export type Wurf = { treffer: boolean; grund: string; ende: number };
+export const BALL_R = 0.12;      // Basketball: 24 cm Durchmesser
+export const RING_R = 0.23;      // Ring: 45 cm innen
 
-/** Fliegt die Bahn durch den Korb? Prüft Hindernisse und Decke auf dem Weg dorthin. */
-export function wirf(s: SPF, lv: Level): Wurf {
-  const S = scheitel(s);
-  for (let x = 0; x <= lv.korbX; x += 0.02) {
-    const y = spfWert(s, x);
-    if (lv.decke !== undefined && y > lv.decke) return { treffer: false, grund: "an die Decke", ende: x };
-    for (const h of lv.hindernisse) if (x >= h.x0 && x <= h.x1 && y >= h.y0 && y <= h.y1) return { treffer: false, grund: `vom ${h.name} geblockt`, ende: x };
-    if (y < 0) return { treffer: false, grund: "zu kurz – auf dem Boden", ende: x };
+/** spur: ein Punkt je 1/60 s ab dem Abwurf zur Zeit t0 */
+export type Wurf = { treffer: boolean; grund: string; spur: Punkt[]; t0: number };
+
+/** Das feste Spielfeld als Strecken: Boden, Decke, Ring, Brett, Pfosten, stehende Hindernisse. */
+export function korbFeld(lv: Level): Strecke[] {
+  const k = lv.korbX;
+  const feld: Strecke[] = [
+    { x0: -2, y0: 0, x1: 12, y1: 0, art: "boden" },
+    { x0: k - RING_R, y0: KORB_HOEHE, x1: k - RING_R, y1: KORB_HOEHE, art: "ring", dicke: 0.02 },
+    { x0: k + RING_R, y0: KORB_HOEHE, x1: k + 0.3, y1: KORB_HOEHE, art: "ring", dicke: 0.02 },
+    { x0: k + 0.3, y0: 2.9, x1: k + 0.3, y1: 4, art: "brett", dicke: 0.03 },
+    { x0: k + 0.35, y0: 0, x1: k + 0.35, y1: 2.9, art: "pfosten", dicke: 0.03 },
+  ];
+  if (lv.decke !== undefined) feld.push({ x0: -2, y0: lv.decke, x1: 12, y1: lv.decke, art: "decke" });
+  for (const h of lv.hindernisse) if (!h.sprung) feld.push(...rechteck(h.x0, h.y0, h.x1, h.y1, h.name));
+  return feld;
+}
+
+const STOSSZAHL: Record<string, number> = { boden: 0.6, ring: 0.7, brett: 0.8, pfosten: 0.4, decke: 0.4 };
+
+/**
+ * Wirft den Ball mit der Physik aus wurfphysik.ts: Er folgt der Parabel, bis er
+ * an etwas stößt. Treffer, wenn seine Mitte zwischen den Ringkanten von oben
+ * durch 3,05 m fällt – auch nach einem Abpraller an Ring oder Brett.
+ * Die Spur hat einen Punkt je 1/60 s für die Animation.
+ */
+export function wirf(s: SPF, lv: Level, t0 = 0): Wurf {
+  const v = startAufParabel(s.a, s.d, ABWURF.x);
+  const spur: Punkt[] = [{ ...ABWURF }];
+  if (!v) return { treffer: false, grund: "keine Wurfbahn", spur, t0 };
+  const b: Koerper = { x: ABWURF.x, y: ABWURF.y, vx: v.vx, vy: v.vy, r: BALL_R };
+  const feld = korbFeld(lv), springer = lv.hindernisse.filter(h => h.sprung);
+  const dt = 1 / 300, proBild = 5;   // 3 cm je Schritt bei 10 m/s – deutlich unter dem Ballradius
+  const kontakte = new Set<string>();
+  let erster: string | null = null, treffer = false, vonUnten = false, ruhe = 0;
+  for (let n = 1; n <= 300 * 5; n++) {
+    const yAlt = b.y;
+    schritt(b, dt);
+    const jetzt = springer.flatMap(h => { const o = sprungHoehe(h, t0 + n * dt); return rechteck(h.x0, h.y0 + o, h.x1, h.y1 + o, h.name); });
+    for (const st of jetzt.length ? [...feld, ...jetzt] : feld) if (stoss(b, st, STOSSZAHL[st.art] ?? 0.3)) { erster ??= st.art; kontakte.add(st.art); }
+    const imRing = Math.abs(b.x - lv.korbX) < RING_R;
+    if (!treffer && !vonUnten && imRing && yAlt >= KORB_HOEHE && b.y < KORB_HOEHE) treffer = true;
+    if (!treffer && imRing && yAlt < KORB_HOEHE && b.y >= KORB_HOEHE) vonUnten = true;
+    if (n % proBild === 0) spur.push({ x: b.x, y: b.y });
+    if (b.x < -1.5 || b.x > 10 || b.y < -1) break;
+    ruhe = b.y <= BALL_R + 0.01 && Math.hypot(b.vx, b.vy) < 0.6 ? ruhe + 1 : 0;
+    if (ruhe > 60 || (treffer && b.y < 1)) break;
   }
-  const yk = spfWert(s, lv.korbX);
-  if (S.x >= lv.korbX) return { treffer: false, grund: "noch im Steigen am Korb – der Ball muss von oben kommen", ende: lv.korbX };
-  if (Math.abs(yk - KORB_HOEHE) <= 0.18) return { treffer: true, grund: "Korb!", ende: lv.korbX };
-  return { treffer: false, grund: yk > KORB_HOEHE ? "zu hoch – über den Korb" : "zu tief – unter den Ring", ende: lv.korbX + 1.5 };
+  if (treffer) return { treffer, spur, t0, grund: kontakte.has("brett") ? "Korb – übers Brett!" : kontakte.has("ring") ? "Korb – vom Ring rein!" : "Korb!" };
+  const S = scheitel(s);
+  const grund =
+    vonUnten ? "von unten durch den Ring – zählt nicht" :
+    erster === "decke" ? "an die Decke" :
+    erster === "ring" ? "an den Ring – rausgesprungen" :
+    erster === "brett" ? "ans Brett – abgeprallt" :
+    erster && lv.hindernisse.some(h => h.name === erster) ? `vom ${erster} geblockt` :
+    S.x >= lv.korbX ? "noch im Steigen am Korb – der Ball muss von oben kommen" :
+    spfWert(s, lv.korbX) > KORB_HOEHE ? "zu hoch – über den Korb" :
+    erster === "boden" && spur.every(p => p.x < lv.korbX - RING_R) ? "zu kurz – auf dem Boden" :
+    "zu tief – unter den Ring";
+  return { treffer: false, grund, spur, t0 };
 }

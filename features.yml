@@ -848,7 +848,8 @@ simulationen:
       - "Umformen (ausmultiplizieren, quadratische Ergänzung), Nullstellen mit p-q, Schnittpunkte – Rechenweg Schritt für Schritt"
       - "Üben: zehn Themen an- und abwählbar, drei Stufen, Tipps, Lösungsweg mit Graph"
       - "Prüfungsaufgaben mit Teilaufgaben und BE (Brücke, Basketball, Springbrunnen, Gewinn, Gehege, Rampe), Word-Export mit Graph und Lösungen"
-      - "Spiel Korbwurf: Scheitelpunkt der Wurfbahn setzen, Hindernisse, Stufen mit/ohne Vorschau und Term eintippen"
+      - "Spiel Korbwurf: Scheitelpunkt der Wurfbahn setzen, Ballphysik (Ring/Brett/Decke), springende Verteidiger, 3D-Avatare, Stufen mit/ohne Vorschau und Term eintippen"
+      - "Spiel Feuerwehr: Düsendruck und Winkel ergeben die Strahlparabel, Hitze bestimmt den Mindestabstand, Tropfen-Physik und begrenzter Tank"
   - id: kreis
     name: Kreis
     faehigkeiten: {use: [true, true]}

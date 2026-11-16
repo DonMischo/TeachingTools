@@ -3,13 +3,18 @@
  * Spiel Korbwurf: Der Ball verlässt die Hand bei (0 | 2) und fliegt auf einer
  * Parabel. Man setzt den Scheitelpunkt S der Wurfbahn – die Sim rechnet a so,
  * dass die Bahn durch die Hand geht, und zeigt den Term y = a(x + d)² + e.
- * Treffer, wenn der Ball von oben durch den Ring (3,05 m) fällt.
+ * Der Wurf läuft durch die Physik (lib/wurfphysik.ts): Treffer, wenn die Ballmitte
+ * zwischen den Ringkanten von oben durch 3,05 m fällt – auch nach Abprallern.
+ * Verteidiger springen in echter Zeit; der Abwurfzeitpunkt zählt. Figuren sind die
+ * 3D-Avatare (eigener Avatar wirft), ohne WebGL Strichfiguren.
  *
  * Stufen: mit Vorschau · ohne Vorschau · Term eintippen (d und e selbst, S(−d|e)).
  * Animation per setInterval: requestAnimationFrame steht in verdeckten Fenstern still.
  */
 import { useEffect, useRef, useState } from "react";
-import { ABWURF, KORB_HOEHE, LEVELS, glatt, leseZahl, scheitel, spfStuecke, spfWert, wirf, wurfbahn, zahl, type Punkt, type SPF, type Wurf } from "@/lib/quadratisch";
+import { ABWURF, BALL_R, KORB_HOEHE, LEVELS, RING_R, glatt, leseZahl, scheitel, spfStuecke, spfWert, sprungHoehe, wirf, wurfbahn, zahl, type Punkt, type SPF, type Wurf } from "@/lib/quadratisch";
+import { ladeAvatar, type Avatar } from "@/components/gebaeude/avatar";
+import Figuren3D, { type FigurLage } from "./Figuren3D";
 import { Chips } from "@/components/prozent/ui";
 import { F, FARBE, Term } from "./teile";
 
@@ -24,6 +29,9 @@ const X0 = -0.6, X1 = 8.6, Y0 = 0, Y1 = 7.4;
 const sx = (x: number) => MX + ((x - X0) / (X1 - X0)) * (W - 2 * MX);
 const sy = (y: number) => H - MY - ((y - Y0) / (Y1 - Y0)) * (H - 2 * MY);
 const bestKey = (s: Stufe) => `hp_quadratisch_korbwurf_best_${s}`;
+const GEGNER: Avatar[] = [
+  { klasse: "krieger", form: "m", haut: 2 }, { klasse: "rocker", form: "w", haut: 1 }, { klasse: "metalhead", form: "m", haut: 3 },
+];
 const leseBest = (s: Stufe) => { try { return Number(localStorage.getItem(bestKey(s)) ?? 0) || 0; } catch { return 0; } };
 
 export default function Korbwurf() {
@@ -32,8 +40,12 @@ export default function Korbwurf() {
   const [S, setS] = useState<Punkt>({ x: 2.5, y: 4.2 });
   const [dTxt, setDTxt] = useState("−2,5");
   const [eTxt, setETxt] = useState("4,2");
-  const [flug, setFlug] = useState<number | null>(null);   // aktuelles x des Balls
-  const [wurf, setWurf] = useState<Wurf | null>(null);
+  const [flug, setFlug] = useState<number | null>(null);   // Bild der Spur, das gerade gezeigt wird
+  const [lauf, setLauf] = useState<Wurf | null>(null);     // der Wurf, der gerade fliegt
+  const [wurf, setWurf] = useState<Wurf | null>(null);     // Ergebnis, sobald er gelandet ist
+  const [uhr, setUhr] = useState(0);                        // Spielzeit in s (für springende Verteidiger)
+  const [drei, setDrei] = useState(false);                  // 3D-Avatare da?
+  const [ich, setIch] = useState<Avatar | null>(null);
   const [versuch, setVersuch] = useState(0);
   const [punkte, setPunkte] = useState(0);
   const [fertig, setFertig] = useState(false);
@@ -43,6 +55,14 @@ export default function Korbwurf() {
   const level = LEVELS[lv];
 
   useEffect(() => { setBest(leseBest(stufe)); }, [stufe]);
+  useEffect(() => { setIch(ladeAvatar()); }, []);
+  // Springer bewegen sich auch, wenn gerade niemand wirft (während des Flugs zählt die Spur)
+  const springt = level.hindernisse.some(h => h.sprung);
+  useEffect(() => {
+    if (!springt || lauf) return;
+    const id = setInterval(() => setUhr(u => u + 1 / 60), 1000 / 60);
+    return () => clearInterval(id);
+  }, [springt, lauf]);
   useEffect(() => () => { if (timer.current) clearInterval(timer.current); }, []);
 
   // Im Term-Modus kommt S aus d und e (Tafelwerk: S(−d | e)).
@@ -52,30 +72,30 @@ export default function Korbwurf() {
 
   const neuesSpiel = (st = stufe) => {
     if (timer.current) clearInterval(timer.current);
-    setLv(0); setPunkte(0); setVersuch(0); setWurf(null); setFlug(null); setFertig(false); setStufe(st);
+    setLv(0); setPunkte(0); setVersuch(0); setWurf(null); setLauf(null); setFlug(null); setFertig(false); setStufe(st);
   };
 
   const werfen = () => {
     if (!bahn || timer.current) return;   // läuft schon ein Wurf?
-    const w = wirf(bahn, level);
-    setWurf(null);
-    let x = 0;
+    const w = wirf(bahn, level, uhr);
+    setWurf(null); setLauf(w);
+    let i = 0;
     setFlug(0);
     timer.current = setInterval(() => {
-      x += 0.12;
-      if (x >= w.ende) {
+      i++;
+      if (i >= w.spur.length - 1) {
         clearInterval(timer.current!); timer.current = null;
-        setFlug(w.ende); setWurf(w);
+        setFlug(w.spur.length - 1); setWurf(w); setLauf(null); setUhr(w.t0 + (w.spur.length - 1) / 60);
         if (w.treffer) setPunkte(p => p + Math.max(1, 3 - versuch));
         else setVersuch(v => v + 1);
         return;
       }
-      setFlug(x);
-    }, 16);
+      setFlug(i);
+    }, 1000 / 60);
   };
 
   const weiter = () => {
-    setWurf(null); setFlug(null); setVersuch(0);
+    setWurf(null); setLauf(null); setFlug(null); setVersuch(0);
     if (lv + 1 >= LEVELS.length) {
       setFertig(true);
       if (punkte > best) { setBest(punkte); try { localStorage.setItem(bestKey(stufe), String(punkte)); } catch { /* privat */ } }
@@ -92,6 +112,18 @@ export default function Korbwurf() {
     setS({ x: Math.min(8, Math.max(0.2, x)), y: Math.min(7.2, Math.max(2.1, y)) });
     setWurf(null);
   };
+
+  // Spielzeit, die gerade zu sehen ist: im Flug die der Spur
+  const zeigeWurf = lauf ?? wurf;
+  const t = zeigeWurf && flug !== null ? zeigeWurf.t0 + flug / 60 : uhr;
+  const ball: Punkt = zeigeWurf && flug !== null ? zeigeWurf.spur[flug] : ABWURF;
+  const figuren: FigurLage[] = [
+    ...(ich ? [{ id: "werfer", avatar: ich, x: -0.3, y: 0, hoehe: 1.9, blick: 1 as const, bewegung: lauf && flug !== null && flug < 30 ? "angriff" as const : wurf?.treffer ? "jubel" as const : "idle" as const }] : []),
+    ...level.hindernisse.map((h, i) => {
+      const o = sprungHoehe(h, t);
+      return { id: `h${lv}_${i}`, avatar: GEGNER[i % GEGNER.length], x: (h.x0 + h.x1) / 2, y: h.y0 + o, hoehe: (h.y1 - h.y0) * 0.85, blick: -1 as const, bewegung: o > 0.02 ? "jubel" as const : "idle" as const };
+    }),
+  ];
 
   // gestrichelte Vorschau, durchgezogene Flugspur
   const pfad = (s: SPF, bis: number) => {
@@ -144,31 +176,36 @@ export default function Korbwurf() {
             {level.decke !== undefined && <g><rect x={sx(X0)} y={0} width={W} height={sy(level.decke)} fill="var(--text-muted)" opacity={0.25} />
               <text x={W / 2} y={sy(level.decke) - 6} textAnchor="middle" fontSize={12} fontWeight={800} fill="var(--text)">Hallendecke {zahl(level.decke)} m</text></g>}
             {/* Werfer */}
-            <g stroke="var(--text)" strokeWidth={3} strokeLinecap="round" fill="none">
+            {!drei && <g stroke="var(--text)" strokeWidth={3} strokeLinecap="round" fill="none">
               <circle cx={sx(-0.25)} cy={sy(1.75)} r={9} fill="var(--surface)" />
               <line x1={sx(-0.25)} y1={sy(1.6)} x2={sx(-0.25)} y2={sy(0.8)} />
               <line x1={sx(-0.25)} y1={sy(0.8)} x2={sx(-0.4)} y2={sy(0)} /><line x1={sx(-0.25)} y1={sy(0.8)} x2={sx(-0.1)} y2={sy(0)} />
               <line x1={sx(-0.25)} y1={sy(1.4)} x2={sx(ABWURF.x)} y2={sy(ABWURF.y)} />
-            </g>
+            </g>}
             {/* Hindernisse */}
-            {level.hindernisse.map((h, i) => (
-              <g key={i}>
-                <rect x={sx(h.x0)} y={sy(h.y1)} width={sx(h.x1) - sx(h.x0)} height={sy(h.y0) - sy(h.y1)} rx={6} fill="#db2777" opacity={0.75} />
-                <text x={(sx(h.x0) + sx(h.x1)) / 2} y={sy(h.y1) - 6} textAnchor="middle" fontSize={11} fontWeight={800} fill="#db2777">🙋 {h.name}</text>
-              </g>
-            ))}
+            {level.hindernisse.map((h, i) => {
+              const o = sprungHoehe(h, t);
+              return (
+                <g key={i}>
+                  <rect x={sx(h.x0)} y={sy(h.y1 + o)} width={sx(h.x1) - sx(h.x0)} height={sy(h.y0) - sy(h.y1)} rx={6} fill="#db2777"
+                    opacity={drei ? 0.15 : 0.75} stroke={drei ? "#db2777" : "none"} strokeDasharray="4 4" />
+                  <text x={(sx(h.x0) + sx(h.x1)) / 2} y={sy(h.y1 + o) - 6} textAnchor="middle" fontSize={11} fontWeight={800} fill="#db2777">{h.sprung ? "⤒" : "🙋"} {h.name}</text>
+                </g>
+              );
+            })}
+            <Figuren3D welt={{ W, H, MX, MY, X0, X1, Y0, Y1 }} figuren={figuren} beiBereit={setDrei} />
             {/* Korb */}
             <g>
               <line x1={sx(level.korbX + 0.35)} y1={sy(0)} x2={sx(level.korbX + 0.35)} y2={sy(4.1)} stroke="var(--text-muted)" strokeWidth={4} />
               <line x1={sx(level.korbX + 0.3)} y1={sy(2.9)} x2={sx(level.korbX + 0.3)} y2={sy(4.0)} stroke="var(--text)" strokeWidth={5} />
-              <line x1={sx(level.korbX - 0.23)} y1={sy(KORB_HOEHE)} x2={sx(level.korbX + 0.23)} y2={sy(KORB_HOEHE)} stroke="#ea580c" strokeWidth={5} strokeLinecap="round" />
+              <line x1={sx(level.korbX - RING_R)} y1={sy(KORB_HOEHE)} x2={sx(level.korbX + 0.3)} y2={sy(KORB_HOEHE)} stroke="#ea580c" strokeWidth={5} strokeLinecap="round" />
               <path d={`M${sx(level.korbX - 0.2)},${sy(KORB_HOEHE)} L${sx(level.korbX - 0.1)},${sy(KORB_HOEHE - 0.4)} L${sx(level.korbX + 0.1)},${sy(KORB_HOEHE - 0.4)} L${sx(level.korbX + 0.2)},${sy(KORB_HOEHE)}`} fill="none" stroke="var(--text-muted)" strokeWidth={1.5} />
               <text x={sx(level.korbX)} y={sy(KORB_HOEHE) + 34} textAnchor="middle" fontSize={11} fill="var(--text-muted)">({zahl(level.korbX)} | 3,05)</text>
             </g>
             {/* Vorschau / Flugbahn */}
             {bahn && stufe === "vorschau" && flug === null && <path d={pfad(bahn, level.korbX + 1)} fill="none" stroke="var(--accent)" strokeWidth={2} strokeDasharray="5 6" opacity={0.8} />}
-            {bahn && flug !== null && <path d={pfad(bahn, flug)} fill="none" stroke="var(--accent)" strokeWidth={2.5} />}
-            {bahn && <circle cx={sx(flug ?? 0)} cy={sy(spfWert(bahn, flug ?? 0))} r={9} fill="#ea580c" stroke="#7c2d12" strokeWidth={1.5} />}
+            {zeigeWurf && flug !== null && <path d={zeigeWurf.spur.slice(0, flug + 1).map((p, i) => `${i ? "L" : "M"}${sx(p.x).toFixed(1)},${sy(p.y).toFixed(1)}`).join("")} fill="none" stroke="var(--accent)" strokeWidth={2.5} />}
+            <circle cx={sx(ball.x)} cy={sy(ball.y)} r={sx(BALL_R) - sx(0)} fill="#ea580c" stroke="#7c2d12" strokeWidth={1.5} />
             {/* Scheitelpunkt */}
             {Sakt && stufe !== "term" && (
               <g>
@@ -202,15 +239,16 @@ export default function Korbwurf() {
             <div className="flex gap-2 flex-wrap">
               {!wurf?.treffer && <button className="btn btn-primary" onClick={werfen} disabled={!bahn || (flug !== null && !wurf)}>🏀 Werfen</button>}
               {wurf?.treffer && <button className="btn btn-primary" onClick={weiter}>{lv + 1 >= LEVELS.length ? "🏆 Auswertung" : "➡ Nächster Wurf"}</button>}
-              {wurf && !wurf.treffer && <button className="btn" onClick={() => { setWurf(null); setFlug(null); }}>↺ Neu zielen</button>}
+              {wurf && !wurf.treffer && <button className="btn" onClick={() => { setWurf(null); setLauf(null); setFlug(null); }}>↺ Neu zielen</button>}
             </div>
-            {wurf && <p className={`font-black ${wurf.treffer ? "text-ok" : "text-bad"}`}>{wurf.treffer ? `✔ Korb! +${Math.max(1, 3 - versuch)} Punkte` : `✘ ${wurf.grund}`}</p>}
+            {wurf && <p className={`font-black ${wurf.treffer ? "text-ok" : "text-bad"}`}>{wurf.treffer ? `✔ ${wurf.grund} +${Math.max(1, 3 - versuch)} Punkte` : `✘ ${wurf.grund}`}</p>}
             {wurf && !wurf.treffer && bahn && <p className="text-xs text-muted">Bei x = {zahl(level.korbX)} ist die Bahn auf y = {zahl(spfWert(bahn, level.korbX), 2)} – der Ring hängt auf 3,05.</p>}
           </div>
           <div className="card p-3 text-sm flex flex-col gap-1">
             <b>💡 Mathe dahinter</b>
             <p>Die Bahn ist eine nach unten geöffnete Parabel (a &lt; 0) mit Scheitelpunkt S. Ein höherer Scheitel macht sie steiler, ein Scheitel weiter rechts macht sie weiter.</p>
-            <p>Treffer heißt: f({zahl(level.korbX)}) ≈ 3,05 – und der Ball muss schon fallen (S links vom Korb).</p>
+            <p>Treffer heißt: Die Ballmitte fällt zwischen den Ringkanten (x = {zahl(level.korbX)} ± 0,23) durch y = 3,05 – der Ball muss also schon fallen (S links vom Korb). Flache Würfe prallen an Ring oder Brett ab; steil fallende Bälle sehen den Ring breiter.</p>
+            {springt && <p>⤒ Die Verteidiger springen immer wieder – auch ihr Sprung ist eine Parabel, nur in der Zeit: h(t) = −4,9·t² + v·t.</p>}
             <p className="text-xs text-muted">Punkte: 3 beim ersten Versuch, 2 beim zweiten, danach 1.</p>
           </div>
         </div>

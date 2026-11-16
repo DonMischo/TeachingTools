@@ -13,6 +13,7 @@
  *   ✍️ Üben              Themen wählbar, drei Stufen
  *   📝 Prüfungsaufgaben  Sachaufgaben mit Teilaufgaben, Word-Export
  *   🏀 Korbwurf          Spiel
+ *   🚒 Feuerwehr         Spiel: Löschstrahl mit Druck, Hitze-Mindestabstand
  */
 import { useState, type ReactNode } from "react";
 import { wahl, type Vorgabe } from "@/lib/vorgabe";
@@ -25,6 +26,7 @@ import { Nullstellen, Schnittpunkte, Umformen } from "./Rechnen";
 import Ueben from "./Ueben";
 import PruefungsBlatt from "./Pruefung";
 import Korbwurf from "./Korbwurf";
+import Feuerwehr from "./Feuerwehr";
 
 const BLAETTER = [
   { id: "normal", icon: "🔵", label: "Normalparabel" },
@@ -38,6 +40,7 @@ const BLAETTER = [
   { id: "ueben", icon: "✍️", label: "Üben" },
   { id: "pruefung", icon: "📝", label: "Prüfungsaufgaben" },
   { id: "spiel", icon: "🏀", label: "Korbwurf" },
+  { id: "feuerwehr", icon: "🚒", label: "Feuerwehr" },
 ] as const;
 type Blatt = (typeof BLAETTER)[number]["id"];
 
@@ -53,6 +56,7 @@ const INHALT: Record<Blatt, () => ReactNode> = {
   ueben: () => <Ueben />,
   pruefung: () => <PruefungsBlatt />,
   spiel: () => <Korbwurf />,
+  feuerwehr: () => <Feuerwehr />,
 };
 
 export default function Quadratisch({ action, vorgabe }: { action?: ReactNode; vorgabe?: Vorgabe }) {
