@@ -6,11 +6,11 @@ import type { FreiOrt, FreiPlan } from "@/lib/gebaeude/frei";
 
 // jsdom kann kein WebGL: Die Welt wird durch Knöpfe ersetzt, die »ankommen«.
 vi.mock("@/components/gebaeude/frei/FreiWelt", () => ({
-  default: ({ plan, stock, zielOffen, zustaende, objekte, waechter, stile, onAnkunft }: {
+  default: ({ plan, stock, zielOffen, zustaende, objekte, waechter, stile, gegenschlag, onAnkunft }: {
     plan: FreiPlan; stock: number; zielOffen: boolean[]; zustaende: string[][]; objekte: string[][]; waechter: boolean[]; stile: string[];
-    onAnkunft: (o: FreiOrt) => void;
+    gegenschlag: number; onAnkunft: (o: FreiOrt) => void;
   }) => (
-    <div data-testid="welt" data-stock={stock} data-ziel={String(zielOffen[stock])} data-zustaende={zustaende[stock].join(",")}
+    <div data-testid="welt" data-stock={stock} data-gegenschlag={gegenschlag} data-ziel={String(zielOffen[stock])} data-zustaende={zustaende[stock].join(",")}
       data-objekte={objekte[stock].join(",")} data-waechter={String(waechter[stock])} data-stile={stile.join(",")}
       data-plaetze={plan.ebenen.map(e => e.raeume.length).join(",")}>
       {zustaende[stock].map((_, k) => (
@@ -56,7 +56,7 @@ function spiel(solved: string[], stil?: Stil, stile?: (Stil | undefined)[], onFi
 describe("TaskCrawler als freie 3D-Welt", () => {
   beforeEach(() => postEvent.mockReset().mockResolvedValue({}));
 
-  it("baut je Abschnitt eine Karte mit einem Platz je Folie; ohne Stil ist es ein Wald ohne Monster", () => {
+  it("baut je Abschnitt eine Karte mit einem Platz je Folie; ohne Stil ist es ein Wald, jede Aufgabe ein Monster", () => {
     spiel([]);
     const w = screen.getByTestId("welt");
     expect(screen.queryByTestId("buehne")).toBeNull();
@@ -64,8 +64,11 @@ describe("TaskCrawler als freie 3D-Welt", () => {
     expect(w.dataset.stile).toBe("wald,wald");
     expect(w.dataset.zustaende).toBe("info,offen");
     expect(w.dataset.ziel).toBe("false");
-    expect(w.dataset.objekte).not.toContain("monster");
-    expect(w.dataset.waechter).toBe("false");
+    // die Erklärung behält ihr Objekt (in der Welt steht dort Erz), die Aufgabe ist ein Monster, das Tor bewacht ein Boss
+    expect(w.dataset.objekte!.split(",")[1]).toBe("monster");
+    expect(w.dataset.objekte!.split(",")[0]).not.toBe("monster");
+    expect(w.dataset.waechter).toBe("true");
+    expect(w.dataset.gegenschlag).toBe("0");
     expect(screen.getByText(/Abschnitt 1 \/ 2/)).toBeInTheDocument();
   });
 
@@ -81,31 +84,26 @@ describe("TaskCrawler als freie 3D-Welt", () => {
     expect(fertig).toHaveBeenCalled();
   });
 
-  it("macht aus Höhlenstilen ein Verlies: Monster an den Aufgaben, ein Boss am Tor", () => {
-    spiel([], "hoehle");
-    const w = screen.getByTestId("welt");
-    expect(w.dataset.stile).toBe("hoehle,hoehle");
-    expect(w.dataset.objekte).toContain("monster");
-    expect(w.dataset.waechter).toBe("true");
+  it("nennt die Erklärung beim Öffnen einen Info-Splitter", () => {
+    spiel([]);
+    fireEvent.click(screen.getByText("ankommen 0"));
+    expect(screen.getByText("💎 Info-Splitter …")).toBeInTheDocument();
+    expect(screen.getByText("So geht das.")).toBeInTheDocument();
   });
 
   it("ordnet jedem Stil eine Welt zu: Wald, Garten, Höhlen — alles andere ist ein Gebäude", () => {
     const welten = Object.fromEntries((Object.keys(STILE) as Stil[]).map(s => [s, weltVon(s)]));
-    expect(welten).toMatchObject({ wald: "wald", garten: "garten", hoehle: "hoehle", steinzeit: "hoehle", lava: "hoehle", klassisch: "gebaeude", burg: "gebaeude" });
-    expect(Object.values(welten).filter(w => w === "gebaeude")).toHaveLength(Object.keys(STILE).length - 5);
-    // gerade Karten für Gebäude und Garten, angenagte für Wald und Höhle
-    expect((["wald", "hoehle", "garten", "burg"] as Stil[]).map(istOrganisch)).toEqual([true, true, false, false]);
-  });
-
-  it("zeigt im Garten keine Monster", () => {
-    spiel([], "garten");
-    expect(screen.getByTestId("welt").dataset.objekte).not.toContain("monster");
-    expect(screen.getByTestId("welt").dataset.waechter).toBe("false");
+    expect(welten).toMatchObject({
+      wald: "wald", winter: "winter", oase: "oase", pilze: "pilze", garten: "garten",
+      hoehle: "hoehle", steinzeit: "hoehle", lava: "hoehle", klassisch: "gebaeude", burg: "gebaeude",
+    });
+    expect(Object.values(welten).filter(w => w === "gebaeude")).toHaveLength(Object.keys(STILE).length - 8);
+    // gerade Karten für Gebäude und Garten, angenagte für Wälder und Höhle
+    expect((["wald", "winter", "oase", "pilze", "hoehle", "garten", "burg"] as Stil[]).map(istOrganisch)).toEqual([true, true, true, true, true, false, false]);
   });
 
   it("nimmt je Abschnitt einen eigenen Stil; wo keiner steht, gilt der gemeinsame", () => {
     spiel([], "burg", [undefined, "lava"]);
     expect(screen.getByTestId("welt").dataset.stile).toBe("burg,lava");
-    expect(screen.getByTestId("welt").dataset.waechter).toBe("false");
   });
 });

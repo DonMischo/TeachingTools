@@ -39,7 +39,7 @@ export type Stil =
   | "klassisch" | "beton" | "neon" | "garten" | "verlies"
   | "burg" | "holz" | "eis" | "wueste" | "raumstation" | "lava"
   | "steinzeit" | "antike" | "mittelalter" | "gotisch" | "viktorianisch" | "retro"
-  | "wald" | "hoehle";
+  | "wald" | "hoehle" | "winter" | "oase" | "pilze";
 
 interface Palette {
   boden: number; wand: number; wandH: number; oben: number; obenH: number;
@@ -73,6 +73,9 @@ export const STILE: Record<Stil, Palette & { name: string }> = {
   retro: { name: "Retro (70er)", boden: 0xd97706, wand: 0xfef3c7, wandH: 1.0, oben: 0x92400e, obenH: 0.1, tuer: 0x65a30d, treppe: 0xfcd34d, stuetze: 0x78716c, sockel: 0x57534e },
   // Natur: in der freien 3D-Ansicht eigene Welten (Wald mit Bäumen, Höhle mit Kristallen), sonst Hecken bzw. Fels
   wald: { name: "Wald", boden: 0x9aa63a, wand: 0x4f7a28, wandH: 1.3, oben: 0x6b8e23, obenH: 0.3, tuer: 0x6b4a32, treppe: 0x8c6a3d, stuetze: 0x6b4a32, sockel: 0x3f4a1f },
+  winter: { name: "Winterwald", boden: 0xeef3f9, wand: 0xdbe5f1, wandH: 1.3, oben: 0xffffff, obenH: 0.3, tuer: 0x4a3a30, treppe: 0xcfd9e6, stuetze: 0x4a3a30, sockel: 0x9dbbe0 },
+  oase: { name: "Oase", boden: 0xedd39a, wand: 0xc9a56c, wandH: 1.2, oben: 0xdfc07c, obenH: 0.2, tuer: 0x8a6a44, treppe: 0xd6b577, stuetze: 0x8a6a44, sockel: 0x3f95e6 },
+  pilze: { name: "Leuchtpilzwald", boden: 0x25444c, wand: 0x3a2a6a, wandH: 1.4, oben: 0x9a7bff, obenH: 0.25, tuer: 0x1a1440, treppe: 0x2a3550, stuetze: 0xd8d0e8, sockel: 0x070618, leuchten: true, licht: 0x38e1d6 },
   hoehle: { name: "Tropfsteinhöhle", boden: 0x5a554e, wand: 0x4c505c, wandH: 1.6, oben: 0x6b7080, obenH: 0.2, tuer: 0x2b2e38, treppe: 0x6b7080, stuetze: 0x3a3d48, sockel: 0x16181f, leuchten: true, licht: 0x38e1d6 },
 };
 
@@ -102,6 +105,9 @@ export const AUSSEHEN: Record<Stil, { boden?: Muster; wand?: Muster; organisch?:
   viktorianisch: { boden: "parkett", wand: "tapete" },
   retro: { boden: "teppich", wand: "putz" },
   wald: { boden: "erde", organisch: true },
+  winter: { boden: "eis", organisch: true },
+  oase: { boden: "sand", organisch: true },
+  pilze: { boden: "erde", organisch: true },
   hoehle: { boden: "fels", wand: "fels", organisch: true, ecken: "tropfstein" },
 };
 

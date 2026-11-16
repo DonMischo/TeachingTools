@@ -29,7 +29,9 @@ export default function GebaeudeDemo() {
   const frei = art === "frei";
   const welt = weltVon(stil);
   const organisch = istOrganisch(stil);
-  const verlies = art === "verlies" || (frei && welt === "hoehle");
+  const verlies = art === "verlies" || frei;
+  /** 3D-Welt: jede dritte Station ist ein Erz mit einem Info-Splitter, die anderen sind Monster */
+  const istErz = (k: number) => frei && k % 3 === 1;
   const tueren = art === "ebene" || frei;
   const plan = useMemo(() => bauePlan(Array(stockwerke).fill(zimmer), seed, frei ? "haus" : art), [stockwerke, zimmer, seed, art, frei]);
   const freiPlan = useMemo(
@@ -52,7 +54,8 @@ export default function GebaeudeDemo() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plan, freiPlan]);
 
-  const zustaende: RaumZustand[][] = karten.map((st, i) => st.raeume.map((_, k) => (besucht[i]?.[k] ? "geloest" : "offen")));
+  const zustaende: RaumZustand[][] = karten.map((st, i) => st.raeume.map((_, k) =>
+    (istErz(k) ? (besucht[i]?.[k] ? "gelesen" : "info") : besucht[i]?.[k] ? "geloest" : "offen")));
   const zielOffen = karten.map((_, i) => (besucht[i] ?? []).every(Boolean));
   // Reihum alle Objekte zeigen — im Verlies wartet in jedem Zimmer ein Monster, an jeder Treppe ein Boss.
   const objekte = karten.map((st, i) => st.raeume.map((_, k) => (verlies ? "monster" : OBJEKTE[(i * 5 + k) % OBJEKTE.length])));
@@ -62,7 +65,9 @@ export default function GebaeudeDemo() {
   const ankunft = (ort: Ort) => {
     if (ort.art === "raum") {
       setBesucht(b => b.map((z, i) => (i === stock ? z.map((v, k) => v || k === ort.raum) : z)));
-      setMeldung(verlies
+      setMeldung(istErz(ort.raum)
+        ? `Station ${ort.raum + 1}: Im Erz steckte ein Info-Splitter — im TaskCrawler ist das eine Erklärung zum Lesen.`
+        : verlies
         ? `Zimmer ${ort.raum + 1}: Im TaskCrawler ist das Monster eine Aufgabe — gelöst, liegt es besiegt am Boden.`
         : `Zimmer ${ort.raum + 1} (${OBJEKT_NAME[objekte[stock][ort.raum]]}): Im TaskCrawler wartet hier eine Aufgabe. Wer sie löst, bekommt einen Codeschnipsel.`);
     } else if (ort.art === "zurueck") {

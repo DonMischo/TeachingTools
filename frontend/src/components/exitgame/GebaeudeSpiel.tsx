@@ -17,7 +17,7 @@ import { bauePlan } from "@/lib/gebaeude/plan";
 import { baueFreiPlan } from "@/lib/gebaeude/frei";
 import Gebaeude, { type GebaeudeArt, type Ort } from "@/components/gebaeude/Gebaeude";
 import FreiWelt from "@/components/gebaeude/frei/FreiWelt";
-import { istOrganisch, weltVon } from "@/components/gebaeude/frei/welt";
+import { istOrganisch } from "@/components/gebaeude/frei/welt";
 import type { RaumZustand, Stil } from "@/components/gebaeude/szene";
 import { FolienText, MediaView, TaskArea, letzteInfo, levelOf } from "./FolienTeile";
 import { SimKnopf } from "./SimStation";
@@ -66,14 +66,18 @@ export default function GebaeudeSpiel({
   const stilSchluessel = JSON.stringify([stil, stile]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const freiStile = useMemo(() => teile.map((_, i) => stile?.[i] ?? stil ?? FREI_STIL), [teile, stilSchluessel]);
-  // Monster und Bosse: im Verlies überall, frei nur in den Höhlen.
-  const monster = useMemo(() => teile.map((_, i) => (frei ? weltVon(freiStile[i]) === "hoehle" : art === "verlies")), [teile, frei, art, freiStile]);
+  // Monster und Bosse: im Verlies und in der 3D-Welt — dort ist jede Aufgabe ein kleiner Kampf.
+  const monster = useMemo(() => teile.map(() => frei || art === "verlies"), [teile, frei, art]);
   const plan = useMemo(() => (frei ? null : bauePlan(teile.map(t => t.raeume.length), seedAus(code), art as GebaeudeArt)), [teile, code, art, frei]);
   const organisch = JSON.stringify(freiStile.map(istOrganisch));
   const freiPlan = useMemo(
     () => (frei ? baueFreiPlan(teile.map(t => t.raeume.length), seedAus(code), JSON.parse(organisch) as boolean[]) : null),
     [teile, code, frei, organisch]);
-  const objekte = useMemo(() => teile.map((t, k) => t.raeume.map(i => stationsObjekt(slides[i], monster[k]))), [teile, slides, monster]);
+  // 3D-Welt: an jeder Aufgabe steht ein Monster, auch wenn das JSON ein anderes Objekt nennt (Erklärungen sind Erz).
+  const objekte = useMemo(
+    () => teile.map((t, k) => t.raeume.map(i => (frei && slides[i].type === "task" ? "monster" : stationsObjekt(slides[i], monster[k])))),
+    [teile, slides, monster, frei]);
+  const [gegenschlag, setGegenschlag] = useState(0);
   // Wo Monster hausen, bewacht an jeder Tür ein Boss den Weg weiter.
   const waechter = useMemo(() => teile.map((t, k) => monster[k] && t.tuer !== null), [teile, monster]);
   const geloest = attempt.solved_slide_ids;
@@ -162,7 +166,7 @@ export default function GebaeudeSpiel({
         <div className="relative h-[70vh] min-h-[380px] lg:h-auto rounded-2xl border border-line overflow-hidden bg-linear-to-b from-sky-900/30 to-transparent">
           {freiPlan
             ? <FreiWelt plan={freiPlan} stock={stock} zustaende={zustaende} zielOffen={zielOffen} objekte={objekte}
-                stile={freiStile} waechter={waechter} seed={seedAus(code)}
+                stile={freiStile} waechter={waechter} seed={seedAus(code)} gegenschlag={gegenschlag}
                 avatar={avatar} aktiv={s === null} auftrag={auftrag} onAnkunft={ankunft} />
             : plan && <Gebaeude plan={plan} stock={stock} zustaende={zustaende} zielOffen={zielOffen} objekte={objekte}
                 art={art as GebaeudeArt} stil={stil} stile={stile} waechter={waechter}
@@ -183,6 +187,7 @@ export default function GebaeudeSpiel({
                     {s.type === "door" ? `${verlies ? "👹" : "🚪"} ${W.tuer}` : (() => {
                       // Das Objekt im Zimmer spricht: das Telefon klingelt, das Radio sendet …
                       const st = OBJEKT_STIMME[objekte[stock][teile[stock].raeume.indexOf(offen)]];
+                      if (frei && s.type !== "task" && s.type !== "boss") return "💎 Info-Splitter …";
                       return st ? `${st.icon} ${s.type === "task" || s.type === "boss" ? st.aufgabe : st.info} …` : s.type === "boss" ? "⚔️ Boss" : s.type === "task" ? "✏️ Aufgabe" : "📖 Erklärung";
                     })()}
                   </span>
@@ -197,7 +202,7 @@ export default function GebaeudeSpiel({
                 {(s.type === "task" || s.type === "door") && (
                   <TaskArea key={s.id} slide={s} attemptId={attempt.id} solvedSlideIds={geloest}
                     variantChoices={variantChoices} level={levelOf(adaptation)} fragments={fragments} info={letzteInfo(slides, s.id)}
-                    onSlideSolved={onSlideSolved} onAdaptation={a => { if (a) onAdaptation(a); }}
+                    onSlideSolved={onSlideSolved} onAdaptation={a => { setGegenschlag(n => n + 1); if (a) onAdaptation(a); }}
                     onReview={rueckblick} />
                 )}
                 <div className="flex gap-2 flex-wrap">
@@ -224,7 +229,7 @@ export default function GebaeudeSpiel({
           <h2 className="font-black">{data.title}</h2>
           <p className="text-xs text-muted">
             {frei
-              ? "Laufe mit W/S oder den Pfeiltasten, drehe dich mit A/D oder durch Ziehen mit der Maus (Umschalt rennt, Mausrad zoomt). Ein Klick auf den Boden oder eine Station läuft hin, ebenso die Nummer (1–9, 0 = Tor). An den leuchtenden Ringen warten Erklärungen und Aufgaben"
+              ? "Laufe mit W/S oder den Pfeiltasten, drehe dich mit A/D oder durch Ziehen mit der Maus (Umschalt rennt, Mausrad zoomt). Ein Klick auf den Boden oder eine Station läuft hin, ebenso die Nummer (1–9, 0 = Tor). Blaues Erz baust du mit E ab (drei Hiebe) und bekommst einen Info-Splitter; an den Aufgaben wartet ein kleiner Kampf"
               : "Klicke auf den Boden oder ein Zimmer, nutze die Pfeiltasten oder tippe die Zimmernummer (1–9, 0 = Treppe bzw. Tür). In den Zimmern warten Erklärungen und Aufgaben"}
             {verlies ? " — die Monster geben sich erst geschlagen, wenn du ihre Aufgabe löst" : ""}; jede gelöste Aufgabe gibt einen
             Codeschnipsel für {frei ? (verlies ? "den Boss am Tor" : "das Tor") : art === "ebene" ? "die nächste Tür" : verlies ? "den Boss an der Treppe" : "die Tür zum Treppenhaus"}.

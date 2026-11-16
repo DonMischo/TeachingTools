@@ -5,6 +5,7 @@
  *   hoehle    Felsbrocken, Säulen, leuchtende Kristalle, Fackellicht
  *   wald      hohe Stämme mit Kronen, Büsche als Rand, Gras, Lichtung je Station
  *   garten    geschnittene Hecken, Kieswege, Rasenplätze, Beete, Teiche (Stil »garten«)
+ *   winter    Tannen mit Schneekappen im Schnee · oase: Palmen, Sand, Sandstein · pilze: Leuchtpilze bei Nacht
  *
  * `baueLandschaft` baut alles, was sich nicht ändert (einmal je Abschnitt),
  * `baueOrte` die Stationen, das Tor und den Rückweg (neu bei jedem Fortschritt).
@@ -17,17 +18,18 @@ import { baueObjekt } from "../objekte3d";
 import { felsGeometrie, musterMaterial, textur, zufallAus } from "../stoff";
 import { AUSSEHEN, STILE, type RaumZustand, type Stil } from "../szene";
 
-export type Welt = "gebaeude" | "hoehle" | "wald" | "garten";
+export type Welt = "gebaeude" | "hoehle" | "wald" | "garten" | "winter" | "oase" | "pilze";
 
 /** Welcher Kachelsatz zu welchem Baustil gehört */
 export function weltVon(stil: Stil): Welt {
-  return stil === "wald" ? "wald" : stil === "garten" ? "garten" : AUSSEHEN[stil].organisch ? "hoehle" : "gebaeude";
+  if (stil === "wald" || stil === "garten" || stil === "winter" || stil === "oase" || stil === "pilze") return stil;
+  return AUSSEHEN[stil].organisch ? "hoehle" : "gebaeude";
 }
 
-/** Wald und Höhle bekommen angenagte Karten; Gebäude und Garten bleiben gerade */
+/** Wälder und Höhle bekommen angenagte Karten; Gebäude und Garten bleiben gerade */
 export function istOrganisch(stil: Stil): boolean {
   const w = weltVon(stil);
-  return w === "wald" || w === "hoehle";
+  return w !== "gebaeude" && w !== "garten";
 }
 
 export interface Stimmung {
@@ -220,81 +222,217 @@ function umland(e: FreiEbene, f: number): THREE.Mesh {
   return m;
 }
 
-// ── Wald ─────────────────────────────────────────────────────────────────
+// ── Wald und seine Verwandten ────────────────────────────────────────────
 
-const WALD = {
-  schatten: [0x3f4a1f, 0x4d5a26, 0x5a4a22, 0x6b5a2a, 0x46522a],
-  wiese: [0x8a8f2e, 0xa39a34, 0xb7a23c, 0x7d8a2c, 0xc2a64a, 0x96a238],
-  pfad: [0x9a7646, 0xa9834f, 0x8c6a3d, 0xb8935a],
-  lichtung: [0xa8b03a, 0xc0b848, 0x93a836, 0xd1c05a],
-  blueten: [0xfff3c4, 0xffd24a, 0xf2a0c0, 0xffffff],
-  stamm: [0x6b4a32, 0x7a5638, 0x5a4034, 0x80624a, 0x6a5148],
-  krone: [0x6b8e23, 0x8a9a2b, 0xc9a227, 0xd98a1f, 0xb5541b, 0x4f7a28, 0xe0b53a, 0x7da033],
-  busch: [0x4f7a28, 0x6b8e23, 0x8a9a2b, 0x3f6a2a, 0xa8a030],
-  gras: [0x9aa83e, 0x86a034, 0xb3ac48, 0x76942f, 0xc09f40],
+type Baum = "laub" | "tanne" | "palme" | "pilz";
+
+interface Natur {
+  schatten: number[]; wiese: number[]; pfad: number[]; lichtung: number[]; blueten: number[];
+  stamm: number[]; krone: number[]; busch: number[]; gras: number[]; stein: number;
+  baum: Baum;
+  /** Anteil der Felder am Weg, auf denen ein Baum steht */
+  dicht: number;
+  /** Grasbüschel je freiem Feld (Anteil) */
+  halme: number;
+  /** Felsen am Wegrand (Anteil) */
+  felsen: number;
+  grund: number; umland: number;
+  stimmung: Stimmung;
+}
+
+const NATUR: Record<"wald" | "winter" | "oase" | "pilze", Natur> = {
+  wald: {
+    schatten: [0x3f4a1f, 0x4d5a26, 0x5a4a22, 0x6b5a2a, 0x46522a],
+    wiese: [0x8a8f2e, 0xa39a34, 0xb7a23c, 0x7d8a2c, 0xc2a64a, 0x96a238],
+    pfad: [0x9a7646, 0xa9834f, 0x8c6a3d, 0xb8935a],
+    lichtung: [0xa8b03a, 0xc0b848, 0x93a836, 0xd1c05a],
+    blueten: [0xfff3c4, 0xffd24a, 0xf2a0c0, 0xffffff],
+    stamm: [0x6b4a32, 0x7a5638, 0x5a4034, 0x80624a, 0x6a5148],
+    krone: [0x6b8e23, 0x8a9a2b, 0xc9a227, 0xd98a1f, 0xb5541b, 0x4f7a28, 0xe0b53a, 0x7da033],
+    busch: [0x4f7a28, 0x6b8e23, 0x8a9a2b, 0x3f6a2a, 0xa8a030],
+    gras: [0x9aa83e, 0x86a034, 0xb3ac48, 0x76942f, 0xc09f40],
+    stein: 0x8f8a82, baum: "laub", dicht: 0.9, halme: 0.3, felsen: 0.12, grund: 0x5d6b2a, umland: 0x4d5a26,
+    stimmung: {
+      himmelOben: 0x86b4e6, himmelUnten: 0xf2ddb0, nebel: 0xe9d6ac, dichte: 0.017,
+      sonne: 0xffc98f, sonneStaerke: 3.4, sonneVon: [-0.62, 0.58, -0.4],
+      oben: 0xb9d2ff, unten: 0x9a6a36, umgebung: 1.0, fackel: 0, belichtung: 1.0,
+    },
+  },
+  // Winterwald: Tannen mit Schneekappen, verschneiter Boden, kaltes Licht
+  winter: {
+    schatten: [0xc3d0e0, 0xb4c4d8, 0xd2dcea, 0xa9bbd2],
+    wiese: [0xf2f6fb, 0xe6edf6, 0xffffff, 0xdbe5f1],
+    pfad: [0xcfd9e6, 0xbcc9da, 0xd8e0ea],
+    lichtung: [0xffffff, 0xf4f8fc, 0xe9f0f8],
+    blueten: [0xbfe3ff, 0xffffff, 0xd6ecff],
+    stamm: [0x4a3a30, 0x55443a, 0x3f332c],
+    krone: [0x2f5a44, 0x38684c, 0x274c3c, 0x41725a],
+    busch: [0xf4f8fc, 0xe2ebf5, 0xffffff, 0x9fb7a8],
+    gras: [0xa89a78, 0x8f8468, 0xbcae8c],
+    stein: 0xb9c2cf, baum: "tanne", dicht: 0.9, halme: 0.08, felsen: 0.15, grund: 0xe6edf6, umland: 0xdbe5f1,
+    stimmung: {
+      himmelOben: 0x9dbbe0, himmelUnten: 0xf2f6fb, nebel: 0xe8eef6, dichte: 0.02,
+      sonne: 0xfff1dc, sonneStaerke: 2.5, sonneVon: [-0.6, 0.5, 0.45],
+      oben: 0xd9e8ff, unten: 0xa8b8d0, umgebung: 1.15, fackel: 0, belichtung: 0.9,
+    },
+  },
+  // Oase: Sand und Dünen, Palmen, Sandsteinfelsen, grüne Plätze am Wasser
+  oase: {
+    schatten: [0xd9b676, 0xcfa965, 0xe3c388, 0xc59c58],
+    wiese: [0xedd39a, 0xe6c887, 0xf3dcab, 0xdfc07c],
+    pfad: [0xd6b577, 0xcba865, 0xe0c188],
+    lichtung: [0x9fc45a, 0x8ab64e, 0xb4d068, 0x7aa846],
+    blueten: [0xff6f61, 0xffd166, 0xffffff, 0xf78fb3],
+    stamm: [0x8a6a44, 0x7a5c3a, 0x9a7850],
+    krone: [0x4f9a3c, 0x5fae46, 0x3f8a36, 0x74bb50],
+    busch: [0xc9a368, 0xb8935a, 0x8f9a4a, 0xd4b47c],
+    gras: [0xb8b060, 0xa3a352, 0xcbbd72],
+    stein: 0xc9a56c, baum: "palme", dicht: 0.6, halme: 0.1, felsen: 0.45, grund: 0xe6c887, umland: 0xdfc07c,
+    stimmung: {
+      himmelOben: 0x3f95e6, himmelUnten: 0xf6e3b4, nebel: 0xf3dfb0, dichte: 0.009,
+      sonne: 0xffe6b0, sonneStaerke: 3.6, sonneVon: [-0.4, 0.85, 0.3],
+      oben: 0xcfe4ff, unten: 0xe0b060, umgebung: 1.15, fackel: 0, belichtung: 0.9,
+    },
+  },
+  // Leuchtpilzwald: Nacht, Riesenpilze mit leuchtenden Hüten
+  pilze: {
+    schatten: [0x141a2e, 0x1a2038, 0x10162a, 0x1f1a3a],
+    wiese: [0x1f3a44, 0x25444c, 0x1a3340, 0x2a3a52],
+    pfad: [0x2a3550, 0x323c5a, 0x243048],
+    lichtung: [0x2a5560, 0x326470, 0x244c58],
+    blueten: [0x5ef2e0, 0xf070d8, 0xa98bff, 0xb6ff6a],
+    stamm: [0xd8d0e8, 0xc8c0dc, 0xe6def2],
+    krone: [0x38e1d6, 0xe85ad0, 0x9a7bff, 0xa6f25a, 0x52b8ff],
+    busch: [0x38e1d6, 0xe85ad0, 0x9a7bff, 0xa6f25a],
+    gras: [0x2f6a66, 0x3a7a70, 0x2a5a6a],
+    stein: 0x4a4a6a, baum: "pilz", dicht: 0.85, halme: 0.25, felsen: 0.1, grund: 0x1a2a3a, umland: 0x141a2e,
+    stimmung: {
+      himmelOben: 0x070618, himmelUnten: 0x1c1648, nebel: 0x14103a, dichte: 0.026,
+      sonne: 0x8fa8ff, sonneStaerke: 0.9, sonneVon: [0.35, 0.8, -0.4],
+      oben: 0x7a6ae0, unten: 0x1a3a4a, umgebung: 0.85, fackel: 14, belichtung: 1.25,
+    },
+  },
 };
 
-function waldLandschaft(e: FreiEbene, seed: number): Landschaft {
+function waldLandschaft(e: FreiEbene, seed: number, art: keyof typeof NATUR = "wald"): Landschaft {
   const g = new THREE.Group();
   const r = zufallAus(seed * 7 + 3);
-  g.add(himmel(0x86b4e6, 0xf2ddb0));
-  g.add(umland(e, 0x4d5a26));
+  const P = NATUR[art];
+  g.add(himmel(P.stimmung.himmelOben, P.stimmung.himmelUnten));
+  g.add(umland(e, P.umland));
   g.add(boden(e, (ctx, px) => {
-    striche(ctx, e, px, r, 6, a => (a === WAND ? WALD.schatten : a === PLATZ ? WALD.lichtung : WALD.wiese));
+    striche(ctx, e, px, r, 6, a => (a === WAND ? P.schatten : a === PLATZ ? P.lichtung : P.wiese));
     // ausgetretener Pfad: wo ringsum alles frei ist
-    striche(ctx, e, px, r, 3, (a, x, y) => (a === WEG && allein(e, x, y) ? WALD.pfad : null), 0.55);
-    // Blüten auf den Lichtungen
+    striche(ctx, e, px, r, 3, (a, x, y) => (a === WEG && allein(e, x, y) ? P.pfad : null), 0.55);
+    // Blüten (bzw. Eiskristalle, Leuchtsporen) auf den Lichtungen
     for (let y = 0; y < e.h; y++) for (let x = 0; x < e.b; x++) {
       if (e.art[y * e.b + x] !== PLATZ) continue;
       for (let k = 0; k < 2; k++) {
-        ctx.fillStyle = css(aus(WALD.blueten, r));
+        ctx.fillStyle = css(aus(P.blueten, r));
         ctx.beginPath();
         ctx.arc((x + r()) * px, (y + r()) * px, px * (0.05 + r() * 0.05), 0, Math.PI * 2);
         ctx.fill();
       }
     }
-  }, 0x5d6b2a));
+    if (art === "oase") {
+      // Wasserloch in der Mitte jedes Platzes (unter der Station): blauer Ring
+      for (const [x, y] of [...e.raeume.map(p => [p.x, p.y]), e.start, e.ziel]) {
+        ctx.lineWidth = px * 1.1;
+        ctx.strokeStyle = "#6fc3e8";
+        ctx.beginPath();
+        ctx.arc((x + 0.5) * px, (y + 0.5) * px, px * 3.7, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
+  }, P.grund));
 
   const RAND = 7;
   const { t, B } = tiefen(e, RAND);
   const staemme: Stueck[] = [], kronen: Stueck[] = [], buesche: Stueck[] = [], graeser: Stueck[] = [], steine: Stueck[] = [];
+  const kegel: Stueck[] = [], leuchten: Stueck[] = [];
+  const lichter: [number, number, number][] = [];
   const hoch = new THREE.Vector3(0, 1, 0);
   const dreh = () => new THREE.Quaternion().setFromAxisAngle(hoch, r() * Math.PI * 2);
+  const hell = (liste: number[], von = 0.9, breit = 0.25) => farbe(aus(liste, r)).multiplyScalar(von + r() * breit);
+
+  /** ein Baum der jeweiligen Art bei (sx, sz); `nah` = am Weg (voller ausgebaut) */
+  const pflanze = (sx: number, sz: number, nah: boolean) => {
+    if (P.baum === "tanne") {
+      const h = 5 + r() * 4, dick = 0.16 + r() * 0.1;
+      staemme.push({ p: new THREE.Vector3(sx, -0.1, sz), s: new THREE.Vector3(dick, h * 0.7, dick), f: hell(P.stamm, 0.85, 0.3) });
+      const stufen = nah ? 4 : 3;
+      for (let k = 0; k < stufen; k++) {
+        // unten bleibt der Stamm frei: tiefe Äste nähmen am Weg die Sicht
+        const anteil = k / stufen, breit = (2.3 - anteil * 1.5) * (0.85 + r() * 0.3), hk = h * 0.34;
+        const y = 2.4 + (h - 2.4) * anteil * 0.8 + hk / 2;
+        kegel.push({ p: new THREE.Vector3(sx, y, sz), s: new THREE.Vector3(breit, hk, breit), q: dreh(), f: hell(P.krone) });
+        // Schneekappe: etwas kleiner, ein Stück höher
+        kegel.push({ p: new THREE.Vector3(sx, y + hk * 0.2, sz), s: new THREE.Vector3(breit * 0.72, hk * 0.62, breit * 0.72), q: dreh(), f: farbe(0xf4f8fc) });
+      }
+    } else if (P.baum === "palme") {
+      const h = 4.2 + r() * 2.6, dick = 0.14 + r() * 0.06;
+      const neigung = new THREE.Quaternion().setFromEuler(new THREE.Euler((r() - 0.5) * 0.4, r() * 6.3, (r() - 0.5) * 0.4));
+      staemme.push({ p: new THREE.Vector3(sx, -0.1, sz), s: new THREE.Vector3(dick, h, dick), q: neigung, f: hell(P.stamm, 0.85, 0.3) });
+      const spitze = new THREE.Vector3(0, h, 0).applyQuaternion(neigung).add(new THREE.Vector3(sx, 0, sz));
+      const wedel = nah ? 7 : 5, start = r() * 6;
+      for (let k = 0; k < wedel; k++) {
+        const a = start + (k / wedel) * Math.PI * 2, lang = 1.5 + r() * 0.7;
+        // Wedel: lang und flach, hängt nach außen herab
+        const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -a, -0.35 - r() * 0.25, "YXZ"));
+        kronen.push({
+          p: new THREE.Vector3(spitze.x + Math.cos(a) * lang * 0.45, spitze.y - 0.15, spitze.z + Math.sin(a) * lang * 0.45),
+          s: new THREE.Vector3(lang, 0.16, 0.55), q, f: hell(P.krone),
+        });
+      }
+    } else if (P.baum === "pilz") {
+      const h = 2.6 + r() * 4, dick = 0.28 + r() * 0.3, breit = 2.4 + r() * 2.4;
+      const neigung = new THREE.Quaternion().setFromEuler(new THREE.Euler((r() - 0.5) * 0.2, r() * 6.3, (r() - 0.5) * 0.2));
+      staemme.push({ p: new THREE.Vector3(sx, -0.1, sz), s: new THREE.Vector3(dick, h, dick), q: neigung, f: hell(P.stamm, 0.55, 0.2) });
+      const f = farbe(aus(P.krone, r));
+      leuchten.push({ p: new THREE.Vector3(sx, h + breit * 0.12, sz), s: new THREE.Vector3(breit, breit * 0.42, breit), q: dreh(), f: f.clone().multiplyScalar(0.75 + r() * 0.35) });
+      // nur wenige echte Lichter, weit auseinander
+      if (nah && lichter.length < 6 && lichter.every(([lx, lz]) => Math.hypot(lx - sx, lz - sz) > 14)) lichter.push([sx, sz, f.getHex()]);
+    } else {
+      const h = 6.5 + r() * 4.5, dick = 0.2 + r() * 0.17;
+      const neigung = new THREE.Quaternion().setFromEuler(new THREE.Euler((r() - 0.5) * 0.12, r() * 6.3, (r() - 0.5) * 0.12));
+      staemme.push({ p: new THREE.Vector3(sx, -0.1, sz), s: new THREE.Vector3(dick, h, dick), q: neigung, f: hell(P.stamm, 0.85, 0.3) });
+      for (let k = 0; k < (nah ? 3 : 2); k++) {
+        const breit = 2.2 + r() * 1.6;
+        kronen.push({
+          p: new THREE.Vector3(sx + (r() - 0.5) * 1.8, h * (0.82 + r() * 0.22), sz + (r() - 0.5) * 1.8),
+          s: new THREE.Vector3(breit, 1.3 + r() * 0.9, breit), q: dreh(), f: hell(P.krone),
+        });
+      }
+    }
+  };
+
   for (let Y = 0; Y < B; Y++) for (let X = 0; X < B; X++) {
     const tiefe = t[Y * B + X], x = X - RAND, y = Y - RAND;
     const wx = feldMitte(x), wz = feldMitte(y);
     if (tiefe === 0) {
-      if (e.art[y * e.b + x] !== DURCHGANG && r() < 0.3) {
-        graeser.push({ p: new THREE.Vector3(wx + (r() - 0.5) * ZELLE, 0, wz + (r() - 0.5) * ZELLE), s: new THREE.Vector3().setScalar(0.8 + r() * 0.9), q: dreh(), f: farbe(aus(WALD.gras, r)) });
+      if (e.art[y * e.b + x] !== DURCHGANG && r() < P.halme) {
+        graeser.push({ p: new THREE.Vector3(wx + (r() - 0.5) * ZELLE, 0, wz + (r() - 0.5) * ZELLE), s: new THREE.Vector3().setScalar(0.8 + r() * 0.9), q: dreh(), f: farbe(aus(P.gras, r)) });
       }
       continue;
     }
     const einzeln = tiefe === 1 && allein(e, x, y);
     // am Weg dicht, dahinter lichter, weit hinten nur noch einzelne Stämme
-    if (r() < (tiefe === 1 ? 0.9 : tiefe <= 3 ? 0.6 : 0.3)) {
-      const h = 6.5 + r() * 4.5, dick = 0.2 + r() * 0.17;
-      const sx = wx + (r() - 0.5) * 0.5, sz = wz + (r() - 0.5) * 0.5;
-      const neigung = new THREE.Quaternion().setFromEuler(new THREE.Euler((r() - 0.5) * 0.12, r() * 6.3, (r() - 0.5) * 0.12));
-      staemme.push({ p: new THREE.Vector3(sx, -0.1, sz), s: new THREE.Vector3(dick, h, dick), q: neigung, f: farbe(aus(WALD.stamm, r)).multiplyScalar(0.85 + r() * 0.3) });
-      const blaetter = tiefe <= 3 ? 3 : 2;
-      for (let k = 0; k < blaetter; k++) {
-        const breit = 2.2 + r() * 1.6;
-        kronen.push({
-          p: new THREE.Vector3(sx + (r() - 0.5) * 1.8, h * (0.82 + r() * 0.22), sz + (r() - 0.5) * 1.8),
-          s: new THREE.Vector3(breit, 1.3 + r() * 0.9, breit), q: dreh(), f: farbe(aus(WALD.krone, r)).multiplyScalar(0.9 + r() * 0.25),
-        });
-      }
+    if (einzeln || r() < (tiefe === 1 ? P.dicht : tiefe <= 3 ? P.dicht * 0.66 : P.dicht * 0.33)) {
+      pflanze(wx + (r() - 0.5) * 0.5, wz + (r() - 0.5) * 0.5, tiefe <= 3);
     }
     if (tiefe <= 2 && r() < (einzeln ? 1 : 0.75)) {
       const breit = einzeln ? 0.9 : 1.2 + r() * 0.6;
-      buesche.push({ p: new THREE.Vector3(wx + (r() - 0.5) * 0.4, 0.3, wz + (r() - 0.5) * 0.4), s: new THREE.Vector3(breit, 0.7 + r() * 0.5, breit), q: dreh(), f: farbe(aus(WALD.busch, r)).multiplyScalar(0.85 + r() * 0.3) });
+      const stueck: Stueck = { p: new THREE.Vector3(wx + (r() - 0.5) * 0.4, 0.3, wz + (r() - 0.5) * 0.4), s: new THREE.Vector3(breit, 0.7 + r() * 0.5, breit), q: dreh(), f: hell(P.busch, 0.85, 0.3) };
+      // im Pilzwald leuchtet der Rand: kleine Pilzhüte statt Büsche
+      if (P.baum === "pilz") leuchten.push({ ...stueck, s: stueck.s.multiplyScalar(0.55), f: farbe(aus(P.busch, r)).multiplyScalar(0.6 + r() * 0.3) });
+      else buesche.push(stueck);
     }
-    if (tiefe <= 3) for (let k = 0; k < 2; k++) {
-      graeser.push({ p: new THREE.Vector3(wx + (r() - 0.5) * ZELLE, 0, wz + (r() - 0.5) * ZELLE), s: new THREE.Vector3().setScalar(1 + r() * 1.2), q: dreh(), f: farbe(aus(WALD.gras, r)).multiplyScalar(0.75 + r() * 0.3) });
+    if (tiefe <= 3 && P.halme > 0.15) for (let k = 0; k < 2; k++) {
+      graeser.push({ p: new THREE.Vector3(wx + (r() - 0.5) * ZELLE, 0, wz + (r() - 0.5) * ZELLE), s: new THREE.Vector3().setScalar(1 + r() * 1.2), q: dreh(), f: farbe(aus(P.gras, r)).multiplyScalar(0.75 + r() * 0.3) });
     }
-    if (tiefe === 1 && !einzeln && r() < 0.12) {
-      const gross = 0.5 + r() * 0.5;
-      steine.push({ p: new THREE.Vector3(wx, 0.1, wz), s: new THREE.Vector3(gross * 1.3, gross * 0.8, gross), q: dreh(), f: farbe(0x8f8a82).multiplyScalar(0.8 + r() * 0.3) });
+    if (tiefe <= 2 && !einzeln && r() < P.felsen) {
+      const gross = (P.felsen > 0.3 ? 0.9 : 0.5) + r() * (P.felsen > 0.3 ? 1.1 : 0.5);
+      steine.push({ p: new THREE.Vector3(wx + (r() - 0.5) * 0.5, gross * 0.25, wz + (r() - 0.5) * 0.5), s: new THREE.Vector3(gross * 1.3, gross * 0.9, gross), q: dreh(), f: farbe(P.stein).multiplyScalar(0.8 + r() * 0.3) });
     }
   }
   const weiss = () => new THREE.MeshLambertMaterial({ color: 0xffffff });
@@ -302,15 +440,17 @@ function waldLandschaft(e: FreiEbene, seed: number): Landschaft {
   g.add(reihe(felsGeometrie(), weiss(), kronen));
   g.add(reihe(felsGeometrie(), weiss(), buesche));
   g.add(reihe(felsGeometrie(), weiss(), steine));
+  g.add(reihe(new THREE.ConeGeometry(0.5, 1, 8), weiss(), kegel));
+  // leuchtende Hüte: ohne Licht und Schatten gezeichnet, darum hell auch in der Nacht
+  g.add(reihe(felsGeometrie(), new THREE.MeshBasicMaterial({ color: 0xffffff }), leuchten, false));
   g.add(reihe(bueschelGeometrie(), weiss(), graeser, false));
-  return {
-    gruppe: g, wandHoehe: 0,
-    stimmung: {
-      himmelOben: 0x86b4e6, himmelUnten: 0xf2ddb0, nebel: 0xe9d6ac, dichte: 0.017,
-      sonne: 0xffc98f, sonneStaerke: 3.4, sonneVon: [-0.62, 0.58, -0.4],
-      oben: 0xb9d2ff, unten: 0x9a6a36, umgebung: 1.0, fackel: 0, belichtung: 1.0,
-    },
-  };
+  for (const [lx, lz, f] of lichter) {
+    const l = new THREE.PointLight(f, 22, 16, 1.5);
+    l.position.set(lx, 2.2, lz);
+    g.add(l);
+  }
+  // Tannen tragen ihr Grün auf Augenhöhe: die Kamera bleibt auf dem Weg, sonst steckte sie in den Zweigen
+  return { gruppe: g, wandHoehe: P.baum === "tanne" ? 99 : 0, stimmung: P.stimmung };
 }
 
 // ── Höhle ────────────────────────────────────────────────────────────────
@@ -699,7 +839,7 @@ function gartenLandschaft(e: FreiEbene, seed: number): Landschaft {
 
 export function baueLandschaft(e: FreiEbene, stil: Stil, seed: number): Landschaft {
   const w = weltVon(stil);
-  return w === "wald" ? waldLandschaft(e, seed) : w === "garten" ? gartenLandschaft(e, seed)
+  return w === "wald" || w === "winter" || w === "oase" || w === "pilze" ? waldLandschaft(e, seed, w) : w === "garten" ? gartenLandschaft(e, seed)
     : w === "hoehle" ? hoehleLandschaft(e, stil, seed) : gebaeudeLandschaft(e, stil, seed);
 }
 
@@ -757,11 +897,45 @@ function tor(g: THREE.Group, stein: number, schein: number, breit = 2.6, hoehe =
   g.add(flaeche);
 }
 
+/** Erzader: grauer Fels mit blauen Kristallen; `leer` = abgebaut, nur Geröll und ein Splitter bleiben */
+function erz(leer: boolean, r: () => number): THREE.Group {
+  const g = new THREE.Group();
+  const fels = new THREE.MeshLambertMaterial({ color: 0x6b7280 });
+  const kristall = new THREE.MeshLambertMaterial({ color: 0x93c5fd, emissive: 0x3b82f6, emissiveIntensity: leer ? 0.5 : 1.3 });
+  const brocken = (x: number, y: number, z: number, b: number, h: number) => {
+    const m = new THREE.Mesh(felsGeometrie(), fels);
+    m.position.set(x, y, z);
+    m.scale.set(b, h, b * (0.8 + r() * 0.4));
+    m.rotation.y = r() * 6;
+    m.castShadow = true;
+    g.add(m);
+  };
+  const zacke = (x: number, y: number, z: number, h: number, kippX: number, kippZ: number) => {
+    const m = new THREE.Mesh(new THREE.ConeGeometry(0.16, h, 5), kristall);
+    m.position.set(x, y + h / 2, z);
+    m.rotation.set(kippX, r() * 6, kippZ);
+    g.add(m);
+  };
+  if (leer) {
+    for (let k = 0; k < 5; k++) brocken((r() - 0.5) * 1.3, 0.12, (r() - 0.5) * 1.3, 0.35 + r() * 0.3, 0.25 + r() * 0.15);
+    zacke(0, 0.1, 0, 0.5, 0.3, 0.2);
+    return g;
+  }
+  brocken(0, 0.55, 0, 1.5, 1.2);
+  brocken(0.5, 0.3, 0.4, 0.9, 0.7);
+  brocken(-0.55, 0.3, -0.3, 0.8, 0.6);
+  for (let k = 0; k < 7; k++) {
+    const a = r() * Math.PI * 2, ab = 0.2 + r() * 0.45;
+    zacke(Math.cos(a) * ab, 0.7 + r() * 0.3, Math.sin(a) * ab, 0.6 + r() * 0.6, Math.sin(a) * 0.6, -Math.cos(a) * 0.6);
+  }
+  return g;
+}
+
 export function baueOrte(e: FreiEbene, bild: OrteBild): { gruppe: THREE.Group; marken: Marke[] } {
   const g = new THREE.Group();
   const marken: Marke[] = [];
   const w = weltVon(bild.stil);
-  const stein = w === "wald" ? 0x7a5638 : w === "garten" ? 0xe8e2d2 : w === "hoehle" ? farbe(STILE[bild.stil].wand).multiplyScalar(1.5).getHex() : STILE[bild.stil].tuer;
+  const stein = w === "wald" ? 0x7a5638 : w === "garten" ? 0xe8e2d2 : w === "winter" ? 0x8fa3b8 : w === "oase" ? 0xc9a56c : w === "pilze" ? 0x6a5acd : w === "hoehle" ? farbe(STILE[bild.stil].wand).multiplyScalar(1.5).getHex() : STILE[bild.stil].tuer;
 
   e.raeume.forEach((p, k) => {
     const zg = new THREE.Group();
@@ -769,13 +943,21 @@ export function baueOrte(e: FreiEbene, bild: OrteBild): { gruppe: THREE.Group; m
     zg.position.set(feldMitte(p.x), 0, feldMitte(p.y));
     const z = bild.zustaende[k] ?? "offen";
     leuchtfeuer(zg, RAUM_FARBE[z], z === "offen" || z === "info");
-    const ding = baueObjekt(bild.objekte?.[k] ?? "pult", z === "geloest", k + bild.abschnitt * 3);
-    ding.scale.setScalar(1.5);
-    ding.rotation.y = k * 1.3;
-    ding.traverse(o => { o.castShadow = true; });
-    zg.add(ding);
+    if (z === "info" || z === "gelesen") {
+      // Erklärungen stecken als Info-Splitter im Erz: erst abbauen, dann lesen
+      const ader = erz(z === "gelesen", zufallAus(k * 31 + bild.abschnitt * 7 + 1));
+      zg.userData.erz = ader;
+      zg.add(ader);
+    } else {
+      const ding = baueObjekt(bild.objekte?.[k] ?? "pult", z === "geloest", k + bild.abschnitt * 3);
+      ding.scale.setScalar(1.5);
+      ding.rotation.y = k * 1.3;
+      ding.traverse(o => { o.castShadow = true; });
+      zg.userData.ding = ding;
+      zg.add(ding);
+    }
     g.add(zg);
-    marken.push({ ort: { art: "raum", raum: k }, text: z === "info" || z === "gelesen" ? "i" : String(k + 1), ton: z, x: zg.position.x, y: 3.4, z: zg.position.z });
+    marken.push({ ort: { art: "raum", raum: k }, text: z === "info" ? "⛏" : z === "gelesen" ? "i" : String(k + 1), ton: z, x: zg.position.x, y: 3.4, z: zg.position.z });
   });
 
   const zg = new THREE.Group();

@@ -533,6 +533,8 @@ export function baueObjekt(art: Objekt, besiegt = false, variante = 0): THREE.Gr
     platz.remove(ersatz);
     entsorgeGebaut(ersatz);
     platz.add(m.modell);
+    // für kleine Kämpfe: wer das Objekt hält, lässt das Monster angreifen (3D-Welt)
+    platz.userData.figur = m;
     if (besiegt) {
       m.eigeneMaterialien();
       m.modell.traverse((o) => { const mat = (o as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined; if (mat?.color) mat.color.lerp(new THREE.Color(0x6b7280), 0.7); });

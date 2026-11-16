@@ -16,9 +16,11 @@ ANSICHTEN = {
                "Monster in den Aufgabenräumen, ein Boss bewacht jede Treppe.",
     "ebene": "Ebene: die Abschnitte liegen nebeneinander, eine verschlossene Tür in der Wand führt weiter.",
     "frei": "3D-Welt: gemalte Landschaft, die Figur läuft frei (Kamera über der Schulter). Der Stil bestimmt die Welt: "
-            "'wald' (Standard) ist ein Wald mit Lichtungen, 'garten' ein Garten mit Hecken, Kieswegen und Beeten, die "
-            "Höhlenstile (hoehle, steinzeit, lava) sind Höhlen mit Monstern und einem Boss am Tor, alle anderen ein "
-            "möbliertes Gebäude in diesem Baustil. Braucht ein Gerät mit WebGL.",
+            "'wald' (Standard) ist ein Wald mit Lichtungen, 'winter' ein Winterwald, 'oase' eine Oase mit Palmen, "
+            "'pilze' ein Leuchtpilzwald bei Nacht, 'garten' ein Garten mit Hecken, Kieswegen und Beeten, die "
+            "Höhlenstile (hoehle, steinzeit, lava) sind Höhlen, alle anderen ein möbliertes Gebäude in diesem Baustil. "
+            "Jede Aufgabe ist ein kleiner Kampf gegen ein Monster (falsche Antwort = Gegenschlag), Türen bewacht ein "
+            "Boss; Erklärungen stecken als Info-Splitter im Erz und werden mit drei Hieben abgebaut. Braucht WebGL.",
 }
 
 STILE = {
@@ -43,6 +45,9 @@ STILE = {
     # Natur — in der Ansicht "frei" eigene Welten, sonst Hecken bzw. Felswände
     "wald": "Wald: hohe Stämme, Büsche, Lichtungen (Standard der 3D-Welt).",
     "hoehle": "Tropfsteinhöhle: grauer Fels, türkis leuchtende Kristalle.",
+    "winter": "Winterwald: Tannen mit Schneekappen, verschneiter Boden.",
+    "oase": "Oase: Sand, Palmen, Sandsteinfelsen, grüne Plätze am Wasser.",
+    "pilze": "Leuchtpilzwald: Nacht, Riesenpilze mit leuchtenden Hüten.",
 }
 
 OBJEKTE = {

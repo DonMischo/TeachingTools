@@ -7,6 +7,10 @@
  *   Maus ziehen (oder wischen) dreht die Kamera, Mausrad zoomt
  *   Klick/Tippen auf den Boden oder eine Station: hinlaufen
  *   1–9 läuft zur Station mit dieser Nummer, 0 zum Tor; E öffnet, was vor einem steht
+ *
+ * Aufgaben sind kleine Kämpfe: Das Monster greift an, dann kommt die Frage;
+ * jede falsche Antwort ist sein Gegenschlag, die richtige der Sieg.
+ * Erklärungen stecken als Info-Splitter im Erz: drei Hiebe legen sie frei.
  *   auf Tablets: Steuerknüppel unten links
  *
  * Kennt wie das Gebäude keine Inhalte: Wer die Welt benutzt, gibt Karte,
@@ -45,8 +49,13 @@ interface Props {
   auftrag?: { ort: FreiOrt; nr: number } | null;
   /** Karte ist bei gleichem `seed` gleich bepflanzt */
   seed: number;
+  /** zählt die falschen Antworten: bei jeder schlägt das Monster zurück */
+  gegenschlag?: number;
   onAnkunft: (ort: FreiOrt) => void;
 }
+
+/** so viele Hiebe braucht ein Erz */
+const HIEBE = 3;
 
 const GEHEN = 6.2, RENNEN = 9.5, DREHEN = 2.3;
 const RADIUS = 0.42;
@@ -60,7 +69,7 @@ const TON: Record<Marke["ton"], string> = {
 };
 
 export default function FreiWelt({
-  plan, stock, zustaende, zielOffen, objekte, stile, avatar = STANDARD_AVATAR, waechter, aktiv, auftrag, seed, onAnkunft,
+  plan, stock, zustaende, zielOffen, objekte, stile, avatar = STANDARD_AVATAR, waechter, aktiv, auftrag, seed, gegenschlag = 0, onAnkunft,
 }: Props) {
   const huelle = useRef<HTMLDivElement>(null);
   const [fehler, setFehler] = useState(false);
@@ -69,13 +78,19 @@ export default function FreiWelt({
   const [nah, setNah] = useState<FreiOrt | null>(null);
   const [guete, setGuete] = useState<Guete>(2);
   const [finger, setFinger] = useState(false);
+  const [hiebe, setHiebe] = useState(0);
+  const [kampf, setKampf] = useState(false);
   const knueppel = useRef<HTMLDivElement>(null);
   const knauf = useRef<HTMLDivElement>(null);
 
   // Alles, was die Zeichenschleife liest, steht in einem Ref.
   const lage = useRef({
-    plan, stock, aktiv, onAnkunft, guete,
+    plan, stock, aktiv, onAnkunft, guete, zustaende,
     x: 0, z: 0, blick: 0, neigung: 0.34, abstand: 6.5,
+    /** Hiebe am Erz, vor dem die Figur steht */
+    hiebe: 0,
+    /** kurze Szene (Kampfbeginn, letzter Hieb): danach öffnet sich der Ort */
+    warte: null as { rest: number; ort: FreiOrt } | null,
     /** Wegpunkte (Welt) für das Laufen per Klick oder Auftrag */
     pfad: [] as [number, number][],
     /** an diesem Ort soll der Weg enden */
@@ -86,15 +101,64 @@ export default function FreiWelt({
     drin: "",
     wandHoehe: 0,
     marken: [] as Marke[],
-    setNah, setGuete,
+    setNah, setGuete, setHiebe, setKampf,
   });
-  Object.assign(lage.current, { plan, stock, aktiv, onAnkunft, guete });
+  Object.assign(lage.current, { plan, stock, aktiv, onAnkunft, guete, zustaende });
 
   const drei = useRef<{
     szene: THREE.Scene; land: THREE.Group; orte: THREE.Group; spieler: THREE.Group;
     himmel: THREE.HemisphereLight; sonne: THREE.DirectionalLight; fackel: THREE.PointLight;
     nebel: THREE.FogExp2; maler: Maler; sonneVon: THREE.Vector3;
+    /** Splitter sprühen von einem Punkt aus */
+    spritze: (x: number, y: number, z: number, farbe: number, anzahl: number) => void;
   } | null>(null);
+
+  /** Gruppe einer Station in der Szene (trägt `userData.erz` bzw. `userData.ding`) */
+  const station = (raum: number): THREE.Object3D | null => {
+    let aus: THREE.Object3D | null = null;
+    drei.current?.orte.traverse(o => { const ort = o.userData.ort as FreiOrt | undefined; if (ort?.art === "raum" && ort.raum === raum) aus = o; });
+    return aus;
+  };
+  const figur = () => drei.current?.spieler.children[0];
+  /** Figur dreht sich zu einem Punkt */
+  const schaue = (x: number, z: number) => {
+    const d = drei.current, l = lage.current;
+    if (d) d.spieler.rotation.y = Math.atan2(x - l.x, z - l.z);
+  };
+
+  /**
+   * Einen Ort betreten: Erz wird erst abgebaut, ein Monster greift erst an —
+   * alles andere (und beides danach) öffnet sich sofort.
+   */
+  const betrete = (ort: FreiOrt) => {
+    const l = lage.current;
+    if (l.warte) return;
+    const z = ort.art === "raum" ? l.zustaende[l.stock]?.[ort.raum] : null;
+    const st = ort.art === "raum" ? station(ort.raum) : null;
+    if (z === "info" && st) {
+      l.hiebe++;
+      l.setHiebe(l.hiebe);
+      schaue(st.position.x, st.position.z);
+      const f = figur();
+      if (f) bewegeAvatar(f, "angriff");
+      const erz = st.userData.erz as THREE.Object3D | undefined;
+      erz?.scale.setScalar(1 - 0.17 * l.hiebe);
+      drei.current?.spritze(st.position.x, 1.2, st.position.z, 0x60a5fa, 10);
+      if (l.hiebe >= HIEBE) { l.hiebe = 0; l.warte = { rest: 0.45, ort }; }
+      return;
+    }
+    if (z === "offen" && st) {
+      // Kampfbeginn: das Monster dreht sich her und greift an, dann kommt die Frage
+      const ding = st.userData.ding as THREE.Object3D | undefined;
+      if (ding) ding.rotation.y = Math.atan2(l.x - st.position.x, l.z - st.position.z);
+      (ding?.userData.figur as { spiele(art: string): number } | undefined)?.spiele("angriff");
+      schaue(st.position.x, st.position.z);
+      l.setKampf(true);
+      l.warte = { rest: 0.9, ort };
+      return;
+    }
+    l.onAnkunft(ort);
+  };
 
   /** Figur an den Anfang (oder ans Tor) des Abschnitts stellen, Blick zur Kartenmitte */
   const stelle = (anTor: boolean) => {
@@ -116,7 +180,7 @@ export default function FreiWelt({
     const l = lage.current, e = l.plan.ebenen[l.stock];
     const ziel: [number, number] = ort ? (ort.art === "ziel" ? e.ziel : ort.art === "zurueck" ? e.start : [e.raeume[ort.raum].x, e.raeume[ort.raum].y]) : feld!;
     const von: [number, number] = [feldBei(l.x), feldBei(l.z)];
-    if (ort && ortSchluessel(ortBei(e, l.x, l.z, l.stock > 0)) === ortSchluessel(ort)) { l.onAnkunft(ort); return; }
+    if (ort && ortSchluessel(ortBei(e, l.x, l.z, l.stock > 0)) === ortSchluessel(ort)) { betrete(ort); return; }
     l.pfad = freiWeg(e, von, ziel).map(([x, y]) => [feldMitte(x), feldMitte(y)]);
     l.pfadOrt = ort;
   };
@@ -161,7 +225,19 @@ export default function FreiWelt({
     const land = new THREE.Group(), orte = new THREE.Group(), spieler = new THREE.Group();
     spieler.scale.setScalar(1.4);
     szene.add(himmel, sonne, sonne.target, fackel, land, orte, spieler);
-    drei.current = { szene, land, orte, spieler, himmel, sonne, fackel, nebel, maler, sonneVon: new THREE.Vector3(0, 1, 0) };
+    // Splitter: kleine Tetraeder, die hochspritzen und zu Boden fallen
+    const splitterForm = new THREE.TetrahedronGeometry(0.13);
+    const splitter: { m: THREE.Mesh; v: THREE.Vector3; leben: number }[] = [];
+    const spritze = (x: number, y: number, z: number, farbe: number, anzahl: number) => {
+      for (let k = 0; k < anzahl; k++) {
+        const m = new THREE.Mesh(splitterForm, new THREE.MeshBasicMaterial({ color: farbe }));
+        m.position.set(x + (Math.random() - 0.5) * 0.6, y + Math.random() * 0.5, z + (Math.random() - 0.5) * 0.6);
+        m.scale.setScalar(0.6 + Math.random() * 1.2);
+        szene.add(m);
+        splitter.push({ m, v: new THREE.Vector3((Math.random() - 0.5) * 5, 3 + Math.random() * 4, (Math.random() - 0.5) * 5), leben: 0.9 + Math.random() * 0.4 });
+      }
+    };
+    drei.current = { szene, land, orte, spieler, himmel, sonne, fackel, nebel, maler, sonneVon: new THREE.Vector3(0, 1, 0), spritze };
 
     const kamera = new THREE.PerspectiveCamera(55, 1, 0.2, 500);
     const groesse = () => {
@@ -192,7 +268,7 @@ export default function FreiWelt({
       const k = ev.key.toLowerCase();
       if (k === "e" || k === "enter") {
         const ort = ortBei(e, l.x, l.z, l.stock > 0);
-        if (ort) { ev.preventDefault(); l.onAnkunft(ort); }
+        if (ort) { ev.preventDefault(); betrete(ort); }
         return;
       }
       if (!LAUF.has(k)) return;
@@ -258,7 +334,7 @@ export default function FreiWelt({
     let id = 0, zuletzt = performance.now(), lahm = 0, gemessen = 0, bilder = 0;
     const bild = (jetzt: number) => {
       const roh = (jetzt - zuletzt) / 1000;
-      const dt = Math.min(0.1, roh);
+      const dt = Math.max(0, Math.min(0.1, roh));
       zuletzt = jetzt;
       tickMonster(dt);
       tickAvatare();
@@ -266,9 +342,24 @@ export default function FreiWelt({
       if (!d) return;
       const e = l.plan.ebenen[l.stock];
 
+      // kurze Szene läuft ab (Kampfbeginn, letzter Hieb): danach öffnet sich der Ort
+      if (l.warte) {
+        l.warte.rest -= dt;
+        l.pfad = []; l.pfadOrt = null;
+        if (l.warte.rest <= 0) { const ort = l.warte.ort; l.warte = null; l.tasten.clear(); l.setKampf(false); l.onAnkunft(ort); }
+      }
+      for (let k = splitter.length - 1; k >= 0; k--) {
+        const s = splitter[k];
+        s.v.y -= 16 * dt;
+        s.m.position.addScaledVector(s.v, dt);
+        s.m.rotation.x += dt * 9; s.m.rotation.z += dt * 7;
+        s.leben -= dt;
+        if (s.leben <= 0 || s.m.position.y < 0) { szene.remove(s.m); (s.m.material as THREE.Material).dispose(); splitter.splice(k, 1); }
+      }
+
       // Eingaben: Tasten und Steuerknüppel
       let vor = 0, dreh = 0;
-      if (l.aktiv) {
+      if (l.aktiv && !l.warte) {
         const t = l.tasten;
         vor = (t.has("w") || t.has("arrowup") ? 1 : 0) - (t.has("s") || t.has("arrowdown") ? 1 : 0) - l.knueppel.y;
         dreh = (t.has("a") || t.has("arrowleft") ? 1 : 0) - (t.has("d") || t.has("arrowright") ? 1 : 0) - l.knueppel.x;
@@ -316,6 +407,7 @@ export default function FreiWelt({
         d.spieler.rotation.y += diff * Math.min(1, dt * 12);
       }
       d.spieler.position.set(l.x, 0, l.z);
+      if (!laeuft && l.warte) schaue(...ortMitte(e, l.warte.ort));
       const figur = d.spieler.children[0];
       if (figur) bewegeAvatar(figur, laeuft ? (tempo > GEHEN + 0.5 ? "rennen" : "lauf") : "idle");
       // ohne Bewegungsclips (Modell lädt noch) hüpft die Figur beim Laufen
@@ -327,8 +419,14 @@ export default function FreiWelt({
       if (schluessel !== l.drin) {
         l.drin = schluessel;
         l.setNah(ort);
-        // der Rückweg öffnet sich nur auf Wunsch (E bzw. Knopf), sonst liefe man aus Versehen zurück
-        if (ort && ort.art !== "zurueck" && l.aktiv) { l.pfad = []; l.pfadOrt = null; l.tasten.clear(); l.onAnkunft(ort); }
+        if (l.hiebe) { l.hiebe = 0; l.setHiebe(0); }
+        // Der Rückweg öffnet sich nur auf Wunsch (E bzw. Knopf), sonst liefe man aus Versehen zurück;
+        // ein Erz wartet auf die Hiebe. Alles andere beginnt von selbst.
+        const erz = ort?.art === "raum" && l.zustaende[l.stock]?.[ort.raum] === "info";
+        if (ort && ort.art !== "zurueck" && l.aktiv) {
+          l.pfad = []; l.pfadOrt = null; l.tasten.clear();
+          if (!erz) betrete(ort);
+        }
       }
 
       // Kamera über der Schulter; Wände halten sie auf
@@ -388,6 +486,8 @@ export default function FreiWelt({
       window.removeEventListener("keyup", hoch);
       window.removeEventListener("blur", weg);
       for (const k of spieler.children) beendeAvatar(k);
+      for (const s of splitter) (s.m.material as THREE.Material).dispose();
+      splitterForm.dispose();
       entsorge(szene);
       maler.entsorge();
       renderer.dispose();
@@ -445,6 +545,7 @@ export default function FreiWelt({
 
   // ── Stationen und Tor: neu bei jedem Fortschritt ─────────────────────────
   const schluessel = JSON.stringify([stock, zustaende[stock], zielOffen[stock], objekte?.[stock], stil, waechter?.[stock]]);
+  const vorZustand = useRef<{ stock: number; plan: FreiPlan | null; z: RaumZustand[] }>({ stock: -1, plan: null, z: [] });
   useEffect(() => {
     const d = drei.current;
     if (!d) return;
@@ -457,8 +558,36 @@ export default function FreiWelt({
     d.orte.add(o.gruppe);
     lage.current.marken = o.marken;
     setMarken(o.marken);
+    // Sieg: eine Aufgabe dieses Abschnitts ist eben gelöst worden — die Figur schlägt zu und jubelt, Splitter fliegen
+    const jetzt = zustaende[stock] ?? [], alt = vorZustand.current;
+    if (alt.stock === stock && alt.plan === plan) {
+      jetzt.forEach((z, k) => {
+        if (z !== "geloest" || alt.z[k] !== "offen") return;
+        const st = station(k);
+        if (!st) return;
+        d.spritze(st.position.x, 1.4, st.position.z, 0xfacc15, 18);
+        d.spritze(st.position.x, 1.4, st.position.z, 0x22c55e, 10);
+        schaue(st.position.x, st.position.z);
+        const f = figur();
+        if (f) { const dauer = bewegeAvatar(f, "angriff"); window.setTimeout(() => { const g = figur(); if (g) bewegeAvatar(g, "jubel"); }, dauer * 1000 + 50); }
+      });
+    }
+    vorZustand.current = { stock, plan, z: [...jetzt] };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plan, schluessel]);
+
+  // Gegenschlag: bei jeder falschen Antwort greift das Monster an, die Figur zuckt
+  useEffect(() => {
+    if (!gegenschlag || !drei.current) return;
+    const l = lage.current;
+    const ort = ortBei(l.plan.ebenen[l.stock], l.x, l.z, false);
+    const st = ort?.art === "raum" ? station(ort.raum) : null;
+    ((st?.userData.ding as THREE.Object3D | undefined)?.userData.figur as { spiele(art: string): number } | undefined)?.spiele("angriff");
+    const f = figur();
+    if (f) bewegeAvatar(f, "treffer");
+    drei.current.spritze(l.x, 1.6, l.z, 0xe11d48, 8);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gegenschlag]);
 
   // Abschnitt gewechselt: weiter → an dessen Anfang; zurück → an dessen Tor.
   const vorher = useRef(stock);
@@ -515,12 +644,21 @@ export default function FreiWelt({
           {GUETE_NAME[guete]}
         </button>
       </div>
-      {nah && aktiv && (
-        <button onClick={() => onAnkunft(nah)}
-          className="absolute left-1/2 -translate-x-1/2 bottom-5 btn-primary text-sm py-2 px-4 shadow-xl">
-          {nah.art === "raum" ? "E · Ansehen" : nah.art === "ziel" ? "E · Zum Tor" : "E · Zurück in den Abschnitt davor"}
-        </button>
+      {kampf && (
+        <div className="absolute inset-x-0 top-1/3 flex justify-center pointer-events-none" data-kampf>
+          <span className="px-5 py-2 rounded-xl bg-rose-600 text-white font-black text-2xl shadow-2xl -rotate-3">⚔️ Kampf!</span>
+        </div>
       )}
+      {nah && aktiv && !kampf && (() => {
+        const z = nah.art === "raum" ? zustaende[stock]?.[nah.raum] : null;
+        return (
+          <button onClick={() => betrete(nah)} data-ort-knopf
+            className="absolute left-1/2 -translate-x-1/2 bottom-5 btn-primary text-sm py-2 px-4 shadow-xl">
+            {nah.art === "ziel" ? "E · Zum Tor" : nah.art === "zurueck" ? "E · Zurück in den Abschnitt davor"
+              : z === "info" ? `⛏️ E · Erz abbauen (${hiebe}/${HIEBE})` : z === "offen" ? "⚔️ E · Kämpfen" : z === "gelesen" ? "E · Info-Splitter lesen" : "E · Ansehen"}
+          </button>
+        );
+      })()}
       {finger && (
         <div ref={knueppel} className="absolute left-4 bottom-4 w-28 h-28 rounded-full bg-surface/50 border-2 border-line touch-none flex items-center justify-center"
           onPointerDown={ev => { ev.currentTarget.setPointerCapture(ev.pointerId); knueppelZug(ev); }}
