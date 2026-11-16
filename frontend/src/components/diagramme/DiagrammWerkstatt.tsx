@@ -21,34 +21,32 @@ import { DIAGRAMM_IMPORT, FARBEN, FORMEN, RICHTUNGEN, THEMEN, VORLAGEN } from "@
 import { CodeFeld } from "./CodeFeld";
 import { Spickzettel } from "./Spickzettel";
 import { KiPrompt } from "./KiPrompt";
-import { useNeigung } from "@/lib/diagramm/neigung";
 
 const SPEICHER = "hp_diagramme";
 
 /**
- * 3D-Ansicht: Hintergrund (Farbschlieren), Schatten und Diagrammkarte liegen in
- * verschiedenen Tiefen; useNeigung kippt die Bühne per --nx/--ny, dadurch
- * verschieben sich die Ebenen gegeneinander. Knoten heben sich beim Überfahren.
+ * Moderne Ansicht, nur fürs Anzeigen (Export bleibt D2-Original): Diagramm als
+ * Karte, Formen mit runden Ecken, weichem Schatten und zarterem Rand, Linien mit
+ * runden Enden; Knoten heben sich beim Überfahren federnd an.
  */
-const TIEFE_CSS = `
-.d2-buehne[data-tiefe]{perspective:1100px;padding:28px;
+const MODERN_CSS = `
+.d2-buehne[data-modern]{padding:24px;
   background:
-    radial-gradient(40% 55% at calc(28% - var(--nx,0)*5%) calc(30% - var(--ny,0)*5%), color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%),
-    radial-gradient(45% 55% at calc(76% - var(--nx,0)*8%) calc(72% - var(--ny,0)*8%), color-mix(in srgb, #8b5cf6 16%, transparent), transparent 70%),
+    radial-gradient(45% 60% at 25% 25%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 70%),
+    radial-gradient(45% 60% at 80% 80%, color-mix(in srgb, #8b5cf6 12%, transparent), transparent 70%),
     var(--surface-hover);}
-.d2-buehne[data-tiefe] .d2-ebenen{transform-style:preserve-3d;
-  transform:rotateX(calc(var(--ny,0) * -5deg)) rotateY(calc(var(--nx,0) * 7deg));}
-.d2-buehne[data-tiefe] .d2-schatten{position:absolute;inset:6% 4%;border-radius:18px;pointer-events:none;
-  background:rgb(15 23 42 / .38);filter:blur(24px);
-  transform:translate3d(calc(var(--nx,0) * -16px), calc(var(--ny,0) * -12px + 20px), -70px);}
-.d2-buehne[data-tiefe] .d2-karte{position:relative;transform:translateZ(0);border-radius:14px;overflow:hidden;
-  box-shadow:0 0 0 1px rgb(255 255 255 / .35) inset, 0 2px 8px rgb(0 0 0 / .10);}
-.d2-buehne[data-tiefe] .d2-karte::after{content:"";position:absolute;inset:0;pointer-events:none;
-  background:linear-gradient(115deg, transparent 38%, rgb(255 255 255 / .16) 50%, transparent 62%);
-  background-size:260% 100%;background-position:calc(50% + var(--nx,0) * 40%) 0;}
-.d2-buehne[data-tiefe] .d2-karte g[class]:has(> g.shape){transform-box:fill-box;transform-origin:center;
-  transition:transform .5s cubic-bezier(.34,1.56,.64,1);}
-.d2-buehne[data-tiefe] .d2-karte g[class]:has(> g.shape):hover{transform:translateY(-3px) scale(1.035);}
+.d2-buehne[data-modern] .d2-karte{border-radius:16px;overflow:hidden;
+  box-shadow:0 1px 2px rgb(15 23 42 / .06), 0 12px 32px -8px rgb(15 23 42 / .22);}
+.d2-buehne[data-modern] g.shape > rect{rx:10px;ry:10px;}
+.d2-buehne[data-modern] g.shape > *{stroke-opacity:.35;}
+.d2-buehne[data-modern] g.shape{filter:drop-shadow(0 1px 1.5px rgb(15 23 42 / .10)) drop-shadow(0 4px 10px rgb(15 23 42 / .08));
+  transition:filter .3s;}
+.d2-buehne[data-modern] path.connection{stroke-linecap:round;stroke-linejoin:round;}
+.d2-buehne[data-modern] g[class]:has(> g.shape){transform-box:fill-box;transform-origin:center;
+  transition:transform .45s cubic-bezier(.34,1.56,.64,1);}
+.d2-buehne[data-modern] g[class]:has(> g.shape):hover{transform:translateY(-3px) scale(1.04);}
+.d2-buehne[data-modern] g[class]:has(> g.shape):hover > g.shape{
+  filter:drop-shadow(0 2px 3px rgb(15 23 42 / .12)) drop-shadow(0 10px 20px rgb(15 23 42 / .16));}
 `;
 
 interface Blatt { id: string; name: string; code: string; geaendert: number }
@@ -120,7 +118,7 @@ export default function DiagrammWerkstatt({ action }: { action?: ReactNode }) {
   /** Von Hand gewählter Zoom; null = passt sich jedem neuen Bild an. */
   const [handZoom, setZoom] = useState<number | null>(null);
   const [passend, setPassend] = useState(1);
-  const [tiefe, setTiefe] = useState(true);
+  const [modern, setModern] = useState(true);
   const [verlauf, setVerlauf] = useState<{ zurueck: string[]; vor: string[] }>({ zurueck: [], vor: [] });
   const letzteAenderung = useRef(0);
   const labelFeld = useRef<HTMLInputElement>(null);
@@ -190,10 +188,9 @@ export default function DiagrammWerkstatt({ action }: { action?: ReactNode }) {
   const breite = ergebnis ? viewBoxBreite(ergebnis.svg) : 800;
   useEffect(() => {
     const w = flaeche.current?.clientWidth ?? 800;
-    setPassend(Math.min(1, (w - (tiefe ? 72 : 16)) / breite));
-  }, [breite, ergebnis, tiefe]);
+    setPassend(Math.min(1, (w - (modern ? 64 : 16)) / breite));
+  }, [breite, ergebnis, modern]);
   const zoom = handZoom ?? passend;
-  useNeigung(flaeche, tiefe);
 
   /* ---------------------------------------------------------- Bearbeiten */
 
@@ -251,7 +248,7 @@ export default function DiagrammWerkstatt({ action }: { action?: ReactNode }) {
     if (schwebe?.id === t.id) return;
     const g = (e.target as Element).closest("g[class]")!;
     const pfad = [...g.querySelectorAll("path")].find(p => p.getTotalLength() > 0);
-    // In Diagramm-Koordinaten statt Bildschirm: getScreenCTM verrutscht, wenn die 3D-Ansicht kippt.
+    // In Diagramm-Koordinaten: der Knopf sitzt in derselben Ebene wie das Bild, Scrollen egal.
     const matrix = pfad?.getCTM();
     if (!pfad || !matrix) return;
     const mitte = pfad.getPointAtLength(pfad.getTotalLength() / 2);
@@ -578,7 +575,7 @@ export default function DiagrammWerkstatt({ action }: { action?: ReactNode }) {
             <span className="tabular-nums w-12 text-center">{Math.round(zoom * 100)} %</span>
             <button className="btn-secondary text-sm" onClick={() => setZoom(Math.min(4, zoom * 1.25))} aria-label="Vergrößern">＋</button>
             <button className="btn-secondary text-sm" onClick={() => setZoom(null)}>Einpassen</button>
-            <button className={chip(tiefe)} onClick={() => setTiefe(!tiefe)} title="Leicht räumliche Ansicht, folgt der Maus">🌊 3D</button>
+            <button className={chip(modern)} onClick={() => setModern(!modern)} title="Moderne Ansicht (nur Anzeige, der Export bleibt im D2-Stil)">✨ Modern</button>
             <span className="flex-1" />
             {laedt && <span className="text-muted">D2 wird geladen …</span>}
           </div>
@@ -606,12 +603,11 @@ export default function DiagrammWerkstatt({ action }: { action?: ReactNode }) {
               </ul>
             </div>
           )}
-          <style>{TIEFE_CSS + hervorheben}</style>
-          <div ref={flaeche} data-tiefe={tiefe || undefined}
+          <style>{MODERN_CSS + hervorheben}</style>
+          <div ref={flaeche} data-modern={modern || undefined}
             className="d2-buehne relative overflow-auto max-h-[75vh] min-h-[300px] rounded-lg">
             {ergebnis && (
-              <div className="d2-ebenen relative" style={{ width: `${breite * zoom}px` }}>
-                {tiefe && <div className="d2-schatten" aria-hidden />}
+              <div className="relative" style={{ width: `${breite * zoom}px` }}>
                 <div ref={svgBox} data-d2-flaeche onClick={klick} onDoubleClick={doppelklick}
                   onMouseOver={ueber} onMouseOut={schwebeLoslassen}
                   className={`d2-karte [&_svg]:block [&_svg]:w-full [&_svg]:h-auto [&_g]:cursor-pointer ${verbinden ? "cursor-crosshair" : ""}`}
@@ -620,7 +616,7 @@ export default function DiagrammWerkstatt({ action }: { action?: ReactNode }) {
                   <button onClick={() => kanteWeg(schwebe.id)} onMouseEnter={schwebeHalten} onMouseLeave={schwebeLoslassen}
                     title="Verbindung löschen" aria-label="Verbindung löschen"
                     className="absolute z-10 h-8 w-8 rounded-full bg-surface border border-line shadow-md text-sm hover:border-bad hover:bg-bad hover:text-white"
-                    style={{ left: schwebe.x, top: schwebe.y, transform: "translate3d(-50%, -50%, 12px)" }}>🗑</button>
+                    style={{ left: schwebe.x, top: schwebe.y, transform: "translate(-50%, -50%)" }}>🗑</button>
                 )}
               </div>
             )}

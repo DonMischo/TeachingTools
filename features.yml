@@ -487,7 +487,7 @@ simulationen:
     kann:
       - Ablaufdiagramme und Mindmaps in D2 (d2lang, MPL-2.0), gesetzt im Browser per WebAssembly
       - Pfeile per 🗑 beim Darüberfahren löschen; breite unsichtbare Trefferfläche um jede Verbindung
-      - 3D-Ansicht (abschaltbar) - Diagramm als schwebende Karte, kippt der Maus ein paar Grad entgegen und federt nach; Schatten und Farbschlieren in eigener Tiefe, Knoten heben sich beim Darüberfahren
+      - Moderne Ansicht (abschaltbar, nur Anzeige) - Diagramm als Karte, Formen mit runden Ecken, weichem Schatten und zartem Rand; Knoten heben sich beim Darüberfahren federnd an
       - Bausteine-Modus - Knoten hinzufügen (Schritt, Start/Ende, Entscheidung, Ein-/Ausgabe), am gewählten Knoten weiterbauen, per Klick verbinden, Text, Form, Füll-/Rahmen-/Schriftfarbe, gestrichelt, fett, Pfeilart und Beschriftung
       - Code-Modus als Codeblock mit Syntaxfarben, Zeilennummern, Kopieren-Knopf, Fehlern mit Zeilenangabe und bebildertem Spickzettel für Schüler·innen; Bausteine und Code bearbeiten denselben Text, unbekannte D2-Teile bleiben unverändert
       - 20 Farbthemen, Richtung, Anordnung (dagre oder ELK), Handzeichnungs-Stil - im Code unter vars.d2-config
