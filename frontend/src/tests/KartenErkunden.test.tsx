@@ -11,7 +11,7 @@ const KATALOG: Katalog = {
   ebenen: [
     { id: "de-laender", name: "Bundesländer", gruppe: "politisch", bereich: "de", geometrie: "flaeche", quiz: true, bytes: 1, quelle: { name: "BKG", lizenz: "dl-de/by-2.0", url: "" } },
     { id: "de-staedte", name: "Städte", gruppe: "politisch", bereich: "de", geometrie: "punkt", quiz: true, bytes: 1, quelle: { name: "BKG", lizenz: "dl-de/by-2.0", url: "" } },
-    { id: "de-dichte", name: "Bevölkerungsdichte", gruppe: "bevoelkerung", bereich: "de", geometrie: "flaeche", bytes: 1, quelle: { name: "BKG", lizenz: "dl-de/by-2.0", url: "" },
+    { id: "de-dichte", name: "Bevölkerungsdichte", gruppe: "bevoelkerung", bereich: "de", geometrie: "flaeche", quiz: false, bytes: 1, quelle: { name: "BKG", lizenz: "dl-de/by-2.0", url: "" },
       darstellung: { feld: "dichte", art: "kategorie", werte: [{ wert: "dicht", text: "sehr dicht", farbe: "#c00" }] } },
   ],
 };
