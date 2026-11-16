@@ -116,6 +116,12 @@ export interface Kliff {
   typ: KliffTyp;
   dx: number; nx: number; nz: number; z0: number;
   mat: Uint8Array; herk: Uint8Array; schaden: Float32Array; gestoert: Uint8Array;
+  /** Loses Material: Falltempo nach unten und Rutschtempo zur Seite (m/s, mit Vorzeichen) */
+  vz: Float32Array; vx: Float32Array;
+  /** Durchgang, in dem eine Zelle zuletzt bewegt wurde — keine zweimal je Durchgang */
+  takt: Uint16Array; durchgang: number;
+  /** Wasserstand des letzten Zeitschritts (m) — im Wasser sinkt Schutt langsam */
+  wasser: number;
   /** Bewuchs je Spalte: 0 kahl, 1 Gras, 2 Strandhafer, 3 Wald */
   bewuchs: Uint8Array;
   hub: number; stauMax: number; wellenFaktor: number;
@@ -168,6 +174,7 @@ function neu(typ: KliffTyp, dx: number, breite: number, z0: number, hoehe: numbe
   return {
     typ, dx, nx, nz, z0,
     mat: new Uint8Array(n), herk: new Uint8Array(n), schaden: new Float32Array(n), gestoert: new Uint8Array(n),
+    vz: new Float32Array(n), vx: new Float32Array(n), takt: new Uint16Array(n), durchgang: 0, wasser: 0,
     bewuchs: new Uint8Array(nx),
     hub: 0.1, stauMax: 1.6, wellenFaktor: 0.75,
     stunde: 0, flut: null, seed: 20260928,
@@ -589,7 +596,7 @@ function abtragen(k: Kliff, i: number, zuSchutt: boolean) {
   if (m === MAT.LUFT || m === MAT.DECKWERK) return;
   if (m === MAT.BLOCK) {
     // von der Brandung fortgerollt
-    k.mat[i] = MAT.LUFT; k.herk[i] = 0; k.schaden[i] = 0;
+    k.mat[i] = MAT.LUFT; k.herk[i] = 0; k.schaden[i] = 0; k.vz[i] = 0; k.vx[i] = 0;
     aendern(k, i);
     return;
   }
@@ -608,7 +615,7 @@ function abtragen(k: Kliff, i: number, zuSchutt: boolean) {
     k.mat[i] = MAT.BLOCK; k.herk[i] = herk;
     k.bilanz.weggespuelt += k.dx * k.dx * 0.8;
   } else {
-    k.mat[i] = MAT.LUFT;
+    k.mat[i] = MAT.LUFT; k.vz[i] = 0; k.vx[i] = 0;
     k.bilanz.weggespuelt += k.dx * k.dx;
   }
   aendern(k, i);
@@ -832,7 +839,7 @@ function wetterWirkt(k: Kliff, w: Wetter, W: number, dt: number) {
       const rz = g.top[ziel] + 1;
       if (rz >= k.nz) continue;
       k.mat[i] = MAT.LUFT;
-      k.mat[rz * k.nx + ziel] = MAT.SCHUTT; k.herk[rz * k.nx + ziel] = MAT.SAND;
+      k.mat[rz * k.nx + ziel] = MAT.SCHUTT; k.herk[rz * k.nx + ziel] = MAT.SAND; k.vz[rz * k.nx + ziel] = 0; k.vx[rz * k.nx + ziel] = 0;
       aendern(k, i); aendern(k, rz * k.nx + ziel);
     }
   }
@@ -849,46 +856,130 @@ function ruhe(k: Kliff, i: number) {
 
 function verschieben(k: Kliff, von: number, nach: number) {
   k.mat[nach] = k.mat[von]; k.herk[nach] = k.herk[von]; k.schaden[nach] = 0; k.gestoert[nach] = k.gestoert[von];
-  k.mat[von] = MAT.LUFT; k.herk[von] = 0; k.schaden[von] = 0; k.gestoert[von] = 0;
+  k.vz[nach] = k.vz[von]; k.vx[nach] = k.vx[von];
+  k.mat[von] = MAT.LUFT; k.herk[von] = 0; k.schaden[von] = 0; k.gestoert[von] = 0; k.vz[von] = 0; k.vx[von] = 0;
 }
 
-/** Ein Durchgang Schwerkraft für lose Zellen; liefert die Zahl der Bewegungen */
-export function rieseln(k: Kliff): number {
+/** Höchsttempo fallenden Schutts in Luft und im Wasser (m/s) */
+const V_LUFT = 30, V_WASSER = 1.5;
+/** Unter diesem Rutschtempo (m/s) rieselt Schutt nur noch nach dem Schüttwinkel */
+const V_RUHE = 0.3;
+
+/** Zufällig gerundete Zahl von Zellen für einen Weg in Metern */
+function zellenFuer(k: Kliff, weg: number) {
+  const f = weg / k.dx;
+  return Math.floor(f) + (zufall(k) < f - Math.floor(f) ? 1 : 0);
+}
+
+/**
+ * Aufprall nach einem Fall: ein Teil des Tempos wird zum Rutschen hangabwärts
+ * (im Wasser bremst es stark). So läuft ein Schuttkegel weiter aus, je höher
+ * der Schutt herabfällt.
+ */
+function aufprall(k: Kliff, i: number, nass: boolean) {
+  const v = k.vz[i];
+  k.vz[i] = 0;
+  if (v < 2) return;
   const { nx, mat } = k;
+  const c = i % nx;
+  const frei = (d: number) => {
+    const cc = c + d;
+    if (cc < 0 || cc >= nx || mat[i + d] !== MAT.LUFT) return 0;
+    return mat[i + d - nx] === MAT.LUFT ? 2 : 1;
+  };
+  const l = frei(-1), r = frei(1);
+  if (!l && !r) return;
+  const d = l > r ? -1 : r > l ? 1 : zufall(k) < 0.5 ? -1 : 1;
+  k.vx[i] = d * v * (nass ? 0.1 : 0.35);
+}
+
+/**
+ * Ein Durchgang Schwerkraft für lose Zellen (Zeitschritt dt in s), von unten
+ * nach oben wie bei einem Fallsand-Spiel, die Laufrichtung wechselt je Zeile:
+ *   fallen   mit Erdbeschleunigung, im Wasser nur langsam sinken;
+ *   rutschen mit dem Schwung des Aufpralls, bis die Reibung ihn aufzehrt;
+ *   rieseln  zur Seite, solange der Hang steiler als der Schüttwinkel ist.
+ * Liefert die Zahl der Zellen, die sich bewegt haben oder noch Tempo haben.
+ */
+export function rieseln(k: Kliff, dt = 1 / 20): number {
+  const { nx, mat, vz, vx, takt } = k;
   const a = k.aktiv;
   if (a.c0 > a.c1) return 0;
+  const durch = k.durchgang = (k.durchgang % 65535) + 1;
+  const rW = zeileVon(k, k.wasser);
   let n = 0;
   let c0 = nx, c1 = -1, r0 = k.nz, r1 = -1;
-  const rechts = zufall(k) < 0.5;
+  const merke = (i: number) => {
+    const c = i % nx, r = (i - c) / nx;
+    if (c < c0) c0 = c; if (c > c1) c1 = c;
+    if (r < r0) r0 = r; if (r > r1) r1 = r;
+  };
   for (let r = a.r0; r <= a.r1; r++) {
+    const rechts = ((r + durch) & 1) === 1;
     for (let j = a.c0; j <= a.c1; j++) {
       const c = rechts ? a.c1 - (j - a.c0) : j;
-      const i = r * nx + c;
+      let i = r * nx + c;
       const m = mat[i];
-      if (m !== MAT.SCHUTT && m !== MAT.BLOCK) continue;
-      let ziel = -1;
-      const u = i - nx;
-      if (mat[u] === MAT.LUFT) ziel = u;
-      else {
-        const weite = 1 / Math.tan((ruhe(k, i) * Math.PI) / 180);
-        let kmax = Math.floor(weite);
-        if (zufall(k) < weite - kmax) kmax++;
-        if (kmax < 1) continue;
-        const d0 = zufall(k) < 0.5 ? -1 : 1;
-        for (const d of [d0, -d0]) {
-          for (let s = 1; s <= kmax; s++) {
-            const cc = c + d * s;
-            if (cc < 0 || cc >= nx || mat[r * nx + cc] !== MAT.LUFT) break;
-            if (mat[(r - 1) * nx + cc] === MAT.LUFT) { ziel = (r - 1) * nx + cc; break; }
-          }
-          if (ziel >= 0) break;
+      if ((m !== MAT.SCHUTT && m !== MAT.BLOCK) || takt[i] === durch) continue;
+      const von = i;
+      // Fallen
+      if (mat[i - nx] === MAT.LUFT) {
+        let v = Math.min(r <= rW ? V_WASSER : V_LUFT, vz[i] + 9.81 * dt);
+        let rr = r;
+        for (let s = zellenFuer(k, v * dt); s > 0 && rr > 0 && mat[i - nx] === MAT.LUFT; s--) {
+          i -= nx; rr--;
+          if (rr <= rW) v = Math.min(v, V_WASSER);
         }
+        if (i !== von) verschieben(k, von, i);
+        vz[i] = v;
+        takt[i] = durch;
+        merke(von); merke(i);
+        n++;
+        if (rr === 0 || mat[i - nx] !== MAT.LUFT) aufprall(k, i, rr <= rW);
+        continue;
+      }
+      if (vz[i] > 0) aufprall(k, i, r <= rW);
+      // Rutschen mit Schwung
+      if (Math.abs(vx[i]) > V_RUHE) {
+        const d = vx[i] > 0 ? 1 : -1;
+        let v = Math.abs(vx[i]), cc = c, rr = r;
+        for (let s = zellenFuer(k, v * dt); s > 0; s--) {
+          const nc = cc + d;
+          if (nc < 0 || nc >= nx || mat[rr * nx + nc] !== MAT.LUFT) { v = 0; break; }
+          cc = nc;
+          if (rr > 0 && mat[(rr - 1) * nx + nc] === MAT.LUFT) rr--;
+        }
+        // Reibung nach dem Schüttwinkel; im Wasser bremst es viel stärker
+        v = Math.max(0, v - 9.81 * Math.tan((ruhe(k, i) * Math.PI) / 180) * dt * (rr <= rW ? 4 : 1));
+        const ziel = rr * nx + cc;
+        if (ziel !== i) verschieben(k, i, ziel);
+        vx[ziel] = v > V_RUHE ? d * v : 0;
+        takt[ziel] = durch;
+        merke(von); merke(ziel);
+        n++;
+        continue;
+      }
+      vx[i] = 0;
+      // Rieseln bis zum Schüttwinkel
+      let ziel = -1;
+      const weite = 1 / Math.tan((ruhe(k, i) * Math.PI) / 180);
+      let kmax = Math.floor(weite);
+      if (zufall(k) < weite - kmax) kmax++;
+      if (kmax < 1) continue;
+      const d0 = zufall(k) < 0.5 ? -1 : 1;
+      for (const d of [d0, -d0]) {
+        for (let s = 1; s <= kmax; s++) {
+          const cc = c + d * s;
+          if (cc < 0 || cc >= nx || mat[r * nx + cc] !== MAT.LUFT) break;
+          if (mat[(r - 1) * nx + cc] === MAT.LUFT) { ziel = (r - 1) * nx + cc; break; }
+        }
+        if (ziel >= 0) break;
       }
       if (ziel < 0) continue;
       verschieben(k, i, ziel);
+      takt[ziel] = durch;
+      merke(i); merke(ziel);
       n++;
-      const cz = ziel % nx;
-      c0 = Math.min(c0, c, cz); c1 = Math.max(c1, c, cz); r0 = Math.min(r0, r - 1); r1 = Math.max(r1, r);
     }
   }
   if (n > 0) {
@@ -1003,6 +1094,9 @@ function aufschlagen(k: Kliff, b: Bewegung) {
     const herk = b.mMat[p.j] === MAT.SCHUTT ? b.mHerk[p.j] : b.mMat[p.j];
     k.mat[i] = b.mMat[p.j] === MAT.BLOCK || zufall(k) < MATERIAL[herk].block ? MAT.BLOCK : MAT.SCHUTT;
     k.herk[i] = herk;
+    // Der Aufprall schleudert den Schutt seewärts: er läuft als Schuttstrom aus
+    k.vz[i] = 0;
+    k.vx[i] = -(0.2 + 0.2 * zufall(k)) * Math.abs(b.vz);
   }
   aendern(k);
 }
@@ -1132,7 +1226,7 @@ function ablegen(k: Kliff, b: Bewegung) {
     let r = Math.max(0, zeileVon(k, z));
     while (r < k.nz - 1 && k.mat[r * k.nx + c] !== MAT.LUFT) r++;
     const i = r * k.nx + c;
-    k.mat[i] = MAT.SCHUTT; k.herk[i] = b.mMat[j] === MAT.SCHUTT ? b.mHerk[j] : b.mMat[j];
+    k.mat[i] = MAT.SCHUTT; k.herk[i] = b.mMat[j] === MAT.SCHUTT ? b.mHerk[j] : b.mMat[j]; k.vz[i] = 0; k.vx[i] = 0;
   }
   aendern(k);
   geometrie(k);
@@ -1227,7 +1321,7 @@ export function animieren(k: Kliff, dt: number, durchgaenge = 2): boolean {
   baeumeBewegen(k, dt);
   if (k.unruhig) {
     let n = 0;
-    for (let d = 0; d < durchgaenge; d++) n += rieseln(k);
+    for (let d = 0; d < durchgaenge; d++) n += rieseln(k, dt / 2);
     if (n === 0) k.unruhig = false;
   }
   return k.bewegungen.length > 0;
@@ -1662,11 +1756,12 @@ export function kSturmflut(k: Kliff, staerke = 1) {
 export function kSchritt(k: Kliff, w: Wetter, dt = 1) {
   if (k.bewegungen.length) return;
   const W = kWasser(k, w);
+  k.wasser = W;
   const H0 = kWelle(k, w);
   const wl = kWellen(k, W, H0);
   brandung(k, W, H0, wl, dt);
   wetterWirkt(k, w, W, dt);
-  if (k.unruhig) for (let d = 0; d < 3 && k.unruhig; d++) if (rieseln(k) === 0) k.unruhig = false;
+  if (k.unruhig) for (let d = 0; d < 3 && k.unruhig; d++) if (rieseln(k, 0.25) === 0) k.unruhig = false;
   k.seitVerbindung += dt;
   if (k.pruefen && k.seitVerbindung >= 24) { k.seitVerbindung = 0; verbindungPruefen(k); }
   if (!k.bewegungen.length) sturzPruefen(k, W);

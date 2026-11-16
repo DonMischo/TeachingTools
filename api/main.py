@@ -113,6 +113,8 @@ app.include_router(klikk_router.router)
 app.include_router(klikk_router.router_spiele)
 from .routers import verkehr as verkehr_router
 app.include_router(verkehr_router.router)
+from .routers import sonnensystem as sonnensystem_router
+app.include_router(sonnensystem_router.router)
 from .routers import leben as leben_router
 app.include_router(leben_router.router)
 from .routers import algo as algo_router

@@ -31,57 +31,61 @@ const baue = (a = antwort()) => {
 };
 
 async function sammle(u: ReturnType<typeof userEvent.setup>) {
+  await u.click(screen.getByRole("button", { name: "🔦 Zum Tatort" }));
   await u.click(screen.getByRole("button", { name: "Alles einsammeln" }));
-  await u.click(screen.getByRole("button", { name: "Zum Verhör" }));
+  await u.click(screen.getByRole("button", { name: "Zur Ermittlungswand" }));
 }
+const vorlegen = async (u: ReturnType<typeof userEvent.setup>) => {
+  await u.click(screen.getByRole("button", { name: /Offene Aufgabe/ }));
+  await u.click(screen.getByRole("button", { name: "Spur anheften: Zweiseitiger Hebel" }));
+  await u.click(screen.getByRole("button", { name: "Beweis vorlegen" }));
+};
 
 describe("Detektiv", () => {
-  it("sammelt, legt Beweise auf die Aussage und wertet", async () => {
+  it("beginnt mit der Fallakte: Fallname aus der Etappe, Beteiligte mit Foto", () => {
+    baue();
+    const akte = screen.getByRole("group", { name: "Fallakte" });
+    expect(akte.textContent).toContain("Fall: »Der Hebel«");
+    expect(akte.textContent).toMatch(/2 Spuren/);
+    expect(screen.getByRole("group", { name: "Beteiligte" }).querySelectorAll("figure")).toHaveLength(2);
+  });
+
+  it("Tatort ist dunkel: die Taschenlampe leuchtet, die Minikarte verrät keine Spuren", async () => {
+    const { u, ui } = baue();
+    await u.click(screen.getByRole("button", { name: "🔦 Zum Tatort" }));
+    expect(ui.container.querySelector("[data-licht]")).toBeTruthy();
+    expect(screen.getAllByRole("button", { name: "Verdächtige Stelle untersuchen" }).length).toBeGreaterThanOrEqual(4); // 2 Spuren + 2 leere Stellen
+  });
+
+  it("heftet Beweise an die Aussage, legt vor und wertet; falsch: der Verdächtige grinst", async () => {
     const { lauf, u } = baue();
     await sammle(u);
-    await u.click(screen.getByRole("button", { name: /Offene Aufgabe/ }));
-    await u.click(screen.getByRole("button", { name: /^Zweiseitiger Hebel$/ }));
-    await u.click(screen.getByRole("button", { name: "Beweis vorlegen" }));
+    await vorlegen(u);
     expect(lauf.antworte).toHaveBeenCalledWith("c1", ["f1"], false);
     expect(await screen.findByText("Daneben")).toBeTruthy();
+    expect(screen.getByText(/Beweisen Sie das erst mal!/)).toBeTruthy();
   });
 
-  it("zeigt komplette Treffer an", async () => {
+  it("widerlegte Aussage: Stempel und rote Fäden zu den Beweisen, dann FALL GELÖST", async () => {
     const { u } = baue(antwort({ treffer: true, komplett: true, schaden: 10 }));
     await sammle(u);
-    await u.click(screen.getByRole("button", { name: /Offene Aufgabe/ }));
-    await u.click(screen.getByRole("button", { name: /^Zweiseitiger Hebel$/ }));
-    await u.click(screen.getByRole("button", { name: "Beweis vorlegen" }));
+    await vorlegen(u);
     await waitFor(() => expect(screen.getByText(/Treffer!/)).toBeTruthy());
+    expect(screen.getAllByText("WIDERLEGT")).toHaveLength(2); // c2 war schon erledigt
+    expect(screen.getByText("FALL GELÖST!")).toBeTruthy();
   });
 
-  it("bietet erledigte Challenges nicht an", async () => {
+  it("erledigte Aussagen lassen sich nicht wählen", async () => {
     const { u } = baue();
     await sammle(u);
-    await u.click(screen.getByRole("button", { name: /Offene Aufgabe/ }));
-    expect(screen.queryByText("Schon erledigt")).toBeNull();
+    expect((screen.getByRole("button", { name: /Schon erledigt/ }) as HTMLButtonElement).disabled).toBe(true);
   });
-
-  it("Fundstelle anklicken: Figur läuft hin, Hinweis landet im Notizbuch", async () => {
-    const { u } = baue();
-    await u.click(screen.getByRole("button", { name: "Fundstelle 1 untersuchen" }));
-    await screen.findByText(/Hinweis gefunden!/, undefined, { timeout: 12000 });
-    expect(screen.getByText(/Hinweise im Notizbuch: 1\/2/)).toBeTruthy();
-  }, 15000);
 
   it("meldet den Spielwert beim Abbau", async () => {
     const { lauf, u, ui } = baue();
+    await u.click(screen.getByRole("button", { name: "🔦 Zum Tatort" }));
     await u.click(screen.getByRole("button", { name: "Alles einsammeln" }));
     ui.unmount();
     expect(lauf.spielwert).toHaveBeenCalledWith("detektiv", 1, 2, 2);
-  });
-
-  it("hängt gelöste Aussagen an die Pinnwand", async () => {
-    const { u } = baue(antwort({ treffer: true, komplett: true, schaden: 10 }));
-    await sammle(u);
-    await u.click(screen.getByRole("button", { name: /Offene Aufgabe/ }));
-    await u.click(screen.getByRole("button", { name: /^Zweiseitiger Hebel$/ }));
-    await u.click(screen.getByRole("button", { name: "Beweis vorlegen" }));
-    expect(await screen.findByRole("group", { name: "Pinnwand" })).toBeTruthy();
   });
 });

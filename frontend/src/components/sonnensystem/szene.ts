@@ -12,6 +12,7 @@
  * Die Ringe hängen an der Achse, nicht an der Kugel — sonst drehten sie mit.
  */
 import * as THREE from "three";
+import { baueFahrzeug } from "./satelliten";
 import type { Koerper } from "@/lib/sonnensystem/daten";
 import { textur as texturNachweis } from "@/lib/sonnensystem/bilder";
 import type { Vec3 } from "@/lib/sonnensystem/bahnen";
@@ -206,7 +207,7 @@ export function baueKoerper(k: Koerper, radius: number, texturen: Texturen, fein
 }
 
 /**
- * Ein Raumfahrzeug: Rumpf, zwei Sonnensegel, dazu ein Glanzpunkt fester
+ * Ein Raumfahrzeug (Modelle in satelliten.ts), dazu ein Glanzpunkt fester
  * Bildschirmgröße, damit man es überhaupt findet.
  *
  * Maßstabsgetreu wäre die ISS ein Hundertstel Pixel groß (siehe
@@ -219,19 +220,8 @@ export function baueSatellit(k: Koerper, radius: number): KoerperObjekt {
   const achse = new THREE.Group();
   gruppe.add(achse);
 
-  const rumpf = new THREE.Mesh(
-    new THREE.BoxGeometry(radius * 1.1, radius * 0.85, radius * 1.7),
-    new THREE.MeshStandardMaterial({ color: new THREE.Color(k.farbe), roughness: 0.5, metalness: 0.45 }),
-  );
-  rumpf.userData.id = k.id;
+  const rumpf = baueFahrzeug(k.id, k.farbe, radius);
   achse.add(rumpf);
-
-  const segelMaterial = new THREE.MeshStandardMaterial({ color: 0x1d2c5c, roughness: 0.35, metalness: 0.7 });
-  for (const seite of [-1, 1]) {
-    const segel = new THREE.Mesh(new THREE.BoxGeometry(radius * 2.4, radius * 0.07, radius * 1.05), segelMaterial);
-    segel.position.x = seite * radius * 1.85;
-    achse.add(segel);
-  }
 
   const glanz = new THREE.Sprite(new THREE.SpriteMaterial({
     map: leuchtTextur("rgba(255,255,255,0.9)", "rgba(180,220,255,0.2)"),

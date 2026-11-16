@@ -1,5 +1,5 @@
 "use client";
-/** Holzsuche: Wald-Labyrinth (Markov-Regeln) von oben; in den Sackgassen liegen Bretter, jedes Brett trägt Fakten. */
+/** Materialsuche: Wald-Labyrinth (Markov-Regeln) von oben; in den Sackgassen liegt Baumaterial (Holz, Stein, Stahl, Seile), jedes Teil trägt Fakten. */
 import { useMemo, useState } from "react";
 import type { ChallengeFakt } from "@/lib/api";
 import type { ThemeDef } from "@/lib/challenge/themes";
@@ -8,6 +8,7 @@ import { useUeberspringen } from "@/lib/challenge/useUeberspringen";
 import Fundkarte from "../../Fundkarte";
 import Erkunden, { type ErkundObjekt } from "../../pixel/Erkunden";
 import { PixelMatrix } from "../../pixel/Matrix";
+import { materialVon, MATERIALIEN } from "@/lib/challenge/brueckeSpiel";
 
 const BRETT = ["..........", "bbbbbbbbbb", "bddbbddbbb", "dddddddddd", ".........."];
 const BRETT_F = { b: "#c28a4a", d: "#8a5a2b" };
@@ -35,13 +36,18 @@ export default function Holz({ fakten, theme, seed, gefunden, setGefunden, weite
     setZeige(faktenVon(i));
   };
   const dinge: ErkundObjekt[] = orte
-    .map((o, i) => ({ id: i, x: o.x, y: o.y, label: "Brett aufheben", render: () => <PixelMatrix bild={BRETT} palette={BRETT_F} scale={2} /> }))
+    .map((o, i) => {
+      const f = faktenVon(i)[0];
+      const m = f ? materialVon(f.id) : "holz";
+      return { id: i, x: o.x, y: o.y, label: `${MATERIALIEN[m].name} aufheben`,
+        render: () => m === "holz" ? <PixelMatrix bild={BRETT} palette={BRETT_F} scale={2} /> : <span className="text-xl" aria-hidden>{MATERIALIEN[m].icon}</span> };
+    })
     .filter((o) => !geholt.includes(o.id));
   const alleEinsammeln = () => { nimm(fakten); setGeholt(orte.map((_, i) => i)); setZeige([]); weiter(); };
 
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-muted">Suche im Wald nach Brettern: Pfeiltasten/WASD, die Knöpfe oder ein Brett anklicken. Gefunden: {gefunden.length}/{fakten.length}</p>
+      <p className="text-muted">Suche im Wald nach Baumaterial: Pfeiltasten/WASD, Enter zum Aufheben, die Knöpfe oder ein Teil anklicken. Gefunden: {gefunden.length}/{fakten.length}</p>
       <Erkunden karte={karte} theme={theme} objekte={dinge} onBetreten={betreten} pausiert={zeige.length > 0} kachel="wald" label="Wald" />
       <div className="flex flex-wrap gap-2">
         {alle && <button className="btn-primary" onClick={weiter}>Zur Schlucht</button>}

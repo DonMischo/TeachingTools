@@ -3,7 +3,9 @@
  * Erkunden von oben: eine Markov-Karte (lib/challenge/markovKarte) als Kachelbühne.
  * Die Figur läuft per Pfeiltasten/WASD, Bildschirmknöpfe oder Klick auf ein Objekt (Weg entlang der Gänge);
  * die Kamera folgt. Die Karte wird einmal in ein Canvas gemalt (nicht je Schritt hunderte Kachelbilder neu),
- * bei reduzierter Bewegung kommt die Figur ohne Zwischenschritte an. Betritt die Figur ein Objekt, meldet `onBetreten(id)`.
+ * bei reduzierter Bewegung kommt die Figur ohne Zwischenschritte an. Betritt die Figur ein Objekt, meldet `onBetreten(id)`;
+ * Enter/E/Leertaste nimmt ein Objekt auf dem Feld oder direkt daneben (zuerst in Blickrichtung), ohne hinzulaufen.
+ * Mit `licht` ist es dunkel bis auf eine Taschenlampe um die Figur: Objekte zeigen sich nur in deren Schein.
  */
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { wenigerBewegung } from "@/lib/challenge/bewegung";
@@ -29,7 +31,11 @@ export type ErkundObjekt = {
   blockiert?: boolean;
   /** mit Label ist das Objekt klickbar (Figur läuft hin) */
   label?: string;
+  /** nur absichtlich: Darüberlaufen löst nichts aus, erst Enter/E daneben oder ein Klick */
+  untersuchen?: boolean;
 };
+const NACHBARN: Record<"links" | "rechts" | "hoch" | "runter", [number, number]> = { links: [-1, 0], rechts: [1, 0], hoch: [0, -1], runter: [0, 1] };
+const AKTION = new Set(["enter", "e", " "]);
 export type KachelArt = "boden" | "hecke" | "wald" | "haus";
 type Blick = "links" | "rechts" | "hoch" | "runter";
 
@@ -53,9 +59,11 @@ const KNOEPFE: { label: string; zeichen: string; r: [number, number] }[] = [
 ];
 const klemme = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
-export default function Erkunden({ karte, theme, objekte, onBetreten, pausiert = false, kachel = "boden", label }: {
+export default function Erkunden({ karte, theme, objekte, onBetreten, pausiert = false, kachel = "boden", label, licht }: {
   karte: ErkundKarte; theme: ThemeDef; objekte: ErkundObjekt[]; onBetreten(id: ErkundObjekt["id"]): void;
   pausiert?: boolean; kachel?: KachelArt; label: string;
+  /** Radius der Taschenlampe in Feldern; ohne: alles hell */
+  licht?: number;
 }) {
   const { R } = karte;
   const [pos, setPos] = useState<Punkt>(karte.start);
@@ -73,13 +81,28 @@ export default function Erkunden({ karte, theme, objekte, onBetreten, pausiert =
     return () => clearTimeout(t);
   }, [geht, pos]);
 
+  // Ziel eines Klicks: dort angekommen, wird auch ein Untersuchen-Objekt ausgelöst
+  const klickZiel = useRef<ErkundObjekt["id"] | null>(null);
   const gehe = (p: Punkt) => {
     const o = objekte.find((x) => x.x === p[0] && x.y === p[1]);
-    if (o) setRoute([]);
+    const gewollt = !!o && klickZiel.current === o.id;
+    if (o && (!o.untersuchen || gewollt)) { setRoute([]); klickZiel.current = null; }
     if (o?.blockiert) { betreten.current(o.id); return; }
     setDir(p[0] !== pos[0] ? (p[0] < pos[0] ? "links" : "rechts") : p[1] < pos[1] ? "hoch" : "runter");
     setPos(p); setGeht(true);
-    if (o) betreten.current(o.id);
+    if (o && (!o.untersuchen || gewollt)) betreten.current(o.id);
+  };
+  /** Objekt auf dem eigenen Feld oder daneben, zuerst in Blickrichtung. */
+  const inReichweite = (): ErkundObjekt | undefined => {
+    const auf = (x: number, y: number) => objekte.find((o) => o.label && o.x === x && o.y === y);
+    const [bx, by] = NACHBARN[dir];
+    return auf(pos[0], pos[1]) ?? auf(pos[0] + bx, pos[1] + by)
+      ?? Object.values(NACHBARN).map(([dx, dy]) => auf(pos[0] + dx, pos[1] + dy)).find(Boolean);
+  };
+  const klick = (o: ErkundObjekt) => {
+    if (Math.abs(o.x - pos[0]) + Math.abs(o.y - pos[1]) <= 1) { setRoute([]); betreten.current(o.id); return; }
+    klickZiel.current = o.id;
+    setRoute(karte.weg(pos, [o.x, o.y]));
   };
   const schritt = (r: [number, number]) => {
     const p: Punkt = [pos[0] + r[0], pos[1] + r[1]];
@@ -113,6 +136,8 @@ export default function Erkunden({ karte, theme, objekte, onBetreten, pausiert =
   // dann sehr schnell) wird ignoriert; die zuletzt gedrückte, noch gehaltene Richtung zählt.
   const schrittRef = useRef(schritt);
   schrittRef.current = schritt;
+  const aktionRef = useRef(() => {});
+  aktionRef.current = () => { const o = inReichweite(); if (o) { setRoute([]); betreten.current(o.id); } };
   const gehalten = useRef<string[]>([]);
   useEffect(() => {
     if (pausiert) { gehalten.current = []; return; }
@@ -125,7 +150,13 @@ export default function Erkunden({ karte, theme, objekte, onBetreten, pausiert =
     };
     const runter = (e: KeyboardEvent) => {
       const k = e.key.toLowerCase();
-      if (!RICHTUNG[k] || e.ctrlKey || e.metaKey || e.altKey || (e.target as HTMLElement)?.closest?.("input,textarea,select")) return;
+      if (e.ctrlKey || e.metaKey || e.altKey || (e.target as HTMLElement)?.closest?.("input,textarea,select")) return;
+      // Aufheben/Untersuchen; auf einem fokussierten Knopf lösen Enter und Leertaste weiter den Knopf aus
+      if (AKTION.has(k)) {
+        if (!e.repeat && (k === "e" || !(e.target as HTMLElement)?.closest?.("button,a"))) { e.preventDefault(); aktionRef.current(); }
+        return;
+      }
+      if (!RICHTUNG[k]) return;
       e.preventDefault();
       if (e.repeat || gehalten.current.includes(k)) return;
       gehalten.current = [...gehalten.current, k];
@@ -190,9 +221,10 @@ export default function Erkunden({ karte, theme, objekte, onBetreten, pausiert =
       if (karte.begehbar([x, y])) ctx.fillRect(x * M, y * M, M, M);
     }
     ctx.fillStyle = "#facc15";
-    for (const o of objekte) ctx.fillRect(o.x * M - 1, o.y * M - 1, M + 2, M + 2);
+    // im Dunkeln verrät die Minikarte keine unentdeckten Stellen
+    for (const o of objekte) if (!licht || !o.label) ctx.fillRect(o.x * M - 1, o.y * M - 1, M + 2, M + 2);
     miniFest.current = fest;
-  }, [R, karte, objekte]);
+  }, [R, karte, objekte, licht]);
   useEffect(() => {
     const ctx = mini.current?.getContext("2d");
     if (!ctx) return;
@@ -209,6 +241,8 @@ export default function Erkunden({ karte, theme, objekte, onBetreten, pausiert =
   const lauf = { frames: bilder, fps: 8 };
   const sh = sp.stehen.h * 2;
   const bewegung = ruhig ? undefined : `${SCHRITT_MS}ms linear`;
+  const imLicht = (o: ErkundObjekt) => !licht || Math.hypot(o.x - pos[0], o.y - pos[1]) <= licht;
+  const nah = pausiert ? undefined : inReichweite();
 
   return (
     <div className="flex flex-col gap-2">
@@ -217,15 +251,22 @@ export default function Erkunden({ karte, theme, objekte, onBetreten, pausiert =
           <div className="absolute left-0 top-0" style={{ width: R * T, height: R * T, transform: `translate(${-cx * T}px, ${-cy * T}px)`, transition: bewegung && `transform ${bewegung}` }}>
             <canvas ref={leinwand} aria-hidden width={R * T} height={R * T} className="absolute left-0 top-0" style={{ imageRendering: "pixelated" }} />
             {objekte.map((o) => {
-              const stil = { left: o.x * T - 6, top: o.y * T - 8, width: T + 12, height: T + 8 };
+              const hell = imLicht(o);
+              const stil = { left: o.x * T - 6, top: o.y * T - 8, width: T + 12, height: T + 8, opacity: hell ? 1 : 0, transition: "opacity .3s", pointerEvents: hell ? undefined : ("none" as const) };
               if (!o.label) return <span key={o.id} className="absolute flex items-center justify-center" style={stil}>{o.render()}</span>;
               return (
-                <button key={o.id} style={stil} aria-label={o.label} onClick={() => setRoute(karte.weg(pos, [o.x, o.y]))}
+                <button key={o.id} style={stil} aria-label={o.label} onClick={() => klick(o)} data-nah={nah?.id === o.id || undefined}
                   className="absolute flex items-center justify-center focus-visible:outline-2 focus-visible:outline-accent">
                   {o.render()}
                 </button>
               );
             })}
+            {licht && (
+              // Taschenlampe: Dunkelheit mit hellem Kreis um die Figur, wandert mit ihr
+              <div className="absolute left-0 top-0 pointer-events-none" aria-hidden data-licht
+                style={{ width: R * T * 2, height: R * T * 2, transform: `translate(${(pos[0] + 0.5) * T - R * T}px, ${(pos[1] + 0.5) * T - R * T}px)`, transition: bewegung && `transform ${bewegung}`,
+                  background: `radial-gradient(circle at center, rgba(255,240,200,0.06) 0, transparent ${licht * T * 0.55}px, rgba(4,4,12,0.9) ${licht * T}px)` }} />
+            )}
             <div className="absolute pointer-events-none" aria-label="Spielfigur" role="img" data-feld={`${pos[0]},${pos[1]}`}
               style={{ left: 0, top: 0, transform: `translate(${pos[0] * T}px, ${pos[1] * T - (sh - T)}px)`, transition: bewegung && `transform ${bewegung}` }}>
               <Sprite src={sp.src} frame={bilder[0]} scale={2} animation={geht ? lauf : undefined} />
@@ -241,6 +282,9 @@ export default function Erkunden({ karte, theme, objekte, onBetreten, pausiert =
         {KNOEPFE.map((k) => (
           <button key={k.label} className="btn-secondary w-10" aria-label={k.label} disabled={pausiert} onClick={() => schritt(k.r)}>{k.zeichen}</button>
         ))}
+        <button className="btn-secondary" disabled={pausiert || !nah} onClick={() => aktionRef.current()} title="Enter, E oder Leertaste">
+          {nah?.untersuchen ? "🔍 Untersuchen" : "✋ Aufheben"} <span className="text-muted text-xs">(Enter)</span>
+        </button>
       </div>
     </div>
   );

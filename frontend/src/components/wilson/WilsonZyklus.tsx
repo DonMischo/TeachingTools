@@ -13,6 +13,7 @@ import {
   PHASEN, ZYKLUS, phaseBei, streifen, zustand, type Phase,
 } from "@/lib/wilson/modell";
 import { spalten, zeichne } from "./zeichnen";
+import { WilsonMantel } from "./mantel";
 import { wahl, type Vorgabe } from "@/lib/vorgabe";
 
 type Reiter = "schnitt" | "quiz" | "wissen";
@@ -70,6 +71,7 @@ interface Schalter { beschriftung: boolean; konvektion: boolean; magnet: boolean
 function Buehne({ t, schalter }: { t: number; schalter: Schalter }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const zustandRef = useRef({ t, schalter });
+  const mantel = useRef<WilsonMantel | null>(null);
   zustandRef.current = { t, schalter };
   useEffect(() => {
     let id = 0;
@@ -79,7 +81,11 @@ function Buehne({ t, schalter }: { t: number; schalter: Schalter }) {
       const c = ref.current;
       if (!c) return;
       const { t, schalter } = zustandRef.current;
-      zeichne(c.getContext("2d")!, c.width, c.height, t, { ...schalter, uhr: (performance.now() - start) / 1000 });
+      if (schalter.konvektion) {
+        mantel.current ??= new WilsonMantel();
+        mantel.current.schritt(t);
+      }
+      zeichne(c.getContext("2d")!, c.width, c.height, t, { ...schalter, uhr: (performance.now() - start) / 1000, mantel: mantel.current ?? undefined });
     };
     id = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(id);

@@ -253,14 +253,15 @@ export function kontinentHoehe(t: number, dicke: number, x: number): number {
 
 /** Wo steht ein Punkt der abtauchenden Platte? s = Weg hinter der Rinne (km). */
 export function plattenBahn(s: number): { dx: number; z: number; winkel: number } {
-  // Erst flach (5°), nach 300 km steil (50°), bei 660 km legt sie sich hin.
+  // Erst flach (5°), nach 300 km steil (50°), auf der 660-km-Grenze legt sie
+  // sich in einem weiten Bogen hin (sie kommt dort nicht ohne Weiteres durch).
   const knick = 300;
   const w0 = (5 * Math.PI) / 180, w1 = (50 * Math.PI) / 180;
   let dx = 0, z = 0, w = w0;
   const schritt = 5;
   for (let a = 0; a < s; a += schritt) {
     const ds = Math.min(schritt, s - a);
-    w = z >= 640 ? Math.max(0, w - 0.02 * ds) : a < knick ? w0 + (w1 - w0) * (a / knick) : w1;
+    w = z >= 600 ? Math.max(0, w - 0.008 * ds) : a < knick ? w0 + (w1 - w0) * (a / knick) : w1;
     dx += Math.cos(w) * ds;
     z += Math.sin(w) * ds;
   }
@@ -274,6 +275,62 @@ export function bogenAbstand(): number {
     if (p.z >= 110) return p.dx;
   }
   return 300;
+}
+
+/** Ein Punkt auf der Oberseite der abtauchenden Platte (km). */
+export interface PlattenPunkt { x: number; z: number; winkel: number; dick: number }
+
+/** Ab hier reißt die Platte nach der Kollision ab (Weg hinter der Rinne, km). */
+export const ABRISS_S = 400;
+
+/**
+ * Die abtauchende Platte als durchgehendes Band, Oberseite alle 10 km.
+ * Ein Teil hängt an der Rinne; nach der Kollision reißt er ab: der obere
+ * Stumpf schrumpft, der untere Teil sinkt in den tieferen Mantel.
+ * Die Platte wird mit der Tiefe dünner (sie wärmt sich auf) und läuft
+ * an den Enden spitz aus.
+ */
+export function abtauchendePlatte(t: number): { haengt: PlattenPunkt[]; sinkt: PlattenPunkt[]; abriss: number } | null {
+  if (t < SUBDUKTION) return null;
+  const abriss = t > KOLLISION + 15 ? (t - KOLLISION - 15) * 4 : 0;
+  if (abriss > 700) return null;
+  const ab = streifen(t).filter(s => s.abgetaucht > 0 && s.abgetaucht < 1500).sort((a, b) => a.abgetaucht - b.abgetaucht);
+  if (!ab.length) return null;
+  const rinne = kanteB(Math.min(t, KOLLISION));
+  const zRinne = ozeanTiefe(ab[0].alter) + 3;
+  const sMax = Math.min(1500, ab[ab.length - 1].abgetaucht + ab[ab.length - 1].breite / 2);
+  // Nach dem Abriss schrumpft der Stumpf binnen 15 Mio. Jahren auf null.
+  const stumpf = abriss > 0 ? Math.min(sMax, ABRISS_S * Math.max(0, 1 - (t - KOLLISION - 15) / 15)) : sMax;
+  let k = 0;
+  const punkt = (s: number, von: number, bis: number, tiefer: number): PlattenPunkt => {
+    while (k < ab.length - 1 && ab[k].abgetaucht < s) k++;
+    const p = plattenBahn(s);
+    const spitze = Math.sqrt(Math.min(1, (bis - s) / 80, von > 0 ? (s - von) / 80 : 1));
+    const dick = lithoDicke(ab[k].alter - s / 40) * (1 - 0.5 * Math.min(1, s / 1200)) * Math.max(0, spitze);
+    return { x: rinne + p.dx, z: zRinne + p.z + tiefer, winkel: p.winkel, dick };
+  };
+  const band = (von: number, bis: number, tiefer: number) => {
+    const aus: PlattenPunkt[] = [];
+    if (bis - von < 10) return aus;
+    k = 0;
+    for (let s = von; s < bis; s += 10) aus.push(punkt(s, von, bis, tiefer));
+    aus.push(punkt(bis, von, bis, tiefer));
+    return aus;
+  };
+  return {
+    haengt: band(0, stumpf, 0),
+    sinkt: abriss > 0 ? band(Math.min(ABRISS_S, sMax), sMax, abriss) : [],
+    abriss,
+  };
+}
+
+/** Tiefe der Plattenoberseite unter x (km), Infinity, wo keine Platte ist. */
+export function plattenOberseite(band: PlattenPunkt[], x: number): number {
+  if (band.length < 2 || x < band[0].x || x > band[band.length - 1].x) return Infinity;
+  let i = 1;
+  while (i < band.length - 1 && band[i].x < x) i++;
+  const a = band[i - 1], b = band[i];
+  return a.z + ((b.z - a.z) * (x - a.x)) / Math.max(1e-6, b.x - a.x);
 }
 
 export interface Zustand {

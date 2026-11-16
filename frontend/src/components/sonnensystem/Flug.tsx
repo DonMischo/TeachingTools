@@ -34,6 +34,8 @@ import {
   type KoerperObjekt,
 } from "./szene";
 import { baueMagnetfeld, baueSturmwolke } from "./magnetfeld";
+import { baueRaumschiff } from "./raumschiff";
+import type { FlugNetz } from "./useFlugLive";
 import { mitEintrag, type Fortschritt } from "./fortschritt";
 import {
   Einblendung, HaltKnopf, HudKnopf, ScanKarte, Steuerungstabelle, Stick, ZielAuswahl, type Eingabe,
@@ -84,13 +86,28 @@ const STURM_FLUG = 12;
 /** Und so lange leuchten die Polarlichter danach noch. */
 const STURM_NACHGLUEHEN = 26;
 
-const nameVon = (id: string) => KOERPER_NACH_ID[id]?.name ?? ORTE_NACH_ID[id]?.name ?? id;
+/**
+ * Mitspieler sind Ziele wie Himmelskörper, mit der Id `spieler:<key>`. Ihre
+ * Namen stehen hier, damit `nameVon` auch in der Flugschleife ohne React
+ * auskommt; es gibt immer nur einen Flug zugleich.
+ */
+const SPIELER = "spieler:";
+const spielerNamen = new Map<string, string>();
+const istSpieler = (id: string) => id.startsWith(SPIELER);
+const nameVon = (id: string) =>
+  istSpieler(id) ? spielerNamen.get(id.slice(SPIELER.length)) ?? "Mitspieler" : KOERPER_NACH_ID[id]?.name ?? ORTE_NACH_ID[id]?.name ?? id;
+/** Fürs Anfliegen zählt ein fremdes Schiff als Kugel dieser Größe (Schiffe sind 1,4 lang). */
+const SCHIFF_RADIUS = 0.7;
+/** Näher als so (Mitte zu Mitte) heißt Zusammenstoß. */
+const STOSS_ABSTAND = 1.2;
+/** Langsamer als so wird nur sanft beiseitegeschoben: alle starten an derselben Stelle. */
+const STOSS_TEMPO = 0.3;
 /** Wie oft die Statistik in den gespeicherten Fortschritt wandert. */
 const STATISTIK_TAKT = 2;
 const UNFALL_DAUER = 2.8;
 
 type Modus = "steht" | "flug" | "puls" | "overdrive" | "autopilot";
-type UnfallArt = "absturz" | "verglueht";
+type UnfallArt = "absturz" | "verglueht" | "zusammenstoss";
 
 interface Hud {
   modus: Modus;
@@ -127,11 +144,11 @@ interface Befehle {
 interface Zuwachs {
   flugzeit: number; strecke: number; vollgas: number; orbitzeit: number; hoechstC: number;
   overdrives: number; umrundungen: number; umrundet: string[];
-  verglueht: number; abstuerze: number; abgestuerztAuf: string[];
+  verglueht: number; abstuerze: number; abgestuerztAuf: string[]; zusammenstoesse: number;
 }
 const leererZuwachs = (): Zuwachs => ({
   flugzeit: 0, strecke: 0, vollgas: 0, orbitzeit: 0, hoechstC: 0, overdrives: 0,
-  umrundungen: 0, umrundet: [], verglueht: 0, abstuerze: 0, abgestuerztAuf: [],
+  umrundungen: 0, umrundet: [], verglueht: 0, abstuerze: 0, abgestuerztAuf: [], zusammenstoesse: 0,
 });
 
 /** Die anderen Ansichten, erreichbar aus dem Menü. */
@@ -150,7 +167,7 @@ export const flugzeitText = (s: number) => {
 };
 
 export default function Flug({
-  onSteckbrief, fortschritt, aendere, zuruecksetzen, onVerlassen, onVollbild, vollbild = false, onKodex, angehalten = false,
+  onSteckbrief, fortschritt, aendere, zuruecksetzen, onVerlassen, onVollbild, vollbild = false, onKodex, angehalten = false, schiffSeed = "TT", netz = null, mitspieler = [],
 }: {
   onSteckbrief: (id: string) => void;
   fortschritt: Fortschritt;
@@ -163,7 +180,18 @@ export default function Flug({
   onKodex?: (bereich: "eintraege" | "erfolge") => void;
   /** Von außen angehalten, etwa während der Kodex offen ist */
   angehalten?: boolean;
+  /** Startwert fürs eigene Schiff (raumschiff.ts): gleicher Seed, gleiches Schiff */
+  schiffSeed?: string;
+  /** Live-Raum: andere Schiffe sehen und anfliegen (useFlugLive) */
+  netz?: FlugNetz | null;
+  /** Namen der anderen im Raum, für die Zielauswahl */
+  mitspieler?: { key: string; name: string }[];
 }) {
+  const netzRef = useRef(netz);
+  netzRef.current = netz;
+  const schiffSeedRef = useRef(schiffSeed);
+  schiffSeedRef.current = schiffSeed;
+  for (const m of mitspieler) spielerNamen.set(m.key, m.name);
   const buehneRef = useRef<HTMLDivElement>(null);
   const markerRef = useRef<Map<string, HTMLButtonElement>>(new Map());
   const randRef = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -254,6 +282,7 @@ export default function Flug({
           verglueht: s.verglueht + z.verglueht,
           abstuerze: s.abstuerze + z.abstuerze,
           abgestuerztAuf: z.abgestuerztAuf.reduce(mitEintrag, s.abgestuerztAuf),
+          zusammenstoesse: s.zusammenstoesse + z.zusammenstoesse,
         },
       };
     });
@@ -407,6 +436,8 @@ export default function Flug({
       drehung: new THREE.Vector3(),
     };
     const blickMatrix = new THREE.Matrix4();
+    // Im Live-Raum starten alle neben der Erde — nicht ineinander.
+    if (netzRef.current) schiff.pos.add(new THREE.Vector3().randomDirection().multiplyScalar(3 + Math.random() * 4));
     schiff.quat.setFromRotationMatrix(blickMatrix.lookAt(schiff.pos, erde, oben));
 
     // ── Weltraumstaub: Striche, die mit dem Tempo länger werden ──
@@ -434,9 +465,55 @@ export default function Flug({
     let sturm: { t: number; angekommen: boolean } | null = null;
 
     // ── Unfall: ein kleines Schiff, das aufschlägt, und eine Explosion ──
-    const wrack = baueSchiffchen();
+    let wrack = baueSchiffchen(schiffSeedRef.current);
     wrack.visible = false;
     szene.add(wrack);
+    // Im Live-Raum kommt der eigene Schlüssel (= Seed) erst nach dem Aufbau.
+    const wrackFuerSeed = () => {
+      if (wrack.userData.seed === schiffSeedRef.current) return;
+      szene.remove(wrack);
+      entsorge(wrack);
+      wrack = baueSchiffchen(schiffSeedRef.current);
+      wrack.visible = false;
+      szene.add(wrack);
+    };
+
+    // ── Mitspieler: ihre Schiffe, gleiten zur gemeldeten Lage ──
+    const fremde = new Map<string, { gruppe: THREE.Group; ziel: THREE.Vector3; quat: THREE.Quaternion }>();
+    function stelleFremde(dt: number) {
+      const da = new Set<string>();
+      for (const s of netzRef.current?.andere() ?? []) {
+        const mitte = ort.get(s.bei) ?? ortStelle.get(s.bei);
+        if (!mitte) continue;
+        da.add(s.key);
+        const ziel = mitte.clone().add(hilf.set(s.p[0], s.p[1], s.p[2]));
+        let f = fremde.get(s.key);
+        if (!f) {
+          const gruppe = baueSchiffchen(s.key);
+          gruppe.add(namensSchild(s.name));
+          gruppe.position.copy(ziel);
+          szene.add(gruppe);
+          f = { gruppe, ziel, quat: new THREE.Quaternion() };
+          fremde.set(s.key, f);
+        }
+        f.ziel.copy(ziel);
+        f.quat.set(s.q[0], s.q[1], s.q[2], s.q[3]).normalize();
+      }
+      for (const [k, f] of fremde) {
+        if (!da.has(k)) {
+          szene.remove(f.gruppe);
+          f.gruppe.traverse(o => { if (o instanceof THREE.Sprite) o.material.map?.dispose(); });
+          entsorge(f.gruppe);
+          fremde.delete(k);
+          if (zielRef.current === SPIELER + k) { schiff.autopilot = false; setzeZielRef.current(null); }
+          continue;
+        }
+        // Weit daneben (Rettungskapsel, Pulsantrieb): hinsetzen statt quer durchs All gleiten.
+        if (f.gruppe.position.distanceTo(f.ziel) > 200) f.gruppe.position.copy(f.ziel);
+        else f.gruppe.position.lerp(f.ziel, 1 - Math.exp(-dt * 8));
+        f.gruppe.quaternion.slerp(f.quat, 1 - Math.exp(-dt * 8));
+      }
+    }
     const TRUEMMER = 220;
     const truemmerOrt = new Float32Array(TRUEMMER * 3);
     const truemmerTempo = new Float32Array(TRUEMMER * 3);
@@ -510,8 +587,9 @@ export default function Flug({
     const randPlaetze: [number, number][] = [];
 
     /** Wo etwas steht — Himmelskörper, Raumfahrzeug oder Lagrangepunkt. */
-    const stelleVon = (id: string) => ort.get(id) ?? ortStelle.get(id)!;
-    const radiusVon = (id: string) => radius.get(id) ?? ORT_RADIUS;
+    const stelleVon = (id: string) =>
+      istSpieler(id) ? fremde.get(id.slice(SPIELER.length))?.gruppe.position ?? schiff.pos : ort.get(id) ?? ortStelle.get(id)!;
+    const radiusVon = (id: string) => (istSpieler(id) ? SCHIFF_RADIUS : radius.get(id) ?? ORT_RADIUS);
     const oberflaeche = (id: string) => schiff.pos.distanceTo(stelleVon(id)) - radiusVon(id);
 
     /** Wirklicher Ort in km (Planeten zum Startdatum, Monde laufen mit). */
@@ -538,10 +616,12 @@ export default function Flug({
     let bisSpeichern = STATISTIK_TAKT;
     const speichere = () => { zuwachsRef.current(zuwachs); zuwachs = leererZuwachs(); bisSpeichern = STATISTIK_TAKT; };
 
-    function starteUnfall(art: UnfallArt, id: string) {
+    /** `id` ist der Körper, über dem die Rettungskapsel startet; beim Zusammenstoß liegt `stoss` beim anderen Schiff. */
+    function starteUnfall(art: UnfallArt, id: string, stoss?: { stelle: THREE.Vector3; name: string }) {
+      wrackFuerSeed();
       const mitte = ort.get(id)!;
       const normale = hilf2.copy(schiff.pos).sub(mitte).normalize();
-      const stelle = mitte.clone().addScaledVector(normale, radius.get(id)!);
+      const stelle = stoss ? stoss.stelle.clone() : mitte.clone().addScaledVector(normale, radius.get(id)!);
       schiffOben.set(0, 1, 0).applyQuaternion(schiff.quat);
       const anflug = stelle.clone().addScaledVector(vorne, -4);
       crash = {
@@ -556,10 +636,11 @@ export default function Flug({
       schiff.v = 0; schiff.schub = 0; schiff.puls = false; schiff.overdrive = 0; schiff.autopilot = false;
       scan = null; scanHuelle.visible = false;
       if (art === "verglueht") zuwachs.verglueht += 1;
+      else if (art === "zusammenstoss") zuwachs.zusammenstoesse += 1;
       else { zuwachs.abstuerze += 1; zuwachs.abgestuerztAuf = mitEintrag(zuwachs.abgestuerztAuf, id); }
       speichere();
       if (document.pointerLockElement === leinwand) document.exitPointerLock();
-      setUnfall({ art, name: KOERPER_NACH_ID[id].name, knall: false });
+      setUnfall({ art, name: stoss?.name ?? KOERPER_NACH_ID[id].name, knall: false });
     }
 
     function laufeUnfall(dt: number) {
@@ -680,8 +761,12 @@ export default function Flug({
             const w = hilf.copy(ortStelle.get(o.id)!).sub(schiff.pos).angleTo(vorne);
             if (w < besterWinkel) { besterWinkel = w; bestes = o.id; }
           }
+          for (const [k, f] of fremde) {
+            const w = hilf.copy(f.gruppe.position).sub(schiff.pos).angleTo(vorne);
+            if (w < besterWinkel) { besterWinkel = w; bestes = SPIELER + k; }
+          }
           if (bestes) setzeZielRef.current(bestes);
-          else meldeRef.current("Kein Himmelskörper im Fadenkreuz — dreh dich zu einem hin.");
+          else meldeRef.current("Nichts im Fadenkreuz — dreh dich zu einem Himmelskörper oder Mitspieler hin.");
         }
         if (b.scan && !scan) {
           const bereit = scanBereit(naechster);
@@ -740,7 +825,7 @@ export default function Flug({
         const entscheidung = autopilot(zielAbstand, halt, naechsterAbstand, schiff.quat.angleTo(sollQuat) < 0.15);
         if (entscheidung.angekommen) {
           schiff.autopilot = false; schiff.puls = false; schiff.overdrive = 0; schiff.schub = 0;
-          meldeRef.current(`Angekommen: ${nameVon(ziel)}. Mit C oder 📡 scannen.`);
+          meldeRef.current(istSpieler(ziel) ? `Bei ${nameVon(ziel)} angekommen.` : `Angekommen: ${nameVon(ziel)}. Mit C oder 📡 scannen.`);
         } else {
           schiff.puls = entscheidung.puls || (schiff.overdrive > 0 && entscheidung.schub === 1);
           if (!schiff.puls) schiff.overdrive = 0;
@@ -785,6 +870,32 @@ export default function Flug({
           // Zu schnell heißt: schneller als das Schleichtempo vor diesem Körper.
           if (aufprall > Math.min(ABSTURZ_TEMPO, schleichTempo(radius.get(id)!) * 0.8)) { starteUnfall("absturz", id); break; }
           schiff.pos.sub(o).setLength(min).add(o);
+        }
+      }
+
+      // ── Mitspieler: eigene Lage melden, ihre Schiffe nachziehen, Zusammenstoß ──
+      stelleFremde(dt);
+      if (!crash) {
+        const mitte = ort.get(naechster)!;
+        netzRef.current?.sendeIch(
+          naechster,
+          [schiff.pos.x - mitte.x, schiff.pos.y - mitte.y, schiff.pos.z - mitte.z],
+          [schiff.quat.x, schiff.quat.y, schiff.quat.z, schiff.quat.w],
+          schiff.v,
+        );
+        for (const [k, f] of fremde) {
+          const d = schiff.pos.distanceTo(f.gruppe.position);
+          if (d >= STOSS_ABSTAND) continue;
+          // Wer selbst kaum fährt, wird nur weggeschoben — den Unfall hat der andere.
+          if (schiff.v < STOSS_TEMPO) {
+            if (d > 1e-6) schiff.pos.sub(f.gruppe.position).setLength(STOSS_ABSTAND).add(f.gruppe.position);
+            else schiff.pos.y += STOSS_ABSTAND;
+            continue;
+          }
+          starteUnfall("zusammenstoss", naechster, {
+            stelle: f.gruppe.position.clone().lerp(schiff.pos, 0.5), name: spielerNamen.get(k) ?? "einem Mitspieler",
+          });
+          break;
         }
       }
 
@@ -977,7 +1088,8 @@ export default function Flug({
       }
       function scanBereit(naechsterId: string): string | null {
         for (const id of [ziel, naechsterId]) {
-          if (!id) continue;
+          // Schiffe von Mitspielern sind Ziele, aber nichts zum Erforschen.
+          if (!id || istSpieler(id)) continue;
           const weite = ORTE_NACH_ID[id] ? ORT_SCANWEITE : radiusVon(id) * 8 + 60;
           if (oberflaeche(id) < weite) return id;
         }
@@ -1021,13 +1133,13 @@ export default function Flug({
 
   const zielLagrange = hud.ziel ? ORTE_NACH_ID[hud.ziel] ?? null : null;
   const zielK = hud.ziel && !zielLagrange ? KOERPER_NACH_ID[hud.ziel] : null;
-  const zielTitel = zielK?.name ?? zielLagrange?.name ?? null;
+  const zielTitel = zielK?.name ?? zielLagrange?.name ?? (hud.ziel && istSpieler(hud.ziel) ? `🚀 ${nameVon(hud.ziel)}` : null);
   const standort = KOERPER_NACH_ID[hud.naechster];
   const echteStrecke = zielK && zielK.id !== standort.id ? echterAbstandRef.current(standort.id, zielK.id) : null;
   const gemessen = hud.zielAbstand >= 0;
   const restzeit = zielTitel && gemessen
     ? schaetzeFlugzeit({
-      abstand: hud.zielAbstand, zielRadius: zielK ? flugRadius(zielK) : ORT_RADIUS, startAbstand: hud.startAbstand,
+      abstand: hud.zielAbstand, zielRadius: zielK ? flugRadius(zielK) : hud.ziel && istSpieler(hud.ziel) ? SCHIFF_RADIUS : ORT_RADIUS, startAbstand: hud.startAbstand,
       tempo: hud.tempo, puls: hud.puls, overdriveRest: hud.overdrive, winkel: hud.winkel,
     })
     : 0;
@@ -1037,7 +1149,7 @@ export default function Flug({
   // Raumfahrzeuge und Lagrangepunkte stehen auf gestauchten Bahnen: eine
   // Umrechnung in Kilometer wäre glatt gelogen (die ISS läge dann Millionen km
   // entfernt). Dort steht nur die Flugzeit, die echte Strecke eine Zeile tiefer.
-  const gestauchtesZiel = zielLagrange !== null || zielK?.art === "satellit";
+  const gestauchtesZiel = zielLagrange !== null || zielK?.art === "satellit" || (hud.ziel !== null && istSpieler(hud.ziel));
   const zielStrecke = km(Math.max(hud.zielAbstand, 0) * (nahbereich ? FLUG_KM_JE_EINHEIT : KM_JE_FLUGEINHEIT));
   const zielZeile = !gemessen ? "wird gemessen …"
     : restzeit <= 0 ? "Ziel erreicht"
@@ -1173,6 +1285,7 @@ export default function Flug({
           ziel={hud.ziel}
           onZiel={id => { setzeZiel(id); setMenue(false); }}
           erforscht={fortschritt.erforscht}
+          mitspieler={mitspieler}
           geloest={fortschritt.erledigt.length}
           erfolge={Object.keys(fortschritt.erfolge).length}
           zeitstufe={zeitstufe}
@@ -1317,10 +1430,12 @@ export default function Flug({
           {unfall.knall && (
             <div className="relative text-center font-mono">
               <div className="text-3xl sm:text-5xl font-black uppercase tracking-[0.2em] text-white drop-shadow-[0_2px_8px_#000]">
-                {unfall.art === "verglueht" ? "Verglüht" : "Aufgeschlagen"}
+                {unfall.art === "verglueht" ? "Verglüht" : unfall.art === "zusammenstoss" ? "Zusammenstoß" : "Aufgeschlagen"}
               </div>
               <div className="mt-2 text-sm text-white/90 drop-shadow-[0_1px_4px_#000]">
-                {unfall.art === "verglueht" ? `Zu nah an der ${unfall.name}. ` : `Zu schnell auf ${unfall.name}. `}Rettungskapsel startet …
+                {unfall.art === "verglueht" ? `Zu nah an der ${unfall.name}. `
+                  : unfall.art === "zusammenstoss" ? `Mit ${unfall.name} zusammengekracht. `
+                    : `Zu schnell auf ${unfall.name}. `}Rettungskapsel startet …
               </div>
             </div>
           )}
@@ -1476,30 +1591,44 @@ function baueTrojaner(farbe: number, mitte: THREE.Vector3): THREE.Points {
 }
 
 /** Ein kleines Raumschiff für die Absturz-Szene: Rumpf, Flügel, Triebwerksglühen. */
-function baueSchiffchen(): THREE.Group {
-  const g = new THREE.Group();
-  const huelle = new THREE.MeshStandardMaterial({ color: 0xc8d0dc, metalness: 0.4, roughness: 0.5, emissive: 0x000000 });
-  const rumpf = new THREE.Mesh(new THREE.ConeGeometry(0.28, 1.4, 12), huelle);
-  rumpf.rotation.x = -Math.PI / 2;
-  g.add(rumpf);
-  const fluegel = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.05, 0.45), huelle);
-  fluegel.position.z = 0.35;
-  g.add(fluegel);
+/** Ein Namensschild über einem fremden Schiff, immer gleich groß auf dem Bildschirm. */
+function namensSchild(name: string): THREE.Sprite {
+  const c = document.createElement("canvas");
+  c.width = 256; c.height = 64;
+  const g = c.getContext("2d")!;
+  g.font = "bold 30px system-ui, sans-serif";
+  g.textAlign = "center"; g.textBaseline = "middle";
+  g.lineWidth = 6; g.strokeStyle = "rgba(0,0,0,0.85)";
+  g.strokeText(name, 128, 32, 248);
+  g.fillStyle = "#9fe8ff";
+  g.fillText(name, 128, 32, 248);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, depthWrite: false, transparent: true, sizeAttenuation: false }));
+  s.scale.set(0.12, 0.03, 1);
+  s.position.y = 0.7;
+  s.renderOrder = 2;
+  return s;
+}
+
+function baueSchiffchen(seed: string): THREE.Group {
+  const g = baueRaumschiff(seed, 1.4);
+  g.userData.seed = seed;
   const glut = new THREE.Sprite(new THREE.SpriteMaterial({
     map: leuchtTextur("rgba(160,230,255,1)", "rgba(60,160,255,0.4)"), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true,
   }));
   glut.scale.setScalar(0.9);
   glut.position.z = 0.8;
   g.add(glut);
-  g.userData.huelle = huelle;
   return g;
 }
 
-function Menue({ onSchliessen, ziel, onZiel, erforscht, geloest, erfolge, zeitstufe, onZeit, magnetfeld, onMagnetfeld, onSturm, onAuftraege, onKodex, onHilfe, onVollbild, vollbild, onVerlassen, onZuruecksetzen }: {
+function Menue({ onSchliessen, ziel, onZiel, erforscht, mitspieler, geloest, erfolge, zeitstufe, onZeit, magnetfeld, onMagnetfeld, onSturm, onAuftraege, onKodex, onHilfe, onVollbild, vollbild, onVerlassen, onZuruecksetzen }: {
   onSchliessen: () => void;
   ziel: string | null;
   onZiel: (id: string | null) => void;
   erforscht: string[];
+  mitspieler: { key: string; name: string }[];
   geloest: number;
   erfolge: number;
   zeitstufe: number;
@@ -1526,7 +1655,7 @@ function Menue({ onSchliessen, ziel, onZiel, erforscht, geloest, erfolge, zeitst
       >
         <div className="px-3 pt-1 pb-2 text-[10px] font-black uppercase tracking-[0.25em] text-cyan-300">Ziel</div>
         <div className="px-2 pb-2">
-          <ZielAuswahl ziel={ziel} onWahl={onZiel} erforscht={erforscht} />
+          <ZielAuswahl ziel={ziel} onWahl={onZiel} erforscht={erforscht} mitspieler={mitspieler} />
         </div>
         <button className={eintrag} onClick={onAuftraege}>
           <span>🛰️ Forschungsaufträge</span><span className="text-xs text-slate-400">{geloest}/{AUFTRAEGE.length}</span>

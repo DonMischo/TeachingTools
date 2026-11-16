@@ -209,6 +209,12 @@ export const REGISTER: WerkzeugQuellen[] = [
     ],
   },
   {
+    slug: "sonnensystem", name: "🪐 Sonnensystem",
+    eintraege: [
+      { quelle: "SpaceshipGenerator", urheber: "Michael Davies", lizenz: "MIT", url: "https://github.com/a1studmuffin/SpaceshipGenerator", verwendung: "Verfahren der Raumschiffe im Flug (Würfel, Rumpfabschnitte, Triebwerke, Gitter, Antennen, Geschütze); Blender-Skript nach TypeScript übertragen in components/sonnensystem/raumschiff.ts, Texturen selbst gezeichnet" },
+    ],
+  },
+  {
     slug: "dla", name: "🪸 Fraktales Wachstum",
     eintraege: [
       { quelle: "dlaf (Diffusion-limited aggregation)", urheber: "Michael Fogleman", lizenz: "MIT", url: "https://github.com/fogleman/dlaf", verwendung: "Vorbild für Parameter (Abstand, Anziehung, Mindestschritt, Haftung) und den Sprung im leeren Raum; neu in TypeScript geschrieben, kein Code übernommen" },

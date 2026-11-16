@@ -76,14 +76,15 @@ describe("Wegwerfen in den Modi", () => {
   it("Detektiv: weggeworfene Beweise werden nicht angeboten, Zurückholen stellt sie wieder her", async () => {
     const u = userEvent.setup(); const lauf = mkLauf();
     render(<Detektiv brett={brett("detektiv") as never} theme={themeVon("wald")} skin="monster" lauf={lauf as never} zurKarte={() => {}} />);
+    await u.click(screen.getByRole("button", { name: "🔦 Zum Tatort" }));
     await u.click(screen.getByRole("button", { name: "Alles einsammeln" }));
-    await u.click(screen.getByRole("button", { name: "Zum Verhör" }));
+    await u.click(screen.getByRole("button", { name: "Zur Ermittlungswand" }));
     await u.click(screen.getByRole("button", { name: /Offene Aufgabe/ }));
     await u.click(screen.getByRole("button", { name: "»Fakt Alpha« wegwerfen" }));
-    expect(screen.queryByRole("button", { name: /^Fakt Alpha$/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Spur anheften: Fakt Alpha" })).toBeNull();
     await u.click(screen.getByText(/Papierkorb \(1\)/));
     await u.click(screen.getByRole("button", { name: "»Fakt Alpha« zurückholen" }));
-    expect(screen.getByRole("button", { name: /^Fakt Alpha$/ })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Spur anheften: Fakt Alpha" })).toBeTruthy();
     nichtGesendet(lauf);
   });
 

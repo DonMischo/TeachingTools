@@ -60,3 +60,40 @@ describe("Erkunden", () => {
     expect(feld()).toBe(`${karte.orte[0].x},${karte.orte[0].y}`);
   }, 15000);
 });
+
+describe("Erkunden: Enter, Untersuchen, Taschenlampe", () => {
+  const karte = markovKarte(3, 4, "labyrinth");
+  const [sx, sy] = karte.start;
+  const RICHT = [["{ArrowRight}", 1, 0], ["{ArrowDown}", 0, 1], ["{ArrowLeft}", -1, 0], ["{ArrowUp}", 0, -1]] as const;
+  const nachbar = RICHT.find(([, dx, dy]) => karte.begehbar([sx + dx, sy + dy]))!;
+  const nx = sx + nachbar[1], ny = sy + nachbar[2];
+  const obj = (extra = {}) => [{ id: "o", x: nx, y: ny, label: "Ding", render: () => <span>x</span>, ...extra }];
+
+  it("Enter hebt ein Objekt direkt daneben auf, ohne hinzulaufen", async () => {
+    const u = userEvent.setup(); const betreten = vi.fn();
+    render(<Erkunden karte={karte} theme={THEMES.klassisch} objekte={obj()} onBetreten={betreten} label="T" kachel="hecke" />);
+    await u.keyboard("{Enter}");
+    expect(betreten).toHaveBeenCalledWith("o");
+    expect(feld()).toBe(`${sx},${sy}`);
+  });
+
+  it("Untersuchen-Objekte: Darüberlaufen löst nichts aus, erst E", async () => {
+    const u = userEvent.setup(); const betreten = vi.fn();
+    render(<Erkunden karte={karte} theme={THEMES.klassisch} objekte={obj({ untersuchen: true })} onBetreten={betreten} label="T" kachel="hecke" />);
+    await u.keyboard(nachbar[0]);
+    expect(feld()).toBe(`${nx},${ny}`);
+    expect(betreten).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: /Untersuchen/ })).toBeTruthy();
+    await u.keyboard("e");
+    expect(betreten).toHaveBeenCalledWith("o");
+  });
+
+  it("Taschenlampe: ferne Objekte bleiben dunkel, nahe zeigen sich", () => {
+    const fern = karte.orte.map((o) => [o.x, o.y]).find(([x, y]) => Math.hypot(x - sx, y - sy) > 4)!;
+    const objekte = [...obj(), { id: "f", x: fern[0], y: fern[1], label: "Fern", render: () => <span>f</span> }];
+    const { container } = render(<Erkunden karte={karte} theme={THEMES.klassisch} objekte={objekte} onBetreten={vi.fn()} label="T" kachel="hecke" licht={3} />);
+    expect(container.querySelector("[data-licht]")).toBeTruthy();
+    expect((screen.getByRole("button", { name: "Ding" }) as HTMLElement).style.opacity).toBe("1");
+    expect((screen.getByRole("button", { name: "Fern" }) as HTMLElement).style.opacity).toBe("0");
+  });
+});

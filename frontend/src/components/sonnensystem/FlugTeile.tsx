@@ -73,8 +73,15 @@ export function Stick({ eingabe }: { eingabe: Eingabe }) {
   );
 }
 
-export function ZielAuswahl({ ziel, onWahl, erforscht }: { ziel: string | null; onWahl: (id: string | null) => void; erforscht: string[] }) {
+export function ZielAuswahl({ ziel, onWahl, erforscht, mitspieler = [] }: {
+  ziel: string | null;
+  onWahl: (id: string | null) => void;
+  erforscht: string[];
+  /** andere Schiffe im Live-Raum; ihre Ziel-Id ist `spieler:<key>` (siehe Flug.tsx) */
+  mitspieler?: { key: string; name: string }[];
+}) {
   const gruppen: { name: string; eintraege: { id: string; name: string }[] }[] = [
+    ...(mitspieler.length ? [{ name: "Mitspieler", eintraege: mitspieler.map(m => ({ id: `spieler:${m.key}`, name: `🚀 ${m.name}` })) }] : []),
     { name: "Sonne und Planeten", eintraege: HAUPTKOERPER },
     ...HAUPTKOERPER.filter(p => mondeVon(p.id).length).map(p => ({ name: `Monde von ${p.name}`, eintraege: mondeVon(p.id) })),
     ...HAUPTKOERPER.filter(p => satellitenVon(p.id).length).map(p => ({ name: `Raumfahrzeuge um ${p.name}`, eintraege: satellitenVon(p.id) })),
@@ -105,7 +112,7 @@ export function Steuerungstabelle({ beruehrung }: { beruehrung: boolean }) {
       ["Schub / Bremse", "gedrückt halten"],
       ["⚡", "Pulsantrieb für weite Strecken (bis 100-fache Lichtgeschwindigkeit)"],
       ["⚡⚡", "Overdrive: 1000-fache Lichtgeschwindigkeit für ein paar Sekunden, dann 45 s Pause"],
-      ["🎯", "Himmelskörper im Fadenkreuz als Ziel — oder im Menü ☰ oben links"],
+      ["🎯", "Himmelskörper oder Mitspieler im Fadenkreuz als Ziel — oder im Menü ☰ oben links"],
       ["🧭", "Autopilot fliegt zum Ziel"],
       ["📡", "scannen, wenn du nah genug bist"],
       ["☰ → Bei der Erde", "Erdmagnetfeld einblenden und einen Sonnensturm auslösen"],
@@ -117,7 +124,7 @@ export function Steuerungstabelle({ beruehrung }: { beruehrung: boolean }) {
       ["W / S", "Schub geben / bremsen"],
       ["Leertaste", "Pulsantrieb an/aus — für weite Strecken (bis 100-fache Lichtgeschwindigkeit)"],
       ["Umschalt", "Overdrive: 1000-fache Lichtgeschwindigkeit für ein paar Sekunden, dann 45 s Pause"],
-      ["T", "Himmelskörper im Fadenkreuz als Ziel (oder Markierung anklicken)"],
+      ["T", "Himmelskörper oder Mitspieler im Fadenkreuz als Ziel (oder Markierung anklicken)"],
       ["G", "Autopilot zum Ziel"],
       ["C", "scannen, wenn du nah genug bist"],
       ["X", "sofort anhalten"],
