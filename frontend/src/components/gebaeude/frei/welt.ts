@@ -4,6 +4,7 @@
  *   gebaeude  Mauern, Türstürze, Lampen, Topfpflanzen (in den Farben aller Baustile)
  *   hoehle    Felsbrocken, Säulen, leuchtende Kristalle, Fackellicht
  *   wald      hohe Stämme mit Kronen, Büsche als Rand, Gras, Lichtung je Station
+ *   garten    geschnittene Hecken, Kieswege, Rasenplätze, Beete, Teiche (Stil »garten«)
  *
  * `baueLandschaft` baut alles, was sich nicht ändert (einmal je Abschnitt),
  * `baueOrte` die Stationen, das Tor und den Rückweg (neu bei jedem Fortschritt).
@@ -16,11 +17,17 @@ import { baueObjekt } from "../objekte3d";
 import { felsGeometrie, musterMaterial, textur, zufallAus } from "../stoff";
 import { AUSSEHEN, STILE, type RaumZustand, type Stil } from "../szene";
 
-export type Welt = "gebaeude" | "hoehle" | "wald";
+export type Welt = "gebaeude" | "hoehle" | "wald" | "garten";
 
 /** Welcher Kachelsatz zu welchem Baustil gehört */
 export function weltVon(stil: Stil): Welt {
-  return stil === "wald" ? "wald" : AUSSEHEN[stil].organisch ? "hoehle" : "gebaeude";
+  return stil === "wald" ? "wald" : stil === "garten" ? "garten" : AUSSEHEN[stil].organisch ? "hoehle" : "gebaeude";
+}
+
+/** Wald und Höhle bekommen angenagte Karten; Gebäude und Garten bleiben gerade */
+export function istOrganisch(stil: Stil): boolean {
+  const w = weltVon(stil);
+  return w === "wald" || w === "hoehle";
 }
 
 export interface Stimmung {
@@ -440,6 +447,15 @@ function gebaeudeLandschaft(e: FreiEbene, stil: Stil, seed: number): Landschaft 
   }, F.sockel));
 
   const waende: Stueck[] = [], sockel: Stueck[] = [], leisten: Stueck[] = [], stuerze: Stueck[] = [], pfosten: Stueck[] = [], lampen: Stueck[] = [];
+  const rahmen: Stueck[] = [], scheiben: Stueck[] = [], bilder: Stueck[] = [], regale: Stueck[] = [], buecher: Stueck[] = [];
+  const zinnen: Stueck[] = [], spitzen: Stueck[] = [], streifen: Stueck[] = [];
+  const BUCH = [0xb23a48, 0x2a6f97, 0xe9c46a, 0x52796f, 0x6d597a, 0xe76f51];
+  const BILD = [0x3d5a80, 0xe07a5f, 0x81b29a, 0xf2cc8f, 0x9d4edd, 0x457b9d];
+  /** flache Platte an der Wandseite, die zum freien Nachbarn zeigt */
+  const anWand = (wx: number, wz: number, d: [number, number], hoehe: number, breit: number, hoch: number, dick: number, vor = 0.04): Stueck => ({
+    p: new THREE.Vector3(wx + d[0] * (ZELLE / 2 + vor), hoehe, wz + d[1] * (ZELLE / 2 + vor)),
+    s: new THREE.Vector3(d[0] ? dick : breit, hoch, d[1] ? dick : breit),
+  });
   for (let y = 0; y < e.h; y++) for (let x = 0; x < e.b; x++) {
     const a = e.art[y * e.b + x], wx = feldMitte(x), wz = feldMitte(y);
     if (a === DURCHGANG) {
@@ -448,6 +464,21 @@ function gebaeudeLandschaft(e: FreiEbene, stil: Stil, seed: number): Landschaft 
         if (!istFrei(e, x + dx, y + dy)) pfosten.push({ p: new THREE.Vector3(wx + dx * (ZELLE / 2 - 0.1), (H - 0.6) / 2, wz + dy * (ZELLE / 2 - 0.1)), s: new THREE.Vector3(dx ? 0.2 : ZELLE, H - 0.6, dy ? 0.2 : ZELLE) });
       }
       continue;
+    }
+    if (a === PLATZ && (x * 5 + y * 11) % 7 === 0) {
+      const d = ([[1, 0], [-1, 0], [0, 1], [0, -1]] as [number, number][]).find(([dx, dy]) => e.art[(y + dy) * e.b + x + dx] === WAND);
+      if (d) {
+        // Regal: steht im Zimmer flach an der Wand, drei Reihen bunter Bücher
+        const mx = wx + d[0] * (ZELLE / 2 - 0.2), mz = wz + d[1] * (ZELLE / 2 - 0.2);
+        regale.push({ p: new THREE.Vector3(mx, 0.95, mz), s: new THREE.Vector3(d[0] ? 0.38 : 1.25, 1.9, d[1] ? 0.38 : 1.25) });
+        for (let reihe = 0; reihe < 3; reihe++) for (let k = 0; k < 4; k++) {
+          const quer = (k - 1.5) * 0.27;
+          buecher.push({
+            p: new THREE.Vector3(mx - d[0] * 0.2 + (d[0] ? 0 : quer), 0.45 + reihe * 0.55, mz - d[1] * 0.2 + (d[1] ? 0 : quer)),
+            s: new THREE.Vector3(d[0] ? 0.06 : 0.22, 0.3 + r() * 0.12, d[1] ? 0.06 : 0.22), f: farbe(aus(BUCH, r)),
+          });
+        }
+      }
     }
     if (a !== WAND) continue;
     waende.push({ p: new THREE.Vector3(wx, H / 2, wz), s: new THREE.Vector3(ZELLE, H, ZELLE) });
@@ -460,8 +491,23 @@ function gebaeudeLandschaft(e: FreiEbene, stil: Stil, seed: number): Landschaft 
     if (!amWeg) continue;
     sockel.push({ p: new THREE.Vector3(wx, 0.5, wz), s: new THREE.Vector3(ZELLE + 0.1, 1.0, ZELLE + 0.1) });
     leisten.push({ p: new THREE.Vector3(wx, H + F.obenH * 0.75, wz), s: new THREE.Vector3(ZELLE + 0.08, Math.max(0.1, F.obenH * 1.5), ZELLE + 0.08) });
-    if (frei && (x * 7 + y * 13) % 6 === 0) {
+    const wahl = (x * 7 + y * 13) % 6;
+    if (frei && wahl === 0) {
       lampen.push({ p: new THREE.Vector3(wx + frei[0] * (ZELLE / 2 + 0.08), 2.35, wz + frei[1] * (ZELLE / 2 + 0.08)), s: new THREE.Vector3(0.22, 0.32, 0.22) });
+    } else if (frei && wahl === 3) {
+      // Fenster: Rahmen und helle Scheibe
+      rahmen.push(anWand(wx, wz, frei, 2.0, 1.05, 1.3, 0.1));
+      scheiben.push(anWand(wx, wz, frei, 2.0, 0.85, 1.1, 0.12, 0.05));
+    } else if (frei && wahl === 5) {
+      rahmen.push(anWand(wx, wz, frei, 1.95, 0.8, 0.62, 0.08));
+      bilder.push({ ...anWand(wx, wz, frei, 1.95, 0.66, 0.48, 0.1, 0.045), f: farbe(aus(BILD, r)) });
+    }
+    if (frei && F.leuchten) streifen.push(anWand(wx, wz, frei, 0.1, ZELLE, 0.08, 0.06, 0.07));
+    const kante = H + Math.max(0.1, F.obenH * 1.5);
+    if (A.ecken === "zinne" && (x + y) % 2 === 0) zinnen.push({ p: new THREE.Vector3(wx, kante + 0.25, wz), s: new THREE.Vector3(ZELLE * 0.62, 0.5, ZELLE * 0.62) });
+    if ((A.ecken === "spitze" || A.ecken === "kristall") && (x + y) % 3 === 0) {
+      const h = 0.9 + r() * 0.7;
+      spitzen.push({ p: new THREE.Vector3(wx, kante + h / 2, wz), s: new THREE.Vector3(1, h, 1) });
     }
   }
   // oben heller Putz im Muster des Stils, unten ein Sockel in der Wandfarbe
@@ -470,33 +516,191 @@ function gebaeudeLandschaft(e: FreiEbene, stil: Stil, seed: number): Landschaft 
   g.add(reihe(wuerfel, new THREE.MeshLambertMaterial({ color: F.oben }), leisten));
   g.add(reihe(wuerfel, new THREE.MeshLambertMaterial({ color: F.tuer }), stuerze));
   g.add(reihe(wuerfel, new THREE.MeshLambertMaterial({ color: F.tuer }), pfosten));
+  g.add(reihe(wuerfel, new THREE.MeshLambertMaterial({ color: F.tuer }), rahmen, false));
+  const tag = dunkel ? 0x2a3350 : 0xcfe8ff;
+  g.add(reihe(wuerfel, new THREE.MeshLambertMaterial({ color: tag, emissive: tag, emissiveIntensity: dunkel ? 0.6 : 0.9 }), scheiben, false));
+  g.add(reihe(wuerfel, new THREE.MeshLambertMaterial({ color: 0xffffff }), bilder, false));
+  g.add(reihe(wuerfel, new THREE.MeshLambertMaterial({ color: 0x7a5230 }), regale));
+  g.add(reihe(wuerfel, new THREE.MeshLambertMaterial({ color: 0xffffff }), buecher, false));
+  g.add(reihe(wuerfel, new THREE.MeshLambertMaterial({ color: F.wand }), zinnen));
+  const eis = A.ecken === "kristall";
+  g.add(reihe(new THREE.ConeGeometry(eis ? 0.2 : 0.32, 1, eis ? 5 : 4), new THREE.MeshLambertMaterial(eis ? { color: 0xe0f2fe, emissive: 0x38bdf8, emissiveIntensity: 0.5 } : { color: F.oben }), spitzen));
+  const neon = F.licht ?? 0xff3b3b;
+  g.add(reihe(wuerfel, new THREE.MeshLambertMaterial({ color: neon, emissive: neon, emissiveIntensity: 2.4 }), streifen, false));
   const schein = F.licht ?? 0xffdf9e;
   g.add(reihe(wuerfel, new THREE.MeshLambertMaterial({ color: schein, emissive: schein, emissiveIntensity: dunkel ? 2.2 : 1.1 }), lampen, false));
 
   // Topfpflanzen in den Ecken der Zimmer
-  const toepfe: Stueck[] = [], gruen: Stueck[] = [];
+  const toepfe: Stueck[] = [], gruen: Stueck[] = [], saeulen: Stueck[] = [];
   const hoch = new THREE.Vector3(0, 1, 0);
   for (const p of e.raeume) for (const sx of [-1, 1]) for (const sy of [-1, 1]) {
     if (r() < 0.35) continue;
     const wx = feldMitte(p.x + sx * p.r) + sx * 0.25, wz = feldMitte(p.y + sy * p.r) + sy * 0.25;
+    if (A.ecken === "saeule") { saeulen.push({ p: new THREE.Vector3(wx, (H + 0.3) / 2, wz), s: new THREE.Vector3(1, H + 0.3, 1) }); continue; }
     toepfe.push({ p: new THREE.Vector3(wx, 0.3, wz), s: new THREE.Vector3(0.6, 0.6, 0.6) });
     const breit = 0.9 + r() * 0.4;
     gruen.push({ p: new THREE.Vector3(wx, 1.1 + r() * 0.3, wz), s: new THREE.Vector3(breit, 1.2 + r() * 0.6, breit), q: new THREE.Quaternion().setFromAxisAngle(hoch, r() * 6), f: farbe(aus([0x3f7a2a, 0x5a8f2f, 0x2f6a3a], r)) });
   }
   g.add(reihe(new THREE.CylinderGeometry(0.42, 0.3, 1, 10), new THREE.MeshLambertMaterial({ color: 0xb4623a }), toepfe));
+  g.add(reihe(new THREE.CylinderGeometry(0.3, 0.36, 1, 14), musterMaterial(F.stuetze, "marmor", 1.6), saeulen));
   g.add(reihe(felsGeometrie(), new THREE.MeshLambertMaterial({ color: 0xffffff }), gruen));
 
   return {
-    gruppe: g, wandHoehe: H,
+    // die Kamera bleibt immer diesseits der Mauern: von oben verdeckte die Mauerkrone die Figur
+    gruppe: g, wandHoehe: 99,
     stimmung: dunkel
       ? { himmelOben: oben, himmelUnten: unten, nebel: 0x0b0d14, dichte: 0.026, sonne: 0x9fb4ff, sonneStaerke: 0.35, sonneVon: [-0.3, 1, 0.25], oben: 0x8a94c0, unten: 0x2a2420, umgebung: 0.7, fackel: 40, belichtung: 1.15 }
       : { himmelOben: oben, himmelUnten: unten, nebel: unten, dichte: 0.008, sonne: 0xffe9c4, sonneStaerke: 2.4, sonneVon: [-0.45, 1, 0.3], oben: 0xffffff, unten: 0xb89a7a, umgebung: 1.25, fackel: 0, belichtung: 0.95 },
   };
 }
 
+// ── Garten ───────────────────────────────────────────────────────────────
+
+const GARTEN = {
+  kies: [0xe6d9b8, 0xd9caa4, 0xefe4c8, 0xcdbd96],
+  rasen: [0x7fb04a, 0x8cbc52, 0x72a544, 0x9ac65c],
+  beet: [0x5e8a3a, 0x6c9840, 0x53803a, 0x7aa548],
+  hecke: [0x3f7a34, 0x4a8a3a, 0x35692e, 0x578f3e],
+  blueten: [0xf2668b, 0xffd24a, 0xffffff, 0xb07cf0, 0xff8f3c, 0xe63946],
+  krone: [0x5a9a3c, 0x6fae44, 0x4a8a3a, 0x86bb4e, 0xf0a8c0],
+  stamm: [0x7a5a40, 0x8a6a4c, 0x6a4c38],
+  wasser: [0x6fc3e8, 0x8fd4f0, 0x58b0dc],
+};
+
+/** Formaler Garten: geschnittene Hecken, Kieswege, Rasenplätze mit Beeten, Teiche und Bäume hinter den Hecken */
+function gartenLandschaft(e: FreiEbene, seed: number): Landschaft {
+  const g = new THREE.Group();
+  const r = zufallAus(seed * 17 + 9);
+  const RAND = 6;
+  const { t, B } = tiefen(e, RAND);
+  const tiefeBei = (x: number, y: number) => t[(y + RAND) * B + x + RAND];
+  g.add(himmel(0x5fa8ee, 0xdcecf7));
+  g.add(umland(e, 0x7fb04a));
+  // Teiche hinter den Hecken: dort, wo ringsum genug Platz ist
+  const teiche: [number, number, number][] = [];
+  for (let y = 2; y < e.h - 2; y++) for (let x = 2; x < e.b - 2; x++) {
+    if (tiefeBei(x, y) >= 3 && r() < 0.08 && teiche.every(([tx, ty]) => Math.hypot(tx - x, ty - y) > 7)) teiche.push([x, y, 1.1 + r() * 0.7]);
+  }
+  g.add(boden(e, (ctx, px) => {
+    striche(ctx, e, px, r, 6, a => (a === WAND ? GARTEN.beet : a === PLATZ ? GARTEN.rasen : GARTEN.kies));
+    // Plätze: Kiesring um die Mitte, dazu ein Rondell mit Blüten
+    for (const [x, y] of [...e.raeume.map(p => [p.x, p.y]), e.start, e.ziel]) {
+      ctx.lineWidth = px * 0.9;
+      ctx.strokeStyle = css(GARTEN.kies[0]);
+      ctx.beginPath();
+      ctx.arc((x + 0.5) * px, (y + 0.5) * px, px * 3.4, 0, Math.PI * 2);
+      ctx.stroke();
+      for (let k = 0; k < 46; k++) {
+        const a = r() * Math.PI * 2, ab = px * (4.2 + r() * 0.7);
+        ctx.fillStyle = css(aus(GARTEN.blueten, r));
+        ctx.beginPath();
+        ctx.arc((x + 0.5) * px + Math.cos(a) * ab, (y + 0.5) * px + Math.sin(a) * ab, px * (0.1 + r() * 0.1), 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    for (const [x, y, gross] of teiche) {
+      ctx.fillStyle = css(GARTEN.kies[1]);
+      ctx.beginPath();
+      ctx.ellipse((x + 0.5) * px, (y + 0.5) * px, px * (gross + 0.3), px * (gross * 0.8 + 0.3), 0, 0, Math.PI * 2);
+      ctx.fill();
+      for (let k = 0; k < 5; k++) strich(ctx, (x + 0.5) * px, (y + 0.5) * px, px * gross * (1 - k * 0.15), px * gross * 0.8 * (1 - k * 0.15), 0, css(aus(GARTEN.wasser, r)), 0.9);
+    }
+  }, 0x7fb04a));
+
+  const hecken: Stueck[] = [], kuppen: Stueck[] = [], staemme: Stueck[] = [], kronen: Stueck[] = [], blumen: Stueck[] = [], graeser: Stueck[] = [];
+  const balken: Stueck[] = [], vasen: Stueck[] = [];
+  const hoch = new THREE.Vector3(0, 1, 0);
+  const dreh = () => new THREE.Quaternion().setFromAxisAngle(hoch, r() * Math.PI * 2);
+  const H = 2.0;
+  for (let Y = 0; Y < B; Y++) for (let X = 0; X < B; X++) {
+    const tiefe = t[Y * B + X], x = X - RAND, y = Y - RAND;
+    const wx = feldMitte(x), wz = feldMitte(y);
+    if (tiefe === 0) {
+      if (e.art[y * e.b + x] === DURCHGANG) {
+        // Laube über dem Durchgang
+        // die Heckenlinie läuft dort entlang, wo nebenan Hecke oder wieder Durchgang ist
+        const inLinie = (dx: number, dy: number) => !istFrei(e, x + dx, y + dy) || e.art[(y + dy) * e.b + x + dx] === DURCHGANG;
+        const laengsX = inLinie(1, 0) || inLinie(-1, 0);
+        for (const s of [-0.45, 0.45]) {
+          // zwei Holme längs, dazu Sprossen quer
+          balken.push({ p: new THREE.Vector3(wx + (laengsX ? 0 : s), 2.75, wz + (laengsX ? s : 0)), s: new THREE.Vector3(laengsX ? ZELLE : 0.12, 0.12, laengsX ? 0.12 : ZELLE) });
+          balken.push({ p: new THREE.Vector3(wx + (laengsX ? s * 0.8 : 0), 2.86, wz + (laengsX ? 0 : s * 0.8)), s: new THREE.Vector3(laengsX ? 0.09 : 1.3, 0.09, laengsX ? 1.3 : 0.09) });
+          // Pfosten nur am Ende der Laube, wo die Hecke anschließt
+          for (const d of [-1, 1]) {
+            if (istFrei(e, x + (laengsX ? d : 0), y + (laengsX ? 0 : d))) continue;
+            balken.push({ p: new THREE.Vector3(wx + (laengsX ? d * (ZELLE / 2 - 0.1) : s), 1.38, wz + (laengsX ? s : d * (ZELLE / 2 - 0.1))), s: new THREE.Vector3(0.16, 2.76, 0.16) });
+          }
+        }
+        if (r() < 0.7) blumen.push({ p: new THREE.Vector3(wx + (r() - 0.5), 2.9, wz + (r() - 0.5)), s: new THREE.Vector3().setScalar(0.45 + r() * 0.3), q: dreh(), f: farbe(aus(GARTEN.blueten, r)) });
+        continue;
+      }
+      // Blumen am Fuß der Hecken
+      let anHecke: [number, number] | null = null;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (!istFrei(e, x + dx, y + dy)) anHecke = [dx, dy];
+      if (anHecke && r() < 0.45) {
+        for (let k = 0; k < 3; k++) {
+          const quer = (r() - 0.5) * ZELLE;
+          blumen.push({
+            p: new THREE.Vector3(wx + anHecke[0] * 0.5 + (anHecke[0] ? 0 : quer), 0.22 + r() * 0.15, wz + anHecke[1] * 0.5 + (anHecke[1] ? 0 : quer)),
+            s: new THREE.Vector3().setScalar(0.2 + r() * 0.16), q: dreh(), f: farbe(aus(GARTEN.blueten, r)),
+          });
+        }
+        graeser.push({ p: new THREE.Vector3(wx + anHecke[0] * 0.5, 0, wz + anHecke[1] * 0.5), s: new THREE.Vector3().setScalar(0.9 + r() * 0.5), q: dreh(), f: farbe(aus(GARTEN.beet, r)) });
+      }
+      continue;
+    }
+    if (tiefe === 1) {
+      // geschnittene Hecke, obenauf eine runde Kuppe
+      hecken.push({ p: new THREE.Vector3(wx, H / 2, wz), s: new THREE.Vector3(ZELLE + 0.04, H, ZELLE + 0.04), f: farbe(aus(GARTEN.hecke, r)).multiplyScalar(0.9 + r() * 0.2) });
+      kuppen.push({ p: new THREE.Vector3(wx, H - 0.05, wz), s: new THREE.Vector3(ZELLE * 1.15, 0.55 + r() * 0.2, ZELLE * 1.15), q: dreh(), f: farbe(aus(GARTEN.hecke, r)).multiplyScalar(1.0 + r() * 0.25) });
+      continue;
+    }
+    const imTeich = teiche.some(([tx, ty, gross]) => Math.hypot(tx - x, ty - y) < gross + 1);
+    if (imTeich) continue;
+    // hinter den Hecken: Bäume mit runder Krone, Blumenbüsche
+    if (r() < (tiefe <= 3 ? 0.16 : 0.28)) {
+      const h = 2.6 + r() * 1.8, breit = 2.2 + r() * 1.6;
+      staemme.push({ p: new THREE.Vector3(wx, -0.05, wz), s: new THREE.Vector3(0.16 + r() * 0.08, h, 0.16 + r() * 0.08), q: dreh(), f: farbe(aus(GARTEN.stamm, r)) });
+      kronen.push({ p: new THREE.Vector3(wx, h + breit * 0.3, wz), s: new THREE.Vector3(breit, breit * (0.85 + r() * 0.3), breit), q: dreh(), f: farbe(aus(GARTEN.krone, r)).multiplyScalar(0.9 + r() * 0.25) });
+    } else if (r() < 0.3) {
+      const breit = 0.7 + r() * 0.6;
+      kronen.push({ p: new THREE.Vector3(wx + (r() - 0.5) * 0.6, breit * 0.35, wz + (r() - 0.5) * 0.6), s: new THREE.Vector3(breit, breit * 0.8, breit), q: dreh(), f: farbe(aus(GARTEN.hecke, r)).multiplyScalar(1.1) });
+      for (let k = 0; k < 4; k++) {
+        blumen.push({ p: new THREE.Vector3(wx + (r() - 0.5) * 1.1, breit * 0.55 + r() * 0.2, wz + (r() - 0.5) * 1.1), s: new THREE.Vector3().setScalar(0.18 + r() * 0.14), q: dreh(), f: farbe(aus(GARTEN.blueten, r)) });
+      }
+    }
+  }
+  // Steinvasen mit Blumen in den Ecken der Plätze
+  for (const p of e.raeume) for (const sx of [-1, 1]) for (const sy of [-1, 1]) {
+    const wx = feldMitte(p.x + sx * p.r) + sx * 0.2, wz = feldMitte(p.y + sy * p.r) + sy * 0.2;
+    vasen.push({ p: new THREE.Vector3(wx, 0.45, wz), s: new THREE.Vector3(0.7, 0.9, 0.7) });
+    for (let k = 0; k < 5; k++) {
+      blumen.push({ p: new THREE.Vector3(wx + (r() - 0.5) * 0.6, 1.0 + r() * 0.3, wz + (r() - 0.5) * 0.6), s: new THREE.Vector3().setScalar(0.22 + r() * 0.14), q: dreh(), f: farbe(aus(GARTEN.blueten, r)) });
+    }
+  }
+  const weiss = () => new THREE.MeshLambertMaterial({ color: 0xffffff });
+  g.add(reihe(wuerfel, weiss(), hecken));
+  g.add(reihe(felsGeometrie(), weiss(), kuppen));
+  g.add(reihe(stammGeometrie(), weiss(), staemme));
+  g.add(reihe(felsGeometrie(), weiss(), kronen));
+  g.add(reihe(felsGeometrie(), weiss(), blumen, false));
+  g.add(reihe(bueschelGeometrie(), weiss(), graeser, false));
+  g.add(reihe(wuerfel, new THREE.MeshLambertMaterial({ color: 0xf4efe2 }), balken));
+  g.add(reihe(new THREE.CylinderGeometry(0.5, 0.28, 1, 12), new THREE.MeshLambertMaterial({ color: 0xd9d2c0 }), vasen));
+  return {
+    gruppe: g, wandHoehe: 0,
+    stimmung: {
+      himmelOben: 0x5fa8ee, himmelUnten: 0xdcecf7, nebel: 0xdcecf7, dichte: 0.006,
+      sonne: 0xfff0cf, sonneStaerke: 3.0, sonneVon: [-0.5, 0.8, 0.35],
+      oben: 0xcfe4ff, unten: 0x7da045, umgebung: 1.1, fackel: 0, belichtung: 0.95,
+    },
+  };
+}
+
 export function baueLandschaft(e: FreiEbene, stil: Stil, seed: number): Landschaft {
   const w = weltVon(stil);
-  return w === "wald" ? waldLandschaft(e, seed) : w === "hoehle" ? hoehleLandschaft(e, stil, seed) : gebaeudeLandschaft(e, stil, seed);
+  return w === "wald" ? waldLandschaft(e, seed) : w === "garten" ? gartenLandschaft(e, seed)
+    : w === "hoehle" ? hoehleLandschaft(e, stil, seed) : gebaeudeLandschaft(e, stil, seed);
 }
 
 // ── Stationen, Tor, Rückweg ──────────────────────────────────────────────
@@ -557,7 +761,7 @@ export function baueOrte(e: FreiEbene, bild: OrteBild): { gruppe: THREE.Group; m
   const g = new THREE.Group();
   const marken: Marke[] = [];
   const w = weltVon(bild.stil);
-  const stein = w === "wald" ? 0x7a5638 : w === "hoehle" ? farbe(STILE[bild.stil].wand).multiplyScalar(1.5).getHex() : STILE[bild.stil].tuer;
+  const stein = w === "wald" ? 0x7a5638 : w === "garten" ? 0xe8e2d2 : w === "hoehle" ? farbe(STILE[bild.stil].wand).multiplyScalar(1.5).getHex() : STILE[bild.stil].tuer;
 
   e.raeume.forEach((p, k) => {
     const zg = new THREE.Group();

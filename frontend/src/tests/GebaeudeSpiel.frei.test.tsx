@@ -29,7 +29,8 @@ vi.mock("@/lib/api", async orig => ({
 }));
 
 import GebaeudeSpiel from "@/components/exitgame/GebaeudeSpiel";
-import type { Stil } from "@/components/gebaeude/szene";
+import { STILE, type Stil } from "@/components/gebaeude/szene";
+import { istOrganisch, weltVon } from "@/components/gebaeude/frei/welt";
 
 const data: ExitGameData = {
   title: "Testwelt",
@@ -86,6 +87,20 @@ describe("TaskCrawler als freie 3D-Welt", () => {
     expect(w.dataset.stile).toBe("hoehle,hoehle");
     expect(w.dataset.objekte).toContain("monster");
     expect(w.dataset.waechter).toBe("true");
+  });
+
+  it("ordnet jedem Stil eine Welt zu: Wald, Garten, Höhlen — alles andere ist ein Gebäude", () => {
+    const welten = Object.fromEntries((Object.keys(STILE) as Stil[]).map(s => [s, weltVon(s)]));
+    expect(welten).toMatchObject({ wald: "wald", garten: "garten", hoehle: "hoehle", steinzeit: "hoehle", lava: "hoehle", klassisch: "gebaeude", burg: "gebaeude" });
+    expect(Object.values(welten).filter(w => w === "gebaeude")).toHaveLength(Object.keys(STILE).length - 5);
+    // gerade Karten für Gebäude und Garten, angenagte für Wald und Höhle
+    expect((["wald", "hoehle", "garten", "burg"] as Stil[]).map(istOrganisch)).toEqual([true, true, false, false]);
+  });
+
+  it("zeigt im Garten keine Monster", () => {
+    spiel([], "garten");
+    expect(screen.getByTestId("welt").dataset.objekte).not.toContain("monster");
+    expect(screen.getByTestId("welt").dataset.waechter).toBe("false");
   });
 
   it("nimmt je Abschnitt einen eigenen Stil; wo keiner steht, gilt der gemeinsame", () => {

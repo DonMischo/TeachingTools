@@ -16,8 +16,9 @@ ANSICHTEN = {
                "Monster in den Aufgabenräumen, ein Boss bewacht jede Treppe.",
     "ebene": "Ebene: die Abschnitte liegen nebeneinander, eine verschlossene Tür in der Wand führt weiter.",
     "frei": "3D-Welt: gemalte Landschaft, die Figur läuft frei (Kamera über der Schulter). Der Stil bestimmt die Welt: "
-            "'wald' (Standard) ist ein Wald mit Lichtungen, die Höhlenstile (hoehle, steinzeit, lava) sind Höhlen mit "
-            "Monstern und einem Boss am Tor, alle anderen ein Gebäude in diesem Baustil. Braucht ein Gerät mit WebGL.",
+            "'wald' (Standard) ist ein Wald mit Lichtungen, 'garten' ein Garten mit Hecken, Kieswegen und Beeten, die "
+            "Höhlenstile (hoehle, steinzeit, lava) sind Höhlen mit Monstern und einem Boss am Tor, alle anderen ein "
+            "möbliertes Gebäude in diesem Baustil. Braucht ein Gerät mit WebGL.",
 }
 
 STILE = {

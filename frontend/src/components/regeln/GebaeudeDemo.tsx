@@ -15,7 +15,7 @@ import { STANDARD_AVATAR, ladeAvatar, type Avatar } from "@/components/gebaeude/
 import { OBJEKTE, OBJEKT_NAME } from "@/lib/gebaeude/objekte";
 import { DURCHGANG, NAGE_REGELN, PLATZ, WAND, baueFreiPlan, freiRegeln, type FreiEbene } from "@/lib/gebaeude/frei";
 import FreiWelt from "@/components/gebaeude/frei/FreiWelt";
-import { weltVon } from "@/components/gebaeude/frei/welt";
+import { istOrganisch, weltVon } from "@/components/gebaeude/frei/welt";
 
 export default function GebaeudeDemo() {
   const [stockwerke, setStockwerke] = useState(3);
@@ -28,12 +28,13 @@ export default function GebaeudeDemo() {
   // frei: gemalte 3D-Welt auf einer weiten Karte; der Stil bestimmt die Welt (Wald, Höhle, Gebäude)
   const frei = art === "frei";
   const welt = weltVon(stil);
+  const organisch = istOrganisch(stil);
   const verlies = art === "verlies" || (frei && welt === "hoehle");
   const tueren = art === "ebene" || frei;
   const plan = useMemo(() => bauePlan(Array(stockwerke).fill(zimmer), seed, frei ? "haus" : art), [stockwerke, zimmer, seed, art, frei]);
   const freiPlan = useMemo(
-    () => (frei ? baueFreiPlan(Array(stockwerke).fill(zimmer), seed, Array(stockwerke).fill(welt !== "gebaeude")) : null),
-    [frei, stockwerke, zimmer, seed, welt]);
+    () => (frei ? baueFreiPlan(Array(stockwerke).fill(zimmer), seed, Array(stockwerke).fill(organisch)) : null),
+    [frei, stockwerke, zimmer, seed, organisch]);
   /** die Abschnitte der gewählten Art: beide haben `raeume` */
   const karten: { raeume: unknown[] }[] = freiPlan ? freiPlan.ebenen : plan.stockwerke;
   const [stock, setStock] = useState(0);
@@ -144,7 +145,7 @@ export default function GebaeudeDemo() {
                 Dann wird alles gestreckt: Wege und Plätze dreimal so breit wie die Wände.
               </p>
               <pre className="text-[10px] leading-snug font-mono bg-surface-hover rounded-lg p-2 overflow-x-auto">{freiRegeln(zimmer + 2, zimmer + 2)}</pre>
-              {welt !== "gebaeude" && (
+              {organisch && (
                 <>
                   <p>Wald und Höhle: Ein Zellautomat nagt die Ränder an, einzelne {welt === "wald" ? "Bäume" : "Felssäulen"} wachsen mitten im Weg.</p>
                   <pre className="text-[10px] leading-snug font-mono bg-surface-hover rounded-lg p-2 overflow-x-auto">{NAGE_REGELN}</pre>

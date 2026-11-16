@@ -17,7 +17,7 @@ import { bauePlan } from "@/lib/gebaeude/plan";
 import { baueFreiPlan } from "@/lib/gebaeude/frei";
 import Gebaeude, { type GebaeudeArt, type Ort } from "@/components/gebaeude/Gebaeude";
 import FreiWelt from "@/components/gebaeude/frei/FreiWelt";
-import { weltVon } from "@/components/gebaeude/frei/welt";
+import { istOrganisch, weltVon } from "@/components/gebaeude/frei/welt";
 import type { RaumZustand, Stil } from "@/components/gebaeude/szene";
 import { FolienText, MediaView, TaskArea, letzteInfo, levelOf } from "./FolienTeile";
 import { SimKnopf } from "./SimStation";
@@ -69,7 +69,7 @@ export default function GebaeudeSpiel({
   // Monster und Bosse: im Verlies überall, frei nur in den Höhlen.
   const monster = useMemo(() => teile.map((_, i) => (frei ? weltVon(freiStile[i]) === "hoehle" : art === "verlies")), [teile, frei, art, freiStile]);
   const plan = useMemo(() => (frei ? null : bauePlan(teile.map(t => t.raeume.length), seedAus(code), art as GebaeudeArt)), [teile, code, art, frei]);
-  const organisch = JSON.stringify(freiStile.map(s => weltVon(s) !== "gebaeude"));
+  const organisch = JSON.stringify(freiStile.map(istOrganisch));
   const freiPlan = useMemo(
     () => (frei ? baueFreiPlan(teile.map(t => t.raeume.length), seedAus(code), JSON.parse(organisch) as boolean[]) : null),
     [teile, code, frei, organisch]);
