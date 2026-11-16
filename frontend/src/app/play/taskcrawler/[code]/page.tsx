@@ -14,8 +14,8 @@ import { STANDARD_AVATAR, TIERE, gespeicherterAvatar, speichereAvatar } from "@/
 import GebaeudeSpiel from "@/components/exitgame/GebaeudeSpiel";
 import { STILE, type Stil } from "@/components/gebaeude/szene";
 
-type Ansicht = "folien" | "gebaeude" | "verlies" | "ebene";
-const ANSICHTEN: [Ansicht, string][] = [["folien", "📄 Text"], ["gebaeude", "🏢 Gebäude"], ["verlies", "🗝️ Verlies"], ["ebene", "🗺️ Ebene"]];
+type Ansicht = "folien" | "gebaeude" | "verlies" | "ebene" | "frei";
+const ANSICHTEN: [Ansicht, string][] = [["folien", "📄 Text"], ["gebaeude", "🏢 Gebäude"], ["verlies", "🗝️ Verlies"], ["ebene", "🗺️ Ebene"], ["frei", "🌲 3D-Welt"]];
 const istAnsicht = (a: unknown): a is Ansicht => ANSICHTEN.some(([x]) => x === a);
 const istStil = (s: unknown): s is Stil => typeof s === "string" && s in STILE;
 /** je Sitzungscode: die eigene Wahl gilt nur für dieses Spiel */
@@ -216,7 +216,7 @@ export default function ExitgamePlayPage() {
         <GebaeudeSpiel code={code} attempt={start.attempt} exitgameId={start.exitgame_id} data={data}
           variantChoices={start.variant_choices ?? {}} fragments={fragments} adaptation={adaptation}
           onSlideSolved={slideSolved} onAdaptation={setAdaptation} onFinish={() => finishMut.mutate()}
-          art={aktiv === "verlies" ? "verlies" : aktiv === "ebene" ? "ebene" : "haus"}
+          art={aktiv === "gebaeude" ? "haus" : aktiv}
           stil={festerStil ?? (festeStile ? undefined : stil) ?? undefined} stile={festeStile ?? undefined} />
       </div>
     );

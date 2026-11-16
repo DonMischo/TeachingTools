@@ -54,7 +54,7 @@ export function neueAufgabe(kind: ExitGameTask["kind"] = "single", alt?: ExitGam
 }
 
 const ANSICHT_NAMEN: Record<string, string> = {
-  folien: "Folien (klassisch)", gebaeude: "Gebäude", verlies: "Verlies", ebene: "Ebene",
+  folien: "Folien (klassisch)", gebaeude: "Gebäude", verlies: "Verlies", ebene: "Ebene", frei: "3D-Welt (frei laufen)",
 };
 
 function AufgabeForm({ task, onChange, katalog, name, leichter = true }: {

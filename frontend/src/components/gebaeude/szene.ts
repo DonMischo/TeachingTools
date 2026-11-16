@@ -38,7 +38,8 @@ const RAUM_FARBE: Record<RaumZustand, number> = {
 export type Stil =
   | "klassisch" | "beton" | "neon" | "garten" | "verlies"
   | "burg" | "holz" | "eis" | "wueste" | "raumstation" | "lava"
-  | "steinzeit" | "antike" | "mittelalter" | "gotisch" | "viktorianisch" | "retro";
+  | "steinzeit" | "antike" | "mittelalter" | "gotisch" | "viktorianisch" | "retro"
+  | "wald" | "hoehle";
 
 interface Palette {
   boden: number; wand: number; wandH: number; oben: number; obenH: number;
@@ -70,6 +71,9 @@ export const STILE: Record<Stil, Palette & { name: string }> = {
   gotisch: { name: "Gotik", boden: 0x57534e, boden2: 0x3f3a36, wand: 0x6b6560, wandH: 2.0, oben: 0x44403c, obenH: 0.1, tuer: 0x1c1917, treppe: 0x78716c, stuetze: 0x44403c, sockel: 0x1c1917, leuchten: true, licht: 0x8b5cf6 },
   viktorianisch: { name: "Viktorianisch", boden: 0x6b3a2a, wand: 0x14532d, wandH: 1.3, oben: 0xd4af37, obenH: 0.08, tuer: 0x3b1f14, treppe: 0x8b5a3c, stuetze: 0x1c1917, sockel: 0x44403c },
   retro: { name: "Retro (70er)", boden: 0xd97706, wand: 0xfef3c7, wandH: 1.0, oben: 0x92400e, obenH: 0.1, tuer: 0x65a30d, treppe: 0xfcd34d, stuetze: 0x78716c, sockel: 0x57534e },
+  // Natur: in der freien 3D-Ansicht eigene Welten (Wald mit Bäumen, Höhle mit Kristallen), sonst Hecken bzw. Fels
+  wald: { name: "Wald", boden: 0x9aa63a, wand: 0x4f7a28, wandH: 1.3, oben: 0x6b8e23, obenH: 0.3, tuer: 0x6b4a32, treppe: 0x8c6a3d, stuetze: 0x6b4a32, sockel: 0x3f4a1f },
+  hoehle: { name: "Tropfsteinhöhle", boden: 0x5a554e, wand: 0x4c505c, wandH: 1.6, oben: 0x6b7080, obenH: 0.2, tuer: 0x2b2e38, treppe: 0x6b7080, stuetze: 0x3a3d48, sockel: 0x16181f, leuchten: true, licht: 0x38e1d6 },
 };
 
 /** Verzierung auf den Eckpfeilern der Wände */
@@ -97,6 +101,8 @@ export const AUSSEHEN: Record<Stil, { boden?: Muster; wand?: Muster; organisch?:
   gotisch: { boden: "stein", wand: "stein", ecken: "spitze" },
   viktorianisch: { boden: "parkett", wand: "tapete" },
   retro: { boden: "teppich", wand: "putz" },
+  wald: { boden: "erde", organisch: true },
+  hoehle: { boden: "fels", wand: "fels", organisch: true, ecken: "tropfstein" },
 };
 
 const box = new THREE.BoxGeometry(1, 1, 1);

@@ -15,6 +15,9 @@ ANSICHTEN = {
     "verlies": "Verlies: Ebenen gehen hinab, nur die aktuelle ist zu sehen, dunkel mit Fackel; "
                "Monster in den Aufgabenräumen, ein Boss bewacht jede Treppe.",
     "ebene": "Ebene: die Abschnitte liegen nebeneinander, eine verschlossene Tür in der Wand führt weiter.",
+    "frei": "3D-Welt: gemalte Landschaft, die Figur läuft frei (Kamera über der Schulter). Der Stil bestimmt die Welt: "
+            "'wald' (Standard) ist ein Wald mit Lichtungen, die Höhlenstile (hoehle, steinzeit, lava) sind Höhlen mit "
+            "Monstern und einem Boss am Tor, alle anderen ein Gebäude in diesem Baustil. Braucht ein Gerät mit WebGL.",
 }
 
 STILE = {
@@ -36,6 +39,9 @@ STILE = {
     "gotisch": "Gotik: hohe dunkle Steinmauern, Zimmer leuchten violett wie Kirchenfenster.",
     "viktorianisch": "Viktorianisch (19. Jh.): Parkett, grüne Tapete, Goldleisten, Gusseisen.",
     "retro": "Retro (1970er): oranger Teppich, cremefarbene Wände, olivgrüne Türen.",
+    # Natur — in der Ansicht "frei" eigene Welten, sonst Hecken bzw. Felswände
+    "wald": "Wald: hohe Stämme, Büsche, Lichtungen (Standard der 3D-Welt).",
+    "hoehle": "Tropfsteinhöhle: grauer Fels, türkis leuchtende Kristalle.",
 }
 
 OBJEKTE = {
