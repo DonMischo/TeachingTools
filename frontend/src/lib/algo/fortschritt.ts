@@ -61,3 +61,13 @@ export function summen(s: AlgoStand): { punkte: number; sterne: number } {
   for (const w of Object.values(s.wertung)) { punkte += w.punkte; sterne += w.sterne; }
   return { punkte, sterne };
 }
+
+/** Zwei Stände zusammenführen (Browser + Server): je Level und Aufgabe das Beste. */
+export function vereinige(a: AlgoStand, b: AlgoStand): AlgoStand {
+  let s = a;
+  for (const [id, l] of Object.entries(b.level ?? {})) s = mitLevel(s, id, { sterne: l.sterne, bloecke: l.bloecke, punkte: l.punkte ?? 0 });
+  for (const feld of ["fluss", "automat"] as const) {
+    for (const id of b[feld] ?? []) s = mitErledigt(s, feld, id, b.wertung?.[`${feld}:${id}`]);
+  }
+  return s;
+}

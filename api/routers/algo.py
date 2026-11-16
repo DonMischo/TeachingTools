@@ -99,6 +99,39 @@ def fortschritt_melden(
     return {"ok": True}
 
 
+@router.get("/sitzung/{code}/mein", response_model=FortschrittIn)
+def mein_fortschritt(
+    code: str,
+    db: Session = Depends(get_db),
+    spieler: Union[Teacher, Student, Guest] = Depends(get_player),
+):
+    """Der eigene gemeldete Stand — damit er auf einem anderen Rechner oder nach
+    gelöschtem Browser-Speicher wieder da ist. Konten bekommen das Beste aus all
+    ihren Sitzungen, Gäste nur ihre Zeile in dieser Sitzung."""
+    session = _sitzung(code, db)
+    wer = _teilnehmer(spieler)
+    q = db.query(AlgoFortschritt).filter_by(**wer)
+    zeilen = q.filter_by(session_id=session.id).all() if isinstance(spieler, Guest) else q.all()
+    level: dict = {}
+    fluss: list = []
+    automat: list = []
+    wertung: dict = {}
+    for z in zeilen:
+        for k, v in (z.level or {}).items():
+            alt = level.get(k)
+            level[k] = v if alt is None else {
+                "sterne": max(alt.get("sterne", 0), v.get("sterne", 0)),
+                "bloecke": min(alt.get("bloecke", 999), v.get("bloecke", 999)),
+                "punkte": max(alt.get("punkte", 0), v.get("punkte", 0)),
+            }
+        fluss += [x for x in (z.fluss or []) if x not in fluss]
+        automat += [x for x in (z.automat or []) if x not in automat]
+        for k, v in (z.wertung or {}).items():
+            alt = wertung.get(k)
+            wertung[k] = v if alt is None else {"sterne": max(alt["sterne"], v["sterne"]), "punkte": max(alt["punkte"], v["punkte"])}
+    return FortschrittIn(level=level, fluss=fluss, automat=automat, wertung=wertung)
+
+
 @router.get("/sitzung/{code}/uebersicht", response_model=list[UebersichtZeile])
 def uebersicht(code: str, db: Session = Depends(get_db), teacher: Teacher = Depends(get_current_teacher)):
     session = _sitzung(code, db)

@@ -1,11 +1,13 @@
 "use client";
 /**
- * Klassenübersicht der Algorithmen-Werkstatt: wer über den Code mitmacht,
+ * Klassenübersicht der Algorithmen-Werkstatt: wer über den Code der gewählten
+ * Sitzung (je Klasse eine, siehe SitzungWahl) mitmacht,
  * welche Automaten, Flussdiagramm-Aufgaben und Level (Sterne) geschafft sind.
  * Abgefragt wird alle fünf Sekunden wie beim Maus-Führerschein.
  */
 import { useQuery } from "@tanstack/react-query";
 import { api, type AlgoUebersichtZeile } from "@/lib/api";
+import { SitzungLeiste, type SitzungWahl } from "@/components/SitzungWahl";
 import { AUTOMATEN } from "@/lib/algo/automaten";
 import { AUFGABEN } from "@/lib/algo/fluss";
 import { LEVEL, WELTEN } from "@/lib/algo/level";
@@ -28,12 +30,8 @@ function erledigt(z: AlgoUebersichtZeile, feld: "automat" | "fluss", id: string)
   return z[feld].includes(id) ? "✅" : <span className="text-muted">·</span>;
 }
 
-export default function AlgoUebersicht() {
-  const { data: sitzung, isError: sitzungFehler } = useQuery({
-    queryKey: ["algo-sitzung"],
-    queryFn: () => api.toolSessions.create("algo"),
-  });
-  const code = sitzung?.code;
+export default function AlgoUebersicht({ wahl }: { wahl: SitzungWahl }) {
+  const code = wahl.sitzung?.code;
   const { data: zeilen = [], isLoading, isError } = useQuery({
     queryKey: ["algo-uebersicht", code],
     queryFn: () => api.algo.uebersicht(code!),
@@ -41,18 +39,14 @@ export default function AlgoUebersicht() {
     refetchInterval: TAKT_MS,
   });
 
-  if (sitzungFehler) return <p className="text-sm text-bad">Die Sitzung ließ sich nicht öffnen.</p>;
-
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-sm text-muted">
-        Alle, die über den Code <b className="text-fg tracking-widest">{code ?? "…"}</b> mitmachen. Die Liste aktualisiert sich alle fünf Sekunden.
-      </p>
+      <SitzungLeiste wahl={wahl} />
       <div className="card overflow-x-auto">
         {isLoading && <p className="text-sm text-muted p-6 text-center">wird geladen …</p>}
         {isError && <p className="text-sm text-bad p-6 text-center">Die Übersicht ließ sich nicht laden.</p>}
         {!isLoading && !isError && zeilen.length === 0 && (
-          <p className="text-sm text-muted p-6 text-center">Noch niemand da. Zeig den Code oder QR über »Zum Mitmachen«.</p>
+          <p className="text-sm text-muted p-6 text-center">Noch niemand da. Zeig den Code <b className="text-fg tracking-widest">{code ?? "…"}</b> oder den QR über »Zum Mitmachen«.</p>
         )}
         {zeilen.length > 0 && (
           <table className="w-full text-sm" data-testid="algo-uebersicht">

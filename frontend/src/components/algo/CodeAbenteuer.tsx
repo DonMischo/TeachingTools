@@ -294,6 +294,8 @@ function Vorhersage({ level, thema, m, tipp, fertig }: KindProps) {
   const [ausgang, setAusgang] = useState<{ id: Ausgang; ok: boolean } | null>(null);
   const abspiel = useAbspielen();
   const geloest = feld?.ok && ausgang?.ok;
+  // Nach dem Abspielen (Vorführen, Ablauf ansehen) zurück zur Startlage — sonst ließe sich kein Feld mehr anklicken.
+  useEffect(() => { if (abspiel.fertig) abspiel.zurueck(); }, [abspiel.fertig]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const pruefe = (f: typeof feld, a: typeof ausgang) => { if (f?.ok && a?.ok) fertig(level.optimal); };
   const klick = (x: number, y: number) => {
@@ -439,14 +441,16 @@ function ProgrammLevel({ level, thema, m, tipp, fertig }: KindProps) {
   const fehler = demo !== "laeuft" && abspiel.fertig && letzter && !letzter.ergebnis.ok ? letzter.ergebnis.fehler : null;
 
   const editorProps = { prog, onChange: aendern, erlaubt: level.bloecke, bedingungen: level.bedingungen, verb: thema.verb, aktiv: abspiel.lauf && demo !== "laeuft" ? z.aktiv : undefined };
+  // Eigene Bedienung beendet eine laufende Vorführung — sonst zählte der eigene Lauf danach nicht.
+  const demoEnde = () => setDemo(d => (d === "laeuft" ? "fertig" : d));
+  // Links Spielfeld + Steuerung, rechts daneben der Editor
   return (
-    <div className="flex flex-col gap-4">
-    <div className="grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] gap-4 items-start">
-      <div className="flex flex-col gap-2">
+    <div className="grid lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-4 items-start">
+      <div className="flex flex-col gap-2 min-w-0">
         {level.karten.length > 1 && (
           <div className="flex gap-1">
             {level.karten.map((_, i) => (
-              <button key={i} type="button" onClick={() => { abspiel.zurueck(); setVariante(i); }}
+              <button key={i} type="button" onClick={() => { demoEnde(); abspiel.zurueck(); setVariante(i); }}
                 className={`px-3 py-1 rounded-lg text-xs font-bold border ${i === karteNr ? "bg-accent text-accent-fg border-transparent" : "border-line text-muted"}`}>
                 Karte {i + 1}
               </button>
@@ -454,17 +458,16 @@ function ProgrammLevel({ level, thema, m, tipp, fertig }: KindProps) {
           </div>
         )}
         <Spielfeld karte={karte} z={z} thema={thema} dauer={abspiel.tempo * 0.8} fehler={!!fehler} />
-      </div>
-      <div className="flex flex-col gap-2 min-w-0">
         {fehler && <FehlerZeile f={fehler} />}
         <div className="flex items-center gap-2 flex-wrap">
           {abspiel.laeuft
             ? <button type="button" className="btn-secondary" onClick={abspiel.halt}>⏸ Pause</button>
             : abspiel.lauf && !abspiel.fertig
               ? <button type="button" className="btn-primary" onClick={abspiel.weiter}>▶ Weiter</button>
-              : <button type="button" className="btn-primary" disabled={zuViele || anzahl === 0} onClick={() => { setDemo(d => (d === "laeuft" ? "fertig" : d)); abspiel.starte(laeufe()); }}>▶ Start</button>}
-          <button type="button" className="btn-secondary" disabled={zuViele || anzahl === 0} onClick={() => abspiel.schritt(laeufe)}>⏭ Schritt</button>
-          <button type="button" className="btn-secondary" onClick={abspiel.zurueck}>⟲ Zurück</button>
+              : <button type="button" className="btn-primary" disabled={zuViele || anzahl === 0} onClick={() => { demoEnde(); abspiel.starte(laeufe()); }}>▶ Start</button>}
+          <button type="button" className="btn-secondary" disabled={zuViele || anzahl === 0}
+            onClick={() => { if (demo === "laeuft") { demoEnde(); abspiel.zurueck(); } abspiel.schritt(laeufe); }}>⏭ Schritt</button>
+          <button type="button" className="btn-secondary" onClick={() => { demoEnde(); abspiel.zurueck(); }}>⟲ Zurück</button>
           <label className="text-xs text-muted flex items-center gap-1 ml-auto">🐢
             <input type="range" min={80} max={900} step={20} value={980 - abspiel.tempo} onChange={e => abspiel.setTempo(980 - +e.target.value)} />🐇
           </label>
@@ -483,8 +486,13 @@ function ProgrammLevel({ level, thema, m, tipp, fertig }: KindProps) {
             )}
           </div>
         )}
+        {anzahl > 0 && !level.bloecke.includes("rufe") && (
+          <details className="card p-2 text-sm">
+            <summary className="cursor-pointer font-bold">🔀 Mein Programm als Flussdiagramm</summary>
+            <div className="mt-2"><FlussEditor d={ausProgramm(prog)} modus="lesen" /></div>
+          </details>
+        )}
       </div>
-    </div>
       <div className="flex flex-col gap-2 min-w-0">
         <div className="flex items-center gap-2 text-sm">
           <span className={zuViele ? "text-bad font-bold" : "text-muted"}>
@@ -496,12 +504,6 @@ function ProgrammLevel({ level, thema, m, tipp, fertig }: KindProps) {
           </button>
         </div>
         <BlocklyEditor key={`${editorKey}-${geladen}`} {...editorProps} />
-        {anzahl > 0 && !level.bloecke.includes("rufe") && (
-          <details className="card p-2 text-sm">
-            <summary className="cursor-pointer font-bold">🔀 Mein Programm als Flussdiagramm</summary>
-            <div className="mt-2"><FlussEditor d={ausProgramm(prog)} modus="lesen" /></div>
-          </details>
-        )}
       </div>
     </div>
   );

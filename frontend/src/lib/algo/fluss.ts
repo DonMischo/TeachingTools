@@ -89,8 +89,43 @@ export function hatSchleife(d: Diagramm): boolean {
 export type Werte = Record<string, number>;
 
 function zerlege(s: string): string[] {
-  const t = s.replace(/[·×]/g, "*").replace(/:/g, "/").replace(/≠/g, "!=").replace(/,/g, ".");
-  return t.match(/\d+(?:\.\d+)?|[A-Za-zÄÖÜäöüß_]\w*|<=|>=|!=|==|[-+*/()<>=]/g) ?? [];
+  const t = s.replace(/[·×]/g, "*").replace(/:/g, "/").replace(/≠/g, "!=").replace(/,/g, ".").replace(/%/g, " mod ");
+  const roh = t.match(/\d+(?:\.\d+)?|[A-Za-zÄÖÜäöüß_]\w*|<=|>=|!=|==|[-+*/()<>=]/g) ?? [];
+  // »3T« und »2(x + 1)« wie im Heft: das fehlende Malzeichen ergänzen
+  const aus: string[] = [];
+  for (const tk of roh) {
+    const vor = aus.at(-1);
+    const vorZahl = vor !== undefined && (/^\d/.test(vor) || vor === ")");
+    if (vorZahl && (tk === "(" || (/^[A-Za-zÄÖÜäöüß_]/.test(tk) && tk.toLowerCase() !== "mod"))) aus.push("*");
+    aus.push(tk.toLowerCase() === "mod" ? "mod" : tk);
+  }
+  return aus;
+}
+
+/** Name eines Werts ohne Rücksicht auf Groß-/Kleinschreibung (»t« findet »T«). */
+function schluessel(w: Werte, name: string): string {
+  if (name in w) return name;
+  return Object.keys(w).find(k => k.toLowerCase() === name.toLowerCase()) ?? name;
+}
+
+const IST_EINGABE = /^eingabe\s*:?\s*([A-Za-zÄÖÜäöüß_]\w*)$/i;
+const IST_AUSGABE = /^ausgabe\s*:?\s*(.+)$/i;
+const IST_ZUWEISUNG = /^([A-Za-zÄÖÜäöüß_]\w*)\s*=\s*(.+)$/;
+const IST_VERGLEICH = /^[\w\s+\-*/().,·×:%]+(<=|>=|!=|≠|==|<|>|=)[\w\s+\-*/().,·×:%]+\??$/;
+
+/**
+ * Die Rechnung eines Kastens: das Feld »Rechnung« — oder, wenn das leer ist,
+ * der Kastentext, sofern er schon wie eine Rechnung aussieht (»eingabe T«,
+ * »x = 3*T + M«, »x > 7?«). So klappt es auch, wenn sie im Text steht.
+ */
+export function rechnungVon(k: Knoten): string | undefined {
+  const code = k.code?.trim();
+  if (code) return code;
+  const text = k.text.trim();
+  if (k.typ === "io" && (IST_EINGABE.test(text) || IST_AUSGABE.test(text))) return text;
+  if (k.typ === "aktion" && IST_ZUWEISUNG.test(text)) return text;
+  if (k.typ === "entscheidung" && IST_VERGLEICH.test(text)) return text.replace(/\?\s*$/, "");
+  return undefined;
 }
 
 export function rechne(ausdruck: string, w: Werte): number {
@@ -116,7 +151,8 @@ export function rechne(ausdruck: string, w: Werte): number {
     if (t === "-") return -faktor();
     if (t === "(") { const v = summe(); if (tk[i++] !== ")") throw new Error("Eine Klammer fehlt."); return v; }
     if (/^\d/.test(t)) return parseFloat(t);
-    if (t in w) return w[t];
+    const n = schluessel(w, t);
+    if (n in w) return w[n];
     throw new Error(`»${t}« hat noch keinen Wert.`);
   };
   const v = summe();
@@ -149,7 +185,7 @@ const zahl = (v: number) => String(Math.round(v * 1000) / 1000).replace(".", ","
 /** Setzt die Werte in eine Rechnung ein: »3*T + M« → »3 · 14 + 10«. */
 export function einsetzen(ausdruck: string, w: Werte): string {
   return ausdruck
-    .replace(/[A-Za-zÄÖÜäöüß_]\w*/g, n => (n === "mod" ? "mod" : n in w ? zahl(w[n]) : n))
+    .replace(/[A-Za-zÄÖÜäöüß_]\w*/g, n => (n.toLowerCase() === "mod" ? "mod" : schluessel(w, n) in w ? zahl(w[schluessel(w, n)]) : n))
     .replace(/\*/g, "·").replace(/\s*([+\-·/])\s*/g, " $1 ");
 }
 
@@ -162,9 +198,10 @@ export function startStand(d: Diagramm): AblaufStand {
 export function brauchtAntwort(d: Diagramm, s: AblaufStand): Frage | null {
   const k = d.knoten.find(x => x.id === s.bei);
   if (!k || s.fertig) return null;
-  const ein = k.code?.trim().match(/^eingabe\s+(\w+)$/i);
+  const code = rechnungVon(k);
+  const ein = code?.match(IST_EINGABE);
   if (k.typ === "io" && ein) return { art: "zahl", name: ein[1] };
-  if (k.typ === "entscheidung" && !k.code?.trim()) return { art: "janein" };
+  if (k.typ === "entscheidung" && !code) return { art: "janein" };
   return null;
 }
 
@@ -176,27 +213,33 @@ export function weiter(d: Diagramm, s: AblaufStand, antwort?: number | boolean):
   const werte = { ...s.werte };
   const ausgaben = [...s.ausgaben];
   const protokoll = [...s.protokoll];
-  const code = k.code?.trim();
+  const code = rechnungVon(k);
   let marke: "ja" | "nein" | undefined;
   if (k.typ === "io" && code) {
-    const ein = code.match(/^eingabe\s+(\w+)$/i), aus = code.match(/^ausgabe\s+(.+)$/i);
+    const ein = code.match(IST_EINGABE), aus = code.match(IST_AUSGABE);
     if (ein) {
-      werte[ein[1]] = Number(antwort);
+      werte[schluessel(werte, ein[1])] = Number(antwort);
       protokoll.push(`Eingabe: ${ein[1]} = ${zahl(Number(antwort))}`);
     } else if (aus) {
-      const v = rechne(aus[1], werte);
-      ausgaben.push(String(Math.round(v * 1000) / 1000));
-      protokoll.push(`Ausgabe: ${aus[1].trim()} = ${zahl(v)}`);
+      let v: number | null = null;
+      try { v = rechne(aus[1], werte); } catch (e) { if (k.code?.trim()) throw e; }
+      // Steht »Ausgabe: gerade« nur im Text und lässt sich nicht rechnen, wird der Text ausgegeben.
+      if (v === null) { ausgaben.push(k.text); protokoll.push(k.text); }
+      else {
+        ausgaben.push(String(Math.round(v * 1000) / 1000));
+        protokoll.push(`Ausgabe: ${aus[1].trim()} = ${zahl(v)}`);
+      }
     }
   } else if (k.typ === "io") {
     ausgaben.push(k.text);
     protokoll.push(k.text);
   } else if (k.typ === "aktion" && code) {
-    const m = code.match(/^(\w+)\s*=\s*(.+)$/);
+    const m = code.match(IST_ZUWEISUNG);
     if (!m) throw new Error(`»${code}« verstehe ich nicht. So geht es: x = 3*T + M`);
-    werte[m[1]] = rechne(m[2], werte);
+    const name = schluessel(werte, m[1]);
+    werte[name] = rechne(m[2], werte);
     const eingesetzt = einsetzen(m[2], s.werte);
-    protokoll.push(`${m[1]} = ${eingesetzt}${eingesetzt.trim() === zahl(werte[m[1]]) ? "" : ` = ${zahl(werte[m[1]])}`}`);
+    protokoll.push(`${m[1]} = ${eingesetzt}${eingesetzt.trim() === zahl(werte[name]) ? "" : ` = ${zahl(werte[name])}`}`);
   } else if (k.typ === "entscheidung") {
     marke = (code ? vergleiche(code, werte) : !!antwort) ? "ja" : "nein";
     protokoll.push(`${k.text} ${code ? `(${einsetzen(code, werte)}) ` : ""}→ ${marke}`);
@@ -403,6 +446,12 @@ export interface FlussAufgabe {
   optionen?: { text: string; richtig: boolean; warum: string }[];
   tests?: { eingaben: number[]; ausgabe: string }[];
   verlangt?: { entscheidung?: boolean; schleife?: boolean };
+  /** Arbeitsschritte, als nummerierte Liste unter dem Text */
+  schritte?: string[];
+  /** Lückenaufgabe: Beispiel-Id des Gerüsts, Knoten-Ids mit Lücke (→ Mustertext), fehlende Pfeile [von, nach] */
+  geruest?: string;
+  luecken?: Record<string, string>;
+  fehlendePfeile?: [string, string][];
 }
 
 export const AUFGABEN: FlussAufgabe[] = [
@@ -439,18 +488,47 @@ export const AUFGABEN: FlussAufgabe[] = [
   },
   {
     id: "bauen-geburtstag", titel: "6 · Selbst bauen: Geburtstagsrechnung", art: "bauen",
-    text: "Zeichne das Flussdiagramm der Geburtstagsrechnung selbst. Damit es rechnen kann, schreib in die Kästen eine Rechnung: »eingabe T«, »x = 3*T + M«, »r = x mod 7«, »ausgabe r«.",
+    text: "Die Rechenvorschrift: Nimm den Tag deines Geburtstags T (z. B. 14) mal 3 und zähle die Monatszahl M dazu (Oktober = 10). Teile das Ergebnis durch 7 und gib den Rest aus. Zeichne dazu ein Flussdiagramm, das wirklich rechnet:",
+    schritte: [
+      "Unter Start: zwei Ein-/Ausgabe-Kästen (Parallelogramm) für die Eingaben. Kasten anklicken und unten bei »Rechnung« eintragen: eingabe T bzw. eingabe M.",
+      "Dann zwei Anweisungen (Rechteck) mit den Rechnungen x = 3*T + M und r = x mod 7.",
+      "Dann ein Ein-/Ausgabe-Kasten mit ausgabe r, zuletzt das Ende.",
+      "Alles mit Pfeilen von oben nach unten verbinden (Pfeil-Modus) und »Prüfen«. Probe: Mit T = 14 und M = 10 muss 3 herauskommen.",
+    ],
     tests: [{ eingaben: [14, 10], ausgabe: "3" }, { eingaben: [1, 1], ausgabe: "4" }, { eingaben: [31, 12], ausgabe: "0" }],
   },
   {
-    id: "bauen-lexikon", titel: "7 · Selbst bauen: Lexikon", art: "bauen",
-    text: "Du sollst etwas über »Milcheis mit Schokostücken« schreiben, bist dir aber beim Sortennamen unsicher. Zeichne das Flussdiagramm, wie man das Wort im Lexikon nachschlägt. Es braucht mindestens eine Entscheidung und eine Schleife.",
+    id: "bauen-lexikon", titel: "7 · Lückendiagramm: Lexikon", art: "bauen",
+    text: "Du willst über »Milcheis mit Schokostücken« schreiben und schlägst den Sortennamen »Stracciatella« im Lexikon nach. Das Grundgerüst steht schon — vervollständige es:",
+    schritte: [
+      "Fülle die drei Lücken »…«: Kasten anklicken, Text eintragen. Was fragst du in der oberen Raute? Was tust du bei »ja« und was bei »nein« der unteren Raute?",
+      "Ergänze die drei fehlenden Pfeile (Pfeil-Modus): Nach dem Blättern geht es jeweils zurück zur oberen Raute — das ist die Schleife. Und von der oberen Raute muss ein »ja«-Pfeil zu »Eintrag lesen« führen.",
+      "»Prüfen«: Keine Lücke mehr offen, jeder Kasten hat seine Pfeile, und es gibt eine Schleife.",
+    ],
+    geruest: "lexikon",
+    luecken: { k3: "Steht das Wort auf der Seite?", k5: "Nach vorn blättern", k6: "Nach hinten blättern" },
+    fehlendePfeile: [["k5", "k3"], ["k6", "k3"], ["k3", "k7"]],
     verlangt: { entscheidung: true, schleife: true },
   },
 ];
 
+export const LUECKE = "…";
+
+/** Grundgerüst einer Lückenaufgabe: das Beispiel ohne die Lückentexte und ohne die fehlenden Pfeile. */
+export function geruestVon(a: FlussAufgabe): Diagramm | null {
+  const d = a.geruest ? beispiel(a.geruest)?.diagramm : undefined;
+  if (!d) return null;
+  const fehlt = (e: Kante) => (a.fehlendePfeile ?? []).some(([v, n]) => e.von === v && e.nach === n);
+  return {
+    knoten: d.knoten.map(k => (a.luecken && k.id in a.luecken ? { ...k, text: LUECKE } : k)),
+    kanten: d.kanten.filter(e => !fehlt(e)),
+  };
+}
+
 /** Prüft ein selbst gebautes Diagramm gegen die Aufgabe. Leere Liste = gelöst. */
 export function pruefeBau(a: FlussAufgabe, d: Diagramm): string[] {
+  const offen = d.knoten.filter(k => !k.text.trim() || k.text.includes(LUECKE)).length;
+  if (offen) return [`Noch ${offen === 1 ? "eine Lücke" : `${offen} Lücken`} »${LUECKE}« offen — Kasten anklicken und Text eintragen.`];
   const fehler = pruefe(d).map(p => p.text);
   if (fehler.length) return fehler;
   if (a.verlangt?.entscheidung && !d.knoten.some(k => k.typ === "entscheidung")) fehler.push("Es fehlt eine Entscheidung (Raute).");

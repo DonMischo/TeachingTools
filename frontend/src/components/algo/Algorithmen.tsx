@@ -10,12 +10,13 @@
  */
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { wahl as vorWahl, type Vorgabe } from "@/lib/vorgabe";
-import { LEER_STAND, ladeStand, mitErledigt, mitLevel, speichereStand, summen, type AlgoStand } from "@/lib/algo/fortschritt";
+import { LEER_STAND, ladeStand, mitErledigt, mitLevel, speichereStand, summen, vereinige, type AlgoStand } from "@/lib/algo/fortschritt";
 import { HilfeKontext } from "./Hilfe";
 import CodeAbenteuer from "./CodeAbenteuer";
 import AutomatEinstieg from "./AutomatEinstieg";
 import FlussReiter from "./FlussReiter";
 import AlgoUebersicht from "./AlgoUebersicht";
+import type { SitzungWahl } from "@/components/SitzungWahl";
 
 type Reiter = "automat" | "fluss" | "abenteuer" | "uebersicht";
 
@@ -29,10 +30,12 @@ const REITER: { id: Reiter; icon: string; label: string }[] = [
 const chip = (an: boolean) =>
   `px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${an ? "bg-accent text-accent-fg" : "text-muted hover:text-fg"}`;
 
-export default function Algorithmen({ action, vorgabe, speicherSchluessel = "hp_algo_stand", onStand, verwaltung = false }: {
+export default function Algorithmen({ action, vorgabe, speicherSchluessel = "hp_algo_stand", onStand, wahl, ladeServer }: {
   action?: ReactNode;
-  /** Lehrkraft auf der Werkzeugseite: zeigt die Klassenübersicht */
-  verwaltung?: boolean;
+  /** Lehrkraft auf der Werkzeugseite: gewählte Sitzung — zeigt die Klassenübersicht */
+  wahl?: SitzungWahl;
+  /** holt den beim Server gemeldeten Stand; er wird mit dem im Browser vereinigt */
+  ladeServer?: () => Promise<AlgoStand | null>;
   vorgabe?: Vorgabe;
   /** localStorage-Schlüssel des Fortschritts (Gäste: je Name) */
   speicherSchluessel?: string;
@@ -44,6 +47,13 @@ export default function Algorithmen({ action, vorgabe, speicherSchluessel = "hp_
   const [stand, setStand] = useState<AlgoStand>(LEER_STAND);
   const [flussStart, setFlussStart] = useState<string | null>(null);
   useEffect(() => { setStand(ladeStand(speicherSchluessel)); }, [speicherSchluessel]);
+  // Stand vom Server dazuholen (anderer Rechner, gelöschter Browser-Speicher): je Aufgabe zählt das Beste.
+  const [serverGeholt, setServerGeholt] = useState(false);
+  useEffect(() => {
+    if (!ladeServer || serverGeholt) return;
+    setServerGeholt(true);
+    ladeServer().then(s => { if (s) setStand(alt => vereinige(alt, s)); }).catch(() => { /* dann eben nur der Browser */ });
+  }, [ladeServer, serverGeholt]);
   const [hilfsmodus, setHilfsmodus] = useState(false);
   useEffect(() => { try { setHilfsmodus(localStorage.getItem("hp_algo_hilfsmodus") === "1"); } catch { /* aus */ } }, []);
   const gesamt = summen(stand);
@@ -79,7 +89,7 @@ export default function Algorithmen({ action, vorgabe, speicherSchluessel = "hp_
       </div>
       {!festerReiter && (
         <div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface">
-          {REITER.filter(r => r.id !== "uebersicht" || verwaltung).map(r => (
+          {REITER.filter(r => r.id !== "uebersicht" || wahl).map(r => (
             <button key={r.id} type="button" onClick={() => setReiter(r.id)} className={chip(reiter === r.id)}>{r.icon} {r.label}</button>
           ))}
         </div>
@@ -90,7 +100,7 @@ export default function Algorithmen({ action, vorgabe, speicherSchluessel = "hp_
           onFluss={id => { setFlussStart(id); setReiter("fluss"); }} />
       )}
       {reiter === "fluss" && <FlussReiter erledigt={stand.fluss} start={flussStart} onGeloest={(id, w) => aendern(s => mitErledigt(s, "fluss", id, w))} />}
-      {reiter === "uebersicht" && verwaltung && <AlgoUebersicht />}
+      {reiter === "uebersicht" && wahl && <AlgoUebersicht wahl={wahl} />}
       {reiter === "abenteuer" && (
         <CodeAbenteuer stand={stand} onGeloest={(id, w) => aendern(s => mitLevel(s, id, w))} />
       )}

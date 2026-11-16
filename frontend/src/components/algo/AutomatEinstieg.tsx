@@ -7,6 +7,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { aufgabenWertung, type Wertung } from "@/lib/algo/wertung";
 import { HilfeLeiste, WertungZeile, useMessung } from "./Hilfe";
+import ZiehKarten from "./ZiehKarten";
 import { AUTOMATEN, MERKMAL, fuehreAutomatAus, gemischt, type AusfuehrSchritt, type Automat } from "@/lib/algo/automaten";
 
 const AUSFUEHRER = [
@@ -84,7 +85,6 @@ function AutomatAufgabe({ a, onGeloest, onFluss }: { a: Automat; onGeloest: (w: 
   const schritt = lauf?.schritte[lauf.i];
   const ausf = AUSFUEHRER.find(x => x.id === wer)!;
   const textVon = (id: string) => a.handlungen.find(h => h.id === id)!.text;
-  const knopf = "w-6 h-6 rounded bg-surface-hover hover:bg-line text-xs";
 
   return (
     <div className="flex flex-col gap-4">
@@ -101,40 +101,10 @@ function AutomatAufgabe({ a, onGeloest, onFluss }: { a: Automat; onGeloest: (w: 
         ) : <button type="button" className="self-start text-xs underline text-muted" onClick={() => setNotizAuf(true)}>✏️ Erst selbst aufschreiben</button>}
       </section>
 
-      <div className="grid md:grid-cols-2 gap-4">
-        <section className="card p-3 flex flex-col gap-2">
-          <h3 className="text-sm font-bold">🃏 Karten — antippen zum Hinzufügen</h3>
-          {stapel.filter(id => !plan.includes(id)).map(id => (
-            <button key={id} type="button" onClick={() => neuerPlan([...plan, id])}
-              className="text-left text-sm rounded-lg border border-line bg-page px-3 py-2 hover:border-line-active">
-              {textVon(id)}
-            </button>
-          ))}
-        </section>
-        <section className="card p-3 flex flex-col gap-2">
-          <h3 className="text-sm font-bold">📜 Dein Algorithmus</h3>
-          {plan.length === 0 && <p className="text-sm text-muted">Noch leer — tippe links auf Karten.</p>}
-          <ol className="flex flex-col gap-1">
-            {plan.map((id, i) => {
-              const aktiv = schritt?.handlung?.id === id;
-              const kaputt = fertig && schritt?.art === "fehler" && schritt.handlung?.id === id;
-              return (
-                <li key={id} className={`flex items-center gap-2 text-sm rounded-lg border px-2 py-1.5 ${kaputt ? "border-bad bg-bad/10" : aktiv ? "border-line-active bg-surface-hover" : "border-line"}`}>
-                  <span className="font-black tabular-nums w-5 text-right">{i + 1}.</span>
-                  <span className="flex-1">{textVon(id)}</span>
-                  <span className="inline-flex gap-1 shrink-0">
-                    <button type="button" className={knopf} aria-label="nach oben" disabled={i === 0}
-                      onClick={() => { const p = [...plan]; [p[i - 1], p[i]] = [p[i], p[i - 1]]; neuerPlan(p); }}>▲</button>
-                    <button type="button" className={knopf} aria-label="nach unten" disabled={i === plan.length - 1}
-                      onClick={() => { const p = [...plan]; [p[i + 1], p[i]] = [p[i], p[i + 1]]; neuerPlan(p); }}>▼</button>
-                    <button type="button" className={knopf} aria-label="Karte entfernen" onClick={() => neuerPlan(plan.filter(x => x !== id))}>✕</button>
-                  </span>
-                </li>
-              );
-            })}
-          </ol>
-        </section>
-      </div>
+      <ZiehKarten stapel={stapel.filter(id => !plan.includes(id))} plan={plan} text={textVon} onPlan={neuerPlan}
+        stapelTitel="🃏 Karten — ziehen oder antippen" planTitel="📜 Dein Algorithmus" leer="Noch leer — zieh Karten hierher oder tippe sie an."
+        gesperrt={!!lauf && !fertig}
+        zeilenKlasse={id => (fertig && schritt?.art === "fehler" && schritt.handlung?.id === id ? "border-bad bg-bad/10" : schritt?.handlung?.id === id ? "border-line-active bg-surface-hover" : "border-line")} />
 
       <section className="card p-4 flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
@@ -231,21 +201,9 @@ function InnenAufgabe({ a, onFluss }: { a: Automat; onFluss: (id: string) => voi
       <p className="text-sm text-muted">
         Während du ihn bedienst, arbeitet der Automat seinen eigenen Algorithmus ab. Spielt es zu zweit nach (eine Person ist Kundschaft, eine der Automat) — und bringt dann seine Schritte in die richtige Reihenfolge.
       </p>
-      <div className="grid md:grid-cols-2 gap-3">
-        <div className="flex flex-col gap-1">
-          {stapel.filter(i => !folge.includes(i)).map(i => (
-            <button key={i} type="button" onClick={() => setFolge([...folge, i])}
-              className="text-left text-sm rounded-lg border border-line bg-page px-3 py-2 hover:border-line-active">{a.innen[i]}</button>
-          ))}
-        </div>
-        <ol className="flex flex-col gap-1">
-          {folge.map((x, i) => (
-            <li key={x} className={`text-sm rounded-lg border px-3 py-2 ${fertig ? (x === i ? "border-ok" : "border-bad") : "border-line"}`}>
-              <b>{i + 1}.</b> {a.innen[x]}
-            </li>
-          ))}
-        </ol>
-      </div>
+      <ZiehKarten stapel={stapel.filter(i => !folge.includes(i)).map(String)} plan={folge.map(String)} text={id => a.innen[+id]}
+        onPlan={p => setFolge(p.map(Number))} stapelTitel="🃏 Schritte des Automaten" planTitel="🔧 Reihenfolge" knoepfe={!fertig}
+        zeilenKlasse={(id, i) => (fertig ? (+id === i ? "border-ok" : "border-bad") : "border-line")} />
       <div className="flex gap-2 items-center flex-wrap">
         <button type="button" className="btn-secondary" onClick={() => setFolge([])}>⟲ Neu ordnen</button>
         {fertig && (richtig

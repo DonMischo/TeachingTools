@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AUFGABEN, BEISPIELE, ausProgramm, baue, beispiel, hatSchleife, laufeDurch, pruefe, pruefeBau, rechne, vergleiche } from "@/lib/algo/fluss";
+import { AUFGABEN, BEISPIELE, LUECKE, ausProgramm, baue, beispiel, geruestVon, hatSchleife, laufeDurch, pruefe, pruefeBau, rechne, vergleiche, type Diagramm } from "@/lib/algo/fluss";
 import { LEVEL } from "@/lib/algo/level";
 
 describe("Rechensprache", () => {
@@ -13,6 +13,12 @@ describe("Rechensprache", () => {
     expect(vergleiche("z mod 2 = 0", { z: 4 })).toBe(true);
     expect(vergleiche("x >= 7", { x: 6 })).toBe(false);
     expect(vergleiche("x ≠ 3", { x: 6 })).toBe(true);
+  });
+  it("liest »3T« als 3 · T, % als mod und Namen ohne Groß-/Kleinschreibung", () => {
+    expect(rechne("3T + m", { T: 14, M: 10 })).toBe(52);
+    expect(rechne("2(x + 1)", { x: 2 })).toBe(6);
+    expect(rechne("52 % 7", {})).toBe(3);
+    expect(rechne("x MOD 7", { x: 52 })).toBe(3);
   });
   it("meldet unbekannte Namen", () => {
     expect(() => rechne("y + 1", {})).toThrow(/y/);
@@ -61,6 +67,28 @@ describe("Prüfung", () => {
 });
 
 describe("Aufgaben", () => {
+  it("rechnet auch, wenn die Rechnung nur im Kastentext steht (Aufgabe 6)", () => {
+    const k = (id: string, typ: Diagramm["knoten"][number]["typ"], text: string, y: number) => ({ id, typ, text, x: 110, y });
+    const d: Diagramm = {
+      knoten: [k("s", "start", "Start", 0), k("a", "io", "Eingabe: t", 1), k("b", "io", "eingabe M", 2), k("c", "aktion", "x = 3T + M", 3),
+        k("d", "aktion", "r = x mod 7", 4), k("f", "io", "ausgabe r", 5), k("e", "ende", "Ende", 6)],
+      kanten: [["s", "a"], ["a", "b"], ["b", "c"], ["c", "d"], ["d", "f"], ["f", "e"]].map(([von, nach]) => ({ von, nach })),
+    };
+    expect(pruefeBau(AUFGABEN.find(x => x.id === "bauen-geburtstag")!, d)).toEqual([]);
+  });
+  it("Text-Ausgaben ohne Rechnung bleiben Text", () => {
+    expect(laufeDurch(beispiel("teiler")!.diagramm, [4]).ausgaben).toEqual(["Ausgabe: gerade"]);
+  });
+  it("das Lexikon-Gerüst hat Lücken und fehlende Pfeile, ausgefüllt ist es gelöst", () => {
+    const a = AUFGABEN.find(x => x.id === "bauen-lexikon")!;
+    const g = geruestVon(a)!;
+    expect(g.knoten.filter(k => k.text === LUECKE)).toHaveLength(3);
+    expect(pruefeBau(a, g)[0]).toMatch(/3 Lücken/);
+    const gefuellt = { ...g, knoten: g.knoten.map(k => (a.luecken![k.id] ? { ...k, text: a.luecken![k.id] } : k)) };
+    expect(pruefeBau(a, gefuellt).length).toBeGreaterThan(0);
+    const kanten = [...gefuellt.kanten, ...a.fehlendePfeile!.map(([von, nach]) => ({ von, nach, ...(von === "k3" ? { marke: "ja" as const } : {}) }))];
+    expect(pruefeBau(a, { ...gefuellt, kanten })).toEqual([]);
+  });
   it("die Musterlösung der Geburtstags-Aufgabe besteht ihre Tests", () => {
     const a = AUFGABEN.find(x => x.id === "bauen-geburtstag")!;
     expect(pruefeBau(a, beispiel("geburtstag")!.diagramm)).toEqual([]);
@@ -78,4 +106,20 @@ describe("Aufgaben", () => {
 
 describe("Programm als Flussdiagramm", () => {
   for (const l of LEVEL) it(`${l.id} ergibt ein gültiges Diagramm`, () => expect(pruefe(ausProgramm(l.loesung))).toEqual([]));
+});
+
+describe("D2-Ansicht", () => {
+  it("übersetzt Formen, Marken und Hervorhebung in D2-Code", async () => {
+    const { alsD2, d2Text } = await import("@/lib/algo/flussD2");
+    const d = beispiel("teiler")!.diagramm;
+    const code = alsD2(d, { theme: 3, skizze: true, quer: true, aktiv: d.knoten[1].id });
+    expect(code).toContain("theme-id: 3");
+    expect(code).toContain("sketch: true");
+    expect(code).toContain("direction: right");
+    expect(code).toContain("shape: diamond");
+    expect(code).toContain("shape: parallelogram");
+    expect(code).toMatch(/-> n_\w+: ja/);
+    expect(code).toContain("stroke-width: 5");
+    expect(d2Text('a "b" \\ c')).toBe('"a \\"b\\" \\\\ c"');
+  });
 });

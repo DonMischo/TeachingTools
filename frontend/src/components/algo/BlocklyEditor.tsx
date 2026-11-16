@@ -125,13 +125,21 @@ export default function BlocklyEditor({
           theme: thema,
           trashcan: !nurLesen,
           move: { scrollbars: true, drag: true, wheel: false },
-          zoom: { controls: true, wheel: true, startScale: 0.9 },
+          // Mausrad scrollt die Seite statt zu zoomen; die Knöpfe zoomen in feinen Stufen.
+          zoom: { controls: true, wheel: false, startScale: 0.8, scaleSpeed: 1.1, minScale: 0.4, maxScale: 1.6 },
           sounds: false,
         });
         ws.current = w;
         B.serialization.workspaces.load(zuJson(startProg.current, mitFn), w);
         for (const b of w.getTopBlocks(false)) {
           if (b.type === "algo_start" || b.type === "algo_fn") b.setDeletable(false);
+        }
+        // Ist der Editor zu schmal für beide Hüte nebeneinander, kommt das Unterprogramm unter das Hauptprogramm.
+        const hut = (t: string) => w.getTopBlocks(false).find(b => b.type === t);
+        const start = hut("algo_start"), fn = hut("algo_fn");
+        if (start && fn) {
+          const s = start.getBoundingRectangle(), sicht = w.getMetricsManager().getViewMetrics(true);
+          if (fn.getBoundingRectangle().right > sicht.left + sicht.width) fn.moveTo(new B.utils.Coordinate(s.left, s.bottom + 40));
         }
         w.addChangeListener(e => {
           if (e.isUiEvent || w.isDragging()) return;
@@ -155,5 +163,5 @@ export default function BlocklyEditor({
   }, [aktiv]);
 
   if (fehler) return <div className="card p-3 text-sm text-bad">Blockly konnte nicht geladen werden: {fehler}</div>;
-  return <div ref={ort} className="w-full rounded-xl overflow-hidden border border-line" style={{ height: nurLesen ? 260 : "min(560px, 70vh)" }} data-testid="blockly-editor" />;
+  return <div ref={ort} className="w-full rounded-xl overflow-hidden border border-line" style={{ height: nurLesen ? 260 : "min(640px, 75vh)" }} data-testid="blockly-editor" />;
 }

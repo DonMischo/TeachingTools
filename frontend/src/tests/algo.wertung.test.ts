@@ -43,3 +43,17 @@ describe("Unscharfe Hilfe", () => {
     expect(hilfestufe({ ...e, hilfsmodus: true })).toBeGreaterThan(hilfestufe(e));
   });
 });
+
+describe("Stand vereinigen (Browser + Server)", () => {
+  it("nimmt je Level und Aufgabe das Beste", async () => {
+    const { vereinige, LEER_STAND } = await import("@/lib/algo/fortschritt");
+    const browser = { ...LEER_STAND, level: { "1-1": { sterne: 1, bloecke: 5, punkte: 300 } }, fluss: ["formen"] };
+    const server = { level: { "1-1": { sterne: 3, bloecke: 7, punkte: 900 }, "1-2": { sterne: 2, bloecke: 4, punkte: 600 } }, fluss: [], automat: ["kaugummi"], wertung: { "automat:kaugummi": { sterne: 2, punkte: 500 } } };
+    const s = vereinige(browser, server);
+    expect(s.level["1-1"]).toEqual({ sterne: 3, bloecke: 5, punkte: 900 });
+    expect(s.level["1-2"].sterne).toBe(2);
+    expect(s.fluss).toEqual(["formen"]);
+    expect(s.automat).toEqual(["kaugummi"]);
+    expect(s.wertung["automat:kaugummi"]).toEqual({ sterne: 2, punkte: 500 });
+  });
+});

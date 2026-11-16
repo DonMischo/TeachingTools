@@ -11,7 +11,10 @@
  * wird immer die senkrechte Lage (`kippe` / `zurueckKippen`).
  */
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type PointerEvent as RPointerEvent } from "react";
-import { BREITE, TYP_NAME, hoehe, kippe, zurueckKippen, type Diagramm, type Kante, type Knoten, type KnotenTyp } from "@/lib/algo/fluss";
+import { alsD2 } from "@/lib/algo/flussD2";
+import { THEMEN as D2_THEMEN } from "@/lib/diagramm/vorlagen";
+import { useD2Zeichner } from "./D2Kontext";
+import { BREITE, LUECKE, TYP_NAME, hoehe, kippe, zurueckKippen, type Diagramm, type Kante, type Knoten, type KnotenTyp } from "@/lib/algo/fluss";
 
 export type Modus = "bearbeiten" | "verbinden" | "lesen";
 type Punkt = [number, number];
@@ -97,6 +100,37 @@ export function FormKnopf({ typ, text, onClick, an }: { typ: KnotenTyp; text: st
 }
 
 const RICHTUNG_KEY = "hp_algo_fluss_waagerecht";
+const D2_KEY = "hp_algo_fluss_d2";
+
+interface D2Wahl { an: boolean; theme: number; skizze: boolean }
+
+/** Die D2-Ansicht: dasselbe Diagramm, gesetzt und gezeichnet von D2 (Themen, Skizzenstil). Nur zum Ansehen. */
+function D2Ansicht({ d, wahl, quer, aktiv, markiert }: { d: Diagramm; wahl: D2Wahl; quer: boolean; aktiv?: string; markiert?: string[] }) {
+  const zeichne = useD2Zeichner();
+  const code = useMemo(() => alsD2(d, { theme: wahl.theme, skizze: wahl.skizze, quer, aktiv, markiert }), [d, wahl.theme, wahl.skizze, quer, aktiv, markiert]);
+  const [svg, setSvg] = useState<string | null>(null);
+  const [fehler, setFehler] = useState<string | null>(null);
+  const lauf = useRef(0);
+  useEffect(() => {
+    if (!zeichne) return;
+    const nr = ++lauf.current;
+    const t = setTimeout(() => {
+      zeichne(code)
+        .then(r => { if (nr === lauf.current) { setSvg(r.svg); setFehler(null); } })
+        .catch(e => { if (nr === lauf.current) setFehler(e instanceof Error ? e.message : String(e)); });
+    }, 150);
+    return () => clearTimeout(t);
+  }, [code, zeichne]);
+  const dunkel = D2_THEMEN.find(t => t.id === wahl.theme)?.dunkel;
+  return (
+    <div className={`overflow-auto rounded-xl border border-line p-3 ${dunkel ? "bg-[#1e1e2e]" : "bg-white"}`} style={{ maxHeight: "70vh" }} data-testid="fluss-d2">
+      {fehler && <p className="text-sm text-bad">D2 konnte nicht zeichnen: {fehler}</p>}
+      {!svg && !fehler && <p className="text-sm text-slate-500 p-6 text-center">D2 wird geladen …</p>}
+      {/* entschärftes SVG aus lib/diagramm/d2laufzeit */}
+      {svg && <div className="[&>svg]:max-w-full [&>svg]:h-auto [&>svg]:mx-auto" dangerouslySetInnerHTML={{ __html: svg }} />}
+    </div>
+  );
+}
 
 export default function FlussEditor({
   d, onChange, modus, aktiv, formen, markiertKante, markiertKnoten, onKnotenKlick, onKanteKlick, kommentare: kommentareStart = false, pfeilStart = false,
@@ -127,8 +161,22 @@ export default function FlussEditor({
   const [kommentare, setKommentare] = useState(kommentareStart);
   useEffect(() => { try { setQuer(localStorage.getItem(RICHTUNG_KEY) === "1"); } catch { /* senkrecht */ } }, []);
   const zug = useRef<{ id: string; dx: number; dy: number; bewegt: boolean } | null>(null);
+  // Ein neuer Kasten wird in den sichtbaren Bereich gerollt
+  const [zeigen, setZeigen] = useState<string | null>(null);
+  useEffect(() => {
+    if (!zeigen) return;
+    svg.current?.querySelector(`[data-testid="knoten-${zeigen}"]`)?.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
+    setZeigen(null);
+  }, [zeigen, d]);
   const darfVerbinden = modus !== "lesen";
   const darfZiehen = modus !== "lesen" && !pfeilModus;
+  // D2-Ansicht: nur, wenn die Seite D2 mitbringt und keine Klick-Aufgabe läuft (die braucht die eigene Zeichnung)
+  const zeichner = useD2Zeichner();
+  const d2Moeglich = !!zeichner && !formen && !onKnotenKlick && !onKanteKlick;
+  const [d2, setD2] = useState<D2Wahl>({ an: false, theme: 0, skizze: false });
+  useEffect(() => { try { const w = JSON.parse(localStorage.getItem(D2_KEY) ?? "null"); if (w && typeof w.theme === "number") setD2({ an: !!w.an, theme: w.theme, skizze: !!w.skizze }); } catch { /* aus */ } }, []);
+  const setzeD2 = (w: D2Wahl) => { setD2(w); try { localStorage.setItem(D2_KEY, JSON.stringify(w)); } catch { /* egal */ } };
+  const d2An = d2Moeglich && d2.an;
   const hatErklaerung = d.knoten.some(k => k.erklaerung);
 
   // Angezeigt wird ggf. gekippt; Änderungen gehen in senkrechter Lage hinaus.
@@ -211,6 +259,14 @@ export default function FlussEditor({
     onKnotenKlick?.(id);
   };
 
+  /** ja ⇄ nein an einer Raute: der andere Pfeil derselben Raute tauscht mit, damit beide eindeutig bleiben */
+  const tauscheMarke = (i: number) => {
+    const e = anzeige.kanten[i];
+    if (!e?.marke) return;
+    const neu = e.marke === "ja" ? "nein" : "ja";
+    aendere({ ...anzeige, kanten: anzeige.kanten.map((x, j) => (j === i ? { ...x, marke: neu } : x.von === e.von && x.marke === neu ? { ...x, marke: e.marke } : x)) });
+  };
+
   const kanteKlick = (i: number) => {
     if (pfeilModus && darfVerbinden) {
       aendere({ ...anzeige, kanten: anzeige.kanten.filter((_, j) => j !== i) });
@@ -227,10 +283,13 @@ export default function FlussEditor({
   const neuerKnoten = (typ: KnotenTyp) => {
     const id = `n${Date.now().toString(36)}${Math.floor(Math.random() * 1000)}`;
     const text = typ === "start" ? "Start" : typ === "ende" ? "Ende" : typ === "entscheidung" ? "Frage?" : typ === "io" ? "Ein-/Ausgabe" : "Anweisung";
-    // In senkrechter Lage unten anhängen (die Anzeige kippt mit)
-    const tiefste = Math.max(-52, ...d.knoten.map(k => k.y));
-    onChange?.({ ...d, knoten: [...d.knoten, { id, typ, text, x: 110, y: tiefste + 92 }] });
+    // In senkrechter Lage unter dem letzten Kasten vor dem Ende einfügen; das Ende rückt nach unten (die Anzeige kippt mit)
+    const ohneEnde = d.knoten.filter(k => k.typ !== "ende" || typ === "ende");
+    const y = Math.max(-52, ...ohneEnde.map(k => k.y)) + 92;
+    const knoten = d.knoten.map(k => (typ !== "ende" && k.typ === "ende" && k.y < y + 92 ? { ...k, y: y + 92 } : k));
+    onChange?.({ ...d, knoten: [...knoten, { id, typ, text, x: 110, y }] });
     setWahl({ knoten: id });
+    setZeigen(id);
   };
 
   const loeschen = () => {
@@ -247,11 +306,11 @@ export default function FlussEditor({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap gap-1.5 items-center">
-        {modus === "bearbeiten" && (["start", "aktion", "io", "entscheidung", "ende"] as KnotenTyp[]).map(t => (
+        {modus === "bearbeiten" && !d2An && (["start", "aktion", "io", "entscheidung", "ende"] as KnotenTyp[]).map(t => (
           <FormKnopf key={t} typ={t} text={t === "start" ? "Start" : t === "ende" ? "Ende" : TYP_NAME[t]} onClick={() => neuerKnoten(t)} />
         ))}
         <span className="ml-auto flex flex-wrap gap-1.5">
-          {darfVerbinden && (
+          {darfVerbinden && !d2An && (
             <button type="button" className={schalter(pfeilModus)} onClick={() => { setPfeilModus(!pfeilModus); setVerbindeVon(null); }}
               title="Pfeil-Modus: erst Startkasten, dann Zielkasten anklicken; ein Klick auf einen Pfeil löscht ihn">
               ➜ Pfeil-Modus {pfeilModus ? "an" : "aus"}
@@ -262,12 +321,28 @@ export default function FlussEditor({
             onClick={() => { const neu = !quer; setQuer(neu); try { localStorage.setItem(RICHTUNG_KEY, neu ? "1" : "0"); } catch { /* egal */ } }}>
             {quer ? "↔ waagerecht" : "↕ senkrecht"}
           </button>
+          {d2Moeglich && (
+            <button type="button" className={schalter(d2.an)} title="Das Diagramm von D2 setzen und zeichnen lassen — mit Farbthemen und Skizzenstil (nur zum Ansehen)"
+              onClick={() => setzeD2({ ...d2, an: !d2.an })}>🎨 D2-Ansicht</button>
+          )}
         </span>
       </div>
       {verbindeVon
         ? <p className="text-sm text-accent font-bold">➜ Jetzt den Kasten anklicken, zu dem der Pfeil zeigen soll. (Esc oder Klick ins Leere bricht ab.)</p>
-        : pfeilModus && darfVerbinden && <p className="text-xs text-muted">Pfeil-Modus: Kasten anklicken, dann den Zielkasten. Ein Klick auf einen Pfeil (🗑) löscht ihn. Bei einer Raute wird der erste Pfeil »ja«, der zweite »nein«.</p>}
-      <div className="overflow-auto rounded-xl border border-line bg-white" style={{ maxHeight: "70vh" }}
+        : pfeilModus && darfVerbinden && <p className="text-xs text-muted">Pfeil-Modus: Kasten anklicken, dann den Zielkasten. Am Pfeil: 🗑 löscht ihn, ⇄ tauscht »ja« und »nein«. Bei einer Raute wird der erste Pfeil »ja«, der zweite »nein«.</p>}
+      {d2An && (
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <label className="flex items-center gap-1.5">Thema
+            <select className="input !py-1 text-xs" value={d2.theme} onChange={e => setzeD2({ ...d2, theme: Number(e.target.value) })}>
+              {D2_THEMEN.map(t => <option key={t.id} value={t.id}>{t.name}{t.dunkel ? " (dunkel)" : ""}</option>)}
+            </select>
+          </label>
+          <label className="flex items-center gap-1.5"><input type="checkbox" checked={d2.skizze} onChange={e => setzeD2({ ...d2, skizze: e.target.checked })} /> ✏️ Handgezeichnet</label>
+          {modus !== "lesen" && <span className="text-muted">Zum Bearbeiten die D2-Ansicht ausschalten.</span>}
+        </div>
+      )}
+      {d2An && <D2Ansicht d={d} wahl={d2} quer={quer} aktiv={aktiv} markiert={markiertKnoten} />}
+      <div className={`overflow-auto rounded-xl border border-line bg-white ${d2An ? "hidden" : ""}`} style={{ maxHeight: "70vh" }}
         onKeyDown={e => { if (e.key === "Escape") setVerbindeVon(null); if (e.key === "Delete" && (modus === "bearbeiten" || (modus === "verbinden" && kante))) loeschen(); }} tabIndex={0}>
         <svg ref={svg} viewBox={`${rahmen.x} ${rahmen.y} ${rahmen.b} ${rahmen.h}`} width={rahmen.b} height={rahmen.h}
           className="block select-none touch-none" data-testid="fluss-flaeche"
@@ -306,6 +381,7 @@ export default function FlussEditor({
             const pfad = p.map(([x, y], j) => `${j ? "L" : "M"}${x},${y}`).join(" ");
             const an = wahl.kante === i || markiertKante?.i === i;
             const loeschbar = pfeilModus && darfVerbinden && ueber === i;
+            const raus = () => setUeber(u => (u === i ? null : u));
             const farbe = markiertKante?.i === i ? (markiertKante.ok ? "#16a34a" : "#dc2626") : loeschbar ? "#dc2626" : an ? "#2563eb" : "#334155";
             const [lx, ly] = p[0], [nx, ny] = p[1];
             const rx = lx + (nx > lx ? 10 : nx < lx ? -28 : 6), ry = ly + (ny > ly ? 14 : ny < ly ? -5 : -6);
@@ -313,14 +389,29 @@ export default function FlussEditor({
             return (
               <g key={`e${i}`}>
                 <path d={pfad} style={{ fill: "none", stroke: farbe, strokeWidth: an || loeschbar ? 3 : 2 }} markerEnd={`url(#pf${uid})`} />
-                {e.marke && <text x={rx} y={ry} style={{ fontSize: 12, fontWeight: 700, fill: e.marke === "ja" ? "#15803d" : "#b91c1c" }}>{e.marke}</text>}
                 <path d={pfad} style={{ fill: "none", stroke: "transparent", strokeWidth: 18, cursor: loeschbar ? "pointer" : "pointer" }}
-                  onPointerEnter={() => setUeber(i)} onPointerLeave={() => setUeber(u => (u === i ? null : u))}
+                  onPointerEnter={() => setUeber(i)} onPointerLeave={raus}
                   onPointerDown={ev => { ev.stopPropagation(); kanteKlick(i); }} />
+                {e.marke && (
+                  <text x={rx} y={ry} style={{ fontSize: 12, fontWeight: 700, fill: e.marke === "ja" ? "#15803d" : "#b91c1c", cursor: "pointer", pointerEvents: darfVerbinden ? undefined : "none" }}
+                    onPointerDown={ev => { ev.stopPropagation(); tauscheMarke(i); }}>
+                    {darfVerbinden && <title>Klick: »ja« und »nein« tauschen</title>}{e.marke}
+                  </text>
+                )}
                 {loeschbar && (
-                  <g style={{ pointerEvents: "none" }}>
-                    <circle cx={mx} cy={my} r={13} style={{ fill: "#fee2e2", stroke: "#dc2626", strokeWidth: 1.5 }} />
-                    <text x={mx} y={my + 5} textAnchor="middle" style={{ fontSize: 14 }}>🗑</text>
+                  <g onPointerEnter={() => setUeber(i)} onPointerLeave={raus} style={{ cursor: "pointer" }}>
+                    <g onPointerDown={ev => { ev.stopPropagation(); kanteKlick(i); }}>
+                      <title>Pfeil löschen</title>
+                      <circle cx={mx} cy={my} r={13} style={{ fill: "#fee2e2", stroke: "#dc2626", strokeWidth: 1.5 }} />
+                      <text x={mx} y={my + 5} textAnchor="middle" style={{ fontSize: 14, pointerEvents: "none" }}>🗑</text>
+                    </g>
+                    {e.marke && (
+                      <g onPointerDown={ev => { ev.stopPropagation(); tauscheMarke(i); }}>
+                        <title>»ja« und »nein« tauschen</title>
+                        <circle cx={mx + 30} cy={my} r={13} style={{ fill: "#dbeafe", stroke: "#2563eb", strokeWidth: 1.5 }} />
+                        <text x={mx + 30} y={my + 5} textAnchor="middle" style={{ fontSize: 14, fontWeight: 700, fill: "#1d4ed8", pointerEvents: "none" }}>⇄</text>
+                      </g>
+                    )}
                   </g>
                 )}
               </g>
@@ -336,6 +427,7 @@ export default function FlussEditor({
               stroke: k.id === aktiv ? "#f59e0b" : markiert ? "#dc2626" : quelle || wahl.knoten === k.id ? "#2563eb" : "#334155",
               strokeWidth: k.id === aktiv || markiert || quelle || wahl.knoten === k.id ? 4 : 2,
               cursor: pfeilModus && darfVerbinden ? "crosshair" : darfZiehen || onKnotenKlick ? "pointer" : "default",
+              ...(k.text === LUECKE ? { strokeDasharray: "6 4", fill: "#f8fafc" } : {}),
             };
             const z = zeilen(k.text);
             return (
@@ -368,13 +460,14 @@ export default function FlussEditor({
           })}
         </svg>
       </div>
-      {modus !== "lesen" && !pfeilModus && (gewaehlt || kante) && (
+      {modus !== "lesen" && !pfeilModus && !d2An && (gewaehlt || kante) && (
         <div className="card p-3 flex flex-wrap items-end gap-3 text-sm">
           {gewaehlt && modus === "bearbeiten" && (
             <>
               <label className="flex flex-col gap-1 flex-1 min-w-48">
                 <span className="label">Text</span>
-                <input className="input" value={gewaehlt.text} onChange={e => setzeKnoten({ text: e.target.value })} />
+                <input className="input" value={gewaehlt.text === LUECKE ? "" : gewaehlt.text} placeholder={gewaehlt.text === LUECKE ? "Lücke ausfüllen …" : undefined}
+                  autoFocus={gewaehlt.text === LUECKE} onChange={e => setzeKnoten({ text: e.target.value })} />
               </label>
               <div className="flex flex-col gap-1">
                 <span className="label">Form</span>

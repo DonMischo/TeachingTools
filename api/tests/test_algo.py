@@ -113,3 +113,33 @@ def test_geschlossene_sitzung_ist_403(client, db, teacher_token):
     db.flush()
     r = client.put(f"/api/algo/sitzung/{code}/fortschritt", json=_fortschritt(), headers=auth(gast))
     assert r.status_code == 403
+
+
+def test_mein_stand_kommt_zurueck_konto_ueber_sitzungen(client, db, teacher_token):
+    from api.models import ToolSession
+    eins = _sitzung(client, teacher_token)
+    erste = db.query(ToolSession).filter_by(code=eins).first()
+    zweite = ToolSession(code="ALGO22", tool_slug="algo", created_by=erste.created_by, status="open")
+    db.add(zweite)
+    db.flush()
+    zwei = zweite.code
+    tok = _schueler(db)
+    client.cookies.clear()
+    client.put(f"/api/algo/sitzung/{eins}/fortschritt", json=_fortschritt(3, fluss=["f1"]), headers=auth(tok))
+    client.put(f"/api/algo/sitzung/{zwei}/fortschritt",
+               json={"level": {"L1": {"sterne": 1, "bloecke": 4}, "L2": {"sterne": 2, "bloecke": 7}}, "fluss": ["f2"], "automat": []},
+               headers=auth(tok))
+    r = client.get(f"/api/algo/sitzung/{zwei}/mein", headers=auth(tok))
+    assert r.status_code == 200, r.text
+    mein = r.json()
+    assert mein["level"]["L1"] == {"sterne": 3, "bloecke": 4, "punkte": 0}
+    assert mein["level"]["L2"]["sterne"] == 2
+    assert sorted(mein["fluss"]) == ["f1", "f2"] and mein["automat"] == ["a1"]
+
+
+def test_mein_stand_gast_nur_eigene_zeile(client, teacher_token):
+    code = _sitzung(client, teacher_token)
+    mia, tom = _gast(client, teacher_token, code, "Mia"), _gast(client, teacher_token, code, "Tom")
+    client.put(f"/api/algo/sitzung/{code}/fortschritt", json=_fortschritt(2), headers=auth(mia))
+    assert client.get(f"/api/algo/sitzung/{code}/mein", headers=auth(tom)).json()["level"] == {}
+    assert client.get(f"/api/algo/sitzung/{code}/mein", headers=auth(mia)).json()["level"]["L1"]["sterne"] == 2

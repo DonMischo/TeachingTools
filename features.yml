@@ -586,16 +586,17 @@ simulationen:
   - id: algo
     name: Algorithmen-Werkstatt
     kann:
-      - "Reiter Automat: vier Automaten (Kaugummi, Pfand, Fahrkarte, Kakao), Handlungskarten ordnen, Robo oder Alien Zorp führen sie wörtlich aus"
+      - "Reiter Automat: vier Automaten (Kaugummi, Pfand, Fahrkarte, Kakao), Handlungskarten per Ziehen (Maus/Finger) oder Antippen ordnen, Robo oder Alien Zorp führen sie wörtlich aus"
       - "Jede Falle zeigt eine Algorithmus-Eigenschaft: nicht eindeutig, nicht ausführbar, nicht endlich, falsche Reihenfolge; Automat B prüft »allgemein gültig«"
       - Notizfeld »Erst selbst aufschreiben« und Ordnungsaufgabe »Was macht der Automat?« mit Sprung ins Flussdiagramm
-      - "Reiter Flussdiagramm: Editor mit Start/Ende, Ein-/Ausgabe, Anweisung, Entscheidung; Ziehen, Pfeile, ja/nein; Prüfung inkl. Endlosschleifen"
-      - "Rechnender Ablauf Schritt für Schritt: eingabe T, x = 3*T + M, ausgabe r, Vergleiche in Rauten"
-      - "Sieben Aufgaben: Formen zuordnen, Pfeile setzen, Fehler finden, Ablauf verfolgen, Ist das ein Algorithmus?, Geburtstagsrechnung und Lexikon selbst bauen (automatisch geprüft)"
+      - "Reiter Flussdiagramm: Editor mit Start/Ende, Ein-/Ausgabe, Anweisung, Entscheidung; Ziehen, Pfeile, ja/nein (⇄ am Pfeil oder Klick auf die Marke tauscht); Prüfung inkl. Endlosschleifen; neue Kästen landen vor dem Ende"
+      - "D2-Ansicht: dasselbe Flussdiagramm von D2 gesetzt, mit Farbthemen und Skizzenstil (nicht in der Offline-Datei)"
+      - "Rechnender Ablauf Schritt für Schritt: eingabe T, x = 3*T + M, ausgabe r, Vergleiche in Rauten — auch direkt im Kastentext, »3T« und Groß-/Kleinschreibung verziehen"
+      - "Sieben Aufgaben: Formen zuordnen, Pfeile setzen, Fehler finden, Ablauf verfolgen, Ist das ein Algorithmus?, Geburtstagsrechnung selbst bauen (Arbeitsschritte ausgeschrieben), Lexikon als Lückendiagramm mit Gerüst (automatisch geprüft)"
       - Neun Beispiele (Automaten, Automat von innen, Geburtstag, Lexikon, Zähneputzen, gerade/ungerade) und freies Zeichnen
       - "Reiter Code-Abenteuer: 31 Level in acht Welten — Direktsteuerung, Planen, Drehen, Schleifen, Bedingungen, Labyrinthe, Unterprogramme, Endgegner"
       - Vorhersage-Level (Endfeld anklicken), Fehlersuche mit vorgegebenem Programm, mehrere Karten je Level, Bausteingrenzen, Sterne für kurze Programme
-      - "Editor: Blockly-Blöcke im Scratch-Look über die volle Breite unter dem Spielfeld; gezeigte Programme (Vorhersage, Hinweis, Vorführen) als Puzzleteile; Programm als Flussdiagramm ansehen"
+      - "Editor: Blockly-Blöcke im Scratch-Look neben dem Spielfeld (Zoom nur per Knopf, Mausrad scrollt die Seite); gezeigte Programme (Vorhersage, Hinweis, Vorführen) als Puzzleteile; Programm als Flussdiagramm ansehen"
       - "Vier Themen: Bug-Jagd (Cyberpunk), Verlies-Abenteuer, Mars-Mission, Labyrinthien (Mampfi)"
       - Duell zu zweit an einem Gerät mit Zugprotokoll
       - "Sterne und Punkte überall: Bausteine, Fehlversuche und ein kleiner Zeitanteil (Zeit nur bei sichtbarer Seite); Vorführen halbiert die Punkte"
@@ -603,7 +604,8 @@ simulationen:
       - Radar-Anzeige beim Einsammeln und bei Sensor-Prüfungen; Bedingung »Gegner in der Nähe« (Feld vorne oder daneben)
       - "Welt 8: Viren auf Streifen kreuzen den Weg (8-2 Virenschleuse, 8-3 Datenstrom), 8-4 Jäger-Virus folgt der Figur auf dem kürzesten Weg mit halber Geschwindigkeit"
       - "Vorhersage-Level mit zweiter Frage »Was passiert am Ende?« — Programme enden auch vor dem Ziel, an der Wand oder mit Scan ins Leere"
-      - Klassenübersicht für die Lehrkraft (Automaten, Aufgaben, Sterne je Level), Gäste über den Code
+      - Klassenübersicht für die Lehrkraft (Automaten, Aufgaben, Sterne je Level), Gäste über den Code; Lehrkraft wählt beim Öffnen die Klasse (je Klasse eigener Code) oder setzt eine Sitzung fort
+      - "Fortschritt im Browser und beim Server: Wer über den Code mitmacht, bekommt seinen Stand auf jedem Rechner zurück (Konten über alle Sitzungen, Gäste je Sitzung)"
   - id: regeln
     name: Regel-Labor
     kann:

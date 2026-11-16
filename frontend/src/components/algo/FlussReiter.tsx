@@ -5,7 +5,7 @@
  */
 import { useEffect, useMemo, useState } from "react";
 import {
-  AUFGABEN, BEISPIELE, beispiel, brauchtAntwort, pruefeBau, startStand, weiter,
+  AUFGABEN, BEISPIELE, beispiel, brauchtAntwort, geruestVon, pruefeBau, startStand, weiter,
   type AblaufStand, type Diagramm, type FlussAufgabe, type KnotenTyp,
 } from "@/lib/algo/fluss";
 import FlussEditor, { Form, FormKnopf } from "./FlussEditor";
@@ -215,6 +215,8 @@ const TIPP: Record<FlussAufgabe["art"], string> = {
   bauen: "Fang mit Start und Ende an. Dann die Kästen dazwischen, zuletzt die Pfeile (Pfeil-Modus).",
 };
 
+const TIPP_LUECKE = "Spiel es im Kopf durch: Du schlägst die Mitte auf. Was prüfst du zuerst? Und wenn das Wort noch nicht da ist — in welche Richtung blätterst du, und was machst du danach?";
+
 const HINWEIS: Record<string, string> = {
   formen: "Fragen mit »?« sind Rauten. »Münze einwerfen« und »Kaugummi fällt ins Fach« sind Ein- bzw. Ausgaben (Parallelogramm). »Rad drehen« ist eine Anweisung (Rechteck).",
   verbinden: "Start → Becher → Taste → »Bezahlt?«. Bei »nein« geht es zur Karte und von dort zurück zur Raute, bei »ja« weiter zum Warten.",
@@ -222,7 +224,7 @@ const HINWEIS: Record<string, string> = {
   verfolgen: "3 · 14 = 42, dazu 10 ergibt 52. Wie oft passt 7 in 52, und was bleibt übrig?",
   frage: "Mit denselben Zahlen kommt jedes Mal dasselbe heraus — das heißt »eindeutig«, auch wenn andere Leute andere Zahlen haben.",
   "bauen-geburtstag": "Du brauchst: Start, zwei Eingaben (eingabe T, eingabe M), zwei Anweisungen (x = 3*T + M, r = x mod 7), eine Ausgabe (ausgabe r), Ende.",
-  "bauen-lexikon": "Die Schleife: Eine Raute »Steht das Wort auf der Seite?«. Bei »nein« blätterst du und gehst zurück zur Raute, bei »ja« liest du den Eintrag.",
+  "bauen-lexikon": "Obere Raute: »Steht das Wort auf der Seite?«. Untere Raute »früher?« — bei »ja« nach vorn blättern, bei »nein« nach hinten. Von beiden Blätter-Kästen führt ein Pfeil zurück zur oberen Raute.",
 };
 
 const VORLAGE_BAU: Record<string, string> = { "bauen-geburtstag": "geburtstag", "bauen-lexikon": "lexikon" };
@@ -245,7 +247,8 @@ function AufgabeAnsicht({ a, onGeloest, geloest }: { a: FlussAufgabe; onGeloest:
       <section className="card p-4 text-sm flex flex-col gap-2">
         <h2 className="text-lg font-black">{a.titel} {geloest && "✅"}</h2>
         <p>{a.text}</p>
-        <HilfeLeiste m={m} tipp={TIPP[a.art]} hinweis={HINWEIS[a.id]} onVorfuehren={() => setDemo(d => d + 1)} />
+        {a.schritte && <ol className="list-decimal pl-5 flex flex-col gap-1">{a.schritte.map(t => <li key={t}>{t}</li>)}</ol>}
+        <HilfeLeiste m={m} tipp={a.geruest ? TIPP_LUECKE : TIPP[a.art]} hinweis={HINWEIS[a.id]} onVorfuehren={() => setDemo(d => d + 1)} />
         {wertung && <WertungZeile w={wertung} />}
       </section>
       {a.art === "formen" && <FormenAufgabe {...p} />}
@@ -401,8 +404,10 @@ function FrageAufgabe({ a, onGeloest, fehler, demo }: KindProps) {
 }
 
 function BauAufgabe({ a, onGeloest, fehler, demo }: KindProps) {
-  const speicher = `hp_algo_fluss_${a.id}`;
-  const [d, setD] = useState<Diagramm>(LEER);
+  // Lückenaufgaben speichern unter eigenem Schlüssel (alte freie Zeichnungen verdecken das Gerüst nicht)
+  const speicher = `hp_algo_fluss_${a.id}${a.geruest ? "_geruest" : ""}`;
+  const anfang = useMemo(() => geruestVon(a) ?? LEER, [a]);
+  const [d, setD] = useState<Diagramm>(anfang);
   const [geladen, setGeladen] = useState(false);
   const [probleme, setProbleme] = useState<string[] | null>(null);
   useEffect(() => {
@@ -427,6 +432,7 @@ function BauAufgabe({ a, onGeloest, fehler, demo }: KindProps) {
     <div className="flex flex-col gap-3">
       <div className="flex gap-2 items-center flex-wrap">
         <button type="button" className="btn-primary" onClick={() => { const p = pruefeBau(a, d); setProbleme(p); if (!p.length) onGeloest(); else fehler(); }}>Prüfen</button>
+        <button type="button" className="btn-secondary" onClick={() => aendern(anfang)}>⟲ Von vorn</button>
         {probleme && !probleme.length && <span className="text-sm text-ok font-bold">🎉 Dein Diagramm erfüllt alle Bedingungen!</span>}
       </div>
       {probleme && probleme.length > 0 && <Pruefliste probleme={probleme} />}

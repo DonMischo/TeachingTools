@@ -66,6 +66,8 @@ import KartenQuizSpiel from "@/components/karten/KartenQuizSpiel";
 import Karten from "@/components/karten/Karten";
 import ChallengeSpiel from "@/components/challenge/ChallengeSpiel";
 import Algorithmen from "@/components/algo/Algorithmen";
+import { D2Kontext } from "@/components/algo/D2Kontext";
+import { zeichne as d2Zeichne } from "@/lib/diagramm/d2laufzeit";
 import Periodensystem from "@/components/pse/Periodensystem";
 import Atomwerkstatt from "@/components/atome/Atomwerkstatt";
 import Strukturformeln from "@/components/struktur/Strukturformeln";
@@ -284,12 +286,14 @@ export default function SimulationJoinPage() {
                 ? `konto-${auth.user_type}-${auth.student?.id ?? auth.teacher?.id ?? 0}`
                 : guest.token ? schluesselFuerGast(code, guest.token) : `gast-${code}`} />
         : session.tool_slug === "algo"
-          ? <Algorithmen
+          ? <D2Kontext.Provider value={d2Zeichne}><Algorithmen
               // Angemeldete je Konto, Gäste je Namen (wie beim Maus-Führerschein)
               speicherSchluessel={auth
                 ? `hp_algo_stand_konto-${auth.user_type}-${auth.student?.id ?? auth.teacher?.id ?? 0}`
                 : `hp_algo_stand_gast-${(guest.session?.name ?? code).trim().toLowerCase().replace(/\s+/g, " ")}`}
-              onStand={s => { api.algo.fortschritt({ code, token: guest.token }, s).catch(() => { /* nur für die Übersicht */ }); }} />
+              // gemeldeter Stand kommt zurück (anderer Rechner, gelöschter Browser-Speicher)
+              ladeServer={auth || guest.token ? () => api.algo.mein({ code, token: auth ? null : guest.token }) : undefined}
+              onStand={s => { api.algo.fortschritt({ code, token: guest.token }, s).catch(() => { /* nur für die Übersicht */ }); }} /></D2Kontext.Provider>
         : session.tool_slug === "kikompass"
           ? <KiKompass
               zugang={{ code, token: guest.token }}

@@ -2070,6 +2070,10 @@ export const api = {
       }),
     uebersicht: (code: string) =>
       apiFetch<AlgoUebersichtZeile[]>(`algo/sitzung/${encodeURIComponent(code)}/uebersicht`),
+    mein: (zugang: MausZugang) =>
+      apiFetch<AlgoFortschrittIn>(`algo/sitzung/${encodeURIComponent(zugang.code)}/mein`, {
+        headers: zugang.token ? { Authorization: `Bearer ${zugang.token}` } : undefined,
+      }),
   },
 
   // Geschichte der Medien: Fortschritt am Konto bzw. am Gast (siehe api/routers/medien.py)
