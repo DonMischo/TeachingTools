@@ -5,22 +5,24 @@
  * wer stattdessen zieht, bekommt »Richtig, aber übe hier …«.
  */
 import { useEffect, useMemo, useState } from "react";
+import type { MarkierStand } from "@/lib/markieren/speicher";
 import { AUFGABEN_JE_LEKTION, LEKTIONEN, lektionsAufgaben, zufall } from "@/lib/markieren/aufgaben";
 import { mitTasten } from "@/components/maus/Taste";
 import { Textfeld } from "./Textfeld";
 
-const SCHLUESSEL = "hp_markieren_lektionen";
-const liesGeschafft = (): string[] => {
-  try { return JSON.parse(localStorage.getItem(SCHLUESSEL) ?? "[]"); } catch { return []; }
-};
-const schreibGeschafft = (ids: string[]) => {
-  try { localStorage.setItem(SCHLUESSEL, JSON.stringify(ids)); } catch { /* privat */ }
-};
+/** Im Training steht »Geschafft« länger als in der Challenge — man soll sehen, was passiert ist. */
+const PAUSE_MS = 1800;
 
 const saat = (id: string, runde: number) => [...id].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) + runde * 7919;
 
-export default function Lektionen() {
-  const [geschafft, setGeschafft] = useState<string[]>([]);
+export default function Lektionen({ stand, aendern, onAktuell }: {
+  /** Stand der Person (geladen vom Aufrufer, je Person ein Schlüssel). */
+  stand: MarkierStand | null;
+  aendern: (f: (s: MarkierStand) => MarkierStand) => void;
+  /** Was gerade geübt wird — für die Übersicht der Lehrkraft. */
+  onAktuell?: (text: string) => void;
+}) {
+  const geschafft = stand?.lektionen ?? [];
   const [idx, setIdx] = useState(0);
   const [runde, setRunde] = useState(0);
   const [nr, setNr] = useState(0);
@@ -28,12 +30,21 @@ export default function Lektionen() {
   const aufgaben = useMemo(() => lektionsAufgaben(lektion, zufall(saat(lektion.id, runde))), [lektion, runde]);
   const fertig = nr >= AUFGABEN_JE_LEKTION;
 
+  // Einmal je Person: dort weitermachen, wo noch etwas offen ist.
+  const geladen = stand !== null;
   useEffect(() => {
-    const g = liesGeschafft();
-    setGeschafft(g);
-    const offen = LEKTIONEN.findIndex(l => !g.includes(l.id));
-    if (offen > 0) setIdx(offen);
-  }, []);
+    if (!geladen) return;
+    const offen = LEKTIONEN.findIndex(l => !geschafft.includes(l.id));
+    setIdx(offen > 0 ? offen : 0);
+    setNr(0);
+    setRunde(0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [geladen]);
+
+  useEffect(() => {
+    onAktuell?.(fertig ? `Lektion »${lektion.titel}« geschafft` : `Lektion »${lektion.titel}«, Aufgabe ${nr + 1}/${AUFGABEN_JE_LEKTION}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lektion.id, nr, fertig]);
 
   function waehle(i: number) {
     setIdx(i);
@@ -45,9 +56,7 @@ export default function Lektionen() {
     const naechste = nr + 1;
     setNr(naechste);
     if (naechste === AUFGABEN_JE_LEKTION && !geschafft.includes(lektion.id)) {
-      const neu = [...geschafft, lektion.id];
-      setGeschafft(neu);
-      schreibGeschafft(neu);
+      aendern(s => (s.lektionen.includes(lektion.id) ? s : { ...s, lektionen: [...s.lektionen, lektion.id] }));
     }
   }
 
@@ -93,7 +102,8 @@ export default function Lektionen() {
               <p className="font-bold text-lg">👉 {mitTasten(aufgaben[nr].auftrag)}</p>
               <span className="text-sm text-muted">Aufgabe {nr + 1} von {AUFGABEN_JE_LEKTION}</span>
             </div>
-            <Textfeld key={`${lektion.id}-${runde}-${nr}`} aufgabe={aufgaben[nr]} verlangt={lektion.verlangt} onGeloest={geloest} />
+            <Textfeld key={`${lektion.id}-${runde}-${nr}`} aufgabe={aufgaben[nr]} verlangt={lektion.verlangt} onGeloest={geloest}
+              pauseMs={PAUSE_MS} vorfuehren />
           </div>
         )}
       </section>

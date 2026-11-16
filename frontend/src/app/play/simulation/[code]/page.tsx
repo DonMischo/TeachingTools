@@ -267,7 +267,13 @@ export default function SimulationJoinPage() {
                 ? `konto-${auth.user_type}-${auth.student?.id ?? auth.teacher?.id ?? 0}`
                 : guest.token ? schluesselFuerGast(code, guest.token) : `gast-${code}`} />
         : session.tool_slug === "markieren"
-          ? <Markieren rangliste={{ zugang: { code, token: auth ? null : guest.token }, klasse: auth?.student?.klasse ?? null }} />
+          ? <Markieren rangliste={{ zugang: { code, token: auth ? null : guest.token }, klasse: auth?.student?.klasse ?? null }}
+              // Wie beim Maus-Führerschein: Angemeldete je Konto, Gäste je Namen (sonst
+              // bekam das nächste Kind am selben Rechner alle Haken des vorigen).
+              speicherSchluessel={auth
+                ? `konto-${auth.user_type}-${auth.student?.id ?? auth.teacher?.id ?? 0}`
+                : schluesselFuerGastName(guest.session?.name ?? "")
+                  ?? (guest.token ? schluesselFuerGast(code, guest.token) : `gast-${code}`)} />
         : session.tool_slug === "stellenwert"
           // der Code für die Geheimpost: Botschaften gehen nur an Leute derselben Sitzung
           ? <Stellenwert zugang={{ code, token: auth ? null : guest.token }} />

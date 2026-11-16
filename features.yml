@@ -697,11 +697,14 @@ simulationen:
     name: Markieren & Bearbeiten
     faehigkeiten: {use: [true, true]}
     kann:
-      - Echtes Textfeld mit Zeilennummern, erkennt Doppel-/Dreifachklick, Ziehen, Umschalt-Klick und Tastenkürzel
+      - Echtes Textfeld mit mitwachsenden Zeilennummern (Cursorzeile hervorgehoben), erkennt Doppel-/Dreifachklick, Ziehen, Umschalt-Klick und Tastenkürzel
+      - Vorführen je Aufgabe mit Zeiger, Maus und Tastatur, längere Pause nach jeder gelösten Übungsaufgabe
       - 15 Lektionen je Technik, zählt nur mit der verlangten Technik
-      - Challenge auf Zeit in drei Modi mit Bestzeit, Aktionen und Profi-Weg
+      - Challenge auf Zeit in drei Modi mit Bestzeit, Aktionen und Profi-Weg; Überspringen +30 s
       - Bestenliste je Modus mit Gästen, Filter Sitzung/Klasse, Admin löscht Einträge
-      - "Quellen: Zitat + Kurzbeleg + Literaturverzeichnis aus Buch oder Webseite kopieren, Hinweise zu Fehlgriffen (Lektorat, Kurzlink, Website-Name, Abrufdatum)"
+      - "Quellen: Zitat + Kurzbeleg + Literaturverzeichnis aus Buch, Webseite, Zeitung, Zeitschrift, Video oder Online-Lexikon kopieren, Hinweise zu Fehlgriffen (Lektorat, Kurzlink, Website-Name, Abrufdatum, Jahrgang, Dachzeile, Videolänge, Stand)"
+      - Stand je Konto bzw. je Gastname im Browser
+      - Sitzung je Klasse/Kurs und Lehrkraft-Übersicht (Techniken, Bestzeiten, Quellen, gerade dabei)
       - Aufgaben gewürfelt aus sechs Übungstexten (markieren, Cursor setzen, löschen, ersetzen, kopieren, verschieben, rückgängig)
       - Spickzettel mit allen Kürzeln
   - id: pcbau

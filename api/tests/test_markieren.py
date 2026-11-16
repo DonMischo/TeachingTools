@@ -3,7 +3,7 @@ nur Verbesserungen bleiben stehen, Gäste tragen sich über den Sitzungscode ein
 und »Diese Sitzung« zeigt, wer seine Bestzeit dort erzielt hat.
 """
 from api.auth import create_access_token, hash_password
-from api.models import Student
+from api.models import Student, Teacher
 from .conftest import auth
 
 
@@ -93,3 +93,65 @@ def test_admin_loescht_eintrag(client, db, teacher_token, admin_token):
     client.cookies.clear()
     assert client.delete(f"/api/markieren/bestenliste/eintrag/{eid}", headers=auth(admin_token)).status_code == 204
     assert client.get("/api/markieren/bestenliste?modus=markieren", headers=als(ada)).json() == []
+
+
+# --- Fortschritt + Lehrer-Übersicht -----------------------------------------
+
+def _stand(**kw) -> dict:
+    body = {"lektionen": ["doppelklick"], "quellen": {"q1": 52000},
+            "challenge": {"markieren": {"best_ms": 41000, "runden": 2}},
+            "aktuell": "Lektion Doppelklick, Aufgabe 2/3"}
+    body.update(kw)
+    return body
+
+
+def test_fortschritt_schueler_und_uebersicht(client, db, teacher_token):
+    code = _sitzung(client, teacher_token)
+    ada = schueler(db)
+    client.cookies.clear()
+    url = f"/api/markieren/sitzung/{code}/fortschritt"
+    assert client.put(url, json=_stand(), headers=als(ada)).json() == {"ok": True}
+    assert client.put(url, json=_stand(lektionen=["doppelklick", "drag"], aktuell=None),
+                      headers=als(ada)).status_code == 200
+    client.cookies.clear()
+    zeilen = client.get(f"/api/markieren/sitzung/{code}/uebersicht", headers=auth(teacher_token)).json()
+    assert len(zeilen) == 1
+    z = zeilen[0]
+    assert z["klasse"] == "7a" and z["gast"] is False
+    assert z["lektionen"] == ["doppelklick", "drag"] and z["aktuell"] is None
+    assert z["quellen"] == {"q1": 52000}
+    assert z["challenge"]["markieren"] == {"best_ms": 41000, "runden": 2}
+
+
+def test_fortschritt_gast(client, db, teacher_token):
+    code = _sitzung(client, teacher_token)
+    gast = _gast(client, teacher_token, code)
+    r = client.put(f"/api/markieren/sitzung/{code}/fortschritt", json=_stand(), headers=auth(gast))
+    assert r.status_code == 200
+    zeilen = client.get(f"/api/markieren/sitzung/{code}/uebersicht", headers=auth(teacher_token)).json()
+    assert [z["gast"] for z in zeilen] == [True]
+
+
+def test_uebersicht_fremde_lehrkraft_403(client, db, teacher_token):
+    code = _sitzung(client, teacher_token)
+    andere = Teacher(first_name="Bea", last_name="Berg", active=True,
+                     password_hash=hash_password("x"), role="teacher")
+    db.add(andere)
+    db.flush()
+    client.cookies.clear()
+    r = client.get(f"/api/markieren/sitzung/{code}/uebersicht", headers=als(andere, "teacher"))
+    assert r.status_code == 403
+
+
+def test_fortschritt_unbekannter_modus_400(client, db, teacher_token):
+    code = _sitzung(client, teacher_token)
+    r = client.put(f"/api/markieren/sitzung/{code}/fortschritt",
+                   json=_stand(challenge={"zauber": {"best_ms": 1, "runden": 1}}), headers=als(schueler(db)))
+    assert r.status_code == 400
+
+
+def test_sitzung_je_klasse_hat_eigenen_code(client, db, teacher_token, klass):
+    ohne = _sitzung(client, teacher_token)
+    mit = client.post("/api/tool-sessions", json={"tool_slug": "markieren", "class_id": klass.id},
+                      headers=auth(teacher_token)).json()["code"]
+    assert mit != ohne

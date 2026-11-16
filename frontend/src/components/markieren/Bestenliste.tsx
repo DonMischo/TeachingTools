@@ -13,19 +13,21 @@ import { sek } from "./Challenge";
 
 type Bereich = "alle" | "sitzung" | "klasse";
 
-export default function Bestenliste({ zugang, verwaltung, klasse }: {
+export default function Bestenliste({ zugang, verwaltung, klasse, sitzungCode: gewaehlt }: {
   zugang?: MausZugang;
   /** Lehrkraft auf der Werkzeugseite: »Diese Sitzung« = ihre eigene. */
   verwaltung?: boolean;
   klasse?: string | null;
+  /** Lehrkraft: die gewählte Sitzung (je Klasse eine). */
+  sitzungCode?: string | null;
 }) {
   // Hier und nicht in der Hülle: die Offline-Datei hat keinen QueryClient.
   const { data: eigeneSitzung } = useQuery({
     queryKey: ["markieren-sitzung"],
     queryFn: () => api.toolSessions.create("markieren"),
-    enabled: !!verwaltung && !zugang,
+    enabled: !!verwaltung && !zugang && !gewaehlt,
   });
-  const sitzungCode = zugang?.code ?? eigeneSitzung?.code ?? null;
+  const sitzungCode = zugang?.code ?? gewaehlt ?? eigeneSitzung?.code ?? null;
   const { auth } = useAuth();
   const admin = auth?.role === "admin";
   const qc = useQueryClient();

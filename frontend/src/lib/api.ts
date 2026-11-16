@@ -1318,6 +1318,13 @@ export type MarkierEintrag = {
   zeit_ms: number; aktionen: number; selbst: boolean;
 };
 export type MarkierEintragIn = { modus: MarkierModus; zeit_ms: number; aktionen: number };
+export type MarkierFortschrittIn = {
+  lektionen: string[];
+  quellen: Record<string, number>;
+  challenge: Partial<Record<MarkierModus, { best_ms: number | null; runden: number }>>;
+  aktuell: string | null;
+};
+export type MarkierUebersichtZeile = MarkierFortschrittIn & { name: string; klasse: string | null; gast: boolean; aktualisiert_am: string };
 
 // Werbeauktion zu »Klikk« (siehe api/routers/klikk.py)
 export type KlikkMerkmal = { titel: string; wert: string; heikel: boolean };
@@ -1877,6 +1884,17 @@ export const api = {
     /** Nur Admin — für unpassende Gastnamen. */
     loeschen: (id: number) => apiFetch<void>(`markieren/bestenliste/eintrag/${id}`, { method: "DELETE" }),
   },
+  // Fortschritt je Sitzung und Übersicht der Lehrkraft (siehe api/routers/markieren.py)
+  markieren: {
+    fortschritt: (zugang: MausZugang, body: MarkierFortschrittIn) =>
+      apiFetch<{ ok: boolean }>(`markieren/sitzung/${encodeURIComponent(zugang.code)}/fortschritt`, {
+        method: "PUT",
+        body: JSON.stringify(body),
+        headers: zugang.token ? { Authorization: `Bearer ${zugang.token}` } : undefined,
+      }),
+    uebersicht: (code: string) =>
+      apiFetch<MarkierUebersichtZeile[]>(`markieren/sitzung/${encodeURIComponent(code)}/uebersicht`),
+  },
 
   // Maus-Führerschein: Fortschritt je Sitzung, Live-Übersicht, Prüfung (siehe api/routers/maus.py)
   maus: {
@@ -2145,7 +2163,7 @@ export const api = {
 
   toolSessions: {
     /** Session der Lehrkraft für dieses Werkzeug — legt sie beim ersten Mal an. */
-    /** `scope` (nur Challenge): je Klasse bzw. Kurs eine eigene Sitzung. */
+    /** `scope` (Challenge, Markieren): je Klasse bzw. Kurs eine eigene Sitzung. */
     create: (tool_slug: string, ref_id?: number, scope?: { class_id?: number; group_id?: number }) =>
       apiFetch<ToolSessionOut>("tool-sessions", { method: "POST", body: JSON.stringify({ tool_slug, ref_id, ...scope }) }),
     /** Öffentlich: der Beitritts-Screen liest das vor jedem Login. */

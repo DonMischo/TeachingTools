@@ -2410,6 +2410,39 @@ class MarkierBestenliste(Base):
     erreicht_am: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class MarkierFortschritt(Base):
+    """»Markieren & Bearbeiten«: Fortschritt einer Person in einer Sitzung — eine Zeile
+    je Teilnehmer (Lektionen, Quellen-Bestzeiten, Challenge-Stand)."""
+    __tablename__ = "markier_fortschritt"
+    __table_args__ = (
+        UniqueConstraint("session_id", "student_id", name="uq_markier_fortschritt_student"),
+        UniqueConstraint("session_id", "teacher_id", name="uq_markier_fortschritt_teacher"),
+        UniqueConstraint("session_id", "guest_id", name="uq_markier_fortschritt_guest"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    session_id: Mapped[int] = mapped_column(
+        ForeignKey("tool_sessions.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    student_id: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"), nullable=True)
+    teacher_id: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="CASCADE"), nullable=True)
+    guest_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    klasse: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    gast: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
+    # ids der abgeschlossenen Lektionen
+    lektionen: Mapped[list] = mapped_column(JSON, nullable=False, default=list, server_default="[]")
+    # {quelleId: beste Zeit in ms}
+    quellen: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict, server_default="{}")
+    # {modus: {"best_ms": int|None, "runden": int}}
+    challenge: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict, server_default="{}")
+    # was die Person gerade tut, z. B. Lektion und Aufgabe
+    aktuell: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    aktualisiert_am: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
 class MausFortschritt(Base):
     """Fortschritt einer Person in einer Maus-Sitzung — eine Zeile je Teilnehmer,
     damit die Lehrkraft live sieht, wer welche Stufe des Führerscheins schon

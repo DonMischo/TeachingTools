@@ -7,38 +7,35 @@
  * Überschrift, Lektorat statt Autorin, Kurzlink statt Adresse) bekommen einen
  * eigenen Hinweis.
  */
-import { useEffect, useMemo, useRef, useState } from "react";
-import { fertig, faelle, pruefeFeld, type Buch, type Fall, type Feld, type Pruefung, type Teil, type Webseite } from "@/lib/markieren/quellen";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  QUELLEN_ART, fertig, faelle, pruefeFeld,
+  type Buch, type Fall, type Feld, type Heft, type Lexikon, type Pruefung, type Quelle, type Teil, type Video, type Webseite, type Zeitung,
+} from "@/lib/markieren/quellen";
+import type { MarkierStand } from "@/lib/markieren/speicher";
 import { sek } from "./Challenge";
 import { mitTasten } from "@/components/maus/Taste";
 
-const SCHLUESSEL = "hp_markieren_quellen";
-type Bestzeiten = Record<string, number>;
-const liesBest = (): Bestzeiten => {
-  try { return JSON.parse(localStorage.getItem(SCHLUESSEL) ?? "{}"); } catch { return {}; }
-};
-const schreibBest = (b: Bestzeiten) => {
-  try { localStorage.setItem(SCHLUESSEL, JSON.stringify(b)); } catch { /* privat */ }
-};
 
 const SERIF = { fontFamily: "Georgia, 'Times New Roman', serif" };
 
-export default function Quellen() {
+export default function Quellen({ stand, aendern, onAktuell }: {
+  stand: MarkierStand | null;
+  aendern: (f: (s: MarkierStand) => MarkierStand) => void;
+  onAktuell?: (text: string) => void;
+}) {
   const alle = useMemo(() => faelle(), []);
-  const [best, setBest] = useState<Bestzeiten>({});
+  const best = stand?.quellen ?? {};
   const [aktiv, setAktiv] = useState<string | null>(null);
-  useEffect(() => { setBest(liesBest()); }, []);
+  // Je Art der erste Fall als Muster.
+  const beispiele = useMemo(() => alle.filter((f, i) => alle.findIndex(g => g.quelle.art === f.quelle.art) === i), [alle]);
 
   const fall = alle.find(f => f.id === aktiv);
   if (fall) {
     return (
       <FallAnsicht key={fall.id} fall={fall} best={best[fall.id]} onZurueck={() => setAktiv(null)}
-        onFertig={ms => {
-          if (best[fall.id] !== undefined && best[fall.id] <= ms) return;
-          const neu = { ...best, [fall.id]: ms };
-          setBest(neu);
-          schreibBest(neu);
-        }} />
+        onFertig={ms => aendern(s => (s.quellen[fall.id] !== undefined && s.quellen[fall.id] <= ms
+          ? s : { ...s, quellen: { ...s.quellen, [fall.id]: ms } }))} />
     );
   }
 
@@ -47,29 +44,26 @@ export default function Quellen() {
       <div className="card p-4 flex flex-col gap-2">
         <h2 className="text-lg font-black">📚 Zitieren wie im Referat</h2>
         <p className="text-sm">
-          Wer etwas aus einem Buch oder von einer Website übernimmt, setzt es in Anführungszeichen und schreibt dazu, woher es
-          stammt. Im Text steht ein kurzer Beleg, am Ende das ganze Literaturverzeichnis:
+          Wer etwas aus einem Buch, einer Zeitung, einem Video oder von einer Website übernimmt, setzt es in Anführungszeichen
+          und schreibt dazu, woher es stammt. Im Text steht ein kurzer Beleg, am Ende das ganze Literaturverzeichnis:
         </p>
-        <div className="grid gap-2 md:grid-cols-2 text-sm" style={SERIF}>
-          <div className="rounded-lg border border-line p-3">
-            <div className="text-xs font-bold text-muted mb-1" style={{ fontFamily: "inherit" }}>📖 Buch</div>
-            <p>… „Zitat“ (Brandt 2021, S. 45).</p>
-            <p className="mt-1 pl-6 -indent-6">Brandt, Johanna (2021): Das große Bienenbuch. Leben, Arbeit und Sprache der Honigbiene. Leipzig: Wiesengrund Verlag.</p>
-          </div>
-          <div className="rounded-lg border border-line p-3">
-            <div className="text-xs font-bold text-muted mb-1">🌐 Website</div>
-            <p>… „Zitat“ (Sommer 2026).</p>
-            <p className="mt-1 pl-6 -indent-6">Sommer, Lena (2026): Warum der Mond seine Form ändert. Online unter: https://www.… (Abruf: TT.MM.JJJJ).</p>
-          </div>
+        <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3 text-sm" style={SERIF}>
+          {beispiele.map(f => (
+            <div key={f.quelle.art} className="rounded-lg border border-line p-3">
+              <div className="text-xs font-bold text-muted mb-1">{QUELLEN_ART[f.quelle.art]}</div>
+              <p>… „Zitat{fertig(f.zitatSatz.slice(f.zitatSatz.findIndex(t => typeof t !== "string" && t.feld === "zitat") + 1), f.felder)}</p>
+              <p className="mt-1 pl-6 -indent-6">{fertig(f.verzeichnis, f.felder)}</p>
+            </div>
+          ))}
         </div>
         <p className="text-xs text-muted">Manche Lehrkräfte wollen die Angaben etwas anders angeordnet — die Teile, die du finden musst, sind dieselben.</p>
       </div>
 
       <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(16rem,1fr))]">
         {alle.map(f => (
-          <button key={f.id} type="button" onClick={() => setAktiv(f.id)}
+          <button key={f.id} type="button" onClick={() => { setAktiv(f.id); onAktuell?.(`Quelle »${f.titel}«`); }}
             className="card p-4 text-left flex flex-col gap-1 hover:border-accent transition-colors">
-            <span className="text-xs font-bold text-muted">{f.quelle.art === "buch" ? "📖 Buch" : "🌐 Website"}</span>
+            <span className="text-xs font-bold text-muted">{QUELLEN_ART[f.quelle.art]}</span>
             <span className="font-black">{f.icon} {f.titel}</span>
             <span className="text-sm text-muted">
               {best[f.id] !== undefined ? <>✅ Bestzeit {sek(best[f.id])}</> : "noch offen"}
@@ -117,7 +111,7 @@ function FallAnsicht({ fall, best, onZurueck, onFertig }: {
       </div>
 
       <div className="grid gap-4 xl:grid-cols-2 items-start">
-        {fall.quelle.art === "buch" ? <BuchAnsicht buch={fall.quelle} /> : <Browser seite={fall.quelle} />}
+        <QuellenAnsicht quelle={fall.quelle} />
 
         <section className="card p-5 flex flex-col gap-4" aria-label="Mein Referat">
           <div className="flex items-center justify-between">
@@ -193,6 +187,17 @@ function Vorlage({ teile, felder, werte, befund, setze, onPaste }: {
       })}
     </>
   );
+}
+
+function QuellenAnsicht({ quelle }: { quelle: Quelle }) {
+  switch (quelle.art) {
+    case "buch": return <BuchAnsicht buch={quelle} />;
+    case "web": return <Browser seite={quelle} />;
+    case "zeitung": return <ZeitungAnsicht zeitung={quelle} />;
+    case "heft": return <HeftAnsicht heft={quelle} />;
+    case "video": return <VideoAnsicht video={quelle} />;
+    case "lexikon": return <LexikonAnsicht lexikon={quelle} />;
+  }
 }
 
 function BuchAnsicht({ buch }: { buch: Buch }) {
@@ -308,5 +313,208 @@ function Browser({ seite }: { seite: Webseite }) {
         )}
       </div>
     </section>
+  );
+}
+
+/** Fensterkopf mit Reiter und Adresszeile — für Video und Lexikon wie beim Browser. */
+function Fenster({ tab, url, label, children }: { tab: string; url: string; label: string; children: ReactNode }) {
+  return (
+    <section className="rounded-xl border border-line overflow-hidden shadow-lg bg-surface" aria-label={label}>
+      <div className="bg-surface-hover px-2 pt-2 flex items-end gap-2">
+        <div className="rounded-t-lg bg-surface px-3 py-1.5 text-xs max-w-[22rem] truncate border border-b-0 border-line">🌐 {tab}</div>
+        <div className="text-muted text-sm pb-1">＋</div>
+      </div>
+      <div className="flex items-center gap-2 px-2 py-1.5 border-b border-line">
+        <span className="text-muted text-sm select-none">← → ↻</span>
+        <input readOnly value={url} aria-label="Adresszeile" onFocus={e => e.currentTarget.select()}
+          className="flex-1 min-w-0 rounded-full bg-surface-hover px-3 py-1 text-sm outline-none focus:ring-2 focus:ring-accent" />
+        <span className="text-muted select-none">☆ ⋮</span>
+      </div>
+      <div className="relative max-h-[36rem] overflow-y-auto">{children}</div>
+    </section>
+  );
+}
+
+function ZeitungAnsicht({ zeitung: z }: { zeitung: Zeitung }) {
+  return (
+    <section className="card p-4" aria-label="Zeitung">
+      <article className="rounded-sm border border-line bg-surface shadow-lg mx-auto w-full max-w-[40rem] px-6 py-5 flex flex-col gap-3" style={SERIF}>
+        <header className="border-b-4 border-double border-fg pb-2 text-center">
+          <div className="flex justify-between text-[11px] text-muted">
+            <span>{z.jahrgang} · {z.nummer}</span><span>{z.preis}</span>
+          </div>
+          <h4 className="text-4xl font-black tracking-tight leading-none mt-1">{z.name}</h4>
+          <div className="text-xs italic mt-1">{z.unterzeile}</div>
+          <div className="text-xs mt-1 border-t border-line pt-1">{z.datum}</div>
+        </header>
+        <div className="flex justify-between text-xs uppercase tracking-widest border-b border-line pb-1">
+          <span>{z.ressort}</span><span>Seite {z.seite}</span>
+        </div>
+        <div className="grid gap-4 md:grid-cols-[1fr_11rem]">
+          <div className="flex flex-col gap-2 min-w-0">
+            <div className="text-sm font-bold text-accent">{z.dachzeile}</div>
+            <h5 className="text-2xl font-black leading-tight">{z.titel}</h5>
+            <p className="font-bold text-sm">{z.vorspann}</p>
+            <div className="text-xs italic">{z.autor}</div>
+            <div className="text-[14px] leading-relaxed text-justify hyphens-auto md:columns-2 gap-4" lang="de">
+              {z.absaetze.map((a, i) => <p key={i} className="mb-2">{i === 0 && <b>{z.ortsmarke} </b>}{a}</p>)}
+            </div>
+          </div>
+          <aside className="flex flex-col gap-3 text-xs md:border-l border-line md:pl-3">
+            <div>
+              <div className="font-black text-sm">{z.meldung.titel}</div>
+              <p>{z.meldung.text}</p>
+            </div>
+            <div className="rounded border border-dashed border-line p-2">
+              <div className="text-[10px] uppercase text-muted">Anzeige</div>
+              {z.anzeige}
+            </div>
+          </aside>
+        </div>
+      </article>
+    </section>
+  );
+}
+
+function HeftAnsicht({ heft }: { heft: Heft }) {
+  const [nr, setNr] = useState(0);
+  const s = heft.seiten[nr];
+  return (
+    <section className="card p-4 flex flex-col gap-3" aria-label="Zeitschrift">
+      <div className="flex flex-wrap gap-1" role="tablist" aria-label="Seiten">
+        {heft.seiten.map((x, i) => (
+          <button key={i} type="button" role="tab" aria-selected={i === nr} onClick={() => setNr(i)}
+            className={"text-sm rounded-lg px-3 py-1 border " + (i === nr ? "border-accent text-accent font-bold" : "border-line hover:border-accent")}>
+            {x.titel}
+          </button>
+        ))}
+      </div>
+      <article className="rounded-sm border border-line bg-surface shadow-lg mx-auto w-full max-w-[34rem] min-h-[26rem] px-7 py-7 flex flex-col gap-3">
+        {s.art === "cover" && (
+          <div className="flex-1 flex flex-col gap-4 rounded-lg bg-surface-hover p-5">
+            <div className="flex items-start justify-between gap-2">
+              <h4 className="text-4xl font-black tracking-tight text-accent">{s.name}</h4>
+              <span className="text-xs text-right">{s.heft}<br />{s.preis}</span>
+            </div>
+            <p className="text-3xl font-black leading-tight mt-6">{s.thema}</p>
+            <ul className="mt-auto flex flex-col gap-1 text-sm font-bold">{s.anrisse.map(a => <li key={a}>▸ {a}</li>)}</ul>
+          </div>
+        )}
+        {s.art === "inhalt" && (
+          <>
+            <h4 className="text-2xl font-black">Inhalt</h4>
+            <ul className="flex flex-col gap-2">
+              {s.eintraege.map(e => (
+                <li key={e.seite} className="flex gap-3 items-baseline border-b border-line pb-1">
+                  <span className="font-black tabular-nums w-8 text-right">{e.seite}</span>
+                  <span className="text-xs uppercase text-muted w-20">{e.rubrik}</span>
+                  <span>{e.titel}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-auto text-xs text-muted flex flex-col gap-0.5">
+              <div className="font-bold">Impressum</div>
+              {s.impressum.map(z => <span key={z}>{z}</span>)}
+            </div>
+          </>
+        )}
+        {s.art === "artikel" && (
+          <>
+            <div className="flex justify-between text-xs text-muted border-b border-line pb-1">
+              <span>{s.rubrik ?? ""}</span><span>{s.kopf}</span>
+            </div>
+            {s.ueberschrift && <h4 className="text-2xl font-black leading-tight">{s.ueberschrift}</h4>}
+            {s.vorspann && <p className="font-bold">{s.vorspann}</p>}
+            {s.autor && <div className="text-xs italic">{s.autor}</div>}
+            <div className="flex-1 flex flex-col gap-3 text-[15px] leading-relaxed" style={SERIF}>
+              {s.zeilen.map((z, i) => <p key={i}>{z}</p>)}
+            </div>
+            <div className="text-center text-sm mt-4">{s.nr}</div>
+          </>
+        )}
+      </article>
+    </section>
+  );
+}
+
+function VideoAnsicht({ video: v }: { video: Video }) {
+  const [teilen, setTeilen] = useState(false);
+  return (
+    <Fenster tab={`${v.titel} – ${v.plattform}`} url={v.url} label="Video">
+      <div className="p-4 flex flex-col gap-3">
+        <div className="font-black text-accent">▶ {v.plattform}</div>
+        <div className="relative rounded-xl bg-black aspect-video flex items-center justify-center text-white">
+          <span className="text-6xl opacity-80">▶</span>
+          <span className="absolute bottom-2 right-3 text-xs bg-black/70 rounded px-1.5 py-0.5 tabular-nums">0:00 / {v.dauer}</span>
+        </div>
+        <h4 className="text-xl font-black leading-tight">{v.titel}</h4>
+        <div className="flex items-center gap-3 flex-wrap text-sm">
+          <span className="w-9 h-9 rounded-full bg-surface-hover flex items-center justify-center font-black">{v.kanal[0]}</span>
+          <span className="flex flex-col leading-tight"><b>{v.kanal}</b><span className="text-xs text-muted">{v.abonnenten}</span></span>
+          <span className="rounded-full border border-line px-3 py-1 text-xs font-bold">Abonnieren</span>
+          <span className="relative ml-auto">
+            <button type="button" className="text-xs rounded-full border border-line px-3 py-1 hover:border-accent" onClick={() => setTeilen(t => !t)}>↗ Teilen</button>
+            {teilen && (
+              <span className="absolute right-0 z-10 mt-1 rounded-lg border border-line bg-surface shadow-xl p-2 text-xs w-64 block">
+                <span className="text-muted mb-1 block">Link zum Teilen:</span>
+                <input readOnly value={v.kurzlink} aria-label="Link zum Teilen" onFocus={e => e.currentTarget.select()} className="w-full rounded bg-surface-hover px-2 py-1" />
+              </span>
+            )}
+          </span>
+        </div>
+        <div className="rounded-lg bg-surface-hover p-3 text-sm flex flex-col gap-1">
+          <b>{v.aufrufe} · Hochgeladen am {v.hochgeladen}</b>
+          {v.beschreibung.map(b => <p key={b}>{b}</p>)}
+        </div>
+        <div className="rounded-lg border border-line">
+          <div className="px-3 py-2 border-b border-line font-bold text-sm">📝 Abschrift</div>
+          <ul className="flex flex-col text-sm">
+            {v.abschrift.map(z => (
+              <li key={z.zeit} className="flex gap-3 px-3 py-1.5 border-b border-line last:border-0">
+                <span className="text-accent tabular-nums font-bold w-10 shrink-0">{z.zeit}</span><span>{z.text}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="text-sm">
+          <div className="font-bold mb-1">Als Nächstes</div>
+          <ul className="flex flex-col gap-1 text-accent">{v.vorschlaege.map(a => <li key={a}>▶ {a}</li>)}</ul>
+        </div>
+      </div>
+    </Fenster>
+  );
+}
+
+function LexikonAnsicht({ lexikon: l }: { lexikon: Lexikon }) {
+  return (
+    <Fenster tab={`${l.stichwort} – ${l.name}`} url={l.url} label="Online-Lexikon">
+      <header className="flex items-center gap-3 px-4 py-3 border-b border-line flex-wrap">
+        <span className="text-2xl">🔎</span>
+        <span className="font-black">{l.name}</span>
+        <span className="text-xs text-muted">Das freie Wissenslexikon</span>
+        <span className="ml-auto rounded-full border border-line px-3 py-1 text-xs text-muted">Suchen …</span>
+      </header>
+      <div className="p-4 flex flex-col gap-3">
+        <div className="flex gap-3 text-xs text-muted border-b border-line flex-wrap">
+          <span className="border-b-2 border-accent pb-1 text-fg">Artikel</span><span>Diskussion</span><span className="ml-auto">Bearbeiten</span><span>Versionsgeschichte</span>
+        </div>
+        <h4 className="text-3xl leading-tight" style={SERIF}>{l.stichwort}</h4>
+        <p className="leading-relaxed">{l.kurz}</p>
+        <div className="rounded border border-line bg-surface-hover p-3 text-sm w-fit">
+          <div className="font-bold mb-1">Inhaltsverzeichnis</div>
+          <ol className="list-decimal pl-5">{l.inhalt.map(t => <li key={t}>{t}</li>)}</ol>
+        </div>
+        {l.abschnitte.map(a => (
+          <div key={a.titel} className="flex flex-col gap-2">
+            <h5 className="text-xl border-b border-line pb-1" style={SERIF}>{a.titel}</h5>
+            {a.absaetze.map((p, i) => <p key={i} className="leading-relaxed">{p}</p>)}
+          </div>
+        ))}
+      </div>
+      <footer className="border-t border-line px-4 py-3 text-xs text-muted flex flex-col gap-1">
+        <span>Diese Seite wurde zuletzt am {l.stand} bearbeitet.</span>
+        <span>Der Text ist unter einer freien Lizenz verfügbar · Datenschutz · Impressum</span>
+      </footer>
+    </Fenster>
   );
 }

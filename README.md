@@ -222,9 +222,12 @@ Jede Simulation trägt Fächer (auch mehrere, z. B. Geografie und Physik); die �
 ### 🖍️ Markieren & Bearbeiten
 - Anschluss an den Maus-Führerschein: Textbearbeitung in einem echten Textfeld, das sich wie Word verhält
 - 15 Lektionen, je eine Technik: Doppel- und Dreifachklick, Ziehen, Umschalt + Klick, Pos1/Ende, Umschalt + Pos1/Ende, Strg + Pfeil, Strg + Umschalt + Pfeil, Umschalt + Pfeil, Strg + A, Löschen, Überschreiben, Strg + C/V, Strg + X, Strg + Z — gezählt wird nur mit der geübten Technik
-- Challenge auf Zeit (Markier-Sprint, Bearbeiten, Profi-Mix) mit gewürfelten Aufgaben, Bestzeit im Browser und dem schnelleren Weg, wo jemand viele Aktionen brauchte
+- »Vorführen« spielt jede Aufgabe mit Mauszeiger, Maus und Tastatur vor (Ziehen markiert sichtbar mit), danach ist man selbst dran; Zeilennummern wachsen mit dem Text, die Cursorzeile ist hervorgehoben
+- Challenge auf Zeit (Markier-Sprint, Bearbeiten, Profi-Mix) mit gewürfelten Aufgaben, Bestzeit im Browser und dem schnelleren Weg, wo jemand viele Aktionen brauchte; Überspringen kostet 30 Sekunden
 - Bestenliste je Modus (auch Gäste über den Code), eingrenzbar auf Sitzung und Klasse
-- Quellen fürs Referat: wörtliches Zitat und Literaturangabe aus einem Buch (Titelseite, Impressum, Inhaltsseite) oder einer nachgebauten Webseite (Adresszeile, Kurzlink, Werbung, Cookie-Hinweis) herauskopieren — Vorlage mit Kurzbeleg und Literaturverzeichnis, Hinweise zu typischen Fehlgriffen
+- Quellen fürs Referat: wörtliches Zitat und Literaturangabe aus Buch (Titelseite, Impressum, Inhaltsseite), nachgebauter Webseite (Adresszeile, Kurzlink, Werbung, Cookie-Hinweis), Zeitungsseite, Zeitschriftenheft, Video mit Abschrift (Zeitangabe statt Seite) oder Online-Lexikon (Stichwort und Stand statt Autor) herauskopieren — Vorlage mit Kurzbeleg und Literaturverzeichnis, Hinweise zu typischen Fehlgriffen
+- Stand je Person: angemeldet je Konto, Gäste je Name in diesem Browser — am Schulrechner erbt niemand die Haken des vorigen Kindes
+- Für die Lehrkraft: je Klasse bzw. Kurs eine eigene Sitzung mit eigenem Code und eine Übersicht, wer wie weit ist (Techniken, Challenge-Bestzeiten, Quellen, was gerade läuft)
 - Spickzettel mit allen Kürzeln
 
 ### 🪛 PC-Werkstatt

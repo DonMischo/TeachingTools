@@ -35,7 +35,7 @@ REF_TOOLS = {"zeitstrahl": TimelineSet, "karten": KartenSatz, "challenge": Chall
 # ist das ganze Kartentool zum Erkunden (routers/karten.py, /sitzung/{code}).
 OHNE_INHALT_MOEGLICH = ("karten",)
 # Werkzeuge, deren Sitzung einer Klasse bzw. einem Kurs/WPF gehört: je Geltungsbereich ein eigener Code
-MIT_KLASSE = ("challenge",)
+MIT_KLASSE = ("challenge", "markieren")
 # Werkzeuge, deren geteilter Satz über /content an Spieler gehen darf (ein Challenge-Satz enthält die Lösungen)
 OEFFENTLICHER_INHALT = ("zeitstrahl", "karten")
 

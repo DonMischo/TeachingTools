@@ -15,7 +15,15 @@ import { Textfeld } from "@/components/markieren/Textfeld";
 import Markieren from "@/components/markieren/Markieren";
 import Challenge from "@/components/markieren/Challenge";
 import Quellen from "@/components/markieren/Quellen";
-import { faelle, pruefeFeld } from "@/lib/markieren/quellen";
+import { faelle, pruefeFeld, quelltext } from "@/lib/markieren/quellen";
+import { LEER, liesStand, mitRunde, schreibStand, type MarkierStand } from "@/lib/markieren/speicher";
+import { vorfuehrung } from "@/lib/markieren/vorfuehren";
+
+/** Stand wie im Werkzeug: Änderungen landen in `aktuell`. */
+function standHalter(start: MarkierStand = LEER) {
+  const h = { stand: start, aendern: (f: (s: MarkierStand) => MarkierStand) => { h.stand = f(h.stand); } };
+  return h;
+}
 
 const taste = (key: string, mod: Partial<{ ctrlKey: boolean; shiftKey: boolean; metaKey: boolean }> = {}) =>
   ({ key, ctrlKey: false, shiftKey: false, metaKey: false, ...mod });
@@ -179,11 +187,41 @@ describe("Bestenliste", () => {
 
   it("eine Runde mit Überspringen wird nicht gemeldet", () => {
     const melden = vi.fn(() => Promise.resolve({ platz: 1 }));
-    render(<Challenge melden={melden} />);
+    const h = standHalter();
+    render(<Challenge melden={melden} stand={LEER} aendern={h.aendern} />);
     fireEvent.click(screen.getAllByText("Los!")[0]);
     for (let i = 0; i < 10; i++) fireEvent.click(screen.getByText(/^Überspringen/));
     expect(screen.getByText(/Andere Challenge/)).toBeTruthy();
     expect(melden).not.toHaveBeenCalled();
+    // gezählt als Runde, aber ohne Bestzeit
+    expect(h.stand.challenge.markieren).toEqual({ best_ms: null, runden: 1 });
+  });
+
+  it("Überspringen kostet 30 Sekunden und behält nicht den Fokus", () => {
+    render(<Challenge stand={LEER} aendern={() => {}} />);
+    fireEvent.click(screen.getAllByText("Los!")[0]);
+    const knopf = screen.getByText(/^Überspringen/);
+    expect(knopf.textContent).toContain("+30 s");
+    // mouseDown wird verhindert: der Knopf bekommt keinen Fokus, eine Leertaste überspringt nichts.
+    expect(fireEvent.mouseDown(knopf)).toBe(false);
+    fireEvent.click(knopf);
+    expect(screen.getByText(/Aufgabe 2 von 10/)).toBeTruthy();
+    // das neue Feld hat den Fokus, damit Tastenkürzel gleich im Text wirken
+    expect(document.activeElement).toBe(screen.getByLabelText("Übungstext"));
+  });
+
+  it("gelöst und gleich danach übersprungen: das verspätete »gelöst« kommt nicht mehr an", () => {
+    vi.useFakeTimers();
+    const a = wuerfle("allesMarkieren", zufall(1));
+    const onGeloest = vi.fn();
+    const { unmount } = render(<Textfeld aufgabe={a} onGeloest={onGeloest} />);
+    const feld = screen.getByLabelText("Übungstext") as HTMLTextAreaElement;
+    act(() => { feld.setSelectionRange(0, a.text.length); fireEvent.select(feld); });
+    expect(screen.getByText(/Geschafft/)).toBeTruthy();
+    unmount(); // Überspringen baut das Feld ab, bevor die Pause um ist
+    act(() => { vi.advanceTimersByTime(2000); });
+    expect(onGeloest).not.toHaveBeenCalled();
+    vi.useRealTimers();
   });
 });
 
@@ -197,8 +235,7 @@ describe("Quellen", () => {
       const ids = new Set(f.felder.map(x => x.id));
       for (const t of [...f.zitatSatz, ...f.verzeichnis]) if (typeof t !== "string") expect(ids.has(t.feld), `${f.id}: ${t.feld}`).toBe(true);
       // das Zitat steht wörtlich in der Quelle
-      const quelltext = f.quelle.art === "buch" ? f.quelle.seiten.flatMap(s => s.zeilen).join(" ") : f.quelle.absaetze.join(" ");
-      expect(quelltext).toContain(f.felder.find(x => x.id === "zitat")!.ziel[0]);
+      expect(quelltext(f.quelle)).toContain(f.felder.find(x => x.id === "zitat")!.ziel[0]);
     }
   });
 
@@ -220,6 +257,21 @@ describe("Quellen", () => {
     expect(pruefeFeld(wasser.felder.find(f => f.id === "autor")!, "Redaktion Wasserwelt").hinweis).toMatch(/keine Person/);
   });
 
+  it("es gibt Zeitung, Zeitschrift, Video und Online-Lexikon", () => {
+    expect(new Set(alle.map(f => f.quelle.art))).toEqual(new Set(["buch", "web", "zeitung", "heft", "video", "lexikon"]));
+    const feld = (fall: string, id: string) => alle.find(f => f.id === fall)!.felder.find(f => f.id === id)!;
+    expect(pruefeFeld(feld("igel", "nummer"), "76").hinweis).toMatch(/Jahrgang/);
+    expect(pruefeFeld(feld("igel", "titel"), "Tiere im Garten").hinweis).toMatch(/Dachzeile/);
+    expect(pruefeFeld(feld("roboter", "seite"), "22–23").hinweis).toMatch(/nur die Seite mit dem Zitat/);
+    expect(pruefeFeld(feld("roboter", "seiten"), "22-23").ok).toBe(true);
+    expect(pruefeFeld(feld("roboter", "titel"), "Roboter unter uns").hinweis).toMatch(/Titelthema/);
+    expect(pruefeFeld(feld("regenbogen", "zeit"), "2:04").ok).toBe(true);
+    expect(pruefeFeld(feld("regenbogen", "zeit"), "6:41").hinweis).toMatch(/Länge/);
+    expect(pruefeFeld(feld("regenbogen", "kanal"), "ClipTube").hinweis).toMatch(/Plattform/);
+    expect(pruefeFeld(feld("biber", "stand"), "29.10.2026").hinweis).toMatch(/heutige Datum/);
+    expect(pruefeFeld(feld("biber", "stichwort"), "Wissensnetz").hinweis).toMatch(/Name des Lexikons/);
+  });
+
   it("das Zitat muss wörtlich sein", () => {
     const zitat = alle[0].felder.find(f => f.id === "zitat")!;
     const satz = zitat.ziel[0];
@@ -231,7 +283,7 @@ describe("Quellen", () => {
   });
 
   it("ein Fall wird im Referat gelöst", () => {
-    render(<Quellen />);
+    render(<Quellen stand={LEER} aendern={() => {}} />);
     fireEvent.click(screen.getByText(/Das große Bienenbuch/, { selector: "span" }));
     const bienen = alle.find(f => f.id === "bienen")!;
     expect(bienen.felder.map(f => f.id)).toEqual(expect.arrayContaining(["nachnameBeleg", "jahrBeleg", "nachname", "jahr"]));
@@ -239,5 +291,72 @@ describe("Quellen", () => {
     fireEvent.click(screen.getByText("Prüfen"));
     expect(screen.getByText(/Richtig zitiert/)).toBeTruthy();
     expect(screen.getByText(/Brandt, Johanna \(2021\): Das große Bienenbuch\. Leben, Arbeit und Sprache der Honigbiene\. Leipzig: Wiesengrund Verlag\./)).toBeTruthy();
+  });
+});
+
+describe("Stand je Person", () => {
+  it("Gäste am selben Rechner teilen keine Haken", () => {
+    localStorage.clear();
+    schreibStand("gast-name-mia", { ...LEER, lektionen: ["doppelklick", "strgA"] });
+    expect(liesStand("gast-name-mia").lektionen).toEqual(["doppelklick", "strgA"]);
+    expect(liesStand("gast-name-ben").lektionen).toEqual([]);
+  });
+
+  it("ohne Schlüssel gilt der frühere Stand aus den Einzelschlüsseln", () => {
+    localStorage.clear();
+    localStorage.setItem("hp_markieren_lektionen", JSON.stringify(["ziehen"]));
+    localStorage.setItem("hp_markieren_bestzeit", JSON.stringify({ markieren: 40000 }));
+    const s = liesStand();
+    expect(s.lektionen).toEqual(["ziehen"]);
+    expect(s.challenge.markieren).toEqual({ best_ms: 40000, runden: 0 });
+    // ein Gast erbt davon nichts
+    expect(liesStand("gast-name-mia")).toEqual(LEER);
+  });
+
+  it("Bestzeit nur ohne Überspringen und nur bei Verbesserung", () => {
+    let s = mitRunde(LEER, "markieren", 50000, true).stand;
+    expect(mitRunde(s, "markieren", 60000, true).rekord).toBe(false);
+    expect(mitRunde(s, "markieren", 20000, false).rekord).toBe(false);
+    const r = mitRunde(s, "markieren", 40000, true);
+    s = r.stand;
+    expect(r.rekord).toBe(true);
+    expect(s.challenge.markieren).toEqual({ best_ms: 40000, runden: 2 });
+  });
+});
+
+describe("Vorführen", () => {
+  const typen = Object.keys(GENERATOREN) as AufgabenTyp[];
+  it.each(typen)("%s: der vorgeführte Weg löst die Aufgabe", typ => {
+    const r = zufall(7);
+    for (let i = 0; i < 15; i++) {
+      const a = wuerfle(typ, r);
+      const schritte = vorfuehrung(a);
+      expect(schritte.length, a.auftrag).toBeGreaterThan(0);
+      let text = a.text, von = a.start?.von ?? 0, bis = a.start?.bis ?? 0, zwischen = false;
+      for (const s of schritte) {
+        if (s.wert !== undefined) text = s.wert;
+        if (s.auswahl) ({ von, bis } = s.auswahl);
+        expect(von, a.auftrag).toBeLessThanOrEqual(text.length);
+        expect(bis, a.auftrag).toBeLessThanOrEqual(text.length);
+        if (s.zeiger !== undefined) expect(s.zeiger).toBeLessThanOrEqual(text.length);
+        zwischen = pruefe(a, { text, von: Math.min(von, bis), bis: Math.max(von, bis) }, zwischen).zwischen;
+      }
+      expect(pruefe(a, { text, von: Math.min(von, bis), bis: Math.max(von, bis) }, zwischen).geloest, a.auftrag).toBe(true);
+    }
+  });
+});
+
+describe("Zeilennummern", () => {
+  it("folgen dem Text und markieren die Cursorzeile", () => {
+    const a = wuerfle("zeileKopieren", zufall(5));
+    render(<Textfeld aufgabe={a} onGeloest={() => {}} />);
+    const feld = screen.getByLabelText("Übungstext") as HTMLTextAreaElement;
+    const nummern = () => screen.getByTestId("zeilennummern").children;
+    const vorher = a.text.split("\n").length;
+    expect(nummern().length).toBe(vorher);
+    act(() => { fireEvent.input(feld, { target: { value: a.text + "\nneu" } }); });
+    expect(nummern().length).toBe(vorher + 1);
+    act(() => { feld.focus(); feld.setSelectionRange(a.text.length + 2, a.text.length + 2); fireEvent.select(feld); });
+    expect(nummern()[vorher].className).toContain("text-accent");
   });
 });

@@ -1,6 +1,7 @@
 /**
- * Referat & Quellen: aus einem Buch oder einer Webseite ein wörtliches Zitat
- * und die Angaben fürs Literaturverzeichnis herauskopieren.
+ * Referat & Quellen: aus einem Buch, einer Webseite, einer Zeitung, einer
+ * Zeitschrift, einem Video oder einem Online-Lexikon ein wörtliches Zitat und
+ * die Angaben fürs Literaturverzeichnis herauskopieren.
  *
  * Alle Quellen sind erfunden (Namen, Verlage, Adressen) — es geht ums Finden
  * und Kopieren, nicht um den Inhalt. Die Zitierweise ist die in Schulen
@@ -55,12 +56,88 @@ export type Webseite = {
   fuss: string[];
 };
 
+/** Eine Zeitungsseite: Kopf mit Name, Datum und Nummer, darunter der Artikel. */
+export type Zeitung = {
+  art: "zeitung";
+  name: string;
+  unterzeile: string;
+  datum: string;
+  nummer: string;
+  jahrgang: string;
+  preis: string;
+  ressort: string;
+  seite: number;
+  dachzeile: string;
+  titel: string;
+  vorspann: string;
+  autor: string;
+  ortsmarke: string;
+  absaetze: string[];
+  meldung: { titel: string; text: string };
+  anzeige: string;
+};
+
+/** Ein Zeitschriftenheft zum Blättern: Titelblatt, Inhaltsverzeichnis, Artikelseiten. */
+export type HeftSeite =
+  | { titel: string; art: "cover"; name: string; heft: string; thema: string; anrisse: string[]; preis: string }
+  | { titel: string; art: "inhalt"; eintraege: { seite: number; rubrik: string; titel: string }[]; impressum: string[] }
+  | { titel: string; art: "artikel"; nr: number; kopf: string; rubrik?: string; ueberschrift?: string; vorspann?: string; autor?: string; zeilen: string[] };
+
+export type Heft = { art: "heft"; seiten: HeftSeite[] };
+
+/** Ein Video mit Abschrift (Untertitel) — zitiert wird mit Zeitangabe statt Seite. */
+export type Video = {
+  art: "video";
+  plattform: string;
+  url: string;
+  kurzlink: string;
+  titel: string;
+  kanal: string;
+  abonnenten: string;
+  aufrufe: string;
+  hochgeladen: string;
+  dauer: string;
+  beschreibung: string[];
+  abschrift: { zeit: string; text: string }[];
+  vorschlaege: string[];
+};
+
+/** Ein Artikel in einem Online-Lexikon: ohne Autor, dafür mit Stand der letzten Bearbeitung. */
+export type Lexikon = {
+  art: "lexikon";
+  name: string;
+  url: string;
+  stichwort: string;
+  kurz: string;
+  inhalt: string[];
+  abschnitte: { titel: string; absaetze: string[] }[];
+  stand: string;
+};
+
+export type Quelle = Buch | Webseite | Zeitung | Heft | Video | Lexikon;
+
+export const QUELLEN_ART: Record<Quelle["art"], string> = {
+  buch: "📖 Buch", web: "🌐 Website", zeitung: "📰 Zeitung", heft: "🗞️ Zeitschrift", video: "🎬 Video", lexikon: "🔎 Online-Lexikon",
+};
+
+/** Aller Fließtext einer Quelle — darin muss das Zitat wörtlich stehen. */
+export function quelltext(q: Quelle): string {
+  switch (q.art) {
+    case "buch": return q.seiten.flatMap(s => s.zeilen).join(" ");
+    case "web": return q.absaetze.join(" ");
+    case "zeitung": return q.absaetze.join(" ");
+    case "heft": return q.seiten.flatMap(s => (s.art === "artikel" ? s.zeilen : [])).join(" ");
+    case "video": return q.abschrift.map(z => z.text).join(" ");
+    case "lexikon": return [q.kurz, ...q.abschnitte.flatMap(a => a.absaetze)].join(" ");
+  }
+}
+
 export type Fall = {
   id: string;
   icon: string;
   titel: string;
   auftrag: string;
-  quelle: Buch | Webseite;
+  quelle: Quelle;
   felder: Feld[];
   zitatSatz: Teil[];
   verzeichnis: Teil[];
@@ -250,6 +327,188 @@ function webRoh(d: WebDaten, heute: Date): Fall {
   };
 }
 
+// ---------------------------------------------------------------- Zeitung
+
+type ZeitungDaten = {
+  id: string; icon: string; name: string; unterzeile: string; wochentag: string; datum: string; nummer: number; jahrgang: number;
+  ressort: string; seite: number; dachzeile: string; titel: string; vorspann: string;
+  vorname: string; nachname: string; ortsmarke: string; absaetze: string[]; zitat: string; frage: string;
+  meldung: { titel: string; text: string }; anzeige: string;
+};
+
+const MONATE = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
+/** »12.03.2026« → »12. März 2026« für den Zeitungskopf. */
+const langesDatum = (d: string) => { const [t, m, j] = d.split("."); return `${Number(t)}. ${MONATE[Number(m) - 1]} ${j}`; };
+
+/** Leere Hinweise (ein Fehlgriff, der zufällig richtig wäre) fallen weg. */
+const ohneLeere = (felder: Feld[]): Feld[] =>
+  felder.map(f => (f.falsch ? { ...f, falsch: Object.fromEntries(Object.entries(f.falsch).filter(([, v]) => v)) } : f));
+
+function zeitung(d: ZeitungDaten): Fall {
+  const name = `${d.vorname} ${d.nachname}`;
+  return eigenerBeleg({
+    id: d.id, icon: d.icon, titel: d.titel, auftrag: d.frage,
+    quelle: {
+      art: "zeitung", name: d.name, unterzeile: d.unterzeile, datum: `${d.wochentag}, ${langesDatum(d.datum)}`,
+      nummer: `Nr. ${d.nummer}`, jahrgang: `${d.jahrgang}. Jahrgang`, preis: "2,40 €", ressort: d.ressort, seite: d.seite,
+      dachzeile: d.dachzeile, titel: d.titel, vorspann: d.vorspann, autor: `Von ${name}`, ortsmarke: d.ortsmarke,
+      absaetze: d.absaetze, meldung: d.meldung, anzeige: d.anzeige,
+    },
+    felder: ohneLeere([
+      { id: "zitat", label: "Zitat", ziel: [d.zitat], genau: true, breit: true, hinweis: "Das ist nicht der gesuchte Satz. Lies die Aufgabe noch einmal." },
+      { id: "nachname", label: "Nachname", ziel: [d.nachname], hinweis: "Der Name steht unter dem Vorspann (»Von …«).",
+        falsch: { [d.vorname]: "Das ist der Vorname.", [name]: "Hier nur der Nachname.", [d.name]: "Das ist der Name der Zeitung. Gesucht ist, wer den Artikel geschrieben hat." } },
+      { id: "vorname", label: "Vorname", ziel: [d.vorname], hinweis: "Der Vorname steht unter dem Vorspann (»Von …«).",
+        falsch: { [d.nachname]: "Das ist der Nachname." } },
+      { id: "jahr", label: "Jahr", ziel: [d.datum.slice(-4)], hinweis: "Das Jahr steht im Datum oben im Zeitungskopf.",
+        falsch: { [String(d.jahrgang)]: "Das ist der Jahrgang der Zeitung (wie lange es sie schon gibt), nicht das Jahr." } },
+      { id: "seite", label: "Seite", ziel: [String(d.seite)], hinweis: "Die Seitenzahl steht oben in der Kopfzeile der Seite.",
+        falsch: { [String(d.nummer)]: "Das ist die Nummer der Ausgabe. Die Seite steht oben neben dem Ressort." } },
+      { id: "titel", label: "Titel", ziel: [d.titel], breit: true, hinweis: "Der Titel ist die große Schlagzeile des Artikels.",
+        falsch: { [d.dachzeile]: "Das ist die Dachzeile über der Schlagzeile. Gesucht ist die große Überschrift.", [d.ressort]: "Das ist das Ressort (die Rubrik).", [d.vorspann]: "Das ist der Vorspann unter der Überschrift." } },
+      { id: "zeitung", label: "Zeitung", ziel: [d.name], breit: true, hinweis: "Der Name der Zeitung steht groß ganz oben im Kopf.",
+        falsch: { [d.ressort]: "Das ist nur das Ressort. Gesucht ist der Name der ganzen Zeitung.", [d.unterzeile]: "Das ist der Zusatz unter dem Namen." } },
+      { id: "nummer", label: "Nummer", ziel: [String(d.nummer), `Nr. ${d.nummer}`], hinweis: "Die Nummer der Ausgabe steht im Kopf (»Nr. …«).",
+        falsch: { [String(d.jahrgang)]: "Das ist der Jahrgang. Gesucht ist die Nummer der Ausgabe.", [`${d.jahrgang}. Jahrgang`]: "Das ist der Jahrgang. Gesucht ist die Nummer der Ausgabe.", [String(d.seite)]: "Das ist die Seite. Gesucht ist die Nummer der Ausgabe." } },
+      { id: "datum", label: "Datum", ziel: [d.datum, langesDatum(d.datum)], hinweis: "Das Datum der Ausgabe steht im Kopf (TT.MM.JJJJ)." },
+    ]),
+    zitatSatz: ["In der Zeitung heißt es: „", { feld: "zitat" }, "“ (", { feld: "nachname" }, " ", { feld: "jahr" }, ", S. ", { feld: "seite" }, ")."],
+    verzeichnis: [{ feld: "nachname" }, ", ", { feld: "vorname" }, " (", { feld: "jahr" }, "): ", { feld: "titel" }, ". In: ", { feld: "zeitung" }, ", Nr. ", { feld: "nummer" }, " vom ", { feld: "datum" }, ", S. ", { feld: "seite" }, "."],
+  });
+}
+
+// ---------------------------------------------------------------- Zeitschrift
+
+type HeftDaten = {
+  id: string; icon: string; name: string; heft: string; monat: string; jahr: string; thema: string; anrisse: string[];
+  rubrik: string; titel: string; vorspann: string; vorname: string; nachname: string;
+  von: number; seiten: [string[], string[]]; zitat: string; frage: string;
+  inhalt: { seite: number; rubrik: string; titel: string }[];
+  chefredaktion: string; verlag: string;
+};
+
+function heft(d: HeftDaten): Fall {
+  const name = `${d.vorname} ${d.nachname}`;
+  const bis = d.von + 1;
+  const zitatSeite = d.seiten[0].some(z => z.includes(d.zitat)) ? d.von : bis;
+  const andere = zitatSeite === d.von ? bis : d.von;
+  const spanne = `${d.von}–${bis}`;
+  const chefNachname = d.chefredaktion.split(" ").slice(-1)[0];
+  return eigenerBeleg({
+    id: d.id, icon: d.icon, titel: d.titel, auftrag: d.frage,
+    quelle: {
+      art: "heft",
+      seiten: [
+        { titel: "Titelblatt", art: "cover", name: d.name, heft: `Heft ${d.heft} · ${d.monat} ${d.jahr}`, thema: d.thema, anrisse: d.anrisse, preis: "4,90 €" },
+        { titel: "Inhalt", art: "inhalt", eintraege: [...d.inhalt, { seite: d.von, rubrik: d.rubrik, titel: d.titel }].sort((a, b) => a.seite - b.seite),
+          impressum: [`${d.name} erscheint monatlich.`, `Chefredaktion: ${d.chefredaktion}`, `Verlag: ${d.verlag}`] },
+        { titel: `Seite ${d.von}`, art: "artikel", nr: d.von, kopf: `${d.name} ${d.heft}/${d.jahr}`, rubrik: d.rubrik, ueberschrift: d.titel, vorspann: d.vorspann, autor: `Text: ${name}`, zeilen: d.seiten[0] },
+        { titel: `Seite ${bis}`, art: "artikel", nr: bis, kopf: `${d.name} ${d.heft}/${d.jahr}`, zeilen: d.seiten[1] },
+      ],
+    },
+    felder: ohneLeere([
+      { id: "zitat", label: "Zitat", ziel: [d.zitat], genau: true, breit: true, hinweis: "Das ist nicht der gesuchte Satz. Lies die Aufgabe noch einmal." },
+      { id: "nachname", label: "Nachname", ziel: [d.nachname], hinweis: "Der Name steht am Anfang des Artikels (»Text: …«).",
+        falsch: { [d.vorname]: "Das ist der Vorname.", [name]: "Hier nur der Nachname.",
+          [d.chefredaktion]: "Das ist die Chefredaktion des ganzen Hefts. Gesucht ist, wer diesen Artikel geschrieben hat.",
+          [chefNachname]: "Das ist die Chefredaktion des ganzen Hefts. Gesucht ist, wer diesen Artikel geschrieben hat." } },
+      { id: "vorname", label: "Vorname", ziel: [d.vorname], hinweis: "Der Vorname steht am Anfang des Artikels (»Text: …«).",
+        falsch: { [d.nachname]: "Das ist der Nachname." } },
+      { id: "jahr", label: "Jahr", ziel: [d.jahr], hinweis: "Das Jahr steht auf dem Titelblatt neben der Heftnummer." },
+      { id: "seite", label: "Seite", ziel: [String(zitatSeite)], hinweis: "Im Kurzbeleg steht die Seite, auf der das Zitat steht.",
+        falsch: { [spanne]: "Im Kurzbeleg steht nur die Seite mit dem Zitat. Alle Seiten des Artikels kommen ins Verzeichnis.", [String(andere)]: "Auf dieser Seite steht der Artikel auch — aber nicht dein Zitat." } },
+      { id: "titel", label: "Titel", ziel: [d.titel], breit: true, hinweis: "Der Titel ist die Überschrift des Artikels.",
+        falsch: { [d.thema]: "Das ist das Titelthema vom Titelblatt — gesucht ist die Überschrift des Artikels.", [d.rubrik]: "Das ist nur die Rubrik.", [d.vorspann]: "Das ist der Vorspann unter der Überschrift." } },
+      { id: "zeitschrift", label: "Zeitschrift", ziel: [d.name], breit: true, hinweis: "Der Name der Zeitschrift steht groß auf dem Titelblatt.",
+        falsch: { [d.verlag]: "Das ist der Verlag. Gesucht ist der Name der Zeitschrift." } },
+      { id: "heft", label: "Heft", ziel: [`${d.heft}/${d.jahr}`, d.heft], hinweis: "Die Heftnummer steht auf dem Titelblatt (»Heft …«), geschrieben als Nummer/Jahr.",
+        falsch: { [d.monat]: "Statt des Monats kommt die Heftnummer hierher." } },
+      { id: "seiten", label: "Seiten", ziel: [spanne, `${d.von}-${bis}`, `${d.von} – ${bis}`, `${d.von} - ${bis}`, `${d.von}f.`, `${d.von} f.`],
+        hinweis: "Ins Verzeichnis kommen alle Seiten des Artikels, von der ersten bis zur letzten (z. B. 12–13).",
+        falsch: { [String(d.von)]: "Das ist nur die erste Seite. Der Artikel geht weiter — von bis.", [String(bis)]: "Das ist nur die letzte Seite. Gesucht ist von bis." } },
+    ]),
+    zitatSatz: ["In der Zeitschrift heißt es: „", { feld: "zitat" }, "“ (", { feld: "nachname" }, " ", { feld: "jahr" }, ", S. ", { feld: "seite" }, ")."],
+    verzeichnis: [{ feld: "nachname" }, ", ", { feld: "vorname" }, " (", { feld: "jahr" }, "): ", { feld: "titel" }, ". In: ", { feld: "zeitschrift" }, ", Heft ", { feld: "heft" }, ", S. ", { feld: "seiten" }, "."],
+  });
+}
+
+// ---------------------------------------------------------------- Video
+
+type VideoDaten = {
+  id: string; icon: string; plattform: string; heim: string; videoId: string; kurzlink: string;
+  titel: string; kanal: string; abonnenten: string; aufrufe: string; hochgeladen: string; dauer: string;
+  beschreibung: string[]; abschrift: { zeit: string; text: string }[]; zitat: string; frage: string; vorschlaege: string[];
+};
+
+function video(d: VideoDaten, heute: Date): Fall {
+  const url = `https://${d.heim}/watch?v=${d.videoId}`;
+  const zeit = d.abschrift.find(z => z.text.includes(d.zitat))!.zeit;
+  const jetzt = String(heute.getFullYear());
+  return eigenerBeleg({
+    id: d.id, icon: d.icon, titel: d.titel, auftrag: d.frage,
+    quelle: {
+      art: "video", plattform: d.plattform, url, kurzlink: d.kurzlink, titel: d.titel, kanal: d.kanal, abonnenten: d.abonnenten,
+      aufrufe: d.aufrufe, hochgeladen: d.hochgeladen, dauer: d.dauer, beschreibung: d.beschreibung, abschrift: d.abschrift, vorschlaege: d.vorschlaege,
+    },
+    felder: ohneLeere([
+      { id: "zitat", label: "Zitat", ziel: [d.zitat], genau: true, breit: true, hinweis: "Das ist nicht der gesuchte Satz. Lies die Aufgabe noch einmal." },
+      { id: "kanal", label: "Kanal", ziel: [d.kanal], breit: true, hinweis: "Bei Videos steht statt einer Person der Kanal, der das Video hochgeladen hat (unter dem Video).",
+        falsch: { [d.plattform]: "Das ist die Plattform. Gesucht ist der Kanal, der das Video gemacht hat." } },
+      { id: "jahr", label: "Jahr", ziel: [d.hochgeladen.slice(-4)], hinweis: "Das Jahr steht beim Datum unter dem Video (»Hochgeladen am …«).",
+        falsch: { [jetzt]: d.hochgeladen.endsWith(jetzt) ? "" : "Das ist das heutige Jahr. Gesucht ist, wann das Video hochgeladen wurde." } },
+      { id: "zeit", label: "Zeit (Min:Sek)", ziel: [zeit], hinweis: "Statt einer Seite kommt die Stelle im Video: die Zeit vor dem Satz in der Abschrift (Min:Sek).",
+        falsch: { [d.dauer]: "Das ist die Länge des ganzen Videos. Gesucht ist die Stelle, an der der Satz fällt." } },
+      { id: "titel", label: "Titel", ziel: [d.titel], breit: true, hinweis: "Der Titel steht fett direkt unter dem Video.",
+        falsch: { [d.kanal]: "Das ist der Kanal. Gesucht ist der Titel des Videos." } },
+      { id: "url", label: "Adresse (URL)", ziel: [url, url.replace("https://", "")], breit: true,
+        hinweis: "Die genaue Adresse steht oben in der Adresszeile des Browsers.",
+        falsch: { [d.kurzlink]: "Das ist der Kurzlink aus »Teilen«. Ins Verzeichnis gehört die Adresse aus der Adresszeile.", [`https://${d.heim}`]: "Das ist nur die Startseite der Plattform." } },
+      { id: "abruf", label: "Abrufdatum", ziel: abrufVarianten(heute), hinweis: "Das Abrufdatum ist der Tag, an dem du das Video angesehen hast — also heute (TT.MM.JJJJ).",
+        falsch: { [d.hochgeladen]: "Das ist das Datum des Hochladens. Angesehen hast du das Video heute." } },
+    ]),
+    zitatSatz: ["Im Video heißt es: „", { feld: "zitat" }, "“ (", { feld: "kanal" }, " ", { feld: "jahr" }, ", ", { feld: "zeit" }, ")."],
+    verzeichnis: [{ feld: "kanal" }, " (", { feld: "jahr" }, "): ", { feld: "titel" }, " [Video]. Online unter: ", { feld: "url" }, " (Abruf: ", { feld: "abruf" }, ")."],
+  });
+}
+
+// ---------------------------------------------------------------- Online-Lexikon
+
+type LexikonDaten = {
+  id: string; icon: string; name: string; heim: string; stichwort: string; kurz: string;
+  abschnitte: { titel: string; absaetze: string[] }[]; stand: string; zitat: string; frage: string;
+};
+
+function lexikon(d: LexikonDaten, heute: Date): Fall {
+  const url = `https://${d.heim}/wiki/${d.stichwort}`;
+  const heuteText = abrufVarianten(heute)[0];
+  const jetzt = String(heute.getFullYear());
+  return eigenerBeleg({
+    id: d.id, icon: d.icon, titel: `${d.stichwort} (${d.name})`, auftrag: d.frage,
+    quelle: {
+      art: "lexikon", name: d.name, url, stichwort: d.stichwort, kurz: d.kurz,
+      inhalt: d.abschnitte.map(a => a.titel), abschnitte: d.abschnitte, stand: d.stand,
+    },
+    felder: ohneLeere([
+      { id: "zitat", label: "Zitat", ziel: [d.zitat], genau: true, breit: true, hinweis: "Das ist nicht der gesuchte Satz. Lies die Aufgabe noch einmal." },
+      { id: "stichwort", label: "Stichwort", ziel: [d.stichwort], hinweis: "Im Lexikon steht keine Autorin — der Artikel wird mit seinem Stichwort (der Überschrift) belegt.",
+        falsch: { [d.name]: "Das ist der Name des Lexikons. Gesucht ist das Stichwort des Artikels." } },
+      { id: "jahr", label: "Jahr", ziel: [d.stand.slice(-4)], hinweis: "Das Jahr steht beim Stand ganz unten (»zuletzt bearbeitet am …«).",
+        falsch: { [jetzt]: d.stand.endsWith(jetzt) ? "" : "Das ist das heutige Jahr. Gesucht ist der Stand des Artikels (ganz unten)." } },
+      { id: "lexikon", label: "Lexikon", ziel: [d.name], breit: true, hinweis: "Der Name des Lexikons steht oben links neben dem Logo.",
+        falsch: { [d.stichwort]: "Das ist das Stichwort. Gesucht ist der Name des ganzen Lexikons." } },
+      { id: "url", label: "Adresse (URL)", ziel: [url, url.replace("https://", "")], breit: true,
+        hinweis: "Die genaue Adresse steht oben in der Adresszeile des Browsers.",
+        falsch: { [`https://${d.heim}`]: "Das ist nur die Startseite des Lexikons." } },
+      { id: "stand", label: "Stand", ziel: [d.stand], hinweis: "Der Stand ist der Tag der letzten Bearbeitung — er steht ganz unten im Artikel.",
+        falsch: { [heuteText]: d.stand === heuteText ? "" : "Das ist das heutige Datum (das Abrufdatum). Gesucht ist, wann der Artikel zuletzt bearbeitet wurde." } },
+      { id: "abruf", label: "Abrufdatum", ziel: abrufVarianten(heute), hinweis: "Das Abrufdatum ist der Tag, an dem du den Artikel gelesen hast — also heute (TT.MM.JJJJ).",
+        falsch: { [d.stand]: d.stand === heuteText ? "" : "Das ist der Stand des Artikels. Abgerufen hast du ihn heute." } },
+    ]),
+    zitatSatz: ["Im Lexikon heißt es: „", { feld: "zitat" }, "“ (", { feld: "stichwort" }, " ", { feld: "jahr" }, ")."],
+    verzeichnis: [{ feld: "stichwort" }, " (", { feld: "jahr" }, "). In: ", { feld: "lexikon" }, ". Online unter: ", { feld: "url" }, " (Stand: ", { feld: "stand" }, "; Abruf: ", { feld: "abruf" }, ")."],
+  });
+}
+
 export function faelle(heute: Date = new Date()): Fall[] {
   return [
     buch({
@@ -341,6 +600,77 @@ export function faelle(heute: Date = new Date()): Fall[] {
       navigation: ["Start", "Klima & Alltag", "Energie", "Mobilität", "Podcast"],
       seitenleiste: ["Fünf Tipps gegen Hitze im Klassenzimmer", "Warum Bäume die Stadt kühlen", "Interview: Leben auf dem Gründach"],
       werbung: "Ventilator-Sale: Nur heute 30 % Rabatt!",
+    }, heute),
+    zeitung({
+      id: "igel", icon: "🦔", name: "Thüringer Abendbote", unterzeile: "Unabhängige Tageszeitung für Mittelthüringen",
+      wochentag: "Donnerstag", datum: "12.03.2026", nummer: 61, jahrgang: 76, ressort: "Natur & Umwelt", seite: 7,
+      dachzeile: "Tiere im Garten", titel: "Wenn der Igel aus dem Winterschlaf erwacht",
+      vorspann: "Die ersten warmen Tage locken die stacheligen Gartenbewohner hervor. Was sie jetzt brauchen.",
+      vorname: "Maria", nachname: "Kern", ortsmarke: "WEIMAR.",
+      absaetze: [
+        "Kaum klettern die Temperaturen über zehn Grad, raschelt es wieder unter Hecken und Laubhaufen. Viele Igel haben den Winter in einem Nest aus Blättern verbracht.",
+        "Im Winterschlaf schlägt das Herz eines Igels nur noch etwa fünfmal in der Minute. So spart das Tier Energie, denn im Winter findet es kaum Käfer und Würmer.",
+        "Nach dem Aufwachen sind die Igel oft mager und durstig. Eine flache Schale mit Wasser hilft ihnen mehr als Milch, die sie nicht vertragen.",
+      ],
+      zitat: "Im Winterschlaf schlägt das Herz eines Igels nur noch etwa fünfmal in der Minute.",
+      frage: "Übernimm den Satz über das Herz des Igels im Winterschlaf — und belege den Zeitungsartikel.",
+      meldung: { titel: "Krötenzäune stehen", text: "An drei Straßen im Kreis helfen Freiwillige wieder Kröten über die Fahrbahn." },
+      anzeige: "Gartenmarkt Sonnenberg: Frühlingsblüher ab 1,99 €",
+    }),
+    heft({
+      id: "roboter", icon: "🤖", name: "Forscherwelt", heft: "4", monat: "April", jahr: "2025",
+      thema: "Roboter unter uns", anrisse: ["Experiment: Ein Ei überlebt den Sturz", "Wie schlafen Wale?", "Rätsel und Comics"],
+      rubrik: "Technik", titel: "Helfer aus Metall", vorspann: "Sie mähen Rasen, sortieren Pakete und operieren sogar mit. Wie Roboter wissen, was sie tun sollen.",
+      vorname: "Paul", nachname: "Winter", von: 22,
+      seiten: [
+        [
+          "Ein Roboter ist eine Maschine, die sich bewegen und ihre Umgebung wahrnehmen kann. Dafür hat er Sensoren, zum Beispiel Kameras oder Abstandsmesser.",
+          "Ein Roboter tut nur das, was ihm ein Programm vorschreibt. Er überlegt nicht selbst, sondern folgt Schritt für Schritt seinen Befehlen.",
+        ],
+        [
+          "Mähroboter zum Beispiel fahren so lange geradeaus, bis ihr Sensor den Rand des Rasens meldet. Dann drehen sie ein Stück und fahren weiter.",
+          "In Fabriken arbeiten Roboterarme seit vielen Jahren. Sie heben schwere Teile und schweißen sie zusammen — schneller und genauer als ein Mensch.",
+        ],
+      ],
+      zitat: "Ein Roboter tut nur das, was ihm ein Programm vorschreibt.",
+      frage: "Übernimm den Satz darüber, was ein Roboter tut — und belege den Artikel aus der Zeitschrift.",
+      inhalt: [
+        { seite: 4, rubrik: "Natur", titel: "Wie schlafen Wale?" },
+        { seite: 14, rubrik: "Experiment", titel: "Ein Ei überlebt den Sturz" },
+        { seite: 30, rubrik: "Freizeit", titel: "Rätsel und Comics" },
+      ],
+      chefredaktion: "Sabine Lorenz", verlag: "Neugier Medien GmbH, Stuttgart",
+    }),
+    video({
+      id: "regenbogen", icon: "🌈", plattform: "ClipTube", heim: "www.cliptube.de", videoId: "rB7x2LqM", kurzlink: "https://clip.tu/rB7x2",
+      titel: "Wie entsteht ein Regenbogen? | Physik einfach erklärt", kanal: "Physik mit Pia", abonnenten: "182.000 Abonnenten",
+      aufrufe: "412.538 Aufrufe", hochgeladen: "08.05.2024", dauer: "6:41",
+      beschreibung: ["Warum sehen wir nach dem Regen manchmal einen bunten Bogen am Himmel? Pia erklärt es mit einem Glas Wasser und einer Taschenlampe.", "00:00 Einstieg · 01:15 Licht ist bunt · 03:02 Das Experiment · 05:40 Zusammenfassung"],
+      abschrift: [
+        { zeit: "0:12", text: "Hallo und willkommen! Heute geht es um den Regenbogen." },
+        { zeit: "1:15", text: "Das weiße Licht der Sonne besteht in Wahrheit aus vielen Farben." },
+        { zeit: "2:04", text: "Trifft Sonnenlicht auf einen Regentropfen, wird es gebrochen und in seine Farben zerlegt." },
+        { zeit: "3:02", text: "Das probieren wir jetzt mit einem Glas Wasser aus." },
+        { zeit: "5:40", text: "Ein Regenbogen entsteht also nur, wenn die Sonne hinter uns steht und vor uns Regen fällt." },
+      ],
+      zitat: "Trifft Sonnenlicht auf einen Regentropfen, wird es gebrochen und in seine Farben zerlegt.",
+      frage: "Übernimm den Satz, der erklärt, was im Regentropfen passiert — und belege das Video mit der Zeitangabe.",
+      vorschlaege: ["Warum ist der Himmel blau?", "Experiment: Regenbogen im Glas", "Licht und Schatten in 5 Minuten"],
+    }, heute),
+    lexikon({
+      id: "biber", icon: "🦫", name: "Wissensnetz", heim: "www.wissensnetz-lexikon.de", stichwort: "Europäischer Biber",
+      kurz: "Der Europäische Biber ist das größte Nagetier Europas. Er lebt an Flüssen und Seen und kann bis zu 30 Kilogramm schwer werden.",
+      abschnitte: [
+        { titel: "Merkmale", absaetze: ["Biber haben ein dichtes braunes Fell und einen breiten, flachen Schwanz, die Kelle. Mit ihren Schwimmhäuten an den Hinterfüßen sind sie gute Schwimmer."] },
+        { titel: "Lebensweise", absaetze: [
+          "Biber fällen Bäume mit ihren Zähnen und bauen daraus Dämme und Burgen.",
+          "Mit ihren Dämmen stauen Biber das Wasser, damit der Eingang ihrer Burg immer unter Wasser liegt. So sind sie vor Feinden geschützt.",
+        ] },
+        { titel: "Verbreitung", absaetze: ["Um 1900 war der Biber in Deutschland fast ausgerottet. Heute leben wieder viele Tausend Tiere an Elbe, Donau und ihren Nebenflüssen."] },
+      ],
+      stand: "17.02.2026",
+      zitat: "Mit ihren Dämmen stauen Biber das Wasser, damit der Eingang ihrer Burg immer unter Wasser liegt.",
+      frage: "Übernimm den Satz, der erklärt, wozu Biber Dämme bauen — und belege den Lexikonartikel.",
     }, heute),
   ];
 }

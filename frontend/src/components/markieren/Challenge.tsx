@@ -6,18 +6,10 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { MODI, STRAFE_MS, challengeAufgaben, type Aufgabe, type Modus } from "@/lib/markieren/aufgaben";
+import { mitRunde, type MarkierStand } from "@/lib/markieren/speicher";
 import { TECHNIKEN } from "@/lib/markieren/technik";
 import { mitTasten } from "@/components/maus/Taste";
 import { Textfeld, type Loesung } from "./Textfeld";
-
-const SCHLUESSEL = "hp_markieren_bestzeit";
-type Bestzeiten = Partial<Record<Modus, number>>;
-const liesBest = (): Bestzeiten => {
-  try { return JSON.parse(localStorage.getItem(SCHLUESSEL) ?? "{}"); } catch { return {}; }
-};
-const schreibBest = (b: Bestzeiten) => {
-  try { localStorage.setItem(SCHLUESSEL, JSON.stringify(b)); } catch { /* privat */ }
-};
 
 type Ergebnis = { aufgabe: Aufgabe; ms: number; aktionen: number; uebersprungen: boolean };
 type Lauf = { modus: Modus; aufgaben: Aufgabe[]; ergebnisse: Ergebnis[]; seit: number };
@@ -28,15 +20,24 @@ const summe = (e: Ergebnis[]) => e.reduce((s, x) => s + x.ms + (x.uebersprungen 
 /** Meldet eine Runde ohne Überspringen an die Bestenliste; liefert den Platz. */
 export type Melden = (modus: Modus, zeitMs: number, aktionen: number) => Promise<{ platz: number }>;
 
-export default function Challenge({ melden }: { melden?: Melden }) {
-  const [best, setBest] = useState<Bestzeiten>({});
-  const [lauf, setLauf] = useState<Lauf | null>(null);
+export default function Challenge({ melden, stand, aendern, onAktuell }: {
+  melden?: Melden;
+  stand: MarkierStand | null;
+  aendern: (f: (s: MarkierStand) => MarkierStand) => void;
+  onAktuell?: (text: string) => void;
+}) {
+  const best: Partial<Record<Modus, number>> = {};
+  for (const [m, c] of Object.entries(stand?.challenge ?? {})) if (c?.best_ms != null) best[m as Modus] = c.best_ms;
+  const [lauf, setLaufState] = useState<Lauf | null>(null);
+  // Der aktuelle Lauf auch als Ref: »weiter« kann aus einem verspäteten
+  // Timer kommen und darf dann nicht mit einem alten Stand rechnen.
+  const laufRef = useRef<Lauf | null>(null);
+  const setLauf = (l: Lauf | null) => { laufRef.current = l; setLaufState(l); };
   const [neuerRekord, setNeuerRekord] = useState(false);
   const [platz, setPlatz] = useState<number | null>(null);
   const [jetzt, setJetzt] = useState(0);
   const uhr = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  useEffect(() => { setBest(liesBest()); }, []);
   useEffect(() => () => { if (uhr.current) clearInterval(uhr.current); }, []);
 
   const fertig = !!lauf && lauf.ergebnisse.length >= lauf.aufgaben.length;
@@ -55,13 +56,21 @@ export default function Challenge({ melden }: { melden?: Melden }) {
     setJetzt(performance.now());
   }
 
-  function weiter(e: Ergebnis) {
+  const nrJetzt = lauf ? lauf.ergebnisse.length : -1;
+  useEffect(() => {
     if (!lauf) return;
+    onAktuell?.(fertig ? `Challenge »${MODI[lauf.modus].titel}« beendet` : `Challenge »${MODI[lauf.modus].titel}«, Aufgabe ${nrJetzt + 1}/${lauf.aufgaben.length}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lauf?.modus, nrJetzt, fertig]);
+
+  /** `nr`: die Aufgabe, zu der das Ergebnis gehört — ein zweites Ergebnis dazu (Überspringen und Lösen gleichzeitig) fällt weg. */
+  function weiter(nr: number, e: Ergebnis) {
+    const lauf = laufRef.current;
+    if (!lauf || lauf.ergebnisse.length !== nr) return;
     const ergebnisse = [...lauf.ergebnisse, e];
     setLauf({ ...lauf, ergebnisse, seit: performance.now() });
     if (ergebnisse.length === lauf.aufgaben.length) {
       const gesamt = summe(ergebnisse);
-      const alt = best[lauf.modus];
       const sauber = !ergebnisse.some(x => x.uebersprungen);
       if (sauber && melden) {
         // Fehler bleiben still — die Runde ist auch ohne Liste geschafft.
@@ -69,12 +78,8 @@ export default function Challenge({ melden }: { melden?: Melden }) {
           .then(r => setPlatz(r.platz)).catch(() => { /* offline oder ohne Freigabe */ });
       }
       // Bestzeit nur ohne Überspringen — sonst wäre »alles überspringen« ein Rekord.
-      if (sauber && (alt === undefined || gesamt < alt)) {
-        const neu = { ...best, [lauf.modus]: gesamt };
-        setBest(neu);
-        schreibBest(neu);
-        setNeuerRekord(true);
-      }
+      if (stand) setNeuerRekord(mitRunde(stand, lauf.modus, gesamt, sauber).rekord);
+      aendern(s => mitRunde(s, lauf.modus, gesamt, sauber).stand);
     }
   }
 
@@ -111,11 +116,12 @@ export default function Challenge({ melden }: { melden?: Melden }) {
         <div className="h-full bg-accent transition-all" style={{ width: `${(nr / lauf.aufgaben.length) * 100}%` }} />
       </div>
       <p className="font-bold text-lg">👉 {mitTasten(aufgabe.auftrag)}</p>
-      <Textfeld key={nr} aufgabe={aufgabe}
-        onGeloest={(l: Loesung) => weiter({ aufgabe, ms: Math.round(performance.now() - lauf.seit), aktionen: l.aktionen, uebersprungen: false })} />
+      <Textfeld key={nr} aufgabe={aufgabe} fokus
+        onGeloest={(l: Loesung) => weiter(nr, { aufgabe, ms: Math.round(performance.now() - lauf.seit), aktionen: l.aktionen, uebersprungen: false })} />
       <div className="flex gap-2 justify-end">
-        <button type="button" className="btn-secondary text-sm"
-          onClick={() => weiter({ aufgabe, ms: Math.round(performance.now() - lauf.seit), aktionen: 0, uebersprungen: true })}>
+        {/* mouseDown verhindert, dass der Knopf den Fokus bekommt: sonst übersprang die nächste Leertaste gleich die nächste Aufgabe. */}
+        <button type="button" className="btn-secondary text-sm" onMouseDown={e => e.preventDefault()}
+          onClick={() => weiter(nr, { aufgabe, ms: Math.round(performance.now() - lauf.seit), aktionen: 0, uebersprungen: true })}>
           Überspringen (+{STRAFE_MS / 1000} s)
         </button>
         <button type="button" className="btn-secondary text-sm" onClick={() => setLauf(null)}>Abbrechen</button>

@@ -6,9 +6,14 @@
  *   📚 Quellen      Zitat und Literaturangabe aus Buch oder Webseite kopieren
  *   🏆 Bestenliste  die schnellsten Challenge-Runden (nur mit Server, nicht in der Offline-Datei)
  *   📋 Spickzettel  alle Kürzel auf einen Blick
+ *   👩‍🏫 Übersicht   nur Lehrkraft: wer in der gewählten Sitzung wie weit ist
+ *
+ * Der Stand liegt je Person im Browser (`speicherSchluessel`: Konto, Gastname
+ * bzw. Gast-Id) und geht mit Code zusätzlich an die Übersicht der Lehrkraft.
  */
-import { useState, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { wahl, type Vorgabe } from "@/lib/vorgabe";
+import { liesStand, schreibStand, speicherName, type MarkierStand } from "@/lib/markieren/speicher";
 import { api, type MausZugang } from "@/lib/api";
 import { mitTasten } from "@/components/maus/Taste";
 import Lektionen from "./Lektionen";
@@ -22,6 +27,7 @@ const BLAETTER = [
   { id: "quellen", icon: "📚", label: "Quellen" },
   { id: "beste", icon: "🏆", label: "Bestenliste" },
   { id: "spick", icon: "📋", label: "Spickzettel" },
+  { id: "uebersicht", icon: "👩‍🏫", label: "Übersicht" },
 ] as const;
 type Blatt = (typeof BLAETTER)[number]["id"];
 
@@ -95,24 +101,64 @@ export type MarkierRangliste = {
   klasse?: string | null;
   /** Lehrkraft auf der Werkzeugseite: »Diese Sitzung« = ihre eigene. */
   verwaltung?: boolean;
+  /** Lehrkraft: die gewählte Sitzung (je Klasse eine) — für »Diese Sitzung«. */
+  sitzungCode?: string | null;
 };
 
-export default function Markieren({ action, rangliste, vorgabe }: { action?: ReactNode; rangliste?: MarkierRangliste; vorgabe?: Vorgabe }) {
+/** Stand je Schlüssel; Laden im Effekt, Schreiben nur beim Ändern (sonst überschreibt StrictMode den Stand). */
+function useStand(schluessel?: string) {
+  const name = speicherName(schluessel);
+  const [s, setS] = useState<{ name: string; stand: MarkierStand } | null>(null);
+  useEffect(() => { setS({ name, stand: liesStand(schluessel) }); }, [name, schluessel]);
+  const aendern = useCallback((f: (s: MarkierStand) => MarkierStand) => {
+    setS(alt => {
+      if (!alt || alt.name !== name) return alt;
+      const stand = f(alt.stand);
+      schreibStand(schluessel, stand);
+      return { name, stand };
+    });
+  }, [name, schluessel]);
+  return { stand: s && s.name === name ? s.stand : null, aendern };
+}
+
+export default function Markieren({ action, rangliste, vorgabe, speicherSchluessel, uebersicht }: {
+  action?: ReactNode;
+  rangliste?: MarkierRangliste;
+  vorgabe?: Vorgabe;
+  /** Je Person ein eigener Stand im Browser (Konto, Gastname bzw. Gast-Id). */
+  speicherSchluessel?: string;
+  /** Nur Lehrkraft: die Übersicht der Sitzung. */
+  uebersicht?: ReactNode;
+}) {
   // Station mit festem Reiter: ohne Reiterleiste, wie es der TaskCrawler verspricht.
   const festerReiter = wahl(vorgabe, "reiter", BLAETTER.map(b => b.id));
   const [blatt, setBlatt] = useState<Blatt>(festerReiter ?? "techniken");
   const zugang = rangliste?.zugang;
+  const { stand, aendern } = useStand(speicherSchluessel);
+  const [aktuell, setAktuell] = useState<string | null>(null);
 
+  // Mit Code: Stand und »gerade dabei« an die Übersicht der Lehrkraft (gebündelt, still bei Fehlern).
+  const code = zugang?.code, token = zugang?.token ?? null;
+  useEffect(() => {
+    if (!code || !stand) return;
+    const t = setTimeout(() => {
+      api.markieren.fortschritt({ code, token }, { ...stand, aktuell: aktuell?.slice(0, 120) ?? null }).catch(() => { /* nur für die Übersicht */ });
+    }, 800);
+    return () => clearTimeout(t);
+  }, [code, token, stand, aktuell]);
+
+  const teile = { stand, aendern, onAktuell: setAktuell };
   const INHALT: Record<Blatt, () => ReactNode> = {
-    techniken: () => <Lektionen />,
+    techniken: () => <Lektionen {...teile} />,
     challenge: () => (
-      <Challenge melden={rangliste
+      <Challenge {...teile} melden={rangliste
         ? (modus, zeit_ms, aktionen) => api.markierBestenliste.eintragen({ modus, zeit_ms, aktionen }, zugang)
         : undefined} />
     ),
-    quellen: () => <Quellen />,
-    beste: () => <Bestenliste zugang={zugang} verwaltung={rangliste?.verwaltung} klasse={rangliste?.klasse} />,
+    quellen: () => <Quellen {...teile} />,
+    beste: () => <Bestenliste zugang={zugang} verwaltung={rangliste?.verwaltung} klasse={rangliste?.klasse} sitzungCode={rangliste?.sitzungCode} />,
     spick: () => <Spickzettel />,
+    uebersicht: () => uebersicht,
   };
   return (
     <div className="page">
@@ -128,7 +174,7 @@ export default function Markieren({ action, rangliste, vorgabe }: { action?: Rea
       </div>
 
       {!festerReiter && <div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface">
-        {BLAETTER.filter(b => b.id !== "beste" || rangliste).map(b => (
+        {BLAETTER.filter(b => (b.id !== "beste" || rangliste) && (b.id !== "uebersicht" || uebersicht)).map(b => (
           <button key={b.id} onClick={() => setBlatt(b.id)}
             className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${
               blatt === b.id ? "bg-accent text-accent-fg" : "text-muted hover:text-fg"

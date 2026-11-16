@@ -520,4 +520,4 @@ export function challengeAufgaben(m: Modus, r: Zufall = Math.random): Aufgabe[] 
 }
 
 /** Strafzeit fürs Überspringen. */
-export const STRAFE_MS = 15000;
+export const STRAFE_MS = 30000;
