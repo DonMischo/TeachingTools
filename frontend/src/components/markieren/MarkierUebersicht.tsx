@@ -6,7 +6,7 @@
  * Techniken, Challenge-Bestzeiten, zitierte Quellen und was gerade läuft.
  * Abgefragt wird alle fünf Sekunden wie bei der Algorithmen-Werkstatt.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, type MarkierModus, type ToolSessionOut } from "@/lib/api";
 import { ScopeSelect, scopeBody, type Scope } from "@/components/ScopeSelect";
@@ -25,25 +25,18 @@ function vor(iso: string): string {
 }
 
 /**
- * Die gewählte Sitzung der Lehrkraft. Vorgewählt ist die neueste eigene; gibt
- * es noch keine, die alte für alle offene (gedruckte Codes gelten weiter).
+ * Die gewählte Sitzung der Lehrkraft. Vorgewählt ist nichts: Wie bei der
+ * Challenge wählt die Lehrkraft beim Öffnen zuerst die Klasse (oder setzt eine
+ * eigene Sitzung fort), erst dann geht es ins Werkzeug.
  */
 export function useMarkierSitzung(aktiv: boolean) {
   const qc = useQueryClient();
   const [sitzung, setSitzung] = useState<ToolSessionOut | null>(null);
   const [fehler, setFehler] = useState("");
-  const { data: alle, isSuccess } = useQuery({
+  const { data: alle, isLoading } = useQuery({
     queryKey: LISTE, queryFn: () => api.play.sessions("simulation", "markieren"), enabled: aktiv,
   });
   const meine = useMemo(() => (alle ?? []).filter(z => z.mine), [alle]);
-  const erste = meine[0]?.code;
-
-  useEffect(() => {
-    if (!aktiv || sitzung || !isSuccess) return;
-    (erste ? api.toolSessions.get(erste) : api.toolSessions.create("markieren"))
-      .then(s => { setSitzung(s); if (!erste) qc.invalidateQueries({ queryKey: LISTE }); })
-      .catch(() => setFehler("Die Sitzung ließ sich nicht laden."));
-  }, [aktiv, sitzung, isSuccess, erste, qc]);
 
   async function waehle(code: string) {
     try { setSitzung(await api.toolSessions.get(code)); setFehler(""); } catch { setFehler("Die Sitzung ließ sich nicht laden."); }
@@ -55,7 +48,45 @@ export function useMarkierSitzung(aktiv: boolean) {
       qc.invalidateQueries({ queryKey: LISTE });
     } catch (e) { setFehler((e as Error).message || "Die Sitzung ließ sich nicht anlegen."); }
   }
-  return { sitzung, meine, waehle, neu, fehler };
+  return { sitzung, meine, waehle, neu, fehler, laedt: aktiv && isLoading };
+}
+
+/** Startbildschirm der Lehrkraft: für welche Klasse läuft die Stunde? */
+export function MarkierStart({ wahl }: { wahl: ReturnType<typeof useMarkierSitzung> }) {
+  const { meine, waehle, neu, fehler, laedt } = wahl;
+  const [scope, setScope] = useState<Scope>(null);
+  return (
+    <section className="card p-5 flex flex-col gap-4 text-sm max-w-3xl mx-auto w-full" aria-label="Sitzung wählen">
+      <h1 className="text-2xl font-black">🖍️ Markieren &amp; Bearbeiten</h1>
+      <p className="text-muted">
+        Für welche Klasse bzw. welchen Kurs läuft es? Jede bekommt einen eigenen Code, eine eigene Übersicht
+        und »Diese Sitzung« in der Bestenliste.
+      </p>
+      <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Neue Sitzung">
+        <label className="flex items-center gap-1.5 font-bold">Neu für <ScopeSelect value={scope} onChange={setScope} className="input w-56" /></label>
+        <button type="button" className="btn-primary" disabled={!scope} onClick={() => neu(scope)}>Starten</button>
+        <button type="button" className="px-3 py-1.5 rounded-lg border border-line hover:bg-surface-hover" onClick={() => neu(null)}>
+          Ohne Klasse
+        </button>
+      </div>
+      {laedt && <p className="text-muted">Sitzungen werden geladen …</p>}
+      {meine.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <div className="font-bold">Oder fortsetzen:</div>
+          <div className="flex flex-wrap gap-2">
+            {meine.map(z => (
+              <button key={z.code} type="button" onClick={() => waehle(z.code)}
+                className="rounded-lg border border-line px-3 py-2 text-left hover:border-accent">
+                <span className="font-bold">{z.scope_label ?? "Alle (ohne Klasse)"}</span>
+                <span className="text-muted tracking-widest ml-2">{z.code}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {fehler && <p className="text-bad">{fehler}</p>}
+    </section>
+  );
 }
 
 export default function MarkierUebersicht({ wahl }: { wahl: ReturnType<typeof useMarkierSitzung> }) {
