@@ -21,8 +21,35 @@ import { DIAGRAMM_IMPORT, FARBEN, FORMEN, RICHTUNGEN, THEMEN, VORLAGEN } from "@
 import { CodeFeld } from "./CodeFeld";
 import { Spickzettel } from "./Spickzettel";
 import { KiPrompt } from "./KiPrompt";
+import { useNeigung } from "@/lib/diagramm/neigung";
 
 const SPEICHER = "hp_diagramme";
+
+/**
+ * 3D-Ansicht: Hintergrund (Farbschlieren), Schatten und Diagrammkarte liegen in
+ * verschiedenen Tiefen; useNeigung kippt die Bühne per --nx/--ny, dadurch
+ * verschieben sich die Ebenen gegeneinander. Knoten heben sich beim Überfahren.
+ */
+const TIEFE_CSS = `
+.d2-buehne[data-tiefe]{perspective:1100px;padding:28px;
+  background:
+    radial-gradient(40% 55% at calc(28% - var(--nx,0)*5%) calc(30% - var(--ny,0)*5%), color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%),
+    radial-gradient(45% 55% at calc(76% - var(--nx,0)*8%) calc(72% - var(--ny,0)*8%), color-mix(in srgb, #8b5cf6 16%, transparent), transparent 70%),
+    var(--surface-hover);}
+.d2-buehne[data-tiefe] .d2-ebenen{transform-style:preserve-3d;
+  transform:rotateX(calc(var(--ny,0) * -5deg)) rotateY(calc(var(--nx,0) * 7deg));}
+.d2-buehne[data-tiefe] .d2-schatten{position:absolute;inset:6% 4%;border-radius:18px;pointer-events:none;
+  background:rgb(15 23 42 / .38);filter:blur(24px);
+  transform:translate3d(calc(var(--nx,0) * -16px), calc(var(--ny,0) * -12px + 20px), -70px);}
+.d2-buehne[data-tiefe] .d2-karte{position:relative;transform:translateZ(0);border-radius:14px;overflow:hidden;
+  box-shadow:0 0 0 1px rgb(255 255 255 / .35) inset, 0 2px 8px rgb(0 0 0 / .10);}
+.d2-buehne[data-tiefe] .d2-karte::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(115deg, transparent 38%, rgb(255 255 255 / .16) 50%, transparent 62%);
+  background-size:260% 100%;background-position:calc(50% + var(--nx,0) * 40%) 0;}
+.d2-buehne[data-tiefe] .d2-karte g[class]:has(> g.shape){transform-box:fill-box;transform-origin:center;
+  transition:transform .5s cubic-bezier(.34,1.56,.64,1);}
+.d2-buehne[data-tiefe] .d2-karte g[class]:has(> g.shape):hover{transform:translateY(-3px) scale(1.035);}
+`;
 
 interface Blatt { id: string; name: string; code: string; geaendert: number }
 interface Ablage { aktiv: string; liste: Blatt[] }
@@ -93,6 +120,7 @@ export default function DiagrammWerkstatt({ action }: { action?: ReactNode }) {
   /** Von Hand gewählter Zoom; null = passt sich jedem neuen Bild an. */
   const [handZoom, setZoom] = useState<number | null>(null);
   const [passend, setPassend] = useState(1);
+  const [tiefe, setTiefe] = useState(true);
   const [verlauf, setVerlauf] = useState<{ zurueck: string[]; vor: string[] }>({ zurueck: [], vor: [] });
   const letzteAenderung = useRef(0);
   const labelFeld = useRef<HTMLInputElement>(null);
@@ -162,9 +190,10 @@ export default function DiagrammWerkstatt({ action }: { action?: ReactNode }) {
   const breite = ergebnis ? viewBoxBreite(ergebnis.svg) : 800;
   useEffect(() => {
     const w = flaeche.current?.clientWidth ?? 800;
-    setPassend(Math.min(1, (w - 16) / breite));
-  }, [breite, ergebnis]);
+    setPassend(Math.min(1, (w - (tiefe ? 72 : 16)) / breite));
+  }, [breite, ergebnis, tiefe]);
   const zoom = handZoom ?? passend;
+  useNeigung(flaeche, tiefe);
 
   /* ---------------------------------------------------------- Bearbeiten */
 
@@ -217,17 +246,17 @@ export default function DiagrammWerkstatt({ action }: { action?: ReactNode }) {
 
   const ueber = (e: React.MouseEvent) => {
     const t = treffer(e.target, e.currentTarget);
-    if (t?.art !== "kante" || !flaeche.current || !ergebnis || !kanteZuVerbindung(modell, ergebnis.verbindungen, t.id)) return;
+    if (t?.art !== "kante" || !ergebnis || !kanteZuVerbindung(modell, ergebnis.verbindungen, t.id)) return;
     schwebeHalten();
     if (schwebe?.id === t.id) return;
     const g = (e.target as Element).closest("g[class]")!;
     const pfad = [...g.querySelectorAll("path")].find(p => p.getTotalLength() > 0);
-    const matrix = pfad?.getScreenCTM();
+    // In Diagramm-Koordinaten statt Bildschirm: getScreenCTM verrutscht, wenn die 3D-Ansicht kippt.
+    const matrix = pfad?.getCTM();
     if (!pfad || !matrix) return;
     const mitte = pfad.getPointAtLength(pfad.getTotalLength() / 2);
     const p = new DOMPoint(mitte.x, mitte.y).matrixTransform(matrix);
-    const rahmen = flaeche.current.getBoundingClientRect();
-    setSchwebe({ id: t.id, x: p.x - rahmen.left + flaeche.current.scrollLeft, y: p.y - rahmen.top + flaeche.current.scrollTop });
+    setSchwebe({ id: t.id, x: p.x * zoom, y: p.y * zoom });
   };
 
   const kanteWeg = (id: string) => {
@@ -549,6 +578,7 @@ export default function DiagrammWerkstatt({ action }: { action?: ReactNode }) {
             <span className="tabular-nums w-12 text-center">{Math.round(zoom * 100)} %</span>
             <button className="btn-secondary text-sm" onClick={() => setZoom(Math.min(4, zoom * 1.25))} aria-label="Vergrößern">＋</button>
             <button className="btn-secondary text-sm" onClick={() => setZoom(null)}>Einpassen</button>
+            <button className={chip(tiefe)} onClick={() => setTiefe(!tiefe)} title="Leicht räumliche Ansicht, folgt der Maus">🌊 3D</button>
             <span className="flex-1" />
             {laedt && <span className="text-muted">D2 wird geladen …</span>}
           </div>
@@ -576,20 +606,23 @@ export default function DiagrammWerkstatt({ action }: { action?: ReactNode }) {
               </ul>
             </div>
           )}
-          <style>{hervorheben}</style>
-          <div ref={flaeche} className="relative overflow-auto max-h-[75vh] min-h-[300px] rounded-lg">
+          <style>{TIEFE_CSS + hervorheben}</style>
+          <div ref={flaeche} data-tiefe={tiefe || undefined}
+            className="d2-buehne relative overflow-auto max-h-[75vh] min-h-[300px] rounded-lg">
             {ergebnis && (
-              <div ref={svgBox} data-d2-flaeche onClick={klick} onDoubleClick={doppelklick}
-                onMouseOver={ueber} onMouseOut={schwebeLoslassen}
-                className={`[&_svg]:block [&_svg]:w-full [&_svg]:h-auto [&_g]:cursor-pointer ${verbinden ? "cursor-crosshair" : ""}`}
-                style={{ width: `${breite * zoom}px` }}
-                dangerouslySetInnerHTML={{ __html: ergebnis.svg }} />
-            )}
-            {schwebe && (
-              <button onClick={() => kanteWeg(schwebe.id)} onMouseEnter={schwebeHalten} onMouseLeave={schwebeLoslassen}
-                title="Verbindung löschen" aria-label="Verbindung löschen"
-                className="absolute z-10 -translate-x-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-surface border border-line shadow-md text-sm hover:border-bad hover:bg-bad hover:text-white"
-                style={{ left: schwebe.x, top: schwebe.y }}>🗑</button>
+              <div className="d2-ebenen relative" style={{ width: `${breite * zoom}px` }}>
+                {tiefe && <div className="d2-schatten" aria-hidden />}
+                <div ref={svgBox} data-d2-flaeche onClick={klick} onDoubleClick={doppelklick}
+                  onMouseOver={ueber} onMouseOut={schwebeLoslassen}
+                  className={`d2-karte [&_svg]:block [&_svg]:w-full [&_svg]:h-auto [&_g]:cursor-pointer ${verbinden ? "cursor-crosshair" : ""}`}
+                  dangerouslySetInnerHTML={{ __html: ergebnis.svg }} />
+                {schwebe && (
+                  <button onClick={() => kanteWeg(schwebe.id)} onMouseEnter={schwebeHalten} onMouseLeave={schwebeLoslassen}
+                    title="Verbindung löschen" aria-label="Verbindung löschen"
+                    className="absolute z-10 h-8 w-8 rounded-full bg-surface border border-line shadow-md text-sm hover:border-bad hover:bg-bad hover:text-white"
+                    style={{ left: schwebe.x, top: schwebe.y, transform: "translate3d(-50%, -50%, 12px)" }}>🗑</button>
+                )}
+              </div>
             )}
           </div>
         </div>
