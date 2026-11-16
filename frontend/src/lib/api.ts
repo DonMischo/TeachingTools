@@ -289,8 +289,14 @@ export type BarometerSessionOut = {
   shared: boolean;
   mode: BarometerMode;
   results_public: boolean;
+  /** Gäste geben keinen Namen ein. */
+  anonymous: boolean;
+  /** Gastfenster in Minuten: null = Schulvorgabe, 0 = bis geschlossen, sonst 60 … 43200. */
+  guest_minutes: number | null;
   questions: BarometerQuestionOut[];
 };
+
+export type BarometerSettings = { anonymous?: boolean; guest_minutes?: number | null };
 
 export type BarometerSessionSummary = {
   id: number;
@@ -1659,6 +1665,8 @@ export type PlayMatch = {
   status: string | null;
   /** "none" | "guests" | "always" — wer im Hub einen Avatar wählt. */
   avatar: "none" | "guests" | "always";
+  /** Anonyme Umfrage: kein Name abfragen. */
+  anonymous?: boolean;
 };
 
 /** Ein Werkzeug-Bündel als einzelne HTML-Datei zum Mitnehmen. */
@@ -2921,9 +2929,9 @@ export const api = {
   },
   barometer: {
     list: () => apiFetch<BarometerSessionSummary[]>("barometer"),
-    create: (body: { title: string; questions: BarometerQuestionIn[]; shared?: boolean; mode?: BarometerMode }) =>
+    create: (body: { title: string; questions: BarometerQuestionIn[]; shared?: boolean; mode?: BarometerMode } & BarometerSettings) =>
       apiFetch<BarometerSessionOut>("barometer", { method: "POST", body: JSON.stringify(body) }),
-    update: (code: string, body: { title: string; questions: BarometerQuestionIn[]; shared?: boolean; mode?: BarometerMode }) =>
+    update: (code: string, body: { title: string; questions: BarometerQuestionIn[]; shared?: boolean; mode?: BarometerMode } & BarometerSettings) =>
       apiFetch<BarometerSessionOut>(`barometer/${code}`, { method: "PATCH", body: JSON.stringify(body) }),
     get: (code: string) => apiFetch<BarometerSessionOut>(`barometer/${code}`),
     delete: (code: string) => apiFetch<void>(`barometer/${code}`, { method: "DELETE" }),

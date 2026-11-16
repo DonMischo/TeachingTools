@@ -763,6 +763,12 @@ class BarometerSession(Base):
     # "live" (teacher shows one question at a time) | "self" (students see all questions at once)
     mode: Mapped[str] = mapped_column(String(10), nullable=False, server_default="live", default="live")
     results_public: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sql_expr.false(), default=False)
+    # Anonym: Gaeste tippen keinen Namen ein, der Server traegt »Anonym« ein.
+    anonymous: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sql_expr.false(), default=False)
+    # Laenge des Gastfensters dieser Umfrage in Minuten. NULL = Schulvorgabe
+    # (Admin › Gastzugang), 0 = offen bis die Umfrage geschlossen wird, sonst
+    # 60 … 43200 (30 Tage). Gelesen in api.routers.guest._fensterlaenge.
+    guest_minutes: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     creator: Mapped["Teacher"] = relationship()
     questions: Mapped[list["BarometerQuestion"]] = relationship(

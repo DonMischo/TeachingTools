@@ -32,6 +32,8 @@ mgr = RoomManager()
 
 KINDS = ("scale", "choice", "multi", "text", "number")
 MODES = ("live", "self")
+# Eigene Gastfenster-Laenge: 60 Minuten bis 30 Tage (0 = bis geschlossen).
+GAST_MIN, GAST_MAX = 60, 30 * 24 * 60
 CHARTS = {
     "scale": ("saeulen", "balken", "donut", "gestapelt", "flaeche"),
     "choice": ("balken", "saeulen", "donut", "kreis", "gestapelt"),
@@ -348,6 +350,9 @@ class SessionCreate(BaseModel):
     questions: list[QuestionIn]
     shared: bool = False
     mode: str = "live"
+    anonymous: bool = False
+    # None = Schulvorgabe, 0 = bis geschlossen, sonst 60 … 43200 Minuten
+    guest_minutes: int | None = None
 
 
 class QuestionOut(BaseModel):
@@ -382,6 +387,8 @@ class SessionOut(BaseModel):
     status: str
     mode: str
     results_public: bool
+    anonymous: bool = False
+    guest_minutes: int | None = None
     current_question_idx: int
     results_visible: bool
     shared: bool
@@ -433,6 +440,11 @@ def _validate_umfrage(data) -> list[str]:
     mode = data.get("mode")
     if mode is not None and mode not in MODES:
         errors.append("'mode' muss 'live' oder 'self' sein")
+
+    gm = data.get("guest_minutes")
+    if gm is not None and (not isinstance(gm, int) or isinstance(gm, bool)
+                           or not (gm == 0 or GAST_MIN <= gm <= GAST_MAX)):
+        errors.append(f"'guest_minutes' muss leer (Schulvorgabe), 0 (bis geschlossen) oder {GAST_MIN} bis {GAST_MAX} sein")
 
     questions = data.get("questions")
     if not isinstance(questions, list) or not questions:
@@ -660,6 +672,8 @@ def create_session(
         created_by=current.id,
         shared=body.shared,
         mode=body.mode,
+        anonymous=body.anonymous,
+        guest_minutes=body.guest_minutes,
     )
     db.add(session)
     db.flush()
@@ -686,6 +700,8 @@ def clone_session_impl(db: Session, code: str, teacher: Teacher) -> BarometerSes
         created_by=teacher.id,
         shared=False,
         mode=template.mode,
+        anonymous=template.anonymous,
+        guest_minutes=template.guest_minutes,
     )
     db.add(session)
     db.flush()
@@ -866,6 +882,8 @@ def upload_session(
             title=raw["title"].strip(),
             shared=bool(raw.get("shared", False)),
             mode=raw.get("mode", "live"),
+            anonymous=bool(raw.get("anonymous", False)),
+            guest_minutes=raw.get("guest_minutes"),
             questions=[QuestionIn(**{k: v for k, v in q.items() if k in QuestionIn.model_fields}) for q in raw["questions"]],
         ),
         db=db, current=current,
@@ -916,6 +934,8 @@ def update_session(
     s.title = body.title
     s.shared = body.shared
     s.mode = body.mode
+    s.anonymous = body.anonymous
+    s.guest_minutes = body.guest_minutes
     for q in list(s.questions):
         db.delete(q)
     db.flush()

@@ -74,6 +74,17 @@ describe("Playhub", () => {
 
   // ── Gäste ───────────────────────────────────────────────────────────────
 
+  it("anonyme Umfrage: kein Namensschritt, direkt zur Umfrageseite", async () => {
+    mockResolve.mockResolvedValue({ code: "ABC123", matches: [{
+      tool: "barometer", label: "📊 Umfrage", code: "ABC123",
+      join_url: "/play/barometer/ABC123", status: "active", avatar: "none", anonymous: true,
+    }] });
+    await enterCode("abc123");
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith("/play/barometer/ABC123"));
+    expect(screen.queryByPlaceholderText("Dein Name")).toBeNull();
+    expect(mockGuestJoin).not.toHaveBeenCalled();
+  });
+
   it("führt vom Code über die Identität ins Spiel", async () => {
     mockResolve.mockResolvedValue({ code: "ABC123", matches: [exitTicket] });
     const user = await enterCode("abc123");

@@ -27,6 +27,8 @@ class PlayMatch(BaseModel):
     status: str | None = None
     # "none" | "guests" | "always" - wer im Hub einen Avatar waehlt.
     avatar: str = "none"
+    # Anonyme Umfrage: der Hub fragt keinen Namen ab.
+    anonymous: bool = False
 
 
 class PlayResolveOut(BaseModel):
@@ -59,6 +61,7 @@ def resolve(code: str, db: Session = Depends(get_db)):
                 join_url=tool.join_url(clean),
                 status=getattr(session, "status", None),
                 avatar=tool.avatar,
+                anonymous=bool(getattr(session, "anonymous", False)),
             )
             for tool, session in hits
         ],

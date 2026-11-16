@@ -401,6 +401,8 @@ def _run_migrations(db_engine):
         "CREATE INDEX IF NOT EXISTS ix_lueckentext_participants_export_token ON lueckentext_participants (export_token)",
         "ALTER TABLE barometer_sessions ADD COLUMN IF NOT EXISTS mode VARCHAR(10) NOT NULL DEFAULT 'live'",
         "ALTER TABLE barometer_sessions ADD COLUMN IF NOT EXISTS results_public BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE barometer_sessions ADD COLUMN IF NOT EXISTS anonymous BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE barometer_sessions ADD COLUMN IF NOT EXISTS guest_minutes INTEGER",
         "ALTER TABLE barometer_questions ADD COLUMN IF NOT EXISTS kind VARCHAR(10) NOT NULL DEFAULT 'scale'",
         "ALTER TABLE barometer_questions ADD COLUMN IF NOT EXISTS options JSON NOT NULL DEFAULT '[]'",
         "ALTER TABLE barometer_questions ADD COLUMN IF NOT EXISTS chart VARCHAR(20)",

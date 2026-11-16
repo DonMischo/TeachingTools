@@ -394,3 +394,27 @@ export function questionsToDrafts(qs: BarometerQuestionOut[]): DraftItem[] {
   }
   return items;
 }
+
+// ── Gastfenster einer Umfrage ───────────────────────────────────────────────
+// `guest_minutes`: null = Schulvorgabe, 0 = bis geschlossen, sonst GAST_MIN … GAST_MAX.
+
+export const GAST_MIN = 60;
+export const GAST_MAX = 30 * 24 * 60;
+export type GastEinheit = "min" | "h" | "d";
+const FAKTOR: Record<GastEinheit, number> = { min: 1, h: 60, d: 24 * 60 };
+
+/** Zahl + Einheit → Minuten; NaN, wenn nichts Brauchbares eingetragen ist. */
+export function gastMinuten(zahl: number, einheit: GastEinheit): number {
+  return Number.isFinite(zahl) && zahl > 0 ? Math.round(zahl * FAKTOR[einheit]) : NaN;
+}
+
+/** Minuten → größte glatte Einheit, für die Anzeige im Formular. */
+export function gastAufteilen(minuten: number): { zahl: number; einheit: GastEinheit } {
+  if (minuten % FAKTOR.d === 0) return { zahl: minuten / FAKTOR.d, einheit: "d" };
+  if (minuten % FAKTOR.h === 0) return { zahl: minuten / FAKTOR.h, einheit: "h" };
+  return { zahl: minuten, einheit: "min" };
+}
+
+export function gastMinutenGueltig(m: number | null): boolean {
+  return m === null || m === 0 || (Number.isFinite(m) && m >= GAST_MIN && m <= GAST_MAX);
+}

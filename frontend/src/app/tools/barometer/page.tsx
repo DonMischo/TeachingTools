@@ -14,6 +14,8 @@ import {
 } from "@/lib/barometer";
 import { QuestionDraftCard } from "@/components/barometer/QuestionDraftCard";
 import { BlockDraftCard } from "@/components/barometer/BlockDraftCard";
+import { UmfrageEinstellungen } from "@/components/barometer/UmfrageEinstellungen";
+import { gastMinutenGueltig } from "@/lib/barometer";
 
 export default function BarometerPage() {
   const { auth } = useAuth();
@@ -28,6 +30,8 @@ export default function BarometerPage() {
   const [title, setTitle] = useState("");
   const [shared, setShared] = useState(false);
   const [mode, setMode] = useState<BarometerMode>("live");
+  const [anonymous, setAnonymous] = useState(false);
+  const [guestMinutes, setGuestMinutes] = useState<number | null>(null);
   const [items, setItems] = useState<DraftItem[]>([blankQuestion()]);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<UploadError | null>(null);
@@ -45,6 +49,8 @@ export default function BarometerPage() {
     setTitle(s.title);
     setShared(s.shared);
     setMode(s.mode);
+    setAnonymous(s.anonymous ?? false);
+    setGuestMinutes(s.guest_minutes ?? null);
     setItems(questionsToDrafts(s.questions));
     setShowCreate(true);
   }
@@ -64,6 +70,8 @@ export default function BarometerPage() {
     setTitle("");
     setShared(false);
     setMode("live");
+    setAnonymous(false);
+    setGuestMinutes(null);
     setItems([blankQuestion()]);
     setShowCreate(false);
   }
@@ -83,8 +91,8 @@ export default function BarometerPage() {
 
   const createMut = useMutation({
     mutationFn: () => editingCode
-      ? api.barometer.update(editingCode, { title: title.trim(), shared, mode, questions: questionBody() })
-      : api.barometer.create({ title: title.trim(), shared, mode, questions: questionBody() }),
+      ? api.barometer.update(editingCode, { title: title.trim(), shared, mode, anonymous, guest_minutes: guestMinutes, questions: questionBody() })
+      : api.barometer.create({ title: title.trim(), shared, mode, anonymous, guest_minutes: guestMinutes, questions: questionBody() }),
     onSuccess: (s) => {
       qc.invalidateQueries({ queryKey: ["barometer"] });
       resetForm();
@@ -211,10 +219,14 @@ export default function BarometerPage() {
             Öffentlich — für alle Kolleg:innen im Tool-Pool sichtbar
           </label>
 
+          <UmfrageEinstellungen key={editingCode ?? "neu"}
+            anonymous={anonymous} onAnonymous={setAnonymous}
+            guestMinutes={guestMinutes} onGuestMinutes={setGuestMinutes} />
+
           <div className="flex gap-2">
             <button
               onClick={() => createMut.mutate()}
-              disabled={!title.trim() || questionBody().length === 0 || hasInvalidOptions || hasTooManySmileySteps || createMut.isPending}
+              disabled={!title.trim() || questionBody().length === 0 || hasInvalidOptions || hasTooManySmileySteps || !gastMinutenGueltig(guestMinutes) || createMut.isPending}
               className="btn-primary text-sm py-1.5 px-4"
             >
               {createMut.isPending ? "…" : editingCode ? "Speichern" : "Starten"}

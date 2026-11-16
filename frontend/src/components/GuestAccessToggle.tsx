@@ -119,8 +119,15 @@ export function GuestAccessToggle({ tool, code, className = "text-sm text-muted 
         Gäste erlauben
       </button>
 
+      {/* 0 Minuten = diese Sitzung hält den Gastzugang offen, bis sie geschlossen wird */}
+      {allow && minutes === 0 && endet === null && (
+        <span className="opacity-70" title="Für diese Sitzung eingestellt: der Gastzugang bleibt offen, bis die Sitzung geschlossen wird.">
+          bis geschlossen
+        </span>
+      )}
+
       {allow && restMinuten > 0 && (
-        <span className="opacity-70" title={`Danach schließt der Gastzugang von selbst. Fensterlänge: ${minutes} Min. (schulweit im Admin einstellbar)`}>
+        <span className="opacity-70" title={`Danach schließt der Gastzugang von selbst. Fensterlänge: ${minutes} Min. (Schulvorgabe im Admin, bei Umfragen auch je Umfrage einstellbar)`}>
           noch {restMinuten} Min.
         </span>
       )}

@@ -56,6 +56,7 @@ def test_resolves_exit_ticket(client, db, teacher):
     assert body["matches"] == [{
         "tool": "exit-ticket", "label": "🎫 Exit Ticket", "code": "ET0001",
         "join_url": "/play/exit-ticket/ET0001", "status": "open", "avatar": "none",
+        "anonymous": False,
     }]
 
 

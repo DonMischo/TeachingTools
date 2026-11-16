@@ -931,6 +931,7 @@ tools:
       - Diagrammart je Frage, JSON-Export, öffentliche Ergebnisseite per QR
       - KI-Auswertung der Freitexte über externe KI
       - Mit Kolleginnen und Kollegen teilen
+      - Anonym (ohne Namen) und eigene Gastzugangs-Dauer bis 30 Tage oder bis zum Schließen
   - id: exit-ticket
     name: Exit Ticket
     faehigkeiten: {use: [true, false], host: [true, false]}

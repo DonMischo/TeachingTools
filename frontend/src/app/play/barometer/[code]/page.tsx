@@ -9,6 +9,7 @@ import { PlayerIdentityForm } from "@/components/PlayerIdentityForm";
 import { ResultChart } from "@/components/barometer/ResultChart";
 import { BlockChart } from "@/components/barometer/BlockChart";
 import { SlideForm } from "@/components/barometer/AnswerInput";
+import { api } from "@/lib/api";
 import type { BarometerAnswer, BarometerKind, BarometerResults, BarometerScaleStyle, BarometerShowIf } from "@/lib/api";
 import { conditionMet, segmentsOf, slidesOf } from "@/lib/barometer";
 
@@ -71,6 +72,19 @@ export default function BarometerPlayPage() {
 
   useEffect(() => { setMounted(true); }, []);
   const isGuest = mounted && !auth;
+
+  // Anonyme Umfrage: Gäste treten ohne Namensformular bei (der Server trägt
+  // ohnehin »Anonym« ein). null = noch unbekannt.
+  const [anonym, setAnonym] = useState<boolean | null>(null);
+  const brauchtBeitritt = isGuest && guest.loaded && !guest.token && !guest.expired;
+  useEffect(() => {
+    if (!brauchtBeitritt || anonym !== null) return;
+    api.barometer.get(code).then(s => setAnonym(!!s.anonymous)).catch(() => setAnonym(false));
+  }, [brauchtBeitritt, anonym, code]);
+  useEffect(() => {
+    if (brauchtBeitritt && anonym && !joinError) void handleGuestJoin("Anonym");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [brauchtBeitritt, anonym, joinError]);
 
   async function handleGuestJoin(name: string) {
     try {
@@ -158,6 +172,13 @@ export default function BarometerPlayPage() {
 
   // Unauthenticated visitor picks a username before connecting.
   if (isGuest && !guest.token) {
+    if (anonym === null || anonym) {
+      return (
+        <div className="h-full overflow-y-auto flex items-center justify-center p-6 bg-page">
+          <div className="text-center text-muted text-sm">{joinError ?? "Verbinde mit der Umfrage …"}</div>
+        </div>
+      );
+    }
     return (
       <PlayerIdentityForm
         gameCode={code}

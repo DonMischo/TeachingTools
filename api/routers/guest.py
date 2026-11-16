@@ -79,6 +79,19 @@ def _resolve_session(tool: str, code: str, db: Session):
     return session
 
 
+# Token-Laufzeit, wenn das Gastfenster bis zum Schliessen offen bleibt
+# (``guest_minutes == 0``): das Token braucht ein Ende, die Sitzung selbst
+# entscheidet ueber den Zugang (geschlossen = kein Beitritt, kein Abstimmen).
+BIS_GESCHLOSSEN_TOKEN_MIN = 30 * 24 * 60
+
+
+def _fensterlaenge(session, db: Session) -> int:
+    """Fensterlaenge in Minuten: die eigene der Sitzung (bisher nur Umfragen,
+    ``guest_minutes``), sonst die Schulvorgabe. 0 heisst »bis geschlossen«."""
+    eigen = getattr(session, "guest_minutes", None)
+    return guest_token_minutes(db) if eigen is None else eigen
+
+
 def _gastfenster(session, db: Session) -> tuple[int, int]:
     """(Fensterlaenge, Restminuten) dieser Sitzung — und schliesst ein
     abgelaufenes Fenster gleich.
@@ -88,8 +101,8 @@ def _gastfenster(session, db: Session) -> tuple[int, int]:
     die Hostansicht, die Sitzungslisten und der Schreibraum-Zugang das
     geschlossene Fenster, ohne jede einzeln rechnen zu muessen.
     """
-    minutes = guest_token_minutes(db)
-    if not session.allow_guests:
+    minutes = _fensterlaenge(session, db)
+    if not session.allow_guests or minutes == 0:
         return minutes, 0
     left = guest_minutes_left(session, minutes)
     if left <= 0:
@@ -123,13 +136,14 @@ def guest_join(body: GuestJoinIn, db: Session = Depends(get_db)):
     if entry.closable and getattr(session, "status", None) == entry.closed_status:
         raise HTTPException(403, "Diese Sitzung ist geschlossen")
 
-    name = body.name.strip()[:100]
+    # Anonyme Umfrage: der Name, den der Browser schickt, zaehlt nicht.
+    name = "Anonym" if getattr(session, "anonymous", False) else body.name.strip()[:100]
     if not name:
         raise HTTPException(422, "Bitte einen Namen angeben")
 
     # Nie laenger als das Fenster noch laeuft: sonst haette ein Beitritt in der
     # letzten Minute wieder eine ganze Fensterlaenge vor sich.
-    minutes = min(minutes, left)
+    minutes = BIS_GESCHLOSSEN_TOKEN_MIN if minutes == 0 else min(minutes, left)
     return GuestJoinOut(
         token=create_guest_token(
             body.code, name, getattr(session, "guest_epoch", 0) or 0, minutes,

@@ -45,9 +45,11 @@ export default function JoinPage() {
 
   /**
    * Angemeldete haben schon einen Namen — für sie lohnt der Schritt nur, wenn
-   * noch ein Avatar zu wählen ist. Gäste müssen immer durch (Name + Token).
+   * noch ein Avatar zu wählen ist. Gäste müssen sonst immer durch (Name +
+   * Token) — außer bei einer anonymen Umfrage: deren Seite holt sich den
+   * Token selbst, ohne Namen.
    */
-  const needsIdentity = (m: PlayMatch) => !auth || wantsAvatar(m);
+  const needsIdentity = (m: PlayMatch) => (!auth && !m.anonymous) || wantsAvatar(m);
 
   function edit(value: string) {
     setCode(value.toUpperCase());
