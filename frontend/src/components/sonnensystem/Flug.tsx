@@ -435,6 +435,16 @@ export default function Flug({
       autopilot: false,
       drehung: new THREE.Vector3(),
     };
+    /**
+     * Overdrive beenden — egal ob abgelaufen, abgebrochen (Leertaste, Bremse,
+     * Autopilot aus) oder vom Anflug gestoppt: jedes Ende eines laufenden
+     * Overdrives startet die Abklingzeit. Sonst lud ein Druck auf die Leertaste
+     * ihn sofort wieder voll.
+     */
+    const overdriveAus = () => {
+      if (schiff.overdrive > 0) schiff.abklingen = OVERDRIVE_ABKLINGZEIT;
+      schiff.overdrive = 0;
+    };
     const blickMatrix = new THREE.Matrix4();
     // Im Live-Raum starten alle neben der Erde — nicht ineinander.
     if (netzRef.current) schiff.pos.add(new THREE.Vector3().randomDirection().multiplyScalar(3 + Math.random() * 4));
@@ -633,7 +643,7 @@ export default function Flug({
       wrack.position.copy(anflug);
       wrack.quaternion.copy(schiff.quat);
       (wrack.userData.huelle as THREE.MeshStandardMaterial).emissive.setHex(art === "verglueht" ? 0x000000 : 0x000000);
-      schiff.v = 0; schiff.schub = 0; schiff.puls = false; schiff.overdrive = 0; schiff.autopilot = false;
+      schiff.v = 0; schiff.schub = 0; schiff.puls = false; overdriveAus(); schiff.autopilot = false;
       scan = null; scanHuelle.visible = false;
       if (art === "verglueht") zuwachs.verglueht += 1;
       else if (art === "zusammenstoss") zuwachs.zusammenstoesse += 1;
@@ -729,7 +739,7 @@ export default function Flug({
       // ── Befehle ──
       if (!pausiert) {
         if (b.pulsUmschalten) {
-          if (schiff.puls) { schiff.puls = false; schiff.overdrive = 0; schiff.schub = 0.5; }
+          if (schiff.puls) { schiff.puls = false; overdriveAus(); schiff.schub = 0.5; }
           else if (naechsterAbstand < 6) meldeRef.current(`Zu nah an ${KOERPER_NACH_ID[naechster].name} für den Pulsantrieb.`);
           else { schiff.puls = true; schiff.autopilot = false; }
         }
@@ -746,9 +756,9 @@ export default function Flug({
         }
         if (b.autopilot) {
           if (!ziel) meldeRef.current("Erst ein Ziel wählen: T drücken oder im Menü ☰.");
-          else { schiff.autopilot = !schiff.autopilot; if (!schiff.autopilot) { schiff.puls = false; schiff.overdrive = 0; } }
+          else { schiff.autopilot = !schiff.autopilot; if (!schiff.autopilot) { schiff.puls = false; overdriveAus(); } }
         }
-        if (b.anhalten) { schiff.schub = 0; schiff.puls = false; schiff.overdrive = 0; schiff.autopilot = false; }
+        if (b.anhalten) { schiff.schub = 0; schiff.puls = false; overdriveAus(); schiff.autopilot = false; }
         if (b.zielNaechstes) {
           let bestes: string | null = null;
           let besterWinkel = 0.35;
@@ -811,7 +821,7 @@ export default function Flug({
         if (t.has("KeyW") || e.schubKnopf) schiff.schub = Math.min(1, schiff.schub + dt * 0.8);
         if (t.has("KeyS") || e.bremsKnopf) {
           schiff.schub = Math.max(0, schiff.schub - dt * 1.2);
-          schiff.puls = false; schiff.overdrive = 0; schiff.autopilot = false;
+          schiff.puls = false; overdriveAus(); schiff.autopilot = false;
         }
       }
 
@@ -824,11 +834,11 @@ export default function Flug({
         const halt = haltAbstand(radiusVon(ziel));
         const entscheidung = autopilot(zielAbstand, halt, naechsterAbstand, schiff.quat.angleTo(sollQuat) < 0.15);
         if (entscheidung.angekommen) {
-          schiff.autopilot = false; schiff.puls = false; schiff.overdrive = 0; schiff.schub = 0;
+          schiff.autopilot = false; schiff.puls = false; overdriveAus(); schiff.schub = 0;
           meldeRef.current(istSpieler(ziel) ? `Bei ${nameVon(ziel)} angekommen.` : `Angekommen: ${nameVon(ziel)}. Mit C oder 📡 scannen.`);
         } else {
           schiff.puls = entscheidung.puls || (schiff.overdrive > 0 && entscheidung.schub === 1);
-          if (!schiff.puls) schiff.overdrive = 0;
+          if (!schiff.puls) overdriveAus();
           schiff.schub = entscheidung.schub;
         }
       }
@@ -838,7 +848,7 @@ export default function Flug({
       const kommtNaeher = hilf.copy(naechsterOrt).sub(schiff.pos).dot(vorne) > 0;
       if (schiff.puls && kommtNaeher && naechsterAbstand < Math.max(radius.get(naechster)! * 3, 40)) {
         schiff.puls = false;
-        schiff.overdrive = 0;
+        overdriveAus();
         schiff.schub = 0.6;
         if (!schiff.autopilot) meldeRef.current(`Pulsantrieb aus — ${KOERPER_NACH_ID[naechster].name} voraus.`);
       }
@@ -846,8 +856,7 @@ export default function Flug({
         schiff.overdrive -= pausiert ? 0 : dt;
         // Beim Anflug bringt der Overdrive nichts mehr: das Bremstempo liegt schon darunter.
         if (schiff.overdrive <= 0 || (overdriveLohntNicht(voraus) && schiff.v <= HOECHSTTEMPO * 1.05)) {
-          schiff.overdrive = 0;
-          schiff.abklingen = OVERDRIVE_ABKLINGZEIT;
+          overdriveAus();
         }
       } else if (schiff.abklingen > 0 && !pausiert) {
         schiff.abklingen = Math.max(0, schiff.abklingen - dt);
@@ -943,7 +952,7 @@ export default function Flug({
           scanHuelle.visible = false;
           const id = scan.id;
           scan = null;
-          schiff.schub = 0; schiff.puls = false; schiff.overdrive = 0; schiff.autopilot = false;
+          schiff.schub = 0; schiff.puls = false; overdriveAus(); schiff.autopilot = false;
           scanFertigRef.current(id);
         }
       }
