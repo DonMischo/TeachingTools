@@ -297,7 +297,7 @@ export default function GebaeudeSpiel({
           <h2 className="font-black">{data.title}</h2>
           <p className="text-xs text-muted">
             {frei
-              ? "Laufe mit W/S oder den Pfeiltasten, drehe dich mit A/D oder durch Ziehen mit der Maus (Umschalt rennt, Mausrad zoomt). Ein Klick auf den Boden oder eine Station läuft hin, ebenso die Nummer (1–9, 0 = Tor). Blaues Erz baust du mit E ab (drei Hiebe) und bekommst einen Info-Splitter; an den Aufgaben wartet ein kleiner Kampf"
+              ? "Laufe mit W/S oder den Pfeiltasten, drehe dich mit A/D oder durch Ziehen mit der Maus (Umschalt rennt, Mausrad zoomt). »2D« oben rechts bzw. V zeigt dieselbe Welt von oben. Ein Klick auf den Boden oder eine Station läuft hin, ebenso die Nummer (1–9, 0 = Tor). Blaues Erz baust du mit E ab (drei Hiebe) und bekommst einen Info-Splitter; an den Aufgaben wartet ein kleiner Kampf"
               : "Klicke auf den Boden oder ein Zimmer, nutze die Pfeiltasten oder tippe die Zimmernummer (1–9, 0 = Treppe bzw. Tür). In den Zimmern warten Erklärungen und Aufgaben"}
             {verlies ? " — die Monster geben sich erst geschlagen, wenn du ihre Aufgabe löst" : ""}; jede gelöste Aufgabe gibt einen
             Codeschnipsel für {frei ? (verlies ? "den Boss am Tor" : "das Tor") : art === "ebene" ? "die nächste Tür" : verlies ? "den Boss an der Treppe" : "die Tür zum Treppenhaus"}.

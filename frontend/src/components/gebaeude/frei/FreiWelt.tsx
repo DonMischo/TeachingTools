@@ -16,6 +16,8 @@
  * Dazu Schildblock und Schwachstelle an den Stationen, Runen und Kräftemessen
  * beim Boss am Tor, und beim Erz ein Takt: der Hieb im richtigen Moment zählt doppelt.
  * Unten rechts eine Karte des Abschnitts; ein Klick darauf läuft hin.
+ * Knopf »2D« bzw. Taste V: dieselbe Welt in Draufsicht — WASD läuft in Bildschirmrichtung, um die
+ * Figur herum schneidet die Durchsicht (durchsicht.ts) Kronen und Mauern weg.
  *   auf Tablets: Steuerknüppel unten links
  *
  * Kennt wie das Gebäude keine Inhalte: Wer die Welt benutzt, gibt Karte,
@@ -38,6 +40,8 @@ import { beendeAvatar, bewegeAvatar, tickAvatare } from "../avatarModell";
 import { entsorge, type RaumZustand, type Stil } from "../szene";
 import { baueMaler, type Guete, type Maler } from "./malfilter";
 import { baueLandschaft, baueOrte, type Landschaft, type Marke } from "./welt";
+import { ladeWeltModelle, weltModelle } from "./modelle";
+import { DURCHSICHT, durchsichtFuer } from "./durchsicht";
 
 interface Props {
   plan: FreiPlan;
@@ -106,6 +110,7 @@ const ZUSTAND_FARBE: Record<RaumZustand, string> = { offen: "#f59e0b", geloest: 
 const GEHEN = 6.2, RENNEN = 9.5, DREHEN = 2.3;
 const RADIUS = 0.42;
 const GUETE_SCHLUESSEL = "hp_frei_guete";
+const BLICK_SCHLUESSEL = "hp_frei_blick";
 const GUETE_NAME: Record<Guete, string> = { 2: "🎨 gemalt", 1: "🖌️ leicht gemalt", 0: "⚡ schnell" };
 const ortSchluessel = (o: FreiOrt | null) => (o ? (o.art === "raum" ? `raum${o.raum}` : o.art) : "");
 const TON: Record<Marke["ton"], string> = {
@@ -123,8 +128,14 @@ export default function FreiWelt({
   const markenEl = useRef<(HTMLDivElement | null)[]>([]);
   const [nah, setNah] = useState<FreiOrt | null>(null);
   const [guete, setGuete] = useState<Guete>(2);
+  // 2D (Draufsicht) oder 3D (über die Schulter); auf dem Gerät gemerkt
+  const [oben, setOben] = useState(false);
+  useEffect(() => { try { setOben(localStorage.getItem(BLICK_SCHLUESSEL) === "oben"); } catch { /* ohne Speicher */ } }, []);
   const [finger, setFinger] = useState(false);
   const [hiebe, setHiebe] = useState(0);
+  // Blender-Modelle (Bäume, Felsen …): bis sie da sind, baut die Welt ihre Formen selbst
+  const [modelleDa, setModelleDa] = useState(() => !!weltModelle());
+  useEffect(() => { let an = true; ladeWeltModelle().then(ok => { if (an && ok) setModelleDa(true); }); return () => { an = false; }; }, []);
   const [kampf, setKampf] = useState(false);
   const [duell, setDuell] = useState<DuellBild | null>(null);
   const ringEl = useRef<HTMLDivElement>(null);
@@ -141,7 +152,7 @@ export default function FreiWelt({
 
   // Alles, was die Zeichenschleife liest, steht in einem Ref.
   const lage = useRef({
-    plan, stock, aktiv, onAnkunft, guete, zustaende, stufe, onKampf, zielOffen, waechter,
+    plan, stock, aktiv, onAnkunft, guete, zustaende, stufe, onKampf, zielOffen, waechter, oben,
     /** laufender kleiner Kampf, sein Ort und was davon schon geschehen ist */
     duell: null as Kampf | null,
     duellOrt: null as FreiOrt | null,
@@ -162,12 +173,14 @@ export default function FreiWelt({
     /** an welchem Ort die Figur gerade steht */
     drin: "",
     wandHoehe: 0,
+    /** Nebeldichte der Welt (in der Draufsicht dünner) */
+    nebelBasis: 0.01,
     /** bewegt, was in der Luft schwebt */
     luft: null as ((zeit: number) => void) | null,
     marken: [] as Marke[],
-    setNah, setGuete, setHiebe, setKampf, setDuell, setVolltreffer,
+    setNah, setGuete, setHiebe, setKampf, setDuell, setVolltreffer, setOben,
   });
-  Object.assign(lage.current, { plan, stock, aktiv, onAnkunft, guete, zustaende, stufe, onKampf, zielOffen, waechter });
+  Object.assign(lage.current, { plan, stock, aktiv, onAnkunft, guete, zustaende, stufe, onKampf, zielOffen, waechter, oben });
 
   const drei = useRef<{
     szene: THREE.Scene; land: THREE.Group; orte: THREE.Group; spieler: THREE.Group;
@@ -376,6 +389,7 @@ export default function FreiWelt({
         return;
       }
       const k = ev.key.toLowerCase();
+      if (k === "v" && !ev.repeat) { ev.preventDefault(); wechsleBlick(); return; }
       if (k === "e" || k === "enter") {
         const ort = ortBei(e, l.x, l.z, l.stock > 0);
         if (ort) { ev.preventDefault(); betrete(ort); }
@@ -409,6 +423,7 @@ export default function FreiWelt({
       griff.weit += Math.abs(dx) + Math.abs(dy);
       griff.x = ev.clientX; griff.y = ev.clientY;
       if (griff.weit < 6) return;
+      if (l.oben) return; // die Draufsicht bleibt nach Norden ausgerichtet
       l.blick -= dx * 0.006;
       l.neigung = Math.max(0.05, Math.min(1.25, l.neigung + dy * 0.004));
     };
@@ -514,16 +529,19 @@ export default function FreiWelt({
       }
 
       // Eingaben: Tasten und Steuerknüppel
-      let vor = 0, dreh = 0;
+      let vor = 0, dreh = 0, ox = 0, oz = 0;
       if (l.aktiv && !l.warte && !l.duell) {
         const t = l.tasten;
+        // Draufsicht: oben auf dem Bildschirm ist Norden (−z)
+        ox = (t.has("d") || t.has("arrowright") ? 1 : 0) - (t.has("a") || t.has("arrowleft") ? 1 : 0) + l.knueppel.x;
+        oz = (t.has("s") || t.has("arrowdown") ? 1 : 0) - (t.has("w") || t.has("arrowup") ? 1 : 0) + l.knueppel.y;
         vor = (t.has("w") || t.has("arrowup") ? 1 : 0) - (t.has("s") || t.has("arrowdown") ? 1 : 0) - l.knueppel.y;
         dreh = (t.has("a") || t.has("arrowleft") ? 1 : 0) - (t.has("d") || t.has("arrowright") ? 1 : 0) - l.knueppel.x;
         vor = Math.max(-1, Math.min(1, vor));
         dreh = Math.max(-1, Math.min(1, dreh));
       }
       if (Math.abs(l.knueppel.x) + Math.abs(l.knueppel.y) > 0.1 && l.pfad.length) { l.pfad = []; l.pfadOrt = null; }
-      l.blick += dreh * DREHEN * dt;
+      if (!l.oben) l.blick += dreh * DREHEN * dt;
 
       let vx = 0, vz = 0, tempo = 0;
       if (l.pfad.length) {
@@ -543,7 +561,11 @@ export default function FreiWelt({
           diff = Math.atan2(Math.sin(diff), Math.cos(diff));
           l.blick += diff * Math.min(1, dt * 1.6);
         }
-      } else if (vor) {
+      } else if (l.oben && (ox || oz)) {
+        const n = Math.hypot(ox, oz);
+        vx = ox / n; vz = oz / n;
+        tempo = (l.tasten.has("shift") ? RENNEN : GEHEN) * Math.min(1, n);
+      } else if (!l.oben && vor) {
         vx = Math.sin(l.blick) * vor; vz = Math.cos(l.blick) * vor;
         tempo = (l.tasten.has("shift") ? RENNEN : GEHEN) * (vor < 0 ? 0.6 : 1) * Math.abs(vor);
         const n = Math.hypot(vx, vz);
@@ -586,6 +608,18 @@ export default function FreiWelt({
         }
       }
 
+      // Draufsicht: schräg von Süden, weit oben; die Durchsicht schneidet um die Figur alles Hohe weg
+      DURCHSICHT.uDsAn.value = l.oben ? 1 : 0;
+      DURCHSICHT.uDsSpieler.value.set(l.x, 0, l.z);
+      d.nebel.density = l.nebelBasis * (l.oben ? 0.4 : 1);
+      if (l.oben) {
+        const weit = l.abstand * 3.3;
+        kopf.set(l.x, 0.6, l.z);
+        punkt.set(l.x, weit, l.z + weit * 0.62);
+        auge.lerp(punkt, Math.min(1, dt * 10));
+        kamera.position.copy(auge);
+        kamera.lookAt(auge.x, 0.6, auge.z - weit * 0.62);
+      } else {
       // Kamera über der Schulter; Wände halten sie auf
       kopf.set(l.x, 2.1, l.z);
       const flach = Math.cos(l.neigung) * l.abstand, steil = Math.sin(l.neigung) * l.abstand;
@@ -598,6 +632,7 @@ export default function FreiWelt({
       auge.lerp(punkt, Math.min(1, dt * 14));
       kamera.position.copy(auge);
       kamera.lookAt(kopf);
+      }
 
       // Licht wandert mit
       d.fackel.position.set(l.x, 3.4, l.z);
@@ -615,7 +650,7 @@ export default function FreiWelt({
       // Karte: der Pfeil zeigt, wo die Figur steht und wohin die Kamera schaut
       if (pfeilEl.current) {
         const f = KARTE_PX / (e.b * ZELLE);
-        pfeilEl.current.style.transform = `translate(${l.x * f}px, ${l.z * f}px) translate(-50%, -50%) rotate(${Math.PI - l.blick}rad)`;
+        pfeilEl.current.style.transform = `translate(${l.x * f}px, ${l.z * f}px) translate(-50%, -50%) rotate(${Math.PI - (l.oben ? d.spieler.rotation.y : l.blick)}rad)`;
       }
 
       // Schilder über den Stationen
@@ -675,6 +710,14 @@ export default function FreiWelt({
     const s = drei.current?.sonne.shadow;
     if (s) { s.mapSize.setScalar(guete === 2 ? 2048 : 1024); s.map?.dispose(); s.map = null; }
   }, [guete]);
+  function wechsleBlick() {
+    const l = lage.current, neu = !l.oben;
+    l.oben = neu;
+    l.setOben(neu);
+    // zurück in 3D: die Kamera steht hinter der Figur, so wie sie gerade schaut
+    if (!neu) l.blick = drei.current?.spieler.rotation.y ?? l.blick;
+    try { localStorage.setItem(BLICK_SCHLUESSEL, neu ? "oben" : "schulter"); } catch { /* egal */ }
+  }
   const waehleGuete = () => {
     const g = ((guete + 2) % 3) as Guete;
     setGuete(g);
@@ -706,6 +749,8 @@ export default function FreiWelt({
     const s = land.stimmung;
     d.nebel.color.set(s.nebel);
     d.nebel.density = s.dichte;
+    lage.current.nebelBasis = s.dichte;
+    durchsichtFuer(land.gruppe);
     d.himmel.color.set(s.oben); d.himmel.groundColor.set(s.unten); d.himmel.intensity = s.umgebung;
     d.sonne.color.set(s.sonne); d.sonne.intensity = s.sonneStaerke; d.sonne.castShadow = s.sonneStaerke > 0.2;
     d.sonneVon.set(...s.sonneVon).normalize();
@@ -715,7 +760,7 @@ export default function FreiWelt({
     d.maler.belichtung(s.belichtung);
     lage.current.wandHoehe = land.wandHoehe;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [plan, stock, stil, seed]);
+  }, [plan, stock, stil, seed, modelleDa]);
 
   // ── Stationen und Tor: neu bei jedem Fortschritt ─────────────────────────
   const schluessel = JSON.stringify([stock, zustaende[stock], zielOffen[stock], objekte?.[stock], stil, waechter?.[stock]]);
@@ -846,6 +891,10 @@ export default function FreiWelt({
         ))}
       </div>
       <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
+        <button className={`${knopf} px-2 h-8 text-xs`} onClick={wechsleBlick} data-blick={oben ? "oben" : "schulter"}
+          title={oben ? "Zurück in die 3D-Ansicht über die Schulter (V)" : "Draufsicht: dieselbe Welt von oben (V)"}>
+          {oben ? "🧍 3D" : "🗺️ 2D"}
+        </button>
         <button className={`${knopf} px-2 h-8 text-xs`} onClick={waehleGuete} title="Darstellung: gemalt sieht am schönsten aus, schnell läuft auf jedem Gerät">
           {GUETE_NAME[guete]}
         </button>

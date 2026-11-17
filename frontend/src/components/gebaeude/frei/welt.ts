@@ -16,6 +16,7 @@ import { DURCHGANG, PLATZ, WAND, WEG, ZELLE, feldMitte, istFrei, type FreiEbene,
 import type { Objekt } from "@/lib/gebaeude/objekte";
 import { baueObjekt } from "../objekte3d";
 import { felsGeometrie, musterMaterial, textur, zufallAus } from "../stoff";
+import { FASSUNGEN, weltModelle, type ModellArt } from "./modelle";
 import { AUSSEHEN, STILE, type RaumZustand, type Stil } from "../szene";
 
 export type Welt = "gebaeude" | "hoehle" | "wald" | "garten" | "winter" | "oase" | "pilze";
@@ -79,6 +80,37 @@ function reihe(geo: THREE.BufferGeometry, mat: THREE.Material, stuecke: Stueck[]
 
 const wuerfel = new THREE.BoxGeometry(1, 1, 1);
 wuerfel.userData.geteilt = true;
+
+/**
+ * Stellt Blender-Modelle (modelle.ts) auf: je Teil eine InstancedMesh, je Stück eine Farbe pro Teil.
+ * `setze` gibt false zurück, solange die Modelle nicht geladen sind — dann baut der Aufrufer die Form selbst.
+ */
+function modellSetzer(r: () => number) {
+  const M = weltModelle();
+  const platziert = new Map<string, Stueck[]>();
+  /** `schmal`: je Teil ein Faktor für die Breite (schlankere Stämme bei gleicher Krone) */
+  const setze = (art: ModellArt, p: THREE.Vector3, s: THREE.Vector3, q: THREE.Quaternion, farben: Record<string, THREE.Color>, schmal: Record<string, number> = {}): boolean => {
+    if (!M) return false;
+    const name = `${art}${1 + Math.floor(r() * FASSUNGEN[art])}`;
+    if (!Object.keys(farben).some(teil => M[`${name}_${teil}`])) return false;
+    for (const [teil, f] of Object.entries(farben)) {
+      const k = `${name}_${teil}`;
+      if (!M[k]) continue;
+      let liste = platziert.get(k);
+      if (!liste) platziert.set(k, liste = []);
+      const k2 = schmal[teil] ?? 1;
+      liste.push({ p, s: k2 === 1 ? s : new THREE.Vector3(s.x * k2, s.y, s.z * k2), q, f });
+    }
+    return true;
+  };
+  /** alles Aufgestellte in die Gruppe */
+  const fertig = (g: THREE.Group, schatten = true) => {
+    for (const [k, liste] of platziert) {
+      g.add(reihe(M![k], new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true }), liste, schatten));
+    }
+  };
+  return { da: !!M, setze, fertig };
+}
 
 let stamm: THREE.BufferGeometry | null = null;
 /** Baumstamm: unten breiter, leicht krumm, Fuß bei y = 0, Höhe 1 */
@@ -542,8 +574,22 @@ function waldLandschaft(e: FreiEbene, seed: number, art: keyof typeof NATUR = "w
   const dreh = () => new THREE.Quaternion().setFromAxisAngle(hoch, r() * Math.PI * 2);
   const hell = (liste: number[], von = 0.9, breit = 0.25) => farbe(aus(liste, r)).multiplyScalar(von + r() * breit);
 
+  const modell = modellSetzer(r);
+  const gedreht = (neigen = 0) => new THREE.Quaternion().setFromEuler(new THREE.Euler((r() - 0.5) * neigen, r() * Math.PI * 2, (r() - 0.5) * neigen));
+  /** Blender-Baum, wenn geladen: `h` hoch, etwas breiter oder schmaler */
+  const modellBaum = (art: "laubbaum" | "tanne" | "palme", sx: number, sz: number, h: number, farben: Record<string, THREE.Color>) => {
+    // Tannen schlank (sonst reichen die unteren Äste in den Weg), Stämme schmaler als in Blender
+    const w = h * (art === "tanne" ? 0.58 : 0.85) * (0.9 + r() * 0.2);
+    return modell.setze(art, new THREE.Vector3(sx, -0.08, sz), new THREE.Vector3(w, h, w), gedreht(art === "palme" ? 0 : 0.08), farben,
+      art === "tanne" ? {} : { stamm: art === "palme" ? 0.6 : 0.5 });
+  };
+
   /** ein Baum der jeweiligen Art bei (sx, sz); `nah` = am Weg (voller ausgebaut) */
   const pflanze = (sx: number, sz: number, nah: boolean, amWeg: boolean) => {
+    // am Weg nur junge Tannen: die Äste der großen reichen bis auf Kopfhöhe in den Weg
+    if (P.baum === "tanne" && modellBaum("tanne", sx, sz, amWeg ? 2.6 + r() * 1.6 : 6 + r() * 4, { stamm: hell(P.stamm, 0.85, 0.3), krone: hell(P.krone), schnee: farbe(0xf4f8fc) })) return;
+    if (P.baum === "palme" && modellBaum("palme", sx, sz, 5 + r() * 2.6, { stamm: hell(P.stamm, 0.85, 0.3), krone: hell(P.krone) })) return;
+    if (P.baum === "laub" && modellBaum("laubbaum", sx, sz, 7.5 + r() * 4, { stamm: hell(P.stamm, 0.85, 0.3), krone: hell(P.krone) })) return;
     if (P.baum === "tanne") {
       const h = 5 + r() * 4, dick = 0.16 + r() * 0.1;
       staemme.push({ p: new THREE.Vector3(sx, -0.1, sz), s: new THREE.Vector3(dick, h * 0.7, dick), f: hell(P.stamm, 0.85, 0.3) });
@@ -606,7 +652,7 @@ function waldLandschaft(e: FreiEbene, seed: number, art: keyof typeof NATUR = "w
         graeser.push({ p: new THREE.Vector3(wx + (r() - 0.5) * ZELLE, 0, wz + (r() - 0.5) * ZELLE), s: new THREE.Vector3().setScalar(0.8 + r() * 0.9), q: dreh(), f: farbe(aus(P.gras, r)) });
       }
       // Sonne fällt in Bahnen durch die Kronen
-      if ((art === "wald" || art === "winter") && r() < 0.045) {
+      if ((art === "wald" || art === "winter") && e.art[y * e.b + x] === PLATZ && r() < 0.05) {
         const lang = 13 + r() * 5, breit = 0.9 + r() * 1.6;
         // die Bahn steht in Sonnenrichtung schräg; zwei gekreuzte Flächen, damit sie von überall zu sehen ist
         const zurSonne = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), sonneRichtung);
@@ -625,6 +671,10 @@ function waldLandschaft(e: FreiEbene, seed: number, art: keyof typeof NATUR = "w
       if (tiefe === 1 && r() < 0.22) for (let k = 0, n = 1 + Math.floor(r() * 3); k < n; k++) {
         pilz(wx + (r() - 0.5) * 1.2, wz + (r() - 0.5) * 1.2, 0.25 + r() * 0.35, 0.3 + r() * 0.3, farbe(aus([0xd63a2f, 0xe0552f, 0xc9902f], r)));
       }
+      if (tiefe === 1 && !einzeln && r() < 0.05) {
+        const h = 0.5 + r() * 0.4;
+        modell.setze("stumpf", new THREE.Vector3(wx + (r() - 0.5) * 0.5, -0.04, wz + (r() - 0.5) * 0.5), new THREE.Vector3(h * 1.3, h, h * 1.3), gedreht(), { stamm: hell(P.stamm, 0.75, 0.3) });
+      }
       if (tiefe === 2 && r() < 0.06) {
         const lang = 2.5 + r() * 2.5, dick = 0.3 + r() * 0.2;
         staemmeLiegend.push({
@@ -636,6 +686,7 @@ function waldLandschaft(e: FreiEbene, seed: number, art: keyof typeof NATUR = "w
       // Kakteen: Säule mit ein, zwei Armen
       if (tiefe >= 2 && tiefe <= 4 && r() < 0.1) {
         const h = 1.6 + r() * 1.8, gruen = farbe(aus([0x4f8a3c, 0x5c9a46, 0x45803a], r));
+        if (modell.setze("kaktus", new THREE.Vector3(wx, 0, wz), new THREE.Vector3(h, h, h), gedreht(), { krone: gruen })) continue;
         kakteen.push({ p: new THREE.Vector3(wx, h / 2, wz), s: new THREE.Vector3(0.5, h * 0.6, 0.5), f: gruen });
         for (const seite of [-1, 1]) {
           if (r() < 0.3) continue;
@@ -657,22 +708,24 @@ function waldLandschaft(e: FreiEbene, seed: number, art: keyof typeof NATUR = "w
     if (tiefe <= 2 && r() < (einzeln ? 1 : 0.75)) {
       const breit = einzeln ? 0.9 : 1.2 + r() * 0.6;
       const stueck: Stueck = { p: new THREE.Vector3(wx + (r() - 0.5) * 0.4, 0.3, wz + (r() - 0.5) * 0.4), s: new THREE.Vector3(breit, 0.7 + r() * 0.5, breit), q: dreh(), f: hell(P.busch, 0.85, 0.3) };
-      // im Pilzwald leuchtet der Rand: kleine Pilzhüte statt Büsche
       // im Pilzwald leuchtet der Rand: Grüppchen kleiner Pilze statt Büschen
       if (P.baum === "pilz") {
         for (let k = 0, n = 2 + Math.floor(r() * 3); k < n; k++) {
           pilz(stueck.p.x + (r() - 0.5) * 1.1, stueck.p.z + (r() - 0.5) * 1.1, 0.4 + r() * 1.1, 0.45 + r() * 0.6, farbe(aus(P.busch, r)).multiplyScalar(0.75 + r() * 0.3));
         }
-      } else buesche.push(stueck);
+      } else if (!modell.setze("busch", new THREE.Vector3(stueck.p.x, -0.05, stueck.p.z), stueck.s, stueck.q!, { krone: stueck.f! })) buesche.push(stueck);
     }
     if (tiefe <= 3 && P.halme > 0.15) for (let k = 0; k < 2; k++) {
       graeser.push({ p: new THREE.Vector3(wx + (r() - 0.5) * ZELLE, 0, wz + (r() - 0.5) * ZELLE), s: new THREE.Vector3().setScalar(1 + r() * 1.2), q: dreh(), f: farbe(aus(P.gras, r)).multiplyScalar(0.75 + r() * 0.3) });
     }
     if (tiefe <= 2 && !einzeln && r() < P.felsen) {
       const gross = (P.felsen > 0.3 ? 0.9 : 0.5) + r() * (P.felsen > 0.3 ? 1.1 : 0.5);
-      steine.push({ p: new THREE.Vector3(wx + (r() - 0.5) * 0.5, gross * 0.25, wz + (r() - 0.5) * 0.5), s: new THREE.Vector3(gross * 1.3, gross * 0.9, gross), q: dreh(), f: farbe(P.stein).multiplyScalar(0.8 + r() * 0.3) });
+      const ort = new THREE.Vector3(wx + (r() - 0.5) * 0.5, gross * 0.25, wz + (r() - 0.5) * 0.5), groesse = new THREE.Vector3(gross * 1.3, gross * 0.9, gross);
+      const f = farbe(P.stein).multiplyScalar(0.8 + r() * 0.3);
+      if (!modell.setze("fels", new THREE.Vector3(ort.x, -0.1 * gross, ort.z), groesse.multiplyScalar(1.15), dreh(), { stein: f })) steine.push({ p: ort, s: groesse, q: dreh(), f });
     }
   }
+  modell.fertig(g);
   const weiss = () => new THREE.MeshLambertMaterial({ color: 0xffffff });
   g.add(reihe(stammGeometrie(), weiss(), staemme));
   g.add(reihe(felsGeometrie(), weiss(), kronen));
@@ -696,7 +749,7 @@ function waldLandschaft(e: FreiEbene, seed: number, art: keyof typeof NATUR = "w
     // Lichtbahnen: schmale, schräge Flächen in Sonnenrichtung, die nur aufhellen
     const bahn = new THREE.PlaneGeometry(1, 1);
     bahn.translate(0, 0.5, 0);
-    const licht = reihe(bahn, new THREE.MeshBasicMaterial({ color: P.stimmung.sonne, transparent: true, opacity: 0.07, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false }), strahlen, false);
+    const licht = reihe(bahn, new THREE.MeshBasicMaterial({ color: P.stimmung.sonne, transparent: true, opacity: 0.05, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false }), strahlen, false);
     licht.receiveShadow = false;
     g.add(licht);
   }
@@ -790,7 +843,13 @@ function hoehleLandschaft(e: FreiEbene, stil: Stil, seed: number): Landschaft {
       if (lichter.length < 7 && lichter.every(([lx, lz]) => Math.hypot(lx - wx, lz - wz) > 13)) lichter.push([wx, wz]);
     }
   }
-  g.add(reihe(felsGeometrie(), new THREE.MeshLambertMaterial({ color: 0xffffff }), brocken, false));
+  {
+    // mit den Blender-Felsen: kantiger und abwechslungsreicher als der eine runde Brocken
+    const modell = modellSetzer(r);
+    const uebrig = brocken.filter(b => !modell.setze("fels", new THREE.Vector3(b.p.x, b.p.y - b.s.y * 0.42, b.p.z), b.s.clone().multiply(new THREE.Vector3(1.1, 1.25, 1.1)), b.q ?? new THREE.Quaternion(), { stein: b.f! }));
+    modell.fertig(g, false);
+    g.add(reihe(felsGeometrie(), new THREE.MeshLambertMaterial({ color: 0xffffff }), uebrig, false));
+  }
   g.add(reihe(new THREE.ConeGeometry(0.24, 1, 6), new THREE.MeshLambertMaterial({ color: 0xffffff }), zapfen, false));
   g.add(reihe(new THREE.ConeGeometry(0.14, 1, 5), new THREE.MeshLambertMaterial({ color: glut, emissive: glut, emissiveIntensity: 1.6 }), kristalle, false));
   for (const [lx, lz] of lichter) {
