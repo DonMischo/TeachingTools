@@ -73,6 +73,22 @@ describe("useGuestSession", () => {
     expect(result.current.expired).toBe(true);
   });
 
+  it("lange Fenster (bis 30 Tage) laufen nicht sofort ab", async () => {
+    // setTimeout kann höchstens 2^31-1 ms (~24,8 Tage) warten; darüber feuert
+    // er sofort — der Gast sah direkt »Sitzung abgelaufen«.
+    vi.useFakeTimers();
+    const tag = 24 * 60 * 60_000;
+    storeSession(Date.now() + 30 * tag);
+    const { result } = renderHook(() => useGuestSession("WAAGE1"));
+    await act(async () => {});
+    await act(async () => { vi.advanceTimersByTime(1_000); });
+    expect(result.current.expired).toBe(false);
+    await act(async () => { vi.advanceTimersByTime(25 * tag); });
+    expect(result.current.expired).toBe(false);
+    await act(async () => { vi.advanceTimersByTime(5 * tag); });
+    expect(result.current.expired).toBe(true);
+  });
+
   it("markExpired sperrt sofort (WS 4001 / REST 401)", async () => {
     storeSession(Date.now() + 30 * 60 * 1000);
     const { result } = renderHook(() => useGuestSession("WAAGE1"));

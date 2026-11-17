@@ -16,6 +16,9 @@ const CLIENT_SKEW_MS = 60 * 1000;
 /** Fällt der Server aus, bevor er die Zahl nennt: das alte Fenster als Rückfall. */
 const RUECKFALL_MINUTEN = 90;
 
+/** Längste Wartezeit, die setTimeout verträgt. */
+const MAX_TIMEOUT_MS = 2 ** 31 - 1;
+
 function clientTtlMs(minutes: number | undefined): number {
   // Ohne brauchbare Zahl (ein Backend, das sie noch nicht mitschickt) wäre die
   // Rechnung NaN — und ein NaN-Ablauf gilt sofort als abgelaufen: jeder Gast
@@ -55,12 +58,16 @@ export function useGuestSession(code: string) {
   const [loaded, setLoaded] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const armExpiry = useCallback((s: GuestSession | null) => {
+  const armExpiry = useCallback(function arm(s: GuestSession | null) {
     if (timer.current) clearTimeout(timer.current);
     if (!s) return;
     const ms = s.expiresAt - Date.now();
     if (ms <= 0) { setExpired(true); return; }
-    timer.current = setTimeout(() => setExpired(true), ms);
+    // setTimeout wartet höchstens 2^31-1 ms (~24,8 Tage) und feuert darüber
+    // sofort. Umfragen erlauben bis zu 30 Tage — längere Fenster in Etappen.
+    timer.current = ms > MAX_TIMEOUT_MS
+      ? setTimeout(() => arm(s), MAX_TIMEOUT_MS)
+      : setTimeout(() => setExpired(true), ms);
   }, []);
 
   useEffect(() => {
