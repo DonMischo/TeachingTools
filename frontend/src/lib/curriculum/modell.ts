@@ -360,6 +360,16 @@ export function umkehrOps(vorher: Vorlage, ops: Op[]): Op[] | null {
     else if (o.op === "klasse") klassen.add(o.klasse as number);
   }
   const zurueck: Op[] = [];
+  // Ganzer Lehrplan entfernt: ihn samt altem Abgleich wieder einspielen, die Einheiten kommen unten zurück
+  for (const o of ops.filter(o => o.op === "lehrplan_loeschen")) {
+    const lp = vorher.lehrplaene.find(l => l.id === o.id);
+    if (!lp) continue;
+    zurueck.push({ op: "import", daten: { lehrplaene: [lp], abgleich: vorher.abgleich } });
+    const ids = new Set(lp.karten.map(k => k.id));
+    vorher.curriculum.klassen.forEach(k => k.themen.forEach(t => {
+      if (t.karten.some(i => ids.has(i)) || Object.values(t.zuordnung ?? {}).some(v => v?.some(i => ids.has(i)))) themen.add(t.id);
+    }));
+  }
   if (ops.some(o => o.op === "sammlung")) zurueck.push({ op: "sammlung", id: vorher.sammlung ?? null });
   for (const [key, { lehrplan, id }] of karten) {
     const alt = kartenVorher.get(key);

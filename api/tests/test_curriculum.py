@@ -296,3 +296,25 @@ def test_materialsammlung_anlegen_und_abgleichen(client, teacher, teacher2):
     assert r.json()["data"]["sammlung"] == sid
     c = client.get(f"/api/fragments/collections/{sid}", headers=t_auth(teacher)).json()
     assert [e["id"] for e in c["kategorien"][1]["einheiten"]] == ["c", "d"]
+
+
+def test_alten_lehrplan_entfernen_raeumt_abgleich_und_einheiten_auf():
+    doc = leer()
+    doc["lehrplaene"] = [
+        {"id": "alt", "rolle": "alt", "schulart": "RS", "karten": [{"id": "a1"}, {"id": "a2"}]},
+        {"id": "neu", "rolle": "neu", "schulart": "RS+GY", "karten": [{"id": "n1"}]},
+    ]
+    doc["abgleich"] = [
+        {"id": "p1", "alt": ["a1"], "neu": ["n1"], "status": "identisch"},
+        {"id": "p2", "alt": [], "neu": ["n1"], "status": "neu"},
+        {"id": "p3", "alt": ["a2"], "neu": [], "status": "entfallen"},
+    ]
+    doc["curriculum"]["klassen"] = [{"klasse": 5, "wochen_verfuegbar": 36, "themen": [
+        {"id": "t1", "titel": "E", "karten": ["a1", "a2"], "zuordnung": {"R": ["n1", "a1"]}}]}]
+    neu = anwenden(doc, {"op": "lehrplan_loeschen", "id": "alt"})
+    assert [lp["id"] for lp in neu["lehrplaene"]] == ["neu"]
+    assert [p["id"] for p in neu["abgleich"]] == ["p2"]
+    t = neu["curriculum"]["klassen"][0]["themen"][0]
+    assert t["karten"] == [] and t["zuordnung"] == {"R": ["n1"]}
+    with pytest.raises(OpFehler):
+        anwenden(doc, {"op": "lehrplan_loeschen", "id": "gibtsnicht"})

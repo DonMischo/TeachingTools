@@ -158,6 +158,27 @@ def anwenden(doc: dict, op: dict) -> dict:
         lp = _lehrplan(doc, op.get("lehrplan"))
         lp["karten"] = [k for k in lp["karten"] if k["id"] != op.get("id")]
 
+    elif art == "lehrplan_loeschen":
+        # Ganzen Lehrplan entfernen (z. B. die alten nach der Umstellung): seine Karten
+        # verschwinden auch aus Abgleich, Einheiten und Zuordnungen. Ein Paar, dessen
+        # eine Seite nur aus diesem Lehrplan bestand, ist danach sinnlos und geht mit.
+        lid = op.get("id")
+        weg = {k["id"] for k in _lehrplan(doc, lid).get("karten", [])}
+        doc["lehrplaene"] = [lp for lp in doc["lehrplaene"] if lp["id"] != lid]
+        abgleich = []
+        for p in doc["abgleich"]:
+            alt = [i for i in p.get("alt", []) if i not in weg]
+            neu = [i for i in p.get("neu", []) if i not in weg]
+            if (p.get("alt") and not alt) or (p.get("neu") and not neu):
+                continue
+            abgleich.append({**p, "alt": alt, "neu": neu})
+        doc["abgleich"] = abgleich
+        for k in doc["curriculum"]["klassen"]:
+            for t in k["themen"]:
+                t["karten"] = [i for i in t.get("karten", []) if i not in weg]
+                if t.get("zuordnung"):
+                    t["zuordnung"] = {n: [i for i in v if i not in weg] for n, v in t["zuordnung"].items()}
+
     elif art == "paar":
         paar = op.get("paar")
         if isinstance(paar, dict) and not paar.get("id"):

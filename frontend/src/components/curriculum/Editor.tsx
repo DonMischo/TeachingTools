@@ -29,6 +29,10 @@ import {
 import { KarteBox, KartenAnsicht, StatusChip } from "./KarteBox";
 import { MaterialSammlung, Verknuepfungen } from "./Verknuepfungen";
 import { Pruefungen } from "./Pruefungen";
+import { Menue, MenueAbschnitt, MenueFeld, MenuePunkt } from "./Menue";
+
+/** Aktionen der Seite (Umbenennen, Kopie, Löschen) für den Abschnitt »Plan« im ☰-Menü. */
+export type PlanAktion = { label: string; onClick: () => void; gefahr?: boolean; title?: string };
 import { ExportDialog, ImportDialog, KarteDialog, KiDialog, TeilenDialog, ThemaDialog } from "./Dialoge";
 
 type Op = Record<string, unknown>;
@@ -70,7 +74,9 @@ export function InhaltText({ text, nurLesen, onSpeichern }: { text: string; nurL
 }
 
 
-export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanOut; guestToken?: string }) {
+export function CurriculumEditor({ start, guestToken, planAktionen = [] }: {
+  start: CurriculumPlanOut; guestToken?: string; planAktionen?: PlanAktion[];
+}) {
   const { toast } = useToast();
   const [plan, setPlan] = useState(start);
   const [offen, setOffen] = useState<Offen>(null);
@@ -279,6 +285,15 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
     ops(liste);
   };
 
+  const altEntfernen = () => {
+    const alte = doc.lehrplaene.filter(l => l.rolle === "alt");
+    const karten = alte.reduce((n, l) => n + l.karten.length, 0);
+    if (!confirm(`Alte Lehrpläne entfernen?\n\n${alte.map(l => `• ${l.titel ?? l.id}`).join("\n")}\n\n`
+      + `${karten} Karten, ihr Abgleich und die Zuordnung zu den Unterrichtseinheiten verschwinden für alle. `
+      + "Rückgängig mit ↶, solange die Seite offen ist — sicherer vorher »Kopie« im Menü.")) return;
+    ops(alte.map(l => ({ op: "lehrplan_loeschen", id: l.id })));
+  };
+
   const materialsammlung = async () => {
     try {
       const neu = await api.curriculum.materialsammlung(plan.id);
@@ -309,79 +324,100 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
     <MaterialSammlung.Provider value={doc.sammlung ?? null}>
     <KartenAnsicht.Provider value={ansichtMitMaterial}>
     <div className="flex flex-col gap-3">
-      {/* Werkzeugleiste */}
-      <div className="flex flex-wrap items-center gap-2 sticky top-0 z-30 bg-page py-2 border-b border-line">
-        <div className="flex gap-1" title="Welche Niveau-Zeilen angezeigt werden">
+      {/* Werkzeugleiste: links die Filter (gleich hoch, in Gruppen), rechts Stand, Rückgängig und ☰ */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 sticky top-0 z-30 bg-page py-2 border-b border-line
+        [&_.chip]:h-7 [&_.chip]:inline-flex [&_.chip]:items-center [&_.chip]:py-0">
+        <div className="flex items-center gap-1" title="Welche Niveau-Zeilen angezeigt werden">
           {NIVEAUS.map(n => (
-            <button key={n} className="chip text-xs" title={NIVEAU_NAME[n]}
+            <button key={n} className="chip text-xs justify-center min-w-9" title={NIVEAU_NAME[n]}
               style={niveaus.has(n) ? { background: NIVEAU_FARBE[n], color: "#fff", borderColor: NIVEAU_FARBE[n] } : undefined}
               onClick={() => setNiveaus(s => { const x = new Set(s); x.has(n) ? x.delete(n) : x.add(n); return x; })}>{n}</button>
           ))}
         </div>
-        <div className="flex items-center gap-1" title="Welche Lehrplan-Karten gezeigt werden — überall: alt, Niveau-Zeilen, Vorschläge, Offen">
-          <span className="text-xs text-muted">Karten:</span>
+        <div className="flex items-center gap-1 border-l border-line pl-3" title="Welche Lehrplan-Karten gezeigt werden — überall: alt, Niveau-Zeilen, Vorschläge, Offen">
           {([["RS", "GY"], ["RS"], ["GY"]] as string[][]).map(a => (
             <button key={a.join()} className={`chip text-xs ${[...schularten].sort().join() === [...a].sort().join() ? "chip-on" : ""}`}
               onClick={() => setSchularten(new Set(a))}>
               {a.length > 1 ? "RS + GY" : a[0] === "RS" ? "nur Regelschule" : "nur Gymnasium"}</button>
           ))}
         </div>
-        <div className="flex gap-1">
+        <div className="flex items-center gap-1 border-l border-line pl-3">
           <button className="chip text-xs" onClick={() => alleKarten(true)} title="Alle Karten aufklappen">▾ alle auf</button>
           <button className="chip text-xs" onClick={() => alleKarten(false)} title="Alle Karten zuklappen">▸ alle zu</button>
+          <button className={`chip text-xs ${endfassung ? "chip-on" : ""}`} onClick={() => setEndfassung(v => !v)}
+            title="Durchgestrichenes und Markierungen ausblenden — nur der neue Wortlaut">✓ Endfassung</button>
         </div>
-        <button className={`chip text-xs ${endfassung ? "chip-on" : ""}`} onClick={() => setEndfassung(v => !v)}
-          title="Durchgestrichenes und Markierungen ausblenden — nur der neue Wortlaut">✓ Endfassung</button>
-        {bereichListe.length > 1 && (
-          <details className="relative">
-            <summary className={`chip text-xs list-none cursor-pointer ${bereichFilter.size ? "chip-on" : ""}`}>
-              Bereiche: {bereichFilter.size ? [...bereichFilter].join(", ") : "alle"} ▾
-            </summary>
-            <div className="absolute z-40 mt-1 card p-2 flex flex-col gap-1 text-sm min-w-[14rem] shadow-lg">
-              {bereichListe.map(b => (
-                <label key={b} className="flex items-center gap-2 whitespace-nowrap">
-                  <input type="checkbox" checked={bereichFilter.has(b)}
-                    onChange={() => setBereichFilter(f => { const x = new Set(f); x.has(b) ? x.delete(b) : x.add(b); return x; })} />
-                  {b}
-                </label>
-              ))}
-              {bereichFilter.size > 0 && (
-                <button className="btn-secondary text-xs py-0.5 mt-1" onClick={() => setBereichFilter(new Set())}>alle zeigen</button>
-              )}
-            </div>
-          </details>
-        )}
-        <button className={`chip text-xs ${nurKonflikte ? "chip-on" : ""}`} onClick={() => setNurKonflikte(v => !v)}>⚠ nur Konflikte</button>
-        <input className="input w-44 text-sm py-1" placeholder="Einheit suchen…" value={suche} onChange={e => setSuche(e.target.value)} />
+        <div className="flex items-center gap-1 border-l border-line pl-3">
+          {bereichListe.length > 1 && (
+            <details className="relative">
+              <summary className={`chip text-xs list-none cursor-pointer ${bereichFilter.size ? "chip-on" : ""}`}>
+                Bereiche: {bereichFilter.size ? [...bereichFilter].join(", ") : "alle"} ▾
+              </summary>
+              <div className="absolute z-40 mt-1 card p-2 flex flex-col gap-1 text-sm min-w-[14rem] shadow-lg">
+                {bereichListe.map(b => (
+                  <label key={b} className="flex items-center gap-2 whitespace-nowrap">
+                    <input type="checkbox" checked={bereichFilter.has(b)}
+                      onChange={() => setBereichFilter(f => { const x = new Set(f); x.has(b) ? x.delete(b) : x.add(b); return x; })} />
+                    {b}
+                  </label>
+                ))}
+                {bereichFilter.size > 0 && (
+                  <button className="btn-secondary text-xs py-0.5 mt-1" onClick={() => setBereichFilter(new Set())}>alle zeigen</button>
+                )}
+              </div>
+            </details>
+          )}
+          <button className={`chip text-xs ${nurKonflikte ? "chip-on" : ""}`} onClick={() => setNurKonflikte(v => !v)}>⚠ nur Konflikte</button>
+          <input className="input w-44 text-sm h-7 py-0" placeholder="Einheit suchen…" value={suche} onChange={e => setSuche(e.target.value)} />
+        </div>
         <span className="flex-1" />
-        <span className="text-xs text-muted">{nurLesen ? "nur lesen · " : ""}v{plan.version}{plan.zuletzt_von ? ` · zuletzt ${plan.zuletzt_von}` : ""}</span>
-        {!nurLesen && <button className="btn-secondary text-sm" onClick={einheitenAnlegen} title="Je Lernbereich des neuen Lehrplans eine leere Unterrichtseinheit anlegen — die Karten bleiben im Deck">📚 Einheiten aus Lehrplan</button>}
-        {!nurLesen && doc.abgleich.length > 0 && <button className="btn-secondary text-sm" onClick={alleVorschlaege} title="Partner der alten Karten in die Niveau-Zeilen übernehmen">⇣ Vorschläge übernehmen</button>}
-        <button className="btn-secondary text-sm" onClick={() => setOffen({ art: "ki" })} title="KI ordnet den Unterrichtseinheiten Lehrplan-Karten zu">🤖 KI-Zuordnung</button>
-        {!nurLesen && <button className="btn-secondary text-sm" onClick={() => setOffen({ art: "import" })}>⬆ Hochladen</button>}
-        {!nurLesen && <button className="btn-secondary text-sm" disabled={!rueckAnzahl} onClick={rueckgaengig} title="Letzte eigene Änderung rückgängig machen (Strg+Z)">↶ Rückgängig</button>}
-        {!nurLesen && !guestToken && (
-          <select className="input text-sm py-1 w-auto max-w-[14rem]" value={doc.sammlung ?? ""} title="Fragmente-Sammlung für »+ Material«: nur ihre Karten und Clippings stehen zur Auswahl"
-            aria-label="Fragmente-Sammlung für Material"
-            onChange={e => ops([{ op: "sammlung", id: e.target.value ? Number(e.target.value) : null }])}>
-            <option value="">🗂️ Material: alle Sammlungen</option>
-            {(sammlungen ?? []).map(c => <option key={c.id} value={c.id}>🗂️ {c.name}</option>)}
-            {doc.sammlung != null && !sammlungen?.some(c => c.id === doc.sammlung) && <option value={doc.sammlung}>🗂️ Sammlung {doc.sammlung}</option>}
-          </select>
-        )}
-        {!nurLesen && !guestToken && (
-          <button className="btn-secondary text-sm" onClick={materialsammlung}
-            title={doc.sammlung == null
-              ? "Fragmente-Sammlung für diesen Plan anlegen: je Klasse und Unterrichtseinheit einordnen, Tabs Unterrichtsmaterial und Leistungskontrollen, für alle Lehrkräfte"
-              : "Klassen und Unterrichtseinheiten des Plans als Kategorien in die Sammlung übernehmen"}>
-            {doc.sammlung == null ? "🗂️ Sammlung anlegen" : "↻ Kategorien abgleichen"}
-          </button>
-        )}
-        {doc.sammlung != null && !guestToken && (
-          <a className="btn-secondary text-sm" href={`/fragmente/${doc.sammlung}`} target="_blank" rel="noreferrer" title="Sammlung öffnen">🗂️ ↗</a>
-        )}
-        <button className="btn-secondary text-sm" onClick={() => setOffen({ art: "export" })}>⬇ Export</button>
-        {!guestToken && <button className="btn-secondary text-sm" onClick={() => setOffen({ art: "teilen" })}>👥 Teilen</button>}
+        <span className="text-xs text-muted whitespace-nowrap">{nurLesen ? "nur lesen · " : ""}v{plan.version}{plan.zuletzt_von ? ` · zuletzt ${plan.zuletzt_von}` : ""}</span>
+        {!nurLesen && <button className="btn-secondary h-8 px-3 py-0 text-sm" disabled={!rueckAnzahl} onClick={rueckgaengig}
+          title="Letzte eigene Änderung rückgängig machen (Strg+Z)" aria-label="Rückgängig">↶</button>}
+        <Menue>
+          {planAktionen.length > 0 && (
+            <MenueAbschnitt titel="Plan">
+              {planAktionen.map(a => <MenuePunkt key={a.label} onClick={a.onClick} gefahr={a.gefahr} title={a.title}>{a.label}</MenuePunkt>)}
+            </MenueAbschnitt>
+          )}
+          <MenueAbschnitt titel="Bearbeiten">
+            {!nurLesen && <MenuePunkt onClick={einheitenAnlegen} title="Je Lernbereich des neuen Lehrplans eine leere Unterrichtseinheit anlegen — die Karten bleiben im Deck">📚 Einheiten aus Lehrplan</MenuePunkt>}
+            {!nurLesen && doc.abgleich.length > 0 && <MenuePunkt onClick={alleVorschlaege} title="Partner der alten Karten in die Niveau-Zeilen übernehmen">⇣ Vorschläge übernehmen</MenuePunkt>}
+            <MenuePunkt onClick={() => setOffen({ art: "ki" })} title="KI ordnet den Unterrichtseinheiten Lehrplan-Karten zu">🤖 KI-Zuordnung</MenuePunkt>
+            {!nurLesen && <MenuePunkt onClick={() => setOffen({ art: "import" })}>⬆ Hochladen</MenuePunkt>}
+            {!nurLesen && doc.lehrplaene.some(l => l.rolle === "alt") && (
+              <MenuePunkt gefahr onClick={altEntfernen} title="Alte Lehrpläne samt ihrer Karten und des Abgleichs aus diesem Plan entfernen (rückgängig mit ↶)">🗑 Alte Karten entfernen</MenuePunkt>
+            )}
+          </MenueAbschnitt>
+          {!guestToken && (
+            <MenueAbschnitt titel="Material">
+              {!nurLesen && (
+                <MenueFeld>
+                  <select className="input text-sm py-1" value={doc.sammlung ?? ""} title="Fragmente-Sammlung für »+ Material«: nur ihre Karten und Clippings stehen zur Auswahl"
+                    aria-label="Fragmente-Sammlung für Material"
+                    onChange={e => ops([{ op: "sammlung", id: e.target.value ? Number(e.target.value) : null }])}>
+                    <option value="">🗂️ alle Sammlungen</option>
+                    {(sammlungen ?? []).map(c => <option key={c.id} value={c.id}>🗂️ {c.name}</option>)}
+                    {doc.sammlung != null && !sammlungen?.some(c => c.id === doc.sammlung) && <option value={doc.sammlung}>🗂️ Sammlung {doc.sammlung}</option>}
+                  </select>
+                </MenueFeld>
+              )}
+              {!nurLesen && (
+                <MenuePunkt onClick={materialsammlung}
+                  title={doc.sammlung == null
+                    ? "Fragmente-Sammlung für diesen Plan anlegen: je Klasse und Unterrichtseinheit einordnen, Tabs Unterrichtsmaterial und Leistungskontrollen, für alle Lehrkräfte"
+                    : "Klassen und Unterrichtseinheiten des Plans als Kategorien in die Sammlung übernehmen"}>
+                  {doc.sammlung == null ? "🗂️ Sammlung anlegen" : "↻ Kategorien abgleichen"}
+                </MenuePunkt>
+              )}
+              {doc.sammlung != null && <MenuePunkt href={`/fragmente/${doc.sammlung}`} title="Sammlung in neuem Tab öffnen">🗂️ Sammlung öffnen ↗</MenuePunkt>}
+            </MenueAbschnitt>
+          )}
+          <MenueAbschnitt titel="Teilen & Export">
+            <MenuePunkt onClick={() => setOffen({ art: "export" })}>⬇ Export</MenuePunkt>
+            {!guestToken && <MenuePunkt onClick={() => setOffen({ art: "teilen" })}>👥 Teilen</MenuePunkt>}
+          </MenueAbschnitt>
+        </Menue>
       </div>
 
       {(auswahl.size > 0 || kopiert.length > 0 || zielZelle) && (

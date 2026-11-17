@@ -66,3 +66,37 @@ describe("Anhänge", () => {
     expect(weg).toHaveBeenCalledWith(0);
   });
 });
+
+describe("Titel aus Dateiname", () => {
+  it("nimmt Endung und Trenner weg", async () => {
+    const { titelAusDatei } = await import("@/components/fragmente/Anhaenge");
+    expect(titelAusDatei("AB_Brüche-kürzen_v2.pdf")).toBe("AB Brüche kürzen v2");
+    expect(titelAusDatei("Klassenarbeit 7b.docx")).toBe("Klassenarbeit 7b");
+  });
+});
+
+describe("Alte Karten entfernen", () => {
+  it("lässt sich rückgängig machen: Lehrplan, Abgleich und Einheiten kommen zurück", async () => {
+    const { umkehrOps, leereVorlage } = await import("@/lib/curriculum/modell");
+    const v = leereVorlage("Mathematik");
+    v.lehrplaene = [{ id: "alt", rolle: "alt", schulart: "RS", karten: [{ id: "a1" }] } as never];
+    v.abgleich = [{ id: "p1", alt: ["a1"], neu: [], status: "entfallen" } as never];
+    v.curriculum.klassen = [{ klasse: 5, wochen_verfuegbar: 36, themen: [{ id: "t1", titel: "E", wochen: null, inhalte: {}, karten: ["a1"] }] }];
+    const zurueck = umkehrOps(v, [{ op: "lehrplan_loeschen", id: "alt" }])!;
+    expect(zurueck[0]).toEqual({ op: "import", daten: { lehrplaene: [v.lehrplaene[0]], abgleich: v.abgleich } });
+    expect(zurueck).toContainEqual({ op: "thema", klasse: 5, pos: 0, thema: v.curriculum.klassen[0].themen[0] });
+  });
+});
+
+describe("☰-Menü", () => {
+  it("öffnet, führt einen Punkt aus und schließt", async () => {
+    const { Menue, MenueAbschnitt, MenuePunkt } = await import("@/components/curriculum/Menue");
+    const los = vi.fn();
+    render(<Menue><MenueAbschnitt titel="Plan"><MenuePunkt onClick={los}>⧉ Kopie</MenuePunkt></MenueAbschnitt></Menue>);
+    expect(screen.queryByRole("menu")).toBeNull();
+    fireEvent.click(screen.getByLabelText("Menü"));
+    fireEvent.click(screen.getByRole("menuitem", { name: "⧉ Kopie" }));
+    expect(los).toHaveBeenCalled();
+    expect(screen.queryByRole("menu")).toBeNull();
+  });
+});
