@@ -114,7 +114,7 @@ function Blitz() {
 
 // ── Welches Diagramm passt? ──────────────────────────────────────────────
 
-const DIA_ICON: Record<DiaTyp, string> = { saeulen: "📊", balken: "📶", kreis: "🥧", linie: "📈", piktogramm: "🙂", boxplot: "📦" };
+const DIA_ICON: Record<DiaTyp, string> = { saeulen: "📊", balken: "📶", kreis: "🥧", piktogramm: "🙂", boxplot: "📦" };
 
 function DiagrammSpiel() {
   const { niveau } = useContext(Navi);

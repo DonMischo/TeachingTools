@@ -42,8 +42,3 @@ export const WEITSPRUNG = {
   "6b": [2.5, 3.8, 3.0, 2.4, 4.1, 3.3, 2.9, 3.7, 2.2, 3.5, 4.0, 2.8, 3.1],
 };
 
-/** Temperaturen einer Woche (für Liniendiagramme). */
-export const WOCHE = [
-  { wert: "Mo", anzahl: 12 }, { wert: "Di", anzahl: 15 }, { wert: "Mi", anzahl: 14 }, { wert: "Do", anzahl: 18 },
-  { wert: "Fr", anzahl: 21 }, { wert: "Sa", anzahl: 19 }, { wert: "So", anzahl: 16 },
-];

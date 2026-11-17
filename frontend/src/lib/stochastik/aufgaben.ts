@@ -96,17 +96,16 @@ function diagramme(r: Zufall, s: Stufe): Aufgabe {
   const art = s === 1 ? "lesen" : eins(r, ["lesen", "passt", "differenz"] as const);
   if (art === "passt") {
     const faelle = [
-      { t: "Wie sich die Temperatur über einen Tag verändert", a: "Liniendiagramm", f: ["Kreisdiagramm", "Piktogramm"] },
-      { t: "Welcher Anteil der Klasse mit welchem Verkehrsmittel kommt (zusammen 100 %)", a: "Kreisdiagramm", f: ["Liniendiagramm", "Boxplot"] },
-      { t: "Wie viele Bücher jedes Kind gelesen hat, im Vergleich", a: "Säulendiagramm", f: ["Liniendiagramm", "Kreisdiagramm"] },
-      { t: "Lange Namen von Ländern mit ihrer Einwohnerzahl", a: "Balkendiagramm", f: ["Liniendiagramm", "Kreisdiagramm"] },
+      { t: "Welcher Anteil der Klasse mit welchem Verkehrsmittel kommt (zusammen 100 %)", a: "Kreisdiagramm", f: ["Säulendiagramm", "Piktogramm"] },
+      { t: "Wie viele Bücher jedes Kind gelesen hat, im Vergleich", a: "Säulendiagramm", f: ["Kreisdiagramm", "Piktogramm"] },
+      { t: "Lange Namen von Ländern mit ihrer Einwohnerzahl", a: "Balkendiagramm", f: ["Kreisdiagramm", "Piktogramm"] },
     ];
     const f = eins(r, faelle);
     return {
       lektion: "diagramme", frage: `Welches Diagramm passt am besten? ${f.t}.`,
       felder: [wahlGemischt(r, "d", "Diagramm", f.a, f.f)],
-      tipps: ["Verlauf über die Zeit → Linie. Anteile an einem Ganzen → Kreis. Vergleichen → Säulen oder Balken (lange Beschriftungen: Balken)."],
-      weg: [`${f.a} – ${f.a === "Liniendiagramm" ? "es geht um eine Entwicklung über die Zeit" : f.a === "Kreisdiagramm" ? "alle Teile ergeben zusammen das Ganze" : f.a === "Balkendiagramm" ? "lange Beschriftungen passen links neben waagerechte Balken" : "Säulen nebeneinander lassen sich gut vergleichen"}.`],
+      tipps: ["Anteile an einem Ganzen → Kreis. Vergleichen → Säulen oder Balken (lange Beschriftungen: Balken)."],
+      weg: [`${f.a} – ${f.a === "Kreisdiagramm" ? "alle Teile ergeben zusammen das Ganze" : f.a === "Balkendiagramm" ? "lange Beschriftungen passen links neben waagerechte Balken" : "Säulen nebeneinander lassen sich gut vergleichen"}.`],
     };
   }
   const kat = ["Mo", "Di", "Mi", "Do", "Fr"];

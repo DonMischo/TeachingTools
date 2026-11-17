@@ -313,7 +313,7 @@ const ALL_CARDS: Werkzeug[] = [
     href: "/simulationen/stochastik",
     icon: "🎲",
     title: "Daten und Stochastik",
-    description: "Aufsteigend für Kl. 5–10 nach dem Thüringer Lehrplan 2026, mit Klasse und Niveau (H/R/G) an jeder Lektion: Ur- und Strichlisten, Häufigkeiten, Säulen-, Balken-, Kreis-, Linien- und Piktogramm-Diagramme, Kenngrößen am Punktstrahl, Quartile und Boxplot, eigene Umfragen (auch aus einer TT-Umfrage übernommen), Würfel, Münze, Glücksrad und Urne mit Baumdiagramm, Gesetz der großen Zahlen live, Laplace, Pfadregeln, Venn, Vierfeldertafel mit bedingter Wahrscheinlichkeit, Kombinatorik und Erwartungswert. Dazu Übungen mit Lösungsweg, fünf Spiele und Erfolge.",
+    description: "Aufsteigend für Kl. 5–10 nach dem Thüringer Lehrplan 2026, mit Klasse und Niveau (H/R/G) an jeder Lektion: Ur- und Strichlisten, Häufigkeiten, Säulen-, Balken-, Kreis- und Piktogramm-Diagramme, Kenngrößen am Punktstrahl, Quartile und Boxplot, eigene Umfragen (auch aus einer TT-Umfrage übernommen), Würfel, Münze, Glücksrad und Urne mit Baumdiagramm, Gesetz der großen Zahlen live, Laplace, Pfadregeln, Venn, Vierfeldertafel mit bedingter Wahrscheinlichkeit, Kombinatorik und Erwartungswert. Dazu Übungen mit Lösungsweg, fünf Spiele und Erfolge.",
     color: "#7c3aed",
   },
   {

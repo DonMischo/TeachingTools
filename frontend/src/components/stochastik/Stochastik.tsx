@@ -13,7 +13,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { wahl, type Vorgabe } from "@/lib/vorgabe";
 import { LEKTIONEN, NIVEAU_NAME, STUFEN, lage, type LektionId, type Niveau, type Stufe } from "@/lib/stochastik/lektionen";
 import { ERFOLGE, lade, type Stand } from "@/lib/stochastik/erfolge";
-import { Diagramme, Erfassen } from "./Daten";
+import { Diagramme, EigeneDaten, Erfassen } from "./Daten";
 import Kenngroessen from "./Kenngroessen";
 import Umfrage from "./Umfrage";
 import { Experimente, Labor } from "./Zufall";
@@ -21,7 +21,7 @@ import { BaumBlatt, Laplace, VennBlatt } from "./Wahrscheinlichkeit";
 import { Kombinatorik, Vierfelder, Zufallsgroessen } from "./Oberstufe";
 import Ueben from "./Ueben";
 import Spiele from "./Spiele";
-import { ErfolgsMelder, Navi, NiveauMarke, useMelden } from "./ui";
+import { ErfolgsMelder, Navi, useMelden } from "./ui";
 
 const EXTRA = [
   { id: "ueben", icon: "✍️", label: "Üben" },
@@ -29,6 +29,8 @@ const EXTRA = [
   { id: "erfolge", icon: "🏆", label: "Erfolge" },
 ] as const;
 type Blatt = LektionId | (typeof EXTRA)[number]["id"];
+const STUFEN_TITEL: Record<Stufe, string> = { "5/6": "Daten und erster Zufall", "7/8": "Wahrscheinlichkeit", "9/10": "Verknüpfen und Verteilen" };
+const NIV_PUNKT: Record<Niveau, string> = { H: "#0ea5e9", R: "#22c55e", G: "#a855f7" };
 const ALLE: Blatt[] = [...LEKTIONEN.map(l => l.id), ...EXTRA.map(e => e.id)];
 
 const INHALT: Record<LektionId, () => ReactNode> = {
@@ -90,6 +92,7 @@ export default function Stochastik({ action, vorgabe }: { action?: ReactNode; vo
 
   return (
     <ErfolgsMelder>
+      <EigeneDaten>
       <Navi.Provider value={{ gehe, niveau }}>
         <Besuch id={blatt} />
         <div className="page">
@@ -111,41 +114,54 @@ export default function Stochastik({ action, vorgabe }: { action?: ReactNode; vo
                 <span className="text-xs text-muted">Klasse</span>
                 <button className={`chip ${stufe === null ? "chip-on" : ""}`} onClick={() => setStufe(null)}>alle</button>
                 {STUFEN.map(s => <button key={s} className={`chip ${stufe === s ? "chip-on" : ""}`} onClick={() => setStufe(s)}>{s}</button>)}
-                <span className="w-4" />
+                <span className="w-3" />
                 <span className="text-xs text-muted">Niveau</span>
                 <button className={`chip ${niveau === null ? "chip-on" : ""}`} onClick={() => setNiveau(null)}>alle</button>
                 {(["H", "R", "G"] as Niveau[]).map(n => (
                   <button key={n} className={`chip ${niveau === n ? "chip-on" : ""}`} onClick={() => setNiveau(n)} title={NIVEAU_NAME[n]}>{n} · {NIVEAU_NAME[n]}</button>
                 ))}
+                <span className="flex-1" />
+                <div className="inline-flex rounded-xl border border-line p-1 bg-surface">
+                  {EXTRA.map(e => (
+                    <button key={e.id} onClick={() => setBlatt(e.id)}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${blatt === e.id ? "bg-accent text-accent-fg" : "text-muted hover:text-fg"}`}>{e.icon} {e.label}</button>
+                  ))}
+                </div>
               </div>
-              <div className="flex flex-col gap-1.5">
-                {STUFEN.map(st => (
-                  <div key={st} className="flex flex-wrap items-center gap-1.5">
-                    <span className="w-14 text-xs font-black text-muted">Kl. {st}</span>
-                    <div className="inline-flex flex-wrap rounded-xl border border-line p-1 bg-surface">
-                      {LEKTIONEN.filter(l => l.stufe === st).map(l => {
+              <nav className="grid gap-3 md:grid-cols-3" aria-label="Lektionen">
+                {STUFEN.map(st => {
+                  const lekts = LEKTIONEN.filter(l => l.stufe === st);
+                  const aktiv = stufe === st;
+                  return (
+                    <div key={st} className={`rounded-2xl border bg-surface p-2 flex flex-col gap-0.5 ${aktiv ? "border-line-active ring-2 ring-accent/40" : "border-line"} ${stufe && !aktiv ? "opacity-80" : ""}`}>
+                      <button onClick={() => setStufe(aktiv ? null : st)} title="Als Klassenstufe wählen"
+                        className="flex items-baseline justify-between px-2 pt-1 pb-1.5 text-left">
+                        <span className="font-black">Kl. {st}</span>
+                        <span className="text-xs text-muted">{STUFEN_TITEL[st]}</span>
+                      </button>
+                      {lekts.map(l => {
                         const lg = lage(l, stufe, niveau);
+                        const nr = LEKTIONEN.indexOf(l) + 1;
+                        const an = blatt === l.id;
                         return (
-                          <button key={l.id} onClick={() => setBlatt(l.id)} title={lg === "frueher" ? "Wiederholung aus früheren Klassen" : lg === "spaeter" ? "kommt später" : lg === "anderes" ? "nicht in diesem Niveau" : undefined}
-                            className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${blatt === l.id ? "bg-accent text-accent-fg" : "text-muted hover:text-fg"} ${lg === "spaeter" || lg === "anderes" ? "opacity-40" : ""}`}>
-                            {l.icon} {l.label}{lg === "frueher" && blatt !== l.id && <span className="ml-1 text-[10px]">↩</span>}
+                          <button key={l.id} onClick={() => setBlatt(l.id)}
+                            title={lg === "frueher" ? "Wiederholung aus früheren Klassen" : lg === "spaeter" ? "kommt später" : lg === "anderes" ? "nicht in diesem Niveau" : undefined}
+                            className={`group flex items-center gap-2 rounded-xl px-2 py-1.5 text-sm font-bold text-left transition-colors ${an ? "bg-accent text-accent-fg" : "hover:bg-surface-hover"} ${lg === "spaeter" || lg === "anderes" ? "opacity-40" : ""}`}>
+                            <span className={`w-5 text-center text-xs tabular-nums ${an ? "" : "text-muted"}`}>{nr}</span>
+                            <span className="text-base leading-none">{l.icon}</span>
+                            <span className="flex-1">{l.label}{lg === "frueher" && !an && <span className="ml-1 text-[10px] text-muted">↩</span>}</span>
+                            <span className="flex gap-0.5" aria-hidden>
+                              {(["H", "R", "G"] as Niveau[]).map(n => (
+                                <span key={n} className={`w-1.5 h-1.5 rounded-full ${l.niveaus.includes(n) ? "" : "opacity-20"}`} style={{ background: NIV_PUNKT[n] }} />
+                              ))}
+                            </span>
                           </button>
                         );
                       })}
                     </div>
-                  </div>
-                ))}
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="w-14" />
-                  <div className="inline-flex flex-wrap rounded-xl border border-line p-1 bg-surface">
-                    {EXTRA.map(e => (
-                      <button key={e.id} onClick={() => setBlatt(e.id)}
-                        className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${blatt === e.id ? "bg-accent text-accent-fg" : "text-muted hover:text-fg"}`}>{e.icon} {e.label}</button>
-                    ))}
-                  </div>
-                  {niveau && <span className="flex items-center gap-1 text-xs text-muted ml-2"><NiveauMarke n={niveau} /> gewählt</span>}
-                </div>
-              </div>
+                  );
+                })}
+              </nav>
             </>
           )}
 
@@ -158,6 +174,7 @@ export default function Stochastik({ action, vorgabe }: { action?: ReactNode; vo
           )}
         </div>
       </Navi.Provider>
+      </EigeneDaten>
     </ErfolgsMelder>
   );
 }

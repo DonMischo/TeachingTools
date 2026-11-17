@@ -15,7 +15,7 @@ describe("Stochastik-Blätter", () => {
   it("öffnet jede Lektion, Üben, Spiele und Erfolge", () => {
     render(<Stochastik />);
     for (const l of LEKTIONEN) {
-      fireEvent.click(screen.getAllByRole("button", { name: new RegExp(`^${l.icon} ${l.label}`) })[0]);
+      fireEvent.click(within(screen.getByRole("navigation", { name: "Lektionen" })).getByRole("button", { name: new RegExp(l.label) }));
       expect(screen.getByRole("heading", { level: 2, name: new RegExp(l.label) })).toBeTruthy();
     }
     fireEvent.click(screen.getByRole("button", { name: "✍️ Üben" }));
@@ -32,7 +32,7 @@ describe("Stochastik-Blätter", () => {
 
   it("Hauptschulniveau blendet Quartile und Boxplot aus", () => {
     render(<Stochastik />);
-    fireEvent.click(screen.getAllByRole("button", { name: /^📏 Kenngrößen/ })[0]);
+    fireEvent.click(within(screen.getByRole("navigation", { name: "Lektionen" })).getByRole("button", { name: /Kenngrößen/ }));
     expect(screen.getAllByText(/Quartile/).length).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole("button", { name: /^H · / }));
     expect(screen.queryByRole("img", { name: "Boxplot" })).toBeNull();
@@ -41,7 +41,7 @@ describe("Stochastik-Blätter", () => {
 
   it("Rückgriff springt zur früheren Lektion", () => {
     render(<Stochastik />);
-    fireEvent.click(screen.getAllByRole("button", { name: /^🌳 Baumdiagramm/ })[0]);
+    fireEvent.click(within(screen.getByRole("navigation", { name: "Lektionen" })).getByRole("button", { name: /Baumdiagramm/ }));
     fireEvent.click(screen.getByRole("button", { name: /kennst du aus Kl\. 5\/6: 🎲 Zufallsexperimente/ }));
     expect(screen.getByRole("heading", { level: 2, name: /Zufallsexperimente/ })).toBeTruthy();
   });
@@ -54,9 +54,28 @@ describe("Stochastik-Blätter", () => {
     expect(within(tab).getByText("24")).toBeTruthy();
   });
 
+  it("eigene Daten: Merkmale anlegen, Fertig, per Klick zählen", () => {
+    render(<Stochastik />);
+    fireEvent.click(screen.getByRole("button", { name: "✏️ Eigene Daten" }));
+    fireEvent.change(screen.getByLabelText("Neues Merkmal"), { target: { value: "gelb" } });
+    fireEvent.click(screen.getByRole("button", { name: "＋ Hinzufügen" }));
+    fireEvent.click(screen.getByRole("button", { name: /Fertig – jetzt zählen/ }));
+    fireEvent.click(screen.getByRole("button", { name: /＋ gelb/ }));
+    fireEvent.click(screen.getByRole("button", { name: /＋ gelb/ }));
+    fireEvent.click(screen.getByRole("button", { name: /＋ Obst/ }));
+    const tab = screen.getAllByRole("table")[0];
+    const zeile = within(tab).getByText("gelb").closest("tr")!;
+    expect(within(zeile).getByText("2")).toBeTruthy();
+    expect(within(tab).getByText("3")).toBeTruthy();
+    // dieselben Daten im Blatt Diagramme
+    fireEvent.click(within(screen.getByRole("navigation", { name: "Lektionen" })).getByRole("button", { name: /Diagramme/ }));
+    fireEvent.click(screen.getByRole("button", { name: "✏️ Eigene Daten" }));
+    expect(screen.getByRole("button", { name: /＋ gelb 2/ })).toBeTruthy();
+  });
+
   it("fester Reiter: keine Reiterleiste", () => {
     render(<Stochastik vorgabe={{ reiter: "vierfelder" }} />);
     expect(screen.getByRole("heading", { level: 2, name: /Vierfeldertafel/ })).toBeTruthy();
-    expect(screen.queryByRole("button", { name: /^📋 Daten erfassen/ })).toBeNull();
+    expect(screen.queryByRole("navigation", { name: "Lektionen" })).toBeNull();
   });
 });

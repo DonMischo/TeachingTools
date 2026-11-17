@@ -869,7 +869,8 @@ simulationen:
     kann:
       - "Lerneinheit Kl. 5–10 nach Lehrplan Mathematik 2026 (Thüringen), Filter für Klasse und Niveau H/R/G, Rückgriffe und Wanderung der Inhalte je Lektion"
       - "Daten erfassen: Urliste, Strichliste, Häufigkeitstabelle (absolut/relativ), Rangliste"
-      - "Diagramme: Säule, Balken, Kreis, Ring, Linie, Piktogramm, Strichliste an denselben Daten"
+      - "Diagramme: Säule, Balken, Kreis, Ring, Piktogramm, Strichliste an denselben Daten"
+      - "Eigene Daten: Merkmale anlegen, dann jede Antwort per Klick zählen (gilt auch im Blatt Diagramme)"
       - "Kenngrößen am Punktstrahl mit Ausreißer, Quartile und Boxplot (R/G), zwei Klassen vergleichen"
       - "Eigene Umfrage planen, erfassen, darstellen, auswerten; TT-Umfrage per Code übernehmen (freigegebene Ergebnisse, kein Freitext)"
       - "Zufallsexperimente (Würfel, Münze, Glücksrad, Urne mit/ohne Zurücklegen), Baumdiagramm ohne und mit Wahrscheinlichkeiten, Pfadregeln"

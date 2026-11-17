@@ -1,14 +1,14 @@
 "use client";
 /**
  * Diagramme der Stochastik. Kategorien-Diagramme über recharts (Säule,
- * Balken, Kreis/Ring, Linie), alles mit eigener Geometrie als SVG
+ * Balken, Kreis/Ring), alles mit eigener Geometrie als SVG
  * (Strichliste, Piktogramm, Punktstrahl, Boxplot, Histogramm, Venn,
  * Baumdiagramm, Urne, Glücksrad, Würfel). Achsen und Text nehmen die
  * Theme-Farben über `style`, Datenfarben kommen aus REIHE.
  */
 import { useId, type ReactNode } from "react";
 import {
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell, LineChart, Line, LabelList,
+  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell, LabelList,
 } from "recharts";
 import type { Zeile } from "@/lib/stochastik/kenngroessen";
 import { kenngroessen } from "@/lib/stochastik/kenngroessen";
@@ -20,10 +20,10 @@ const T = { text: "var(--text)", muted: "var(--text-muted)", line: "var(--border
 const tick = { fill: T.muted, fontSize: 12 };
 const tip = { contentStyle: { background: T.surface, border: `1px solid ${T.line}`, borderRadius: 10, color: T.text }, itemStyle: { color: T.text }, cursor: { fill: "rgba(127,127,127,.12)" } };
 
-export type DiaArt = "saeulen" | "balken" | "kreis" | "ring" | "linie" | "piktogramm" | "strichliste";
+export type DiaArt = "saeulen" | "balken" | "kreis" | "ring" | "piktogramm" | "strichliste";
 export const DIA_ARTEN: { id: DiaArt; label: string }[] = [
   { id: "saeulen", label: "📊 Säulen" }, { id: "balken", label: "📶 Balken" }, { id: "kreis", label: "🥧 Kreis" },
-  { id: "ring", label: "🍩 Ring" }, { id: "linie", label: "📈 Linie" }, { id: "piktogramm", label: "🙂 Piktogramm" },
+  { id: "ring", label: "🍩 Ring" }, { id: "piktogramm", label: "🙂 Piktogramm" },
   { id: "strichliste", label: "𝍸 Strichliste" },
 ];
 
@@ -65,17 +65,6 @@ export function Diagramm({ art, zeilen, relativ, hoehe = 260, farbig = true, tit
         ))}
       </ul>
     </div>,
-  );
-  if (art === "linie") return rahmen(
-    <ResponsiveContainer width="100%" height={hoehe}>
-      <LineChart data={daten} margin={{ top: 16, right: 16, left: 0, bottom: 4 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke={T.line} vertical={false} />
-        <XAxis dataKey="name" tick={tick} stroke={T.line} />
-        <YAxis tick={tick} stroke={T.line} allowDecimals={relativ} />
-        <Tooltip {...tip} formatter={fmt} />
-        <Line type="monotone" dataKey="wert" stroke={REIHE[0]} strokeWidth={3} dot={{ r: 5, fill: REIHE[0], strokeWidth: 0 }} isAnimationActive={false} />
-      </LineChart>
-    </ResponsiveContainer>,
   );
   const quer = art === "balken";
   return rahmen(
@@ -130,7 +119,8 @@ export function Striche({ n, farbe = T.text }: { n: number; farbe?: string }) {
 }
 
 export function StrichTabelle({ zeilen, relativ }: { zeilen: Zeile[]; relativ?: boolean }) {
-  const ges = zeilen.reduce((a, z) => a + z.anzahl, 0) || 1;
+  const summe = zeilen.reduce((a, z) => a + z.anzahl, 0);
+  const ges = summe || 1;
   return (
     <table className="text-sm w-full max-w-xl">
       <thead><tr className="text-left text-muted text-xs"><th className="py-1">Merkmal</th><th>Strichliste</th><th className="text-right">absolut</th>{relativ && <th className="text-right">relativ</th>}</tr></thead>
@@ -143,7 +133,7 @@ export function StrichTabelle({ zeilen, relativ }: { zeilen: Zeile[]; relativ?: 
             {relativ && <td className="text-right tabular-nums pl-3">{z.anzahl}/{ges} ≈ {prozent(z.anzahl / ges)}</td>}
           </tr>
         ))}
-        <tr className="border-t-2 border-line font-black"><td className="py-1.5">Summe</td><td /><td className="text-right">{ges}</td>{relativ && <td className="text-right">100 %</td>}</tr>
+        <tr className="border-t-2 border-line font-black"><td className="py-1.5">Summe</td><td /><td className="text-right">{summe}</td>{relativ && <td className="text-right">100 %</td>}</tr>
       </tbody>
     </table>
   );

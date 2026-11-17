@@ -45,14 +45,12 @@ export function blitzRunde(r: Zufall): BlitzRunde {
 
 // ── Welches Diagramm passt? ──────────────────────────────────────────────
 
-export type DiaTyp = "saeulen" | "balken" | "kreis" | "linie" | "piktogramm" | "boxplot";
+export type DiaTyp = "saeulen" | "balken" | "kreis" | "piktogramm" | "boxplot";
 export const DIA_NAME: Record<DiaTyp, string> = {
-  saeulen: "Säulendiagramm", balken: "Balkendiagramm", kreis: "Kreisdiagramm", linie: "Liniendiagramm", piktogramm: "Piktogramm", boxplot: "Boxplot",
+  saeulen: "Säulendiagramm", balken: "Balkendiagramm", kreis: "Kreisdiagramm", piktogramm: "Piktogramm", boxplot: "Boxplot",
 };
 
 const SITUATIONEN: { t: string; a: DiaTyp; warum: string }[] = [
-  { t: "Körpergröße eines Kindes von 1 bis 12 Jahren", a: "linie", warum: "Entwicklung über die Zeit" },
-  { t: "Wasserstand eines Flusses über eine Woche", a: "linie", warum: "Entwicklung über die Zeit" },
   { t: "Wie sich das Taschengeld der Klasse auf Sparen, Essen, Spiele aufteilt", a: "kreis", warum: "Teile eines Ganzen" },
   { t: "Anteile der Parteien an allen Stimmen", a: "kreis", warum: "Teile eines Ganzen" },
   { t: "Anzahl der Tore jeder Mannschaft im Turnier", a: "saeulen", warum: "Werte vergleichen" },
