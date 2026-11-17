@@ -5,6 +5,7 @@
  *
  * Reiter:
  *   Wachstum   — die Stadt wächst Epoche für Epoche, dazu ein Quiz
+ *   Bauen      — wichtige Orte setzen, Häuser und Straßen wachsen von selbst (wie Anno)
  *   Planen     — Aufträge: selbst gründen, dann prüfen lassen
  *   Sandkasten — frei bauen, optional prüfen
  *   So geht's  — Stadttypen im Vergleich, Quellen
@@ -21,11 +22,13 @@ import GelaendeLeiste from "@/components/gelaende/GelaendeLeiste";
 import { erodiereNebenbei, gelaendeLeinwand, wasserLeinwand, type GelaendeBilder } from "@/components/gelaende/leinwand";
 import { waldMaske } from "@/lib/gelaende/wald";
 import WachstumAnsicht from "./WachstumAnsicht";
+import BauModus from "./BauModus";
 import Planen from "./Planen";
 import Erklaerung from "./Erklaerung";
 
 const REITER = [
   { id: "wachstum", icon: "🕰️", label: "Wachstum" },
+  { id: "bauen", icon: "🏗️", label: "Bauen" },
   { id: "planen", icon: "📐", label: "Planen" },
   { id: "sandkasten", icon: "🧱", label: "Sandkasten" },
   { id: "erklaerung", icon: "📘", label: "So geht's" },
@@ -91,6 +94,7 @@ export default function Stadtentwicklung({ action, vorgabe }: { action?: ReactNo
         <>
           {/* Planen und Sandkasten bleiben eingehängt, damit Pläne beim Reiterwechsel erhalten bleiben */}
           <div hidden={reiter !== "wachstum"}>{reiter === "wachstum" && <WachstumAnsicht g={g} bild={bild} stil={stil} setStil={waehleStil} />}</div>
+          <div hidden={reiter !== "bauen"}><BauModus g={g} bild={bild} stil={stil} setStil={waehleStil} aktiv={reiter === "bauen"} /></div>
           <div hidden={reiter !== "planen"}><Planen g={g} bild={bild} aktiv={reiter === "planen"} /></div>
           <div hidden={reiter !== "sandkasten"}><Planen g={g} bild={bild} sandkasten aktiv={reiter === "sandkasten"} /></div>
           {reiter === "erklaerung" && <Erklaerung />}
