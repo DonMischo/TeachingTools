@@ -199,6 +199,13 @@ export default function BarometerHostPage() {
     return `Folgefrage zu Frage ${parent.order + 1}: ${labels}`;
   }
 
+  // Löscht alle Antworten und KI-Auswertungen (WS »restart«) — darum zweimal nachfragen.
+  function zuruecksetzen() {
+    if (!confirm("Umfrage zurücksetzen?\n\nAlle Antworten und KI-Auswertungen werden gelöscht. Die Fragen bleiben.")) return;
+    if (!confirm("Wirklich alle Antworten löschen?\n\nDas lässt sich nicht rückgängig machen. Tipp: vorher »Ergebnisse (JSON)« sichern.")) return;
+    send({ action: "restart" });
+  }
+
   return (
     <div className="page">
       <div className="flex items-start gap-4 flex-wrap">
@@ -338,6 +345,10 @@ export default function BarometerHostPage() {
             Umfrage beenden
           </button>
         )}
+        <button onClick={zuruecksetzen}
+          className="self-start text-sm border border-red-400/50 text-red-400 hover:bg-red-400/10 rounded-xl px-4 py-1.5 transition-colors">
+          🗑 Umfrage zurücksetzen
+        </button>
         <button onClick={handleExport}
           className="self-start text-sm border border-line text-muted hover:text-fg hover:border-accent rounded-xl px-4 py-1.5 transition-colors">
           ⬇️ Ergebnisse (JSON)

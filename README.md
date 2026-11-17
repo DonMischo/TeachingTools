@@ -313,6 +313,7 @@ Das Lehrkraft-Werkzeugset. Standardmäßig nur für Lehrkräfte sichtbar.
 - Diagrammart je Frage umschaltbar, JSON-Export, öffentliche Ergebnisseite per QR (ohne Freitext)
 - KI-Auswertung der Freitexte über eine externe KI, das Ergebnis wird wieder hochgeladen
 - Umfragen für Kolleginnen und Kollegen freigeben, JSON-Vorlage und Upload
+- Umfrage zurücksetzen (alle Antworten löschen, mit doppelter Rückfrage); Zahlenfragen zeigen ihren erlaubten Bereich und sperren das Absenden außerhalb
 - Anonym-Modus (Gäste geben keinen Namen ein) und eigene Dauer des Gastzugangs: Schulvorgabe, 60 Minuten bis 30 Tage oder offen bis zum Schließen
 
 ### 🎫 Exit Ticket

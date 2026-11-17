@@ -1,6 +1,6 @@
 "use client";
 import type { BarometerAnswer, BarometerKind, BarometerScaleStyle, BarometerShowIf } from "@/lib/api";
-import { conditionMet, scaleLabel, segmentsOf } from "@/lib/barometer";
+import { conditionMet, scaleLabel, segmentsOf, zahlAusserhalb, zahlBereich } from "@/lib/barometer";
 
 type Question = {
   id: number;
@@ -89,13 +89,23 @@ export function QuestionInput({ question, value, onChange }: {
   }
 
   if (q.kind === "number") {
+    const bereich = zahlBereich(q);
+    const falsch = zahlAusserhalb(q, value);
     return (
-      <div className="flex items-center gap-2">
-        <input type="number" step="any" aria-label="Zahl" className="input flex-1"
-          min={q.num_min ?? undefined} max={q.num_max ?? undefined}
-          value={typeof value === "number" ? value : ""}
-          onChange={e => onChange(e.target.value === "" ? undefined : Number(e.target.value))} />
-        {q.unit && <span className="text-sm text-muted">{q.unit}</span>}
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center gap-2">
+          <input type="number" step="any" aria-label="Zahl" aria-invalid={falsch} className="input flex-1"
+            min={q.num_min ?? undefined} max={q.num_max ?? undefined}
+            value={typeof value === "number" ? value : ""}
+            onChange={e => onChange(e.target.value === "" ? undefined : Number(e.target.value))} />
+          {q.unit && <span className="text-sm text-muted">{q.unit}</span>}
+        </div>
+        {bereich && (
+          <span role={falsch ? "alert" : undefined}
+            className={`text-xs ${falsch ? "text-(--danger,#dc2626) font-bold" : "text-muted"}`}>
+            {falsch ? `Bitte eine Zahl ${bereich} eingeben.` : `Erlaubt: ${bereich}`}
+          </span>
+        )}
       </div>
     );
   }

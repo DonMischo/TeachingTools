@@ -11,7 +11,7 @@ import { BlockChart } from "@/components/barometer/BlockChart";
 import { SlideForm } from "@/components/barometer/AnswerInput";
 import { api } from "@/lib/api";
 import type { BarometerAnswer, BarometerKind, BarometerResults, BarometerScaleStyle, BarometerShowIf } from "@/lib/api";
-import { conditionMet, segmentsOf, slidesOf } from "@/lib/barometer";
+import { conditionMet, segmentsOf, slidesOf, zahlAusserhalb } from "@/lib/barometer";
 
 type Question = {
   id: number; order: number; text: string;
@@ -36,13 +36,24 @@ function myAnswersToRecord(myAnswers: Record<string, BarometerAnswer> | undefine
   return out;
 }
 
-function submitPayload(questions: Question[], answers: Record<number, BarometerAnswer>) {
+function visibleIds(questions: Question[], answers: Record<number, BarometerAnswer>): Set<number> {
   const visible = new Set<number>();
   for (const seg of segmentsOf(questions)) {
     const gate = seg.type === "single" ? seg.question : seg.questions[0];
     const members = seg.type === "single" ? [seg.question] : seg.questions;
     if (conditionMet(gate, answers)) for (const q of members) visible.add(q.id);
   }
+  return visible;
+}
+
+/** Sichtbare Fragen mit einer Zahl außerhalb des Bereichs — der Server würde sie verwerfen. */
+function ungueltig(questions: Question[], answers: Record<number, BarometerAnswer>): Question[] {
+  const visible = visibleIds(questions, answers);
+  return questions.filter(q => visible.has(q.id) && zahlAusserhalb(q, answers[q.id]));
+}
+
+function submitPayload(questions: Question[], answers: Record<number, BarometerAnswer>) {
+  const visible = visibleIds(questions, answers);
   const out: { question_id: number; value?: number; text?: string; choices?: number[] }[] = [];
   for (const q of questions) {
     if (!visible.has(q.id)) continue;
@@ -58,6 +69,15 @@ function submitPayload(questions: Question[], answers: Record<number, BarometerA
     }
   }
   return out;
+}
+
+function Pruefen({ fehler }: { fehler: Question[] }) {
+  if (fehler.length === 0) return null;
+  return (
+    <p role="alert" className="text-sm text-center text-(--danger,#dc2626)">
+      Bitte prüfe {fehler.length === 1 ? "diese Frage" : "diese Fragen"}: {fehler.map(q => `»${q.text}«`).join(", ")}
+    </p>
+  );
 }
 
 export default function BarometerPlayPage() {
@@ -228,8 +248,9 @@ export default function BarometerPlayPage() {
               Folie {phase.index + 1} von {phase.total}
             </div>
             <SlideForm questions={phase.questions} answers={answers} onChange={setAnswer} />
+            <Pruefen fehler={ungueltig(phase.questions, answers)} />
             {!phase.sent ? (
-              <button className="btn-primary w-full" disabled={!hasAnyAnswer(phase.questions)} onClick={submitSlide}>
+              <button className="btn-primary w-full" disabled={!hasAnyAnswer(phase.questions) || ungueltig(phase.questions, answers).length > 0} onClick={submitSlide}>
                 Absenden
               </button>
             ) : (
@@ -237,7 +258,7 @@ export default function BarometerPlayPage() {
                 <div className="text-center text-sm text-muted">
                   Antworten gespeichert ✓ — du kannst sie bis zur Auswertung ändern
                 </div>
-                <button className="btn-secondary w-full" onClick={submitSlide}>Aktualisieren</button>
+                <button className="btn-secondary w-full" disabled={ungueltig(phase.questions, answers).length > 0} onClick={submitSlide}>Aktualisieren</button>
               </div>
             )}
           </div>
@@ -279,7 +300,8 @@ export default function BarometerPlayPage() {
                   <SlideForm questions={slideQuestions} answers={answers} onChange={setAnswer} />
                 </div>
               ))}
-              <button className="btn-primary w-full" disabled={Object.keys(answers).length === 0} onClick={submitSelf}>
+              <Pruefen fehler={ungueltig(phase.questions, answers)} />
+              <button className="btn-primary w-full" disabled={Object.keys(answers).length === 0 || ungueltig(phase.questions, answers).length > 0} onClick={submitSelf}>
                 Absenden
               </button>
             </div>

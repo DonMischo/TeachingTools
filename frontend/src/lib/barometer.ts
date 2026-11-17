@@ -418,3 +418,21 @@ export function gastAufteilen(minuten: number): { zahl: number; einheit: GastEin
 export function gastMinutenGueltig(m: number | null): boolean {
   return m === null || m === 0 || (Number.isFinite(m) && m >= GAST_MIN && m <= GAST_MAX);
 }
+
+// ── Zahlenbereich ───────────────────────────────────────────────────────────
+// Der Server verwirft Zahlen außerhalb von num_min … num_max kommentarlos —
+// die Seite muss das also vor dem Absenden abfangen.
+
+export function zahlAusserhalb(q: { kind: string; num_min: number | null; num_max: number | null }, v: unknown): boolean {
+  if (q.kind !== "number" || typeof v !== "number") return false;
+  if (!Number.isFinite(v)) return true;
+  return (q.num_min !== null && v < q.num_min) || (q.num_max !== null && v > q.num_max);
+}
+
+export function zahlBereich(q: { num_min: number | null; num_max: number | null }): string | null {
+  const { num_min: lo, num_max: hi } = q;
+  if (lo !== null && hi !== null) return `zwischen ${lo} und ${hi}`;
+  if (lo !== null) return `mindestens ${lo}`;
+  if (hi !== null) return `höchstens ${hi}`;
+  return null;
+}
