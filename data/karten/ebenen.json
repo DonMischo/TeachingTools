@@ -1,5 +1,5 @@
 {
-  "stand": "2026-10-22",
+  "stand": "2026-11-17",
   "ebenen": [
     {
       "id": "de-laender",
@@ -14,7 +14,37 @@
         "url": "https://www.govdata.de/dl-de/by-2-0"
       },
       "anzahl": 16,
-      "bytes": 54264
+      "bytes": 54424
+    },
+    {
+      "id": "welt-flaggen",
+      "name": "Flaggen der Staaten",
+      "gruppe": "politisch",
+      "bereich": "welt",
+      "geometrie": "punkt",
+      "quiz": true,
+      "quelle": {
+        "name": "flag-icons (Panayiotis Lipiridis)",
+        "lizenz": "MIT",
+        "url": "https://github.com/lipis/flag-icons"
+      },
+      "anzahl": 245,
+      "bytes": 38843
+    },
+    {
+      "id": "de-flaggen",
+      "name": "Flaggen der Bundesländer",
+      "gruppe": "politisch",
+      "bereich": "de",
+      "geometrie": "punkt",
+      "quiz": true,
+      "quelle": {
+        "name": "Wikimedia Commons",
+        "lizenz": "gemeinfrei",
+        "url": "https://commons.wikimedia.org/wiki/Category:Flags_of_states_of_Germany"
+      },
+      "anzahl": 16,
+      "bytes": 2538
     },
     {
       "id": "de-staedte",

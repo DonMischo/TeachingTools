@@ -6,7 +6,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { Map as MapLibreMap, MapGeoJSONFeature, Popup } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { ebeneVonStilEbene, istKlickbar, istLauflicht, zeichneSymbol, type Katalog } from "@/lib/karten/stil";
+import { ebeneVonStilEbene, istKlickbar, istLauflicht, ladeFlagge, zeichneSymbol, type Katalog } from "@/lib/karten/stil";
 import { ladeKindBild } from "@/lib/karten/kinderatlas";
 import type { Ausschnitt } from "@/lib/karten/satz";
 import type { StyleSpecification } from "maplibre-gl";
@@ -60,7 +60,7 @@ export function startKamera(projektion: Projektion) {
 /** Liefert das Kartenbild als PNG-data-URL, sobald der aktuelle Stil fertig gezeichnet ist. */
 export type KartenBild = () => Promise<string>;
 
-export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, ziel, onAusschnitt, bildRef, gastToken, fundort, blick, partikel, projektion = "equalearth", menue, legende, seite }: {
+export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, ziel, onAusschnitt, bildRef, gastToken, fundort, blick, fokus, partikel, projektion = "equalearth", menue, legende, seite, ueberlagerung }: {
   stil: StyleSpecification;
   katalog: Katalog;
   namenZeigen: boolean;
@@ -78,6 +78,10 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
   fundort?: { punkt: [number, number]; text: string; zoom: number } | null;
   /** Diesen Punkt ins Bild holen (ohne Namen, z. B. das gefragte Objekt beim Üben) */
   blick?: [number, number] | null;
+  /** Hinfliegen und heranzoomen (Quiz: angetipptes Objekt); `n` zählt hoch, damit derselbe Punkt erneut wirkt */
+  fokus?: { punkt: [number, number]; n: number } | null;
+  /** Unten über der Karte (Quiz: Antwortfeld zum angetippten Objekt) */
+  ueberlagerung?: ReactNode;
   /** Partikelfluss über Wind/Strömungen (nur diese Ebenen, im gewählten Monat) */
   partikel?: { ebenen: string[]; monat: string } | null;
   /** Kartennetz des Stils — für alles, was hier in echten Koordinaten ankommt */
@@ -140,9 +144,9 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
       // Symbole erst bei Bedarf zeichnen — seit MapLibre 6 nur noch über den Resolver
       // (ein »styleimagemissing«-Listener kann das Bild nicht mehr nachliefern)
       m.setMissingStyleImageResolver(async (id) => {
-        // Kinderatlas-Illustrationen kommen als SVG-Datei (lädt asynchron)
-        if (id.startsWith("kindbild:")) {
-          const bild = await ladeKindBild(id);
+        // Kinderatlas-Illustrationen und Flaggen kommen als Datei (lädt asynchron)
+        if (id.startsWith("kindbild:") || id.startsWith("flagge:")) {
+          const bild = await (id.startsWith("flagge:") ? ladeFlagge(id) : ladeKindBild(id));
           if (bild && !m!.hasImage(id)) m!.addImage(id, bild, { pixelRatio: bild.pixelRatio });
           return;
         }
@@ -298,6 +302,15 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
     if (p.x < width * 0.1 || p.x > width * 0.9 || p.y < height * 0.1 || p.y > height * 0.9) m.easeTo({ center: ort, duration: 600 });
   }, [blick, bereit, projektion]);
 
+  useEffect(() => {
+    const m = karte.current;
+    if (!bereit || !m || !fokus) return;
+    // Mindestens anderthalb Stufen näher als der ganze Ausschnitt — weiter hineingezoomt bleibt es dabei
+    const z = ziel ? ausschnittVor(ziel, projektion) : null;
+    const basis = (z && m.cameraForBounds([[z.west, z.sued], [z.ost, z.nord]])?.zoom) ?? m.getZoom();
+    m.flyTo({ center: vor(fokus.punkt, projektion), zoom: Math.min(m.getMaxZoom(), Math.max(m.getZoom(), basis + 1.5)), duration: 700 });
+  }, [fokus, bereit]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const fundPopup = useRef<Popup | null>(null);
   useEffect(() => {
     const m = karte.current;
@@ -347,6 +360,8 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
           {legende}
         </div>
       )}
+      {ueberlagerung && <div className="absolute inset-x-2 bottom-14 z-20 flex justify-center pointer-events-none">
+        <div className="pointer-events-auto w-full max-w-md">{ueberlagerung}</div></div>}
       <button onClick={() => einpassen(400)} title="Ganze Region einpassen" aria-label="Einpassen"
         className="absolute right-2.5 top-[76px] z-10 w-[29px] h-[29px] rounded bg-white shadow-[0_0_0_2px_rgba(0,0,0,0.1)] text-neutral-800 text-base leading-none hover:bg-neutral-100">⤢</button>
     </div>

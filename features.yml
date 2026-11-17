@@ -166,6 +166,7 @@ aktivitaeten:
       - Atlas-Signaturen für Kraftwerke, Bergbau, Flug- und Seehäfen, Industrie und Sonderkulturen (Karte und Legende)
       - Stadtmodelle Berlin, Paris, New York - Zentrum, Innenstadt, Stadtrand aus amtlichen Bezirken
       - Alle Siedlungen Deutschlands mit Größenklassen-Filter in der Legende, Ortssuche
+      - Flaggen der Staaten (flag-icons, MIT) und der Bundesländer (Wikimedia Commons) als quizfähige Ebenen
       - Meeresboden mit Tiefenstufen und Schummerung, Tiefseegräben und Rücken (quizfähig)
       - Meeresströmungen und Windsysteme (ITC, Druckgürtel, Monsun) animiert, einzeln anklickbar, Jahresverlauf per Monatsregler, Partikelfluss (Wind leuchtend in Gürtelfarben, ITC als Band)
       - Kartensätze: Objekte auswählen, nummerieren (1 2 3, a b c, A B C, I II III), auf dem Server speichern und teilen; der volle Datensatz bleibt unverändert
@@ -175,6 +176,7 @@ aktivitaeten:
       - Eigene Ebenen (GeoJSON, KML, KMZ, GPX) nur für Lehrkräfte
       - JSON-Vorlage mit »aktiv« je Objekt zum Filtern (auch per KI) und wieder hochladen
       - Kartenquiz per Code/QR (benennen oder finden), Prüfung auf dem Server, Hauspunkte je Klasse
+      - "Kartenquiz benennen: Objekt antippen (Karte oder Liste) - Karte zoomt hin, Antwortfeld über der Karte; Wortbank als Knöpfe mit allen Namen (auch schon benutzten); »Alle kontrollieren«; Quizkarte so gefärbt wie die Kartenart (politisch bleibt bunt)"
       - Ganzes Kartentool per Code/QR zum Erkunden (Ebenen, Kartenart, Kartennetz, Ortssuche) - auch für Gäste, ohne Kartensätze, Upload und Export
       - Erfolge je Kartensatz in neun Arten (Anteil, fehlerfrei, bestimmte Objekte, Serie, auf Zeit, benennen und finden, Fehler aufgeholt, an mehreren Tagen, alle)
       - Lernhelfer »Üben« – Fuzzy-Regeln wählen, was am wenigsten sitzt; unsicher → Auswahl mit Ablenkern (frühere Verwechslungen, Nachbarn, ähnliche Namen), sicher → freie Eingabe; Lernstand über Sitzungen hinweg

@@ -182,15 +182,7 @@ export const FARBE = {
   eigen: "#7c3aed",
 };
 
-/** Sechs Pastelltöne, so verteilt, dass Nachbarländer verschieden sind. */
-const LAND_FARBE: Record<string, string> = {
-  SH: "#cfe6b8", HH: "#f4c2c2", HB: "#f4c2c2", NI: "#f1e3a0", MV: "#dccbe8", NW: "#cfe6b8",
-  HE: "#f4c2c2", RP: "#f1e3a0", SL: "#c9d7f0", BW: "#cfe6b8", BY: "#c9d7f0", TH: "#f6d7a7",
-  ST: "#cfe6b8", SN: "#f1e3a0", BB: "#f6d7a7", BE: "#f4c2c2",
-};
-const landFarbe = ["match", ["get", "kurz"], ...Object.entries(LAND_FARBE).flat(), "#eeeeee"] as unknown as ExpressionSpecification;
-
-/** Natural Earth MAPCOLOR7: 1–7, Nachbarn haben verschiedene Werte. */
+/** Natural Earth MAPCOLOR7: 1–7, Nachbarn haben verschiedene Werte (Bundesländer: dieselben Nummern, siehe fetch-karten.mjs). */
 const STAAT_FARBE = ["#f6d7a7", "#cfe6b8", "#f4c2c2", "#c9d7f0", "#f1e3a0", "#dccbe8", "#c8e6e0"];
 const staatFarbe = ["match", ["get", "farbe"], ...STAAT_FARBE.flatMap((f, i) => [i + 1, f]), "#eeeeee"] as unknown as ExpressionSpecification;
 
@@ -226,7 +218,7 @@ export const quelleAusApi: Quelle = (e) =>
   `/api/karten/ebenen/${e.id}${e.eigen ? `?namen=${encodeURIComponent(e.eigen.namensfeld)}` : ""}`;
 
 type Rolle = "staaten" | "kontinente" | "laender" | "hoehen" | "wasserflaeche" | "meere" | "seen" | "fluesse"
-  | "gebirge" | "landschaften" | "gipfel" | "staedte" | "eigen" | "thema" | "zirkulation";
+  | "gebirge" | "landschaften" | "gipfel" | "staedte" | "flaggen" | "eigen" | "thema" | "zirkulation";
 
 /** Monat für Wind und Strömungen, solange niemand den Regler bewegt hat (Juli, wie im Atlas) */
 export const MONAT_STANDARD = "7";
@@ -248,7 +240,10 @@ const ROLLE: Record<string, Rolle> = {
   "de-landschaften": "landschaften", "welt-landschaften": "landschaften",
   "de-gipfel": "gipfel", "welt-gipfel": "gipfel",
   "de-staedte": "staedte", "de-orte": "staedte", "welt-staedte": "staedte",
+  "welt-flaggen": "flaggen", "de-flaggen": "flaggen",
 };
+/** Flaggen-Ebene? (Marken rücken über die Flagge, statt sie zu verdecken) */
+export const istFlaggenEbene = (id: string) => ROLLE[id] === "flaggen";
 
 /** Städte nach Rang: die kleinen erst ab einer Zoomstufe. */
 const STADT_STUFEN: Record<string, { raenge: string[]; minzoom: number }[]> = {
@@ -334,7 +329,7 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
   const grundfarbe = mit("thema").find((e) => e.darstellung?.grundfarbe)?.darstellung?.grundfarbe;
   for (const e of mit("laender")) {
     layers.push({ id: `${e.id}:flaeche`, type: "fill", source: e.id, paint: {
-      "fill-color": grundfarbe ?? (art === "politisch" ? landFarbe : "#f7f4ee"), "fill-opacity": hatRelief && !grundfarbe ? 0 : 1 } });
+      "fill-color": grundfarbe ?? (art === "politisch" ? staatFarbe : "#f7f4ee"), "fill-opacity": hatRelief && !grundfarbe ? 0 : 1 } });
   }
 
   for (const e of mit("thema")) if (e.geometrie === "raster" && e.kachelUrl) {
@@ -625,6 +620,18 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
     });
   }
 
+  // Flaggen über den Städten; Welt: große Staaten zuerst, die übrigen verdrängt, bis man heranzoomt
+  for (const e of mit("flaggen")) {
+    const welt = e.bereich === "welt";
+    layers.push({ id: `${e.id}:symbol`, type: "symbol", source: e.id,
+      layout: { "icon-image": ["concat", "flagge:", ["get", "flagge"]], "symbol-sort-key": ["get", "rang"],
+        "icon-size": welt ? ["interpolate", ["linear"], ["zoom"], 1, 0.6, 4, 0.9, 6, 1.1] : ["interpolate", ["linear"], ["zoom"], 5, 0.9, 8, 1.3],
+        "icon-allow-overlap": !welt, "icon-padding": 1,
+        ...(text ? { "text-field": ["get", "name"], "text-font": SCHRIFT.normal, "text-size": 10.5, "text-anchor": "top",
+          "text-offset": [0, 1.1], "text-optional": true } : {}) },
+      paint: schrift(FARBE.schrift) });
+  }
+
   // Kinderatlas: Tiere und Pflanzen obenauf (Bilder zeichnet kinderatlas.ts), wichtige zuerst
   if (kinder) {
     sources["kinder"] = { type: "geojson", data: kinderPunkte(auswahl.kinderatlas ?? ["tiere", "pflanzen"], projektion, auswahl.kinderstil) };
@@ -647,6 +654,19 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
     sources,
     layers,
   } as StyleSpecification;
+}
+
+/** Flagge »flagge:<datei>« aus public/karten/flaggen (PNG für pixelRatio 2, Dateiname ohne Ländercode). */
+export async function ladeFlagge(name: string): Promise<{ width: number; height: number; data: Uint8ClampedArray; pixelRatio: number } | null> {
+  const img = new Image();
+  img.src = `/karten/flaggen/${name.slice("flagge:".length)}.png`;
+  try { await img.decode(); } catch { return null; }
+  const c = document.createElement("canvas");
+  c.width = img.naturalWidth; c.height = img.naturalHeight;
+  const g = c.getContext("2d");
+  if (!g) return null;
+  g.drawImage(img, 0, 0);
+  return { width: c.width, height: c.height, data: g.getImageData(0, 0, c.width, c.height).data, pixelRatio: 2 };
 }
 
 /** Kleine Symbole, die MapLibre beim ersten Bedarf anfordert (kein Sprite-Server nötig). */
@@ -762,9 +782,12 @@ export function wendeSatzAn(stil: StyleSpecification, katalog: Katalog, satz: Sa
     const geo = (f: GeoJSON.Feature) => katalog.ebenen.find((x) => x.id === f.properties?.ebene)?.geometrie;
     const versatz = spreizen(satz.anker.features.map((f) => ({
       p: (f.geometry as GeoJSON.Point).coordinates, vorrang: geo(f) === "punkt" })));
+    // Auf Flaggen sitzt die Marke darüber, sonst wäre die Flagge verdeckt
+    const ueber = (i: number): [number, number] =>
+      (istFlaggenEbene(String(satz.anker.features[i].properties?.ebene)) ? [versatz[i][0], versatz[i][1] - 22] : versatz[i]);
     const daten: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: satz.anker.features.map((f, i) => ({
       ...f, geometry: { type: "Point", coordinates: vor((f.geometry as GeoJSON.Point).coordinates, satz.projektion ?? "equalearth") },
-      properties: { ...f.properties, versatz: versatz[i], versatzEm: versatz[i].map((v) => v / 14),
+      properties: { ...f.properties, versatz: ueber(i), versatzEm: ueber(i).map((v) => v / 14),
         verschoben: versatz[i][0] !== 0 || versatz[i][1] !== 0 } })) };
     sources["nummern"] = { type: "geojson", data: daten };
     const farbe: ExpressionSpecification = ["coalesce", ["get", "farbe"], FARBE.hervor];

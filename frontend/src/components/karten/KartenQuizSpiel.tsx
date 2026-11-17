@@ -1,7 +1,8 @@
 "use client";
 /**
  * Kartenquiz für Schüler:innen und Gäste (per Code/QR).
- *   benennen — Nummern auf der Karte, Namen eintippen (oder aus der Wortbank wählen)
+ *   benennen — Nummern auf der Karte, Namen eintippen (oder aus der Wortbank wählen). Objekt antippen
+ *              (Karte oder Liste) → die Karte zoomt hin, darüber öffnet sich das Antwortfeld.
  *   finden   — Name gegeben, Objekt auf der Karte anklicken
  * Geprüft wird auf dem Server; die Karte kommt ohne Namen (api/routers/karten_quiz.py).
  * »Üben« (Lernhelfer): eine Aufgabe nach der anderen, was am wenigsten sitzt zuerst;
@@ -28,6 +29,10 @@ export default function KartenQuizSpiel({ code, token }: { code: string; token?:
   const [uebung, setUebung] = useState<UebenAufgabe | null>(null);
   const [uebErgebnis, setUebErgebnis] = useState<UebenAntwortOut | null>(null);
   const [uebEingabe, setUebEingabe] = useState("");
+  // benennen: angetippte Aufgabe (Antwortfeld über der Karte) und wohin die Karte fliegt
+  const [gewaehlt, setGewaehlt] = useState<number | null>(null);
+  const [fokus, setFokus] = useState<{ punkt: [number, number]; n: number } | null>(null);
+  const [pruefeAlle, setPruefeAlle] = useState(false);
 
   useEffect(() => {
     api.karten.quiz(code, token).then((s) => { setSpiel(s); setStand(s.stand); setLernen(s.lernen ?? null); })
@@ -43,15 +48,15 @@ export default function KartenQuizSpiel({ code, token }: { code: string; token?:
   const offene = aufgaben.filter((a) => !erledigt(a));
   const jetzt = spiel?.spiel.modus === "finden" ? offene[aktuell % Math.max(1, offene.length)] : undefined;
 
-  // Aufgedeckte Lösungen (finden) als rote Umrandung — je Ebene die Tokens
+  // Aufgedeckte Lösungen (finden) bzw. das angetippte Objekt (benennen) rot umranden — je Ebene die Tokens
   const hervor = useMemo(() => {
     const je: Record<string, string[]> = {};
     for (const a of aufgaben) {
-      const t = loesungen[a.nr];
-      if (t && spiel?.spiel.modus === "finden") (je[a.ebene] ??= []).push(t);
+      const t = spiel?.spiel.modus === "finden" ? loesungen[a.nr] : a.nr === gewaehlt ? a.token : undefined;
+      if (t) (je[a.ebene] ??= []).push(t);
     }
     return je;
-  }, [aufgaben, loesungen, spiel]);
+  }, [aufgaben, loesungen, spiel, gewaehlt]);
 
   // Üben: gefragtes Objekt (benennen) bzw. Kandidaten (finden) umranden; nach der Antwort die Lösung
   const uebAnsicht = useMemo(() => {
@@ -81,23 +86,52 @@ export default function KartenQuizSpiel({ code, token }: { code: string; token?:
     erfolgMelden(r.neue_erfolge);
   };
 
-  const sende = async (a: QuizAufgabe, antwort: string) => {
+  /** `still`: keine Einzelmeldung (»Alle kontrollieren« meldet gesammelt) */
+  const sende = async (a: QuizAufgabe, antwort: string, still = false) => {
     const r = await api.karten.quizAntwort(code, a.nr, antwort, token);
     setStand(r.stand);
     if (r.loesung) setLoesungen((l) => ({ ...l, [a.nr]: r.loesung! }));
     if (r.lernen) setLernen(r.lernen);
+    erfolgMelden(r.neue_erfolge);
+    if (still) return r.richtig;
     if (r.richtig) setMeldung({ text: "Richtig! ✓", gut: true });
     else if (r.loesung && spiel?.spiel.modus === "benennen") setMeldung({ text: `Leider nicht — richtig ist »${r.loesung}«.`, gut: false });
     else if (r.loesung) setMeldung({ text: "Leider nicht — die Lösung ist jetzt rot umrandet.", gut: false });
     else setMeldung({ text: "Noch nicht — versuch es noch einmal.", gut: false });
-    erfolgMelden(r.neue_erfolge);
     return r.richtig;
+  };
+
+  const offenBenennen = (a: QuizAufgabe) => !stand.antworten[String(a.nr)]?.richtig && !loesungen[a.nr];
+  const waehle = (a: QuizAufgabe) => {
+    setGewaehlt(a.nr);
+    if (a.anker) setFokus({ punkt: a.anker, n: Date.now() });
+  };
+  /** Alle ausgefüllten, noch offenen Antworten auf einmal prüfen */
+  const alleKontrollieren = async () => {
+    const zuPruefen = aufgaben.filter((a) => offenBenennen(a) && eingaben[a.nr]?.trim());
+    if (!zuPruefen.length || pruefeAlle) return;
+    setPruefeAlle(true);
+    let richtig = 0;
+    try {
+      for (const a of zuPruefen) if (await sende(a, eingaben[a.nr], true)) richtig++;
+    } finally { setPruefeAlle(false); }
+    const alle = richtig === zuPruefen.length;
+    setMeldung({ text: `${richtig} von ${zuPruefen.length} richtig${alle ? " ✓" : " — Falsches noch einmal versuchen (nach zwei Fehlern kommt die Lösung)."}`,
+      gut: alle });
   };
 
   const klick = (treffer: Treffer[]) => {
     if (ansicht === "ueben") {
       const t = uebung?.richtung === "finden" ? treffer.find((x) => x.ebene === uebung.ebene) : undefined;
       if (t) void uebenSenden(t.id);
+      return;
+    }
+    if (spiel?.spiel.modus === "benennen") {
+      // Antippen wählt die Aufgabe zu diesem Objekt (oberstes Objekt mit Aufgabe zuerst)
+      for (const t of treffer) {
+        const auf = aufgaben.find((x) => x.ebene === t.ebene && x.token === t.id);
+        if (auf) { waehle(auf); return; }
+      }
       return;
     }
     if (!jetzt) return;
@@ -110,6 +144,11 @@ export default function KartenQuizSpiel({ code, token }: { code: string; token?:
 
   const fertig = offene.length === 0;
   const a = spiel.karte.ausschnitt;
+  // benennen: Antwortfeld über der Karte zur angetippten, noch offenen Aufgabe
+  const feldAufgabe = ansicht === "quiz" && spiel.spiel.modus === "benennen"
+    ? aufgaben.find((x) => x.nr === gewaehlt && offenBenennen(x)) : undefined;
+  const naechste = feldAufgabe
+    && [...aufgaben.filter((x) => x.nr > feldAufgabe.nr), ...aufgaben.filter((x) => x.nr < feldAufgabe.nr)].find(offenBenennen);
   return (
     <div className="flex flex-col gap-4 p-3 sm:p-5 max-w-seite mx-auto w-full">
       <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -137,7 +176,14 @@ export default function KartenQuizSpiel({ code, token }: { code: string; token?:
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-4 items-start">
         <KartenAnsicht stil={stil} katalog={{ stand: "", ebenen: spiel.katalog }} namenZeigen={false} gastToken={token}
           projektion={spiel.karte.projektion ?? "equalearth"}
-          onKlick={klick} ziel={a} blick={uebAnsicht?.anker ?? null} />
+          onKlick={klick} ziel={a} blick={uebAnsicht?.anker ?? null} fokus={ansicht === "quiz" ? fokus : null}
+          ueberlagerung={feldAufgabe && (
+            <AntwortFeld aufgabe={feldAufgabe} wortbank={spiel.spiel.wortbank} eingabe={eingaben[feldAufgabe.nr] ?? ""}
+              benutzt={new Set(Object.entries(eingaben).filter(([nr]) => Number(nr) !== feldAufgabe.nr).map(([, w]) => w))}
+              setEingabe={(w) => setEingaben((x) => ({ ...x, [feldAufgabe.nr]: w }))}
+              pruefen={() => { if (eingaben[feldAufgabe.nr]?.trim()) void sende(feldAufgabe, eingaben[feldAufgabe.nr]); }}
+              weiter={naechste ? () => waehle(naechste) : undefined} schliessen={() => setGewaehlt(null)} />
+          )} />
 
         <aside className="card p-4 flex flex-col gap-3 text-sm">
           {meldung && <p className={`font-bold ${meldung.gut ? "text-ok" : "text-bad"}`}>{meldung.text}</p>}
@@ -157,37 +203,48 @@ export default function KartenQuizSpiel({ code, token }: { code: string; token?:
               </div>
             )
           ) : (
-            <ol className="flex flex-col gap-1.5">
-              {aufgaben.map((auf) => {
-                const st = stand.antworten[String(auf.nr)];
-                return (
-                  <li key={auf.nr} className="flex items-center gap-2">
-                    <span className="w-8 text-right font-black text-bad">{auf.marke}</span>
-                    {st?.richtig ? (
-                      <span className="flex-1 text-ok font-bold">✓ richtig</span>
-                    ) : loesungen[auf.nr] ? (
-                      <span className="flex-1 text-muted">{loesungen[auf.nr]}</span>
-                    ) : (
-                      <form className="flex-1 flex gap-1" onSubmit={(e) => { e.preventDefault(); if (eingaben[auf.nr]) void sende(auf, eingaben[auf.nr]); }}>
-                        {spiel.spiel.wortbank ? (
-                          <select value={eingaben[auf.nr] ?? ""} aria-label={`Name für ${auf.marke}`}
-                            onChange={(e) => setEingaben((x) => ({ ...x, [auf.nr]: e.target.value }))}
-                            className="flex-1 min-w-0 px-2 py-1 rounded-lg border border-line bg-page">
-                            <option value="">— wählen —</option>
-                            {spiel.spiel.wortbank.map((w) => <option key={w}>{w}</option>)}
-                          </select>
-                        ) : (
-                          <input value={eingaben[auf.nr] ?? ""} placeholder={auf.kategorie} aria-label={`Name für ${auf.marke}`}
-                            onChange={(e) => setEingaben((x) => ({ ...x, [auf.nr]: e.target.value }))}
-                            className="flex-1 min-w-0 px-2 py-1 rounded-lg border border-line bg-page" />
-                        )}
-                        <button className="px-2 rounded-lg border border-line font-bold" aria-label={`${auf.marke} prüfen`}>✓</button>
-                      </form>
-                    )}
-                  </li>
-                );
-              })}
-            </ol>
+            <div className="flex flex-col gap-2">
+              <p className="text-xs text-muted">Tippe eine Nummer auf der Karte oder in der Liste an.</p>
+              <ol className="flex flex-col gap-1.5">
+                {aufgaben.map((auf) => {
+                  const st = stand.antworten[String(auf.nr)];
+                  const aktiv = gewaehlt === auf.nr;
+                  return (
+                    <li key={auf.nr} className={`flex items-center gap-2 rounded-lg ${aktiv ? "bg-surface-hover ring-1 ring-accent" : ""}`}>
+                      <button onClick={() => waehle(auf)} aria-label={`${auf.marke} auf der Karte zeigen`}
+                        className="w-8 text-right font-black text-bad hover:underline">{auf.marke}</button>
+                      {st?.richtig ? (
+                        <span className="flex-1 text-ok font-bold">✓ richtig</span>
+                      ) : loesungen[auf.nr] ? (
+                        <span className="flex-1 text-muted">{loesungen[auf.nr]}</span>
+                      ) : (
+                        <form className="flex-1 flex gap-1" onSubmit={(e) => { e.preventDefault(); if (eingaben[auf.nr]) void sende(auf, eingaben[auf.nr]); }}>
+                          {spiel.spiel.wortbank ? (
+                            <button type="button" onClick={() => waehle(auf)} aria-label={`Name für ${auf.marke}`}
+                              className={`flex-1 min-w-0 px-2 py-1 rounded-lg border border-line bg-page text-left truncate ${eingaben[auf.nr] ? "" : "text-muted"}`}>
+                              {eingaben[auf.nr] || "— wählen —"}
+                            </button>
+                          ) : (
+                            <input value={eingaben[auf.nr] ?? ""} placeholder={auf.kategorie} aria-label={`Name für ${auf.marke}`}
+                              onFocus={() => { if (!aktiv) waehle(auf); }}
+                              onChange={(e) => setEingaben((x) => ({ ...x, [auf.nr]: e.target.value }))}
+                              className="flex-1 min-w-0 px-2 py-1 rounded-lg border border-line bg-page" />
+                          )}
+                          <button className="px-2 rounded-lg border border-line font-bold" aria-label={`${auf.marke} prüfen`}>✓</button>
+                        </form>
+                      )}
+                    </li>
+                  );
+                })}
+              </ol>
+              {!fertig && (
+                <button onClick={() => void alleKontrollieren()}
+                  disabled={pruefeAlle || !aufgaben.some((x) => offenBenennen(x) && eingaben[x.nr]?.trim())}
+                  className="btn-primary self-start px-3 py-1.5 disabled:opacity-50">
+                  {pruefeAlle ? "Wird geprüft …" : "✓ Alle kontrollieren"}
+                </button>
+              )}
+            </div>
           )}
 
           {spiel.erfolge.length > 0 && (
@@ -205,6 +262,40 @@ export default function KartenQuizSpiel({ code, token }: { code: string; token?:
         </aside>
       </div>
     </div>
+  );
+}
+
+/** Antwortfeld über der Karte zum angetippten Objekt: Wortbank (alle Namen, auch schon benutzte) oder Eingabe. */
+function AntwortFeld({ aufgabe, wortbank, eingabe, benutzt, setEingabe, pruefen, weiter, schliessen }: {
+  aufgabe: QuizAufgabe; wortbank?: string[]; eingabe: string; benutzt: Set<string>;
+  setEingabe: (w: string) => void; pruefen: () => void; weiter?: () => void; schliessen: () => void;
+}) {
+  return (
+    <form className="card p-3 flex flex-col gap-2 text-sm shadow-lg" aria-label={`Antwort für ${aufgabe.marke}`}
+      onSubmit={(e) => { e.preventDefault(); pruefen(); }}>
+      <div className="flex items-center gap-2">
+        <span className="font-black text-bad text-lg">{aufgabe.marke}</span>
+        <span className="text-xs uppercase tracking-wide text-muted flex-1">{aufgabe.kategorie}</span>
+        <button type="button" onClick={schliessen} aria-label="Antwortfeld schließen" className="px-1.5 text-muted hover:text-fg">✕</button>
+      </div>
+      {wortbank ? (
+        <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto" role="listbox" aria-label="Wortbank">
+          {wortbank.map((w) => (
+            <button key={w} type="button" role="option" aria-selected={eingabe === w} onClick={() => setEingabe(w)}
+              title={benutzt.has(w) ? "schon bei einer anderen Nummer gewählt" : undefined}
+              className={`px-2 py-1 rounded-lg border font-bold ${eingabe === w ? "border-accent bg-accent text-accent-fg"
+                : benutzt.has(w) ? "border-line text-muted" : "border-line hover:bg-surface-hover"}`}>{w}</button>
+          ))}
+        </div>
+      ) : (
+        <input key={aufgabe.nr} value={eingabe} onChange={(e) => setEingabe(e.target.value)} autoFocus placeholder={aufgabe.kategorie}
+          aria-label={`Name für ${aufgabe.marke} eingeben`} className="px-2 py-1.5 rounded-lg border border-line bg-page" />
+      )}
+      <div className="flex gap-2">
+        <button disabled={!eingabe.trim()} className="btn-primary px-3 py-1.5 disabled:opacity-50">✓ Prüfen</button>
+        {weiter && <button type="button" onClick={weiter} className="px-3 py-1.5 rounded-lg border border-line font-bold">Nächste →</button>}
+      </div>
+    </form>
   );
 }
 

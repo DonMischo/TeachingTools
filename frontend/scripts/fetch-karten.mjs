@@ -22,6 +22,7 @@
  * Rohdaten landen in .karten-roh/ (nicht im Repo, ~150 MB).
  */
 import { createHash } from "crypto";
+import { gunzipSync } from "zlib";
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "fs";
 import { dirname, join, resolve } from "path";
 import { fileURLToPath } from "url";
@@ -183,10 +184,16 @@ function schreibe(id, meta, features) {
 
 // ── Ebenen ───────────────────────────────────────────────────────────
 
+/** Färbung der Bundesländer (Nummern der Pastelltöne in lib/karten/stil.ts::STAAT_FARBE) */
+const LAND_FARBE_NR = { SH: 2, HH: 3, HB: 3, NI: 5, MV: 6, NW: 2, HE: 3, RP: 5, SL: 4, BW: 2, BY: 4, TH: 1, ST: 2, SN: 5, BB: 1, BE: 3 };
+
 async function laender(vg) {
   // GF 9 = Landfläche (GF 4 wären auch Bodensee- und Küstengewässer)
   const fs = await lies(finde(vg, "VG2500_LAN.shp"), `-filter "GF==9" -simplify 15% keep-shapes`);
-  const land = fs.map((f) => feature(f.geometry, { id: f.properties.AGS, name: f.properties.GEN, kurz: f.properties.LKZ }));
+  // farbe = Farbnummer wie MAPCOLOR7 der Staaten (Nachbarn verschieden) — bleibt auch auf der Quizkarte,
+  // »kurz« verriete dort die Antwort
+  const land = fs.map((f) => feature(f.geometry, { id: f.properties.AGS, name: f.properties.GEN, kurz: f.properties.LKZ,
+    farbe: LAND_FARBE_NR[f.properties.LKZ] }));
   schreibe("de-laender", { name: "Bundesländer", gruppe: "politisch", bereich: "de", geometrie: "flaeche", quiz: true, quelle: QUELLE_BKG }, land);
   return land;
 }
@@ -1389,6 +1396,104 @@ mkdirSync(join(ZIEL, "ebenen"), { recursive: true });
 const ordner = {};
 for (const k of Object.keys(PAKETE)) ordner[k] = await lade(k);
 
+// ── Flaggen ──────────────────────────────────────────────────────────
+
+const FLAGGEN = resolve(HIER, "../public/karten/flaggen");
+const FLAG_ICONS = "https://registry.npmjs.org/flag-icons/-/flag-icons-7.6.0.tgz";
+/** Landesflaggen der Bundesländer auf Wikimedia Commons (gemeinfrei) */
+const LAND_FLAGGE = {
+  SH: "Flag_of_Schleswig-Holstein.svg", HH: "Flag_of_Hamburg.svg", HB: "Flag_of_Bremen.svg", NI: "Flag_of_Lower_Saxony.svg",
+  MV: "Flag_of_Mecklenburg-Western_Pomerania.svg", NW: "Flag_of_North_Rhine-Westphalia.svg", HE: "Flag_of_Hesse.svg",
+  RP: "Flag_of_Rhineland-Palatinate.svg", SL: "Flag_of_Saarland.svg", BW: "Flag_of_Baden-Württemberg.svg",
+  BY: "Flag_of_Bavaria_(lozengy).svg", TH: "Flag_of_Thuringia.svg", ST: "Flag_of_Saxony-Anhalt_(state).svg",
+  SN: "Flag_of_Saxony.svg", BB: "Flag_of_Brandenburg.svg", BE: "Flag_of_Berlin.svg",
+};
+/** Dateiname ohne Ländercode — sonst verriete die Bild-URL auf der Quizkarte die Antwort */
+const flaggenDatei = (code) => createHash("sha256").update(`flagge:${code}`).digest("hex").slice(0, 10);
+
+/** Liest Dateien aus einem .tgz (npm-Paket): Name → Inhalt. */
+function entpackeTgz(datei) {
+  const tar = gunzipSync(readFileSync(datei));
+  const dateien = {};
+  for (let i = 0; i + 512 <= tar.length;) {
+    const name = tar.subarray(i, i + 100).toString("utf8").replace(/\0.*$/s, "");
+    if (!name) break;
+    const groesse = parseInt(tar.subarray(i + 124, i + 136).toString("utf8").replace(/\0.*$/s, "").trim() || "0", 8);
+    dateien[name] = tar.subarray(i + 512, i + 512 + groesse);
+    i += 512 + Math.ceil(groesse / 512) * 512;
+  }
+  return dateien;
+}
+
+/** Commons drosselt schnell (429): langsam und mit Wiederholung. */
+async function ladeCommons(name, ziel) {
+  if (existsSync(ziel) && !force) return readFileSync(ziel);
+  for (let versuch = 0; versuch < 6; versuch++) {
+    await new Promise((r) => setTimeout(r, 3000 * (versuch + 1)));
+    const antwort = await fetch(`https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(name)}`,
+      { headers: { "User-Agent": "TT-Kartentool/1.0 (Schul-Kartentool)" } });
+    const inhalt = Buffer.from(await antwort.arrayBuffer());
+    if (antwort.ok && inhalt.subarray(0, 400).toString("utf8").includes("<svg")) { writeFileSync(ziel, inhalt); return inhalt; }
+    console.log(`  ${name}: HTTP ${antwort.status}, neuer Versuch …`);
+  }
+  throw new Error(`${name}: Commons liefert nicht`);
+}
+
+/** Flagge als PNG (40 px hoch, für pixelRatio 2) mit dünnem grauen Rand. */
+async function flaggenBild(svg, code) {
+  const datei = `${flaggenDatei(code)}.png`;
+  await sharp(svg, { density: 300 }).resize({ height: 38 }).flatten({ background: "#ffffff" })
+    .extend({ top: 1, bottom: 1, left: 1, right: 1, background: "#8a847c" }).png().toFile(join(FLAGGEN, datei));
+  return flaggenDatei(code);
+}
+
+/** Je Staat bzw. Bundesland ein Punkt mit Flagge (innen in der größten Teilfläche); rang = Größe, die großen zuerst. */
+async function flaggenPunkte(flaechen) {
+  const aus = await mapshaper.applyCommands("-i in.json -points inner -o format=geojson precision=0.0001 out.json",
+    { "in.json": { type: "FeatureCollection", features: flaechen } });
+  return JSON.parse(aus["out.json"].toString()).features;
+}
+
+const ringFlaeche = (r) => Math.abs(r.reduce((a, p, i) => { const q = r[(i + 1) % r.length]; return a + p[0] * q[1] - q[0] * p[1]; }, 0)) / 2;
+const flaeche = (g) => (g.type === "Polygon" ? [g.coordinates] : g.coordinates).reduce((a, t) => a + ringFlaeche(t[0]), 0);
+
+async function flaggen(ne, vg) {
+  rmSync(FLAGGEN, { recursive: true, force: true });
+  mkdirSync(FLAGGEN, { recursive: true });
+  const roh = join(ROH, "flaggen");
+  mkdirSync(roh, { recursive: true });
+  const icons = entpackeTgz(await ladeDatei("flag-icons-7.6.0.tgz", FLAG_ICONS));
+
+  // Staaten: Natural Earth (ISO-Code für die Flagge), ids wie welt-staaten
+  const staatenRoh = await lies(finde(ne, "ne_10m_admin_0_countries.shp"), `-simplify 12% keep-shapes`);
+  const staaten = [];
+  for (const f of staatenRoh) {
+    const iso = String(f.properties.ISO_A2_EH ?? "").toLowerCase();
+    const svg = icons[`package/flags/4x3/${iso}.svg`];
+    if (!svg) continue;
+    staaten.push(feature(f.geometry, { id: f.properties.ADM0_A3, name: f.properties.NAME_DE || f.properties.NAME,
+      flagge: await flaggenBild(svg, iso), groesse: flaeche(f.geometry) }));
+  }
+  const rang = (fs) => fs.sort((a, b) => b.properties.groesse - a.properties.groesse)
+    .map((f, i) => { const { groesse: _, ...p } = f.properties; return { ...f, properties: { ...p, rang: i + 1 } }; });
+  schreibe("welt-flaggen", { name: "Flaggen der Staaten", gruppe: "politisch", bereich: "welt", geometrie: "punkt", quiz: true,
+    quelle: { name: "flag-icons (Panayiotis Lipiridis)", lizenz: "MIT", url: "https://github.com/lipis/flag-icons" } },
+    rang(await flaggenPunkte(staaten)));
+
+  // Bundesländer: Landesflaggen von Commons
+  const laenderRoh = await lies(finde(vg, "VG2500_LAN.shp"), `-filter "GF==9" -simplify 15% keep-shapes`);
+  const laender = [];
+  for (const f of laenderRoh) {
+    const kurz = f.properties.LKZ;
+    const svg = await ladeCommons(LAND_FLAGGE[kurz], join(roh, `${kurz}.svg`));
+    laender.push(feature(f.geometry, { id: f.properties.AGS, name: f.properties.GEN,
+      flagge: await flaggenBild(svg, `de-${kurz}`), groesse: flaeche(f.geometry) }));
+  }
+  schreibe("de-flaggen", { name: "Flaggen der Bundesländer", gruppe: "politisch", bereich: "de", geometrie: "punkt", quiz: true,
+    quelle: { name: "Wikimedia Commons", lizenz: "gemeinfrei", url: "https://commons.wikimedia.org/wiki/Category:Flags_of_states_of_Germany" } },
+    rang(await flaggenPunkte(laender)));
+}
+
 // `--nur boden,kraftwerke` baut nur diese Schritte neu und ergänzt den bestehenden Katalog
 const nurStelle = process.argv.indexOf("--nur");
 const nur = nurStelle > 0 ? process.argv[nurStelle + 1].split(",") : null;
@@ -1434,6 +1539,7 @@ await schritt("eukraftwerke", async () => kraftwerke([await ladeDatei("opsd_eu.c
   "https://data.open-power-system-data.org/conventional_power_plants/latest/conventional_power_plants_EU.csv"), await ladeDatei("opsd_de.csv",
   "https://data.open-power-system-data.org/conventional_power_plants/latest/conventional_power_plants_DE.csv")],
   null, "eu-kraftwerke", "Europa: Kraftwerke (ab 100 MW)", "welt"));
+await schritt("flaggen", () => flaggen(ordner.ne_staaten, ordner.vg2500));
 await schritt("schriften", () => schriften());
 
 let ebenen = KATALOG;

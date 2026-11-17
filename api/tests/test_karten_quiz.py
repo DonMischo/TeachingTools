@@ -40,6 +40,20 @@ def test_entschaerfte_ebene_ohne_namen_und_ids():
     assert p["id"] == engine.token("geheim", "de-staedte", "16051000") != "16051000"
 
 
+def test_quizkarte_behaelt_farbe_und_flagge_aber_nicht_das_kuerzel():
+    sammlung = {"type": "FeatureCollection", "features": [
+        {"type": "Feature", "geometry": {"type": "Point", "coordinates": [11, 51]},
+         "properties": {"id": "16", "name": "Thüringen", "kurz": "TH", "farbe": 1, "flagge": "9e1e60656d"}}]}
+    p = engine.entschaerfe_ebene(sammlung, "de-laender", "geheim")["features"][0]["properties"]
+    assert p["farbe"] == 1 and p["flagge"] == "9e1e60656d" and "kurz" not in p  # das Kürzel verriete die Antwort
+
+
+def test_benennen_aufgaben_tragen_das_token_ihres_objekts():
+    aufgaben = [{"nr": 1, "ebene": "de-staedte", "id": "erfurt", "name": "Erfurt", "marke": "1", "kategorie": "Städte", "anker": [11, 51]}]
+    sichtbar = engine.fuer_spieler(aufgaben, "benennen", "geheim")["aufgaben"][0]
+    assert sichtbar["token"] == engine.token("geheim", "de-staedte", "erfurt") and "name" not in sichtbar
+
+
 # ── Spiel ────────────────────────────────────────────────────────────
 
 SATZ = {"titel": "Thüringen", "inhalt": {

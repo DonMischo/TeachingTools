@@ -159,8 +159,9 @@ def token(geheim: str, ebene: str, oid: str) -> str:
 def fuer_spieler(aufgaben: list[dict], modus: str, geheim: str, wortbank: bool = False, mischen: int | None = None) -> dict:
     """Was der Spieler sieht: benennen → Marken und Ankerpunkte, finden → Namen und Ebenen."""
     if modus == "benennen":
+        # token: Antippen auf der Karte wählt die Aufgabe (verrät den Namen nicht)
         sichtbar = [{"nr": a["nr"], "marke": a["marke"] or str(a["nr"]), "kategorie": a["kategorie"],
-                     "ebene": a["ebene"], "anker": a["anker"]} for a in aufgaben]
+                     "ebene": a["ebene"], "anker": a["anker"], "token": token(geheim, a["ebene"], a["id"])} for a in aufgaben]
     else:
         sichtbar = [{"nr": a["nr"], "name": a["name"], "kategorie": a["kategorie"], "ebene": a["ebene"]} for a in aufgaben]
         if mischen is not None:
@@ -181,7 +182,7 @@ def _tokens_je_ebene(aufgaben: list[dict], geheim: str) -> dict[str, list[str]]:
 
 
 # Eigenschaften, die auf der Spielerkarte bleiben dürfen (Darstellung), alles andere fällt weg
-ERLAUBTE_EIGENSCHAFTEN = {"klasse", "rang", "hoehe", "ew", "art", "farbe", "dichte", "leistung", "monate"}
+ERLAUBTE_EIGENSCHAFTEN = {"klasse", "rang", "hoehe", "ew", "art", "farbe", "dichte", "leistung", "monate", "flagge"}
 
 
 def entschaerfe_ebene(sammlung: dict, ebene: str, geheim: str) -> dict:

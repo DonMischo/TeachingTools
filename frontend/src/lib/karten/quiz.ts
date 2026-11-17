@@ -16,6 +16,8 @@ export type QuizAufgabe = {
   /** benennen */
   marke?: string;
   anker?: [number, number] | null;
+  /** benennen: Token des Objekts (Antippen auf der Karte wählt die Aufgabe) */
+  token?: string;
   /** finden */
   name?: string;
 };
