@@ -402,6 +402,8 @@ Das Lehrkraft-Werkzeugset. Standardmäßig nur für Lehrkräfte sichtbar.
 ## 🗂️ Fragmente
 
 - Pinnwände im Stil von TaskCards: Textfragmente und Recherche-Clips mit Link-Vorschau
+- Dateien aus dem Explorer auf die Pinnwand ziehen öffnet ein neues Clipping mit den Dateien und einem Titel aus dem Dateinamen; ein Klick auf eine freie Stelle einer Karte klappt sie auf
+- Workflows tragen Material (Sims, Werkzeuge, Fragmente, Links) und Anhänge
 - Anhänge als gut sichtbare Liste (Symbol je Dateityp, Name, Endung, Herunterladen); Fragmente-Pinnwände laden fremde Neuzugänge alle 5 s nach
 - Clippings tragen Bilder, PDFs und Textdokumente (md, txt, csv, rtf, doc/docx, odt, xls/xlsx, ods, ppt/pptx, odp) sowie ein Werkzeug mit Einstellungen wie an TaskCrawler-Aufgaben (Reiter, Station, Aufgabe …); es öffnet sich im Vollbild
 - Workflows: Ablauf in einem Markdown-Feld, das beim Tippen formatiert (Überschriften, Schritte, Aufgaben-Checkboxen; Quelltext umschaltbar) plus Bild oder D2-Diagramm wie in der Diagramm-Werkstatt; ein KI-Prompt baut das Diagramm aus dem Text, »In der Diagramm-Werkstatt bearbeiten« öffnet es dort

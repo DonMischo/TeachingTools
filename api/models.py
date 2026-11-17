@@ -2009,6 +2009,8 @@ class ResearchItem(Base):
     # als Bild entweder hochgeladene Bilder oder ein D2-Diagramm (Quelltext in d2).
     art: Mapped[str] = mapped_column(String(20), nullable=False, server_default="clipping")
     d2: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Material: Verknüpfungen zu Sims, Werkzeugen, Fragmenten oder Links ({type, ref_id, url, label})
+    links: Mapped[list | None] = mapped_column(JSON, nullable=True)
     # Author — same scheme as Fragment.
     author_kind: Mapped[str | None] = mapped_column(String(10), nullable=True)
     author_id: Mapped[int | None] = mapped_column(Integer, nullable=True)

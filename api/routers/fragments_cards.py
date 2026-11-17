@@ -414,6 +414,21 @@ class ResearchMediaOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class ResearchLink(BaseModel):
+    """Material wie im Curriculinator/Stundenplaner (ToolLink)."""
+    type: str = Field(max_length=40)
+    ref_id: Optional[str] = Field(default=None, max_length=100)
+    url: Optional[str] = Field(default=None, max_length=2000)
+    label: str = Field(max_length=300)
+
+    @field_validator("url")
+    @classmethod
+    def _nur_web(cls, v: Optional[str]) -> Optional[str]:
+        if v and not re.match(r"^https?://", v, re.I):
+            raise ValueError("Links nur mit http(s)://")
+        return v
+
+
 class ResearchSim(BaseModel):
     """Werkzeug wie an einer TaskCrawler-Station (Werte: exitgame_katalog.WERKZEUGE)."""
     tool: str
@@ -438,6 +453,7 @@ class ResearchItemCreate(BaseModel):
     klasse: Optional[int] = None
     einheit: Optional[str] = Field(default=None, max_length=100)
     sim: Optional[ResearchSim] = None
+    links: Optional[list[ResearchLink]] = Field(default=None, max_length=50)
 
 
 class ResearchItemUpdate(BaseModel):
@@ -450,6 +466,7 @@ class ResearchItemUpdate(BaseModel):
     einheit: Optional[str] = Field(default=None, max_length=100)
     sim: Optional[ResearchSim] = None
     d2: Optional[str] = Field(default=None, max_length=50_000)
+    links: Optional[list[ResearchLink]] = Field(default=None, max_length=50)
 
 
 class ResearchItemOut(BaseModel):
@@ -468,6 +485,7 @@ class ResearchItemOut(BaseModel):
     sim: Optional[dict] = None
     art: str = "clipping"
     d2: Optional[str] = None
+    links: Optional[list[dict]] = None
     media: list[ResearchMediaOut]
     author_kind: Optional[str]
     author_id: Optional[int]
@@ -526,6 +544,7 @@ async def create_research(
         text_content=body.text_content, tags=body.tags, klasse=body.klasse, einheit=body.einheit,
         sim=body.sim.model_dump() if body.sim else None,
         art=body.art, d2=body.d2 if body.art == "workflow" else None,
+        links=[l.model_dump() for l in body.links] if body.links else None,
         author_kind=kind, author_id=uid, author_name=author_name_of(user),
     )
     db.add(item)

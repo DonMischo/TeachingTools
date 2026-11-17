@@ -462,3 +462,18 @@ def test_workflow_ist_ein_clipping_mit_d2(client, teacher):
     assert (c["art"], c["d2"]) == ("clipping", None)
     assert client.post(f"{PREFIX}/collections/{cid}/research", json={"art": "quatsch"},
                        headers=teacher_auth(teacher)).status_code == 422
+
+
+def test_workflow_traegt_material(client, teacher):
+    client.cookies.clear()
+    cid = client.post(f"{PREFIX}/collections", json={"name": "Material"}, headers=teacher_auth(teacher)).json()["id"]
+    links = [{"type": "simulation", "ref_id": "quadratisch", "url": None, "label": "Quadratische Funktionen"},
+             {"type": "link", "ref_id": None, "url": "https://example.org/ab.pdf", "label": "AB"}]
+    w = client.post(f"{PREFIX}/collections/{cid}/research", json={"art": "workflow", "title": "W", "links": links},
+                    headers=teacher_auth(teacher)).json()
+    assert w["links"] == links
+    w = client.patch(f"{PREFIX}/research/{w['id']}", json={"links": links[:1]}, headers=teacher_auth(teacher)).json()
+    assert w["links"] == links[:1]
+    boese = [{"type": "link", "url": "javascript:alert(1)", "label": "x"}]
+    assert client.post(f"{PREFIX}/collections/{cid}/research", json={"art": "workflow", "links": boese},
+                       headers=teacher_auth(teacher)).status_code == 422

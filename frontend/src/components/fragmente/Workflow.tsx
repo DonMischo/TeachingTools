@@ -17,8 +17,9 @@ import { kopiereText } from "@/lib/zwischenablage";
 import { DIAGRAMM_IMPORT, KI_ARTEN, kiPrompt, type KiArt } from "@/lib/diagramm/vorlagen";
 import { codeAusAntwort } from "@/lib/diagramm/hervorheben";
 import { CodeFeld } from "@/components/diagramme/CodeFeld";
-import { GewaehlteDateien } from "./Anhaenge";
-import { KlappKnopf, useKlappmodus } from "./Aufklappen";
+import { Anhaenge, GewaehlteDateien } from "./Anhaenge";
+import { Verknuepfungen } from "@/components/curriculum/Verknuepfungen";
+import { KlappKnopf, useKlappmodus, useRahmenKlick } from "./Aufklappen";
 import { ALLGEMEIN, Einordnung, EinordnenWahl, OHNE_ORT, ortText } from "./Einordnung";
 
 const BEISPIEL = `direction: down
@@ -147,6 +148,9 @@ export function WorkflowModal({ collectionId, initial, tab, guestToken, onClose 
   const [d2, setD2] = useState(initial ? initial.d2 ?? "" : BEISPIEL);
   const [fehler, setFehler] = useState<string[]>([]);
   const [files, setFiles] = useState<File[]>([]);
+  // Material und Anhänge — unabhängig vom Bild
+  const [links, setLinks] = useState(initial?.links ?? []);
+  const [dokumente, setDokumente] = useState<File[]>([]);
 
   useEffect(() => {
     const zu = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -159,11 +163,13 @@ export function WorkflowModal({ collectionId, initial, tab, guestToken, onClose 
       const payload = {
         title: title.trim() || null, text_content: text.trim() || null, tab: kat, ...ort,
         d2: bild === "d2" && d2.trim() ? d2 : null,
+        ...(guestToken ? {} : { links: links.length ? links : null }),
       };
       const item = initial
         ? await api.fragments.updateResearch(initial.id, payload)
         : await api.fragments.createResearch(collectionId, { ...payload, art: "workflow" }, guestToken);
       if (bild === "bild") for (const f of files) await api.fragments.uploadMedia(item.id, f, guestToken);
+      for (const f of dokumente) await api.fragments.uploadMedia(item.id, f, guestToken);
       return item;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["research", collectionId] }); toast("Gespeichert", "success"); onClose(); },
@@ -178,7 +184,7 @@ export function WorkflowModal({ collectionId, initial, tab, guestToken, onClose 
   };
 
   const fehlerZeilen = new Set(fehler.flatMap(f => { const m = /^Zeile (\d+)/.exec(f); return m ? [Number(m[1])] : []; }));
-  const canSave = !save.isPending && (!!title.trim() || !!text.trim() || (!!d2.trim() && d2 !== BEISPIEL) || files.length > 0);
+  const canSave = !save.isPending && (!!title.trim() || !!text.trim() || (!!d2.trim() && d2 !== BEISPIEL) || files.length > 0 || dokumente.length > 0 || links.length > 0);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
@@ -234,6 +240,23 @@ export function WorkflowModal({ collectionId, initial, tab, guestToken, onClose 
             )}
           </div>
         </div>
+        <div className="mt-4 space-y-3">
+          {!guestToken && (
+            <div>
+              <span className="label">📎 Material</span>
+              <p className="text-[10px] text-muted mb-1">Simulationen, Werkzeuge, andere Fragmente oder Links, die zum Ablauf gehören.</p>
+              <Verknuepfungen links={links} onChange={setLinks} />
+            </div>
+          )}
+          <div>
+            <span className="label">Anhänge (PDF, Dokumente)</span>
+            {initial && <Anhaenge media={initial.media} onPdf={p => window.open(p, "_blank")} />}
+            <input type="file" multiple aria-label="Anhänge wählen" className="w-full mt-1"
+              accept="application/pdf,.txt,.md,.csv,.rtf,.tex,.doc,.docx,.odt,.ott,.xls,.xlsx,.ods,.ppt,.pptx,.odp,.odg"
+              onChange={e => { const neu = Array.from(e.target.files ?? []); setDokumente(f => [...f, ...neu]); e.target.value = ""; }} />
+            <GewaehlteDateien dateien={dokumente} onEntfernen={i => setDokumente(f => f.filter((_, j) => j !== i))} />
+          </div>
+        </div>
         <div className="mt-6 flex gap-2 justify-end">
           <button className="px-4 py-2 text-sm rounded-lg border border-line hover:bg-surface-hover" onClick={onClose}>Abbrechen</button>
           <button className="btn-primary px-4 py-2 text-sm" disabled={!canSave} onClick={() => save.mutate()}>
@@ -258,10 +281,11 @@ export function WorkflowCard({ item, onEdit }: { item: ResearchItemOut; onEdit: 
   const delMedia = useMutation({ mutationFn: (mid: number) => api.fragments.deleteMedia(mid), onSuccess: invalidate });
   const bilder = item.media.filter(m => m.kind === "image");
   const klapp = useKlappmodus(`r${item.id}`);
+  const rahmenKlick = useRahmenKlick(`r${item.id}`);
   const lang = (item.text_content ?? "").split("\n").length > 8;
 
   return (
-    <div className="group rounded-xl border border-line bg-page p-3 flex flex-col gap-2" data-art="workflow">
+    <div className="group rounded-xl border border-line bg-page p-3 flex flex-col gap-2" data-art="workflow" onClick={rahmenKlick}>
       <div className="flex items-start justify-between gap-2">
         <KlappKnopf id={`r${item.id}`} />
         <button className="flex-1 text-sm font-semibold text-left line-clamp-2 hover:text-accent" onClick={onEdit}>
@@ -299,6 +323,9 @@ export function WorkflowCard({ item, onEdit }: { item: ResearchItemOut; onEdit: 
           {lang && klapp !== "auf" && <button className="text-[10px] text-muted hover:text-fg mt-1" onClick={() => setVoll(v => !v)}>{voll ? "▴ weniger" : "▾ ganzer Ablauf"}</button>}
         </div>
       )}
+      {!!item.links?.length && <Verknuepfungen links={item.links} klein />}
+      <Anhaenge media={item.media} onPdf={p => window.open(p, "_blank")}
+        onLoeschen={item.can_edit ? id => delMedia.mutate(id) : undefined} />
       {ortText(kategorien, item) && <div className="text-[10px] text-muted">📍 {ortText(kategorien, item)}</div>}
       {item.author_name && <span className="text-[10px] text-muted truncate mt-auto">{item.author_name}</span>}
       </>}

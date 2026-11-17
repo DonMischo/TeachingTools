@@ -1530,6 +1530,7 @@ export type FragmentOut = FragmentOrt & {
   author_name: string | null;
   can_edit: boolean;
 };
+export type FragmentLink = { type: string; ref_id: string | null; url?: string | null; label: string };
 export type ResearchMediaOut = { id: number; kind: "image" | "pdf" | "file"; path: string; name?: string | null; order_index: number };
 export type ResearchItemOut = FragmentOrt & {
   id: number;
@@ -1547,6 +1548,8 @@ export type ResearchItemOut = FragmentOrt & {
   /** »workflow«: Ablauf in Markdown (text_content) plus Bild oder D2-Diagramm */
   art: "clipping" | "workflow";
   d2: string | null;
+  /** Material: Sims, Werkzeuge, Fragmente, Links (wie im Curriculinator) */
+  links?: FragmentLink[] | null;
   media: ResearchMediaOut[];
   author_kind: string | null;
   author_id: number | null;
@@ -2297,9 +2300,9 @@ export const api = {
     },
 
     listResearch: (id: number, guestToken?: string) => ffetch<ResearchItemOut[]>(`fragments/collections/${id}/research`, undefined, guestToken),
-    createResearch: (id: number, body: Partial<{ tab: string; art: "clipping" | "workflow"; d2: string | null; title: string | null; url: string | null; text_content: string | null; tags: string[]; sim: ExitGameSim | null } & FragmentOrt>, guestToken?: string) =>
+    createResearch: (id: number, body: Partial<{ tab: string; art: "clipping" | "workflow"; d2: string | null; title: string | null; url: string | null; text_content: string | null; tags: string[]; sim: ExitGameSim | null; links: FragmentLink[] | null } & FragmentOrt>, guestToken?: string) =>
       ffetch<ResearchItemOut>(`fragments/collections/${id}/research`, { method: "POST", body: JSON.stringify(body) }, guestToken),
-    updateResearch: (itemId: number, body: Partial<{ tab: string; d2: string | null; title: string | null; url: string | null; text_content: string | null; tags: string[]; sim: ExitGameSim | null } & FragmentOrt>) =>
+    updateResearch: (itemId: number, body: Partial<{ tab: string; d2: string | null; title: string | null; url: string | null; text_content: string | null; tags: string[]; sim: ExitGameSim | null; links: FragmentLink[] | null } & FragmentOrt>) =>
       apiFetch<ResearchItemOut>(`fragments/research/${itemId}`, { method: "PATCH", body: JSON.stringify(body) }),
     deleteResearch: (itemId: number) => apiFetch<void>(`fragments/research/${itemId}`, { method: "DELETE" }),
     refetchUrl: (itemId: number) => apiFetch<ResearchItemOut>(`fragments/research/${itemId}/fetch-url`, { method: "POST" }),

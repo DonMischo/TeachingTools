@@ -1027,7 +1027,8 @@ verwaltung:
     kann:
       - Pinnwände mit Textfragmenten und Recherche-Clips samt Link-Vorschau
       - Clippings mit Bildern, PDFs, Textdokumenten (md, txt, docx, odt …) und einem Werkzeug samt Einstellungen wie im TaskCrawler
-      - Workflows: Ablauf in Markdown plus Bild oder D2-Diagramm, KI-Prompt erstellt das Diagramm aus dem Text
+      - Workflows: Ablauf in Markdown plus Bild oder D2-Diagramm, KI-Prompt erstellt das Diagramm aus dem Text, dazu Material und Anhänge
+      - Dateien per Drag & Drop auf die Pinnwand → neues Clipping mit Titel aus dem Dateinamen
       - Zugriff je Sammlung (lesen, beitragen, verwalten) für Lehrkräfte, Klassen, A/B-Gruppen
       - Gastbeitritt per QR, Tabs
       - Materialsammlung (nur Admin löscht), Einordnung erst nach Kategorie (Allgemein, Unterrichtsmaterial, Leistungskontrollen), dann Klasse und Unterrichtseinheit, mit Filterchips

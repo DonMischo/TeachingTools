@@ -11,8 +11,8 @@ import {
 } from "@/lib/api";
 import { ALLGEMEIN, Einordnung, EinordnenWahl, OHNE_ORT, ortText, tabName } from "@/components/fragmente/Einordnung";
 import { WorkflowCard, WorkflowModal } from "@/components/fragmente/Workflow";
-import { Anhaenge, GewaehlteDateien } from "@/components/fragmente/Anhaenge";
-import { Aufklappen, KlappKnopf, useAufklappen, useKlappmodus } from "@/components/fragmente/Aufklappen";
+import { Anhaenge, GewaehlteDateien, titelAusDatei } from "@/components/fragmente/Anhaenge";
+import { Aufklappen, KlappKnopf, useAufklappen, useKlappmodus, useRahmenKlick } from "@/components/fragmente/Aufklappen";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { JoinQR } from "@/components/JoinQR";
@@ -164,6 +164,7 @@ function FragmentCard({
 
   const { kategorien } = useContext(Einordnung);
   const klapp = useKlappmodus(`f${frag.id}`);
+  const rahmenKlick = useRahmenKlick(`f${frag.id}`);
   const save = (patch: Partial<{ tab: string; title: string | null; content: string | null; category: string | null } & FragmentOrt>) =>
     api.fragments.updateFragment(frag.id, patch).catch((e: any) => toast(e.message ?? "Fehler", "error"));
 
@@ -184,6 +185,7 @@ function FragmentCard({
         klapp === "normal" ? (layout === "list" ? "h-32" : "h-52") : ""}`}
       onDragOver={canReorder ? (e) => e.preventDefault() : undefined}
       onDrop={canReorder ? () => onDropCard?.() : undefined}
+      onClick={rahmenKlick}
     >
       {canReorder && (
         <span
@@ -256,18 +258,20 @@ function FragmentCard({
 // ── Clipping (research) modal ─────────────────────────────────────────────────
 
 function ClippingModal({
-  collectionId, initial, tab, guestToken, onClose,
+  collectionId, initial, tab, guestToken, onClose, dateien,
 }: {
   collectionId: number;
   initial: ResearchItemOut | null;
   tab: string;
   guestToken?: string;
   onClose: () => void;
+  /** per Drag & Drop abgelegte Dateien: vorausgewählt, Titel aus dem ersten Namen */
+  dateien?: File[];
 }) {
   const qc = useQueryClient();
   const { toast } = useToast();
   const isEdit = !!initial;
-  const [title, setTitle] = useState(initial?.title ?? "");
+  const [title, setTitle] = useState(initial?.title ?? (dateien?.[0] ? titelAusDatei(dateien[0].name) : ""));
   const [url, setUrl] = useState(initial?.url ?? "");
   const [text, setText] = useState(initial?.text_content ?? "");
   const [tags, setTags] = useState<string[]>(initial?.tags ?? []);
@@ -275,7 +279,7 @@ function ClippingModal({
   const [kat, setKat] = useState(initial?.tab ?? tab);
   const [ort, setOrt] = useState<FragmentOrt>(initial ? { klasse: initial.klasse, einheit: initial.einheit } : kat === ALLGEMEIN ? OHNE_ORT : vorgabe);
   const [tagInput, setTagInput] = useState("");
-  const [files, setFiles] = useState<File[]>([]);
+  const [files, setFiles] = useState<File[]>(dateien ?? []);
   const [sim, setSim] = useState<ExitGameSim | null>(initial?.sim ?? null);
   // Werkzeug-Liste mit Einstellungen wie im TaskCrawler (Gäste wählen keine Werkzeuge)
   const { data: katalog } = useQuery<Katalog>({
@@ -423,6 +427,7 @@ function ClippingCard({ item, onEdit }: { item: ResearchItemOut; onEdit: () => v
 
   const displayTitle = item.title || item.url_title || item.url || "Ohne Titel";
   const klapp = useKlappmodus(`r${item.id}`);
+  const rahmenKlick = useRahmenKlick(`r${item.id}`);
   const images = item.media.filter(m => m.kind === "image");
   const gallery = images.length > 0
     ? images
@@ -438,7 +443,7 @@ function ClippingCard({ item, onEdit }: { item: ResearchItemOut; onEdit: () => v
   };
 
   return (
-    <div className="group rounded-xl border border-line bg-page p-3 flex flex-col gap-2">
+    <div className="group rounded-xl border border-line bg-page p-3 flex flex-col gap-2" onClick={rahmenKlick}>
       {klapp !== "zu" && active && (
         <div className="relative rounded-lg overflow-hidden bg-surface-hover aspect-4/3">
           <img src={active.path} alt="" className="w-full h-full object-cover cursor-zoom-in" onClick={() => setLightbox(true)} />
@@ -528,7 +533,10 @@ export default function FragmentBoardPage() {
     const el = document.querySelector(`[data-eintrag="${eintrag}"]`);
     if (el) { el.scrollIntoView({ block: "center" }); gesprungen.current = true; }
   });
-  const [clippingModal, setClippingModal] = useState<null | { item: ResearchItemOut | null; tab?: string; workflow?: boolean }>(null);
+  const [clippingModal, setClippingModal] = useState<null | { item: ResearchItemOut | null; tab?: string; workflow?: boolean; dateien?: File[] }>(null);
+  // Dateien aus dem Explorer auf die Pinnwand ziehen → neues Clipping (wie bei Google Drive)
+  const [ziehtDateien, setZiehtDateien] = useState(false);
+  const istDateiZug = (e: React.DragEvent) => Array.from(e.dataTransfer.types).includes("Files");
   // Clipping oder Workflow — beide sind Einträge der Recherche-Liste
   const eintragKarte = (item: ResearchItemOut) => item.art === "workflow"
     ? <WorkflowCard key={`r${item.id}`} item={item} onEdit={() => item.can_edit && setClippingModal({ item })} />
@@ -700,7 +708,24 @@ export default function FragmentBoardPage() {
   return (
     <Einordnung.Provider value={{ kategorien, vorgabe: ortFilter, tabs: allTabs, art: collection.art }}>
     <Aufklappen.Provider value={klappen.wert}>
-    <div className="mx-auto w-[92%] max-w-seite p-6">
+    <div className="relative mx-auto w-[92%] max-w-seite p-6"
+      onDragOver={e => { if (!canContribute || !istDateiZug(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = "copy"; setZiehtDateien(true); }}
+      onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setZiehtDateien(false); }}
+      onDrop={e => {
+        if (!canContribute || !istDateiZug(e)) return;
+        e.preventDefault();
+        setZiehtDateien(false);
+        const dateien = Array.from(e.dataTransfer.files);
+        if (!dateien.length) return;
+        // In der Spaltenansicht zählt die Spalte unter dem Mauszeiger
+        const spalte = (e.target as HTMLElement).closest<HTMLElement>("[data-spalte]")?.dataset.spalte;
+        setClippingModal({ item: null, tab: spalte ?? activeTab, dateien });
+      }}>
+      {ziehtDateien && (
+        <div className="pointer-events-none absolute inset-2 z-40 flex items-center justify-center rounded-2xl border-4 border-dashed border-accent bg-accent/10">
+          <span className="rounded-xl bg-page px-5 py-3 text-lg font-semibold shadow-lg">📥 Hier ablegen → neues Clipping</span>
+        </div>
+      )}
       <button className="text-sm text-muted hover:text-fg mb-2" onClick={() => router.push("/fragmente")}>← Sammlungen</button>
       <div className="flex items-center justify-between gap-4 mb-4">
         <div className="min-w-0">
@@ -873,7 +898,7 @@ export default function FragmentBoardPage() {
             const colRes = ortRes.filter(r => effTab(r.tab) === t && (!tagFilter || r.tags.includes(tagFilter)));
             const empty = colFrags.length === 0 && colRes.length === 0;
             return (
-              <div key={t} className="shrink-0 w-80 rounded-xl border border-line bg-surface-hover/30 p-3 flex flex-col gap-3">
+              <div key={t} data-spalte={t} className="shrink-0 w-80 rounded-xl border border-line bg-surface-hover/30 p-3 flex flex-col gap-3">
                 {/* Column header + its own add buttons */}
                 <div className="flex items-center justify-between gap-2">
                   <h3 className="text-sm font-semibold truncate">{tabLabel(t)}</h3>
@@ -922,7 +947,7 @@ export default function FragmentBoardPage() {
           tab={clippingModal.tab ?? activeTab} guestToken={guestToken} onClose={() => setClippingModal(null)} />
       )}
       {clippingModal && !(clippingModal.workflow || clippingModal.item?.art === "workflow") && (
-        <ClippingModal collectionId={collectionId} initial={clippingModal.item}
+        <ClippingModal collectionId={collectionId} initial={clippingModal.item} dateien={clippingModal.dateien}
           tab={clippingModal.tab ?? activeTab} guestToken={guestToken} onClose={() => setClippingModal(null)} />
       )}
     </div>

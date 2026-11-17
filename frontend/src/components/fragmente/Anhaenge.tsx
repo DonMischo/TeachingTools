@@ -21,6 +21,11 @@ export function dateiArt(name: string): { icon: string; art: string; endung: str
   return { icon: t?.[1] ?? "📎", art: t?.[2] ?? "Datei", endung };
 }
 
+/** Titelvorschlag aus einem Dateinamen: »AB_Brüche-kürzen_v2.pdf« → »AB Brüche kürzen v2«. */
+export function titelAusDatei(name: string): string {
+  return name.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
+}
+
 const groesse = (b: number) => (b < 1024 * 1024 ? `${Math.max(1, Math.round(b / 1024))} KB` : `${(b / 1024 / 1024).toFixed(1).replace(".", ",")} MB`);
 
 /** Hochgeladene PDFs und Dokumente eines Clippings. */
