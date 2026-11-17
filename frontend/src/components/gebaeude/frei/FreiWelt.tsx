@@ -13,6 +13,8 @@
  * Erklärungen stecken als Info-Splitter im Erz: drei Hiebe legen sie frei.
  * Vor der Frage läuft ein kurzes Geschicklichkeitsspiel (Konter, Ausweichen,
  * Kombo; lib/gebaeude/kampf.ts) — die Stufe legt die Zeiten fest, »aus« lässt es weg.
+ * Dazu Schildblock und Schwachstelle an den Stationen, Runen und Kräftemessen
+ * beim Boss am Tor, und beim Erz ein Takt: der Hieb im richtigen Moment zählt doppelt.
  * Unten rechts eine Karte des Abschnitts; ein Klick darauf läuft hin.
  *   auf Tablets: Steuerknüppel unten links
  *
@@ -27,8 +29,8 @@ import {
 } from "@/lib/gebaeude/frei";
 import type { Objekt } from "@/lib/gebaeude/objekte";
 import {
-  KAMPF_ARTEN, KAMPF_NAME, KONTER_ZIEL, kampfEingabe, kampfSchritt, neuerKampf,
-  type Kampf, type KampfArt, type Stufe, type Taste,
+  BLOCK_ZIEL, BOSS_ARTEN, KAMPF_ARTEN, KAMPF_NAME, KONTER_ZIEL, ZEITEN, kampfEingabe, kampfLoslassen, kampfSchritt, neuerKampf,
+  taktStelle, taktTreffer, type Kampf, type KampfArt, type Stufe, type Taste,
 } from "@/lib/gebaeude/kampf";
 import { tickMonster } from "@/lib/angriffe/monsterLader";
 import { STANDARD_AVATAR, baueAvatar, type Avatar } from "../avatar";
@@ -74,17 +76,30 @@ interface DuellBild {
   /** Ausweichen: erst nach der Pause bekannt */
   richtung: "links" | "rechts" | null;
   folge: Taste[]; pos: number;
+  /** Schildblock: Schild oben? · Schwachstelle: leuchtende Seite, nötige Treffer · Runen: Phase, leuchtende Rune */
+  haelt: boolean; ziel: Taste | null; noetig: number; phase: "zeigen" | "eingeben"; zeigt: number;
   ergebnis: "gut" | "schlecht" | null; reaktion: number | null;
 }
 const bildVon = (k: Kampf, gezeigt: boolean): DuellBild => ({
-  art: k.art, halb: k.halb, richtung: gezeigt ? k.richtung : null, folge: k.folge, pos: k.pos, ergebnis: k.ergebnis, reaktion: k.reaktion,
+  art: k.art, halb: k.halb, richtung: gezeigt ? k.richtung : null, folge: k.folge, pos: k.pos,
+  haelt: k.haelt, ziel: k.ziel, noetig: k.noetig, phase: k.phase, zeigt: k.zeigt, ergebnis: k.ergebnis, reaktion: k.reaktion,
 });
+/** Runen der vier Richtungen, je in eigener Farbe */
+const RUNE: Record<Taste, { zeichen: string; farbe: string }> = {
+  hoch: { zeichen: "ᛉ", farbe: "#38bdf8" }, links: { zeichen: "ᚠ", farbe: "#f472b6" }, runter: { zeichen: "ᛟ", farbe: "#facc15" },
+  rechts: { zeichen: "ᚱ", farbe: "#4ade80" }, los: { zeichen: "", farbe: "" },
+};
+/** Steuerkreuz: Reihenfolge der Knöpfe im 3×3-Raster (null = leer) */
+const KREUZ: (Taste | null)[] = [null, "hoch", null, "links", null, "rechts", null, "runter", null];
 const PFEIL: Record<Taste, string> = { links: "⬅", rechts: "➡", hoch: "⬆", runter: "⬇", los: "👊" };
 const TASTE: Record<string, Taste> = {
   e: "los", enter: "los", " ": "los", a: "links", arrowleft: "links", d: "rechts", arrowright: "rechts",
   w: "hoch", arrowup: "hoch", s: "runter", arrowdown: "runter",
 };
-const SIEG: Record<KampfArt, string> = { konter: "⚡ Konter!", ausweichen: "💨 Ausgewichen!", folge: "✨ Kombo!" };
+const SIEG: Record<KampfArt, string> = {
+  konter: "⚡ Konter!", ausweichen: "💨 Ausgewichen!", folge: "✨ Kombo!", block: "🛡️ Abgeblockt!", ziel: "🎯 Volltreffer!",
+  runen: "🔮 Bann gebrochen!", kraft: "💪 Zurückgedrängt!",
+};
 const KARTE_PX = 150;
 const ZUSTAND_FARBE: Record<RaumZustand, string> = { offen: "#f59e0b", geloest: "#22c55e", info: "#60a5fa", gelesen: "#94a3b8" };
 
@@ -114,6 +129,11 @@ export default function FreiWelt({
   const [duell, setDuell] = useState<DuellBild | null>(null);
   const ringEl = useRef<HTMLDivElement>(null);
   const balkenEl = useRef<HTMLDivElement>(null);
+  const ladeEl = useRef<HTMLDivElement>(null);
+  const kraftEl = useRef<HTMLDivElement>(null);
+  const pusteEl = useRef<HTMLDivElement>(null);
+  const taktEl = useRef<HTMLDivElement>(null);
+  const [volltreffer, setVolltreffer] = useState(0);
   const karteEl = useRef<HTMLCanvasElement>(null);
   const pfeilEl = useRef<HTMLDivElement>(null);
   const knueppel = useRef<HTMLDivElement>(null);
@@ -121,11 +141,13 @@ export default function FreiWelt({
 
   // Alles, was die Zeichenschleife liest, steht in einem Ref.
   const lage = useRef({
-    plan, stock, aktiv, onAnkunft, guete, zustaende, stufe, onKampf,
+    plan, stock, aktiv, onAnkunft, guete, zustaende, stufe, onKampf, zielOffen, waechter,
     /** laufender kleiner Kampf, sein Ort und was davon schon geschehen ist */
     duell: null as Kampf | null,
     duellOrt: null as FreiOrt | null,
-    duellGezeigt: false, duellSchlag: false, duellFertig: false, duellNach: 0,
+    duellGezeigt: false, duellSchlag: false, duellFertig: false, duellNach: 0, duellStand: 0,
+    /** Erz-Takt: Zeit, seit die Figur am Erz steht */
+    takt: 0,
     x: 0, z: 0, blick: 0, neigung: 0.34, abstand: 6.5,
     /** Hiebe am Erz, vor dem die Figur steht */
     hiebe: 0,
@@ -141,9 +163,9 @@ export default function FreiWelt({
     drin: "",
     wandHoehe: 0,
     marken: [] as Marke[],
-    setNah, setGuete, setHiebe, setKampf, setDuell,
+    setNah, setGuete, setHiebe, setKampf, setDuell, setVolltreffer,
   });
-  Object.assign(lage.current, { plan, stock, aktiv, onAnkunft, guete, zustaende, stufe, onKampf });
+  Object.assign(lage.current, { plan, stock, aktiv, onAnkunft, guete, zustaende, stufe, onKampf, zielOffen, waechter });
 
   const drei = useRef<{
     szene: THREE.Scene; land: THREE.Group; orte: THREE.Group; spieler: THREE.Group;
@@ -153,11 +175,24 @@ export default function FreiWelt({
     spritze: (x: number, y: number, z: number, farbe: number, anzahl: number) => void;
   } | null>(null);
 
-  /** Gruppe einer Station in der Szene (trägt `userData.erz` bzw. `userData.ding`) */
-  const station = (raum: number): THREE.Object3D | null => {
+  /** Gruppe eines Ortes in der Szene (trägt `userData.erz` bzw. `userData.ding`) */
+  const ortGruppe = (ort: FreiOrt): THREE.Object3D | null => {
     let aus: THREE.Object3D | null = null;
-    drei.current?.orte.traverse(o => { const ort = o.userData.ort as FreiOrt | undefined; if (ort?.art === "raum" && ort.raum === raum) aus = o; });
+    const gesucht = ortSchluessel(ort);
+    drei.current?.orte.traverse(o => { if (o.userData.ort && ortSchluessel(o.userData.ort as FreiOrt) === gesucht) aus = o; });
     return aus;
+  };
+  const station = (raum: number) => ortGruppe({ art: "raum", raum });
+  /** kleinen Kampf an einem Ort beginnen */
+  const beginne = (art: KampfArt, ort: FreiOrt) => {
+    const l = lage.current;
+    if (l.stufe === "aus") return;
+    l.duell = neuerKampf(art, l.stufe);
+    l.duellOrt = ort;
+    l.duellGezeigt = l.duellSchlag = l.duellFertig = false;
+    l.duellStand = 0;
+    l.tasten.clear();
+    l.setDuell(bildVon(l.duell, false));
   };
   const figur = () => drei.current?.spieler.children[0];
   /** Figur dreht sich zu einem Punkt */
@@ -176,13 +211,16 @@ export default function FreiWelt({
     const z = ort.art === "raum" ? l.zustaende[l.stock]?.[ort.raum] : null;
     const st = ort.art === "raum" ? station(ort.raum) : null;
     if (z === "info" && st) {
-      l.hiebe++;
-      l.setHiebe(l.hiebe);
+      // Erz-Takt: steht der Zeiger in der Mitte, zählt der Hieb doppelt
+      const voll = l.stufe !== "aus" && taktTreffer(l.takt, l.stufe);
+      l.hiebe += voll ? 2 : 1;
+      if (voll) { l.setVolltreffer(n => n + 1); drei.current?.spritze(st.position.x, 1.4, st.position.z, 0xfacc15, 8); }
+      l.setHiebe(Math.min(HIEBE, l.hiebe));
       schaue(st.position.x, st.position.z);
       const f = figur();
       if (f) bewegeAvatar(f, "angriff");
       const erz = st.userData.erz as THREE.Object3D | undefined;
-      erz?.scale.setScalar(1 - 0.17 * l.hiebe);
+      erz?.scale.setScalar(1 - 0.17 * Math.min(HIEBE, l.hiebe));
       drei.current?.spritze(st.position.x, 1.2, st.position.z, 0x60a5fa, 10);
       if (l.hiebe >= HIEBE) { l.hiebe = 0; l.warte = { rest: 0.45, ort }; }
       return;
@@ -194,17 +232,21 @@ export default function FreiWelt({
       (ding?.userData.figur as { spiele(art: string): number } | undefined)?.spiele("angriff");
       schaue(st.position.x, st.position.z);
       if (l.stufe !== "aus") {
-        // kleiner Kampf vor der Frage: reihum Konter, Ausweichen, Kombo
+        // kleiner Kampf vor der Frage: reihum Konter, Ausweichen, Kombo, Schildblock, Schwachstelle
         const nr = (ort.art === "raum" ? ort.raum : 0) + l.stock;
-        l.duell = neuerKampf(KAMPF_ARTEN[nr % KAMPF_ARTEN.length], l.stufe);
-        l.duellOrt = ort;
-        l.duellGezeigt = l.duellSchlag = l.duellFertig = false;
-        l.tasten.clear();
-        l.setDuell(bildVon(l.duell, false));
+        beginne(KAMPF_ARTEN[nr % KAMPF_ARTEN.length], ort);
         return;
       }
       l.setKampf(true);
       l.warte = { rest: 0.9, ort };
+      return;
+    }
+    // der Boss am verschlossenen Tor: Runen oder Kräftemessen, abwechselnd je Abschnitt
+    if (ort.art === "ziel" && l.stufe !== "aus" && l.waechter?.[l.stock] && !l.zielOffen[l.stock]) {
+      const tor = ortGruppe(ort);
+      const boss = tor?.userData.ding as THREE.Object3D | undefined;
+      if (tor && boss) boss.rotation.y = Math.atan2(l.x - (tor.position.x + boss.position.x), l.z - (tor.position.z + boss.position.z));
+      beginne(BOSS_ARTEN[l.stock % BOSS_ARTEN.length], ort);
       return;
     }
     l.onAnkunft(ort);
@@ -214,10 +256,10 @@ export default function FreiWelt({
   const druecke = (taste: Taste) => {
     const l = lage.current, k = l.duell;
     if (!k || k.ergebnis) return;
-    const vorher = k.pos;
     kampfEingabe(k, taste);
-    if (k.pos !== vorher && !k.ergebnis) l.setDuell(bildVon(k, l.duellGezeigt));
   };
+  /** Schildblock: Taste bzw. Knopf losgelassen */
+  const lasse = () => { const k = lage.current.duell; if (k) kampfLoslassen(k); };
 
   /** Figur an den Anfang (oder ans Tor) des Abschnitts stellen, Blick zur Kartenmitte */
   const stelle = (anTor: boolean) => {
@@ -342,7 +384,10 @@ export default function FreiWelt({
       l.tasten.add(k);
       if (k !== "shift") { l.pfad = []; l.pfadOrt = null; }
     };
-    const hoch = (ev: KeyboardEvent) => { lage.current.tasten.delete(ev.key.toLowerCase()); };
+    const hoch = (ev: KeyboardEvent) => {
+      lage.current.tasten.delete(ev.key.toLowerCase());
+      if (TASTE[ev.key.toLowerCase()] === "los") lasse();
+    };
     const weg = () => lage.current.tasten.clear();
     window.addEventListener("keydown", runter);
     window.addEventListener("keyup", hoch);
@@ -416,7 +461,7 @@ export default function FreiWelt({
       }
       if (l.duell && l.duellOrt) {
         const k = l.duell, ort = l.duellOrt;
-        const st = ort.art === "raum" ? station(ort.raum) : null;
+        const st = ortGruppe(ort);
         const monster = (st?.userData.ding as THREE.Object3D | undefined)?.userData.figur as { spiele(art: string): number } | undefined;
         const held = d.spieler.children[0];
         l.pfad = []; l.pfadOrt = null;
@@ -426,6 +471,10 @@ export default function FreiWelt({
           // der Ring trifft den Kreis genau bei KONTER_ZIEL
           if (ringEl.current) ringEl.current.style.transform = `scale(${Math.max(0.2, 1 + (KONTER_ZIEL - anteil) * 2)})`;
           if (balkenEl.current) balkenEl.current.style.width = `${Math.max(0, 100 - anteil * 100)}%`;
+          if (ladeEl.current) ladeEl.current.style.width = `${Math.min(100, k.ladung * 100)}%`;
+          if (kraftEl.current) kraftEl.current.style.width = `${k.kraft * 100}%`;
+          if (pusteEl.current) pusteEl.current.style.width = `${k.ausdauer * 100}%`;
+          if ((k.art === "block" || k.art === "ziel" || k.art === "kraft") && !l.duellSchlag && k.t > 0.3) { l.duellSchlag = true; monster?.spiele("angriff"); }
           if (k.art === "konter" && !l.duellSchlag && anteil > KONTER_ZIEL - 0.25) { l.duellSchlag = true; monster?.spiele("angriff"); }
           if (k.art === "ausweichen" && !l.duellGezeigt && k.t >= k.ab) { l.duellGezeigt = true; monster?.spiele("angriff"); l.setDuell(bildVon(k, true)); }
         }
@@ -444,6 +493,10 @@ export default function FreiWelt({
           }
           l.setDuell(bildVon(k, true));
           l.onKampf?.(k.ergebnis === "gut", k.art, k.reaktion);
+        } else if (!k.ergebnis && k.stand !== l.duellStand) {
+          // etwas Sichtbares hat sich geändert (Treffer, neue Schwachstelle, nächste Rune …)
+          l.duellStand = k.stand;
+          l.setDuell(bildVon(k, l.duellGezeigt));
         } else if (l.duellFertig) {
           l.duellNach -= dt;
           if (l.duellNach <= 0) { l.duell = null; l.duellOrt = null; l.setDuell(null); l.tasten.clear(); l.onAnkunft(ort); }
@@ -551,6 +604,10 @@ export default function FreiWelt({
       d.sonne.position.set(l.x + d.sonneVon.x * 70, d.sonneVon.y * 70, l.z + d.sonneVon.z * 70);
 
       d.maler.male(szene, kamera);
+
+      // Erz-Takt: der Zeiger schwingt, solange die Figur an einem Erz steht
+      l.takt += dt;
+      if (taktEl.current && l.stufe !== "aus") taktEl.current.style.left = `${taktStelle(l.takt, l.stufe) * 100}%`;
 
       // Karte: der Pfeil zeigt, wo die Figur steht und wohin die Kamera schaut
       if (pfeilEl.current) {
@@ -840,7 +897,72 @@ export default function FreiWelt({
                 </div>
               </>
             )}
-            {duell.art !== "konter" && (
+            {duell.art === "block" && (
+              <>
+                <div className="text-5xl h-16 flex items-center">{duell.haelt ? "🛡️" : "✋"}</div>
+                <div className="relative w-56 h-5 rounded-full bg-line overflow-hidden">
+                  {/* grüner Bereich: hier loslassen */}
+                  <div className="absolute inset-y-0 bg-green-500/70" style={{ left: `${(BLOCK_ZIEL - duell.halb) * 100}%`, width: `${duell.halb * 200}%` }} />
+                  <div ref={ladeEl} className="absolute inset-y-0 left-0 bg-accent/80 border-r-2 border-fg" style={{ width: "0%" }} />
+                </div>
+                <p className="text-xs text-muted text-center">Halte E (oder den Knopf) gedrückt und lass los, wenn der Balken im Grünen ist.</p>
+                <button className="btn-primary py-2 px-6 select-none touch-none" disabled={!!duell.ergebnis}
+                  onPointerDown={ev => { ev.currentTarget.setPointerCapture(ev.pointerId); druecke("los"); }} onPointerUp={lasse} onPointerCancel={lasse}>
+                  🛡️ Schild halten
+                </button>
+              </>
+            )}
+            {duell.art === "ziel" && (
+              <>
+                <div className="grid grid-cols-3 gap-1" data-ziel={duell.ziel ?? ""}>
+                  {KREUZ.map((t, i) => t === null
+                    ? <span key={i} className="w-14 h-14 flex items-center justify-center text-3xl">{i === 4 ? "👾" : ""}</span>
+                    : (
+                      <button key={i} onClick={() => druecke(t)} disabled={!!duell.ergebnis} aria-label={t}
+                        className={`w-14 h-14 rounded-full border-2 text-2xl ${duell.ziel === t ? "border-rose-500 bg-rose-500/40 animate-pulse" : "border-line opacity-50"}`}>
+                        {duell.ziel === t ? "🎯" : PFEIL[t]}
+                      </button>
+                    ))}
+                </div>
+                <p className="text-xs text-muted text-center">Triff die Schwachstelle, solange sie leuchtet (Pfeiltasten oder antippen): {duell.pos} / {duell.noetig}</p>
+              </>
+            )}
+            {duell.art === "runen" && (
+              <>
+                <div className="grid grid-cols-3 gap-1" data-rune={duell.phase === "zeigen" && duell.zeigt >= 0 ? duell.folge[duell.zeigt] : ""} data-phase={duell.phase}>
+                  {KREUZ.map((t, i) => {
+                    if (t === null) return <span key={i} className="w-14 h-14 flex items-center justify-center text-3xl">{i === 4 ? "👹" : ""}</span>;
+                    const an = duell.phase === "zeigen" && duell.zeigt >= 0 && duell.folge[duell.zeigt] === t;
+                    return (
+                      <button key={i} onClick={() => druecke(t)} disabled={!!duell.ergebnis || duell.phase === "zeigen"} aria-label={t}
+                        className="w-14 h-14 rounded-xl border-2 text-3xl font-black transition-colors"
+                        style={{ borderColor: RUNE[t].farbe, color: an ? "#111827" : RUNE[t].farbe, background: an ? RUNE[t].farbe : "transparent", opacity: duell.phase === "zeigen" && !an ? 0.45 : 1 }}>
+                        {RUNE[t].zeichen}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-muted text-center">
+                  {duell.phase === "zeigen" ? "Merk dir, in welcher Reihenfolge die Runen aufleuchten …"
+                    : `Jetzt du: gleiche Reihenfolge (Pfeiltasten oder antippen) — ${duell.pos} / ${duell.folge.length}`}
+                </p>
+              </>
+            )}
+            {duell.art === "kraft" && (
+              <>
+                <div className="relative w-60 h-6 rounded-full bg-rose-500/60 overflow-hidden border border-line">
+                  <div ref={kraftEl} className="absolute inset-y-0 left-0 bg-green-500" style={{ width: "50%" }} />
+                  <div className="absolute inset-y-0 left-1/2 w-0.5 bg-fg/60" />
+                </div>
+                <div className="flex items-center gap-2 text-xs text-muted w-60">
+                  <span>Puste</span>
+                  <div className="flex-1 h-1.5 rounded-full bg-line overflow-hidden"><div ref={pusteEl} className="h-full bg-sky-400" style={{ width: "100%" }} /></div>
+                </div>
+                <p className="text-xs text-muted text-center">Drück E im ruhigen Takt und schieb den Balken nach rechts. Wer nur hämmert, dem geht die Puste aus.</p>
+                <button className="btn-primary py-2 px-6" onClick={() => druecke("los")} disabled={!!duell.ergebnis}>💪 Drücken</button>
+              </>
+            )}
+            {duell.art !== "konter" && duell.art !== "block" && (
               <div className="w-48 h-1.5 rounded-full bg-line overflow-hidden"><div ref={balkenEl} className="h-full bg-accent" style={{ width: "100%" }} /></div>
             )}
           </div>
@@ -855,11 +977,22 @@ export default function FreiWelt({
       {nah && aktiv && !kampf && !duell && (() => {
         const z = nah.art === "raum" ? zustaende[stock]?.[nah.raum] : null;
         return (
+          <div className="absolute left-1/2 -translate-x-1/2 bottom-5 flex flex-col items-center gap-1.5">
+            {z === "info" && stufe !== "aus" && (
+              <div className="flex flex-col items-center gap-0.5" data-takt>
+                {volltreffer > 0 && <span key={volltreffer} className="text-xs font-black text-amber-400 animate-bounce">💥 Volltreffer! Zählt doppelt</span>}
+                <div className="relative w-44 h-3 rounded-full bg-surface/90 border border-line overflow-hidden">
+                  <div className="absolute inset-y-0 bg-green-500/70" style={{ left: `${(0.5 - ZEITEN[stufe].taktHalb) * 100}%`, width: `${ZEITEN[stufe].taktHalb * 200}%` }} />
+                  <div ref={taktEl} className="absolute inset-y-0 w-1 -ml-0.5 bg-fg" style={{ left: "0%" }} />
+                </div>
+              </div>
+            )}
           <button onClick={() => betrete(nah)} data-ort-knopf
-            className="absolute left-1/2 -translate-x-1/2 bottom-5 btn-primary text-sm py-2 px-4 shadow-xl">
+            className="btn-primary text-sm py-2 px-4 shadow-xl">
             {nah.art === "ziel" ? "E · Zum Tor" : nah.art === "zurueck" ? "E · Zurück in den Abschnitt davor"
               : z === "info" ? `⛏️ E · Erz abbauen (${hiebe}/${HIEBE})` : z === "offen" ? "⚔️ E · Kämpfen" : z === "gelesen" ? "E · Info-Splitter lesen" : "E · Ansehen"}
           </button>
+          </div>
         );
       })()}
       {finger && (

@@ -972,6 +972,7 @@ export function baueOrte(e: FreiEbene, bild: OrteBild): { gruppe: THREE.Group; m
     boss.scale.setScalar(1.5);
     boss.position.set(offen ? 2.6 : 0, 0, offen ? 0.5 : 1.6);
     boss.traverse(o => { o.castShadow = true; });
+    zg.userData.ding = boss;
     zg.add(boss);
   }
   g.add(zg);

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { KONTER_ZIEL, ZEITEN, istStufe, kampfEingabe, kampfSchritt, neuerKampf } from "@/lib/gebaeude/kampf";
+import {
+  BLOCK_ZIEL, KONTER_ZIEL, ZEITEN, istStufe, kampfEingabe, kampfLoslassen, kampfSchritt, neuerKampf, taktStelle, taktTreffer,
+} from "@/lib/gebaeude/kampf";
 
 const fest = (...werte: number[]) => { let i = 0; return () => werte[i++ % werte.length]; };
 
@@ -102,4 +104,138 @@ describe("Kombo", () => {
 it("kennt die Stufen", () => {
   expect(["aus", "leicht", "mittel", "schwer"].every(istStufe)).toBe(true);
   expect(istStufe("unmöglich")).toBe(false);
+});
+
+describe("Schildblock", () => {
+  it("gelingt, wenn man im grünen Bereich loslässt", () => {
+    const k = neuerKampf("block", "mittel");
+    kampfEingabe(k, "los");
+    expect(k.haelt).toBe(true);
+    kampfSchritt(k, k.ladeZeit * BLOCK_ZIEL);
+    kampfLoslassen(k);
+    expect(k.ergebnis).toBe("gut");
+  });
+
+  it("misslingt zu früh und bei zu langem Halten; leicht darf noch einmal", () => {
+    const frueh = neuerKampf("block", "mittel");
+    kampfEingabe(frueh, "los");
+    kampfSchritt(frueh, frueh.ladeZeit * 0.3);
+    kampfLoslassen(frueh);
+    expect(frueh.ergebnis).toBe("schlecht");
+
+    const lang = neuerKampf("block", "mittel");
+    kampfEingabe(lang, "los");
+    kampfSchritt(lang, lang.ladeZeit * (BLOCK_ZIEL + lang.halb) + 0.02);
+    expect(lang.ergebnis).toBe("schlecht");
+
+    const sanft = neuerKampf("block", "leicht");
+    kampfEingabe(sanft, "los");
+    kampfSchritt(sanft, 0.2);
+    kampfLoslassen(sanft);
+    expect(sanft.ergebnis).toBeNull();
+    expect(sanft.ladung).toBe(0);
+    // ohne Halten lädt nichts
+    kampfSchritt(sanft, 1);
+    expect(sanft.ladung).toBe(0);
+  });
+});
+
+describe("Schwachstelle", () => {
+  it("lässt Stellen aufleuchten und zählt Treffer bis zum Sieg", () => {
+    const k = neuerKampf("ziel", "mittel", fest(0.1));
+    expect(k.ziel).toBeNull();
+    for (let n = 0; n < ZEITEN.mittel.zielNoetig; n++) {
+      kampfSchritt(k, 0.55);
+      expect(k.ziel).not.toBeNull();
+      kampfEingabe(k, k.ziel!);
+    }
+    expect(k.ergebnis).toBe("gut");
+  });
+
+  it("straft die falsche Seite und das Verpassen — außer auf leicht", () => {
+    const falsch = neuerKampf("ziel", "mittel", fest(0.1));
+    kampfSchritt(falsch, 0.55);
+    kampfEingabe(falsch, falsch.ziel === "hoch" ? "runter" : "hoch");
+    expect(falsch.ergebnis).toBe("schlecht");
+
+    const lahm = neuerKampf("ziel", "schwer", fest(0.1));
+    kampfSchritt(lahm, 0.55);
+    kampfSchritt(lahm, ZEITEN.schwer.zielFade + 0.01);
+    expect(lahm.ergebnis).toBe("schlecht");
+
+    const sanft = neuerKampf("ziel", "leicht", fest(0.1));
+    kampfSchritt(sanft, 0.55);
+    kampfSchritt(sanft, ZEITEN.leicht.zielFade + 0.01);
+    expect(sanft.ergebnis).toBeNull();
+    expect(sanft.ziel).toBeNull();
+    kampfSchritt(sanft, 0.35);
+    expect(sanft.ziel).not.toBeNull();
+  });
+});
+
+describe("Runen", () => {
+  it("zeigt erst die Reihe und nimmt dann die Eingabe an", () => {
+    const k = neuerKampf("runen", "mittel", fest(0.1, 0.3, 0.6, 0.9));
+    const n = k.folge.length;
+    kampfSchritt(k, 0.01);
+    expect(k.zeigt).toBe(0);
+    kampfEingabe(k, k.folge[0]);
+    expect(k.pos).toBe(0); // beim Zeigen zählt nichts
+    kampfSchritt(k, k.zeig);
+    expect(k.zeigt).toBe(1);
+    kampfSchritt(k, n * k.zeig + 0.5);
+    expect(k.phase).toBe("eingeben");
+    for (const t of k.folge) kampfEingabe(k, t);
+    expect(k.ergebnis).toBe("gut");
+  });
+
+  it("bricht bei einer falschen Rune ab; leicht zeigt die Reihe noch einmal", () => {
+    const hart = neuerKampf("runen", "schwer", fest(0.1));
+    kampfSchritt(hart, hart.folge.length * hart.zeig + 0.5);
+    kampfEingabe(hart, "runter");
+    expect(hart.ergebnis).toBe("schlecht");
+    const sanft = neuerKampf("runen", "leicht", fest(0.1));
+    kampfSchritt(sanft, sanft.folge.length * sanft.zeig + 0.5);
+    kampfEingabe(sanft, "runter");
+    expect(sanft.ergebnis).toBeNull();
+    expect(sanft.phase).toBe("zeigen");
+    expect(sanft.t).toBe(0);
+  });
+});
+
+describe("Kräftemessen", () => {
+  /** drückt `rate`-mal je Sekunde, bis der Kampf entschieden ist */
+  const spiele = (stufe: "leicht" | "mittel" | "schwer", rate: number) => {
+    const k = neuerKampf("kraft", stufe);
+    let naechster = 0;
+    for (let t = 0; t < 12 && !k.ergebnis; t += 0.02) {
+      kampfSchritt(k, 0.02);
+      if (t >= naechster) { kampfEingabe(k, "los"); naechster += 1 / rate; }
+    }
+    return k.ergebnis;
+  };
+
+  it("gewinnt, wer im Takt drückt — auf jeder Stufe", () => {
+    expect(spiele("leicht", 2.2)).toBe("gut");
+    expect(spiele("mittel", 2.2)).toBe("gut");
+    expect(spiele("schwer", 2.2)).toBe("gut");
+  });
+
+  it("verliert, wer nichts tut oder nur hämmert", () => {
+    expect(spiele("mittel", 0.01)).toBe("schlecht");
+    expect(spiele("mittel", 12)).toBe("schlecht");
+  });
+});
+
+describe("Erz-Takt", () => {
+  it("schwingt hin und zurück; in der Mitte ist der Volltreffer", () => {
+    const d = ZEITEN.mittel.taktDauer;
+    expect(taktStelle(0, "mittel")).toBe(0);
+    expect(taktStelle(d / 2, "mittel")).toBeCloseTo(1, 5);
+    expect(taktStelle(d / 4, "mittel")).toBeCloseTo(0.5, 5);
+    expect(taktTreffer(d / 4, "mittel")).toBe(true);
+    expect(taktTreffer(d * 0.75, "mittel")).toBe(true);
+    expect(taktTreffer(0, "mittel")).toBe(false);
+    expect(taktTreffer(d / 2, "mittel")).toBe(false);
+  });
 });

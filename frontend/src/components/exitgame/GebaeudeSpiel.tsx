@@ -15,7 +15,7 @@ import { STANDARD_AVATAR, gespeicherterAvatar, ladeAvatar, type Avatar } from "@
 import { OBJEKT_NAME, OBJEKT_STIMME } from "@/lib/gebaeude/objekte";
 import { bauePlan } from "@/lib/gebaeude/plan";
 import { baueFreiPlan } from "@/lib/gebaeude/frei";
-import { KAMPF_NAME, STUFEN, istStufe, type KampfArt, type Stufe } from "@/lib/gebaeude/kampf";
+import { BOSS_ARTEN, KAMPF_ARTEN, KAMPF_NAME, STUFEN, istStufe, type KampfArt, type Stufe } from "@/lib/gebaeude/kampf";
 import Gebaeude, { type GebaeudeArt, type Ort } from "@/components/gebaeude/Gebaeude";
 import FreiWelt from "@/components/gebaeude/frei/FreiWelt";
 import { istOrganisch } from "@/components/gebaeude/frei/welt";
@@ -206,7 +206,7 @@ export default function GebaeudeSpiel({
               <section className="card p-5 flex flex-col gap-3 max-w-md shadow-2xl">
                 <h2 className="font-black text-lg">⚔️ Wie schwer sollen die Kämpfe sein?</h2>
                 <p className="text-sm text-muted">
-                  Vor jeder Aufgabe gibt es einen kurzen Kampf: im richtigen Moment kontern, ausweichen oder eine Kombo drücken.
+                  Vor jeder Aufgabe gibt es einen kurzen Kampf: im richtigen Moment kontern, ausweichen, den Schild halten oder eine Kombo drücken.
                   Die Stufe bestimmt, wie viel Zeit du hast. Wer verliert, bekommt nur einen Treffer ab — die Aufgabe kommt trotzdem.
                   Du kannst die Stufe jederzeit oben in der Leiste ändern.
                 </p>
@@ -288,7 +288,9 @@ export default function GebaeudeSpiel({
                 </p>
               )}
               {stufe && stufe !== "aus" && (
-                <p className="text-[11px] text-muted">Reihum: {Object.values(KAMPF_NAME).join(", ")}.</p>
+                <p className="text-[11px] text-muted">
+                  Stationen reihum: {KAMPF_ARTEN.map(a => KAMPF_NAME[a]).join(", ")} · Boss am Tor: {BOSS_ARTEN.map(a => KAMPF_NAME[a]).join(", ")} · Erz: Hieb im Takt zählt doppelt
+                </p>
               )}
             </div>
           )}
