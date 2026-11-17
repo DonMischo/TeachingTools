@@ -6,17 +6,20 @@ import type { FreiOrt, FreiPlan } from "@/lib/gebaeude/frei";
 
 // jsdom kann kein WebGL: Die Welt wird durch Knöpfe ersetzt, die »ankommen«.
 vi.mock("@/components/gebaeude/frei/FreiWelt", () => ({
-  default: ({ plan, stock, zielOffen, zustaende, objekte, waechter, stile, gegenschlag, onAnkunft }: {
+  default: ({ plan, stock, zielOffen, zustaende, objekte, waechter, stile, gegenschlag, stufe, aktiv, onKampf, onAnkunft }: {
     plan: FreiPlan; stock: number; zielOffen: boolean[]; zustaende: string[][]; objekte: string[][]; waechter: boolean[]; stile: string[];
-    gegenschlag: number; onAnkunft: (o: FreiOrt) => void;
+    gegenschlag: number; stufe: string; aktiv: boolean; onKampf: (gut: boolean, art: string, reaktion: number | null) => void;
+    onAnkunft: (o: FreiOrt) => void;
   }) => (
-    <div data-testid="welt" data-stock={stock} data-gegenschlag={gegenschlag} data-ziel={String(zielOffen[stock])} data-zustaende={zustaende[stock].join(",")}
+    <div data-testid="welt" data-stock={stock} data-gegenschlag={gegenschlag} data-stufe={stufe} data-aktiv={String(aktiv)} data-ziel={String(zielOffen[stock])} data-zustaende={zustaende[stock].join(",")}
       data-objekte={objekte[stock].join(",")} data-waechter={String(waechter[stock])} data-stile={stile.join(",")}
       data-plaetze={plan.ebenen.map(e => e.raeume.length).join(",")}>
       {zustaende[stock].map((_, k) => (
         <button key={k} onClick={() => onAnkunft({ art: "raum", raum: k })}>ankommen {k}</button>
       ))}
       <button onClick={() => onAnkunft({ art: "ziel" })}>ankommen ziel</button>
+      <button onClick={() => onKampf(true, "ausweichen", 0.42)}>kampf gewonnen</button>
+      <button onClick={() => onKampf(false, "konter", null)}>kampf verloren</button>
     </div>
   ),
 }));
@@ -54,7 +57,38 @@ function spiel(solved: string[], stil?: Stil, stile?: (Stil | undefined)[], onFi
 }
 
 describe("TaskCrawler als freie 3D-Welt", () => {
-  beforeEach(() => postEvent.mockReset().mockResolvedValue({}));
+  beforeEach(() => { postEvent.mockReset().mockResolvedValue({}); localStorage.clear(); });
+
+  it("fragt beim ersten Mal nach der Schwierigkeit der Kämpfe und merkt sie sich", () => {
+    spiel([]);
+    const w = screen.getByTestId("welt");
+    // bis zur Wahl: keine Kämpfe, die Welt wartet
+    expect(screen.getByText(/Wie schwer sollen die Kämpfe sein/)).toBeInTheDocument();
+    expect(w.dataset.stufe).toBe("aus");
+    expect(w.dataset.aktiv).toBe("false");
+    fireEvent.click(screen.getByText("🙂 Leicht"));
+    expect(screen.queryByText(/Wie schwer sollen die Kämpfe sein/)).toBeNull();
+    expect(w.dataset.stufe).toBe("leicht");
+    expect(w.dataset.aktiv).toBe("true");
+    expect(localStorage.getItem("hp_frei_kampf")).toBe("leicht");
+  });
+
+  it("stellt die Schwierigkeit oben in der Leiste um und zählt die Kämpfe", () => {
+    localStorage.setItem("hp_frei_kampf", "mittel");
+    spiel([]);
+    const w = screen.getByTestId("welt");
+    expect(screen.queryByText(/Wie schwer sollen die Kämpfe sein/)).toBeNull();
+    expect(w.dataset.stufe).toBe("mittel");
+    const leiste = screen.getByRole("group", { name: "Schwierigkeit der Kämpfe" });
+    fireEvent.click(Array.from(leiste.querySelectorAll("button")).find(b => b.textContent === "Schwer")!);
+    expect(w.dataset.stufe).toBe("schwer");
+    expect(localStorage.getItem("hp_frei_kampf")).toBe("schwer");
+    fireEvent.click(screen.getByText("kampf gewonnen"));
+    fireEvent.click(screen.getByText("kampf gewonnen"));
+    expect(screen.getByText(/2 von 2 gewonnen · Serie 2 🔥 · beste Reaktion 0,42 s/)).toBeInTheDocument();
+    fireEvent.click(screen.getByText("kampf verloren"));
+    expect(screen.getByText(/2 von 3 gewonnen · beste Reaktion 0,42 s/)).toBeInTheDocument();
+  });
 
   it("baut je Abschnitt eine Karte mit einem Platz je Folie; ohne Stil ist es ein Wald, jede Aufgabe ein Monster", () => {
     spiel([]);

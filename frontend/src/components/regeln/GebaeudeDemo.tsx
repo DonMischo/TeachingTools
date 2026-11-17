@@ -15,6 +15,7 @@ import { STANDARD_AVATAR, ladeAvatar, type Avatar } from "@/components/gebaeude/
 import { OBJEKTE, OBJEKT_NAME } from "@/lib/gebaeude/objekte";
 import { DURCHGANG, NAGE_REGELN, PLATZ, WAND, baueFreiPlan, freiRegeln, type FreiEbene } from "@/lib/gebaeude/frei";
 import FreiWelt from "@/components/gebaeude/frei/FreiWelt";
+import { STUFEN, type Stufe } from "@/lib/gebaeude/kampf";
 import { istOrganisch, weltVon } from "@/components/gebaeude/frei/welt";
 
 export default function GebaeudeDemo() {
@@ -27,6 +28,7 @@ export default function GebaeudeDemo() {
   const [stil, setStil] = useState<Stil>("klassisch");
   // frei: gemalte 3D-Welt auf einer weiten Karte; der Stil bestimmt die Welt (Wald, Höhle, Gebäude)
   const frei = art === "frei";
+  const [stufe, setStufe] = useState<Stufe>("mittel");
   const welt = weltVon(stil);
   const organisch = istOrganisch(stil);
   const verlies = art === "verlies" || frei;
@@ -106,6 +108,13 @@ export default function GebaeudeDemo() {
             {(Object.keys(STILE) as Stil[]).map(s => <option key={s} value={s}>{STILE[s].name}</option>)}
           </select>
         </label>
+        {frei && (
+          <label className="flex items-center gap-1">Kämpfe
+            <select value={stufe} onChange={e => setStufe(e.target.value as Stufe)} className={auswahl} aria-label="Kämpfe">
+              {STUFEN.map(st => <option key={st.id} value={st.id}>{st.name}</option>)}
+            </select>
+          </label>
+        )}
         <div className="inline-flex rounded-lg border border-line p-0.5" role="group" aria-label="Art">
           {([["haus", "🏢 Haus (nach oben)"], ["verlies", "🗝️ Verlies (nach unten)"], ["ebene", "🗺️ Ebene (Türen)"], ["frei", "🌲 3D-Welt (frei laufen)"]] as const).map(([v, t]) => (
             <button key={v} onClick={() => { setArt(v); setStil(v === "verlies" ? "verlies" : v === "frei" ? "wald" : "klassisch"); setStock(0); }} aria-pressed={art === v}
@@ -128,7 +137,7 @@ export default function GebaeudeDemo() {
           <div className="relative h-[75vh] min-h-[480px] rounded-xl border border-line overflow-hidden bg-linear-to-b from-sky-900/30 to-transparent">
             {freiPlan
               ? <FreiWelt key={seed} plan={freiPlan} stock={Math.min(stock, freiPlan.ebenen.length - 1)} zustaende={zustaende} zielOffen={zielOffen} objekte={objekte}
-                  stile={freiPlan.ebenen.map(() => stil)} waechter={waechter} seed={seed} avatar={avatar} aktiv auftrag={auftrag} onAnkunft={ankunft} />
+                  stile={freiPlan.ebenen.map(() => stil)} waechter={waechter} seed={seed} stufe={stufe} avatar={avatar} aktiv auftrag={auftrag} onAnkunft={ankunft} />
               : art !== "frei" && (ansicht === "laufen"
                 ? <Gebaeude plan={plan} stock={stock} zustaende={zustaende} zielOffen={zielOffen} objekte={objekte} stil={stil}
                     art={art} waechter={waechter} avatar={avatar} aktiv auftrag={auftrag} onAnkunft={ankunft} />

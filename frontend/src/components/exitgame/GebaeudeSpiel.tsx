@@ -15,6 +15,7 @@ import { STANDARD_AVATAR, gespeicherterAvatar, ladeAvatar, type Avatar } from "@
 import { OBJEKT_NAME, OBJEKT_STIMME } from "@/lib/gebaeude/objekte";
 import { bauePlan } from "@/lib/gebaeude/plan";
 import { baueFreiPlan } from "@/lib/gebaeude/frei";
+import { KAMPF_NAME, STUFEN, istStufe, type KampfArt, type Stufe } from "@/lib/gebaeude/kampf";
 import Gebaeude, { type GebaeudeArt, type Ort } from "@/components/gebaeude/Gebaeude";
 import FreiWelt from "@/components/gebaeude/frei/FreiWelt";
 import { istOrganisch } from "@/components/gebaeude/frei/welt";
@@ -51,6 +52,9 @@ const WORTE: Record<SpielArt, { stock: string; icon: string; weiter: string; zur
   frei: { stock: "Abschnitt", icon: "🌲", weiter: "Tor zum nächsten Abschnitt", zurueck: "⬅ Zurück durchs Tor", pfeil: "➡", tuer: "Verschlossenes Tor", hin: "➡ Durchs Tor" },
 };
 
+/** auf dem Gerät gemerkt: wie schwer die kleinen Kämpfe der 3D-Welt sind */
+const STUFE_SCHLUESSEL = "hp_frei_kampf";
+
 /** Welt der freien Ansicht, wenn weder Spiel noch Spieler einen Stil wählen */
 const FREI_STIL: Stil = "wald";
 
@@ -78,6 +82,24 @@ export default function GebaeudeSpiel({
     () => teile.map((t, k) => t.raeume.map(i => (frei && slides[i].type === "task" ? "monster" : stationsObjekt(slides[i], monster[k])))),
     [teile, slides, monster, frei]);
   const [gegenschlag, setGegenschlag] = useState(0);
+  // Kleine Kämpfe: die Stufe wählt man beim ersten Mal und kann sie oben in der Leiste jederzeit ändern.
+  const [stufe, setStufe] = useState<Stufe | null>(null);
+  const [stufeFragen, setStufeFragen] = useState(false);
+  useEffect(() => {
+    let s: string | null = null;
+    try { s = localStorage.getItem(STUFE_SCHLUESSEL); } catch { /* ohne Speicher */ }
+    if (istStufe(s)) setStufe(s); else setStufeFragen(true);
+  }, []);
+  const waehleStufe = (s: Stufe) => {
+    setStufe(s);
+    setStufeFragen(false);
+    try { localStorage.setItem(STUFE_SCHLUESSEL, s); } catch { /* egal */ }
+  };
+  const [bilanz, setBilanz] = useState({ siege: 0, kaempfe: 0, serie: 0, beste: null as number | null });
+  const kampfAus = (gut: boolean, _art: KampfArt, reaktion: number | null) => setBilanz(b => ({
+    siege: b.siege + (gut ? 1 : 0), kaempfe: b.kaempfe + 1, serie: gut ? b.serie + 1 : 0,
+    beste: reaktion !== null && (b.beste === null || reaktion < b.beste) ? reaktion : b.beste,
+  }));
   // Wo Monster hausen, bewacht an jeder Tür ein Boss den Weg weiter.
   const waechter = useMemo(() => teile.map((t, k) => monster[k] && t.tuer !== null), [teile, monster]);
   const geloest = attempt.solved_slide_ids;
@@ -167,7 +189,8 @@ export default function GebaeudeSpiel({
           {freiPlan
             ? <FreiWelt plan={freiPlan} stock={stock} zustaende={zustaende} zielOffen={zielOffen} objekte={objekte}
                 stile={freiStile} waechter={waechter} seed={seedAus(code)} gegenschlag={gegenschlag}
-                avatar={avatar} aktiv={s === null} auftrag={auftrag} onAnkunft={ankunft} />
+                stufe={stufe ?? "aus"} onKampf={kampfAus}
+                avatar={avatar} aktiv={s === null && !(frei && stufeFragen)} auftrag={auftrag} onAnkunft={ankunft} />
             : plan && <Gebaeude plan={plan} stock={stock} zustaende={zustaende} zielOffen={zielOffen} objekte={objekte}
                 art={art as GebaeudeArt} stil={stil} stile={stile} waechter={waechter}
                 avatar={avatar} aktiv={s === null} auftrag={auftrag} onAnkunft={ankunft} festeKamera />}
@@ -178,6 +201,25 @@ export default function GebaeudeSpiel({
             <AvatarWahl avatar={avatar} onWahl={setAvatar} startOffen={ersteWahl} />
           </div>
 
+          {frei && stufeFragen && (
+            <div className="absolute inset-0 bg-black/50 flex items-center justify-center p-4" data-stufenwahl>
+              <section className="card p-5 flex flex-col gap-3 max-w-md shadow-2xl">
+                <h2 className="font-black text-lg">⚔️ Wie schwer sollen die Kämpfe sein?</h2>
+                <p className="text-sm text-muted">
+                  Vor jeder Aufgabe gibt es einen kurzen Kampf: im richtigen Moment kontern, ausweichen oder eine Kombo drücken.
+                  Die Stufe bestimmt, wie viel Zeit du hast. Wer verliert, bekommt nur einen Treffer ab — die Aufgabe kommt trotzdem.
+                  Du kannst die Stufe jederzeit oben in der Leiste ändern.
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {STUFEN.map(st => (
+                    <button key={st.id} onClick={() => waehleStufe(st.id)} className={st.id === "leicht" ? "btn-primary py-2" : "py-2 rounded-lg border border-line font-bold hover:border-accent"}>
+                      {st.id === "aus" ? "🕊️ Ohne Kämpfe" : st.id === "leicht" ? "🙂 Leicht" : st.id === "mittel" ? "😤 Mittel" : "🔥 Schwer"}
+                    </button>
+                  ))}
+                </div>
+              </section>
+            </div>
+          )}
           {s && offen !== null && (
             <div className="absolute inset-0 bg-black/40 flex items-end sm:items-center justify-center p-2 sm:p-6" data-zimmer={s.id}>
               {/* Boss: das Challenge-Spiel bekommt die ganze Spielfläche */}
@@ -226,6 +268,30 @@ export default function GebaeudeSpiel({
         </div>
 
         <aside className="card flex flex-col gap-3 p-4 text-sm lg:overflow-y-auto">
+          {frei && (
+            <div className="flex flex-col gap-1.5 pb-3 border-b border-line" data-kampfleiste>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-bold text-muted">⚔️ Kämpfe</span>
+                <div className="inline-flex rounded-lg border border-line p-0.5 text-xs" role="group" aria-label="Schwierigkeit der Kämpfe">
+                  {STUFEN.map(st => (
+                    <button key={st.id} onClick={() => waehleStufe(st.id)} aria-pressed={stufe === st.id}
+                      className={`px-2 py-0.5 rounded-md font-bold ${stufe === st.id ? "bg-accent text-accent-fg" : "text-muted"}`}>
+                      {st.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {bilanz.kaempfe > 0 && (
+                <p className="text-xs text-muted">
+                  {bilanz.siege} von {bilanz.kaempfe} gewonnen{bilanz.serie > 1 ? ` · Serie ${bilanz.serie} 🔥` : ""}
+                  {bilanz.beste !== null ? ` · beste Reaktion ${bilanz.beste.toFixed(2).replace(".", ",")} s` : ""}
+                </p>
+              )}
+              {stufe && stufe !== "aus" && (
+                <p className="text-[11px] text-muted">Reihum: {Object.values(KAMPF_NAME).join(", ")}.</p>
+              )}
+            </div>
+          )}
           <h2 className="font-black">{data.title}</h2>
           <p className="text-xs text-muted">
             {frei
