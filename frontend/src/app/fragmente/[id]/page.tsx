@@ -11,6 +11,8 @@ import {
 } from "@/lib/api";
 import { ALLGEMEIN, Einordnung, EinordnenWahl, OHNE_ORT, ortText, tabName } from "@/components/fragmente/Einordnung";
 import { WorkflowCard, WorkflowModal } from "@/components/fragmente/Workflow";
+import { Anhaenge, GewaehlteDateien } from "@/components/fragmente/Anhaenge";
+import { Aufklappen, KlappKnopf, useAufklappen, useKlappmodus } from "@/components/fragmente/Aufklappen";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { JoinQR } from "@/components/JoinQR";
@@ -161,6 +163,7 @@ function FragmentCard({
   const editable = frag.can_edit;
 
   const { kategorien } = useContext(Einordnung);
+  const klapp = useKlappmodus(`f${frag.id}`);
   const save = (patch: Partial<{ tab: string; title: string | null; content: string | null; category: string | null } & FragmentOrt>) =>
     api.fragments.updateFragment(frag.id, patch).catch((e: any) => toast(e.message ?? "Fehler", "error"));
 
@@ -177,7 +180,8 @@ function FragmentCard({
 
   return (
     <div
-      className={`group relative rounded-xl border border-line bg-page p-3 flex flex-col ${layout === "list" ? "h-32" : "h-52"}`}
+      className={`group relative rounded-xl border border-line bg-page p-3 flex flex-col ${
+        klapp === "normal" ? (layout === "list" ? "h-32" : "h-52") : ""}`}
       onDragOver={canReorder ? (e) => e.preventDefault() : undefined}
       onDrop={canReorder ? () => onDropCard?.() : undefined}
     >
@@ -189,16 +193,21 @@ function FragmentCard({
           title="Ziehen zum Sortieren"
         >⠿</span>
       )}
-      <input
-        className="bg-transparent text-sm font-semibold outline-hidden mb-1 disabled:opacity-100 pr-5"
-        value={title}
-        disabled={!editable}
-        placeholder="Titel…"
-        onChange={e => setTitle(e.target.value)}
-        onBlur={() => title !== (frag.title ?? "") && save({ title: title.trim() || null })}
-      />
+      <div className="flex items-center gap-1 mb-1 pr-5">
+        <KlappKnopf id={`f${frag.id}`} />
+        <input
+          className="flex-1 min-w-0 bg-transparent text-sm font-semibold outline-hidden disabled:opacity-100"
+          value={title}
+          disabled={!editable}
+          placeholder={klapp === "zu" && !title ? (content.split("\n")[0] || "Titel…") : "Titel…"}
+          onChange={e => setTitle(e.target.value)}
+          onBlur={() => title !== (frag.title ?? "") && save({ title: title.trim() || null })}
+        />
+      </div>
+      {klapp !== "zu" && <>
       <textarea
-        className="flex-1 resize-none bg-transparent text-sm outline-hidden text-fg placeholder:text-muted"
+        className={`flex-1 resize-none bg-transparent text-sm outline-hidden text-fg placeholder:text-muted ${
+          klapp === "auf" ? "field-sizing-content min-h-16" : ""}`}
         value={content}
         disabled={!editable}
         placeholder={editable ? "Text…" : ""}
@@ -231,6 +240,7 @@ function FragmentCard({
             onClick={() => setConfirmDel(true)} title="Löschen">Löschen</button>
         )}
       </div>
+      </>}
       {confirmDel && (
         <ConfirmDialog
           title="Karte löschen?"
@@ -329,10 +339,11 @@ function ClippingModal({
           </div>
           <div>
             <label className="label">Bilder / PDFs / Dokumente</label>
-            <input type="file" multiple accept={`image/*,application/pdf,${DOKUMENTE}`}
-              onChange={e => setFiles(Array.from(e.target.files ?? []))}
-              className="text-xs text-muted" />
-            {files.length > 0 && <p className="text-[10px] text-muted mt-1">{files.length} Datei(en) ausgewählt</p>}
+            {initial && <Anhaenge media={initial.media} onPdf={p => window.open(p, "_blank")} />}
+            <input type="file" multiple accept={`image/*,application/pdf,${DOKUMENTE}`} aria-label="Dateien wählen"
+              onChange={e => { const neu = Array.from(e.target.files ?? []); setFiles(f => [...f, ...neu]); e.target.value = ""; }}
+              className={`w-full ${initial?.media.length ? "mt-2" : ""}`} />
+            <GewaehlteDateien dateien={files} onEntfernen={i => setFiles(f => f.filter((_, j) => j !== i))} />
           </div>
           {katalog && <SimFelder sim={sim ?? undefined} katalog={katalog} onChange={s => setSim(s ?? null)} />}
         </div>
@@ -411,6 +422,7 @@ function ClippingCard({ item, onEdit }: { item: ResearchItemOut; onEdit: () => v
   });
 
   const displayTitle = item.title || item.url_title || item.url || "Ohne Titel";
+  const klapp = useKlappmodus(`r${item.id}`);
   const images = item.media.filter(m => m.kind === "image");
   const gallery = images.length > 0
     ? images
@@ -427,7 +439,7 @@ function ClippingCard({ item, onEdit }: { item: ResearchItemOut; onEdit: () => v
 
   return (
     <div className="group rounded-xl border border-line bg-page p-3 flex flex-col gap-2">
-      {active && (
+      {klapp !== "zu" && active && (
         <div className="relative rounded-lg overflow-hidden bg-surface-hover aspect-4/3">
           <img src={active.path} alt="" className="w-full h-full object-cover cursor-zoom-in" onClick={() => setLightbox(true)} />
           {gallery.length > 1 && (
@@ -455,38 +467,22 @@ function ClippingCard({ item, onEdit }: { item: ResearchItemOut; onEdit: () => v
           onConfirm={() => del.mutate()} onClose={() => setConfirmDel(false)} />
       )}
       <div className="flex items-start justify-between gap-2">
-        <button className="text-sm font-semibold text-left line-clamp-2 hover:text-accent" onClick={onEdit}>{displayTitle}</button>
+        <KlappKnopf id={`r${item.id}`} />
+        <button className="flex-1 text-sm font-semibold text-left line-clamp-2 hover:text-accent" onClick={onEdit}>{displayTitle}</button>
+        {klapp === "zu" && item.media.length > 0 && <span className="text-[10px] text-muted shrink-0" title="Anhänge">📎{item.media.length}</span>}
         {item.can_edit && (
           <button className="opacity-0 group-hover:opacity-100 text-muted hover:text-red-500 text-xs transition-opacity"
             onClick={() => setConfirmDel(true)} title="Löschen">×</button>
         )}
       </div>
+      {klapp !== "zu" && <>
       {item.url && (
         <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-accent truncate hover:underline">{item.url}</a>
       )}
-      {item.text_content && <p className="text-xs text-muted line-clamp-4 border-l-2 border-line pl-2 italic">{item.text_content}</p>}
+      {item.text_content && <p className={`text-xs text-muted border-l-2 border-line pl-2 italic whitespace-pre-line ${klapp === "auf" ? "" : "line-clamp-4"}`}>{item.text_content}</p>}
 
-      {/* PDFs + extra media */}
-      {item.media.filter(m => m.kind === "pdf").length > 0 && (
-        <div className="flex flex-wrap gap-1">
-          {item.media.filter(m => m.kind === "pdf").map(m => (
-            <span key={m.id} className="inline-flex items-center gap-1 text-[10px] bg-surface-hover px-2 py-0.5 rounded-sm">
-              <button onClick={() => setPdfUrl(m.path)} className="hover:underline">📄 PDF</button>
-              {item.can_edit && <button onClick={() => delMedia.mutate(m.id)} className="hover:text-red-500">×</button>}
-            </span>
-          ))}
-        </div>
-      )}
-      {item.media.some(m => m.kind === "file") && (
-        <div className="flex flex-wrap gap-1">
-          {item.media.filter(m => m.kind === "file").map(m => (
-            <span key={m.id} className="inline-flex items-center gap-1 text-[10px] bg-surface-hover px-2 py-0.5 rounded-sm max-w-full">
-              <a href={m.path} download={m.name ?? undefined} className="hover:underline truncate" title="Herunterladen">📝 {m.name ?? "Dokument"}</a>
-              {item.can_edit && <button onClick={() => delMedia.mutate(m.id)} className="hover:text-red-500">×</button>}
-            </span>
-          ))}
-        </div>
-      )}
+      {/* PDFs und Dokumente */}
+      <Anhaenge media={item.media} onPdf={setPdfUrl} onLoeschen={item.can_edit ? id => delMedia.mutate(id) : undefined} />
       {item.sim && <SimKnopf sim={item.sim} zurueck="✕ Schließen" />}
       {ortText(kategorien, item) && <div className="text-[10px] text-muted">📍 {ortText(kategorien, item)}</div>}
       {item.tags.length > 0 && (
@@ -504,6 +500,7 @@ function ClippingCard({ item, onEdit }: { item: ResearchItemOut; onEdit: () => v
           </div>
         )}
       </div>
+      </>}
     </div>
   );
 }
@@ -539,6 +536,7 @@ export default function FragmentBoardPage() {
   const [view, setView] = useState<"grid" | "list" | "columns">("grid");
   const [dragId, setDragId] = useState<number | null>(null);
   const [tagFilter, setTagFilter] = useState<string | null>(null);
+  const klappen = useAufklappen();
   // Filter nach Klasse / Unterrichtseinheit (nur bei Sammlungen mit Kategorien)
   const [ortFilter, setOrtFilter] = useState<FragmentOrt>({ klasse: null, einheit: null });
   const [addTabOpen, setAddTabOpen] = useState(false);
@@ -565,11 +563,14 @@ export default function FragmentBoardPage() {
     queryKey: ["fragments", collectionId],
     queryFn: () => api.fragments.listFragments(collectionId, undefined, guestToken),
     enabled: !!collection,
+    // Was andere anlegen, erscheint ohne Neuladen
+    refetchInterval: 5000,
   });
   const { data: research = [] } = useQuery<ResearchItemOut[]>({
     queryKey: ["research", collectionId],
     queryFn: () => api.fragments.listResearch(collectionId, guestToken),
     enabled: !!collection,
+    refetchInterval: 5000,
   });
 
   // Join URL uses the host's LAN IP (not localhost) so scanned QR codes work on
@@ -698,6 +699,7 @@ export default function FragmentBoardPage() {
 
   return (
     <Einordnung.Provider value={{ kategorien, vorgabe: ortFilter, tabs: allTabs, art: collection.art }}>
+    <Aufklappen.Provider value={klappen.wert}>
     <div className="mx-auto w-[92%] max-w-seite p-6">
       <button className="text-sm text-muted hover:text-fg mb-2" onClick={() => router.push("/fragmente")}>← Sammlungen</button>
       <div className="flex items-center justify-between gap-4 mb-4">
@@ -801,7 +803,13 @@ export default function FragmentBoardPage() {
           <button className="px-3 py-1.5 text-sm rounded-lg border border-line hover:bg-surface-hover disabled:opacity-50"
             disabled={importFrag.isPending} onClick={pickImport} title="Markdown-/Textdateien importieren">Import</button>
         )}
-        <div className="ml-auto flex items-center rounded-lg border border-line overflow-hidden">
+        <div className="ml-auto flex items-center gap-1">
+          <button className={`chip ${klappen.alle === "auf" ? "chip-on" : ""}`} onClick={() => klappen.alleSetzen("auf")}
+            title="Alle Einträge ganz zeigen (noch einmal: zurück zur normalen Ansicht)">▾ alle auf</button>
+          <button className={`chip ${klappen.alle === "zu" ? "chip-on" : ""}`} onClick={() => klappen.alleSetzen("zu")}
+            title="Nur die Kopfzeilen zeigen (noch einmal: zurück zur normalen Ansicht)">▸ alle zu</button>
+        </div>
+        <div className="flex items-center rounded-lg border border-line overflow-hidden">
           <button className={`px-2 py-1 text-sm ${view === "grid" ? "bg-surface-hover text-fg" : "text-muted"}`}
             onClick={() => setView("grid")} title="Raster">▦</button>
           <button className={`px-2 py-1 text-sm ${view === "list" ? "bg-surface-hover text-fg" : "text-muted"}`}
@@ -918,6 +926,7 @@ export default function FragmentBoardPage() {
           tab={clippingModal.tab ?? activeTab} guestToken={guestToken} onClose={() => setClippingModal(null)} />
       )}
     </div>
+    </Aufklappen.Provider>
     </Einordnung.Provider>
   );
 }

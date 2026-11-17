@@ -124,3 +124,25 @@ describe("Einordnen", () => {
     expect(tabName("Leistungskontrollen", "materialsammlung")).toBe("Leistungskontrollen");
   });
 });
+
+describe("Auf- und Zuklappen", () => {
+  it("zeigt zugeklappt nur die Kopfzeile und klappt per ▸ wieder auf", async () => {
+    const { Aufklappen, useAufklappen } = await import("@/components/fragmente/Aufklappen");
+    function Brett() {
+      const k = useAufklappen();
+      return (
+        <Aufklappen.Provider value={k.wert}>
+          <button onClick={() => k.alleSetzen("zu")}>alle zu</button>
+          <WorkflowCard item={workflow()} onEdit={() => {}} />
+        </Aufklappen.Provider>
+      );
+    }
+    mitQuery(<Brett />);
+    expect(await screen.findByTestId("d2-bild")).toBeTruthy();
+    fireEvent.click(screen.getByText("alle zu"));
+    expect(screen.queryByTestId("d2-bild")).toBeNull();
+    expect(screen.queryByText("Versuch", { selector: "strong" })).toBeNull();
+    fireEvent.click(screen.getByLabelText("Aufklappen"));
+    expect(await screen.findByTestId("d2-bild")).toBeTruthy();
+  });
+});

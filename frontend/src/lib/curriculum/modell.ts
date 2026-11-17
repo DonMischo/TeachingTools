@@ -86,7 +86,11 @@ export type Thema = {
   zuordnung?: Partial<Record<Niveau, string[]>>;
   notiz?: string;
   links?: Verknuepfung[];
+  /** Tests und Klassenarbeiten der Einheit — Name, später mit Fragmente verknüpfbar */
+  pruefungen?: Pruefung[];
 };
+
+export type Pruefung = { id: string; name: string; link?: Verknuepfung | null };
 
 export type Klasse = { klasse: number; wochen_verfuegbar: number; themen: Thema[] };
 

@@ -14,23 +14,32 @@ import { api, type ToolLink, type ToolRefs } from "@/lib/api";
 const LINK_TYPE = "link";
 const LINK_LABEL = "🔗 Link / URL";
 
-export function ToolPicker({ refs: start, onConfirm, onClose, sammlung }: {
+export function ToolPicker({ refs: start, onConfirm, onClose, sammlung, nurTypen }: {
   refs: ToolRefs;
   onConfirm: (link: ToolLink) => void;
   onClose: () => void;
   /** nur Fragmente dieser Sammlung anbieten (Curriculinator) */
   sammlung?: number | null;
+  /** nur diese Typen anbieten (z. B. ["fragmente", "link"]) */
+  nurTypen?: string[];
 }) {
-  // Beim Öffnen frisch nachladen: ein eben angelegtes Clipping oder Quiz steht sonst
-  // erst nach dem Neuladen der Seite in der Liste.
+  // Frisch halten: beim Öffnen, beim Zurückkehren ins Fenster und alle 5 s — ein eben in
+  // Fragmente angelegtes Clipping steht so gleich in der Liste.
   const [alleRefs, setRefs] = useState<ToolRefs>(start);
-  useEffect(() => { api.stundenplaner.toolRefs().then(setRefs, () => {}); }, []);
+  useEffect(() => {
+    const laden = () => api.stundenplaner.toolRefs().then(setRefs, () => {});
+    laden();
+    const takt = setInterval(laden, 5000);
+    window.addEventListener("focus", laden);
+    return () => { clearInterval(takt); window.removeEventListener("focus", laden); };
+  }, []);
   const [type, setType] = useState<string>("");
   const [refId, setRefId] = useState<string | null>(null);
   const [url, setUrl] = useState("");
   const [label, setLabel] = useState("");
 
-  const refs = sammlung == null ? alleRefs : alleRefs.map(t => t.type !== "fragmente" ? t
+  const gefiltert = nurTypen ? alleRefs.filter(t => nurTypen.includes(t.type)) : alleRefs;
+  const refs = sammlung == null ? gefiltert : gefiltert.map(t => t.type !== "fragmente" ? t
     : { ...t, items: t.items.filter(i => i.ref_id === `c${sammlung}` || !!i.ref_id?.startsWith(`c${sammlung}:`)) });
   const tool = refs.find(t => t.type === type);
   const isLink = type === LINK_TYPE;
@@ -72,7 +81,7 @@ export function ToolPicker({ refs: start, onConfirm, onClose, sammlung }: {
         <div>
           <label className="text-xs text-muted block mb-1">Tool-Typ</label>
           <div className="grid grid-cols-2 gap-2">
-            {[...refs, { type: LINK_TYPE, label: LINK_LABEL }].map(t => (
+            {[...refs, ...(!nurTypen || nurTypen.includes(LINK_TYPE) ? [{ type: LINK_TYPE, label: LINK_LABEL }] : [])].map(t => (
               <button key={t.type} onClick={() => handleTypeChange(t.type)}
                 className="text-left px-3 py-2 rounded-lg border text-sm transition-colors"
                 style={{

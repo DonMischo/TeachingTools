@@ -108,7 +108,10 @@ Im JSON heißt eine Unterrichtseinheit aus Kompatibilitätsgründen `thema` (Lis
         "R": ["rs2026-56-xxx-01"],
         "H": ["rs2026-56-xxx-01"]  // RS-Karte ohne H-Text: R-Text wird beim Zuordnen nach H kopiert
       },
-      "notiz": ""
+      "notiz": "",
+      "pruefungen": [               // Tests und Klassenarbeiten; link optional (Fragmente-Karte, Clipping, URL)
+        { "id": "p1", "name": "Klassenarbeit Beispiel", "link": null }
+      ]
     }
   ]
 }

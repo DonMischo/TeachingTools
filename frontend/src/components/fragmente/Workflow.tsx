@@ -17,6 +17,8 @@ import { kopiereText } from "@/lib/zwischenablage";
 import { DIAGRAMM_IMPORT, KI_ARTEN, kiPrompt, type KiArt } from "@/lib/diagramm/vorlagen";
 import { codeAusAntwort } from "@/lib/diagramm/hervorheben";
 import { CodeFeld } from "@/components/diagramme/CodeFeld";
+import { GewaehlteDateien } from "./Anhaenge";
+import { KlappKnopf, useKlappmodus } from "./Aufklappen";
 import { ALLGEMEIN, Einordnung, EinordnenWahl, OHNE_ORT, ortText } from "./Einordnung";
 
 const BEISPIEL = `direction: down
@@ -224,9 +226,9 @@ export function WorkflowModal({ collectionId, initial, tab, guestToken, onClose 
               </div>
             ) : (
               <div>
-                <input type="file" multiple accept="image/*" aria-label="Bilder"
-                  onChange={e => setFiles(Array.from(e.target.files ?? []))} className="text-xs text-muted" />
-                {files.length > 0 && <p className="text-[10px] text-muted mt-1">{files.length} Bild(er) ausgewählt</p>}
+                <input type="file" multiple accept="image/*" aria-label="Bilder" className="w-full"
+                  onChange={e => { const neu = Array.from(e.target.files ?? []); setFiles(f => [...f, ...neu]); e.target.value = ""; }} />
+                <GewaehlteDateien dateien={files} onEntfernen={i => setFiles(f => f.filter((_, j) => j !== i))} />
                 {hatBilder && <p className="text-[10px] text-muted mt-1">Vorhandene Bilder entfernst du auf der Karte (×).</p>}
               </div>
             )}
@@ -255,12 +257,14 @@ export function WorkflowCard({ item, onEdit }: { item: ResearchItemOut; onEdit: 
     onError: (e: any) => toast(e.message ?? "Fehler", "error") });
   const delMedia = useMutation({ mutationFn: (mid: number) => api.fragments.deleteMedia(mid), onSuccess: invalidate });
   const bilder = item.media.filter(m => m.kind === "image");
+  const klapp = useKlappmodus(`r${item.id}`);
   const lang = (item.text_content ?? "").split("\n").length > 8;
 
   return (
     <div className="group rounded-xl border border-line bg-page p-3 flex flex-col gap-2" data-art="workflow">
       <div className="flex items-start justify-between gap-2">
-        <button className="text-sm font-semibold text-left line-clamp-2 hover:text-accent" onClick={onEdit}>
+        <KlappKnopf id={`r${item.id}`} />
+        <button className="flex-1 text-sm font-semibold text-left line-clamp-2 hover:text-accent" onClick={onEdit}>
           🔀 {item.title || "Workflow"}
         </button>
         {item.can_edit && (
@@ -275,6 +279,7 @@ export function WorkflowCard({ item, onEdit }: { item: ResearchItemOut; onEdit: 
           <button className="text-muted" onClick={() => setLoeschen(false)}>Abbrechen</button>
         </div>
       )}
+      {klapp !== "zu" && <>
       {item.d2 && <D2Bild code={item.d2} />}
       {!item.d2 && bilder.map(m => (
         <div key={m.id} className="relative rounded-lg overflow-hidden bg-surface-hover">
@@ -288,14 +293,15 @@ export function WorkflowCard({ item, onEdit }: { item: ResearchItemOut; onEdit: 
       {bildGross && <Gross onClose={() => setBildGross(null)}><img src={bildGross} alt="" className="max-w-[90vw] max-h-[85vh]" /></Gross>}
       {item.text_content && (
         <div className="text-xs">
-          <div className={voll || !lang ? "" : "max-h-40 overflow-hidden [mask-image:linear-gradient(to_bottom,black_70%,transparent)]"}>
+          <div className={voll || !lang || klapp === "auf" ? "" : "max-h-40 overflow-hidden [mask-image:linear-gradient(to_bottom,black_70%,transparent)]"}>
             <Markdown text={item.text_content} />
           </div>
-          {lang && <button className="text-[10px] text-muted hover:text-fg mt-1" onClick={() => setVoll(v => !v)}>{voll ? "▴ weniger" : "▾ ganzer Ablauf"}</button>}
+          {lang && klapp !== "auf" && <button className="text-[10px] text-muted hover:text-fg mt-1" onClick={() => setVoll(v => !v)}>{voll ? "▴ weniger" : "▾ ganzer Ablauf"}</button>}
         </div>
       )}
       {ortText(kategorien, item) && <div className="text-[10px] text-muted">📍 {ortText(kategorien, item)}</div>}
       {item.author_name && <span className="text-[10px] text-muted truncate mt-auto">{item.author_name}</span>}
+      </>}
     </div>
   );
 }

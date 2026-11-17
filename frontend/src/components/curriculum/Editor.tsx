@@ -28,6 +28,7 @@ import {
 } from "@/lib/curriculum/modell";
 import { KarteBox, KartenAnsicht, StatusChip } from "./KarteBox";
 import { MaterialSammlung, Verknuepfungen } from "./Verknuepfungen";
+import { Pruefungen } from "./Pruefungen";
 import { ExportDialog, ImportDialog, KarteDialog, KiDialog, TeilenDialog, ThemaDialog } from "./Dialoge";
 
 type Op = Record<string, unknown>;
@@ -542,6 +543,15 @@ export function CurriculumEditor({ start, guestToken }: { start: CurriculumPlanO
                       {s.konflikte.map((k, i) => <div key={i}>• {k}</div>)}
                     </details>
                   )}
+                </div>
+              ))}
+
+              {/* Tests und Klassenarbeiten je Einheit */}
+              <div className={`${kopfZelle} text-muted`}>Tests &amp; Klassen&shy;arbeiten</div>
+              {einheiten.map(({ t }) => (
+                <div key={t.id} className="border-r border-b border-line p-1.5 bg-surface">
+                  <Pruefungen liste={t.pruefungen ?? []} klasse={nr}
+                    onChange={nurLesen ? undefined : pruefungen => ops([{ op: "thema", klasse: nr, thema: { ...t, pruefungen } }])} />
                 </div>
               ))}
 

@@ -17,13 +17,19 @@ let refsLaden: Promise<ToolRefs> | null = null;
 export const MaterialSammlung = createContext<number | null>(null);
 let klassenLaden: Promise<ClassOut[]> | null = null;
 
-export function Verknuepfungen({ links, onChange, klasse, klein }: {
+export function Verknuepfungen({ links, onChange, klasse, klein, typen, max, plus = "+ Material" }: {
   links: Verknuepfung[] | undefined;
   /** fehlt → nur öffnen, nicht ändern */
   onChange?: (links: Verknuepfung[]) => void;
   /** Klassenstufe für Werkzeuge mit Klassenbindung (Vorauswahl) */
   klasse?: number;
   klein?: boolean;
+  /** nur diese Werkzeug-Typen anbieten */
+  typen?: string[];
+  /** höchstens so viele Verknüpfungen */
+  max?: number;
+  /** Beschriftung des Knopfs zum Hinzufügen */
+  plus?: string;
 }) {
   const liste = links ?? [];
   const sammlung = useContext(MaterialSammlung);
@@ -57,7 +63,7 @@ export function Verknuepfungen({ links, onChange, klasse, klein }: {
     const info = (await (refsLaden ??= api.stundenplaner.toolRefs()).catch(() => null))?.find(t => t.type === link.type);
     if (!info?.uses_class) return starten(link);
     const alle = await (klassenLaden ??= api.classes.list()).catch(() => [] as ClassOut[]);
-    const passend = klasse ? alle.filter(c => new RegExp(`^${klasse}\D`).test(c.code)) : [];
+    const passend = klasse ? alle.filter(c => new RegExp(`^${klasse}\\D`).test(c.code)) : [];
     setKlassenFrage({ link, klassen: passend.length ? passend : alle });
   };
 
@@ -73,9 +79,9 @@ export function Verknuepfungen({ links, onChange, klasse, klein }: {
           )}
         </span>
       ))}
-      {onChange && (
+      {onChange && (max == null || liste.length < max) && (
         <button className={`rounded-full border border-dashed border-line text-muted hover:text-accent hover:border-accent ${chip}`}
-          onClick={() => setWaehlen(true)}>+ Material</button>
+          onClick={() => setWaehlen(true)}>{plus}</button>
       )}
       {klassenFrage && (
         <span className={`inline-flex items-center gap-1 ${chip}`}>
@@ -89,7 +95,7 @@ export function Verknuepfungen({ links, onChange, klasse, klein }: {
       )}
       {fehler && <span className="text-xs text-bad">{fehler}</span>}
       {waehlen && refs && onChange && (
-        <ToolPicker refs={refs} sammlung={sammlung} onClose={() => setWaehlen(false)}
+        <ToolPicker refs={refs} sammlung={sammlung} nurTypen={typen} onClose={() => setWaehlen(false)}
           onConfirm={link => { onChange([...liste, { type: link.type, ref_id: link.ref_id, url: link.url ?? null, label: link.label }]); setWaehlen(false); }} />
       )}
     </div>
