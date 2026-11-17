@@ -129,6 +129,9 @@ CATALOG: list[CatalogTool] = [
     CatalogTool("trigonometrie", "🔺 Trigonometrie", "🔺", "simulationen", {
         "use": _cap(True, True),
     }),
+    CatalogTool("stochastik", "🎲 Daten und Stochastik", "🎲", "simulationen", {
+        "use": _cap(True, True),
+    }),
     CatalogTool("quadratisch", "⛲ Quadratische Funktionen", "⛲", "simulationen", {
         "use": _cap(True, True),
     }),

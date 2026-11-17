@@ -212,6 +212,8 @@ WERKZEUGE = {
     "pcbau": {"name": "PC-Werkstatt", "config": {"reiter?": "bauen|erkennen|vergleich"}},
     "algo": {"name": "Algorithmen-Werkstatt", "config": {"reiter?": "automat|fluss|abenteuer"}},
     "stromkreis": {"name": "Stromkreise", "config": {}, "hinweis": "Öffnet frei mit Batterie, Schalter und Lämpchen."},
+    "stochastik": {"name": "Daten und Stochastik",
+                   "config": {"reiter?": "erfassen|diagramme|kenngroessen|umfrage|experimente|labor|laplace|baum|venn|vierfelder|kombinatorik|zufallsgroessen|ueben|spiel|erfolge"}},
     "quadratisch": {"name": "Quadratische Funktionen",
                     "config": {"reiter?": "normal|verschieben|strecken|scheitel|binome|umformen|nullstellen|schnitt|ueben|pruefung|spiel|feuerwehr"}},
     "stroemung": {"name": "Druck & Strömung",

@@ -863,6 +863,21 @@ simulationen:
       - "Prüfungsaufgaben mit Teilaufgaben und BE (Brücke, Basketball, Springbrunnen, Gewinn, Gehege, Rampe), Word-Export mit Graph und Lösungen"
       - "Spiel Korbwurf: Scheitelpunkt der Wurfbahn setzen, Ballphysik (Ring/Brett/Decke), springende Verteidiger, 3D-Avatare, Stufen mit/ohne Vorschau und Term eintippen"
       - "Spiel Feuerwehr: Düsendruck und Winkel ergeben die Strahlparabel, Hitze bestimmt den Mindestabstand, Tropfen-Physik und begrenzter Tank"
+  - id: stochastik
+    name: Daten und Stochastik
+    faehigkeiten: {use: [true, true]}
+    kann:
+      - "Lerneinheit Kl. 5–10 nach Lehrplan Mathematik 2026 (Thüringen), Filter für Klasse und Niveau H/R/G, Rückgriffe und Wanderung der Inhalte je Lektion"
+      - "Daten erfassen: Urliste, Strichliste, Häufigkeitstabelle (absolut/relativ), Rangliste"
+      - "Diagramme: Säule, Balken, Kreis, Ring, Linie, Piktogramm, Strichliste an denselben Daten"
+      - "Kenngrößen am Punktstrahl mit Ausreißer, Quartile und Boxplot (R/G), zwei Klassen vergleichen"
+      - "Eigene Umfrage planen, erfassen, darstellen, auswerten; TT-Umfrage per Code übernehmen (freigegebene Ergebnisse, kein Freitext)"
+      - "Zufallsexperimente (Würfel, Münze, Glücksrad, Urne mit/ohne Zurücklegen), Baumdiagramm ohne und mit Wahrscheinlichkeiten, Pfadregeln"
+      - "Zufallslabor: bis 10 000 Versuche, relative Häufigkeit konvergiert sichtbar"
+      - "Ereignisse, Gegenereignis, Laplace; Venn-Diagramm mit ∩ ∪ Ā"
+      - "Vierfeldertafel, bedingte Wahrscheinlichkeit, Baum ↔ Tafel, Unabhängigkeit"
+      - "Kombinatorik (mit/ohne Zurücklegen, mit einem Griff) und Zufallsgrößen mit Histogramm und Erwartungswert"
+      - "Üben in drei Stufen mit Tipps und Lösungsweg; fünf Spiele; 17 Erfolge auch auf /erfolge"
   - id: kreis
     name: Kreis
     faehigkeiten: {use: [true, true]}

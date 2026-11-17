@@ -73,6 +73,7 @@ export const SIM_STATIONEN: Record<string, { name: string; icon: string; Kompone
   algo: { name: "Algorithmen-Werkstatt", icon: "🔀", Komponente: laden(() => import("@/components/algo/Algorithmen")) },
   stromkreis: { name: "Stromkreise", icon: "💡", Komponente: laden(() => import("@/components/stromkreis/Stromkreis")) },
   quadratisch: { name: "Quadratische Funktionen", icon: "⛲", Komponente: laden(() => import("@/components/quadratisch/Quadratisch")) },
+  stochastik: { name: "Daten und Stochastik", icon: "🎲", Komponente: laden(() => import("@/components/stochastik/Stochastik")) },
   stroemung: { name: "Druck & Strömung", icon: "💧", Komponente: laden(() => import("@/components/stroemung/Stroemung")) },
   diagramme: { name: "Diagramm-Werkstatt", icon: "🔀", Komponente: laden(() => import("@/components/diagramme/DiagrammWerkstatt")) },
   baum: { name: "Baumleben", icon: "🌳", Komponente: laden(() => import("@/components/baum/Baumleben")) },

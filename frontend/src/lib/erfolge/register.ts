@@ -28,6 +28,7 @@ import { KLIKK_ERFOLGE } from "@/lib/klikk/erfolge";
 import { ergaenze } from "@/lib/klikk/motor";
 import type { Stand } from "@/lib/klikk/typen";
 import { ERFOLGE as MEDIEN_ERFOLGE } from "@/lib/medien/erfolge";
+import { ERFOLGE as STOCHASTIK_ERFOLGE, lade as ladeStochastik } from "@/lib/stochastik/erfolge";
 import { leer as medienLeer, sauber as medienSauber, type Fortschritt as MedienStand } from "@/lib/medien/fortschritt";
 
 /** Ein Erfolg, wie ihn die Übersicht zeigt — unabhängig davon, woher er kommt. */
@@ -236,6 +237,15 @@ function medien(): SchauErfolg[] {
   return bestesVon(profile, aus(medienLeer()));
 }
 
+/** Daten und Stochastik: fester Schlüssel, Erfolge mit Fortschritt. */
+function stochastik(): SchauErfolg[] {
+  const stand = ladeStochastik();
+  return STOCHASTIK_ERFOLGE.map(e => ({
+    id: e.id, icon: e.icon, name: e.name, text: e.text, gruppe: e.gruppe,
+    wert: Math.min(e.wert(stand), e.ziel), ziel: e.ziel, erreicht: e.wert(stand) >= e.ziel,
+  }));
+}
+
 export const WERKZEUGE: WerkzeugErfolge[] = [
   { slug: "klikk", name: "Klikk", icon: "📱", bereich: "Simulationen", lies: klikk },
   { slug: "medien", name: "Geschichte der Medien", icon: "📜", bereich: "Simulationen", lies: medien },
@@ -246,6 +256,7 @@ export const WERKZEUGE: WerkzeugErfolge[] = [
   { slug: "algo", name: "Algorithmen-Werkstatt", icon: "🔀", bereich: "Simulationen", lies: algo },
   { slug: "funktionen", name: "Koordinaten-Lauf", icon: "📈", bereich: "Simulationen", lies: koordinaten },
   { slug: "regeln", name: "Regel-Labor", icon: "🧬", bereich: "Simulationen", lies: regeln },
+  { slug: "stochastik", name: "Daten und Stochastik", icon: "🎲", bereich: "Simulationen", lies: stochastik },
 ];
 
 export interface WerkzeugSchau extends WerkzeugErfolge {

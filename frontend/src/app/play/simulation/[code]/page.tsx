@@ -28,6 +28,7 @@ import Rechenzeichen from "@/components/rechenzeichen/Rechenzeichen";
 import Prozent from "@/components/prozent/Prozent";
 import Trigonometrie from "@/components/trigonometrie/Trigonometrie";
 import Quadratisch from "@/components/quadratisch/Quadratisch";
+import Stochastik from "@/components/stochastik/Stochastik";
 import Stroemung from "@/components/stroemung/Stroemung";
 import Dreiecke from "@/components/dreiecke/Dreiecke";
 import Kreis from "@/components/kreis/Kreis";
@@ -87,6 +88,7 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   dreiecke: { title: "Dreiecke", icon: "△", node: <Dreiecke /> },
   trigonometrie: { title: "Trigonometrie", icon: "🔺", node: <Trigonometrie /> },
   quadratisch: { title: "Quadratische Funktionen", icon: "⛲", node: <Quadratisch /> },
+  stochastik: { title: "Daten und Stochastik", icon: "🎲", node: <Stochastik /> },
   // Druck & Strömung holt über den Code das Rohrnetz der Lehrkraft für den Baukasten.
   stroemung: { title: "Druck & Strömung", icon: "💧", node: null },
   kreis: { title: "Kreis", icon: "⭕", node: <Kreis /> },
