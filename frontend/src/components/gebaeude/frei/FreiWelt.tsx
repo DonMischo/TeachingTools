@@ -162,6 +162,8 @@ export default function FreiWelt({
     /** an welchem Ort die Figur gerade steht */
     drin: "",
     wandHoehe: 0,
+    /** bewegt, was in der Luft schwebt */
+    luft: null as ((zeit: number) => void) | null,
     marken: [] as Marke[],
     setNah, setGuete, setHiebe, setKampf, setDuell, setVolltreffer,
   });
@@ -442,7 +444,7 @@ export default function FreiWelt({
 
     // ── Schleife ──
     const auge = new THREE.Vector3(), kopf = new THREE.Vector3(), punkt = new THREE.Vector3();
-    let id = 0, zuletzt = performance.now(), lahm = 0, gemessen = 0, bilder = 0;
+    let id = 0, zuletzt = performance.now(), lahm = 0, gemessen = 0, bilder = 0, gelaufen = 0;
     const bild = (jetzt: number) => {
       const roh = (jetzt - zuletzt) / 1000;
       const dt = Math.max(0, Math.min(0.1, roh));
@@ -603,6 +605,7 @@ export default function FreiWelt({
       d.sonne.target.position.set(l.x, 0, l.z);
       d.sonne.position.set(l.x + d.sonneVon.x * 70, d.sonneVon.y * 70, l.z + d.sonneVon.z * 70);
 
+      l.luft?.(jetzt / 1000);
       d.maler.male(szene, kamera);
 
       // Erz-Takt: der Zeiger schwingt, solange die Figur an einem Erz steht
@@ -629,10 +632,14 @@ export default function FreiWelt({
       });
 
       // zu langsam? Dann den Pinsel schmaler stellen (einmal alle paar Sekunden prüfen)
-      bilder++; gemessen += roh;
+      // Die ersten Sekunden zählen nicht (Modelle laden, Shader bauen), ebenso wenig Aussetzer
+      // (Tab im Hintergrund, Aufgabenfenster): nur anhaltend langsame Bilder stellen herunter —
+      // und auf »schnell«, also ganz ohne Pinsel, erst wenn auch »leicht gemalt« lange ruckelt.
+      gelaufen += dt;
+      if (gelaufen > 10 && roh < 0.5) { bilder++; gemessen += roh; }
       if (gemessen > 3) {
-        if (bilder / gemessen < 24 && document.visibilityState === "visible") lahm++; else lahm = 0;
-        if (lahm >= 2 && l.guete > 0 && fest === null) { l.setGuete((l.guete - 1) as Guete); lahm = 0; }
+        if (bilder / gemessen < 22 && document.visibilityState === "visible") lahm++; else lahm = 0;
+        if (lahm >= (l.guete === 2 ? 3 : 6) && l.guete > 0 && fest === null) { l.setGuete((l.guete - 1) as Guete); lahm = 0; }
         bilder = 0; gemessen = 0;
       }
     };
@@ -703,6 +710,8 @@ export default function FreiWelt({
     d.sonne.color.set(s.sonne); d.sonne.intensity = s.sonneStaerke; d.sonne.castShadow = s.sonneStaerke > 0.2;
     d.sonneVon.set(...s.sonneVon).normalize();
     d.fackel.intensity = s.fackel; d.fackel.userData.staerke = s.fackel;
+    d.fackel.color.set(s.fackelFarbe ?? 0xffc48a);
+    lage.current.luft = land.takt ?? null;
     d.maler.belichtung(s.belichtung);
     lage.current.wandHoehe = land.wandHoehe;
     // eslint-disable-next-line react-hooks/exhaustive-deps

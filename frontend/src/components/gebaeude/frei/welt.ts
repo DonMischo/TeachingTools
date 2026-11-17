@@ -40,6 +40,8 @@ export interface Stimmung {
   oben: number; unten: number; umgebung: number;
   /** Fackel über der Figur (0 = aus) */
   fackel: number;
+  /** Farbe dieses Lichts (Vorgabe: warm wie eine Fackel) */
+  fackelFarbe?: number;
   belichtung: number;
 }
 
@@ -48,6 +50,8 @@ export interface Landschaft {
   stimmung: Stimmung;
   /** bis zu dieser Höhe versperren Wände der Kamera die Sicht (0 = gar nicht) */
   wandHoehe: number;
+  /** je Bild aufrufen: bewegt, was in der Luft schwebt (Zeit in Sekunden) */
+  takt?: (zeit: number) => void;
 }
 
 const farbe = (hex: number) => new THREE.Color(hex);
@@ -114,6 +118,140 @@ function bueschelGeometrie(): THREE.BufferGeometry {
   g.userData.geteilt = true;
   bueschel = g;
   return g;
+}
+
+/**
+ * Material, das in seiner eigenen Farbe glimmt: beleuchtet wie Lambert (also mit Form und Schatten),
+ * dazu strahlt die Farbe des einzelnen Stücks mit `glimmen` von selbst — für Pilzhüte bei Nacht.
+ */
+function glimmMaterial(glimmen: number): THREE.MeshLambertMaterial {
+  const m = new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true });
+  m.onBeforeCompile = shader => {
+    shader.fragmentShader = shader.fragmentShader.replace("#include <emissivemap_fragment>", `#include <emissivemap_fragment>
+      #ifdef USE_COLOR
+        totalEmissiveRadiance += vColor.rgb * ${glimmen.toFixed(3)};
+      #endif`);
+  };
+  m.customProgramCacheKey = () => `hp-glimmen-${glimmen.toFixed(3)}`;
+  return m;
+}
+
+let hut: THREE.BufferGeometry | null = null;
+/** Pilzhut: gewölbte Kappe mit eingezogenem Rand und heller Unterseite (Lamellen); Breite 1, Fuß bei y = 0 */
+function hutGeometrie(): THREE.BufferGeometry {
+  if (hut) return hut;
+  const profil: [number, number, number][] = [
+    // Radius, Höhe, Helligkeit: oben über die Wölbung zum Rand, dann unten zurück zum Stiel
+    [0.001, 0.46, 1], [0.14, 0.45, 1], [0.28, 0.39, 1], [0.4, 0.28, 0.95], [0.48, 0.14, 0.9], [0.5, 0.04, 0.85],
+    [0.46, 0, 1.35], [0.3, 0.05, 1.5], [0.12, 0.09, 1.6], [0.001, 0.1, 1.6],
+  ];
+  const g = new THREE.LatheGeometry(profil.map(([x, y]) => new THREE.Vector2(x, y)), 16);
+  const farben: number[] = [];
+  const n = g.attributes.position.count / profil.length;
+  for (let k = 0; k < n; k++) for (const [, , hell] of profil) farben.push(hell, hell, hell);
+  g.setAttribute("color", new THREE.Float32BufferAttribute(farben, 3));
+  g.computeVertexNormals();
+  g.userData.geteilt = true;
+  hut = g;
+  return g;
+}
+
+let stiel: THREE.BufferGeometry | null = null;
+/** Pilzstiel: unten bauchig, oben schlank, mit Ring; Fuß bei y = 0, Höhe 1 */
+function stielGeometrie(): THREE.BufferGeometry {
+  if (stiel) return stiel;
+  const profil: [number, number][] = [[0.001, 0], [1.25, 0.02], [1.35, 0.1], [1.0, 0.24], [0.8, 0.5], [0.72, 0.74], [0.95, 0.77], [0.7, 0.8], [0.66, 1]];
+  const g = new THREE.LatheGeometry(profil.map(([x, y]) => new THREE.Vector2(x, y)), 10);
+  const p = g.attributes.position;
+  g.setAttribute("color", new THREE.Float32BufferAttribute(new Array(p.count * 3).fill(1), 3));
+  g.computeVertexNormals();
+  g.userData.geteilt = true;
+  stiel = g;
+  return g;
+}
+
+interface Schweben {
+  farben: number[]; anzahl: number;
+  /** Größe eines Teilchens in Welteinheiten */
+  groesse: number;
+  /** Fallgeschwindigkeit (negativ = steigt), Höhe der Luftschicht */
+  fall: number; hoehe: number;
+  /** leuchtet (hell auf dunkel) statt zu decken */
+  leuchtet: boolean;
+}
+
+/**
+ * Was in der Luft schwebt: Pollen, Schnee, Sporen, Funken. Punkte über den freien Feldern,
+ * die im Shader treiben und fallen — `takt(zeit)` stellt nur die Uhr.
+ */
+function schweben(e: FreiEbene, r: () => number, S: Schweben): { punkte: THREE.Points; takt: (zeit: number) => void } {
+  const frei: number[] = [];
+  for (let i = 0; i < e.art.length; i++) if (e.art[i] !== WAND) frei.push(i);
+  const ort: number[] = [], farben: number[] = [], phase: number[] = [];
+  const c = new THREE.Color();
+  for (let k = 0; k < S.anzahl && frei.length; k++) {
+    const i = frei[Math.floor(r() * frei.length)], x = i % e.b, y = (i - x) / e.b;
+    ort.push((x + r()) * ZELLE, r() * S.hoehe, (y + r()) * ZELLE);
+    c.set(aus(S.farben, r));
+    farben.push(c.r, c.g, c.b);
+    phase.push(r());
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(ort, 3));
+  g.setAttribute("color", new THREE.Float32BufferAttribute(farben, 3));
+  g.setAttribute("aPhase", new THREE.Float32BufferAttribute(phase, 1));
+  const mat = new THREE.ShaderMaterial({
+    uniforms: { uZeit: { value: 0 }, uGroesse: { value: S.groesse }, uFall: { value: S.fall }, uHoehe: { value: S.hoehe }, uHoch: { value: 720 } },
+    vertexColors: true, transparent: true, depthWrite: false,
+    blending: S.leuchtet ? THREE.AdditiveBlending : THREE.NormalBlending,
+    vertexShader: /* glsl */ `
+      attribute float aPhase;
+      uniform float uZeit, uGroesse, uFall, uHoehe, uHoch;
+      varying vec3 vFarbe;
+      varying float vHell;
+      void main() {
+        vec3 p = position;
+        p.y = mod( position.y - uZeit * uFall * ( 0.6 + aPhase * 0.8 ), uHoehe );
+        p.x += sin( uZeit * ( 0.4 + aPhase * 0.5 ) + aPhase * 6.283 ) * 0.5;
+        p.z += cos( uZeit * ( 0.35 + aPhase * 0.4 ) + aPhase * 12.566 ) * 0.5;
+        vec4 mv = modelViewMatrix * vec4( p, 1.0 );
+        gl_Position = projectionMatrix * mv;
+        gl_PointSize = uGroesse * uHoch / max( 0.5, -mv.z );
+        vFarbe = color;
+        // funkelt leise; verblasst in der Ferne und kurz über dem Boden bzw. unter der Decke
+        vHell = ( 0.65 + 0.35 * sin( uZeit * 2.0 + aPhase * 40.0 ) ) * smoothstep( 46.0, 18.0, -mv.z )
+          * smoothstep( 0.0, 0.4, p.y ) * smoothstep( uHoehe, uHoehe - 0.6, p.y );
+      }`,
+    fragmentShader: /* glsl */ `
+      varying vec3 vFarbe;
+      varying float vHell;
+      void main() {
+        float d = length( gl_PointCoord - 0.5 );
+        float a = smoothstep( 0.5, 0.12, d ) * vHell;
+        if ( a < 0.01 ) discard;
+        gl_FragColor = vec4( vFarbe, a );
+      }`,
+  });
+  const punkte = new THREE.Points(g, mat);
+  punkte.frustumCulled = false;
+  return { punkte, takt: zeit => { mat.uniforms.uZeit.value = zeit; } };
+}
+
+/** Sterne am Nachthimmel: feste Punkte weit draußen */
+function sterne(r: () => number): THREE.Points {
+  const ort: number[] = [], farben: number[] = [];
+  for (let k = 0; k < 500; k++) {
+    const a = r() * Math.PI * 2, h = 0.12 + r() * 0.88, rad = Math.sqrt(1 - h * h);
+    ort.push(Math.cos(a) * rad * 400, h * 400, Math.sin(a) * rad * 400);
+    const hell = 0.5 + r() * 0.5;
+    farben.push(hell, hell, Math.min(1, hell * (0.9 + r() * 0.3)));
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(ort, 3));
+  g.setAttribute("color", new THREE.Float32BufferAttribute(farben, 3));
+  const p = new THREE.Points(g, new THREE.PointsMaterial({ size: 2.2, sizeAttenuation: false, vertexColors: true, fog: false, depthWrite: false }));
+  p.frustumCulled = false;
+  return p;
 }
 
 /** Himmel: große Kugel mit Farbverlauf vom Horizont nach oben */
@@ -237,6 +375,8 @@ interface Natur {
   /** Felsen am Wegrand (Anteil) */
   felsen: number;
   grund: number; umland: number;
+  /** was in der Luft treibt */
+  luft: Schweben;
   stimmung: Stimmung;
 }
 
@@ -252,6 +392,8 @@ const NATUR: Record<"wald" | "winter" | "oase" | "pilze", Natur> = {
     busch: [0x4f7a28, 0x6b8e23, 0x8a9a2b, 0x3f6a2a, 0xa8a030],
     gras: [0x9aa83e, 0x86a034, 0xb3ac48, 0x76942f, 0xc09f40],
     stein: 0x8f8a82, baum: "laub", dicht: 0.9, halme: 0.3, felsen: 0.12, grund: 0x5d6b2a, umland: 0x4d5a26,
+    // Pollen und Staub im Sonnenlicht
+    luft: { farben: [0xfff2c0, 0xffe08a, 0xffffff], anzahl: 260, groesse: 0.09, fall: 0.06, hoehe: 5, leuchtet: true },
     stimmung: {
       himmelOben: 0x86b4e6, himmelUnten: 0xf2ddb0, nebel: 0xe9d6ac, dichte: 0.017,
       sonne: 0xffc98f, sonneStaerke: 3.4, sonneVon: [-0.62, 0.58, -0.4],
@@ -266,10 +408,12 @@ const NATUR: Record<"wald" | "winter" | "oase" | "pilze", Natur> = {
     lichtung: [0xffffff, 0xf4f8fc, 0xe9f0f8],
     blueten: [0xbfe3ff, 0xffffff, 0xd6ecff],
     stamm: [0x4a3a30, 0x55443a, 0x3f332c],
-    krone: [0x2f5a44, 0x38684c, 0x274c3c, 0x41725a],
+    krone: [0x3a6e52, 0x44805c, 0x316248, 0x4f8c68],
     busch: [0xf4f8fc, 0xe2ebf5, 0xffffff, 0x9fb7a8],
     gras: [0xa89a78, 0x8f8468, 0xbcae8c],
     stein: 0xb9c2cf, baum: "tanne", dicht: 0.9, halme: 0.08, felsen: 0.15, grund: 0xe6edf6, umland: 0xdbe5f1,
+    // Schnee fällt
+    luft: { farben: [0xffffff, 0xf2f6fb], anzahl: 700, groesse: 0.11, fall: 0.9, hoehe: 8, leuchtet: false },
     stimmung: {
       himmelOben: 0x9dbbe0, himmelUnten: 0xf2f6fb, nebel: 0xe8eef6, dichte: 0.02,
       sonne: 0xfff1dc, sonneStaerke: 2.5, sonneVon: [-0.6, 0.5, 0.45],
@@ -288,6 +432,8 @@ const NATUR: Record<"wald" | "winter" | "oase" | "pilze", Natur> = {
     busch: [0xc9a368, 0xb8935a, 0x8f9a4a, 0xd4b47c],
     gras: [0xb8b060, 0xa3a352, 0xcbbd72],
     stein: 0xc9a56c, baum: "palme", dicht: 0.6, halme: 0.1, felsen: 0.45, grund: 0xe6c887, umland: 0xdfc07c,
+    // Flugsand
+    luft: { farben: [0xfff0c8, 0xf3dcab], anzahl: 160, groesse: 0.07, fall: 0.1, hoehe: 4, leuchtet: true },
     stimmung: {
       himmelOben: 0x3f95e6, himmelUnten: 0xf6e3b4, nebel: 0xf3dfb0, dichte: 0.009,
       sonne: 0xffe6b0, sonneStaerke: 3.6, sonneVon: [-0.4, 0.85, 0.3],
@@ -305,11 +451,14 @@ const NATUR: Record<"wald" | "winter" | "oase" | "pilze", Natur> = {
     krone: [0x38e1d6, 0xe85ad0, 0x9a7bff, 0xa6f25a, 0x52b8ff],
     busch: [0x38e1d6, 0xe85ad0, 0x9a7bff, 0xa6f25a],
     gras: [0x2f6a66, 0x3a7a70, 0x2a5a6a],
-    stein: 0x4a4a6a, baum: "pilz", dicht: 0.85, halme: 0.25, felsen: 0.1, grund: 0x1a2a3a, umland: 0x141a2e,
+    stein: 0x4a4a6a, baum: "pilz", dicht: 0.7, halme: 0.25, felsen: 0.1, grund: 0x1a2a3a, umland: 0x141a2e,
+    // leuchtende Sporen steigen auf
+    luft: { farben: [0x5ef2e0, 0xf070d8, 0xa98bff, 0xb6ff6a], anzahl: 520, groesse: 0.13, fall: -0.22, hoehe: 7, leuchtet: true },
     stimmung: {
-      himmelOben: 0x070618, himmelUnten: 0x1c1648, nebel: 0x14103a, dichte: 0.026,
-      sonne: 0x8fa8ff, sonneStaerke: 0.9, sonneVon: [0.35, 0.8, -0.4],
-      oben: 0x7a6ae0, unten: 0x1a3a4a, umgebung: 0.85, fackel: 14, belichtung: 1.25,
+      himmelOben: 0x05041a, himmelUnten: 0x241a5c, nebel: 0x171245, dichte: 0.02,
+      sonne: 0xa9b8ff, sonneStaerke: 0.7, sonneVon: [0.35, 0.8, -0.4],
+      // das Licht über der Figur ist hier kühl wie Mondschein, damit sie nicht zum Schattenriss wird
+      oben: 0x8a7cf0, unten: 0x1f5560, umgebung: 0.7, fackel: 9, fackelFarbe: 0xcfe6ff, belichtung: 1.1,
     },
   },
 };
@@ -334,6 +483,24 @@ function waldLandschaft(e: FreiEbene, seed: number, art: keyof typeof NATUR = "w
         ctx.fill();
       }
     }
+    if (art === "winter") {
+      // zugefrorener Teich um jede Station: heller Eisring mit Kratzern
+      for (const [x, y] of [...e.raeume.map(p => [p.x, p.y]), e.start, e.ziel]) {
+        ctx.lineWidth = px * 1.3;
+        ctx.strokeStyle = "#bfe0f5";
+        ctx.beginPath();
+        ctx.arc((x + 0.5) * px, (y + 0.5) * px, px * 3.7, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.lineWidth = px * 0.08;
+        ctx.strokeStyle = "#ffffff";
+        for (let k = 0; k < 14; k++) {
+          const a = r() * Math.PI * 2, b = a + 0.15 + r() * 0.3;
+          ctx.beginPath();
+          ctx.arc((x + 0.5) * px, (y + 0.5) * px, px * (3.3 + r() * 0.8), a, b);
+          ctx.stroke();
+        }
+      }
+    }
     if (art === "oase") {
       // Wasserloch in der Mitte jedes Platzes (unter der Station): blauer Ring
       for (const [x, y] of [...e.raeume.map(p => [p.x, p.y]), e.start, e.ziel]) {
@@ -349,25 +516,45 @@ function waldLandschaft(e: FreiEbene, seed: number, art: keyof typeof NATUR = "w
   const RAND = 7;
   const { t, B } = tiefen(e, RAND);
   const staemme: Stueck[] = [], kronen: Stueck[] = [], buesche: Stueck[] = [], graeser: Stueck[] = [], steine: Stueck[] = [];
-  const kegel: Stueck[] = [], leuchten: Stueck[] = [];
+  const kegel: Stueck[] = [], huete: Stueck[] = [], stiele: Stueck[] = [], tupfen: Stueck[] = [], scheine: Stueck[] = [];
+  const strahlen: Stueck[] = [], staemmeLiegend: Stueck[] = [], kakteen: Stueck[] = [];
+  const sonneRichtung = new THREE.Vector3(...P.stimmung.sonneVon).normalize();
+  /** ein Pilz: Stiel, Hut, auf manchen weiße Tupfen; große werfen einen Lichtschein auf den Boden */
+  const pilz = (sx: number, sz: number, h: number, breit: number, f: THREE.Color) => {
+    const dick = Math.max(0.04, breit * 0.05 + h * 0.007);
+    const neigung = new THREE.Quaternion().setFromEuler(new THREE.Euler((r() - 0.5) * 0.16, r() * 6.3, (r() - 0.5) * 0.16));
+    const kopf = new THREE.Vector3(0, h, 0).applyQuaternion(neigung).add(new THREE.Vector3(sx, 0, sz));
+    stiele.push({ p: new THREE.Vector3(sx, -0.05, sz), s: new THREE.Vector3(dick, h, dick), q: neigung, f: f.clone().lerp(farbe(0xd8d0ec), 0.45).multiplyScalar(0.55) });
+    const hoch = breit * (0.75 + r() * 0.5);
+    huete.push({ p: new THREE.Vector3(kopf.x, kopf.y - hoch * 0.1, kopf.z), s: new THREE.Vector3(breit, hoch, breit), q: neigung, f });
+    if (r() < 0.45) {
+      for (let k = 0; k < 6; k++) {
+        const a = r() * Math.PI * 2, rad = (0.08 + r() * 0.3), oben = 0.46 * Math.sqrt(Math.max(0, 1 - (rad / 0.52) ** 2));
+        const stelle = new THREE.Vector3(Math.cos(a) * rad * breit, (oben - 0.1) * hoch, Math.sin(a) * rad * breit).applyQuaternion(neigung).add(kopf);
+        const gross = breit * (0.035 + r() * 0.035);
+        tupfen.push({ p: stelle, s: new THREE.Vector3(gross, gross * 0.5, gross), q: neigung });
+      }
+    }
+    if (breit > 1.5) scheine.push({ p: new THREE.Vector3(sx, 0.03 + r() * 0.01, sz), s: new THREE.Vector3(breit * 1.5, 1, breit * 1.5), f: f.clone().multiplyScalar(0.35) });
+  };
   const lichter: [number, number, number][] = [];
   const hoch = new THREE.Vector3(0, 1, 0);
   const dreh = () => new THREE.Quaternion().setFromAxisAngle(hoch, r() * Math.PI * 2);
   const hell = (liste: number[], von = 0.9, breit = 0.25) => farbe(aus(liste, r)).multiplyScalar(von + r() * breit);
 
   /** ein Baum der jeweiligen Art bei (sx, sz); `nah` = am Weg (voller ausgebaut) */
-  const pflanze = (sx: number, sz: number, nah: boolean) => {
+  const pflanze = (sx: number, sz: number, nah: boolean, amWeg: boolean) => {
     if (P.baum === "tanne") {
       const h = 5 + r() * 4, dick = 0.16 + r() * 0.1;
       staemme.push({ p: new THREE.Vector3(sx, -0.1, sz), s: new THREE.Vector3(dick, h * 0.7, dick), f: hell(P.stamm, 0.85, 0.3) });
-      const stufen = nah ? 4 : 3;
+      const stufen = nah ? 6 : 4;
       for (let k = 0; k < stufen; k++) {
         // unten bleibt der Stamm frei: tiefe Äste nähmen am Weg die Sicht
-        const anteil = k / stufen, breit = (2.3 - anteil * 1.5) * (0.85 + r() * 0.3), hk = h * 0.34;
+        const anteil = k / stufen, breit = (2.0 - anteil * 1.45) * (0.85 + r() * 0.3), hk = h * 0.25;
         const y = 2.4 + (h - 2.4) * anteil * 0.8 + hk / 2;
         kegel.push({ p: new THREE.Vector3(sx, y, sz), s: new THREE.Vector3(breit, hk, breit), q: dreh(), f: hell(P.krone) });
         // Schneekappe: etwas kleiner, ein Stück höher
-        kegel.push({ p: new THREE.Vector3(sx, y + hk * 0.2, sz), s: new THREE.Vector3(breit * 0.72, hk * 0.62, breit * 0.72), q: dreh(), f: farbe(0xf4f8fc) });
+        kegel.push({ p: new THREE.Vector3(sx, y + hk * 0.26, sz), s: new THREE.Vector3(breit * 0.84, hk * 0.56, breit * 0.84), q: dreh(), f: farbe(0xf4f8fc) });
       }
     } else if (P.baum === "palme") {
       const h = 4.2 + r() * 2.6, dick = 0.14 + r() * 0.06;
@@ -385,11 +572,16 @@ function waldLandschaft(e: FreiEbene, seed: number, art: keyof typeof NATUR = "w
         });
       }
     } else if (P.baum === "pilz") {
-      const h = 2.6 + r() * 4, dick = 0.28 + r() * 0.3, breit = 2.4 + r() * 2.4;
-      const neigung = new THREE.Quaternion().setFromEuler(new THREE.Euler((r() - 0.5) * 0.2, r() * 6.3, (r() - 0.5) * 0.2));
-      staemme.push({ p: new THREE.Vector3(sx, -0.1, sz), s: new THREE.Vector3(dick, h, dick), q: neigung, f: hell(P.stamm, 0.55, 0.2) });
-      const f = farbe(aus(P.krone, r));
-      leuchten.push({ p: new THREE.Vector3(sx, h + breit * 0.12, sz), s: new THREE.Vector3(breit, breit * 0.42, breit), q: dreh(), f: f.clone().multiplyScalar(0.75 + r() * 0.35) });
+      // Am Weg stehen Riesen, deren Hüte über der Kamera sitzen (sonst steckte sie mitten im Hut);
+      // dahinter auch mannshohe, deren leuchtende Hüte man auf Augenhöhe sieht.
+      const riese = amWeg || r() < 0.4;
+      const h = riese ? 6 + r() * 4 : 1.8 + r() * 2.2, breit = riese ? 3 + r() * 2.6 : 1.3 + r() * 1.4;
+      const f = farbe(aus(P.krone, r)).multiplyScalar(0.8 + r() * 0.3);
+      pilz(sx, sz, h, breit, f);
+      // um den Fuß ein paar junge Pilze in derselben Farbe
+      if (nah) for (let k = 0, n = Math.floor(r() * 3); k < n; k++) {
+        pilz(sx + (r() - 0.5) * 1.6, sz + (r() - 0.5) * 1.6, 0.35 + r() * 0.7, 0.35 + r() * 0.4, f.clone().multiplyScalar(0.9));
+      }
       // nur wenige echte Lichter, weit auseinander
       if (nah && lichter.length < 6 && lichter.every(([lx, lz]) => Math.hypot(lx - sx, lz - sz) > 14)) lichter.push([sx, sz, f.getHex()]);
     } else {
@@ -413,19 +605,65 @@ function waldLandschaft(e: FreiEbene, seed: number, art: keyof typeof NATUR = "w
       if (e.art[y * e.b + x] !== DURCHGANG && r() < P.halme) {
         graeser.push({ p: new THREE.Vector3(wx + (r() - 0.5) * ZELLE, 0, wz + (r() - 0.5) * ZELLE), s: new THREE.Vector3().setScalar(0.8 + r() * 0.9), q: dreh(), f: farbe(aus(P.gras, r)) });
       }
+      // Sonne fällt in Bahnen durch die Kronen
+      if ((art === "wald" || art === "winter") && r() < 0.045) {
+        const lang = 13 + r() * 5, breit = 0.9 + r() * 1.6;
+        // die Bahn steht in Sonnenrichtung schräg; zwei gekreuzte Flächen, damit sie von überall zu sehen ist
+        const zurSonne = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), sonneRichtung);
+        for (const dreh2 of [0, Math.PI / 2]) {
+          strahlen.push({
+            p: new THREE.Vector3(wx, 0, wz), s: new THREE.Vector3(breit, lang, 1),
+            q: zurSonne.clone().multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), dreh2)),
+          });
+        }
+      }
       continue;
     }
     const einzeln = tiefe === 1 && allein(e, x, y);
+    if (art === "wald") {
+      // Fliegenpilze am Fuß der Bäume, hier und da ein umgestürzter Stamm
+      if (tiefe === 1 && r() < 0.22) for (let k = 0, n = 1 + Math.floor(r() * 3); k < n; k++) {
+        pilz(wx + (r() - 0.5) * 1.2, wz + (r() - 0.5) * 1.2, 0.25 + r() * 0.35, 0.3 + r() * 0.3, farbe(aus([0xd63a2f, 0xe0552f, 0xc9902f], r)));
+      }
+      if (tiefe === 2 && r() < 0.06) {
+        const lang = 2.5 + r() * 2.5, dick = 0.3 + r() * 0.2;
+        staemmeLiegend.push({
+          p: new THREE.Vector3(wx, dick * 0.4, wz), s: new THREE.Vector3(dick, lang, dick),
+          q: new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, 0, r() * Math.PI, "YXZ")), f: hell(P.stamm, 0.7, 0.3),
+        });
+      }
+    } else if (art === "oase") {
+      // Kakteen: Säule mit ein, zwei Armen
+      if (tiefe >= 2 && tiefe <= 4 && r() < 0.1) {
+        const h = 1.6 + r() * 1.8, gruen = farbe(aus([0x4f8a3c, 0x5c9a46, 0x45803a], r));
+        kakteen.push({ p: new THREE.Vector3(wx, h / 2, wz), s: new THREE.Vector3(0.5, h * 0.6, 0.5), f: gruen });
+        for (const seite of [-1, 1]) {
+          if (r() < 0.3) continue;
+          const hoch = h * (0.35 + r() * 0.25), a = r() * 6.3;
+          kakteen.push({ p: new THREE.Vector3(wx + Math.cos(a) * 0.45 * seite, hoch + 0.35, wz + Math.sin(a) * 0.45 * seite), s: new THREE.Vector3(0.3, 0.6, 0.3), f: gruen });
+          kakteen.push({ p: new THREE.Vector3(wx + Math.cos(a) * 0.25 * seite, hoch, wz + Math.sin(a) * 0.25 * seite), s: new THREE.Vector3(0.28, 0.35, 0.28), q: new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -a, Math.PI / 2, "YXZ")), f: gruen });
+        }
+      }
+      // Dünen: flache Sandrücken hinter dem Rand
+      if (tiefe >= 4 && r() < 0.14) {
+        const breit = 6 + r() * 7;
+        steine.push({ p: new THREE.Vector3(wx, -0.2, wz), s: new THREE.Vector3(breit, 1.6 + r() * 2.2, breit * (0.6 + r() * 0.5)), q: dreh(), f: farbe(aus(P.wiese, r)).multiplyScalar(0.95 + r() * 0.1) });
+      }
+    }
     // am Weg dicht, dahinter lichter, weit hinten nur noch einzelne Stämme
     if (einzeln || r() < (tiefe === 1 ? P.dicht : tiefe <= 3 ? P.dicht * 0.66 : P.dicht * 0.33)) {
-      pflanze(wx + (r() - 0.5) * 0.5, wz + (r() - 0.5) * 0.5, tiefe <= 3);
+      pflanze(wx + (r() - 0.5) * 0.5, wz + (r() - 0.5) * 0.5, tiefe <= 3, tiefe === 1);
     }
     if (tiefe <= 2 && r() < (einzeln ? 1 : 0.75)) {
       const breit = einzeln ? 0.9 : 1.2 + r() * 0.6;
       const stueck: Stueck = { p: new THREE.Vector3(wx + (r() - 0.5) * 0.4, 0.3, wz + (r() - 0.5) * 0.4), s: new THREE.Vector3(breit, 0.7 + r() * 0.5, breit), q: dreh(), f: hell(P.busch, 0.85, 0.3) };
       // im Pilzwald leuchtet der Rand: kleine Pilzhüte statt Büsche
-      if (P.baum === "pilz") leuchten.push({ ...stueck, s: stueck.s.multiplyScalar(0.55), f: farbe(aus(P.busch, r)).multiplyScalar(0.6 + r() * 0.3) });
-      else buesche.push(stueck);
+      // im Pilzwald leuchtet der Rand: Grüppchen kleiner Pilze statt Büschen
+      if (P.baum === "pilz") {
+        for (let k = 0, n = 2 + Math.floor(r() * 3); k < n; k++) {
+          pilz(stueck.p.x + (r() - 0.5) * 1.1, stueck.p.z + (r() - 0.5) * 1.1, 0.4 + r() * 1.1, 0.45 + r() * 0.6, farbe(aus(P.busch, r)).multiplyScalar(0.75 + r() * 0.3));
+        }
+      } else buesche.push(stueck);
     }
     if (tiefe <= 3 && P.halme > 0.15) for (let k = 0; k < 2; k++) {
       graeser.push({ p: new THREE.Vector3(wx + (r() - 0.5) * ZELLE, 0, wz + (r() - 0.5) * ZELLE), s: new THREE.Vector3().setScalar(1 + r() * 1.2), q: dreh(), f: farbe(aus(P.gras, r)).multiplyScalar(0.75 + r() * 0.3) });
@@ -441,8 +679,31 @@ function waldLandschaft(e: FreiEbene, seed: number, art: keyof typeof NATUR = "w
   g.add(reihe(felsGeometrie(), weiss(), buesche));
   g.add(reihe(felsGeometrie(), weiss(), steine));
   g.add(reihe(new THREE.ConeGeometry(0.5, 1, 8), weiss(), kegel));
-  // leuchtende Hüte: ohne Licht und Schatten gezeichnet, darum hell auch in der Nacht
-  g.add(reihe(felsGeometrie(), new THREE.MeshBasicMaterial({ color: 0xffffff }), leuchten, false));
+  if (huete.length) {
+    // Pilze glimmen in ihrer Farbe, bleiben aber beleuchtete Körper mit Wölbung und heller Unterseite
+    g.add(reihe(hutGeometrie(), glimmMaterial(P.baum === "pilz" ? 0.7 : 0.06), huete));
+    g.add(reihe(stielGeometrie(), glimmMaterial(P.baum === "pilz" ? 0.1 : 0), stiele));
+    g.add(reihe(new THREE.SphereGeometry(1, 8, 6), new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.5 }), tupfen, false));
+    // Lichtschein am Boden unter den großen Hüten
+    const kreis = new THREE.CircleGeometry(1, 20);
+    kreis.rotateX(-Math.PI / 2);
+    const schein = reihe(kreis, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.1, blending: THREE.AdditiveBlending, depthWrite: false }), P.baum === "pilz" ? scheine : [], false);
+    schein.receiveShadow = false;
+    g.add(schein);
+    if (P.baum === "pilz") g.add(sterne(r));
+  }
+  if (strahlen.length) {
+    // Lichtbahnen: schmale, schräge Flächen in Sonnenrichtung, die nur aufhellen
+    const bahn = new THREE.PlaneGeometry(1, 1);
+    bahn.translate(0, 0.5, 0);
+    const licht = reihe(bahn, new THREE.MeshBasicMaterial({ color: P.stimmung.sonne, transparent: true, opacity: 0.07, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false }), strahlen, false);
+    licht.receiveShadow = false;
+    g.add(licht);
+  }
+  if (staemmeLiegend.length) g.add(reihe(new THREE.CylinderGeometry(0.5, 0.5, 1, 8), weiss(), staemmeLiegend));
+  if (kakteen.length) g.add(reihe(new THREE.CapsuleGeometry(0.5, 1, 4, 8), weiss(), kakteen));
+  const luft = schweben(e, r, P.luft);
+  g.add(luft.punkte);
   g.add(reihe(bueschelGeometrie(), weiss(), graeser, false));
   for (const [lx, lz, f] of lichter) {
     const l = new THREE.PointLight(f, 22, 16, 1.5);
@@ -450,7 +711,7 @@ function waldLandschaft(e: FreiEbene, seed: number, art: keyof typeof NATUR = "w
     g.add(l);
   }
   // Tannen tragen ihr Grün auf Augenhöhe: die Kamera bleibt auf dem Weg, sonst steckte sie in den Zweigen
-  return { gruppe: g, wandHoehe: P.baum === "tanne" ? 99 : 0, stimmung: P.stimmung };
+  return { gruppe: g, wandHoehe: P.baum === "tanne" ? 99 : 0, stimmung: P.stimmung, takt: luft.takt };
 }
 
 // ── Höhle ────────────────────────────────────────────────────────────────
@@ -473,6 +734,7 @@ function hoehleLandschaft(e: FreiEbene, stil: Stil, seed: number): Landschaft {
 
   const { t, B } = tiefen(e, 3);
   const brocken: Stueck[] = [], zapfen: Stueck[] = [], kristalle: Stueck[] = [];
+  const haengend: Stueck[] = [], pilzHuete: Stueck[] = [], pilzStiele: Stueck[] = [];
   const lichter: [number, number][] = [];
   const hoch = new THREE.Vector3(0, 1, 0);
   const dreh = () => new THREE.Quaternion().setFromAxisAngle(hoch, r() * Math.PI * 2);
@@ -500,6 +762,20 @@ function hoehleLandschaft(e: FreiEbene, stil: Stil, seed: number): Landschaft {
         f: farbe(ton(fels, (tiefe === 1 ? 0.9 : 0.6) + r() * 0.5)),
       });
     }
+    // Tropfsteine hängen von der Decke (die man nur ahnt)
+    if (tiefe <= 2 && r() < 0.35) {
+      const h = 1.5 + r() * 3;
+      haengend.push({ p: new THREE.Vector3(wx + (r() - 0.5) * 1.4, 8.5 - h / 2 + r() * 1.5, wz + (r() - 0.5) * 1.4), s: new THREE.Vector3(1.6 + r(), h, 1.6 + r()), f: farbe(ton(fels, 0.7 + r() * 0.4)) });
+    }
+    if (tiefe === 1 && r() < 0.14) {
+      // Leuchtpilze in der Farbe der Glut
+      for (let k = 0, n = 2 + Math.floor(r() * 3); k < n; k++) {
+        const h = 0.3 + r() * 0.6, breit = 0.35 + r() * 0.4, f = farbe(glut).multiplyScalar(0.7 + r() * 0.4);
+        const px2 = wx + (r() - 0.5) * 1.3, pz2 = wz + (r() - 0.5) * 1.3;
+        pilzStiele.push({ p: new THREE.Vector3(px2, 0, pz2), s: new THREE.Vector3(breit * 0.07 + 0.03, h, breit * 0.07 + 0.03), f: f.clone().lerp(farbe(0xd8d0ec), 0.5).multiplyScalar(0.6) });
+        pilzHuete.push({ p: new THREE.Vector3(px2, h - breit * 0.08, pz2), s: new THREE.Vector3(breit, breit * 0.9, breit), f });
+      }
+    }
     if (tiefe === 1 && r() < 0.5) {
       const h = 0.5 + r() * 1.3;
       zapfen.push({ p: new THREE.Vector3(wx + (r() - 0.5) * 1.2, h / 2, wz + (r() - 0.5) * 1.2), s: new THREE.Vector3(1, h, 1), f: farbe(ton(fels, 1.2 + r() * 0.4)) });
@@ -522,7 +798,16 @@ function hoehleLandschaft(e: FreiEbene, stil: Stil, seed: number): Landschaft {
     l.position.set(lx, 1.6, lz);
     g.add(l);
   }
+  const spitzeUnten = new THREE.ConeGeometry(0.24, 1, 6);
+  spitzeUnten.rotateX(Math.PI);
+  g.add(reihe(spitzeUnten, new THREE.MeshLambertMaterial({ color: 0xffffff }), haengend, false));
+  g.add(reihe(hutGeometrie(), glimmMaterial(0.9), pilzHuete, false));
+  g.add(reihe(stielGeometrie(), glimmMaterial(0.15), pilzStiele, false));
+  // Funken bzw. Kristallstaub steigen auf
+  const luft = schweben(e, r, { farben: [glut, farbe(glut).lerp(farbe(0xffffff), 0.5).getHex()], anzahl: 240, groesse: 0.09, fall: -0.3, hoehe: 5, leuchtet: true });
+  g.add(luft.punkte);
   return {
+    takt: luft.takt,
     gruppe: g, wandHoehe: 99,
     stimmung: {
       himmelOben: 0x04050a, himmelUnten: 0x0a0c14, nebel: 0x080a12, dichte: 0.034,
@@ -588,6 +873,7 @@ function gebaeudeLandschaft(e: FreiEbene, stil: Stil, seed: number): Landschaft 
 
   const waende: Stueck[] = [], sockel: Stueck[] = [], leisten: Stueck[] = [], stuerze: Stueck[] = [], pfosten: Stueck[] = [], lampen: Stueck[] = [];
   const rahmen: Stueck[] = [], scheiben: Stueck[] = [], bilder: Stueck[] = [], regale: Stueck[] = [], buecher: Stueck[] = [];
+  const flecken: Stueck[] = [], halos: Stueck[] = [], lichtkreise: Stueck[] = [], baenke: Stueck[] = [];
   const zinnen: Stueck[] = [], spitzen: Stueck[] = [], streifen: Stueck[] = [];
   const BUCH = [0xb23a48, 0x2a6f97, 0xe9c46a, 0x52796f, 0x6d597a, 0xe76f51];
   const BILD = [0x3d5a80, 0xe07a5f, 0x81b29a, 0xf2cc8f, 0x9d4edd, 0x457b9d];
@@ -634,10 +920,20 @@ function gebaeudeLandschaft(e: FreiEbene, stil: Stil, seed: number): Landschaft 
     const wahl = (x * 7 + y * 13) % 6;
     if (frei && wahl === 0) {
       lampen.push({ p: new THREE.Vector3(wx + frei[0] * (ZELLE / 2 + 0.08), 2.35, wz + frei[1] * (ZELLE / 2 + 0.08)), s: new THREE.Vector3(0.22, 0.32, 0.22) });
+      // weicher Schein um die Lampe und auf dem Boden darunter
+      halos.push({ p: new THREE.Vector3(wx + frei[0] * (ZELLE / 2 + 0.2), 2.35, wz + frei[1] * (ZELLE / 2 + 0.2)), s: new THREE.Vector3().setScalar(0.9) });
+      lichtkreise.push({ p: new THREE.Vector3(wx + frei[0] * (ZELLE / 2 + 0.7), 0.03, wz + frei[1] * (ZELLE / 2 + 0.7)), s: new THREE.Vector3(1.5, 1, 1.5) });
+    } else if (frei && wahl === 1 && e.art[(y + frei[1]) * e.b + x + frei[0]] === WEG) {
+      // Bank im Flur, flach an der Wand
+      const mx = wx + frei[0] * (ZELLE / 2 + 0.24), mz = wz + frei[1] * (ZELLE / 2 + 0.24);
+      baenke.push({ p: new THREE.Vector3(mx, 0.42, mz), s: new THREE.Vector3(frei[0] ? 0.42 : 1.2, 0.09, frei[1] ? 0.42 : 1.2) });
+      for (const s2 of [-0.5, 0.5]) baenke.push({ p: new THREE.Vector3(mx + (frei[0] ? 0 : s2), 0.2, mz + (frei[1] ? 0 : s2)), s: new THREE.Vector3(frei[0] ? 0.36 : 0.09, 0.4, frei[1] ? 0.36 : 0.09) });
     } else if (frei && wahl === 3) {
       // Fenster: Rahmen und helle Scheibe
       rahmen.push(anWand(wx, wz, frei, 2.0, 1.05, 1.3, 0.1));
       scheiben.push(anWand(wx, wz, frei, 2.0, 0.85, 1.1, 0.12, 0.05));
+      // das Fenster wirft einen hellen Fleck auf den Boden
+      flecken.push({ p: new THREE.Vector3(wx + frei[0] * (ZELLE / 2 + 1.3), 0.035, wz + frei[1] * (ZELLE / 2 + 1.3)), s: new THREE.Vector3(frei[0] ? 2.0 : 1.0, 1, frei[1] ? 2.0 : 1.0) });
     } else if (frei && wahl === 5) {
       rahmen.push(anWand(wx, wz, frei, 1.95, 0.8, 0.62, 0.08));
       bilder.push({ ...anWand(wx, wz, frei, 1.95, 0.66, 0.48, 0.1, 0.045), f: farbe(aus(BILD, r)) });
@@ -654,7 +950,8 @@ function gebaeudeLandschaft(e: FreiEbene, stil: Stil, seed: number): Landschaft 
   g.add(reihe(wuerfel, musterMaterial(farbe(F.wand).lerp(farbe(F.boden), 0.45).getHex(), A.wand, 2.2), waende));
   g.add(reihe(wuerfel, new THREE.MeshLambertMaterial({ color: F.wand }), sockel));
   g.add(reihe(wuerfel, new THREE.MeshLambertMaterial({ color: F.oben }), leisten));
-  g.add(reihe(wuerfel, new THREE.MeshLambertMaterial({ color: F.tuer }), stuerze));
+  // der Sturz gehört zur Mauer (heller Putz); nur die Pfosten tragen die Türfarbe
+  g.add(reihe(wuerfel, musterMaterial(farbe(F.wand).lerp(farbe(F.boden), 0.45).getHex(), A.wand, 2.2), stuerze));
   g.add(reihe(wuerfel, new THREE.MeshLambertMaterial({ color: F.tuer }), pfosten));
   g.add(reihe(wuerfel, new THREE.MeshLambertMaterial({ color: F.tuer }), rahmen, false));
   const tag = dunkel ? 0x2a3350 : 0xcfe8ff;
@@ -667,7 +964,20 @@ function gebaeudeLandschaft(e: FreiEbene, stil: Stil, seed: number): Landschaft 
   g.add(reihe(new THREE.ConeGeometry(eis ? 0.2 : 0.32, 1, eis ? 5 : 4), new THREE.MeshLambertMaterial(eis ? { color: 0xe0f2fe, emissive: 0x38bdf8, emissiveIntensity: 0.5 } : { color: F.oben }), spitzen));
   const neon = F.licht ?? 0xff3b3b;
   g.add(reihe(wuerfel, new THREE.MeshLambertMaterial({ color: neon, emissive: neon, emissiveIntensity: 2.4 }), streifen, false));
+  g.add(reihe(wuerfel, new THREE.MeshLambertMaterial({ color: 0x7a5230 }), baenke));
   const schein = F.licht ?? 0xffdf9e;
+  {
+    const hell = (farbwert: number, deckung: number) => new THREE.MeshBasicMaterial({ color: farbwert, transparent: true, opacity: deckung, blending: THREE.AdditiveBlending, depthWrite: false });
+    const fleck = new THREE.PlaneGeometry(1, 1);
+    fleck.rotateX(-Math.PI / 2);
+    const kreis = new THREE.CircleGeometry(1, 20);
+    kreis.rotateX(-Math.PI / 2);
+    for (const m of [
+      reihe(fleck, hell(dunkel ? 0x6a7ab8 : 0xfff2cc, dunkel ? 0.18 : 0.3), flecken, false),
+      reihe(kreis, hell(schein, dunkel ? 0.3 : 0.14), lichtkreise, false),
+      reihe(new THREE.SphereGeometry(0.5, 12, 8), hell(schein, dunkel ? 0.45 : 0.22), halos, false),
+    ]) { m.receiveShadow = false; g.add(m); }
+  }
   g.add(reihe(wuerfel, new THREE.MeshLambertMaterial({ color: schein, emissive: schein, emissiveIntensity: dunkel ? 2.2 : 1.1 }), lampen, false));
 
   // Topfpflanzen in den Ecken der Zimmer
@@ -683,11 +993,14 @@ function gebaeudeLandschaft(e: FreiEbene, stil: Stil, seed: number): Landschaft 
   }
   g.add(reihe(new THREE.CylinderGeometry(0.42, 0.3, 1, 10), new THREE.MeshLambertMaterial({ color: 0xb4623a }), toepfe));
   g.add(reihe(new THREE.CylinderGeometry(0.3, 0.36, 1, 14), musterMaterial(F.stuetze, "marmor", 1.6), saeulen));
+  // Staub tanzt im Licht
+  const luft = schweben(e, r, { farben: [dunkel ? schein : 0xfff2cc, 0xffffff], anzahl: 180, groesse: 0.06, fall: 0.04, hoehe: 3.2, leuchtet: true });
+  g.add(luft.punkte);
   g.add(reihe(felsGeometrie(), new THREE.MeshLambertMaterial({ color: 0xffffff }), gruen));
 
   return {
     // die Kamera bleibt immer diesseits der Mauern: von oben verdeckte die Mauerkrone die Figur
-    gruppe: g, wandHoehe: 99,
+    gruppe: g, wandHoehe: 99, takt: luft.takt,
     stimmung: dunkel
       ? { himmelOben: oben, himmelUnten: unten, nebel: 0x0b0d14, dichte: 0.026, sonne: 0x9fb4ff, sonneStaerke: 0.35, sonneVon: [-0.3, 1, 0.25], oben: 0x8a94c0, unten: 0x2a2420, umgebung: 0.7, fackel: 40, belichtung: 1.15 }
       : { himmelOben: oben, himmelUnten: unten, nebel: unten, dichte: 0.008, sonne: 0xffe9c4, sonneStaerke: 2.4, sonneVon: [-0.45, 1, 0.3], oben: 0xffffff, unten: 0xb89a7a, umgebung: 1.25, fackel: 0, belichtung: 0.95 },
@@ -827,7 +1140,11 @@ function gartenLandschaft(e: FreiEbene, seed: number): Landschaft {
   g.add(reihe(bueschelGeometrie(), weiss(), graeser, false));
   g.add(reihe(wuerfel, new THREE.MeshLambertMaterial({ color: 0xf4efe2 }), balken));
   g.add(reihe(new THREE.CylinderGeometry(0.5, 0.28, 1, 12), new THREE.MeshLambertMaterial({ color: 0xd9d2c0 }), vasen));
+  // Blütenblätter treiben durch den Garten
+  const luft = schweben(e, r, { farben: [0xf7b8d0, 0xffffff, 0xffd9e6], anzahl: 220, groesse: 0.1, fall: 0.35, hoehe: 5, leuchtet: false });
+  g.add(luft.punkte);
   return {
+    takt: luft.takt,
     gruppe: g, wandHoehe: 0,
     stimmung: {
       himmelOben: 0x5fa8ee, himmelUnten: 0xdcecf7, nebel: 0xdcecf7, dichte: 0.006,
