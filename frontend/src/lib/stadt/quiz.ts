@@ -91,6 +91,33 @@ const WISSEN: Record<Stil, Wissen[]> = {
     { ab: 1, text: "Warum baute die Kolonialmacht die Ville nouvelle neben die Medina?", richtig: "Europäer und Einheimische sollten getrennt leben; die Medina blieb erhalten.", falsch: ["Weil die Medina abgebrannt war", "Weil dort mehr Wasser war"], erklaerung: "In Marokko ließ Lyautey Neustädte neben den Altstädten bauen — es entstand eine dualistische Stadt." },
     { ab: 2, text: "Wer lebt heute oft in der Medina?", richtig: "Ärmere Familien und Zugezogene; dazu Touristen im Bazar", falsch: ["Fast nur reiche Familien", "Niemand — sie ist ein Museum"], erklaerung: "Wohlhabende zogen in die Neubauviertel; viele Medinas sind UNESCO-Welterbe (Fès seit 1981)." },
   ],
+  bergmann: [
+    { ab: 0, text: "Warum liegt die Bergmannsstadt am steilen Hang statt im ebenen Tal?", richtig: "Weil dort das Erz gefunden wurde.", falsch: ["Weil der Hang sicherer vor Hochwasser war", "Weil die Aussicht schöner war"], erklaerung: "Der Bodenschatz bestimmt den Ort. Schacht und Siedlung liegen direkt über dem Erzgang — Bequemlichkeit zählte nicht." },
+    { ab: 0, text: "Was sind Halden?", richtig: "Aufgeschüttetes taubes Gestein aus den Gruben", falsch: ["Lager für das fertige Silber", "Wälle zur Verteidigung"], erklaerung: "Um an das Erz zu kommen, muss viel Gestein ohne Wert nach oben — es wird neben dem Schacht aufgeschüttet." },
+    { ab: 1, text: "Warum steht die Schmelzhütte unten am Bach?", richtig: "Wasserräder treiben Blasebälge und Pochwerke an.", falsch: ["Um das Silber zu waschen", "Weil oben kein Platz für Schornsteine war"], erklaerung: "Vor der Dampfmaschine war Wasserkraft die wichtigste Energie. Dazu brauchte man Holzkohle aus den Wäldern." },
+    { ab: 1, text: "Warum ließ der Landesherr eine planmäßige Stadt bauen?", richtig: "Er verdiente am Bergbau mit (Bergregal) und wollte Bergleute anlocken.", falsch: ["Weil die Bergleute es verlangten", "Weil die Kirche es vorschrieb"], erklaerung: "Das Bergregal gab dem Landesherrn einen Anteil am Erz. Eine gut geordnete Stadt mit Markt lockte mehr Bergleute und Händler an." },
+    { ab: 2, text: "Warum liegt der Bahnhof im Tal und nicht in der Altstadt?", richtig: "Eisenbahnen schaffen nur geringe Steigungen.", falsch: ["Die Bergleute wollten keine Bahn.", "Im Tal war der Boden billiger."], erklaerung: "Schon wenige Prozent Steigung sind für Züge viel. Die Bahn folgt dem Tal, die Bergstadt bleibt oben." },
+  ],
+  industrie: [
+    { ab: 0, text: "Warum steht die Zeche nicht im Dorf?", richtig: "Sie steht dort, wo die Kohle im Boden liegt.", falsch: ["Weil sie zu laut war", "Weil der Bürgermeister es verbot"], erklaerung: "Wie beim Erz bestimmt der Rohstoff den Ort. Siedlungen wuchsen erst danach um die Zechen herum." },
+    { ab: 1, text: "Warum steht das Hüttenwerk direkt am Fluss?", richtig: "Es braucht Kühlwasser und Schiffe für Erz und Kohle.", falsch: ["Damit Arbeiter baden können", "Wegen der schönen Lage"], erklaerung: "Schwere Güter reisen am billigsten per Schiff. Deshalb baute man auch Kanäle zu den Zechen." },
+    { ab: 1, text: "Was ist eine Zechenkolonie?", richtig: "Eine Siedlung, die das Bergwerk für seine Arbeiter baute", falsch: ["Ein Lager für Kohle", "Eine Kolonie in Afrika"], erklaerung: "Doppelhäuser mit Garten und Stall — so band die Zeche die Arbeiter an sich." },
+    { ab: 1, text: "Warum hat das Ruhrgebiet keine richtige Mitte?", richtig: "Viele Dörfer wuchsen um viele Zechen gleichzeitig zusammen.", falsch: ["Die Mitte wurde im Krieg zerstört.", "Es wurde nach Plan ohne Mitte gebaut."], erklaerung: "Statt einer Stadt, die von innen nach außen wächst, entstand ein Städteband aus vielen Kernen — ein »polyzentrischer Ballungsraum«." },
+    { ab: 3, text: "Was bedeutet Strukturwandel?", richtig: "Alte Industrien verschwinden, neue Arbeit entsteht in Dienstleistung und Bildung.", falsch: ["Häuser werden umgebaut", "Straßen bekommen neue Namen"], erklaerung: "Seit der Kohlekrise 1958 sind fast alle Zechen und viele Hütten geschlossen. Alte Flächen werden zu Parks, Hochschulen und Gewerbe." },
+  ],
+  hafen: [
+    { ab: 0, text: "Warum liegt die Hafenstadt in einer Bucht oder Flussmündung?", richtig: "Dort liegen Schiffe geschützt vor Sturm und Wellen.", falsch: ["Dort ist das Wasser wärmer.", "Dort gibt es mehr Fische."], erklaerung: "Ein geschützter Naturhafen war wichtiger als alles andere. Flussmündungen verbinden zudem mit dem Hinterland." },
+    { ab: 0, text: "Was war die Hanse?", richtig: "Ein Bund von Handelsstädten im Nord- und Ostseeraum", falsch: ["Eine Schiffsart", "Ein Königreich"], erklaerung: "Lübeck, Hamburg, Bremen, Danzig und viele mehr schützten gemeinsam ihren Handel." },
+    { ab: 1, text: "Warum stehen die Speicher direkt am Wasser?", richtig: "Waren werden vom Schiff direkt ins Lager gehoben.", falsch: ["Damit sie kühl bleiben", "Damit Diebe nicht herankommen"], erklaerung: "In der Speicherstadt holen Kräne die Ware aus den Schuten auf den Fleeten — ohne Umweg über die Straße." },
+    { ab: 2, text: "Warum liegt der Containerhafen weit draußen?", richtig: "Große Schiffe brauchen tiefes Wasser und viel Fläche zum Stapeln.", falsch: ["Container sind gefährlich.", "In der Stadt ist Lkw-Verkehr verboten."], erklaerung: "Containerschiffe sind über 400 m lang. Nahe der Altstadt fehlt beides: Tiefe und Platz." },
+    { ab: 3, text: "Warum braucht ein neues Hafenquartier eine U-Bahn?", richtig: "Viele Menschen wohnen und arbeiten dort — Straßen allein würden verstopfen.", falsch: ["Weil Busse nicht über Brücken dürfen", "Weil es Vorschrift für Neubauten ist"], erklaerung: "Dichte Viertel brauchen leistungsfähigen Nahverkehr. Eine U-Bahn befördert pro Stunde so viele Menschen wie mehrere Autobahnspuren." },
+  ],
+  tech: [
+    { ab: 0, text: "Wovon lebte das Tal, bevor dort Computer gebaut wurden?", richtig: "Von Obstplantagen", falsch: ["Vom Goldbergbau", "Vom Walfang"], erklaerung: "Das »Valley of Heart's Delight« war einer der größten Obstgärten der Welt." },
+    { ab: 1, text: "Welche Rolle spielte die Universität?", richtig: "Ihre Absolventen gründeten Firmen gleich nebenan.", falsch: ["Sie baute selbst Computer zum Verkauf.", "Sie verbot Firmen in der Nähe."], erklaerung: "Stanford verpachtete Land für einen Forschungspark. Wissen, Geld und Gründer trafen sich auf engem Raum (»Cluster«)." },
+    { ab: 2, text: "Warum liegen die Firmen-Campus an den Highway-Ausfahrten?", richtig: "Fast alle Beschäftigten kommen mit dem Auto.", falsch: ["Wegen des schönen Blicks", "Weil dort Strom billiger ist"], erklaerung: "Flaches Land, große Parkplätze, schnelle Auffahrt — die ganze Region ist für das Auto geplant." },
+    { ab: 3, text: "Warum lohnen sich Bus und Bahn in Vororten mit Einfamilienhäusern kaum?", richtig: "Im Umkreis jeder Haltestelle wohnen zu wenige Menschen.", falsch: ["Weil dort niemand arbeitet", "Weil Busse zu laut sind"], erklaerung: "Öffentlicher Verkehr braucht Dichte. Bei weit verstreuten Häusern ist der Weg zur Haltestelle zu lang, die Busse fahren fast leer." },
+  ],
 };
 
 function mischen<T>(a: T[], z: () => number): T[] {
@@ -200,7 +227,7 @@ export function zielOrt(f: Extract<Frage, { art: "zeige" }>, s: Stadt): P | null
     const z = [...s.zonen].reverse().find(x => x.typ === ziel.zone);
     if (!z) return null;
     // ein Punkt der Zone, der wirklich dazu zählt
-    for (const p of z.poly) for (const t of [0.5, 0.3, 0.7]) {
+    for (const t of [0.5, 0.3, 0.7, 0.85, 0.92, 0.97]) for (const p of z.poly) {
       const c = z.poly.reduce((a, q) => ({ x: a.x + q.x / z.poly.length, y: a.y + q.y / z.poly.length }), { x: 0, y: 0 });
       const q = { x: c.x + (p.x - c.x) * t, y: c.y + (p.y - c.y) * t };
       if (zoneBei(s, q) === ziel.zone) return q;

@@ -7,6 +7,7 @@
  *   1980  Plattenbau-Wohnkomplexe (WBS 70), Poliklinik
  *   2015  Schrumpfung: Werk verkleinert, Rückbau, Einfamilienhäuser, Discounter
  */
+import { eignung } from "../standort";
 import { istWasser, neigungBei, wasserAbstand, type Gelaende } from "@/lib/gelaende/gelaende";
 import { zufallsquelle } from "@/lib/gelaende/rauschen";
 import { abstand, geschlossen, inPoly, rechteck, schwerpunkt, type P } from "../geometrie";
@@ -59,7 +60,7 @@ export function sozialistisch(g: Gelaende, seed: number): Epoche[] {
     if (d < 900 || d > 1500 || !baubar(g, p, 6) || !trocken(g, p, werk)) return -1e9;
     let gut = 0;
     for (let k = 0; k < 12; k++) { const q = polar(p, (k / 12) * Math.PI * 2, 500); if (baubar(g, q, 12)) gut++; }
-    return gut - abstand(p, mitte) / 500 + z() * 0.3;
+    return gut + eignung(g, p, "sozialistisch") - abstand(p, mitte) / 500 + z() * 0.3;
   }) ?? { x: werk.x + 1100, y: werk.y };
   const w = Math.atan2(c.y - werk.y, c.x - werk.x);
   const quer = w + Math.PI / 2;

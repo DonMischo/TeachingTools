@@ -4,8 +4,9 @@
  */
 import { hoeheBei, inAue, istWasser, neigungBei, wasserAbstand, type Gelaende } from "@/lib/gelaende/gelaende";
 import { abstand, flaeche, geschlossen, inPoly, laenge, richtung, schnitte, schwerpunkt, winkelAbstand, zurLinie, type P } from "./geometrie";
-import { zoneBei } from "./haeuser";
-import { BAUTEN } from "./modell";
+import { haeuser, zoneBei } from "./haeuser";
+import { erschliessung } from "./oepnv";
+import { BAUTEN, OEPNV } from "./modell";
 import type { BauTyp, Stadt, Stil, StrassenArt } from "./modell";
 
 export interface Pruefung { ok: boolean; hinweis: string; ort?: P }
@@ -25,7 +26,7 @@ export interface Auftrag {
   titel: string;
   auftrag: string;
   /** Start: leere Karte oder eine Epoche aus dem Wachstum */
-  start: { epoche: number } | null;
+  start: { epoche: number; ohneNahverkehr?: boolean } | null;
   werkzeuge: Werkzeug[];
   bauten: BauTyp[];
   regeln: Regel[];
@@ -543,6 +544,73 @@ const INDUSTRIE: Regel[] = [
 
 // ---------------------------------------------------------------- Amerikanisch 1960 (Erweiterung)
 
+const HALTE: BauTyp[] = ["haltestelle", "umsteige"];
+const LINIEN_OEPNV: StrassenArt[] = ["tram", "bus", "sbahn", "ubahn"];
+const halteIn = (s: Stadt) => s.bauten.filter(b => HALTE.includes(b.typ));
+const ARBEIT = ["gewerbe", "industrie", "cbd", "campus", "zeche", "hafengebiet", "uni"];
+const WOHN = ["grosssiedlung", "einfamilienhaus", "pendler", "platte", "gruenderzeit", "vorort", "kolonie", "hafencity"];
+
+const NAHVERKEHR: Regel[] = [
+  {
+    id: "erschlossen", text: "Mindestens 60 % der Wohnhäuser haben eine Haltestelle in Fußnähe", warum: "Mehr als 400 m (Bus, Tram) oder 800 m (S-Bahn) zu Fuß — dann nehmen die meisten doch das Auto.",
+    pruefe: (s, g) => {
+      const e = erschliessung(s, haeuser(s, g, g.wahl.seed));
+      return { ok: e.anteil >= 0.6, hinweis: `${Math.round(e.anteil * 100)} % der Wohnhäuser sind angebunden (${e.mit} von ${e.alle}).` };
+    },
+  },
+  {
+    id: "halt-an-linie", text: "Jede Haltestelle liegt an einer Linie", warum: "Eine Haltestelle ohne Bus oder Bahn nützt niemandem.",
+    pruefe: s => {
+      const h = halteIn(s);
+      if (!h.length) return fehlt("Haltestellen (🚏)");
+      const los = h.find(b => !nahAnStrasse(s, b, LINIEN_OEPNV, 40));
+      return los ? { ok: false, hinweis: "Diese Haltestelle liegt an keiner Linie.", ort: los } : { ok: true, hinweis: `${h.length} Haltestellen, alle an einer Linie.` };
+    },
+  },
+  {
+    id: "wohnen-arbeit", text: "Eine Linie verbindet Wohngebiete mit Arbeitsorten", warum: "Die meisten Fahrten sind Wege zur Arbeit, Schule oder Ausbildung.",
+    pruefe: s => {
+      const l = strassen(s, ...LINIEN_OEPNV);
+      if (!l.length) return fehlt("eine Linie (Tram, Bus, S- oder U-Bahn)");
+      const nahe = (st: P[], typen: string[]) => s.zonen.some(z => typen.includes(z.typ) && zurLinie(schwerpunkt(z.poly), st).d < 400);
+      return l.some(st => nahe(st.punkte, WOHN) && nahe(st.punkte, ARBEIT))
+        ? { ok: true, hinweis: "Mindestens eine Linie fährt von Wohnen zur Arbeit." }
+        : { ok: false, hinweis: "Keine Linie kommt sowohl an einem Wohngebiet als auch an Gewerbe, Industrie oder Innenstadt vorbei." };
+    },
+  },
+  {
+    id: "umsteigen", text: "Wo sich Linien kreuzen, kann man umsteigen", warum: "Ein Netz ist mehr als einzelne Linien: Kurze Umsteigewege machen viele Ziele erreichbar.",
+    pruefe: s => {
+      const l = strassen(s, ...LINIEN_OEPNV);
+      if (l.length < 2) return { ok: false, hinweis: "Lege mindestens zwei Linien an, die sich treffen." };
+      const h = halteIn(s);
+      let kreuz = 0;
+      for (let i = 0; i < l.length; i++) for (let j = i + 1; j < l.length; j++) for (const p of schnitte(l[i].punkte, l[j].punkte)) {
+        kreuz++;
+        if (!h.some(b => abstand(b, p) < 120)) return { ok: false, hinweis: "Hier kreuzen sich zwei Linien ohne Haltestelle.", ort: p };
+      }
+      return kreuz ? { ok: true, hinweis: `${kreuz} Kreuzungspunkte, alle mit Haltestelle.` } : { ok: false, hinweis: "Die Linien kreuzen sich nirgends — kein Umsteigen möglich." };
+    },
+  },
+  {
+    id: "abstand", text: "Haltestellen liegen 300 bis 1000 m auseinander", warum: "Zu dicht macht die Fahrt langsam, zu weit macht den Fußweg lang.",
+    pruefe: s => {
+      const l = strassen(s, ...LINIEN_OEPNV);
+      const h = halteIn(s);
+      if (!l.length || h.length < 2) return fehlt("Linien mit mehreren Haltestellen");
+      for (const st of l) {
+        const an = h.filter(b => zurLinie(b, st.punkte).d < 40);
+        const L = laenge(st.punkte);
+        if (an.length < 2) return { ok: false, hinweis: "Diese Linie hat weniger als zwei Haltestellen.", ort: st.punkte[0] };
+        const mittel = L / (an.length - 1 || 1);
+        if (mittel < 300) return { ok: false, hinweis: `Im Schnitt nur ${Math.round(mittel)} m zwischen den Haltestellen — zu langsam.`, ort: st.punkte[0] };
+        if (mittel > 1000 && st.art !== "sbahn") return { ok: false, hinweis: `Im Schnitt ${Math.round(mittel)} m zwischen den Haltestellen — zu weit zu Fuß.`, ort: st.punkte[0] };
+      }
+      return { ok: true, hinweis: "Die Abstände passen." };
+    },
+  },
+];
+
 const AUTOSTADT: Regel[] = [
   {
     id: "interstate", text: "Eine Interstate quer über die Karte", warum: "Ab 1956 baute die Regierung ein Netz von Autobahnen (Interstate Highways) — auch mitten durch die Städte.",
@@ -863,7 +931,23 @@ export const AUFTRAEGE: Auftrag[] = [
     bauten: ["paradeplatz", "kirche", "kaserne", "zitadelle", "markt"],
     regeln: FESTUNG,
   },
+  {
+    id: "nahverkehr", stil: "europaeisch", icon: "🚋", titel: "Plane den Nahverkehr",
+    auftrag: "Heute: Die Stadt ist gewachsen, aber Bus und Bahn fehlen. Lege Straßenbahn-, Bus-, S- oder U-Bahn-Linien an und setze Haltestellen, sodass die meisten Menschen zu Fuß eine Haltestelle erreichen — und vom Wohnen zur Arbeit kommen.",
+    start: { epoche: 5, ohneNahverkehr: true },
+    werkzeuge: ["tram", "bus", "sbahn", "ubahn"],
+    bauten: ["haltestelle", "umsteige"],
+    regeln: NAHVERKEHR,
+  },
 ];
+
+/** Ausgangsstadt eines Erweiterungsauftrags aus den gewachsenen Epochen */
+export function startStadt(a: Auftrag, epochen: { stadt: Stadt }[]): Stadt | null {
+  if (!a.start) return null;
+  const s = epochen[a.start.epoche].stadt;
+  // Nahverkehr selbst planen: Linien und Haltestellen der Epoche weg
+  return a.start.ohneNahverkehr ? { ...s, strassen: s.strassen.filter(x => !OEPNV.includes(x.art)), bauten: s.bauten.filter(b => !HALTE.includes(b.typ)) } : s;
+}
 
 /** Regelsätze zum freien Prüfen im Sandkasten */
 export const REGELSAETZE: { id: string; label: string; regeln: Regel[] }[] = [
@@ -872,6 +956,7 @@ export const REGELSAETZE: { id: string; label: string; regeln: Regel[] }[] = [
   { id: "eisenbahn", label: "Eisenbahnstadt (USA)", regeln: EISENBAHNSTADT },
   { id: "residenz", label: "Residenzstadt", regeln: RESIDENZ },
   { id: "festung", label: "Festungsstadt", regeln: FESTUNG },
+  { id: "nahverkehr", label: "Nahverkehr", regeln: NAHVERKEHR },
 ];
 
 export function pruefe(regeln: Regel[], s: Stadt, g: Gelaende, start: Stadt | null) {

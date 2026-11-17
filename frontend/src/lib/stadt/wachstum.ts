@@ -6,6 +6,7 @@
  *   amerikanisch Eisenbahnstadt → Straßenbahnstadt → Autostadt → Sprawl
  * Jede Epoche ist eine vollständige Kopie der Stadt (zum Blättern).
  */
+import { eignung } from "./standort";
 import { hoeheBei, inAue, istWasser, neigungBei, wasserAbstand, type Gelaende } from "@/lib/gelaende/gelaende";
 import { perlin, zufallsquelle } from "@/lib/gelaende/rauschen";
 import {
@@ -21,6 +22,11 @@ import { festung } from "./stile/festung";
 import { sozialistisch } from "./stile/sozialistisch";
 import { lateinamerika } from "./stile/lateinamerika";
 import { orientalisch } from "./stile/orientalisch";
+import { bergmann } from "./stile/bergmann";
+import { industrie } from "./stile/industrie";
+import { hafen } from "./stile/hafen";
+import { tech } from "./stile/tech";
+import { jahrVon, nahverkehr } from "./oepnv";
 
 // für Planen und Tests
 export { band, zerschneiden, freiraeumen } from "./hilfen";
@@ -44,7 +50,8 @@ export function roemischerStandort(g: Gelaende, z: Z): RoemischerPlan {
       if (schlecht > 2 || neig > 9) return -1e9;
       const dw = wasserAbstand(g, c.x, c.y);
       const nah = g.wasser.some(w => w) ? -Math.abs(dw - (W / 2 + 120)) / 120 : 0;
-      return nah - neig * 0.6 - schlecht + z() * 0.4 - abstand(c, { x: g.breite / 2, y: g.breite / 2 }) / 900;
+      const aq = g.quelle ? -Math.max(0, abstand(c, g.quelle) - 2000) / 250 : 0;
+      return nah * 0.5 + aq + eignung(g, c, "roemisch") - neig * 0.3 - schlecht + z() * 0.4 - abstand(c, { x: g.breite / 2, y: g.breite / 2 }) / 900;
     });
     if (p) return { c: p, W, H };
   }
@@ -110,7 +117,8 @@ export function roemisch(g: Gelaende, seed: number): Epoche[] {
   }
   // Aquädukt: Quelle auf höherem Gelände, Gefälle bis zur Stadt
   const hc = hoeheBei(g, c.x, c.y);
-  const quelle = besterPunkt(g, 40, p => {
+  // geplanter Quellsee zuerst, sonst die höchste Stelle in Reichweite
+  const quelle = (g.quelle && abstand(g.quelle, c) < 2600 ? g.quelle : null) ?? besterPunkt(g, 40, p => {
     const d = abstand(p, c);
     if (d < 900 || d > 2400 || istWasser(g, p.x, p.y)) return -1e9;
     return hoeheBei(g, p.x, p.y) - hc - d / 200;
@@ -193,7 +201,9 @@ export function europaeischerStandort(g: Gelaende, z: Z): EuropaeischerPlan {
       if (baubar(g, p, 8)) markt = { x: p.x + nx * 60 * seite, y: p.y + ny * 60 * seite };
     }
   }
-  markt ??= besterPunkt(g, 600, p => (baubar(g, p, 6) ? -neigungBei(g, p.x, p.y) - abstand(p, mitte) / 300 + z() : -1e9)) ?? mitte;
+  // an der Furt nur, wenn die Altstadt dort nicht am Steilhang klebt
+  if (markt && eignung(g, markt, "europaeisch") < -5) markt = null;
+  markt ??= besterPunkt(g, 600, p => (baubar(g, p, 6) ? eignung(g, p, "europaeisch") - abstand(p, mitte) / 600 + z() * 0.5 : -1e9)) ?? mitte;
   let burg: P | null = null;
   if (g.berg && abstand(g.berg, markt) < 1000) burg = g.berg;
   else burg = besterPunkt(g, 60, p => {
@@ -359,7 +369,7 @@ export function amerikanischerStandort(g: Gelaende, z: Z): P {
     if (!baubar(g, p, 6)) return -1e9;
     let n = 0;
     for (let i = -2; i <= 2; i++) for (let j = -2; j <= 2; j++) n += baubar(g, { x: p.x + i * 110, y: p.y + j * 90 }, 10) ? 1 : 0;
-    return n - abstand(p, mitte) / 250 + z() * 0.5 - Math.abs(wasserAbstand(g, p.x, p.y) - 300) / 600;
+    return n + eignung(g, p, "amerikanisch") - abstand(p, mitte) / 250 + z() * 0.5 - Math.abs(wasserAbstand(g, p.x, p.y) - 300) / 600;
   }) ?? mitte;
 }
 
@@ -497,6 +507,12 @@ export function amerikanisch(g: Gelaende, seed: number): Epoche[] {
 }
 
 export function wachse(stil: Stil, g: Gelaende, seed: number): Epoche[] {
+  const epochen = wachseOhneNahverkehr(stil, g, seed);
+  for (const e of epochen) e.neu.push(...nahverkehr(g, e.stadt, jahrVon(e.jahr), stil));
+  return epochen;
+}
+
+function wachseOhneNahverkehr(stil: Stil, g: Gelaende, seed: number): Epoche[] {
   switch (stil) {
     case "roemisch": return roemisch(g, seed);
     case "europaeisch": return europaeisch(g, seed);
@@ -506,6 +522,10 @@ export function wachse(stil: Stil, g: Gelaende, seed: number): Epoche[] {
     case "sozialistisch": return sozialistisch(g, seed);
     case "lateinamerika": return lateinamerika(g, seed);
     case "orientalisch": return orientalisch(g, seed);
+    case "bergmann": return bergmann(g, seed);
+    case "industrie": return industrie(g, seed);
+    case "hafen": return hafen(g, seed);
+    case "tech": return tech(g, seed);
   }
 }
 

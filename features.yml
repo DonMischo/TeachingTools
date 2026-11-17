@@ -406,12 +406,15 @@ simulationen:
   - id: stadt
     name: Stadtentwicklung
     kann:
-      - Acht Stadttypen auf demselben Zufallsgelände (5 Landschaften, Fluss mit Aue und Furt, Burgberg, Relief, Erosion auf Knopfdruck) - römisch, europäisch, amerikanisch, Residenzstadt, Festungsstadt, sozialistisch, lateinamerikanisch, orientalisch
+      - Zwölf Stadttypen auf demselben Zufallsgelände (5 Landschaften, Fluss mit Aue und Furt, Burgberg, Relief, Erosion auf Knopfdruck) - römisch, europäisch, amerikanisch, Residenzstadt, Festungsstadt, sozialistisch, lateinamerikanisch, orientalisch, Bergmannsstadt, Industriestadt (Ruhrgebiet), Hafen- und Handelsstadt, Tech-Region (Silicon Valley)
+      - Gelände passend zum Stadttyp nach echten Vorbildern (Trier, Karlsruhe, Freiberg, Duisburg, Hamburg, San José) mit geplanten Merkmalen - Quellsee auf der Höhe fürs Aquädukt, Erzberg, geschützte Bucht, Kohlefeld; »Warum hier?« mit Neigung und Flussabstand
+      - Standortwahl prüft die ganze Stadtfläche (mittlere Neigung, Aue) und den Wunschabstand zum Fluss je Stadttyp
+      - Nahverkehr je Epoche - Straßenbahn ab 1880, Abbau in der amerikanischen Autostadt, Busse zu den Vororten, S- und U-Bahn in großen Städten; Anteil angebundener Wohnhäuser (400/800 m); Planungsauftrag »Plane den Nahverkehr« mit fünf Regeln
       - Europäische Stadt bis um 2020 (Konversion, Gentrifizierung, Reurbanisierung); sozialistische Stadt mit Schrumpfung und Rückbau
       - Stadtstrukturmodelle als Schema (Burgess, Hoyt, Harris-Ullman, Lateinamerika, Orient)
       - Wachstum Epoche für Epoche mit Erklärung, »Neu in dieser Epoche« und Viertel-Legende
       - Quiz zur Karte — Bauwerke, Viertel und Straßen anklicken, Wissensfragen mit Begründung, Epoche erkennen
-      - Sieben Planungsaufträge (auch Residenz- und Festungsstadt) mit Regelprüfung (✅/❌, Hinweis, Warum, Stelle in der Karte) und Beispiel-Lösung auf demselben Gelände
+      - Acht Planungsaufträge (auch Residenz-, Festungsstadt und Nahverkehr) mit Regelprüfung (✅/❌, Hinweis, Warum, Stelle in der Karte) und Beispiel-Lösung auf demselben Gelände
       - Sandkasten mit allen Werkzeugen, Viertel-Pinsel und optionaler Prüfung
       - Häuser entlang der Straßen je Viertel, Gassen und Vororte aus Tensorfeldern (Idee MapGenerator), alte Straßen per günstigstem Weg übers Gelände
       - Geländeinfo unter dem Mauszeiger (Höhe, Neigung, Aue, Abstand zum Wasser)

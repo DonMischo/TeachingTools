@@ -11,6 +11,9 @@ import { haeuser } from "@/lib/stadt/haeuser";
 import { STILE, ZONEN, type Epoche, type Stil } from "@/lib/stadt/modell";
 import { quizFragen, trifft, zielOrt, type Frage } from "@/lib/stadt/quiz";
 import { wachse, zonenIn } from "@/lib/stadt/wachstum";
+import { VORLAGEN } from "@/lib/stadt/landschaft";
+import { erschliessung } from "@/lib/stadt/oepnv";
+import { standortText } from "@/lib/stadt/standort";
 import Karte from "./Karte";
 import Stadt3D from "./Stadt3D";
 
@@ -45,6 +48,8 @@ export default function WachstumAnsicht({ g, bild, stil, setStil }: { g: Gelaend
   }, [epochen, g]);
 
   const e = epochen?.[idx];
+  const oepnv = useMemo(() => (stadt && stadt.bauten.some(b => b.typ === "haltestelle" || b.typ === "umsteige") ? erschliessung(stadt, hs) : null), [stadt, hs]);
+  const standort = useMemo(() => (fokus ? standortText(g, fokus, stil) : null), [fokus, g, stil]);
   const startQuiz = () => epochen && setQuiz({ fragen: quizFragen(stil, epochen, idx, Date.now() % 1e6), nr: 0, punkte: 0, antwort: null });
   const antworte = (ok: boolean, wahl?: number) => setQuiz(q => (q && !q.antwort ? { ...q, punkte: q.punkte + (ok ? 1 : 0), antwort: { ok, wahl } } : q));
   const marken = frage?.art === "zeige" && quiz?.antwort && stadt ? (() => { const o = zielOrt(frage, stadt); return o ? [{ p: o, r: 40, farbe: quiz.antwort.ok ? "#16a34a" : "#dc2626" }] : []; })() : undefined;
@@ -94,6 +99,18 @@ export default function WachstumAnsicht({ g, bild, stil, setStil }: { g: Gelaend
                 <div className="mb-1 text-xs font-bold text-muted">Neu in dieser Epoche</div>
                 <ul className="list-disc pl-5 text-sm">{e.neu.map(n => <li key={n}>{n}</li>)}</ul>
               </div>
+              <div className="rounded-lg bg-surface-hover/60 p-2 text-xs">
+                <div className="font-bold">📍 Warum hier?</div>
+                <p>{VORLAGEN[stil].warum}</p>
+                <p className="text-muted">Vorbild: {VORLAGEN[stil].vorbild}{standort ? ` · ${standort}` : ""}</p>
+              </div>
+              {oepnv ? (
+                <div className="rounded-lg bg-surface-hover/60 p-2 text-xs">
+                  <div className="font-bold">🚏 Nahverkehr: {Math.round(oepnv.anteil * 100)} % der Wohnhäuser angebunden</div>
+                  <div className="mt-1 h-2 overflow-hidden rounded bg-line"><div className="h-full" style={{ width: `${oepnv.anteil * 100}%`, background: oepnv.anteil >= 0.6 ? "#16a34a" : oepnv.anteil >= 0.35 ? "#d97706" : "#dc2626" }} /></div>
+                  <p className="mt-1 text-muted">Haltestelle höchstens 400 m (Bus, Tram) bzw. 600–800 m (U-/S-Bahn) zu Fuß entfernt.</p>
+                </div>
+              ) : null}
               <div>
                 <div className="mb-1 text-xs font-bold text-muted">Viertel</div>
                 <div className="flex flex-wrap gap-1.5 text-xs">

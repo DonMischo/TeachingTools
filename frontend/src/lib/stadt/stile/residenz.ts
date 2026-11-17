@@ -6,6 +6,7 @@
  *   1800  Ausbau: Markt mit Kirche und Rathaus auf der Hauptachse, Erweiterung
  *   heute Bahn, Gründerzeit, Moderne
  */
+import { eignung } from "../standort";
 import { istWasser, neigungBei, type Gelaende } from "@/lib/gelaende/gelaende";
 import { zufallsquelle } from "@/lib/gelaende/rauschen";
 import type { P } from "../geometrie";
@@ -28,7 +29,7 @@ export function residenzStandort(g: Gelaende, z: () => number): P {
         neig += neigungBei(g, p.x, p.y);
       }
     }
-    return -neig / 540 + z() * 0.3 - Math.hypot(c.x - g.breite / 2, c.y - g.breite / 2) / 900;
+    return -neig / 540 + eignung(g, c, "residenz") + z() * 0.3 - Math.hypot(c.x - g.breite / 2, c.y - g.breite / 2) / 900;
   }) ?? { x: g.breite / 2, y: g.breite / 2 };
 }
 

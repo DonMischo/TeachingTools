@@ -11,7 +11,7 @@ import { istWasser, type Gelaende } from "@/lib/gelaende/gelaende";
 import { abstand, flaeche, geschlossen, inPoly, schwerpunkt, zurLinie, type P } from "@/lib/stadt/geometrie";
 import { haeuser } from "@/lib/stadt/haeuser";
 import { BAUTEN, kopie, leereStadt, STILE, STRASSEN, ZONEN, type BauTyp, type Stadt, type Stil, type StrassenArt, type ZonenTyp } from "@/lib/stadt/modell";
-import { AUFTRAEGE, pruefe, REGELSAETZE, sterne, type Auftrag, type Werkzeug } from "@/lib/stadt/regeln";
+import { AUFTRAEGE, pruefe, REGELSAETZE, startStadt, sterne, type Auftrag, type Werkzeug } from "@/lib/stadt/regeln";
 import { wachse, zerschneiden } from "@/lib/stadt/wachstum";
 import Karte from "./Karte";
 import Stadt3D from "./Stadt3D";
@@ -27,14 +27,19 @@ const WERKZEUG_TEXT: Record<Werkzeug, { icon: string; label: string; hilfe: stri
   autobahn: { icon: "🚗", label: STRASSEN.autobahn.label, hilfe: "Klicken setzt Punkte, Doppelklick oder Enter beendet." },
   bahn: { icon: "🚆", label: STRASSEN.bahn.label, hilfe: "Klicken setzt Punkte, Doppelklick oder Enter beendet. Bahnen mögen es gerade und flach." },
   aquaedukt: { icon: "💧", label: STRASSEN.aquaedukt.label, hilfe: "Von der Quelle (hoch) zur Stadt (tiefer) klicken, Doppelklick beendet." },
+  kanal: { icon: "🚢", label: STRASSEN.kanal.label, hilfe: "Klicken setzt Punkte, Doppelklick beendet. Kanäle brauchen flaches Land." },
+  tram: { icon: "🚋", label: STRASSEN.tram.label, hilfe: "Linie über die Straßen legen, Doppelklick beendet. Haltestellen setzt du mit 🚏 aus den Bauwerken." },
+  bus: { icon: "🚌", label: STRASSEN.bus.label, hilfe: "Linie über die Straßen legen, Doppelklick beendet. Haltestellen setzt du mit 🚏 aus den Bauwerken." },
+  sbahn: { icon: "🚈", label: STRASSEN.sbahn.label, hilfe: "Auf der Eisenbahn oder eigener Trasse, Doppelklick beendet. Haltestellen etwa alle 800–1000 m." },
+  ubahn: { icon: "🚇", label: STRASSEN.ubahn.label, hilfe: "Unter der Erde — gerade Strecken sind billiger. Doppelklick beendet." },
   mauer: { icon: "🧱", label: "Mauer", hilfe: "Eckpunkte klicken, Klick auf den ersten Punkt oder Doppelklick schließt die Mauer." },
   rechteckmauer: { icon: "▭", label: "Rechteck-Mauer", hilfe: "Ein Rechteck aufziehen." },
   raster: { icon: "#️⃣", label: "Straßenraster", hilfe: "Ein Rechteck aufziehen — es füllt sich mit Nebenstraßen im eingestellten Abstand." },
   zone: { icon: "🎨", label: "Viertel malen", hilfe: "Eckpunkte klicken, Klick auf den ersten Punkt schließt. Das Viertel bestimmt, welche Häuser entstehen." },
 };
 
-const LINIEN: Werkzeug[] = ["fernstrasse", "haupt", "neben", "gasse", "ring", "autobahn", "bahn", "aquaedukt"];
-const BEISPIEL: Record<string, number> = { kolonie: 1, marktstadt: 1, eisenbahnstadt: 0, industrie: 3, autostadt: 2 };
+const LINIEN: Werkzeug[] = ["fernstrasse", "haupt", "neben", "gasse", "ring", "autobahn", "bahn", "aquaedukt", "kanal", "tram", "bus", "sbahn", "ubahn"];
+const BEISPIEL: Record<string, number> = { kolonie: 1, marktstadt: 1, eisenbahnstadt: 0, industrie: 3, autostadt: 2, nahverkehr: 5 };
 
 const SANDKASTEN_BAUTEN: Record<Stil, BauTyp[]> = {
   roemisch: ["forum", "tempel", "thermen", "theater", "amphitheater", "nekropole", "castellum", "hafen", "villa", "tor"],
@@ -45,8 +50,12 @@ const SANDKASTEN_BAUTEN: Record<Stil, BauTyp[]> = {
   sozialistisch: ["werk", "aufmarschplatz", "kulturhaus", "schule", "kaufhalle", "poliklinik", "einkauf", "bahnhof"],
   lateinamerika: ["plaza", "kathedrale", "cabildo", "kirche", "fabrik", "einkauf", "hochhaus", "schule"],
   orientalisch: ["moschee", "kasbah", "hammam", "karawanserei", "tor", "friedhof", "bahnhof", "einkauf"],
+  bergmann: ["schacht", "huettenwerk", "bergamt", "markt", "kirche", "rathaus", "tor", "bahnhof", "universitaet"],
+  industrie: ["zechenturm", "hochofen", "kanalhafen", "bahnhof", "kirche", "rathaus", "schule", "universitaet", "einkauf"],
+  hafen: ["kai", "zollhaus", "werft", "leuchtturm", "markt", "kirche", "rathaus", "bahnhof", "einkauf"],
+  tech: ["universitaet", "forschungspark", "techzentrale", "rechenzentrum", "depot", "einkauf", "schule", "hochhaus"],
 };
-const ALLE_WERKZEUGE: Werkzeug[] = ["fernstrasse", "haupt", "neben", "gasse", "ring", "autobahn", "bahn", "aquaedukt", "mauer", "rechteckmauer", "raster", "zone"];
+const ALLE_WERKZEUGE: Werkzeug[] = ["fernstrasse", "haupt", "neben", "gasse", "ring", "autobahn", "bahn", "aquaedukt", "kanal", "tram", "bus", "sbahn", "ubahn", "mauer", "rechteckmauer", "raster", "zone"];
 
 export default function Planen({ g, bild, sandkasten, aktiv = true }: { g: Gelaende; bild: GelaendeBilder; sandkasten?: boolean; aktiv?: boolean }) {
   const [auftragId, setAuftragId] = useState<string>(AUFTRAEGE[0].id);
@@ -55,7 +64,7 @@ export default function Planen({ g, bild, sandkasten, aktiv = true }: { g: Gelae
   const auftrag: Auftrag | null = sandkasten ? null : AUFTRAEGE.find(a => a.id === auftragId)!;
   const stil = auftrag?.stil ?? stilFrei;
 
-  const start = useMemo(() => (auftrag?.start ? wachse(auftrag.stil, g, g.wahl.seed)[auftrag.start.epoche].stadt : null), [auftrag, g]);
+  const start = useMemo(() => (auftrag ? startStadt(auftrag, wachse(auftrag.stil, g, g.wahl.seed)) : null), [auftrag, g]);
   const [plan, setPlan] = useState<Stadt>(() => leereStadt(stil));
   const [verlauf, setVerlauf] = useState<Stadt[]>([]);
   const [wahl, setWahl] = useState<Wahl>(null);
@@ -195,7 +204,7 @@ export default function Planen({ g, bild, sandkasten, aktiv = true }: { g: Gelae
   const marken = useMemo(() => (marke ? [{ p: marke, r: 50, farbe: "#dc2626" }] : undefined), [marke]);
 
   const werkzeuge = auftrag?.werkzeuge ?? ALLE_WERKZEUGE;
-  const bauten = auftrag?.bauten ?? SANDKASTEN_BAUTEN[stilFrei];
+  const bauten = auftrag?.bauten ?? [...SANDKASTEN_BAUTEN[stilFrei], "haltestelle"];
   const regeln = auftrag?.regeln ?? REGELSAETZE.find(r => r.id === regelsatz)?.regeln ?? null;
   const pruefen = () => { if (regeln) { setErgebnis(pruefe(regeln, plan, g, start)); setMarke(null); } };
   const fokus = useMemo(() => {

@@ -4,7 +4,7 @@ import { inPoly } from "@/lib/stadt/geometrie";
 import { haeuser } from "@/lib/stadt/haeuser";
 import { STILE } from "@/lib/stadt/modell";
 import { quizFragen, trifft, zielOrt } from "@/lib/stadt/quiz";
-import { AUFTRAEGE, pruefe, REGELSAETZE } from "@/lib/stadt/regeln";
+import { AUFTRAEGE, pruefe, REGELSAETZE, startStadt } from "@/lib/stadt/regeln";
 import { wachse } from "@/lib/stadt/wachstum";
 
 const g = erzeuge({ art: "flusstal", seed: 12, fluss: true, relief: 1 });
@@ -58,7 +58,7 @@ describe("Regeln", () => {
 
   it("Erweiterungsaufträge: der Ausgangszustand ist noch nicht gelöst", () => {
     for (const a of AUFTRAEGE.filter(x => x.start)) {
-      const start = epochen[a.stil][a.start!.epoche].stadt;
+      const start = startStadt(a, epochen[a.stil])!;
       const r = pruefe(a.regeln, start, g, start);
       expect(r.filter(x => x.ok).length).toBeLessThan(r.length * 0.6);
     }

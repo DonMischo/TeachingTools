@@ -7,6 +7,7 @@
  *            Grüngürtel (getrennte, »dualistische« Stadt)
  *   heute    Wachstum: informelle Siedlungen, Neubauviertel, Mall
  */
+import { eignung } from "../standort";
 import { hoeheBei, inAue, istWasser, type Gelaende } from "@/lib/gelaende/gelaende";
 import { perlin, zufallsquelle } from "@/lib/gelaende/rauschen";
 import { abstand, geschlossen, inPoly, laenge, punktBei, rechteck, schnitte, skaliere, zurLinie, type P } from "../geometrie";
@@ -62,7 +63,7 @@ export function orientalisch(g: Gelaende, seed: number): Epoche[] {
     if (!baubar(g, p, 8)) return -1e9;
     let gut = 0;
     for (let k = 0; k < 12; k++) { const q = polar(p, (k / 12) * Math.PI * 2, R); if (baubar(g, q, 14)) gut++; }
-    return gut - abstand(p, mitte) / 400 + z() * 0.4;
+    return gut + eignung(g, p, "orientalisch") - abstand(p, mitte) / 400 + z() * 0.4;
   }) ?? mitte;
   const s = leereStadt("orientalisch");
   // Mauer: unregelmäßig, meidet Wasser

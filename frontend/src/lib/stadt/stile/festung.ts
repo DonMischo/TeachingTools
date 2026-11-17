@@ -7,6 +7,7 @@
  *   um 1870  Entfestigung: Ring und Parks auf den Wällen, Bahnhof, Gründerzeit
  *   heute    Moderne
  */
+import { eignung } from "../standort";
 import { istWasser, neigungBei, type Gelaende } from "@/lib/gelaende/gelaende";
 import { zufallsquelle } from "@/lib/gelaende/rauschen";
 import { abstand, inPoly, schnitte, skaliere, geschlossen, type P } from "../geometrie";
@@ -48,7 +49,7 @@ export function festung(g: Gelaende, seed: number): Epoche[] {
       if (istWasser(g, q.x, q.y)) return -1e9;
       neig += neigungBei(g, q.x, q.y);
     }
-    return -neig / 16 - neigungBei(g, p.x, p.y) + z() * 0.4 - abstand(p, { x: g.breite / 2, y: g.breite / 2 }) / 800;
+    return -neig / 16 - neigungBei(g, p.x, p.y) + eignung(g, p, "festung") + z() * 0.4 - abstand(p, { x: g.breite / 2, y: g.breite / 2 }) / 800;
   }) ?? { x: g.breite / 2, y: g.breite / 2 };
   const s = leereStadt("festung");
   const wall = bastionen(c, R, 8);

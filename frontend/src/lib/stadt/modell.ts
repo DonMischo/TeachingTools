@@ -15,6 +15,10 @@ export const STILE = [
   { id: "sozialistisch", icon: "🏭", label: "Sozialistische Stadt (DDR)", kurz: "Sozialistisch" },
   { id: "lateinamerika", icon: "⛪", label: "Lateinamerikanische Stadt", kurz: "Lateinamerika" },
   { id: "orientalisch", icon: "🕌", label: "Orientalische Stadt", kurz: "Orientalisch" },
+  { id: "bergmann", icon: "⛏️", label: "Bergmannsstadt", kurz: "Bergbau" },
+  { id: "industrie", icon: "🏭", label: "Industriestadt (Ruhrgebiet)", kurz: "Industrie" },
+  { id: "hafen", icon: "⚓", label: "Hafen- und Handelsstadt", kurz: "Hafen" },
+  { id: "tech", icon: "💻", label: "Tech-Region (Silicon Valley)", kurz: "Tech" },
 ] as const;
 export type Stil = (typeof STILE)[number]["id"];
 
@@ -27,7 +31,16 @@ export const STRASSEN = {
   autobahn: { label: "Autobahn / Highway", breite: 30, farbe: "#f7c46c", rand: "#9a5f12" },
   bahn: { label: "Eisenbahn", breite: 8, farbe: "#3b3b3b", rand: "#3b3b3b" },
   aquaedukt: { label: "Aquädukt", breite: 5, farbe: "#c7a77e", rand: "#6e5232" },
+  kanal: { label: "Kanal", breite: 22, farbe: "#6fa6c9", rand: "#4a7a99" },
+  // Nahverkehr: fährt auf Straßen oder unter der Erde, verdrängt keine Häuser
+  tram: { label: "Straßenbahn", breite: 3, farbe: "#d6342c", rand: "#d6342c" },
+  bus: { label: "Buslinie", breite: 3, farbe: "#e08a1e", rand: "#e08a1e" },
+  sbahn: { label: "S-Bahn / Stadtbahn", breite: 4, farbe: "#2f8f46", rand: "#2f8f46" },
+  ubahn: { label: "U-Bahn", breite: 4, farbe: "#2456a6", rand: "#2456a6" },
 } as const;
+
+/** Linien des Nahverkehrs (ÖPNV) */
+export const OEPNV: StrassenArt[] = ["tram", "bus", "sbahn", "ubahn"];
 export type StrassenArt = keyof typeof STRASSEN;
 
 /** Häuser eines Viertels: Breite an der Straße, Tiefe, Lücke, Höhe in m */
@@ -79,6 +92,24 @@ export const ZONEN = {
   // Orientalische Stadt
   medina: { label: "Medina (Wohnquartiere)", farbe: "#e7dcc6", haus: { breite: [12, 18], tiefe: [12, 18], luecke: 0, hoehe: [6, 10], dach: "#e2d8c4", fassade: "#efe7d6", flach: true } },
   bazar: { label: "Bazar (Suq)", farbe: "#d9b98a", haus: { breite: [4, 6], tiefe: [6, 8], luecke: 0, hoehe: [4, 5], dach: "#c9a77c", fassade: "#dcc29a", flach: true } },
+  // Bergmannsstadt
+  bergstadt: { label: "Bergstadt (Bergmannshäuser am Hang)", farbe: "#d2b48c", haus: { breite: [8, 12], tiefe: [8, 11], luecke: 3, hoehe: [6, 9], dach: "#5d5a58", fassade: "#e8dcc4" } },
+  halde: { label: "Halde (Abraum)", farbe: "#8c8277", haus: null },
+  huette: { label: "Hütte und Pochwerk", farbe: "#9b8f84", haus: { breite: [24, 40], tiefe: [16, 24], luecke: 10, hoehe: [8, 14], dach: "#4f4a45", fassade: "#8f8378" } },
+  // Industriestadt
+  zeche: { label: "Zeche und Kokerei", farbe: "#8f8780", haus: { breite: [40, 80], tiefe: [24, 40], luecke: 14, hoehe: [14, 26], dach: "#544c46", fassade: "#7d6e64", flach: true } },
+  kolonie: { label: "Arbeiterkolonie (Zechensiedlung)", farbe: "#cdbf9a", haus: { breite: [10, 14], tiefe: [8, 10], luecke: 10, hoehe: [6, 8], dach: "#8a3f2c", fassade: "#b5654a" } },
+  landschaftspark: { label: "Landschaftspark (alte Industrie)", farbe: "#a7c48a", haus: null },
+  // Hafenstadt
+  kontor: { label: "Kaufmanns-Altstadt (Kontorhäuser)", farbe: "#cf9f7a", haus: { breite: [7, 10], tiefe: [14, 20], luecke: 0, hoehe: [12, 18], dach: "#7d3a24", fassade: "#a6553a" } },
+  speicher: { label: "Speicherstadt", farbe: "#b06a4c", haus: { breite: [30, 50], tiefe: [20, 26], luecke: 4, hoehe: [20, 26], dach: "#5f6b5a", fassade: "#a64f34" } },
+  hafengebiet: { label: "Hafen (Kais, Kräne, Lager)", farbe: "#a4a9ad", haus: { breite: [40, 90], tiefe: [24, 40], luecke: 18, hoehe: [10, 16], dach: "#7b8288", fassade: "#9aa1a6", flach: true } },
+  containerhafen: { label: "Containerterminal", farbe: "#c6a77d", haus: { breite: [12, 12], tiefe: [2.5, 2.5], luecke: 1, hoehe: [2.5, 7.5], dach: "#b4462f", fassade: "#2e6aa6", flach: true, abseits: 6 } },
+  hafencity: { label: "Neues Hafenquartier", farbe: "#c3cfd8", haus: { breite: [26, 40], tiefe: [20, 26], luecke: 10, hoehe: [20, 45], dach: "#c9d2d8", fassade: "#e4e8ec", flach: true } },
+  // Tech-Region
+  campus: { label: "Tech-Campus (Bürogelände)", farbe: "#bcd3c4", haus: { breite: [50, 90], tiefe: [30, 50], luecke: 40, hoehe: [10, 18], dach: "#d7dde0", fassade: "#9fc1d6", flach: true, abseits: 30 } },
+  uni: { label: "Universität", farbe: "#e2d1a8", haus: { breite: [30, 50], tiefe: [16, 24], luecke: 20, hoehe: [10, 16], dach: "#b0543a", fassade: "#e8d7b4", abseits: 12 } },
+  obstplantage: { label: "Obstplantagen (Valley of Heart’s Delight)", farbe: "#b9cf8a", haus: null },
   ville: { label: "Ville nouvelle (Kolonialstadt)", farbe: "#e6e2d6", haus: { breite: [18, 26], tiefe: [14, 20], luecke: 6, hoehe: [12, 18], dach: "#d9d4c8", fassade: "#f4f1ea", flach: true } },
 } as const satisfies Record<string, { label: string; farbe: string; haus: HausArt | null }>;
 export type ZonenTyp = keyof typeof ZONEN;
@@ -135,6 +166,27 @@ export const BAUTEN = {
   kasbah: { label: "Kasbah (Zitadelle)", icon: "🏰", b: 160, h: 120, hoehe: 16, farbe: "#c8a57a", text: "Sitz des Herrschers, am Rand der Medina an der Mauer — oft auf höherem Gelände." },
   hammam: { label: "Hammam", icon: "♨️", b: 30, h: 24, hoehe: 7, farbe: "#efe5d3", text: "Öffentliches Bad, oft neben der Moschee (Waschungen vor dem Gebet)." },
   karawanserei: { label: "Karawanserei (Funduq)", icon: "🐪", b: 60, h: 60, hoehe: 9, farbe: "#d8c2a0", text: "Herberge und Lager für Fernhändler — nahe den Toren an den Karawanenwegen." },
+  // Bergmannsstadt
+  schacht: { label: "Schacht mit Förderturm", icon: "⛏️", b: 30, h: 30, hoehe: 30, farbe: "#6f655c", text: "Hier fahren die Bergleute ein und das Erz kommt nach oben. Der Schacht liegt über dem Erzgang — die Stadt drängt sich darum." },
+  huettenwerk: { label: "Schmelzhütte", icon: "🔥", b: 60, h: 40, hoehe: 18, farbe: "#7f746a", text: "Erz wird geschmolzen. Braucht Holzkohle aus dem Wald und Wasserkraft für die Blasebälge — deshalb unten am Bach." },
+  bergamt: { label: "Bergamt", icon: "📜", b: 34, h: 24, hoehe: 14, farbe: "#e2d2b0", text: "Verwaltet die Gruben und erhebt den »Zehnten« für den Landesherrn." },
+  // Industriestadt
+  zechenturm: { label: "Zeche (Fördergerüst)", icon: "🏗️", b: 80, h: 60, hoehe: 55, farbe: "#6c635b", text: "Steinkohlenbergwerk: Über dem Flöz entsteht die Zeche, daneben Kokerei und Halde. Die Stadt wächst zwischen den Zechen zusammen." },
+  hochofen: { label: "Hochofen / Stahlwerk", icon: "🔥", b: 140, h: 80, hoehe: 60, farbe: "#5e5650", text: "Kohle (als Koks) und Eisenerz werden zu Stahl. Braucht Kühlwasser und Schiffe — deshalb am Fluss." },
+  kanalhafen: { label: "Kanalhafen", icon: "🚢", b: 90, h: 40, hoehe: 6, farbe: "#a4a9ad", text: "Kohle und Erz kommen per Schiff — billiger als jede Bahn." },
+  // Hafenstadt
+  kai: { label: "Kai mit Kränen", icon: "🏗️", b: 120, h: 30, hoehe: 22, farbe: "#8a9096", text: "Schiffe legen an, Kräne heben die Ladung an Land." },
+  leuchtturm: { label: "Leuchtturm", icon: "🗼", b: 14, h: 14, hoehe: 34, farbe: "#f2f2f2", text: "Weist Schiffen nachts den Weg in die Bucht." },
+  werft: { label: "Werft", icon: "⚓", b: 120, h: 60, hoehe: 30, farbe: "#7a8189", text: "Hier werden Schiffe gebaut — an tiefem Wasser mit Helling." },
+  zollhaus: { label: "Zollhaus / Börse", icon: "💰", b: 40, h: 30, hoehe: 16, farbe: "#e6d6b6", text: "Kaufleute handeln Waren aus aller Welt; der Zoll füllt die Stadtkasse." },
+  // Tech-Region
+  universitaet: { label: "Universität", icon: "🎓", b: 140, h: 90, hoehe: 18, farbe: "#e2c89a", text: "Keimzelle der Tech-Region: Absolventen gründen Firmen in der Nähe (Stanford → Hewlett-Packard, Google)." },
+  forschungspark: { label: "Forschungspark", icon: "🔬", b: 110, h: 80, hoehe: 14, farbe: "#bcd3c4", text: "Die Universität verpachtet Land an Firmen — Forschung und Produktion Tür an Tür." },
+  techzentrale: { label: "Konzernzentrale (Campus)", icon: "💻", b: 160, h: 120, hoehe: 20, farbe: "#a9c6dc", text: "Großer Campus mit Parkhäusern im Grünen — gut mit dem Auto, schlecht mit Bus und Bahn erreichbar." },
+  rechenzentrum: { label: "Rechenzentrum", icon: "🗄️", b: 90, h: 50, hoehe: 12, farbe: "#9aa6b2", text: "Braucht viel Strom und Kühlung, aber kaum Personal." },
+  // Nahverkehr
+  haltestelle: { label: "Haltestelle", icon: "🚏", b: 8, h: 8, hoehe: 3, farbe: "#f3d34a", text: "Wer im Umkreis von etwa 400 m (5 Minuten zu Fuß) wohnt, nutzt Bus und Bahn." },
+  umsteige: { label: "Umsteigeknoten", icon: "🔀", b: 24, h: 24, hoehe: 8, farbe: "#f3d34a", text: "Hier treffen sich Linien — kurze Wege zum Umsteigen machen das Netz schnell." },
 } as const satisfies Record<string, Bauart>;
 export type BauTyp = keyof typeof BAUTEN;
 

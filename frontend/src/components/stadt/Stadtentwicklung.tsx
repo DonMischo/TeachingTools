@@ -15,6 +15,8 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { wahl as vorgabeWahl, type Vorgabe } from "@/lib/vorgabe";
 import { erzeuge, type Gelaende, type GelaendeWahl } from "@/lib/gelaende/gelaende";
 import { STILE, type Stil } from "@/lib/stadt/modell";
+import { passendeWahl } from "@/lib/stadt/landschaft";
+import { MERKMALE } from "@/lib/gelaende/gelaende";
 import GelaendeLeiste from "@/components/gelaende/GelaendeLeiste";
 import { erodiereNebenbei, gelaendeLeinwand, wasserLeinwand, type GelaendeBilder } from "@/components/gelaende/leinwand";
 import { waldMaske } from "@/lib/gelaende/wald";
@@ -38,7 +40,10 @@ export default function Stadtentwicklung({ action, vorgabe }: { action?: ReactNo
   const fest = vorgabeWahl(vorgabe, "reiter", REITER.map(r => r.id));
   const [reiter, setReiter] = useState<Reiter>(fest ?? "wachstum");
   const [stil, setStil] = useState<Stil>(vorgabeWahl(vorgabe, "stil", STILE.map(x => x.id)) ?? "europaeisch");
-  const [wahl, setWahl] = useState<GelaendeWahl>({ art: "flusstal", seed: 12, fluss: true, relief: 1 });
+  // Gelände passend zum Stadttyp planen (Quellsee, Erzberg, Bucht …) oder frei wählen
+  const [passend, setPassend] = useState(true);
+  const [wahl, setWahl] = useState<GelaendeWahl>(() => passendeWahl(stil, 12));
+  const waehleStil = (s: Stil) => { setStil(s); if (passend) setWahl(w => passendeWahl(s, w.seed)); };
   const roh = useMemo(() => erzeuge(wahl), [wahl]);
   const [erodiert, setErodiert] = useState<Gelaende | null>(null);
   const [fortschritt, setFortschritt] = useState<number | null>(null);
@@ -60,7 +65,7 @@ export default function Stadtentwicklung({ action, vorgabe }: { action?: ReactNo
         <div>
           <h1 className="text-2xl font-black tracking-tight">🏘️ Stadtentwicklung</h1>
           <p className="text-muted text-sm mt-1">
-            Warum liegt eine Stadt, wo sie liegt — und warum sieht sie so aus? Römerstadt, mittelalterliche Marktstadt und amerikanische Eisenbahnstadt wachsen auf demselben Gelände.
+            Warum liegt eine Stadt, wo sie liegt — und warum sieht sie so aus? Zwölf Stadttypen — von der Römerstadt bis zum Silicon Valley — wachsen auf einem Gelände, das du passend zum Typ formen lassen oder frei wählen kannst.
           </p>
         </div>
         <div className="flex items-center gap-2">{action}</div>
@@ -73,7 +78,11 @@ export default function Stadtentwicklung({ action, vorgabe }: { action?: ReactNo
         )}
         {reiter !== "erklaerung" && (
           <div className="flex items-center gap-2">
-            <GelaendeLeiste wahl={wahl} setWahl={w => setWahl(w)} erosion={erodiert ? undefined : erosion} erosionLaeuft={fortschritt} />
+            <label className="flex items-center gap-1.5 text-sm text-muted" title="Landschaft so formen, wie dieser Stadttyp sie braucht — nach echten Vorbildern">
+              <input type="checkbox" checked={passend} onChange={x => { setPassend(x.target.checked); if (x.target.checked) setWahl(w => passendeWahl(stil, w.seed)); }} /> 🧭 passend zum Stadttyp
+            </label>
+            <GelaendeLeiste wahl={wahl} setWahl={w => { setWahl(passend ? { ...w, merkmale: passendeWahl(stil, w.seed).merkmale } : { ...w, merkmale: undefined }); }} erosion={erodiert ? undefined : erosion} erosionLaeuft={fortschritt} />
+            {wahl.merkmale?.map(m => <span key={m} className="chip" title={MERKMALE[m].text}>{MERKMALE[m].icon} {MERKMALE[m].label}</span>)}
             {erodiert && <span className="chip chip-on">🌧️ erodiert</span>}
           </div>
         )}
@@ -81,7 +90,7 @@ export default function Stadtentwicklung({ action, vorgabe }: { action?: ReactNo
       {!bild ? <div className="h-[600px]" /> : (
         <>
           {/* Planen und Sandkasten bleiben eingehängt, damit Pläne beim Reiterwechsel erhalten bleiben */}
-          <div hidden={reiter !== "wachstum"}>{reiter === "wachstum" && <WachstumAnsicht g={g} bild={bild} stil={stil} setStil={setStil} />}</div>
+          <div hidden={reiter !== "wachstum"}>{reiter === "wachstum" && <WachstumAnsicht g={g} bild={bild} stil={stil} setStil={waehleStil} />}</div>
           <div hidden={reiter !== "planen"}><Planen g={g} bild={bild} aktiv={reiter === "planen"} /></div>
           <div hidden={reiter !== "sandkasten"}><Planen g={g} bild={bild} sandkasten aktiv={reiter === "sandkasten"} /></div>
           {reiter === "erklaerung" && <Erklaerung />}

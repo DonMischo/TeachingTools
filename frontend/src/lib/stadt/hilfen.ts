@@ -44,7 +44,7 @@ export function zerschneiden(l: P[], g: Gelaende, nurMeer = false): P[][] {
 }
 
 /** Bauwerke mit Platz (Forum, Markt …) schneiden Neben­straßen und Gassen weg */
-const PLATZ: BauTyp[] = ["forum", "markt", "thermen", "theater", "kloster", "burg", "gericht", "einkauf", "bahnhof", "buero", "amphitheater", "kirche", "fabrik", "schule", "friedhof", "schloss", "zitadelle", "paradeplatz", "kulturhaus", "aufmarschplatz", "werk", "kaufhalle", "plaza", "kathedrale", "cabildo", "moschee", "kasbah", "karawanserei", "kaserne"];
+const PLATZ: BauTyp[] = ["forum", "markt", "thermen", "theater", "kloster", "burg", "gericht", "einkauf", "bahnhof", "buero", "amphitheater", "kirche", "fabrik", "schule", "friedhof", "schloss", "zitadelle", "paradeplatz", "kulturhaus", "aufmarschplatz", "werk", "kaufhalle", "plaza", "kathedrale", "cabildo", "moschee", "kasbah", "karawanserei", "kaserne", "huettenwerk", "zechenturm", "hochofen", "kanalhafen", "kai", "werft", "universitaet", "forschungspark", "techzentrale", "rechenzentrum"];
 export function freiraeumen(s: Stadt): void {
   const flaechen = s.bauten.filter(b => PLATZ.includes(b.typ)).map(b => rechteck(b, BAUTEN[b.typ].b + 6, BAUTEN[b.typ].h + 6, b.dreh ?? 0));
   if (!flaechen.length) return;
@@ -160,3 +160,18 @@ export function auslauf(l: P[], q: P, c: P, L: number): P[] {
   return aus;
 }
 
+
+/** gedrehtes Straßenraster um c (Breite B, Tiefe H, Blöcke bx × by), am Wasser unterbrochen */
+export function gedrehtesRaster(g: Gelaende, c: P, B: number, H: number, bx: number, by: number, dreh: number, art: StrassenArt = "neben", drin?: (p: P) => boolean): Strasse[] {
+  const welt = (x: number, y: number): P => ({ x: c.x + x * Math.cos(dreh) - y * Math.sin(dreh), y: c.y + x * Math.sin(dreh) + y * Math.cos(dreh) });
+  const linien: P[][] = [];
+  for (let x = -Math.floor(B / 2 / bx) * bx; x <= B / 2 + 0.01; x += bx) linien.push([welt(x, -H / 2), welt(x, H / 2)]);
+  for (let y = -Math.floor(H / 2 / by) * by; y <= H / 2 + 0.01; y += by) linien.push([welt(-B / 2, y), welt(B / 2, y)]);
+  const aus: Strasse[] = [];
+  for (const l of linien) for (const st of zerschneiden(l, g)) {
+    if (!drin) { aus.push({ art, punkte: st }); continue; }
+    const teile = st.filter(drin);
+    if (teile.length > 1) aus.push({ art, punkte: [teile[0], teile[teile.length - 1]] });
+  }
+  return aus;
+}

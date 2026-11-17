@@ -7,7 +7,7 @@ import { inAue, istWasser, neigungBei, type Gelaende } from "@/lib/gelaende/gela
 import { perlin } from "@/lib/gelaende/rauschen";
 import { abstand, geschlossen, inPoly, laenge, punktBei, rechteck, skaliere, zurLinie, type P } from "./geometrie";
 import type { Stadt } from "./modell";
-import { auslauf, band, bau, baubar, flussRichtung, freiraeumen, nebenStrasse, type Z } from "./hilfen";
+import { auslauf, band, bau, baubar, flussRichtung, freiraeumen, nebenStrasse, zerschneiden, type Z } from "./hilfen";
 import { stromlinien, type Feld } from "./tensor";
 import { glaetten, randPunkt, weg } from "./wege";
 
@@ -48,7 +48,9 @@ export function industrialisierung(g: Gelaende, s: Stadt, kern: P[], m: P, z: Z,
     const mitte = { x: m.x + nx * (R + 330), y: m.y + ny * (R + 330) };
     best = [randPunkt(mitte, w + Math.PI, g.breite), randPunkt(mitte, w, g.breite)];
   }
-  const bahn = glaetten(best, 2);
+  // am Meer endet die Bahn an der Küste (Stück mit dem Bahnhof = nächstes zur Stadt)
+  const stuecke = zerschneiden(glaetten(best, 2), g, true);
+  const bahn = stuecke.length ? stuecke.sort((u, v) => zurLinie(m, u).d - zurLinie(m, v).d)[0] : glaetten(best, 2);
   s.strassen.push({ art: "bahn", name: "Eisenbahn", punkte: bahn });
   const rb = zurLinie(m, bahn);
   const ra = bahn[rb.seg], rbb = bahn[rb.seg + 1];

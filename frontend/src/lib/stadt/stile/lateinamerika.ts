@@ -6,6 +6,7 @@
  *   1970  polarisiert: Landflucht, Marginalsiedlungen an Hängen und in der Aue
  *   2000  fragmentiert: Gated Communities, Malls, Stadtautobahnen — Inseln von Reich und Arm
  */
+import { eignung } from "../standort";
 import { inAue, istWasser, neigungBei, type Gelaende } from "@/lib/gelaende/gelaende";
 import { perlin, zufallsquelle } from "@/lib/gelaende/rauschen";
 import { abstand, inPoly, rechteck, type P } from "../geometrie";
@@ -42,7 +43,7 @@ export function lateinamerika(g: Gelaende, seed: number): Epoche[] {
     if (!baubar(g, p, 5)) return -1e9;
     let gut = 0;
     for (let i = -2; i <= 2; i++) for (let j = -2; j <= 2; j++) if (baubar(g, { x: p.x + i * 110, y: p.y + j * 110 }, 10)) gut++;
-    return gut - abstand(p, mitte) / 300 + z() * 0.5;
+    return gut + eignung(g, p, "lateinamerika") - abstand(p, mitte) / 300 + z() * 0.5;
   }) ?? mitte;
   const B = 110;
   const s = leereStadt("lateinamerika");

@@ -6,7 +6,7 @@
 import { istWasser, type Gelaende } from "@/lib/gelaende/gelaende";
 import { abstand, geschlossen, rechteck, schnitte, type P } from "./geometrie";
 import type { Haus } from "./haeuser";
-import { BAUTEN, STRASSEN, ZONEN, type Stadt, type StrassenArt } from "./modell";
+import { BAUTEN, OEPNV, STRASSEN, ZONEN, type Stadt, type StrassenArt } from "./modell";
 
 type Ctx = CanvasRenderingContext2D;
 
@@ -35,7 +35,7 @@ export interface ZeichenOptionen {
   nurBild?: boolean;
 }
 
-const REIHE: StrassenArt[] = ["aquaedukt", "fernstrasse", "gasse", "neben", "haupt", "ring", "autobahn", "bahn"];
+const REIHE: StrassenArt[] = ["kanal", "aquaedukt", "fernstrasse", "gasse", "neben", "haupt", "ring", "autobahn", "bahn", "bus", "tram", "sbahn", "ubahn"];
 
 function linie(ctx: Ctx, a: Ansicht, l: P[]) {
   ctx.beginPath();
@@ -77,7 +77,7 @@ export function zeichneKarte(ctx: Ctx, W: number, H: number, a: Ansicht, g: Gela
   // Brücken: unter den Straßen, wo sie Wasser queren
   ctx.strokeStyle = "#5b4630";
   for (const st of s.strassen) {
-    if (st.art === "aquaedukt") continue;
+    if (st.art === "aquaedukt" || st.art === "ubahn" || st.art === "kanal") continue;
     const b = STRASSEN[st.art].breite;
     for (let i = 0; i + 1 < st.punkte.length; i++) {
       const p = st.punkte[i], q = st.punkte[i + 1], d = abstand(p, q), k = Math.max(1, Math.ceil(d / 6));
@@ -100,6 +100,15 @@ export function zeichneKarte(ctx: Ctx, W: number, H: number, a: Ansicht, g: Gela
       if (art === "bahn") {
         if (pass === 0) { ctx.strokeStyle = "#2b2b2b"; ctx.lineWidth = Math.max(2.5, 5 * a.m); ctx.setLineDash([]); ctx.stroke(); }
         else { ctx.strokeStyle = "#f4f4f4"; ctx.lineWidth = Math.max(1, 2.4 * a.m); ctx.setLineDash([Math.max(3, 12 * a.m), Math.max(3, 12 * a.m)]); ctx.stroke(); ctx.setLineDash([]); }
+        continue;
+      }
+      if (OEPNV.includes(art)) {
+        // Linien nur im zweiten Durchgang, über den Straßen; U-Bahn gestrichelt (unter der Erde)
+        if (pass === 1) {
+          ctx.strokeStyle = st.farbe; ctx.lineWidth = Math.max(2, st.breite * 1.6 * a.m);
+          if (art === "ubahn" || art === "bus") ctx.setLineDash([Math.max(3, 14 * a.m), Math.max(2, 7 * a.m)]);
+          ctx.stroke(); ctx.setLineDash([]);
+        }
         continue;
       }
       if (art === "aquaedukt") {

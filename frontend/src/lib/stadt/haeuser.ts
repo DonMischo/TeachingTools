@@ -7,7 +7,7 @@
 import { zufallsquelle } from "@/lib/gelaende/rauschen";
 import { istWasser, type Gelaende } from "@/lib/gelaende/gelaende";
 import { abstand, inPoly, rechteck, type P } from "./geometrie";
-import { BAUTEN, STRASSEN, ZONEN, type HausArt, type Stadt, type ZonenTyp } from "./modell";
+import { BAUTEN, OEPNV, STRASSEN, ZONEN, type HausArt, type Stadt, type ZonenTyp } from "./modell";
 
 export interface Haus { ecken: P[]; c: P; hoehe: number; dach: string; zone: ZonenTyp; fassade: string; flach: boolean; /** Breite an der Straße, Tiefe */ b: number; t: number; dreh: number }
 
@@ -70,6 +70,7 @@ export function haeuser(s: Stadt, g: Gelaende, seed = 1): Haus[] {
   const aus: Haus[] = [];
   // Straßen und Bauwerke als Hindernisse eintragen
   for (const st of s.strassen) {
+    if (OEPNV.includes(st.art)) continue;
     const b = STRASSEN[st.art].breite;
     for (let i = 0; i + 1 < st.punkte.length; i++) {
       const a = st.punkte[i], c = st.punkte[i + 1];
@@ -84,7 +85,7 @@ export function haeuser(s: Stadt, g: Gelaende, seed = 1): Haus[] {
     if (l > 0.1) beleg.add(rechteck({ x: (a.x + c.x) / 2, y: (a.y + c.y) / 2 }, l + 4, 5, Math.atan2(c.y - a.y, c.x - a.x)));
   }
 
-  const ohneHaeuser = new Set(["autobahn", "bahn", "aquaedukt", "fernstrasse"]);
+  const ohneHaeuser = new Set<string>(["autobahn", "bahn", "aquaedukt", "fernstrasse", "kanal", ...OEPNV]);
   for (const st of s.strassen) {
     const sb = STRASSEN[st.art].breite;
     const fern = st.art === "fernstrasse";
