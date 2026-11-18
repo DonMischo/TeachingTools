@@ -325,8 +325,10 @@ export function CurriculumEditor({ start, guestToken, planAktionen = [] }: {
     <KartenAnsicht.Provider value={ansichtMitMaterial}>
     <div className="flex flex-col gap-3">
       {/* Werkzeugleiste: links die Filter (gleich hoch, in Gruppen), rechts Stand, Rückgängig und ☰ */}
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 sticky top-0 z-30 bg-page py-2 border-b border-line
+      <div className="flex items-start gap-3 sticky top-0 z-30 bg-page py-2 border-b border-line
         [&_.chip]:h-7 [&_.chip]:inline-flex [&_.chip]:items-center [&_.chip]:py-0">
+        {/* Filter brechen in ihrem eigenen Bereich um; Stand, ↶ und ☰ bleiben rechts in der ersten Zeile */}
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 flex-1 min-w-0">
         <div className="flex items-center gap-1" title="Welche Niveau-Zeilen angezeigt werden">
           {NIVEAUS.map(n => (
             <button key={n} className="chip text-xs justify-center min-w-9" title={NIVEAU_NAME[n]}
@@ -370,8 +372,11 @@ export function CurriculumEditor({ start, guestToken, planAktionen = [] }: {
           <button className={`chip text-xs ${nurKonflikte ? "chip-on" : ""}`} onClick={() => setNurKonflikte(v => !v)}>⚠ nur Konflikte</button>
           <input className="input w-44 text-sm h-7 py-0" placeholder="Einheit suchen…" value={suche} onChange={e => setSuche(e.target.value)} />
         </div>
-        <span className="flex-1" />
-        <span className="text-xs text-muted whitespace-nowrap">{nurLesen ? "nur lesen · " : ""}v{plan.version}{plan.zuletzt_von ? ` · zuletzt ${plan.zuletzt_von}` : ""}</span>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+        <span className="text-xs text-muted whitespace-nowrap max-w-[12rem] truncate"
+          title={`Version ${plan.version}${plan.zuletzt_von ? `, zuletzt geändert von ${plan.zuletzt_von}` : ""}`}>
+          {nurLesen ? "nur lesen · " : ""}v{plan.version}{plan.zuletzt_von ? ` · ${plan.zuletzt_von}` : ""}</span>
         {!nurLesen && <button className="btn-secondary h-8 px-3 py-0 text-sm" disabled={!rueckAnzahl} onClick={rueckgaengig}
           title="Letzte eigene Änderung rückgängig machen (Strg+Z)" aria-label="Rückgängig">↶</button>}
         <Menue>
@@ -418,6 +423,7 @@ export function CurriculumEditor({ start, guestToken, planAktionen = [] }: {
             {!guestToken && <MenuePunkt onClick={() => setOffen({ art: "teilen" })}>👥 Teilen</MenuePunkt>}
           </MenueAbschnitt>
         </Menue>
+        </div>
       </div>
 
       {(auswahl.size > 0 || kopiert.length > 0 || zielZelle) && (

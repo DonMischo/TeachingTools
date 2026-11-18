@@ -51,7 +51,7 @@ export default function CurriculumPlanSeite() {
   if (!plan) return <div className="p-6 text-muted">Lade…</div>;
 
   return (
-    <div className="max-w-seite mx-auto px-4 py-4">
+    <div className="w-full max-w-seite mx-auto px-4 py-4">
       <div className="flex items-center gap-3 mb-1">
         {!guestToken && <Link href="/tools/curriculum" className="text-muted text-sm">← Pläne</Link>}
         <h1 className="text-xl font-bold flex-1">🧭 {plan.name}</h1>

@@ -9,6 +9,8 @@ const Schliessen = createContext<() => void>(() => {});
 
 export function Menue({ children, titel = "Menü" }: { children: ReactNode; titel?: string }) {
   const [offen, setOffen] = useState(false);
+  // Nach links aufklappen, außer links ist kein Platz (Knopf am linken Rand)
+  const [nachRechts, setNachRechts] = useState(false);
   const rahmen = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!offen) return;
@@ -21,9 +23,12 @@ export function Menue({ children, titel = "Menü" }: { children: ReactNode; tite
   return (
     <div className="relative" ref={rahmen}>
       <button className={`btn-secondary h-8 px-3 py-0 text-base ${offen ? "bg-surface-hover" : ""}`} aria-haspopup="menu" aria-expanded={offen}
-        aria-label={titel} title={titel} onClick={() => setOffen(o => !o)}>☰</button>
+        aria-label={titel} title={titel} onClick={() => {
+          setNachRechts((rahmen.current?.getBoundingClientRect().right ?? 1000) < 320);
+          setOffen(o => !o);
+        }}>☰</button>
       {offen && (
-        <div role="menu" className="absolute right-0 top-full mt-1 z-50 w-72 max-h-[80vh] overflow-y-auto card p-1.5 shadow-xl flex flex-col">
+        <div role="menu" className={`absolute ${nachRechts ? "left-0" : "right-0"} top-full mt-1 z-50 w-72 max-h-[80vh] overflow-y-auto card p-1.5 shadow-xl flex flex-col`}>
           <Schliessen.Provider value={() => setOffen(false)}>{children}</Schliessen.Provider>
         </div>
       )}
