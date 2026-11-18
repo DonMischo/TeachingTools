@@ -3,7 +3,7 @@ import { erzeuge } from "@/lib/gelaende/gelaende";
 import { besterPunkt, baubar } from "@/lib/stadt/hilfen";
 import { flussAbstand } from "@/lib/stadt/standort";
 import { BAUPLAENE } from "@/lib/stadt/bauen";
-import { BAU, baue, FREI, fussabdruck, HAUS, neueWelt, pruefePlatz, reichweite, schritt, stufe, versorgungBei, mitteVon } from "@/lib/stadt/aufbau";
+import { BAU, baue, FREI, fussabdruck, HAUS, neueWelt, pruefePlatz, reichweite, schritt, strassenKetten, stufe, versorgungBei, mitteVon } from "@/lib/stadt/aufbau";
 
 const g = erzeuge({ art: "flusstal", seed: 12, fluss: true, relief: 1 });
 const m = besterPunkt(g, 600, p => (baubar(g, p, 4) ? -Math.abs(flussAbstand(g, p) - 250) : -1e9))!;
@@ -57,5 +57,27 @@ describe("Aufbau auf dem Raster", () => {
     const gut = w.haeuser.filter(h => h.versorgt === 1), schlecht = w.haeuser.filter(h => h.versorgt < 1);
     if (gut.length && schlecht.length) expect(Math.max(...gut.map(h => h.ziel))).toBeGreaterThan(Math.min(...schlecht.map(h => h.ziel)));
     expect(versorgungBei(w, i, j)).toBeGreaterThan(0);
+  });
+
+  it("gedrehte Gebäude tauschen Breite und Tiefe", () => {
+    const a = fussabdruck("kirche", 0), b = fussabdruck("kirche", 1);
+    expect([b.w, b.h]).toEqual([a.h, a.w]);
+    const w = neueWelt(g, "europaeisch", 3);
+    const [i, j] = zelle(m);
+    const o = baue(g, w, "markt", i, j, 1)!;
+    expect(o.dreh).toBe(1);
+    expect([o.w, o.h]).toEqual([fussabdruck("markt", 1).w, fussabdruck("markt", 1).h]);
+  });
+
+  it("Straßenketten verbinden Kreuzungen, Treppen werden geglättet", () => {
+    const w = neueWelt(g, "europaeisch", 1);
+    const [i, j] = zelle(m);
+    baue(g, w, "markt", i, j);
+    for (let t = 0; t < 80; t++) schritt(g, w);
+    const { ketten, knoten } = strassenKetten(w);
+    expect(ketten.length).toBeGreaterThan(5);
+    expect(knoten.length).toBeGreaterThan(2);
+    // geglättet: es gibt Kettenpunkte, die nicht auf Feldmitten liegen
+    expect(ketten.some(k => k.punkte.some(p => Math.abs(((p.x / g.zelle) % 1) - 0.5) > 0.05))).toBe(true);
   });
 });

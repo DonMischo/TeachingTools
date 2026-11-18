@@ -7,7 +7,7 @@ import type { Gelaende } from "@/lib/gelaende/gelaende";
 import { zufallsquelle } from "@/lib/gelaende/rauschen";
 import { waldMaske } from "@/lib/gelaende/wald";
 import { BAUTEN, type BauTyp } from "@/lib/stadt/modell";
-import { FREI, fussabdruck, HAUPT, hausFarben, STRASSE, type Welt } from "@/lib/stadt/aufbau";
+import { FREI, fussabdruck, HAUPT, hausFarben, strassenKetten, type Kette, type Welt } from "@/lib/stadt/aufbau";
 import { MODELL_VON, TEILFARBEN } from "../drei/modelle";
 import { hoeheGlatt } from "./gelaende";
 
@@ -27,7 +27,7 @@ export class AufbauObjekte {
   private bauGruppe = new THREE.Group();
   private baeume: { mesh: THREE.InstancedMesh; matrizen: THREE.Matrix4[]; zellen: number[] }[] = [];
   geist = new THREE.Group();
-  private geistArt: BauTyp | null = null;
+  private geistArt = "";
   private geistBoden: THREE.Mesh;
   private mats: THREE.Material[] = [];
   private geos: THREE.BufferGeometry[] = [];
@@ -88,6 +88,42 @@ export class AufbauObjekte {
     this.geist.visible = false;
   }
 
+  private band: THREE.Mesh | null = null;
+  private bandMat = new THREE.MeshLambertMaterial({ vertexColors: true, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+
+  /** Straßenband: je Kette ein Streifen (Hauptstraße 7 m, Gasse 5 m breit), dem Gelände folgend */
+  private baueBand(ketten: Kette[]) {
+    const pos: number[] = [], col: number[] = [], idx: number[] = [];
+    const h2 = this.h2, c = new THREE.Color();
+    for (const k of ketten) {
+      const p = k.punkte;
+      if (p.length < 2) continue;
+      const halb = k.haupt ? 3.5 : 2.5;
+      c.set(k.haupt ? "#c8b48c" : "#ddd0b0");
+      const start = pos.length / 3;
+      for (let i = 0; i < p.length; i++) {
+        const a = p[Math.max(0, i - 1)], b = p[Math.min(p.length - 1, i + 1)];
+        const dx = b.x - a.x, dy = b.y - a.y, l = Math.hypot(dx, dy) || 1;
+        const nx = -dy / l * halb, ny = dx / l * halb;
+        for (const s of [1, -1]) {
+          const x = p[i].x + nx * s, y = p[i].y + ny * s;
+          pos.push(x - h2, hoeheGlatt(this.g, x, y) + 0.18, y - h2);
+          col.push(c.r, c.g, c.b);
+        }
+        if (i > 0) { const q = start + (i - 1) * 2; idx.push(q, q + 2, q + 1, q + 1, q + 2, q + 3); }
+      }
+    }
+    if (this.band) { this.gruppe.remove(this.band); this.band.geometry.dispose(); }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+    geo.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
+    geo.setIndex(idx);
+    geo.computeVertexNormals();
+    this.band = new THREE.Mesh(geo, this.bandMat);
+    this.band.receiveShadow = true;
+    this.gruppe.add(this.band);
+  }
+
   /** Mittel- und Höchstwert der Geländehöhe über einer Feldfläche */
   private boden(i: number, j: number, w: number, h: number) {
     const z = this.g.zelle;
@@ -98,11 +134,13 @@ export class AufbauObjekte {
   aktualisiere(w: Welt) {
     const g = this.g, z = g.zelle, n = w.n, h2 = this.h2;
     const m = new THREE.Matrix4(), q = new THREE.Quaternion(), achse = new THREE.Vector3(0, 1, 0), c = new THREE.Color();
-    // Straßen
+    // Straßen: geglättetes Band zwischen den Kreuzungen, Kreuzungen als Pflasterfelder
+    const { ketten, knoten } = strassenKetten(w);
+    this.baueBand(ketten);
     let s = 0;
-    for (let k = 0; k < n * n && s < MAX_STRASSE; k++) {
+    for (const k of knoten) {
+      if (s >= MAX_STRASSE) break;
       const f = w.feld[k];
-      if (f !== STRASSE && f !== HAUPT) continue;
       const i = k % n, j = Math.floor(k / n);
       const y = this.boden(i, j, 1, 1).max + 0.12;
       m.makeTranslation((i + 0.5) * z - h2, y, (j + 0.5) * z - h2);
@@ -139,7 +177,7 @@ export class AufbauObjekte {
       this.bauSchluessel = schluessel;
       this.bauGruppe.traverse(o => { const me = o as THREE.Mesh; if (me.isMesh && !me.geometry.userData.geteilt) me.geometry.dispose(); });
       this.bauGruppe.clear();
-      for (const b of w.bauten) { const gr = this.gebaeude(b.bau, b.i, b.j, 1); gr.userData.id = b.id; this.bauGruppe.add(gr); }
+      for (const b of w.bauten) { const gr = this.gebaeude(b.bau, b.i, b.j, 1, b.dreh); gr.userData.id = b.id; this.bauGruppe.add(gr); }
     }
     // Bäume auf bebauten Feldern ausblenden
     const null0 = new THREE.Matrix4().makeScale(0, 0, 0);
@@ -150,8 +188,8 @@ export class AufbauObjekte {
   }
 
   /** ein Gebäude als Gruppe (Modell aus Blender, Plätze als Pflaster) */
-  gebaeude(b: BauTyp, i: number, j: number, deckkraft: number): THREE.Group {
-    const g = this.g, z = g.zelle, h2 = this.h2, { w, h } = fussabdruck(b), art = BAUTEN[b];
+  gebaeude(b: BauTyp, i: number, j: number, deckkraft: number, dreh = 0): THREE.Group {
+    const g = this.g, z = g.zelle, h2 = this.h2, { w, h } = fussabdruck(b, dreh), roh = fussabdruck(b), art = BAUTEN[b];
     const gr = new THREE.Group();
     const bo = this.boden(i, j, w, h);
     gr.position.set((i + w / 2) * z - h2, bo.min - 0.5, (j + h / 2) * z - h2);
@@ -166,7 +204,13 @@ export class AufbauObjekte {
       const f = TEILFARBEN[name] ?? { dach: "#8a4b33", akzent: "#8a4b33" };
       const modell = new THREE.Group();
       modell.position.y = bo.max - bo.min + 0.8;
-      modell.scale.set(w * z - 2, Math.max(8, art.hoehe), h * z - 2);
+      // Modell in eigener Ausrichtung strecken, dann die Vierteldrehung (Zufahrt Süden → Westen → Norden → Osten)
+      modell.scale.set(roh.w * z - 2, Math.max(8, art.hoehe), roh.h * z - 2);
+      const drehung = new THREE.Group();
+      drehung.rotation.y = (-dreh * Math.PI) / 2;
+      drehung.position.y = modell.position.y;
+      modell.position.y = 0;
+      drehung.add(modell);
       for (const [teil, farbe] of [["wand", art.farbe], ["dach", f.dach], ["akzent", f.akzent]] as const) {
         const geo = this.teile?.[`${name}_${teil}`] ?? (teil === "wand" ? hell(new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0)) : null);
         if (!geo) continue;
@@ -174,7 +218,7 @@ export class AufbauObjekte {
         mesh.castShadow = !transparent;
         modell.add(mesh);
       }
-      gr.add(modell);
+      gr.add(drehung);
     }
     return gr;
   }
@@ -188,14 +232,14 @@ export class AufbauObjekte {
   }
 
   /** Geist: halbdurchsichtiges Gebäude am Bauplatz, Boden grün (erlaubt), gelb (schwach) oder rot */
-  zeigeGeist(b: BauTyp | null, i: number, j: number, zustand: "gut" | "schwach" | "nein") {
+  zeigeGeist(b: BauTyp | null, i: number, j: number, zustand: "gut" | "schwach" | "nein", dreh = 0) {
     if (!b) { this.geist.visible = false; return; }
-    if (this.geistArt !== b) {
+    if (this.geistArt !== `${b}|${dreh}`) {
       for (const k of [...this.geist.children]) if (k !== this.geistBoden) this.geist.remove(k);
-      this.geist.add(this.gebaeude(b, 0, 0, 0.55));
-      this.geistArt = b;
+      this.geist.add(this.gebaeude(b, 0, 0, 0.55, dreh));
+      this.geistArt = `${b}|${dreh}`;
     }
-    const { w, h } = fussabdruck(b), z = this.g.zelle, bo = this.boden(i, j, w, h);
+    const { w, h } = fussabdruck(b, dreh), z = this.g.zelle, bo = this.boden(i, j, w, h);
     const modell = this.geist.children.find(k => k !== this.geistBoden)!;
     modell.position.set(0, bo.min - 0.5, 0);
     this.geist.position.set((i + w / 2) * z - this.h2, 0, (j + h / 2) * z - this.h2);
@@ -209,6 +253,8 @@ export class AufbauObjekte {
   entsorge() {
     this.geos.forEach(x => x.dispose());
     this.mats.forEach(x => x.dispose());
+    this.bandMat.dispose();
+    this.band?.geometry.dispose();
     this.gruppe.traverse(o => { const im = o as THREE.InstancedMesh; if (im.isInstancedMesh) im.dispose(); });
   }
 }

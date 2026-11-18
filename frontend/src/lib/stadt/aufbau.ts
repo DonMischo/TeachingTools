@@ -28,7 +28,7 @@ const REICHWEITE: Partial<Record<BauTyp, number>> = {
 export const reichweite = (b: BauTyp) => REICHWEITE[b] ?? 220;
 
 export interface AufHaus { i: number; j: number; dreh: 0 | 1 | 2 | 3; bewohner: number; ziel: number; versorgt: number; hoehe: number }
-export interface AufBau { id: number; bau: BauTyp; i: number; j: number; w: number; h: number; faktor: number }
+export interface AufBau { id: number; bau: BauTyp; i: number; j: number; w: number; h: number; faktor: number; /** Vierteldrehungen (0–3), Zufahrt 0 = Süden */ dreh: number }
 
 export interface Welt {
   stil: Stil;
@@ -56,8 +56,16 @@ export function neueWelt(g: Gelaende, stil: Stil, seed: number): Welt {
 
 export const mitteVon = (w: Welt, b: { i: number; j: number; w: number; h: number }): P => ({ x: (b.i + b.w / 2) * w.zelle, y: (b.j + b.h / 2) * w.zelle });
 export const orteVon = (w: Welt): Ort[] => w.bauten.map(b => ({ bau: b.bau, p: mitteVon(w, b) }));
-/** Grundfläche in Feldern */
-export const fussabdruck = (b: BauTyp) => ({ w: Math.max(2, Math.min(24, Math.round(BAUTEN[b].b / 6))), h: Math.max(2, Math.min(24, Math.round(BAUTEN[b].h / 6))) });
+/** Grundfläche in Feldern; bei ungerader Drehung sind Breite und Tiefe vertauscht */
+export function fussabdruck(b: BauTyp, dreh = 0) {
+  const w = Math.max(2, Math.min(24, Math.round(BAUTEN[b].b / 6))), h = Math.max(2, Math.min(24, Math.round(BAUTEN[b].h / 6)));
+  return dreh % 2 ? { w: h, h: w } : { w, h };
+}
+
+/** Feld vor der Zufahrt des Gebäudes (Seite je Drehung: Süden, Westen, Norden, Osten) */
+function zufahrt(i: number, j: number, fw: number, fh: number, dreh: number) {
+  return [{ i: i + Math.floor(fw / 2), j: j + fh }, { i: i - 1, j: j + Math.floor(fh / 2) }, { i: i + Math.floor(fw / 2), j: j - 1 }, { i: i + fw, j: j + Math.floor(fh / 2) }][dreh % 4];
+}
 
 const baubarFeld = (g: Gelaende, i: number, j: number, max = 22) => {
   if (i < 0 || j < 0 || i >= g.n || j >= g.n) return false;
@@ -92,8 +100,8 @@ export function freischalten(w: Welt) {
 export interface Platzpruefung { ok: boolean; faktor: number; gruende: Bewertung[]; versorgt: number }
 
 /** Darf Gebäude b mit linker oberer Ecke (i, j) hin? Dazu: Lage nach den Regeln, Häuser im Einzugsbereich */
-export function pruefePlatz(g: Gelaende, w: Welt, b: BauTyp, i: number, j: number): Platzpruefung {
-  const { w: fw, h: fh } = fussabdruck(b);
+export function pruefePlatz(g: Gelaende, w: Welt, b: BauTyp, i: number, j: number, dreh = 0): Platzpruefung {
+  const { w: fw, h: fh } = fussabdruck(b, dreh);
   const gruende: Bewertung[] = [];
   let ok = true;
   for (let y = j; y < j + fh && ok; y++) for (let x = i; x < i + fw; x++) {
@@ -110,16 +118,16 @@ export function pruefePlatz(g: Gelaende, w: Welt, b: BauTyp, i: number, j: numbe
   return { ok: ok && pr.erlaubt, faktor: ok ? pr.faktor : 0, gruende: [...gruende, ...pr.gruende], versorgt };
 }
 
-export function baue(g: Gelaende, w: Welt, b: BauTyp, i: number, j: number): AufBau | null {
-  const pr = pruefePlatz(g, w, b, i, j);
+export function baue(g: Gelaende, w: Welt, b: BauTyp, i: number, j: number, dreh = 0): AufBau | null {
+  const pr = pruefePlatz(g, w, b, i, j, dreh);
   if (!pr.ok) return null;
-  const { w: fw, h: fh } = fussabdruck(b);
-  const neu: AufBau = { id: w.naechsteId++, bau: b, i, j, w: fw, h: fh, faktor: pr.faktor };
+  const { w: fw, h: fh } = fussabdruck(b, dreh);
+  const neu: AufBau = { id: w.naechsteId++, bau: b, i, j, w: fw, h: fh, faktor: pr.faktor, dreh: dreh % 4 };
   for (let y = j; y < j + fh; y++) for (let x = i; x < i + fw; x++) w.feld[y * w.n + x] = BAU;
   w.bauten.push(neu);
   // Hauptstraße zum Netz (vom Rand der Fläche)
-  const tor = { i: i + Math.floor(fw / 2), j: j + fh };
-  const ziel = naechsteStrasse(w, tor.i, tor.j) ?? (w.bauten.length > 1 ? (() => { const z = zentrum(w)!; return z === neu ? null : { i: z.i + Math.floor(z.w / 2), j: z.j + z.h }; })() : null);
+  const tor = zufahrt(i, j, fw, fh, dreh);
+  const ziel = naechsteStrasse(w, tor.i, tor.j) ?? (w.bauten.length > 1 ? (() => { const z = zentrum(w)!; return z === neu ? null : zufahrt(z.i, z.j, z.w, z.h, z.dreh); })() : null);
   if (ziel) strasseZwischen(g, w, tor, ziel, HAUPT);
   else markiere(w, tor.i, tor.j, HAUPT);
   for (const o of w.bauten) o.faktor = pruefeOrt(g, w.stil, o.bau, mitteVon(w, o), orteVon(w)).faktor;
@@ -208,7 +216,7 @@ function netz(w: Welt): ((i: number, j: number) => boolean) | null {
   const z = zentrum(w);
   if (!z) return null;
   const plan = BAUPLAENE[w.stil];
-  const ci = z.i + Math.floor(z.w / 2), cj = z.j + z.h;
+  const { i: ci, j: cj } = zufahrt(z.i, z.j, z.w, z.h, z.dreh);
   const B = Math.max(5, Math.round(plan.block / w.zelle));
   if (plan.muster === "raster" || plan.muster === "stern") return (i, j) => (i - ci) % B === 0 || (j - cj) % B === 0;
   if (plan.muster === "faecher") return (i, j) => {
@@ -237,11 +245,11 @@ function netz(w: Welt): ((i: number, j: number) => boolean) | null {
 function wohnstrassen(g: Gelaende, w: Welt, r: number) {
   const z = zentrum(w), nz = netz(w);
   if (!z || !nz) return;
-  const ci = z.i + Math.floor(z.w / 2), cj = z.j + z.h;
+  const { i: ci, j: cj } = zufahrt(z.i, z.j, z.w, z.h, z.dreh);
   for (let j = Math.max(0, cj - r); j <= Math.min(w.n - 1, cj + r); j++)
     for (let i = Math.max(0, ci - r); i <= Math.min(w.n - 1, ci + r); i++) {
       const k = j * w.n + i;
-      if ((i - ci) ** 2 + (j - cj) ** 2 > r * r || w.feld[k] !== FREI || !w.frei[k] || !baubarFeld(g, i, j, 25) || !imEinzug(w, i, j, 30)) continue;
+      if ((i - ci) ** 2 + (j - cj) ** 2 > r * r || w.feld[k] !== FREI || !w.frei[k] || !baubarFeld(g, i, j, 25) || !imEinzug(w, i, j, 30) || g.aue[k]) continue;
       if (nz(i, j)) w.feld[k] = STRASSE;
     }
 }
@@ -357,4 +365,63 @@ export function schritt(g: Gelaende, w: Welt): void {
 export function hausFarben(stil: Stil) {
   const art = ZONEN[BAUPLAENE[stil].kern].haus as HausArt | null;
   return { fassade: art?.fassade ?? "#e6dccb", dach: art?.dach ?? "#9c5b44", flach: !!art?.flach };
+}
+
+// ---------------------------------------------------------------- Straßen zeichnen
+
+export interface Kette { punkte: P[]; haupt: boolean }
+
+/**
+ * Straßen als geglättete Linien: Ketten von Kreuzung zu Kreuzung (Felder mit ≠ 2 Nachbarn) verfolgen und
+ * mit Chaikin glätten — Treppenstufen werden zu Schrägen, Ecken zu Kurven, Kreuzungen bleiben feldgenau.
+ * Liefert auch die Kreuzungsfelder (die bekommen eine eigene Pflasterfläche).
+ */
+export function strassenKetten(w: Welt, runden = 2): { ketten: Kette[]; knoten: number[] } {
+  const n = w.n, z = w.zelle;
+  const ist = (k: number) => w.feld[k] === STRASSE || w.feld[k] === HAUPT;
+  const nachbarn = (k: number) => {
+    const i = k % n, j = Math.floor(k / n), aus: number[] = [];
+    if (i > 0 && ist(k - 1)) aus.push(k - 1);
+    if (i < n - 1 && ist(k + 1)) aus.push(k + 1);
+    if (j > 0 && ist(k - n)) aus.push(k - n);
+    if (j < n - 1 && ist(k + n)) aus.push(k + n);
+    return aus;
+  };
+  const mitte = (k: number): P => ({ x: ((k % n) + 0.5) * z, y: (Math.floor(k / n) + 0.5) * z });
+  const knoten: number[] = [];
+  const istKnoten = new Uint8Array(n * n);
+  for (let k = 0; k < n * n; k++) if (ist(k) && nachbarn(k).length !== 2) { knoten.push(k); istKnoten[k] = 1; }
+  const gesehen = new Set<number>();
+  const kante = (a: number, b: number) => (a < b ? a * n * n + b : b * n * n + a);
+  const ketten: Kette[] = [];
+  const verfolge = (start: number, erst: number) => {
+    const zellen = [start];
+    let vor = start, jetzt = erst;
+    gesehen.add(kante(start, erst));
+    for (;;) {
+      zellen.push(jetzt);
+      if (istKnoten[jetzt] || jetzt === start) break;
+      const weiter = nachbarn(jetzt).find(x => x !== vor);
+      if (weiter === undefined) break;
+      gesehen.add(kante(jetzt, weiter));
+      vor = jetzt; jetzt = weiter;
+    }
+    let pts = zellen.map(mitte);
+    for (let r = 0; r < runden && pts.length > 2; r++) {
+      const neu: P[] = [pts[0]];
+      for (let i = 0; i + 1 < pts.length; i++) {
+        const a = pts[i], b = pts[i + 1];
+        if (i > 0) neu.push({ x: a.x * 0.75 + b.x * 0.25, y: a.y * 0.75 + b.y * 0.25 });
+        if (i + 2 < pts.length) neu.push({ x: a.x * 0.25 + b.x * 0.75, y: a.y * 0.25 + b.y * 0.75 });
+      }
+      neu.push(pts[pts.length - 1]);
+      pts = neu;
+    }
+    const haupt = zellen.filter(k => w.feld[k] === HAUPT).length * 2 >= zellen.length;
+    ketten.push({ punkte: pts, haupt });
+  };
+  for (const k of knoten) for (const nb of nachbarn(k)) if (!gesehen.has(kante(k, nb))) verfolge(k, nb);
+  // übrige Ringe ohne Kreuzung
+  for (let k = 0; k < n * n; k++) if (ist(k) && !istKnoten[k]) for (const nb of nachbarn(k)) if (!gesehen.has(kante(k, nb))) verfolge(k, nb);
+  return { ketten, knoten };
 }
