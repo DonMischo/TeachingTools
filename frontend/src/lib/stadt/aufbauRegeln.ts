@@ -40,9 +40,13 @@ export const ANBIETER: Partial<Record<BauTyp, { gut: Gut; minuten: number }[]>> 
 /** Grundversorgung, die jeder Stadttyp bauen kann (ab Stufe) */
 export const GRUNDBAUTEN: { bau: BauTyp; stufe: number }[] = [
   { bau: "brunnen", stufe: 0 }, { bau: "kapelle", stufe: 0 }, { bau: "schule", stufe: 2 }, { bau: "spital", stufe: 2 }, { bau: "haltestelle", stufe: 4 },
-  // Werkstätten (Berufe)
-  { bau: "baecker", stufe: 1 }, { bau: "schmiede", stufe: 1 }, { bau: "zimmerei", stufe: 1 }, { bau: "weberei", stufe: 2 }, { bau: "brauerei", stufe: 2 },
+  // Werkstätten (Berufe); die Mühle für Stadttypen, deren Bauplan keine hat
+  { bau: "muehle", stufe: 1 }, { bau: "schmiede", stufe: 1 }, { bau: "zimmerei", stufe: 1 },
+  { bau: "baecker", stufe: 2 }, { bau: "weberei", stufe: 2 }, { bau: "brauerei", stufe: 2 },
 ];
+
+/** Warenkette: dieser Betrieb arbeitet nur, wenn der vorige läuft (Getreide → Mühle → Mehl → Bäckerei → Brot) */
+export const VORSTUFE: Partial<Record<BauTyp, BauTyp>> = { baecker: "muehle" };
 
 // ---------------------------------------------------------------- Berufe
 
@@ -95,6 +99,8 @@ export function palette(stil: Stil): { bau: BauTyp; stufe: number }[] {
   const z = zentrumTyp(stil);
   for (const x of aus) if (x.bau === z) x.stufe = 0;
   for (const gb of GRUNDBAUTEN) if (!aus.some(x => x.bau === gb.bau)) aus.push(gb);
+  // ein Betrieb wird nie vor seiner Vorstufe frei
+  for (const x of aus) { const v = VORSTUFE[x.bau], vs = v ? aus.find(y => y.bau === v) : null; if (vs && vs.stufe > x.stufe) x.stufe = vs.stufe; }
   return aus;
 }
 

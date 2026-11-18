@@ -122,6 +122,11 @@ export class AufbauObjekte {
   private band: THREE.Mesh | null = null;
   private bandMat = new THREE.MeshLambertMaterial({ vertexColors: true, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
 
+  /** was der Zeiger treffen darf (Häuser, Dächer, Gebäude) — damit der Bauplatz nicht hinter Häuser springt */
+  trefferziele(): THREE.Object3D[] {
+    return [this.wand, this.dach, this.bauGruppe];
+  }
+
   /** Figuren bewegen und aufstellen (jedes Bild); dt in Sekunden Spielzeit */
   verkehrBewegen(n: number, dt: number) {
     if (!this.verkehr.length) { this.karren.count = this.ochse.count = this.fuss.count = 0; return; }

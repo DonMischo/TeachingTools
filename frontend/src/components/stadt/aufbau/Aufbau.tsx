@@ -4,7 +4,9 @@
  *   Mausrad zoomt vom einzelnen Haus bis zur ganzen Stadt (die Kamera kippt dabei flacher),
  *   rechte Maustaste oder Q/E dreht, ziehen oder W/A/S/D verschiebt.
  *   Touch: ein Finger verschiebt, zwei Finger zoomen und drehen; Knöpfe ⟲ ⟳ ＋ －.
- *   Gebäude drehen mit R oder ↻; auf Touch setzt Tippen den Geist, »✔ Hier bauen« baut.
+ *   Gebäude drehen mit R, ↻ oder dem Mausrad (beim Bauen); auf Touch setzt Tippen den Geist, »✔ Hier bauen« baut.
+ *   Wie im Echtzeit-Strategiespiel: B öffnet das Baumenü, Umschalt halten baut mehrfach und zeigt die Werte am
+ *   Bauplatz, am Rand scrollt die Karte, »Maus fangen« hält den Zeiger im Spielfeld (Esc löst), I zeigt die Übersicht.
  *   Der Spielstand liegt im Browser (localStorage) je Spieler (`speicherSchluessel`: Konto oder Gastname),
  *   Stadttyp und Gelände; derselbe Typ auf demselben Gelände macht dort weiter.
  *   Gebäude wählen → Geist am Mauszeiger mit Werte-Kärtchen am Bauplatz und Einzugsbereich;
@@ -18,7 +20,7 @@ import { BAUTEN, STILE, type BauTyp, type Stil } from "@/lib/stadt/modell";
 import { lageRegeln } from "@/lib/stadt/bauen";
 import { ANBIETER, aufStufen, GUETER, kosten, METER_JE_MINUTE, palette, SCHICHTEN, SEKTOREN, STELLEN, TROCKEN_KOSTEN, zentrumTyp, type Gut, type Sektor } from "@/lib/stadt/aufbauRegeln";
 import {
-  abdeckung, baue, bauBei, baukosten, besetzung, erreichteHaeuser, fussabdruck, hausFarben, mitteVon, naechsteStufeFehlt, neueWelt, pruefePlatz, reichweite, reisseAb, schritt, stufe, versorgungsQuote,
+  abdeckung, baue, bauBei, baukosten, besetzung, geldDetails, nahrungsDetails, erreichteHaeuser, fussabdruck, hausFarben, mitteVon, naechsteStufeFehlt, neueWelt, pruefePlatz, reichweite, reisseAb, schritt, stufe, versorgungsQuote,
   trockenlegen, TROCKEN_RADIUS, welteAlsText, welteAusText,
   type Platzpruefung, type Welt,
 } from "@/lib/stadt/aufbau";
@@ -61,6 +63,12 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
   const [ohneWebGL, setOhneWebGL] = useState(false);
   const [meldung, setMeldung] = useState<string | null>(null);
   const [dreh, setDreh] = useState(0);
+  const [menue, setMenue] = useState(false);
+  const [uebersicht, setUebersicht] = useState(false);
+  const [gefangen, setGefangen] = useState(false);
+  const umschalt = useRef(false);
+  const touchZuletzt = useRef(false);
+  const zeigerEl = useRef<HTMLDivElement>(null);
   const drehRef = useRef(dreh); drehRef.current = dreh;
   const wahlRef = useRef(wahl); wahlRef.current = wahl;
   const rasterRef = useRef(raster); rasterRef.current = raster;
@@ -122,15 +130,25 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
     groesse();
 
     const strahl = new THREE.Raycaster(), maus = new THREE.Vector2();
-    /** Bodenpunkt unter dem Zeiger (Karte in Metern) */
+    /** Punkt unter dem Zeiger (Karte in Metern): Gelände oder das Haus/Gebäude davor — sonst spränge der Bauplatz hinter Häuser */
     const bodenBei = (cx: number, cy: number): { x: number; y: number } | null => {
       const d = drei.current;
       if (!d?.gelaende) return null;
       const r = renderer.domElement.getBoundingClientRect();
       maus.set(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1);
       strahl.setFromCamera(maus, kamera);
-      const t = strahl.intersectObjects(d.gelaende.gruppe.children.filter(o => o.userData.gelaende), false)[0];
+      const ziele = [...d.gelaende.gruppe.children.filter(o => o.userData.gelaende), ...(d.objekte?.trefferziele() ?? [])];
+      const t = strahl.intersectObjects(ziele, true)[0];
       return t ? { x: t.point.x + g.breite / 2, y: t.point.z + g.breite / 2 } : null;
+    };
+    // gefangene Maus (Pointer Lock): eigener Zeiger, der im Spielfeld bleibt
+    const virtuell = { x: el.clientWidth / 2, y: el.clientHeight / 2, drin: false };
+    const istGefangen = () => document.pointerLockElement === renderer.domElement;
+    /** Bildschirmpunkt eines Ereignisses — bei gefangener Maus der eigene Zeiger */
+    const punkt = (e: { clientX: number; clientY: number }) => {
+      if (!istGefangen()) return { x: e.clientX, y: e.clientY };
+      const r = renderer.domElement.getBoundingClientRect();
+      return { x: r.left + virtuell.x, y: r.top + virtuell.y };
     };
     const zielFeld = (p: { x: number; y: number }, b: BauTyp) => {
       const { w, h } = fussabdruck(b, drehRef.current);
@@ -154,13 +172,23 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
     const druck = (e: PointerEvent) => {
       renderer.domElement.focus();
       try { renderer.domElement.setPointerCapture(e.pointerId); } catch { /* Zeiger schon weg */ }
-      finger.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      touchZuletzt.current = e.pointerType === "touch";
+      const q = punkt(e);
+      finger.set(e.pointerId, q);
       if (finger.size === 2) { zwei = zweiMessen(); if (griff) griff.weit = 99; return; }
-      griff = { x: e.clientX, y: e.clientY, knopf: e.button, weit: 0, touch: e.pointerType === "touch" };
+      griff = { x: q.x, y: q.y, knopf: e.button, weit: 0, touch: e.pointerType === "touch" };
     };
     const zug = (e: PointerEvent) => {
       const d = drei.current!;
-      if (finger.has(e.pointerId)) finger.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      umschalt.current = e.shiftKey;
+      if (istGefangen()) {
+        virtuell.x = Math.max(0, Math.min(el.clientWidth - 1, virtuell.x + e.movementX));
+        virtuell.y = Math.max(0, Math.min(el.clientHeight - 1, virtuell.y + e.movementY));
+      } else { const r = renderer.domElement.getBoundingClientRect(); virtuell.x = e.clientX - r.left; virtuell.y = e.clientY - r.top; }
+      virtuell.drin = e.pointerType === "mouse";
+      if (zeigerEl.current) zeigerEl.current.style.transform = `translate(${virtuell.x - 2}px, ${virtuell.y - 2}px)`;
+      const q = punkt(e);
+      if (finger.has(e.pointerId)) finger.set(e.pointerId, q);
       if (finger.size >= 2 && zwei) {
         const n = zweiMessen();
         d.rig.ziel.d = Math.max(NAH, Math.min(FERN, d.rig.ziel.d * (zwei.abst / Math.max(1, n.abst))));
@@ -172,17 +200,17 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
         return;
       }
       if (griff) {
-        const dx = e.clientX - griff.x, dy = e.clientY - griff.y;
+        const dx = istGefangen() ? e.movementX : q.x - griff.x, dy = istGefangen() ? e.movementY : q.y - griff.y;
         griff.weit += Math.abs(dx) + Math.abs(dy);
-        griff.x = e.clientX; griff.y = e.clientY;
+        griff.x = q.x; griff.y = q.y;
         if (griff.knopf === 2 || griff.knopf === 1) d.rig.ziel.yaw -= dx * 0.006;
         else if (griff.weit > 5) verschiebe(dx, dy); // Bildschirmbewegung in Bodenrichtung, so weit wie der Abstand
         return;
       }
       const b = wahlRef.current;
-      if (b === "trocken") { trockenPunkt = bodenBei(e.clientX, e.clientY); return; }
+      if (b === "trocken") { trockenPunkt = bodenBei(q.x, q.y); return; }
       if (!b || b === "abriss") return;
-      const p = bodenBei(e.clientX, e.clientY);
+      const p = bodenBei(q.x, q.y);
       if (!p) return;
       const { i, j } = zielFeld(p, b);
       const z0 = zielRef.current;
@@ -195,7 +223,9 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
       const gr = griff;
       if (finger.size === 0) griff = null;
       if (!gr || gr.weit > 5 || gr.knopf !== 0 || finger.size > 0) return;
-      const p = bodenBei(e.clientX, e.clientY);
+      umschalt.current = e.shiftKey;
+      const q = punkt(e);
+      const p = bodenBei(q.x, q.y);
       if (!p) return;
       const w = welt.current, b = wahlRef.current;
       if (b === "abriss") {
@@ -228,10 +258,14 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
     };
     const rad = (e: WheelEvent) => {
       e.preventDefault();
+      // beim Bauen dreht das Rad das Gebäude (wie im Aufbauspiel), sonst zoomt es
+      const b = wahlRef.current;
+      if (b && b !== "abriss" && b !== "trocken") { drehenRef.current(e.deltaY > 0 ? 1 : -1); return; }
       const d = drei.current!, alt = d.rig.ziel.d;
       const neu = Math.max(NAH, Math.min(FERN, alt * (e.deltaY > 0 ? 1.18 : 1 / 1.18)));
       // beim Hineinzoomen zum Zeiger hin
-      const p = bodenBei(e.clientX, e.clientY);
+      const q = punkt(e);
+      const p = bodenBei(q.x, q.y);
       if (p && neu < alt) {
         const f = 1 - neu / alt;
         d.rig.ziel.x += (p.x - g.breite / 2 - d.rig.ziel.x) * f;
@@ -241,11 +275,14 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
     };
     const runter = (e: KeyboardEvent) => {
       const k = e.key.toLowerCase();
-      if (k === "escape") { setWahl(null); setZiel(null); setAuswahl(null); return; }
-      if (k === "r") { drehenRef.current(); return; }
+      if (k === "shift") { umschalt.current = true; return; }
+      if (k === "escape") { setWahl(null); setZiel(null); setAuswahl(null); setMenue(false); setUebersicht(false); return; }
+      if (k === "r") { drehenRef.current(1); return; }
+      if (k === "b") { e.preventDefault(); setMenue(m => !m); setUebersicht(false); return; }
+      if (k === "i") { e.preventDefault(); setUebersicht(u => !u); setMenue(false); return; }
       if (["w", "a", "s", "d", "q", "e", "arrowup", "arrowdown", "arrowleft", "arrowright"].includes(k)) { e.preventDefault(); drei.current?.tasten.add(k); }
     };
-    const hoch = (e: KeyboardEvent) => drei.current?.tasten.delete(e.key.toLowerCase());
+    const hoch = (e: KeyboardEvent) => { if (e.key === "Shift") umschalt.current = false; drei.current?.tasten.delete(e.key.toLowerCase()); };
     const c = renderer.domElement;
     const kein = (e: Event) => e.preventDefault();
     c.addEventListener("pointerdown", druck);
@@ -254,9 +291,13 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
     c.addEventListener("pointercancel", los);
     c.addEventListener("wheel", rad, { passive: false });
     c.addEventListener("contextmenu", kein);
-    c.addEventListener("keydown", runter);
-    c.addEventListener("keyup", hoch);
+    const box = huelle.current!;
+    box.addEventListener("keydown", runter);
+    box.addEventListener("keyup", hoch);
     c.addEventListener("blur", () => drei.current?.tasten.clear());
+    c.addEventListener("pointerleave", () => { if (!istGefangen()) virtuell.drin = false; });
+    const lockWechsel = () => { const an = istGefangen(); setGefangen(an); if (an) virtuell.drin = true; };
+    document.addEventListener("pointerlockchange", lockWechsel);
 
     const licht = new THREE.Vector3(-0.6, 0.6, -0.35).normalize(), blick = new THREE.Vector3(), bildschirm = new THREE.Vector3();
     let id = 0, zuletzt = performance.now();
@@ -272,6 +313,15 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
       r.ziel.x += (-Math.sin(r.yaw) * vw + Math.cos(r.yaw) * sw) * sp;
       r.ziel.z += (-Math.cos(r.yaw) * vw - Math.sin(r.yaw) * sw) * sp;
       r.ziel.yaw += ((t.has("q") ? 1 : 0) - (t.has("e") ? 1 : 0)) * dt * 1.4;
+      // am Rand des Spielfelds scrollen (Maus darin bzw. gefangen), wie im Echtzeit-Strategiespiel
+      if (virtuell.drin && !griff) {
+        const R = 18, w0 = el.clientWidth, h0 = el.clientHeight;
+        const rx = virtuell.x < R ? -1 : virtuell.x > w0 - R ? 1 : 0, ry = virtuell.y < R ? -1 : virtuell.y > h0 - R ? 1 : 0;
+        if (rx || ry) {
+          r.ziel.x += (Math.cos(r.yaw) * rx + Math.sin(r.yaw) * ry) * sp * 0.8;
+          r.ziel.z += (-Math.sin(r.yaw) * rx + Math.cos(r.yaw) * ry) * sp * 0.8;
+        }
+      }
       const h2 = g.breite / 2;
       r.ziel.x = Math.max(-h2, Math.min(h2, r.ziel.x)); r.ziel.z = Math.max(-h2, Math.min(h2, r.ziel.z));
       // weich nachführen
@@ -295,7 +345,7 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
       // Werte-Kärtchen über dem Bauplatz
       const karteEl = huelle.current?.querySelector<HTMLDivElement>("[data-kaertchen]");
       if (karteEl) {
-        if (kreis) {
+        if (kreis && (umschalt.current || touchZuletzt.current)) {
           bildschirm.set(kreis.x - h2, hoeheGlatt(g, kreis.x, kreis.y) + 25, kreis.y - h2).project(kamera);
           const x = (bildschirm.x * 0.5 + 0.5) * el.clientWidth, y = (-bildschirm.y * 0.5 + 0.5) * el.clientHeight;
           // nicht über die Knopfleiste rechts unten und nicht aus dem Bild
@@ -335,6 +385,10 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
       ab = true;
       cancelAnimationFrame(id);
       ro.disconnect();
+      box.removeEventListener("keydown", runter);
+      box.removeEventListener("keyup", hoch);
+      document.removeEventListener("pointerlockchange", lockWechsel);
+      if (istGefangen()) document.exitPointerLock();
       c.removeEventListener("wheel", rad);
       drei.current?.gelaende?.entsorge();
       drei.current?.objekte?.entsorge();
@@ -352,8 +406,9 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
     if (!pr.ok) { setMeldung(`❌ ${BAUTEN[b].label}: ${pr.gruende.filter(x => !x.ok).map(x => x.text).slice(0, 2).join(", ")}`); return; }
     const neu = baue(g, w, b, i, j, dreh)!;
     setMeldung(pr.faktor < 1 ? `⚠️ ${BAUTEN[b].label} steht ungünstig — wirkt nur zu ${Math.round(pr.faktor * 100)} %.` : `✅ ${BAUTEN[b].label} gebaut.`);
-    setAuswahl({ id: neu.id });
-    setWahl(null); setZiel(null);
+    // mit Umschalt mehrere hintereinander bauen, sonst ist die Auswahl erledigt
+    if (umschalt.current) setZiel(null);
+    else { setAuswahl({ id: neu.id }); setWahl(null); setZiel(null); }
     if (w.bauten.length === 1) setLaeuft(true);
     drei.current?.objekte?.aktualisiere(w);
     drei.current?.gelaende?.setzeMasken(w);
@@ -362,8 +417,8 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
   };
   const bauenRef = useRef(bauen); bauenRef.current = bauen;
   /** Gebäude um eine Vierteldrehung weiterdrehen; der Geist bleibt an seinem Platz */
-  const drehen = () => {
-    const nd = (dreh + 1) % 4;
+  const drehen = (richtung = 1) => {
+    const nd = (dreh + (richtung > 0 ? 1 : 3)) % 4;
     setDreh(nd);
     if (ziel) setZiel({ ...ziel, dreh: nd, pr: pruefePlatz(g, welt.current, ziel.bau, ziel.i, ziel.j, nd) });
   };
@@ -427,19 +482,31 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
         {STILE.map(s => <button key={s.id} onClick={() => setStil(s.id)} className={chip(stil === s.id)}>{s.icon} {s.kurz}</button>)}
       </div>
       <div className="grid gap-3 lg:grid-cols-[1fr_340px]">
-        <div ref={huelle} className="relative h-[640px] overflow-hidden rounded-xl border border-line bg-[#b7d4ea]">
+        <div ref={huelle} tabIndex={-1} className={`relative h-[640px] overflow-hidden rounded-xl border border-line bg-[#b7d4ea] outline-none ${gefangen ? "cursor-none" : ""}`}>
           <div ref={karte} className="absolute inset-0" />
           {laedt && <div className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white drop-shadow">⏳ Gelände wird geformt …</div>}
           <div className="pointer-events-none absolute bottom-2 left-2 rounded-lg bg-black/45 px-2 py-1 text-xs text-white">
-            Mausrad / zwei Finger: Haus ↔ Stadt · rechte Maustaste / Q E: drehen · ziehen / W A S D: schieben · R: Gebäude drehen · Esc
+            B: Baumenü · I: Übersicht · Umschalt: Werte, mehrfach bauen · Rad: Zoom (beim Bauen: drehen) · rechte Maustaste / Q E: drehen · Rand / W A S D: schieben · Esc
           </div>
           <div className="absolute right-2 top-2 flex gap-1.5">
+            <button className={`chip ${menue ? "chip-on" : ""}`} onClick={() => { setMenue(m => !m); setUebersicht(false); }} title="Baumenü (B)">🏗️ Bauen</button>
+            <button className={`chip ${uebersicht ? "chip-on" : ""}`} onClick={() => { setUebersicht(u => !u); setMenue(false); }} title="Übersicht (I)">📊 Übersicht</button>
             <button className={`chip ${raster ? "chip-on" : ""}`} onClick={() => setRaster(r => !r)}># Raster</button>
+            <button className={`chip ${gefangen ? "chip-on" : ""}`} title="Maus im Spielfeld halten — am Rand scrollt die Karte. Esc löst."
+              onClick={() => { const c = huelle.current?.querySelector("canvas"); if (gefangen) document.exitPointerLock(); else c?.requestPointerLock(); }}>🖱️ {gefangen ? "Maus frei (Esc)" : "Maus fangen"}</button>
           </div>
+          {/* eigener Zeiger, solange die Maus gefangen ist */}
+          <div ref={zeigerEl} className="pointer-events-none absolute left-0 top-0 h-4 w-4" style={{ visibility: gefangen ? "visible" : "hidden" }}>
+            <svg viewBox="0 0 16 16" className="h-4 w-4 drop-shadow"><path d="M1 1 L1 13 L4.5 9.5 L7 15 L9 14 L6.5 8.5 L11 8.5 Z" fill="white" stroke="black" strokeWidth="1" /></svg>
+          </div>
+          {menue && <BauMenue stufen={stufen} pal={pal} stufe={i} taler={w.taler} preis={b => baukosten(w, b)} gewaehlt={wahl}
+            waehle={b => { setWahl(b); setZiel(null); setAuswahl(null); setMenue(false); huelle.current?.querySelector("canvas")?.focus(); }}
+            zu={() => setMenue(false)} />}
+          {uebersicht && <Uebersicht w={w} zu={() => setUebersicht(false)} />}
           {/* Knopfleiste für Touch (und Maus): Ansicht drehen und zoomen, Gebäude drehen und bauen */}
           <div className="absolute bottom-16 right-2 flex flex-col items-end gap-1.5">
             {ziel && <button className="btn-primary py-1.5" disabled={!ziel.pr.ok} onClick={() => bauen(ziel.i, ziel.j)}>✔ Hier bauen</button>}
-            {wahl && wahl !== "abriss" && <button className="btn-secondary py-1.5" onClick={drehen} title="Gebäude drehen (R)">↻ Gebäude drehen</button>}
+            {wahl && wahl !== "abriss" && <button className="btn-secondary py-1.5" onClick={() => drehen(1)} title="Gebäude drehen (R oder Mausrad)">↻ Gebäude drehen</button>}
             {(wahl || ziel) && <button className="btn-secondary py-1.5" onClick={() => { setWahl(null); setZiel(null); }}>✕ Abbrechen</button>}
             <div className="flex gap-1 rounded-xl bg-black/35 p-1">
               <button className="btn-secondary h-10 w-10 p-0 text-lg" title="Ansicht nach links drehen" onClick={() => kamera(r => { r.yaw += Math.PI / 4; })}>⟲</button>
@@ -569,6 +636,94 @@ function Kaertchen({ stil, bau, pr, neu, besetzt, frei }: { stil: Stil; bau: Bau
       ) : (
         <ul className="mt-1 text-muted">{regeln.soll.map(t => <li key={t}>• {t}</li>)}</ul>
       )}
+    </div>
+  );
+}
+
+/** Baumenü (B): alle Gebäude nach Stufen, mit Preis; gesperrte grau */
+function BauMenue({ stufen, pal, stufe, taler, preis, gewaehlt, waehle, zu }: {
+  stufen: { name: string }[]; pal: { bau: BauTyp; stufe: number }[]; stufe: number; taler: number; preis: (b: BauTyp) => number;
+  gewaehlt: string | null; waehle: (b: BauTyp) => void; zu: () => void;
+}) {
+  return (
+    <div className="absolute inset-x-4 top-12 z-10 max-h-[70%] overflow-auto rounded-xl border border-line bg-surface/97 p-3 shadow-xl">
+      <div className="mb-2 flex items-center justify-between">
+        <div className="font-black">🏗️ Bauen <span className="text-xs font-normal text-muted">B oder Esc schließt · Umschalt halten baut mehrfach</span></div>
+        <button className="chip" onClick={zu}>✕</button>
+      </div>
+      {stufen.map((st, k) => {
+        const liste = pal.filter(o => o.stufe === k);
+        if (!liste.length) return null;
+        const zuGesperrt = k > stufe;
+        return (
+          <div key={k} className="mb-2">
+            <div className="mb-1 text-xs font-bold text-muted">{zuGesperrt ? "🔒 " : ""}{st.name}</div>
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-1.5">
+              {liste.map(o => {
+                const k0 = preis(o.bau), teuer = taler < k0;
+                return (
+                  <button key={o.bau} disabled={zuGesperrt} onClick={() => waehle(o.bau)} title={BAUTEN[o.bau].text}
+                    className={`flex items-center gap-2 rounded-lg border px-2 py-1.5 text-left text-xs ${gewaehlt === o.bau ? "border-accent bg-accent/15" : "border-line hover:bg-surface-hover"} ${zuGesperrt ? "opacity-40" : ""}`}>
+                    <span className="text-lg">{BAUTEN[o.bau].icon}</span>
+                    <span className="flex-1"><span className="block font-bold">{BAUTEN[o.bau].label}</span>
+                      <span className={teuer && !zuGesperrt ? "text-bad" : "text-muted"}>{k0} Taler{STELLEN[o.bau] ? ` · ${STELLEN[o.bau]!.n} ${SCHICHTEN[STELLEN[o.bau]!.schicht].name}` : ""}</span></span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Übersicht (I): Geld, Nahrung, Bevölkerung und Arbeit, Betriebe — je Posten */
+function Uebersicht({ w, zu }: { w: Welt; zu: () => void }) {
+  const geld = geldDetails(w), nah = nahrungsDetails(w), bes = besetzung(w);
+  const f = (x: number) => x.toFixed(1).replace(".", ",");
+  const betriebe = w.bauten.filter(b => STELLEN[b.bau] && !b.dorf);
+  return (
+    <div className="absolute inset-x-4 top-12 z-10 max-h-[75%] overflow-auto rounded-xl border border-line bg-surface/97 p-3 text-xs shadow-xl">
+      <div className="mb-2 flex items-center justify-between">
+        <div className="text-sm font-black">📊 Übersicht <span className="font-normal text-muted">I oder Esc schließt</span></div>
+        <button className="chip" onClick={zu}>✕</button>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <section>
+          <div className="mb-1 font-bold">💰 Geld je Schritt: {geld.steuern - geld.unterhalt >= 0 ? "+" : ""}{f(geld.steuern - geld.unterhalt)}</div>
+          {geld.steuernJe.map((x, k) => x > 0.05 && <div key={k} className="flex justify-between"><span>Steuern {SCHICHTEN[k].name}</span><span className="text-ok">+{f(x)}</span></div>)}
+          <div className="flex justify-between text-muted"><span>Zufriedenheit · Handel (Weberei)</span><span>{Math.round(geld.zufriedenheit * 100)} % · +{Math.round(geld.handel * 100)} %</span></div>
+          <div className="flex justify-between"><span>Unterhalt Gebäude</span><span className="text-bad">−{f(geld.gebaeude)}</span></div>
+          <div className="flex justify-between"><span>Unterhalt Wege ({geld.strassenfelder} Felder)</span><span className="text-bad">−{f(geld.wege)}</span></div>
+          {geld.verwaltung > 0 && <div className="flex justify-between"><span>Verwaltung, Wache, Armenpflege</span><span className="text-bad">−{f(geld.verwaltung)}</span></div>}
+        </section>
+        <section>
+          <div className="mb-1 font-bold">🌾 Nahrung: {zahl(nah.angebot)} für {zahl(nah.bedarf)} Stadtbewohner</div>
+          <div className="flex justify-between"><span>Ernte aus {nah.hoefe} Höfen ({nah.angebunden} mit Weg zum Markt)</span><span>{zahl(nah.ernte)}</span></div>
+          <div className="flex justify-between text-muted"><span>davon Werkzeug (Schmiede)</span><span>+{Math.round(nah.werkzeug * 100)} %</span></div>
+          <div className="flex justify-between"><span>Einfuhr (Bahn, Schiff)</span><span>{zahl(nah.einfuhr)}</span></div>
+          <div className="flex justify-between"><span>Mühle und Bäckerei</span><span>+{Math.round(nah.verarbeitung * 100)} %</span></div>
+        </section>
+        <section>
+          <div className="mb-1 font-bold">👥 Bevölkerung und Arbeit</div>
+          <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-3">
+            <span className="text-muted">Schicht</span><span className="text-muted">Leute</span><span className="text-muted">Arbeitskräfte</span><span className="text-muted">fehlen</span>
+            {SCHICHTEN.map((sch, k) => {
+              const leute = w.haeuser.filter(h => h.schicht === k).reduce((a, h) => a + h.bewohner, 0);
+              if (!leute && !bes.fehlend[k]) return null;
+              return [<span key={`a${k}`}>{sch.name}</span>, <span key={`b${k}`}>{zahl(leute)}</span>, <span key={`c${k}`}>{zahl(bes.angebot[k])}</span>, <span key={`d${k}`} className={bes.fehlend[k] > 0 ? "text-bad" : ""}>{zahl(bes.fehlend[k])}</span>];
+            })}
+          </div>
+        </section>
+        <section>
+          <div className="mb-1 font-bold">🏭 Betriebe ({betriebe.length})</div>
+          {betriebe.map(b => {
+            const q = bes.quote.get(b.id) ?? 1;
+            return <div key={b.id} className="flex justify-between"><span>{BAUTEN[b.bau].icon} {BAUTEN[b.bau].label}</span><span className={q >= 1 ? "text-ok" : q >= 0.5 ? "text-[#ca8a04]" : "text-bad"}>{Math.round(q * 100)} % besetzt{q < 0.5 ? " · steht still" : ""}</span></div>;
+          })}
+        </section>
+      </div>
     </div>
   );
 }

@@ -6,7 +6,8 @@ import {
   abdeckung, baue, baukosten, besetzung, bruecken, fussabdruck, HAUPT, HAUS, nahrungsBilanz, nasseAue, neueWelt, pruefePlatz, reisseAb, schritt, STRASSE,
   strassenKetten, trockenlegen, versorgungsQuote, welteAlsText, welteAusText, zentrum, type Welt,
 } from "@/lib/stadt/aufbau";
-import { aufStufen, kosten, zentrumTyp } from "@/lib/stadt/aufbauRegeln";
+import { aufStufen, kosten, palette, zentrumTyp } from "@/lib/stadt/aufbauRegeln";
+import { STILE } from "@/lib/stadt/modell";
 
 const g = erzeuge(passendeWahl("europaeisch", 12));
 
@@ -174,6 +175,20 @@ describe("Aufbau: Raster, Brücken, Aue, Spielstand", { timeout: 120000 }, () =>
   });
 
 describe("Aufbau: Berufe", { timeout: 120000 }, () => {
+  it("Warenkette: die Bäckerei kommt nie vor der Mühle und braucht eine", () => {
+    for (const st of STILE) {
+      const pal = palette(st.id), b = pal.find(x => x.bau === "baecker")!, m = pal.find(x => x.bau === "muehle")!;
+      expect(m, st.id).toBeTruthy();
+      expect(b.stufe, st.id).toBeGreaterThanOrEqual(m.stufe);
+    }
+    const w = neueWelt(g, "europaeisch", 12, false);
+    w.frei.fill(1); w.stufe = 3; w.taler = 9999;
+    let ohne = null as ReturnType<typeof pruefePlatz> | null;
+    for (let y = 200; y < 300 && !ohne?.gruende.some(x => x.text.includes("Mühle")); y += 4) ohne = pruefePlatz(g, w, "baecker", 250, y);
+    expect(ohne!.ok).toBe(false);
+    expect(ohne!.gruende.some(x => x.text.includes("Mühle"))).toBe(true);
+  });
+
   it("ein Betrieb ohne Personal steht still und versorgt niemanden", () => {
     const w = neueWelt(g, "europaeisch", 12, false);
     w.frei.fill(1); w.stufe = 1; w.taler = 5000;

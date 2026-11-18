@@ -17,7 +17,7 @@ import { BAUTEN, ZONEN, type BauTyp, type HausArt, type Stil } from "./modell";
 import { BAUPLAENE, pruefeOrt, type Bewertung, type Ort } from "./bauen";
 import {
   ANBIETER, aufStufen, EINFUHR, ERWERBSQUOTE, grundVon, kosten, METER_JE_MINUTE, NAHRUNG_JE_HOF, palette, SCHICHTEN, SEKTOREN, START_TALER, STELLEN, steuern,
-  TROCKEN_KOSTEN, unterhalt, VORRANG, zentrumTyp, type Gut, type Sektor,
+  TROCKEN_KOSTEN, unterhalt, VORRANG, VORSTUFE, zentrumTyp, type Gut, type Sektor,
 } from "./aufbauRegeln";
 
 export const FREI = 0, STRASSE = 1, HAUPT = 2, HAUS = 3, BAU = 4;
@@ -399,6 +399,8 @@ export function pruefePlatz(g: Gelaende, w: Welt, b: BauTyp, i: number, j: numbe
   const pal = palette(w.stil).find(p => p.bau === b);
   if (!pal) { ok = false; gruende.push({ ok: false, text: "gehört nicht zu diesem Stadttyp" }); }
   else if (pal.stufe > w.stufe) { ok = false; gruende.push({ ok: false, text: `erst ab Stufe ${pal.stufe + 1}` }); }
+  const vor = VORSTUFE[b];
+  if (vor && !w.bauten.some(o => o.bau === vor)) { ok = false; gruende.push({ ok: false, text: `braucht erst ${BAUTEN[vor].icon} ${BAUTEN[vor].label} (Warenkette)` }); }
   const k0 = baukosten(w, b);
   if (w.taler < k0) { ok = false; gruende.push({ ok: false, text: `zu teuer: ${k0} Taler, du hast ${Math.floor(w.taler)}` }); }
   const p = mitteVon(w, { i, j, w: fw, h: fh });
@@ -670,20 +672,32 @@ function hausWerte(w: Welt, h: AufHaus) {
 
 /** Nahrung: Bauernhöfe mit Weg zum Markt liefern voll, ohne Anbindung nur wenig; dazu Einfuhr über Bahn und Schiff */
 export function nahrungsBilanz(w: Welt, abd = abdeckung(w)): { angebot: number; bedarf: number } {
+  const d = nahrungsDetails(w, abd);
+  return { angebot: d.angebot, bedarf: d.bedarf };
+}
+
+/** Nahrung nach Posten: Höfe (mit/ohne Weg zum Markt), Werkzeug, Einfuhr, Mühle und Bäckerei */
+export function nahrungsDetails(w: Welt, abd = abdeckung(w)) {
   const markt = abd.get("nahrung");
   const anbindung = markt ? marktAnbindung(w) : null;
   const bes = besetzung(w);
   // Schmiede: Werkzeug für die Höfe (+20 %)
   const werkzeug = 1 + 0.2 * werkstatt(w, bes, "schmiede", 1);
-  let angebot = 0, bedarf = 0;
+  let hoefe = 0, angebunden = 0, ernte = 0, bedarf = 0;
   for (const h of w.haeuser) {
-    if (h.bauer) angebot += NAHRUNG_JE_HOF * werkzeug * (anbindung?.[h.tor] ? 1 : 0.3) * (h.bewohner / Math.max(1, h.ziel));
-    else bedarf += h.bewohner;
+    if (h.bauer) {
+      hoefe++;
+      if (anbindung?.[h.tor]) angebunden++;
+      ernte += NAHRUNG_JE_HOF * werkzeug * (anbindung?.[h.tor] ? 1 : 0.3) * (h.bewohner / Math.max(1, h.ziel));
+    } else bedarf += h.bewohner;
   }
-  for (const b of w.bauten) angebot += (EINFUHR[b.bau] ?? 0) * (bes.quote.get(b.id) ?? 1);
-  // Mühle und Bäckereien machen aus Getreide mehr Brot
-  angebot *= 1 + 0.15 * werkstatt(w, bes, "muehle", 1) + 0.15 * werkstatt(w, bes, "baecker", 2);
-  return { angebot: Math.round(angebot), bedarf };
+  let einfuhr = 0;
+  for (const b of w.bauten) einfuhr += (EINFUHR[b.bau] ?? 0) * (bes.quote.get(b.id) ?? 1);
+  // Mühle und Bäckereien machen aus Getreide mehr Brot (Bäckerei nur so weit, wie die Mühle mahlt)
+  const muehle = werkstatt(w, bes, "muehle", 1);
+  const verarbeitung = 0.15 * muehle + 0.15 * Math.min(werkstatt(w, bes, "baecker", 2), 2 * muehle);
+  const angebot = Math.round((ernte + einfuhr) * (1 + verarbeitung));
+  return { angebot, bedarf, hoefe, angebunden, ernte: Math.round(ernte), einfuhr: Math.round(einfuhr), werkzeug: werkzeug - 1, verarbeitung };
 }
 
 /** Bauernhöfe, die über Wege einen Markt erreichen (30 Minuten mit dem Karren) */
@@ -700,17 +714,31 @@ function marktAnbindung(w: Welt): Uint8Array {
 
 /** Steuerkraft, Zufriedenheit, Unterhalt (Dorfbauten und Feldwege halten die Bauern selbst instand) */
 export function geldBilanz(w: Welt): { steuern: number; unterhalt: number } {
+  const d = geldDetails(w);
+  return { steuern: d.steuern, unterhalt: d.unterhalt };
+}
+
+/** Geld nach Posten: Steuern je Schicht, Unterhalt für Gebäude, Wege und Verwaltung */
+export function geldDetails(w: Welt) {
   let kraft = 0, zufr = 0;
-  for (const h of w.haeuser) { kraft += h.bewohner * SCHICHTEN[h.schicht].steuer; zufr += h.versorgt; }
+  const kraftJe = SCHICHTEN.map(() => 0);
+  for (const h of w.haeuser) { const k = h.bewohner * SCHICHTEN[h.schicht].steuer; kraft += k; kraftJe[h.schicht] += k; zufr += h.versorgt; }
   const bes = besetzung(w);
   // Brauerei hebt die Zufriedenheit, Webereien bringen Tuch in den Fernhandel
-  const z = Math.min(1, (w.haeuser.length ? zufr / w.haeuser.length : 1) + 0.1 * werkstatt(w, bes, "brauerei", 1));
+  const zufriedenheit = Math.min(1, (w.haeuser.length ? zufr / w.haeuser.length : 1) + 0.1 * werkstatt(w, bes, "brauerei", 1));
   const handel = 1 + 0.1 * werkstatt(w, bes, "weberei", 3);
+  const summe = steuern(kraft, zufriedenheit) * handel;
   const bau = w.bauten.filter(b => !b.dorf).reduce((a, b) => a + kosten(b.bau), 0);
   // Verwaltung, Wache und Rat wachsen mit der Stadt: je Stufe 20 % mehr Unterhalt; ab der Handelsstadt dazu
   // Armenfürsorge, Stadtwache und Kanzlei je Einwohner — sonst häuft eine große Stadt endlos Geld an
+  const aufschlag = 1 + 0.2 * Math.max(0, w.stufe - 1), strassen = stadtStrassen(w);
+  const gebaeude = unterhalt(bau, 0) * aufschlag, wege = (unterhalt(0, strassen)) * aufschlag;
   const verwaltung = 0.015 * w.einwohner * Math.max(0, w.stufe - 2);
-  return { steuern: steuern(kraft, z) * handel, unterhalt: unterhalt(bau, stadtStrassen(w)) * (1 + 0.2 * Math.max(0, w.stufe - 1)) + verwaltung };
+  return {
+    steuern: summe, unterhalt: gebaeude + wege + verwaltung,
+    steuernJe: kraftJe.map(k => (kraft ? (summe * k) / kraft : 0)), zufriedenheit, handel: handel - 1,
+    gebaeude, wege, verwaltung, strassenfelder: strassen,
+  };
 }
 
 /** Straßenfelder der Stadt (im erschlossenen Kreis um das Zentrum) */
