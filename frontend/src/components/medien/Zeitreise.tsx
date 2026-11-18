@@ -6,13 +6,15 @@ import { erreichbarBis, type Aenderung, type Fortschritt } from "@/lib/medien/fo
 import Station from "./Station";
 
 /** `start`: Id einer Station (TaskCrawler-Vorgabe, Link ?station=) — dort öffnen, auch wenn sie noch gesperrt wäre. */
-export default function Zeitreise({ fortschritt, aendere, zuruecksetzen, start }: { fortschritt: Fortschritt; aendere: (a: Aenderung) => void; zuruecksetzen: () => void; start?: string }) {
+/** `allesOffen`: Lehrkraft hat alles freigeschaltet — jede Station anklickbar, gespeichert wird dadurch nichts. */
+export default function Zeitreise({ fortschritt, aendere, zuruecksetzen, start, allesOffen }: { fortschritt: Fortschritt; aendere: (a: Aenderung) => void; zuruecksetzen: () => void; start?: string; allesOffen?: boolean }) {
   const startIndex = start ? MEDIEN.findIndex(x => x.id === start) : -1;
-  const bis = Math.max(erreichbarBis(fortschritt.geschafft), startIndex);
+  const erreichbar = Math.max(erreichbarBis(fortschritt.geschafft), startIndex);
+  const bis = allesOffen ? MEDIEN.length - 1 : erreichbar;
   const [index, setIndex] = useState(Math.max(0, startIndex));
   const gewaehlt = useRef(startIndex >= 0);
   // Beim Laden des gespeicherten Stands zur ersten offenen Station springen — nicht mehr, sobald man selbst wählt oder antwortet
-  useEffect(() => { if (!gewaehlt.current) setIndex(bis); }, [bis]);
+  useEffect(() => { if (!gewaehlt.current) setIndex(erreichbar); }, [erreichbar]);
   const leiste = useRef<HTMLDivElement>(null);
   useEffect(() => {
     leiste.current?.querySelector<HTMLElement>(`[data-index="${index}"]`)?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });

@@ -24,6 +24,10 @@ import Eilbote from "./Eilbote";
 import WerWarZuerst from "./WerWarZuerst";
 import Posteingang from "./Posteingang";
 import { MedienLiveKontext, useMedienLive, type LiveZugang } from "@/lib/medien/live";
+import { useAuth } from "@/contexts/AuthContext";
+
+/** Lehrkraft: alles freischalten gilt nur für diese Browser-Sitzung (Tab), gespeichert wird nichts */
+const ALLES_FREI = "hp_medien_alles_frei";
 
 const REITER = [
   { id: "zeitreise", ebene: "kennen", icon: "🕰️", label: "Zeitreise" },
@@ -53,6 +57,18 @@ const chip = (an: boolean) =>
 export default function Medien({ action, vorgabe, speicher, live }: { action?: ReactNode; vorgabe?: Vorgabe; speicher?: "konto" | MausZugang; live?: LiveZugang }) {
   // Live-Raum der Sitzung: Nachrichten an andere, gemeinsame Höhlenwand (nur mit Code)
   const raum = useMedienLive(live ?? null);
+  const { auth } = useAuth();
+  const lehrkraft = auth?.role === "teacher" || auth?.role === "admin";
+  const [allesFrei, setAllesFrei] = useState(false);
+  useEffect(() => { try { setAllesFrei(sessionStorage.getItem(ALLES_FREI) === "1"); } catch { /* egal */ } }, []);
+  const offen = lehrkraft && allesFrei;
+  const umschalten = () => {
+    const neu = !allesFrei;
+    setAllesFrei(neu);
+    try { if (neu) sessionStorage.setItem(ALLES_FREI, "1"); else sessionStorage.removeItem(ALLES_FREI); } catch { /* egal */ }
+  };
+  // Nur zum Zeigen: Stationen, Fotos und Flops offen — der echte Fortschritt bleibt unberührt
+  const sichtbar = offen ? MEDIEN.map(m => m.id) : null;
   const fest = wahl(vorgabe, "reiter", REITER.map(r => r.id));
   const station = wahl(vorgabe, "station", MEDIEN.map(m => m.id));
   const [reiter, setReiter] = useState<Reiter>(fest ?? "zeitreise");
@@ -124,6 +140,12 @@ export default function Medien({ action, vorgabe, speicher, live }: { action?: R
         </div>}
         <div className="ml-auto flex gap-2 text-sm">
           {live && <Posteingang />}
+          {lehrkraft && (
+            <button className={`chip ${offen ? "chip-on" : ""}`} onClick={umschalten}
+              title="Nur für Lehrkräfte: alle Stationen, Fotos und Flops öffnen — bis dieser Tab geschlossen wird. Der Fortschritt bleibt unverändert.">
+              {offen ? "🔓 Alles frei (Lehrkraft)" : "🔒 Alles freischalten"}
+            </button>
+          )}
           <span className="chip" title="Geschaffte Stationen">🏁 {f.geschafft.length} / {MEDIEN.length}</span>
           <span className="chip" title="Freigeschaltete Fotos">📷 {frei} / {GALERIE.length}</span>
           <button className="chip" title="Erfolge" onClick={() => setReiter("erfolge")}>🏆 {erreichte(f).size} / {ERFOLGE.length}</button>
@@ -133,14 +155,14 @@ export default function Medien({ action, vorgabe, speicher, live }: { action?: R
         </div>
       </div>
 
-      {reiter === "zeitreise" && <Zeitreise fortschritt={f} aendere={aendere} zuruecksetzen={zuruecksetzen} start={station} />}
+      {reiter === "zeitreise" && <Zeitreise fortschritt={f} aendere={aendere} zuruecksetzen={zuruecksetzen} start={station} allesOffen={offen} />}
       {reiter === "vergleich" && <Vergleich />}
-      {reiter === "flops" && <FlopMuseum geschafft={f.geschafft} />}
+      {reiter === "flops" && <FlopMuseum geschafft={sichtbar ?? f.geschafft} />}
       {reiter === "galerie" && (
         <FotoGalerie bilder={GALERIE} bereiche={BEREICHE} nachweisFuer={nachweisFuer}
           gesperrt={b => {
             const m = MEDIEN.find(x => x.id === (b as (typeof GALERIE)[number]).medium);
-            return m && !f.geschafft.includes(m.id) ? `Schaff die Station ${m.icon} ${m.name} in der Zeitreise.` : null;
+            return m && !offen && !f.geschafft.includes(m.id) ? `Schaff die Station ${m.icon} ${m.name} in der Zeitreise.` : null;
           }}
           einleitung={<>Echte Fotos der Medien aus {MEDIEN.length} Stationen. Jedes Foto wird freigeschaltet, sobald du die passende Station der Zeitreise geschafft hast. Bisher: <b>{frei} von {GALERIE.length}</b>.</>} />
       )}
