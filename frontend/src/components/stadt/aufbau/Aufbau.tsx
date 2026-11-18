@@ -231,7 +231,7 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
       const w = welt.current, b = wahlRef.current;
       if (b === "abriss") {
         const o = bauBei(w, Math.floor(p.x / g.zelle), Math.floor(p.y / g.zelle));
-        if (o) { reisseAb(g, w, o.id); setMeldung(`🧽 ${BAUTEN[o.bau].label} abgerissen.`); drei.current?.objekte?.aktualisiere(w); drei.current?.gelaende?.setzeMasken(w); speichernRef.current(); neuZeichnen(); }
+        if (o) abreissenRef.current(o.id);
         return;
       }
       if (b === "trocken") {
@@ -279,6 +279,7 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
       if (k === "shift") { umschalt.current = true; return; }
       if (k === "escape") { setWahl(null); setZiel(null); setAuswahl(null); setMenue(false); setUebersicht(false); return; }
       if (k === "r") { drehenRef.current(1); return; }
+      if ((k === "delete" || k === "backspace") && auswahlRef.current) { e.preventDefault(); abreissenRef.current(auswahlRef.current.id); return; }
       if (k === "b") { e.preventDefault(); setMenue(m => !m); setUebersicht(false); return; }
       if (k === "i") { e.preventDefault(); setUebersicht(u => !u); setMenue(false); return; }
       if (k === "f") { e.preventDefault(); umVollbild(); return; }
@@ -349,7 +350,7 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
       // Werte-Kärtchen über dem Bauplatz
       const karteEl = huelle.current?.querySelector<HTMLDivElement>("[data-kaertchen]");
       if (karteEl) {
-        if (kreis && (umschalt.current || touchZuletzt.current)) {
+        if (kreis && (umschalt.current || touchZuletzt.current || (a0 && !z0 && !wahlRef.current))) {
           bildschirm.set(kreis.x - h2, hoeheGlatt(g, kreis.x, kreis.y) + 25, kreis.y - h2).project(kamera);
           const x = (bildschirm.x * 0.5 + 0.5) * el.clientWidth, y = (-bildschirm.y * 0.5 + 0.5) * el.clientHeight;
           // nicht über die Knopfleiste rechts unten und nicht aus dem Bild
@@ -402,6 +403,20 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
       el.removeChild(c);
     };
   }, [g]);
+
+  /** reißt ein Gebäude ab (Abriss-Werkzeug, oder Auswahl + Entf) — ein Viertel der Baukosten kommt zurück */
+  const abreissen = (id: number) => {
+    const w = welt.current, o = w.bauten.find(x => x.id === id);
+    if (!o) return;
+    reisseAb(g, w, id);
+    setMeldung(`🧽 ${BAUTEN[o.bau].label} abgerissen.`);
+    setAuswahl(null);
+    drei.current?.objekte?.aktualisiere(w);
+    drei.current?.gelaende?.setzeMasken(w);
+    speichern();
+    neuZeichnen();
+  };
+  const abreissenRef = useRef(abreissen); abreissenRef.current = abreissen;
 
   /** baut das gewählte Gebäude mit der aktuellen Drehung bei (i, j) */
   const bauen = (i: number, j: number) => {
@@ -497,7 +512,7 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
           <div ref={karte} className="absolute inset-0" />
           {laedt && <div className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white drop-shadow">⏳ Gelände wird geformt …</div>}
           <div className="pointer-events-none absolute bottom-2 left-2 rounded-lg bg-black/45 px-2 py-1 text-xs text-white">
-            B: Baumenü · I: Übersicht · F: Vollbild · Umschalt: Werte, mehrfach bauen · Rad: Zoom (beim Bauen: drehen) · rechte Maustaste / Q E: drehen · Rand / W A S D: schieben · Esc
+            B: Baumenü · I: Übersicht · F: Vollbild · Entf: Gewähltes abreißen · Umschalt: Werte, mehrfach bauen · Rad: Zoom (beim Bauen: drehen) · rechte Maustaste / Q E: drehen · Rand / W A S D: schieben · Esc
           </div>
           <div className="absolute right-2 top-2 flex gap-1.5">
             <button className={`chip ${menue ? "chip-on" : ""}`} onClick={() => { setMenue(m => !m); setUebersicht(false); }} title="Baumenü (B)">🏗️ Bauen</button>
@@ -520,6 +535,7 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
             {ziel && <button className="btn-primary py-1.5" disabled={!ziel.pr.ok} onClick={() => bauen(ziel.i, ziel.j)}>✔ Hier bauen</button>}
             {wahl && wahl !== "abriss" && <button className="btn-secondary py-1.5" onClick={() => drehen(1)} title="Gebäude drehen (R oder Mausrad)">↻ Gebäude drehen</button>}
             {(wahl || ziel) && <button className="btn-secondary py-1.5" onClick={() => { setWahl(null); setZiel(null); }}>✕ Abbrechen</button>}
+            {gewaehlt && !wahl && <button className="btn-secondary py-1.5" onClick={() => abreissen(gewaehlt.id)} title="Gewähltes Gebäude abreißen (Entf) — ein Viertel der Kosten kommt zurück">🧽 {BAUTEN[gewaehlt.bau].label} abreißen</button>}
             <div className="flex gap-1 rounded-xl bg-black/35 p-1">
               <button className="btn-secondary h-10 w-10 p-0 text-lg" title="Ansicht nach links drehen" onClick={() => kamera(r => { r.yaw += Math.PI / 4; })}>⟲</button>
               <button className="btn-secondary h-10 w-10 p-0 text-lg" title="Ansicht nach rechts drehen" onClick={() => kamera(r => { r.yaw -= Math.PI / 4; })}>⟳</button>
