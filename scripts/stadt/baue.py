@@ -405,13 +405,33 @@ def kaserne(t):
     walmdach(t["dach"], -0.52, -0.52, 0.52, 0.52, 0.6, 1.0, 0.85)
 
 
+def kontor(t):
+    """Hafenkontor: Speicherhaus mit Treppengiebeln, Ladeluken-Gaube, Kai und Ladekran zur Wasserseite (+y)"""
+    quader(t["wand"], -0.5, -0.5, 0, 0.5, 0.2, 0.62)                     # Speicher
+    giebel(t["dach"], -0.52, -0.52, 0.52, 0.22, 0.62, 0.95, False)      # First quer: Giebel zu Stadt und Wasser
+    for s in (-1, 1):                                                  # Treppengiebel an beiden Enden
+        y0 = -0.53 if s < 0 else 0.19
+        for k in range(4):
+            b = 0.46 - k * 0.11
+            quader(t["wand"], -b, y0, 0.62 + k * 0.08, b, y0 + 0.04, 0.68 + k * 0.08)
+    quader(t["akzent"], -0.07, 0.18, 0.66, 0.07, 0.3, 0.86)               # Ladeluke mit Kranbalken
+    quader(t["akzent"], -0.015, 0.2, 0.84, 0.015, 0.42, 0.87)
+    quader(t["dach"], -0.5, 0.2, 0, 0.5, 0.5, 0.06)                       # Kai
+    for x in (-0.38, -0.12, 0.14, 0.4):                                  # Poller
+        walze(t["akzent"], x, 0.46, 0.06, 0.12, 0.02, None, 6)
+    quader(t["akzent"], 0.3, 0.3, 0.06, 0.34, 0.34, 0.5)                 # Tretkran: Mast und Ausleger
+    quader(t["akzent"], 0.3, 0.3, 0.48, 0.34, 0.55, 0.51)
+    quader(t["dach"], -0.35, 0.28, 0.06, -0.2, 0.4, 0.16)                # Fässer und Ballen
+    quader(t["dach"], -0.15, 0.3, 0.06, -0.05, 0.38, 0.13)
+
+
 MODELLE = {
     "haus_wand": haus_wand, "dach_sattel": dach_sattel, "dach_walm": dach_walm, "dach_flach": dach_flach, "dach_mansard": dach_mansard,
     "kirche": kirche, "kathedrale": kathedrale, "burg": burg, "schloss": schloss, "tempel": tempel, "kolonnade": kolonnade,
     "arena": arena, "theater": lambda t: arena(t, True), "foerderturm": foerderturm, "hochofen": hochofen, "fabrik": fabrik,
     "kran": kran, "leuchtturm": leuchtturm, "moschee": moschee, "bahnhof": bahnhof, "hochhaus": hochhaus, "silo": silo,
     "muehle": muehle, "tor": tor, "rathaus": rathaus, "kuppelbau": kuppelbau, "campus": campus, "festungsbau": festungsbau,
-    "kaserne": kaserne,
+    "kaserne": kaserne, "kontor": kontor,
 }
 
 

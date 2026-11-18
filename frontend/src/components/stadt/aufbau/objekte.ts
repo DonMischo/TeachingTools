@@ -7,12 +7,13 @@ import type { Gelaende } from "@/lib/gelaende/gelaende";
 import { zufallsquelle } from "@/lib/gelaende/rauschen";
 import { waldMaske } from "@/lib/gelaende/wald";
 import { BAUTEN, type BauTyp } from "@/lib/stadt/modell";
-import { FREI, fussabdruck, HAUPT, hausFarben, strassenKetten, type Kette, type Welt } from "@/lib/stadt/aufbau";
+import { FREI, fussabdruck, HAUPT, hausFarben, STRASSE, strassenKetten, type Kette, type Welt } from "@/lib/stadt/aufbau";
 import { MODELL_VON, TEILFARBEN } from "../drei/modelle";
 import { hoeheGlatt } from "./gelaende";
+import { wasserspiegel } from "../drei/szene";
 
 type Teile = Record<string, THREE.BufferGeometry> | null;
-const MAX_HAUS = 8000, MAX_STRASSE = 40000;
+const MAX_HAUS = 24000, MAX_STRASSE = 40000;
 
 function hell(g: THREE.BufferGeometry) {
   g.setAttribute("color", new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count * 3).fill(1), 3));
@@ -33,9 +34,18 @@ export class AufbauObjekte {
   private geos: THREE.BufferGeometry[] = [];
   private h2: number;
   private bauSchluessel = "";
+  private spiegel: Float32Array;
+  private pfeiler: THREE.InstancedMesh;
 
   constructor(private g: Gelaende, private teile: Teile, baeume: Teile, stilFarben: { fassade: string; dach: string; flach: boolean }) {
     this.h2 = g.breite / 2;
+    this.spiegel = wasserspiegel(g);
+    const pGeo = hell(new THREE.BoxGeometry(6.2, 1, 5.6).translate(0, 0.5, 0));
+    const pMat = new THREE.MeshLambertMaterial({ vertexColors: true, color: 0x9a8f80 });
+    this.pfeiler = new THREE.InstancedMesh(pGeo, pMat, 4000);
+    this.pfeiler.count = 0;
+    this.pfeiler.castShadow = this.pfeiler.receiveShadow = true;
+    this.geos.push(pGeo);
     const sGeo = hell(new THREE.BoxGeometry(6, 1.2, 6).translate(0, -0.5, 0));
     const sMat = new THREE.MeshLambertMaterial({ vertexColors: true });
     this.strassen = new THREE.InstancedMesh(sGeo, sMat, MAX_STRASSE);
@@ -50,7 +60,8 @@ export class AufbauObjekte {
     this.wand.castShadow = this.dach.castShadow = this.wand.receiveShadow = true;
     this.mats.push(sMat, wMat, dMat);
     this.geos.push(sGeo);
-    this.gruppe.add(this.strassen, this.wand, this.dach, this.bauGruppe, this.geist);
+    this.gruppe.add(this.strassen, this.wand, this.dach, this.bauGruppe, this.geist, this.pfeiler);
+    this.mats.push(pMat);
     // Wald aus den TaskCrawler-Bäumen; jeder Baum kennt sein Feld und verschwindet, wenn dort gebaut wird
     const maske = waldMaske(g), z = zufallsquelle(g.wahl.seed + 3), n = g.n;
     const orte: { x: number; y: number; art: string; s: number; w: number; k: number }[] = [];
@@ -91,6 +102,13 @@ export class AufbauObjekte {
   private band: THREE.Mesh | null = null;
   private bandMat = new THREE.MeshLambertMaterial({ vertexColors: true, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
 
+  /** Höhe der Fahrbahn bei (x, y) Karte: an Land das Gelände, über Wasser das Brückendeck */
+  private fahrbahn(x: number, y: number) {
+    const g = this.g, k = Math.min(g.n - 1, Math.max(0, Math.floor(y / g.zelle))) * g.n + Math.min(g.n - 1, Math.max(0, Math.floor(x / g.zelle)));
+    const h = hoeheGlatt(g, x, y) + 0.18;
+    return g.wasser[k] && !Number.isNaN(this.spiegel[k]) ? Math.max(h, this.spiegel[k] + 1.8) : h;
+  }
+
   /** Straßenband: je Kette ein Streifen (Hauptstraße 7 m, Gasse 5 m breit), dem Gelände folgend */
   private baueBand(ketten: Kette[]) {
     const pos: number[] = [], col: number[] = [], idx: number[] = [];
@@ -107,7 +125,7 @@ export class AufbauObjekte {
         const nx = -dy / l * halb, ny = dx / l * halb;
         for (const s of [1, -1]) {
           const x = p[i].x + nx * s, y = p[i].y + ny * s;
-          pos.push(x - h2, hoeheGlatt(this.g, x, y) + 0.18, y - h2);
+          pos.push(x - h2, this.fahrbahn(x, y), y - h2);
           col.push(c.r, c.g, c.b);
         }
         if (i > 0) { const q = start + (i - 1) * 2; idx.push(q, q + 2, q + 1, q + 1, q + 2, q + 3); }
@@ -142,7 +160,7 @@ export class AufbauObjekte {
       if (s >= MAX_STRASSE) break;
       const f = w.feld[k];
       const i = k % n, j = Math.floor(k / n);
-      const y = this.boden(i, j, 1, 1).max + 0.12;
+      const y = g.wasser[k] ? this.fahrbahn((i + 0.5) * z, (j + 0.5) * z) - 0.06 : this.boden(i, j, 1, 1).max + 0.12;
       m.makeTranslation((i + 0.5) * z - h2, y, (j + 0.5) * z - h2);
       this.strassen.setMatrixAt(s, m);
       this.strassen.setColorAt(s, c.set(f === HAUPT ? "#c8b48c" : "#ddd0b0"));
@@ -151,21 +169,49 @@ export class AufbauObjekte {
     this.strassen.count = s;
     this.strassen.instanceMatrix.needsUpdate = true;
     if (this.strassen.instanceColor) this.strassen.instanceColor.needsUpdate = true;
-    // Häuser: 2 × 2 Felder, 10 × 10 m, Front zur Straße
+    // Brücken: steinerner Unterbau vom Flussbett bis unters Deck
+    let pI = 0;
+    for (let k = 0; k < n * n && pI < 4000; k++) {
+      if (!g.wasser[k] || (w.feld[k] !== STRASSE && w.feld[k] !== HAUPT)) continue;
+      const i = k % n, j = Math.floor(k / n), x = (i + 0.5) * z, y = (j + 0.5) * z;
+      const deck = this.fahrbahn(x, y) - 0.2, bett = g.hoehe[k] - 1;
+      m.compose(new THREE.Vector3(x - h2, bett, y - h2), new THREE.Quaternion(), new THREE.Vector3(1, Math.max(0.5, deck - bett), 1));
+      this.pfeiler.setMatrixAt(pI++, m);
+    }
+    this.pfeiler.count = pI;
+    this.pfeiler.instanceMatrix.needsUpdate = true;
+    this.pfeiler.computeBoundingSphere();
+    // Häuser: Einzelhaus (2 × 2 Felder) oder Hof (3 × 3 Felder) mit Flügeln um einen Innenhof; Front zur Straße
     const fb = hausFarben(w.stil);
     let hI = 0;
-    for (const h of w.haeuser.slice(0, MAX_HAUS)) {
-      const b = this.boden(h.i, h.j, 2, 2), hoehe = Math.max(4, h.hoehe * Math.min(1, 0.4 + h.bewohner / Math.max(1, h.ziel)));
-      const x = (h.i + 1) * z - h2, zz = (h.j + 1) * z - h2;
-      q.setFromAxisAngle(achse, (h.dreh * Math.PI) / 2);
-      const wh = hoehe + (b.max - b.min) + 0.4;
-      m.compose(new THREE.Vector3(x, b.min - 0.4, zz), q, new THREE.Vector3(10, wh, 9));
+    const dq = new THREE.Quaternion();
+    /** ein Flügel: Mitte (lx, lz) und Maße im Hausrahmen (+z = Straße), First längs x oder längs z */
+    const fluegel = (h: (typeof w.haeuser)[number], x0: number, y0: number, unten: number, lx: number, lz: number, bx: number, bz: number, hh: number, laengsZ: boolean, farbe: number) => {
+      if (hI >= MAX_HAUS) return;
+      const th = (h.dreh * Math.PI) / 2, cs = Math.cos(th), sn = Math.sin(th);
+      const px = x0 + lx * cs + lz * sn, pz = y0 - lx * sn + lz * cs;
+      q.setFromAxisAngle(achse, th);
+      m.compose(new THREE.Vector3(px, unten, pz), q, new THREE.Vector3(bx, hh, bz));
       this.wand.setMatrixAt(hI, m);
-      this.wand.setColorAt(hI, c.set(fb.fassade).offsetHSL(0, 0, ((h.i * 7 + h.j * 3) % 9 - 4) * 0.012));
-      m.compose(new THREE.Vector3(x, b.min - 0.4 + wh, zz), q, new THREE.Vector3(10.6, fb.flach ? 1.2 : 4.2, 9.8));
+      this.wand.setColorAt(hI, c.set(fb.fassade).offsetHSL(0, 0, farbe * 0.012));
+      const rh = fb.flach ? 1.2 : Math.min(bx, bz) * 0.5;
+      dq.setFromAxisAngle(achse, th + (laengsZ ? Math.PI / 2 : 0));
+      m.compose(new THREE.Vector3(px, unten + hh, pz), fb.flach ? q : dq, laengsZ ? new THREE.Vector3(bz * 1.06, rh, bx * 1.12) : new THREE.Vector3(bx * 1.06, rh, bz * 1.12));
       this.dach.setMatrixAt(hI, m);
-      this.dach.setColorAt(hI, c.set(fb.dach).offsetHSL(0, 0, ((h.i * 3 + h.j * 5) % 7 - 3) * 0.015));
+      this.dach.setColorAt(hI, c.set(fb.dach).offsetHSL(0, 0, farbe * 0.015));
       hI++;
+    };
+    for (const h of w.haeuser) {
+      const b = this.boden(h.i, h.j, h.s, h.s), voll = Math.min(1, 0.4 + h.bewohner / Math.max(1, h.ziel));
+      const hoehe = Math.max(4, h.hoehe * voll), wh = hoehe + (b.max - b.min) + 0.4, unten = b.min - 0.4;
+      const x0 = (h.i + h.s / 2) * z - h2, y0 = (h.j + h.s / 2) * z - h2, f = ((h.i * 7 + h.j * 3) % 9) - 4;
+      if (h.s === 3 && h.hof) {
+        // Hof 18 × 18 m: Wohnhaus an der Straße, Stall links, Scheune hinten, beim Vierseithof rechts das Torhaus
+        fluegel(h, x0, y0, unten, 0, 5.8, 17, 5.6, wh, false, f);
+        fluegel(h, x0, y0, unten, -5.8, -0.4, 5.4, 6.8, wh * 0.82, true, f - 2);
+        fluegel(h, x0, y0, unten, 0, -5.8, 17, 5.6, wh * 0.9, false, f + 2);
+        if (h.hof === 4) fluegel(h, x0, y0, unten, 5.8, -0.4, 5.4, 6.8, wh * 0.75, true, f - 1);
+      } else fluegel(h, x0, y0, unten, 0, 0, h.s * 6 - 2, h.s * 6 - 3, wh, false, f);
     }
     this.wand.count = this.dach.count = hI;
     for (const im of [this.wand, this.dach]) { im.instanceMatrix.needsUpdate = true; if (im.instanceColor) im.instanceColor.needsUpdate = true; }

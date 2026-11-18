@@ -49,13 +49,25 @@ function farbe(g: Gelaende, x: number, y: number, h: number, steil: number, r: R
   if (h > 600) out.lerp(new THREE.Color(0.92, 0.93, 0.95), Math.min(1, (h - 600) / 120));
 }
 
-export function baueGelaende(g: Gelaende, frei: Uint8Array): { gruppe: THREE.Group; uniforms: GelaendeUniforms; setzeFrei(f: Uint8Array): void; entsorge(): void } {
+/** Masken der Welt fürs Gelände: erschlossen (R), nasse Aue (G), trockengelegt (B) */
+export interface Masken { frei: Uint8Array; trocken: Uint8Array }
+
+export function baueGelaende(g: Gelaende, m0: Masken): { gruppe: THREE.Group; uniforms: GelaendeUniforms; setzeMasken(m: Masken): void; entsorge(): void } {
   const B = g.breite, h2 = B / 2, S = 3, N = Math.round(B / S), K = 8, Q = N / K;
-  const tex = new THREE.DataTexture(new Uint8Array(g.n * g.n), g.n, g.n, THREE.RedFormat, THREE.UnsignedByteType);
+  const tex = new THREE.DataTexture(new Uint8Array(g.n * g.n * 4), g.n, g.n, THREE.RGBAFormat, THREE.UnsignedByteType);
   tex.magFilter = THREE.LinearFilter;
   tex.minFilter = THREE.LinearFilter;
-  const setzeFrei = (f: Uint8Array) => { (tex.image.data as Uint8Array).set(f.map(v => (v ? 255 : 0))); tex.needsUpdate = true; };
-  setzeFrei(frei);
+  const setzeMasken = (m: Masken) => {
+    const d = tex.image.data as Uint8Array;
+    for (let k = 0; k < g.n * g.n; k++) {
+      d[k * 4] = m.frei[k] ? 255 : 0;
+      d[k * 4 + 1] = g.aue[k] && !m.trocken[k] && !g.wasser[k] ? 255 : 0;
+      d[k * 4 + 2] = m.trocken[k] ? 255 : 0;
+      d[k * 4 + 3] = 255;
+    }
+    tex.needsUpdate = true;
+  };
+  setzeMasken(m0);
   const uniforms: GelaendeUniforms = {
     uFrei: { value: tex }, uRaster: { value: 0 }, uKreis: { value: new THREE.Vector4(0, 0, 0, 0) },
     uKreisFarbe: { value: new THREE.Color(0x3b82f6) }, uBreite: { value: B },
@@ -76,7 +88,12 @@ uniform vec3 uKreisFarbe;
 uniform float uBreite;`)
       .replace("#include <color_fragment>", `#include <color_fragment>
   vec2 kartenUv = (vWp.xz + uBreite * 0.5) / uBreite;
-  float frei = texture2D(uFrei, kartenUv).r;
+  vec4 maske = texture2D(uFrei, kartenUv);
+  float frei = maske.r;
+  // nasse Aue: blaugrün getönt (Hochwasser, nicht bebaubar); trockengelegt: feine Entwässerungsgräben
+  diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.32, 0.52, 0.5), 0.45 * smoothstep(0.3, 0.7, maske.g));
+  float graben = 1.0 - smoothstep(0.0, 0.25 + fwidth(vWp.x), abs(fract((vWp.x + vWp.z) / 18.0) - 0.5) * 18.0);
+  diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.36, 0.45, 0.32), 0.5 * graben * smoothstep(0.3, 0.7, maske.b));
   // Bauraster (6 m) nur auf erschlossenem Land
   vec2 f = abs(fract(vWp.xz / 6.0 + 0.5) - 0.5) * 6.0;
   float linie = 1.0 - smoothstep(0.0, 0.18 + fwidth(vWp.x) * 0.8, min(f.x, f.y));
@@ -151,7 +168,7 @@ uniform float uBreite;`)
     gruppe.add(new THREE.Mesh(wGeo, wMat));
   }
   return {
-    gruppe, uniforms, setzeFrei,
+    gruppe, uniforms, setzeMasken,
     entsorge() { geos.forEach(x => x.dispose()); mat.dispose(); wMat.dispose(); tex.dispose(); },
   };
 }

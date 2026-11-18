@@ -15,7 +15,8 @@ import type { Gelaende } from "@/lib/gelaende/gelaende";
 import { BAUTEN, STILE, type BauTyp, type Stil } from "@/lib/stadt/modell";
 import { BAUPLAENE, fehlt, jahrVonStand, kapazitaet, lageRegeln } from "@/lib/stadt/bauen";
 import {
-  baue, bauBei, beduerfnisse, fussabdruck, hausFarben, mitteVon, neueWelt, orteVon, pruefePlatz, reichweite, reisseAb, schritt, stufe,
+  baue, bauBei, beduerfnisse, fussabdruck, hausFarben, hausMitte, mitteVon, neueWelt, orteVon, pruefePlatz, reichweite, reisseAb, schritt, stufe,
+  trockenlegen, TROCKEN_RADIUS,
   type Platzpruefung, type Welt,
 } from "@/lib/stadt/aufbau";
 import { ladeWeltModelle, weltModelle } from "@/components/gebaeude/frei/modelle";
@@ -40,7 +41,7 @@ export default function Aufbau({ g, stil, setStil, aktiv = true }: { g: Gelaende
   const welt = useRef<Welt>(neueWelt(g, stil, g.wahl.seed));
   const [, setVersion] = useState(0);
   const neuZeichnen = () => setVersion(v => v + 1);
-  const [wahl, setWahl] = useState<BauTyp | "abriss" | null>(null);
+  const [wahl, setWahl] = useState<BauTyp | "abriss" | "trocken" | null>(null);
   const [ziel, setZiel] = useState<Ziel | null>(null);
   const [auswahl, setAuswahl] = useState<Auswahl | null>(null);
   const [laeuft, setLaeuft] = useState(false);
@@ -68,7 +69,7 @@ export default function Aufbau({ g, stil, setStil, aktiv = true }: { g: Gelaende
     setWahl(null); setZiel(null); setAuswahl(null); setLaeuft(false); setMeldung(null);
     const d = drei.current;
     if (d?.objekte) d.objekte.aktualisiere(welt.current);
-    if (d?.gelaende) { d.gelaende.setzeFrei(welt.current.frei); d.freiSumme = -1; }
+    if (d?.gelaende) { d.gelaende.setzeMasken(welt.current); d.freiSumme = -1; }
     neuZeichnen();
   }, [g, stil]);
 
@@ -119,6 +120,7 @@ export default function Aufbau({ g, stil, setStil, aktiv = true }: { g: Gelaende
     };
 
     let griff: { x: number; y: number; knopf: number; weit: number; touch: boolean } | null = null;
+    let trockenPunkt: { x: number; y: number } | null = null;
     // Touch: alle Finger; zwei Finger zoomen (Spreizen) und drehen (Winkel)
     const finger = new Map<number, { x: number; y: number }>();
     let zwei: { abst: number; winkel: number; mx: number; my: number } | null = null;
@@ -160,6 +162,7 @@ export default function Aufbau({ g, stil, setStil, aktiv = true }: { g: Gelaende
         return;
       }
       const b = wahlRef.current;
+      if (b === "trocken") { trockenPunkt = bodenBei(e.clientX, e.clientY); return; }
       if (!b || b === "abriss") return;
       const p = bodenBei(e.clientX, e.clientY);
       if (!p) return;
@@ -179,7 +182,15 @@ export default function Aufbau({ g, stil, setStil, aktiv = true }: { g: Gelaende
       const w = welt.current, b = wahlRef.current;
       if (b === "abriss") {
         const o = bauBei(w, Math.floor(p.x / g.zelle), Math.floor(p.y / g.zelle));
-        if (o) { reisseAb(g, w, o.id); setMeldung(`🧽 ${BAUTEN[o.bau].label} abgerissen.`); drei.current?.objekte?.aktualisiere(w); neuZeichnen(); }
+        if (o) { reisseAb(g, w, o.id); setMeldung(`🧽 ${BAUTEN[o.bau].label} abgerissen.`); drei.current?.objekte?.aktualisiere(w); drei.current?.gelaende?.setzeMasken(w); neuZeichnen(); }
+        return;
+      }
+      if (b === "trocken") {
+        trockenPunkt = p;
+        const neu = trockenlegen(g, w, p.x, p.y);
+        setMeldung(neu ? `🌾 ${Math.round(neu * g.zelle * g.zelle / 10000 * 10) / 10} ha Aue trockengelegt — hier darf jetzt gebaut werden.` : "Hier gibt es keine nasse, erschlossene Aue zum Trockenlegen.");
+        drei.current?.gelaende?.setzeMasken(w);
+        neuZeichnen();
         return;
       }
       if (b && gr.touch) {
@@ -257,8 +268,10 @@ export default function Aufbau({ g, stil, setStil, aktiv = true }: { g: Gelaende
       // Einzugsbereich: Geist oder gewähltes Gebäude
       const z0 = zielRef.current, a0 = auswahlRef.current, w = welt.current;
       let kreis: { x: number; y: number; r: number } | null = null;
-      if (z0) { const { w: fw, h: fh } = fussabdruck(z0.bau, z0.dreh); const m = mitteVon(w, { i: z0.i, j: z0.j, w: fw, h: fh }); kreis = { ...m, r: reichweite(z0.bau) }; }
+      if (wahlRef.current === "trocken" && trockenPunkt) kreis = { ...trockenPunkt, r: TROCKEN_RADIUS };
+      else if (z0) { const { w: fw, h: fh } = fussabdruck(z0.bau, z0.dreh); const m = mitteVon(w, { i: z0.i, j: z0.j, w: fw, h: fh }); kreis = { ...m, r: reichweite(z0.bau) }; }
       else if (a0) { const o = w.bauten.find(x => x.id === a0.id); if (o) kreis = { ...mitteVon(w, o), r: reichweite(o.bau) }; }
+      if (d.gelaende) d.gelaende.uniforms.uKreisFarbe.value.set(wahlRef.current === "trocken" ? 0x84cc16 : 0x3b82f6);
       if (d.gelaende) d.gelaende.uniforms.uKreis.value.set(kreis ? kreis.x - h2 : 0, kreis ? kreis.y - h2 : 0, kreis?.r ?? 0, kreis ? 1 : 0);
       // Werte-Kärtchen über dem Bauplatz
       const karteEl = huelle.current?.querySelector<HTMLDivElement>("[data-kaertchen]");
@@ -287,7 +300,7 @@ export default function Aufbau({ g, stil, setStil, aktiv = true }: { g: Gelaende
     Promise.all([ladeStadtModelle(), ladeWeltModelle()]).then(([teile]) => {
       if (ab || !drei.current) return;
       const d = drei.current;
-      d.gelaende = baueGelaende(g, welt.current.frei);
+      d.gelaende = baueGelaende(g, welt.current);
       d.objekte = new AufbauObjekte(g, teile, weltModelle(), hausFarben(welt.current.stil));
       szene.add(d.gelaende.gruppe, d.objekte.gruppe);
       d.objekte.aktualisiere(welt.current);
@@ -313,7 +326,7 @@ export default function Aufbau({ g, stil, setStil, aktiv = true }: { g: Gelaende
   /** baut das gewählte Gebäude mit der aktuellen Drehung bei (i, j) */
   const bauen = (i: number, j: number) => {
     const w = welt.current, b = wahl;
-    if (!b || b === "abriss") return;
+    if (!b || b === "abriss" || b === "trocken") return;
     const pr = pruefePlatz(g, w, b, i, j, dreh);
     if (!pr.ok) { setMeldung(`❌ ${BAUTEN[b].label}: ${pr.gruende.filter(x => !x.ok).map(x => x.text).slice(0, 2).join(", ")}`); return; }
     const neu = baue(g, w, b, i, j, dreh)!;
@@ -322,6 +335,7 @@ export default function Aufbau({ g, stil, setStil, aktiv = true }: { g: Gelaende
     setWahl(null); setZiel(null);
     if (w.bauten.length === 1) setLaeuft(true);
     drei.current?.objekte?.aktualisiere(w);
+    drei.current?.gelaende?.setzeMasken(w);
     neuZeichnen();
   };
   const bauenRef = useRef(bauen); bauenRef.current = bauen;
@@ -352,7 +366,7 @@ export default function Aufbau({ g, stil, setStil, aktiv = true }: { g: Gelaende
       if (d?.objekte) d.objekte.aktualisiere(w);
       if (d?.gelaende) {
         const s = w.frei.reduce((a, x) => a + x, 0);
-        if (s !== d.freiSumme) { d.gelaende.setzeFrei(w.frei); d.freiSumme = s; }
+        if (s !== d.freiSumme) { d.gelaende.setzeMasken(w); d.freiSumme = s; }
       }
       neuZeichnen();
     }, 450 / tempo);
@@ -365,7 +379,7 @@ export default function Aufbau({ g, stil, setStil, aktiv = true }: { g: Gelaende
   const fehlend = fehlt(plan, { orte: orteVon(w), einwohner: w.einwohner, tick: 0 });
   const naechste = plan.stufen[i + 1];
   const bed = beduerfnisse(w);
-  const deckung = useMemo(() => bed.map(b => ({ b, anteil: w.haeuser.length ? w.haeuser.filter(h => w.bauten.some(o => o.bau === b && Math.hypot(mitteVon(w, o).x - (h.i + 1) * g.zelle, mitteVon(w, o).y - (h.j + 1) * g.zelle) <= reichweite(b))).length / w.haeuser.length : 0 })), [bed.join(), w.haeuser.length, w.bauten.length]);
+  const deckung = useMemo(() => bed.map(b => ({ b, anteil: w.haeuser.length ? w.haeuser.filter(h => w.bauten.some(o => o.bau === b && Math.hypot(mitteVon(w, o).x - hausMitte(w, h).x, mitteVon(w, o).y - hausMitte(w, h).y) <= reichweite(b))).length / w.haeuser.length : 0 })), [bed.join(), w.haeuser.length, w.bauten.length]);
   const gewaehlt = auswahl ? w.bauten.find(o => o.id === auswahl.id) ?? null : null;
   const kaertchen = ziel
     ? { bau: ziel.bau, pr: ziel.pr, neu: true }
@@ -448,12 +462,16 @@ export default function Aufbau({ g, stil, setStil, aktiv = true }: { g: Gelaende
                 </div>
               );
             })}
-            <button className={`chip self-start ${wahl === "abriss" ? "chip-on" : ""}`} onClick={() => { setWahl(x => (x === "abriss" ? null : "abriss")); setZiel(null); }}>🧽 Abreißen</button>
+            <div className="flex flex-wrap gap-1.5">
+              <button className={`chip ${wahl === "trocken" ? "chip-on" : ""}`} title="Gräben und Deich: macht ein Stück nasse Aue bebaubar" onClick={() => { setWahl(x => (x === "trocken" ? null : "trocken")); setZiel(null); }}>🌾 Trockenlegen</button>
+              <button className={`chip ${wahl === "abriss" ? "chip-on" : ""}`} onClick={() => { setWahl(x => (x === "abriss" ? null : "abriss")); setZiel(null); }}>🧽 Abreißen</button>
+            </div>
+            {wahl === "trocken" && <p className="text-xs text-muted">Die blaugrüne Fläche ist Aue: Sie wird bei Hochwasser überflutet, Häuser entstehen dort nicht. Tippen oder klicken legt einen Kreis von {TROCKEN_RADIUS} m trocken (Gräben, Deich) — danach wächst die Stadt hinein.</p>}
           </div>
           <div className="mt-auto flex flex-wrap items-center gap-2">
             <button className="btn-primary" disabled={!w.bauten.length} onClick={() => setLaeuft(l => !l)}>{laeuft ? "⏸ Anhalten" : "▶ Zeit läuft"}</button>
             {[1, 2, 4].map(t => <button key={t} className={`chip ${tempo === t ? "chip-on" : ""}`} onClick={() => setTempo(t)}>{t}×</button>)}
-            <button className="btn-secondary" onClick={() => { welt.current = neueWelt(g, stil, g.wahl.seed); setLaeuft(false); setMeldung(null); setAuswahl(null); drei.current?.objekte?.aktualisiere(welt.current); drei.current?.gelaende?.setzeFrei(welt.current.frei); neuZeichnen(); }}>↺ Neu</button>
+            <button className="btn-secondary" onClick={() => { welt.current = neueWelt(g, stil, g.wahl.seed); setLaeuft(false); setMeldung(null); setAuswahl(null); drei.current?.objekte?.aktualisiere(welt.current); drei.current?.gelaende?.setzeMasken(welt.current); neuZeichnen(); }}>↺ Neu</button>
           </div>
         </aside>
       </div>
@@ -467,7 +485,7 @@ function pruefePlatzVorhanden(g: Gelaende, w: Welt, id: number): Platzpruefung {
   const r = reichweite(o.bau), m = mitteVon(w, o);
   return {
     ok: true, faktor: o.faktor, gruende: [],
-    versorgt: w.haeuser.filter(h => Math.hypot((h.i + 1) * g.zelle - m.x, (h.j + 1) * g.zelle - m.y) <= r).length,
+    versorgt: w.haeuser.filter(h => Math.hypot(hausMitte(w, h).x - m.x, hausMitte(w, h).y - m.y) <= r).length,
   };
 }
 

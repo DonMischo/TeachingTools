@@ -23,11 +23,21 @@ const REICHWEITE: Partial<Record<BauTyp, number>> = {
   burg: 380, schloss: 450, moschee: 260, hammam: 160, thermen: 260, rathaus: 300, cabildo: 260, zechenturm: 340,
   hochofen: 420, kai: 300, universitaet: 500, techzentrale: 600, einkauf: 600, kaufhalle: 260, poliklinik: 420,
   aufmarschplatz: 420, kulturhaus: 360, paradeplatz: 300, kaserne: 260, muehle: 200, castellum: 400, schacht: 220,
-  werk: 600, gericht: 320, karawanserei: 240, kasbah: 360, huettenwerk: 300, bergamt: 260, forschungspark: 400,
+  werk: 600, gericht: 320, hafenkontor: 320, karawanserei: 240, kasbah: 360, huettenwerk: 300, bergamt: 260, forschungspark: 400,
 };
 export const reichweite = (b: BauTyp) => REICHWEITE[b] ?? 220;
 
-export interface AufHaus { i: number; j: number; dreh: 0 | 1 | 2 | 3; bewohner: number; ziel: number; versorgt: number; hoehe: number }
+export interface AufHaus { i: number; j: number; dreh: 0 | 1 | 2 | 3; bewohner: number; ziel: number; versorgt: number; hoehe: number; /** Kantenlänge in Feldern (2 = Haus, 3 = Hof) */ s: number; /** Hof: 3 = Dreiseithof, 4 = Vierseithof, 0 = Einzelhaus */ hof: number }
+
+/** Kantenlänge eines Grundstücks in Feldern: Europa und Orient bauen Höfe (Drei-/Vierseithof, Hofhaus), sonst Einzelhäuser */
+export const hausMass = (stil: Stil) => (stil === "europaeisch" || stil === "orientalisch" ? 3 : 2);
+/** Mitte eines Hauses (Karte in Metern) */
+export const hausMitte = (w: Welt, h: AufHaus): P => ({ x: (h.i + h.s / 2) * w.zelle, y: (h.j + h.s / 2) * w.zelle });
+const zellenVon = (h: { i: number; j: number; s: number }) => {
+  const aus: [number, number][] = [];
+  for (let b = 0; b < h.s; b++) for (let a = 0; a < h.s; a++) aus.push([h.i + a, h.j + b]);
+  return aus;
+};
 export interface AufBau { id: number; bau: BauTyp; i: number; j: number; w: number; h: number; faktor: number; /** Vierteldrehungen (0–3), Zufahrt 0 = Süden */ dreh: number }
 
 export interface Welt {
@@ -46,11 +56,35 @@ export interface Welt {
   /** Radius der Wohnstraßen um das Zentrum (Felder), wächst nach Bedarf */
   strassenRadius: number;
   naechsteId: number;
+  /** Brückenmitten (Felder), für Mindestabstand */
+  bruecken: { i: number; j: number }[];
+  /** 1 = Aue trockengelegt (Gräben, Deich) — dort darf gebaut werden */
+  trocken: Uint8Array;
+}
+
+/** Feld liegt in der (noch nassen) Aue */
+export const nasseAue = (g: Gelaende, w: Welt, k: number) => g.aue[k] === 1 && !w.trocken[k];
+
+/** Radius des Trockenlegens in Metern */
+export const TROCKEN_RADIUS = 60;
+
+/** Aue im Umkreis trockenlegen; gibt die Zahl der neu trockenen Felder zurück (0 = hier gibt es nichts zu tun) */
+export function trockenlegen(g: Gelaende, w: Welt, x: number, y: number): number {
+  const rz = Math.ceil(TROCKEN_RADIUS / w.zelle), ci = Math.floor(x / w.zelle), cj = Math.floor(y / w.zelle);
+  let neu = 0;
+  for (let j = Math.max(0, cj - rz); j <= Math.min(w.n - 1, cj + rz); j++)
+    for (let i = Math.max(0, ci - rz); i <= Math.min(w.n - 1, ci + rz); i++) {
+      const k = j * w.n + i;
+      if ((i - ci) ** 2 + (j - cj) ** 2 > rz * rz || !w.frei[k] || !g.aue[k] || w.trocken[k] || g.wasser[k]) continue;
+      w.trocken[k] = 1;
+      neu++;
+    }
+  return neu;
 }
 
 export function neueWelt(g: Gelaende, stil: Stil, seed: number): Welt {
   const n = g.n;
-  const w: Welt = { stil, seed, n, zelle: g.zelle, feld: new Uint8Array(n * n), frei: new Uint8Array(n * n).fill(1), haeuser: [], bauten: [], einwohner: 0, tick: 0, strassenRadius: 6, naechsteId: 1 };
+  const w: Welt = { stil, seed, n, zelle: g.zelle, feld: new Uint8Array(n * n), frei: new Uint8Array(n * n).fill(1), haeuser: [], bauten: [], einwohner: 0, tick: 0, strassenRadius: 6, naechsteId: 1, bruecken: [], trocken: new Uint8Array(n * n) };
   return w;
 }
 
@@ -109,12 +143,12 @@ export function pruefePlatz(g: Gelaende, w: Welt, b: BauTyp, i: number, j: numbe
     const k = y * w.n + x;
     if (!w.frei[k]) { ok = false; gruende.push({ ok: false, text: "Land noch nicht erschlossen — wächst mit der nächsten Stufe" }); break; }
     if (w.feld[k] === HAUS || w.feld[k] === BAU) { ok = false; gruende.push({ ok: false, text: "Feld ist schon bebaut" }); break; }
-    if (g.wasser[k] && b !== "kai" && b !== "werft" && b !== "hafen" && b !== "kanalhafen" && b !== "muehle") { ok = false; gruende.push({ ok: false, text: "im Wasser" }); break; }
+    if (g.wasser[k] && b !== "kai" && b !== "werft" && b !== "hafen" && b !== "kanalhafen" && b !== "muehle" && b !== "hafenkontor") { ok = false; gruende.push({ ok: false, text: "im Wasser" }); break; }
   }
   const p = mitteVon(w, { i, j, w: fw, h: fh });
   const pr = pruefeOrt(g, w.stil, b, p, orteVon(w));
   const r = reichweite(b);
-  const versorgt = w.haeuser.filter(h => Math.hypot((h.i + 1) * w.zelle - p.x, (h.j + 1) * w.zelle - p.y) <= r).length;
+  const versorgt = w.haeuser.filter(h => { const m = hausMitte(w, h); return Math.hypot(m.x - p.x, m.y - p.y) <= r; }).length;
   return { ok: ok && pr.erlaubt, faktor: ok ? pr.faktor : 0, gruende: [...gruende, ...pr.gruende], versorgt };
 }
 
@@ -137,7 +171,7 @@ export function baue(g: Gelaende, w: Welt, b: BauTyp, i: number, j: number, dreh
 
 /** Haus-Felder freigeben (gibt true zurück, damit es aus der Liste fällt) */
 function leere(w: Welt, h: AufHaus) {
-  for (const [a, c] of [[0, 0], [1, 0], [0, 1], [1, 1]]) w.feld[(h.j + c) * w.n + h.i + a] = FREI;
+  for (const [x, y] of zellenVon(h)) w.feld[y * w.n + x] = FREI;
   return true;
 }
 
@@ -249,9 +283,36 @@ function wohnstrassen(g: Gelaende, w: Welt, r: number) {
   for (let j = Math.max(0, cj - r); j <= Math.min(w.n - 1, cj + r); j++)
     for (let i = Math.max(0, ci - r); i <= Math.min(w.n - 1, ci + r); i++) {
       const k = j * w.n + i;
-      if ((i - ci) ** 2 + (j - cj) ** 2 > r * r || w.feld[k] !== FREI || !w.frei[k] || !baubarFeld(g, i, j, 25) || !imEinzug(w, i, j, 30) || g.aue[k]) continue;
+      if ((i - ci) ** 2 + (j - cj) ** 2 > r * r || w.feld[k] !== FREI || !w.frei[k] || !baubarFeld(g, i, j, 25) || !imEinzug(w, i, j, 30) || nasseAue(g, w, k)) continue;
       if (nz(i, j)) w.feld[k] = STRASSE;
     }
+}
+
+/**
+ * Brücken: Wo eine Straße am Ufer endet und das andere Ufer nah (≤ 60 m), erschlossen und bebaubar ist,
+ * führt sie über das Wasser weiter. Brücken halten Abstand voneinander (≥ 150 m) — sie waren teuer.
+ */
+export function bruecken(g: Gelaende, w: Welt) {
+  const n = w.n, nass = (x: number, y: number) => g.wasser[y * n + x] > 0;
+  for (let k = 0; k < n * n; k++) {
+    const f = w.feld[k];
+    if ((f !== STRASSE && f !== HAUPT) || g.wasser[k]) continue;
+    const i = k % n, j = Math.floor(k / n);
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      let x = i + dx, y = j + dy;
+      if (x < 0 || y < 0 || x >= n || y >= n || !nass(x, y)) continue;
+      const ueber: number[] = [];
+      while (x >= 0 && y >= 0 && x < n && y < n && nass(x, y) && ueber.length <= 10) { ueber.push(y * n + x); x += dx; y += dy; }
+      if (ueber.length > 10 || x < 0 || y < 0 || x >= n || y >= n) continue;
+      const l = y * n + x;
+      if (!w.frei[l] || !baubarFeld(g, x, y, 40) || (w.feld[l] !== FREI && w.feld[l] !== STRASSE && w.feld[l] !== HAUPT)) continue;
+      const mi = (i + x) / 2, mj = (j + y) / 2;
+      if (w.bruecken.some(b => Math.hypot(b.i - mi, b.j - mj) < 25)) continue;
+      for (const u of ueber) w.feld[u] = STRASSE;
+      if (w.feld[l] === FREI) w.feld[l] = STRASSE;
+      w.bruecken.push({ i: mi, j: mj });
+    }
+  }
 }
 
 // ---------------------------------------------------------------- Häuser und Versorgung
@@ -263,15 +324,15 @@ export function beduerfnisse(w: Welt): BauTyp[] {
 }
 
 /** Anteil der Bedürfnisse, deren Gebäude das Feld (i, j) im Einzugsbereich haben */
-export function versorgungBei(w: Welt, i: number, j: number, beduerf = beduerfnisse(w)): number {
+export function versorgungBei(w: Welt, i: number, j: number, beduerf = beduerfnisse(w), s = 2): number {
   if (!beduerf.length) return 1;
-  const x = (i + 1) * w.zelle, y = (j + 1) * w.zelle;
+  const x = (i + s / 2) * w.zelle, y = (j + s / 2) * w.zelle;
   let n = 0;
   for (const b of beduerf) if (w.bauten.some(o => o.bau === b && Math.hypot(mitteVon(w, o).x - x, mitteVon(w, o).y - y) <= reichweite(b))) n++;
   return n / beduerf.length;
 }
 
-const imEinzug = (w: Welt, i: number, j: number, rand = 0) => w.bauten.some(o => Math.hypot(mitteVon(w, o).x - (i + 1) * w.zelle, mitteVon(w, o).y - (j + 1) * w.zelle) <= reichweite(o.bau) + rand);
+const imEinzug = (w: Welt, i: number, j: number, rand = 0, s = 2) => w.bauten.some(o => Math.hypot(mitteVon(w, o).x - (i + s / 2) * w.zelle, mitteVon(w, o).y - (j + s / 2) * w.zelle) <= reichweite(o.bau) + rand);
 
 /** Kandidaten für neue Häuser: 2 × 2 frei, freigeschaltet, eben, an einer Straße, im Einzugsbereich */
 function hausplaetze(g: Gelaende, w: Welt, max: number): AufHaus[] {
@@ -281,13 +342,13 @@ function hausplaetze(g: Gelaende, w: Welt, max: number): AufHaus[] {
   const n = w.n, aus: { h: AufHaus; wert: number }[] = [];
   const gesehen = new Set<number>();
   const nz = netz(w);
+  const S = hausMass(w.stil), zi = Math.floor(c.x / w.zelle), zj = Math.floor(c.y / w.zelle);
   const frei2 = (i: number, j: number) => {
-    for (const [a, b] of [[0, 0], [1, 0], [0, 1], [1, 1]]) {
-      const x = i + a, y = j + b;
+    for (const [x, y] of zellenVon({ i, j, s: S })) {
       if (x < 0 || y < 0 || x >= n || y >= n) return false;
       const k = y * n + x;
-      // Häuser: nicht ans Ufer und nicht in die Aue (Hochwasser)
-      if (w.feld[k] !== FREI || !w.frei[k] || !baubarFeld(g, x, y, 25) || nz?.(x, y) || g.aue[k] || g.abstandWasser[k] < 12) return false;
+      // Häuser: nicht in die nasse Aue (Hochwasser) — erst nach dem Trockenlegen; ein Uferstreifen bleibt frei
+      if (w.feld[k] !== FREI || !w.frei[k] || !baubarFeld(g, x, y, 25) || nz?.(x, y) || nasseAue(g, w, k) || g.abstandWasser[k] < 15) return false;
     }
     return true;
   };
@@ -296,12 +357,16 @@ function hausplaetze(g: Gelaende, w: Welt, max: number): AufHaus[] {
     if (f !== STRASSE && f !== HAUPT) continue;
     const si = k % n, sj = Math.floor(k / n);
     // Haus an jeder Seite der Straße, Front zur Straße
-    for (const [i, j, dreh] of [[si - 2, sj, 1], [si + 1, sj, 3], [si, sj - 2, 0], [si, sj + 1, 2], [si - 1, sj - 2, 0], [si - 1, sj + 1, 2], [si - 2, sj - 1, 1], [si + 1, sj - 1, 3]] as [number, number, 0 | 1 | 2 | 3][]) {
+    const lagen: [number, number, 0 | 1 | 2 | 3][] = [];
+    for (let t = 0; t < S; t++) lagen.push([si - S, sj - t, 1], [si + 1, sj - t, 3], [si - t, sj - S, 0], [si - t, sj + 1, 2]);
+    for (const [i, j, dreh] of lagen) {
       const key = j * n + i;
-      if (gesehen.has(key) || !frei2(i, j) || !imEinzug(w, i, j)) continue;
+      if (gesehen.has(key) || !frei2(i, j) || !imEinzug(w, i, j, 0, S)) continue;
       gesehen.add(key);
-      const d = Math.hypot((i + 1) * w.zelle - c.x, (j + 1) * w.zelle - c.y);
-      aus.push({ h: { i, j, dreh, bewohner: 0, ziel: 0, versorgt: 0, hoehe: 0 }, wert: -d + rausch(i / 7, j / 7) * 60 + (f === HAUPT ? 25 : 0) });
+      const d = Math.hypot((i + S / 2) * w.zelle - c.x, (j + S / 2) * w.zelle - c.y);
+      // in der Flucht der Nachbarn (Raster im Grundstücksmaß): Häuser schließen lückenlos an
+      const flucht = (((i - zi) % S) + S) % S === 0 && (((j - zj) % S) + S) % S === 0 ? 40 : 0;
+      aus.push({ h: { i, j, dreh, bewohner: 0, ziel: 0, versorgt: 0, hoehe: 0, s: S, hof: 0 }, wert: -d + rausch(i / 7, j / 7) * 60 + (f === HAUPT ? 25 : 0) + flucht });
     }
   }
   aus.sort((a, b) => b.wert - a.wert);
@@ -310,7 +375,7 @@ function hausplaetze(g: Gelaende, w: Welt, max: number): AufHaus[] {
   const belegt = new Set<number>();
   for (const { h } of aus) {
     if (res.length >= max) break;
-    const zellen = [[0, 0], [1, 0], [0, 1], [1, 1]].map(([a, b]) => (h.j + b) * n + h.i + a);
+    const zellen = zellenVon(h).map(([x, y]) => y * n + x);
     if (zellen.some(z => belegt.has(z))) continue;
     zellen.forEach(z => belegt.add(z));
     res.push(h);
@@ -320,8 +385,11 @@ function hausplaetze(g: Gelaende, w: Welt, max: number): AufHaus[] {
 
 /** Bewohner je Haus nach Versorgung (4 … 12), Höhe nach Stadttyp und Versorgung */
 function hausWerte(w: Welt, h: AufHaus, beduerf: BauTyp[]) {
-  h.versorgt = versorgungBei(w, h.i, h.j, beduerf);
-  h.ziel = Math.round(4 + 8 * h.versorgt);
+  h.versorgt = versorgungBei(w, h.i, h.j, beduerf, h.s);
+  // ein Hof beherbergt mehr Menschen (Familie, Gesinde, Handwerk) als ein Einzelhaus
+  const gross = h.s === 3 ? 2 : 1;
+  h.ziel = Math.round((4 + 8 * h.versorgt) * gross);
+  if (h.s === 3) h.hof = (h.i * 7 + h.j * 13) % 3 === 0 ? 4 : 3;
   const art = ZONEN[BAUPLAENE[w.stil].kern].haus;
   const [lo, hi] = art?.hoehe ?? [6, 10];
   h.hoehe = lo + (hi - lo) * h.versorgt;
@@ -346,10 +414,11 @@ export function schritt(g: Gelaende, w: Welt): void {
     if (neu.length < 6) {
       w.strassenRadius = Math.min(w.n, w.strassenRadius + 3);
       wohnstrassen(g, w, w.strassenRadius);
+      bruecken(g, w);
       neu = hausplaetze(g, w, 6);
     }
     for (const h of neu) {
-      for (const [a, b] of [[0, 0], [1, 0], [0, 1], [1, 1]]) w.feld[(h.j + b) * w.n + h.i + a] = HAUS;
+      for (const [x, y] of zellenVon(h)) w.feld[y * w.n + x] = HAUS;
       hausWerte(w, h, beduerf);
       w.haeuser.push(h);
     }

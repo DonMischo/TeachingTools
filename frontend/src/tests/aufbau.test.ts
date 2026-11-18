@@ -3,7 +3,7 @@ import { erzeuge } from "@/lib/gelaende/gelaende";
 import { besterPunkt, baubar } from "@/lib/stadt/hilfen";
 import { flussAbstand } from "@/lib/stadt/standort";
 import { BAUPLAENE } from "@/lib/stadt/bauen";
-import { BAU, baue, FREI, fussabdruck, HAUS, neueWelt, pruefePlatz, reichweite, schritt, strassenKetten, stufe, versorgungBei, mitteVon } from "@/lib/stadt/aufbau";
+import { BAU, baue, bruecken, FREI, fussabdruck, HAUPT, HAUS, hausMitte, nasseAue, neueWelt, pruefePlatz, reichweite, schritt, STRASSE, strassenKetten, stufe, trockenlegen, versorgungBei, mitteVon } from "@/lib/stadt/aufbau";
 
 const g = erzeuge({ art: "flusstal", seed: 12, fluss: true, relief: 1 });
 const m = besterPunkt(g, 600, p => (baubar(g, p, 4) ? -Math.abs(flussAbstand(g, p) - 250) : -1e9))!;
@@ -30,8 +30,12 @@ describe("Aufbau auf dem Raster", () => {
     expect(w.haeuser.length).toBeGreaterThan(30);
     const markt = mitteVon(w, w.bauten[0]);
     for (const h of w.haeuser) {
-      expect(Math.hypot((h.i + 1) * g.zelle - markt.x, (h.j + 1) * g.zelle - markt.y)).toBeLessThanOrEqual(reichweite("markt") + 1);
-      for (const [a, c] of [[0, 0], [1, 1]]) expect(w.feld[(h.j + c) * w.n + h.i + a]).toBe(HAUS);
+      const hm = hausMitte(w, h);
+      expect(Math.hypot(hm.x - markt.x, hm.y - markt.y)).toBeLessThanOrEqual(reichweite("markt") + 1);
+      expect(h.s).toBe(3); // europäisch: Höfe
+      for (const [a, c] of [[0, 0], [2, 2]]) expect(w.feld[(h.j + c) * w.n + h.i + a]).toBe(HAUS);
+      // nicht in der nassen Aue
+      for (const [a, c] of [[0, 0], [2, 2]]) expect(nasseAue(g, w, (h.j + c) * w.n + h.i + a)).toBe(false);
     }
     expect(w.einwohner).toBeGreaterThan(0);
     expect(w.feld.some(f => f === FREI)).toBe(true);
@@ -79,5 +83,32 @@ describe("Aufbau auf dem Raster", () => {
     expect(knoten.length).toBeGreaterThan(2);
     // geglättet: es gibt Kettenpunkte, die nicht auf Feldmitten liegen
     expect(ketten.some(k => k.punkte.some(p => Math.abs(((p.x / g.zelle) % 1) - 0.5) > 0.05))).toBe(true);
+  });
+
+  it("Trockenlegen macht Aue bebaubar, nur erschlossene", () => {
+    const w = neueWelt(g, "europaeisch", 4);
+    const k = g.aue.findIndex((a, kk) => a === 1 && !g.wasser[kk]);
+    const x = (k % g.n + 0.5) * g.zelle, y = (Math.floor(k / g.n) + 0.5) * g.zelle;
+    expect(nasseAue(g, w, k)).toBe(true);
+    expect(trockenlegen(g, w, x, y)).toBeGreaterThan(0);
+    expect(nasseAue(g, w, k)).toBe(false);
+    expect(trockenlegen(g, w, x, y)).toBe(0);
+  });
+
+  it("eine Straße am Ufer bekommt eine Brücke, wenn das andere Ufer nah ist", () => {
+    const w = neueWelt(g, "europaeisch", 5);
+    // schmale Flussstelle suchen: Land – Wasser (≤ 8 Felder) – Land in x-Richtung
+    let start = -1;
+    for (let k = g.n * 100; k < g.n * (g.n - 100) && start < 0; k++) {
+      const i = k % g.n;
+      if (i < 20 || i > g.n - 30 || g.wasser[k] || !g.wasser[k + 1]) continue;
+      let l = 1; while (l <= 8 && g.wasser[k + l]) l++;
+      if (l <= 8 && !g.wasser[k + l]) start = k;
+    }
+    expect(start).toBeGreaterThan(0);
+    w.feld[start] = STRASSE;
+    bruecken(g, w);
+    expect(g.wasser[start + 1] > 0 && (w.feld[start + 1] === STRASSE || w.feld[start + 1] === HAUPT)).toBe(true);
+    expect(w.bruecken.length).toBe(1);
   });
 });

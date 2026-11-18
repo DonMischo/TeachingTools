@@ -53,7 +53,7 @@ export const MODELL_VON: Partial<Record<BauTyp, string>> = {
   rathaus: "rathaus", cabildo: "rathaus", bergamt: "rathaus", gericht: "rathaus", spital: "kaserne", kaserne: "kaserne",
   mietshaus: "kaserne", schule: "kaserne", kaufhalle: "kaserne", einkauf: "campus", karawanserei: "festungsbau",
   hammam: "kuppelbau", villa: "kaserne", techzentrale: "campus", forschungspark: "campus", zitadelle: "festungsbau",
-  kasbah: "festungsbau",
+  kasbah: "festungsbau", hafenkontor: "kontor",
 };
 
 /** Farben der Dächer und Akzente je Modell (Wand = Farbe des Bauwerks) */
@@ -70,4 +70,5 @@ export const TEILFARBEN: Record<string, { dach: string; akzent: string }> = {
   muehle: { dach: "#8a4b33", akzent: "#6b4a2f" }, tor: { dach: "#8a4b33", akzent: "#8a4b33" },
   rathaus: { dach: "#8a4b33", akzent: "#4f8f7c" }, festungsbau: { dach: "#9a8f80", akzent: "#9a8f80" },
   kaserne: { dach: "#8a4b33", akzent: "#8a4b33" }, campus: { dach: "#cfd5da", akzent: "#7fb2d6" },
+  kontor: { dach: "#7d3a24", akzent: "#6b4a2f" },
 };
