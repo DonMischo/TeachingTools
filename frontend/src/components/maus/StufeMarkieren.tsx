@@ -12,6 +12,8 @@ import type { StufenErgebnis } from "@/lib/maus/ergebnis";
 import { AvatarDisplay } from "@/components/AvatarPicker";
 import { Stufenkopf } from "./Stufenkopf";
 import { DemoBuehne, useDemo, type DemoSchritt } from "./Demo";
+import { useWindows } from "./windows/WindowsKontext";
+import type { Betriebssystem } from "@/lib/maus/system";
 import { KURZ, Lesetext, bereichFuer, markiere, ortIn, useAuswahl, useStrgA } from "./Lesetext";
 
 const GRUPPEN: { art: Aufgabe["art"]; titel: string }[] = [
@@ -20,7 +22,8 @@ const GRUPPEN: { art: Aufgabe["art"]; titel: string }[] = [
   { art: "alles", titel: "Der ganze Text" },
 ];
 
-function auftragFuer(a: Aufgabe) {
+function auftragFuer(a: Aufgabe, system: Betriebssystem = "windows") {
+  const strg = system === "macos" ? "⌘" : "Strg";
   if (a.art === "wort") {
     return {
       text: <>Markiere das Wort <b>»{a.ziel}«</b>.</>,
@@ -35,11 +38,12 @@ function auftragFuer(a: Aufgabe) {
   }
   return {
     text: <>Markiere den <b>ganzen Text</b>.</>,
-    tipp: "Klicke in den Text und drücke Strg + A — oder ziehe vom Anfang bis ganz zum Ende.",
+    tipp: `Klicke in den Text und drücke ${strg} + A — oder ziehe vom Anfang bis ganz zum Ende.`,
   };
 }
 
-export function demoSchritteMarkieren(feld: HTMLElement | null, a: Aufgabe): DemoSchritt[] {
+export function demoSchritteMarkieren(feld: HTMLElement | null, a: Aufgabe, system: Betriebssystem = "windows"): DemoSchritt[] {
+  const mac = system === "macos";
   const bereich = () => bereichFuer(feld, a);
   if (a.art === "wort") {
     return [
@@ -65,14 +69,15 @@ export function demoSchritteMarkieren(feld: HTMLElement | null, a: Aufgabe): Dem
   }
   return [
     { text: "Klicke in den Text.", zu: () => ortIn(bereich(), "anfang") },
-    { text: "Halte die Strg-Taste fest …", tasten: ["ControlLeft"] },
-    { text: "… und drücke A. Alles ist markiert!", tasten: ["ControlLeft", "KeyA"], aktion: () => markiere(bereich()) },
+    { text: mac ? "Halte die ⌘-Taste fest …" : "Halte die Strg-Taste fest …", tasten: [mac ? "MetaLeft" : "ControlLeft"] },
+    { text: "… und drücke A. Alles ist markiert!", tasten: [mac ? "MetaLeft" : "ControlLeft", "KeyA"], aktion: () => markiere(bereich()) },
   ];
 }
 
 export default function StufeMarkieren({
   avatar, onFertig, onWeiter,
 }: { avatar: string; onFertig: (e: StufenErgebnis) => void; onWeiter: () => void }) {
+  const { system } = useWindows();
   const [nr, setNr] = useState(0);
   const [hinweis, setHinweis] = useState<{ text: string; gut: boolean } | null>(null);
   const [erfolg, setErfolg] = useState(false);
@@ -103,7 +108,7 @@ export default function StufeMarkieren({
             dauerMs: Math.round(performance.now() - start.current),
             details: [
               `${naechste} von ${MARKIER_AUFGABEN.length} Aufgaben`,
-              strgA.current ? "Alles markiert mit Strg + A" : "Alles markiert durch Ziehen",
+              strgA.current ? `Alles markiert mit ${system === "macos" ? "⌘" : "Strg"} + A` : "Alles markiert durch Ziehen",
             ],
           });
         }
@@ -119,7 +124,7 @@ export default function StufeMarkieren({
   useStrgA(feld, () => { strgA.current = true; });
   useEffect(() => () => { if (hinweisUhr.current) clearTimeout(hinweisUhr.current); }, []);
 
-  const auftrag = auftragFuer(aufgabe);
+  const auftrag = auftragFuer(aufgabe, system);
 
   return (
     <div className="flex flex-col gap-4">
@@ -129,7 +134,7 @@ export default function StufeMarkieren({
           ? <>Alle Markier-Aufgaben geschafft! Weiter geht es mit Kopieren und Einfügen.</>
           : <>{auftrag.text}<div data-zusatz className="text-xs text-muted mt-1">💡 {auftrag.tipp}</div></>}
         punkte={Math.min(nr, MARKIER_AUFGABEN.length) * PUNKTE_MARKIEREN}
-        onDemo={fertig ? undefined : () => { markiere(null); demo.abspielen(demoSchritteMarkieren(feld.current, aufgabe)); }}
+        onDemo={fertig ? undefined : () => { markiere(null); demo.abspielen(demoSchritteMarkieren(feld.current, aufgabe, system)); }}
         onWeiter={onWeiter}
         hervor={fertig}
       >

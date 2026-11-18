@@ -16,6 +16,7 @@ import { Stufenkopf } from "./Stufenkopf";
 import { DemoBuehne, mitte, useDemo } from "./Demo";
 import { KURZ, Lesetext, auswahlImFeld, markiere, useAuswahl, useStrgA } from "./Lesetext";
 import { demoSchritteMarkieren } from "./StufeMarkieren";
+import { useWindows } from "./windows/WindowsKontext";
 
 type Schritt = "markieren" | "kopieren" | "einfuegen";
 
@@ -43,6 +44,11 @@ function markierTipp(a: Aufgabe) {
 export default function StufeKopieren({
   avatar, onFertig, onWeiter,
 }: { avatar: string; onFertig: (e: StufenErgebnis) => void; onWeiter: () => void }) {
+  const { system } = useWindows();
+  const strg = system === "macos" ? "⌘" : "Strg";
+  const strgCode = system === "macos" ? "MetaLeft" : "ControlLeft";
+  // Im Mac-Menü heißt »Einfügen« »Einsetzen«.
+  const einfuegen = system === "macos" ? "Einsetzen" : "Einfügen";
   const [nr, setNr] = useState(0);
   const [schritt, setSchritt] = useState<Schritt>("markieren");
   const [notiz, setNotiz] = useState("");
@@ -142,20 +148,20 @@ export default function StufeKopieren({
     zwischenVorDemo.current = zwischen;
     const zeile = aufgabe.art === "absatz" ? aufgabe.ziel.slice(0, 40) + " …" : aufgabe.ziel;
     demo.abspielen([
-      ...demoSchritteMarkieren(feld.current, aufgabe),
-      { text: "Halte Strg fest und drücke C: kopieren.", tasten: ["ControlLeft", "KeyC"], aktion: () => setZwischen({ text: aufgabe.ziel, nr: Date.now() }) },
+      ...demoSchritteMarkieren(feld.current, aufgabe, system),
+      { text: `Halte ${strg} fest und drücke C: kopieren.`, tasten: [strgCode, "KeyC"], aktion: () => setZwischen({ text: aufgabe.ziel, nr: Date.now() }) },
       { text: "Die Kopie liegt jetzt im Zwischenspeicher.", zu: () => mitte(zwischenRef.current) },
       { text: "Klicke in den Merkzettel.", zu: () => mitte(zettel.current) },
       { text: "Linke Taste.", taste: "links" },
-      { text: "Halte Strg fest und drücke V: einfügen!", tasten: ["ControlLeft", "KeyV"], aktion: () => setNotiz(n => `${n}${n ? "\n" : ""}${zeile}`) },
+      { text: `Halte ${strg} fest und drücke V: einfügen!`, tasten: [strgCode, "KeyV"], aktion: () => setNotiz(n => `${n}${n ? "\n" : ""}${zeile}`) },
       { text: "Da ist es! Jetzt probierst du es.", taste: null },
     ]);
   }
 
   const schritte: { id: Schritt; text: string }[] = [
     { id: "markieren", text: `Markieren (${markierTipp(aufgabe)})` },
-    { id: "kopieren", text: "Kopieren: Strg + C — oder Rechtsklick → Kopieren" },
-    { id: "einfuegen", text: "In den Merkzettel klicken, einfügen: Strg + V — oder Rechtsklick → Einfügen" },
+    { id: "kopieren", text: `Kopieren: ${strg} + C — oder Rechtsklick → Kopieren` },
+    { id: "einfuegen", text: `In den Merkzettel klicken, einfügen: ${strg} + V — oder Rechtsklick → ${einfuegen}` },
   ];
   const stand = schritte.findIndex(s => s.id === schritt);
 
@@ -204,7 +210,7 @@ export default function StufeKopieren({
             {zwischen ? zwischen.text : <span className="italic text-muted">leer — noch nichts kopiert</span>}
           </div>
           <p className="text-xs text-muted leading-snug select-none">
-            Strg + C legt eine Kopie hinein — die alte fliegt dabei raus. Strg + V holt sie wieder heraus, so oft du willst.
+            {strg} + C legt eine Kopie hinein — die alte fliegt dabei raus. {strg} + V holt sie wieder heraus, so oft du willst.
           </p>
         </div>
         <div className="card p-5 flex flex-col gap-2 flex-1">

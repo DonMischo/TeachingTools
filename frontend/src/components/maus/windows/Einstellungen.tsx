@@ -8,8 +8,11 @@
  * zusätzlich `onAuswahl`, damit eine Stufe falsche Klicks mitzählen kann.
  */
 import { AvatarDisplay, AvatarPicker } from "@/components/AvatarPicker";
+import { appsFuer, fuerSystem } from "@/lib/maus/system";
+import { useWindows } from "./WindowsKontext";
+import { ausrichtungName, useSystemText } from "../systemText";
 import {
-  AKZENTE, ALLE_APPS, HINTERGRUENDE, STANDARD_TASKLEISTE,
+  AKZENTE, HINTERGRUENDE, STANDARD_TASKLEISTE,
   type AppId, type Aussehen, type EinstellungId, type ZeigerFarbe,
 } from "@/lib/maus/windows";
 
@@ -60,6 +63,10 @@ export function Einstellungen({
   hilfe?: boolean;
   onAuswahl?: (feld: keyof Aussehen, wert: unknown) => void;
 }) {
+  const { system } = useWindows();
+  // Begriffe des gewählten Systems: »Personalisierung« heißt bei Ubuntu »Darstellung«, die Taskleiste »Dock« …
+  const { t } = useSystemText();
+  const angeheftet = fuerSystem(aussehen.taskleiste, system);
   const dunkel = aussehen.dunkel;
   const flaeche = dunkel ? "#202020ff" : "#f3f3f3ff";
   const seitenFlaeche = dunkel ? "#2b2b2bff" : "#ffffffff";
@@ -90,7 +97,7 @@ export function Einstellungen({
         <nav className="flex flex-col gap-1 p-2">
           {NAV.map(gruppe => (
             <div key={gruppe.bereich} className="flex flex-col gap-0.5 mb-2">
-              <span className="px-2 py-1 text-[11px] font-bold uppercase" style={{ color: textLeise }}>{gruppe.bereich}</span>
+              <span className="px-2 py-1 text-[11px] font-bold uppercase" style={{ color: textLeise }}>{t(gruppe.bereich)}</span>
               {gruppe.seiten.map(s => (
                 <button
                   key={s.id}
@@ -100,7 +107,7 @@ export function Einstellungen({
                   className="text-left rounded-lg px-2 py-1.5"
                   style={{ background: seite === s.id ? (dunkel ? "#ffffff1f" : "#0000000f") : "transparent", fontWeight: seite === s.id ? 700 : 400 }}
                 >
-                  {s.label}
+                  {t(s.label)}
                 </button>
               ))}
             </div>
@@ -184,7 +191,7 @@ export function Einstellungen({
         {seite === "taskleiste" && (
           <div className="flex flex-col gap-5">
             <div className="flex flex-col gap-2">
-              <h3 className="font-black text-base">Ausrichtung</h3>
+              <h3 className="font-black text-base">{system === "windows" ? "Ausrichtung" : "Position auf dem Bildschirm"}</h3>
               <div className="flex gap-2">
                 {(["links", "mitte"] as const).map(a => (
                   <button
@@ -200,16 +207,16 @@ export function Einstellungen({
                       fontWeight: aussehen.ausrichtung === a ? 700 : 400,
                     }}
                   >
-                    {a === "links" ? "Links" : "Mitte"}
+                    {ausrichtungName(a, system)}
                   </button>
                 ))}
               </div>
             </div>
             <div className="flex flex-col gap-2">
-              <h3 className="font-black text-base">In der Taskleiste anzeigen</h3>
+              <h3 className="font-black text-base">{t("In der Taskleiste anzeigen").replace("In der Dock", "Im Dock")}</h3>
               <ul className="flex flex-col gap-1">
-                {ALLE_APPS.filter(a => a.art !== "system").map(a => {
-                  const an = aussehen.taskleiste.includes(a.id);
+                {Object.values(appsFuer(system)).filter(a => a.art !== "system").map(a => {
+                  const an = angeheftet.includes(a.id);
                   return (
                     <li key={a.id} className="flex items-center justify-between rounded-lg px-2 py-1.5" style={{ borderBottom: `1px solid ${rand}` }}>
                       <span>{a.name}</span>
@@ -219,7 +226,7 @@ export function Einstellungen({
                         aria-checked={an}
                         data-taskleiste-schalter={a.id}
                         onClick={() => {
-                          const neu: AppId[] = an ? aussehen.taskleiste.filter(id => id !== a.id) : [...aussehen.taskleiste, a.id];
+                          const neu: AppId[] = an ? angeheftet.filter(id => id !== a.id) : [...angeheftet, a.id];
                           setzen("taskleiste", neu.length ? neu : STANDARD_TASKLEISTE);
                         }}
                         className="rounded-full"

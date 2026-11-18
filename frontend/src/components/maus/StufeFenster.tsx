@@ -12,7 +12,7 @@
 import { useEffect, useRef, useState, type PointerEvent as ZeigerEreignis, type ReactNode } from "react";
 import { AVATARS } from "@/components/AvatarPicker";
 import {
-  DESKTOP, START_FENSTER, TASKLEISTE_HOEHE,
+  DESKTOP, START_FENSTER,
   ZIEL_GROESSE, ZIEL_POSITION, altTabGeschafft, amZiel, groesseAendern, groesseErreicht,
   maximieren, minimieren, schliessen, verschieben, wiederherstellen, zielRahmen, zurueckholen,
   type FensterZustand,
@@ -20,15 +20,17 @@ import {
 import { type StufenErgebnis } from "@/lib/maus/ergebnis";
 import { wertung } from "@/lib/maus/wertung";
 import { baueDateisystem } from "@/lib/maus/dateisystem";
+import { arbeitsflaeche, type Betriebssystem, type SystemInfo } from "@/lib/maus/system";
 import type { AppId } from "@/lib/maus/windows";
+import { appName } from "@/lib/maus/system";
 import { useMausKontext, HILFE_GROESSE } from "./MausKontext";
 import { useWindows } from "./windows/WindowsKontext";
 import { WindowsDesktop } from "./windows/WindowsDesktop";
 import { AppSymbol } from "./windows/AppSymbol";
 import { ExplorerInhalt } from "./windows/ExplorerInhalt";
-import { FensterSymbol, KnopfImText } from "./windows/FensterSymbol";
+import { FensterKnoepfe, KnopfImText, useKnoepfeLinks } from "./windows/FensterSymbol";
 import { Stufenkopf } from "./Stufenkopf";
-import { Taste } from "./Taste";
+import { Taste, mitTasten } from "./Taste";
 import { DemoBuehne, mitte, useDemo, type DemoSchritt } from "./Demo";
 import { Hinweiszeile } from "./aufgabenStufe";
 
@@ -47,49 +49,67 @@ function EckeImText() {
   );
 }
 
-function TitelleisteImText() {
+function TitelleisteImText({ system }: { system: Betriebssystem }) {
   return (
     <span className="inline-flex items-center align-middle rounded-sm border-2 border-accent bg-surface-hover mx-0.5 px-1.5 h-6 text-xs font-bold">
-      ✏️ Notizen – Editor
+      ✏️ Notizen – {appName("editor", system)}
     </span>
   );
 }
 
-const AUFGABEN: { id: AufgabeId; text: string; symbol: ReactNode; auftrag: ReactNode }[] = [
-  {
-    id: "maximieren", text: "Fenster maximieren", symbol: <KnopfImText art="maximieren" />,
-    auftrag: <>Klick oben rechts im Fenster auf <KnopfImText art="maximieren" /> (<b>Maximieren</b>) — das Fenster füllt dann den ganzen Bildschirm.</>,
-  },
-  {
-    id: "wiederherstellen", text: "Fenster wiederherstellen", symbol: <KnopfImText art="wiederherstellen" />,
-    auftrag: <>Der Knopf sieht jetzt anders aus: zwei Rechtecke <KnopfImText art="wiederherstellen" />. Klick darauf (<b>Wiederherstellen</b>) — das Fenster bekommt seine alte Größe zurück.</>,
-  },
-  {
-    id: "minimieren", text: "Fenster minimieren", symbol: <KnopfImText art="minimieren" />,
-    auftrag: <>Klick auf <KnopfImText art="minimieren" /> (<b>Minimieren</b>) — das Fenster verschwindet in die Taskleiste.</>,
-  },
-  {
-    id: "zurueckholen", text: "Aus der Taskleiste zurückholen",
-    symbol: <span className="inline-flex align-middle mx-0.5"><AppSymbol id="editor" groesse={22} titel={false} /></span>,
-    auftrag: <>Hol das Fenster zurück: Klick unten in der <b>Taskleiste</b> auf das Editor-Symbol <span className="inline-flex align-middle mx-0.5"><AppSymbol id="editor" groesse={22} titel={false} /></span>.</>,
-  },
-  {
-    id: "verschieben", text: "Fenster verschieben", symbol: <TitelleisteImText />,
-    auftrag: <>Greif das Fenster an der <b>Titelleiste</b> <TitelleisteImText /> (Maustaste gedrückt halten) und zieh es in das gestrichelte Feld.</>,
-  },
-  {
-    id: "groesse", text: "Größe ändern", symbol: <EckeImText />,
-    auftrag: <>Das Fenster ist zurück in der Mitte — greif die <b>Ecke unten rechts</b> <EckeImText /> und zieh, bis es den gestrichelten Rahmen ausfüllt.</>,
-  },
-  {
-    id: "altTab", text: "Mit Alt + Tab wechseln", symbol: <><Taste>Alt</Taste>+<Taste>Tab</Taste></>,
-    auftrag: <>Halte <Taste>Alt</Taste> gedrückt und drücke <Taste>Tab</Taste>, um zu einem anderen Programm zu wechseln — und komm dann wieder hierher zurück.</>,
-  },
-  {
-    id: "schliessen", text: "Fenster schließen", symbol: <KnopfImText art="schliessen" />,
-    auftrag: <>Schließ das Fenster mit <KnopfImText art="schliessen" /> (<b>Schließen</b>). Du hast nichts hineingeschrieben — deshalb geht es ohne Rückfrage zu.</>,
-  },
-];
+function aufgabenFuer(system: Betriebssystem, sys: SystemInfo): { id: AufgabeId; text: string; symbol: ReactNode; auftrag: ReactNode }[] {
+  const mac = system === "macos";
+  const ort = mac ? "oben links" : "oben rechts";
+  const ins = system === "windows" ? "in die Taskleiste" : "ins Dock";
+  const leiste = system === "windows" ? "Taskleiste" : "Dock";
+  const editorSymbol = <span className="inline-flex align-middle mx-0.5"><AppSymbol id="editor" groesse={22} titel={false} /></span>;
+  const wechsel = mitTasten(sys.kuerzel.appWechsel);
+  return [
+    {
+      id: "maximieren", text: "Fenster maximieren", symbol: <KnopfImText art="maximieren" />,
+      auftrag: mac
+        ? <>Klick {ort} im Fenster auf den <b>grünen Punkt</b> <KnopfImText art="maximieren" /> — das Fenster füllt dann den ganzen Bildschirm.</>
+        : <>Klick {ort} im Fenster auf <KnopfImText art="maximieren" /> (<b>Maximieren</b>) — das Fenster füllt dann den ganzen Bildschirm.</>,
+    },
+    {
+      id: "wiederherstellen", text: "Fenster wiederherstellen", symbol: <KnopfImText art="wiederherstellen" />,
+      auftrag: mac
+        ? <>Klick noch einmal auf den <b>grünen Punkt</b> <KnopfImText art="wiederherstellen" /> — das Fenster bekommt seine alte Größe zurück.</>
+        : <>Der Knopf sieht jetzt anders aus: zwei Rechtecke <KnopfImText art="wiederherstellen" />. Klick darauf (<b>Wiederherstellen</b>) — das Fenster bekommt seine alte Größe zurück.</>,
+    },
+    {
+      id: "minimieren", text: "Fenster minimieren", symbol: <KnopfImText art="minimieren" />,
+      auftrag: mac
+        ? <>Klick auf den <b>gelben Punkt</b> <KnopfImText art="minimieren" /> — das Fenster verschwindet {ins}.</>
+        : <>Klick auf <KnopfImText art="minimieren" /> (<b>Minimieren</b>) — das Fenster verschwindet {ins}.</>,
+    },
+    {
+      id: "zurueckholen", text: `Aus ${system === "windows" ? "der Taskleiste" : "dem Dock"} zurückholen`,
+      symbol: editorSymbol,
+      auftrag: <>Hol das Fenster zurück: Klick {system === "windows" ? "unten in der" : system === "ubuntu" ? "links im" : "unten im"} <b>{leiste}</b> auf das {appName("editor", system)}-Symbol {editorSymbol}.</>,
+    },
+    {
+      id: "verschieben", text: "Fenster verschieben", symbol: <TitelleisteImText system={system} />,
+      auftrag: <>Greif das Fenster an der <b>Titelleiste</b> <TitelleisteImText system={system} /> (Maustaste gedrückt halten) und zieh es in das gestrichelte Feld.</>,
+    },
+    {
+      id: "groesse", text: "Größe ändern", symbol: <EckeImText />,
+      auftrag: <>Das Fenster ist zurück in der Mitte — greif die <b>Ecke unten rechts</b> <EckeImText /> und zieh, bis es den gestrichelten Rahmen ausfüllt.</>,
+    },
+    {
+      id: "altTab", text: `Mit ${mac ? "⌘ + Tab" : "Alt + Tab"} wechseln`, symbol: <>{wechsel}</>,
+      auftrag: mac
+        ? <>Halte <Taste>⌘</Taste> gedrückt und drücke <Taste>Tab</Taste>, um zu einem anderen Programm zu wechseln — und komm dann wieder hierher zurück. (An einem Windows-PC klappt das mit <Taste>Alt</Taste> + <Taste>Tab</Taste>.)</>
+        : <>Halte <Taste>Alt</Taste> gedrückt und drücke <Taste>Tab</Taste>, um zu einem anderen Programm zu wechseln — und komm dann wieder hierher zurück.</>,
+    },
+    {
+      id: "schliessen", text: "Fenster schließen", symbol: <KnopfImText art="schliessen" />,
+      auftrag: mac
+        ? <>Schließ das Fenster mit dem <b>roten Punkt</b> <KnopfImText art="schliessen" />. Du hast nichts hineingeschrieben — deshalb geht es ohne Rückfrage zu.</>
+        : <>Schließ das Fenster mit <KnopfImText art="schliessen" /> (<b>Schließen</b>). Du hast nichts hineingeschrieben — deshalb geht es ohne Rückfrage zu.</>,
+    },
+  ];
+}
 
 type Hinweis = { text: string; gut: boolean } | null;
 
@@ -97,14 +117,17 @@ export default function StufeFenster({
   avatar, onFertig, onWeiter,
 }: { avatar: string; onFertig: (e: StufenErgebnis) => void; onWeiter: () => void }) {
   const { hilfe } = useMausKontext();
-  const { aussehen, benutzer } = useWindows();
+  const { aussehen, benutzer, system, sys } = useWindows();
+  const links = useKnoepfeLinks();
+  const AUFGABEN = aufgabenFuer(system, sys);
+  const flaeche = arbeitsflaeche(system, aussehen.ausrichtung === "links");
   const [nr, setNr] = useState(0);
   const [zustand, setZustand] = useState<FensterZustand>({ modus: "normal", pos: START_FENSTER });
   const [hinweis, setHinweis] = useState<Hinweis>(null);
   const [explorerOffen, setExplorerOffen] = useState(false);
   const [explorerOrdner, setExplorerOrdner] = useState("pc");
   const [aktivFenster, setAktivFenster] = useState<AppId | null>("editor");
-  const [fs] = useState(() => baueDateisystem(benutzer));
+  const [fs] = useState(() => baueDateisystem(benutzer, false, system));
   const [altTabHinweisText, setAltTabHinweisText] = useState<string | null>(null);
   const start = useRef(performance.now());
   const geloesteAufgaben = useRef(0);
@@ -257,7 +280,7 @@ export default function StufeFenster({
     zug.current = { ...z, x: e.clientX, y: e.clientY };
     setZustand(alt => ({
       ...alt,
-      pos: z.art === "verschieben" ? verschieben(alt.pos, dx, dy, hilfe) : groesseAendern(alt.pos, dx, dy, hilfe),
+      pos: z.art === "verschieben" ? verschieben(alt.pos, dx, dy, hilfe, flaeche) : groesseAendern(alt.pos, dx, dy, hilfe, flaeche),
     }));
   }
 
@@ -314,22 +337,22 @@ export default function StufeFenster({
     let schritte: DemoSchritt[] = [];
     if (aufgabe.id === "maximieren") {
       schritte = [
-        { text: "Zeige oben rechts auf den mittleren Knopf: ein Rechteck.", zu: () => mitte(maxRef.current) },
+        { text: system === "macos" ? "Zeige oben links auf den grünen Punkt." : "Zeige oben rechts auf den mittleren Knopf: ein Rechteck.", zu: () => mitte(maxRef.current) },
         { text: "Klick — das Fenster füllt den Bildschirm.", taste: "links", aktion: () => setZustand(z => maximieren(z)) },
       ];
     } else if (aufgabe.id === "wiederherstellen") {
       schritte = [
-        { text: "Der Knopf zeigt jetzt zwei Rechtecke: »Wiederherstellen«.", zu: () => mitte(maxRef.current) },
+        { text: system === "macos" ? "Wieder der grüne Punkt: »Wiederherstellen«." : "Der Knopf zeigt jetzt zwei Rechtecke: »Wiederherstellen«.", zu: () => mitte(maxRef.current) },
         { text: "Klick — das Fenster hat wieder seine alte Größe.", taste: "links", aktion: () => setZustand(z => wiederherstellen(z)) },
       ];
     } else if (aufgabe.id === "minimieren") {
       schritte = [
-        { text: "Zeige auf den linken Knopf: der Strich.", zu: () => mitte(minRef.current) },
-        { text: "Klick — das Fenster verschwindet in die Taskleiste.", taste: "links", aktion: () => setZustand(z => minimieren(z)) },
+        { text: system === "macos" ? "Zeige auf den gelben Punkt." : "Zeige auf den linken Knopf: der Strich.", zu: () => mitte(minRef.current) },
+        { text: `Klick — das Fenster verschwindet ${system === "windows" ? "in die Taskleiste" : "ins Dock"}.`, taste: "links", aktion: () => setZustand(z => minimieren(z)) },
       ];
     } else if (aufgabe.id === "zurueckholen") {
       schritte = [
-        { text: "Zeige unten in der Taskleiste auf das Editor-Symbol.", zu: () => mitte(document.querySelector('[data-taskleiste="editor"]')) },
+        { text: `Zeige ${system === "windows" ? "unten in der Taskleiste" : "im Dock"} auf das ${appName("editor", system)}-Symbol.`, zu: () => mitte(document.querySelector('[data-taskleiste="editor"]')) },
         { text: "Klick — das Fenster ist wieder da.", taste: "links", aktion: () => setZustand(z => zurueckholen(z)) },
       ];
     } else if (aufgabe.id === "verschieben") {
@@ -355,13 +378,13 @@ export default function StufeFenster({
       ];
     } else if (aufgabe.id === "altTab") {
       schritte = [
-        { text: "Halte Alt fest …", tasten: ["AltLeft"] },
-        { text: "… und drücke Tab. So wechselst du das Programm.", tasten: ["AltLeft", "Tab"] },
-        { text: "Komm dann wieder zurück hierher — z. B. per Klick in der echten Taskleiste.", taste: null },
+        { text: system === "macos" ? "Halte ⌘ fest …" : "Halte Alt fest …", tasten: [system === "macos" ? "MetaLeft" : "AltLeft"] },
+        { text: "… und drücke Tab. So wechselst du das Programm.", tasten: [system === "macos" ? "MetaLeft" : "AltLeft", "Tab"] },
+        { text: `Komm dann wieder zurück hierher — z. B. per Klick in der echten ${system === "windows" ? "Taskleiste" : "Leiste"}.`, taste: null },
       ];
     } else if (aufgabe.id === "schliessen") {
       schritte = [
-        { text: "Zeige oben rechts auf das ✕.", zu: () => mitte(schliessenRef.current) },
+        { text: system === "macos" ? "Zeige oben links auf den roten Punkt." : "Zeige oben rechts auf das ✕.", zu: () => mitte(schliessenRef.current) },
         { text: "Klick — das Fenster ist zu. Nichts verändert, also keine Frage.", taste: "links", aktion: () => setZustand(z => schliessen(z)) },
       ];
     }
@@ -372,6 +395,22 @@ export default function StufeFenster({
   const knopfGroesse = 22 * hilfeGroesse;
   const knopfSymbol = Math.round(11 * hilfeGroesse);
 
+  const knoepfe = (
+    <FensterKnoepfe
+      maximiert={zustand.modus === "maximiert"}
+      onMinimieren={klickMinimieren} onMaximieren={klickMaximieren} onSchliessen={klickSchliessen}
+      groesse={knopfGroesse} symbol={knopfSymbol}
+      minRef={minRef} maxRef={maxRef} schliessenRef={schliessenRef}
+    />
+  );
+
+  const explorerKnoepfe = (
+    <FensterKnoepfe
+      onSchliessen={() => { setExplorerOffen(false); setAktivFenster("editor"); }}
+      groesse={knopfGroesse} symbol={knopfSymbol} schliessenLabel={`${sys.dateimanager} schließen`}
+    />
+  );
+
   const offenListe: AppId[] = [
     ...(zustand.modus !== "geschlossen" ? (["editor"] as AppId[]) : []),
     ...(explorerOffen ? (["explorer"] as AppId[]) : []),
@@ -380,14 +419,14 @@ export default function StufeFenster({
   return (
     <div className="flex flex-col gap-3">
       <Stufenkopf
-        titel="🪟 Teil 2 · Fenster"
+        titel={`${sys.icon} Teil 2 · Fenster`}
         auftrag={fertig ? <>Alle Aufgaben rund ums Fenster geschafft!</> : aufgabe.auftrag}
         punkte={punkteStand()}
         onDemo={fertig ? undefined : vorfuehren}
         onWeiter={onWeiter}
         hervor={fertig}
       >
-        <span className="text-4xl">🪟</span>
+        <span className="text-4xl">{sys.icon}</span>
       </Stufenkopf>
 
       <ul className="flex flex-wrap gap-x-4 gap-y-1.5 text-sm items-center">
@@ -419,7 +458,10 @@ export default function StufeFenster({
           <div
             className="absolute rounded-xl shadow-xl border border-line bg-surface flex flex-col overflow-hidden pointer-events-auto"
             style={zustand.modus === "maximiert"
-              ? { left: 0, top: 0, width: "100%", height: `calc(100% - ${(TASKLEISTE_HOEHE / DESKTOP.h) * 100}%)` }
+              ? {
+                left: `${(flaeche.x / DESKTOP.w) * 100}%`, top: `${(flaeche.y / DESKTOP.h) * 100}%`,
+                width: `${(flaeche.w / DESKTOP.w) * 100}%`, height: `${(flaeche.h / DESKTOP.h) * 100}%`,
+              }
               : {
                 left: `${(zustand.pos.x / DESKTOP.w) * 100}%`,
                 top: `${(zustand.pos.y / DESKTOP.h) * 100}%`,
@@ -434,25 +476,10 @@ export default function StufeFenster({
               className="flex items-center gap-2 px-2 shrink-0 bg-surface-hover border-b border-line cursor-grab"
               style={{ height: 32 * hilfeGroesse }}
             >
+              {links && knoepfe}
               <span>✏️</span>
-              <span className="text-sm font-bold flex-1 truncate">Notizen – Editor</span>
-              <button ref={minRef} type="button" onClick={klickMinimieren}
-                className="rounded-sm hover:bg-surface flex items-center justify-center"
-                style={{ width: knopfGroesse, height: knopfGroesse }} aria-label="Minimieren">
-                <FensterSymbol art="minimieren" groesse={knopfSymbol} />
-              </button>
-              <button ref={maxRef} type="button" onClick={klickMaximieren}
-                className="rounded-sm hover:bg-surface flex items-center justify-center"
-                style={{ width: knopfGroesse, height: knopfGroesse }}
-                aria-label={zustand.modus === "maximiert" ? "Wiederherstellen" : "Maximieren"}
-                title={zustand.modus === "maximiert" ? "Wiederherstellen" : "Maximieren"}>
-                <FensterSymbol art={zustand.modus === "maximiert" ? "wiederherstellen" : "maximieren"} groesse={knopfSymbol} />
-              </button>
-              <button ref={schliessenRef} type="button" onClick={klickSchliessen}
-                className="rounded-sm hover:bg-red-500 hover:text-white flex items-center justify-center"
-                style={{ width: knopfGroesse, height: knopfGroesse }} aria-label="Schließen">
-                <FensterSymbol art="schliessen" groesse={knopfSymbol} />
-              </button>
+              <span className="text-sm font-bold flex-1 truncate">Notizen – {appName("editor", system)}</span>
+              {!links && knoepfe}
             </div>
             <div className="flex-1 p-3 text-sm leading-relaxed overflow-hidden flex items-center justify-center gap-3">
               <span className="text-3xl">{AVATARS.find(a => a.id === avatar)?.emoji ?? "📝"}</span>
@@ -487,7 +514,7 @@ export default function StufeFenster({
           />
         )}
         {aufgabe.id === "groesse" && !fertig && (() => {
-          const rahmen = zielRahmen(zustand.pos, ZIEL_GROESSE);
+          const rahmen = zielRahmen(zustand.pos, ZIEL_GROESSE, flaeche);
           return (
             <div
               className="absolute rounded-xl border-2 border-dashed pointer-events-none"
@@ -508,13 +535,10 @@ export default function StufeFenster({
             style={{ left: "8%", top: "12%", width: "72%", height: "68%" }}
           >
             <div className="flex items-center gap-2 px-2 shrink-0 bg-surface-hover border-b border-line" style={{ height: 32 * hilfeGroesse }}>
+              {links && explorerKnoepfe}
               <AppSymbol id="explorer" groesse={18} titel={false} />
-              <span className="text-sm font-bold flex-1 truncate">Explorer</span>
-              <button type="button" onClick={() => { setExplorerOffen(false); setAktivFenster("editor"); }}
-                className="rounded-sm hover:bg-red-500 hover:text-white flex items-center justify-center"
-                style={{ width: knopfGroesse, height: knopfGroesse }} aria-label="Explorer schließen">
-                <FensterSymbol art="schliessen" groesse={knopfSymbol} />
-              </button>
+              <span className="text-sm font-bold flex-1 truncate">{sys.dateimanager}</span>
+              {!links && explorerKnoepfe}
             </div>
             <div className="flex-1 min-h-0">
               <ExplorerInhalt

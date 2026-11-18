@@ -12,12 +12,14 @@ import { Hinweiszeile, useAufgabenStufe } from "./aufgabenStufe";
 import { DemoBuehne, mitte, useDemo, type DemoSchritt } from "./Demo";
 import { useMausKontext } from "./MausKontext";
 import { useWindows } from "./windows/WindowsKontext";
+import { useSystemText } from "./systemText";
+import { FensterKnoepfe } from "./windows/FensterSymbol";
 import { WindowsDesktop } from "./windows/WindowsDesktop";
 import { AppSymbol } from "./windows/AppSymbol";
 import { Einstellungen } from "./windows/Einstellungen";
 import { Startmenue } from "./windows/Startmenue";
 import { Sperrbildschirm } from "./windows/Sperrbildschirm";
-import { APPS, HINTERGRUENDE, akzentFarbe, type Aussehen, type EinstellungId, type Treffer } from "@/lib/maus/windows";
+import { HINTERGRUENDE, akzentFarbe, type Aussehen, type EinstellungId, type Treffer } from "@/lib/maus/windows";
 import { begruessungGeaendert, zielProfilTier } from "@/lib/maus/einstellungen";
 import { startAngeheftet } from "@/lib/maus/taskleiste";
 import { TIERNAMEN, tierName } from "@/lib/maus/tiere";
@@ -30,7 +32,8 @@ export default function StufeProfil({
   avatar, onFertig, onWeiter,
 }: { avatar: string; onFertig: (e: StufenErgebnis) => void; onWeiter: () => void }) {
   const { hilfe } = useMausKontext();
-  const { aussehen, setAussehen, benutzer } = useWindows();
+  const { aussehen, setAussehen, benutzer, system } = useWindows();
+  const { t, tt } = useSystemText();
 
   const startAussehen = useRef<Aussehen>(aussehen);
   const zielTier = useRef(zielProfilTier(startAussehen.current, avatar, Object.keys(TIERNAMEN)));
@@ -140,14 +143,14 @@ export default function StufeProfil({
       );
     }
     schritte.push({ text: "Jetzt bist du dran!", taste: null });
-    demo.abspielen(schritte);
+    demo.abspielen(schritte.map(x => ({ ...x, text: t(x.text) })));
   }
 
   return (
     <div className="flex flex-col gap-3">
       <Stufenkopf
-        titel="🔒 Teil 3 · Profil & Sperrbildschirm"
-        auftrag={fertig ? <>Klasse — das ist jetzt wirklich dein Computer!</> : aufgabenTexte[schritt]}
+        titel={t("🔒 Teil 3 · Profil & Sperrbildschirm")}
+        auftrag={tt(fertig ? <>Klasse — das ist jetzt wirklich dein Computer!</> : aufgabenTexte[schritt])}
         punkte={punkte()}
         onDemo={fertig ? undefined : vorfuehren}
         onWeiter={onWeiter}
@@ -162,7 +165,7 @@ export default function StufeProfil({
         ))}
       </ul>
 
-      <Hinweiszeile hinweis={hinweis} />
+      <Hinweiszeile hinweis={hinweis && { ...hinweis, text: t(hinweis.text) }} />
 
       <WindowsDesktop
         aussehen={aussehen}
@@ -182,7 +185,7 @@ export default function StufeProfil({
               suchText={suchText}
               onSuchText={setSuchText}
               angeheftet={startAngeheftet(null)}
-              onApp={id => startTreffer({ art: "app", id, name: APPS[id].name })}
+              onApp={id => startTreffer({ art: "app", id, name: id })}
               onTreffer={startTreffer}
               benutzer={benutzer}
               profilTier={aussehen.profilTier}
@@ -206,8 +209,8 @@ export default function StufeProfil({
           >
             <div className="flex items-center gap-2 px-2 shrink-0" style={{ height: 32, background: aussehen.dunkel ? "#2b2b2b" : "#ffffff", borderBottom: `1px solid ${aussehen.dunkel ? "#ffffff1a" : "#0000001a"}` }}>
               <AppSymbol id="einstellungen" groesse={18} titel={false} />
-              <span className="text-sm font-bold flex-1" style={{ color: aussehen.dunkel ? "#fff" : "#1a1a1a" }}>Einstellungen</span>
-              <button type="button" onClick={() => setFensterOffen(false)} aria-label="Schließen" className="rounded-sm hover:bg-red-500 hover:text-white w-6 h-6" style={{ color: aussehen.dunkel ? "#fff" : "#1a1a1a" }}>✕</button>
+              <span className="text-sm font-bold flex-1" style={{ color: aussehen.dunkel ? "#fff" : "#1a1a1a" }}>{t("Einstellungen")}</span>
+              <span className={system === "macos" ? "order-first" : ""}><FensterKnoepfe onSchliessen={() => setFensterOffen(false)} groesse={24} symbol={11} /></span>
             </div>
             <div className="flex-1 overflow-hidden">
               <Einstellungen

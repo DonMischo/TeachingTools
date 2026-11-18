@@ -20,7 +20,10 @@ const CODES: Record<string, string> = {
   "Strg": "ControlLeft", "Alt": "AltLeft", "Tab": "Tab", "Esc": "Escape",
   "Enter": "Enter", "Leertaste": "Space", "Druck": "PrintScreen",
   "⊞": "MetaLeft", "⊞ Windows": "MetaLeft", "Windows": "MetaLeft",
-  "F2": "F2", "F5": "F5",
+  // Ubuntu und macOS: Super und ⌘ liegen dort, wo am PC die Windows-Taste sitzt; ⌥ ist Alt, ⌃ ist Strg.
+  "Super": "MetaLeft", "⌘": "MetaLeft", "⌥": "AltLeft", "⌃": "ControlLeft", "⇧ Umschalt": "ShiftLeft",
+  "⌫": "Backspace",
+  "F2": "F2", "F3": "F3", "F4": "F4", "F5": "F5",
 };
 
 /** Codes, die auf der kleinen Tastatur (ohne Blöcke) Platz haben. */
@@ -31,6 +34,7 @@ const HAUPTBLOCK = new Set(
 export function codeFuer(label: string): string | null {
   if (CODES[label]) return CODES[label];
   if (/^[A-ZÄÖÜ]$/.test(label)) return `Key${label}`;
+  if (/^[0-9]$/.test(label)) return `Digit${label}`;
   return null;
 }
 

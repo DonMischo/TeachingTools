@@ -28,7 +28,7 @@ describe("Maus-Führerschein: Einstellungen-Fenster", () => {
 function AussehenTestRahmen() {
   const [aussehen, setAussehen] = useState<Aussehen>(STANDARD_AUSSEHEN);
   return (
-    <WindowsKontext.Provider value={{ aussehen, setAussehen, benutzer: "Mia" }}>
+    <WindowsKontext.Provider value={{ aussehen, setAussehen, benutzer: "Mia", system: "windows" }}>
       <StufeAussehen avatar="cat" onFertig={() => {}} onWeiter={() => {}} />
     </WindowsKontext.Provider>
   );

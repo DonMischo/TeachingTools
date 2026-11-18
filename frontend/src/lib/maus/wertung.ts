@@ -1,5 +1,5 @@
 /**
- * Punkte und Sterne für die Stufen von Teil 2 und 3.
+ * Punkte und Sterne für die Stufen von Teil 2, 3 und 4.
  *
  * Drei Dinge zählen: wie viele Aufgaben gelöst sind, wie lange es gedauert
  * hat und wie oft etwas danebenging. Großzügig: die Zeitgrenze ist das
@@ -31,6 +31,11 @@ export const RICHTZEIT_S: Partial<Record<StufeId, number>> = {
   bedienhilfe: 60,
   taskleiste: 120,
   profil: 90,
+  handy: 120,
+  appstore: 150,
+  berechtigungen: 120,
+  privatsphaere: 120,
+  risiken: 180,
 };
 
 export const GRUND = 600;

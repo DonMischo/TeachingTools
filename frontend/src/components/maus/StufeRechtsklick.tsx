@@ -12,7 +12,9 @@ import { useRef, useState } from "react";
 import { AVATARS, AvatarDisplay } from "@/components/AvatarPicker";
 import { PUNKTE_RECHTSKLICK, type StufenErgebnis } from "@/lib/maus/ergebnis";
 import { tierName } from "@/lib/maus/tiere";
-import { Kontextmenue, SYMBOLE } from "./Kontextmenue";
+import { Kontextmenue, SYMBOLE, type Eintrag } from "./Kontextmenue";
+import { mitTasten } from "./Taste";
+import { useWindows } from "./windows/WindowsKontext";
 import { Stufenkopf } from "./Stufenkopf";
 import { DemoBuehne, mitte, useDemo } from "./Demo";
 
@@ -26,6 +28,10 @@ export default function StufeRechtsklick({
   onFertig: (e: StufenErgebnis) => void;
   onWeiter: () => void;
 }) {
+  const { system, sys } = useWindows();
+  const mac = system === "macos";
+  const ubuntu = system === "ubuntu";
+  const kurz = (k: string) => k.replace(/\[\[|\]\]/g, "").replace(/\+/g, mac ? "" : "+");
   const [menue, setMenue] = useState<{ x: number; y: number; id: string } | null>(null);
   const [hinweis, setHinweis] = useState<string | null>(null);
   const [wackelt, setWackelt] = useState<{ id: string; nr: number } | null>(null);
@@ -81,6 +87,10 @@ export default function StufeRechtsklick({
         {gewaehlt && avatar && <AvatarDisplay avatarId={avatar} size="lg" />}
       </Stufenkopf>
 
+      {sys.rechtsklickHinweis && (
+        <p className="text-center text-sm text-muted">💡 {mitTasten(sys.rechtsklickHinweis)}</p>
+      )}
+
       <div className="min-h-6 text-center text-sm font-bold text-muted" aria-live="polite">
         {hinweis}
       </div>
@@ -117,16 +127,21 @@ export default function StufeRechtsklick({
         <Kontextmenue
           x={menue.x}
           y={menue.y}
+          system={system}
           onZu={() => { if (!demo.aktiv) setMenue(null); }}
           eintraege={[
             { text: "Als mein Tier wählen", symbol: SYMBOLE.tier, onWahl: () => { if (!demo.aktiv) waehlen(menue.id); } },
             "trenner",
-            { text: "Ausschneiden", symbol: SYMBOLE.ausschneiden, kuerzel: "Strg+X", aus: true },
-            { text: "Kopieren", symbol: SYMBOLE.kopieren, kuerzel: "Strg+C", aus: true },
-            { text: "Umbenennen", symbol: SYMBOLE.umbenennen, kuerzel: "F2", aus: true },
-            { text: "Löschen", symbol: SYMBOLE.loeschen, kuerzel: "Entf", aus: true },
+            { text: "Ausschneiden", symbol: SYMBOLE.ausschneiden, kuerzel: kurz(sys.kuerzel.ausschneiden), aus: true },
+            { text: "Kopieren", symbol: SYMBOLE.kopieren, kuerzel: kurz(sys.kuerzel.kopieren), aus: true },
+            ...(system === "windows" ? [] : [{ text: mac ? "Einsetzen" : "Einfügen", symbol: SYMBOLE.kopieren, kuerzel: kurz(sys.kuerzel.einfuegen), aus: true } as Eintrag]),
+            { text: ubuntu ? "Umbenennen …" : "Umbenennen", symbol: SYMBOLE.umbenennen, kuerzel: kurz(sys.kuerzel.umbenennen), aus: true },
+            {
+              text: mac ? "In den Papierkorb legen" : ubuntu ? "In den Papierkorb verschieben" : "Löschen",
+              symbol: SYMBOLE.loeschen, kuerzel: kurz(sys.kuerzel.loeschen), aus: true,
+            },
             "trenner",
-            { text: "Eigenschaften", symbol: SYMBOLE.eigenschaften, kuerzel: "Alt+Eingabe", aus: true },
+            { text: mac ? "Informationen" : "Eigenschaften", symbol: SYMBOLE.eigenschaften, kuerzel: mac ? "⌘I" : "Alt+Eingabe", aus: true },
           ]}
         />
       )}

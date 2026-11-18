@@ -7,20 +7,25 @@
  */
 import { createContext, useContext } from "react";
 import { STANDARD_AUSSEHEN, type Aussehen } from "@/lib/maus/windows";
+import { SYSTEME, type Betriebssystem, type SystemInfo } from "@/lib/maus/system";
 
 export type WindowsRahmen = {
   aussehen: Aussehen;
   setAussehen: (neu: Aussehen | ((alt: Aussehen) => Aussehen)) => void;
   /** Windows-Benutzername, z. B. »Mia« */
   benutzer: string;
+  /** Welches System nachgebildet wird (Auswahl oben im Werkzeug). */
+  system: Betriebssystem;
 };
 
 export const WindowsKontext = createContext<WindowsRahmen>({
   aussehen: STANDARD_AUSSEHEN,
   setAussehen: () => {},
   benutzer: "Schüler",
+  system: "windows",
 });
 
-export function useWindows(): WindowsRahmen {
-  return useContext(WindowsKontext);
+export function useWindows(): WindowsRahmen & { sys: SystemInfo } {
+  const k = useContext(WindowsKontext);
+  return { ...k, sys: SYSTEME[k.system] };
 }

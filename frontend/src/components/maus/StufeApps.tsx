@@ -16,7 +16,9 @@ import {
   APP_INFO, AUSWAHL_APPS, DATEI_ARTEN, DATEI_BEISPIELE, alternativen, artVon, endungVon, kartenRichtig, kartenText,
   ziehKarten, type AppKarte, type DateiArtId,
 } from "@/lib/maus/apps";
-import { APP_AUFGABEN, APPS, DATEITYPEN, istRichtig, type AppId } from "@/lib/maus/windows";
+import { APP_AUFGABEN, DATEITYPEN, istRichtig, type AppId } from "@/lib/maus/windows";
+import { appName, fuerSystem } from "@/lib/maus/system";
+import { useWindows } from "./windows/WindowsKontext";
 import type { StufenErgebnis } from "@/lib/maus/ergebnis";
 import { wertung } from "@/lib/maus/wertung";
 import { Stufenkopf } from "./Stufenkopf";
@@ -38,6 +40,7 @@ function AppKachel({ id, groesse, wackelt, onKlick, onFallen }: {
   id: AppId; groesse: number; wackelt: boolean; onKlick: () => void; onFallen: (e: React.DragEvent) => void;
 }) {
   const [offen, setOffen] = useState(false);
+  const { system } = useWindows();
   const info = APP_INFO[id];
   return (
     <div className="relative" onMouseEnter={() => setOffen(true)} onMouseLeave={() => setOffen(false)}>
@@ -56,7 +59,7 @@ function AppKachel({ id, groesse, wackelt, onKlick, onFallen }: {
         }
       >
         <AppSymbol id={id} groesse={groesse} titel={false} />
-        <span className="text-[11px] font-bold text-center leading-tight">{APPS[id].name}</span>
+        <span className="text-[11px] font-bold text-center leading-tight">{appName(id, system)}</span>
       </button>
       {info && (
         <div
@@ -67,7 +70,7 @@ function AppKachel({ id, groesse, wackelt, onKlick, onFallen }: {
             (offen ? "block" : "hidden")
           }
         >
-          <div className="text-sm font-black">{APPS[id].name}</div>
+          <div className="text-sm font-black">{appName(id, system)}</div>
           <div className="text-xs mt-0.5">{info.was}</div>
           <div className="text-xs mt-1.5 text-muted">
             {info.endungen.length
@@ -84,12 +87,16 @@ export default function StufeApps({
   onFertig, onWeiter,
 }: { avatar: string; onFertig: (e: StufenErgebnis) => void; onWeiter: () => void }) {
   const { hilfe } = useMausKontext();
+  const { system } = useWindows();
+  // Nur Apps dieses Systems: bei Ubuntu z. B. Writer statt Word, am Mac Vorschau statt IrfanView.
+  const auswahl = fuerSystem(AUSWAHL_APPS, system);
+  const fuerHier = <T extends { richtig: AppId[] }>(l: T[]) => l.map(a => ({ ...a, richtig: fuerSystem(a.richtig, system) })).filter(a => a.richtig.length > 0);
   const anzahl0 = hilfe ? 5 : 8;
   const anzahl1 = hilfe ? 6 : 10;
   const anzahl2 = hilfe ? 5 : 8;
 
-  const [karten1] = useState<AppKarte[]>(() => ziehKarten(APP_AUFGABEN, anzahl1).map(aufgabe => ({ art: "aufgabe" as const, aufgabe })));
-  const [karten2] = useState<AppKarte[]>(() => ziehKarten(DATEITYPEN, anzahl2).map(datei => ({ art: "datei" as const, datei })));
+  const [karten1] = useState<AppKarte[]>(() => ziehKarten(fuerHier(APP_AUFGABEN), anzahl1).map(aufgabe => ({ art: "aufgabe" as const, aufgabe })));
+  const [karten2] = useState<AppKarte[]>(() => ziehKarten(fuerHier(DATEITYPEN), anzahl2).map(datei => ({ art: "datei" as const, datei })));
   // Runde 0 nimmt aus jeder Art eine Datei, bevor sie mischt — so kommt jede Art einmal dran.
   const [karten0] = useState<string[]>(() => {
     const je = DATEI_ARTEN.map(a => ziehKarten(DATEI_BEISPIELE.filter(n => artVon(n) === a.id), 1)[0]);
@@ -135,7 +142,7 @@ export default function StufeApps({
     if (demo.aktiv) return;
     const karte = karten[index];
     if (istRichtig({ richtig: kartenRichtig(karte) }, appId)) {
-      const alt = alternativen({ richtig: kartenRichtig(karte) }, appId).map(id => APPS[id].name);
+      const alt = alternativen({ richtig: kartenRichtig(karte) }, appId).map(id => appName(id, system));
       setHinweis({ text: alt.length > 0 ? `Richtig! Auch richtig: ${alt.join(", ")}` : "Richtig!", gut: true });
       const neu = new Set(erledigt);
       neu.add(index);
@@ -152,7 +159,7 @@ export default function StufeApps({
       setWackelId(appId);
       if (wackelUhr.current) clearTimeout(wackelUhr.current);
       wackelUhr.current = setTimeout(() => setWackelId(null), 650);
-      setHinweis({ text: `Mit ›${APPS[appId].name}‹ geht das nicht so gut — probier eine andere.`, gut: false });
+      setHinweis({ text: `Mit ›${appName(appId, system)}‹ geht das nicht so gut — probier eine andere.`, gut: false });
     }
   }
 
@@ -224,7 +231,7 @@ export default function StufeApps({
     const schritte: DemoSchritt[] = [
       { text: `Nimm die Karte »${kartenText(karte)}«.`, zu: () => mitte(document.querySelector(`[data-karte="${index}"]`)) },
       { text: "Linke Taste festhalten …", taste: "halten" },
-      { text: `… und auf ${APPS[appId].name} ziehen.`, taste: "halten", zu: () => mitte(document.querySelector(`[data-app-kachel="${appId}"]`)) },
+      { text: `… und auf ${appName(appId, system)} ziehen.`, taste: "halten", zu: () => mitte(document.querySelector(`[data-app-kachel="${appId}"]`)) },
       { text: "Loslassen. Oder: erst die Karte, dann die App anklicken.", taste: null },
     ];
     demo.abspielen(schritte);
@@ -342,7 +349,7 @@ export default function StufeApps({
           </div>
 
           <div className="grid grid-cols-4 sm:grid-cols-6 gap-3 justify-items-center">
-            {AUSWAHL_APPS.map(id => (
+            {auswahl.map(id => (
               <AppKachel
                 key={id}
                 id={id}

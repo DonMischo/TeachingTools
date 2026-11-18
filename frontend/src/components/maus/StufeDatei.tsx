@@ -16,7 +16,9 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { AvatarDisplay } from "@/components/AvatarPicker";
 import type { StufenErgebnis } from "@/lib/maus/ergebnis";
 import { wertung } from "@/lib/maus/wertung";
-import { USB, ablegen, baueDateisystem, neueDatei, type Dateisystem, type Knoten } from "@/lib/maus/dateisystem";
+import { USB, ablegen, baueDateisystem, neueDatei, usbFuer, type Dateisystem, type Knoten } from "@/lib/maus/dateisystem";
+import { appName, type Betriebssystem } from "@/lib/maus/system";
+import { uebersetzer, uebertrage } from "./systemText";
 import { akzentFarbe, type AppId } from "@/lib/maus/windows";
 import { useMausKontext, HILFE_GROESSE } from "./MausKontext";
 import { useWindows } from "./windows/WindowsKontext";
@@ -25,7 +27,7 @@ import { AppSymbol } from "./windows/AppSymbol";
 import { ExplorerInhalt } from "./windows/ExplorerInhalt";
 import { SpeichernUnter } from "./windows/SpeichernUnter";
 import { Startmenue, type EinAus } from "./windows/Startmenue";
-import { FensterSymbol, KnopfImText } from "./windows/FensterSymbol";
+import { FensterKnoepfe, KnopfImText, useKnoepfeLinks } from "./windows/FensterSymbol";
 import { OrdnerSymbol } from "./windows/OrdnerSymbol";
 import { Stufenkopf } from "./Stufenkopf";
 import { mitTasten } from "./Taste";
@@ -37,6 +39,7 @@ const Sym = ({ id }: { id: AppId }) => (
   <span className="inline-flex align-middle mx-0.5"><AppSymbol id={id} groesse={20} titel={false} /></span>
 );
 const UsbSym = () => <span className="inline-flex align-middle mx-0.5"><OrdnerSymbol knoten={USB} groesse={20} /></span>;
+// (Das Symbol ist überall gleich; nur der Name wechselt mit dem System.)
 
 const AUFGABEN: { id: AufgabeId; kurz: string; titel: ReactNode; schritte: ReactNode[] }[] = [
   {
@@ -103,6 +106,25 @@ const AUFGABEN: { id: AufgabeId; kurz: string; titel: ReactNode; schritte: React
   },
 ];
 
+/** Für Ubuntu/macOS: Windows-Begriffe ersetzen (systemText.tsx); am Mac heißt das »Datei«-Menü »Ablage«. */
+function uebersetzerDatei(system: Betriebssystem): (t: string) => string {
+  const allgemein = uebersetzer(system);
+  if (system !== "macos") return allgemein;
+  return t => allgemein(t === "Datei" ? "Ablage" : t.replaceAll("»Datei«", "»Ablage«").replace(/^Datei ›/, "Ablage ›"));
+}
+
+/** Ausschalten bei Ubuntu (⏻ oben rechts) und macOS (● oben links) statt über das Startmenü. */
+const HERUNTERFAHREN: Record<Exclude<Betriebssystem, "windows">, ReactNode[]> = {
+  ubuntu: [
+    <>Oben rechts in der Leiste auf <b>⏻</b> klicken.</>,
+    <><b>Ausschalten …</b> wählen. (»Bildschirm sperren« schaltet nicht aus.)</>,
+  ],
+  macos: [
+    <>Oben links in der Menüleiste auf <b>●</b> (das System-Menü) klicken.</>,
+    <><b>Ausschalten …</b> wählen. (»Ruhezustand« lässt ihn nur schlafen.)</>,
+  ],
+};
+
 const BEISPIEL_INHALT: Record<string, string> = {
   "f-einkauf": "Milch\nBrot\nÄpfel\nKäse",
 };
@@ -119,10 +141,14 @@ export default function StufeDatei({
   avatar, onFertig, onWeiter,
 }: { avatar: string; onFertig: (e: StufenErgebnis) => void; onWeiter: () => void }) {
   const { hilfe } = useMausKontext();
-  const { aussehen, benutzer } = useWindows();
+  const { aussehen, benutzer, system, sys } = useWindows();
+  const t = uebersetzerDatei(system);
+  const links = useKnoepfeLinks();
+  const usb = usbFuer(system);
+  const [sysMenue, setSysMenue] = useState(false);
   const [nr, setNr] = useState(0);
   const [hinweis, setHinweis] = useState<Hinweis>(null);
-  const [fs, setFs] = useState<Dateisystem>(() => baueDateisystem(benutzer));
+  const [fs, setFs] = useState<Dateisystem>(() => baueDateisystem(benutzer, false, system));
   const [inhalte, setInhalte] = useState<Record<string, string>>(BEISPIEL_INHALT);
   const [editor, setEditor] = useState<Editor>({ offen: true, datei: null, text: "", gespeichert: "" });
   const [dateiMenue, setDateiMenue] = useState(false);
@@ -161,7 +187,12 @@ export default function StufeDatei({
   });
 
   const fertig = nr >= AUFGABEN.length;
-  const aufgabe = AUFGABEN[Math.min(nr, AUFGABEN.length - 1)];
+  const roh = AUFGABEN[Math.min(nr, AUFGABEN.length - 1)];
+  const aufgabe = {
+    ...roh,
+    titel: uebertrage(roh.titel, t),
+    schritte: system !== "windows" && roh.id === "herunterfahren" ? HERUNTERFAHREN[system] : roh.schritte.map(x => uebertrage(x, t)),
+  };
   const geaendert = editor.text !== editor.gespeichert;
   const dateiName = editor.datei ? fs[editor.datei]?.name ?? "Unbenannt" : "Unbenannt";
 
@@ -191,7 +222,7 @@ export default function StufeDatei({
   useEffect(() => {
     if (aufgabe.id !== "usbFinden" || fs.usb) return;
     const uhr = setTimeout(() => {
-      setFs(f => ({ ...f, usb: USB }));
+      setFs(f => ({ ...f, usb }));
       setUsbMeldung(true);
     }, 700);
     return () => clearTimeout(uhr);
@@ -321,7 +352,7 @@ export default function StufeDatei({
   function ordnerWechsel(id: string) {
     if (fs[id]?.gesperrt) fehler.current += 1;
     setExplorer(x => ({ ...x, ordner: id, markiert: null }));
-    if (id === "usb") geschafft("usbFinden", "Da ist der USB-Stick: Laufwerk D:!");
+    if (id === "usb") geschafft("usbFinden", system === "windows" ? "Da ist der USB-Stick: Laufwerk D:!" : "Da ist der USB-Stick!");
   }
 
   function dateiOeffnen(k: Knoten) {
@@ -399,8 +430,9 @@ export default function StufeDatei({
 
   function einAus(wahl: EinAus) {
     setStartOffen(false);
-    if (wahl === "energiesparen") { fehlversuch("»Energie sparen« lässt den Computer nur schlafen — er ist nicht aus."); return; }
-    if (wahl === "neustart") { fehlversuch("»Neu starten« fährt ihn gleich wieder hoch. Gesucht ist »Herunterfahren«."); return; }
+    setSysMenue(false);
+    if (wahl === "energiesparen") { fehlversuch(system === "ubuntu" ? "»Bildschirm sperren« schaltet nicht aus." : `»${system === "macos" ? "Ruhezustand" : "Energie sparen"}« lässt den Computer nur schlafen — er ist nicht aus.`); return; }
+    if (wahl === "neustart") { fehlversuch(`»Neu starten« fährt ihn gleich wieder hoch. Gesucht ist »${system === "windows" ? "Herunterfahren" : "Ausschalten"}«.`); return; }
     if (aufgabe.id !== "herunterfahren") { setHinweis({ text: "Noch nicht ausschalten — erst die anderen Aufgaben.", gut: false }); return; }
     if (editor.offen && geaendert) {
       setHinweis({ text: "Im Editor ist noch etwas nicht gespeichert — speichere es zuerst, sonst wäre es beim Ausschalten weg.", gut: false });
@@ -413,6 +445,7 @@ export default function StufeDatei({
   // ── Vorführung ──────────────────────────────────────────────────────
   function vorfuehren() {
     vorDemo.current = { fs, inhalte, editor, dialog, explorer, aktiv, startOffen };
+    setSysMenue(false);
     demoLaeuft.current = true;
     const ort = (sel: string) => () => mitte(document.querySelector(sel));
     const zeigeExplorer = (ordner: string) => { setExplorer({ offen: true, ordner, markiert: null }); setAktiv("explorer"); };
@@ -455,6 +488,11 @@ export default function StufeDatei({
         { text: "… links auf »USB-Stick (D:)« ziehen …", zu: ort('[data-explorer] [data-nav="usb"]'), taste: "halten", ms: 2000 },
         { text: "… und loslassen. Die Datei wird kopiert.", taste: null },
       ];
+    } else if (aufgabe.id === "herunterfahren" && system !== "windows") {
+      schritte = [
+        { text: system === "macos" ? "Oben links auf ● klicken." : "Oben rechts auf ⏻ klicken.", zu: ort("[data-system-menue]"), taste: "links", aktion: () => setSysMenue(true) },
+        { text: "»Ausschalten …« wählen.", zu: ort('[data-einaus-wahl="herunterfahren"]'), taste: "links" },
+      ];
     } else if (aufgabe.id === "herunterfahren") {
       schritte = [
         { text: "Unten auf »Start« klicken.", zu: ort("[data-start]"), taste: "links", aktion: () => setStartOffen(true) },
@@ -462,7 +500,7 @@ export default function StufeDatei({
         { text: "»Herunterfahren« wählen.", zu: ort('[data-einaus-wahl="herunterfahren"]'), taste: "links" },
       ];
     }
-    demo.abspielen(schritte);
+    demo.abspielen(schritte.map(x => ({ ...x, text: t(x.text) })));
   }
 
   // ── Anzeige ─────────────────────────────────────────────────────────
@@ -485,16 +523,12 @@ export default function StufeDatei({
   }).punkte;
 
   function titelleiste(titel: ReactNode, onZu: () => void, zuRef?: React.Ref<HTMLButtonElement>) {
+    const knoepfe = <FensterKnoepfe onSchliessen={onZu} schliessenRef={zuRef} groesse={knopf} symbol={symbol} />;
     return (
       <div className="flex items-center gap-2 px-2 shrink-0" style={{ height: 32 * hilfeGroesse, background: fenster.leiste, borderBottom: `1px solid ${fenster.linie}` }}>
+        {links && knoepfe}
         {titel}
-        <span className="flex items-center justify-center opacity-40" style={{ width: knopf, height: knopf }} aria-hidden><FensterSymbol art="minimieren" groesse={symbol} /></span>
-        <span className="flex items-center justify-center opacity-40" style={{ width: knopf, height: knopf }} aria-hidden><FensterSymbol art="maximieren" groesse={symbol} /></span>
-        <button ref={zuRef} type="button" onClick={onZu} aria-label="Schließen"
-          className="rounded-sm hover:bg-[#e81123] hover:text-white flex items-center justify-center"
-          style={{ width: knopf, height: knopf }}>
-          <FensterSymbol art="schliessen" groesse={symbol} />
-        </button>
+        {!links && knoepfe}
       </div>
     );
   }
@@ -511,7 +545,9 @@ export default function StufeDatei({
             </ol>
             {(aufgabe.id === "speichernUnter" || aufgabe.id === "schliessen") && (
               <div data-zusatz className="text-sm text-muted mt-1.5">
-                💡 {mitTasten("Schneller: [[Strg]] + [[S]] speichert, [[Strg]] + [[Umschalt]] + [[S]] ist »Speichern unter«.")}
+                💡 {mitTasten(system === "macos"
+                  ? "Schneller: [[⌘]] + [[S]] sichert, [[⌘]] + [[⇧]] + [[S]] ist »Speichern unter«."
+                  : "Schneller: [[Strg]] + [[S]] speichert, [[Strg]] + [[Umschalt]] + [[S]] ist »Speichern unter«.")}
               </div>
             )}
           </>
@@ -534,8 +570,28 @@ export default function StufeDatei({
           onSymbol={id => { if (id === "dieserpc") explorerOeffnen(); }}
           onTaskleiste={taskleisteKlick}
           onStart={() => { if (!demo.aktiv) setStartOffen(o => !o); }}
+          onSystemMenue={() => { if (!demo.aktiv) setSysMenue(m => !m); }}
           startOffen={startOffen}
           overlay={<>
+            {sysMenue && system !== "windows" && (
+              <div
+                role="menu"
+                data-system-menue-liste
+                className={"pointer-events-auto absolute rounded-xl py-1 shadow-2xl border flex flex-col min-w-[12em] text-sm "
+                  + (system === "ubuntu" ? "right-[1%] bg-[#303030] text-white border-[#ffffff1f]" : "left-[1%] bg-[#ecececf2] text-[#111] border-[#0000001a]")}
+                style={{ top: "6.5%" }}
+              >
+                {(system === "ubuntu"
+                  ? [["energiesparen", "🔒 Bildschirm sperren"], ["neustart", "↻ Neu starten …"], ["herunterfahren", "⏻ Ausschalten …"]]
+                  : [["energiesparen", "Ruhezustand"], ["neustart", "Neustart …"], ["herunterfahren", "Ausschalten …"]]
+                ).map(([id, text]) => (
+                  <button key={id} type="button" role="menuitem" data-einaus-wahl={id} onClick={() => einAus(id as EinAus)}
+                    className={"px-3 py-1.5 text-left " + (system === "ubuntu" ? "hover:bg-[#ffffff1a]" : "hover:bg-[#0a60ff] hover:text-white")}>
+                    {text}
+                  </button>
+                ))}
+              </div>
+            )}
             {startOffen && (
               <Startmenue
                 suchText=""
@@ -558,9 +614,9 @@ export default function StufeDatei({
               <div className="pointer-events-auto absolute right-[2%] bottom-[13%] flex items-center gap-3 rounded-lg shadow-2xl border px-3 py-2 text-sm"
                 style={{ background: fenster.leiste, color: fenster.text, borderColor: fenster.linie}}
                 role="status">
-                <OrdnerSymbol knoten={USB} groesse={32} />
+                <OrdnerSymbol knoten={usb} groesse={32} />
                 <div>
-                  <div className="font-bold">USB-Stick (D:)</div>
+                  <div className="font-bold">{usb.name}</div>
                   <div style={{ color: fenster.leise }}>Ein Wechseldatenträger wurde angeschlossen.</div>
                 </div>
               </div>
@@ -627,7 +683,7 @@ export default function StufeDatei({
               {titelleiste(
                 <>
                   <AppSymbol id="editor" groesse={16} titel={false} />
-                  <span className="text-sm flex-1 truncate" data-testid="editor-titel">{geaendert ? "*" : ""}{dateiName} – Editor</span>
+                  <span className="text-sm flex-1 truncate" data-testid="editor-titel">{geaendert ? "*" : ""}{dateiName} – {appName("editor", system)}</span>
                 </>,
                 schliessenKlick,
                 schliessenKnopf,
@@ -635,7 +691,7 @@ export default function StufeDatei({
               <div className="relative flex items-center gap-1 px-1 text-sm shrink-0" style={{ borderBottom: `1px solid ${fenster.linie}` }}>
                 <button ref={dateiKnopf} type="button" onClick={() => setDateiMenue(m => !m)}
                   className={"rounded-sm px-2 py-0.5 " + (dateiMenue ? "bg-[#0078d738]" : "hover:bg-[#0078d71a]")} aria-expanded={dateiMenue}>
-                  Datei
+                  {system === "macos" ? "Ablage" : "Datei"}
                 </button>
                 <span className="px-2 py-0.5" style={{ color: fenster.leise }}>Bearbeiten</span>
                 <span className="px-2 py-0.5" style={{ color: fenster.leise }}>Ansicht</span>
@@ -687,7 +743,7 @@ export default function StufeDatei({
               {titelleiste(
                 <>
                   <AppSymbol id="explorer" groesse={16} titel={false} />
-                  <span className="text-sm flex-1 truncate" style={{ color: fenster.text }}>{fs[explorer.ordner]?.name ?? "Explorer"}</span>
+                  <span className="text-sm flex-1 truncate" style={{ color: fenster.text }}>{fs[explorer.ordner]?.name ?? sys.dateimanager}</span>
                 </>,
                 () => { setExplorer(x => ({ ...x, offen: false })); setAktiv(editor.offen ? "editor" : null); },
               )}
@@ -721,7 +777,7 @@ export default function StufeDatei({
           </ul>
           {(aufgabe.id === "usbFinden" || aufgabe.id === "aufStick") && !fertig && (
             <div className="flex flex-col gap-1.5 text-sm text-muted">
-              <span>{mitTasten("Falsche Datei auf dem Stick? Markieren und [[Entf]] drücken oder oben im Explorer auf 🗑.")}</span>
+              <span>{mitTasten(t(`Falsche Datei auf dem Stick? Markieren und ${sys.kuerzel.loeschen} drücken oder oben im Explorer auf 🗑.`))}</span>
               <button type="button" onClick={stickZuruecksetzen} disabled={demo.aktiv} data-testid="stick-zuruecksetzen" className="btn-secondary self-start">
                 ↺ Aufgabe zurücksetzen
               </button>

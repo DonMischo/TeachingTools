@@ -18,6 +18,8 @@ import {
 import { Stufenkopf } from "./Stufenkopf";
 import { Kontextmenue, SYMBOLE } from "./Kontextmenue";
 import { DemoBuehne, mitte, useDemo, type DemoSchritt } from "./Demo";
+import { useWindows } from "./windows/WindowsKontext";
+import type { Betriebssystem } from "@/lib/maus/system";
 import { useMausKontext, HILFE_GROESSE } from "./MausKontext";
 import { mitTasten } from "./Taste";
 
@@ -30,7 +32,7 @@ const ICON: Record<Datei["art"], string> = {
 };
 
 const NAV = [
-  { id: "desktop", label: "Desktop", icon: "🖥️" },
+  { id: "desktop", label: "Desktop", icon: "🖥️" }, // bei Ubuntu und macOS »Schreibtisch« (siehe navLabel)
   { id: "dokumente", label: "Dokumente", icon: "📁" },
   { id: "bilder", label: "Bilder", icon: "🖼️" },
   { id: "musik", label: "Musik", icon: "🎵" },
@@ -86,6 +88,22 @@ const AUFGABEN: { titel: string; schritte: string[]; merke?: string }[] = [
   },
 ];
 
+/**
+ * Die Aufgaben für ein System. Ubuntu wie Windows; am Mac heißt Strg ⌘,
+ * umbenannt wird mit der Zeilenschalter-Taste (Enter) statt F2, und
+ * verschoben wird mit ⌘ + C und ⌥ + ⌘ + V (Ausschneiden kennt der Finder nicht).
+ */
+function aufgabenFuer(system: Betriebssystem): typeof AUFGABEN {
+  if (system !== "macos") return AUFGABEN;
+  const mac = (t: string) => t
+    .replace("[[F2]] drücken — oder Rechtsklick › Umbenennen", "[[Enter]] drücken — oder Rechtsklick › Umbenennen")
+    .replace("Oder: [[Strg]] + [[X]], »Schule« doppelklicken, [[Strg]] + [[V]].", "Oder: [[⌘]] + [[C]], »Schule« doppelklicken, [[⌥]] + [[⌘]] + [[V]] (»Objekt hierher bewegen«).")
+    .replaceAll("[[Strg]]", "[[⌘]]")
+    .replaceAll("[[Umschalt]]", "[[⇧]]")
+    .replaceAll("Strg", "⌘");
+  return AUFGABEN.map(a => ({ titel: mac(a.titel), schritte: a.schritte.map(mac), merke: a.merke && mac(a.merke) }));
+}
+
 type Menue = { x: number; y: number; ziel: string | "leer" };
 /** `aktiv` erst ab ein paar Pixeln Weg — ein einfacher Klick ist kein Ziehen. */
 type Zug = { ids: string[]; x: number; y: number; dx: number; dy: number; startX: number; startY: number; aktiv: boolean };
@@ -94,6 +112,12 @@ export default function StufeExplorer({
   onFertig, onWeiter,
 }: { avatar: string; onFertig: (e: StufenErgebnis) => void; onWeiter: () => void }) {
   const { hilfe } = useMausKontext();
+  const { system, sys } = useWindows();
+  const mac = system === "macos";
+  const AUFGABEN = aufgabenFuer(system);
+  const strg = mac ? "⌘" : "Strg";
+  const strgCode = mac ? "MetaLeft" : "ControlLeft";
+  const navLabel = (id: string, label: string) => (id === "desktop" ? sys.desktopOrdner : label);
   const [stand, setStand] = useState<ExplorerStand>(() => anfangsStand());
   const [schritt, setSchritt] = useState(0);
   const [hinweis, setHinweis] = useState<{ text: string; gut: boolean } | null>(null);
@@ -148,7 +172,9 @@ export default function StufeExplorer({
   }
 
   /** Einfügen: außerhalb von »Schule« während der Verschiebe-Aufgabe zählt als Fehlversuch. */
-  function handleEinfuegen() {
+  /** `bewegen`: ⌥ + ⌘ + V am Mac — die kopierten Dateien werden verschoben statt verdoppelt. */
+  function handleEinfuegen(bewegen = false) {
+    if (bewegen) aendern(s => (s.zwischenablage ? { ...s, zwischenablage: { ...s.zwischenablage, modus: "ausschneiden" } } : s));
     if (schritt === VERSCHIEBE_SCHRITT && istFalscherZielordner(stand.aktuellerOrdner, schulordner.current)) {
       fehlerHinzu();
     }
@@ -297,10 +323,13 @@ export default function StufeExplorer({
     function taste(e: KeyboardEvent) {
       if (demo.aktiv || fertig || umbenennenId) return;
       if (e.key === "F2" && stand.auswahl.length === 1) { anF2(stand.auswahl[0]); }
+      // Mac: Enter benennt um, ⌘ + ⌫ legt in den Papierkorb (Strg geht auch — oft sitzt das Kind an einer PC-Tastatur).
+      else if (mac && e.key === "Enter" && stand.auswahl.length === 1) { anF2(stand.auswahl[0]); }
+      else if (mac && e.key === "Backspace" && (e.metaKey || e.ctrlKey) && stand.auswahl.length > 0) { handleLoeschen(); }
       else if (e.key === "Delete" && stand.auswahl.length > 0) { handleLoeschen(); }
       else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "x" && stand.auswahl.length > 0) { aendern(ausschneiden); }
       else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "c" && stand.auswahl.length > 0) { aendern(kopieren); }
-      else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "v" && stand.zwischenablage) { handleEinfuegen(); }
+      else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "v" && stand.zwischenablage) { handleEinfuegen(mac && e.altKey); }
     }
     window.addEventListener("keydown", taste);
     return () => window.removeEventListener("keydown", taste);
@@ -363,22 +392,26 @@ export default function StufeExplorer({
       const neu = () => standRef.current.dateien.find(d => d.art === "ordner" && d.parent === standRef.current.aktuellerOrdner)?.id;
       schritte.push(
         { text: "Den neuen Ordner einmal anklicken.", zu: () => { const id = neu(); return id ? mitte(dateiRef.current[id]) : null; }, taste: "links", aktion: () => { const id = neu(); if (id) aendern(s => klick(s, id)); } },
-        { text: "Drücke F2 …", tasten: ["F2"] },
+        mac ? { text: "Drücke Enter …", tasten: ["Enter"] } : { text: "Drücke F2 …", tasten: ["F2"] },
         { text: "… und tippe »Schule«.", tasten: ["ShiftLeft", "KeyS"], aktion: () => { const id = neu(); if (id) aendern(s => umbenennen(s, id, "Schule").stand); } },
         { text: "Mit Enter bestätigen.", tasten: ["Enter"] },
       );
     } else if (schritt === 2) {
       schritte.push({ text: "Klicke auf »Deutsch«.", zu: () => mitte(dateiRef.current["deutsch"]), taste: "links", aktion: () => aendern(s => klick(s, "deutsch")) });
       for (const id of FAECHER.slice(1)) {
-        schritte.push({ text: `Strg halten und auf »${stand.dateien.find(d => d.id === id)?.name}« klicken.`, zu: () => mitte(dateiRef.current[id]), taste: "links", tasten: ["ControlLeft"], aktion: () => aendern(s => strgKlick(s, id)) });
+        schritte.push({ text: `${strg} halten und auf »${stand.dateien.find(d => d.id === id)?.name}« klicken.`, zu: () => mitte(dateiRef.current[id]), taste: "links", tasten: [strgCode], aktion: () => aendern(s => strgKlick(s, id)) });
       }
       schritte.push({ text: "Nur die vier Fächer sind markiert — alles dazwischen bleibt frei.", taste: null });
     } else if (schritt === 3) {
       const ordnerOrt = () => mitte(Object.values(dateiRef.current).find(el => el?.dataset.ordner === schulordner.current) ?? null);
       schritte.push(
-        { text: "Strg + X drücken.", tasten: ["ControlLeft", "KeyX"], aktion: () => aendern(ausschneiden) },
+        mac
+          ? { text: "⌘ + C drücken.", tasten: ["MetaLeft", "KeyC"], aktion: () => aendern(ausschneiden) }
+          : { text: "Strg + X drücken.", tasten: ["ControlLeft", "KeyX"], aktion: () => aendern(ausschneiden) },
         { text: "In den Ordner »Schule« doppelklicken.", zu: ordnerOrt, taste: "doppel", aktion: () => { if (schulordner.current) aendern(s => oeffnen(s, schulordner.current!)); } },
-        { text: "Strg + V drücken.", tasten: ["ControlLeft", "KeyV"], aktion: () => aendern(einfuegen) },
+        mac
+          ? { text: "⌥ + ⌘ + V drücken: hierher bewegen.", tasten: ["AltLeft", "MetaLeft", "KeyV"], aktion: () => aendern(einfuegen) }
+          : { text: "Strg + V drücken.", tasten: ["ControlLeft", "KeyV"], aktion: () => aendern(einfuegen) },
       );
     } else if (schritt === 4) {
       schritte.push(
@@ -404,7 +437,7 @@ export default function StufeExplorer({
       <Stufenkopf
         titel="📁 Teil 2 · Dateien ordnen"
         auftrag={fertig
-          ? <>Toll gemacht! Du kennst dich jetzt im Explorer aus.</>
+          ? <>Toll gemacht! Du kennst dich jetzt im {sys.dateimanager} aus.</>
           : <>
               {AUFGABEN[schritt].titel}
               <ol className="list-decimal list-inside text-sm font-normal mt-1.5 flex flex-col gap-0.5">
@@ -450,7 +483,7 @@ export default function StufeExplorer({
               📋 Kopieren
             </button>
             <button ref={einfuegenRef} type="button" title="Einfügen" disabled={!stand.zwischenablage}
-              onClick={handleEinfuegen}
+              onClick={() => handleEinfuegen()}
               className="text-xs rounded-lg px-2 py-1 border border-line hover:border-accent disabled:opacity-30">
               📌 Einfügen
             </button>
@@ -499,11 +532,11 @@ export default function StufeExplorer({
                     className={"rounded-lg px-2 py-1.5 flex items-center gap-1.5 text-left font-bold border " + (
                       ueberOrdner === DOKUMENTE_ZIEL ? "bg-[#0078d738] border-[#0078d799]"
                         : stand.aktuellerOrdner ? "border-transparent hover:bg-surface-hover" : "border-transparent bg-surface-hover")}>
-                    <span>{n.icon}</span>{n.label}
+                    <span>{n.icon}</span>{navLabel(n.id, n.label)}
                   </button>
                 ) : (
                   <div key={n.id} className="rounded-lg px-2 py-1.5 flex items-center gap-1.5 text-muted">
-                    <span>{n.icon}</span>{n.label}
+                    <span>{n.icon}</span>{navLabel(n.id, n.label)}
                   </div>
                 )
               ))}
@@ -600,17 +633,21 @@ export default function StufeExplorer({
         <Kontextmenue
           x={menue.x}
           y={menue.y}
+          system={system}
           onZu={() => setMenue(null)}
           eintraege={menue.ziel === "leer" ? [
-            { text: "Neuer Ordner", symbol: <span aria-hidden>📁</span>, onWahl: () => aendern(neuerOrdner) },
+            { text: system === "ubuntu" ? "Neuer Ordner …" : "Neuer Ordner", symbol: <span aria-hidden>📁</span>, onWahl: () => aendern(neuerOrdner) },
             "trenner",
             { text: "Ansicht", aus: true },
             { text: "Sortieren nach", aus: true },
           ] : [
-            { text: "Ausschneiden", symbol: SYMBOLE.ausschneiden, kuerzel: "Strg+X", onWahl: () => aendern(ausschneiden) },
-            { text: "Kopieren", symbol: SYMBOLE.kopieren, kuerzel: "Strg+C", onWahl: () => aendern(kopieren) },
-            { text: "Umbenennen", symbol: SYMBOLE.umbenennen, kuerzel: "F2", onWahl: () => anF2(menue.ziel) },
-            { text: "Löschen", symbol: SYMBOLE.loeschen, kuerzel: "Entf", onWahl: handleLoeschen },
+            ...(mac ? [] : [{ text: "Ausschneiden", symbol: SYMBOLE.ausschneiden, kuerzel: "Strg+X", onWahl: () => aendern(ausschneiden) }]),
+            { text: "Kopieren", symbol: SYMBOLE.kopieren, kuerzel: mac ? "⌘C" : "Strg+C", onWahl: () => aendern(kopieren) },
+            { text: system === "ubuntu" ? "Umbenennen …" : "Umbenennen", symbol: SYMBOLE.umbenennen, kuerzel: mac ? "↩" : "F2", onWahl: () => anF2(menue.ziel) },
+            {
+              text: mac ? "In den Papierkorb legen" : system === "ubuntu" ? "In den Papierkorb verschieben" : "Löschen",
+              symbol: SYMBOLE.loeschen, kuerzel: mac ? "⌘⌫" : "Entf", onWahl: handleLoeschen,
+            },
           ]}
         />
       )}

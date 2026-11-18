@@ -20,7 +20,9 @@ import { Tastatur } from "@/components/tippen/Tastatur";
 import { Stufenkopf } from "./Stufenkopf";
 import { DemoBuehne, mitte, useDemo, type DemoSchritt } from "./Demo";
 import { useMausKontext } from "./MausKontext";
-import { Taste, codeFuer } from "./Taste";
+import { Taste, codeFuer, mitTasten } from "./Taste";
+import { useWindows } from "./windows/WindowsKontext";
+import { SYSTEME, echtesSystem, type Betriebssystem } from "@/lib/maus/system";
 
 type Vorschau = { url: string; breite: number; hoehe: number };
 
@@ -30,6 +32,68 @@ const ANZAHL = 3;
 const TASTEN_3 = ["⊞", "Umschalt", "S", "Strg", "C", "V"];
 
 const SCHRITT_3_TEXT = "Speichern und in IrfanView öffnen: Ausschnitt, »Markup und Freigabe«, speichern, mit IrfanView öffnen, dort Strg + C — hier Strg + V.";
+
+/**
+ * Ubuntu und macOS. Das Foto entsteht auf dem ECHTEN Computer (der Browser
+ * sieht nur, was eingefügt wird) — deshalb folgen die Schritte dem echten
+ * System; das geübte steht, wenn es ein anderes ist, als Zusatz darunter.
+ */
+type Anleitung = {
+  ausschnitt: string; ganz: string; schritt3: string; auftrag: string;
+  tasten1: string[]; tasten3: string[]; liste3: string[];
+  demo1: DemoSchritt; demo2: DemoSchritt; demo3: DemoSchritt[]; strg: string;
+  kurz: string;
+};
+const ANLEITUNG: Record<Exclude<Betriebssystem, "windows">, Anleitung> = {
+  ubuntu: {
+    ausschnitt: "Ausschnitt: Druck-Taste, »Auswahl«, Rahmen um die Karte ziehen, Enter — dann Strg + V einfügen.",
+    ganz: "Ganzer Bildschirm: Umschalt + Druck, dann wieder einfügen.",
+    schritt3: "Öffnen und kopieren: Ausschnitt machen, im Dateimanager unter »Bilder › Bildschirmfotos« mit dem Bildbetrachter öffnen, dort Strg + C — hier Strg + V.",
+    auftrag: "Mach ein Bildschirmfoto von der bunten Karte — Ausschnitt, ganzer Bildschirm, dann die gespeicherte Datei öffnen. Ubuntu legt jedes Foto auch in die Zwischenablage; eingefügt wird mit [[Strg]] + [[V]].",
+    tasten1: ["PrintScreen"], tasten3: ["Druck", "Strg", "C", "V"],
+    liste3: [
+      "Mach wie in Schritt 1 einen Ausschnitt ([[Druck]], »Auswahl«, Rahmen ziehen, [[Enter]]).",
+      "Ubuntu speichert das Bild von selbst in »Bilder › Bildschirmfotos«.",
+      "Öffne den Ordner im Dateimanager und die Datei mit Doppelklick — sie erscheint im Bildbetrachter.",
+      "Im Bildbetrachter [[Strg]] + [[C]] drücken (kopieren) …",
+      "… und hier ins Feld klicken und [[Strg]] + [[V]] drücken.",
+    ],
+    demo1: { text: "Drücke die Druck-Taste — das Bildschirmfoto-Werkzeug erscheint. »Auswahl« ist schon gewählt.", tasten: ["PrintScreen"] },
+    demo2: { text: "Drücke Umschalt + Druck — der ganze Bildschirm.", tasten: ["ShiftLeft", "PrintScreen"] },
+    demo3: [
+      { text: "Mit Enter aufnehmen. Das Bild liegt jetzt in »Bilder › Bildschirmfotos«.", tasten: ["Enter"] },
+      { text: "Die Datei im Dateimanager doppelklicken: der Bildbetrachter öffnet sie.", taste: "doppel" },
+      { text: "Im Bildbetrachter Strg + C drücken: das Bild ist kopiert.", tasten: ["ControlLeft", "KeyC"] },
+    ],
+    strg: "Strg",
+    kurz: "Ubuntu: [[Druck]] für einen Ausschnitt, [[Umschalt]] + [[Druck]] für den ganzen Bildschirm. Fotos landen in »Bilder › Bildschirmfotos« und in der Zwischenablage.",
+  },
+  macos: {
+    ausschnitt: "Ausschnitt: ⌃ + ⌘ + ⇧ + 4, Rahmen um die Karte ziehen — dann ⌘ + V einfügen.",
+    ganz: "Ganzer Bildschirm: ⌃ + ⌘ + ⇧ + 3, dann wieder einfügen.",
+    schritt3: "Speichern und öffnen: ⌘ + ⇧ + 4 (ohne ⌃) legt die Datei auf den Schreibtisch, mit Vorschau öffnen, ⌘ + A und ⌘ + C — hier ⌘ + V.",
+    auftrag: "Mach ein Bildschirmfoto von der bunten Karte — Ausschnitt, ganzer Bildschirm, dann als Datei speichern und öffnen. Mit [[⌃]] dazu landet das Foto in der Zwischenablage; eingefügt wird mit [[⌘]] + [[V]].",
+    tasten1: ["ControlLeft", "MetaLeft", "ShiftLeft", "Digit4"], tasten3: ["⌘", "⇧", "4", "A", "C", "V"],
+    liste3: [
+      "Drück [[⌘]] + [[⇧]] + [[4]] (diesmal ohne [[⌃]]) und zieh einen Rahmen um die Karte.",
+      "Unten rechts erscheint kurz eine kleine Vorschau — klickst du sie an, kannst du darauf malen (Markup). Danach liegt das Bild als Datei auf dem Schreibtisch.",
+      "Öffne die Datei mit Doppelklick — sie erscheint in »Vorschau«.",
+      "In Vorschau [[⌘]] + [[A]] und dann [[⌘]] + [[C]] drücken (alles kopieren) …",
+      "… und hier ins Feld klicken und [[⌘]] + [[V]] drücken.",
+    ],
+    demo1: { text: "Drücke ⌃ + ⌘ + ⇧ + 4 — mit ⌃ kommt das Bild in die Zwischenablage.", tasten: ["ControlLeft", "MetaLeft", "ShiftLeft", "Digit4"] },
+    demo2: { text: "Drücke ⌃ + ⌘ + ⇧ + 3 — der ganze Bildschirm.", tasten: ["ControlLeft", "MetaLeft", "ShiftLeft", "Digit3"] },
+    demo3: [
+      { text: "Diesmal ⌘ + ⇧ + 4 ohne ⌃: das Bild landet als Datei auf dem Schreibtisch.", tasten: ["MetaLeft", "ShiftLeft", "Digit4"] },
+      { text: "Die Datei doppelklicken: »Vorschau« öffnet sie.", taste: "doppel" },
+      { text: "In Vorschau ⌘ + A und ⌘ + C: das Bild ist kopiert.", tasten: ["MetaLeft", "KeyC"] },
+    ],
+    strg: "⌘",
+    kurz: "macOS: [[⌘]] + [[⇧]] + [[4]] für einen Ausschnitt, [[⌘]] + [[⇧]] + [[3]] für den ganzen Bildschirm (mit [[⌃]] dazu in die Zwischenablage). Fotos landen auf dem Schreibtisch.",
+  },
+};
+
+const KURZ_WINDOWS = "Windows: [[⊞]] + [[Umschalt]] + [[S]] für einen Ausschnitt (Snipping Tool), [[Druck]] für den ganzen Bildschirm.";
 
 function bildLaden(datei: File): Promise<Vorschau> {
   return new Promise((resolve, reject) => {
@@ -45,6 +109,13 @@ export default function StufeScreenshot({
   avatar, onFertig, onWeiter,
 }: { avatar: string; onFertig: (e: StufenErgebnis) => void; onWeiter: () => void }) {
   const { hilfe } = useMausKontext();
+  const { system: geuebt } = useWindows();
+  // Das Foto entsteht am echten Computer — dessen System bestimmt die Schritte.
+  const [os, setOs] = useState<Betriebssystem>(geuebt);
+  useEffect(() => { setOs(echtesSystem() ?? geuebt); }, [geuebt]);
+  const a = os === "windows" ? null : ANLEITUNG[os];
+  const strg = a?.strg ?? "Strg";
+  const zusatz = geuebt !== os ? (geuebt === "windows" ? KURZ_WINDOWS : ANLEITUNG[geuebt].kurz) : null;
   const av = AVATARS.find(a => a.id === avatar) ?? AVATARS[0];
   const [zahl] = useState(() => 100 + Math.floor(Math.random() * 900));
   const [nr, setNr] = useState(0);
@@ -169,6 +240,16 @@ export default function StufeScreenshot({
       { text: "… und drücke Strg + V.", tasten: ["ControlLeft", "KeyV"], aktion: () => setDemoVorschau(true) },
       { text: "Da ist das Bild!", taste: null },
     ];
+    if (a) {
+      const einfuegen = einfuegenSchritte.map(x => (x.tasten ? { ...x, text: `… und drücke ${a.strg} + V.`, tasten: [a.strg === "⌘" ? "MetaLeft" : "ControlLeft", "KeyV"] } : x));
+      const rahmen = ausschnitt.slice(1);
+      if (nr === 0) demo.abspielen([a.demo1, ...rahmen, ...einfuegen]);
+      else if (nr === 1) demo.abspielen([a.demo2, ...einfuegen]);
+      // macOS: der erste Schritt von demo3 ist selbst der Ausschnitt (ohne ⌃, als Datei).
+      else if (os === "macos") demo.abspielen([a.demo3[0], ...rahmen, ...a.demo3.slice(1), ...einfuegen]);
+      else demo.abspielen([a.demo1, ...rahmen, ...a.demo3, ...einfuegen]);
+      return;
+    }
     if (nr === 0) {
       demo.abspielen([...ausschnitt, ...einfuegenSchritte]);
     } else if (nr === 1) {
@@ -188,7 +269,7 @@ export default function StufeScreenshot({
     }
   }
 
-  const aufgaben = [
+  const aufgaben = a ? [{ text: a.ausschnitt }, { text: a.ganz }, { text: a.schritt3 }] : [
     { text: "Ausschnitt: ⊞ Windows + Umschalt + S, Rahmen um die Karte ziehen, dann Strg + V einfügen." },
     { text: "Ganzer Bildschirm: Druck-Taste (oder ⊞ Windows + Druck) drücken, dann wieder einfügen." },
     { text: SCHRITT_3_TEXT },
@@ -198,7 +279,9 @@ export default function StufeScreenshot({
     <div className="flex flex-col gap-4">
       <Stufenkopf
         titel="📸 Teil 3 · Bildschirmfoto"
-        auftrag={<>Mach ein Bildschirmfoto von der bunten Karte — Ausschnitt, ganzer Bildschirm, dann speichern und in IrfanView öffnen. Eingefügt wird immer mit <Taste>Strg</Taste> + <Taste>V</Taste>.</>}
+        auftrag={a
+          ? <>{mitTasten(a.auftrag)}{zusatz && <div data-zusatz className="text-xs text-muted mt-1">💡 Am geübten System: {mitTasten(zusatz)}</div>}</>
+          : <>Mach ein Bildschirmfoto von der bunten Karte — Ausschnitt, ganzer Bildschirm, dann speichern und in IrfanView öffnen. Eingefügt wird immer mit <Taste>Strg</Taste> + <Taste>V</Taste>.{zusatz && <div data-zusatz className="text-xs text-muted mt-1">💡 Du übst {SYSTEME[geuebt].name}, sitzt aber an Windows — hier gelten die Windows-Tasten. {mitTasten(zusatz)}</div>}</>}
         punkte={Math.round((PUNKTE_TEIL2 * Math.min(nr, ANZAHL)) / ANZAHL)}
         onDemo={fertig ? undefined : vorfuehren}
         onWeiter={onWeiter}
@@ -252,7 +335,7 @@ export default function StufeScreenshot({
               if (demoVorschau) {
                 return <div aria-hidden className="w-32 h-20 rounded-lg bg-surface-hover border border-line flex items-center justify-center text-2xl">🖼️</div>;
               }
-              return <div className="font-bold">Hier einfügen: Klick hinein und drücke <Taste>Strg</Taste> + <Taste>V</Taste></div>;
+              return <div className="font-bold">Hier einfügen: Klick hinein und drücke <Taste>{strg}</Taste> + <Taste>V</Taste></div>;
             })()}
             <p className="text-sm font-bold min-h-6" aria-live="polite"
               style={{ color: hinweis?.gut ? "var(--green, #16a34a)" : "var(--red, #dc2626)" }}>
@@ -261,16 +344,21 @@ export default function StufeScreenshot({
           </div>
 
           {nr === 0 && (
-            <Tastatur gedrueckt={new Set(["MetaLeft", "ShiftLeft", "KeyS"])} zeigeFinger={false} />
+            <Tastatur gedrueckt={new Set(a ? a.tasten1 : ["MetaLeft", "ShiftLeft", "KeyS"])} zeigeFinger={false} bloecke={os === "ubuntu"} />
           )}
-          {nr === 1 && (
+          {nr === 1 && os !== "macos" && (
             <div className="flex items-center gap-2 text-sm">
               <span className="text-muted">Deine Tastatur hat vielleicht keine echte Druck-Taste:</span>
               <span className="inline-block rounded-md border border-accent bg-surface-hover px-2 py-1 text-xs font-bold">Druck</span>
-              <span className="text-muted">oder <Taste>⊞</Taste> + <span className="inline-block rounded-md border border-accent bg-surface-hover px-2 py-1 text-xs font-bold">Druck</span></span>
+              <span className="text-muted">oder <Taste>{os === "ubuntu" ? "Umschalt" : "⊞"}</Taste> + <span className="inline-block rounded-md border border-accent bg-surface-hover px-2 py-1 text-xs font-bold">Druck</span></span>
             </div>
           )}
-          {nr === 2 && (
+          {nr === 2 && a && (
+            <ol className="flex flex-col gap-1.5 text-sm list-decimal list-inside">
+              {a.liste3.map((x, i) => <li key={i}>{mitTasten(x)}</li>)}
+            </ol>
+          )}
+          {nr === 2 && !a && (
             <ol className="flex flex-col gap-1.5 text-sm list-decimal list-inside">
               <li>Mach wie in Schritt 1 einen Ausschnitt (<Taste>⊞</Taste> + <Taste>Umschalt</Taste> + <Taste>S</Taste>).</li>
               <li>Unten rechts erscheint eine Meldung — klick darin auf <b>»Markup und Freigabe«</b>.</li>
@@ -284,12 +372,12 @@ export default function StufeScreenshot({
             <div className="rounded-2xl border border-line bg-surface p-3 flex flex-col gap-2" data-testid="tasten-3">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-sm font-bold mr-1">Diese Tasten brauchst du:</span>
-                {TASTEN_3.map(t => <Taste key={t} gross>{t}</Taste>)}
+                {(a ? a.tasten3 : TASTEN_3).map(t => <Taste key={t} gross>{t}</Taste>)}
               </div>
               <Tastatur
                 gedrueckt={new Set()}
                 zeigeFinger={false}
-                markiert={new Set(TASTEN_3.map(codeFuer).filter((c): c is string => !!c))}
+                markiert={new Set((a ? a.tasten3 : TASTEN_3).map(codeFuer).filter((c): c is string => !!c))}
               />
             </div>
           )}

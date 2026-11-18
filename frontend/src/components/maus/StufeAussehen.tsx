@@ -10,6 +10,8 @@ import { Hinweiszeile, useAufgabenStufe } from "./aufgabenStufe";
 import { DemoBuehne, mitte, useDemo, type DemoSchritt } from "./Demo";
 import { useMausKontext } from "./MausKontext";
 import { useWindows } from "./windows/WindowsKontext";
+import { useSystemText } from "./systemText";
+import { FensterKnoepfe } from "./windows/FensterSymbol";
 import { WindowsDesktop } from "./windows/WindowsDesktop";
 import { AppSymbol } from "./windows/AppSymbol";
 import { Einstellungen } from "./windows/Einstellungen";
@@ -23,7 +25,8 @@ export default function StufeAussehen({
   onFertig, onWeiter,
 }: { avatar: string; onFertig: (e: StufenErgebnis) => void; onWeiter: () => void }) {
   const { hilfe } = useMausKontext();
-  const { aussehen, setAussehen, benutzer } = useWindows();
+  const { aussehen, setAussehen, benutzer, system } = useWindows();
+  const { t, tt } = useSystemText();
 
   const startAussehen = useRef<Aussehen>(aussehen);
   const zielHG = useRef(zielHintergrund(startAussehen.current));
@@ -112,21 +115,21 @@ export default function StufeAussehen({
       schritte.push({ text: `Klicke auf die Akzentfarbe »${AKZENT_NAME(zielAK.current)}«.`, zu: inEinstellungen(`[data-akzent="${zielAK.current}"]`), taste: "links", aktion: () => setAussehen(a => ({ ...a, akzent: zielAK.current })) });
     }
     schritte.push({ text: "Jetzt bist du dran!", taste: null });
-    demo.abspielen(schritte);
+    demo.abspielen(schritte.map(x => ({ ...x, text: t(x.text) })));
   }
 
   return (
     <div className="flex flex-col gap-3">
       <Stufenkopf
-        titel="🎨 Teil 3 · Hintergrund & Farben"
-        auftrag={fertig ? <>Alles geschafft — dein Windows sieht jetzt anders aus!</> : aufgabenTexte[schritt]}
+        titel={t("🎨 Teil 3 · Hintergrund & Farben")}
+        auftrag={tt(fertig ? <>Alles geschafft — dein Windows sieht jetzt anders aus!</> : aufgabenTexte[schritt])}
         punkte={punkte()}
         onDemo={fertig ? undefined : vorfuehren}
         onWeiter={onWeiter}
         hervor={fertig}
       />
 
-      <Hinweiszeile hinweis={hinweis} />
+      <Hinweiszeile hinweis={hinweis && { ...hinweis, text: t(hinweis.text) }} />
 
       <WindowsDesktop
         aussehen={aussehen}
@@ -145,8 +148,8 @@ export default function StufeAussehen({
           >
             <div className="flex items-center gap-2 px-2 shrink-0" style={{ height: 32, background: aussehen.dunkel ? "#2b2b2b" : "#ffffff", borderBottom: `1px solid ${aussehen.dunkel ? "#ffffff1a" : "#0000001a"}` }}>
               <AppSymbol id="einstellungen" groesse={18} titel={false} />
-              <span className="text-sm font-bold flex-1" style={{ color: aussehen.dunkel ? "#fff" : "#1a1a1a" }}>Einstellungen</span>
-              <button type="button" onClick={schliessen} aria-label="Schließen" className="rounded-sm hover:bg-red-500 hover:text-white w-6 h-6" style={{ color: aussehen.dunkel ? "#fff" : "#1a1a1a" }}>✕</button>
+              <span className="text-sm font-bold flex-1" style={{ color: aussehen.dunkel ? "#fff" : "#1a1a1a" }}>{t("Einstellungen")}</span>
+              <span className={system === "macos" ? "order-first" : ""}><FensterKnoepfe onSchliessen={schliessen} groesse={24} symbol={11} /></span>
             </div>
             <div className="flex-1 overflow-hidden">
               <Einstellungen

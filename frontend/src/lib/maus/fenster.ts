@@ -34,30 +34,27 @@ export const TOLERANZ_VERSCHIEBEN = 26;
 /** Mindestzeit, die ein Fenster den Fokus verlieren muss, damit Alt+Tab zählt. */
 export const ALT_TAB_MINDEST_MS = 500;
 
-function fensterFlaeche(hilfe: boolean) {
-  return { w: DESKTOP.w, h: DESKTOP.h - TASKLEISTE_HOEHE };
-}
+/** Windows: der ganze Bildschirm ohne Taskleiste. Ubuntu/macOS siehe `arbeitsflaeche` in system.ts. */
+export const WINDOWS_FLAECHE: Rechteck = { x: 0, y: 0, w: DESKTOP.w, h: DESKTOP.h - TASKLEISTE_HOEHE };
 
-/** Hält ein Rechteck innerhalb der Fensterfläche (Bildschirm ohne Taskleiste). */
-export function klemmePosition(pos: Rechteck, hilfe = false): Rechteck {
-  const flaeche = fensterFlaeche(hilfe);
+/** Hält ein Rechteck innerhalb der Fensterfläche (Bildschirm ohne Taskleiste, Dock, Menüleiste). */
+export function klemmePosition(pos: Rechteck, hilfe = false, flaeche: Rechteck = WINDOWS_FLAECHE): Rechteck {
   const w = Math.min(pos.w, flaeche.w);
   const h = Math.min(pos.h, flaeche.h);
-  const x = Math.max(0, Math.min(pos.x, flaeche.w - w));
-  const y = Math.max(0, Math.min(pos.y, flaeche.h - h));
+  const x = Math.max(flaeche.x, Math.min(pos.x, flaeche.x + flaeche.w - w));
+  const y = Math.max(flaeche.y, Math.min(pos.y, flaeche.y + flaeche.h - h));
   return { x, y, w, h };
 }
 
 /** Verschiebt die Titelleiste um (dx, dy) — Größe bleibt gleich. */
-export function verschieben(pos: Rechteck, dx: number, dy: number, hilfe = false): Rechteck {
-  return klemmePosition({ ...pos, x: pos.x + dx, y: pos.y + dy }, hilfe);
+export function verschieben(pos: Rechteck, dx: number, dy: number, hilfe = false, flaeche: Rechteck = WINDOWS_FLAECHE): Rechteck {
+  return klemmePosition({ ...pos, x: pos.x + dx, y: pos.y + dy }, hilfe, flaeche);
 }
 
 /** Zieht an der unteren rechten Ecke — Position (oben links) bleibt gleich. */
-export function groesseAendern(pos: Rechteck, dx: number, dy: number, hilfe = false): Rechteck {
-  const flaeche = fensterFlaeche(hilfe);
-  const w = Math.max(MINDEST_BREITE, Math.min(pos.w + dx, flaeche.w - pos.x));
-  const h = Math.max(MINDEST_HOEHE, Math.min(pos.h + dy, flaeche.h - pos.y));
+export function groesseAendern(pos: Rechteck, dx: number, dy: number, hilfe = false, flaeche: Rechteck = WINDOWS_FLAECHE): Rechteck {
+  const w = Math.max(MINDEST_BREITE, Math.min(pos.w + dx, flaeche.x + flaeche.w - pos.x));
+  const h = Math.max(MINDEST_HOEHE, Math.min(pos.h + dy, flaeche.y + flaeche.h - pos.y));
   return { ...pos, w, h };
 }
 
@@ -77,10 +74,9 @@ export function groesseErreicht(pos: Rechteck, ziel: { w: number; h: number } = 
  * (oben links) aus ZIEL_GROESSE groß, aber nie über den Bildschirmrand
  * hinaus — sonst liefe der Rahmen bei einem Fenster nah am Rand einfach ab.
  */
-export function zielRahmen(pos: Rechteck, ziel: { w: number; h: number } = ZIEL_GROESSE): Rechteck {
-  const flaeche = fensterFlaeche(false);
-  const w = Math.min(ziel.w, flaeche.w - pos.x);
-  const h = Math.min(ziel.h, flaeche.h - pos.y);
+export function zielRahmen(pos: Rechteck, ziel: { w: number; h: number } = ZIEL_GROESSE, flaeche: Rechteck = WINDOWS_FLAECHE): Rechteck {
+  const w = Math.min(ziel.w, flaeche.x + flaeche.w - pos.x);
+  const h = Math.min(ziel.h, flaeche.y + flaeche.h - pos.y);
   return { x: pos.x, y: pos.y, w, h };
 }
 

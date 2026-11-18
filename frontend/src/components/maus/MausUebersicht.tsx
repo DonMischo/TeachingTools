@@ -17,6 +17,7 @@ const ICON: Record<StufeId, string> = {
   klick: "👆", doppelklick: "✌️", rechtsklick: "📋", ziehen: "✋", markieren: "🖍️", kopieren: "📄",
   scrollen: "🖱️", tastatur: "⌨️", explorer: "📁", fenster: "🪟", datei: "💽", screenshot: "📸",
   suche: "🔍", apps: "🧰", aussehen: "🎨", bedienhilfe: "🔎", taskleiste: "📌", profil: "🔒",
+  handy: "📱", appstore: "🛍️", berechtigungen: "🔐", privatsphaere: "🛡️", risiken: "⚠️",
 };
 
 function vor(iso: string): string {
@@ -96,6 +97,8 @@ export default function MausUebersicht() {
                 {kopf(2)}
                 <th className="w-2" />
                 {kopf(3)}
+                <th className="w-2" />
+                {kopf(4)}
                 <th className="px-3 py-2 text-right font-normal">zuletzt</th>
               </tr>
             </thead>
@@ -113,6 +116,8 @@ export default function MausUebersicht() {
                   <Teilzellen z={z} teil={2} />
                   <td />
                   <Teilzellen z={z} teil={3} />
+                  <td />
+                  <Teilzellen z={z} teil={4} />
                   <td className="px-3 py-2 text-right text-xs text-muted whitespace-nowrap">{vor(z.aktualisiert_am)}</td>
                 </tr>
               ))}

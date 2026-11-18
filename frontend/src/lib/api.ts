@@ -1297,7 +1297,7 @@ export type MausUebersichtZeile = {
   aktualisiert_am: string;
 };
 /** `code`: über welche Sitzung geprüft wurde — deren Lehrkraft bucht die Hauspunkte. */
-export type MausPruefungIn = { teil: 1 | 2 | 3; stufen: MausStufenStand; hilfe: boolean; code?: string | null };
+export type MausPruefungIn = { teil: 1 | 2 | 3 | 4; stufen: MausStufenStand; hilfe: boolean; code?: string | null };
 export type MausPruefungOut = { bestanden: boolean; punkte: number; schon_vergeben: boolean; haus: string | null };
 /** Beitritt über Code/QR; `token` nur für Gäste ohne Konto. */
 export type MausZugang = { code: string; token: string | null };

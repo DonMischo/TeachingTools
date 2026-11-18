@@ -9,6 +9,8 @@
  * Komponente über `Gesehen`.
  */
 
+import type { Betriebssystem } from "./system";
+
 export type AufgabenId =
   | "umschalt" | "ruecktaste" | "entf" | "pfeiltasten" | "pos1" | "ende" | "strgz" | "ausschneiden";
 
@@ -123,6 +125,54 @@ export const TASTATUR_AUFGABEN: Aufgabe[] = [
     noetigeAnschlaege: 4,
   },
 ];
+
+/**
+ * Die Aufgaben für ein System. Windows und Ubuntu haben dieselben Tasten; auf
+ * dem Mac fehlen Pos1/Ende/Entf, dort stehen ⌘+←, ⌘+→ und fn+⌫ an ihrer Stelle.
+ * Erkannt werden trotzdem beide Wege (siehe StufeTastatur) — wer am Mac üben
+ * soll, sitzt oft an einer PC-Tastatur.
+ */
+export function aufgabenFuer(system: Betriebssystem = "windows"): Aufgabe[] {
+  if (system !== "macos") return TASTATUR_AUFGABEN;
+  const mac: Partial<Record<AufgabenId, Partial<Aufgabe>>> = {
+    ruecktaste: {
+      kurz: "⌫ Löschtaste",
+      auftrag: "Lösche das doppelte e mit der [[⌫]] (Löschtaste).",
+      tipp: "Die Löschtaste [[⌫]] löscht das Zeichen links vom Cursor.",
+      tastenHinweis: ["⌫"],
+    },
+    entf: {
+      kurz: "fn + ⌫",
+      auftrag: "Lösche das doppelte M mit [[fn]]+[[⌫]].",
+      tipp: "[[fn]]+[[⌫]] löscht das Zeichen rechts vom Cursor. Auf einer PC-Tastatur geht auch [[Entf]].",
+      tastenHinweis: ["fn", "⌫"],
+    },
+    pos1: {
+      kurz: "⌘ + ←",
+      auftrag: "Spring mit [[⌘]]+[[←]] an den Anfang und schreibe A.",
+      tipp: "[[⌘]]+[[←]] springt an den Anfang der Zeile. Auf einer PC-Tastatur geht auch [[Pos1]].",
+      tastenHinweis: ["⌘", "←"],
+    },
+    ende: {
+      kurz: "⌘ + →",
+      auftrag: "Spring mit [[⌘]]+[[→]] ans Ende und setze ein !.",
+      tipp: "[[⌘]]+[[→]] springt ans Ende der Zeile. Auf einer PC-Tastatur geht auch [[Ende]].",
+      tastenHinweis: ["⌘", "→"],
+    },
+    strgz: {
+      kurz: "⌘ + Z",
+      auftrag: "Markiere den Satz, lösche ihn mit [[⌫]] — und hol ihn mit [[⌘]] + [[Z]] zurück.",
+      tipp: "Markieren: dreimal schnell in den Satz klicken (ein Doppelklick nimmt nur ein Wort). [[⌘]] + [[Z]] macht den letzten Schritt rückgängig.",
+      tastenHinweis: ["⌫", "⌘", "Z"],
+    },
+    ausschneiden: {
+      kurz: "⌘ + X / ⌘ + V",
+      tipp: "Doppelklick auf »Zoo« markiert das Wort. [[⌘]] + [[X]] schneidet aus, vor den Punkt klicken, [[⌘]] + [[V]] fügt ein — oder Rechtsklick › Ausschneiden / Einsetzen.",
+      tastenHinweis: ["⌘", "X", "V"],
+    },
+  };
+  return TASTATUR_AUFGABEN.map(a => ({ ...a, ...mac[a.id] }));
+}
 
 export type Gesehen = {
   shift: boolean;

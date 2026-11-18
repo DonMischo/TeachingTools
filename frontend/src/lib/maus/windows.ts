@@ -112,12 +112,15 @@ function bewertung(anfrage: string, name: string, schlagworte: string[]): number
 
 const RANG: Record<Treffer["art"], number> = { app: 0, einstellung: 1, datei: 2 };
 
-/** Wie die Windows-Suche: Apps zuerst, dann Einstellungen, dann Dateien; höchstens acht. */
-export function suche(text: string): Treffer[] {
+/**
+ * Wie die Windows-Suche: Apps zuerst, dann Einstellungen, dann Dateien; höchstens acht.
+ * `apps` — die Apps des geübten Systems mit ihren dortigen Namen (siehe appsFuer in system.ts).
+ */
+export function suche(text: string, apps: App[] = ALLE_APPS): Treffer[] {
   const anfrage = normalisieren(text);
   if (!anfrage) return [];
   const kandidaten: { treffer: Treffer; wert: number }[] = [
-    ...ALLE_APPS.map(a => ({ treffer: { art: "app", id: a.id, name: a.name } as Treffer, wert: bewertung(anfrage, a.name, a.schlagworte) })),
+    ...apps.map(a => ({ treffer: { art: "app", id: a.id, name: a.name } as Treffer, wert: bewertung(anfrage, a.name, a.schlagworte) })),
     ...EINSTELLUNGEN.map(e => ({ treffer: { art: "einstellung", id: e.id, name: e.name, bereich: e.bereich } as Treffer, wert: bewertung(anfrage, e.name, e.schlagworte) })),
     ...SUCH_DATEIEN.map(d => ({ treffer: { art: "datei", id: d.id, name: d.name, ort: d.ort, app: d.app } as Treffer, wert: bewertung(anfrage, d.name, d.schlagworte) })),
   ];

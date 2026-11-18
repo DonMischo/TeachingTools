@@ -14,11 +14,14 @@ import { DemoBuehne, mitte, useDemo, type DemoSchritt } from "./Demo";
 import { Kontextmenue, type Eintrag } from "./Kontextmenue";
 import { useMausKontext } from "./MausKontext";
 import { useWindows } from "./windows/WindowsKontext";
+import { ausrichtungName, useSystemText } from "./systemText";
+import { appName, fuerSystem } from "@/lib/maus/system";
+import { FensterKnoepfe } from "./windows/FensterSymbol";
 import { WindowsDesktop } from "./windows/WindowsDesktop";
 import { AppSymbol } from "./windows/AppSymbol";
 import { Einstellungen } from "./windows/Einstellungen";
 import { Startmenue } from "./windows/Startmenue";
-import { APPS, akzentFarbe, type AppId, type Aussehen, type EinstellungId, type Treffer } from "@/lib/maus/windows";
+import { akzentFarbe, type AppId, type Aussehen, type EinstellungId, type Treffer } from "@/lib/maus/windows";
 import {
   gemischteReihenfolge, istNachNameSortiert, leistenAenderung, nachNameSortiert,
   startAngeheftet, zielAnheften, zielAusrichtung, zielLoesen,
@@ -40,11 +43,21 @@ export default function StufeTaskleiste({
   onFertig, onWeiter,
 }: { avatar: string; onFertig: (e: StufenErgebnis) => void; onWeiter: () => void }) {
   const { hilfe } = useMausKontext();
-  const { aussehen, setAussehen, benutzer } = useWindows();
+  const { aussehen, setAussehen, benutzer, system } = useWindows();
+  const { t, tt } = useSystemText();
 
-  const startAussehen = useRef<Aussehen>(aussehen);
+  // Bei Ubuntu/macOS zuerst die Leiste auf Apps dieses Systems übertragen (Word → Writer, Edge fällt weg),
+  // damit jedes Ziel auch wirklich im Dock zu sehen ist.
+  const startAussehen = useRef<Aussehen>(system === "windows" ? aussehen
+    : { ...aussehen, taskleiste: fuerSystem(aussehen.taskleiste, system), desktop: fuerSystem(aussehen.desktop, system) });
+  useEffect(() => {
+    if (system !== "windows") setAussehen(a => ({ ...a, taskleiste: startAussehen.current.taskleiste, desktop: startAussehen.current.desktop }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const name = (id: AppId) => appName(id, system);
+  const ausr = (a: "mitte" | "links") => ausrichtungName(a, system);
   // Sind wirklich schon alle Apps angeheftet, wird Paint zu Beginn gelöst.
-  const zielAn = useRef<AppId>(zielAnheften(startAussehen.current) ?? "paint");
+  const zielAn = useRef<AppId>(zielAnheften(startAussehen.current, system) ?? "paint");
   const zielLos = useRef<AppId>(zielLoesen(startAussehen.current) ?? "word");
   const zielAusr = useRef(zielAusrichtung(startAussehen.current));
 
@@ -93,11 +106,11 @@ export default function StufeTaskleiste({
     const { dazu, weg } = leistenAenderung(alt, neu);
     if (dazu.length === 0 && weg.length === 0) return;
     if (schritt === 0) {
-      if (dazu.includes(zielAn.current)) weiterMit(true, `Angeheftet — ${APPS[zielAn.current].name} wartet jetzt unten auf dich!`);
-      else falsch(`Das war nicht ${APPS[zielAn.current].name}. Such genau diese App.`);
+      if (dazu.includes(zielAn.current)) weiterMit(true, `Angeheftet — ${name(zielAn.current)} wartet jetzt unten auf dich!`);
+      else falsch(`Das war nicht ${name(zielAn.current)}. Such genau diese App.`);
     } else if (schritt === 1) {
-      if (weg.includes(zielLos.current)) weiterMit(true, `Gelöst — ${APPS[zielLos.current].name} ist weg aus der Taskleiste.`);
-      else falsch(`Das war nicht ${APPS[zielLos.current].name}. Lös genau diese App.`);
+      if (weg.includes(zielLos.current)) weiterMit(true, `Gelöst — ${name(zielLos.current)} ist weg aus der Taskleiste.`);
+      else falsch(`Das war nicht ${name(zielLos.current)}. Lös genau diese App.`);
     }
   }
 
@@ -111,7 +124,7 @@ export default function StufeTaskleiste({
     if (feld === "taskleiste") { leistePruefen(aussehen.taskleiste, wert as AppId[]); return; }
     if (demo.aktiv || fertig || wechselt.current || feld !== "ausrichtung" || schritt !== 2) return;
     if (wert === zielAusr.current) weiterMit(true, "Genau — die Taskleiste sitzt jetzt anders!");
-    else falsch(`Gesucht ist »${zielAusr.current === "links" ? "Links" : "Mitte"}«.`);
+    else falsch(`Gesucht ist »${ausr(zielAusr.current)}«.`);
   }
 
   function einstellungenOeffnen(ziel: EinstellungId = "taskleiste") {
@@ -150,20 +163,20 @@ export default function StufeTaskleiste({
     const angeheftet = aussehen.taskleiste.includes(id);
     const fest = FEST_ANGEHEFTET.includes(id);
     const umschalten: Eintrag = angeheftet
-      ? { text: "Von Taskleiste lösen", aus: fest, onWahl: () => leisteSetzen(aussehen.taskleiste.filter(a => a !== id)) }
-      : { text: "An Taskleiste anheften", onWahl: () => leisteSetzen([...aussehen.taskleiste, id]) };
+      ? { text: t("Von Taskleiste lösen"), aus: fest, onWahl: () => leisteSetzen(aussehen.taskleiste.filter(a => a !== id)) }
+      : { text: t("An Taskleiste anheften"), onWahl: () => leisteSetzen([...aussehen.taskleiste, id]) };
     if (m.art === "leiste") {
-      return [{ text: APPS[id].name, aus: true }, "trenner", umschalten, { text: "Fenster schließen", aus: true }];
+      return [{ text: name(id), aus: true }, "trenner", umschalten, { text: "Fenster schließen", aus: true }];
     }
     return [{ text: "Öffnen", aus: true }, umschalten, { text: "Von Start lösen", aus: true }, { text: "Deinstallieren", aus: true }];
   }
 
   const aufgabenTexte = [
-    <>Hefte <b>»{APPS[zielAn.current].name}«</b> an die Taskleiste.
+    <>Hefte <b>»{name(zielAn.current)}«</b> an die Taskleiste.
       <span data-zusatz className="block text-xs text-muted">Tipp: Start öffnen, dann Rechtsklick auf die App.</span></>,
-    <>Löse <b>»{APPS[zielLos.current].name}«</b> von der Taskleiste.
+    <>Löse <b>»{name(zielLos.current)}«</b> von der Taskleiste.
       <span data-zusatz className="block text-xs text-muted">Tipp: Rechtsklick auf das Symbol unten in der Taskleiste.</span></>,
-    <>Stell die Taskleiste auf <b>»{zielAusr.current === "links" ? "Links" : "Mitte"}«</b>.
+    <>Stell die Taskleiste auf <b>»{ausr(zielAusr.current)}«</b>.
       <span data-zusatz className="block text-xs text-muted">Tipp: Einstellungen › Taskleiste › Ausrichtung.</span></>,
     <>Räum den Desktop auf: <b>Rechtsklick auf eine freie Stelle → Sortieren nach: Name</b>.</>,
   ];
@@ -178,26 +191,26 @@ export default function StufeTaskleiste({
       const id = zielAn.current;
       schritte.push(
         { text: "Klicke auf Start.", zu: imRahmen("[data-start]"), taste: "links", aktion: () => { setFensterOffen(false); setSuchText(""); setStartOffen(true); } },
-        { text: `Rechtsklick auf ${APPS[id].name}.`, zu: imRahmen(`[data-start-app="${id}"]`), taste: "rechts", aktion: () => {
+        { text: `Rechtsklick auf ${name(id)}.`, zu: imRahmen(`[data-start-app="${id}"]`), taste: "rechts", aktion: () => {
           const o = mitte(rahmenRef.current?.querySelector(`[data-start-app="${id}"]`) ?? null);
           if (o) setMenue({ art: "start", id, x: o.x, y: o.y });
         } },
-        { text: "Klicke auf »An Taskleiste anheften«.", zu: () => mitte(menuePunkt("An Taskleiste anheften")), taste: "links" },
+        { text: "Klicke auf »An Taskleiste anheften«.", zu: () => mitte(menuePunkt(t("An Taskleiste anheften"))), taste: "links" },
       );
     } else if (schritt === 1) {
       const id = zielLos.current;
       schritte.push(
-        { text: `Rechtsklick auf ${APPS[id].name} unten in der Taskleiste.`, zu: imRahmen(`[data-taskleiste="${id}"]`), taste: "rechts", aktion: () => {
+        { text: `Rechtsklick auf ${name(id)} unten in der Taskleiste.`, zu: imRahmen(`[data-taskleiste="${id}"]`), taste: "rechts", aktion: () => {
           setStartOffen(false);
           const o = mitte(rahmenRef.current?.querySelector(`[data-taskleiste="${id}"]`) ?? null);
           if (o) setMenue({ art: "leiste", id, x: o.x, y: o.y });
         } },
-        { text: "Klicke auf »Von Taskleiste lösen«.", zu: () => mitte(menuePunkt("Von Taskleiste lösen")), taste: "links" },
+        { text: "Klicke auf »Von Taskleiste lösen«.", zu: () => mitte(menuePunkt(t("Von Taskleiste lösen"))), taste: "links" },
       );
     } else if (schritt === 2) {
       schritte.push(
         { text: "Öffne die Einstellungen in der Taskleiste.", zu: imRahmen('[data-taskleiste="einstellungen"]'), taste: "links", aktion: () => { setStartOffen(false); setFensterOffen(true); setSeite("taskleiste"); } },
-        { text: `Unter »Ausrichtung« auf »${zielAusr.current === "links" ? "Links" : "Mitte"}« klicken.`, zu: () => mitte(einstellungenRef.current?.querySelector(`[data-ausrichtung="${zielAusr.current}"]`) ?? null), taste: "links" },
+        { text: `Unter »Ausrichtung« auf »${ausr(zielAusr.current)}« klicken.`, zu: () => mitte(einstellungenRef.current?.querySelector(`[data-ausrichtung="${zielAusr.current}"]`) ?? null), taste: "links" },
       );
     } else if (schritt === 3) {
       const frei = () => {
@@ -215,14 +228,14 @@ export default function StufeTaskleiste({
       );
     }
     schritte.push({ text: "Jetzt bist du dran!", taste: null });
-    demo.abspielen(schritte);
+    demo.abspielen(schritte.map(x => ({ ...x, text: t(x.text) })));
   }
 
   return (
     <div className="flex flex-col gap-3">
       <Stufenkopf
-        titel="📌 Teil 3 · Taskleiste & Start"
-        auftrag={fertig ? <>Super — Taskleiste und Desktop sind jetzt so, wie du sie willst!</> : aufgabenTexte[schritt]}
+        titel={t("📌 Teil 3 · Taskleiste & Start")}
+        auftrag={tt(fertig ? <>Super — Taskleiste und Desktop sind jetzt so, wie du sie willst!</> : aufgabenTexte[schritt])}
         punkte={punkte()}
         onDemo={fertig ? undefined : vorfuehren}
         onWeiter={onWeiter}
@@ -237,7 +250,7 @@ export default function StufeTaskleiste({
         ))}
       </ul>
 
-      <Hinweiszeile hinweis={hinweis} />
+      <Hinweiszeile hinweis={hinweis && { ...hinweis, text: t(hinweis.text) }} />
 
       <WindowsDesktop
         aussehen={aussehen}
@@ -258,7 +271,7 @@ export default function StufeTaskleiste({
             suchText={suchText}
             onSuchText={setSuchText}
             angeheftet={startAngeheftet(zielAn.current)}
-            onApp={id => startTreffer({ art: "app", id, name: APPS[id].name })}
+            onApp={id => startTreffer({ art: "app", id, name: name(id) })}
             onTreffer={startTreffer}
             onAppKontext={(id, x, y) => { if (!demo.aktiv) setMenue({ art: "start", id, x, y }); }}
             benutzer={benutzer}
@@ -278,8 +291,8 @@ export default function StufeTaskleiste({
           >
             <div className="flex items-center gap-2 px-2 shrink-0" style={{ height: 32, background: aussehen.dunkel ? "#2b2b2b" : "#ffffff", borderBottom: `1px solid ${aussehen.dunkel ? "#ffffff1a" : "#0000001a"}` }}>
               <AppSymbol id="einstellungen" groesse={18} titel={false} />
-              <span className="text-sm font-bold flex-1" style={{ color: aussehen.dunkel ? "#fff" : "#1a1a1a" }}>Einstellungen</span>
-              <button type="button" onClick={() => setFensterOffen(false)} aria-label="Schließen" className="rounded-sm hover:bg-red-500 hover:text-white w-6 h-6" style={{ color: aussehen.dunkel ? "#fff" : "#1a1a1a" }}>✕</button>
+              <span className="text-sm font-bold flex-1" style={{ color: aussehen.dunkel ? "#fff" : "#1a1a1a" }}>{t("Einstellungen")}</span>
+              <span className={system === "macos" ? "order-first" : ""}><FensterKnoepfe onSchliessen={() => setFensterOffen(false)} groesse={24} symbol={11} /></span>
             </div>
             <div className="flex-1 overflow-hidden">
               <Einstellungen
@@ -296,7 +309,7 @@ export default function StufeTaskleiste({
         )}
       </WindowsDesktop>
 
-      {menue && <Kontextmenue x={menue.x} y={menue.y} eintraege={menueEintraege(menue)} onZu={() => setMenue(null)} />}
+      {menue && <Kontextmenue x={menue.x} y={menue.y} system={system} eintraege={menueEintraege(menue)} onZu={() => setMenue(null)} />}
 
       <DemoBuehne demo={demo} />
     </div>

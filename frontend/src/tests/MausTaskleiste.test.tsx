@@ -20,7 +20,7 @@ function Rahmen({ kind, start = STANDARD_AUSSEHEN, onFertig = () => {} }: {
   stand = aussehen;
   const Stufe = kind === "taskleiste" ? StufeTaskleiste : StufeProfil;
   return (
-    <WindowsKontext.Provider value={{ aussehen, setAussehen, benutzer: "Mia" }}>
+    <WindowsKontext.Provider value={{ aussehen, setAussehen, benutzer: "Mia", system: "windows" }}>
       <Stufe avatar="fox" onFertig={onFertig} onWeiter={() => {}} />
     </WindowsKontext.Provider>
   );

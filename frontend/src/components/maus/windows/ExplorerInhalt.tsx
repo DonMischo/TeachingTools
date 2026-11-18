@@ -11,7 +11,8 @@
 import { useState, type DragEvent } from "react";
 import { AppSymbol } from "./AppSymbol";
 import { OrdnerSymbol } from "./OrdnerSymbol";
-import { EIGENE_ORDNER, kinder, pfad, type Dateisystem, type Knoten } from "@/lib/maus/dateisystem";
+import { EIGENE_ORDNER, kinder, pfad, pfadText, type Dateisystem, type Knoten } from "@/lib/maus/dateisystem";
+import { useWindows } from "./WindowsKontext";
 
 const BLAU_MARKIERT = "bg-[#0078d738] border-[#0078d799]";
 const BLAU_HOVER = "hover:bg-[#0078d71a]";
@@ -41,6 +42,7 @@ export function ExplorerInhalt({
   dunkel?: boolean;
   hilfe?: boolean;
 }) {
+  const { system, sys, benutzer } = useWindows();
   const aktuell = fs[ordner] ?? fs.pc;
   const kette = pfad(fs, aktuell.id);
   const hoch = aktuell.eltern;
@@ -79,7 +81,7 @@ export function ExplorerInhalt({
     else onOrdner(k.id);
   }
 
-  function navKnopf(id: string, eingerueckt = false) {
+  function navKnopf(id: string, eingerueckt = false, bezeichnung?: string, auswerfen = false) {
     const k = fs[id];
     if (!k) return null;
     const aktiv = aktuell.id === id || ueber === id;
@@ -94,9 +96,14 @@ export function ExplorerInhalt({
         style={{ paddingLeft: eingerueckt ? "1.5em" : undefined }}
       >
         <Symbol k={k} groesse={18} />
-        <span className="truncate">{k.name}</span>
+        <span className="truncate flex-1">{bezeichnung ?? k.name}</span>
+        {auswerfen && <span aria-hidden style={{ color: farben.leise }}>⏏</span>}
       </button>
     );
+  }
+
+  function ueberschrift(text: string) {
+    return <div className="px-2 pt-1 text-xs font-semibold" style={{ color: farben.leise }}>{text}</div>;
   }
 
   return (
@@ -117,7 +124,7 @@ export function ExplorerInhalt({
           <button
             type="button"
             aria-label="Löschen"
-            title="Löschen (Entf)"
+            title={`Löschen (${sys.kuerzel.loeschen.replace(/\[\[|\]\]/g, "")})`}
             disabled={!markierteDatei}
             onClick={() => markierteDatei && onLoeschen(markierteDatei)}
             data-testid="loeschen"
@@ -130,6 +137,7 @@ export function ExplorerInhalt({
           className="flex-1 min-w-0 flex items-center gap-0.5 rounded-sm px-1.5 py-1 overflow-x-auto whitespace-nowrap"
           style={{ background: farben.grund, border: `1px solid ${farben.linie}` }}
           data-testid="adressleiste"
+          data-pfadtext={pfadText(fs, aktuell.id, system)}
         >
           {kette.map((k, i) => (
             <span key={k.id} className="flex items-center gap-0.5">
@@ -144,11 +152,33 @@ export function ExplorerInhalt({
 
       <div className="flex flex-1 min-h-0">
         <nav aria-label="Navigationsbereich" className="shrink-0 flex flex-col gap-0.5 p-1.5 overflow-y-auto" style={{ width: hilfe ? "11em" : "10em", borderRight: `1px solid ${farben.linie}` }}>
-          {EIGENE_ORDNER.map(o => navKnopf(o.id))}
-          <div className="my-1 h-px" style={{ background: farben.linie }} />
-          {navKnopf("pc")}
-          {navKnopf("c", true)}
-          {navKnopf("usb", true)}
+          {system === "macos" ? (
+            <>
+              {ueberschrift("Favoriten")}
+              {EIGENE_ORDNER.map(o => navKnopf(o.id))}
+              {navKnopf("benutzer", false, sys.heimName(benutzer))}
+              {ueberschrift("Orte")}
+              {navKnopf("c")}
+              {navKnopf("usb", false, undefined, true)}
+            </>
+          ) : system === "ubuntu" ? (
+            <>
+              {navKnopf("benutzer", false, sys.heimName(benutzer))}
+              {EIGENE_ORDNER.map(o => navKnopf(o.id))}
+              <div className="my-1 h-px" style={{ background: farben.linie }} />
+              {navKnopf("pc")}
+              {navKnopf("c", true)}
+              {navKnopf("usb", true, undefined, true)}
+            </>
+          ) : (
+            <>
+              {EIGENE_ORDNER.map(o => navKnopf(o.id))}
+              <div className="my-1 h-px" style={{ background: farben.linie }} />
+              {navKnopf("pc")}
+              {navKnopf("c", true)}
+              {navKnopf("usb", true)}
+            </>
+          )}
         </nav>
 
         <div
@@ -179,7 +209,10 @@ export function ExplorerInhalt({
                   data-knoten={k.id}
                   onClick={() => onMarkieren?.(k)}
                   onDoubleClick={() => oeffnen(k)}
-                  onKeyDown={e => { if (e.key === "Delete" && onLoeschen && k.art === "datei") onLoeschen(k); }}
+                  onKeyDown={e => {
+                    const mac = system === "macos" && e.key === "Backspace" && (e.metaKey || e.ctrlKey);
+                    if ((e.key === "Delete" || mac) && onLoeschen && k.art === "datei") onLoeschen(k);
+                  }}
                   draggable={!!onAblegen && k.art === "datei"}
                   onDragStart={e => {
                     if (!onAblegen || k.art !== "datei") return;

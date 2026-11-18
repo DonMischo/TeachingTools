@@ -8,7 +8,9 @@
 import { useEffect, useRef, useState } from "react";
 import { AvatarDisplay } from "@/components/AvatarPicker";
 import { AppSymbol } from "./AppSymbol";
-import { APPS, SUCH_DATEIEN, suche, type AppId, type Treffer } from "@/lib/maus/windows";
+import { SUCH_DATEIEN, suche, type App, type AppId, type Treffer } from "@/lib/maus/windows";
+import { appName, appsFuer, fuerSystem } from "@/lib/maus/system";
+import { useWindows } from "./WindowsKontext";
 
 export type EinAus = "energiesparen" | "herunterfahren" | "neustart";
 
@@ -23,7 +25,8 @@ const GRUPPEN_TITEL: Record<Treffer["art"], string> = { app: "Apps", einstellung
 function TrefferZeile({ t, gross = false, onWahl, onKontext }: {
   t: Treffer; gross?: boolean; onWahl: () => void; onKontext?: (x: number, y: number) => void;
 }) {
-  const name = t.art === "app" ? APPS[t.id].name : t.name;
+  const { system } = useWindows();
+  const name = t.art === "app" ? appName(t.id, system) : t.name;
   const unterzeile = t.art === "datei" ? t.ort : t.art === "einstellung" ? t.bereich : "App";
   const appId: AppId = t.art === "app" ? t.id : t.art === "datei" ? t.app : "einstellungen";
   return (
@@ -70,6 +73,7 @@ export function Startmenue({
   /** Ein/Aus-Menü von außen öffnen (Vorführung). */
   einAusOffen?: boolean;
 }) {
+  const { system, sys } = useWindows();
   const eingabeRef = useRef<HTMLInputElement>(null);
   const [profilMenue, setProfilMenue] = useState(false);
   const [einAusMenue, setEinAusMenue] = useState(false);
@@ -79,7 +83,7 @@ export function Startmenue({
     if (autoFocusSuche) eingabeRef.current?.focus();
   }, [autoFocusSuche]);
 
-  const treffer = suchText.trim() ? suche(suchText) : [];
+  const treffer = suchText.trim() ? suche(suchText, Object.values(appsFuer(system)) as App[]) : [];
   const beste = treffer[0];
   const gruppen: Treffer["art"][] = ["app", "einstellung", "datei"];
 
@@ -98,8 +102,18 @@ export function Startmenue({
   return (
     <div
       data-startmenue
-      className={"pointer-events-auto absolute left-1/2 -translate-x-1/2 flex flex-col rounded-xl backdrop-blur-md shadow-2xl overflow-hidden " + (dunkel ? "text-white bg-[#2b2b2bf2]" : "text-[#1a1a1a] bg-[#f3f3f3f2]")}
-      style={{ bottom: "12%", width: "62%", maxHeight: "74%", fontSize: `${textGroesse}rem` }}
+      data-system={system}
+      aria-label={sys.start}
+      className={"pointer-events-auto absolute left-1/2 -translate-x-1/2 flex flex-col backdrop-blur-md shadow-2xl overflow-hidden "
+        + (system === "macos" ? "rounded-2xl " : system === "ubuntu" ? "rounded-3xl " : "rounded-xl ")
+        + (dunkel || system === "ubuntu" ? "text-white " : "text-[#1a1a1a] ")
+        + (system === "ubuntu" ? "bg-[#2c2c2cf0]" : dunkel ? "bg-[#2b2b2bf2]" : "bg-[#f3f3f3f2]")}
+      style={{
+        ...(system === "windows" ? { bottom: "12%", width: "62%", maxHeight: "74%" }
+          : system === "ubuntu" ? { top: "9%", width: "78%", maxHeight: "86%" }
+          : { top: "12%", width: "56%", maxHeight: "72%" }),
+        fontSize: `${textGroesse}rem`,
+      }}
     >
       <div className="p-4 flex flex-col gap-3 overflow-y-auto">
         <input
@@ -108,16 +122,19 @@ export function Startmenue({
           value={suchText}
           onChange={e => onSuchText(e.target.value)}
           onKeyDown={nachTaste}
-          placeholder="Programme, Einstellungen und Dokumente durchsuchen"
-          className={"rounded-full px-4 py-2 text-sm outline-hidden border " + (dunkel ? "bg-[#ffffff14] border-[#ffffff1f]" : "bg-white border-[#0000001a]")}
+          placeholder={system === "windows" ? "Programme, Einstellungen und Dokumente durchsuchen"
+            : system === "ubuntu" ? "Tippen, um zu suchen" : "Spotlight-Suche"}
+          className={"rounded-full px-4 py-2 text-sm outline-hidden border "
+            + (system === "macos" ? "rounded-xl text-base " : "")
+            + (dunkel || system === "ubuntu" ? "bg-[#ffffff14] border-[#ffffff1f]" : "bg-white border-[#0000001a]")}
         />
 
         {!suchText.trim() ? (
           <>
             <section>
-              <h3 className="text-xs font-bold opacity-70 mb-2">Angeheftet</h3>
-              <div className="grid grid-cols-4 gap-2">
-                {angeheftet.map(id => (
+              <h3 className="text-xs font-bold opacity-70 mb-2">{system === "windows" ? "Angeheftet" : system === "ubuntu" ? "Favoriten" : "Im Dock"}</h3>
+              <div className={"grid gap-2 " + (system === "ubuntu" ? "grid-cols-6" : "grid-cols-4")}>
+                {fuerSystem(angeheftet, system).map(id => (
                   <button
                     key={id}
                     type="button"
@@ -127,13 +144,13 @@ export function Startmenue({
                     className="flex flex-col items-center gap-1 rounded-lg p-2 hover:bg-[#0000000f]"
                   >
                     <AppSymbol id={id} groesse={hilfe ? 40 : 30} titel={false} />
-                    <span className="text-xs truncate w-full text-center">{APPS[id].name}</span>
+                    <span className="text-xs truncate w-full text-center">{appName(id, system)}</span>
                   </button>
                 ))}
               </div>
             </section>
             <section>
-              <h3 className="text-xs font-bold opacity-70 mb-2">Empfohlen</h3>
+              <h3 className="text-xs font-bold opacity-70 mb-2">{system === "windows" ? "Empfohlen" : "Zuletzt benutzt"}</h3>
               <div className="flex flex-col">
                 {SUCH_DATEIEN.slice(0, 3).map(d => (
                   <TrefferZeile

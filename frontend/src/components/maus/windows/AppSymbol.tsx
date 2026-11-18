@@ -8,6 +8,8 @@
  */
 import type { ReactNode } from "react";
 import { APPS, type AppId } from "@/lib/maus/windows";
+import { appName } from "@/lib/maus/system";
+import { useWindows } from "./WindowsKontext";
 
 const SCHRIFT = '"Segoe UI", system-ui, sans-serif';
 
@@ -221,16 +223,17 @@ const SYMBOLE: Record<AppId, ReactNode> = {
 };
 
 export function AppSymbol({ id, groesse = 32, titel = true }: { id: AppId; groesse?: number | string; titel?: boolean }) {
+  const name = appName(id, useWindows().system);
   return (
     <svg
       viewBox="0 0 48 48"
       width={groesse}
       height={groesse}
       role="img"
-      aria-label={APPS[id].name}
+      aria-label={name}
       data-app={id}
     >
-      {titel && <title>{APPS[id].name}</title>}
+      {titel && <title>{name}</title>}
       {SYMBOLE[id]}
       {/* Browser bekommen zusätzlich einen kleinen Globus — daran erkennt man die Gruppe. */}
       {APPS[id].art === "browser" && id === "chrome" && <Globus farbe="#ffffff" />}

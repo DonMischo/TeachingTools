@@ -6,6 +6,7 @@
  * wirkt und das Kind lernt, dass nicht alles immer geht.
  */
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import type { Betriebssystem } from "@/lib/maus/system";
 
 export type Eintrag = { text: string; symbol?: ReactNode; kuerzel?: string; aus?: boolean; onWahl?: () => void };
 
@@ -21,8 +22,10 @@ export const SYMBOLE = {
 };
 
 export function Kontextmenue({
-  x, y, eintraege, onZu,
-}: { x: number; y: number; eintraege: (Eintrag | "trenner")[]; onZu: () => void }) {
+  x, y, eintraege, onZu, system = "windows",
+}: { x: number; y: number; eintraege: (Eintrag | "trenner")[]; onZu: () => void; system?: Betriebssystem }) {
+  const ubuntu = system === "ubuntu";
+  const mac = system === "macos";
   const ref = useRef<HTMLDivElement>(null);
   const [ort, setOrt] = useState({ x, y });
 
@@ -64,19 +67,22 @@ export function Kontextmenue({
       style={{
         left: ort.x,
         top: ort.y,
-        fontFamily: '"Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif',
-        fontSize: 14,
-        color: "#1a1a1a",
-        background: "rgba(249, 249, 249, 0.97)",
+        fontFamily: mac
+          ? '-apple-system, "SF Pro Text", system-ui, sans-serif'
+          : ubuntu ? 'Ubuntu, "Cantarell", system-ui, sans-serif'
+          : '"Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif',
+        fontSize: mac ? 13 : 14,
+        color: ubuntu ? "#f2f2f2" : "#1a1a1a",
+        background: ubuntu ? "rgba(48, 48, 48, 0.98)" : mac ? "rgba(236, 236, 238, 0.82)" : "rgba(249, 249, 249, 0.97)",
         backdropFilter: "blur(30px)",
-        border: "1px solid rgba(0, 0, 0, 0.1)",
-        borderRadius: 8,
+        border: ubuntu ? "1px solid rgba(255, 255, 255, 0.12)" : "1px solid rgba(0, 0, 0, 0.1)",
+        borderRadius: ubuntu ? 12 : mac ? 10 : 8,
         boxShadow: "0 8px 16px rgba(0, 0, 0, 0.14)",
       }}
     >
       {eintraege.map((e, i) =>
         e === "trenner" ? (
-          <div key={i} role="separator" className="my-1 mx-[-4px] h-px" style={{ background: "rgba(0,0,0,0.08)" }} />
+          <div key={i} role="separator" className="my-1 mx-[-4px] h-px" style={{ background: ubuntu ? "rgba(255,255,255,0.14)" : "rgba(0,0,0,0.08)" }} />
         ) : (
           <button
             key={i}
@@ -84,12 +90,15 @@ export function Kontextmenue({
             aria-disabled={e.aus || undefined}
             disabled={e.aus}
             onClick={() => { e.onWahl?.(); onZu(); }}
-            className="w-full flex items-center gap-3 h-8 px-3 rounded-sm text-left enabled:hover:bg-black/6 enabled:active:bg-black/4"
-            style={{ color: e.aus ? "rgba(0,0,0,0.36)" : undefined }}
+            className={
+              "w-full flex items-center gap-3 px-3 text-left " +
+              (mac ? "h-6 rounded-md enabled:hover:bg-[#0a60ff] enabled:hover:text-white" : ubuntu ? "h-8 rounded-lg enabled:hover:bg-white/10" : "h-8 rounded-sm enabled:hover:bg-black/6 enabled:active:bg-black/4")
+            }
+            style={{ color: e.aus ? (ubuntu ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.36)") : undefined }}
           >
-            <span className="w-4 h-4 flex items-center justify-center shrink-0">{e.symbol}</span>
+            {!mac && <span className="w-4 h-4 flex items-center justify-center shrink-0">{e.symbol}</span>}
             <span className="flex-1">{e.text}</span>
-            {e.kuerzel && <span className="text-xs" style={{ color: e.aus ? "rgba(0,0,0,0.3)" : "rgba(0,0,0,0.55)" }}>{e.kuerzel}</span>}
+            {e.kuerzel && <span className="text-xs" style={{ color: e.aus ? (ubuntu ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)") : (ubuntu ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.55)") }}>{e.kuerzel}</span>}
           </button>
         ),
       )}

@@ -20,6 +20,8 @@ import { tierName } from "@/lib/maus/tiere";
 import { Stufenkopf } from "./Stufenkopf";
 import { DemoBuehne, mitte, useDemo } from "./Demo";
 import { leinwandAlsPdf } from "@/lib/maus/pdf";
+import { SYSTEME, echtesSystem, type Betriebssystem } from "@/lib/maus/system";
+import { useWindows } from "./windows/WindowsKontext";
 
 const W = 1240;
 const H = 1754;
@@ -44,7 +46,7 @@ export const BLATT_STUFEN: Record<Teil, { id: StufeId; icon: string; titel: stri
     { id: "datei", icon: "💽", titel: "Speichern & USB-Stick" },
   ],
   3: [
-    { id: "suche", icon: "🔍", titel: "Windows-Suche" },
+    { id: "suche", icon: "🔍", titel: "Suchen" },
     { id: "apps", icon: "🧰", titel: "Welche App wofür?" },
     { id: "screenshot", icon: "📸", titel: "Bildschirmfoto" },
     { id: "aussehen", icon: "🎨", titel: "Hintergrund & Farben" },
@@ -52,12 +54,20 @@ export const BLATT_STUFEN: Record<Teil, { id: StufeId; icon: string; titel: stri
     { id: "taskleiste", icon: "📌", titel: "Taskleiste & Start" },
     { id: "profil", icon: "🔒", titel: "Profil & Sperrbildschirm" },
   ],
+  4: [
+    { id: "handy", icon: "📱", titel: "Handy bedienen" },
+    { id: "appstore", icon: "🛍️", titel: "Apps installieren" },
+    { id: "berechtigungen", icon: "🔐", titel: "App-Berechtigungen" },
+    { id: "privatsphaere", icon: "🛡️", titel: "Privatsphäre einstellen" },
+    { id: "risiken", icon: "⚠️", titel: "Risiken erkennen" },
+  ],
 };
 
 const UNTERTITEL: Record<Teil, string> = {
   1: "Grundkurs: Maus und Tastatur",
   2: "Teil 2: Tastatur, Dateien, Fenster und Speichern",
   3: "Teil 3: Suchen, Apps, Bildschirmfoto und Aussehen",
+  4: "Teil 4: Handy — Apps, Datenschutz und Sicherheit",
 };
 
 const zahl = (n: number) => n.toLocaleString("de-DE");
@@ -212,6 +222,16 @@ export default function StufeSpeichern({
   bestanden?: boolean;
 }) {
   const [blattName, setBlattName] = useState(name);
+  // Gespeichert und wiedergefunden wird auf dem ECHTEN Computer — also gelten dessen Begriffe.
+  const { system: geuebt } = useWindows();
+  const [echt, setEcht] = useState<Betriebssystem>(geuebt);
+  useEffect(() => { setEcht(echtesSystem() ?? geuebt); }, [geuebt]);
+  const sys = SYSTEME[echt];
+  const oeffnen = echt === "windows"
+    ? <><Kbd>⊞ Windows</Kbd> + <Kbd>E</Kbd> drücken — oder unten in der Taskleiste auf den gelben Ordner 📁 klicken</>
+    : echt === "macos"
+      ? <>im Dock auf das Finder-Symbol klicken (ganz links) — oder <Kbd>⌘</Kbd> + <Kbd>Leertaste</Kbd> und »Finder« tippen</>
+      : <>im Dock auf »Dateien« 📁 klicken — oder <Kbd>Super</Kbd> drücken und »Dateien« tippen</>;
   const [bild, setBild] = useState<{ url: string; hash: string } | null>(null);
   const [browser, setBrowser] = useState<Browser>("chrome");
   const [ueber, setUeber] = useState(false);
@@ -300,7 +320,9 @@ export default function StufeSpeichern({
       { text: "Drücke die rechte Taste.", taste: "rechts" },
       { text: `Im Menü: »${MENUE[browser][1]}« — mit links anklicken.`, zu: () => mitte(eintrag()) },
       { text: "Einen Ordner wählen, einen Namen eintippen, »Speichern«.", taste: null },
-      { text: "Wiederfinden: Windows-Taste + E öffnet den Explorer.", tasten: ["MetaLeft", "KeyE"] },
+      echt === "windows"
+        ? { text: "Wiederfinden: Windows-Taste + E öffnet den Explorer.", tasten: ["MetaLeft", "KeyE"] }
+        : { text: `Wiederfinden: ${sys.dateimanager} öffnen — ${echt === "macos" ? "im Dock ganz links" : "im Dock"}.`, taste: null },
       { text: "Die Datei mit gedrückter linker Taste hierher ziehen.", taste: "halten", zu: () => mitte(ablageRef.current) },
       { text: "Loslassen — fertig!", taste: null },
     ]);
@@ -310,7 +332,7 @@ export default function StufeSpeichern({
     <div className="flex flex-col gap-4">
       <Stufenkopf
         titel={teil === 1 ? "💾 Stufe 7 · Speichern und Wiederfinden" : `💾 Teil ${teil} · Urkunde speichern`}
-        auftrag={<>Speichere deinen Führerschein auf dem Computer — mit <b>Rechtsklick auf das Bild</b>. Dann suche die Datei im <b>Explorer</b> und ziehe sie hierher zurück.</>}
+        auftrag={<>Speichere deinen Führerschein auf dem Computer — mit <b>Rechtsklick auf das Bild</b>. Dann suche die Datei im <b>{sys.dateimanager}</b> und ziehe sie hierher zurück.</>}
         punkte={teilSumme(ergebnisse, teil)}
         onDemo={vorfuehren}
         onWeiter={onWeiter}
@@ -394,9 +416,9 @@ export default function StufeSpeichern({
           <section className="card p-4 flex flex-col gap-3">
             <h3 className="font-black">B · Wiederfinden</h3>
             <ol className="list-decimal pl-5 text-sm flex flex-col gap-1.5 leading-snug">
-              <li>Öffne den <b>Explorer</b>: <Kbd>⊞ Windows</Kbd> + <Kbd>E</Kbd> drücken — oder unten in der Taskleiste auf den gelben Ordner 📁 klicken.</li>
+              <li>Öffne {echt === "ubuntu" ? "»Dateien«" : <>den <b>{sys.dateimanager}</b></>}: {oeffnen}.</li>
               <li>Klicke links auf den Ordner, in dem du gespeichert hast.</li>
-              <li>Such deine Datei. Schiebe das Explorer-Fenster so, dass du dieses Feld hier noch siehst.</li>
+              <li>Such deine Datei. Schiebe das Fenster so, dass du dieses Feld hier noch siehst.</li>
               <li>Ziehe die Datei mit <b>gedrückter linker Maustaste</b> in das Feld und lass los.</li>
             </ol>
             <div

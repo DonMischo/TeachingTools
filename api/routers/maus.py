@@ -30,7 +30,7 @@ router = APIRouter(prefix="/api/maus/bestenliste", tags=["maus"])
 
 # Modus → Obergrenze für plausible Werte. Alle vier sind "mehr ist besser";
 # spiegelt GRENZEN in frontend/src/lib/maus/ergebnis.ts.
-MODI: dict[str, float] = {"klick": 24000, "doppelklick": 13500, "ziehen": 6000, "gesamt": 70000}
+MODI: dict[str, float] = {"klick": 24000, "doppelklick": 13500, "ziehen": 6000, "gesamt": 80000}
 TOP = 100
 
 
@@ -244,6 +244,7 @@ TEILE: dict[int, list[str]] = {
     1: ["klick", "doppelklick", "rechtsklick", "ziehen", "markieren", "kopieren"],
     2: ["scrollen", "tastatur", "explorer", "fenster", "datei"],
     3: ["suche", "apps", "screenshot", "aussehen", "bedienhilfe", "taskleiste", "profil"],
+    4: ["handy", "appstore", "berechtigungen", "privatsphaere", "risiken"],
 }
 STUFEN: set[str] = {sid for ids in TEILE.values() for sid in ids}
 
@@ -378,7 +379,7 @@ def _buchende_lehrkraft(db: Session, student: Student, code: str | None, slug: s
 
 
 class PruefungIn(BaseModel):
-    teil: Literal[1, 2, 3]
+    teil: Literal[1, 2, 3, 4]
     stufen: dict[str, StufeStand]
     hilfe: bool = False
     code: str | None = None

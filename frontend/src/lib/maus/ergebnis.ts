@@ -19,18 +19,22 @@ import { SPUREN } from "./spur";
 export type StufeId =
   | "klick" | "doppelklick" | "rechtsklick" | "ziehen" | "markieren" | "kopieren"
   | "scrollen" | "tastatur" | "explorer" | "fenster" | "datei" | "screenshot"
-  | "suche" | "apps" | "aussehen" | "bedienhilfe" | "taskleiste" | "profil";
+  | "suche" | "apps" | "aussehen" | "bedienhilfe" | "taskleiste" | "profil"
+  | "handy" | "appstore" | "berechtigungen" | "privatsphaere" | "risiken";
 
-export type Teil = 1 | 2 | 3;
+export type Teil = 1 | 2 | 3 | 4;
+
+export const ALLE_TEILE: Teil[] = [1, 2, 3, 4];
 
 /** Die übenden Stufen je Teil — »Speichern« schließt jeden Teil ab und zählt nicht mit. */
 export const TEILE: Record<Teil, StufeId[]> = {
   1: ["klick", "doppelklick", "rechtsklick", "ziehen", "markieren", "kopieren"],
   2: ["scrollen", "tastatur", "explorer", "fenster", "datei"],
   3: ["suche", "apps", "screenshot", "aussehen", "bedienhilfe", "taskleiste", "profil"],
+  4: ["handy", "appstore", "berechtigungen", "privatsphaere", "risiken"],
 };
 
-/** Jede Stufe von Teil 2 und 3 bringt höchstens so viel — Punkte = 1000 · gelöst / Aufgaben. */
+/** Jede Stufe von Teil 2, 3 und 4 bringt höchstens so viel — Punkte = 1000 · gelöst / Aufgaben. */
 export const PUNKTE_TEIL2 = 1000;
 
 export type StufenErgebnis = {
@@ -45,7 +49,7 @@ export type Ergebnisse = Partial<Record<StufeId, StufenErgebnis>>;
 export const PUNKTE_RECHTSKLICK = 500;
 
 /** Die Obergrenzen, die auch der Server prüft (api/routers/maus.py). */
-export const GRENZEN = { klick: 24000, doppelklick: 13500, ziehen: 6000, gesamt: 70000 } as const;
+export const GRENZEN = { klick: 24000, doppelklick: 13500, ziehen: 6000, gesamt: 80000 } as const;
 export type MausModus = keyof typeof GRENZEN;
 
 export const HOECHST: Record<StufeId, number> = {
@@ -67,6 +71,11 @@ export const HOECHST: Record<StufeId, number> = {
   bedienhilfe: PUNKTE_TEIL2,
   taskleiste: PUNKTE_TEIL2,
   profil: PUNKTE_TEIL2,
+  handy: PUNKTE_TEIL2,
+  appstore: PUNKTE_TEIL2,
+  berechtigungen: PUNKTE_TEIL2,
+  privatsphaere: PUNKTE_TEIL2,
+  risiken: PUNKTE_TEIL2,
 };
 
 /**

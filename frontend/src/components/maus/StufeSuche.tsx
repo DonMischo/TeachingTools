@@ -16,11 +16,13 @@ import { Stufenkopf } from "./Stufenkopf";
 import { DemoBuehne, mitte, useDemo, type DemoSchritt } from "./Demo";
 import { useMausKontext } from "./MausKontext";
 import { useWindows } from "./windows/WindowsKontext";
+import { useSystemText } from "./systemText";
+import { appName } from "@/lib/maus/system";
+import { FensterKnoepfe } from "./windows/FensterSymbol";
 
 const ANZAHL_AUFGABEN = 4;
 
-const AUFGABEN = [
-  "Öffne Paint über die Suche.",
+const AUFGABEN_REST = [
   "Finde die Datei »Referat Planeten« und öffne sie.",
   "Öffne über die Suche die Einstellung »Farben« (dort gibt es den dunklen Modus).",
   "Tippe nur die ersten Buchstaben: öffne den Rechner mit »rech« und der Eingabetaste.",
@@ -32,7 +34,11 @@ export default function StufeSuche({
   avatar, onFertig, onWeiter,
 }: { avatar: string; onFertig: (e: StufenErgebnis) => void; onWeiter: () => void }) {
   const { hilfe } = useMausKontext();
-  const { aussehen, benutzer } = useWindows();
+  const { aussehen, benutzer, system } = useWindows();
+  const { t, tt } = useSystemText();
+  // Paint heißt bei Ubuntu »Drawing« und am Mac »Freeform« — gesucht wird nach dem Namen auf diesem System.
+  const paint = appName("paint", system);
+  const AUFGABEN = [`Öffne ${paint} über die Suche.`, ...AUFGABEN_REST];
   const [schritt, setSchritt] = useState(0);
   const [fehler, setFehler] = useState(0);
   const [hinweis, setHinweis] = useState<{ text: string; gut: boolean } | null>(null);
@@ -90,7 +96,7 @@ export default function StufeSuche({
   }
 
   function apptrefferGewaehlt(id: AppId) {
-    if (schritt === 0 && id === "paint") { oeffneFenster("app:paint", "Paint", "paint"); weiterSchritt("Paint ist offen! ⭐"); return; }
+    if (schritt === 0 && id === "paint") { oeffneFenster("app:paint", paint, "paint"); weiterSchritt(`${paint} ist offen! ⭐`); return; }
     if (schritt === 3 && id === "rechner") {
       if (suchText.trim().length <= 4) { oeffneFenster("app:rechner", "Rechner", "rechner"); weiterSchritt("Nur ein paar Buchstaben reichen! ⭐"); return; }
       setHinweis({ text: "Fast — probier es mit weniger Buchstaben.", gut: false });
@@ -135,8 +141,8 @@ export default function StufeSuche({
     ];
     if (schritt === 0) {
       schritte.push(
-        { text: "»paint« tippen.", tasten: ["KeyP", "KeyA", "KeyI", "KeyN", "KeyT"], aktion: () => setSuchText("paint") },
-        { text: "Auf Paint klicken.", zu: treffpunkt("app:paint"), taste: "links", aktion: () => { schliesseStart(); oeffneFenster("app:paint", "Paint", "paint"); } },
+        { text: `»${paint.toLowerCase()}« tippen.`, tasten: [...paint.slice(0, 5).toUpperCase()].map(c => `Key${c}`), aktion: () => setSuchText(paint.toLowerCase()) },
+        { text: `Auf ${paint} klicken.`, zu: treffpunkt("app:paint"), taste: "links", aktion: () => { schliesseStart(); oeffneFenster("app:paint", paint, "paint"); } },
       );
     } else if (schritt === 1) {
       schritte.push(
@@ -154,16 +160,16 @@ export default function StufeSuche({
         { text: "Eingabetaste drücken.", tasten: ["Enter"], aktion: () => { schliesseStart(); oeffneFenster("app:rechner", "Rechner", "rechner"); } },
       );
     }
-    demo.abspielen(schritte);
+    demo.abspielen(schritte.map(x => ({ ...x, text: t(x.text) })));
   }
 
   return (
     <div className="flex flex-col gap-4">
       <Stufenkopf
-        titel="🔍 Teil 3 · Suchen"
-        auftrag={fertig
+        titel={t("🔍 Teil 3 · Suchen")}
+        auftrag={tt(fertig
           ? <>Super — du findest jetzt alles über die Suche!</>
-          : <>{AUFGABEN[schritt]}<div data-zusatz className="text-xs text-muted mt-1">💡 Klicke auf die Suche in der Taskleiste oder auf Start.</div></>}
+          : <>{AUFGABEN[schritt]}<div data-zusatz className="text-xs text-muted mt-1">💡 Klicke auf die Suche in der Taskleiste oder auf Start.</div></>)}
         punkte={wertung({ stufe: "suche", geloest: Math.min(schritt, ANZAHL_AUFGABEN), anzahl: ANZAHL_AUFGABEN, dauerMs: Math.round(performance.now() - start.current), fehler }).punkte}
         onDemo={fertig ? undefined : vorfuehren}
         onWeiter={onWeiter}
@@ -208,8 +214,8 @@ export default function StufeSuche({
               onPointerDown={() => setAktiv(f.id)}
             >
               <div className="flex items-center gap-2 px-2 py-1.5 border-b border-[#0000001a] bg-[#f3f3f3] text-sm font-bold">
-                <span className="flex-1 truncate">{f.titel}</span>
-                <button type="button" aria-label={`${f.titel} schließen`} onClick={() => schliesseFenster(f.id)} className="w-6 h-6 rounded-sm hover:bg-[#00000014]">✕</button>
+                <span className="flex-1 truncate">{t(f.titel)}</span>
+                <span className={system === "macos" ? "order-first" : ""}><FensterKnoepfe onSchliessen={() => schliesseFenster(f.id)} schliessenLabel={`${f.titel} schließen`} groesse={24} symbol={11} /></span>
               </div>
               <div className="p-4 text-sm text-[#555]">{f.titel}</div>
             </div>
@@ -228,7 +234,7 @@ export default function StufeSuche({
           </ul>
           <div className="min-h-10 text-sm font-bold" aria-live="polite"
             style={{ color: hinweis?.gut ? "var(--green, #16a34a)" : "var(--text-muted)" }}>
-            {hinweis?.text}
+            {hinweis && t(hinweis.text)}
           </div>
         </aside>
       </div>

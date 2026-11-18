@@ -11,7 +11,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import {
-  TASTATUR_AUFGABEN, leeresGesehen, mitFeststelltasteGeloest, pruefeAufgabe, zuVieleAnschlaege,
+  aufgabenFuer, leeresGesehen, mitFeststelltasteGeloest, pruefeAufgabe, zuVieleAnschlaege,
   type Aufgabe, type Gesehen,
 } from "@/lib/maus/tastatur";
 import type { StufenErgebnis } from "@/lib/maus/ergebnis";
@@ -22,6 +22,8 @@ import { DemoBuehne, useDemo, type DemoSchritt, type Ort } from "./Demo";
 import { Taste, codeFuer, mitTasten } from "./Taste";
 import { Tastatur } from "@/components/tippen/Tastatur";
 import { useMausKontext } from "./MausKontext";
+import { useWindows } from "./windows/WindowsKontext";
+import type { Betriebssystem } from "@/lib/maus/system";
 
 type Feld = HTMLInputElement | HTMLTextAreaElement;
 
@@ -55,24 +57,26 @@ type DemoFeld = {
   markiere: (von: number, bis?: number) => void;
 };
 
-function demoSchritte(aufgabe: Aufgabe, f: DemoFeld): DemoSchritt[] {
+function demoSchritte(aufgabe: Aufgabe, f: DemoFeld, system: Betriebssystem): DemoSchritt[] {
+  const mac = system === "macos";
+  const cmd = mac ? "MetaLeft" : "ControlLeft";
   const bei = (text: string, index: number) => () => zeichenOrt(f.el(), text, index);
   switch (aufgabe.id) {
     case "umschalt":
       return [
-        { text: "Halte Umschalt ⇧ fest …", tasten: ["ShiftLeft"] },
+        { text: mac ? "Halte ⇧ fest …" : "Halte Umschalt ⇧ fest …", tasten: ["ShiftLeft"] },
         { text: "… und tippe H.", tasten: ["ShiftLeft", "KeyH"], aktion: () => f.setWert("H") },
         { text: "Umschalt loslassen, »und« tippen.", tasten: ["KeyU", "KeyN", "KeyD"], aktion: () => f.setWert("Hund") },
       ];
     case "ruecktaste":
       return [
         { text: "Der Cursor steht hinter dem zweiten e.", zu: bei("Katzee", 6), aktion: () => { f.setWert("Katzee"); f.markiere(6); } },
-        { text: "Rücktaste ⟵ drücken: das e links vom Cursor verschwindet.", tasten: ["Backspace"], aktion: () => { f.setWert("Katze"); f.markiere(5); } },
+        { text: mac ? "⌫ drücken: das e links vom Cursor verschwindet." : "Rücktaste ⟵ drücken: das e links vom Cursor verschwindet.", tasten: ["Backspace"], aktion: () => { f.setWert("Katze"); f.markiere(5); } },
       ];
     case "entf":
       return [
         { text: "Der Cursor steht vor dem ersten M.", zu: bei("MMaus", 0), aktion: () => { f.setWert("MMaus"); f.markiere(0); } },
-        { text: "Entf drücken (rechts neben dem großen Tastenfeld): das M rechts vom Cursor verschwindet.", tasten: ["Delete"], aktion: () => { f.setWert("Maus"); f.markiere(0); } },
+        { text: mac ? "fn und ⌫ zusammen drücken: das M rechts vom Cursor verschwindet." : "Entf drücken (rechts neben dem großen Tastenfeld): das M rechts vom Cursor verschwindet.", tasten: ["Delete"], aktion: () => { f.setWert("Maus"); f.markiere(0); } },
       ];
     case "pfeiltasten":
       return [
@@ -83,13 +87,13 @@ function demoSchritte(aufgabe: Aufgabe, f: DemoFeld): DemoSchritt[] {
     case "pos1":
       return [
         { text: "Der Cursor steht ganz hinten.", zu: bei("pfel", 4), aktion: () => { f.setWert("pfel"); f.markiere(4); } },
-        { text: "Pos1 drücken: der Cursor springt an den Anfang.", tasten: ["Home"], aktion: () => f.markiere(0) },
+        { text: mac ? "⌘ und ← drücken: der Cursor springt an den Anfang." : "Pos1 drücken: der Cursor springt an den Anfang.", tasten: mac ? ["MetaLeft", "ArrowLeft"] : ["Home"], aktion: () => f.markiere(0) },
         { text: "A eintippen (mit Umschalt).", tasten: ["ShiftLeft", "KeyA"], aktion: () => { f.setWert("Apfel"); f.markiere(1); } },
       ];
     case "ende":
       return [
         { text: "Der Cursor steht ganz vorn.", zu: bei("Hallo", 0), aktion: () => { f.setWert("Hallo"); f.markiere(0); } },
-        { text: "Ende drücken: der Cursor springt ans Ende.", tasten: ["End"], aktion: () => f.markiere(5) },
+        { text: mac ? "⌘ und → drücken: der Cursor springt ans Ende." : "Ende drücken: der Cursor springt ans Ende.", tasten: mac ? ["MetaLeft", "ArrowRight"] : ["End"], aktion: () => f.markiere(5) },
         { text: "! eintippen (Umschalt + 1).", tasten: ["ShiftLeft", "Digit1"], aktion: () => { f.setWert("Hallo!"); f.markiere(6); } },
       ];
     case "strgz": {
@@ -99,8 +103,8 @@ function demoSchritte(aufgabe: Aufgabe, f: DemoFeld): DemoSchritt[] {
         { text: "Zeige auf den Satz.", zu: bei(satz, wort + 2), aktion: () => { f.setWert(satz); f.markiere(satz.length); } },
         { text: "Ein Doppelklick markiert nur ein Wort …", taste: "doppel", aktion: () => f.markiere(wort, wort + 5) },
         { text: "… dreimal schnell klicken markiert den ganzen Satz.", taste: "doppel", aktion: () => f.markiere(0, satz.length) },
-        { text: "Entf drücken: der Satz ist weg.", tasten: ["Delete"], aktion: () => f.setWert("") },
-        { text: "Strg + Z: der Satz ist wieder da!", tasten: ["ControlLeft", "KeyZ"], aktion: () => f.setWert(satz) },
+        { text: mac ? "⌫ drücken: der Satz ist weg." : "Entf drücken: der Satz ist weg.", tasten: [mac ? "Backspace" : "Delete"], aktion: () => f.setWert("") },
+        { text: `${mac ? "⌘" : "Strg"} + Z: der Satz ist wieder da!`, tasten: [cmd, "KeyZ"], aktion: () => f.setWert(satz) },
       ];
     }
     case "ausschneiden": {
@@ -108,9 +112,9 @@ function demoSchritte(aufgabe: Aufgabe, f: DemoFeld): DemoSchritt[] {
       return [
         { text: "Zeige mit der Maus auf »Zoo«.", zu: bei(aufgabe.start, 1.5), aktion: () => { f.setWert(aufgabe.start); f.markiere(aufgabe.start.length); } },
         { text: "Doppelklick: das Wort ist markiert.", taste: "doppel", aktion: () => f.markiere(0, 4) },
-        { text: "Strg + X: ausschneiden (oder Rechtsklick › Ausschneiden).", tasten: ["ControlLeft", "KeyX"], aktion: () => { f.setWert(ohne); f.markiere(0); } },
+        { text: `${mac ? "⌘" : "Strg"} + X: ausschneiden (oder Rechtsklick › Ausschneiden).`, tasten: [cmd, "KeyX"], aktion: () => { f.setWert(ohne); f.markiere(0); } },
         { text: "Mit der Maus genau vor den Punkt klicken.", zu: bei(ohne, ohne.length - 1), taste: "links", aktion: () => f.markiere(ohne.length - 1) },
-        { text: "Strg + V: einfügen (oder Rechtsklick › Einfügen)!", tasten: ["ControlLeft", "KeyV"], aktion: () => { f.setWert("Ich war im Zoo."); f.markiere(14); } },
+        { text: `${mac ? "⌘ + V: einfügen (oder Rechtsklick › Einsetzen)!" : "Strg + V: einfügen (oder Rechtsklick › Einfügen)!"}`, tasten: [cmd, "KeyV"], aktion: () => { f.setWert("Ich war im Zoo."); f.markiere(14); } },
       ];
     }
   }
@@ -135,6 +139,8 @@ export default function StufeTastatur({
   avatar, onFertig, onWeiter,
 }: { avatar: string; onFertig: (e: StufenErgebnis) => void; onWeiter: () => void }) {
   const { hilfe } = useMausKontext();
+  const { system } = useWindows();
+  const AUFGABEN = aufgabenFuer(system);
   const [nr, setNr] = useState(0);
   const [hinweis, setHinweis] = useState<{ text: string; gut: boolean } | null>(null);
   const [erfolg, setErfolg] = useState(false);
@@ -148,8 +154,8 @@ export default function StufeTastatur({
   const vorDemo = useRef("");
   const demo = useDemo(() => { if (feld.current) feld.current.value = vorDemo.current; });
 
-  const fertig = nr >= TASTATUR_AUFGABEN.length;
-  const aufgabe = TASTATUR_AUFGABEN[Math.min(nr, TASTATUR_AUFGABEN.length - 1)];
+  const fertig = nr >= AUFGABEN.length;
+  const aufgabe = AUFGABEN[Math.min(nr, AUFGABEN.length - 1)];
 
   /**
    * Die Aufgabe auf ihren Anfang zurückstellen: Starttext, Cursor und alles,
@@ -198,11 +204,11 @@ export default function StufeTastatur({
     setTimeout(() => {
       const naechste = nr + 1;
       setNr(naechste);
-      if (naechste === TASTATUR_AUFGABEN.length) {
+      if (naechste === AUFGABEN.length) {
         const { punkte, details } = wertung({
-          stufe: "tastatur", geloest: naechste, anzahl: TASTATUR_AUFGABEN.length, dauerMs, fehler: fehlerRef.current,
+          stufe: "tastatur", geloest: naechste, anzahl: AUFGABEN.length, dauerMs, fehler: fehlerRef.current,
         });
-        onFertig({ punkte, dauerMs, details: [...details, "Strg + Z gerettet"] });
+        onFertig({ punkte, dauerMs, details: [...details, `${system === "macos" ? "⌘" : "Strg"} + Z gerettet`] });
       }
     }, 900);
   }
@@ -219,6 +225,9 @@ export default function StufeTastatur({
     if (e.code === "ArrowLeft") g.arrowLeft = true;
     if (e.code === "Home") g.home = true;
     if (e.code === "End") g.end = true;
+    // Am Mac gibt es keine Pos1/Ende: ⌘ + ← / ⌘ + → tun dasselbe (die PC-Tasten gehen ebenfalls).
+    if (system === "macos" && e.metaKey && e.code === "ArrowLeft") g.home = true;
+    if (system === "macos" && e.metaKey && e.code === "ArrowRight") g.end = true;
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") g.ctrlZ = true;
   }
 
@@ -253,12 +262,12 @@ export default function StufeTastatur({
         el.focus();
         el.setSelectionRange(von, bis);
       },
-    }));
+    }, system));
   }
 
   const schriftgroesse = hilfe ? "text-lg" : "text-base";
   const punkteLaufend = wertung({
-    stufe: "tastatur", geloest: nr, anzahl: TASTATUR_AUFGABEN.length,
+    stufe: "tastatur", geloest: nr, anzahl: AUFGABEN.length,
     dauerMs: Math.round(performance.now() - start.current), fehler,
   }).punkte;
 
@@ -350,7 +359,7 @@ export default function StufeTastatur({
             <aside className="rounded-2xl border border-line bg-surface p-4 flex flex-col gap-1 h-fit">
               <h3 className="font-black mb-1">Aufgaben</h3>
               <ul className="flex flex-col gap-1">
-                {TASTATUR_AUFGABEN.map((a, i) => (
+                {AUFGABEN.map((a, i) => (
                   <li key={a.id} className={"text-sm flex gap-2 " + (i === nr ? "font-bold" : i < nr ? "text-muted" : "")}>
                     <span>{i < nr ? "✅" : i === nr ? "👉" : "⬜"}</span>
                     <span className="truncate">{a.kurz}</span>

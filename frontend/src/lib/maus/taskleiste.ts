@@ -7,6 +7,7 @@
  * dem deutschen Namen der App, nicht nach der internen Id.
  */
 import { ALLE_APPS, APPS, type AppId, type Aussehen } from "./windows";
+import { appsFuer, type Betriebssystem } from "./system";
 
 /** Bevorzugte Ziele zum Anheften — auffällige, bekannte Apps zuerst. */
 const ANHEFTEN_BEVORZUGT: AppId[] = ["paint", "vlc", "geogebra"];
@@ -16,11 +17,13 @@ const LOESEN_BEVORZUGT: AppId[] = ["word"];
 const LOESEN_AUSGENOMMEN = new Set<AppId>(["explorer", "einstellungen"]);
 
 /** Eine noch nicht angeheftete App — oder `null`, wenn wirklich schon alle angeheftet sind. */
-export function zielAnheften(start: Aussehen): AppId | null {
+export function zielAnheften(start: Aussehen, system: Betriebssystem = "windows"): AppId | null {
   const gepinnt = new Set(start.taskleiste);
   const bevorzugt = ANHEFTEN_BEVORZUGT.find(id => !gepinnt.has(id));
   if (bevorzugt) return bevorzugt;
-  const irgendeine = ALLE_APPS.find(a => !gepinnt.has(a.id));
+  // Nur Apps, die es auf dem geübten System gibt (bei Ubuntu z. B. kein Edge).
+  const da = appsFuer(system);
+  const irgendeine = ALLE_APPS.find(a => !gepinnt.has(a.id) && a.id in da);
   return irgendeine ? irgendeine.id : null;
 }
 

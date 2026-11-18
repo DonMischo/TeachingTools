@@ -4,9 +4,14 @@
  *
  * Teil 1: Klicken, Doppelklick, Rechtsklick, Ziehen, Markieren, Kopieren —
  * Teil 2: Scrollen, Tastatur, Dateien ordnen, Fenster, Speichern & USB-Stick;
- * Teil 3: Suchen, Apps, Bildschirmfoto, Aussehen. Jeder
+ * Teil 3: Suchen, Apps, Bildschirmfoto, Aussehen;
+ * Teil 4: Handy (Android/iOS) — Bedienen, Apps installieren, Berechtigungen,
+ * Privatsphäre, Risiken erkennen. Jeder
  * Teil endet mit einem Blatt zum Speichern. Jede Stufe hat »Vorführen« und
  * »Weiter«; Sterne zeigen, wie gut sie lief.
+ *
+ * Teil 1–3 gibt es für Windows 11, Ubuntu und macOS (Auswahl oben): gleiche
+ * Aufgaben, aber Optik, Begriffe und Tastenkürzel des gewählten Systems.
  *
  * Dazu kommen:
  *   • Hilfsmodus — größere Ziele, mehr Zeit (ein Schalter, keine NTA-Daten)
@@ -23,11 +28,11 @@ import { wahl, type Vorgabe } from "@/lib/vorgabe";
 import { useQuery } from "@tanstack/react-query";
 import { api, type MausPruefungOut, type MausStufenStand, type MausZugang } from "@/lib/api";
 import {
-  GRENZEN, TEILE, gesamt, sterne, teilBestanden,
+  ALLE_TEILE, GRENZEN, TEILE, gesamt, sterne, teilBestanden,
   type Ergebnisse, type MausModus, type StufeId, type StufenErgebnis, type Teil,
 } from "@/lib/maus/ergebnis";
 import { MausBild, MausStile } from "./MausBild";
-import { MausKontext } from "./MausKontext";
+import { MausKontext, type HandySystem } from "./MausKontext";
 import Klickspiel from "./Klickspiel";
 import StufeRechtsklick from "./StufeRechtsklick";
 import StufeZiehen from "./StufeZiehen";
@@ -46,13 +51,23 @@ import StufeAussehen from "./StufeAussehen";
 import StufeBedienhilfe from "./StufeBedienhilfe";
 import StufeTaskleiste from "./StufeTaskleiste";
 import StufeProfil from "./StufeProfil";
+import StufeHandy from "./mobil/StufeHandy";
+import StufeAppStore from "./mobil/StufeAppStore";
+import StufeBerechtigungen from "./mobil/StufeBerechtigungen";
+import StufePrivatsphaere from "./mobil/StufePrivatsphaere";
+import StufeRisiken from "./mobil/StufeRisiken";
+import { BETRIEBSSYSTEME, SYSTEME, echtesSystem, hinweisFremd, type Betriebssystem } from "@/lib/maus/system";
+import { mitTasten } from "./Taste";
 import { WindowsKontext } from "./windows/WindowsKontext";
 import { STANDARD_AUSSEHEN, aussehenAus, type Aussehen } from "@/lib/maus/windows";
 import { benutzernameAus } from "@/lib/maus/dateisystem";
 import MausBestenliste from "./MausBestenliste";
 import MausUebersicht from "./MausUebersicht";
 
-type ReiterId = StufeId | "speichern1" | "speichern2" | "speichern3" | "bestenliste" | "uebersicht";
+type SpeicherReiter = "speichern1" | "speichern2" | "speichern3" | "speichern4";
+type ReiterId = StufeId | SpeicherReiter | "bestenliste" | "uebersicht";
+
+const SPEICHERN: Record<Teil, SpeicherReiter> = { 1: "speichern1", 2: "speichern2", 3: "speichern3", 4: "speichern4" };
 
 const REITER: { id: ReiterId; icon: string; label: string; teil: Teil | 0 }[] = [
   { id: "klick", icon: "👆", label: "Klicken", teil: 1 },
@@ -76,6 +91,12 @@ const REITER: { id: ReiterId; icon: string; label: string; teil: Teil | 0 }[] = 
   { id: "taskleiste", icon: "📌", label: "Taskleiste & Start", teil: 3 },
   { id: "profil", icon: "🔒", label: "Profil & Sperrbildschirm", teil: 3 },
   { id: "speichern3", icon: "💾", label: "Urkunde", teil: 3 },
+  { id: "handy", icon: "📱", label: "Handy bedienen", teil: 4 },
+  { id: "appstore", icon: "🛍️", label: "Apps installieren", teil: 4 },
+  { id: "berechtigungen", icon: "🔐", label: "Berechtigungen", teil: 4 },
+  { id: "privatsphaere", icon: "🛡️", label: "Privatsphäre", teil: 4 },
+  { id: "risiken", icon: "⚠️", label: "Risiken erkennen", teil: 4 },
+  { id: "speichern4", icon: "💾", label: "Urkunde", teil: 4 },
   { id: "bestenliste", icon: "🏆", label: "Bestenliste", teil: 0 },
   { id: "uebersicht", icon: "👩‍🏫", label: "Klassenübersicht", teil: 0 },
 ];
@@ -85,7 +106,10 @@ const NAMEN = Object.fromEntries(REITER.map(r => [r.id, `${r.icon} ${r.label}`])
 const TIER_SCHLUESSEL = "hp_maus_tier";
 const EINZELLISTEN: MausModus[] = ["klick", "doppelklick", "ziehen"];
 
-type Gespeichert = { ergebnisse: Ergebnisse; bestanden: Teil[]; hilfe: boolean; aussehen: Aussehen };
+type Gespeichert = {
+  ergebnisse: Ergebnisse; bestanden: Teil[]; hilfe: boolean; aussehen: Aussehen;
+  system: Betriebssystem; handy: HandySystem;
+};
 
 type Pruefung = {
   teil: Teil;
@@ -144,9 +168,11 @@ function laden(schluessel: string): Gespeichert | null {
     if (!roh || typeof roh !== "object" || typeof roh.ergebnisse !== "object") return null;
     return {
       ergebnisse: roh.ergebnisse ?? {},
-      bestanden: Array.isArray(roh.bestanden) ? roh.bestanden.filter((t: unknown) => t === 1 || t === 2 || t === 3) : [],
+      bestanden: Array.isArray(roh.bestanden) ? roh.bestanden.filter((t: unknown) => ALLE_TEILE.includes(t as Teil)) : [],
       hilfe: roh.hilfe === true,
       aussehen: aussehenAus(roh.aussehen),
+      system: BETRIEBSSYSTEME.includes(roh.system) ? roh.system : "windows",
+      handy: roh.handy === "ios" ? "ios" : "android",
     };
   } catch {
     return null;
@@ -156,7 +182,8 @@ function laden(schluessel: string): Gespeichert | null {
 /**
  * `vorgabe` (TaskCrawler-Station): `{ reiter: <Stufen-Id> }` legt die Stufe fest (klick, doppelklick,
  * rechtsklick, ziehen, markieren, kopieren, scrollen, tastatur, explorer, fenster, datei,
- * suche, apps, screenshot, aussehen, bedienhilfe, taskleiste, profil) und blendet Stufenleiste, Prüfungen
+ * suche, apps, screenshot, aussehen, bedienhilfe, taskleiste, profil, handy, appstore,
+ * berechtigungen, privatsphaere, risiken) und blendet Stufenleiste, Prüfungen
  * und »Weiter« aus.
  */
 export default function MausFuehrerschein({
@@ -186,6 +213,10 @@ export default function MausFuehrerschein({
   const [hilfe, setHilfe] = useState(false);
   // Das eigene Windows (Hintergrund, Zeiger, Taskleiste …) — Teil 3 verändert es.
   const [aussehen, setAussehen] = useState<Aussehen>(STANDARD_AUSSEHEN);
+  // Welches System Teil 1–3 nachbilden und welches Handy Teil 4.
+  const [system, setSystem] = useState<Betriebssystem>("windows");
+  const [handy, setHandy] = useState<HandySystem>("android");
+  const [echt, setEcht] = useState<Betriebssystem | null>("windows");
   const [geladen, setGeladen] = useState(false);
   const [pruefung, setPruefung] = useState<Pruefung | null>(null);
   const [nurTouch, setNurTouch] = useState(false);
@@ -203,6 +234,7 @@ export default function MausFuehrerschein({
 
   useEffect(() => {
     try { setAvatar(localStorage.getItem(TIER_SCHLUESSEL)); } catch {}
+    setEcht(echtesSystem());
     if (typeof window.matchMedia === "function") {
       setNurTouch(window.matchMedia("(pointer: coarse)").matches && !window.matchMedia("(any-pointer: fine)").matches);
     }
@@ -216,6 +248,8 @@ export default function MausFuehrerschein({
     setBestanden(g?.bestanden ?? []);
     setHilfe(g?.hilfe ?? false);
     setAussehen(g?.aussehen ?? STANDARD_AUSSEHEN);
+    setSystem(g?.system ?? "windows");
+    setHandy(g?.handy ?? "android");
     const e = g?.ergebnisse ?? {};
     gemeldet.current = {
       klick: e.klick?.punkte ?? 0, doppelklick: e.doppelklick?.punkte ?? 0,
@@ -226,8 +260,8 @@ export default function MausFuehrerschein({
 
   useEffect(() => {
     if (!geladen) return;
-    try { localStorage.setItem(schluessel, JSON.stringify({ ergebnisse, bestanden, hilfe, aussehen })); } catch {}
-  }, [geladen, schluessel, ergebnisse, bestanden, hilfe, aussehen]);
+    try { localStorage.setItem(schluessel, JSON.stringify({ ergebnisse, bestanden, hilfe, aussehen, system, handy })); } catch {}
+  }, [geladen, schluessel, ergebnisse, bestanden, hilfe, aussehen, system, handy]);
 
   // Bestenliste: nur melden, was besser ist als das zuletzt Gemeldete.
   useEffect(() => {
@@ -248,7 +282,7 @@ export default function MausFuehrerschein({
         modus,
         wert: Math.min(wert, GRENZEN[modus]),
         dauer_ms: e ? e.dauerMs : Object.values(ergebnisse).reduce((s, x) => s + (x?.dauerMs ?? 0), 0),
-        kontext: e ? e.details[0] ?? "" : ([1, 2, 3] as Teil[]).map(t => `Teil ${t}: ${anzahl(t)}/${TEILE[t].length}`).join(" · "),
+        kontext: e ? e.details[0] ?? "" : ALLE_TEILE.map(t => `Teil ${t}: ${anzahl(t)}/${TEILE[t].length}`).join(" · "),
         hilfe,
       }, zugang).catch(() => {});
     }
@@ -313,7 +347,7 @@ export default function MausFuehrerschein({
 
   function zurUrkunde(teil: Teil) {
     setPruefung(null);
-    setReiter(teil === 1 ? "speichern1" : teil === 2 ? "speichern2" : "speichern3");
+    setReiter(SPEICHERN[teil]);
   }
 
   // ── Navigation ─────────────────────────────────────────────────────────
@@ -347,6 +381,11 @@ export default function MausFuehrerschein({
       case "bedienhilfe": return <StufeBedienhilfe key={key} {...p} avatar={tier} />;
       case "taskleiste": return <StufeTaskleiste key={key} {...p} avatar={tier} />;
       case "profil": return <StufeProfil key={key} {...p} avatar={tier} />;
+      case "handy": return <StufeHandy key={key} {...p} avatar={tier} />;
+      case "appstore": return <StufeAppStore key={key} {...p} avatar={tier} />;
+      case "berechtigungen": return <StufeBerechtigungen key={key} {...p} avatar={tier} />;
+      case "privatsphaere": return <StufePrivatsphaere key={key} {...p} avatar={tier} />;
+      case "risiken": return <StufeRisiken key={key} {...p} avatar={tier} />;
     }
   }
 
@@ -372,10 +411,14 @@ export default function MausFuehrerschein({
   }
 
   // ── Anzeige ────────────────────────────────────────────────────────────
+  const aktuellerTeil = pruefung ? pruefung.teil : REITER.find(r => r.id === reiter)?.teil ?? 0;
+  const imTeil4 = aktuellerTeil === 4;
+  // Der Hinweis zum fremden System gilt nur am Computer (Teil 1–3).
+  const fremd = aktuellerTeil !== 0 && !imTeil4 ? hinweisFremd(system, echt) : null;
   let inhalt: ReactNode;
   if (pruefung && !pruefung.fertig) {
     const id = TEILE[pruefung.teil][pruefung.nr];
-    inhalt = stufe(id, `pruefung-${pruefung.lauf}-${id}`, pruefungWeiter);
+    inhalt = stufe(id, `pruefung-${pruefung.lauf}-${id}-${system}-${handy}`, pruefungWeiter);
   } else if (pruefung?.fertig) {
     inhalt = (
       <PruefungsErgebnis
@@ -387,8 +430,8 @@ export default function MausFuehrerschein({
         onZurueck={() => setPruefung(null)}
       />
     );
-  } else if (reiter === "speichern1" || reiter === "speichern2" || reiter === "speichern3") {
-    const teil: Teil = reiter === "speichern1" ? 1 : reiter === "speichern2" ? 2 : 3;
+  } else if (reiter.startsWith("speichern")) {
+    const teil = Number(reiter.slice(-1)) as Teil;
     inhalt = (
       <StufeSpeichern
         key={reiter}
@@ -406,12 +449,13 @@ export default function MausFuehrerschein({
     inhalt = verwaltung ? <MausUebersicht /> : null;
   } else {
     // Der Schlüssel wirft die Stufe beim Wechsel weg: kein Timer läuft im Hintergrund weiter.
-    inhalt = stufe(reiter, reiter, weiter);
+    // System und Handy gehören dazu — wer umschaltet, fängt die Stufe im neuen System neu an.
+    inhalt = stufe(reiter as StufeId, `${reiter}-${system}-${handy}`, weiter);
   }
 
   return (
-    <MausKontext.Provider value={{ pruefung: !!pruefung && !pruefung.fertig, hilfe }}>
-    <WindowsKontext.Provider value={{ aussehen, setAussehen, benutzer: benutzernameAus(name) }}>
+    <MausKontext.Provider value={{ pruefung: !!pruefung && !pruefung.fertig, hilfe, handy, setHandy }}>
+    <WindowsKontext.Provider value={{ aussehen, setAussehen, benutzer: benutzernameAus(name), system }}>
       <div className="flex flex-col gap-4 p-4 sm:p-6 max-w-seite mx-auto w-full">
         <MausStile />
         <div className="flex flex-wrap items-center gap-3">
@@ -419,6 +463,31 @@ export default function MausFuehrerschein({
             <MausBild groesse={30} /> Maus-Führerschein
           </h1>
           <div className="flex-1" />
+          <label className="text-sm flex items-center gap-1.5" title="Welcher Computer wird nachgebildet? (Teil 1–3)">
+            <span aria-hidden>💻</span>
+            <select
+              aria-label="Betriebssystem"
+              data-testid="system-wahl"
+              value={system}
+              onChange={e => setSystem(e.target.value as Betriebssystem)}
+              className="rounded-lg border border-line bg-surface px-2 py-1 text-sm font-bold"
+            >
+              {BETRIEBSSYSTEME.map(b => <option key={b} value={b}>{SYSTEME[b].icon} {SYSTEME[b].name}</option>)}
+            </select>
+          </label>
+          <label className="text-sm flex items-center gap-1.5" title="Welches Handy? (Teil 4)">
+            <span aria-hidden>📱</span>
+            <select
+              aria-label="Handy"
+              data-testid="handy-wahl"
+              value={handy}
+              onChange={e => setHandy(e.target.value as HandySystem)}
+              className="rounded-lg border border-line bg-surface px-2 py-1 text-sm font-bold"
+            >
+              <option value="android">🤖 Android</option>
+              <option value="ios">🍎 iPhone (iOS)</option>
+            </select>
+          </label>
           <label className="text-xs flex items-center gap-1.5 cursor-pointer text-muted" title="Größere Ziele und mehr Zeit">
             <input type="checkbox" checked={hilfe} onChange={e => setHilfe(e.target.checked)} />
             🤝 Hilfsmodus
@@ -429,7 +498,13 @@ export default function MausFuehrerschein({
           {action}
         </div>
 
-        {nurTouch && (
+        {fremd && (
+          <div className="rounded-xl border border-line bg-surface px-4 py-2 text-sm" data-testid="system-hinweis">
+            {SYSTEME[system].icon} {mitTasten(fremd)}
+          </div>
+        )}
+
+        {nurTouch && !imTeil4 && (
           <div className="rounded-xl border border-line bg-surface px-4 py-3 text-sm">
             🖱️ Dieses Training ist für die <b>Maus</b> gemacht. Rechtsklick, Doppelklick und Markieren gehen auf einem Tablet anders — nimm am besten einen Computer.
           </div>
@@ -454,7 +529,7 @@ export default function MausFuehrerschein({
           </div>
         ) : festerReiter ? null : (
           <div role="tablist" aria-label="Stufe" className="flex flex-col gap-2">
-            {([1, 2, 3] as const).map(t => (
+            {ALLE_TEILE.map(t => (
               <div key={t} className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-black text-muted w-12">Teil {t}</span>
                 {REITER.filter(r => r.teil === t).map(reiterKnopf)}

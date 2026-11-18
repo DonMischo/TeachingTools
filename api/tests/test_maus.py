@@ -17,7 +17,7 @@ from api.auth import create_access_token, hash_password
 from api.models import Student, ToolAvailability
 from .conftest import auth
 
-MODI_CAPS = {"klick": 24000, "doppelklick": 13500, "ziehen": 6000, "gesamt": 70000}
+MODI_CAPS = {"klick": 24000, "doppelklick": 13500, "ziehen": 6000, "gesamt": 80000}
 
 
 def schueler(db, vorname="Ada", nachname="Lovelace", klasse="7a") -> Student:

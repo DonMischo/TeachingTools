@@ -8,6 +8,7 @@
  * Benutzerordner C:\Benutzer\<Name>\…
  */
 import type { AppId } from "./windows";
+import type { Betriebssystem } from "./system";
 
 export type KnotenArt = "pc" | "laufwerk" | "ordner" | "datei";
 export type OrdnerArt = "normal" | "desktop" | "dokumente" | "downloads" | "bilder" | "musik" | "videos" | "benutzer" | "system" | "usb";
@@ -60,19 +61,65 @@ export const USB: Knoten = {
   id: "usb", name: "USB-Stick (D:)", art: "laufwerk", eltern: "pc", ordnerArt: "usb", frei: "14,2 GB frei", belegt: 0.1,
 };
 
-export function baueDateisystem(benutzer: string, mitUsb = false): Dateisystem {
+/** Der USB-Stick des gewählten Systems — Laufwerksbuchstaben gibt es nur bei Windows. */
+export function usbFuer(system: Betriebssystem = "windows"): Knoten {
+  return system === "windows" ? USB : { ...USB, name: "USB-Stick" };
+}
+
+/**
+ * Ordner und Warnungen je System. Die Ids bleiben überall gleich (»c«,
+ * »c-windows« …), damit die Stufen nichts umrechnen müssen — nur Namen und
+ * Warnungen wechseln: Ubuntu hat / mit home, usr, etc, bin; macOS hat
+ * Macintosh HD mit Benutzer, Programme, Library, System.
+ */
+const NAMEN_JE_SYSTEM: Record<Exclude<Betriebssystem, "windows">, Record<string, string>> = {
+  ubuntu: {
+    pc: "Andere Orte", c: "Rechner", "c-benutzer": "home", "c-programme": "usr", "c-programme86": "etc",
+    "c-windows": "bin", "c-oeffentlich": "gast", desktop: "Schreibtisch",
+  },
+  macos: {
+    pc: "Computer", c: "Macintosh HD", "c-benutzer": "Benutzer", "c-programme": "Programme",
+    "c-programme86": "Library", "c-windows": "System", "c-oeffentlich": "Für alle Benutzer",
+    desktop: "Schreibtisch", videos: "Filme",
+  },
+};
+
+export function warnungSystem(system: Betriebssystem = "windows"): string {
+  return system === "windows" ? WARNUNG_WINDOWS
+    : `Achtung: Hier liegt ${system === "ubuntu" ? "Ubuntu" : "macOS"} selbst. Wer hier etwas verändert, kann den Computer kaputt machen. Geh zurück zu deinen eigenen Ordnern.`;
+}
+
+export function warnungProgramme(system: Betriebssystem = "windows"): string {
+  return system === "windows" ? WARNUNG_PROGRAMME
+    : "Hier liegen Programme und ihre Einstellungen. Deine eigenen Dateien gehören nicht hierher — geh lieber zurück.";
+}
+
+export function warnungOeffentlich(system: Betriebssystem = "windows"): string {
+  return system === "ubuntu"
+    ? "Das ist der Ordner eines anderen Benutzers. Deine Sachen liegen in deinem eigenen Ordner."
+    : WARNUNG_OEFFENTLICH;
+}
+
+/** Benutzername, wie er im Dateisystem steht: bei Ubuntu und macOS klein geschrieben. */
+export function ordnerName(benutzer: string, system: Betriebssystem = "windows"): string {
+  const n = benutzernameAus(benutzer);
+  return system === "windows" ? n : n.toLowerCase();
+}
+
+export function baueDateisystem(benutzer: string, mitUsb = false, system: Betriebssystem = "windows"): Dateisystem {
   const fs: Dateisystem = {};
-  const neu = (k: Knoten) => { fs[k.id] = k; };
+  const namen = system === "windows" ? {} : NAMEN_JE_SYSTEM[system];
+  const neu = (k: Knoten) => { fs[k.id] = { ...k, name: namen[k.id] ?? k.name }; };
 
   neu({ id: "pc", name: "Dieser PC", art: "pc", eltern: null });
   neu({ id: "c", name: "Lokaler Datenträger (C:)", art: "laufwerk", eltern: "pc", frei: "120 GB frei", belegt: 0.5 });
-  if (mitUsb) neu(USB);
+  if (mitUsb) neu(usbFuer(system));
   neu({ id: "c-benutzer", name: "Benutzer", art: "ordner", eltern: "c", ordnerArt: "normal" });
-  neu({ id: "c-programme", name: "Programme", art: "ordner", eltern: "c", ordnerArt: "system", gesperrt: WARNUNG_PROGRAMME });
-  neu({ id: "c-programme86", name: "Programme (x86)", art: "ordner", eltern: "c", ordnerArt: "system", gesperrt: WARNUNG_PROGRAMME });
-  neu({ id: "c-windows", name: "Windows", art: "ordner", eltern: "c", ordnerArt: "system", gesperrt: WARNUNG_WINDOWS });
-  neu({ id: "c-oeffentlich", name: "Öffentlich", art: "ordner", eltern: "c-benutzer", ordnerArt: "system", gesperrt: WARNUNG_OEFFENTLICH });
-  neu({ id: "benutzer", name: benutzernameAus(benutzer), art: "ordner", eltern: "c-benutzer", ordnerArt: "benutzer" });
+  neu({ id: "c-programme", name: "Programme", art: "ordner", eltern: "c", ordnerArt: "system", gesperrt: warnungProgramme(system) });
+  neu({ id: "c-programme86", name: "Programme (x86)", art: "ordner", eltern: "c", ordnerArt: "system", gesperrt: warnungProgramme(system) });
+  neu({ id: "c-windows", name: "Windows", art: "ordner", eltern: "c", ordnerArt: "system", gesperrt: warnungSystem(system) });
+  neu({ id: "c-oeffentlich", name: "Öffentlich", art: "ordner", eltern: "c-benutzer", ordnerArt: "system", gesperrt: warnungOeffentlich(system) });
+  neu({ id: "benutzer", name: ordnerName(benutzer, system), art: "ordner", eltern: "c-benutzer", ordnerArt: "benutzer" });
   for (const o of EIGENE_ORDNER) neu({ id: o.id, name: o.name, art: "ordner", eltern: "benutzer", ordnerArt: o.art });
 
   const datei = (id: string, name: string, eltern: string, app: AppId, groesse: string) =>
@@ -110,10 +157,19 @@ export function pfad(fs: Dateisystem, id: string): Knoten[] {
   return kette;
 }
 
-/** C:\Benutzer\Mia\Dokumente */
-export function pfadText(fs: Dateisystem, id: string): string {
+/**
+ * Windows: C:\Benutzer\Mia\Dokumente · Ubuntu: /home/mia/Dokumente (Stick:
+ * /media/mia/USB-Stick) · macOS wie die Pfadleiste im Finder:
+ * Macintosh HD › Benutzer › mia › Dokumente.
+ */
+export function pfadText(fs: Dateisystem, id: string, system: Betriebssystem = "windows"): string {
   const teile = pfad(fs, id).filter(k => k.art !== "pc");
-  if (teile.length === 0) return "Dieser PC";
+  if (teile.length === 0) return fs.pc?.name ?? "Dieser PC";
+  if (system === "ubuntu") {
+    if (teile[0].id === "usb") return ["", "media", fs.benutzer?.name ?? "", ...teile.map(k => k.name)].join("/");
+    return "/" + teile.slice(1).map(k => k.name).join("/");
+  }
+  if (system === "macos") return teile.map(k => k.name).join(" › ");
   return teile.map(k => (k.art === "laufwerk" ? laufwerksBuchstabe(k) : k.name)).join(TRENNER);
 }
 

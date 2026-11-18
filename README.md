@@ -201,8 +201,9 @@ Jede Simulation trägt Fächer (auch mehrere, z. B. Geografie und Physik); die �
 - Eigene Texte per JSON-Upload
 
 ### 🐭 Maus-Führerschein
-- PC-Grundkurs für Kinder ab etwa zehn Jahren in drei Teilen: Maus; Tastatur, Dateien, Fenster und Speichern; Suchen, Apps, Bildschirmfoto und Aussehen
-- Nachgebautes Windows mit Explorer, Fenstern, Taskleiste, Editor mit »Speichern unter«, USB-Stick, Herunterfahren und Bildschirmfoto
+- PC-Grundkurs für Kinder ab etwa zehn Jahren in vier Teilen: Maus; Tastatur, Dateien, Fenster und Speichern; Suchen, Apps, Bildschirmfoto und Aussehen; Handy
+- Nachgebautes Windows 11, Ubuntu oder macOS (Auswahl oben) mit Dateimanager, Fenstern, Taskleiste bzw. Dock, Editor mit »Speichern unter«, USB-Stick, Ausschalten und Bildschirmfoto — gleiche Aufgaben, aber Optik, Begriffe und Tastenkürzel des gewählten Systems (am PC geht für ⌘ auch Strg)
+- Teil 4 »Handy« für Android oder iPhone: Gesten und Schnelleinstellungen, Apps sicher installieren (Altersfreigabe, Fake-Apps, Datenschutz-Angaben, Erlaubnis der Eltern, Kaufangebote), App-Berechtigungen, Privatsphäre-Einstellungen und zehn Risiko-Lagen aus Kindersicht (Cybergrooming, Kettenbrief, Betrugs-SMS, Lootbox, Cybermobbing, Erpressung …) mit Hilfe-Adressen
 - Tasten als Tastenkappen im Text — beim Draufzeigen zeigt eine Tastatur, wo sie liegt
 - Jede Stufe mit Vorführen, Vorlesen und 1 bis 3 Sternen; Hilfsmodus für langsame Mausnutzer
 - Prüfung je Teil: beim ersten Bestehen 5 Hauspunkte für die Klasse, Urkunde als Bild und PDF
