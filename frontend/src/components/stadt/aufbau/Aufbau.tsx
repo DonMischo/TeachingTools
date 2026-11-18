@@ -11,13 +11,14 @@
  *   Klick baut. Klick auf ein Gebäude zeigt seine Werte und seinen Einzugsbereich.
  * Häuser und Straßen wachsen feldgenau von selbst (lib/stadt/aufbau.ts).
  */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import type { Gelaende } from "@/lib/gelaende/gelaende";
 import { BAUTEN, STILE, type BauTyp, type Stil } from "@/lib/stadt/modell";
-import { BAUPLAENE, fehlt, jahrVonStand, kapazitaet, lageRegeln } from "@/lib/stadt/bauen";
+import { lageRegeln } from "@/lib/stadt/bauen";
+import { ANBIETER, aufStufen, GUETER, kosten, METER_JE_MINUTE, palette, SCHICHTEN, TROCKEN_KOSTEN, zentrumTyp, type Gut } from "@/lib/stadt/aufbauRegeln";
 import {
-  baue, bauBei, beduerfnisse, fussabdruck, hausFarben, hausMitte, mitteVon, neueWelt, orteVon, pruefePlatz, reichweite, reisseAb, schritt, stufe,
+  abdeckung, baue, bauBei, erreichteHaeuser, fussabdruck, hausFarben, mitteVon, naechsteStufeFehlt, neueWelt, pruefePlatz, reichweite, reisseAb, schritt, stufe, versorgungsQuote,
   trockenlegen, TROCKEN_RADIUS, welteAlsText, welteAusText,
   type Platzpruefung, type Welt,
 } from "@/lib/stadt/aufbau";
@@ -41,7 +42,7 @@ const speicherplatz = (wer: string, g: Gelaende, stil: Stil) =>
   `hp_aufbau_${wer}_${stil}_${g.wahl.art}_${g.wahl.seed}_${g.wahl.relief}_${g.wahl.fluss ? 1 : 0}_${(g.wahl.merkmale ?? []).join("+")}`;
 
 export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchluessel = "geraet" }: { g: Gelaende; stil: Stil; setStil: (s: Stil) => void; aktiv?: boolean; speicherSchluessel?: string }) {
-  const plan = BAUPLAENE[stil];
+  const pal = palette(stil);
   const huelle = useRef<HTMLDivElement>(null);
   const karte = useRef<HTMLDivElement>(null);
   const welt = useRef<Welt>(neueWelt(g, stil, g.wahl.seed));
@@ -381,7 +382,7 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
       const w = welt.current, d = drei.current, alt = stufe(w);
       schritt(g, w);
       if (w.tick % 10 === 0) speichern();
-      if (stufe(w) > alt) setMeldung(`🎉 Neue Stufe: ${plan.stufen[stufe(w)].name} — mehr Land ist erschlossen.`);
+      if (stufe(w) > alt) setMeldung(`🎉 Neue Stufe: ${aufStufen(w.stil)[stufe(w)].name} — mehr Land ist erschlossen, neue Gebäude sind frei.`);
       if (d?.objekte) d.objekte.aktualisiere(w);
       if (d?.gelaende) {
         const s = w.frei.reduce((a, x) => a + x, 0);
@@ -390,19 +391,27 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
       neuZeichnen();
     }, 450 / tempo);
     return () => clearInterval(t);
-  }, [laeuft, aktiv, tempo, g, plan]);
+  }, [laeuft, aktiv, tempo, g]);
 
   const w = welt.current;
   const i = stufe(w);
-  const { kap } = kapazitaet(g, stil, { orte: orteVon(w), einwohner: w.einwohner, tick: w.tick });
-  const fehlend = fehlt(plan, { orte: orteVon(w), einwohner: w.einwohner, tick: 0 });
-  const naechste = plan.stufen[i + 1];
-  const bed = beduerfnisse(w);
-  const deckung = useMemo(() => bed.map(b => ({ b, anteil: w.haeuser.length ? w.haeuser.filter(h => w.bauten.some(o => o.bau === b && Math.hypot(mitteVon(w, o).x - hausMitte(w, h).x, mitteVon(w, o).y - hausMitte(w, h).y) <= reichweite(b))).length / w.haeuser.length : 0 })), [bed.join(), w.haeuser.length, w.bauten.length]);
+  const stufen = aufStufen(stil), naechste = stufen[i + 1];
+  const fehlend = naechsteStufeFehlt(w);
+  const stadtHaeuser = w.haeuser.filter(h => !h.bauer);
+  // Versorgung je Gut: Anteil der Stadthäuser, deren Straße das Gut erreicht (Güter ihrer und der nächsten Schicht)
+  const deckung = (() => {
+    if (!stadtHaeuser.length) return [];
+    const abd = abdeckung(w);
+    const gebraucht = new Set<Gut>(stadtHaeuser.flatMap(h => [...SCHICHTEN[h.schicht].grund, ...(SCHICHTEN[h.schicht + 1]?.grund ?? [])]));
+    const da = new Set(pal.flatMap(o => (ANBIETER[o.bau] ?? []).map(a2 => a2.gut)));
+    return [...gebraucht].filter(x => da.has(x)).map(x => ({ gut: x, anteil: stadtHaeuser.filter(h => abd.get(x)?.[h.tor]).length / stadtHaeuser.length }));
+  })();
+  const schichten = SCHICHTEN.map((sch, k) => ({ name: sch.name, leute: w.haeuser.filter(h => h.schicht === k).reduce((a2, h) => a2 + h.bewohner, 0) })).filter(x => x.leute);
+  const netto = w.bilanz.steuern - w.bilanz.unterhalt;
   const gewaehlt = auswahl ? w.bauten.find(o => o.id === auswahl.id) ?? null : null;
   const kaertchen = ziel
     ? { bau: ziel.bau, pr: ziel.pr, neu: true }
-    : gewaehlt ? { bau: gewaehlt.bau, pr: pruefePlatzVorhanden(g, w, gewaehlt.id), neu: false } : null;
+    : gewaehlt ? { bau: gewaehlt.bau, pr: { ok: true, faktor: gewaehlt.faktor, gruende: [], kosten: kosten(gewaehlt.bau), versorgt: erreichteHaeuser(w, gewaehlt.bau, gewaehlt.i, gewaehlt.j, gewaehlt.w, gewaehlt.h, gewaehlt.dreh) }, neu: false } : null;
 
   if (ohneWebGL) return <div className="flex h-[640px] items-center justify-center rounded-xl border border-line text-muted">Der Aufbau braucht WebGL — dein Browser bietet es gerade nicht an.</div>;
   return (
@@ -438,54 +447,73 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
         </div>
         <aside className="card flex flex-col gap-3 p-4">
           <div>
-            <div className="text-xs font-bold uppercase tracking-wide text-muted">Stufe {i + 1} von {plan.stufen.length} · Jahr {jahrText(jahrVonStand(plan, w.einwohner))}</div>
-            <h2 className="text-lg font-black">{plan.stufen[i].name}</h2>
+            <div className="text-xs font-bold uppercase tracking-wide text-muted">Stufe {i + 1} von {stufen.length} · um {jahrText(stufen[i].jahr)}</div>
+            <h2 className="text-lg font-black">{stufen[i].name}</h2>
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="rounded-lg bg-surface-hover/60 p-2">
+              <div className="font-bold">💰 {zahl(w.taler)} Taler</div>
+              <div className={netto >= 0 ? "text-ok" : "text-bad"}>{netto >= 0 ? "+" : ""}{netto.toFixed(1).replace(".", ",")} je Schritt</div>
+              <div className="text-muted">Steuern {w.bilanz.steuern.toFixed(1).replace(".", ",")} · Unterhalt {w.bilanz.unterhalt.toFixed(1).replace(".", ",")}</div>
+            </div>
+            <div className="rounded-lg bg-surface-hover/60 p-2">
+              <div className="font-bold">🌾 Nahrung {zahl(w.bilanz.nahrung)}</div>
+              <div className={w.bilanz.nahrung >= w.bilanz.bedarf ? "text-ok" : "text-bad"}>Bedarf {zahl(w.bilanz.bedarf)}</div>
+              <div className="text-muted">{w.haeuser.filter(h => h.bauer).length} Bauernhöfe in {w.doerfer.length} Dörfern</div>
+            </div>
           </div>
           <div className="text-xs">
-            <div className="flex justify-between"><span>👥 {zahl(w.einwohner)} in {zahl(w.haeuser.length)} Häusern</span><span className="text-muted">Platz für {zahl(kap)}</span></div>
-            <div className="mt-1 h-2 overflow-hidden rounded bg-line"><div className="h-full bg-accent" style={{ width: `${Math.min(100, (w.einwohner / Math.max(1, naechste?.ab ?? kap)) * 100)}%` }} /></div>
-            {naechste && <p className="mt-1 text-muted">Nächste Stufe »{naechste.name}« ab {zahl(naechste.ab)} Einwohnern — erschließt neues Land.</p>}
-            {!w.bauten.length && <p className="mt-1 font-bold">👉 Wähle {BAUTEN[plan.stufen[0].braucht[0]].icon} {BAUTEN[plan.stufen[0].braucht[0]].label} und setze es in die Landschaft. Die Farbe am Boden zeigt, ob der Platz passt.</p>}
-            {fehlend.length > 0 && w.bauten.length > 0 && <p className="mt-1">Für den Aufstieg fehlt: {fehlend.map(b => `${BAUTEN[b].icon} ${BAUTEN[b].label}`).join(", ")}</p>}
+            <div>👥 {zahl(w.einwohner)} Einwohner{schichten.length ? ": " : ""}{schichten.map(x => `${x.name} ${zahl(x.leute)}`).join(" · ")}</div>
+            {naechste && i > 0 && (
+              <>
+                <div className="mt-1 h-2 overflow-hidden rounded bg-line"><div className="h-full bg-accent" style={{ width: `${Math.min(100, (w.einwohner / Math.max(1, naechste.ab)) * 100)}%` }} /></div>
+                <p className="mt-1 text-muted">Nächste Stufe »{naechste.name}« ab {zahl(naechste.ab)} Einwohnern{naechste.quote ? ` · voll versorgt: ${Math.round(versorgungsQuote(w) * 100)} % (nötig ${Math.round(naechste.quote * 100)} %)` : ""}</p>
+              </>
+            )}
+            {i === 0 && <p className="mt-1 font-bold">👉 Wähle {BAUTEN[zentrumTyp(stil)].icon} {BAUTEN[zentrumTyp(stil)].label} und setze es in eines der Dörfer ({w.doerfer.map(d => d.name).join(", ")}) — das erhebt es zum Marktort. Die anderen Dörfer liefern Nahrung.</p>}
+            {i > 0 && fehlend.length > 0 && <p className="mt-1">Für den Aufstieg fehlt: {fehlend.join(", ")}</p>}
           </div>
-          {deckung.length > 0 && w.haeuser.length > 0 && (
+          {deckung.length > 0 && (
             <div className="text-xs">
-              <div className="mb-1 font-bold text-muted">Versorgung der Häuser</div>
+              <div className="mb-1 font-bold text-muted">Versorgung der Stadthäuser (über die Wege)</div>
               {deckung.map(x => (
-                <div key={x.b} className="flex items-center gap-2">
-                  <span className="w-32 truncate">{BAUTEN[x.b].icon} {BAUTEN[x.b].label}</span>
+                <div key={x.gut} className="flex items-center gap-2">
+                  <span className="w-28 truncate">{GUETER[x.gut].icon} {GUETER[x.gut].label}</span>
                   <div className="h-1.5 flex-1 overflow-hidden rounded bg-line"><div className="h-full" style={{ width: `${x.anteil * 100}%`, background: x.anteil > 0.8 ? "#16a34a" : x.anteil > 0.4 ? "#d97706" : "#dc2626" }} /></div>
                   <span className="w-9 text-right">{Math.round(x.anteil * 100)} %</span>
                 </div>
               ))}
-              <p className="mt-1 text-muted">Gut versorgte Häuser wachsen und haben mehr Bewohner.</p>
+              <p className="mt-1 text-muted">Fehlt einem Haus ein Grundbedürfnis länger, steigt es ab und steht zuletzt leer. Voll versorgte Häuser steigen auf (Handwerker → Bürger …).</p>
             </div>
           )}
           {meldung && <div className="rounded-lg bg-surface-hover/70 p-2 text-sm">{meldung}</div>}
           <div className="flex flex-col gap-2">
-            {plan.stufen.map((st, k) => {
-              const liste = plan.orte.filter(o => o.stufe === k);
+            {stufen.map((st, k) => {
+              const liste = pal.filter(o => o.stufe === k);
               if (!liste.length) return null;
               const zu = k > i;
               return (
                 <div key={k}>
                   <div className="mb-1 text-xs font-bold text-muted">{zu ? "🔒 " : ""}{st.name}</div>
                   <div className="flex flex-wrap gap-1.5">
-                    {liste.map(o => (
-                      <button key={o.bau} disabled={zu} title={BAUTEN[o.bau].text} onClick={() => { setWahl(x => (x === o.bau ? null : o.bau)); setZiel(null); setAuswahl(null); }}
-                        className={`chip ${wahl === o.bau ? "chip-on" : ""} ${zu ? "opacity-40" : ""}`}>
-                        {BAUTEN[o.bau].icon} {BAUTEN[o.bau].label}{w.bauten.filter(x => x.bau === o.bau).length ? " ✓" : ""}
-                      </button>
-                    ))}
+                    {liste.map(o => {
+                      const k0 = kosten(o.bau), teuer = w.taler < k0;
+                      return (
+                        <button key={o.bau} disabled={zu} title={`${BAUTEN[o.bau].text} — ${k0} Taler`} onClick={() => { setWahl(x => (x === o.bau ? null : o.bau)); setZiel(null); setAuswahl(null); }}
+                          className={`chip ${wahl === o.bau ? "chip-on" : ""} ${zu ? "opacity-40" : ""}`}>
+                          {BAUTEN[o.bau].icon} {BAUTEN[o.bau].label} <span className={teuer && !zu ? "text-bad" : "text-muted"}>{k0}</span>{w.bauten.some(x => x.bau === o.bau && !x.dorf) ? " ✓" : ""}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               );
             })}
             <div className="flex flex-wrap gap-1.5">
-              <button className={`chip ${wahl === "trocken" ? "chip-on" : ""}`} title="Gräben und Deich: macht ein Stück nasse Aue bebaubar" onClick={() => { setWahl(x => (x === "trocken" ? null : "trocken")); setZiel(null); }}>🌾 Trockenlegen</button>
+              <button className={`chip ${wahl === "trocken" ? "chip-on" : ""}`} title="Gräben und Deich: macht ein Stück nasse Aue bebaubar" onClick={() => { setWahl(x => (x === "trocken" ? null : "trocken")); setZiel(null); }}>🌾 Trockenlegen <span className="text-muted">{TROCKEN_KOSTEN}</span></button>
               <button className={`chip ${wahl === "abriss" ? "chip-on" : ""}`} onClick={() => { setWahl(x => (x === "abriss" ? null : "abriss")); setZiel(null); }}>🧽 Abreißen</button>
             </div>
-            {wahl === "trocken" && <p className="text-xs text-muted">Die blaugrüne Fläche ist Aue: Sie wird bei Hochwasser überflutet, Häuser entstehen dort nicht. Tippen oder klicken legt einen Kreis von {TROCKEN_RADIUS} m trocken (Gräben, Deich) — danach wächst die Stadt hinein.</p>}
+            {wahl === "trocken" && <p className="text-xs text-muted">Die blaugrüne Fläche ist Aue: Sie wird bei Hochwasser überflutet, Häuser entstehen dort nicht. Tippen oder klicken legt einen Kreis von {TROCKEN_RADIUS} m trocken (Gräben, Deich, {TROCKEN_KOSTEN} Taler) — danach wächst die Stadt hinein.</p>}
           </div>
           <div className="mt-auto flex flex-wrap items-center gap-2">
             <button className="btn-primary" disabled={!w.bauten.length} onClick={() => setLaeuft(l => !l)}>{laeuft ? "⏸ Anhalten" : "▶ Zeit läuft"}</button>
@@ -498,27 +526,17 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
   );
 }
 
-/** Werte eines gebauten Gebäudes (Lage neu geprüft, ohne sich selbst als Hindernis) */
-function pruefePlatzVorhanden(g: Gelaende, w: Welt, id: number): Platzpruefung {
-  const o = w.bauten.find(x => x.id === id)!;
-  const r = reichweite(o.bau), m = mitteVon(w, o);
-  return {
-    ok: true, faktor: o.faktor, gruende: [],
-    versorgt: w.haeuser.filter(h => Math.hypot(hausMitte(w, h).x - m.x, hausMitte(w, h).y - m.y) <= r).length,
-  };
-}
-
-/** Werte-Kärtchen am Bauplatz */
+/** Werte-Kärtchen am Bauplatz: Kosten, Güter mit Reichweite, erreichte Häuser, Lage */
 function Kaertchen({ stil, bau, pr, neu }: { stil: Stil; bau: BauTyp; pr: Platzpruefung; neu: boolean }) {
-  const s = BAUPLAENE[stil].orte.find(o => o.bau === bau);
   const regeln = lageRegeln(stil, bau);
+  const gueter = ANBIETER[bau] ?? [];
   return (
     <div className="flex flex-col gap-1">
       <div className="text-sm font-black">{BAUTEN[bau].icon} {BAUTEN[bau].label}</div>
       <div className="grid grid-cols-2 gap-x-2">
-        <span className="text-muted">Einzugsbereich</span><span>{reichweite(bau)} m</span>
-        <span className="text-muted">Häuser darin</span><span>{pr.versorgt}</span>
-        <span className="text-muted">Platz für</span><span>{s ? `${zahl(s.kap * pr.faktor)} Einw.` : "–"}</span>
+        {neu && <><span className="text-muted">Kosten</span><span>{pr.kosten} Taler</span></>}
+        {gueter.map(x => <span key={x.gut} className="col-span-2">{GUETER[x.gut].icon} {GUETER[x.gut].label} für {x.minuten} min Fußweg (≈ {x.minuten * METER_JE_MINUTE} m Weg)</span>)}
+        {gueter.length > 0 && <><span className="text-muted">erreicht</span><span>{pr.versorgt} Häuser</span></>}
         <span className="text-muted">Wirkung</span><span className={pr.faktor >= 1 ? "text-ok font-bold" : pr.faktor > 0 ? "font-bold text-[#ca8a04]" : "text-bad font-bold"}>{Math.round(pr.faktor * 100)} %</span>
       </div>
       {neu ? (

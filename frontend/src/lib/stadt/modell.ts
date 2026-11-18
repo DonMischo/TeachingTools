@@ -178,6 +178,8 @@ export const BAUTEN = {
   kai: { label: "Kai mit Kränen", icon: "🏗️", b: 120, h: 30, hoehe: 22, farbe: "#8a9096", text: "Schiffe legen an, Kräne heben die Ladung an Land." },
   leuchtturm: { label: "Leuchtturm", icon: "🗼", b: 14, h: 14, hoehe: 34, farbe: "#f2f2f2", text: "Weist Schiffen nachts den Weg in die Bucht." },
   werft: { label: "Werft", icon: "⚓", b: 120, h: 60, hoehe: 30, farbe: "#7a8189", text: "Hier werden Schiffe gebaut — an tiefem Wasser mit Helling." },
+  brunnen: { label: "Brunnen", icon: "🪣", b: 10, h: 10, hoehe: 4, farbe: "#a8a29a", text: "Trinkwasser für die Häuser in 2 Minuten Fußweg — ohne Wasser zieht niemand ein." },
+  kapelle: { label: "Kapelle", icon: "⛪", b: 14, h: 22, hoehe: 14, farbe: "#e6ddcc", text: "Kleine Kirche fürs Dorf: Glaube in 3 Minuten Fußweg. Die Stadt braucht später eine Kirche." },
   hafenkontor: { label: "Hafenkontor", icon: "📦", b: 36, h: 24, hoehe: 16, farbe: "#b5654a", text: "Speicher- und Handelshaus am Kai: Schiffe bringen Salz, Tuch und Wein, Kaufleute lagern und verkaufen. Steht direkt am Wasser, die Zufahrt zeigt zur Stadt." },
   zollhaus: { label: "Zollhaus / Börse", icon: "💰", b: 40, h: 30, hoehe: 16, farbe: "#e6d6b6", text: "Kaufleute handeln Waren aus aller Welt; der Zoll füllt die Stadtkasse." },
   // Tech-Region

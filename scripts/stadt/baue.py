@@ -425,13 +425,23 @@ def kontor(t):
     quader(t["dach"], -0.15, 0.3, 0.06, -0.05, 0.38, 0.13)
 
 
+def brunnen(t):
+    """Ziehbrunnen: runder Brunnenkranz, Wasser, zwei Pfosten, kleines Dach"""
+    walze(t["wand"], 0, 0, 0, 0.35, 0.42, None, 16)
+    walze(t["akzent"], 0, 0, 0.3, 0.34, 0.36, None, 16)                  # Wasserspiegel
+    for x in (-0.36, 0.36):
+        quader(t["wand"], x - 0.04, -0.04, 0.3, x + 0.04, 0.04, 0.75)
+    quader(t["wand"], -0.4, -0.02, 0.62, 0.4, 0.02, 0.66)                # Welle
+    giebel(t["dach"], -0.5, -0.32, 0.5, 0.32, 0.75, 1.0, True)
+
+
 MODELLE = {
     "haus_wand": haus_wand, "dach_sattel": dach_sattel, "dach_walm": dach_walm, "dach_flach": dach_flach, "dach_mansard": dach_mansard,
     "kirche": kirche, "kathedrale": kathedrale, "burg": burg, "schloss": schloss, "tempel": tempel, "kolonnade": kolonnade,
     "arena": arena, "theater": lambda t: arena(t, True), "foerderturm": foerderturm, "hochofen": hochofen, "fabrik": fabrik,
     "kran": kran, "leuchtturm": leuchtturm, "moschee": moschee, "bahnhof": bahnhof, "hochhaus": hochhaus, "silo": silo,
     "muehle": muehle, "tor": tor, "rathaus": rathaus, "kuppelbau": kuppelbau, "campus": campus, "festungsbau": festungsbau,
-    "kaserne": kaserne, "kontor": kontor,
+    "kaserne": kaserne, "kontor": kontor, "brunnen": brunnen,
 }
 
 

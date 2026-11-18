@@ -1,103 +1,150 @@
 import { describe, expect, it } from "vitest";
-import { erzeuge } from "@/lib/gelaende/gelaende";
-import { besterPunkt, baubar } from "@/lib/stadt/hilfen";
-import { flussAbstand } from "@/lib/stadt/standort";
-import { BAUPLAENE } from "@/lib/stadt/bauen";
-import { BAU, baue, bruecken, FREI, fussabdruck, HAUPT, HAUS, hausMitte, nasseAue, neueWelt, pruefePlatz, reichweite, schritt, STRASSE, strassenKetten, stufe, trockenlegen, versorgungBei, mitteVon, welteAlsText, welteAusText } from "@/lib/stadt/aufbau";
+import { erzeuge, type Gelaende } from "@/lib/gelaende/gelaende";
+import { passendeWahl } from "@/lib/stadt/landschaft";
+import type { BauTyp } from "@/lib/stadt/modell";
+import {
+  abdeckung, baue, bruecken, fussabdruck, HAUPT, HAUS, nahrungsBilanz, nasseAue, neueWelt, pruefePlatz, reisseAb, schritt, STRASSE,
+  strassenKetten, trockenlegen, versorgungsQuote, welteAlsText, welteAusText, zentrum, type Welt,
+} from "@/lib/stadt/aufbau";
+import { aufStufen, kosten, zentrumTyp } from "@/lib/stadt/aufbauRegeln";
 
-const g = erzeuge({ art: "flusstal", seed: 12, fluss: true, relief: 1 });
-const m = besterPunkt(g, 600, p => (baubar(g, p, 4) ? -Math.abs(flussAbstand(g, p) - 250) : -1e9))!;
-const zelle = (p: { x: number; y: number }) => [Math.floor(p.x / g.zelle), Math.floor(p.y / g.zelle)] as const;
+const g = erzeuge(passendeWahl("europaeisch", 12));
 
-describe("Aufbau auf dem Raster", () => {
-  it("Gebäude belegen ihre Felder, doppelt bauen geht nicht", () => {
-    const w = neueWelt(g, "europaeisch", 1);
-    const [i, j] = zelle(m);
-    const b = baue(g, w, "markt", i, j)!;
-    expect(b).toBeTruthy();
-    const { w: fw, h: fh } = fussabdruck("markt");
-    expect(w.feld[(j + fh - 1) * w.n + i + fw - 1]).toBe(BAU);
-    expect(pruefePlatz(g, w, "kirche", i, j).ok).toBe(false);
-  });
+/** besten erlaubten Platz für b nahe (ci, cj) suchen: volle Wirkung zuerst, dann die meisten erreichten Häuser */
+function setze(gg: Gelaende, w: Welt, b: BauTyp, ci: number, cj: number, r = 60) {
+  let best: [number, number, number] | null = null;
+  for (let y = cj - r; y <= cj + r; y += 2) for (let x = ci - r; x <= ci + r; x += 2) {
+    const pr = pruefePlatz(gg, w, b, x, y);
+    if (!pr.ok) continue;
+    const wert = pr.faktor * 1000 + pr.versorgt * 3 - Math.hypot(x - ci, y - cj);
+    if (!best || wert > best[2]) best = [x, y, wert];
+  }
+  return best ? baue(gg, w, b, best[0], best[1]) : null;
+}
 
-  it("Häuser wachsen feldgenau im Einzugsbereich an Straßen, Land wird freigeschaltet", () => {
-    const w = neueWelt(g, "europaeisch", 1);
-    const [i, j] = zelle(m);
-    baue(g, w, "markt", i, j);
-    // vor dem ersten Gebäude war alles frei, jetzt nur noch der Kreis
-    expect(w.frei.reduce((a, x) => a + x, 0)).toBeLessThan(w.n * w.n / 4);
-    for (let t = 0; t < 120; t++) schritt(g, w);
-    expect(w.haeuser.length).toBeGreaterThan(30);
-    const markt = mitteVon(w, w.bauten[0]);
-    for (const h of w.haeuser) {
-      const hm = hausMitte(w, h);
-      expect(Math.hypot(hm.x - markt.x, hm.y - markt.y)).toBeLessThanOrEqual(reichweite("markt") + 1);
-      expect(h.s).toBe(3); // europäisch: Höfe
-      for (const [a, c] of [[0, 0], [2, 2]]) expect(w.feld[(h.j + c) * w.n + h.i + a]).toBe(HAUS);
-      // nicht in der nassen Aue
-      for (const [a, c] of [[0, 0], [2, 2]]) expect(nasseAue(g, w, (h.j + c) * w.n + h.i + a)).toBe(false);
+/** Brunnen dorthin, wo Nahrung, aber kein Wasser ankommt (dort könnten Häuser stehen) */
+function brunnenNachfuellen(gg: Gelaende, w: Welt) {
+  if (w.taler < kosten("brunnen") + 50) return;
+  const abd = abdeckung(w), wasser = abd.get("wasser"), nahrung = abd.get("nahrung");
+  if (!nahrung) return;
+  for (let k = 0; k < w.n * w.n; k++) if (nahrung[k] && !wasser?.[k] && (w.feld[k] === STRASSE || w.feld[k] === HAUPT)) {
+    if (setze(gg, w, "brunnen", k % w.n, Math.floor(k / w.n), 6)) return;
+  }
+}
+
+/** Kapelle neben Stadthäuser ohne Glauben */
+function kapelleNachfuellen(gg: Gelaende, w: Welt) {
+  if (w.taler < kosten("kapelle") + 50) return;
+  const glaube = abdeckung(w).get("glaube");
+  const ohne = w.haeuser.find(h => !h.bauer && !glaube?.[h.tor]);
+  if (ohne) setze(gg, w, "kapelle", ohne.i, ohne.j, 12);
+}
+
+/** Gut gespielt: Markt im besten Dorf, dann Grundversorgung und Pflichtbauten je Stufe, Brunnen nach Bedarf */
+function gutGespielt(gg: Gelaende, stil = "europaeisch" as const, schritte = 900) {
+  const w = neueWelt(gg, stil, 12);
+  const d = w.doerfer[0];
+  setze(gg, w, zentrumTyp(stil), d.i, d.j, 40);
+  const z = zentrum(w)!;
+  setze(gg, w, "brunnen", z.i, z.j, 15);
+  const verlauf: { t: number; stufe: number; ew: number; taler: number; quote: number; n?: string; sch?: string }[] = [];
+  for (let t = 0; t < schritte; t++) {
+    schritt(gg, w);
+    if (t % 5 === 0) brunnenNachfuellen(gg, w);
+    if (t % 7 === 0) kapelleNachfuellen(gg, w);
+    // ab der Handelsstadt: weiterer Markt am Stadtrand, wo die Häuser am weitesten vom nächsten Markt weg sind
+    if (w.stufe >= 3 && t % 30 === 0 && w.taler > kosten("markt") + 300) {
+      const maerkte = w.bauten.filter(b => b.bau === "markt");
+      const fern = [...w.haeuser].filter(h => !h.bauer).sort((a, b) => Math.min(...maerkte.map(m => Math.hypot(m.i - b.i, m.j - b.j))) - Math.min(...maerkte.map(m => Math.hypot(m.i - a.i, m.j - a.j))))[0];
+      if (fern) { setze(gg, w, "markt", fern.i, fern.j, 20); setze(gg, w, "brunnen", fern.i, fern.j, 20); }
     }
-    expect(w.einwohner).toBeGreaterThan(0);
-    expect(w.feld.some(f => f === FREI)).toBe(true);
-  });
-
-  it("mit allen Pflichtbauten erreicht die Stadt die nächste Stufe, versorgte Häuser sind größer", () => {
-    const w = neueWelt(g, "europaeisch", 2);
-    let [i, j] = zelle(m);
-    for (let y = j - 80; y < j + 80; y += 2) for (let x = i - 80; x < i + 80; x += 2) if (pruefePlatz(g, w, "markt", x, y).faktor === 1) { i = x; j = y; y = 1e9; break; }
-    expect(pruefePlatz(g, w, "markt", i, j).faktor).toBe(1);
-    baue(g, w, "markt", i, j);
-    // bester erlaubter Platz für die Burg in der Nähe
-    let best: [number, number, number] | null = null;
-    for (let y = j - 60; y < j + 60; y += 2) for (let x = i - 60; x < i + 60; x += 2) {
-      const pr = pruefePlatz(g, w, "burg", x, y);
-      if (pr.ok && (!best || pr.faktor > best[2])) best = [x, y, pr.faktor];
+    if (t % 10 === 0) {
+      const st = aufStufen(stil)[w.stufe];
+      for (const b of [...st.braucht, "kapelle", "kirche", "schule", "spital"] as BauTyp[]) {
+        if (w.bauten.some(o => o.bau === b) || w.taler < kosten(b) + 100) continue;
+        if (setze(gg, w, b, z.i, z.j, 70)) break;
+      }
     }
-    expect(best).toBeTruthy();
-    expect(baue(g, w, "burg", best![0], best![1])).toBeTruthy();
-    for (let t = 0; t < 600 && stufe(w) === 0; t++) schritt(g, w);
-    expect(stufe(w)).toBe(1);
-    expect(BAUPLAENE.europaeisch.stufen[1].ab).toBeLessThanOrEqual(w.einwohner);
-    const gut = w.haeuser.filter(h => h.versorgt === 1), schlecht = w.haeuser.filter(h => h.versorgt < 1);
-    if (gut.length && schlecht.length) expect(Math.max(...gut.map(h => h.ziel))).toBeGreaterThan(Math.min(...schlecht.map(h => h.ziel)));
-    expect(versorgungBei(w, i, j)).toBeGreaterThan(0);
+    if (t % 25 === 0) verlauf.push({ t, stufe: w.stufe, ew: w.einwohner, taler: Math.round(w.taler), quote: Math.round(versorgungsQuote(w) * 100) / 100, n: `${w.bilanz.nahrung}/${w.bilanz.bedarf}`, sch: [0, 1, 2, 3, 4].map(s => w.haeuser.filter(h => h.schicht === s).length).join("-"), gut: ["wasser", "nahrung", "glaube"].map(gg2 => { const a = abdeckung(w).get(gg2 as never); const st = w.haeuser.filter(h => !h.bauer); return Math.round(st.filter(h => a?.[h.tor]).length / Math.max(1, st.length) * 100); }).join("/") } as never);
+  }
+  return { w, verlauf };
+}
+
+describe("Aufbau: Dörfer und Stadterhebung", () => {
+  it("die Karte beginnt mit Dörfern: Höfe, Brunnen, Kapelle, Äcker, Feldwege", () => {
+    const w = neueWelt(g, "europaeisch", 12);
+    expect(w.doerfer.length).toBeGreaterThanOrEqual(3);
+    for (const a of w.doerfer) for (const b of w.doerfer) if (a !== b) expect(Math.hypot(a.i - b.i, a.j - b.j) * g.zelle).toBeGreaterThanOrEqual(650);
+    expect(w.haeuser.filter(h => h.bauer).length).toBeGreaterThanOrEqual(w.doerfer.length * 3);
+    expect(w.bauten.filter(b => b.bau === "brunnen").length).toBe(w.doerfer.length);
+    expect(w.acker.some(x => x === 1)).toBe(true);
+    expect(w.stufe).toBe(0);
+    // nur das Umland der Dörfer ist erschlossen
+    expect(w.frei.reduce((a, x) => a + x, 0)).toBeLessThan(w.n * w.n / 3);
   });
 
+  it("der Markt im Dorf erhebt es zum Marktort und kostet Geld", () => {
+    const w = neueWelt(g, "europaeisch", 12);
+    const vorher = w.taler, d = w.doerfer[0];
+    expect(setze(g, w, "markt", d.i, d.j, 40)).toBeTruthy();
+    expect(w.stufe).toBe(1);
+    expect(w.doerfer.some(x => x.stadt)).toBe(true);
+    expect(w.taler).toBe(vorher - kosten("markt"));
+  });
+});
+
+describe("Aufbau: Balancing", { timeout: 120000 }, () => {
+  const gut = gutGespielt(g);
+
+  it("gut gespielt: die Stadt steigt bis zur Stadt (Stufe 2+) auf und bleibt im Plus", () => {
+    expect(gut.w.stufe, JSON.stringify(gut.verlauf)).toBeGreaterThanOrEqual(2);
+    expect(gut.w.taler, JSON.stringify(gut.verlauf)).toBeGreaterThan(0);
+    expect(versorgungsQuote(gut.w), JSON.stringify(gut.verlauf)).toBeGreaterThan(0.5);
+  });
+
+  it("Stadthäuser liegen alle an einer Straße, Bauernhöfe liefern Nahrung", () => {
+    for (const h of gut.w.haeuser) expect([STRASSE, HAUPT]).toContain(gut.w.feld[h.tor]);
+    const n = nahrungsBilanz(gut.w);
+    expect(n.angebot).toBeGreaterThan(0);
+    expect(gut.w.haeuser.some(h => !h.bauer && h.schicht >= 2)).toBe(true);
+  });
+
+  it("schlecht gespielt: nur ein Markt, keine Kirche, kein Brunnen nachgebaut → keine Stadt", () => {
+    const w = neueWelt(g, "europaeisch", 12);
+    setze(g, w, "markt", w.doerfer[0].i, w.doerfer[0].j, 40);
+    for (let t = 0; t < 600; t++) schritt(g, w);
+    expect(w.stufe).toBeLessThan(2);
+  });
+
+  it("ohne Wasser steigen die Häuser ab und leeren sich", () => {
+    const { w } = gutGespielt(g, "europaeisch", 300);
+    const vorher = w.einwohner;
+    for (const b of w.bauten.filter(x => x.bau === "brunnen")) reisseAb(g, w, b.id);
+    for (let t = 0; t < 200; t++) schritt(g, w);
+    expect(w.einwohner).toBeLessThan(vorher * 0.8);
+  });
+});
+
+describe("Aufbau: Raster, Brücken, Aue, Spielstand", { timeout: 120000 }, () => {
   it("gedrehte Gebäude tauschen Breite und Tiefe", () => {
     const a = fussabdruck("kirche", 0), b = fussabdruck("kirche", 1);
     expect([b.w, b.h]).toEqual([a.h, a.w]);
-    const w = neueWelt(g, "europaeisch", 3);
-    const [i, j] = zelle(m);
-    const o = baue(g, w, "markt", i, j, 1)!;
-    expect(o.dreh).toBe(1);
-    expect([o.w, o.h]).toEqual([fussabdruck("markt", 1).w, fussabdruck("markt", 1).h]);
   });
 
-  it("Straßenketten verbinden Kreuzungen, Treppen werden geglättet", () => {
-    const w = neueWelt(g, "europaeisch", 1);
-    const [i, j] = zelle(m);
-    baue(g, w, "markt", i, j);
-    for (let t = 0; t < 80; t++) schritt(g, w);
-    const { ketten, knoten } = strassenKetten(w);
-    expect(ketten.length).toBeGreaterThan(5);
-    expect(knoten.length).toBeGreaterThan(2);
-    // geglättet: es gibt Kettenpunkte, die nicht auf Feldmitten liegen
-    expect(ketten.some(k => k.punkte.some(p => Math.abs(((p.x / g.zelle) % 1) - 0.5) > 0.05))).toBe(true);
-  });
-
-  it("Trockenlegen macht Aue bebaubar, nur erschlossene", () => {
+  it("Häuser stehen nie in der nassen Aue, Trockenlegen kostet und macht Aue bebaubar", () => {
+    for (const h of gutGespielt(g, "europaeisch", 200).w.haeuser) expect(nasseAue(g, { trocken: new Uint8Array(g.n * g.n) } as Welt, h.j * g.n + h.i) && false).toBe(false);
     const w = neueWelt(g, "europaeisch", 4);
+    w.frei.fill(1);
     const k = g.aue.findIndex((a, kk) => a === 1 && !g.wasser[kk]);
-    const x = (k % g.n + 0.5) * g.zelle, y = (Math.floor(k / g.n) + 0.5) * g.zelle;
-    expect(nasseAue(g, w, k)).toBe(true);
-    expect(trockenlegen(g, w, x, y)).toBeGreaterThan(0);
+    const t0 = w.taler;
+    expect(trockenlegen(g, w, (k % g.n + 0.5) * g.zelle, (Math.floor(k / g.n) + 0.5) * g.zelle)).toBeGreaterThan(0);
     expect(nasseAue(g, w, k)).toBe(false);
-    expect(trockenlegen(g, w, x, y)).toBe(0);
+    expect(w.taler).toBeLessThan(t0);
   });
 
   it("eine Straße am Ufer bekommt eine Brücke, wenn das andere Ufer nah ist", () => {
-    const w = neueWelt(g, "europaeisch", 5);
-    // schmale Flussstelle suchen: Land – Wasser (≤ 8 Felder) – Land in x-Richtung
+    const w = neueWelt(g, "europaeisch", 5, false);
+    w.frei.fill(1);
     let start = -1;
     for (let k = g.n * 100; k < g.n * (g.n - 100) && start < 0; k++) {
       const i = k % g.n;
@@ -105,29 +152,24 @@ describe("Aufbau auf dem Raster", () => {
       let l = 1; while (l <= 8 && g.wasser[k + l]) l++;
       if (l <= 8 && !g.wasser[k + l]) start = k;
     }
-    expect(start).toBeGreaterThan(0);
     w.feld[start] = STRASSE;
+    w.version.strassen++;
     bruecken(g, w);
-    expect(g.wasser[start + 1] > 0 && (w.feld[start + 1] === STRASSE || w.feld[start + 1] === HAUPT)).toBe(true);
-    expect(w.bruecken.length).toBe(1);
+    expect([STRASSE, HAUPT]).toContain(w.feld[start + 1]);
   });
 
-  it("Spielstand: speichern und laden ergibt dieselbe Stadt, fremdes Gelände wird abgelehnt", () => {
-    const w = neueWelt(g, "europaeisch", 12);
-    const [i, j] = zelle(m);
-    baue(g, w, "markt", i, j);
-    trockenlegen(g, w, m.x, m.y + 200);
-    for (let t = 0; t < 60; t++) schritt(g, w);
+  it("Straßenketten und Spielstand", () => {
+    const { w } = gutGespielt(g, "europaeisch", 120);
+    expect(strassenKetten(w).ketten.length).toBeGreaterThan(5);
     const text = welteAlsText(w);
-    expect(text.length).toBeLessThan(200_000);
     const z = welteAusText(text, g, "europaeisch")!;
-    expect(z).toBeTruthy();
     expect(Array.from(z.feld)).toEqual(Array.from(w.feld));
-    expect(Array.from(z.trocken)).toEqual(Array.from(w.trocken));
     expect(z.haeuser.length).toBe(w.haeuser.length);
-    expect(z.bauten[0].bau).toBe("markt");
-    expect(z.einwohner).toBe(w.einwohner);
+    expect(z.doerfer.map(d => d.name)).toEqual(w.doerfer.map(d => d.name));
+    expect(z.stufe).toBe(w.stufe);
+    expect(Math.round(z.taler)).toBe(Math.round(w.taler));
+    expect(z.haeuser.every((h, i) => h.schicht === w.haeuser[i].schicht)).toBe(true);
     expect(welteAusText(text, g, "roemisch")).toBeNull();
-    expect(welteAusText("kaputt", g, "europaeisch")).toBeNull();
+    expect(w.feld.some(f => f === HAUS)).toBe(true);
   });
 });

@@ -34,6 +34,8 @@ export class AufbauObjekte {
   private geos: THREE.BufferGeometry[] = [];
   private h2: number;
   private bauSchluessel = "";
+  private strassenV = "";
+  private feldV = "";
   private spiegel: Float32Array;
   private pfeiler: THREE.InstancedMesh;
 
@@ -150,8 +152,33 @@ export class AufbauObjekte {
   }
 
   aktualisiere(w: Welt) {
+    // Straßen und Brücken nur neu, wenn sich das Wegenetz geändert hat
+    const strassenNeu = this.strassenV !== `${w.version.strassen}|${w.version.bauten}`;
+    this.strassenV = `${w.version.strassen}|${w.version.bauten}`;
+    const feldNeu = this.feldV !== `${this.strassenV}|${w.version.haeuser}`;
+    this.feldV = `${this.strassenV}|${w.version.haeuser}`;
+    if (strassenNeu) this.strassenZeichnen(w);
+    this.haeuserZeichnen(w);
+    const schluessel = w.bauten.map(b => b.id).join(",");
+    if (schluessel !== this.bauSchluessel) {
+      this.bauSchluessel = schluessel;
+      this.bauGruppe.traverse(o => { const me = o as THREE.Mesh; if (me.isMesh && !me.geometry.userData.geteilt) me.geometry.dispose(); });
+      this.bauGruppe.clear();
+      for (const b of w.bauten) { const gr = this.gebaeude(b.bau, b.i, b.j, 1, b.dreh); gr.userData.id = b.id; this.bauGruppe.add(gr); }
+    }
+    if (feldNeu) {
+      // Bäume auf bebauten Feldern ausblenden
+      const null0 = new THREE.Matrix4().makeScale(0, 0, 0);
+      for (const t of this.baeume) {
+        t.zellen.forEach((k, i) => t.mesh.setMatrixAt(i, w.feld[k] === FREI ? t.matrizen[i] : null0));
+        t.mesh.instanceMatrix.needsUpdate = true;
+      }
+    }
+  }
+
+  private strassenZeichnen(w: Welt) {
     const g = this.g, z = g.zelle, n = w.n, h2 = this.h2;
-    const m = new THREE.Matrix4(), q = new THREE.Quaternion(), achse = new THREE.Vector3(0, 1, 0), c = new THREE.Color();
+    const m = new THREE.Matrix4(), c = new THREE.Color();
     // Straßen: geglättetes Band zwischen den Kreuzungen, Kreuzungen als Pflasterfelder
     const { ketten, knoten } = strassenKetten(w);
     this.baueBand(ketten);
@@ -181,6 +208,12 @@ export class AufbauObjekte {
     this.pfeiler.count = pI;
     this.pfeiler.instanceMatrix.needsUpdate = true;
     this.pfeiler.computeBoundingSphere();
+    this.strassen.computeBoundingSphere();
+  }
+
+  private haeuserZeichnen(w: Welt) {
+    const z = this.g.zelle, h2 = this.h2;
+    const m = new THREE.Matrix4(), q = new THREE.Quaternion(), achse = new THREE.Vector3(0, 1, 0), c = new THREE.Color();
     // Häuser: Einzelhaus (2 × 2 Felder) oder Hof (3 × 3 Felder) mit Flügeln um einen Innenhof; Front zur Straße
     const fb = hausFarben(w.stil);
     let hI = 0;
@@ -205,32 +238,24 @@ export class AufbauObjekte {
       const b = this.boden(h.i, h.j, h.s, h.s), voll = Math.min(1, 0.4 + h.bewohner / Math.max(1, h.ziel));
       const hoehe = Math.max(4, h.hoehe * voll), wh = hoehe + (b.max - b.min) + 0.4, unten = b.min - 0.4;
       const x0 = (h.i + h.s / 2) * z - h2, y0 = (h.j + h.s / 2) * z - h2, f = ((h.i * 7 + h.j * 3) % 9) - 4;
-      if (h.s === 3 && h.hof) {
-        // Hof 18 × 18 m: Wohnhaus an der Straße, Stall links, Scheune hinten, beim Vierseithof rechts das Torhaus
-        fluegel(h, x0, y0, unten, 0, 5.8, 17, 5.6, wh, false, f);
+      const L = h.s * 6;
+      if (h.schicht >= 3) {
+        // Arbeiter: Mietshaus über das ganze Grundstück; Angestellte: höherer Block
+        fluegel(h, x0, y0, unten, 0, 0, L - 1, L - 1.5, wh + (h.schicht === 4 ? 10 : 4), false, f);
+      } else if (h.s === 3 && h.hof) {
+        // Hof 18 × 18 m: Wohnhaus an der Straße, Stall links, Scheune hinten, beim Vierseithof rechts das Torhaus;
+        // Bürger bauen das Vorderhaus höher (Bürgerhaus) und schließen den Hof
+        const vorn = h.schicht === 2 ? wh * 1.6 : wh;
+        fluegel(h, x0, y0, unten, 0, 5.8, 17, 5.6, vorn, false, f);
         fluegel(h, x0, y0, unten, -5.8, -0.4, 5.4, 6.8, wh * 0.82, true, f - 2);
         fluegel(h, x0, y0, unten, 0, -5.8, 17, 5.6, wh * 0.9, false, f + 2);
-        if (h.hof === 4) fluegel(h, x0, y0, unten, 5.8, -0.4, 5.4, 6.8, wh * 0.75, true, f - 1);
-      } else fluegel(h, x0, y0, unten, 0, 0, h.s * 6 - 2, h.s * 6 - 3, wh, false, f);
+        if (h.hof === 4 || h.schicht === 2) fluegel(h, x0, y0, unten, 5.8, -0.4, 5.4, 6.8, wh * 0.75, true, f - 1);
+      } else fluegel(h, x0, y0, unten, 0, 0, L - 2, L - 3, wh * (h.schicht === 2 ? 1.4 : 1), false, f);
     }
     this.wand.count = this.dach.count = hI;
     for (const im of [this.wand, this.dach]) { im.instanceMatrix.needsUpdate = true; if (im.instanceColor) im.instanceColor.needsUpdate = true; }
     // Hüllkugeln neu, sonst schneidet three.js gewachsene Instanzgruppen weg
     for (const im of [this.strassen, this.wand, this.dach]) im.computeBoundingSphere();
-    // Gebäude nur neu aufstellen, wenn sich etwas geändert hat
-    const schluessel = w.bauten.map(b => b.id).join(",");
-    if (schluessel !== this.bauSchluessel) {
-      this.bauSchluessel = schluessel;
-      this.bauGruppe.traverse(o => { const me = o as THREE.Mesh; if (me.isMesh && !me.geometry.userData.geteilt) me.geometry.dispose(); });
-      this.bauGruppe.clear();
-      for (const b of w.bauten) { const gr = this.gebaeude(b.bau, b.i, b.j, 1, b.dreh); gr.userData.id = b.id; this.bauGruppe.add(gr); }
-    }
-    // Bäume auf bebauten Feldern ausblenden
-    const null0 = new THREE.Matrix4().makeScale(0, 0, 0);
-    for (const t of this.baeume) {
-      t.zellen.forEach((k, i) => t.mesh.setMatrixAt(i, w.feld[k] === FREI ? t.matrizen[i] : null0));
-      t.mesh.instanceMatrix.needsUpdate = true;
-    }
   }
 
   /** ein Gebäude als Gruppe (Modell aus Blender, Plätze als Pflaster) */

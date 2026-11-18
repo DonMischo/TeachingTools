@@ -50,7 +50,7 @@ function farbe(g: Gelaende, x: number, y: number, h: number, steil: number, r: R
 }
 
 /** Masken der Welt fürs Gelände: erschlossen (R), nasse Aue (G), trockengelegt (B) */
-export interface Masken { frei: Uint8Array; trocken: Uint8Array }
+export interface Masken { frei: Uint8Array; trocken: Uint8Array; acker?: Uint8Array }
 
 export function baueGelaende(g: Gelaende, m0: Masken): { gruppe: THREE.Group; uniforms: GelaendeUniforms; setzeMasken(m: Masken): void; entsorge(): void } {
   const B = g.breite, h2 = B / 2, S = 3, N = Math.round(B / S), K = 8, Q = N / K;
@@ -63,7 +63,7 @@ export function baueGelaende(g: Gelaende, m0: Masken): { gruppe: THREE.Group; un
       d[k * 4] = m.frei[k] ? 255 : 0;
       d[k * 4 + 1] = g.aue[k] && !m.trocken[k] && !g.wasser[k] ? 255 : 0;
       d[k * 4 + 2] = m.trocken[k] ? 255 : 0;
-      d[k * 4 + 3] = 255;
+      d[k * 4 + 3] = m.acker?.[k] ? 0 : 255;
     }
     tex.needsUpdate = true;
   };
@@ -94,6 +94,15 @@ uniform float uBreite;`)
   diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.32, 0.52, 0.5), 0.45 * smoothstep(0.3, 0.7, maske.g));
   float graben = 1.0 - smoothstep(0.0, 0.25 + fwidth(vWp.x), abs(fract((vWp.x + vWp.z) / 18.0) - 0.5) * 18.0);
   diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.36, 0.45, 0.32), 0.5 * graben * smoothstep(0.3, 0.7, maske.b));
+  // Äcker der Dörfer: Streifen in Gold, Braun und Grün (Feldfrüchte, Brache)
+  float acker = 1.0 - smoothstep(0.3, 0.7, maske.a);
+  if (acker > 0.01) {
+    float streifen = floor((vWp.x * 0.8 + vWp.z * 0.6) / 14.0);
+    float art = fract(sin(streifen * 12.9898) * 43758.5453);
+    vec3 feld = art < 0.4 ? vec3(0.78, 0.68, 0.36) : art < 0.7 ? vec3(0.55, 0.44, 0.3) : vec3(0.46, 0.6, 0.3);
+    float furche = 0.92 + 0.08 * sin((vWp.x * 0.6 - vWp.z * 0.8) * 2.2);
+    diffuseColor.rgb = mix(diffuseColor.rgb, feld * furche, 0.75 * acker);
+  }
   // Bauraster (6 m) nur auf erschlossenem Land
   vec2 f = abs(fract(vWp.xz / 6.0 + 0.5) - 0.5) * 6.0;
   float linie = 1.0 - smoothstep(0.0, 0.18 + fwidth(vWp.x) * 0.8, min(f.x, f.y));

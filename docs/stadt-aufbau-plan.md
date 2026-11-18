@@ -193,3 +193,20 @@ Zwei Märkte näher als 600 m teilen sich die Kunden; das Kärtchen zeigt dann �
 1. **Geld (Phase 5):** wirklich mit Steuern und Kosten, oder nur Nahrung, Versorgung und Personal als Grenzen? Mit Geld wird es ein echtes Aufbauspiel, aber schwerer für jüngere Klassen.
 2. **Warenkette:** vollständig mit Lager und Transport, oder vereinfacht als »Betrieb versorgt Häuser in Reichweite, wenn er Personal und Rohstoff hat«? Ich empfehle die vereinfachte Fassung.
 3. **Bisheriger Bau-Modus (2D):** bleibt er, oder geht er im Aufbau auf, sobald der fertig ist?
+
+---
+
+## 7. Umsetzungsstand (2026-11-18)
+
+Umgesetzt (`lib/stadt/aufbau.ts`, `lib/stadt/aufbauRegeln.ts`, Tests in `tests/aufbau.test.ts`):
+
+- **Dörfer und Stadterhebung (Phase 1):** 3–4 Dörfer mit Höfen, Brunnen, Kapelle, Äckern in Ringen und Feldwegen; Namen ausgedacht. Das Kern-Gebäude (Markt …) erhebt ein Dorf zum Marktort und legt Landstraßen zu den anderen.
+- **Bedürfnisse nach Güterordnung (Phase 2):** Reichweite in Gehminuten auf dem Wegenetz (80 m/min): Brunnen 2 min, Kapelle 3, Markt 6, Kirche 8, Rathaus 10, Burg 14, Dom 20. Schichten Bauern → Handwerker → Bürger → Arbeiter → Angestellte mit Auf- und Abstieg; ein leeres Haus verschwindet. Für den Aufstieg müssen 70 % der Häuser voll versorgt sein. Ab der Handelsstadt sind mehrere Märkte erlaubt; liegen sie näher als 600 m, halbiert sich ihre Wirkung.
+- **Nahrung (Phase 3, vereinfacht):** Jeder Bauernhof liefert 30 Einheiten, wenn er einen Markt über Wege erreicht, sonst 30 %. Dazu kommen Einfuhren über Bahnhof, Kai und Kontor sowie die Mühle mit +15 %. Neue Stadthäuser entstehen nur bei Nahrungsüberschuss. Fehlt Nahrung, bekommen die Dörfer neue Höfe (Landesausbau).
+- **Geld (Phase 5):** Baukosten aus Fläche und Höhe; Steuern 0,0065 · Steuerkraft^1,15 · Zufriedenheit; Unterhalt 0,005 · Baukosten + 0,012 · Stadtstraßen^0,8. Dorfbauten und Feldwege kosten nichts. Trockenlegen kostet 40 Taler, Abreißen gibt 25 % zurück.
+- **Leistung (Phase 0):** Neigung je Feld wird einmal vorab gerechnet. Straßenliste und Versorgungsraster werden nur bei Änderungen neu erstellt, Straßen und Bäume nur bei Änderungen neu gezeichnet. Ein Schritt dauert rund 10 ms statt bis zu 290 ms.
+- **Korrekturen:** In der Wegsuche (A*) wurde jeder Knoten ab dem zweiten verworfen, weil der Schlüssel mit Schätzung gegen die reinen Kosten verglichen wurde. Gebäude dürfen nicht mehr auf Straßen stehen und brauchen eine freie Zufahrt.
+
+Verlauf der »gut gespielten« Teststadt (europäisch, Seed 12): Stufe 2 nach etwa 60 Schritten, Stufe 3 nach etwa 280. Bei rund 8.200 Einwohnern ist Schluss, weil alle Dörfer voll sind; dann braucht es Bahn oder Schiff. Die Versorgung liegt fast überall bei 100 %.
+
+Offen: Berufe und Betriebe mit Personal (Phase 4), Karren und Fußgänger sichtbar (Phase 6), eigene Ketten je Stadttyp (Phase 7). Spät im Spiel sammelt sich viel Geld an; ein Ventil fehlt noch (teure Großbauten, Unterhalt der höheren Stufen).
