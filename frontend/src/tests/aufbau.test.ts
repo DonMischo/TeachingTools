@@ -3,7 +3,7 @@ import { erzeuge, type Gelaende } from "@/lib/gelaende/gelaende";
 import { passendeWahl } from "@/lib/stadt/landschaft";
 import type { BauTyp } from "@/lib/stadt/modell";
 import {
-  abdeckung, baue, baukosten, besetzung, bruecken, fussabdruck, HAUPT, HAUS, nahrungsBilanz, nasseAue, neueWelt, pruefePlatz, reisseAb, schritt, STRASSE,
+  abdeckung, baue, baukosten, besetzung, bruecken, gewerbe, fussabdruck, HAUPT, HAUS, nahrungsBilanz, nasseAue, neueWelt, pruefePlatz, reisseAb, schritt, STRASSE,
   strassenKetten, trockenlegen, versorgungsQuote, welteAlsText, welteAusText, zentrum, type Welt,
 } from "@/lib/stadt/aufbau";
 import { aufStufen, kosten, palette, zentrumTyp } from "@/lib/stadt/aufbauRegeln";
@@ -187,6 +187,28 @@ describe("Aufbau: Berufe", { timeout: 120000 }, () => {
     for (let y = 200; y < 300 && !ohne?.gruende.some(x => x.text.includes("Mühle")); y += 4) ohne = pruefePlatz(g, w, "baecker", 250, y);
     expect(ohne!.ok).toBe(false);
     expect(ohne!.gruende.some(x => x.text.includes("Mühle"))).toBe(true);
+  });
+
+  it("Werkstätten verkaufen an die Stadt: gleiche teilen sich die Kunden, Bäckerei ohne Mühle verkauft nichts", () => {
+    const w = neueWelt(g, "europaeisch", 12, false);
+    w.bauten = []; w.haeuser = [];
+    // 500 Handwerker, genug Leute für alle Stellen
+    for (let k = 0; k < 50; k++) w.haeuser.push({ i: k, j: 0, schicht: 1, bewohner: 10, bauer: false } as never);
+    w.einwohner = 500;
+    let id = 1;
+    const neu = (bau: BauTyp) => { const b = { id: id++, bau, i: 0, j: 0, w: 2, h: 2, dreh: 0, faktor: 1 } as never as Welt["bauten"][number]; w.bauten.push(b); w.version.bauten++; return b; };
+    const z1 = neu("zimmerei");
+    const allein = gewerbe(w).je.get(z1.id)!;
+    expect(allein.absatz).toBe(1);
+    expect(allein.ertrag).toBeGreaterThan(0.005 * kosten("zimmerei"));
+    // vier Zimmereien für 500 Leute: jede verkauft nur halb so viel
+    for (let k = 0; k < 3; k++) neu("zimmerei");
+    expect(gewerbe(w).je.get(z1.id)!.absatz).toBeCloseTo(0.5, 2);
+    const b = neu("baecker");
+    expect(gewerbe(w).je.get(b.id)!.ertrag).toBe(0);
+    expect(gewerbe(w).je.get(b.id)!.grund).toContain("Mühle");
+    neu("muehle");
+    expect(gewerbe(w).je.get(b.id)!.ertrag).toBeGreaterThan(0);
   });
 
   it("ein Betrieb ohne Personal steht still und versorgt niemanden", () => {

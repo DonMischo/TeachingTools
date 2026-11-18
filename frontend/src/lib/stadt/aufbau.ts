@@ -16,7 +16,7 @@ import type { P } from "./geometrie";
 import { BAUTEN, ZONEN, type BauTyp, type HausArt, type Stil } from "./modell";
 import { BAUPLAENE, pruefeOrt, type Bewertung, type Ort } from "./bauen";
 import {
-  ANBIETER, aufStufen, EINFUHR, ERWERBSQUOTE, grundVon, kosten, METER_JE_MINUTE, NAHRUNG_JE_HOF, palette, SCHICHTEN, SEKTOREN, START_TALER, STELLEN, steuern,
+  ANBIETER, aufStufen, EINFUHR, ERLOES_JE_STELLE, ERWERBSQUOTE, KUNDEN, grundVon, kosten, METER_JE_MINUTE, NAHRUNG_JE_HOF, palette, SCHICHTEN, SEKTOREN, START_TALER, STELLEN, steuern,
   TROCKEN_KOSTEN, unterhalt, VORRANG, VORSTUFE, zentrumTyp, type Gut, type Sektor,
 } from "./aufbauRegeln";
 
@@ -154,6 +154,32 @@ const laeuft = (bes: Besetzung, b: AufBau) => (bes.quote.get(b.id) ?? 1) >= 0.5;
 /** Wirkung einer Werkstatt-Art: Summe der Besetzung, höchstens `max` Betriebe */
 function werkstatt(w: Welt, bes: Besetzung, typ: BauTyp, max: number) {
   return w.bauten.filter(b => b.bau === typ).map(b => bes.quote.get(b.id) ?? 0).sort((a, x) => x - a).slice(0, max).reduce((a, x) => a + x, 0);
+}
+
+/**
+ * Verkauf der Werkstätten: jeder laufende Betrieb verdient je besetzter Stelle, solange die Kundschaft reicht.
+ * Gleiche Betriebe teilen sich die Kunden (Absatz < 100 %); ohne Vorstufe (Bäckerei ohne Mühle) kein Verkauf,
+ * je Mühle beliefert sie höchstens zwei Bäckereien.
+ */
+export function gewerbe(w: Welt, bes = besetzung(w)): { summe: number; je: Map<number, { absatz: number; ertrag: number; grund?: string }> } {
+  const je = new Map<number, { absatz: number; ertrag: number; grund?: string }>();
+  let summe = 0;
+  for (const typ of Object.keys(KUNDEN) as BauTyp[]) {
+    const liste = w.bauten.filter(b => b.bau === typ && !b.dorf).sort((a, b) => (bes.quote.get(b.id) ?? 0) - (bes.quote.get(a.id) ?? 0) || a.id - b.id);
+    if (!liste.length) continue;
+    const vor = VORSTUFE[typ];
+    const erlaubt = vor ? 2 * w.bauten.filter(b => b.bau === vor && laeuft(bes, b)).length : Infinity;
+    const aktiv = liste.filter((b, k) => laeuft(bes, b) && k < erlaubt);
+    const absatz = aktiv.length ? Math.min(1, w.einwohner / (aktiv.length * KUNDEN[typ]!)) : 0;
+    for (const b of liste) {
+      const q = bes.quote.get(b.id) ?? 0;
+      if (!aktiv.includes(b)) { je.set(b.id, { absatz: 0, ertrag: 0, grund: !laeuft(bes, b) ? "kein Personal" : `keine ${BAUTEN[vor!].label}` }); continue; }
+      const ertrag = ERLOES_JE_STELLE * STELLEN[typ]!.n * q * absatz;
+      je.set(b.id, { absatz, ertrag });
+      summe += ertrag;
+    }
+  }
+  return { summe, je };
 }
 
 /** Baukosten mit Zimmerei (−15 %, wenn eine besetzt ist) */
@@ -727,7 +753,7 @@ export function geldDetails(w: Welt) {
   // Brauerei hebt die Zufriedenheit, Webereien bringen Tuch in den Fernhandel
   const zufriedenheit = Math.min(1, (w.haeuser.length ? zufr / w.haeuser.length : 1) + 0.1 * werkstatt(w, bes, "brauerei", 1));
   const handel = 1 + 0.1 * werkstatt(w, bes, "weberei", 3);
-  const summe = steuern(kraft, zufriedenheit) * handel;
+  const summe = steuern(kraft, zufriedenheit) * handel, verkauf = gewerbe(w, bes).summe;
   const bau = w.bauten.filter(b => !b.dorf).reduce((a, b) => a + kosten(b.bau), 0);
   // Verwaltung, Wache und Rat wachsen mit der Stadt: je Stufe 20 % mehr Unterhalt; ab der Handelsstadt dazu
   // Armenfürsorge, Stadtwache und Kanzlei je Einwohner — sonst häuft eine große Stadt endlos Geld an
@@ -735,7 +761,7 @@ export function geldDetails(w: Welt) {
   const gebaeude = unterhalt(bau, 0) * aufschlag, wege = (unterhalt(0, strassen)) * aufschlag;
   const verwaltung = 0.015 * w.einwohner * Math.max(0, w.stufe - 2);
   return {
-    steuern: summe, unterhalt: gebaeude + wege + verwaltung,
+    steuern: summe + verkauf, unterhalt: gebaeude + wege + verwaltung, verkauf,
     steuernJe: kraftJe.map(k => (kraft ? (summe * k) / kraft : 0)), zufriedenheit, handel: handel - 1,
     gebaeude, wege, verwaltung, strassenfelder: strassen,
   };

@@ -75,6 +75,15 @@ export const STELLEN: Partial<Record<BauTyp, { schicht: number; n: number; sekto
   zechenturm: { schicht: 3, n: 50, sektor: "industrie" }, kai: { schicht: 1, n: 10, sektor: "handel" }, werft: { schicht: 3, n: 30, sektor: "industrie" },
 };
 
+/**
+ * Werkstätten verkaufen an die Stadt: Erlös je besetzter Stelle und Schritt, solange es Kundschaft gibt.
+ * KUNDEN = Einwohner, die ein Betrieb dieser Art versorgen kann — mehr gleiche Betriebe teilen sich die Kunden.
+ */
+export const ERLOES_JE_STELLE = 0.25;
+export const KUNDEN: Partial<Record<BauTyp, number>> = {
+  muehle: 300, baecker: 150, brauerei: 300, schmiede: 250, zimmerei: 250, weberei: 400,
+};
+
 /** Anteil der Bewohner, die in Betrieben arbeiten (der Rest arbeitet zu Hause, im Haushalt, auf dem eigenen Acker) */
 export const ERWERBSQUOTE = 0.3;
 /** Reihenfolge, in der Betriebe Personal bekommen: erst die Versorgung, dann der Rest */

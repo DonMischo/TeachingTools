@@ -20,7 +20,7 @@ import { BAUTEN, STILE, type BauTyp, type Stil } from "@/lib/stadt/modell";
 import { lageRegeln } from "@/lib/stadt/bauen";
 import { ANBIETER, aufStufen, GUETER, kosten, METER_JE_MINUTE, palette, SCHICHTEN, SEKTOREN, STELLEN, TROCKEN_KOSTEN, zentrumTyp, type Gut, type Sektor } from "@/lib/stadt/aufbauRegeln";
 import {
-  abdeckung, baue, bauBei, baukosten, besetzung, geldDetails, nahrungsDetails, erreichteHaeuser, fussabdruck, hausFarben, mitteVon, naechsteStufeFehlt, neueWelt, pruefePlatz, reichweite, reisseAb, schritt, stufe, versorgungsQuote,
+  abdeckung, baue, bauBei, baukosten, besetzung, geldDetails, gewerbe, nahrungsDetails, erreichteHaeuser, fussabdruck, hausFarben, mitteVon, naechsteStufeFehlt, neueWelt, pruefePlatz, reichweite, reisseAb, schritt, stufe, versorgungsQuote,
   trockenlegen, TROCKEN_RADIUS, welteAlsText, welteAusText,
   type Platzpruefung, type Welt,
 } from "@/lib/stadt/aufbau";
@@ -725,7 +725,7 @@ function BauMenue({ stufen, pal, stufe, taler, preis, gewaehlt, waehle, zu }: {
 
 /** Übersicht (I): Geld, Nahrung, Bevölkerung und Arbeit, Betriebe — je Posten */
 function Uebersicht({ w, zu }: { w: Welt; zu: () => void }) {
-  const geld = geldDetails(w), nah = nahrungsDetails(w), bes = besetzung(w);
+  const geld = geldDetails(w), nah = nahrungsDetails(w), bes = besetzung(w), verk = gewerbe(w, bes);
   const f = (x: number) => x.toFixed(1).replace(".", ",");
   const betriebe = w.bauten.filter(b => STELLEN[b.bau] && !b.dorf);
   return (
@@ -738,6 +738,7 @@ function Uebersicht({ w, zu }: { w: Welt; zu: () => void }) {
         <section>
           <div className="mb-1 font-bold">💰 Geld je Schritt: {geld.steuern - geld.unterhalt >= 0 ? "+" : ""}{f(geld.steuern - geld.unterhalt)}</div>
           {geld.steuernJe.map((x, k) => x > 0.05 && <div key={k} className="flex justify-between"><span>Steuern {SCHICHTEN[k].name}</span><span className="text-ok">+{f(x)}</span></div>)}
+          {geld.verkauf > 0.05 && <div className="flex justify-between"><span>Verkauf der Werkstätten</span><span className="text-ok">+{f(geld.verkauf)}</span></div>}
           <div className="flex justify-between text-muted"><span>Zufriedenheit · Handel (Weberei)</span><span>{Math.round(geld.zufriedenheit * 100)} % · +{Math.round(geld.handel * 100)} %</span></div>
           <div className="flex justify-between"><span>Unterhalt Gebäude</span><span className="text-bad">−{f(geld.gebaeude)}</span></div>
           <div className="flex justify-between"><span>Unterhalt Wege ({geld.strassenfelder} Felder)</span><span className="text-bad">−{f(geld.wege)}</span></div>
@@ -764,8 +765,9 @@ function Uebersicht({ w, zu }: { w: Welt; zu: () => void }) {
         <section>
           <div className="mb-1 font-bold">🏭 Betriebe ({betriebe.length})</div>
           {betriebe.map(b => {
-            const q = bes.quote.get(b.id) ?? 1;
-            return <div key={b.id} className="flex justify-between"><span>{BAUTEN[b.bau].icon} {BAUTEN[b.bau].label}</span><span className={q >= 1 ? "text-ok" : q >= 0.5 ? "text-[#ca8a04]" : "text-bad"}>{Math.round(q * 100)} % besetzt{q < 0.5 ? " · steht still" : ""}</span></div>;
+            const q = bes.quote.get(b.id) ?? 1, v = verk.je.get(b.id);
+            return <div key={b.id} className="flex justify-between gap-2"><span>{BAUTEN[b.bau].icon} {BAUTEN[b.bau].label}</span><span className={q >= 1 ? "text-ok" : q >= 0.5 ? "text-[#ca8a04]" : "text-bad"}>{Math.round(q * 100)} % besetzt{q < 0.5 ? " · steht still" : ""}
+              {v && (v.grund ? <span className="text-bad"> · verkauft nichts ({v.grund})</span> : <span className={v.absatz < 0.7 ? "text-[#ca8a04]" : "text-muted"}> · Absatz {Math.round(v.absatz * 100)} % · +{f(v.ertrag)}</span>)}</span></div>;
           })}
         </section>
       </div>
