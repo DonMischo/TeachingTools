@@ -290,6 +290,7 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "🏆 Erfolge", text: "41 Erfolge: für geschaffte Stationen, ganze Epochen, das Flop-Museum, jede gelöste Mitmach-Demo (z. B. SOS morsen, drei Dias richtig einlegen, Staffel unter 10 Tagen) und Bestwerte in den Spielen. Neue Erfolge blenden kurz ein; alle stehen auch in der Übersicht »Erfolge«." },
       { label: "🧩 Wer war zuerst?", text: "Fünf Medien nach dem Jahr ordnen (oben das älteste). Zählt die Serie fehlerfreier Runden." },
       { label: "💾 Speichern", text: "Wie beim TaskCrawler liegt der Fortschritt am Server: bei Angemeldeten am Konto (auf jedem Gerät derselbe Stand), bei Gästen am Gast-Zugang ihrer Sitzung. Oben rechts steht, wo gespeichert wird. Nur die Offline-Datei und die TaskCrawler-Station speichern im Browser. »Fortschritt zurücksetzen« unter der Station sperrt alles wieder." },
+      { label: "🔓 Alles freischalten", text: "Lehrkräfte sehen oben den Knopf »Alles freischalten«: Dann sind alle Stationen, Fotos und Flops offen, um etwas zu zeigen — nur in diesem Browser-Tab, bis er geschlossen wird. Der gespeicherte Fortschritt ändert sich dadurch nicht." },
       { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
     ],
   },
