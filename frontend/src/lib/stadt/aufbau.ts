@@ -16,8 +16,8 @@ import type { P } from "./geometrie";
 import { BAUTEN, ZONEN, type BauTyp, type HausArt, type Stil } from "./modell";
 import { BAUPLAENE, pruefeOrt, type Bewertung, type Ort } from "./bauen";
 import {
-  ANBIETER, aufStufen, EINFUHR, grundVon, kosten, METER_JE_MINUTE, NAHRUNG_JE_HOF, palette, SCHICHTEN, START_TALER, steuern,
-  TROCKEN_KOSTEN, unterhalt, zentrumTyp, type Gut,
+  ANBIETER, aufStufen, EINFUHR, ERWERBSQUOTE, grundVon, kosten, METER_JE_MINUTE, NAHRUNG_JE_HOF, palette, SCHICHTEN, SEKTOREN, START_TALER, STELLEN, steuern,
+  TROCKEN_KOSTEN, unterhalt, VORRANG, zentrumTyp, type Gut, type Sektor,
 } from "./aufbauRegeln";
 
 export const FREI = 0, STRASSE = 1, HAUPT = 2, HAUS = 3, BAU = 4;
@@ -91,15 +91,87 @@ function eben(g: Gelaende) {
 }
 const ok25 = (g: Gelaende, i: number, j: number) => i >= 0 && j >= 0 && i < g.n && j < g.n && eben(g).e25[j * g.n + i] === 1;
 
+// ---------------------------------------------------------------- Berufe und Besetzung
+
+export interface Besetzung {
+  /** Anteil besetzter Stellen je Gebäude-ID (1 = voll, ohne Stellen immer 1) */
+  quote: Map<number, number>;
+  /** Arbeitskräfte je Schicht, die in Betrieben arbeiten könnten */
+  angebot: number[];
+  /** davon nach der Verteilung noch frei */
+  frei: number[];
+  /** offene Stellen je Schicht */
+  fehlend: number[];
+  /** Erwerbstätige je Wirtschaftszweig */
+  sektoren: Record<Sektor, number>;
+}
+
+const besetzungCache = new WeakMap<Welt, { schluessel: string; b: Besetzung }>();
+/**
+ * Personal verteilen: jede Schicht stellt ERWERBSQUOTE ihrer Bewohner für Betriebe; die Schicht darunter darf
+ * aushelfen (Bauern am Markt, Handwerker im Rathaus). Betriebe bekommen Leute nach VORRANG, Versorgung zuerst.
+ */
+export function besetzung(w: Welt): Besetzung {
+  const schluessel = `${w.tick}|${w.version.bauten}|${w.version.haeuser}`;
+  const c = besetzungCache.get(w);
+  if (c && c.schluessel === schluessel) return c.b;
+  const angebot = SCHICHTEN.map(() => 0), leute = SCHICHTEN.map(() => 0);
+  let bauern = 0;
+  for (const h of w.haeuser) {
+    angebot[h.schicht] += h.bewohner * ERWERBSQUOTE;
+    if (h.bauer) bauern += h.bewohner; else leute[h.schicht] += h.bewohner;
+  }
+  const frei = [...angebot], fehlend = SCHICHTEN.map(() => 0);
+  const sektoren = Object.fromEntries(Object.keys(SEKTOREN).map(k => [k, 0])) as Record<Sektor, number>;
+  const quote = new Map<number, number>();
+  const rang = (b: AufBau) => { const k = VORRANG.indexOf(b.bau); return k < 0 ? VORRANG.length : k; };
+  for (const b of [...w.bauten].sort((a, x) => rang(a) - rang(x) || a.id - x.id)) {
+    const st = STELLEN[b.bau];
+    if (!st || b.dorf) { quote.set(b.id, 1); continue; }
+    let rest = st.n;
+    for (const sch of [st.schicht, st.schicht - 1]) {
+      if (sch < 0 || rest <= 0) continue;
+      const nimm = Math.min(rest, frei[sch]);
+      frei[sch] -= nimm; rest -= nimm;
+    }
+    fehlend[st.schicht] += rest;
+    quote.set(b.id, (st.n - rest) / st.n);
+    sektoren[st.sektor] += st.n - rest;
+  }
+  // Bauern arbeiten auf dem Feld; Stadtleute ohne Stelle arbeiten selbstständig: Handwerker in der eigenen
+  // Werkstatt, Bürger als Kaufleute, Arbeiter in kleinen Betrieben, Angestellte in Büros
+  const eigen: Sektor[] = ["land", "handwerk", "handel", "industrie", "handel"];
+  sektoren.land += bauern * 0.6;
+  for (let k = 1; k < SCHICHTEN.length; k++) sektoren[eigen[k]] += leute[k] * 0.2 + frei[k];
+  const b = { quote, angebot, frei, fehlend, sektoren };
+  besetzungCache.set(w, { schluessel, b });
+  return b;
+}
+
+/** Betrieb läuft (mindestens die Hälfte der Stellen besetzt) */
+const laeuft = (bes: Besetzung, b: AufBau) => (bes.quote.get(b.id) ?? 1) >= 0.5;
+
+/** Wirkung einer Werkstatt-Art: Summe der Besetzung, höchstens `max` Betriebe */
+function werkstatt(w: Welt, bes: Besetzung, typ: BauTyp, max: number) {
+  return w.bauten.filter(b => b.bau === typ).map(b => bes.quote.get(b.id) ?? 0).sort((a, x) => x - a).slice(0, max).reduce((a, x) => a + x, 0);
+}
+
+/** Baukosten mit Zimmerei (−15 %, wenn eine besetzt ist) */
+export function baukosten(w: Welt, b: BauTyp) {
+  return Math.round(kosten(b) * (werkstatt(w, besetzung(w), "zimmerei", 1) >= 0.5 ? 0.85 : 1));
+}
+
 /** Versorgung je Gut: 1 = Straßenfeld in Reichweite eines Anbieters. Neu nur, wenn sich Straßen oder Gebäude ändern */
 const abdeckungCache = new WeakMap<Welt, { schluessel: string; raster: Map<Gut, Uint8Array> }>();
 export function abdeckung(w: Welt): Map<Gut, Uint8Array> {
-  const schluessel = `${w.version.strassen}|${w.version.bauten}`;
+  const bes = besetzung(w);
+  const aktiv = w.bauten.filter(b => laeuft(bes, b));
+  const schluessel = `${w.version.strassen}|${aktiv.map(b => b.id).join(",")}`;
   const alt = abdeckungCache.get(w);
   if (alt && alt.schluessel === schluessel) return alt.raster;
   const n = w.n, raster = new Map<Gut, Uint8Array>();
   const dist = new Float32Array(n * n);
-  for (const b of w.bauten) for (const a of ANBIETER[b.bau] ?? []) {
+  for (const b of aktiv) for (const a of ANBIETER[b.bau] ?? []) {
     let r = raster.get(a.gut);
     if (!r) { r = new Uint8Array(n * n); raster.set(a.gut, r); }
     erreichbar(w, b, a.minuten, r, dist);
@@ -327,7 +399,7 @@ export function pruefePlatz(g: Gelaende, w: Welt, b: BauTyp, i: number, j: numbe
   const pal = palette(w.stil).find(p => p.bau === b);
   if (!pal) { ok = false; gruende.push({ ok: false, text: "gehört nicht zu diesem Stadttyp" }); }
   else if (pal.stufe > w.stufe) { ok = false; gruende.push({ ok: false, text: `erst ab Stufe ${pal.stufe + 1}` }); }
-  const k0 = kosten(b);
+  const k0 = baukosten(w, b);
   if (w.taler < k0) { ok = false; gruende.push({ ok: false, text: `zu teuer: ${k0} Taler, du hast ${Math.floor(w.taler)}` }); }
   const p = mitteVon(w, { i, j, w: fw, h: fh });
   // Lageregeln nur für Gebäude aus dem Bauplan (Grundversorgung hat keine)
@@ -600,13 +672,17 @@ function hausWerte(w: Welt, h: AufHaus) {
 export function nahrungsBilanz(w: Welt, abd = abdeckung(w)): { angebot: number; bedarf: number } {
   const markt = abd.get("nahrung");
   const anbindung = markt ? marktAnbindung(w) : null;
+  const bes = besetzung(w);
+  // Schmiede: Werkzeug für die Höfe (+20 %)
+  const werkzeug = 1 + 0.2 * werkstatt(w, bes, "schmiede", 1);
   let angebot = 0, bedarf = 0;
   for (const h of w.haeuser) {
-    if (h.bauer) angebot += NAHRUNG_JE_HOF * (anbindung?.[h.tor] ? 1 : 0.3) * (h.bewohner / Math.max(1, h.ziel));
+    if (h.bauer) angebot += NAHRUNG_JE_HOF * werkzeug * (anbindung?.[h.tor] ? 1 : 0.3) * (h.bewohner / Math.max(1, h.ziel));
     else bedarf += h.bewohner;
   }
-  for (const b of w.bauten) angebot += EINFUHR[b.bau] ?? 0;
-  if (w.bauten.some(b => b.bau === "muehle")) angebot *= 1.15;
+  for (const b of w.bauten) angebot += (EINFUHR[b.bau] ?? 0) * (bes.quote.get(b.id) ?? 1);
+  // Mühle und Bäckereien machen aus Getreide mehr Brot
+  angebot *= 1 + 0.15 * werkstatt(w, bes, "muehle", 1) + 0.15 * werkstatt(w, bes, "baecker", 2);
   return { angebot: Math.round(angebot), bedarf };
 }
 
@@ -626,9 +702,12 @@ function marktAnbindung(w: Welt): Uint8Array {
 export function geldBilanz(w: Welt): { steuern: number; unterhalt: number } {
   let kraft = 0, zufr = 0;
   for (const h of w.haeuser) { kraft += h.bewohner * SCHICHTEN[h.schicht].steuer; zufr += h.versorgt; }
-  const z = w.haeuser.length ? zufr / w.haeuser.length : 1;
+  const bes = besetzung(w);
+  // Brauerei hebt die Zufriedenheit, Webereien bringen Tuch in den Fernhandel
+  const z = Math.min(1, (w.haeuser.length ? zufr / w.haeuser.length : 1) + 0.1 * werkstatt(w, bes, "brauerei", 1));
+  const handel = 1 + 0.1 * werkstatt(w, bes, "weberei", 3);
   const bau = w.bauten.filter(b => !b.dorf).reduce((a, b) => a + kosten(b.bau), 0);
-  return { steuern: steuern(kraft, z), unterhalt: unterhalt(bau, stadtStrassen(w)) };
+  return { steuern: steuern(kraft, z) * handel, unterhalt: unterhalt(bau, stadtStrassen(w)) };
 }
 
 /** Straßenfelder der Stadt (im erschlossenen Kreis um das Zentrum) */
@@ -669,13 +748,18 @@ export function schritt(g: Gelaende, w: Welt): void {
   const nahrungOk = (h: AufHaus) => quote >= 0.999 || ((h.i * 73 + h.j * 37) % 100) / 100 < quote;
   if (w.tick % 4 === 1) {
     const raus: AufHaus[] = [];
+    // Aufstiegsbremse: es steigen nur so viele auf, dass die Betriebe ihrer Schicht besetzt bleiben
+    const spielraum = [...besetzung(w).frei];
     for (const h of w.haeuser) {
       h.versorgt = versorgungVon(w, h, abd, nahrungOk);
       if (h.versorgt < 0.999) h.mangel += 4; else h.mangel = 0;
       // Aufstieg: Haus voll, alles da, was die nächste Schicht braucht, und die Stufe erlaubt es
       const hoeher = h.schicht + 1;
       if (!h.bauer && h.versorgt >= 0.999 && h.bewohner >= h.ziel && hoeher <= st[w.stufe].maxSchicht && hoeher < SCHICHTEN.length
-        && versorgungVon(w, h, abd, nahrungOk, hoeher) >= 0.999) { h.schicht = hoeher; w.version.haeuser++; }
+        && versorgungVon(w, h, abd, nahrungOk, hoeher) >= 0.999 && spielraum[h.schicht] >= h.bewohner * ERWERBSQUOTE) {
+        spielraum[h.schicht] -= h.bewohner * ERWERBSQUOTE;
+        h.schicht = hoeher; w.version.haeuser++;
+      }
       // Abstieg nach längerem Mangel; das unterste Stadthaus steht dann leer
       if (h.mangel >= 24) {
         h.mangel = 0;
@@ -821,6 +905,9 @@ export function welteAusText(text: string, g: Gelaende, stil: Stil): Welt | null
     w.einwohner = d.einwohner; w.tick = d.tick; w.stufe = d.stufe; w.taler = d.taler; w.strassenRadius = d.strassenRadius; w.naechsteId = d.naechsteId;
     w.bruecken = d.bruecken.map((b: number[]) => ({ i: b[0], j: b[1] }));
     w.version = { strassen: 1, haeuser: 1, bauten: 1 };
+    // Bilanz gleich zeigen, nicht erst nach dem ersten Schritt
+    const nb = nahrungsBilanz(w), gb = geldBilanz(w);
+    w.bilanz = { steuern: gb.steuern, unterhalt: gb.unterhalt, nahrung: nb.angebot, bedarf: nb.bedarf };
     return w;
   } catch {
     return null;

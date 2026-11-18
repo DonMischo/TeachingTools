@@ -209,4 +209,6 @@ Umgesetzt (`lib/stadt/aufbau.ts`, `lib/stadt/aufbauRegeln.ts`, Tests in `tests/a
 
 Verlauf der »gut gespielten« Teststadt (europäisch, Seed 12): Stufe 2 nach etwa 60 Schritten, Stufe 3 nach etwa 280. Bei rund 8.200 Einwohnern ist Schluss, weil alle Dörfer voll sind; dann braucht es Bahn oder Schiff. Die Versorgung liegt fast überall bei 100 %.
 
-Offen: Berufe und Betriebe mit Personal (Phase 4), Karren und Fußgänger sichtbar (Phase 6), eigene Ketten je Stadttyp (Phase 7). Spät im Spiel sammelt sich viel Geld an; ein Ventil fehlt noch (teure Großbauten, Unterhalt der höheren Stufen).
+- **Berufe (Phase 4):** Betriebe haben Stellen einer Schicht; die Schicht darunter hilft aus, z. B. Bauern am Markt. 30 % der Bewohner arbeiten in Betrieben. Vergeben wird nach Vorrang, Versorgung zuerst. Ein Betrieb mit weniger als der Hälfte des Personals bietet nichts an. Werkstätten: Bäckerei (+15 % Nahrung, bis 2), Schmiede (Höfe +20 %), Weberei (Steuern +10 %, bis 3), Zimmerei (Baukosten −15 %), Brauerei (Zufriedenheit +0,1). Die Aufstiegsbremse lässt nur so viele Häuser aufsteigen, dass die Betriebe ihrer Schicht besetzt bleiben. Das Berufsgefüge je Zweig wird gegen die Anteile um 1450 angezeigt.
+
+Offen: Karren und Fußgänger sichtbar (Phase 6), eigene Ketten je Stadttyp (Phase 7). Spät im Spiel sammelt sich viel Geld an; ein Ventil fehlt noch (teure Großbauten, Unterhalt der höheren Stufen).

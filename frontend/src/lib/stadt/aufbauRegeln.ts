@@ -40,7 +40,41 @@ export const ANBIETER: Partial<Record<BauTyp, { gut: Gut; minuten: number }[]>> 
 /** Grundversorgung, die jeder Stadttyp bauen kann (ab Stufe) */
 export const GRUNDBAUTEN: { bau: BauTyp; stufe: number }[] = [
   { bau: "brunnen", stufe: 0 }, { bau: "kapelle", stufe: 0 }, { bau: "schule", stufe: 2 }, { bau: "spital", stufe: 2 }, { bau: "haltestelle", stufe: 4 },
+  // Werkstätten (Berufe)
+  { bau: "baecker", stufe: 1 }, { bau: "schmiede", stufe: 1 }, { bau: "zimmerei", stufe: 1 }, { bau: "weberei", stufe: 2 }, { bau: "brauerei", stufe: 2 },
 ];
+
+// ---------------------------------------------------------------- Berufe
+
+/** Wirtschaftszweige; Zielanteile nach der Berufsstruktur spätmittelalterlicher Städte (gerundet) */
+export const SEKTOREN = {
+  land: { label: "Landwirtschaft", icon: "🌾", ziel: 0.25 },
+  nahrung: { label: "Nahrung", icon: "🥖", ziel: 0.15 },
+  handwerk: { label: "Handwerk und Textil", icon: "⚒️", ziel: 0.25 },
+  bau: { label: "Bau", icon: "🪚", ziel: 0.1 },
+  handel: { label: "Handel und Verwaltung", icon: "⚖️", ziel: 0.15 },
+  dienste: { label: "Kirche, Schule, Pflege", icon: "⛪", ziel: 0.1 },
+  industrie: { label: "Industrie und Verkehr", icon: "🏭", ziel: 0 },
+} as const;
+export type Sektor = keyof typeof SEKTOREN;
+
+/** Stellen je Betrieb: Schicht (die Schicht darunter darf aushelfen), Zahl, Wirtschaftszweig */
+export const STELLEN: Partial<Record<BauTyp, { schicht: number; n: number; sektor: Sektor }>> = {
+  markt: { schicht: 1, n: 6, sektor: "nahrung" }, forum: { schicht: 1, n: 6, sektor: "nahrung" }, plaza: { schicht: 1, n: 6, sektor: "nahrung" },
+  muehle: { schicht: 1, n: 4, sektor: "nahrung" }, baecker: { schicht: 1, n: 3, sektor: "nahrung" }, brauerei: { schicht: 1, n: 4, sektor: "nahrung" },
+  schmiede: { schicht: 1, n: 3, sektor: "handwerk" }, weberei: { schicht: 1, n: 6, sektor: "handwerk" }, zimmerei: { schicht: 1, n: 4, sektor: "bau" },
+  kirche: { schicht: 1, n: 3, sektor: "dienste" }, kloster: { schicht: 1, n: 6, sektor: "dienste" }, kathedrale: { schicht: 2, n: 8, sektor: "dienste" },
+  schule: { schicht: 2, n: 4, sektor: "dienste" }, spital: { schicht: 2, n: 6, sektor: "dienste" }, universitaet: { schicht: 2, n: 20, sektor: "dienste" },
+  rathaus: { schicht: 2, n: 6, sektor: "handel" }, hafenkontor: { schicht: 2, n: 6, sektor: "handel" }, zollhaus: { schicht: 2, n: 4, sektor: "handel" },
+  burg: { schicht: 1, n: 8, sektor: "dienste" }, kaserne: { schicht: 1, n: 12, sektor: "dienste" },
+  fabrik: { schicht: 3, n: 40, sektor: "industrie" }, bahnhof: { schicht: 3, n: 20, sektor: "industrie" }, hochofen: { schicht: 3, n: 60, sektor: "industrie" },
+  zechenturm: { schicht: 3, n: 50, sektor: "industrie" }, kai: { schicht: 1, n: 10, sektor: "handel" }, werft: { schicht: 3, n: 30, sektor: "industrie" },
+};
+
+/** Anteil der Bewohner, die in Betrieben arbeiten (der Rest arbeitet zu Hause, im Haushalt, auf dem eigenen Acker) */
+export const ERWERBSQUOTE = 0.3;
+/** Reihenfolge, in der Betriebe Personal bekommen: erst die Versorgung, dann der Rest */
+export const VORRANG: BauTyp[] = ["markt", "forum", "plaza", "muehle", "baecker", "kirche", "burg", "rathaus", "schmiede", "zimmerei", "schule", "spital", "weberei", "brauerei"];
 
 export interface Schicht { name: string; grund: Gut[]; bewohner: number; steuer: number }
 

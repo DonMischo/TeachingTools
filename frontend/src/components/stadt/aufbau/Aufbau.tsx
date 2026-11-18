@@ -16,9 +16,9 @@ import * as THREE from "three";
 import type { Gelaende } from "@/lib/gelaende/gelaende";
 import { BAUTEN, STILE, type BauTyp, type Stil } from "@/lib/stadt/modell";
 import { lageRegeln } from "@/lib/stadt/bauen";
-import { ANBIETER, aufStufen, GUETER, kosten, METER_JE_MINUTE, palette, SCHICHTEN, TROCKEN_KOSTEN, zentrumTyp, type Gut } from "@/lib/stadt/aufbauRegeln";
+import { ANBIETER, aufStufen, GUETER, kosten, METER_JE_MINUTE, palette, SCHICHTEN, SEKTOREN, STELLEN, TROCKEN_KOSTEN, zentrumTyp, type Gut, type Sektor } from "@/lib/stadt/aufbauRegeln";
 import {
-  abdeckung, baue, bauBei, erreichteHaeuser, fussabdruck, hausFarben, mitteVon, naechsteStufeFehlt, neueWelt, pruefePlatz, reichweite, reisseAb, schritt, stufe, versorgungsQuote,
+  abdeckung, baue, bauBei, baukosten, besetzung, erreichteHaeuser, fussabdruck, hausFarben, mitteVon, naechsteStufeFehlt, neueWelt, pruefePlatz, reichweite, reisseAb, schritt, stufe, versorgungsQuote,
   trockenlegen, TROCKEN_RADIUS, welteAlsText, welteAusText,
   type Platzpruefung, type Welt,
 } from "@/lib/stadt/aufbau";
@@ -408,10 +408,13 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
   })();
   const schichten = SCHICHTEN.map((sch, k) => ({ name: sch.name, leute: w.haeuser.filter(h => h.schicht === k).reduce((a2, h) => a2 + h.bewohner, 0) })).filter(x => x.leute);
   const netto = w.bilanz.steuern - w.bilanz.unterhalt;
+  const bes = besetzung(w);
+  const erwerb = Object.values(bes.sektoren).reduce((a2, x) => a2 + x, 0);
+  const offen = bes.fehlend.map((n, k) => ({ n: Math.round(n), name: SCHICHTEN[k].name })).filter(x => x.n > 0);
   const gewaehlt = auswahl ? w.bauten.find(o => o.id === auswahl.id) ?? null : null;
   const kaertchen = ziel
-    ? { bau: ziel.bau, pr: ziel.pr, neu: true }
-    : gewaehlt ? { bau: gewaehlt.bau, pr: { ok: true, faktor: gewaehlt.faktor, gruende: [], kosten: kosten(gewaehlt.bau), versorgt: erreichteHaeuser(w, gewaehlt.bau, gewaehlt.i, gewaehlt.j, gewaehlt.w, gewaehlt.h, gewaehlt.dreh) }, neu: false } : null;
+    ? { bau: ziel.bau, pr: ziel.pr, neu: true, frei: bes.frei }
+    : gewaehlt ? { bau: gewaehlt.bau, pr: { ok: true, faktor: gewaehlt.faktor, gruende: [], kosten: kosten(gewaehlt.bau), versorgt: erreichteHaeuser(w, gewaehlt.bau, gewaehlt.i, gewaehlt.j, gewaehlt.w, gewaehlt.h, gewaehlt.dreh) }, neu: false, besetzt: bes.quote.get(gewaehlt.id) } : null;
 
   if (ohneWebGL) return <div className="flex h-[640px] items-center justify-center rounded-xl border border-line text-muted">Der Aufbau braucht WebGL — dein Browser bietet es gerade nicht an.</div>;
   return (
@@ -486,6 +489,22 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
               <p className="mt-1 text-muted">Fehlt einem Haus ein Grundbedürfnis länger, steigt es ab und steht zuletzt leer. Voll versorgte Häuser steigen auf (Handwerker → Bürger …).</p>
             </div>
           )}
+          {erwerb > 0 && i > 0 && (
+            <div className="text-xs">
+              <div className="mb-1 font-bold text-muted">Berufe (Erwerbstätige je Zweig · Strich = Anteil in Städten um 1450)</div>
+              {(Object.keys(SEKTOREN) as Sektor[]).filter(k => bes.sektoren[k] > 0 || SEKTOREN[k].ziel > 0).map(k => (
+                <div key={k} className="flex items-center gap-2">
+                  <span className="w-32 truncate">{SEKTOREN[k].icon} {SEKTOREN[k].label}</span>
+                  <div className="relative h-1.5 flex-1 overflow-hidden rounded bg-line">
+                    <div className="h-full bg-accent" style={{ width: `${(bes.sektoren[k] / erwerb) * 100}%` }} />
+                    {SEKTOREN[k].ziel > 0 && <div className="absolute top-0 h-full w-0.5 bg-fg" style={{ left: `${SEKTOREN[k].ziel * 100}%` }} />}
+                  </div>
+                  <span className="w-9 text-right">{Math.round((bes.sektoren[k] / erwerb) * 100)} %</span>
+                </div>
+              ))}
+              {offen.length > 0 && <p className="mt-1 text-bad">👷 Unbesetzte Stellen: {offen.map(x => `${zahl(x.n)} ${x.name}`).join(", ")} — Betriebe ohne Personal stehen still. Mehr Häuser dieser Schicht, oder weniger Betriebe.</p>}
+            </div>
+          )}
           {meldung && <div className="rounded-lg bg-surface-hover/70 p-2 text-sm">{meldung}</div>}
           <div className="flex flex-col gap-2">
             {stufen.map((st, k) => {
@@ -497,7 +516,7 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
                   <div className="mb-1 text-xs font-bold text-muted">{zu ? "🔒 " : ""}{st.name}</div>
                   <div className="flex flex-wrap gap-1.5">
                     {liste.map(o => {
-                      const k0 = kosten(o.bau), teuer = w.taler < k0;
+                      const k0 = baukosten(w, o.bau), teuer = w.taler < k0;
                       return (
                         <button key={o.bau} disabled={zu} title={`${BAUTEN[o.bau].text} — ${k0} Taler`} onClick={() => { setWahl(x => (x === o.bau ? null : o.bau)); setZiel(null); setAuswahl(null); }}
                           className={`chip ${wahl === o.bau ? "chip-on" : ""} ${zu ? "opacity-40" : ""}`}>
@@ -527,9 +546,10 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
 }
 
 /** Werte-Kärtchen am Bauplatz: Kosten, Güter mit Reichweite, erreichte Häuser, Lage */
-function Kaertchen({ stil, bau, pr, neu }: { stil: Stil; bau: BauTyp; pr: Platzpruefung; neu: boolean }) {
+function Kaertchen({ stil, bau, pr, neu, besetzt, frei }: { stil: Stil; bau: BauTyp; pr: Platzpruefung; neu: boolean; besetzt?: number; frei?: number[] }) {
   const regeln = lageRegeln(stil, bau);
   const gueter = ANBIETER[bau] ?? [];
+  const st = STELLEN[bau];
   return (
     <div className="flex flex-col gap-1">
       <div className="text-sm font-black">{BAUTEN[bau].icon} {BAUTEN[bau].label}</div>
@@ -537,6 +557,7 @@ function Kaertchen({ stil, bau, pr, neu }: { stil: Stil; bau: BauTyp; pr: Platzp
         {neu && <><span className="text-muted">Kosten</span><span>{pr.kosten} Taler</span></>}
         {gueter.map(x => <span key={x.gut} className="col-span-2">{GUETER[x.gut].icon} {GUETER[x.gut].label} für {x.minuten} min Fußweg (≈ {x.minuten * METER_JE_MINUTE} m Weg)</span>)}
         {gueter.length > 0 && <><span className="text-muted">erreicht</span><span>{pr.versorgt} Häuser</span></>}
+        {st && <><span className="text-muted">Personal</span><span>{st.n} {SCHICHTEN[st.schicht].name}{besetzt !== undefined ? ` · ${Math.round(besetzt * 100)} % besetzt` : frei ? ` · frei: ${Math.floor((frei[st.schicht] ?? 0) + (frei[st.schicht - 1] ?? 0))}` : ""}</span></>}
         <span className="text-muted">Wirkung</span><span className={pr.faktor >= 1 ? "text-ok font-bold" : pr.faktor > 0 ? "font-bold text-[#ca8a04]" : "text-bad font-bold"}>{Math.round(pr.faktor * 100)} %</span>
       </div>
       {neu ? (

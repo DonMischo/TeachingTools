@@ -3,7 +3,7 @@ import { erzeuge, type Gelaende } from "@/lib/gelaende/gelaende";
 import { passendeWahl } from "@/lib/stadt/landschaft";
 import type { BauTyp } from "@/lib/stadt/modell";
 import {
-  abdeckung, baue, bruecken, fussabdruck, HAUPT, HAUS, nahrungsBilanz, nasseAue, neueWelt, pruefePlatz, reisseAb, schritt, STRASSE,
+  abdeckung, baue, baukosten, besetzung, bruecken, fussabdruck, HAUPT, HAUS, nahrungsBilanz, nasseAue, neueWelt, pruefePlatz, reisseAb, schritt, STRASSE,
   strassenKetten, trockenlegen, versorgungsQuote, welteAlsText, welteAusText, zentrum, type Welt,
 } from "@/lib/stadt/aufbau";
 import { aufStufen, kosten, zentrumTyp } from "@/lib/stadt/aufbauRegeln";
@@ -60,7 +60,7 @@ function gutGespielt(gg: Gelaende, stil = "europaeisch" as const, schritte = 900
     }
     if (t % 10 === 0) {
       const st = aufStufen(stil)[w.stufe];
-      for (const b of [...st.braucht, "kapelle", "kirche", "schule", "spital"] as BauTyp[]) {
+      for (const b of [...st.braucht, "kapelle", "kirche", "baecker", "schmiede", "zimmerei", "schule", "spital"] as BauTyp[]) {
         if (w.bauten.some(o => o.bau === b) || w.taler < kosten(b) + 100) continue;
         if (setze(gg, w, b, z.i, z.j, 70)) break;
       }
@@ -172,4 +172,45 @@ describe("Aufbau: Raster, Brücken, Aue, Spielstand", { timeout: 120000 }, () =>
     expect(welteAusText(text, g, "roemisch")).toBeNull();
     expect(w.feld.some(f => f === HAUS)).toBe(true);
   });
+
+describe("Aufbau: Berufe", { timeout: 120000 }, () => {
+  it("ein Betrieb ohne Personal steht still und versorgt niemanden", () => {
+    const w = neueWelt(g, "europaeisch", 12, false);
+    w.frei.fill(1); w.stufe = 1; w.taler = 5000;
+    const d = { i: 256, j: 256 };
+    const m = setze(g, w, "markt", d.i, d.j, 60)!;
+    expect(m).toBeTruthy();
+    expect(besetzung(w).quote.get(m.id)).toBe(0);
+    expect(abdeckung(w).get("nahrung")).toBeUndefined();
+  });
+
+  it("Bauern helfen am Markt aus, damit die Stadt anfangen kann", () => {
+    const w = neueWelt(g, "europaeisch", 12);
+    const m = setze(g, w, "markt", w.doerfer[0].i, w.doerfer[0].j, 40)!;
+    expect(besetzung(w).quote.get(m.id)).toBe(1);
+  });
+
+  it("Werkstätten wirken: Bäckerei und Schmiede mehr Nahrung, Zimmerei billiger bauen", () => {
+    const { w } = gutGespielt(g, "europaeisch", 250);
+    const mit = nahrungsBilanz(w).angebot;
+    const ws = w.bauten.filter(b => b.bau === "baecker" || b.bau === "schmiede");
+    expect(ws.length).toBeGreaterThan(0);
+    for (const b of ws) reisseAb(g, w, b.id);
+    expect(nahrungsBilanz(w).angebot).toBeLessThan(mit);
+    if (w.bauten.some(b => b.bau === "zimmerei")) expect(baukosten(w, "kirche")).toBeLessThan(kosten("kirche"));
+  });
+
+  it("die Aufstiegsbremse hält die Versorgungsbetriebe besetzt, das Berufsgefüge ist gemischt", () => {
+    const { w } = gutGespielt(g, "europaeisch", 500);
+    const bes = besetzung(w);
+    const markt = w.bauten.find(b => b.bau === "markt")!;
+    expect(bes.quote.get(markt.id)).toBe(1);
+    const summe = Object.values(bes.sektoren).reduce((a, x) => a + x, 0);
+    expect(bes.sektoren.land / summe).toBeGreaterThan(0.05);
+    // gemischt: kein Zweig hat fast alles, Handwerk und Handel sind beide vertreten
+    expect(Math.max(...Object.values(bes.sektoren)) / summe).toBeLessThan(0.85);
+    expect(bes.sektoren.handwerk + bes.sektoren.handel).toBeGreaterThan(0);
+    expect(bes.sektoren.nahrung).toBeGreaterThan(0);
+  });
+});
 });
