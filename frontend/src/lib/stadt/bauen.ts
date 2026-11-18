@@ -12,7 +12,7 @@ import { abstand, inPoly, rechteck, type P } from "./geometrie";
 import { bau, baubar, fernstrasse, flussRichtung, freiraeumen, gedrehtesRaster } from "./hilfen";
 import { leereStadt, type BauTyp, type Stadt, type Stil, type ZonenTyp } from "./modell";
 import { nahverkehr } from "./oepnv";
-import { flaeche, flussAbstand } from "./standort";
+import { flussAbstand } from "./standort";
 import { stromlinien, type Feld } from "./tensor";
 import { bastionen } from "./stile/festung";
 import { glaetten, randPunkt, weg } from "./wege";
@@ -45,10 +45,18 @@ export interface BauPlan { stufen: Stufe[]; orte: Schluessel[]; muster: Muster; 
 // ---------------------------------------------------------------- Regeln
 
 const r1 = (n: number) => n.toFixed(0);
-// gemessen wird die mittlere Neigung der Baufläche (Umkreis 35 m), nicht nur ein Punkt
-const flach = (max: number): Regel => regel(`eben: höchstens ${max} % Neigung im Umkreis von 35 m`, (g, p) => {
-  const n = flaeche(g, p, 35).neigung;
-  return { ok: n <= max, text: n <= max ? `eben genug (${r1(n)} % im Umkreis von 35 m)` : `zu steil: im Umkreis von 35 m im Mittel ${r1(n)} %, gut bis ${max} %` };
+/** Neigung der Baufläche als Ganzes: größter Höhenunterschied quer über 70 m (Kleinrelief zählt nicht) */
+export function flaechenNeigung(g: Gelaende, p: P, r = 35): number {
+  let m = 0;
+  for (let k = 0; k < 4; k++) {
+    const w = (k / 4) * Math.PI, dx = Math.cos(w) * r, dy = Math.sin(w) * r;
+    m = Math.max(m, Math.abs(hoeheBei(g, p.x + dx, p.y + dy) - hoeheBei(g, p.x - dx, p.y - dy)) / (2 * r));
+  }
+  return m * 100;
+}
+const flach = (max: number): Regel => regel(`eben: höchstens ${max} % Gefälle über die Baufläche (70 m)`, (g, p) => {
+  const n = flaechenNeigung(g, p);
+  return { ok: n <= max, text: n <= max ? `eben genug (${r1(n)} % Gefälle über 70 m)` : `zu steil: ${r1(n)} % Gefälle über 70 m, gut bis ${max} %` };
 });
 const amFluss = (min: number, max: number): Regel => regel(`${min}–${max} m vom Fluss (nah, aber hochwassersicher)`, (g, p) => {
   const d = flussAbstand(g, p);

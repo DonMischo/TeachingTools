@@ -64,7 +64,7 @@ function mitFenstern(m: THREE.MeshLambertMaterial): THREE.MeshLambertMaterial {
 }
 
 /** Spiegel je Zelle: Flüsse knapp unter dem niedrigsten Ufer, Meer auf Meereshöhe */
-function wasserspiegel(g: Gelaende): Float32Array {
+export function wasserspiegel(g: Gelaende): Float32Array {
   const sp = new Float32Array(g.n * g.n).fill(NaN);
   for (let j = 0; j < g.n; j++) for (let i = 0; i < g.n; i++) {
     const k = j * g.n + i;

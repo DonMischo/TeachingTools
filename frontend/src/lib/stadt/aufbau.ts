@@ -1,0 +1,360 @@
+/**
+ * Aufbau (wie Anno): alles liegt auf einem Raster aus 6-m-Feldern (= Geländezellen).
+ *   - Du setzt die wichtigen Gebäude (Markt, Burg, Zeche …) feldgenau; Lageregeln wie im Bau-Modus.
+ *   - Jedes Gebäude hat einen Einzugsbereich. Häuser entstehen nur darin, an Straßen, feldgenau.
+ *   - Ein Haus ist so gut versorgt, wie viele der nötigen Gebäude es erreichen — davon hängen
+ *     Bewohner und Größe ab.
+ *   - Straßen: Hauptstraßen von jedem Gebäude zum Netz (kürzester Weg übers Gelände), Wohnstraßen
+ *     wachsen je Stadttyp als Raster, gewachsenes Gassennetz oder Fächer.
+ *   - Bebaubar ist nur freigeschaltetes Land; es wächst mit jeder Stufe.
+ * Alles deterministisch aus Seed und Zügen.
+ */
+import { neigungBei, type Gelaende } from "@/lib/gelaende/gelaende";
+import { perlin } from "@/lib/gelaende/rauschen";
+import type { P } from "./geometrie";
+import { BAUTEN, ZONEN, type BauTyp, type HausArt, type Stil } from "./modell";
+import { BAUPLAENE, kapazitaet, pruefeOrt, stufeVon, type Bewertung, type Ort } from "./bauen";
+
+export const FREI = 0, STRASSE = 1, HAUPT = 2, HAUS = 3, BAU = 4;
+
+/** Einzugsbereich je Gebäude in Metern (Rest: 220 m) */
+const REICHWEITE: Partial<Record<BauTyp, number>> = {
+  markt: 260, forum: 260, plaza: 260, kirche: 220, kathedrale: 320, tempel: 180, schule: 300, bahnhof: 450, depot: 400,
+  burg: 380, schloss: 450, moschee: 260, hammam: 160, thermen: 260, rathaus: 300, cabildo: 260, zechenturm: 340,
+  hochofen: 420, kai: 300, universitaet: 500, techzentrale: 600, einkauf: 600, kaufhalle: 260, poliklinik: 420,
+  aufmarschplatz: 420, kulturhaus: 360, paradeplatz: 300, kaserne: 260, muehle: 200, castellum: 400, schacht: 220,
+  werk: 600, gericht: 320, karawanserei: 240, kasbah: 360, huettenwerk: 300, bergamt: 260, forschungspark: 400,
+};
+export const reichweite = (b: BauTyp) => REICHWEITE[b] ?? 220;
+
+export interface AufHaus { i: number; j: number; dreh: 0 | 1 | 2 | 3; bewohner: number; ziel: number; versorgt: number; hoehe: number }
+export interface AufBau { id: number; bau: BauTyp; i: number; j: number; w: number; h: number; faktor: number }
+
+export interface Welt {
+  stil: Stil;
+  seed: number;
+  n: number;
+  zelle: number;
+  /** Belegung je Feld (FREI, STRASSE, HAUPT, HAUS, BAU) */
+  feld: Uint8Array;
+  /** 1 = freigeschaltet (bebaubar) */
+  frei: Uint8Array;
+  haeuser: AufHaus[];
+  bauten: AufBau[];
+  einwohner: number;
+  tick: number;
+  /** Radius der Wohnstraßen um das Zentrum (Felder), wächst nach Bedarf */
+  strassenRadius: number;
+  naechsteId: number;
+}
+
+export function neueWelt(g: Gelaende, stil: Stil, seed: number): Welt {
+  const n = g.n;
+  const w: Welt = { stil, seed, n, zelle: g.zelle, feld: new Uint8Array(n * n), frei: new Uint8Array(n * n).fill(1), haeuser: [], bauten: [], einwohner: 0, tick: 0, strassenRadius: 6, naechsteId: 1 };
+  return w;
+}
+
+export const mitteVon = (w: Welt, b: { i: number; j: number; w: number; h: number }): P => ({ x: (b.i + b.w / 2) * w.zelle, y: (b.j + b.h / 2) * w.zelle });
+export const orteVon = (w: Welt): Ort[] => w.bauten.map(b => ({ bau: b.bau, p: mitteVon(w, b) }));
+/** Grundfläche in Feldern */
+export const fussabdruck = (b: BauTyp) => ({ w: Math.max(2, Math.min(24, Math.round(BAUTEN[b].b / 6))), h: Math.max(2, Math.min(24, Math.round(BAUTEN[b].h / 6))) });
+
+const baubarFeld = (g: Gelaende, i: number, j: number, max = 22) => {
+  if (i < 0 || j < 0 || i >= g.n || j >= g.n) return false;
+  const k = j * g.n + i;
+  return !g.wasser[k] && neigungBei(g, (i + 0.5) * g.zelle, (j + 0.5) * g.zelle) < max;
+};
+
+/** Zentrum: das Kern-Gebäude des Stadttyps, sonst das erste */
+export function zentrum(w: Welt): AufBau | null {
+  const z = BAUPLAENE[w.stil].zentrum;
+  return w.bauten.find(b => b.bau === z) ?? w.bauten[0] ?? null;
+}
+
+export const stufe = (w: Welt) => stufeVon(BAUPLAENE[w.stil], w.einwohner);
+
+/** Freischalten: Kreis um das Zentrum (wächst je Stufe) und um jedes Gebäude */
+export function freischalten(w: Welt) {
+  const z = zentrum(w);
+  if (!z) { w.frei.fill(1); return; }
+  w.frei.fill(0);
+  const kreise: [P, number][] = [[mitteVon(w, z), 420 + 330 * stufe(w)], ...w.bauten.map(b => [mitteVon(w, b), 180] as [P, number])];
+  for (const [c, r] of kreise) {
+    const rz = Math.ceil(r / w.zelle), ci = Math.floor(c.x / w.zelle), cj = Math.floor(c.y / w.zelle);
+    for (let j = Math.max(0, cj - rz); j <= Math.min(w.n - 1, cj + rz); j++)
+      for (let i = Math.max(0, ci - rz); i <= Math.min(w.n - 1, ci + rz); i++)
+        if ((i - ci) ** 2 + (j - cj) ** 2 <= rz * rz) w.frei[j * w.n + i] = 1;
+  }
+}
+
+// ---------------------------------------------------------------- Gebäude setzen
+
+export interface Platzpruefung { ok: boolean; faktor: number; gruende: Bewertung[]; versorgt: number }
+
+/** Darf Gebäude b mit linker oberer Ecke (i, j) hin? Dazu: Lage nach den Regeln, Häuser im Einzugsbereich */
+export function pruefePlatz(g: Gelaende, w: Welt, b: BauTyp, i: number, j: number): Platzpruefung {
+  const { w: fw, h: fh } = fussabdruck(b);
+  const gruende: Bewertung[] = [];
+  let ok = true;
+  for (let y = j; y < j + fh && ok; y++) for (let x = i; x < i + fw; x++) {
+    if (x < 0 || y < 0 || x >= w.n || y >= w.n) { ok = false; gruende.push({ ok: false, text: "außerhalb der Karte" }); break; }
+    const k = y * w.n + x;
+    if (!w.frei[k]) { ok = false; gruende.push({ ok: false, text: "Land noch nicht erschlossen — wächst mit der nächsten Stufe" }); break; }
+    if (w.feld[k] === HAUS || w.feld[k] === BAU) { ok = false; gruende.push({ ok: false, text: "Feld ist schon bebaut" }); break; }
+    if (g.wasser[k] && b !== "kai" && b !== "werft" && b !== "hafen" && b !== "kanalhafen" && b !== "muehle") { ok = false; gruende.push({ ok: false, text: "im Wasser" }); break; }
+  }
+  const p = mitteVon(w, { i, j, w: fw, h: fh });
+  const pr = pruefeOrt(g, w.stil, b, p, orteVon(w));
+  const r = reichweite(b);
+  const versorgt = w.haeuser.filter(h => Math.hypot((h.i + 1) * w.zelle - p.x, (h.j + 1) * w.zelle - p.y) <= r).length;
+  return { ok: ok && pr.erlaubt, faktor: ok ? pr.faktor : 0, gruende: [...gruende, ...pr.gruende], versorgt };
+}
+
+export function baue(g: Gelaende, w: Welt, b: BauTyp, i: number, j: number): AufBau | null {
+  const pr = pruefePlatz(g, w, b, i, j);
+  if (!pr.ok) return null;
+  const { w: fw, h: fh } = fussabdruck(b);
+  const neu: AufBau = { id: w.naechsteId++, bau: b, i, j, w: fw, h: fh, faktor: pr.faktor };
+  for (let y = j; y < j + fh; y++) for (let x = i; x < i + fw; x++) w.feld[y * w.n + x] = BAU;
+  w.bauten.push(neu);
+  // Hauptstraße zum Netz (vom Rand der Fläche)
+  const tor = { i: i + Math.floor(fw / 2), j: j + fh };
+  const ziel = naechsteStrasse(w, tor.i, tor.j) ?? (w.bauten.length > 1 ? (() => { const z = zentrum(w)!; return z === neu ? null : { i: z.i + Math.floor(z.w / 2), j: z.j + z.h }; })() : null);
+  if (ziel) strasseZwischen(g, w, tor, ziel, HAUPT);
+  else markiere(w, tor.i, tor.j, HAUPT);
+  for (const o of w.bauten) o.faktor = pruefeOrt(g, w.stil, o.bau, mitteVon(w, o), orteVon(w)).faktor;
+  freischalten(w);
+  return neu;
+}
+
+/** Haus-Felder freigeben (gibt true zurück, damit es aus der Liste fällt) */
+function leere(w: Welt, h: AufHaus) {
+  for (const [a, c] of [[0, 0], [1, 0], [0, 1], [1, 1]]) w.feld[(h.j + c) * w.n + h.i + a] = FREI;
+  return true;
+}
+
+export function reisseAb(g: Gelaende, w: Welt, id: number) {
+  const b = w.bauten.find(x => x.id === id);
+  if (!b) return;
+  for (let y = b.j; y < b.j + b.h; y++) for (let x = b.i; x < b.i + b.w; x++) w.feld[y * w.n + x] = FREI;
+  w.bauten = w.bauten.filter(x => x.id !== id);
+  for (const o of w.bauten) o.faktor = pruefeOrt(g, w.stil, o.bau, mitteVon(w, o), orteVon(w)).faktor;
+  freischalten(w);
+}
+
+export function bauBei(w: Welt, i: number, j: number): AufBau | null {
+  return w.bauten.find(b => i >= b.i && i < b.i + b.w && j >= b.j && j < b.j + b.h) ?? null;
+}
+
+// ---------------------------------------------------------------- Straßen
+
+function markiere(w: Welt, i: number, j: number, art: number) {
+  if (i < 0 || j < 0 || i >= w.n || j >= w.n) return;
+  const k = j * w.n + i;
+  if (w.feld[k] === BAU || w.feld[k] === HAUS) return;
+  if (w.feld[k] !== HAUPT) w.feld[k] = art;
+}
+
+function naechsteStrasse(w: Welt, i: number, j: number, max = 400): { i: number; j: number } | null {
+  for (let r = 0; r < max; r++) for (let a = -r; a <= r; a++) for (const [x, y] of [[i + a, j - r], [i + a, j + r], [i - r, j + a], [i + r, j + a]]) {
+    if (x < 0 || y < 0 || x >= w.n || y >= w.n) continue;
+    const f = w.feld[y * w.n + x];
+    if (f === STRASSE || f === HAUPT) return { i: x, j: y };
+  }
+  return null;
+}
+
+/** kürzester Weg auf dem Raster: Steigung kostet, Wasser viel (Brücke), vorhandene Straßen wenig */
+export function strasseZwischen(g: Gelaende, w: Welt, a: { i: number; j: number }, b: { i: number; j: number }, art = STRASSE) {
+  const n = w.n, rand = 60;
+  const i0 = Math.max(0, Math.min(a.i, b.i) - rand), i1 = Math.min(n - 1, Math.max(a.i, b.i) + rand);
+  const j0 = Math.max(0, Math.min(a.j, b.j) - rand), j1 = Math.min(n - 1, Math.max(a.j, b.j) + rand);
+  const bw = i1 - i0 + 1, bh = j1 - j0 + 1;
+  const kosten = new Float64Array(bw * bh).fill(Infinity), vor = new Int32Array(bw * bh).fill(-1);
+  const idx = (i: number, j: number) => (j - j0) * bw + (i - i0);
+  const heap: [number, number][] = [];
+  const push = (c: number, k: number) => { heap.push([c, k]); let x = heap.length - 1; while (x > 0) { const p = (x - 1) >> 1; if (heap[p][0] <= heap[x][0]) break; [heap[p], heap[x]] = [heap[x], heap[p]]; x = p; } };
+  const pop = () => { const t = heap[0], l = heap.pop()!; if (heap.length) { heap[0] = l; let x = 0; for (;;) { const a2 = 2 * x + 1, b2 = a2 + 1; let m = x; if (a2 < heap.length && heap[a2][0] < heap[m][0]) m = a2; if (b2 < heap.length && heap[b2][0] < heap[m][0]) m = b2; if (m === x) break; [heap[m], heap[x]] = [heap[x], heap[m]]; x = m; } } return t; };
+  const s = idx(a.i, a.j), zi = idx(b.i, b.j);
+  kosten[s] = 0; push(0, s);
+  while (heap.length) {
+    const [c, k] = pop();
+    if (c > kosten[k]) continue;
+    if (k === zi) break;
+    const i = (k % bw) + i0, j = Math.floor(k / bw) + j0;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const x = i + dx, y = j + dy;
+      if (x < i0 || y < j0 || x > i1 || y > j1) continue;
+      const kk = y * n + x, f = w.feld[kk];
+      if (f === HAUS || (f === BAU && !(x === b.i && y === b.j))) continue;
+      const steil = neigungBei(g, (x + 0.5) * w.zelle, (y + 0.5) * w.zelle);
+      const schritt = (f === STRASSE || f === HAUPT ? 0.35 : 1) + steil * 0.08 + (g.wasser[kk] ? 6 : 0) + (steil > 30 ? 20 : 0);
+      const ni = idx(x, y), nc = c + schritt;
+      if (nc < kosten[ni]) { kosten[ni] = nc; vor[ni] = k; push(nc + Math.abs(x - b.i) + Math.abs(y - b.j), ni); }
+    }
+  }
+  if (!Number.isFinite(kosten[zi])) return;
+  for (let k = zi; k >= 0; k = vor[k]) markiere(w, (k % bw) + i0, Math.floor(k / bw) + j0, art);
+}
+
+/**
+ * Geplantes Straßennetz je Stadttyp als Feld-Muster um das Zentrum:
+ *   raster/stern  gerades Raster im Blockmaß
+ *   organisch     verbogenes Raster: jede Straße schlängelt sich, Blöcke sind ungleich groß
+ *   faecher       Strahlen vom Zentrum und Ringe
+ * Die Felder sind für Häuser gesperrt, damit die Stadt nach außen weiterwachsen kann.
+ */
+function netz(w: Welt): ((i: number, j: number) => boolean) | null {
+  const z = zentrum(w);
+  if (!z) return null;
+  const plan = BAUPLAENE[w.stil];
+  const ci = z.i + Math.floor(z.w / 2), cj = z.j + z.h;
+  const B = Math.max(5, Math.round(plan.block / w.zelle));
+  if (plan.muster === "raster" || plan.muster === "stern") return (i, j) => (i - ci) % B === 0 || (j - cj) % B === 0;
+  if (plan.muster === "faecher") return (i, j) => {
+    const d = Math.hypot(i - ci, j - cj);
+    if (d < 2) return true;
+    if (Math.abs(d - Math.round(d / B) * B) < 0.71) return true;
+    const a = Math.atan2(j - cj, i - ci), st = Math.PI / 8;
+    return Math.abs(a - Math.round(a / st) * st) * d < 0.71;
+  };
+  const r = perlin(w.seed + 77), A = B * 0.4;
+  // Lage der k-ten Straße an der Stelle t (quer dazu): lange Wellen, damit die Gassen auf dem Raster
+  // längere gerade Stücke haben statt Treppen; Abstand je Straße leicht verschieden
+  const lage = (k: number, t: number, achse: number) => k * B + Math.round(A * r(k * 3.7 + achse * 50, t / 55) + B * 0.25 * r(k * 1.9 + achse * 20, 0.5));
+  const auf = (u: number, t: number, achse: number) => {
+    const k0 = Math.floor(u / B);
+    for (const k of [k0 - 1, k0, k0 + 1]) {
+      const a = lage(k, t, achse), b = lage(k, t - 1, achse);
+      if (u >= Math.min(a, b) && u <= Math.max(a, b)) return true;
+    }
+    return false;
+  };
+  return (i, j) => auf(j - cj, i - ci, 0) || auf(i - ci, j - cj, 1);
+}
+
+/** Wohnstraßen des geplanten Netzes bis zum Radius r (Felder) anlegen */
+function wohnstrassen(g: Gelaende, w: Welt, r: number) {
+  const z = zentrum(w), nz = netz(w);
+  if (!z || !nz) return;
+  const ci = z.i + Math.floor(z.w / 2), cj = z.j + z.h;
+  for (let j = Math.max(0, cj - r); j <= Math.min(w.n - 1, cj + r); j++)
+    for (let i = Math.max(0, ci - r); i <= Math.min(w.n - 1, ci + r); i++) {
+      const k = j * w.n + i;
+      if ((i - ci) ** 2 + (j - cj) ** 2 > r * r || w.feld[k] !== FREI || !w.frei[k] || !baubarFeld(g, i, j, 25) || !imEinzug(w, i, j, 30)) continue;
+      if (nz(i, j)) w.feld[k] = STRASSE;
+    }
+}
+
+// ---------------------------------------------------------------- Häuser und Versorgung
+
+/** nötige Gebäude bis zur aktuellen Stufe */
+export function beduerfnisse(w: Welt): BauTyp[] {
+  const plan = BAUPLAENE[w.stil];
+  return [...new Set(plan.stufen.slice(0, stufe(w) + 1).flatMap(s => s.braucht))];
+}
+
+/** Anteil der Bedürfnisse, deren Gebäude das Feld (i, j) im Einzugsbereich haben */
+export function versorgungBei(w: Welt, i: number, j: number, beduerf = beduerfnisse(w)): number {
+  if (!beduerf.length) return 1;
+  const x = (i + 1) * w.zelle, y = (j + 1) * w.zelle;
+  let n = 0;
+  for (const b of beduerf) if (w.bauten.some(o => o.bau === b && Math.hypot(mitteVon(w, o).x - x, mitteVon(w, o).y - y) <= reichweite(b))) n++;
+  return n / beduerf.length;
+}
+
+const imEinzug = (w: Welt, i: number, j: number, rand = 0) => w.bauten.some(o => Math.hypot(mitteVon(w, o).x - (i + 1) * w.zelle, mitteVon(w, o).y - (j + 1) * w.zelle) <= reichweite(o.bau) + rand);
+
+/** Kandidaten für neue Häuser: 2 × 2 frei, freigeschaltet, eben, an einer Straße, im Einzugsbereich */
+function hausplaetze(g: Gelaende, w: Welt, max: number): AufHaus[] {
+  const z = zentrum(w);
+  if (!z) return [];
+  const c = mitteVon(w, z), rausch = perlin(w.seed + 5);
+  const n = w.n, aus: { h: AufHaus; wert: number }[] = [];
+  const gesehen = new Set<number>();
+  const nz = netz(w);
+  const frei2 = (i: number, j: number) => {
+    for (const [a, b] of [[0, 0], [1, 0], [0, 1], [1, 1]]) {
+      const x = i + a, y = j + b;
+      if (x < 0 || y < 0 || x >= n || y >= n) return false;
+      const k = y * n + x;
+      // Häuser: nicht ans Ufer und nicht in die Aue (Hochwasser)
+      if (w.feld[k] !== FREI || !w.frei[k] || !baubarFeld(g, x, y, 25) || nz?.(x, y) || g.aue[k] || g.abstandWasser[k] < 12) return false;
+    }
+    return true;
+  };
+  for (let k = 0; k < n * n; k++) {
+    const f = w.feld[k];
+    if (f !== STRASSE && f !== HAUPT) continue;
+    const si = k % n, sj = Math.floor(k / n);
+    // Haus an jeder Seite der Straße, Front zur Straße
+    for (const [i, j, dreh] of [[si - 2, sj, 1], [si + 1, sj, 3], [si, sj - 2, 0], [si, sj + 1, 2], [si - 1, sj - 2, 0], [si - 1, sj + 1, 2], [si - 2, sj - 1, 1], [si + 1, sj - 1, 3]] as [number, number, 0 | 1 | 2 | 3][]) {
+      const key = j * n + i;
+      if (gesehen.has(key) || !frei2(i, j) || !imEinzug(w, i, j)) continue;
+      gesehen.add(key);
+      const d = Math.hypot((i + 1) * w.zelle - c.x, (j + 1) * w.zelle - c.y);
+      aus.push({ h: { i, j, dreh, bewohner: 0, ziel: 0, versorgt: 0, hoehe: 0 }, wert: -d + rausch(i / 7, j / 7) * 60 + (f === HAUPT ? 25 : 0) });
+    }
+  }
+  aus.sort((a, b) => b.wert - a.wert);
+  // Häuser dürfen sich nicht überlappen
+  const res: AufHaus[] = [];
+  const belegt = new Set<number>();
+  for (const { h } of aus) {
+    if (res.length >= max) break;
+    const zellen = [[0, 0], [1, 0], [0, 1], [1, 1]].map(([a, b]) => (h.j + b) * n + h.i + a);
+    if (zellen.some(z => belegt.has(z))) continue;
+    zellen.forEach(z => belegt.add(z));
+    res.push(h);
+  }
+  return res;
+}
+
+/** Bewohner je Haus nach Versorgung (4 … 12), Höhe nach Stadttyp und Versorgung */
+function hausWerte(w: Welt, h: AufHaus, beduerf: BauTyp[]) {
+  h.versorgt = versorgungBei(w, h.i, h.j, beduerf);
+  h.ziel = Math.round(4 + 8 * h.versorgt);
+  const art = ZONEN[BAUPLAENE[w.stil].kern].haus;
+  const [lo, hi] = art?.hoehe ?? [6, 10];
+  h.hoehe = lo + (hi - lo) * h.versorgt;
+}
+
+/** ein Zeitschritt: Bewohner ziehen ein, neue Häuser und Straßen, Freischalten bei neuer Stufe */
+export function schritt(g: Gelaende, w: Welt): void {
+  w.tick++;
+  if (!w.bauten.length) return;
+  const alteStufe = stufe(w);
+  const beduerf = beduerfnisse(w);
+  if (w.tick % 4 === 1) for (const h of w.haeuser) hausWerte(w, h, beduerf);
+  // Bewohner ziehen nach und nach ein
+  let summe = 0;
+  for (const h of w.haeuser) { h.bewohner += Math.sign(h.ziel - h.bewohner); summe += h.bewohner; }
+  w.einwohner = summe;
+  // so viele Einwohner trägt die Stadt (Stufen und Lage wie im Bau-Modus)
+  const { kap } = kapazitaet(g, w.stil, { orte: orteVon(w), einwohner: w.einwohner, tick: w.tick });
+  const zielSumme = w.haeuser.reduce((a, h) => a + h.ziel, 0);
+  if (zielSumme < kap) {
+    let neu = hausplaetze(g, w, 6);
+    if (neu.length < 6) {
+      w.strassenRadius = Math.min(w.n, w.strassenRadius + 3);
+      wohnstrassen(g, w, w.strassenRadius);
+      neu = hausplaetze(g, w, 6);
+    }
+    for (const h of neu) {
+      for (const [a, b] of [[0, 0], [1, 0], [0, 1], [1, 1]]) w.feld[(h.j + b) * w.n + h.i + a] = HAUS;
+      hausWerte(w, h, beduerf);
+      w.haeuser.push(h);
+    }
+  } else if (zielSumme > kap * 1.1 && w.haeuser.length) {
+    // zu viele Häuser (Gebäude abgerissen): das schlechtest versorgte steht leer und verschwindet
+    w.haeuser.sort((a, b) => b.versorgt - a.versorgt);
+    leere(w, w.haeuser.pop()!);
+  }
+  if (stufe(w) !== alteStufe) freischalten(w);
+}
+
+/** Stadttyp für die Häuser: Fassaden- und Dachfarben */
+export function hausFarben(stil: Stil) {
+  const art = ZONEN[BAUPLAENE[stil].kern].haus as HausArt | null;
+  return { fassade: art?.fassade ?? "#e6dccb", dach: art?.dach ?? "#9c5b44", flach: !!art?.flach };
+}
