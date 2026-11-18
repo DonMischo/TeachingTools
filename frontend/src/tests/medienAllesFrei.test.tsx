@@ -25,6 +25,14 @@ describe("Geschichte der Medien: Alles freischalten (Lehrkraft)", () => {
     expect(JSON.parse(localStorage.getItem("hp_medien_fortschritt") ?? '{"geschafft":[]}').geschafft).toEqual([]);
   });
 
+  it("Sitzung mit »Alle Stationen freischalten«: auch für Schüler alles offen, ohne eigenen Knopf", () => {
+    rolle.wert = "student";
+    render(<Medien sitzungFrei />);
+    expect(gesperrt()).toBe(0);
+    expect(screen.getByText(/Alles frei \(Sitzung\)/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Alles freischalten/ })).not.toBeInTheDocument();
+  });
+
   it("Schüler sehen den Knopf nicht", () => {
     rolle.wert = "student";
     render(<Medien />);

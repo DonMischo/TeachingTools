@@ -54,14 +54,18 @@ const chip = (an: boolean) =>
  * `vorgabe` (TaskCrawler-Station, Link ?station=): { reiter?: "zeitreise" | "vergleich" | "flops" | "galerie" | "eilbote" | "sortieren",
  *   station?: Id einer Station — die Zeitreise öffnet dort, auch wenn sie noch gesperrt wäre }
  */
-export default function Medien({ action, vorgabe, speicher, live }: { action?: ReactNode; vorgabe?: Vorgabe; speicher?: "konto" | MausZugang; live?: LiveZugang }) {
+export default function Medien({ action, vorgabe, speicher, live, sitzungFrei }: {
+  action?: ReactNode; vorgabe?: Vorgabe; speicher?: "konto" | MausZugang; live?: LiveZugang;
+  /** Die Lehrkraft hat in der Sitzung »Alle Stationen freischalten« gesetzt — gilt für alle, die beigetreten sind */
+  sitzungFrei?: boolean;
+}) {
   // Live-Raum der Sitzung: Nachrichten an andere, gemeinsame Höhlenwand (nur mit Code)
   const raum = useMedienLive(live ?? null);
   const { auth } = useAuth();
   const lehrkraft = auth?.role === "teacher" || auth?.role === "admin";
   const [allesFrei, setAllesFrei] = useState(false);
   useEffect(() => { try { setAllesFrei(sessionStorage.getItem(ALLES_FREI) === "1"); } catch { /* egal */ } }, []);
-  const offen = lehrkraft && allesFrei;
+  const offen = (lehrkraft && allesFrei) || !!sitzungFrei;
   const umschalten = () => {
     const neu = !allesFrei;
     setAllesFrei(neu);
@@ -140,7 +144,8 @@ export default function Medien({ action, vorgabe, speicher, live }: { action?: R
         </div>}
         <div className="ml-auto flex gap-2 text-sm">
           {live && <Posteingang />}
-          {lehrkraft && (
+          {sitzungFrei && <span className="chip chip-on" title="Die Lehrkraft hat in dieser Sitzung alle Stationen freigeschaltet">🔓 Alles frei (Sitzung)</span>}
+          {lehrkraft && !sitzungFrei && (
             <button className={`chip ${offen ? "chip-on" : ""}`} onClick={umschalten}
               title="Nur für Lehrkräfte: alle Stationen, Fotos und Flops öffnen — bis dieser Tab geschlossen wird. Der Fortschritt bleibt unverändert.">
               {offen ? "🔓 Alles frei (Lehrkraft)" : "🔒 Alles freischalten"}

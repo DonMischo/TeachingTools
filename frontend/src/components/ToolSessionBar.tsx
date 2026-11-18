@@ -6,7 +6,7 @@
  * Gäste ohne Konto hereindürfen. Der Code bleibt pro Lehrkraft, Werkzeug und
  * geteiltem Inhalt derselbe, ein ausgedruckter QR gilt also weiter.
  */
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { api, type ToolSessionOut } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { JoinQR } from "@/components/JoinQR";
@@ -15,9 +15,11 @@ import { useLanUrl } from "@/hooks/useLanUrl";
 import { ToolSessionList } from "@/components/ToolSessionList";
 import { SelbstSpielenKnopf } from "@/components/LehrkraftSpielt";
 
-export function ToolSessionBar({ tool, title, refId, sitzung }: {
+export function ToolSessionBar({ tool, title, refId, sitzung, optionen }: {
   tool: string;
   title: string;
+  /** Einstellungen, die das Werkzeug für seine Sitzung anbietet (Geschichte der Medien: alles freischalten) */
+  optionen?: (session: ToolSessionOut) => ReactNode;
   /** Werkzeuge mit Inhalt (Zeitstrahl) teilen eine bestimmte Sache, nicht sich selbst. */
   refId?: number;
   /** Schon gewählte Sitzung (Challenge: die der gewählten Klasse) — dann wird keine geholt. */
@@ -110,6 +112,8 @@ export function ToolSessionBar({ tool, title, refId, sitzung }: {
                         className="text-xs border border-line rounded-lg px-2.5 py-1.5 hover:border-accent" />
                     )}
                   </div>
+
+                  {optionen && <div className="border-t border-line pt-3 flex flex-col gap-2">{optionen(session)}</div>}
 
                   <div className="border-t border-line pt-3 flex flex-col gap-2">
                     <GuestAccessToggle tool="simulation" code={session.code} />

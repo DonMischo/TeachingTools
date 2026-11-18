@@ -38,6 +38,7 @@ import Farbmodelle from "@/components/farbmodelle/Farbmodelle";
 import Markieren from "@/components/markieren/Markieren";
 import PcWerkstatt from "@/components/pcbau/PcWerkstatt";
 import Medien from "@/components/medien/Medien";
+import { sitzungAllesFrei } from "@/components/medien/SitzungOptionen";
 import Klikk from "@/components/klikk/Klikk";
 import ElemonSpiel from "@/components/elemon/ElemonSpiel";
 import Uebung from "@/components/simulationen/Uebung";
@@ -263,7 +264,7 @@ export default function SimulationJoinPage() {
         : session.tool_slug === "stroemung"
           ? <Stroemung code={code} />
         : session.tool_slug === "medien"
-          ? <Medien speicher={auth ? "konto" : { code, token: guest.token }} live={{ code, token: auth ? null : guest.token }} />
+          ? <Medien speicher={auth ? "konto" : { code, token: guest.token }} live={{ code, token: auth ? null : guest.token }} sitzungFrei={sitzungAllesFrei(session)} />
         : session.tool_slug === "klikk"
           ? <Klikk zugang={{ code, token: auth ? null : guest.token }} konto={!!auth} />
         : session.tool_slug === "elemon"
