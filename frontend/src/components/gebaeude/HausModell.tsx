@@ -11,6 +11,7 @@ import type { Plan } from "@/lib/gebaeude/plan";
 import type { Objekt } from "@/lib/gebaeude/objekte";
 import { STILE, STOCK_H, abschnittBreite, baueStock, entsorge, welt, type RaumZustand, type Stil } from "./szene";
 import type { GebaeudeArt } from "./Gebaeude";
+import { useBausatz } from "./bausatz";
 
 interface Props {
   plan: Plan;
@@ -110,7 +111,8 @@ export default function HausModell({ plan, stil, zustaende, objekte, art = "haus
   }, []);
 
   // Haus (neu) bauen
-  const schluessel = JSON.stringify([stil, zustaende, objekte, art, waechter]);
+  const bausatzNr = useBausatz([stil]);
+  const schluessel = JSON.stringify([stil, zustaende, objekte, art, waechter, bausatzNr]);
   useEffect(() => {
     const d = drei.current;
     if (!d) return;

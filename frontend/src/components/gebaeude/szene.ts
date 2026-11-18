@@ -7,6 +7,7 @@ import type { Plan, Punkt } from "@/lib/gebaeude/plan";
 import type { Objekt } from "@/lib/gebaeude/objekte";
 import { baueObjekt } from "./objekte3d";
 import { felsGeometrie, musterMaterial, zufallAus, type Muster } from "./stoff";
+import { bauReihe, bausatz, type Bausatz, type Lage } from "./bausatz";
 
 export type RaumZustand = "offen" | "geloest" | "info" | "gelesen";
 
@@ -306,19 +307,19 @@ function wandtuer(g: THREE.Group, x: number, z: number, y0: number, offen: boole
  * fünf Stufen hinab. `zu` = Richtung (dx, dz) zum offenen Nachbarfeld, von dem
  * man hineinläuft: dort liegt die unterste (bzw. beim Hinab die oberste) Stufe.
  */
-function treppe(g: THREE.Group, x: number, z: number, y0: number, hoch: boolean, farbe: number, zu: Punkt = [0, -1]) {
+function treppe(g: THREE.Group, x: number, z: number, y0: number, hoch: boolean, farbe: number, zu: Punkt = [0, -1], K?: Bausatz | null, ton = 0xffffff) {
   const t = new THREE.Group();
   const stufe = WEIT / 5;
   // gebaut mit dem Eingang bei −z, dann gedreht
+  const stufen: Lage[] = [];
   for (let s = 0; s < 5; s++) {
-    if (hoch) {
-      t.add(klotz(farbe, WEIT, 0.25 + s * (STOCK_H / 5), stufe, 0, y0, -WEIT / 2 + stufe / 2 + s * stufe));
-    } else {
-      // Stufen hinab: jede liegt tiefer; darunter ist es dunkel
-      const oben = y0 + 0.25 - (s + 1) * (STOCK_H / 5);
-      t.add(klotz(farbe, WEIT, 0.2, stufe, 0, oben - 0.2, -WEIT / 2 + stufe / 2 + s * stufe));
-    }
+    const tz = -WEIT / 2 + stufe / 2 + s * stufe;
+    // Stufen hinab: jede liegt tiefer; darunter ist es dunkel
+    const [h, y] = hoch ? [0.25 + s * (STOCK_H / 5), y0] : [0.2, y0 + 0.25 - (s + 1) * (STOCK_H / 5) - 0.2];
+    if (K?.stufe) stufen.push({ x: 0, y, z: tz, hoch: h });
+    else t.add(klotz(farbe, WEIT, h, stufe, 0, y, tz));
   }
+  if (K?.stufe) t.add(bauReihe(K.stufe, stufen, ton));
   if (!hoch) {
     // Schachtwände, damit das Loch als Loch zu sehen ist
     for (const s of [-1, 1]) t.add(klotz(0x1c1917, 0.12, STOCK_H, WEIT, s * (WEIT / 2 - 0.06), y0 - STOCK_H + 0.25, 0));
@@ -332,6 +333,53 @@ function treppe(g: THREE.Group, x: number, z: number, y0: number, hoch: boolean,
 function eingang(offen: (x: number, y: number) => boolean, [x, y]: Punkt): Punkt {
   for (const [dx, dy] of [[0, -1], [1, 0], [0, 1], [-1, 0]] as Punkt[]) if (offen(x + dx, y + dy)) return [dx, dy];
   return [0, -1];
+}
+
+/** Bausatz-Teile nach Namen sammeln und je Name eine InstancedMesh-Gruppe bauen */
+function bauGruppen(K: Bausatz, lagen: Map<string, Lage[]>, farbe: number, leuchten = 0): THREE.Group[] {
+  return [...lagen].filter(([name]) => K[name]?.geo).map(([name, l]) => bauReihe(K[name], l, farbe, leuchten));
+}
+
+function dazu(lagen: Map<string, Lage[]>, name: string, l: Lage) {
+  const liste = lagen.get(name);
+  if (liste) liste.push(l); else lagen.set(name, [l]);
+}
+
+/** Bodenfelder aus Steinplatten: breit = eine von drei Platten, Durchgang = Streifen, Ecke = kleines Stück */
+function bausatzBoden(K: Bausatz, felder: Punkt[], y0: number, stock: number, farbe: number, leuchten = 0): THREE.Group[] {
+  const lagen = new Map<string, Lage[]>();
+  for (const [x, z] of felder) {
+    const r = feldZufall(x, z, stock + 31);
+    const bx = breite(x) === WEIT, bz = breite(z) === WEIT;
+    const name = bx && bz ? `boden${1 + Math.floor(r() * 3)}` : bx || bz ? "bodenschmal" : "bodenklein";
+    // breite Platten zufällig gedreht, Streifen längs zum Durchgang
+    const dreh = bx && bz ? Math.floor(r() * 4) * Math.PI / 2 : bx || !bz ? 0 : Math.PI / 2;
+    dazu(lagen, name, { x: welt(x), y: y0, z: welt(z), dreh });
+  }
+  return bauGruppen(K, lagen, farbe, leuchten);
+}
+
+/**
+ * Wandfelder aus Mauerwerk: Ecken = Pfeiler, lange Felder = Mauerstück (manche mit Fackel,
+ * Ketten oder Geröll — die Seite mit dem Schmuck zeigt zum Flur), volle Felder = Block.
+ */
+function bausatzWaende(K: Bausatz, felder: Punkt[], offen: (x: number, y: number) => boolean,
+  y0: number, stock: number, hoch: number, farbe: number): THREE.Group[] {
+  const lagen = new Map<string, Lage[]>();
+  for (const [x, z] of felder) {
+    const r = feldZufall(x, z, stock + 47);
+    const bx = breite(x) === WEIT, bz = breite(z) === WEIT;
+    const ort = { x: welt(x), y: y0, z: welt(z), hoch, farbe: new THREE.Color().setScalar(0.88 + r() * 0.2) };
+    if (!bx && !bz) { dazu(lagen, "pfeiler", { ...ort, dreh: Math.floor(r() * 4) * Math.PI / 2 }); continue; }
+    if (bx && bz) { dazu(lagen, "block", { ...ort, dreh: Math.floor(r() * 4) * Math.PI / 2 }); continue; }
+    // Schmuck sitzt in Blender auf der Seite +y, im Spiel −z; Drehung so, dass er zu einem Flurfeld zeigt
+    const seiten: Punkt[] = (bx ? [[0, -1], [0, 1]] : [[-1, 0], [1, 0]] as Punkt[]).filter(([dx, dz]) => offen(x + dx, z + dz)) as Punkt[];
+    const [dx, dz] = seiten.length ? seiten[Math.floor(r() * seiten.length)] : bx ? [0, -1] : [-1, 0];
+    const w = r();
+    const art = !seiten.length || w < 0.5 ? 1 : w < 0.68 ? 4 : w < 0.84 ? 3 : 2;
+    dazu(lagen, `mauer${art}`, { ...ort, dreh: Math.atan2(-dx, -dz) });
+  }
+  return bauGruppen(K, lagen, farbe);
 }
 
 export function baueStock(plan: Plan, i: number, bild: StockBild): THREE.Group {
@@ -368,7 +416,12 @@ export function baueStock(plan: Plan, i: number, bild: StockBild): THREE.Group {
   const dunkel = (f: number) => (bild.unten ? new THREE.Color(f).multiplyScalar(0.55).getHex() : f);
   const glut = A.glut && !bild.unten ? "glut" as const : undefined;
   const bodenStoff = (f: number) => musterMaterial(dunkel(f), A.boden, 2.2, {}, glut);
-  if (F.boden2 === undefined) g.add(klotzReihe(boden, bodenStoff(F.boden), 0.25, y0));
+  // Bausatz aus Blender (gemauert, mit gebackenen Schatten) — solange er lädt, Klötze
+  const K = A.organisch ? null : bausatz(stilName);
+  const ton = bild.unten ? 0x8c8c8c : 0xffffff;
+  if (K) {
+    g.add(...bausatzBoden(K, boden, y0, i, ton));
+  } else if (F.boden2 === undefined) g.add(klotzReihe(boden, bodenStoff(F.boden), 0.25, y0));
   else {
     // Fliesen: je ein breites Feld mit seinem schmalen Rand hat eine Farbe
     const hell = boden.filter(([x, y]) => (Math.floor(x / 2) + Math.floor(y / 2)) % 2 === 0);
@@ -379,6 +432,8 @@ export function baueStock(plan: Plan, i: number, bild: StockBild): THREE.Group {
   const wandStoff = musterMaterial(dunkel(F.wand), A.wand, 1.6, glut ? { emissiveIntensity: 0.45 } : {}, glut);
   if (A.organisch) {
     g.add(felsReihe(waende, wandStoff, bild.unten ? 0.5 : F.wandH, y0, i));
+  } else if (K) {
+    g.add(...bausatzWaende(K, waende, offen, y0, i, (bild.unten ? 0.5 : F.wandH) / 1.5, ton));
   } else {
     g.add(klotzReihe(waende, wandStoff, bild.unten ? 0.5 : F.wandH, y0));
     if (!bild.unten) g.add(klotzReihe(waende, F.oben, F.obenH, y0 + F.wandH));
@@ -414,11 +469,21 @@ export function baueStock(plan: Plan, i: number, bild: StockBild): THREE.Group {
     const z = bild.zustaende[k] ?? "offen";
     const rx = welt(r.x), rz = welt(r.y);
     // Verlies: der ganze Saal in der Zimmerfarbe (gedämpft), die Mitte kräftig
-    if (r.flaeche) {
-      const rand = r.flaeche.filter(([x, y]) => x !== r.x || y !== r.y);
-      zg.add(klotzReihe(rand, dunkel(new THREE.Color(RAUM_FARBE[z]).lerp(new THREE.Color(F.boden), 0.6).getHex()), 0.27, y0));
+    if (K) {
+      // Bausatz: Steinplatten in der Zimmerfarbe, die Mitte glimmt — so sieht man den Zustand auch im Dunkeln
+      const farbe = new THREE.Color(dunkel(RAUM_FARBE[z]));
+      if (r.flaeche) {
+        const rand = r.flaeche.filter(([x, y]) => x !== r.x || y !== r.y);
+        zg.add(...bausatzBoden(K, rand, y0 + 0.02, i + 5, new THREE.Color(farbe).lerp(new THREE.Color(0xffffff), 0.3).getHex()));
+      }
+      zg.add(...bausatzBoden(K, [[r.x, r.y]], y0 + 0.05, i + 7, farbe.getHex(), bild.unten ? 0 : 0.12));
+    } else {
+      if (r.flaeche) {
+        const rand = r.flaeche.filter(([x, y]) => x !== r.x || y !== r.y);
+        zg.add(klotzReihe(rand, dunkel(new THREE.Color(RAUM_FARBE[z]).lerp(new THREE.Color(F.boden), 0.6).getHex()), 0.27, y0));
+      }
+      zg.add(klotz(dunkel(RAUM_FARBE[z]), WEIT, 0.3, WEIT, rx, y0, rz, F.leuchten && !bild.unten));
     }
-    zg.add(klotz(dunkel(RAUM_FARBE[z]), WEIT, 0.3, WEIT, rx, y0, rz, F.leuchten && !bild.unten));
     if (F.leuchten && !bild.unten) {
       // Neon: eine Lichtsäule über dem Zimmer, wie die roten Räume im Bild
       zg.add(klotz(F.licht ?? 0xff3b3b, WEIT * 0.96, 1.1, 0.08, rx, y0 + 0.3, rz - WEIT / 2 + 0.05, true));
@@ -433,10 +498,14 @@ export function baueStock(plan: Plan, i: number, bild: StockBild): THREE.Group {
     const [tx, ty] = r.tuer;
     const quer = tx % 2 === 0; // Durchgang in x-Richtung → Rahmen steht entlang z
     const mx = welt(tx), mz = welt(ty);
-    for (const s of [-rand, rand]) {
-      zg.add(klotz(F.tuer, 0.16, 1.5, 0.16, mx + (quer ? 0 : s), y0 + 0.25, mz + (quer ? s : 0)));
+    if (K?.bogen) {
+      zg.add(bauReihe(K.bogen, [{ x: mx, y: y0 + 0.25, z: mz, dreh: quer ? Math.PI / 2 : 0 }]));
+    } else {
+      for (const s of [-rand, rand]) {
+        zg.add(klotz(F.tuer, 0.16, 1.5, 0.16, mx + (quer ? 0 : s), y0 + 0.25, mz + (quer ? s : 0)));
+      }
+      zg.add(klotz(F.tuer, quer ? 0.18 : WEIT, 0.16, quer ? WEIT : 0.18, mx, y0 + 1.75, mz));
     }
-    zg.add(klotz(F.tuer, quer ? 0.18 : WEIT, 0.16, quer ? WEIT : 0.18, mx, y0 + 1.75, mz));
     if (bild.ganz) return;
     const sp = schild(z === "info" || z === "gelesen" ? "i" : String(k + 1), "#111827",
       z === "geloest" ? "#bbf7d0" : z === "offen" ? "#fef3c7" : z === "info" ? "#dbeafe" : "#e2e8f0");
@@ -456,7 +525,7 @@ export function baueStock(plan: Plan, i: number, bild: StockBild): THREE.Group {
     // ein Streifen Boden unter der Tür, damit man sie auch offen trifft
     zielG.add(klotz(dunkel(F.boden), 2 * SCHMAL, 0.25, WEIT, tx, y0, zy));
   } else if (bild.zielArt === "treppe") {
-    treppe(zielG, zx, zy, y0, richtung === 1, dunkel(F.treppe), eingang(offen, st.ziel));
+    treppe(zielG, zx, zy, y0, richtung === 1, dunkel(F.treppe), eingang(offen, st.ziel), K, ton);
   } else {
     zielG.add(klotz(dunkel(FARBE.ausgang), WEIT, 0.3, WEIT, zx, y0, zy));
     if (!bild.unten) {
@@ -503,7 +572,7 @@ export function baueStock(plan: Plan, i: number, bild: StockBild): THREE.Group {
       flaeche.scale.set(WEIT, 0.05, WEIT);
       flaeche.position.set(sx, y0 + 0.25, sz);
       zurueck.add(flaeche);
-    } else treppe(zurueck, sx, sz, y0, true, dunkel(F.treppe), eingang(offen, st.start));
+    } else treppe(zurueck, sx, sz, y0, true, dunkel(F.treppe), eingang(offen, st.start), K, ton);
     if (!bild.unten && !bild.ganz) {
       const sp = schild(flach ? "⬅" : richtung === 1 ? "⬇" : "⬆", "#111827", "#e2e8f0");
       sp.position.set(sx, y0 + 2.4, sz);
