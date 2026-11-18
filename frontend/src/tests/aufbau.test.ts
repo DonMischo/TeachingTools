@@ -3,7 +3,7 @@ import { erzeuge, type Gelaende } from "@/lib/gelaende/gelaende";
 import { passendeWahl } from "@/lib/stadt/landschaft";
 import type { BauTyp } from "@/lib/stadt/modell";
 import {
-  abdeckung, baue, baukosten, besetzung, bruecken, gewerbe, fussabdruck, HAUPT, HAUS, nahrungsBilanz, nasseAue, neueWelt, pruefePlatz, reisseAb, schritt, STRASSE,
+  abdeckung, baue, baukosten, besetzung, bruecken, gewerbe, verdraengt, fussabdruck, HAUPT, HAUS, nahrungsBilanz, nasseAue, neueWelt, pruefePlatz, reisseAb, schritt, STRASSE,
   strassenKetten, trockenlegen, versorgungsQuote, welteAlsText, welteAusText, zentrum, type Welt,
 } from "@/lib/stadt/aufbau";
 import { aufStufen, kosten, palette, zentrumTyp } from "@/lib/stadt/aufbauRegeln";
@@ -16,7 +16,8 @@ function setze(gg: Gelaende, w: Welt, b: BauTyp, ci: number, cj: number, r = 60)
   let best: [number, number, number] | null = null;
   for (let y = cj - r; y <= cj + r; y += 2) for (let x = ci - r; x <= ci + r; x += 2) {
     const pr = pruefePlatz(gg, w, b, x, y);
-    if (!pr.ok) continue;
+    // der Testspieler baut nur auf freiem Land (nichts soll weichen)
+    if (!pr.ok || pr.gruende.some(x => x.ok && x.text.startsWith("weichen"))) continue;
     const wert = pr.faktor * 1000 + pr.versorgt * 3 - Math.hypot(x - ci, y - cj);
     if (!best || wert > best[2]) best = [x, y, wert];
   }
@@ -209,6 +210,35 @@ describe("Aufbau: Berufe", { timeout: 120000 }, () => {
     expect(gewerbe(w).je.get(b.id)!.grund).toContain("Mühle");
     neu("muehle");
     expect(gewerbe(w).je.get(b.id)!.ertrag).toBeGreaterThan(0);
+  });
+
+  it("Gebäude dürfen auf Häuser und Wege — die weichen, das Wegenetz bleibt verbunden", () => {
+    const { w } = gutGespielt(g, "europaeisch", 200);
+    w.taler = 99999;
+    const versorgte = () => { const a = abdeckung(w).get("nahrung"); return w.haeuser.filter(h => !h.bauer && a?.[h.tor]).length; };
+    // auf ein Stadthaus
+    const h = w.haeuser.find(x => !x.bauer && [0, 1, 2, 3].some(d => pruefePlatz(g, w, "brunnen", x.i, x.j, d).ok))!;
+    expect(h).toBeTruthy();
+    const d = [0, 1, 2, 3].find(d2 => pruefePlatz(g, w, "brunnen", h.i, h.j, d2).ok)!;
+    expect(pruefePlatz(g, w, "brunnen", h.i, h.j, d).gruende.some(x => x.ok && x.text.startsWith("weichen"))).toBe(true);
+    const vorher = versorgte(), weg = verdraengt(w, h.i, h.j, ...Object.values(fussabdruck("brunnen", d)) as [number, number], d).haeuser.length;
+    expect(baue(g, w, "brunnen", h.i, h.j, d)).toBeTruthy();
+    expect(w.haeuser).not.toContain(h);
+    expect(versorgte()).toBeGreaterThanOrEqual(vorher - weg);
+    // auf einen Weg: nur, wenn das Netz dabei nicht zerfällt
+    let gebaut = false;
+    for (let k = 0; k < w.n * w.n && !gebaut; k++) {
+      if (w.feld[k] !== STRASSE) continue;
+      const i = k % w.n, j = Math.floor(k / w.n);
+      if (!pruefePlatz(g, w, "brunnen", i, j, 0).ok) continue;
+      const v = verdraengt(w, i, j, ...Object.values(fussabdruck("brunnen", 0)) as [number, number], 0);
+      expect(v.getrennt).toBe(false);
+      const vor2 = versorgte();
+      baue(g, w, "brunnen", i, j, 0);
+      expect(versorgte()).toBeGreaterThanOrEqual(vor2 - v.haeuser.length);
+      gebaut = true;
+    }
+    expect(gebaut).toBe(true);
   });
 
   it("ein Betrieb ohne Personal steht still und versorgt niemanden", () => {

@@ -223,6 +223,8 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
       if (finger.size < 2) zwei = null;
       const gr = griff;
       if (finger.size === 0) griff = null;
+      // Rechtsklick ohne Ziehen: Bauen bzw. Werkzeug abbrechen (Ziehen mit rechts dreht weiter die Ansicht)
+      if (gr && gr.knopf === 2 && gr.weit <= 5 && finger.size === 0) { setWahl(null); setZiel(null); trockenPunkt = null; return; }
       if (!gr || gr.weit > 5 || gr.knopf !== 0 || finger.size > 0) return;
       umschalt.current = e.shiftKey;
       const q = punkt(e);
@@ -427,7 +429,8 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
     const pr = pruefePlatz(g, w, b, i, j, dreh);
     if (!pr.ok) { setMeldung(`❌ ${BAUTEN[b].label}: ${pr.gruende.filter(x => !x.ok).map(x => x.text).slice(0, 2).join(", ")}`); return; }
     const neu = baue(g, w, b, i, j, dreh)!;
-    setMeldung(pr.faktor < 1 ? `⚠️ ${BAUTEN[b].label} steht ungünstig — wirkt nur zu ${Math.round(pr.faktor * 100)} %.` : `✅ ${BAUTEN[b].label} gebaut.`);
+    const weichen = pr.gruende.find(x => x.ok && x.text.startsWith("weichen"))?.text;
+    setMeldung((pr.faktor < 1 ? `⚠️ ${BAUTEN[b].label} steht ungünstig — wirkt nur zu ${Math.round(pr.faktor * 100)} %.` : `✅ ${BAUTEN[b].label} gebaut.`) + (weichen ? ` Abgerissen und umgeleitet — ${weichen}.` : ""));
     // mit Umschalt mehrere hintereinander bauen, sonst ist die Auswahl erledigt
     if (umschalt.current) setZiel(null);
     else { setAuswahl({ id: neu.id }); setWahl(null); setZiel(null); }
@@ -514,7 +517,7 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
           <div ref={karte} className="absolute inset-0" />
           {laedt && <div className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white drop-shadow">⏳ Gelände wird geformt …</div>}
           <div className="pointer-events-none absolute bottom-2 left-2 rounded-lg bg-black/45 px-2 py-1 text-xs text-white">
-            Leertaste: Pause · 1 2 3: Tempo · B: Baumenü · I: Übersicht · F: Vollbild · Entf: Gewähltes abreißen · Umschalt: Werte, mehrfach bauen · Rad: Zoom (beim Bauen: drehen) · rechte Maustaste / Q E: drehen · Rand / W A S D: schieben · Esc
+            Leertaste: Pause · 1 2 3: Tempo · B: Baumenü · I: Übersicht · F: Vollbild · Entf: Gewähltes abreißen · Umschalt: Werte, mehrfach bauen · Rad: Zoom (beim Bauen: drehen) · Rechtsklick: abbrechen · rechts ziehen / Q E: drehen · Rand / W A S D: schieben · Esc
           </div>
           {/* Spielleiste: Zeit und Kennzahlen, damit sich auch im Vollbild alles steuern lässt */}
           <div className="absolute left-2 top-2 flex max-w-[55%] flex-wrap items-center gap-1.5 rounded-xl bg-surface/90 p-1 text-xs shadow">

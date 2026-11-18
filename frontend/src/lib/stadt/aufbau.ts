@@ -404,6 +404,39 @@ export function dorfBei(w: Welt, x: number, y: number): Dorf | null {
 export interface Platzpruefung { ok: boolean; faktor: number; gruende: Bewertung[]; versorgt: number; kosten: number }
 
 /** Darf Gebäude b mit linker oberer Ecke (i, j) hin? Lageregeln, Freischaltung, Stufe, Geld */
+/**
+ * Was einem Gebäude weichen muss: Häuser unter dem Bauplatz, an der Zufahrt oder mit ihrem Tor darunter,
+ * und Wegfelder darunter. `getrennt` = ohne diese Wegfelder zerfiele das Wegenetz (dann nicht erlaubt).
+ */
+export function verdraengt(w: Welt, i: number, j: number, fw: number, fh: number, dreh: number): { haeuser: AufHaus[]; wege: number; getrennt: boolean } {
+  const n = w.n, unter = new Set<number>();
+  for (let y = j; y < j + fh; y++) for (let x = i; x < i + fw; x++) if (x >= 0 && y >= 0 && x < n && y < n) unter.add(y * n + x);
+  const tz = zufahrt(i, j, fw, fh, dreh), tk = tz.j * n + tz.i;
+  const haeuser = w.haeuser.filter(h => unter.has(h.tor) || zellenVon(h).some(([x, y]) => unter.has(y * n + x) || y * n + x === tk));
+  const ist = (k: number) => (w.feld[k] === STRASSE || w.feld[k] === HAUPT) && !unter.has(k);
+  let wege = 0;
+  const rand = new Set<number>();
+  for (const k of unter) {
+    if (w.feld[k] !== STRASSE && w.feld[k] !== HAUPT) continue;
+    wege++;
+    const x = k % n;
+    for (const nb of [x > 0 ? k - 1 : -1, x < n - 1 ? k + 1 : -1, k - n, k + n]) if (nb >= 0 && nb < n * n && ist(nb)) rand.add(nb);
+  }
+  if (!wege || rand.size < 2) return { haeuser, wege, getrennt: false };
+  // hängen die Wegstücke rund um den Bauplatz noch zusammen?
+  const start = [...rand][0], gesehen = new Set([start]), schlange = [start];
+  let offen = rand.size - 1;
+  for (let q = 0; q < schlange.length && offen > 0; q++) {
+    const k = schlange[q], x = k % n;
+    for (const nb of [x > 0 ? k - 1 : -1, x < n - 1 ? k + 1 : -1, k - n, k + n]) {
+      if (nb < 0 || nb >= n * n || gesehen.has(nb) || !ist(nb)) continue;
+      gesehen.add(nb); schlange.push(nb);
+      if (rand.has(nb)) offen--;
+    }
+  }
+  return { haeuser, wege, getrennt: offen > 0 };
+}
+
 export function pruefePlatz(g: Gelaende, w: Welt, b: BauTyp, i: number, j: number, dreh = 0): Platzpruefung {
   const { w: fw, h: fh } = fussabdruck(b, dreh);
   const gruende: Bewertung[] = [];
@@ -412,15 +445,19 @@ export function pruefePlatz(g: Gelaende, w: Welt, b: BauTyp, i: number, j: numbe
     if (x < 0 || y < 0 || x >= w.n || y >= w.n) { ok = false; gruende.push({ ok: false, text: "außerhalb der Karte" }); break; }
     const k = y * w.n + x;
     if (!w.frei[k]) { ok = false; gruende.push({ ok: false, text: "Land noch nicht erschlossen — wächst mit der nächsten Stufe" }); break; }
-    if (w.feld[k] === HAUS || w.feld[k] === BAU) { ok = false; gruende.push({ ok: false, text: "Feld ist schon bebaut" }); break; }
-    // nicht auf Straßen: sonst reißt das Wegenetz ab und die Versorgung bricht weg
-    if (w.feld[k] === STRASSE || w.feld[k] === HAUPT) { ok = false; gruende.push({ ok: false, text: "Straße im Weg — Gebäude neben die Straße setzen" }); break; }
+    // Häuser und Wege dürfen weichen, andere Gebäude nicht
+    if (w.feld[k] === BAU) { ok = false; gruende.push({ ok: false, text: "hier steht schon ein Gebäude" }); break; }
     if (g.wasser[k] && !["kai", "werft", "hafen", "kanalhafen", "muehle", "hafenkontor"].includes(b)) { ok = false; gruende.push({ ok: false, text: "im Wasser" }); break; }
   }
   // die Zufahrt muss ans Wegenetz können: frei oder schon Straße, nicht im Haus
   const tz = zufahrt(i, j, fw, fh, dreh);
-  if (ok && (tz.i < 0 || tz.j < 0 || tz.i >= w.n || tz.j >= w.n || w.feld[tz.j * w.n + tz.i] === HAUS || w.feld[tz.j * w.n + tz.i] === BAU)) {
+  if (ok && (tz.i < 0 || tz.j < 0 || tz.i >= w.n || tz.j >= w.n || w.feld[tz.j * w.n + tz.i] === BAU)) {
     ok = false; gruende.push({ ok: false, text: "Zufahrt versperrt — dreh das Gebäude oder rück es ab" });
+  }
+  if (ok) {
+    const v = verdraengt(w, i, j, fw, fh, dreh);
+    if (v.getrennt) { ok = false; gruende.push({ ok: false, text: "würde das Wegenetz durchschneiden — etwas verschieben oder drehen" }); }
+    else if (v.haeuser.length || v.wege) gruende.push({ ok: true, text: `weichen: ${[v.haeuser.length ? `${v.haeuser.length} ${v.haeuser.length === 1 ? "Haus" : "Häuser"} (${v.haeuser.reduce((a, h) => a + h.bewohner, 0)} Bewohner)` : "", v.wege ? `${v.wege} Wegfelder` : ""].filter(Boolean).join(", ")}` });
   }
   const pal = palette(w.stil).find(p => p.bau === b);
   if (!pal) { ok = false; gruende.push({ ok: false, text: "gehört nicht zu diesem Stadttyp" }); }
@@ -458,6 +495,11 @@ export function baue(g: Gelaende, w: Welt, b: BauTyp, i: number, j: number, dreh
   if (!pr.ok) return null;
   const { w: fw, h: fh } = fussabdruck(b, dreh);
   const neu: AufBau = { id: w.naechsteId++, bau: b, i, j, w: fw, h: fh, faktor: pr.faktor, dreh: dreh % 4 };
+  // Häuser und Wege unter dem Bauplatz weichen
+  const v = verdraengt(w, i, j, fw, fh, dreh);
+  for (const h of v.haeuser) leere(w, h);
+  if (v.haeuser.length) w.haeuser = w.haeuser.filter(h => !v.haeuser.includes(h));
+  if (v.wege) w.version.strassen++;
   for (let y = j; y < j + fh; y++) for (let x = i; x < i + fw; x++) w.feld[y * w.n + x] = BAU;
   w.bauten.push(neu);
   w.taler -= pr.kosten;
