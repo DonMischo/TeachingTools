@@ -284,6 +284,7 @@ simulationen:
       - Größen, Entfernungen mit Lichtlauf, Kepler-Gesetze
       - Erdmagnetfeld mit Sonnensturm
       - Galerie mit rund 90 Bildern zum Freischalten
+      - Hintergrundmusik in Endlosschleife (3 s überblendet), abschaltbar per 🔊 und im Flugmenü
   - id: leben
     name: Rock your Life
     kann:

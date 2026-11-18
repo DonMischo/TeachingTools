@@ -167,7 +167,7 @@ export const flugzeitText = (s: number) => {
 };
 
 export default function Flug({
-  onSteckbrief, fortschritt, aendere, zuruecksetzen, onVerlassen, onVollbild, vollbild = false, onKodex, angehalten = false, schiffSeed = "TT", netz = null, mitspieler = [],
+  onSteckbrief, fortschritt, aendere, zuruecksetzen, onVerlassen, onVollbild, vollbild = false, musik = false, onMusik, onKodex, angehalten = false, schiffSeed = "TT", netz = null, mitspieler = [],
 }: {
   onSteckbrief: (id: string) => void;
   fortschritt: Fortschritt;
@@ -176,6 +176,9 @@ export default function Flug({
   onVerlassen?: (ansicht: Ansicht) => void;
   onVollbild?: () => void;
   vollbild?: boolean;
+  /** Hintergrundmusik (musik.ts), umschaltbar im Menü */
+  musik?: boolean;
+  onMusik?: () => void;
   /** Kodex öffnen, wahlweise gleich bei den Erfolgen */
   onKodex?: (bereich: "eintraege" | "erfolge") => void;
   /** Von außen angehalten, etwa während der Kodex offen ist */
@@ -1307,6 +1310,8 @@ export default function Flug({
           onHilfe={() => { setHilfe(true); setMenue(false); }}
           onVollbild={onVollbild}
           vollbild={vollbild}
+          musik={musik}
+          onMusik={onMusik}
           onVerlassen={onVerlassen}
           onZuruecksetzen={() => {
             if (window.confirm("Allen Forschungsfortschritt, alle Erfolge und die Flugstatistik auf diesem Gerät löschen?")) zuruecksetzen();
@@ -1632,7 +1637,7 @@ function baueSchiffchen(seed: string): THREE.Group {
   return g;
 }
 
-function Menue({ onSchliessen, ziel, onZiel, erforscht, mitspieler, geloest, erfolge, zeitstufe, onZeit, magnetfeld, onMagnetfeld, onSturm, onAuftraege, onKodex, onHilfe, onVollbild, vollbild, onVerlassen, onZuruecksetzen }: {
+function Menue({ onSchliessen, ziel, onZiel, erforscht, mitspieler, geloest, erfolge, zeitstufe, onZeit, magnetfeld, onMagnetfeld, onSturm, onAuftraege, onKodex, onHilfe, onVollbild, vollbild, musik, onMusik, onVerlassen, onZuruecksetzen }: {
   onSchliessen: () => void;
   ziel: string | null;
   onZiel: (id: string | null) => void;
@@ -1650,6 +1655,8 @@ function Menue({ onSchliessen, ziel, onZiel, erforscht, mitspieler, geloest, erf
   onHilfe: () => void;
   onVollbild?: () => void;
   vollbild: boolean;
+  musik: boolean;
+  onMusik?: () => void;
   onVerlassen?: (ansicht: Ansicht) => void;
   onZuruecksetzen: () => void;
 }) {
@@ -1690,6 +1697,11 @@ function Menue({ onSchliessen, ziel, onZiel, erforscht, mitspieler, geloest, erf
           <span>☀️ Sonnensturm auslösen</span><span className="text-xs text-slate-400">≈40 s</span>
         </button>
         <button className={eintrag} onClick={onHilfe}><span>❔ Steuerung</span></button>
+        {onMusik && (
+          <button className={eintrag} onClick={onMusik}>
+            <span>{musik ? "🔊" : "🔇"} Musik</span><span className="text-xs text-slate-400">{musik ? "an" : "aus"}</span>
+          </button>
+        )}
         {onVollbild && (
           <button className={eintrag} onClick={onVollbild}><span>{vollbild ? "⤡ Vollbild verlassen" : "⛶ Vollbild"}</span></button>
         )}

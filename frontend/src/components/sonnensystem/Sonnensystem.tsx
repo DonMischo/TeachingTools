@@ -32,6 +32,7 @@ import { Galerie } from "./Galerie";
 import { Kodex, type KodexBereich } from "./Kodex";
 import { useForschung } from "./fortschritt";
 import { useFlugLive, type Zugang } from "./useFlugLive";
+import { useMusik } from "./musik";
 
 const Uebersicht = lazy(() => import("./Uebersicht"));
 const Flug = lazy(() => import("./Flug"));
@@ -74,6 +75,7 @@ export default function Sonnensystem({ action, speicherSchluessel = "geraet", le
   const [vollbildMoeglich, setVollbildMoeglich] = useState(false);
   const rahmenRef = useRef<HTMLDivElement>(null);
   const forschung = useForschung(speicherSchluessel);
+  const [musik, umschaltenMusik] = useMusik();
   // Verbunden wird nur im Flug; sonst wäre man ein unsichtbares Schiff.
   const live = useFlugLive(reiter === "flug" ? zugang : null);
   const { fortschritt } = forschung;
@@ -164,6 +166,12 @@ export default function Sonnensystem({ action, speicherSchluessel = "geraet", le
               >{r.name}</button>
             ))}
           </div>
+          <button
+            onClick={umschaltenMusik}
+            aria-pressed={musik}
+            className="shrink-0 px-3 py-2 rounded-xl text-sm border border-line text-muted hover:text-fg"
+            title={musik ? "Musik aus" : "Musik an"}
+          >{musik ? "🔊" : "🔇"}</button>
           {vollbildMoeglich && (
             <button
               onClick={umschaltenVollbild}
@@ -223,6 +231,8 @@ export default function Sonnensystem({ action, speicherSchluessel = "geraet", le
                 onVerlassen={setReiter}
                 onVollbild={vollbildMoeglich ? umschaltenVollbild : undefined}
                 vollbild={vollbild}
+                musik={musik}
+                onMusik={umschaltenMusik}
                 onKodex={setKodexUeberFlug}
                 angehalten={kodexUeberFlug !== null || steckbrief !== null}
                 netz={live.netz}
