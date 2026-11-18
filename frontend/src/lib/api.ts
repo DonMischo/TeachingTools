@@ -2299,6 +2299,28 @@ export const api = {
         .then(async (r) => { if (!r.ok) throw new Error(await r.text()); return r.json() as Promise<{ created: number; skipped: number }>; });
     },
 
+    /** Ganze Sammlung als ZIP (fragmente.json + assets/) */
+    exportZip: async (id: number): Promise<{ datei: Blob; name: string }> => {
+      const r = await fetch(`/api/fragments/collections/${id}/export`, { credentials: "include" });
+      if (!r.ok) throw new Error((await r.text()) || r.statusText);
+      const name = /filename="([^"]+)"/.exec(r.headers.get("content-disposition") ?? "")?.[1] ?? "fragmente.zip";
+      return { datei: await r.blob(), name };
+    },
+    /** Fragmente-ZIP in eine bestehende Pinnwand */
+    importZip: (id: number, file: File) => {
+      const fd = new FormData();
+      fd.append("file", file);
+      return fetch(`/api/fragments/collections/${id}/import`, { method: "POST", credentials: "include", body: fd })
+        .then(async (r) => { if (!r.ok) throw new Error(await r.text()); return r.json() as Promise<{ karten: number; clippings: number; dateien: number }>; });
+    },
+    /** Fragmente-ZIP als neue Sammlung */
+    importSammlung: (file: File) => {
+      const fd = new FormData();
+      fd.append("file", file);
+      return fetch(`/api/fragments/collections/import`, { method: "POST", credentials: "include", body: fd })
+        .then(async (r) => { if (!r.ok) throw new Error(await r.text()); return r.json() as Promise<FragmentCollectionOut>; });
+    },
+
     listResearch: (id: number, guestToken?: string) => ffetch<ResearchItemOut[]>(`fragments/collections/${id}/research`, undefined, guestToken),
     createResearch: (id: number, body: Partial<{ tab: string; art: "clipping" | "workflow"; d2: string | null; title: string | null; url: string | null; text_content: string | null; tags: string[]; sim: ExitGameSim | null; links: FragmentLink[] | null } & FragmentOrt>, guestToken?: string) =>
       ffetch<ResearchItemOut>(`fragments/collections/${id}/research`, { method: "POST", body: JSON.stringify(body) }, guestToken),

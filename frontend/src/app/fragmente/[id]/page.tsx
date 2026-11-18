@@ -603,14 +603,41 @@ export default function FragmentBoardPage() {
     onError: (e: any) => toast(e.message ?? "Fehler", "error"),
   });
 
+  // Markdown/Text → je Datei eine Karte; Fragmente-ZIP → Karten, Clippings, Workflows samt Dateien
   const importFrag = useMutation({
-    mutationFn: (files: File[]) => api.fragments.importFragments(collectionId, files),
-    onSuccess: (res) => { qc.invalidateQueries({ queryKey: ["fragments", collectionId] }); toast(`${res.created} importiert${res.skipped ? `, ${res.skipped} übersprungen` : ""}`, "success"); },
+    mutationFn: async (files: File[]) => {
+      const zips = files.filter(f => /\.zip$/i.test(f.name));
+      const texte = files.filter(f => !/\.zip$/i.test(f.name));
+      const teile: string[] = [];
+      for (const z of zips) {
+        const n = await api.fragments.importZip(collectionId, z);
+        teile.push(`${n.karten} Karten, ${n.clippings} Clippings, ${n.dateien} Dateien`);
+      }
+      if (texte.length) {
+        const n = await api.fragments.importFragments(collectionId, texte);
+        teile.push(`${n.created} Karten${n.skipped ? ` (${n.skipped} übersprungen)` : ""}`);
+      }
+      return teile.join(" · ");
+    },
+    onSuccess: (text) => {
+      ["fragments", "research", "fragment-tabs", "fragment-collection"].forEach(k => qc.invalidateQueries({ queryKey: [k, collectionId] }));
+      toast(`Importiert: ${text}`, "success");
+    },
     onError: (e: any) => toast(e.message ?? "Fehler", "error"),
   });
+  const exportieren = async () => {
+    try {
+      const { datei, name } = await api.fragments.exportZip(collectionId);
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(datei);
+      a.download = name;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    } catch (e: any) { toast(e.message ?? "Export fehlgeschlagen", "error"); }
+  };
   const pickImport = () => {
     const i = document.createElement("input");
-    i.type = "file"; i.multiple = true; i.accept = ".md,.markdown,.txt";
+    i.type = "file"; i.multiple = true; i.accept = ".md,.markdown,.txt,.zip";
     i.onchange = () => { const fs = Array.from(i.files ?? []); if (fs.length) importFrag.mutate(fs); };
     i.click();
   };
@@ -826,7 +853,12 @@ export default function FragmentBoardPage() {
         )}
         {canContribute && !guestToken && (
           <button className="px-3 py-1.5 text-sm rounded-lg border border-line hover:bg-surface-hover disabled:opacity-50"
-            disabled={importFrag.isPending} onClick={pickImport} title="Markdown-/Textdateien importieren">Import</button>
+            disabled={importFrag.isPending} onClick={pickImport}
+            title="Fragmente-ZIP (Karten, Clippings, Workflows samt Dateien) oder Markdown-/Textdateien importieren">⬆ Import</button>
+        )}
+        {!guestToken && (
+          <button className="px-3 py-1.5 text-sm rounded-lg border border-line hover:bg-surface-hover" onClick={exportieren}
+            title="Ganze Sammlung als ZIP: alle Karten, Clippings und Workflows samt Bildern, PDFs und Dokumenten">⬇ Export</button>
         )}
         <div className="ml-auto flex items-center gap-1">
           <button className={`chip ${klappen.alle === "auf" ? "chip-on" : ""}`} onClick={() => klappen.alleSetzen("auf")}

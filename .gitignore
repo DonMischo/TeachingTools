@@ -18,6 +18,9 @@ data/*.html
 data/style-packs/
 data/style-pack/
 data/stundenplaner/
+# Fragmente: hochgeladene Dateien und laufende JSON-Sicherung (Schuldaten, nur auf dem Server)
+data/fragments/
+data/fragments_backup/
 data/bildpaare/
 data/slideshow/
 data/standalone/

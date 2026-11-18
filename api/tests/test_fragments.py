@@ -477,3 +477,60 @@ def test_workflow_traegt_material(client, teacher):
     boese = [{"type": "link", "url": "javascript:alert(1)", "label": "x"}]
     assert client.post(f"{PREFIX}/collections/{cid}/research", json={"art": "workflow", "links": boese},
                        headers=teacher_auth(teacher)).status_code == 422
+
+
+def test_zip_export_und_import_mit_dateien(client, teacher, tmp_path, monkeypatch):
+    import io, json, zipfile
+    from api import fragments_archiv
+    from api.routers import fragments_cards
+    monkeypatch.setattr(fragments_cards, "MEDIA_BASE", tmp_path / "media")
+    monkeypatch.setattr(fragments_archiv, "MEDIA_BASE", tmp_path / "media")
+    client.cookies.clear()
+    h = teacher_auth(teacher)
+    cid = client.post(f"{PREFIX}/collections", json={"name": "Mathe Material"}, headers=h).json()["id"]
+    client.post(f"{PREFIX}/collections/{cid}/fragments", json={"title": "Merksatz", "content": "a² + b² = c²", "klasse": 8}, headers=h)
+    rid = client.post(f"{PREFIX}/collections/{cid}/research",
+                      json={"art": "workflow", "title": "Ablauf", "text_content": "1. los", "d2": "a -> b",
+                            "links": [{"type": "simulation", "ref_id": "kreis", "url": None, "label": "Kreis"}]}, headers=h).json()["id"]
+    client.post(f"{PREFIX}/research/{rid}/media", files={"file": ("AB.docx", b"DOCX")}, headers=h)
+
+    r = client.get(f"{PREFIX}/collections/{cid}/export", headers=h)
+    assert r.status_code == 200 and r.headers["content-type"] == "application/zip"
+    zf = zipfile.ZipFile(io.BytesIO(r.content))
+    daten = json.loads(zf.read("fragmente.json"))
+    assert daten["format"] == "tt-fragmente/1" and daten["sammlung"]["name"] == "Mathe Material"
+    assert daten["karten"][0]["title"] == "Merksatz"
+    clip = daten["clippings"][0]
+    assert clip["art"] == "workflow" and clip["d2"] == "a -> b" and clip["media"][0]["name"] == "AB.docx"
+    assert zf.read(clip["media"][0]["datei"]) == b"DOCX"
+
+    # als neue Sammlung …
+    neu = client.post(f"{PREFIX}/collections/import", files={"file": ("x.zip", r.content)}, headers=h)
+    assert neu.status_code == 201, neu.text
+    nid = neu.json()["id"]
+    assert neu.json()["name"] == "Mathe Material"
+    karten = client.get(f"{PREFIX}/collections/{nid}/fragments", headers=h).json()
+    assert [k["title"] for k in karten] == ["Merksatz"] and karten[0]["klasse"] == 8
+    clips = client.get(f"{PREFIX}/collections/{nid}/research", headers=h).json()
+    assert clips[0]["links"][0]["ref_id"] == "kreis" and clips[0]["media"][0]["name"] == "AB.docx"
+    assert clips[0]["media"][0]["path"].startswith(f"/uploads/fragments/{nid}/")
+    # … und in eine bestehende Pinnwand
+    zahlen = client.post(f"{PREFIX}/collections/{cid}/import", files={"file": ("x.zip", r.content)}, headers=h).json()
+    assert zahlen == {"karten": 1, "clippings": 1, "dateien": 1}
+    assert client.post(f"{PREFIX}/collections/{cid}/import", files={"file": ("x.zip", b"kaputt")}, headers=h).status_code == 400
+
+
+def test_jede_karte_wird_als_json_gesichert(client, teacher, tmp_path):
+    import json
+    from api import fragments_archiv
+    client.cookies.clear()
+    h = teacher_auth(teacher)
+    cid = client.post(f"{PREFIX}/collections", json={"name": "Sicher"}, headers=h).json()["id"]
+    fid = client.post(f"{PREFIX}/collections/{cid}/fragments", json={"title": "Eins"}, headers=h).json()["id"]
+    ordner = fragments_archiv.BACKUP_BASE / str(cid)
+    assert (ordner / "sammlung.json").exists()
+    assert json.loads((ordner / f"karte-{fid}.json").read_text(encoding="utf8"))["daten"]["title"] == "Eins"
+    client.patch(f"{PREFIX}/items/{fid}", json={"title": "Zwei"}, headers=h)
+    assert json.loads((ordner / f"karte-{fid}.json").read_text(encoding="utf8"))["daten"]["title"] == "Zwei"
+    client.delete(f"{PREFIX}/items/{fid}", headers=h)
+    assert not (ordner / f"karte-{fid}.json").exists() and (ordner / f"karte-{fid}.geloescht.json").exists()

@@ -8,7 +8,7 @@ the sibling routers; this module owns the collection and its ACL.
 import secrets
 from typing import Union
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session, selectinload
 
@@ -20,8 +20,10 @@ from ..models import (
     FragmentCollection, FragmentCollectionGrant, Fragment, ResearchItem,
 )
 from ..join_codes import code_taken
+from .. import fragments_archiv as archiv
 from ..fragment_access import (
     resolve_permission, at_least, require_permission, collection_principal,
+    author_of, author_name_of,
 )
 
 router = APIRouter(prefix="/api/fragments", tags=["fragments"])
@@ -389,3 +391,63 @@ def guest_join(body: GuestJoinIn, db: Session = Depends(get_db)):
         name=name,
         collection_id=coll.id, collection_name=coll.name, permission=coll.guest_permission,
     )
+
+
+# ── ZIP-Export und -Import (Karten, Clippings, Workflows samt Dateien) ─────────
+
+MAX_UPLOAD = 120 * 1024 * 1024
+
+
+def _autor(t: Teacher) -> dict:
+    kind, uid = author_of(t)
+    return {"author_kind": kind, "author_id": uid, "author_name": author_name_of(t)}
+
+
+def _zip_lesen(file: UploadFile):
+    inhalt = file.file.read(MAX_UPLOAD + 1)
+    if len(inhalt) > MAX_UPLOAD:
+        raise HTTPException(413, "ZIP zu groß (max. 120 MB)")
+    try:
+        return archiv.lies_zip(inhalt)
+    except archiv.ArchivFehler as e:
+        raise HTTPException(400, str(e))
+
+
+@router.get("/collections/{collection_id}/export")
+def export_collection(collection_id: int, db: Session = Depends(get_db), teacher: Teacher = Depends(get_current_teacher)):
+    """Ganze Sammlung als ZIP: fragmente.json + assets/ (ohne Rechte, Gastcodes, Ids)."""
+    coll, _ = require_permission(db, teacher, collection_id, "read")
+    datei = "".join(c if c.isalnum() or c in "-_" else "_" for c in coll.name)[:60] or "sammlung"
+    return Response(archiv.export_zip(coll), media_type="application/zip",
+                    headers={"Content-Disposition": f'attachment; filename="fragmente_{datei}.zip"'})
+
+
+@router.post("/collections/{collection_id}/import")
+def import_into_collection(collection_id: int, file: UploadFile = File(...), db: Session = Depends(get_db),
+                           teacher: Teacher = Depends(get_current_teacher)):
+    """Karten und Clippings aus einem Fragmente-ZIP zu einer bestehenden Pinnwand hinzufügen."""
+    coll, _ = require_permission(db, teacher, collection_id, "contribute")
+    daten, zf = _zip_lesen(file)
+    zahlen = archiv.importieren(db, coll, daten, zf, _autor(teacher))
+    db.commit()
+    return zahlen
+
+
+@router.post("/collections/import", response_model=CollectionOut, status_code=201,
+             dependencies=[Depends(require_capability("fragmente", "create"))])
+def import_new_collection(file: UploadFile = File(...), db: Session = Depends(get_db),
+                          teacher: Teacher = Depends(get_current_teacher)):
+    """Neue Sammlung aus einem Fragmente-ZIP; sie gehört der importierenden Lehrkraft."""
+    daten, zf = _zip_lesen(file)
+    s = daten.get("sammlung") or {}
+    coll = FragmentCollection(
+        name=(str(s.get("name") or "Importierte Sammlung"))[:200], description=s.get("description") or None,
+        subject=(s.get("subject") or None), owner_teacher_id=teacher.id,
+        art=s.get("art") if s.get("art") in ("standard", "materialsammlung") else "standard",
+    )
+    db.add(coll)
+    db.flush()
+    archiv.importieren(db, coll, daten, zf, _autor(teacher))
+    db.commit()
+    db.refresh(coll)
+    return _collection_out(coll, teacher, db)

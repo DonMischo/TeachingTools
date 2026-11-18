@@ -116,3 +116,10 @@ def count_selects(engine):
     event.listen(engine, "before_cursor_execute", _log)
     yield lambda table: sum(1 for s in seen if f"FROM {table}" in s)
     event.remove(engine, "before_cursor_execute", _log)
+
+
+@pytest.fixture(autouse=True)
+def _fragmente_sicherung_umleiten(tmp_path, monkeypatch):
+    """Die laufende Fragmente-Sicherung schreibt in Tests nie nach data/."""
+    from api import fragments_archiv
+    monkeypatch.setattr(fragments_archiv, "BACKUP_BASE", tmp_path / "fragments_backup")

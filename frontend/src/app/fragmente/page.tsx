@@ -145,10 +145,28 @@ export default function FragmentsLandingPage() {
           <p className="text-sm text-muted">Pinnwände mit Karten & Clippings</p>
         </div>
         {isTeacher && (
-          <button className="btn-primary px-4 py-2 text-sm"
-            onClick={() => setModal({ collection: null })}>
-            + Neue Sammlung
-          </button>
+          <div className="flex gap-2">
+            <button className="btn-secondary px-4 py-2 text-sm" title="Sammlung aus einem Fragmente-ZIP (Export einer Pinnwand) anlegen"
+              onClick={() => {
+                const i = document.createElement("input");
+                i.type = "file"; i.accept = ".zip";
+                i.onchange = async () => {
+                  const f = i.files?.[0];
+                  if (!f) return;
+                  try {
+                    const neu = await api.fragments.importSammlung(f);
+                    qc.invalidateQueries({ queryKey: ["fragment-collections"] });
+                    toast(`»${neu.name}« importiert`, "success");
+                    router.push(`/fragmente/${neu.id}`);
+                  } catch (e: any) { toast(e.message ?? "Import fehlgeschlagen", "error"); }
+                };
+                i.click();
+              }}>⬆ Sammlung importieren</button>
+            <button className="btn-primary px-4 py-2 text-sm"
+              onClick={() => setModal({ collection: null })}>
+              + Neue Sammlung
+            </button>
+          </div>
         )}
       </div>
 
