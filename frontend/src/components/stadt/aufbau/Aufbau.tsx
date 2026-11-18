@@ -283,6 +283,8 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
       if (k === "b") { e.preventDefault(); setMenue(m => !m); setUebersicht(false); return; }
       if (k === "i") { e.preventDefault(); setUebersicht(u => !u); setMenue(false); return; }
       if (k === "f") { e.preventDefault(); umVollbild(); return; }
+      if (k === " ") { e.preventDefault(); if (welt.current.bauten.length) setLaeuft(l => !l); return; }
+      if (k === "1" || k === "2" || k === "3") { setTempo([1, 2, 4][Number(k) - 1]); return; }
       if (["w", "a", "s", "d", "q", "e", "arrowup", "arrowdown", "arrowleft", "arrowright"].includes(k)) { e.preventDefault(); drei.current?.tasten.add(k); }
     };
     const hoch = (e: KeyboardEvent) => { if (e.key === "Shift") umschalt.current = false; drei.current?.tasten.delete(e.key.toLowerCase()); };
@@ -512,9 +514,19 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
           <div ref={karte} className="absolute inset-0" />
           {laedt && <div className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white drop-shadow">⏳ Gelände wird geformt …</div>}
           <div className="pointer-events-none absolute bottom-2 left-2 rounded-lg bg-black/45 px-2 py-1 text-xs text-white">
-            B: Baumenü · I: Übersicht · F: Vollbild · Entf: Gewähltes abreißen · Umschalt: Werte, mehrfach bauen · Rad: Zoom (beim Bauen: drehen) · rechte Maustaste / Q E: drehen · Rand / W A S D: schieben · Esc
+            Leertaste: Pause · 1 2 3: Tempo · B: Baumenü · I: Übersicht · F: Vollbild · Entf: Gewähltes abreißen · Umschalt: Werte, mehrfach bauen · Rad: Zoom (beim Bauen: drehen) · rechte Maustaste / Q E: drehen · Rand / W A S D: schieben · Esc
           </div>
-          <div className="absolute right-2 top-2 flex gap-1.5">
+          {/* Spielleiste: Zeit und Kennzahlen, damit sich auch im Vollbild alles steuern lässt */}
+          <div className="absolute left-2 top-2 flex max-w-[55%] flex-wrap items-center gap-1.5 rounded-xl bg-surface/90 p-1 text-xs shadow">
+            <button className="btn-primary px-2 py-1" disabled={!w.bauten.length} onClick={() => setLaeuft(l => !l)} title="Zeit an/aus (Leertaste)">{laeuft ? "⏸" : "▶"}</button>
+            {[1, 2, 4].map((t, k) => <button key={t} className={`chip ${tempo === t ? "chip-on" : ""}`} onClick={() => setTempo(t)} title={`Tempo ${t}× (Taste ${k + 1})`}>{t}×</button>)}
+            <span className="px-1 font-bold" title={`Stufe ${i + 1} von ${stufen.length}`}>{stufen[i].name}</span>
+            <span className="px-1" title="Taler · Ergebnis je Schritt">💰 {zahl(w.taler)} <span className={netto >= 0 ? "text-ok" : "text-bad"}>{netto >= 0 ? "+" : ""}{netto.toFixed(1).replace(".", ",")}</span></span>
+            <span className="px-1" title="Einwohner">👥 {zahl(w.einwohner)}</span>
+            <span className={`px-1 ${w.bilanz.nahrung >= w.bilanz.bedarf ? "" : "text-bad"}`} title="Nahrung für Bedarf">🌾 {zahl(w.bilanz.nahrung)}/{zahl(w.bilanz.bedarf)}</span>
+          </div>
+          {vollbild && meldung && <div className="pointer-events-none absolute bottom-10 left-1/2 max-w-[60%] -translate-x-1/2 rounded-lg bg-surface/95 px-3 py-1.5 text-sm shadow">{meldung}</div>}
+          <div className="absolute right-2 top-2 flex max-w-[44%] flex-wrap justify-end gap-1.5">
             <button className={`chip ${menue ? "chip-on" : ""}`} onClick={() => { setMenue(m => !m); setUebersicht(false); }} title="Baumenü (B)">🏗️ Bauen</button>
             <button className={`chip ${uebersicht ? "chip-on" : ""}`} onClick={() => { setUebersicht(u => !u); setMenue(false); }} title="Übersicht (I)">📊 Übersicht</button>
             <button className={`chip ${raster ? "chip-on" : ""}`} onClick={() => setRaster(r => !r)}># Raster</button>
@@ -671,7 +683,7 @@ function Kaertchen({ stil, bau, pr, neu, besetzt, frei }: { stil: Stil; bau: Bau
 /** Baumenü (B): alle Gebäude nach Stufen, mit Preis; gesperrte grau */
 function BauMenue({ stufen, pal, stufe, taler, preis, gewaehlt, waehle, zu }: {
   stufen: { name: string }[]; pal: { bau: BauTyp; stufe: number }[]; stufe: number; taler: number; preis: (b: BauTyp) => number;
-  gewaehlt: string | null; waehle: (b: BauTyp) => void; zu: () => void;
+  gewaehlt: string | null; waehle: (b: BauTyp | "abriss" | "trocken") => void; zu: () => void;
 }) {
   return (
     <div className="absolute inset-x-4 top-12 z-10 max-h-[70%] overflow-auto rounded-xl border border-line bg-surface/97 p-3 shadow-xl">
@@ -702,6 +714,11 @@ function BauMenue({ stufen, pal, stufe, taler, preis, gewaehlt, waehle, zu }: {
           </div>
         );
       })}
+      <div className="mb-1 text-xs font-bold text-muted">Werkzeuge</div>
+      <div className="flex flex-wrap gap-1.5">
+        <button className={`chip ${gewaehlt === "trocken" ? "chip-on" : ""}`} title="Gräben und Deich: macht ein Stück nasse Aue bebaubar" onClick={() => waehle("trocken")}>🌾 Trockenlegen <span className="text-muted">{TROCKEN_KOSTEN}</span></button>
+        <button className={`chip ${gewaehlt === "abriss" ? "chip-on" : ""}`} title="Gebäude anklicken zum Abreißen (oder wählen + Entf)" onClick={() => waehle("abriss")}>🧽 Abreißen</button>
+      </div>
     </div>
   );
 }
