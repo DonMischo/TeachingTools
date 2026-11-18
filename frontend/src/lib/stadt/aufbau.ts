@@ -494,3 +494,48 @@ export function strassenKetten(w: Welt, runden = 2): { ketten: Kette[]; knoten: 
   for (let k = 0; k < n * n; k++) if (ist(k) && !istKnoten[k]) for (const nb of nachbarn(k)) if (!gesehen.has(kante(k, nb))) verfolge(k, nb);
   return { ketten, knoten };
 }
+
+// ---------------------------------------------------------------- Spielstand
+
+/**
+ * Spielstand als kompakter Text: Belegung, Erschließung und Trockenlegung je Feld in einem Byte,
+ * lauflängenkodiert (fast alles ist leer), dazu Häuser, Gebäude und Zähler. Meist einige 10 KB.
+ */
+export function welteAlsText(w: Welt): string {
+  const n = w.n, rle: number[] = [];
+  let alt = -1, zahl = 0;
+  for (let k = 0; k < n * n; k++) {
+    const v = w.feld[k] | (w.frei[k] << 3) | (w.trocken[k] << 4);
+    if (v === alt) zahl++;
+    else { if (zahl) rle.push(alt, zahl); alt = v; zahl = 1; }
+  }
+  rle.push(alt, zahl);
+  return JSON.stringify({
+    v: 1, stil: w.stil, seed: w.seed, n, felder: rle,
+    haeuser: w.haeuser.map(h => [h.i, h.j, h.dreh, h.bewohner, h.ziel, Math.round(h.versorgt * 100), Math.round(h.hoehe * 10), h.s, h.hof]),
+    bauten: w.bauten.map(b => [b.id, b.bau, b.i, b.j, b.w, b.h, Math.round(b.faktor * 100), b.dreh]),
+    einwohner: w.einwohner, tick: w.tick, strassenRadius: w.strassenRadius, naechsteId: w.naechsteId, bruecken: w.bruecken.map(b => [b.i, b.j]),
+  });
+}
+
+/** Spielstand lesen; null, wenn er nicht zu Gelände und Stadttyp passt oder kaputt ist */
+export function welteAusText(text: string, g: Gelaende, stil: Stil): Welt | null {
+  try {
+    const d = JSON.parse(text);
+    if (d.v !== 1 || d.stil !== stil || d.n !== g.n || d.seed !== g.wahl.seed) return null;
+    const w = neueWelt(g, stil, d.seed);
+    let k = 0;
+    for (let x = 0; x + 1 < d.felder.length; x += 2) {
+      const v = d.felder[x], z = d.felder[x + 1];
+      for (let t = 0; t < z && k < w.n * w.n; t++, k++) { w.feld[k] = v & 7; w.frei[k] = (v >> 3) & 1; w.trocken[k] = (v >> 4) & 1; }
+    }
+    if (k !== w.n * w.n) return null;
+    w.haeuser = d.haeuser.map((h: number[]) => ({ i: h[0], j: h[1], dreh: h[2], bewohner: h[3], ziel: h[4], versorgt: h[5] / 100, hoehe: h[6] / 10, s: h[7], hof: h[8] }));
+    w.bauten = d.bauten.map((b: [number, BauTyp, number, number, number, number, number, number]) => ({ id: b[0], bau: b[1], i: b[2], j: b[3], w: b[4], h: b[5], faktor: b[6] / 100, dreh: b[7] }));
+    w.einwohner = d.einwohner; w.tick = d.tick; w.strassenRadius = d.strassenRadius; w.naechsteId = d.naechsteId;
+    w.bruecken = d.bruecken.map((b: number[]) => ({ i: b[0], j: b[1] }));
+    return w;
+  } catch {
+    return null;
+  }
+}

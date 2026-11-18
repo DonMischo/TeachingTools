@@ -271,6 +271,12 @@ export default function SimulationJoinPage() {
               speicherSchluessel={auth
                 ? `konto-${auth.user_type}-${auth.student?.id ?? auth.teacher?.id ?? 0}`
                 : guest.token ? schluesselFuerGast(code, guest.token) : `gast-${code}`} />
+        : session.tool_slug === "stadt"
+          // Aufbau-Spielstand wie beim Maus-Führerschein: Angemeldete je Konto, Gäste je Namen
+          ? <Stadtentwicklung speicherSchluessel={auth
+              ? `konto-${auth.user_type}-${auth.student?.id ?? auth.teacher?.id ?? 0}`
+              : schluesselFuerGastName(guest.session?.name ?? "")
+                ?? (guest.token ? schluesselFuerGast(code, guest.token) : `gast-${code}`)} />
         : session.tool_slug === "markieren"
           ? <Markieren rangliste={{ zugang: { code, token: auth ? null : guest.token }, klasse: auth?.student?.klasse ?? null }}
               // Wie beim Maus-Führerschein: Angemeldete je Konto, Gäste je Namen (sonst

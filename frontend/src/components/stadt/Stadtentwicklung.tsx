@@ -42,7 +42,8 @@ const chip = (an: boolean) =>
   `px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${an ? "bg-accent text-accent-fg" : "text-muted hover:text-fg"}`;
 
 /** `vorgabe` (TaskCrawler-Station): { reiter, stil } */
-export default function Stadtentwicklung({ action, vorgabe }: { action?: ReactNode; vorgabe?: Vorgabe }) {
+/** `speicherSchluessel`: wem der Aufbau-Spielstand gehört (Konto oder Gastname), sonst »geraet« */
+export default function Stadtentwicklung({ action, vorgabe, speicherSchluessel }: { action?: ReactNode; vorgabe?: Vorgabe; speicherSchluessel?: string }) {
   const fest = vorgabeWahl(vorgabe, "reiter", REITER.map(r => r.id));
   const [reiter, setReiter] = useState<Reiter>(fest ?? "wachstum");
   const [stil, setStil] = useState<Stil>(vorgabeWahl(vorgabe, "stil", STILE.map(x => x.id)) ?? "europaeisch");
@@ -98,7 +99,7 @@ export default function Stadtentwicklung({ action, vorgabe }: { action?: ReactNo
           {/* Planen und Sandkasten bleiben eingehängt, damit Pläne beim Reiterwechsel erhalten bleiben */}
           <div hidden={reiter !== "wachstum"}>{reiter === "wachstum" && <WachstumAnsicht g={g} bild={bild} stil={stil} setStil={waehleStil} />}</div>
           <div hidden={reiter !== "bauen"}><BauModus g={g} bild={bild} stil={stil} setStil={waehleStil} aktiv={reiter === "bauen"} /></div>
-          {reiter === "aufbau" && <Aufbau g={g} stil={stil} setStil={waehleStil} />}
+          {reiter === "aufbau" && <Aufbau g={g} stil={stil} setStil={waehleStil} speicherSchluessel={speicherSchluessel} />}
           <div hidden={reiter !== "planen"}><Planen g={g} bild={bild} aktiv={reiter === "planen"} /></div>
           <div hidden={reiter !== "sandkasten"}><Planen g={g} bild={bild} sandkasten aktiv={reiter === "sandkasten"} /></div>
           {reiter === "erklaerung" && <Erklaerung />}

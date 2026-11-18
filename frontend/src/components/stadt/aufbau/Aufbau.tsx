@@ -5,6 +5,8 @@
  *   rechte Maustaste oder Q/E dreht, ziehen oder W/A/S/D verschiebt.
  *   Touch: ein Finger verschiebt, zwei Finger zoomen und drehen; Knöpfe ⟲ ⟳ ＋ －.
  *   Gebäude drehen mit R oder ↻; auf Touch setzt Tippen den Geist, »✔ Hier bauen« baut.
+ *   Der Spielstand liegt im Browser (localStorage) je Spieler (`speicherSchluessel`: Konto oder Gastname),
+ *   Stadttyp und Gelände; derselbe Typ auf demselben Gelände macht dort weiter.
  *   Gebäude wählen → Geist am Mauszeiger mit Werte-Kärtchen am Bauplatz und Einzugsbereich;
  *   Klick baut. Klick auf ein Gebäude zeigt seine Werte und seinen Einzugsbereich.
  * Häuser und Straßen wachsen feldgenau von selbst (lib/stadt/aufbau.ts).
@@ -16,7 +18,7 @@ import { BAUTEN, STILE, type BauTyp, type Stil } from "@/lib/stadt/modell";
 import { BAUPLAENE, fehlt, jahrVonStand, kapazitaet, lageRegeln } from "@/lib/stadt/bauen";
 import {
   baue, bauBei, beduerfnisse, fussabdruck, hausFarben, hausMitte, mitteVon, neueWelt, orteVon, pruefePlatz, reichweite, reisseAb, schritt, stufe,
-  trockenlegen, TROCKEN_RADIUS,
+  trockenlegen, TROCKEN_RADIUS, welteAlsText, welteAusText,
   type Platzpruefung, type Welt,
 } from "@/lib/stadt/aufbau";
 import { ladeWeltModelle, weltModelle } from "@/components/gebaeude/frei/modelle";
@@ -34,11 +36,18 @@ const neigung = (d: number) => 0.42 + 0.68 * Math.max(0, Math.min(1, Math.log(d 
 interface Ziel { i: number; j: number; bau: BauTyp; dreh: number; pr: Platzpruefung }
 interface Auswahl { id: number }
 
-export default function Aufbau({ g, stil, setStil, aktiv = true }: { g: Gelaende; stil: Stil; setStil: (s: Stil) => void; aktiv?: boolean }) {
+/** Speicherplatz eines Spielstands: Spieler, Stadttyp, Gelände */
+const speicherplatz = (wer: string, g: Gelaende, stil: Stil) =>
+  `hp_aufbau_${wer}_${stil}_${g.wahl.art}_${g.wahl.seed}_${g.wahl.relief}_${g.wahl.fluss ? 1 : 0}_${(g.wahl.merkmale ?? []).join("+")}`;
+
+export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchluessel = "geraet" }: { g: Gelaende; stil: Stil; setStil: (s: Stil) => void; aktiv?: boolean; speicherSchluessel?: string }) {
   const plan = BAUPLAENE[stil];
   const huelle = useRef<HTMLDivElement>(null);
   const karte = useRef<HTMLDivElement>(null);
   const welt = useRef<Welt>(neueWelt(g, stil, g.wahl.seed));
+  // der Speicherplatz gehört zur Welt (zusammen gesetzt), damit nie unter einem fremden Schlüssel gespeichert wird
+  const platz = useRef(speicherplatz(speicherSchluessel, g, stil));
+  const speichern = () => { try { localStorage.setItem(platz.current, welteAlsText(welt.current)); } catch { /* voll oder gesperrt */ } };
   const [, setVersion] = useState(0);
   const neuZeichnen = () => setVersion(v => v + 1);
   const [wahl, setWahl] = useState<BauTyp | "abriss" | "trocken" | null>(null);
@@ -63,15 +72,21 @@ export default function Aufbau({ g, stil, setStil, aktiv = true }: { g: Gelaende
     rig: { x: number; z: number; yaw: number; d: number; ziel: { x: number; z: number; yaw: number; d: number } }; tasten: Set<string>;
   } | null>(null);
 
-  // neue Welt bei neuem Stadttyp oder Gelände
+  // Welt bei neuem Stadttyp, Gelände oder Spieler: gespeicherten Stand laden, sonst neu
   useEffect(() => {
-    welt.current = neueWelt(g, stil, g.wahl.seed);
-    setWahl(null); setZiel(null); setAuswahl(null); setLaeuft(false); setMeldung(null);
+    const p = speicherplatz(speicherSchluessel, g, stil);
+    let gespeichert: string | null = null;
+    try { gespeichert = localStorage.getItem(p); } catch { /* kein Speicher */ }
+    const geladen = gespeichert ? welteAusText(gespeichert, g, stil) : null;
+    welt.current = geladen ?? neueWelt(g, stil, g.wahl.seed);
+    platz.current = p;
+    setWahl(null); setZiel(null); setAuswahl(null); setLaeuft(false);
+    setMeldung(geladen ? `💾 Spielstand geladen: ${geladen.haeuser.length} Häuser, ${geladen.bauten.length} Gebäude.` : null);
     const d = drei.current;
     if (d?.objekte) d.objekte.aktualisiere(welt.current);
     if (d?.gelaende) { d.gelaende.setzeMasken(welt.current); d.freiSumme = -1; }
     neuZeichnen();
-  }, [g, stil]);
+  }, [g, stil, speicherSchluessel]);
 
   // ── Renderer, Kamera, Eingaben, Schleife ──
   useEffect(() => {
@@ -182,7 +197,7 @@ export default function Aufbau({ g, stil, setStil, aktiv = true }: { g: Gelaende
       const w = welt.current, b = wahlRef.current;
       if (b === "abriss") {
         const o = bauBei(w, Math.floor(p.x / g.zelle), Math.floor(p.y / g.zelle));
-        if (o) { reisseAb(g, w, o.id); setMeldung(`🧽 ${BAUTEN[o.bau].label} abgerissen.`); drei.current?.objekte?.aktualisiere(w); drei.current?.gelaende?.setzeMasken(w); neuZeichnen(); }
+        if (o) { reisseAb(g, w, o.id); setMeldung(`🧽 ${BAUTEN[o.bau].label} abgerissen.`); drei.current?.objekte?.aktualisiere(w); drei.current?.gelaende?.setzeMasken(w); speichernRef.current(); neuZeichnen(); }
         return;
       }
       if (b === "trocken") {
@@ -190,6 +205,7 @@ export default function Aufbau({ g, stil, setStil, aktiv = true }: { g: Gelaende
         const neu = trockenlegen(g, w, p.x, p.y);
         setMeldung(neu ? `🌾 ${Math.round(neu * g.zelle * g.zelle / 10000 * 10) / 10} ha Aue trockengelegt — hier darf jetzt gebaut werden.` : "Hier gibt es keine nasse, erschlossene Aue zum Trockenlegen.");
         drei.current?.gelaende?.setzeMasken(w);
+        speichernRef.current();
         neuZeichnen();
         return;
       }
@@ -336,6 +352,7 @@ export default function Aufbau({ g, stil, setStil, aktiv = true }: { g: Gelaende
     if (w.bauten.length === 1) setLaeuft(true);
     drei.current?.objekte?.aktualisiere(w);
     drei.current?.gelaende?.setzeMasken(w);
+    speichern();
     neuZeichnen();
   };
   const bauenRef = useRef(bauen); bauenRef.current = bauen;
@@ -346,6 +363,7 @@ export default function Aufbau({ g, stil, setStil, aktiv = true }: { g: Gelaende
     if (ziel) setZiel({ ...ziel, dreh: nd, pr: pruefePlatz(g, welt.current, ziel.bau, ziel.i, ziel.j, nd) });
   };
   const drehenRef = useRef(drehen); drehenRef.current = drehen;
+  const speichernRef = useRef(speichern); speichernRef.current = speichern;
   const kamera = (f: (r: { yaw: number; d: number }) => void) => { const r = drei.current?.rig; if (r) f(r.ziel); };
 
   // Geist zeigen
@@ -362,6 +380,7 @@ export default function Aufbau({ g, stil, setStil, aktiv = true }: { g: Gelaende
     const t = setInterval(() => {
       const w = welt.current, d = drei.current, alt = stufe(w);
       schritt(g, w);
+      if (w.tick % 10 === 0) speichern();
       if (stufe(w) > alt) setMeldung(`🎉 Neue Stufe: ${plan.stufen[stufe(w)].name} — mehr Land ist erschlossen.`);
       if (d?.objekte) d.objekte.aktualisiere(w);
       if (d?.gelaende) {
@@ -471,7 +490,7 @@ export default function Aufbau({ g, stil, setStil, aktiv = true }: { g: Gelaende
           <div className="mt-auto flex flex-wrap items-center gap-2">
             <button className="btn-primary" disabled={!w.bauten.length} onClick={() => setLaeuft(l => !l)}>{laeuft ? "⏸ Anhalten" : "▶ Zeit läuft"}</button>
             {[1, 2, 4].map(t => <button key={t} className={`chip ${tempo === t ? "chip-on" : ""}`} onClick={() => setTempo(t)}>{t}×</button>)}
-            <button className="btn-secondary" onClick={() => { welt.current = neueWelt(g, stil, g.wahl.seed); setLaeuft(false); setMeldung(null); setAuswahl(null); drei.current?.objekte?.aktualisiere(welt.current); drei.current?.gelaende?.setzeMasken(welt.current); neuZeichnen(); }}>↺ Neu</button>
+            <button className="btn-secondary" title="Von vorn — der gespeicherte Stand wird gelöscht" onClick={() => { try { localStorage.removeItem(platz.current); } catch { /* egal */ } welt.current = neueWelt(g, stil, g.wahl.seed); setLaeuft(false); setMeldung(null); setAuswahl(null); drei.current?.objekte?.aktualisiere(welt.current); drei.current?.gelaende?.setzeMasken(welt.current); neuZeichnen(); }}>↺ Neu</button>
           </div>
         </aside>
       </div>

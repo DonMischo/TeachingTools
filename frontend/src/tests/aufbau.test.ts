@@ -3,7 +3,7 @@ import { erzeuge } from "@/lib/gelaende/gelaende";
 import { besterPunkt, baubar } from "@/lib/stadt/hilfen";
 import { flussAbstand } from "@/lib/stadt/standort";
 import { BAUPLAENE } from "@/lib/stadt/bauen";
-import { BAU, baue, bruecken, FREI, fussabdruck, HAUPT, HAUS, hausMitte, nasseAue, neueWelt, pruefePlatz, reichweite, schritt, STRASSE, strassenKetten, stufe, trockenlegen, versorgungBei, mitteVon } from "@/lib/stadt/aufbau";
+import { BAU, baue, bruecken, FREI, fussabdruck, HAUPT, HAUS, hausMitte, nasseAue, neueWelt, pruefePlatz, reichweite, schritt, STRASSE, strassenKetten, stufe, trockenlegen, versorgungBei, mitteVon, welteAlsText, welteAusText } from "@/lib/stadt/aufbau";
 
 const g = erzeuge({ art: "flusstal", seed: 12, fluss: true, relief: 1 });
 const m = besterPunkt(g, 600, p => (baubar(g, p, 4) ? -Math.abs(flussAbstand(g, p) - 250) : -1e9))!;
@@ -110,5 +110,24 @@ describe("Aufbau auf dem Raster", () => {
     bruecken(g, w);
     expect(g.wasser[start + 1] > 0 && (w.feld[start + 1] === STRASSE || w.feld[start + 1] === HAUPT)).toBe(true);
     expect(w.bruecken.length).toBe(1);
+  });
+
+  it("Spielstand: speichern und laden ergibt dieselbe Stadt, fremdes Gelände wird abgelehnt", () => {
+    const w = neueWelt(g, "europaeisch", 12);
+    const [i, j] = zelle(m);
+    baue(g, w, "markt", i, j);
+    trockenlegen(g, w, m.x, m.y + 200);
+    for (let t = 0; t < 60; t++) schritt(g, w);
+    const text = welteAlsText(w);
+    expect(text.length).toBeLessThan(200_000);
+    const z = welteAusText(text, g, "europaeisch")!;
+    expect(z).toBeTruthy();
+    expect(Array.from(z.feld)).toEqual(Array.from(w.feld));
+    expect(Array.from(z.trocken)).toEqual(Array.from(w.trocken));
+    expect(z.haeuser.length).toBe(w.haeuser.length);
+    expect(z.bauten[0].bau).toBe("markt");
+    expect(z.einwohner).toBe(w.einwohner);
+    expect(welteAusText(text, g, "roemisch")).toBeNull();
+    expect(welteAusText("kaputt", g, "europaeisch")).toBeNull();
   });
 });
