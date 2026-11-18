@@ -419,7 +419,7 @@ simulationen:
       - Sandkasten mit allen Werkzeugen, Viertel-Pinsel und optionaler Prüfung
       - Häuser entlang der Straßen je Viertel, Gassen und Vororte aus Tensorfeldern (Idee MapGenerator), alte Straßen per günstigstem Weg übers Gelände
       - Geländeinfo unter dem Mauszeiger (Höhe, Neigung, Aue, Abstand zum Wasser)
-      - 3D-Flug im Stil von Voxel Space mit Fassaden, Fenstern, Satteldächern, Wäldern und eingebackenem Licht
+      - 3D-Stadt (three.js) mit Häusern, Dachformen und Wahrzeichen aus Blender (scripts/stadt/baue.py), Fenstern aus dem Shader, Mauern, Aquädukt, Wald aus den TaskCrawler-Bäumen und Schatten; Fliegen oder Laufen mit dem eigenen Avatar (Häuser, Mauern und Wasser halten auf, Brücken nicht)
       - Als TaskCrawler-Werkzeug mit festem Reiter und Stil
   - id: erosion
     name: Erosion

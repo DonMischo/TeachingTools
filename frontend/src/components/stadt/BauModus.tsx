@@ -50,7 +50,7 @@ export default function BauModus({ g, bild, stil, setStil, aktiv = true }: { g: 
 
   // Stadt nur bei spürbarer Änderung neu bauen (Einwohner in ~5-%-Stufen)
   const stufeEw = stand.einwohner ? Math.round(Math.log(stand.einwohner) * 20) : -1;
-  const stadtStand = useMemo(() => ({ ...stand, einwohner: stufeEw < 0 ? 0 : Math.exp(stufeEw / 20) }), [stand.orte, stufeEw]); // eslint-disable-line react-hooks/exhaustive-deps
+  const stadtStand = useMemo(() => ({ ...stand, einwohner: stufeEw < 0 ? 0 : Math.exp(stufeEw / 20) }), [stand.orte, stufeEw]);
   const stadt = useMemo(() => stadtAus(g, stil, stadtStand, g.wahl.seed), [g, stil, stadtStand]);
   const hs = useMemo(() => haeuser(stadt, g, g.wahl.seed), [stadt, g]);
   const oepnv = useMemo(() => (stadt.bauten.some(b => b.typ === "haltestelle") ? erschliessung(stadt, hs) : null), [stadt, hs]);
@@ -61,7 +61,8 @@ export default function BauModus({ g, bild, stil, setStil, aktiv = true }: { g: 
   const naechste = plan.stufen[i + 1];
   const jahr = jahrVonStand(plan, stand.einwohner);
   const ziel = wahl && wahl !== "radierer" && maus ? pruefeOrt(g, stil, wahl, maus, stand.orte) : null;
-  const fokus = useMemo(() => (stand.orte[0] ? { x: stand.orte[0].p.x, y: stand.orte[0].p.y, r: 1200 } : null), [stand.orte]);
+  // erst die ganze Karte (Standort suchen), nach dem ersten Ort näher heran
+  const fokus = useMemo(() => (stand.orte[0] ? { x: stand.orte[0].p.x, y: stand.orte[0].p.y, r: 1200 } : { x: g.breite / 2, y: g.breite / 2, r: g.breite / 2 }), [stand.orte, g.breite]);
 
   const setze = (p: P) => {
     if (wahl === "radierer") {
