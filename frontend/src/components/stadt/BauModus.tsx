@@ -12,7 +12,7 @@ import { abstand, type P } from "@/lib/stadt/geometrie";
 import { haeuser } from "@/lib/stadt/haeuser";
 import { BAUTEN, STILE, type BauTyp, type Stil } from "@/lib/stadt/modell";
 import { erschliessung } from "@/lib/stadt/oepnv";
-import { BAUPLAENE, fehlt, jahrVonStand, kapazitaet, leererStand, pruefeOrt, schritt, stadtAus, stufeVon, type BauStand } from "@/lib/stadt/bauen";
+import { BAUPLAENE, eignungsRaster, fehlt, jahrVonStand, kapazitaet, lageRegeln, leererStand, pruefeOrt, schritt, stadtAus, stufeVon, type BauStand } from "@/lib/stadt/bauen";
 import Karte from "./Karte";
 import Stadt3D from "./Stadt3D";
 
@@ -61,6 +61,24 @@ export default function BauModus({ g, bild, stil, setStil, aktiv = true }: { g: 
   const naechste = plan.stufen[i + 1];
   const jahr = jahrVonStand(plan, stand.einwohner);
   const ziel = wahl && wahl !== "radierer" && maus ? pruefeOrt(g, stil, wahl, maus, stand.orte) : null;
+  // Eignungskarte wie in Anno: grün = volle Wirkung, gelb/orange = halbe/viertel, rot = verboten
+  const eignung = useMemo(() => {
+    if (!wahl || wahl === "radierer" || typeof document === "undefined") return null;
+    const k = 72, e = eignungsRaster(g, stil, wahl, stand.orte, k);
+    const c = document.createElement("canvas");
+    c.width = c.height = k;
+    const ctx = c.getContext("2d")!, bildDaten = ctx.createImageData(k, k);
+    for (let i = 0; i < k * k; i++) {
+      const f = e[i];
+      const [rr, gg, bb, aa] = f >= 1 ? [34, 197, 94, 210] : f >= 0.5 ? [234, 179, 8, 190] : f > 0 ? [234, 108, 30, 170] : [220, 38, 38, 120];
+      bildDaten.data.set([rr, gg, bb, aa], i * 4);
+    }
+    ctx.putImageData(bildDaten, 0, 0);
+    return c;
+  }, [wahl, g, stil, stand.orte]);
+  // Warum wächst die Stadt nicht weiter?
+  const schwach = stand.orte.map(o => ({ o, f: pruefeOrt(g, stil, o.bau, o.p, stand.orte).faktor })).filter(x => x.f < 1);
+  const stillstand = naechste && !gedeckelt && fehlend.length === 0 && kap < naechste.ab && stand.orte.length > 0;
   // erst die ganze Karte (Standort suchen), nach dem ersten Ort näher heran
   const fokus = useMemo(() => (stand.orte[0] ? { x: stand.orte[0].p.x, y: stand.orte[0].p.y, r: 1200 } : { x: g.breite / 2, y: g.breite / 2, r: g.breite / 2 }), [stand.orte, g.breite]);
 
@@ -94,7 +112,7 @@ export default function BauModus({ g, bild, stil, setStil, aktiv = true }: { g: 
             <Stadt3D g={g} stadt={stadt} haeuser={hs} bild={bild} mitte={fokus} />
           ) : (
             <Karte g={g} bild={bild} stadt={stadt} haeuser={hs} fokus={fokus} marken={marken}
-              werkzeug={wahl ? "klick" : null} onBewegung={p => setMaus(p)} onKlick={p => setze(p)} />
+              werkzeug={wahl ? "klick" : null} onBewegung={p => setMaus(p)} onKlick={p => setze(p)} ueberlagerung={eignung} />
           )}
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <button className="btn-primary" disabled={!stand.orte.length} onClick={() => setLaeuft(l => !l)}>{laeuft ? "⏸ Anhalten" : "▶ Zeit läuft"}</button>
@@ -115,6 +133,12 @@ export default function BauModus({ g, bild, stil, setStil, aktiv = true }: { g: 
             {!stand.orte.length && <p className="mt-1 font-bold">👉 Wähle unten {BAUTEN[plan.stufen[0].braucht[0]].icon} {BAUTEN[plan.stufen[0].braucht[0]].label} und setze es in die Karte.</p>}
             {fehlend.length > 0 && stand.orte.length > 0 && (
               <p className={`mt-1 ${gedeckelt ? "font-bold text-bad" : ""}`}>{gedeckelt ? "⛔ Wachstum gestoppt — " : ""}Für den Aufstieg fehlt: {fehlend.map(b => `${BAUTEN[b].icon} ${BAUTEN[b].label}`).join(", ")}</p>
+            )}
+            {stillstand && (
+              <p className="mt-1 font-bold text-bad">
+                ⛔ Zu wenig Platz für »{naechste!.name}«: deine Orte tragen {zahl(kap)} Einwohner, nötig sind {zahl(naechste!.ab)}.{" "}
+                {schwach.length ? `Schlecht gelegen: ${schwach.map(x => `${BAUTEN[x.o.bau].label} (${Math.round(x.f * 100)} %)`).join(", ")} — abreißen und besser setzen.` : "Setze weitere Orte."}
+              </p>
             )}
             {oepnv && <p className="mt-1">🚏 {Math.round(oepnv.anteil * 100)} % der Wohnhäuser an Bus und Bahn</p>}
           </div>
@@ -147,6 +171,9 @@ export default function BauModus({ g, bild, stil, setStil, aktiv = true }: { g: 
             <div className="rounded-lg border border-line p-2 text-xs">
               <div className="font-bold">{BAUTEN[wahl].icon} {BAUTEN[wahl].label}</div>
               <p className="text-muted">{BAUTEN[wahl].text}</p>
+              <div className="mt-1 font-bold">Gute Lage:</div>
+              <ul>{lageRegeln(stil, wahl).soll.map(t => <li key={t}>• {t}</li>)}</ul>
+              <p className="mt-1 text-muted">Karte: <span style={{ color: "#16a34a" }}>■</span> volle Wirkung · <span style={{ color: "#ca8a04" }}>■</span> halbe · <span style={{ color: "#ea6c1e" }}>■</span> viertel · <span style={{ color: "#dc2626" }}>■</span> geht nicht. Jede verfehlte Regel halbiert die Wirkung.</p>
               {ziel ? (
                 <ul className="mt-1">{ziel.gruende.map((x, k) => <li key={k}>{x.ok ? "✅" : "❌"} {x.text}</li>)}</ul>
               ) : <p className="mt-1">Fahre mit der Maus über die Karte, um die Lage zu prüfen.</p>}

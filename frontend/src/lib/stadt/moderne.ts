@@ -50,7 +50,9 @@ export function industrialisierung(g: Gelaende, s: Stadt, kern: P[], m: P, z: Z,
   }
   // am Meer endet die Bahn an der Küste (Stück mit dem Bahnhof = nächstes zur Stadt)
   const stuecke = zerschneiden(glaetten(best, 2), g, true);
-  const bahn = stuecke.length ? stuecke.sort((u, v) => zurLinie(m, u).d - zurLinie(m, v).d)[0] : glaetten(best, 2);
+  // Stummel am Kartenrand zählen nicht
+  const brauchbar = stuecke.filter(u => laenge(u) > 600);
+  const bahn = (brauchbar.length ? brauchbar : stuecke).sort((u, v) => zurLinie(m, u).d - zurLinie(m, v).d)[0] ?? glaetten(best, 2);
   s.strassen.push({ art: "bahn", name: "Eisenbahn", punkte: bahn });
   const rb = zurLinie(m, bahn);
   const ra = bahn[rb.seg], rbb = bahn[rb.seg + 1];

@@ -28,6 +28,8 @@ export interface KartenProps {
   onZiehen?: (a: P, b: P, fertig: boolean) => void;
   onBewegung?: (p: P | null, shift: boolean) => void;
   hoehe?: number;
+  /** halbdurchsichtiges Bild über dem Gelände (z. B. Eignungskarte im Bau-Modus), deckt die ganze Karte */
+  ueberlagerung?: CanvasImageSource | null;
 }
 
 export default function Karte(p: KartenProps) {
@@ -71,8 +73,8 @@ export default function Karte(p: KartenProps) {
     c.height = H * dpr;
     const ctx = c.getContext("2d")!;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    zeichneKarte(ctx, breite, H, ansicht, p.g, p.stadt, { gelaende: p.bild.land, wasser: p.bild.wasser, haeuser: p.haeuser, zonen: p.zonen, vorschau: p.vorschau, marken: p.marken });
-  }, [breite, H, ansicht, p.g, p.bild, p.stadt, p.haeuser, p.zonen, p.vorschau, p.marken]);
+    zeichneKarte(ctx, breite, H, ansicht, p.g, p.stadt, { gelaende: p.bild.land, wasser: p.bild.wasser, haeuser: p.haeuser, zonen: p.zonen, vorschau: p.vorschau, marken: p.marken, ueberlagerung: p.ueberlagerung });
+  }, [breite, H, ansicht, p.g, p.bild, p.stadt, p.haeuser, p.zonen, p.vorschau, p.marken, p.ueberlagerung]);
 
   const welt = (e: { clientX: number; clientY: number }): P => {
     const r = cv.current!.getBoundingClientRect();

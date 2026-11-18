@@ -3,7 +3,9 @@ import { erzeuge } from "@/lib/gelaende/gelaende";
 import { haeuser } from "@/lib/stadt/haeuser";
 import { besterPunkt, baubar } from "@/lib/stadt/hilfen";
 import { STILE } from "@/lib/stadt/modell";
-import { BAUPLAENE, kapazitaet, leererStand, pruefeOrt, schritt, stadtAus, stufeVon, type BauStand } from "@/lib/stadt/bauen";
+import { BAUPLAENE, eignungsRaster, kapazitaet, lageRegeln, leererStand, pruefeOrt, schritt, stadtAus, stufeVon, type BauStand } from "@/lib/stadt/bauen";
+import { zurLinie } from "@/lib/stadt/geometrie";
+import type { Stil } from "@/lib/stadt/modell";
 import { flussAbstand } from "@/lib/stadt/standort";
 
 const g = erzeuge({ art: "flusstal", seed: 12, fluss: true, relief: 1 });
@@ -54,5 +56,31 @@ describe("Bau-Modus", () => {
       const st = stadtAus(g, s.id, { orte: [{ bau: b, p: markt }], einwohner: 2500, tick: 0 }, 3);
       expect(haeuser(st, g, 1).length, s.id).toBeGreaterThan(20);
     }
+  });
+
+  it("stehen alle Pflichtbauten gut, erreicht jede Stadt die nächste Stufe (auch die römische)", () => {
+    const forum = besterPunkt(g, 600, p => pruefeOrt(g, "roemisch", "forum", p, []).faktor - Math.abs(flussAbstand(g, p) - 400) / 1e4)!;
+    expect(pruefeOrt(g, "roemisch", "forum", forum, []).faktor).toBe(1);
+    const tempel = { x: forum.x + 60, y: forum.y };
+    let st: BauStand = { ...leererStand(), orte: [{ bau: "forum", p: forum }, { bau: "tempel", p: tempel }] };
+    for (let k = 0; k < 400; k++) st = schritt(g, "roemisch", st);
+    expect(stufeVon(BAUPLAENE.roemisch, st.einwohner)).toBe(1);
+  });
+
+  it("Lageregeln stehen vorab als Text bereit, die Eignungskarte zeigt gute und verbotene Felder", () => {
+    for (const s of ["europaeisch", "hafen"] as Stil[]) for (const o of BAUPLAENE[s].orte) expect(lageRegeln(s, o.bau).soll.every(t => t.length > 5)).toBe(true);
+    const e = eignungsRaster(g, "europaeisch", "muehle", [{ bau: "markt", p: markt }], 40);
+    expect(e.some(x => x === 1)).toBe(true);
+    expect(e.some(x => x === 0)).toBe(true);
+  });
+
+  it("zwei Bahnhöfe: eine Bahn durch beide, jeder mit eigenem Viertel", () => {
+    const b1 = { x: markt.x + 500, y: markt.y + 300 }, b2 = { x: markt.x - 600, y: markt.y + 500 };
+    const st = stadtAus(g, "europaeisch", { orte: [{ bau: "markt", p: markt }, { bau: "bahnhof", p: b1 }, { bau: "bahnhof", p: b2 }], einwohner: 20000, tick: 0 }, 2);
+    const bahn = st.strassen.filter(x => x.art === "bahn");
+    expect(bahn.length).toBe(1);
+    expect(zurLinie(b1, bahn[0].punkte).d).toBeLessThan(40);
+    expect(zurLinie(b2, bahn[0].punkte).d).toBeLessThan(40);
+    expect(st.zonen.filter(z => z.typ === "gruenderzeit").length).toBe(2);
   });
 });

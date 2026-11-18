@@ -31,8 +31,10 @@ export interface ZeichenOptionen {
   vorschau?: { punkte: P[]; art: StrassenArt | "mauer" | "zone" };
   /** Kreise zum Hervorheben (Quiz, Prüfung) */
   marken?: { p: P; r: number; farbe: string }[];
-  /** Nur Draufsicht ohne Beschriftung (für das Voxel-Farbbild) */
+  /** Nur Draufsicht ohne Beschriftung (Bodenbild der 3D-Stadt) */
   nurBild?: boolean;
+  /** halbdurchsichtiges Bild über dem Gelände, deckt die ganze Karte */
+  ueberlagerung?: CanvasImageSource | null;
 }
 
 const REIHE: StrassenArt[] = ["kanal", "aquaedukt", "fernstrasse", "gasse", "neben", "haupt", "ring", "autobahn", "bahn", "bus", "tram", "sbahn", "ubahn"];
@@ -54,6 +56,11 @@ export function zeichneKarte(ctx: Ctx, W: number, H: number, a: Ansicht, g: Gela
   ctx.imageSmoothingEnabled = true;
   const o0 = zuBild(a, { x: 0, y: 0 });
   ctx.drawImage(o.gelaende, o0.x, o0.y, g.breite * a.m, g.breite * a.m);
+  if (o.ueberlagerung) {
+    ctx.globalAlpha = 0.5;
+    ctx.drawImage(o.ueberlagerung, o0.x, o0.y, g.breite * a.m, g.breite * a.m);
+    ctx.globalAlpha = 1;
+  }
   ctx.lineJoin = "round";
   ctx.lineCap = "round";
 

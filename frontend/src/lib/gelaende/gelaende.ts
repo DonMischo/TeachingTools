@@ -302,11 +302,22 @@ export function erzeuge(wahl: GelaendeWahl, n = STANDARD_N, zelle = STANDARD_ZEL
       if (hoehe[zellIndexRoh(n, zelle, p)] < 0) { kante = p; break; }
     }
     const c = { x: kante.x - meerRichtung.x * 220, y: kante.y - meerRichtung.y * 220 };
+    // unregelmäßiger Rand, entlang der Küste gestreckt; Ufer läuft weich ins Gelände aus
+    const rb = perlin(wahl.seed + 404);
     for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
-      const d = Math.hypot((i + 0.5) * zelle - c.x, (j + 0.5) * zelle - c.y);
+      const dx = (i + 0.5) * zelle - c.x, dy = (j + 0.5) * zelle - c.y;
+      const quer = (dx * seitlich.x + dy * seitlich.y) / 1.35, land = dx * meerRichtung.x + dy * meerRichtung.y;
+      const d = Math.hypot(quer, land < 0 ? land * 1.1 : land * 0.8);
+      if (d > 900) continue;
+      const w = Math.atan2(land, quer);
+      const r = 330 * (1 + 0.28 * fbm(rb, Math.cos(w) * 1.6, Math.sin(w) * 1.6, 3));
       const k = j * n + i;
-      if (d < 330) hoehe[k] = Math.min(hoehe[k], -4 + d * 0.005);
-      else if (d < 480) hoehe[k] = Math.min(hoehe[k], 1 + (d - 330) * 0.06);
+      if (d < r) hoehe[k] = Math.min(hoehe[k], -5 + (d / r) * 4);
+      else {
+        const ufer = 0.8 + (d - r) * 0.05;
+        const f = glatt(r, r + 320, d);
+        hoehe[k] = Math.min(hoehe[k], hoehe[k] * f + Math.min(hoehe[k], ufer) * (1 - f));
+      }
     }
     plus.bucht = c;
   }

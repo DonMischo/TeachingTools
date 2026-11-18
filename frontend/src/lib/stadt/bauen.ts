@@ -15,11 +15,12 @@ import { nahverkehr } from "./oepnv";
 import { flaeche, flussAbstand } from "./standort";
 import { stromlinien, type Feld } from "./tensor";
 import { bastionen } from "./stile/festung";
-import { glaetten, weg } from "./wege";
+import { glaetten, randPunkt, weg } from "./wege";
 
 export interface Ort { bau: BauTyp; p: P }
 export interface Bewertung { ok: boolean; text: string }
-type Regel = (g: Gelaende, p: P, orte: Ort[]) => Bewertung;
+type Regel = ((g: Gelaende, p: P, orte: Ort[]) => Bewertung) & { beschreibung: string };
+const regel = (beschreibung: string, f: (g: Gelaende, p: P, orte: Ort[]) => Bewertung): Regel => Object.assign(f, { beschreibung });
 
 export interface Schluessel {
   bau: BauTyp;
@@ -44,38 +45,39 @@ export interface BauPlan { stufen: Stufe[]; orte: Schluessel[]; muster: Muster; 
 // ---------------------------------------------------------------- Regeln
 
 const r1 = (n: number) => n.toFixed(0);
-const flach = (max: number): Regel => (g, p) => {
-  const n = flaeche(g, p, 70).neigung;
-  return { ok: n <= max, text: n <= max ? `eben genug (${r1(n)} %)` : `zu steil: ${r1(n)} %, gut bis ${max} %` };
-};
-const amFluss = (min: number, max: number): Regel => (g, p) => {
+// gemessen wird die mittlere Neigung der Baufläche (Umkreis 35 m), nicht nur ein Punkt
+const flach = (max: number): Regel => regel(`eben: höchstens ${max} % Neigung im Umkreis von 35 m`, (g, p) => {
+  const n = flaeche(g, p, 35).neigung;
+  return { ok: n <= max, text: n <= max ? `eben genug (${r1(n)} % im Umkreis von 35 m)` : `zu steil: im Umkreis von 35 m im Mittel ${r1(n)} %, gut bis ${max} %` };
+});
+const amFluss = (min: number, max: number): Regel => regel(`${min}–${max} m vom Fluss (nah, aber hochwassersicher)`, (g, p) => {
   const d = flussAbstand(g, p);
   if (!Number.isFinite(d)) return { ok: true, text: "kein Fluss auf der Karte" };
   return { ok: d >= min && d <= max, text: d < min ? `zu nah am Fluss (${r1(d)} m, Hochwasser)` : d > max ? `zu weit vom Fluss (${r1(d)} m, gut bis ${max} m)` : `${r1(d)} m zum Fluss` };
-};
-const amWasser = (max: number): Regel => (g, p) => {
+});
+const amWasser = (max: number): Regel => regel(`direkt am Wasser (höchstens ${max} m)`, (g, p) => {
   const d = wasserAbstand(g, p.x, p.y);
   return { ok: d <= max, text: d <= max ? "direkt am Wasser" : `${r1(d)} m bis zum Wasser — muss ans Ufer` };
-};
-const nah = (b: BauTyp, max: number, name: string): Regel => (_g, p, orte) => {
+});
+const nah = (b: BauTyp, max: number, name: string): Regel => regel(`höchstens ${max} m bis ${name}`, (_g, p, orte) => {
   const o = orte.filter(x => x.bau === b);
   if (!o.length) return { ok: false, text: `${name} fehlt noch` };
   const d = Math.min(...o.map(x => abstand(x.p, p)));
   return { ok: d <= max, text: d <= max ? `nah an ${name}` : `${r1(d)} m bis ${name} — höchstens ${max} m` };
-};
-const fern = (b: BauTyp, min: number, name: string): Regel => (_g, p, orte) => {
+});
+const fern = (b: BauTyp, min: number, name: string): Regel => regel(`mindestens ${min} m Abstand zu ${name}`, (_g, p, orte) => {
   const o = orte.filter(x => x.bau === b);
   if (!o.length) return { ok: true, text: `kein ${name} in der Nähe` };
   const d = Math.min(...o.map(x => abstand(x.p, p)));
   return { ok: d >= min, text: d >= min ? `genug Abstand zu ${name}` : `zu nah an ${name} (${r1(d)} m, mindestens ${min} m)` };
-};
-const erhoeht = (dz: number): Regel => (g, p, orte) => {
+});
+const erhoeht = (dz: number): Regel => regel(`erhöht: mindestens ${dz} m über der Stadt`, (g, p, orte) => {
   const k = orte[0]?.p;
   if (!k) return { ok: true, text: "" };
   const h = hoeheBei(g, p.x, p.y) - hoeheBei(g, k.x, k.y);
   return { ok: h >= dz, text: h >= dz ? `${r1(h)} m über der Stadt` : `nur ${r1(h)} m über der Stadt — gut ab ${dz} m` };
-};
-const quelleHoeher: Regel = (g, p) => {
+});
+const quelleHoeher: Regel = regel("eine Quelle liegt mindestens 12 m höher (Gefälle fürs Aquädukt)", (g, p) => {
   const hp = hoeheBei(g, p.x, p.y);
   let best = -Infinity;
   if (g.quelle) best = hoeheBei(g, g.quelle.x, g.quelle.y) - hp;
@@ -84,14 +86,14 @@ const quelleHoeher: Regel = (g, p) => {
     if (q.x > 0 && q.y > 0 && q.x < g.breite && q.y < g.breite) best = Math.max(best, hoeheBei(g, q.x, q.y) - hp);
   }
   return { ok: best >= 12, text: best >= 12 ? "eine Quelle liegt höher — das Aquädukt hat Gefälle" : "keine höhere Quelle in 2 km — kein Gefälle fürs Aquädukt" };
-};
-const beiMerkmal = (k: "erz" | "kohle", max: number, name: string): Regel => (g, p) => {
+});
+const beiMerkmal = (k: "erz" | "kohle", max: number, name: string): Regel => regel(`über dem ${name} (höchstens ${max} m)`, (g, p) => {
   const m = g[k];
   if (!m) return { ok: true, text: `kein ${name} geplant — überall möglich` };
   const d = abstand(m, p);
   return { ok: d <= max, text: d <= max ? `über dem ${name}` : `${r1(d)} m vom ${name} entfernt` };
-};
-const land: Regel = (g, p) => ({ ok: !istWasser(g, p.x, p.y) && p.x > 0 && p.y > 0 && p.x < g.breite && p.y < g.breite, text: "nicht im Wasser" });
+});
+const land: Regel = regel("an Land", (g, p) => ({ ok: !istWasser(g, p.x, p.y) && p.x > 0 && p.y > 0 && p.x < g.breite && p.y < g.breite, text: "nicht im Wasser" }));
 
 // ---------------------------------------------------------------- Baupläne
 
@@ -266,7 +268,7 @@ export const BAUPLAENE: Record<Stil, BauPlan> = {
       S("zechenturm", 0, 5000, [beiMerkmal("kohle", 700, "Kohlefeld"), fern("kirche", 400, "Dorf")], { max: 4, viertel: { typ: "kolonie", r: 200, raster: 60 } }),
       S("hochofen", 1, 9000, [amFluss(40, 300), flach(3)], { max: 2, viertel: { typ: "industrie", r: 220, raster: 110 } }),
       S("kanalhafen", 1, 3000, [nah("zechenturm", 300, "Zeche")]),
-      S("bahnhof", 1, 6000, [nah("kirche", 700, "Ortskern")], { max: 1 }),
+      S("bahnhof", 1, 6000, [nah("kirche", 900, "Ortskern")], { viertel: { typ: "gruenderzeit", r: 260 } }),
       S("schule", 2, 6000, [fern("kirche", 800, "Ortskern")], { viertel: { typ: "grosssiedlung", r: 220, raster: 110 } }),
       S("universitaet", 3, 8000, [fern("zechenturm", 300, "Zeche")], { viertel: { typ: "uni", r: 180 } }),
     ],
@@ -285,7 +287,7 @@ export const BAUPLAENE: Record<Stil, BauPlan> = {
       S("zollhaus", 0, 1500, [nah("kai", 150, "Kai")], { max: 1 }),
       S("werft", 1, 5000, [amWasser(30), fern("markt", 500, "Markt")], { muss: amWasser(70), viertel: { typ: "hafengebiet", r: 180, raster: 120 } }),
       S("leuchtturm", 1, 500, [amWasser(80), fern("markt", 600, "Markt")], { max: 1 }),
-      S("bahnhof", 1, 7000, [nah("markt", 900, "Markt")], { max: 1, viertel: { typ: "gruenderzeit", r: 320 } }),
+      S("bahnhof", 1, 7000, [nah("markt", 1200, "Markt")], { viertel: { typ: "gruenderzeit", r: 320 } }),
       S("einkauf", 2, 7000, [fern("markt", 1000, "Markt")], { viertel: { typ: "hafencity", r: 220, raster: 80 } }),
     ],
   },
@@ -320,10 +322,28 @@ export function pruefeOrt(g: Gelaende, stil: Stil, b: BauTyp, p: P, orte: Ort[])
   if (neigungBei(g, p.x, p.y) > 45) hart.push({ ok: false, text: "viel zu steil zum Bauen" });
   const andere = orte.filter(o => !(o.p.x === p.x && o.p.y === p.y));
   if (s.max && andere.filter(o => o.bau === b).length >= s.max) hart.push({ ok: false, text: `höchstens ${s.max}× möglich` });
-  const weich = s.soll.map(r => r(g, p, andere)).filter(x => x.text);
+  const soll = b === "bahnhof" || b === "depot" ? [...s.soll, fern(b, 700, "anderen Bahnhof")] : s.soll;
+  const weich = soll.map(r => r(g, p, andere)).filter(x => x.text);
   const erlaubt = hart.every(x => x.ok);
   const faktor = erlaubt ? Math.pow(0.5, weich.filter(x => !x.ok).length) : 0;
   return { erlaubt, faktor, gruende: [...hart.filter(x => !x.ok), ...weich] };
+}
+
+/** Was eine gute Lage für diesen Ort ausmacht (vor dem Setzen) */
+export function lageRegeln(stil: Stil, b: BauTyp): { muss: string[]; soll: string[] } {
+  const s = BAUPLAENE[stil].orte.find(x => x.bau === b);
+  if (!s) return { muss: [], soll: [] };
+  return { muss: ["an Land", ...(s.muss ? [s.muss.beschreibung] : [])], soll: s.soll.map(r => r.beschreibung) };
+}
+
+/** Eignung auf einem Raster k × k: je Feld 0 (verboten) oder 1, 0,5, 0,25 … (Wirkung) */
+export function eignungsRaster(g: Gelaende, stil: Stil, b: BauTyp, orte: Ort[], k = 72): Float32Array {
+  const aus = new Float32Array(k * k);
+  for (let j = 0; j < k; j++) for (let i = 0; i < k; i++) {
+    const p = { x: (i + 0.5) * g.breite / k, y: (j + 0.5) * g.breite / k };
+    aus[j * k + i] = pruefeOrt(g, stil, b, p, orte).faktor;
+  }
+  return aus;
 }
 
 // ---------------------------------------------------------------- Stand und Zeit
@@ -356,6 +376,15 @@ export function kapazitaet(g: Gelaende, stil: Stil, stand: BauStand): { kap: num
   const i = stufeVon(plan, stand.einwohner);
   const naechste = plan.stufen[i + 1];
   if (naechste && fehlt(plan, stand).length && kap >= naechste.ab) return { kap: naechste.ab * 0.97, gedeckelt: true };
+  // jede Stufe, deren Pflichtbauten alle stehen, trägt (bei guter Lage) sicher bis zur nächsten —
+  // auch nachdem sie erreicht ist, sonst fiele die Stadt knapp unter die Schwelle zurück
+  for (let j = 0; j + 1 < plan.stufen.length; j++) {
+    const br = plan.stufen[j].braucht;
+    if (br.some(b => !stand.orte.some(o => o.bau === b))) break;
+    const lage = br.map(b => Math.max(...stand.orte.filter(o => o.bau === b).map(o => pruefeOrt(g, stil, b, o.p, stand.orte).faktor)));
+    const mittel = lage.length ? lage.reduce((a, x) => a + x, 0) / lage.length : 1;
+    kap = Math.max(kap, plan.stufen[j + 1].ab * 1.15 * mittel);
+  }
   return { kap, gedeckelt: false };
 }
 
@@ -469,11 +498,21 @@ export function stadtAus(g: Gelaende, stil: Stil, stand: BauStand, seed: number)
   // Hauptstraßen: vom Kern zu jedem Ort (dem Gelände folgend)
   for (const o of orte) if (abstand(o.p, c) > 60) s.strassen.push({ art: "haupt", punkte: glaetten(weg(g, c, o.p, { steigung: 0.6, wasser: 25, raster: 20 }), 1) });
 
-  // Bahn, sobald es einen Bahnhof oder ein Depot gibt
-  const bhf = orte.find(o => o.bau === "bahnhof" || o.bau === "depot");
-  if (bhf) {
-    const wb = Math.atan2(bhf.p.y - c.y, bhf.p.x - c.x) + Math.PI / 2;
-    s.strassen.push({ art: "bahn", name: "Eisenbahn", punkte: glaetten(fernstrasse(g, bhf.p, wb, 4, 8), 2) });
+  // Bahn durch alle Bahnhöfe: vom Kartenrand über jeden Bahnhof zum anderen Rand
+  const bhf = orte.filter(o => o.bau === "bahnhof" || o.bau === "depot").map(o => o.p);
+  if (bhf.length === 1) {
+    const wb = Math.atan2(bhf[0].y - c.y, bhf[0].x - c.x) + Math.PI / 2;
+    s.strassen.push({ art: "bahn", name: "Eisenbahn", punkte: glaetten(fernstrasse(g, bhf[0], wb, 4, 8), 2) });
+  } else if (bhf.length > 1) {
+    // Reihenfolge entlang der Hauptrichtung der Bahnhöfe
+    let a = bhf[0], b = bhf[1], weit = 0;
+    for (const p of bhf) for (const q of bhf) if (abstand(p, q) > weit) { weit = abstand(p, q); a = p; b = q; }
+    const wb = Math.atan2(b.y - a.y, b.x - a.x);
+    const reihe = [...bhf].sort((p, q) => (p.x - a.x) * Math.cos(wb) + (p.y - a.y) * Math.sin(wb) - ((q.x - a.x) * Math.cos(wb) + (q.y - a.y) * Math.sin(wb)));
+    const halte = [randPunkt(reihe[0], wb + Math.PI, g.breite), ...reihe, randPunkt(reihe[reihe.length - 1], wb, g.breite)];
+    const pfad: P[] = [halte[0]];
+    for (let i = 1; i < halte.length; i++) pfad.push(...weg(g, halte[i - 1], halte[i], { steigung: 4, wasser: 8 }).slice(1));
+    s.strassen.push({ art: "bahn", name: "Eisenbahn", punkte: glaetten(pfad, 2) });
   }
   freiraeumen(s);
   nahverkehr(g, s, jahr, stil);

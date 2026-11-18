@@ -7,7 +7,7 @@
  */
 import { istWasser, type Gelaende } from "@/lib/gelaende/gelaende";
 import { zufallsquelle } from "@/lib/gelaende/rauschen";
-import { abstand, inPoly, rechteck, type P } from "../geometrie";
+import { abstand, rechteck, schwerpunkt, type P } from "../geometrie";
 import { kopie, leereStadt, type Epoche } from "../modell";
 import { bau, baubar, baubarNahe, besterPunkt, freiraeumen, gedrehtesRaster, type Z } from "../hilfen";
 import { industrialisierung, moderne } from "../moderne";
@@ -29,6 +29,63 @@ function zumWasser(g: Gelaende, p: P): number {
   return best;
 }
 
+/**
+ * Uferlinie um den Wasserpunkt c: Strahlen von c bis zum ersten Land, nach Winkel geordnet, nur das
+ * zusammenhängende Stück um den Kai. Liefert Punkte entlang (s) und landeinwärts versetzt (off).
+ */
+export function uferBogen(g: Gelaende, c: P, kai: P) {
+  const roh: P[] = [];
+  for (let k = 0; k < 360; k++) {
+    const w = (k / 360) * Math.PI * 2;
+    let p: P | null = null;
+    for (let r = 20; r < 1400; r += 6) {
+      const q = polar(c, w, r);
+      if (q.x < 0 || q.y < 0 || q.x > g.breite || q.y > g.breite) break;
+      if (!istWasser(g, q.x, q.y)) { p = q; break; }
+    }
+    roh.push(p ?? { x: NaN, y: NaN });
+  }
+  // beim Kai beginnen, in beide Richtungen bis zur ersten Lücke oder einem Sprung
+  let i0 = 0, bd = Infinity;
+  roh.forEach((p, i) => { const d = abstand(p, kai); if (d < bd) { bd = d; i0 = i; } });
+  const sammle = (dir: number) => {
+    const aus: P[] = [];
+    for (let k = 1; k < 180; k++) {
+      const p = roh[(i0 + dir * k + 360) % 360], v = aus.length ? aus[aus.length - 1] : roh[i0];
+      if (Number.isNaN(p.x) || abstand(p, v) > 120) break;
+      aus.push(p);
+    }
+    return aus;
+  };
+  const pkte = [...sammle(-1).reverse(), roh[i0], ...sammle(1)];
+  const sAt = [0];
+  for (let i = 1; i < pkte.length; i++) sAt.push(sAt[i - 1] + abstand(pkte[i - 1], pkte[i]));
+  const laenge = sAt[sAt.length - 1];
+  const beiKai = sAt[pkte.indexOf(roh[i0])];
+  const punkt = (t: number, off: number): P => {
+    let i = 0;
+    while (i + 1 < sAt.length - 1 && sAt[i + 1] < t) i++;
+    const u = Math.max(0, Math.min(1, (t - sAt[i]) / ((sAt[i + 1] ?? sAt[i]) - sAt[i] || 1)));
+    const a = pkte[i], b = pkte[Math.min(pkte.length - 1, i + 1)];
+    const q = { x: a.x + (b.x - a.x) * u, y: a.y + (b.y - a.y) * u };
+    // landeinwärts senkrecht zur geglätteten Uferlinie (vom Wasser weg)
+    const v = pkte[Math.max(0, i - 3)], w = pkte[Math.min(pkte.length - 1, i + 4)];
+    let nx = -(w.y - v.y), ny = w.x - v.x;
+    const nl = Math.hypot(nx, ny) || 1;
+    nx /= nl; ny /= nl;
+    if (nx * (q.x - c.x) + ny * (q.y - c.y) < 0) { nx = -nx; ny = -ny; }
+    return { x: q.x + nx * off, y: q.y + ny * off };
+  };
+  const linie = (a: number, b: number, off: number) => {
+    const aus: P[] = [];
+    for (let t = a; t <= b; t += 25) aus.push(punkt(t, off));
+    return aus;
+  };
+  const band = (a: number, b: number, off0: number, off1: number) => [...linie(a, b, off0), ...linie(a, b, off1).reverse()];
+  const richtung = (t: number) => { const p = punkt(t - 5, 0), q = punkt(t + 5, 0); return Math.atan2(q.y - p.y, q.x - p.x); };
+  return { laenge, beiKai, punkt, linie, band, richtung };
+}
+
 /** Ufer: baubar, 20–60 m vom Wasser, bevorzugt an der Bucht bzw. am Meer */
 export function hafenStandort(g: Gelaende, z: Z): P {
   const mitte = { x: g.breite / 2, y: g.breite / 2 };
@@ -43,7 +100,8 @@ export function hafenStandort(g: Gelaende, z: Z): P {
     if (!baubar(g, p, 8)) return -1e9;
     const d = g.abstandWasser[Math.floor(p.y / g.zelle) * g.n + Math.floor(p.x / g.zelle)];
     if (d < 20 || d > 70) return -1e9;
-    const bucht = g.bucht ? -abstand(p, g.bucht) / 300 : 0;
+    // in der Bucht liegen die Schiffe geschützt: die Bucht schlägt die offene Küste
+    const bucht = g.bucht ? -abstand(p, g.bucht) / 80 : 0;
     return bucht + (meerNah(p) ? 2 : 0) + eignung(g, p, "hafen") * 0.5 - abstand(p, mitte) / 1200 + z() * 0.3;
   }) ?? mitte;
 }
@@ -54,56 +112,56 @@ export function hafen(g: Gelaende, seed: number): Epoche[] {
   const kai = hafenStandort(g, z);
   const ww = zumWasser(g, kai);
   const land = ww + Math.PI;
-  const quer = ww + Math.PI / 2;
-  // Hansestadt: Kaufmannsstadt landeinwärts vom Kai, Giebel zur Straße
-  const markt = polar(kai, land, 190);
-  const R = 220;
-  const mauer = Array.from({ length: 16 }, (_, i) => {
-    const w = (i / 16) * Math.PI * 2;
-    let r = R * (0.9 + z() * 0.2);
-    let p = polar(markt, w, r);
-    while (r > 60 && istWasser(g, p.x, p.y)) { r -= 10; p = polar(markt, w, r); }
-    return p;
-  });
+  // Uferlinie um die Bucht (bzw. am Ufer entlang): die Stadt wächst als Band am Wasser
+  const ufer = uferBogen(g, g.bucht && abstand(g.bucht, kai) < 900 ? g.bucht : polar(kai, ww, 220), kai);
+  const L = ufer.laenge;
+  const s0 = ufer.beiKai;
+  const lang = (a: number, b: number) => [Math.max(0, s0 + a), Math.min(L, s0 + b)] as const;
+  const [a1, b1] = lang(-360, 360);
+  // Altstadt: Band 20–230 m landeinwärts, Kaistraße am Wasser, Gänge quer dazu
+  const mauer = ufer.band(a1, b1, 12, 230);
   s.mauern.push(mauer);
   s.zonen.push({ typ: "kontor", poly: mauer });
-  // Straßen vom Ufer den Hang hinauf (wie Lübecks Gänge), quer dazu die Hauptstraße
-  s.strassen.push(...gedrehtesRaster(g, markt, 2 * R, 2 * R, 44, 120, land, "gasse", p => inPoly(p, mauer)));
+  s.strassen.push({ art: "haupt", name: "Kaistraße", punkte: ufer.linie(a1, b1, 22) });
+  for (const off of [110, 190]) s.strassen.push({ art: "neben", punkte: ufer.linie(a1 + 10, b1 - 10, off) });
+  for (let t = a1 + 30; t < b1 - 10; t += 55) s.strassen.push({ art: "gasse", punkte: [ufer.punkt(t, 22), ufer.punkt(t, 225)] });
+  const markt = ufer.punkt(s0 + 40, 140);
   // Handelsstraße nur ins Hinterland (nicht übers Meer)
-  s.strassen.push({ art: "fernstrasse", name: "Handelsstraße", punkte: weg(g, markt, randPunkt(markt, land, g.breite), { steigung: 0.6, wasser: 40 }) });
-  bau(s, "markt", markt, quer);
-  bau(s, "kirche", polar(markt, land, 80), quer);
-  bau(s, "rathaus", polar(markt, quer, 70), quer);
-  bau(s, "kai", polar(kai, ww, 6), quer);
-  bau(s, "zollhaus", polar(kai, land, 40), quer);
+  s.strassen.push({ art: "fernstrasse", name: "Handelsstraße", punkte: weg(g, ufer.punkt(s0, 225), randPunkt(markt, land, g.breite), { steigung: 0.6, wasser: 40 }) });
+  bau(s, "markt", markt, ufer.richtung(s0 + 40));
+  bau(s, "kirche", ufer.punkt(s0 - 90, 160), ufer.richtung(s0 - 90));
+  bau(s, "rathaus", ufer.punkt(s0 + 120, 150), ufer.richtung(s0 + 120));
+  bau(s, "kai", ufer.punkt(s0, -4), ufer.richtung(s0));
+  bau(s, "zollhaus", ufer.punkt(s0 - 10, 50), ufer.richtung(s0));
   s.namen = [{ text: "Hafen", x: kai.x, y: kai.y - 40 }];
   freiraeumen(s);
   const e1: Epoche = {
     jahr: "um 1250", titel: "Hansestadt am Wasser",
-    text: "Kaufleute siedeln, wo Schiffe sicher anlegen: in einer geschützten Bucht oder an einer Flussmündung. Am Kai wird umgeladen, der Zoll füllt die Stadtkasse. Die Kaufmannshäuser stehen mit dem Giebel zur Straße, unten Lager, oben Wohnung, ganz oben ein Speicherboden mit Kran. Die Stadt gehört zur Hanse, einem Bund von Handelsstädten von Brügge bis Nowgorod.",
-    neu: ["Kai in geschützter Lage", "Kaufmannshäuser mit Speicherböden", "Markt, Kirche, Rathaus", "Zollhaus", "Stadtmauer"],
+    text: "Kaufleute siedeln, wo Schiffe sicher anlegen: in einer geschützten Bucht oder an einer Flussmündung. Die Stadt zieht sich am Ufer entlang — jeder Kaufmann will ans Wasser. Am Kai wird umgeladen, der Zoll füllt die Stadtkasse. Schmale Gänge führen vom Kai den Hang hinauf. Die Kaufmannshäuser stehen mit dem Giebel zur Straße, unten Lager, oben Wohnung, ganz oben ein Speicherboden mit Kran. Die Stadt gehört zur Hanse, einem Bund von Handelsstädten von Brügge bis Nowgorod.",
+    neu: ["Kai in geschützter Lage", "Stadt als Band am Ufer", "Kaufmannshäuser mit Speicherböden", "Markt, Kirche, Rathaus", "Zollhaus", "Stadtmauer"],
     stadt: kopie(s),
   };
 
-  // Freihafen und Speicherstadt am Ufer neben der Altstadt
-  const sp = polar(polar(kai, quer, R + 180), ww, -30);
-  const speicherOk = baubar(g, sp, 10);
-  if (speicherOk) {
-    s.zonen.push({ typ: "speicher", poly: rechteck(sp, 320, 140, quer) });
-    s.strassen.push({ art: "kanal", name: "Fleet", punkte: [polar(sp, quer, -170), polar(sp, quer, 170)] });
-    s.strassen.push(...gedrehtesRaster(g, sp, 320, 140, 80, 140, quer, "neben"));
+  // Freihafen: Speicherstadt am Ufer auf der einen Seite, Kais und Lager auf der anderen — rund um die Bucht
+  const [a2, b2] = lang(380, 760);
+  if (b2 - a2 > 150) {
+    s.zonen.push({ typ: "speicher", poly: ufer.band(a2, b2, 8, 150) });
+    s.strassen.push({ art: "kanal", name: "Fleet", punkte: ufer.linie(a2, b2, 75) });
+    s.strassen.push({ art: "neben", punkte: ufer.linie(a2, b2, 20) }, { art: "neben", punkte: ufer.linie(a2, b2, 135) });
+    for (let t = a2 + 40; t < b2; t += 90) s.strassen.push({ art: "neben", punkte: [ufer.punkt(t, 20), ufer.punkt(t, 140)] });
   }
-  // Hafenbecken-Gebiet auf der anderen Seite
-  const hg = polar(polar(kai, quer, -(R + 260)), ww, -40);
-  if (baubar(g, hg, 10)) {
-    s.zonen.push({ typ: "hafengebiet", poly: rechteck(hg, 420, 200, quer) });
-    s.strassen.push(...gedrehtesRaster(g, hg, 420, 200, 140, 100, quer, "neben"));
-    bau(s, "kai", polar(hg, ww, 90), quer);
+  const [a3, b3] = lang(-820, -380);
+  const hg = ufer.punkt((a3 + b3) / 2, 100);
+  if (b3 - a3 > 150) {
+    s.zonen.push({ typ: "hafengebiet", poly: ufer.band(a3, b3, 6, 200) });
+    s.strassen.push({ art: "neben", punkte: ufer.linie(a3, b3, 30) }, { art: "neben", punkte: ufer.linie(a3, b3, 150) });
+    for (let t = a3 + 60; t < b3; t += 140) s.strassen.push({ art: "neben", punkte: [ufer.punkt(t, 30), ufer.punkt(t, 190)] });
+    bau(s, "kai", ufer.punkt((a3 + b3) / 2, -4), ufer.richtung((a3 + b3) / 2));
   }
   // Werft und Leuchtturm: am offenen Wasser
   const werft = besterPunkt(g, 200, p => {
     const d = g.abstandWasser[Math.floor(p.y / g.zelle) * g.n + Math.floor(p.x / g.zelle)];
-    if (!baubar(g, p, 8) || d > 40 || abstand(p, kai) < 600 || abstand(p, kai) > 1400) return -1e9;
+    if (!baubar(g, p, 8) || d > 40 || abstand(p, kai) < 900 || abstand(p, kai) > 1600) return -1e9;
     return -abstand(p, kai) / 400;
   });
   if (werft) { bau(s, "werft", werft, zumWasser(g, werft) + Math.PI / 2); s.zonen.push({ typ: "industrie", poly: rechteck(werft, 220, 160, zumWasser(g, werft)) }); }
@@ -112,9 +170,21 @@ export function hafen(g: Gelaende, seed: number): Epoche[] {
     if (spitze) bau(s, "leuchtturm", spitze);
   }
   industrialisierung(g, s, mauer, markt, z, true);
+  // An der Küste passt die Bahn quer zum Fluss oft nicht: Bahnhof dann landeinwärts hinter die Altstadt
+  const bh = s.bauten.find(b => b.typ === "bahnhof");
+  if (!bh || abstand(bh, markt) > 800) {
+    s.strassen = s.strassen.filter(x => x.art !== "bahn" && x.name !== "Bahnhofstraße");
+    s.bauten = s.bauten.filter(b => b.typ !== "bahnhof");
+    const bp = baubarNahe(g, ufer.punkt(s0, 330), z, 250, 8);
+    if (bp) {
+      bau(s, "bahnhof", bp, ufer.richtung(s0));
+      s.strassen.push({ art: "bahn", name: "Eisenbahn", punkte: glaetten(weg(g, bp, randPunkt(bp, land, g.breite), { steigung: 4, wasser: 40 }), 2) });
+      s.strassen.push({ art: "haupt", name: "Bahnhofstraße", punkte: weg(g, bp, markt, { steigung: 0.6, wasser: 40, raster: 16 }) });
+    }
+  }
   // Hafenbahn bis an die Kais
   const bhf = s.bauten.find(b => b.typ === "bahnhof");
-  if (bhf) s.strassen.push({ art: "bahn", name: "Hafenbahn", punkte: glaetten(weg(g, bhf, polar(hg, land, 60), { steigung: 4, wasser: 8, raster: 20 }), 2) });
+  if (bhf) s.strassen.push({ art: "bahn", name: "Hafenbahn", punkte: glaetten(weg(g, bhf, polar(hg, land, 60), { steigung: 4, wasser: 40, raster: 20 }), 2) });
   freiraeumen(s);
   const e2: Epoche = {
     jahr: "um 1890", titel: "Freihafen und Speicherstadt",
@@ -149,7 +219,7 @@ export function hafen(g: Gelaende, seed: number): Epoche[] {
   };
 
   moderne(g, s, mauer, markt, z);
-  s.zonen = s.zonen.map(x => (x.typ === "industrie" && hg && abstand(x.poly[0], hg) < 400 ? { ...x, typ: "hafencity" as const } : x));
+  s.zonen = s.zonen.map(x => (x.typ === "industrie" && x.poly.length > 0 && abstand(schwerpunkt(x.poly), hg) < 400 ? { ...x, typ: "hafencity" as const } : x));
   freiraeumen(s);
   const e4: Epoche = {
     jahr: "heute", titel: "Neues Hafenquartier",
