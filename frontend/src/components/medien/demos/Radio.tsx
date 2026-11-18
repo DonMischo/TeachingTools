@@ -89,16 +89,10 @@ export function RadioDemo() {
             </span>
           </div>
         </div>
-        <div className="mt-3 flex flex-col gap-2 text-[#f5d78a]">
-          <label className="flex items-center gap-2 text-sm">
-            <span className="w-24">Abstimmen</span>
-            <input type="range" min={MIN} max={MAX} step={0.1} value={mhz} onChange={e => setMhz(Number(e.target.value))} className="flex-1" aria-label="Frequenz" />
-            <b className="w-20 text-right">{mhz.toFixed(1)} MHz</b>
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <span className="w-24">Lautstärke</span>
-            <input type="range" min={0} max={1} step={0.05} value={laut} onChange={e => setLaut(Number(e.target.value))} className="flex-1" aria-label="Lautstärke" />
-          </label>
+        <div className="mt-3 flex items-end justify-around gap-3 text-[#f5d78a]">
+          {/* Wie am echten Gerät: Abstimmen braucht mehrere Umdrehungen (5 MHz je Umdrehung), Lautstärke ein Dreiviertel-Dreh */}
+          <Drehknopf label="Abstimmen" wert={mhz} min={MIN} max={MAX} proUmdrehung={5} schritt={0.1} onChange={setMhz} anzeige={`${mhz.toFixed(1)} MHz`} />
+          <Drehknopf label="Lautstärke" wert={laut} min={0} max={1} schritt={0.05} onChange={setLaut} anzeige={`${Math.round(laut * 100)} %`} />
         </div>
       </div>
       <div className="min-h-12 text-sm" aria-live="polite">
@@ -114,6 +108,69 @@ export function RadioDemo() {
         </p>
       )}
       <p className="text-xs text-muted">Gefunden: {gehoert.length} von {SENDER.length} Sendern (ab 3 geschafft)</p>
+    </div>
+  );
+}
+
+/**
+ * Drehknopf aus Bakelit: im Kreis ziehen (Maus, Finger), Mausrad oder Pfeiltasten.
+ * Mit `proUmdrehung` dreht er sich mehrmals (Abstimmknopf), sonst über 270° (Lautstärke).
+ */
+function Drehknopf({ label, wert, min, max, schritt, onChange, proUmdrehung, anzeige }: {
+  label: string; wert: number; min: number; max: number; schritt: number; onChange: (v: number) => void; proUmdrehung?: number; anzeige: string;
+}) {
+  const knopf = useRef<SVGSVGElement>(null);
+  const zug = useRef<{ winkel: number; wert: number } | null>(null);
+  const begrenzt = (v: number) => Math.min(max, Math.max(min, Math.round(v / schritt) * schritt));
+  const grad = proUmdrehung ? ((wert - min) / proUmdrehung) * 360 : -135 + 270 * ((wert - min) / (max - min));
+  const proGrad = proUmdrehung ? proUmdrehung / 360 : (max - min) / 270;
+  const winkelVon = (e: React.PointerEvent) => {
+    const r = knopf.current!.getBoundingClientRect();
+    return (Math.atan2(e.clientY - (r.top + r.height / 2), e.clientX - (r.left + r.width / 2)) * 180) / Math.PI;
+  };
+  return (
+    <div className="flex flex-col items-center gap-1 select-none">
+      <svg ref={knopf} viewBox="-50 -50 100 100" className="w-20 h-20 touch-none cursor-grab" role="slider" tabIndex={0}
+        aria-label={label} aria-valuemin={min} aria-valuemax={max} aria-valuenow={Number(wert.toFixed(2))} aria-valuetext={anzeige}
+        onPointerDown={e => { e.currentTarget.setPointerCapture?.(e.pointerId); zug.current = { winkel: winkelVon(e), wert }; }}
+        onPointerMove={e => {
+          const z = zug.current;
+          if (!z) return;
+          const w = winkelVon(e);
+          let d = w - z.winkel;
+          if (d > 180) d -= 360;
+          if (d < -180) d += 360;
+          z.winkel = w;
+          z.wert = Math.min(max, Math.max(min, z.wert + d * proGrad));
+          onChange(begrenzt(z.wert));
+        }}
+        onPointerUp={() => { zug.current = null; }} onPointerCancel={() => { zug.current = null; }}
+        onWheel={e => { e.preventDefault(); onChange(begrenzt(wert + (e.deltaY < 0 ? schritt : -schritt))); }}
+        onKeyDown={e => {
+          if (e.key === "ArrowUp" || e.key === "ArrowRight") { e.preventDefault(); onChange(begrenzt(wert + schritt)); }
+          if (e.key === "ArrowDown" || e.key === "ArrowLeft") { e.preventDefault(); onChange(begrenzt(wert - schritt)); }
+        }}>
+        <defs>
+          <radialGradient id={`knopf-${label}`} cx="40%" cy="35%" r="70%"><stop offset="0" stopColor="#6b4a2b" /><stop offset="1" stopColor="#2a1708" /></radialGradient>
+        </defs>
+        {!proUmdrehung && Array.from({ length: 11 }, (_, i) => {
+          const a = ((-135 + i * 27 - 90) * Math.PI) / 180;
+          return <line key={i} x1={Math.cos(a) * 44} y1={Math.sin(a) * 44} x2={Math.cos(a) * 48} y2={Math.sin(a) * 48} stroke="#f5d78a" strokeWidth="2" />;
+        })}
+        <circle r="40" fill="#1a0d04" />
+        <g style={{ transform: `rotate(${grad}deg)` }}>
+          <circle r="36" fill={`url(#knopf-${label})`} stroke="#140a03" strokeWidth="2" />
+          {/* Griffrillen */}
+          {Array.from({ length: 24 }, (_, i) => {
+            const a = (i * 15 * Math.PI) / 180;
+            return <line key={i} x1={Math.cos(a) * 31} y1={Math.sin(a) * 31} x2={Math.cos(a) * 36} y2={Math.sin(a) * 36} stroke="#140a03" strokeWidth="1.5" />;
+          })}
+          <circle r="22" fill="#3b2410" />
+          <line x1="0" y1="-8" x2="0" y2="-30" stroke="#f5d78a" strokeWidth="4" strokeLinecap="round" />
+        </g>
+      </svg>
+      <span className="text-xs">{label}</span>
+      <b className="text-xs">{anzeige}</b>
     </div>
   );
 }

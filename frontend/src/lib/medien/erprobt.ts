@@ -40,6 +40,7 @@ export const ERPROBT = [
   { id: "email", icon: "📧", name: "Post ohne Briefträger", text: "Schick eine E-Mail." },
   { id: "diskettenlaufwerk", icon: "💾", name: "Klack — eingelegt", text: "Leg die Diskette ins Laufwerk und speichere eine Datei." },
   { id: "qrcode", icon: "🔲", name: "Code geknackt", text: "Lies einen QR-Code mit dem Handy und trag den Text richtig ein — einen geschickten oder den Geheimcode." },
+  { id: "notruf", icon: "🚨", name: "Notruf geübt", text: "Wähl 112 oder 110 und beantworte der Leitstelle alle W-Fragen." },
   { id: "nachricht", icon: "📬", name: "Post für dich", text: "Schick in einer Sitzung jemandem eine Nachricht mit einem alten Medium." },
 ] as const;
 export type ErprobtId = (typeof ERPROBT)[number]["id"];

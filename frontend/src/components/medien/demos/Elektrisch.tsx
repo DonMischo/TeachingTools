@@ -6,6 +6,7 @@ import TOENE from "@/lib/medien/toene.json";
 import { useMedienLiveKontext } from "@/lib/medien/live";
 import { useErprobt } from "@/lib/medien/erprobt";
 import { SendenLeiste } from "./Live";
+import { Leitstelle, type NotrufNummer } from "./Notruf";
 import { dauerton, klingeln, ton } from "./ton";
 
 // ── Morsetaste ──
@@ -142,6 +143,8 @@ export function WaehlscheibeDemo({ an, antwortAuf }: { an?: string; antwortAuf?:
   const [sagen, setSagen] = useState("");
   const erprobt = useErprobt();
   const [nummer, setNummer] = useState("");
+  // 112/110: Notruf üben — außer jemand in der Sitzung hat eine Nummer, die so anfängt
+  const notruf: NotrufNummer | null = (nummer === "112" || nummer === "110") && !live?.spieler.some(s => s.nummer.startsWith(nummer)) ? nummer : null;
   const [dreh, setDreh] = useState(0);
   const [rueck, setRueck] = useState(0.1);
   const [aktiv, setAktiv] = useState(false);
@@ -238,7 +241,10 @@ export function WaehlscheibeDemo({ an, antwortAuf }: { an?: string; antwortAuf?:
         <p className="text-2xl font-mono font-black">{nummer || "—"}</p>
         <p className="text-muted">Wählzeit: {zeit.toFixed(1)} s{nummer.endsWith("0") && nummer.length > 3 ? " — Nullen sind am langsamsten. Telefonnummern mit vielen Nullen waren unbeliebt!" : ""}</p>
         <button className="btn-secondary self-start" onClick={() => { setNummer(""); setZeit(0); setSagen(""); }}>Auflegen</button>
-        {live && <Anruf live={live} nummer={nummer} an={an} antwortAuf={antwortAuf} sagen={sagen} setSagen={setSagen} />}
+        {notruf
+          ? <Leitstelle key={notruf} nummer={notruf} auflegen={() => { setNummer(""); setZeit(0); }} geschafft={() => erprobt("notruf")} />
+          : live && <Anruf live={live} nummer={nummer} an={an} antwortAuf={antwortAuf} sagen={sagen} setSagen={setSagen} />}
+        {!notruf && nummer.length === 0 && <p className="text-xs text-muted">🚨 Probier auch die Notrufnummern 112 (Feuerwehr, Rettungsdienst) und 110 (Polizei) — nur als Übung.</p>}
         <p className="text-xs text-muted">Wer sich verwählt hatte, musste auflegen und neu anfangen. Rückgängig gab es nicht.</p>
       </div>
     </div>
