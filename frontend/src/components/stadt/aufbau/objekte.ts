@@ -10,6 +10,7 @@ import { BAUTEN, type BauTyp } from "@/lib/stadt/modell";
 import { FREI, fussabdruck, HAUPT, hausFarben, STRASSE, strassenKetten, type Kette, type Welt } from "@/lib/stadt/aufbau";
 import { MODELL_VON, TEILFARBEN } from "../drei/modelle";
 import { hoeheGlatt } from "./gelaende";
+import { bewege, erzeugeVerkehr, type Wanderer } from "@/lib/stadt/aufbauVerkehr";
 import { wasserspiegel } from "../drei/szene";
 
 type Teile = Record<string, THREE.BufferGeometry> | null;
@@ -34,6 +35,11 @@ export class AufbauObjekte {
   private geos: THREE.BufferGeometry[] = [];
   private h2: number;
   private bauSchluessel = "";
+  private verkehr: Wanderer[] = [];
+  private verkehrV = "";
+  private karren: THREE.InstancedMesh;
+  private ochse: THREE.InstancedMesh;
+  private fuss: THREE.InstancedMesh;
   private strassenV = "";
   private feldV = "";
   private spiegel: Float32Array;
@@ -63,6 +69,18 @@ export class AufbauObjekte {
     this.mats.push(sMat, wMat, dMat);
     this.geos.push(sGeo);
     this.gruppe.add(this.strassen, this.wand, this.dach, this.bauGruppe, this.geist, this.pfeiler);
+    // Verkehr: Ochsenkarren (Wagen + Ochse) und Fußgänger
+    const kGeo = hell(new THREE.BoxGeometry(1.6, 1.1, 2.4).translate(0, 0.9, -0.6)), oGeo = hell(new THREE.BoxGeometry(0.9, 1.2, 1.8).translate(0, 0.8, 1.5));
+    const fGeo = hell(new THREE.CylinderGeometry(0.28, 0.34, 1.7, 6).translate(0, 0.85, 0));
+    const kMat = new THREE.MeshLambertMaterial({ vertexColors: true, color: 0x7a5a3a }), oMat = new THREE.MeshLambertMaterial({ vertexColors: true, color: 0x5a4636 });
+    const fMat = new THREE.MeshLambertMaterial({ vertexColors: true });
+    this.karren = new THREE.InstancedMesh(kGeo, kMat, 40);
+    this.ochse = new THREE.InstancedMesh(oGeo, oMat, 40);
+    this.fuss = new THREE.InstancedMesh(fGeo, fMat, 140);
+    for (const im of [this.karren, this.ochse, this.fuss]) { im.count = 0; im.castShadow = true; im.frustumCulled = false; }
+    this.geos.push(kGeo, oGeo, fGeo);
+    this.mats.push(kMat, oMat, fMat);
+    this.gruppe.add(this.karren, this.ochse, this.fuss);
     this.mats.push(pMat);
     // Wald aus den TaskCrawler-Bäumen; jeder Baum kennt sein Feld und verschwindet, wenn dort gebaut wird
     const maske = waldMaske(g), z = zufallsquelle(g.wahl.seed + 3), n = g.n;
@@ -103,6 +121,35 @@ export class AufbauObjekte {
 
   private band: THREE.Mesh | null = null;
   private bandMat = new THREE.MeshLambertMaterial({ vertexColors: true, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+
+  /** Figuren bewegen und aufstellen (jedes Bild); dt in Sekunden Spielzeit */
+  verkehrBewegen(n: number, dt: number) {
+    if (!this.verkehr.length) { this.karren.count = this.ochse.count = this.fuss.count = 0; return; }
+    if (dt > 0) bewege(this.verkehr, dt);
+    const z = this.g.zelle, h2 = this.h2, m = new THREE.Matrix4(), q = new THREE.Quaternion(), achse = new THREE.Vector3(0, 1, 0), c = new THREE.Color();
+    let ki = 0, fi = 0;
+    const mitte = (k: number) => ({ x: ((k % n) + 0.5) * z, y: (Math.floor(k / n) + 0.5) * z });
+    for (const f of this.verkehr) {
+      const a = Math.floor(f.pos), b = Math.min(f.pfad.length - 1, a + 1), t = f.pos - a;
+      const pa = mitte(f.pfad[a]), pb = mitte(f.pfad[b]);
+      // rechts gehen bzw. fahren: etwas neben die Mitte
+      const dx = (pb.x - pa.x) * f.richtung, dy = (pb.y - pa.y) * f.richtung, l = Math.hypot(dx, dy) || 1;
+      const seite = f.art === "karren" ? 1.2 : 2.1;
+      const x = pa.x + (pb.x - pa.x) * t - (dy / l) * seite, y = pa.y + (pb.y - pa.y) * t + (dx / l) * seite;
+      q.setFromAxisAngle(achse, Math.atan2(dx, dy));
+      m.compose(new THREE.Vector3(x - h2, this.fahrbahn(x, y) - 0.15, y - h2), q, new THREE.Vector3(1, 1, 1));
+      if (f.art === "karren") {
+        if (ki >= 40) continue;
+        this.karren.setMatrixAt(ki, m); this.ochse.setMatrixAt(ki, m); ki++;
+      } else {
+        if (fi >= 140) continue;
+        this.fuss.setMatrixAt(fi, m); this.fuss.setColorAt(fi, c.set(f.farbe)); fi++;
+      }
+    }
+    this.karren.count = this.ochse.count = ki;
+    this.fuss.count = fi;
+    for (const im of [this.karren, this.ochse, this.fuss]) { im.instanceMatrix.needsUpdate = true; if (im.instanceColor) im.instanceColor.needsUpdate = true; }
+  }
 
   /** Höhe der Fahrbahn bei (x, y) Karte: an Land das Gelände, über Wasser das Brückendeck */
   private fahrbahn(x: number, y: number) {
@@ -166,6 +213,9 @@ export class AufbauObjekte {
       this.bauGruppe.clear();
       for (const b of w.bauten) { const gr = this.gebaeude(b.bau, b.i, b.j, 1, b.dreh); gr.userData.id = b.id; this.bauGruppe.add(gr); }
     }
+    // Figuren neu verteilen, wenn sich Wege oder Häuser deutlich geändert haben
+    const vk = `${w.version.strassen}|${w.version.bauten}|${Math.floor(w.haeuser.length / 20)}`;
+    if (vk !== this.verkehrV) { this.verkehrV = vk; this.verkehr = erzeugeVerkehr(w); }
     if (feldNeu) {
       // Bäume auf bebauten Feldern ausblenden
       const null0 = new THREE.Matrix4().makeScale(0, 0, 0);

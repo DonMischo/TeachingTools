@@ -707,7 +707,10 @@ export function geldBilanz(w: Welt): { steuern: number; unterhalt: number } {
   const z = Math.min(1, (w.haeuser.length ? zufr / w.haeuser.length : 1) + 0.1 * werkstatt(w, bes, "brauerei", 1));
   const handel = 1 + 0.1 * werkstatt(w, bes, "weberei", 3);
   const bau = w.bauten.filter(b => !b.dorf).reduce((a, b) => a + kosten(b.bau), 0);
-  return { steuern: steuern(kraft, z) * handel, unterhalt: unterhalt(bau, stadtStrassen(w)) };
+  // Verwaltung, Wache und Rat wachsen mit der Stadt: je Stufe 20 % mehr Unterhalt; ab der Handelsstadt dazu
+  // Armenfürsorge, Stadtwache und Kanzlei je Einwohner — sonst häuft eine große Stadt endlos Geld an
+  const verwaltung = 0.015 * w.einwohner * Math.max(0, w.stufe - 2);
+  return { steuern: steuern(kraft, z) * handel, unterhalt: unterhalt(bau, stadtStrassen(w)) * (1 + 0.2 * Math.max(0, w.stufe - 1)) + verwaltung };
 }
 
 /** Straßenfelder der Stadt (im erschlossenen Kreis um das Zentrum) */

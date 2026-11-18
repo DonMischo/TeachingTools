@@ -211,4 +211,7 @@ Verlauf der »gut gespielten« Teststadt (europäisch, Seed 12): Stufe 2 nach et
 
 - **Berufe (Phase 4):** Betriebe haben Stellen einer Schicht; die Schicht darunter hilft aus, z. B. Bauern am Markt. 30 % der Bewohner arbeiten in Betrieben. Vergeben wird nach Vorrang, Versorgung zuerst. Ein Betrieb mit weniger als der Hälfte des Personals bietet nichts an. Werkstätten: Bäckerei (+15 % Nahrung, bis 2), Schmiede (Höfe +20 %), Weberei (Steuern +10 %, bis 3), Zimmerei (Baukosten −15 %), Brauerei (Zufriedenheit +0,1). Die Aufstiegsbremse lässt nur so viele Häuser aufsteigen, dass die Betriebe ihrer Schicht besetzt bleiben. Das Berufsgefüge je Zweig wird gegen die Anteile um 1450 angezeigt.
 
-Offen: Karren und Fußgänger sichtbar (Phase 6), eigene Ketten je Stadttyp (Phase 7). Spät im Spiel sammelt sich viel Geld an; ein Ventil fehlt noch (teure Großbauten, Unterhalt der höheren Stufen).
+- **Verkehr (Phase 6):** Ochsenkarren fahren von den Bauernhöfen zum Markt (einer je drei Höfe, höchstens 40), Fußgänger von den Häusern zu Markt, Kirche und Brunnen (einer je 50 Einwohner, höchstens 140). Alle laufen über das Wegenetz, auch über Brücken, auf der rechten Seite. Nur zur Anzeige (`lib/stadt/aufbauVerkehr.ts`, Wegweiser per Breitensuche).
+- **Geld-Ventil:** Unterhalt +20 % je Stufe; ab der Handelsstadt kommt die Stadtverwaltung dazu (0,015 Taler je Einwohner und Stufe über 2). Die Teststadt verdient spät noch etwa 125 statt 270 Taler je Schritt.
+
+Offen: eigene Ketten je Stadttyp (Phase 7); Engpässe im Verkehr sichtbar machen; teure Großbauten als Geldziel.

@@ -67,6 +67,8 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
   const zielRef = useRef(ziel); zielRef.current = ziel;
   const auswahlRef = useRef(auswahl); auswahlRef.current = auswahl;
   const aktivRef = useRef(aktiv); aktivRef.current = aktiv;
+  const laeuftRef = useRef(laeuft); laeuftRef.current = laeuft;
+  const tempoRef = useRef(tempo); tempoRef.current = tempo;
   const drei = useRef<{
     renderer: THREE.WebGLRenderer; szene: THREE.Scene; kamera: THREE.PerspectiveCamera; sonne: THREE.DirectionalLight;
     gelaende: ReturnType<typeof baueGelaende> | null; objekte: AufbauObjekte | null; freiSumme: number;
@@ -308,6 +310,8 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
       blick.set(r.x, by, r.z);
       d.sonne.target.position.copy(blick);
       d.sonne.position.copy(blick).addScaledVector(licht, 2500);
+      // Verkehr: Figuren laufen, solange die Zeit läuft (schneller bei 2× und 4×)
+      d.objekte?.verkehrBewegen(g.n, laeuftRef.current ? dt * tempoRef.current * 2 : 0);
       renderer.render(szene, kamera);
     };
     id = requestAnimationFrame(bild);
