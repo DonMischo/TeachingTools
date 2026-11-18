@@ -66,6 +66,7 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
   const [menue, setMenue] = useState(false);
   const [uebersicht, setUebersicht] = useState(false);
   const [gefangen, setGefangen] = useState(false);
+  const [vollbild, setVollbild] = useState(false);
   const umschalt = useRef(false);
   const touchZuletzt = useRef(false);
   const zeigerEl = useRef<HTMLDivElement>(null);
@@ -280,6 +281,7 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
       if (k === "r") { drehenRef.current(1); return; }
       if (k === "b") { e.preventDefault(); setMenue(m => !m); setUebersicht(false); return; }
       if (k === "i") { e.preventDefault(); setUebersicht(u => !u); setMenue(false); return; }
+      if (k === "f") { e.preventDefault(); umVollbild(); return; }
       if (["w", "a", "s", "d", "q", "e", "arrowup", "arrowdown", "arrowleft", "arrowright"].includes(k)) { e.preventDefault(); drei.current?.tasten.add(k); }
     };
     const hoch = (e: KeyboardEvent) => { if (e.key === "Shift") umschalt.current = false; drei.current?.tasten.delete(e.key.toLowerCase()); };
@@ -298,6 +300,8 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
     c.addEventListener("pointerleave", () => { if (!istGefangen()) virtuell.drin = false; });
     const lockWechsel = () => { const an = istGefangen(); setGefangen(an); if (an) virtuell.drin = true; };
     document.addEventListener("pointerlockchange", lockWechsel);
+    const vollWechsel = () => { setVollbild(document.fullscreenElement === box); box.focus(); };
+    document.addEventListener("fullscreenchange", vollWechsel);
 
     const licht = new THREE.Vector3(-0.6, 0.6, -0.35).normalize(), blick = new THREE.Vector3(), bildschirm = new THREE.Vector3();
     let id = 0, zuletzt = performance.now();
@@ -388,6 +392,7 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
       box.removeEventListener("keydown", runter);
       box.removeEventListener("keyup", hoch);
       document.removeEventListener("pointerlockchange", lockWechsel);
+      document.removeEventListener("fullscreenchange", vollWechsel);
       if (istGefangen()) document.exitPointerLock();
       c.removeEventListener("wheel", rad);
       drei.current?.gelaende?.entsorge();
@@ -475,6 +480,12 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
     ? { bau: ziel.bau, pr: ziel.pr, neu: true, frei: bes.frei }
     : gewaehlt ? { bau: gewaehlt.bau, pr: { ok: true, faktor: gewaehlt.faktor, gruende: [], kosten: kosten(gewaehlt.bau), versorgt: erreichteHaeuser(w, gewaehlt.bau, gewaehlt.i, gewaehlt.j, gewaehlt.w, gewaehlt.h, gewaehlt.dreh) }, neu: false, besetzt: bes.quote.get(gewaehlt.id) } : null;
 
+  /** Vollbild an/aus (Taste F): nur das Spielfeld, Übersicht und Baumenü bleiben erreichbar */
+  function umVollbild() {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else huelle.current?.requestFullscreen?.().catch(() => {});
+  }
+
   if (ohneWebGL) return <div className="flex h-[640px] items-center justify-center rounded-xl border border-line text-muted">Der Aufbau braucht WebGL — dein Browser bietet es gerade nicht an.</div>;
   return (
     <div className="flex flex-col gap-3">
@@ -482,16 +493,17 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
         {STILE.map(s => <button key={s.id} onClick={() => setStil(s.id)} className={chip(stil === s.id)}>{s.icon} {s.kurz}</button>)}
       </div>
       <div className="grid gap-3 lg:grid-cols-[1fr_340px]">
-        <div ref={huelle} tabIndex={-1} className={`relative h-[640px] overflow-hidden rounded-xl border border-line bg-[#b7d4ea] outline-none ${gefangen ? "cursor-none" : ""}`}>
+        <div ref={huelle} tabIndex={-1} className={`relative overflow-hidden border-line ${vollbild ? "h-screen" : "h-[640px] rounded-xl border"} bg-[#b7d4ea] outline-none ${gefangen ? "cursor-none" : ""}`}>
           <div ref={karte} className="absolute inset-0" />
           {laedt && <div className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white drop-shadow">⏳ Gelände wird geformt …</div>}
           <div className="pointer-events-none absolute bottom-2 left-2 rounded-lg bg-black/45 px-2 py-1 text-xs text-white">
-            B: Baumenü · I: Übersicht · Umschalt: Werte, mehrfach bauen · Rad: Zoom (beim Bauen: drehen) · rechte Maustaste / Q E: drehen · Rand / W A S D: schieben · Esc
+            B: Baumenü · I: Übersicht · F: Vollbild · Umschalt: Werte, mehrfach bauen · Rad: Zoom (beim Bauen: drehen) · rechte Maustaste / Q E: drehen · Rand / W A S D: schieben · Esc
           </div>
           <div className="absolute right-2 top-2 flex gap-1.5">
             <button className={`chip ${menue ? "chip-on" : ""}`} onClick={() => { setMenue(m => !m); setUebersicht(false); }} title="Baumenü (B)">🏗️ Bauen</button>
             <button className={`chip ${uebersicht ? "chip-on" : ""}`} onClick={() => { setUebersicht(u => !u); setMenue(false); }} title="Übersicht (I)">📊 Übersicht</button>
             <button className={`chip ${raster ? "chip-on" : ""}`} onClick={() => setRaster(r => !r)}># Raster</button>
+            <button className={`chip ${vollbild ? "chip-on" : ""}`} onClick={umVollbild} title="Vollbild (F)">⛶ {vollbild ? "Fenster" : "Vollbild"}</button>
             <button className={`chip ${gefangen ? "chip-on" : ""}`} title="Maus im Spielfeld halten — am Rand scrollt die Karte. Esc löst."
               onClick={() => { const c = huelle.current?.querySelector("canvas"); if (gefangen) document.exitPointerLock(); else c?.requestPointerLock(); }}>🖱️ {gefangen ? "Maus frei (Esc)" : "Maus fangen"}</button>
           </div>
