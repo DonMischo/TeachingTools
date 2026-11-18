@@ -31,6 +31,7 @@ const EXTRA = [
 type Blatt = LektionId | (typeof EXTRA)[number]["id"];
 const STUFEN_TITEL: Record<Stufe, string> = { "5/6": "Daten und erster Zufall", "7/8": "Wahrscheinlichkeit", "9/10": "Verknüpfen und Verteilen" };
 const NIV_PUNKT: Record<Niveau, string> = { H: "#0ea5e9", R: "#22c55e", G: "#a855f7" };
+const ZU_SCHLUESSEL = "hp_stochastik_lektionen_zu";
 const ALLE: Blatt[] = [...LEKTIONEN.map(l => l.id), ...EXTRA.map(e => e.id)];
 
 const INHALT: Record<LektionId, () => ReactNode> = {
@@ -86,6 +87,10 @@ export default function Stochastik({ action, vorgabe }: { action?: ReactNode; vo
   const [blatt, setBlatt] = useState<Blatt>(festerReiter ?? "erfassen");
   const [stufe, setStufe] = useState<Stufe | null>(null);
   const [niveau, setNiveau] = useState<Niveau | null>(null);
+  // Lektionsübersicht ein- und ausklappen; gemerkt je Browser (nur Bequemlichkeit).
+  const [zu, setZu] = useState(false);
+  useEffect(() => { try { setZu(localStorage.getItem(ZU_SCHLUESSEL) === "1"); } catch { /* privat */ } }, []);
+  const klappe = (x: boolean) => { setZu(x); try { localStorage.setItem(ZU_SCHLUESSEL, x ? "1" : "0"); } catch { /* privat */ } };
   const gehe = (id: LektionId) => { setBlatt(id); if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" }); };
   const lekt = LEKTIONEN.find(l => l.id === blatt);
   const i = lekt ? LEKTIONEN.indexOf(lekt) : -1;
@@ -128,40 +133,59 @@ export default function Stochastik({ action, vorgabe }: { action?: ReactNode; vo
                   ))}
                 </div>
               </div>
-              <nav className="grid gap-3 md:grid-cols-3" aria-label="Lektionen">
-                {STUFEN.map(st => {
-                  const lekts = LEKTIONEN.filter(l => l.stufe === st);
-                  const aktiv = stufe === st;
-                  return (
-                    <div key={st} className={`rounded-2xl border bg-surface p-2 flex flex-col gap-0.5 ${aktiv ? "border-line-active ring-2 ring-accent/40" : "border-line"} ${stufe && !aktiv ? "opacity-80" : ""}`}>
-                      <button onClick={() => setStufe(aktiv ? null : st)} title="Als Klassenstufe wählen"
-                        className="flex items-baseline justify-between px-2 pt-1 pb-1.5 text-left">
-                        <span className="font-black">Kl. {st}</span>
-                        <span className="text-xs text-muted">{STUFEN_TITEL[st]}</span>
-                      </button>
-                      {lekts.map(l => {
-                        const lg = lage(l, stufe, niveau);
-                        const nr = LEKTIONEN.indexOf(l) + 1;
-                        const an = blatt === l.id;
-                        return (
-                          <button key={l.id} onClick={() => setBlatt(l.id)}
-                            title={lg === "frueher" ? "Wiederholung aus früheren Klassen" : lg === "spaeter" ? "kommt später" : lg === "anderes" ? "nicht in diesem Niveau" : undefined}
-                            className={`group flex items-center gap-2 rounded-xl px-2 py-1.5 text-sm font-bold text-left transition-colors ${an ? "bg-accent text-accent-fg" : "hover:bg-surface-hover"} ${lg === "spaeter" || lg === "anderes" ? "opacity-40" : ""}`}>
-                            <span className={`w-5 text-center text-xs tabular-nums ${an ? "" : "text-muted"}`}>{nr}</span>
-                            <span className="text-base leading-none">{l.icon}</span>
-                            <span className="flex-1">{l.label}{lg === "frueher" && !an && <span className="ml-1 text-[10px] text-muted">↩</span>}</span>
-                            <span className="flex gap-0.5" aria-hidden>
-                              {(["H", "R", "G"] as Niveau[]).map(n => (
-                                <span key={n} className={`w-1.5 h-1.5 rounded-full ${l.niveaus.includes(n) ? "" : "opacity-20"}`} style={{ background: NIV_PUNKT[n] }} />
-                              ))}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  );
-                })}
-              </nav>
+              {zu ? (
+                <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-line bg-surface px-2 py-1.5">
+                  <button className="btn px-3 text-xl leading-none" aria-label="Vorige Lektion" disabled={i <= 0} onClick={() => gehe(LEKTIONEN[i - 1].id)}>◂</button>
+                  <span className="font-bold text-sm flex-1 min-w-0 truncate">
+                    {lekt ? <>
+                      <span className="text-muted mr-2">Kl. {lekt.stufe}</span>
+                      <span className="text-muted tabular-nums mr-1">{i + 1}</span> {lekt.icon} {lekt.label}
+                    </> : <>{EXTRA.find(e => e.id === blatt)?.icon} {EXTRA.find(e => e.id === blatt)?.label}</>}
+                  </span>
+                  <button className="btn px-3 text-xl leading-none" aria-label="Nächste Lektion" disabled={i < 0 || i >= LEKTIONEN.length - 1} onClick={() => gehe(LEKTIONEN[i + 1].id)}>▸</button>
+                  <button className="btn" aria-expanded={false} onClick={() => klappe(false)}>▾ Alle Lektionen</button>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex justify-end">
+                    <button className="text-xs text-muted hover:text-fg" aria-expanded onClick={() => klappe(true)}>▴ Lektionen einklappen</button>
+                  </div>
+                <nav className="grid gap-3 md:grid-cols-3" aria-label="Lektionen">
+                  {STUFEN.map(st => {
+                    const lekts = LEKTIONEN.filter(l => l.stufe === st);
+                    const aktiv = stufe === st;
+                    return (
+                      <div key={st} className={`rounded-2xl border bg-surface p-2 flex flex-col gap-0.5 ${aktiv ? "border-line-active ring-2 ring-accent/40" : "border-line"} ${stufe && !aktiv ? "opacity-80" : ""}`}>
+                        <button onClick={() => setStufe(aktiv ? null : st)} title="Als Klassenstufe wählen"
+                          className="flex items-baseline justify-between px-2 pt-1 pb-1.5 text-left">
+                          <span className="font-black">Kl. {st}</span>
+                          <span className="text-xs text-muted">{STUFEN_TITEL[st]}</span>
+                        </button>
+                        {lekts.map(l => {
+                          const lg = lage(l, stufe, niveau);
+                          const nr = LEKTIONEN.indexOf(l) + 1;
+                          const an = blatt === l.id;
+                          return (
+                            <button key={l.id} onClick={() => setBlatt(l.id)}
+                              title={lg === "frueher" ? "Wiederholung aus früheren Klassen" : lg === "spaeter" ? "kommt später" : lg === "anderes" ? "nicht in diesem Niveau" : undefined}
+                              className={`group flex items-center gap-2 rounded-xl px-2 py-1.5 text-sm font-bold text-left transition-colors ${an ? "bg-accent text-accent-fg" : "hover:bg-surface-hover"} ${lg === "spaeter" || lg === "anderes" ? "opacity-40" : ""}`}>
+                              <span className={`w-5 text-center text-xs tabular-nums ${an ? "" : "text-muted"}`}>{nr}</span>
+                              <span className="text-base leading-none">{l.icon}</span>
+                              <span className="flex-1">{l.label}{lg === "frueher" && !an && <span className="ml-1 text-[10px] text-muted">↩</span>}</span>
+                              <span className="flex gap-0.5" aria-hidden>
+                                {(["H", "R", "G"] as Niveau[]).map(n => (
+                                  <span key={n} className={`w-1.5 h-1.5 rounded-full ${l.niveaus.includes(n) ? "" : "opacity-20"}`} style={{ background: NIV_PUNKT[n] }} />
+                                ))}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
+                </nav>
+                </div>
+              )}
             </>
           )}
 

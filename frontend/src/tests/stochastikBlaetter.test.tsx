@@ -9,7 +9,7 @@ import Stochastik from "@/components/stochastik/Stochastik";
 import { LEKTIONEN } from "@/lib/stochastik/lektionen";
 import { SPEICHER, lade } from "@/lib/stochastik/erfolge";
 
-beforeEach(() => localStorage.removeItem(SPEICHER));
+beforeEach(() => { localStorage.removeItem(SPEICHER); localStorage.removeItem("hp_stochastik_lektionen_zu"); });
 
 describe("Stochastik-Blätter", () => {
   it("öffnet jede Lektion, Üben, Spiele und Erfolge", () => {
@@ -71,6 +71,17 @@ describe("Stochastik-Blätter", () => {
     fireEvent.click(within(screen.getByRole("navigation", { name: "Lektionen" })).getByRole("button", { name: /Diagramme/ }));
     fireEvent.click(screen.getByRole("button", { name: "✏️ Eigene Daten" }));
     expect(screen.getByRole("button", { name: /＋ gelb 2/ })).toBeTruthy();
+  });
+
+  it("Lektionen lassen sich einklappen und mit ◂ ▸ durchblättern", () => {
+    render(<Stochastik />);
+    fireEvent.click(screen.getByRole("button", { name: /Lektionen einklappen/ }));
+    expect(screen.queryByRole("navigation", { name: "Lektionen" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Nächste Lektion" }));
+    expect(screen.getByRole("heading", { level: 2, name: /Diagramme/ })).toBeTruthy();
+    expect(localStorage.getItem("hp_stochastik_lektionen_zu")).toBe("1");
+    fireEvent.click(screen.getByRole("button", { name: /Alle Lektionen/ }));
+    expect(screen.getByRole("navigation", { name: "Lektionen" })).toBeTruthy();
   });
 
   it("fester Reiter: keine Reiterleiste", () => {
