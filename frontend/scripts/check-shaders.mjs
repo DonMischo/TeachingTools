@@ -1,6 +1,6 @@
 /**
  * Compile GLSL shaders with glslangValidator at container start.
- * Extracts VERT and FRAG from HaeuserDiagram.tsx and fails fast if either
+ * Extracts VERT and FRAG from fluessigkeit/shader.ts and fails fast if either
  * shader has a compile error, printing line-numbered source + driver log.
  */
 import { readFileSync, writeFileSync, unlinkSync } from "fs";
@@ -8,7 +8,7 @@ import { execSync } from "child_process";
 import { tmpdir } from "os";
 import { join } from "path";
 
-const SRC_FILE = "src/components/HaeuserDiagram.tsx";
+const SRC_FILE = "src/components/fluessigkeit/shader.ts";
 const src = readFileSync(SRC_FILE, "utf8");
 
 function extract(name) {
