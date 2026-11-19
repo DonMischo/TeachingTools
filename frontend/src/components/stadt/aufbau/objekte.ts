@@ -12,6 +12,7 @@ import { MODELL_VON, TEILFARBEN } from "../drei/modelle";
 import { hoeheGlatt } from "./gelaende";
 import { bewege, erzeugeVerkehr, type Wanderer } from "@/lib/stadt/aufbauVerkehr";
 import { wasserspiegel } from "../drei/szene";
+import { dachStoff, fassadenStoff } from "../drei/fassade";
 
 type Teile = Record<string, THREE.BufferGeometry> | null;
 const MAX_HAUS = 24000, MAX_STRASSE = 40000;
@@ -61,7 +62,8 @@ export class AufbauObjekte {
     this.strassen.receiveShadow = true;
     const wGeo = teile?.haus_wand_wand ?? hell(new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0));
     const dGeo = (stilFarben.flach ? teile?.dach_flach_dach : teile?.dach_sattel_dach) ?? hell(new THREE.ConeGeometry(0.72, 1, 4, 1).rotateY(Math.PI / 4).translate(0, 0.5, 0));
-    const wMat = new THREE.MeshLambertMaterial({ vertexColors: true }), dMat = new THREE.MeshLambertMaterial({ vertexColors: true });
+    // Fassaden mit Fensterfeldern, Dächer mit Ziegeln (Kacheln aus Blender, fassade.ts)
+    const wMat = fassadenStoff(new THREE.MeshLambertMaterial({ vertexColors: true })), dMat = dachStoff(new THREE.MeshLambertMaterial({ vertexColors: true }));
     this.wand = new THREE.InstancedMesh(wGeo, wMat, MAX_HAUS);
     this.dach = new THREE.InstancedMesh(dGeo, dMat, MAX_HAUS);
     this.wand.count = this.dach.count = 0;
