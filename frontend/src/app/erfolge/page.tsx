@@ -65,7 +65,7 @@ function Werkzeug({ w, offen, umschalten }: {
               {w.erfolge.filter(e => (e.gruppe ?? "") === g).map(e => <Eintrag key={e.id} e={e} />)}
             </div>
           ))}
-          <Link href={`/simulationen/${w.slug}`} className="text-xs text-muted hover:text-fg underline self-start">
+          <Link href={w.link ?? `/simulationen/${w.slug}`} className="text-xs text-muted hover:text-fg underline self-start">
             {w.name} öffnen →
           </Link>
         </div>

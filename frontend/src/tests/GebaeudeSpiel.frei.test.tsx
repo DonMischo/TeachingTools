@@ -59,6 +59,16 @@ function spiel(solved: string[], stil?: Stil, stile?: (Stil | undefined)[], onFi
 describe("TaskCrawler als freie 3D-Welt", () => {
   beforeEach(() => { postEvent.mockReset().mockResolvedValue({}); localStorage.clear(); });
 
+  it("zählt Kampf-Erfolge auf dem Gerät und blendet neue ein", () => {
+    localStorage.setItem("hp_frei_kampf", "mittel");
+    spiel([]);
+    expect(screen.getByText("🏆 Erfolge: 0 / 15")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("kampf gewonnen"));
+    expect(screen.getByText(/Erster Sieg/)).toBeInTheDocument();
+    expect(screen.getByText("🏆 Erfolge: 1 / 15")).toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem("hp_frei_erfolge")!).siege.ausweichen).toBe(1);
+  });
+
   it("reicht die im TaskCrawler vorgegebenen Minispiele je Aufgabe und Tor an die Welt", () => {
     localStorage.setItem("hp_frei_kampf", "mittel");
     const mit = { ...data, slides: data.slides.map(s => (s.id === "a1" ? { ...s, minispiel: "block" } : s.id === "t1" ? { ...s, minispiel: "kraft" } : s)) };

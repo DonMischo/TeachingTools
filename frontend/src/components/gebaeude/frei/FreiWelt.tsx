@@ -74,6 +74,8 @@ interface Props {
   stufe?: Stufe;
   /** Ausgang eines kleinen Kampfes: gewonnen?, Reaktionszeit beim Ausweichen */
   onKampf?: (gut: boolean, art: KampfArt, reaktion: number | null) => void;
+  /** Sammelspiel an einer Info-Station gelungen oder nicht */
+  onSammeln?: (gut: boolean, art: KampfArt) => void;
   onAnkunft: (ort: FreiOrt) => void;
 }
 
@@ -132,7 +134,7 @@ const TON: Record<Marke["ton"], string> = {
 };
 
 export default function FreiWelt({
-  plan, stock, zustaende, zielOffen, objekte, stile, avatar = STANDARD_AVATAR, waechter, kaempfe, bosse, aktiv, auftrag, seed, gegenschlag = 0, stufe = "mittel", onKampf, onAnkunft,
+  plan, stock, zustaende, zielOffen, objekte, stile, avatar = STANDARD_AVATAR, waechter, kaempfe, bosse, aktiv, auftrag, seed, gegenschlag = 0, stufe = "mittel", onKampf, onSammeln, onAnkunft,
 }: Props) {
   const huelle = useRef<HTMLDivElement>(null);
   const [fehler, setFehler] = useState(false);
@@ -156,6 +158,8 @@ export default function FreiWelt({
   const [duell, setDuell] = useState<DuellBild | null>(null);
   /** das laufende Minispiel ist ein Sammelspiel an einer Info-Station (kein Gegner) */
   const [sammelt, setSammelt] = useState(false);
+  /** hier ist das letzte Minispiel verloren gegangen: es muss wiederholt werden (Ort-Schlüssel) */
+  const [nochmal, setNochmal] = useState<string | null>(null);
   const ringEl = useRef<HTMLDivElement>(null);
   const balkenEl = useRef<HTMLDivElement>(null);
   const ladeEl = useRef<HTMLDivElement>(null);
@@ -170,7 +174,7 @@ export default function FreiWelt({
 
   // Alles, was die Zeichenschleife liest, steht in einem Ref.
   const lage = useRef({
-    plan, stock, aktiv, onAnkunft, guete, zustaende, stufe, onKampf, zielOffen, waechter, kaempfe, bosse, oben,
+    plan, stock, aktiv, onAnkunft, guete, zustaende, stufe, onKampf, onSammeln, zielOffen, waechter, kaempfe, bosse, oben,
     /** laufender kleiner Kampf, sein Ort und was davon schon geschehen ist */
     duell: null as Kampf | null,
     duellOrt: null as FreiOrt | null,
@@ -205,9 +209,9 @@ export default function FreiWelt({
     luft: null as ((zeit: number) => void) | null,
     lichter: null as ((x: number, z: number, zeit: number) => void) | null,
     marken: [] as Marke[],
-    setNah, setGuete, setHiebe, setVorlauf, setKampf, setDuell, setVolltreffer, setOben, setSammelt,
+    setNah, setGuete, setHiebe, setVorlauf, setKampf, setDuell, setVolltreffer, setOben, setSammelt, setNochmal,
   });
-  Object.assign(lage.current, { plan, stock, aktiv, onAnkunft, guete, zustaende, stufe, onKampf, zielOffen, waechter, kaempfe, bosse, oben });
+  Object.assign(lage.current, { plan, stock, aktiv, onAnkunft, guete, zustaende, stufe, onKampf, onSammeln, zielOffen, waechter, kaempfe, bosse, oben });
 
   const drei = useRef<{
     szene: THREE.Scene; land: THREE.Group; orte: THREE.Group; spieler: THREE.Group;
@@ -233,6 +237,7 @@ export default function FreiWelt({
     l.duellOrt = ort;
     l.duellSammeln = sammeln;
     l.setSammelt(sammeln);
+    l.setNochmal(null);
     l.duellGezeigt = l.duellSchlag = l.duellFertig = false;
     l.duellStand = 0;
     l.vorlauf = VORLAUF;
@@ -559,6 +564,7 @@ export default function FreiWelt({
             if (k.ergebnis === "gut") { erz?.scale.setScalar(0.45); d.spritze(mx, 1.2, mz, 0x60a5fa, 14); if (held) bewegeAvatar(held, "jubel"); }
             else d.spritze(mx, 1.0, mz, 0x9ca3af, 6);
             l.setDuell(bildVon(k, true));
+            l.onSammeln?.(k.ergebnis === "gut", k.art);
           } else if (k.ergebnis === "gut") {
             if (held) bewegeAvatar(held, "angriff");
             monster?.spiele("treffer");
@@ -578,7 +584,11 @@ export default function FreiWelt({
           l.setDuell(bildVon(k, l.duellGezeigt));
         } else if (l.duellFertig) {
           l.duellNach -= dt;
-          if (l.duellNach <= 0) { l.duell = null; l.duellOrt = null; l.setDuell(null); l.tasten.clear(); l.onAnkunft(ort); }
+          if (l.duellNach <= 0) {
+            l.duell = null; l.duellOrt = null; l.setDuell(null); l.tasten.clear();
+            // nur ein gewonnenes Minispiel öffnet Aufgabe, Info oder Tor — verloren heißt: noch einmal (E)
+            if (k.ergebnis === "gut") l.onAnkunft(ort); else l.setNochmal(ortSchluessel(ort));
+          }
         }
       }
       for (let k = splitter.length - 1; k >= 0; k--) {
@@ -1008,8 +1018,8 @@ export default function FreiWelt({
           <div className="card px-5 py-4 flex flex-col items-center gap-3 shadow-2xl max-w-[92%]">
             <div className={`font-black text-xl ${duell.ergebnis === "gut" ? "text-green-500" : duell.ergebnis === "schlecht" ? "text-rose-500" : ""}`}>
               {sammelt
-                ? duell.ergebnis === "gut" ? "✨ Info-Splitter geborgen!" : duell.ergebnis === "schlecht" ? "🪨 Knapp daneben — der Splitter kommt trotzdem" : `📜 ${SAMMEL_NAME[duell.art] ?? KAMPF_NAME[duell.art]}`
-                : duell.ergebnis === "gut" ? SIEG[duell.art] : duell.ergebnis === "schlecht" ? "💥 Getroffen!" : `⚔️ ${KAMPF_NAME[duell.art]}`}
+                ? duell.ergebnis === "gut" ? "✨ Info-Splitter geborgen!" : duell.ergebnis === "schlecht" ? "🪨 Daneben — versuch es noch einmal" : `📜 ${SAMMEL_NAME[duell.art] ?? KAMPF_NAME[duell.art]}`
+                : duell.ergebnis === "gut" ? SIEG[duell.art] : duell.ergebnis === "schlecht" ? "💥 Getroffen! Noch einmal" : `⚔️ ${KAMPF_NAME[duell.art]}`}
             </div>
             {duell.art === "konter" && (
               <>
@@ -1136,6 +1146,7 @@ export default function FreiWelt({
       {nah && aktiv && !kampf && !duell && (() => {
         const z = nah.art === "raum" ? zustaende[stock]?.[nah.raum] : null;
         const sammelArt = z === "info" && nah.art === "raum" && stufe !== "aus" ? sammelFuer(kaempfe?.[stock]?.[nah.raum]) : null;
+        const wiederholen = nochmal !== null && nochmal === ortSchluessel(nah) && (z === "offen" || !!sammelArt || nah.art === "ziel");
         return (
           <div className="absolute left-1/2 -translate-x-1/2 bottom-5 flex flex-col items-center gap-1.5">
             {z === "info" && stufe !== "aus" && !sammelArt && (
@@ -1149,7 +1160,7 @@ export default function FreiWelt({
             )}
           <button onClick={() => betrete(nah)} data-ort-knopf
             className="btn-primary text-sm py-2 px-4 shadow-xl">
-            {nah.art === "ziel" ? (stufe !== "aus" && waechter?.[stock] && !zielOffen[stock] ? "⚔️ E · Wächter herausfordern" : "E · Zum Tor") : nah.art === "zurueck" ? "E · Zurück in den Abschnitt davor"
+            {wiederholen ? "🔁 E · Nochmal versuchen" : nah.art === "ziel" ? (stufe !== "aus" && waechter?.[stock] && !zielOffen[stock] ? "⚔️ E · Wächter herausfordern" : "E · Zum Tor") : nah.art === "zurueck" ? "E · Zurück in den Abschnitt davor"
               : sammelArt ? `📜 E · Info bergen: ${SAMMEL_NAME[sammelArt]}` : z === "info" ? `⛏️ E · Erz abbauen (${hiebe}/${HIEBE})` : z === "offen" ? (stufe === "aus" ? "⚔️ E · Kämpfen" : "⚔️ E · Kampf starten") : z === "gelesen" ? "E · Info-Splitter lesen" : "E · Ansehen"}
           </button>
           </div>

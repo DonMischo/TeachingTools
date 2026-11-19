@@ -16,6 +16,7 @@ import { OBJEKT_NAME, OBJEKT_STIMME } from "@/lib/gebaeude/objekte";
 import { bauePlan } from "@/lib/gebaeude/plan";
 import { baueFreiPlan } from "@/lib/gebaeude/frei";
 import { BOSS_ARTEN, KAMPF_ARTEN, KAMPF_NAME, STUFEN, istStufe, type KampfArt, type Stufe } from "@/lib/gebaeude/kampf";
+import { ERFOLGE, erreichte, ladeErfolge, nachSpiel, speichereErfolge } from "@/lib/gebaeude/erfolge";
 import Gebaeude, { type GebaeudeArt, type Ort } from "@/components/gebaeude/Gebaeude";
 import FreiWelt from "@/components/gebaeude/frei/FreiWelt";
 import { istOrganisch } from "@/components/gebaeude/frei/welt";
@@ -100,10 +101,32 @@ export default function GebaeudeSpiel({
     try { localStorage.setItem(STUFE_SCHLUESSEL, s); } catch { /* egal */ }
   };
   const [bilanz, setBilanz] = useState({ siege: 0, kaempfe: 0, serie: 0, beste: null as number | null });
-  const kampfAus = (gut: boolean, _art: KampfArt, reaktion: number | null) => setBilanz(b => ({
-    siege: b.siege + (gut ? 1 : 0), kaempfe: b.kaempfe + 1, serie: gut ? b.serie + 1 : 0,
-    beste: reaktion !== null && (b.beste === null || reaktion < b.beste) ? reaktion : b.beste,
-  }));
+  // Erfolge der Minispiele: auf dem Gerät gezählt, neu erreichte kurz eingeblendet
+  const [neueErfolge, setNeueErfolge] = useState<typeof ERFOLGE>([]);
+  const [erfolgZahl, setErfolgZahl] = useState(0);
+  useEffect(() => { setErfolgZahl(erreichte(ladeErfolge()).size); }, []);
+  const zaehle = (e: Parameters<typeof nachSpiel>[1]) => {
+    const vorher = ladeErfolge();
+    const nachher = nachSpiel(vorher, e);
+    speichereErfolge(nachher);
+    const alt = erreichte(vorher), neu = erreichte(nachher);
+    setErfolgZahl(neu.size);
+    const frisch = ERFOLGE.filter(x => neu.has(x.id) && !alt.has(x.id));
+    if (frisch.length) setNeueErfolge(frisch);
+  };
+  useEffect(() => {
+    if (!neueErfolge.length) return;
+    const t = window.setTimeout(() => setNeueErfolge([]), 4000);
+    return () => clearTimeout(t);
+  }, [neueErfolge]);
+  const kampfAus = (gut: boolean, art: KampfArt, reaktion: number | null) => {
+    setBilanz(b => ({
+      siege: b.siege + (gut ? 1 : 0), kaempfe: b.kaempfe + 1, serie: gut ? b.serie + 1 : 0,
+      beste: reaktion !== null && (b.beste === null || reaktion < b.beste) ? reaktion : b.beste,
+    }));
+    zaehle({ gut, art, reaktion, stufe: stufe ?? "mittel", sammeln: false });
+  };
+  const sammelAus = (gut: boolean, art: KampfArt) => zaehle({ gut, art, reaktion: null, stufe: stufe ?? "mittel", sammeln: true });
   // Wo Monster hausen, bewacht an jeder Tür ein Boss den Weg weiter.
   const waechter = useMemo(() => teile.map((t, k) => monster[k] && t.tuer !== null), [teile, monster]);
   const geloest = attempt.solved_slide_ids;
@@ -193,7 +216,7 @@ export default function GebaeudeSpiel({
           {freiPlan
             ? <FreiWelt plan={freiPlan} stock={stock} zustaende={zustaende} zielOffen={zielOffen} objekte={objekte}
                 stile={freiStile} waechter={waechter} kaempfe={kaempfe} bosse={bosse} seed={seedAus(code)} gegenschlag={gegenschlag}
-                stufe={minispiele ? stufe ?? "aus" : "aus"} onKampf={kampfAus}
+                stufe={minispiele ? stufe ?? "aus" : "aus"} onKampf={kampfAus} onSammeln={sammelAus}
                 avatar={avatar} aktiv={s === null && !(frei && minispiele && stufeFragen)} auftrag={auftrag} onAnkunft={ankunft} />
             : plan && <Gebaeude plan={plan} stock={stock} zustaende={zustaende} zielOffen={zielOffen} objekte={objekte}
                 art={art as GebaeudeArt} stil={stil} stile={stile} waechter={waechter}
@@ -205,13 +228,20 @@ export default function GebaeudeSpiel({
             <AvatarWahl avatar={avatar} onWahl={setAvatar} startOffen={ersteWahl} />
           </div>
 
+          {neueErfolge.length > 0 && (
+            <div className="absolute top-12 left-1/2 -translate-x-1/2 flex flex-col gap-1 items-center pointer-events-none" data-neuer-erfolg>
+              {neueErfolge.map(e => (
+                <div key={e.id} className="card px-3 py-2 text-sm font-bold shadow-2xl border-accent animate-bounce">🏆 {e.icon} {e.name}</div>
+              ))}
+            </div>
+          )}
           {frei && minispiele && stufeFragen && (
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center p-4" data-stufenwahl>
               <section className="card p-5 flex flex-col gap-3 max-w-md shadow-2xl">
                 <h2 className="font-black text-lg">⚔️ Wie schwer sollen die Kämpfe sein?</h2>
                 <p className="text-sm text-muted">
                   Vor jeder Aufgabe gibt es einen kurzen Kampf: im richtigen Moment kontern, ausweichen, den Schild halten oder eine Kombo drücken.
-                  Die Stufe bestimmt, wie viel Zeit du hast. Wer verliert, bekommt nur einen Treffer ab — die Aufgabe kommt trotzdem.
+                  Die Stufe bestimmt, wie viel Zeit du hast. Wer verliert, muss es noch einmal versuchen — erst ein Sieg öffnet Aufgabe, Info oder Tor.
                   Du kannst die Stufe jederzeit oben in der Leiste ändern.
                 </p>
                 <div className="grid grid-cols-2 gap-2">
@@ -290,6 +320,7 @@ export default function GebaeudeSpiel({
                   ))}
                 </div>
               </div>
+              <a href="/erfolge" className="text-xs text-muted hover:text-fg underline self-start">🏆 Erfolge: {erfolgZahl} / {ERFOLGE.length}</a>
               {bilanz.kaempfe > 0 && (
                 <p className="text-xs text-muted">
                   {bilanz.siege} von {bilanz.kaempfe} gewonnen{bilanz.serie > 1 ? ` · Serie ${bilanz.serie} 🔥` : ""}
