@@ -16,7 +16,7 @@ import { OBJEKTE, OBJEKT_NAME } from "@/lib/gebaeude/objekte";
 import { DURCHGANG, NAGE_REGELN, PLATZ, WAND, baueFreiPlan, freiRegeln, type FreiEbene } from "@/lib/gebaeude/frei";
 import FreiWelt from "@/components/gebaeude/frei/FreiWelt";
 import { STUFEN, type Stufe } from "@/lib/gebaeude/kampf";
-import { istOrganisch, weltVon } from "@/components/gebaeude/frei/welt";
+import { kartenArt, weltVon } from "@/components/gebaeude/frei/welt";
 
 export default function GebaeudeDemo() {
   const [stockwerke, setStockwerke] = useState(3);
@@ -30,7 +30,7 @@ export default function GebaeudeDemo() {
   const frei = art === "frei";
   const [stufe, setStufe] = useState<Stufe>("mittel");
   const welt = weltVon(stil);
-  const organisch = istOrganisch(stil);
+  const organisch = kartenArt(stil);
   const verlies = art === "verlies" || frei;
   /** 3D-Welt: jede dritte Station ist ein Erz mit einem Info-Splitter, die anderen sind Monster */
   const istErz = (k: number) => frei && k % 3 === 1;
@@ -152,14 +152,21 @@ export default function GebaeudeDemo() {
             ? <FreiGrundriss e={freiPlan.ebenen[Math.min(stock, freiPlan.ebenen.length - 1)]} besucht={besucht[stock] ?? []} />
             : <Grundriss plan={plan} stock={stock} besucht={besucht[stock] ?? []} />}
           {freiPlan ? (
-            <>
+            organisch === "lichtung" || organisch === "bach" ? (
+              <p>
+                Wälder entstehen ohne Raster: Lichtungen werden verteilt, nie zu eng (Poisson-Scheiben). Dann ein Ablauf-Graph:
+                die kürzesten Verbindungen (Prim) und dazu Querwege, die Schleifen schließen, ohne andere Wege zu kreuzen. Jeder Pfad
+                sucht den billigsten Weg über ein Rauschfeld (Dijkstra), darum windet er sich; danach rundet Chaikin die Ecken.
+                {organisch === "bach" && " Zuletzt fließt ein Bach von Rand zu Rand um die Lichtungen herum; wo er einen Pfad kreuzt, steht eine Brücke."}
+              </p>
+            ) : <>
               <p>
                 Dieselbe Regelmaschine, aber weit und luftig: Erst wächst ein Punktgitter, darauf werden die Plätze gestempelt, ein
                 Backtracker gräbt Wege, einige Wände fallen (Rundwege), jeder Platz bekommt einen Durchgang, Sackgassen verschwinden.
                 Dann wird alles gestreckt: Wege und Plätze dreimal so breit wie die Wände.
               </p>
               <pre className="text-[10px] leading-snug font-mono bg-surface-hover rounded-lg p-2 overflow-x-auto">{freiRegeln(zimmer + 2, zimmer + 2)}</pre>
-              {organisch && (
+              {organisch === "genagt" && (
                 <>
                   <p>Wald und Höhle: Ein Zellautomat nagt die Ränder an, einzelne {welt === "wald" ? "Bäume" : "Felssäulen"} wachsen mitten im Weg.</p>
                   <pre className="text-[10px] leading-snug font-mono bg-surface-hover rounded-lg p-2 overflow-x-auto">{NAGE_REGELN}</pre>

@@ -17,6 +17,7 @@
  * und »wo stehe ich?«.
  */
 import { laufeDurch, programm, starte } from "@/lib/regeln/maschine";
+import { lichtungsEbene, type Bruecke } from "./lichtung";
 import type { Punkt } from "./plan";
 
 /** Kantenlänge eines Feldes in Welteinheiten */
@@ -45,7 +46,20 @@ export interface FreiEbene {
   ziel: Punkt;
   /** die Stationen, nach Entfernung von der Ankunft */
   raeume: FreiRaum[];
+  /** Bachfelder (1 = Wasser; nicht begehbar außer unter einer Brücke) — nur Lichtungskarten mit Bach */
+  wasser?: Uint8Array;
+  /** Brücken über den Bach */
+  bruecken?: Bruecke[];
 }
+
+/**
+ * Wie eine Karte entsteht:
+ *  raster   Punktgitter, Plätze, Backtracker-Gänge (Gebäude, Garten)
+ *  genagt   dasselbe mit angenagten Rändern (Höhle)
+ *  lichtung Lichtungen mit geschwungenen Pfaden und Rundwegen (lichtung.ts; Wälder)
+ *  bach     wie lichtung, dazu ein Bach mit Brücken (Pilzwald)
+ */
+export type KartenArt = "raster" | "genagt" | "lichtung" | "bach";
 
 export interface FreiPlan { ebenen: FreiEbene[] }
 
@@ -187,13 +201,15 @@ function ebene(zimmer: number, seed: number, organisch: boolean, C: number): Fre
  * Karte — die ganze Klasse läuft durch dieselbe Welt. `organisch[i]`: Wald und
  * Höhle bekommen angenagte Ränder.
  */
-export function baueFreiPlan(zimmer: number[], seed: number, organisch: boolean[] = []): FreiPlan {
+export function baueFreiPlan(zimmer: number[], seed: number, organisch: (boolean | KartenArt)[] = []): FreiPlan {
   const ebenen = zimmer.map((n, i) => {
+    const art = organisch[i] === true ? "genagt" : organisch[i] || "raster";
+    if (art === "lichtung" || art === "bach") return lichtungsEbene(n, seed * 131 + i * 17, { bach: art === "bach" });
     // ein Platz belegt mit Abstand etwa 9×9 grobe Felder
     let C = Math.max(19, 2 * Math.ceil(Math.sqrt((n + 2) * 90) / 2) + 1);
     for (; C <= 81; C += 4) {
       for (let v = 0; v < 6; v++) {
-        const e = ebene(n, seed * 131 + i * 17 + v, !!organisch[i], C);
+        const e = ebene(n, seed * 131 + i * 17 + v, art === "genagt", C);
         if (e) return e;
       }
     }

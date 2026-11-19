@@ -12,11 +12,12 @@
  * Ohne React.
  */
 import * as THREE from "three";
-import { DURCHGANG, PLATZ, WAND, WEG, ZELLE, feldMitte, istFrei, type FreiEbene, type FreiOrt } from "@/lib/gebaeude/frei";
+import { DURCHGANG, PLATZ, WAND, WEG, ZELLE, feldMitte, istFrei, type FreiEbene, type FreiOrt, type KartenArt } from "@/lib/gebaeude/frei";
 import type { Objekt } from "@/lib/gebaeude/objekte";
 import { baueObjekt } from "../objekte3d";
 import { felsGeometrie, musterMaterial, textur, zufallAus } from "../stoff";
 import { bauwelt } from "./bauwelt";
+import { pilzwaldLandschaft } from "./pilzwald";
 import { FASSUNGEN, weltModelle, type ModellArt } from "./modelle";
 import { AUSSEHEN, STILE, type RaumZustand, type Stil } from "../szene";
 
@@ -32,6 +33,12 @@ export function weltVon(stil: Stil): Welt {
 export function istOrganisch(stil: Stil): boolean {
   const w = weltVon(stil);
   return w !== "gebaeude" && w !== "garten";
+}
+
+/** Welcher Kartenbau zu welcher Welt passt: Lichtungen mit Pfaden im Wald, im Pilzwald dazu ein Bach */
+export function kartenArt(stil: Stil): KartenArt {
+  const w = weltVon(stil);
+  return w === "pilze" ? "bach" : w === "wald" || w === "winter" || w === "oase" ? "lichtung" : istOrganisch(stil) ? "genagt" : "raster";
 }
 
 export interface Stimmung {
@@ -56,11 +63,13 @@ export interface Landschaft {
   takt?: (zeit: number) => void;
   /** je Bild mit dem Ort der Figur: z. B. die Fackeln in ihrer Nähe flackern lassen */
   lichter?: (x: number, z: number, zeit: number) => void;
+  /** Bodenhöhe für die Figur (z. B. auf einer Brücke); ohne: überall 0 */
+  hoehe?: (x: number, z: number) => number;
 }
 
-const farbe = (hex: number) => new THREE.Color(hex);
-const css = (hex: number) => `#${hex.toString(16).padStart(6, "0")}`;
-const aus = <T,>(liste: T[], r: () => number) => liste[Math.floor(r() * liste.length)];
+export const farbe = (hex: number) => new THREE.Color(hex);
+export const css = (hex: number) => `#${hex.toString(16).padStart(6, "0")}`;
+export const aus = <T,>(liste: T[], r: () => number) => liste[Math.floor(r() * liste.length)];
 
 export interface Stueck { p: THREE.Vector3; s: THREE.Vector3; q?: THREE.Quaternion; f?: THREE.Color }
 
@@ -334,7 +343,7 @@ function verlauf(oben: number, unten: number): THREE.Mesh {
  * Wie tief steckt ein Feld in der Wand? 0 = frei, 1 = Wand am Weg, 2 = dahinter …
  * Das Raster bekommt ringsum `rand` Felder dazu (der Wald geht hinter der Karte weiter).
  */
-function tiefen(e: FreiEbene, rand: number, max = 7): { t: Uint8Array; B: number } {
+export function tiefen(e: FreiEbene, rand: number, max = 7): { t: Uint8Array; B: number } {
   const B = e.b + 2 * rand;
   const t = new Uint8Array(B * B).fill(max);
   const schlange: number[] = [];
@@ -355,15 +364,15 @@ function tiefen(e: FreiEbene, rand: number, max = 7): { t: Uint8Array; B: number
 }
 
 /** Feld ohne Wand in der Nachbarschaft: ein einzelner Baum bzw. eine Säule mitten im Weg */
-function allein(e: FreiEbene, x: number, y: number): boolean {
+export function allein(e: FreiEbene, x: number, y: number): boolean {
   for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
     if ((dx || dy) && !istFrei(e, x + dx, y + dy)) return false;
   }
   return true;
 }
 
-/** Der Boden als gemaltes Bild: `male` setzt die Pinselstriche */
-function boden(e: FreiEbene, male: (ctx: CanvasRenderingContext2D, px: number) => void, grund: number): THREE.Mesh {
+/** Der Boden als gemaltes Bild: `male` setzt die Pinselstriche; mit `hoehe` (Welt x, z → y) wird er zum Gelände */
+export function boden(e: FreiEbene, male: (ctx: CanvasRenderingContext2D, px: number) => void, grund: number, hoehe?: (x: number, z: number) => number): THREE.Mesh {
   const px = Math.max(8, Math.min(20, Math.floor(2048 / e.b)));
   const c = typeof document !== "undefined" ? document.createElement("canvas") : null;
   const ctx = c?.getContext("2d");
@@ -378,8 +387,13 @@ function boden(e: FreiEbene, male: (ctx: CanvasRenderingContext2D, px: number) =
     tex.anisotropy = 4;
     mat.map = tex;
   }
-  const g = new THREE.PlaneGeometry(e.b * ZELLE, e.h * ZELLE);
+  const g = hoehe ? new THREE.PlaneGeometry(e.b * ZELLE, e.h * ZELLE, e.b * 2, e.h * 2) : new THREE.PlaneGeometry(e.b * ZELLE, e.h * ZELLE);
   g.rotateX(-Math.PI / 2);
+  if (hoehe) {
+    const p = g.attributes.position as THREE.BufferAttribute, mx = (e.b * ZELLE) / 2, mz = (e.h * ZELLE) / 2;
+    for (let i = 0; i < p.count; i++) p.setY(i, hoehe(p.getX(i) + mx, p.getZ(i) + mz));
+    g.computeVertexNormals();
+  }
   const m = new THREE.Mesh(g, mat);
   m.position.set((e.b * ZELLE) / 2, 0, (e.h * ZELLE) / 2);
   m.receiveShadow = true;
@@ -388,7 +402,7 @@ function boden(e: FreiEbene, male: (ctx: CanvasRenderingContext2D, px: number) =
 }
 
 /** Ein Pinselstrich: flache, schräge Ellipse */
-function strich(ctx: CanvasRenderingContext2D, x: number, y: number, lang: number, breit: number, winkel: number, f: string, deckung = 1) {
+export function strich(ctx: CanvasRenderingContext2D, x: number, y: number, lang: number, breit: number, winkel: number, f: string, deckung = 1) {
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(winkel);
@@ -401,7 +415,7 @@ function strich(ctx: CanvasRenderingContext2D, x: number, y: number, lang: numbe
 }
 
 /** Je Feld einige Striche in Farben, die `wahl` für das Feld nennt */
-function striche(ctx: CanvasRenderingContext2D, e: FreiEbene, px: number, r: () => number, anzahl: number, wahl: (art: number, x: number, y: number) => number[] | null, deckung = 0.85) {
+export function striche(ctx: CanvasRenderingContext2D, e: FreiEbene, px: number, r: () => number, anzahl: number, wahl: (art: number, x: number, y: number) => number[] | null, deckung = 0.85) {
   for (let y = 0; y < e.h; y++) for (let x = 0; x < e.b; x++) {
     const farben = wahl(e.art[y * e.b + x], x, y);
     if (!farben) continue;
@@ -1247,6 +1261,7 @@ function gartenLandschaft(e: FreiEbene, seed: number): Landschaft {
 
 export function baueLandschaft(e: FreiEbene, stil: Stil, seed: number): Landschaft {
   const w = weltVon(stil);
+  if (w === "pilze") { const p = pilzwaldLandschaft(e, seed); if (p) return p; }
   return w === "wald" || w === "winter" || w === "oase" || w === "pilze" ? waldLandschaft(e, seed, w) : w === "garten" ? gartenLandschaft(e, seed)
     : w === "hoehle" ? hoehleLandschaft(e, stil, seed) : gebaeudeLandschaft(e, stil, seed);
 }

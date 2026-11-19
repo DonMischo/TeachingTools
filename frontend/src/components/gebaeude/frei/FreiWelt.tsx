@@ -41,7 +41,8 @@ import { beendeAvatar, bewegeAvatar, tickAvatare } from "../avatarModell";
 import { entsorge, type RaumZustand, type Stil } from "../szene";
 import { baueMaler, type Guete, type Maler } from "./malfilter";
 import { baueLandschaft, baueOrte, type Landschaft, type Marke } from "./welt";
-import { ladeWeltModelle, weltModelle } from "./modelle";
+import { PILZWALD } from "./pilzwald";
+import { ladeKit, ladeWeltModelle, weltModelle } from "./modelle";
 import { DURCHSICHT, durchsichtFuer } from "./durchsicht";
 import { kachelName, useBausatz } from "../bausatz";
 import { REZEPT } from "./bauwelt";
@@ -154,6 +155,15 @@ export default function FreiWelt({
   // Gebäude aus Blender-Kacheln (bauwelt.ts): sobald sie da sind, wird die Landschaft neu gebaut
   const bausatzNr = useBausatz(stile.flatMap(s => (REZEPT[s] ? ["verlies3d", kachelName(s)] : [])));
   useEffect(() => { let an = true; ladeWeltModelle().then(ok => { if (an && ok) setModelleDa(true); }); return () => { an = false; }; }, []);
+  // Baukästen aus der Weltenwerkstatt (fertig gefärbte Modelle), nur wenn eine Welt sie braucht
+  const [kitNr, setKitNr] = useState(0);
+  const brauchtPilzwald = stile.includes("pilze");
+  useEffect(() => {
+    if (!brauchtPilzwald) return;
+    let an = true;
+    ladeKit(PILZWALD).then(ok => { if (an && ok) setKitNr(n => n + 1); });
+    return () => { an = false; };
+  }, [brauchtPilzwald]);
   const [kampf, setKampf] = useState(false);
   const [duell, setDuell] = useState<DuellBild | null>(null);
   /** das laufende Minispiel ist ein Sammelspiel an einer Info-Station (kein Gegner) */
@@ -208,6 +218,10 @@ export default function FreiWelt({
     /** bewegt, was in der Luft schwebt */
     luft: null as ((zeit: number) => void) | null,
     lichter: null as ((x: number, z: number, zeit: number) => void) | null,
+    /** Bodenhöhe unter der Figur (Brücken); null = flach */
+    hoeheBei: null as ((x: number, z: number) => number) | null,
+    /** geglättete Höhe der Figur */
+    y: 0,
     marken: [] as Marke[],
     setNah, setGuete, setHiebe, setVorlauf, setKampf, setDuell, setVolltreffer, setOben, setSammelt, setNochmal,
   });
@@ -673,13 +687,16 @@ export default function FreiWelt({
         diff = Math.atan2(Math.sin(diff), Math.cos(diff));
         d.spieler.rotation.y += diff * Math.min(1, dt * 12);
       }
-      d.spieler.position.set(l.x, 0, l.z);
+      // Höhe folgt dem Boden (z. B. über eine Brücke), sanft nachgezogen
+      const sollY = l.hoeheBei ? l.hoeheBei(l.x, l.z) : 0;
+      l.y += (sollY - l.y) * Math.min(1, dt * 12);
+      d.spieler.position.set(l.x, l.y, l.z);
       if (!laeuft && l.warte) schaue(...ortMitte(e, l.warte.ort));
       else if (!laeuft && l.duellOrt) schaue(...ortMitte(e, l.duellOrt));
       const figur = d.spieler.children[0];
       if (figur) bewegeAvatar(figur, laeuft ? (tempo > GEHEN + 0.5 ? "rennen" : "lauf") : "idle");
       // ohne Bewegungsclips (Modell lädt noch) hüpft die Figur beim Laufen
-      if (laeuft && !figur?.userData.bewegung) d.spieler.position.y = Math.abs(Math.sin(jetzt / 90)) * 0.08;
+      if (laeuft && !figur?.userData.bewegung) d.spieler.position.y = l.y + Math.abs(Math.sin(jetzt / 90)) * 0.08;
 
       // Ankunft: neu an einem Ort
       const ort = ortBei(e, l.x, l.z, l.stock > 0);
@@ -711,7 +728,7 @@ export default function FreiWelt({
         kamera.lookAt(auge.x, 0.6, auge.z - weit * 0.62);
       } else {
       // Kamera über der Schulter; Wände halten sie auf
-      kopf.set(l.x, 2.1, l.z);
+      kopf.set(l.x, 2.1 + l.y, l.z);
       const flach = Math.cos(l.neigung) * l.abstand, steil = Math.sin(l.neigung) * l.abstand;
       let anteil = 1;
       const unterWand = l.wandHoehe > 0 && kopf.y + steil < l.wandHoehe + 0.4;
@@ -860,10 +877,11 @@ export default function FreiWelt({
     d.fackel.color.set(s.fackelFarbe ?? 0xffc48a);
     lage.current.luft = land.takt ?? null;
     lage.current.lichter = land.lichter ?? null;
+    lage.current.hoeheBei = land.hoehe ?? null;
     d.maler.belichtung(s.belichtung);
     lage.current.wandHoehe = land.wandHoehe;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [plan, stock, stil, seed, modelleDa, bausatzNr]);
+  }, [plan, stock, stil, seed, modelleDa, bausatzNr, kitNr]);
 
   // ── Stationen und Tor: neu bei jedem Fortschritt ─────────────────────────
   const schluessel = JSON.stringify([stock, zustaende[stock], zielOffen[stock], objekte?.[stock], stil, waechter?.[stock]]);

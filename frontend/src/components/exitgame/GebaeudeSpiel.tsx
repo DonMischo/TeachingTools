@@ -14,12 +14,12 @@ import AvatarWahl from "@/components/gebaeude/AvatarWahl";
 import { STANDARD_AVATAR, gespeicherterAvatar, ladeAvatar, type Avatar } from "@/components/gebaeude/avatar";
 import { OBJEKT_NAME, OBJEKT_STIMME } from "@/lib/gebaeude/objekte";
 import { bauePlan } from "@/lib/gebaeude/plan";
-import { baueFreiPlan } from "@/lib/gebaeude/frei";
+import { baueFreiPlan, type KartenArt } from "@/lib/gebaeude/frei";
 import { BOSS_ARTEN, KAMPF_ARTEN, KAMPF_NAME, STUFEN, istStufe, type KampfArt, type Stufe } from "@/lib/gebaeude/kampf";
 import { ERFOLGE, erreichte, ladeErfolge, nachSpiel, speichereErfolge } from "@/lib/gebaeude/erfolge";
 import Gebaeude, { type GebaeudeArt, type Ort } from "@/components/gebaeude/Gebaeude";
 import FreiWelt from "@/components/gebaeude/frei/FreiWelt";
-import { istOrganisch } from "@/components/gebaeude/frei/welt";
+import { kartenArt } from "@/components/gebaeude/frei/welt";
 import type { RaumZustand, Stil } from "@/components/gebaeude/szene";
 import { FolienText, MediaView, TaskArea, letzteInfo, levelOf } from "./FolienTeile";
 import { SimKnopf } from "./SimStation";
@@ -74,9 +74,9 @@ export default function GebaeudeSpiel({
   // Monster und Bosse: im Verlies und in der 3D-Welt — dort ist jede Aufgabe ein kleiner Kampf.
   const monster = useMemo(() => teile.map(() => frei || art === "verlies"), [teile, frei, art]);
   const plan = useMemo(() => (frei ? null : bauePlan(teile.map(t => t.raeume.length), seedAus(code), art as GebaeudeArt)), [teile, code, art, frei]);
-  const organisch = JSON.stringify(freiStile.map(istOrganisch));
+  const organisch = JSON.stringify(freiStile.map(kartenArt));
   const freiPlan = useMemo(
-    () => (frei ? baueFreiPlan(teile.map(t => t.raeume.length), seedAus(code), JSON.parse(organisch) as boolean[]) : null),
+    () => (frei ? baueFreiPlan(teile.map(t => t.raeume.length), seedAus(code), JSON.parse(organisch) as KartenArt[]) : null),
     [teile, code, frei, organisch]);
   // 3D-Welt: an jeder Aufgabe steht ein Monster, auch wenn das JSON ein anderes Objekt nennt (Erklärungen sind Erz).
   const objekte = useMemo(

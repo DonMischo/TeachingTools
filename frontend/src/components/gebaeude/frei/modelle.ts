@@ -50,3 +50,43 @@ export function ladeWeltModelle(): Promise<boolean> {
   }).catch(() => false);
   return laden;
 }
+
+// ── Baukästen aus der Weltenwerkstatt ────────────────────────────────────
+// Fertig gefärbte Modelle (Eckenfarben mit eingebackener Verdeckung), gebaut in TT-Weltenwerkstatt
+// (blender/<welt>.py) und als /modelle/welten/<welt>.glb abgelegt. Leuchtende Teile tragen `glut`.
+
+export interface KitTeil { geo: THREE.BufferGeometry; glut: boolean }
+const kits = new Map<string, Record<string, KitTeil>>();
+const kitLaden = new Map<string, Promise<boolean>>();
+
+/** die Teile eines Baukastens, sobald geladen (sonst null) */
+export function kit(name: string): Record<string, KitTeil> | null {
+  return kits.get(name) ?? null;
+}
+
+/** einmal laden; `true`, wenn der Baukasten da ist */
+export function ladeKit(name: string): Promise<boolean> {
+  const schon = kitLaden.get(name);
+  if (schon) return schon;
+  if (typeof window === "undefined" || !("WebGL2RenderingContext" in window)) return Promise.resolve(false);
+  const draco = new DRACOLoader();
+  draco.setDecoderPath("/draco/");
+  const lader = new GLTFLoader();
+  lader.setDRACOLoader(draco);
+  const p = lader.loadAsync(`/modelle/welten/${name}.glb`).then(gltf => {
+    const teile: Record<string, KitTeil> = {};
+    gltf.scene.updateMatrixWorld(true);
+    gltf.scene.traverse(o => {
+      const m = o as THREE.Mesh;
+      if (!m.isMesh) return;
+      const g = m.geometry.clone();
+      g.applyMatrix4(m.matrixWorld);
+      g.userData.geteilt = true;
+      teile[m.name] = { geo: g, glut: !!(m.userData.glut ?? m.parent?.userData.glut) };
+    });
+    kits.set(name, teile);
+    return true;
+  }).catch(() => false);
+  kitLaden.set(name, p);
+  return p;
+}
