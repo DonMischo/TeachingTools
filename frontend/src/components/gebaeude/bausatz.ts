@@ -3,7 +3,11 @@
  * Eckpfeiler, Steinplatten, Torbögen und Stufen statt glatter Klötze. Die Teile tragen ihre Farbe
  * samt gebackener Umgebungsverdeckung je Ecke; ein Teil `<name>__glut` (Fackelflamme) leuchtet.
  *
- * Wird je Stil einmal geladen; bis dahin (und ohne WebGL2, z. B. in Tests) baut szene.ts Klötze.
+ * Wird je Bausatz einmal geladen; bis dahin (und ohne WebGL2, z. B. in Tests) baut szene.ts Klötze.
+ *
+ * Die Gebäude der freien 3D-Ansicht nehmen die Ausstattung aus verlies3d.glb (scripts/bausatz/verlies3d.py)
+ * und je Stil einen Kachelsatz: /modelle/bausatz/kacheln/<stil>/<mauer|boden|decke>_<farbe|normal>.jpg
+ * (scripts/bausatz/kacheln.py).
  */
 import { useEffect, useState } from "react";
 import * as THREE from "three";
@@ -11,30 +15,60 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import type { Stil } from "./szene";
 
-/** Stile, für die es einen Bausatz gibt */
-export const BAUSAETZE: readonly Stil[] = ["verlies"];
+/** Bausätze mit Modellen: 2,5D-Verlies und die Ausstattung der 3D-Gebäude */
+export const BAUSAETZE: readonly string[] = ["verlies", "verlies3d"];
+
+/** Stile mit Kacheln für die 3D-Gebäude (scripts/bausatz/kacheln.py → kacheln/<stil>/…) */
+export const KACHEL_STILE: readonly Stil[] = [
+  "verlies", "burg", "gotisch", "mittelalter", "antike", "klassisch", "viktorianisch", "retro",
+  "holz", "eis", "wueste", "beton", "raumstation", "neon",
+];
+const KACHELN = ["mauer", "boden", "decke"];
+
+/** Name des Kachelsatzes eines Stils (für ladeBausatz, bauKacheln, useBausatz) */
+export const kachelName = (stil: Stil) => `kacheln/${stil}`;
 
 /** ein Teil: Stein (Eckenfarbe) und ggf. das, was leuchtet */
 export interface BauTeil { geo: THREE.BufferGeometry; glut?: THREE.BufferGeometry }
 export type Bausatz = Record<string, BauTeil>;
+/** Kachel: Farbe (mit gebackenen Schatten) und Normalen, kachelbar (RepeatWrapping) */
+export interface Kachel { farbe: THREE.Texture; normal: THREE.Texture }
 
-const fertig = new Map<Stil, Bausatz>();
-const laden = new Map<Stil, Promise<boolean>>();
+const fertig = new Map<string, Bausatz>();
+const kachelnFertig = new Map<string, Record<string, Kachel>>();
+const laden = new Map<string, Promise<boolean>>();
 let lader: GLTFLoader | null = null;
 
-export function hatBausatz(stil: Stil | undefined): stil is Stil {
-  return !!stil && BAUSAETZE.includes(stil);
+export function hatBausatz(name: string | undefined): name is string {
+  return !!name && (BAUSAETZE.includes(name) || KACHEL_STILE.some(s => kachelName(s) === name));
 }
 
-/** die Teile eines Stils nach Namen (ohne Stil-Vorsilbe), sobald geladen — sonst null */
-export function bausatz(stil: Stil | undefined): Bausatz | null {
-  return (stil && fertig.get(stil)) || null;
+/** die Teile eines Bausatzes nach Namen (ohne Vorsilbe), sobald geladen — sonst null */
+export function bausatz(name: string | undefined): Bausatz | null {
+  return (name && fertig.get(name)) || null;
 }
 
-/** einmal je Stil laden; `true`, wenn der Bausatz da ist */
-export function ladeBausatz(stil: Stil | undefined): Promise<boolean> {
-  if (!hatBausatz(stil)) return Promise.resolve(false);
-  const da = laden.get(stil);
+/** die Kacheln eines Bausatzes, sobald geladen — sonst null */
+export function bauKacheln(name: string | undefined): Record<string, Kachel> | null {
+  return (name && kachelnFertig.get(name)) || null;
+}
+
+function ladeKachel(name: string, kachel: string): Promise<Kachel> {
+  const tl = new THREE.TextureLoader();
+  const eine = (art: string) => tl.loadAsync(`/modelle/bausatz/${name}/${kachel}_${art}.jpg`).then(t => {
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.anisotropy = 8;
+    t.colorSpace = art === "farbe" ? THREE.SRGBColorSpace : THREE.NoColorSpace;
+    t.userData.geteilt = true;
+    return t;
+  });
+  return Promise.all([eine("farbe"), eine("normal")]).then(([farbe, normal]) => ({ farbe, normal }));
+}
+
+/** einmal je Bausatz laden (Modelle und Kacheln); `true`, wenn alles da ist */
+export function ladeBausatz(name: string | undefined): Promise<boolean> {
+  if (!hatBausatz(name)) return Promise.resolve(false);
+  const da = laden.get(name);
   if (da) return da;
   if (typeof window === "undefined" || !("WebGL2RenderingContext" in window)) return Promise.resolve(false);
   if (!lader) {
@@ -43,7 +77,15 @@ export function ladeBausatz(stil: Stil | undefined): Promise<boolean> {
     lader = new GLTFLoader();
     lader.setDRACOLoader(draco);
   }
-  const p = lader.loadAsync(`/modelle/bausatz/${stil}.glb`).then(gltf => {
+  // Kachelsatz: nur Texturen
+  if (!BAUSAETZE.includes(name)) {
+    const p = Promise.all(KACHELN.map(k => ladeKachel(name, k).then(t => [k, t] as const)))
+      .then(ks => { kachelnFertig.set(name, Object.fromEntries(ks)); return true; })
+      .catch(() => false);
+    laden.set(name, p);
+    return p;
+  }
+  const modelle = lader.loadAsync(`/modelle/bausatz/${name}.glb`).then(gltf => {
     const teile: Bausatz = {};
     gltf.scene.updateMatrixWorld(true);
     gltf.scene.traverse(o => {
@@ -54,26 +96,26 @@ export function ladeBausatz(stil: Stil | undefined): Promise<boolean> {
       g.userData.geteilt = true;
       // Namen: verlies_mauer3 bzw. verlies_mauer3__glut
       const [voll, glut] = m.name.split("__");
-      const name = voll.slice(stil.length + 1);
-      teile[name] = { ...teile[name], ...(glut ? { glut: g } : { geo: g }) };
+      const teil = voll.slice(name.length + 1);
+      teile[teil] = { ...teile[teil], ...(glut ? { glut: g } : { geo: g }) };
     });
-    fertig.set(stil, teile);
-    return true;
-  }).catch(() => false);
-  laden.set(stil, p);
+    return teile;
+  });
+  const p = modelle.then(teile => { fertig.set(name, teile); return true; }).catch(() => false);
+  laden.set(name, p);
   return p;
 }
 
 /**
- * Lädt die Bausätze der genannten Stile; die Zahl steigt, sobald einer da ist — in den
+ * Lädt die genannten Bausätze; die Zahl steigt, sobald einer da ist — in den
  * Schlüssel zum Neubauen aufnehmen, dann tauschen die Klötze gegen Mauerwerk.
  */
-export function useBausatz(stile: (Stil | undefined)[]): number {
+export function useBausatz(namen: (Stil | string | undefined)[]): number {
   const [nr, setNr] = useState(0);
-  const schluessel = [...new Set(stile.filter(hatBausatz))].sort().join(",");
+  const schluessel = [...new Set(namen.filter(hatBausatz))].sort().join(",");
   useEffect(() => {
     let an = true;
-    for (const s of schluessel ? schluessel.split(",") as Stil[] : []) {
+    for (const s of schluessel ? schluessel.split(",") : []) {
       if (fertig.has(s)) continue;
       ladeBausatz(s).then(ok => { if (an && ok) setNr(n => n + 1); });
     }

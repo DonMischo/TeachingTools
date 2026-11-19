@@ -42,6 +42,8 @@ import { baueMaler, type Guete, type Maler } from "./malfilter";
 import { baueLandschaft, baueOrte, type Landschaft, type Marke } from "./welt";
 import { ladeWeltModelle, weltModelle } from "./modelle";
 import { DURCHSICHT, durchsichtFuer } from "./durchsicht";
+import { kachelName, useBausatz } from "../bausatz";
+import { REZEPT } from "./bauwelt";
 
 interface Props {
   plan: FreiPlan;
@@ -135,6 +137,8 @@ export default function FreiWelt({
   const [hiebe, setHiebe] = useState(0);
   // Blender-Modelle (Bäume, Felsen …): bis sie da sind, baut die Welt ihre Formen selbst
   const [modelleDa, setModelleDa] = useState(() => !!weltModelle());
+  // Gebäude aus Blender-Kacheln (bauwelt.ts): sobald sie da sind, wird die Landschaft neu gebaut
+  const bausatzNr = useBausatz(stile.flatMap(s => (REZEPT[s] ? ["verlies3d", kachelName(s)] : [])));
   useEffect(() => { let an = true; ladeWeltModelle().then(ok => { if (an && ok) setModelleDa(true); }); return () => { an = false; }; }, []);
   const [kampf, setKampf] = useState(false);
   const [duell, setDuell] = useState<DuellBild | null>(null);
@@ -177,6 +181,7 @@ export default function FreiWelt({
     nebelBasis: 0.01,
     /** bewegt, was in der Luft schwebt */
     luft: null as ((zeit: number) => void) | null,
+    lichter: null as ((x: number, z: number, zeit: number) => void) | null,
     marken: [] as Marke[],
     setNah, setGuete, setHiebe, setKampf, setDuell, setVolltreffer, setOben,
   });
@@ -641,6 +646,7 @@ export default function FreiWelt({
       d.sonne.position.set(l.x + d.sonneVon.x * 70, d.sonneVon.y * 70, l.z + d.sonneVon.z * 70);
 
       l.luft?.(jetzt / 1000);
+      l.lichter?.(l.x, l.z, jetzt / 1000);
       d.maler.male(szene, kamera);
 
       // Erz-Takt: der Zeiger schwingt, solange die Figur an einem Erz steht
@@ -757,10 +763,11 @@ export default function FreiWelt({
     d.fackel.intensity = s.fackel; d.fackel.userData.staerke = s.fackel;
     d.fackel.color.set(s.fackelFarbe ?? 0xffc48a);
     lage.current.luft = land.takt ?? null;
+    lage.current.lichter = land.lichter ?? null;
     d.maler.belichtung(s.belichtung);
     lage.current.wandHoehe = land.wandHoehe;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [plan, stock, stil, seed, modelleDa]);
+  }, [plan, stock, stil, seed, modelleDa, bausatzNr]);
 
   // ── Stationen und Tor: neu bei jedem Fortschritt ─────────────────────────
   const schluessel = JSON.stringify([stock, zustaende[stock], zielOffen[stock], objekte?.[stock], stil, waechter?.[stock]]);
