@@ -10,6 +10,7 @@ import { ausDaten, neuesProjekt, PALETTEN, zuDaten, type PixelDaten } from "@/li
 import { quantisieren } from "@/lib/pixel/werkzeuge";
 import { sheetZuBildern } from "@/lib/pixel/befehle";
 import { gifLesen, gifZuProjekt } from "@/lib/pixel/gifLesen";
+import { BEISPIELE } from "@/lib/pixel/beispiele";
 import { bildDateiLesen, vorschauPng } from "./leinwand";
 import Editor from "./Editor";
 
@@ -42,6 +43,9 @@ function Bibliothek({ action, zugang, oeffne }: {
   const [importPalette, setImportPalette] = useState(true);
   const [sheet, setSheet] = useState({ an: false, w: 16, h: 16 });
   const datei = useRef<HTMLInputElement>(null);
+  // Vorschaubilder der Beispiele brauchen ein Canvas: erst im Browser bauen
+  const [beispielBilder, setBeispielBilder] = useState<Record<string, string>>({});
+  useEffect(() => { setBeispielBilder(Object.fromEntries(BEISPIELE.map(b => [b.id, vorschauPng(b.bauen())]))); }, []);
 
   const laden = useCallback(() => {
     api.pixel.liste(zugang).then(setEigene).catch(e => { setEigene([]); setFehler(meldung(e)); });
@@ -129,6 +133,25 @@ function Bibliothek({ action, zugang, oeffne }: {
             <input className="input w-16 py-0.5" type="number" min={1} max={256} value={sheet.h} onChange={e => setSheet({ ...sheet, h: grenze(+e.target.value) })} /></span>}
           <span className="text-muted">Animierte GIFs werden mit allen Bildern übernommen.</span>
           <input ref={datei} type="file" accept="image/png,image/gif,image/jpeg,image/webp" hidden onChange={e => { const f = e.target.files?.[0]; if (f) importieren(f); e.target.value = ""; }} />
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-2">
+        <h2 className="font-bold">🌟 Beispiele</h2>
+        <p className="text-muted text-sm">Zum Ansehen und Abspielen; »Als Kopie bearbeiten« legt eins in deine Projekte, dann kannst du alles darin ändern.</p>
+        <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))" }}>
+          {BEISPIELE.map((b, k) => (
+            <button key={b.id} className="card p-2 flex gap-3 items-center text-left hover:border-line-active"
+              onClick={() => oeffne({ id: -1 - k, name: b.name, daten: zuDaten(b.bauen()), geteilt: false, fremd: true })}>
+              <span className="w-20 h-20 shrink-0 rounded-lg flex items-center justify-center" style={SCHACH}>
+                {beispielBilder[b.id] && <img src={beispielBilder[b.id]} alt="" style={{ imageRendering: "pixelated", width: "88%", height: "88%", objectFit: "contain" }} />}
+              </span>
+              <span className="flex flex-col gap-0.5 min-w-0">
+                <span className="font-semibold text-sm">{b.name}</span>
+                <span className="text-xs text-muted">{b.text}</span>
+              </span>
+            </button>
+          ))}
         </div>
       </section>
 

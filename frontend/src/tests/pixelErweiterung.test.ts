@@ -171,3 +171,25 @@ describe("Pixel-Studio: GIF lesen", () => {
     expect([...g.bilder[0].rgba]).toEqual([...rgba]);
   });
 });
+
+import { BEISPIELE } from "@/lib/pixel/beispiele";
+import { ausDaten, zuDaten } from "@/lib/pixel/dokument";
+
+describe("Pixel-Studio: Beispiele", () => {
+  it("bauen sich vollständig und überstehen Speichern/Laden", () => {
+    for (const b of BEISPIELE) {
+      const p = b.bauen();
+      const q = ausDaten(JSON.parse(JSON.stringify(zuDaten(p))));
+      expect(q.bilder.length).toBeGreaterThan(1);
+      expect(q.tags.length).toBeGreaterThan(0);
+      for (const e of q.ebenen) expect(q.zellen[e.id]).toHaveLength(q.bilder.length);
+      expect(zusammensetzen(q, 0).some(v => v > 0)).toBe(true);
+    }
+    const s = BEISPIELE[0].bauen();
+    expect(s.tags.map(t => t.name)).toEqual(["stehen", "hüpfen"]);
+    expect(s.ebenen[1].mods).toHaveLength(1);
+    // der Schatten bewegt sich nicht mit
+    const schatten = s.ebenen[0].id;
+    expect(s.zellen[schatten].every(z => z.every((v, i) => v === s.zellen[schatten][0][i]))).toBe(true);
+  });
+});

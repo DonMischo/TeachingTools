@@ -671,6 +671,7 @@ simulationen:
       - Modifier je Ebene (nicht-destruktiv, in allen Bildern) – Farbe (Farbton, Sättigung, Helligkeit, Kontrast, Deckkraft) und Umriss außen/innen 1–8 px; einbacken in die Pixel
       - Befehle – Inseln ordnen, Inseln zu Bildern, Sprite-Sheet zerschneiden, Farbrampe (Hue Shifter), Pixel-Shift mit Alt+Pfeilen, pixelgenaue Striche
       - Import animierter GIFs (alle Bilder mit Dauer) und von Sprite-Sheets
+      - Drei eingebaute Beispiele (Schleim mit Ebenen/Tags/Umriss, Lagerfeuer mit Farbzyklus, nahtlose Wasser-Kachel) zum Ansehen und Kopieren
   - id: verkehr
     name: GTA – Ganztagsaufmerksamkeit im Verkehr – zu Fuß
     kann:
