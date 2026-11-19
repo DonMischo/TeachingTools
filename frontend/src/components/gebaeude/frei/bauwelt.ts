@@ -25,6 +25,8 @@ const LICHTER = 4;
 type Kram = "fass" | "kiste" | "knochen" | "kerzen" | "geroell";
 
 interface Rezept {
+  /** Mauerkachel reicht über die ganze Wandhöhe H3 statt eines Feldes (Fachwerk: Schwelle bis Rähm) */
+  mauerHoch?: boolean;
   /** dämmrig: Fackellicht wandert mit, Nebel dicht */
   dunkel: boolean;
   /** Anteil der Wandseiten mit Fackel, Banner (rot/blau), Fenster */
@@ -55,7 +57,7 @@ export const REZEPT: Partial<Record<Stil, Rezept>> = {
     stimmung: { ...HELL, umgebung: 0.95, sonneStaerke: 1.1, fackel: 14, nebel: 0xc9c2b8 } },
   gotisch: { dunkel: true, fackel: 0.05, banner: 0.1, fenster: 0.12, fensterTon: 0xc4a0ff, kram: [0.14, 0.04], sorten: { kerzen: 6, knochen: 1, geroell: 1 },
     balken: false, ketten: true, pfeiler: true, torrahmen: true, decke: 0x9a96a8, sockel: 0x6b6560, relief: 1.4 },
-  mittelalter: { dunkel: false, fackel: 0.04, banner: 0.05, fenster: 0.12, fensterTon: TAG, kram: [0.18, 0.06], sorten: MITTELALTERLICH,
+  mittelalter: { mauerHoch: true, dunkel: false, fackel: 0.04, banner: 0.05, fenster: 0.12, fensterTon: TAG, kram: [0.18, 0.06], sorten: MITTELALTERLICH,
     balken: true, ketten: false, pfeiler: false, torrahmen: false, decke: 0xffffff, sockel: 0x8a7a66, relief: 1, stimmung: HELL },
   antike: { dunkel: false, fackel: 0, banner: 0, fenster: 0.1, fensterTon: TAG, kram: [0.1, 0.02], sorten: { kerzen: 1 },
     balken: false, ketten: false, pfeiler: false, torrahmen: false, decke: 0xffffff, sockel: 0xd6cfc2, relief: 0.8, stimmung: { ...HELL, nebel: 0xf2ece0 } },
@@ -88,15 +90,19 @@ const DUNKEL: Stimmung = {
   oben: 0x6f6a80, unten: 0x2a2018, umgebung: 0.55, fackel: 26, belichtung: 1.2,
 };
 
-/** Quader, dessen Texturkoordinaten in Feldern zählen: eine Kachel je ZELLE, gleich auf allen Seiten */
-function kachelQuader(b: number, h: number, t: number): THREE.BoxGeometry {
+/**
+ * Quader, dessen Texturkoordinaten in Feldern zählen: eine Kachel je ZELLE, gleich auf allen Seiten.
+ * `kachelH`: Höhe einer Kachel an den Seiten (z. B. die ganze Wand), `ab`: Höhe der Unterkante über dem Boden.
+ */
+function kachelQuader(b: number, h: number, t: number, kachelH = ZELLE, ab = 0): THREE.BoxGeometry {
   const g = new THREE.BoxGeometry(b, h, t);
   const uv = g.attributes.uv as THREE.BufferAttribute;
   // Seiten der BoxGeometry: +x, −x, +y, −y, +z, −z (je 4 Ecken) → Breite und Höhe der Kachel
   const masse: [number, number][] = [[t, h], [t, h], [b, t], [b, t], [b, h], [b, h]];
   for (let s = 0; s < 6; s++) for (let k = 0; k < 4; k++) {
     const i = s * 4 + k;
-    uv.setXY(i, uv.getX(i) * masse[s][0] / ZELLE, uv.getY(i) * masse[s][1] / ZELLE);
+    const seite = s !== 2 && s !== 3;
+    uv.setXY(i, uv.getX(i) * masse[s][0] / ZELLE, seite ? (ab + uv.getY(i) * masse[s][1]) / kachelH : uv.getY(i) * masse[s][1] / ZELLE);
   }
   return g;
 }
@@ -225,9 +231,10 @@ export function bauwelt(e: FreiEbene, stil: Stil, seed: number): Landschaft | nu
   }
 
   const mauer = kachelStoff(T.mauer, 0xffffff, R.relief);
-  g.add(reihe(kachelQuader(ZELLE, H3, ZELLE), mauer, mauern));
+  const kachelH = R.mauerHoch ? H3 : ZELLE;
+  g.add(reihe(kachelQuader(ZELLE, H3, ZELLE, kachelH), mauer, mauern));
   g.add(reihe(kachelQuader(ZELLE + 0.04, 0.4, ZELLE + 0.04), new THREE.MeshLambertMaterial({ color: R.sockel }), sockel));
-  g.add(reihe(kachelQuader(ZELLE, H3 - STURZ, ZELLE), mauer, stuerze));
+  g.add(reihe(kachelQuader(ZELLE, H3 - STURZ, ZELLE, kachelH, STURZ), mauer, stuerze));
   teile(g, K.tuer, tueren);
   teile(g, K.pfeiler, pfeiler);
   teile(g, K.fackel, fackeln, false);

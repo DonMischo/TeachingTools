@@ -152,16 +152,45 @@ def putz(seed, farbe, beulen=0.006):
     return t
 
 
+# Fachwerk-Kachel: eine Feldbreite, aber die ganze Wandhöhe (bauwelt.ts: H3) — sonst stapelt sich das Gefache dreimal
+FACHWERK_H = 4.05
+
+
 def fachwerk(seed, putzfarbe, holzfarbe):
-    """Fachwerk: Putzfelder zwischen Ständern, Riegel in halber Höhe, ein Schrägband"""
+    """Fachwerk über die ganze Wandhöhe: Schwelle, Ständer an den Kachelrändern (je halb, so steht an jeder
+    Feldgrenze einer), Brustriegel mit Andreaskreuz darunter, Riegel, Rähm oben; Gefache als eine glatte Putzfläche"""
     r = random.Random(seed)
-    t = putz(seed, putzfarbe, beulen=0.008)
-    b = 0.16
-    stein(t, (0.08, ZELLE / 2, 0.05), (b, ZELLE + 0.002, 0.07), holzfarbe, r, fase=0.012, teile=2, beulen=0.004, drehung=(0, 0, 0))
-    stein(t, (ZELLE / 2, ZELLE * 0.5, 0.05), (ZELLE + 0.002, b * 0.9, 0.07), hell(holzfarbe, 0.95), r, fase=0.012, teile=2, beulen=0.004, drehung=(0, 0, 0))
-    w = math.atan2(ZELLE * 0.5, ZELLE - b)
-    lang = math.hypot(ZELLE * 0.5, ZELLE - b)
-    stein(t, (ZELLE / 2 + b / 2, ZELLE * 0.25, 0.048), (lang, b * 0.8, 0.065), hell(holzfarbe, 0.9), r, fase=0.012, teile=2, beulen=0.004, drehung=(0, 0, w))
+    B, H = ZELLE, FACHWERK_H
+    t = Teil("u%d" % seed)
+    t.quader((B / 2, H / 2, -0.03), (B * 1.02, H * 1.02, 0.04), hell(putzfarbe, 0.75), fase=0)
+    # Putz: eine Fläche, leicht wellig, ein wenig fleckig
+    stein(t, (B / 2, H / 2, 0.02), (B + 0.002, H + 0.002, 0.04), putzfarbe, r, fase=0, teile=10, beulen=0.006, drehung=(0, 0, 0))
+    b = 0.17
+
+    def holz(x, y, lang, dick, w=0.0, z=0.05, ton=1.0):
+        c = hell(holzfarbe, ton * (0.9 + r.random() * 0.2))
+        stein(t, (x, y, z), (lang, dick, 0.075), c, r, fase=0.015, teile=3, beulen=0.005, drehung=(0, 0, w))
+
+    sockel, brust, riegel, raehm = 0.42, 1.25, 2.6, H - 0.12
+    # Ständer: am linken und rechten Rand je halb (nahtlos zum Nachbarfeld)
+    for x in (0.0, B):
+        holz(x, H / 2, b, H + 0.004, ton=0.92)
+    # Schwelle, Brustriegel, Riegel, Rähm (über die ganze Breite)
+    for y, dick in ((sockel, 0.22), (brust, b * 0.9), (riegel, b * 0.9), (raehm, 0.24)):
+        holz(B / 2, y, B + 0.004, dick, z=0.055)
+    # Andreaskreuz in der Brüstung (zwischen Schwelle und Brustriegel)
+    x0, x1 = b / 2, B - b / 2
+    y0, y1 = sockel + 0.11, brust - b * 0.45
+    w = math.atan2(y1 - y0, x1 - x0)
+    lang = math.hypot(x1 - x0, y1 - y0)
+    holz(B / 2, (y0 + y1) / 2, lang, b * 0.8, w=w, z=0.048, ton=0.95)
+    holz(B / 2, (y0 + y1) / 2, lang, b * 0.8, w=-w, z=0.046, ton=0.95)
+    # Kopfbänder oben: kurze Streben vom Ständer zum Rähm
+    for sx in (1, -1):
+        xa = b / 2 if sx > 0 else B - b / 2
+        ya = raehm - 0.12
+        dx, dy = 0.42 * sx, -0.42
+        holz(xa + dx / 2, ya + dy / 2, math.hypot(dx, dy), b * 0.7, w=math.atan2(dy, dx), z=0.047, ton=0.95)
     return t
 
 
@@ -187,7 +216,7 @@ def stile():
         "decke": (lambda: quader(413, [hx(0x57524d), hx(0x44403c)], hx(0x1c1917), reihen=4, lang=(0.45, 0.7)), "stein"),
     }
     S["mittelalter"] = {
-        "mauer": (lambda: fachwerk(421, hx(0xf0e8d4), hx(0x4a2c17)), "glatt"),
+        "mauer": (lambda: fachwerk(421, hx(0xebe2cc), hx(0x3e2614)), "glatt", (ZELLE, FACHWERK_H)),
         "boden": (lambda: dielen(422, [hx(0x9c7a52), hx(0x7a5a38)], hx(0x2a1a0e), bretter=6), "holz"),
         "decke": (lambda: dielen(423, [hx(0x4a2c17), hx(0x5c3a1f)], hx(0x140c06), bretter=5), "holz"),
     }
@@ -252,6 +281,8 @@ if __name__ == "__main__":
             continue
         ordner = os.path.join(ZIEL, "kacheln", stil)
         os.makedirs(ordner, exist_ok=True)
-        for name, (bau, maserung) in kacheln.items():
-            rendere_kachel(bau(), maserung, ordner, name, proben=(128, 32))
+        for name, (bau, maserung, *groesse) in kacheln.items():
+            # hohe Kacheln (ganze Wandhöhe) mit mehr Bildpunkten, damit die Breite nicht verschwimmt
+            rendere_kachel(bau(), maserung, ordner, name, proben=(128, 32), groesse=groesse[0] if groesse else (ZELLE, ZELLE),
+                           pixel=2048 if groesse else None)
         print("STIL", stil, "fertig")
