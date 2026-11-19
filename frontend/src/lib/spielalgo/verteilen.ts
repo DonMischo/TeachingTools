@@ -84,7 +84,7 @@ export function* poisson(s: Poisson, rng: () => number): Generator<string> {
   }
   s.mitte = -1;
   s.kandidaten = [];
-  return "fertig";
+  return `Fertig: Kein Punkt ist mehr aktiv. ${s.punkte.length} Punkte, keiner näher als ${s.r} am nächsten.`;
 }
 
 /** Kleinster Abstand zweier Punkte (für den Vergleich Zufall ↔ Poisson). */

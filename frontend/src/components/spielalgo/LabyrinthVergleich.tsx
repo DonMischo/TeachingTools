@@ -90,7 +90,7 @@ export default function LabyrinthVergleich() {
         <label className="flex items-center gap-1"><input type="checkbox" checked={wegZeigen} onChange={e => setWegZeigen(e.target.checked)} /> Lösungsweg zeigen</label>
       </>}
       buehne={<>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
           {ARTEN.map((a, i) => (
             <figure key={a.id} className="flex flex-col gap-1 min-w-0">
               <figcaption className="text-sm font-bold">{a.name} <span className="font-normal text-muted text-xs">– {a.kurz}</span></figcaption>

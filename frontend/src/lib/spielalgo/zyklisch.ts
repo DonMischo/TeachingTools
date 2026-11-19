@@ -302,31 +302,43 @@ export function karte(a: Ablauf, b = 64, h = 44, organisch = false): Karte {
 }
 
 /**
- * Felsränder annagen: Fels mit wenigen Fels-Nachbarn wird frei. Das öffnet nur;
- * damit dabei kein Schleichweg an Tür oder Gitter vorbei entsteht, wird jede
- * Runde geprüft und notfalls verworfen.
+ * Felsränder annagen: Fels mit wenigen Fels-Nachbarn wird frei. Damit dabei
+ * kein Schleichweg an Tür oder Gitter vorbei entsteht, trägt jedes freie Feld
+ * die Nummer seines Bereichs (Tür und Gitter trennen Bereiche). Ein Fels, der
+ * zwei verschiedene Bereiche berühren würde, bleibt stehen.
  */
 function annagen(k: Karte) {
-  const { b, h } = k;
-  const raeumeErreichbar = () => {
-    const da = kartenErreichbar(k, false);
-    return k.raeume.map(r => da[r.my * b + r.mx]).join("");
-  };
-  const vorher = raeumeErreichbar();
-  for (let runde = 0; runde < 2; runde++) {
-    const alt = k.z.slice();
-    const neu = k.z.slice();
+  const { b, h, z } = k;
+  const frei = (v: number) => v !== KZ.FELS && v !== KZ.TUER && v !== KZ.GITTER;
+  const bereich = new Int32Array(b * h).fill(-1);
+  let n = 0;
+  for (let s = 0; s < z.length; s++) {
+    if (!frei(z[s]) || bereich[s] >= 0) continue;
+    bereich[s] = n;
+    const st = [s];
+    while (st.length) {
+      const i = st.pop()!;
+      for (const j of [i - 1, i + 1, i - b, i + b]) {
+        if (j >= 0 && j < z.length && Math.abs((j % b) - (i % b)) <= 1 && frei(z[j]) && bereich[j] < 0) { bereich[j] = n; st.push(j); }
+      }
+    }
+    n++;
+  }
+  for (let runde = 0; runde < 3; runde++) {
+    const alt = z.slice();
     for (let y = 1; y < h - 1; y++) for (let x = 1; x < b - 1; x++) {
       const i = y * b + x;
       if (alt[i] !== KZ.FELS) continue;
       let fels = 0;
       for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (alt[(y + dy) * b + x + dx] === KZ.FELS) fels++;
-      if (fels <= 5 && hashZufall(i, runde) < 0.6) neu[i] = KZ.GANG;
+      if (fels > 5 || hashZufall(i, runde) >= 0.55) continue;
+      // Bereiche der freien Nachbarn im aktuellen Stand (auch eben geöffnete)
+      const nb = [i - 1, i + 1, i - b, i + b].map(j => bereich[j]).filter(v => v >= 0);
+      if (nb.some(v => v !== nb[0])) continue;
+      z[i] = KZ.GANG;
+      bereich[i] = nb.length ? nb[0] : n++;
     }
-    k.z = neu;
-    if (raeumeErreichbar() !== vorher) { k.z = alt; break; }
   }
-
 }
 
 

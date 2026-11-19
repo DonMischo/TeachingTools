@@ -286,7 +286,7 @@ describe("Zyklische Generierung", () => {
   });
 
   it.each([false, true])("Karte (organisch=%s) übernimmt Schloss und Gitter", organisch => {
-    for (let seed = 1; seed <= 12; seed++) {
+    for (let seed = 1; seed <= 40; seed++) {
       const a = neuerAblauf();
       alle(erzeugeAblauf(a, { zyklus: "schluessel", laenge: 3, neben: 2 }, zufall(seed)));
       const k = karte(a, 64, 44, organisch);
