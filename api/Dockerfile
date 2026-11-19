@@ -11,7 +11,7 @@ WORKDIR /workspace
 
 COPY requirements.txt .
 # pip selbst aktuell halten (das Basis-Image bringt eine Version mit bekannten Lücken mit)
-RUN pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --timeout 60 --retries 10 --upgrade pip && pip install --no-cache-dir --timeout 60 --retries 10 -r requirements.txt
 
 # Copy api source into /workspace/api/ so relative imports work
 COPY . ./api/

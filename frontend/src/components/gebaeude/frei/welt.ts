@@ -16,6 +16,7 @@ import { DURCHGANG, PLATZ, WAND, WEG, ZELLE, feldMitte, istFrei, type FreiEbene,
 import type { Objekt } from "@/lib/gebaeude/objekte";
 import { baueObjekt } from "../objekte3d";
 import { felsGeometrie, musterMaterial, textur, zufallAus } from "../stoff";
+import { bauwelt } from "./bauwelt";
 import { FASSUNGEN, weltModelle, type ModellArt } from "./modelle";
 import { AUSSEHEN, STILE, type RaumZustand, type Stil } from "../szene";
 
@@ -53,16 +54,18 @@ export interface Landschaft {
   wandHoehe: number;
   /** je Bild aufrufen: bewegt, was in der Luft schwebt (Zeit in Sekunden) */
   takt?: (zeit: number) => void;
+  /** je Bild mit dem Ort der Figur: z. B. die Fackeln in ihrer Nähe flackern lassen */
+  lichter?: (x: number, z: number, zeit: number) => void;
 }
 
 const farbe = (hex: number) => new THREE.Color(hex);
 const css = (hex: number) => `#${hex.toString(16).padStart(6, "0")}`;
 const aus = <T,>(liste: T[], r: () => number) => liste[Math.floor(r() * liste.length)];
 
-interface Stueck { p: THREE.Vector3; s: THREE.Vector3; q?: THREE.Quaternion; f?: THREE.Color }
+export interface Stueck { p: THREE.Vector3; s: THREE.Vector3; q?: THREE.Quaternion; f?: THREE.Color }
 
 /** Viele gleiche Körper als eine InstancedMesh */
-function reihe(geo: THREE.BufferGeometry, mat: THREE.Material, stuecke: Stueck[], schatten = true): THREE.InstancedMesh {
+export function reihe(geo: THREE.BufferGeometry, mat: THREE.Material, stuecke: Stueck[], schatten = true): THREE.InstancedMesh {
   const m = new THREE.InstancedMesh(geo, mat, Math.max(1, stuecke.length));
   m.count = stuecke.length;
   const mx = new THREE.Matrix4(), q0 = new THREE.Quaternion();
@@ -202,7 +205,7 @@ function stielGeometrie(): THREE.BufferGeometry {
   return g;
 }
 
-interface Schweben {
+export interface Schweben {
   farben: number[]; anzahl: number;
   /** Größe eines Teilchens in Welteinheiten */
   groesse: number;
@@ -216,7 +219,7 @@ interface Schweben {
  * Was in der Luft schwebt: Pollen, Schnee, Sporen, Funken. Punkte über den freien Feldern,
  * die im Shader treiben und fallen — `takt(zeit)` stellt nur die Uhr.
  */
-function schweben(e: FreiEbene, r: () => number, S: Schweben): { punkte: THREE.Points; takt: (zeit: number) => void } {
+export function schweben(e: FreiEbene, r: () => number, S: Schweben): { punkte: THREE.Points; takt: (zeit: number) => void } {
   const frei: number[] = [];
   for (let i = 0; i < e.art.length; i++) if (e.art[i] !== WAND) frei.push(i);
   const ort: number[] = [], farben: number[] = [], phase: number[] = [];
@@ -286,8 +289,34 @@ function sterne(r: () => number): THREE.Points {
   return p;
 }
 
-/** Himmel: große Kugel mit Farbverlauf vom Horizont nach oben */
-function himmel(oben: number, unten: number): THREE.Mesh {
+/** gemalte Himmel aus Blender (scripts/bausatz/himmel.py), je Welt einmal geladen */
+const HIMMEL_BILDER = new Map<string, THREE.Texture>();
+
+/**
+ * Himmel: große Kugel mit Farbverlauf vom Horizont nach oben. Mit `bild` (Name eines gemalten Himmels
+ * unter /modelle/himmel/) tauscht die Kugel den Verlauf gegen das Rundumbild, sobald es geladen ist.
+ */
+export function himmel(oben: number, unten: number, bild?: string): THREE.Mesh {
+  const m = verlauf(oben, unten);
+  if (bild && typeof document !== "undefined") {
+    const zeige = (t: THREE.Texture) => {
+      const alt = m.material as THREE.Material;
+      m.material = new THREE.MeshBasicMaterial({ map: t, side: THREE.BackSide, fog: false, depthWrite: false });
+      alt.dispose();
+    };
+    const da = HIMMEL_BILDER.get(bild);
+    if (da?.image) zeige(da);
+    else new THREE.TextureLoader().load(`/modelle/himmel/${bild}.jpg`, t => {
+      t.colorSpace = THREE.SRGBColorSpace;
+      t.userData.geteilt = true;
+      HIMMEL_BILDER.set(bild, t);
+      zeige(t);
+    }, undefined, () => { /* ohne Bild bleibt der Verlauf */ });
+  }
+  return m;
+}
+
+function verlauf(oben: number, unten: number): THREE.Mesh {
   const g = new THREE.SphereGeometry(420, 24, 12);
   const p = g.attributes.position, farben: number[] = [];
   const o = farbe(oben), u = farbe(unten), c = new THREE.Color();
@@ -384,7 +413,7 @@ function striche(ctx: CanvasRenderingContext2D, e: FreiEbene, px: number, r: () 
 }
 
 /** Ebene in einer Farbe weit um die Karte herum (bis zum Nebel) */
-function umland(e: FreiEbene, f: number): THREE.Mesh {
+export function umland(e: FreiEbene, f: number): THREE.Mesh {
   const g = new THREE.PlaneGeometry(900, 900);
   g.rotateX(-Math.PI / 2);
   const m = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ color: f }));
@@ -499,7 +528,7 @@ function waldLandschaft(e: FreiEbene, seed: number, art: keyof typeof NATUR = "w
   const g = new THREE.Group();
   const r = zufallAus(seed * 7 + 3);
   const P = NATUR[art];
-  g.add(himmel(P.stimmung.himmelOben, P.stimmung.himmelUnten));
+  g.add(himmel(P.stimmung.himmelOben, P.stimmung.himmelUnten, art));
   g.add(umland(e, P.umland));
   g.add(boden(e, (ctx, px) => {
     striche(ctx, e, px, r, 6, a => (a === WAND ? P.schatten : a === PLATZ ? P.lichtung : P.wiese));
@@ -882,6 +911,9 @@ function hoehleLandschaft(e: FreiEbene, stil: Stil, seed: number): Landschaft {
 const DUNKEL = new Set<Stil>(["verlies", "gotisch", "raumstation", "neon"]);
 
 function gebaeudeLandschaft(e: FreiEbene, stil: Stil, seed: number): Landschaft {
+  // Gebäude aus Blender-Kacheln und -Ausstattung (bauwelt.ts) — solange sie laden, das schlichte Haus
+  const gebaut = bauwelt(e, stil, seed);
+  if (gebaut) return gebaut;
   const g = new THREE.Group();
   const r = zufallAus(seed * 13 + 1);
   const F = STILE[stil], A = AUSSEHEN[stil];
@@ -1086,7 +1118,7 @@ function gartenLandschaft(e: FreiEbene, seed: number): Landschaft {
   const RAND = 6;
   const { t, B } = tiefen(e, RAND);
   const tiefeBei = (x: number, y: number) => t[(y + RAND) * B + x + RAND];
-  g.add(himmel(0x5fa8ee, 0xdcecf7));
+  g.add(himmel(0x5fa8ee, 0xdcecf7, "garten"));
   g.add(umland(e, 0x7fb04a));
   // Teiche hinter den Hecken: dort, wo ringsum genug Platz ist
   const teiche: [number, number, number][] = [];

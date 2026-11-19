@@ -8,6 +8,7 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import type { BauTyp } from "@/lib/stadt/modell";
+import { ladeStadtKacheln } from "./fassade";
 
 export const STADT_URL = "/modelle/stadt/stadt.glb";
 
@@ -22,7 +23,8 @@ export function ladeStadtModelle(): Promise<Record<string, THREE.BufferGeometry>
   draco.setDecoderPath("/draco/");
   const lader = new GLTFLoader();
   lader.setDRACOLoader(draco);
-  laden = lader.loadAsync(STADT_URL).then(gltf => {
+  // Fassaden- und Dachkacheln gleich mitladen: wer die Modelle hat, hat auch sie
+  laden = Promise.all([lader.loadAsync(STADT_URL), ladeStadtKacheln()]).then(([gltf]) => {
     const teile: Record<string, THREE.BufferGeometry> = {};
     gltf.scene.updateMatrixWorld(true);
     gltf.scene.traverse(o => {

@@ -12,6 +12,7 @@ import { MODELL_VON, TEILFARBEN } from "../drei/modelle";
 import { hoeheGlatt } from "./gelaende";
 import { bewege, erzeugeVerkehr, type Wanderer } from "@/lib/stadt/aufbauVerkehr";
 import { wasserspiegel } from "../drei/szene";
+import { bauwerkStoff, dachStoff, fassadenStoff } from "../drei/fassade";
 
 type Teile = Record<string, THREE.BufferGeometry> | null;
 const MAX_HAUS = 24000, MAX_STRASSE = 40000;
@@ -61,7 +62,8 @@ export class AufbauObjekte {
     this.strassen.receiveShadow = true;
     const wGeo = teile?.haus_wand_wand ?? hell(new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0));
     const dGeo = (stilFarben.flach ? teile?.dach_flach_dach : teile?.dach_sattel_dach) ?? hell(new THREE.ConeGeometry(0.72, 1, 4, 1).rotateY(Math.PI / 4).translate(0, 0.5, 0));
-    const wMat = new THREE.MeshLambertMaterial({ vertexColors: true }), dMat = new THREE.MeshLambertMaterial({ vertexColors: true });
+    // Fassaden mit Fensterfeldern, Dächer mit Ziegeln (Kacheln aus Blender, fassade.ts)
+    const wMat = fassadenStoff(new THREE.MeshLambertMaterial({ vertexColors: true })), dMat = dachStoff(new THREE.MeshLambertMaterial({ vertexColors: true }));
     this.wand = new THREE.InstancedMesh(wGeo, wMat, MAX_HAUS);
     this.dach = new THREE.InstancedMesh(dGeo, dMat, MAX_HAUS);
     this.wand.count = this.dach.count = 0;
@@ -340,7 +342,7 @@ export class AufbauObjekte {
       for (const [teil, farbe] of [["wand", art.farbe], ["dach", f.dach], ["akzent", f.akzent]] as const) {
         const geo = this.teile?.[`${name}_${teil}`] ?? (teil === "wand" ? hell(new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0)) : null);
         if (!geo) continue;
-        const mesh = new THREE.Mesh(geo, this.mat(farbe, transparent, deckkraft));
+        const mesh = new THREE.Mesh(geo, this.mat(farbe, transparent, deckkraft, name, teil));
         mesh.castShadow = !transparent;
         modell.add(mesh);
       }
@@ -350,10 +352,15 @@ export class AufbauObjekte {
   }
 
   private matCache = new Map<string, THREE.MeshLambertMaterial>();
-  private mat(farbe: string, transparent: boolean, deckkraft: number) {
-    const key = `${farbe}|${transparent ? deckkraft : 1}`;
+  /** schlichtes Material; mit Modell und Teil eines Bauwerks mit Fenstern, Quadern bzw. Ziegeln (fassade.ts) */
+  private mat(farbe: string, transparent: boolean, deckkraft: number, modell?: string, teil?: "wand" | "dach" | "akzent") {
+    const key = `${farbe}|${transparent ? deckkraft : 1}|${modell ?? ""}|${teil ?? ""}`;
     let m = this.matCache.get(key);
-    if (!m) { m = new THREE.MeshLambertMaterial({ vertexColors: true, color: farbe, transparent, opacity: deckkraft, depthWrite: !transparent }); this.matCache.set(key, m); this.mats.push(m); }
+    if (!m) {
+      const neu = () => new THREE.MeshLambertMaterial({ vertexColors: true, color: farbe, transparent, opacity: deckkraft, depthWrite: !transparent });
+      m = modell && teil ? bauwerkStoff(modell, teil, neu) : neu();
+      this.matCache.set(key, m); this.mats.push(m);
+    }
     return m;
   }
 

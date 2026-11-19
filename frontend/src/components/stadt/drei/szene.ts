@@ -1,6 +1,6 @@
 /**
  * Szene der 3D-Stadt (three.js): Gelände mit dem Stadtplan als Bodenbild, Wasser, Häuser als
- * Instanzen (Wand + Dach aus Blender, Fenster aus dem Shader), Wahrzeichen, Mauern, Aquädukt und
+ * Instanzen (Wand + Dach aus Blender, Fassaden- und Dachkacheln aus fassade.ts), Wahrzeichen, Mauern, Aquädukt und
  * Wald aus den TaskCrawler-Bäumen. Welt: x = Karte x, z = Karte y, y = Höhe; Ursprung in der Kartenmitte.
  * Dazu Raster für das Laufen: Höhe, Wasser und belegte Flächen.
  */
@@ -12,6 +12,7 @@ import { abstand, inPoly, rechteck, type P } from "@/lib/stadt/geometrie";
 import type { Haus } from "@/lib/stadt/haeuser";
 import { BAUTEN, OEPNV, STRASSEN, type Stadt } from "@/lib/stadt/modell";
 import { MODELL_VON, TEILFARBEN } from "./modelle";
+import { dachStoff, fassadenStoff, bauwerkStoff, steinStoff } from "./fassade";
 
 export interface StadtSzene {
   gruppe: THREE.Group;
@@ -38,30 +39,6 @@ function satteldach(): THREE.BufferGeometry {
   return hell(new THREE.ExtrudeGeometry(s, { depth: 1, bevelEnabled: false }).translate(0, 0, -0.5).rotateY(Math.PI / 2));
 }
 
-/** Fenster: auf senkrechten Flächen ein Raster aus Weltkoordinaten (Geschosse 3,1 m, Achsen 3,4 m) */
-function mitFenstern(m: THREE.MeshLambertMaterial): THREE.MeshLambertMaterial {
-  m.onBeforeCompile = sh => {
-    sh.vertexShader = sh.vertexShader
-      .replace("#include <common>", "#include <common>\nvarying vec3 vWp;\nvarying vec3 vWn;")
-      .replace("#include <project_vertex>", `#include <project_vertex>
-  mat4 wm = modelMatrix;
-  #ifdef USE_INSTANCING
-  wm = modelMatrix * instanceMatrix;
-  #endif
-  vWp = (wm * vec4(transformed, 1.0)).xyz;
-  vWn = normalize(mat3(wm) * objectNormal);`);
-    sh.fragmentShader = sh.fragmentShader
-      .replace("#include <common>", "#include <common>\nvarying vec3 vWp;\nvarying vec3 vWn;")
-      .replace("#include <color_fragment>", `#include <color_fragment>
-  if (abs(vWn.y) < 0.4) {
-    vec2 t = normalize(vec2(-vWn.z, vWn.x));
-    float fu = fract(dot(vWp.xz, t) / 3.4);
-    float fv = fract(vWp.y / 3.1);
-    if (fu > 0.3 && fu < 0.7 && fv > 0.38 && fv < 0.84) diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.17, 0.21, 0.27), 0.8);
-  }`);
-  };
-  return m;
-}
 
 /** Spiegel je Zelle: Flüsse knapp unter dem niedrigsten Ufer, Meer auf Meereshöhe */
 export function wasserspiegel(g: Gelaende): Float32Array {
@@ -190,8 +167,8 @@ export function baueStadtSzene(g: Gelaende, s: Stadt, hs: Haus[], bodenBild: HTM
     if (["einfamilienhaus", "pendler", "vorort", "kolonie", "gated"].includes(h.zone) && (h.c.x * 7 + h.c.y * 3) % 10 < 4) return "walm";
     return "sattel";
   };
-  const wandMat = mitFenstern(new THREE.MeshLambertMaterial({ vertexColors: true }));
-  const dachMat = new THREE.MeshLambertMaterial({ vertexColors: true });
+  const wandMat = fassadenStoff(new THREE.MeshLambertMaterial({ vertexColors: true }));
+  const dachMat = dachStoff(new THREE.MeshLambertMaterial({ vertexColors: true }));
   mats.push(wandMat, dachMat);
   const wand = new THREE.InstancedMesh(wandGeo, wandMat, Math.max(1, hs.length));
   wand.count = hs.length;
@@ -236,9 +213,10 @@ export function baueStadtSzene(g: Gelaende, s: Stadt, hs: Haus[], bodenBild: HTM
 
   // ── Wahrzeichen ──
   const matCache = new Map<string, THREE.MeshLambertMaterial>();
-  const lambert = (c: string) => {
-    let m = matCache.get(c);
-    if (!m) { m = new THREE.MeshLambertMaterial({ vertexColors: true, color: c }); matCache.set(c, m); mats.push(m); }
+  const lambert = (c: string, modell: string, teil: "wand" | "dach" | "akzent") => {
+    const key = `${c}|${modell}|${teil}`;
+    let m = matCache.get(key);
+    if (!m) { m = bauwerkStoff(modell, teil, () => new THREE.MeshLambertMaterial({ vertexColors: true, color: c })); matCache.set(key, m); mats.push(m); }
     return m;
   };
   for (const b of s.bauten) {
@@ -257,7 +235,7 @@ export function baueStadtSzene(g: Gelaende, s: Stadt, hs: Haus[], bodenBild: HTM
       const geo = teile?.[`${name}_${teil}`] ?? (teil === "wand" ? kasten() : null);
       if (!geo) continue;
       if (!teile) geos.push(geo);
-      const m = new THREE.Mesh(geo, lambert(c));
+      const m = new THREE.Mesh(geo, lambert(c, name, teil));
       m.castShadow = m.receiveShadow = true;
       objekt.add(m);
     }
@@ -271,7 +249,7 @@ export function baueStadtSzene(g: Gelaende, s: Stadt, hs: Haus[], bodenBild: HTM
   if (mauerTeile.length) {
     const mGeo = kasten(), tGeo = hell(new THREE.CylinderGeometry(3.2, 3.6, 1, 10).translate(0, 0.5, 0));
     geos.push(mGeo, tGeo);
-    const mMat = new THREE.MeshLambertMaterial({ vertexColors: true, color: 0x9a8f80 });
+    const mMat = steinStoff(new THREE.MeshLambertMaterial({ vertexColors: true, color: 0x9a8f80 }));
     mats.push(mMat);
     const mi = new THREE.InstancedMesh(mGeo, mMat, mauerTeile.length), ti = new THREE.InstancedMesh(tGeo, mMat, mauerTeile.length);
     mauerTeile.forEach(({ a, b }, i) => {

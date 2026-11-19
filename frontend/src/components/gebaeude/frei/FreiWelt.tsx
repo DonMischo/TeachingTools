@@ -10,9 +10,10 @@
  *
  * Aufgaben sind kleine Kämpfe: Das Monster greift an, dann kommt die Frage;
  * jede falsche Antwort ist sein Gegenschlag, die richtige der Sieg.
- * Erklärungen stecken als Info-Splitter im Erz: drei Hiebe legen sie frei.
+ * Erklärungen stecken als Info-Splitter im Erz: zehn Hiebe legen sie frei, jeder dauert seinen Schwung lang.
  * Vor der Frage läuft ein kurzes Geschicklichkeitsspiel (Konter, Ausweichen,
  * Kombo; lib/gebaeude/kampf.ts) — die Stufe legt die Zeiten fest, »aus« lässt es weg.
+ * Kämpfe beginnen nicht von selbst: Knopf bzw. E startet sie, dann zählt ein Vorlauf 3-2-1 herunter.
  * Dazu Schildblock und Schwachstelle an den Stationen, Runen und Kräftemessen
  * beim Boss am Tor, und beim Erz ein Takt: der Hieb im richtigen Moment zählt doppelt.
  * Unten rechts eine Karte des Abschnitts; ein Klick darauf läuft hin.
@@ -42,6 +43,8 @@ import { baueMaler, type Guete, type Maler } from "./malfilter";
 import { baueLandschaft, baueOrte, type Landschaft, type Marke } from "./welt";
 import { ladeWeltModelle, weltModelle } from "./modelle";
 import { DURCHSICHT, durchsichtFuer } from "./durchsicht";
+import { kachelName, useBausatz } from "../bausatz";
+import { REZEPT } from "./bauwelt";
 
 interface Props {
   plan: FreiPlan;
@@ -72,7 +75,11 @@ interface Props {
 }
 
 /** so viele Hiebe braucht ein Erz */
-const HIEBE = 3;
+const HIEBE = 10;
+/** ein Hieb dauert so lange wie der Schwung (Sekunden), mindestens bzw. höchstens */
+const HIEB_MIN = 0.6, HIEB_MAX = 1.2;
+/** Sekunden Vorlauf, bevor ein kleiner Kampf losgeht */
+const VORLAUF = 3;
 
 /** was vom laufenden Kampf zu sehen ist (der Rest läuft in der Zeichenschleife) */
 interface DuellBild {
@@ -109,6 +116,8 @@ const ZUSTAND_FARBE: Record<RaumZustand, string> = { offen: "#f59e0b", geloest: 
 
 const GEHEN = 6.2, RENNEN = 9.5, DREHEN = 2.3;
 const RADIUS = 0.42;
+/** Wegabkürzungen halten so viel Abstand zur Wand; ab dieser Nähe zum Wegpunkt wird eingelenkt; Wendegeschwindigkeit (rad/s) */
+const ABSTAND_WAND = 0.62, KURVE = 1.3, WENDE = 7;
 const GUETE_SCHLUESSEL = "hp_frei_guete";
 const BLICK_SCHLUESSEL = "hp_frei_blick";
 const GUETE_NAME: Record<Guete, string> = { 2: "🎨 gemalt", 1: "🖌️ leicht gemalt", 0: "⚡ schnell" };
@@ -133,8 +142,12 @@ export default function FreiWelt({
   useEffect(() => { try { setOben(localStorage.getItem(BLICK_SCHLUESSEL) === "oben"); } catch { /* ohne Speicher */ } }, []);
   const [finger, setFinger] = useState(false);
   const [hiebe, setHiebe] = useState(0);
+  /** Vorlauf vor dem kleinen Kampf: 3, 2, 1 (0 = läuft) */
+  const [vorlauf, setVorlauf] = useState(0);
   // Blender-Modelle (Bäume, Felsen …): bis sie da sind, baut die Welt ihre Formen selbst
   const [modelleDa, setModelleDa] = useState(() => !!weltModelle());
+  // Gebäude aus Blender-Kacheln (bauwelt.ts): sobald sie da sind, wird die Landschaft neu gebaut
+  const bausatzNr = useBausatz(stile.flatMap(s => (REZEPT[s] ? ["verlies3d", kachelName(s)] : [])));
   useEffect(() => { let an = true; ladeWeltModelle().then(ok => { if (an && ok) setModelleDa(true); }); return () => { an = false; }; }, []);
   const [kampf, setKampf] = useState(false);
   const [duell, setDuell] = useState<DuellBild | null>(null);
@@ -162,6 +175,14 @@ export default function FreiWelt({
     x: 0, z: 0, blick: 0, neigung: 0.34, abstand: 6.5,
     /** Hiebe am Erz, vor dem die Figur steht */
     hiebe: 0,
+    /** Sekunden, bis der nächste Hieb geht (der Schwung läuft noch) */
+    hiebSperre: 0,
+    /** Laufrichtung beim Laufen per Klick (dreht weich nach); null = steht */
+    richtung: null as number | null,
+    /** Kamera-Abstand (Anteil): rückt sofort vor eine Wand, weicht langsam zurück */
+    kamAnteil: 1,
+    /** Sekunden bis zum Kampfbeginn */
+    vorlauf: 0,
     /** kurze Szene (Kampfbeginn, letzter Hieb): danach öffnet sich der Ort */
     warte: null as { rest: number; ort: FreiOrt } | null,
     /** Wegpunkte (Welt) für das Laufen per Klick oder Auftrag */
@@ -177,8 +198,9 @@ export default function FreiWelt({
     nebelBasis: 0.01,
     /** bewegt, was in der Luft schwebt */
     luft: null as ((zeit: number) => void) | null,
+    lichter: null as ((x: number, z: number, zeit: number) => void) | null,
     marken: [] as Marke[],
-    setNah, setGuete, setHiebe, setKampf, setDuell, setVolltreffer, setOben,
+    setNah, setGuete, setHiebe, setVorlauf, setKampf, setDuell, setVolltreffer, setOben,
   });
   Object.assign(lage.current, { plan, stock, aktiv, onAnkunft, guete, zustaende, stufe, onKampf, zielOffen, waechter, oben });
 
@@ -206,6 +228,8 @@ export default function FreiWelt({
     l.duellOrt = ort;
     l.duellGezeigt = l.duellSchlag = l.duellFertig = false;
     l.duellStand = 0;
+    l.vorlauf = VORLAUF;
+    l.setVorlauf(VORLAUF);
     l.tasten.clear();
     l.setDuell(bildVon(l.duell, false));
   };
@@ -214,6 +238,14 @@ export default function FreiWelt({
   const schaue = (x: number, z: number) => {
     const d = drei.current, l = lage.current;
     if (d) d.spieler.rotation.y = Math.atan2(x - l.x, z - l.z);
+  };
+
+  /** Kampf an diesem Ort (Monster an der Station, Boss am Tor)? Der beginnt erst auf Knopf bzw. E */
+  const wartetAufStart = (ort: FreiOrt) => {
+    const l = lage.current;
+    if (l.stufe === "aus") return false;
+    if (ort.art === "raum") return l.zustaende[l.stock]?.[ort.raum] === "offen";
+    return ort.art === "ziel" && !!l.waechter?.[l.stock] && !l.zielOffen[l.stock];
   };
 
   /**
@@ -226,6 +258,8 @@ export default function FreiWelt({
     const z = ort.art === "raum" ? l.zustaende[l.stock]?.[ort.raum] : null;
     const st = ort.art === "raum" ? station(ort.raum) : null;
     if (z === "info" && st) {
+      // erst wenn der letzte Schwung durch ist
+      if (l.hiebSperre > 0) return;
       // Erz-Takt: steht der Zeiger in der Mitte, zählt der Hieb doppelt
       const voll = l.stufe !== "aus" && taktTreffer(l.takt, l.stufe);
       l.hiebe += voll ? 2 : 1;
@@ -233,9 +267,10 @@ export default function FreiWelt({
       l.setHiebe(Math.min(HIEBE, l.hiebe));
       schaue(st.position.x, st.position.z);
       const f = figur();
-      if (f) bewegeAvatar(f, "angriff");
+      const schwung = f ? bewegeAvatar(f, "angriff") : 0;
+      l.hiebSperre = Math.min(HIEB_MAX, Math.max(HIEB_MIN, schwung));
       const erz = st.userData.erz as THREE.Object3D | undefined;
-      erz?.scale.setScalar(1 - 0.17 * Math.min(HIEBE, l.hiebe));
+      erz?.scale.setScalar(1 - 0.55 * Math.min(HIEBE, l.hiebe) / HIEBE);
       drei.current?.spritze(st.position.x, 1.2, st.position.z, 0x60a5fa, 10);
       if (l.hiebe >= HIEBE) { l.hiebe = 0; l.warte = { rest: 0.45, ort }; }
       return;
@@ -270,11 +305,11 @@ export default function FreiWelt({
   /** Eingabe im kleinen Kampf (Taste oder Knopf) */
   const druecke = (taste: Taste) => {
     const l = lage.current, k = l.duell;
-    if (!k || k.ergebnis) return;
+    if (!k || k.ergebnis || l.vorlauf > 0) return;
     kampfEingabe(k, taste);
   };
   /** Schildblock: Taste bzw. Knopf losgelassen */
-  const lasse = () => { const k = lage.current.duell; if (k) kampfLoslassen(k); };
+  const lasse = () => { const l = lage.current, k = l.duell; if (k && l.vorlauf <= 0) kampfLoslassen(k); };
 
   /** Figur an den Anfang (oder ans Tor) des Abschnitts stellen, Blick zur Kartenmitte */
   const stelle = (anTor: boolean) => {
@@ -283,7 +318,7 @@ export default function FreiWelt({
     // ein Stück neben die Mitte: dort steht das Tor
     l.x = feldMitte(fx) + 0.2; l.z = feldMitte(fy) + 2.1;
     l.pfad = []; l.pfadOrt = null; l.tasten.clear();
-    l.duell = null; l.warte = null; l.setDuell(null); l.setKampf(false);
+    l.duell = null; l.warte = null; l.vorlauf = 0; l.setVorlauf(0); l.setDuell(null); l.setKampf(false);
     // Blick den Weg entlang (zur ersten Station bzw. zum Tor), nicht gegen die Wand
     const hin = freiWeg(e, [feldBei(l.x), feldBei(l.z)], anTor || !e.raeume.length ? (anTor ? e.start : e.ziel) : [e.raeume[0].x, e.raeume[0].y]);
     const vorn = hin[Math.min(hin.length - 1, 7)];
@@ -297,7 +332,7 @@ export default function FreiWelt({
     const l = lage.current, e = l.plan.ebenen[l.stock];
     const ziel: [number, number] = ort ? (ort.art === "ziel" ? e.ziel : ort.art === "zurueck" ? e.start : [e.raeume[ort.raum].x, e.raeume[ort.raum].y]) : feld!;
     const von: [number, number] = [feldBei(l.x), feldBei(l.z)];
-    if (ort && ortSchluessel(ortBei(e, l.x, l.z, l.stock > 0)) === ortSchluessel(ort)) { betrete(ort); return; }
+    if (ort && ortSchluessel(ortBei(e, l.x, l.z, l.stock > 0)) === ortSchluessel(ort)) { if (!wartetAufStart(ort)) betrete(ort); return; }
     l.pfad = freiWeg(e, von, ziel).map(([x, y]) => [feldMitte(x), feldMitte(y)]);
     l.pfadOrt = ort;
   };
@@ -482,7 +517,12 @@ export default function FreiWelt({
         const monster = (st?.userData.ding as THREE.Object3D | undefined)?.userData.figur as { spiele(art: string): number } | undefined;
         const held = d.spieler.children[0];
         l.pfad = []; l.pfadOrt = null;
-        if (!k.ergebnis) {
+        if (l.vorlauf > 0) {
+          // Vorlauf: erst einstimmen, dann geht es los
+          const vorher = Math.ceil(l.vorlauf);
+          l.vorlauf = Math.max(0, l.vorlauf - dt);
+          if (Math.ceil(l.vorlauf) !== vorher) { l.setVorlauf(Math.ceil(l.vorlauf)); l.tasten.clear(); }
+        } else if (!k.ergebnis) {
           kampfSchritt(k, dt);
           const anteil = k.t / k.dauer;
           // der Ring trifft den Kreis genau bei KONTER_ZIEL
@@ -546,15 +586,31 @@ export default function FreiWelt({
       let vx = 0, vz = 0, tempo = 0;
       if (l.pfad.length) {
         // gerade Strecken abkürzen: den fernsten Wegpunkt ansteuern, zu dem nichts im Weg ist
-        while (l.pfad.length > 1 && freieStrecke(e, l.x, l.z, l.pfad[1][0], l.pfad[1][1], RADIUS + 0.05) === 1) l.pfad.shift();
+        // (mit Abstand zur Wand: sonst schneidet die Figur Ecken an und prallt ab)
+        while (l.pfad.length > 1 && freieStrecke(e, l.x, l.z, l.pfad[1][0], l.pfad[1][1], ABSTAND_WAND) === 1) l.pfad.shift();
         const [zx, zz] = l.pfad[0];
         const rest = Math.hypot(zx - l.x, zz - l.z);
+        const weiter = l.pfad.length > 1;
         tempo = l.pfad.length > 6 ? RENNEN : GEHEN;
         // vor einer Station bzw. dem Tor stehen bleiben, nicht hineinlaufen
         const amOrt = l.pfadOrt && (() => { const [mx, mz] = ortMitte(e, l.pfadOrt!); return Math.hypot(mx - l.x, mz - l.z) < 1.9; })();
         if (amOrt) { l.pfad = []; l.pfadOrt = null; tempo = 0; }
-        else if (rest < 0.25) { l.pfad.shift(); if (!l.pfad.length) l.pfadOrt = null; }
-        else { vx = (zx - l.x) / rest; vz = (zz - l.z) / rest; }
+        else if (rest < (weiter ? 0.5 : 0.25)) { l.pfad.shift(); if (!l.pfad.length) l.pfadOrt = null; }
+        else {
+          vx = (zx - l.x) / rest; vz = (zz - l.z) / rest;
+          // kurz vor dem Wegpunkt schon zum nächsten einlenken: runde Kurven statt spitzer Haken
+          if (weiter && rest < KURVE) {
+            const [nx, nz] = l.pfad[1], nl = Math.hypot(nx - l.x, nz - l.z) || 1, w = 1 - rest / KURVE;
+            vx = vx * (1 - w) + ((nx - l.x) / nl) * w; vz = vz * (1 - w) + ((nz - l.z) / nl) * w;
+          }
+          // die Laufrichtung dreht mit begrenzter Geschwindigkeit nach
+          const soll = Math.atan2(vx, vz);
+          if (l.richtung === null) l.richtung = soll;
+          let dr = soll - l.richtung;
+          dr = Math.atan2(Math.sin(dr), Math.cos(dr));
+          l.richtung += Math.max(-WENDE * dt, Math.min(WENDE * dt, dr));
+          vx = Math.sin(l.richtung); vz = Math.cos(l.richtung);
+        }
         // die Kamera schwenkt sacht hinter die Figur
         if (vx || vz) {
           let diff = Math.atan2(vx, vz) - l.blick;
@@ -572,6 +628,7 @@ export default function FreiWelt({
         vx /= n; vz /= n;
       }
       const laeuft = tempo > 0 && (vx !== 0 || vz !== 0);
+      if (!l.pfad.length) l.richtung = laeuft ? Math.atan2(vx, vz) : null;
       if (laeuft) {
         [l.x, l.z] = schiebeHeraus(e, l.x + vx * tempo * dt, l.z + vz * tempo * dt, RADIUS);
         // um die Stationen herum: nicht durch das Objekt laufen
@@ -599,12 +656,13 @@ export default function FreiWelt({
         l.drin = schluessel;
         l.setNah(ort);
         if (l.hiebe) { l.hiebe = 0; l.setHiebe(0); }
+        l.hiebSperre = 0;
         // Der Rückweg öffnet sich nur auf Wunsch (E bzw. Knopf), sonst liefe man aus Versehen zurück;
-        // ein Erz wartet auf die Hiebe. Alles andere beginnt von selbst.
+        // ein Erz wartet auf die Hiebe, ein Kampf auf den Startknopf. Alles andere beginnt von selbst.
         const erz = ort?.art === "raum" && l.zustaende[l.stock]?.[ort.raum] === "info";
         if (ort && ort.art !== "zurueck" && l.aktiv) {
           l.pfad = []; l.pfadOrt = null; l.tasten.clear();
-          if (!erz) betrete(ort);
+          if (!erz && !wartetAufStart(ort)) betrete(ort);
         }
       }
 
@@ -624,12 +682,22 @@ export default function FreiWelt({
       kopf.set(l.x, 2.1, l.z);
       const flach = Math.cos(l.neigung) * l.abstand, steil = Math.sin(l.neigung) * l.abstand;
       let anteil = 1;
-      if (l.wandHoehe > 0 && kopf.y + steil < l.wandHoehe + 0.4) {
-        anteil = freieStrecke(e, l.x, l.z, l.x - Math.sin(l.blick) * flach, l.z - Math.cos(l.blick) * flach, 0.35);
-        anteil = Math.max(0.4, anteil - 0.04);
+      const unterWand = l.wandHoehe > 0 && kopf.y + steil < l.wandHoehe + 0.4;
+      if (unterWand) {
+        anteil = freieStrecke(e, l.x, l.z, l.x - Math.sin(l.blick) * flach, l.z - Math.cos(l.blick) * flach, 0.3);
+        anteil = Math.max(0, anteil - 0.05);
       }
-      punkt.set(l.x - Math.sin(l.blick) * flach * anteil, kopf.y + steil * anteil, l.z - Math.cos(l.blick) * flach * anteil);
+      // vor eine Wand sofort heranrücken, danach sacht zurückfedern
+      l.kamAnteil = anteil < l.kamAnteil ? anteil : l.kamAnteil + (anteil - l.kamAnteil) * Math.min(1, dt * 2.5);
+      const a = Math.max(0.12, l.kamAnteil);
+      // nah herangerückt: etwas höher, damit die Figur nicht das ganze Bild füllt
+      punkt.set(l.x - Math.sin(l.blick) * flach * a, kopf.y + steil * a + (1 - a) * 0.9, l.z - Math.cos(l.blick) * flach * a);
       auge.lerp(punkt, Math.min(1, dt * 14));
+      if (unterWand) {
+        // das Nachziehen darf nicht durch eine Ecke führen: verdeckt etwas den Blick zum Kopf, springt die Kamera auf ihren Platz
+        if (freieStrecke(e, l.x, l.z, auge.x, auge.z, 0.12) < 1) auge.copy(punkt);
+        [auge.x, auge.z] = schiebeHeraus(e, auge.x, auge.z, 0.25);
+      }
       kamera.position.copy(auge);
       kamera.lookAt(kopf);
       }
@@ -641,8 +709,10 @@ export default function FreiWelt({
       d.sonne.position.set(l.x + d.sonneVon.x * 70, d.sonneVon.y * 70, l.z + d.sonneVon.z * 70);
 
       l.luft?.(jetzt / 1000);
+      l.lichter?.(l.x, l.z, jetzt / 1000);
       d.maler.male(szene, kamera);
 
+      if (l.hiebSperre > 0) l.hiebSperre = Math.max(0, l.hiebSperre - dt);
       // Erz-Takt: der Zeiger schwingt, solange die Figur an einem Erz steht
       l.takt += dt;
       if (taktEl.current && l.stufe !== "aus") taktEl.current.style.left = `${taktStelle(l.takt, l.stufe) * 100}%`;
@@ -757,10 +827,11 @@ export default function FreiWelt({
     d.fackel.intensity = s.fackel; d.fackel.userData.staerke = s.fackel;
     d.fackel.color.set(s.fackelFarbe ?? 0xffc48a);
     lage.current.luft = land.takt ?? null;
+    lage.current.lichter = land.lichter ?? null;
     d.maler.belichtung(s.belichtung);
     lage.current.wandHoehe = land.wandHoehe;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [plan, stock, stil, seed, modelleDa]);
+  }, [plan, stock, stil, seed, modelleDa, bausatzNr]);
 
   // ── Stationen und Tor: neu bei jedem Fortschritt ─────────────────────────
   const schluessel = JSON.stringify([stock, zustaende[stock], zielOffen[stock], objekte?.[stock], stil, waechter?.[stock]]);
@@ -906,6 +977,12 @@ export default function FreiWelt({
       )}
       {duell && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/25" data-duell={duell.art} data-ergebnis={duell.ergebnis ?? ""}>
+          {vorlauf > 0 && (
+            <div className="absolute inset-x-0 top-[12%] flex flex-col items-center pointer-events-none" data-vorlauf={vorlauf}>
+              <span key={vorlauf} className="text-7xl font-black text-white animate-pulse" style={{ textShadow: "0 0 12px #000, 0 0 4px #000" }}>{vorlauf}</span>
+              <span className="text-sm font-bold text-white" style={{ textShadow: "0 0 6px #000" }}>Mach dich bereit …</span>
+            </div>
+          )}
           <div className="card px-5 py-4 flex flex-col items-center gap-3 shadow-2xl max-w-[92%]">
             <div className={`font-black text-xl ${duell.ergebnis === "gut" ? "text-green-500" : duell.ergebnis === "schlecht" ? "text-rose-500" : ""}`}>
               {duell.ergebnis === "gut" ? SIEG[duell.art] : duell.ergebnis === "schlecht" ? "💥 Getroffen!" : `⚔️ ${KAMPF_NAME[duell.art]}`}
@@ -1047,8 +1124,8 @@ export default function FreiWelt({
             )}
           <button onClick={() => betrete(nah)} data-ort-knopf
             className="btn-primary text-sm py-2 px-4 shadow-xl">
-            {nah.art === "ziel" ? "E · Zum Tor" : nah.art === "zurueck" ? "E · Zurück in den Abschnitt davor"
-              : z === "info" ? `⛏️ E · Erz abbauen (${hiebe}/${HIEBE})` : z === "offen" ? "⚔️ E · Kämpfen" : z === "gelesen" ? "E · Info-Splitter lesen" : "E · Ansehen"}
+            {nah.art === "ziel" ? (stufe !== "aus" && waechter?.[stock] && !zielOffen[stock] ? "⚔️ E · Wächter herausfordern" : "E · Zum Tor") : nah.art === "zurueck" ? "E · Zurück in den Abschnitt davor"
+              : z === "info" ? `⛏️ E · Erz abbauen (${hiebe}/${HIEBE})` : z === "offen" ? (stufe === "aus" ? "⚔️ E · Kämpfen" : "⚔️ E · Kampf starten") : z === "gelesen" ? "E · Info-Splitter lesen" : "E · Ansehen"}
           </button>
           </div>
         );
