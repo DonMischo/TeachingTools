@@ -1304,6 +1304,17 @@ export type MausPruefungOut = { bestanden: boolean; punkte: number; schon_vergeb
 /** Beitritt über Code/QR; `token` nur für Gäste ohne Konto. */
 export type MausZugang = { code: string; token: string | null };
 
+// Pixel-Studio (siehe api/routers/pixel.py)
+export interface PixelProjektKurz {
+  id: number; name: string; breite: number; hoehe: number; bilder: number;
+  vorschau: string | null; geteilt: boolean; aktualisiert_am: string | null; besitzer: string | null;
+}
+export interface PixelProjektVoll extends PixelProjektKurz { daten: unknown }
+/** ohne Zugang: Konto-Routen; mit Code: Sitzungs-Routen (Gäste schicken ihr Token) */
+const pixelPfad = (z: MausZugang | undefined, rest: string) =>
+  z ? `pixel/sitzung/${encodeURIComponent(z.code)}/${rest}` : `pixel/${rest}`;
+const pixelKopf = (z?: MausZugang): RequestInit => (z?.token ? { headers: { Authorization: `Bearer ${z.token}` } } : {});
+
 /** Geschichte der Medien: geschaffte Stationen + Bestwerte (api/routers/medien.py) */
 export type MedienStand = { geschafft: string[]; erprobt?: string[]; eilbote: number; sortieren: number };
 
@@ -2087,6 +2098,18 @@ export const api = {
       apiFetch<AlgoFortschrittIn>(`algo/sitzung/${encodeURIComponent(zugang.code)}/mein`, {
         headers: zugang.token ? { Authorization: `Bearer ${zugang.token}` } : undefined,
       }),
+  },
+
+  // Pixel-Studio: Projektbibliothek je Konto, Gäste über den Sitzungscode (siehe api/routers/pixel.py)
+  pixel: {
+    liste: (z?: MausZugang) => apiFetch<PixelProjektKurz[]>(pixelPfad(z, "projekte"), pixelKopf(z)),
+    vorlagen: (z?: MausZugang) => apiFetch<PixelProjektKurz[]>(pixelPfad(z, "vorlagen"), pixelKopf(z)),
+    laden: (id: number, z?: MausZugang) => apiFetch<PixelProjektVoll>(pixelPfad(z, `projekte/${id}`), pixelKopf(z)),
+    anlegen: (body: { name: string; daten: unknown; vorschau?: string | null }, z?: MausZugang) =>
+      apiFetch<PixelProjektVoll>(pixelPfad(z, "projekte"), { method: "POST", body: JSON.stringify(body), ...pixelKopf(z) }),
+    speichern: (id: number, body: { name?: string; daten?: unknown; vorschau?: string | null; geteilt?: boolean }, z?: MausZugang) =>
+      apiFetch<PixelProjektVoll>(pixelPfad(z, `projekte/${id}`), { method: "PUT", body: JSON.stringify(body), ...pixelKopf(z) }),
+    loeschen: (id: number, z?: MausZugang) => apiFetch<unknown>(pixelPfad(z, `projekte/${id}`), { method: "DELETE", ...pixelKopf(z) }),
   },
 
   // Geschichte der Medien: Fortschritt am Konto bzw. am Gast (siehe api/routers/medien.py)

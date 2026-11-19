@@ -53,6 +53,7 @@ import WilsonZyklus from "@/components/wilson/WilsonZyklus";
 import RegelLabor from "@/components/regeln/RegelLabor";
 import Wellenkollaps from "@/components/wfc/Wellenkollaps";
 import Wachstum from "@/components/dla/Wachstum";
+import PixelStudio from "@/components/pixel/PixelStudio";
 import Stadtentwicklung from "@/components/stadt/Stadtentwicklung";
 import Erosion from "@/components/erosion/Erosion";
 import Vulkan from "@/components/vulkan/Vulkan";
@@ -112,6 +113,8 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   regeln: { title: "Regel-Labor", icon: "🧬", node: <RegelLabor /> },
   wfc: { title: "Wellenfunktionskollaps", icon: "🧩", node: <Wellenkollaps /> },
   dla: { title: "Fraktales Wachstum", icon: "🪸", node: <Wachstum /> },
+  // Pixel-Studio speichert in der Bibliothek: Gäste über Code und Gast-Token
+  pixel: { title: "Pixel-Studio", icon: "👾", node: null },
   stadt: { title: "Stadtentwicklung", icon: "🏘️", node: <Stadtentwicklung /> },
   erosion: { title: "Erosion", icon: "🌧️", node: <Erosion /> },
   vulkan: { title: "Vulkane", icon: "🌋", node: <Vulkan /> },
@@ -263,6 +266,8 @@ export default function SimulationJoinPage() {
                 : guest.token ? schluesselFuerGast(code, guest.token) : `gast-${code}`} />
         : session.tool_slug === "stromkreis"
           ? <Stromkreis code={code} />
+        : session.tool_slug === "pixel"
+          ? <PixelStudio zugang={{ code, token: auth ? null : guest.token }} />
         : session.tool_slug === "stroemung"
           ? <Stroemung code={code} />
         : session.tool_slug === "medien"

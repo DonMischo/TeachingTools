@@ -149,6 +149,14 @@ const ALL_CARDS: Werkzeug[] = [
     color: "#7c3aed",
   },
   {
+    slug: "pixel",
+    href: "/simulationen/pixel",
+    icon: "👾",
+    title: "Pixel-Studio",
+    description: "Sprites, Figuren und Kacheln Pixel für Pixel: Stift, Füllen, Formen, Spiegeln und Dither, Ebenen, eigene Paletten, Animation mit Zwiebelhaut und Tags, Kachel-Nahtprüfung — Export als PNG, GIF und Sprite-Sheet. Projekte liegen am Konto, Lehrkräfte teilen Vorlagen.",
+    color: "#db2777",
+  },
+  {
     slug: "stadt",
     href: "/simulationen/stadt",
     icon: "🏘️",

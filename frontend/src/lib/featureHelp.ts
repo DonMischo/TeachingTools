@@ -683,6 +683,23 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet)." },
     ],
   },
+  pixel: {
+    title: "Pixel-Studio",
+    intro: "Ein Zeichenprogramm für Pixelgrafik: Sprites, Spielfiguren, Gegenstände und Kacheln, Pixel für Pixel und mit fester Palette. Projekte liegen am Konto (Gäste: in der Sitzung) und lassen sich später in anderen Werkzeugen als Figur oder Kachel verwenden.",
+    sections: [
+      { label: "📁 Bibliothek", text: "Neues Projekt mit Größe (8×8 bis 256×256) und Palette, oder ein Bild importieren: Die Farben werden übernommen (bis 64) oder auf die gewählte Palette abgebildet. Lehrkräfte können Projekte als Vorlage teilen; Schüler·innen öffnen sie zum Ansehen und bearbeiten eine Kopie." },
+      { label: "✏️ Werkzeuge", text: "Stift (B), Radierer (E), Füllen (G, auch »überall« für alle Pixel derselben Farbe), Linie (L), Rechteck (R), Ellipse (O), Pipette (I), Auswahl (M) und Verschieben (V). Linke Maustaste malt mit der linken, rechte mit der rechten Farbe; X tauscht sie. Shift macht Linien gerade und Rechtecke quadratisch. Pinselgröße mit [ und ]." },
+      { label: "🪞 Spiegeln und Dither", text: "Symmetrie links/rechts und oben/unten malt jeden Strich gespiegelt mit — ideal für Gesichter und Figuren von vorn. Dither setzt nur jedes zweite Pixel (Schachbrett) für Verläufe und Schatten mit wenigen Farben." },
+      { label: "🎨 Palette", text: "Klick wählt die linke, Rechtsklick die rechte Farbe, Doppelklick ändert sie. Eine Farbe zu ändern färbt alle Pixel dieser Farbe mit um — so probiert man schnell andere Hauttöne oder Jahreszeiten. »Palette laden« tauscht die ganze Palette, jedes Pixel bekommt die ähnlichste neue Farbe." },
+      { label: "🗂️ Ebenen", text: "Bis 16 Ebenen mit Sichtbarkeit und Deckkraft, z. B. Umriss, Farbe und Schatten getrennt. Verdoppeln, verschieben, mit der darunter verschmelzen; Doppelklick benennt um." },
+      { label: "🎞️ Animation", text: "Bis 64 Bilder mit eigener Dauer. Zwiebelhaut zeigt das vorige und nächste Bild durchscheinend. Shift+Klick wählt einen Bereich, »Tag« benennt ihn (z. B. laufen, springen) — Spiele spielen später genau diesen Abschnitt ab. Die Vorschau spielt alles oder den gewählten Bereich." },
+      { label: "🧱 Kacheln", text: "Kachelraster (8, 16, 32) teilt die Leinwand in Kacheln. »Kachel 3×3« in der Vorschau und »Um halbe Größe verschieben« zeigen, ob ein Muster nahtlos aneinanderpasst." },
+      { label: "🛠️ Bild", text: "Spiegeln, Umriss (mit oder ohne Ecken) und Schatten in der linken Farbe, Farbe ersetzen in allen Bildern, Drehen, Leinwandgröße, Skalieren ×2 oder ½, Bild in die aktive Ebene importieren." },
+      { label: "⬇️ Export", text: "PNG (auch 8× groß), animiertes GIF, Sprite-Sheet als PNG mit JSON (Lage, Dauer und Tags jedes Bildes) und die Projektdatei. Gespeichert wird automatisch kurz nach jeder Änderung." },
+      { label: "⌨️ Tasten", text: "Strg+Z / Strg+Y rückgängig/wiederholen, Strg+C/X/V mit Auswahl, Entf leert die Auswahl, Esc hebt sie auf, Strg+A wählt alles. Mausrad zoomt, Leertaste oder Mitteltaste + Ziehen verschiebt die Ansicht, 0 passt ein, , und . blättern durch die Bilder." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet) — Gäste speichern ihre Projekte in der Sitzung." },
+    ],
+  },
   pse: {
     title: "Periodensystem",
     intro: "Alle 118 Elemente im üblichen Raster. Ein Klick auf ein Feld öffnet den Steckbrief: Foto der Stoffprobe, Kenndaten, kurzer Text — und die typischen Reaktionen, die von dort in die Gleichungswaage führen. Rechnet ganz im Browser; die Fotos liegen im Repo, es geht also nichts nach außen.",

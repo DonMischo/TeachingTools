@@ -47,6 +47,7 @@ export const STANDARD_FAECHER: Record<string, string[]> = {
   stroemung: ["Physik", "Technik"],
   diagramme: ["Informatik"],
   spielalgo: ["Informatik", "Mathematik"],
+  pixel: ["Informatik", "Kunst"],
   dla: ["Physik", "Chemie", "Mathematik", "Biologie", "Informatik"],
   schichten: ["Informatik"],
   pse: ["Chemie"],

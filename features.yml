@@ -655,6 +655,18 @@ simulationen:
       - Wegsuche Dijkstra, A* und Greedy auf malbarem Gelände mit Wänden und Sumpf, Vergleichstabelle; Flowfield mit 60 Figuren
       - Zyklische Generierung nach Joris Dormans – Ablauf-Graph (Schlüssel und Schloss, zwei Wege, versteckte Abkürzung, gefährlicher Weg, Nebenschleifen mit Aussicht, Tempo), Lösbarkeitsprüfung und Karte mit A*-Gängen, wahlweise in Höhlenform
       - Verweise auf Regel-Labor, Wellenfunktionskollaps, Fraktales Wachstum, Algorithmen-Werkstatt, Erosion und Stadtentwicklung
+  - id: pixel
+    name: Pixel-Studio
+    kann:
+      - Pixelgrafik zeichnen (8×8 bis 256×256) mit fester Palette – Stift mit Pinselgröße, Radierer, Füllen (zusammenhängend oder überall), Linie, Rechteck, Ellipse, Pipette, Auswahl mit Kopieren/Ausschneiden/Einfügen, Verschieben
+      - Symmetrie-Zeichnen links/rechts und oben/unten, Dither (Schachbrett), Shift für gerade Linien und Quadrate, linke/rechte Maustaste = zwei Farben
+      - Palette bearbeiten (Farbe ändern färbt alle Pixel mit), Farben hinzufügen/entfernen/umsortieren, fünf Vorlagen-Paletten mit Umrechnung auf die ähnlichste Farbe
+      - Bis 16 Ebenen mit Sichtbarkeit, Deckkraft, Verdoppeln, Umsortieren, Verschmelzen
+      - Animation mit bis 64 Bildern, Dauer je Bild, Zwiebelhaut, Vorschau, Tags für Abschnitte (z. B. laufen, springen)
+      - Kachelraster und Kachel-3×3-Vorschau für nahtlose Muster
+      - Bildbefehle – Spiegeln, Umriss, Schatten, Farbe ersetzen, Drehen, Leinwandgröße, Skalieren, Bild importieren (auf die Palette abgebildet)
+      - Export als PNG, animiertes GIF (eigener Kodierer), Sprite-Sheet mit JSON (Lage, Dauer, Tags) und Projektdatei
+      - Bibliothek am Konto mit automatischem Speichern und Vorschaubildern; Lehrkräfte teilen Vorlagen, Schüler·innen bearbeiten Kopien; Gäste speichern über den Sitzungscode
   - id: verkehr
     name: GTA – Ganztagsaufmerksamkeit im Verkehr – zu Fuß
     kann:
