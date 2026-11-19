@@ -911,12 +911,39 @@ def test_upload_validates_gebaeude(client, teacher_token):
         assert any("gebaeude" in e for e in r.json()["detail"]["errors"])
 
 
+def test_upload_validates_minispiele(client, teacher_token):
+    """3D-Welt: Minispiele abschaltbar (gebaeude.minispiele), je Aufgabe ein Kampf, je Tür ein Boss."""
+    slides = [dict(s) for s in SIMPLE_GAME["slides"]]
+    slides[1]["minispiel"] = "block"
+    slides[2]["minispiel"] = "runen"
+    ok = {**SIMPLE_GAME, "gebaeude": {"ansicht": "frei", "minispiele": False}, "slides": slides}
+    assert _upload(client, teacher_token, ok).status_code == 201
+    falsch_slides = [
+        (1, "runen"),       # Boss-Spiel an einer Aufgabe
+        (2, "konter"),      # Aufgaben-Spiel an einer Tür
+        (0, "konter"),      # Erklärungen sind Erz, kein Kampf
+        (1, "tanzen"),
+    ]
+    for nr, spiel in falsch_slides:
+        s = [dict(x) for x in SIMPLE_GAME["slides"]]
+        s[nr]["minispiel"] = spiel
+        r = _upload(client, teacher_token, {**SIMPLE_GAME, "slides": s})
+        assert r.status_code == 422, (nr, spiel)
+        assert any("minispiel" in e for e in r.json()["detail"]["errors"])
+    r = _upload(client, teacher_token, {**SIMPLE_GAME, "gebaeude": {"minispiele": "nein"}})
+    assert r.status_code == 422
+    assert any("minispiele" in e for e in r.json()["detail"]["errors"])
+
+
 def test_medien_example_has_one_style_per_epoch(client, teacher_token):
     """Zeitreise der Medien: sechs Abschnitte, sechs Epochen-Stile — und das Spiel lässt sich hochladen."""
     pfad = Path(__file__).parents[2] / "data" / "taskcrawler_examples" / "TaskCrawler_Geschichte_der_Medien.json"
     spiel = json.loads(pfad.read_text(encoding="utf-8"))
     tueren = sum(1 for s in spiel["slides"] if s["type"] == "door")
     assert len(spiel["gebaeude"]["stile"]) == tueren == 6
+    # 3D-Welt: jede Aufgabe hat ihren Kampf, jede Tür ihren Boss
+    assert spiel["gebaeude"]["ansicht"] == "frei" and spiel["gebaeude"]["minispiele"] is True
+    assert all(s.get("minispiel") for s in spiel["slides"] if s["type"] in ("task", "door"))
     # Jede Station passt zu ihrer Epoche — in der Steinzeit kein Buch, keine Uhr, kein Globus
     erster = spiel["slides"][:next(i for i, s in enumerate(spiel["slides"]) if s["type"] == "door")]
     assert {s["station"] for s in erster} <= {"lagerfeuer", "hoehlenwand", "quipu", "tontafel", "orakelknochen", "schriftrolle"}

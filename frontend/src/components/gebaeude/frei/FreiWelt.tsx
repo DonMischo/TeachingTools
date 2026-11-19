@@ -32,7 +32,7 @@ import {
 } from "@/lib/gebaeude/frei";
 import type { Objekt } from "@/lib/gebaeude/objekte";
 import {
-  BLOCK_ZIEL, BOSS_ARTEN, KAMPF_ARTEN, KAMPF_NAME, KONTER_ZIEL, ZEITEN, kampfEingabe, kampfLoslassen, kampfSchritt, neuerKampf,
+  BLOCK_ZIEL, KAMPF_NAME, KONTER_ZIEL, kampfFuer, ZEITEN, kampfEingabe, kampfLoslassen, kampfSchritt, neuerKampf,
   taktStelle, taktTreffer, type Kampf, type KampfArt, type Stufe, type Taste,
 } from "@/lib/gebaeude/kampf";
 import { tickMonster } from "@/lib/angriffe/monsterLader";
@@ -59,6 +59,9 @@ interface Props {
   avatar?: Avatar;
   /** je Abschnitt: bewacht ein Boss das Tor? */
   waechter?: boolean[];
+  /** im TaskCrawler vorgegebene Minispiele: je Abschnitt und Station bzw. je Tor (fehlt = reihum) */
+  kaempfe?: (string | undefined)[][];
+  bosse?: (string | undefined)[];
   /** Tastatur und Zeiger an (aus, solange z. B. ein Aufgabenfenster offen ist) */
   aktiv: boolean;
   /** von außen: dorthin laufen (neue `nr` = neuer Auftrag) */
@@ -129,7 +132,7 @@ const TON: Record<Marke["ton"], string> = {
 };
 
 export default function FreiWelt({
-  plan, stock, zustaende, zielOffen, objekte, stile, avatar = STANDARD_AVATAR, waechter, aktiv, auftrag, seed, gegenschlag = 0, stufe = "mittel", onKampf, onAnkunft,
+  plan, stock, zustaende, zielOffen, objekte, stile, avatar = STANDARD_AVATAR, waechter, kaempfe, bosse, aktiv, auftrag, seed, gegenschlag = 0, stufe = "mittel", onKampf, onAnkunft,
 }: Props) {
   const huelle = useRef<HTMLDivElement>(null);
   const [fehler, setFehler] = useState(false);
@@ -165,7 +168,7 @@ export default function FreiWelt({
 
   // Alles, was die Zeichenschleife liest, steht in einem Ref.
   const lage = useRef({
-    plan, stock, aktiv, onAnkunft, guete, zustaende, stufe, onKampf, zielOffen, waechter, oben,
+    plan, stock, aktiv, onAnkunft, guete, zustaende, stufe, onKampf, zielOffen, waechter, kaempfe, bosse, oben,
     /** laufender kleiner Kampf, sein Ort und was davon schon geschehen ist */
     duell: null as Kampf | null,
     duellOrt: null as FreiOrt | null,
@@ -202,7 +205,7 @@ export default function FreiWelt({
     marken: [] as Marke[],
     setNah, setGuete, setHiebe, setVorlauf, setKampf, setDuell, setVolltreffer, setOben,
   });
-  Object.assign(lage.current, { plan, stock, aktiv, onAnkunft, guete, zustaende, stufe, onKampf, zielOffen, waechter, oben });
+  Object.assign(lage.current, { plan, stock, aktiv, onAnkunft, guete, zustaende, stufe, onKampf, zielOffen, waechter, kaempfe, bosse, oben });
 
   const drei = useRef<{
     szene: THREE.Scene; land: THREE.Group; orte: THREE.Group; spieler: THREE.Group;
@@ -282,21 +285,21 @@ export default function FreiWelt({
       (ding?.userData.figur as { spiele(art: string): number } | undefined)?.spiele("angriff");
       schaue(st.position.x, st.position.z);
       if (l.stufe !== "aus") {
-        // kleiner Kampf vor der Frage: reihum Konter, Ausweichen, Kombo, Schildblock, Schwachstelle
+        // kleiner Kampf vor der Frage: wie im TaskCrawler vorgegeben, sonst reihum Konter, Ausweichen, Kombo, Schildblock, Schwachstelle
         const nr = (ort.art === "raum" ? ort.raum : 0) + l.stock;
-        beginne(KAMPF_ARTEN[nr % KAMPF_ARTEN.length], ort);
+        beginne(kampfFuer(ort.art === "raum" ? l.kaempfe?.[l.stock]?.[ort.raum] : undefined, nr), ort);
         return;
       }
       l.setKampf(true);
       l.warte = { rest: 0.9, ort };
       return;
     }
-    // der Boss am verschlossenen Tor: Runen oder Kräftemessen, abwechselnd je Abschnitt
+    // der Boss am verschlossenen Tor: Runen oder Kräftemessen — vorgegeben oder abwechselnd je Abschnitt
     if (ort.art === "ziel" && l.stufe !== "aus" && l.waechter?.[l.stock] && !l.zielOffen[l.stock]) {
       const tor = ortGruppe(ort);
       const boss = tor?.userData.ding as THREE.Object3D | undefined;
       if (tor && boss) boss.rotation.y = Math.atan2(l.x - (tor.position.x + boss.position.x), l.z - (tor.position.z + boss.position.z));
-      beginne(BOSS_ARTEN[l.stock % BOSS_ARTEN.length], ort);
+      beginne(kampfFuer(l.bosse?.[l.stock], l.stock, true), ort);
       return;
     }
     l.onAnkunft(ort);

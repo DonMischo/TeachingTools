@@ -14,7 +14,7 @@
     "weltweit"
   ],
   "gebaeude": {
-    "ansicht": "gebaeude",
+    "ansicht": "frei",
     "stile": [
       "steinzeit",
       "gotisch",
@@ -22,7 +22,8 @@
       "retro",
       "neon",
       "raumstation"
-    ]
+    ],
+    "minispiele": true
   },
   "style": {
     "theme": "dark",
@@ -147,7 +148,8 @@
             "reiter": "zeitreise"
           }
         }
-      }
+      },
+      "minispiel": "ziel"
     },
     {
       "id": "welt-quipu",
@@ -188,7 +190,8 @@
             "reiter": "zeitreise"
           }
         }
-      }
+      },
+      "minispiel": "folge"
     },
     {
       "id": "antike-schrift-erklaerung",
@@ -243,7 +246,8 @@
             "reiter": "zeitreise"
           }
         }
-      }
+      },
+      "minispiel": "konter"
     },
     {
       "id": "antike-schrift-aufgabe",
@@ -285,7 +289,8 @@
             "reiter": "zeitreise"
           }
         }
-      }
+      },
+      "minispiel": "block"
     },
     {
       "id": "antike-bibliothek",
@@ -309,7 +314,8 @@
       "onFailReview": [
         "steinzeit-aufgabe",
         "antike-schrift-aufgabe"
-      ]
+      ],
+      "minispiel": "runen"
     },
     {
       "id": "mittelalter-kloster",
@@ -365,7 +371,8 @@
             "reiter": "zeitreise"
           }
         }
-      }
+      },
+      "minispiel": "block"
     },
     {
       "id": "gutenberg-erklaerung",
@@ -420,7 +427,8 @@
             "reiter": "zeitreise"
           }
         }
-      }
+      },
+      "minispiel": "folge"
     },
     {
       "id": "gutenberg-aufgabe",
@@ -462,7 +470,8 @@
             "reiter": "zeitreise"
           }
         }
-      }
+      },
+      "minispiel": "konter"
     },
     {
       "id": "welt-maya",
@@ -503,7 +512,8 @@
             "reiter": "zeitreise"
           }
         }
-      }
+      },
+      "minispiel": "ausweichen"
     },
     {
       "id": "zeitung-erklaerung",
@@ -527,7 +537,8 @@
       "onFailReview": [
         "mittelalter-buch-aufgabe",
         "gutenberg-aufgabe"
-      ]
+      ],
+      "minispiel": "kraft"
     },
     {
       "id": "telegraph-erklaerung",
@@ -576,7 +587,8 @@
         "Morsen war die Sprache des Telegraphen."
       ],
       "station": "telegraph",
-      "ergebnissicherung": "Telegraf (1837, Morse): Nachrichten in Sekunden über weite Strecken – die erste Echtzeit-Kommunikation über Kabel."
+      "ergebnissicherung": "Telegraf (1837, Morse): Nachrichten in Sekunden über weite Strecken – die erste Echtzeit-Kommunikation über Kabel.",
+      "minispiel": "folge"
     },
     {
       "id": "telefon-erklaerung",
@@ -625,7 +637,8 @@
         "Das Patent wurde 1876 angemeldet."
       ],
       "station": "telefon",
-      "ergebnissicherung": "Telefon (1876, Bell): Zum ersten Mal wird die menschliche Stimme über Kabel übertragen."
+      "ergebnissicherung": "Telefon (1876, Bell): Zum ersten Mal wird die menschliche Stimme über Kabel übertragen.",
+      "minispiel": "konter"
     },
     {
       "id": "radio-erklaerung",
@@ -680,7 +693,8 @@
         "Das Wort »Novela« heißt Roman – und ein Roman endet irgendwann.",
         "Soaps laufen oft jahrzehntelang."
       ],
-      "ergebnissicherung": "Aus kubanischen Radionovelas wurden Telenovelas – Serien mit festem Ende, heute in über 100 Ländern."
+      "ergebnissicherung": "Aus kubanischen Radionovelas wurden Telenovelas – Serien mit festem Ende, heute in über 100 Ländern.",
+      "minispiel": "ausweichen"
     },
     {
       "id": "film-erklaerung",
@@ -729,7 +743,8 @@
         "Ton kam erst später dazu."
       ],
       "station": "filmprojektor",
-      "ergebnissicherung": "Film (1895, Brüder Lumière): Die ersten Filme waren kurz und stumm – der Ton kam erst später."
+      "ergebnissicherung": "Film (1895, Brüder Lumière): Die ersten Filme waren kurz und stumm – der Ton kam erst später.",
+      "minispiel": "ziel"
     },
     {
       "id": "fernsehen-erklaerung",
@@ -754,7 +769,8 @@
         "telegraph-aufgabe",
         "telefon-aufgabe",
         "film-aufgabe"
-      ]
+      ],
+      "minispiel": "runen"
     },
     {
       "id": "computer-erklaerung",
@@ -831,7 +847,8 @@
         "Man nennt es auch ‚Klammeraffe‘."
       ],
       "station": "retropc",
-      "ergebnissicherung": "E-Mail (1971, Ray Tomlinson): Das @ trennt Nutzername und Rechner."
+      "ergebnissicherung": "E-Mail (1971, Ray Tomlinson): Das @ trennt Nutzername und Rechner.",
+      "minispiel": "folge"
     },
     {
       "id": "internet-aufgabe",
@@ -866,7 +883,8 @@
         "Es sollte ausfallsicher sein."
       ],
       "station": "grossrechner",
-      "ergebnissicherung": "Das ARPANET (1969) war der Vorläufer des Internets: ein dezentrales Netz, das auch bei Ausfällen weiterläuft."
+      "ergebnissicherung": "Das ARPANET (1969) war der Vorläufer des Internets: ein dezentrales Netz, das auch bei Ausfällen weiterläuft.",
+      "minispiel": "block"
     },
     {
       "id": "www-erklaerung",
@@ -915,7 +933,8 @@
         "Sein System basierte auf Hyperlinks."
       ],
       "station": "retropc",
-      "ergebnissicherung": "Das World Wide Web (1991, Tim Berners-Lee am CERN) verbindet Seiten mit Hyperlinks und machte das Internet für alle nutzbar."
+      "ergebnissicherung": "Das World Wide Web (1991, Tim Berners-Lee am CERN) verbindet Seiten mit Hyperlinks und machte das Internet für alle nutzbar.",
+      "minispiel": "ziel"
     },
     {
       "id": "welt-emoji",
@@ -956,7 +975,8 @@
         "Auf die Bildschirme passten nur wenige Zeichen.",
         "Ein Herz sagt mehr als »ich mag das«."
       ],
-      "ergebnissicherung": "Emojis stammen aus Japan (1999): kleine Bildzeichen für kurze Handy-Nachrichten."
+      "ergebnissicherung": "Emojis stammen aus Japan (1999): kleine Bildzeichen für kurze Handy-Nachrichten.",
+      "minispiel": "ausweichen"
     },
     {
       "id": "tuer-4",
@@ -967,7 +987,8 @@
         "email-aufgabe",
         "internet-aufgabe",
         "www-aufgabe"
-      ]
+      ],
+      "minispiel": "kraft"
     },
     {
       "id": "wikipedia-erklaerung",
@@ -1030,7 +1051,8 @@
         "Die Plattformen wuchsen schnell."
       ],
       "station": "laptop",
-      "ergebnissicherung": "Soziale Medien (Facebook 2004, YouTube 2005, Twitter 2006): Alle können Inhalte veröffentlichen und teilen – Inhalte verbreiten sich viral."
+      "ergebnissicherung": "Soziale Medien (Facebook 2004, YouTube 2005, Twitter 2006): Alle können Inhalte veröffentlichen und teilen – Inhalte verbreiten sich viral.",
+      "minispiel": "ausweichen"
     },
     {
       "id": "smartphone-erklaerung",
@@ -1113,7 +1135,8 @@
         "Es funktionierte schon mit einfachen Tastenhandys.",
         "Denk daran, was man für eine Überweisung sonst braucht."
       ],
-      "ergebnissicherung": "In Kenia bezahlen Millionen per SMS (M-Pesa, 2007) – auch ohne Bankkonto."
+      "ergebnissicherung": "In Kenia bezahlen Millionen per SMS (M-Pesa, 2007) – auch ohne Bankkonto.",
+      "minispiel": "konter"
     },
     {
       "id": "digital-aufgabe",
@@ -1148,7 +1171,8 @@
         "Streaming und On-Demand sind heute normal."
       ],
       "station": "smartphone",
-      "ergebnissicherung": "Heute verschmelzen alle Medien in digitalen Geräten: Das Smartphone ist Telefon, Kamera, Zeitung, Radio und Fernseher zugleich."
+      "ergebnissicherung": "Heute verschmelzen alle Medien in digitalen Geräten: Das Smartphone ist Telefon, Kamera, Zeitung, Radio und Fernseher zugleich.",
+      "minispiel": "block"
     },
     {
       "id": "tuer-5",
@@ -1158,7 +1182,8 @@
       "onFailReview": [
         "soziale-medien-aufgabe",
         "digital-aufgabe"
-      ]
+      ],
+      "minispiel": "runen"
     },
     {
       "id": "photoshop-erklaerung",
@@ -1207,7 +1232,8 @@
         "Frag dich: Würde jemand danach etwas anderes glauben?",
         "Helligkeit und Ausrichtung ändern nicht, was passiert ist."
       ],
-      "ergebnissicherung": "Bildbearbeitung ist nicht immer Fälschung. Entscheidend: Ändert sich die Aussage des Bildes?\n- Aufhellen, gerade rücken: verändert die Aussage nicht.\n- Personen entfernen, Dinge hineinmontieren: verändert die Aussage."
+      "ergebnissicherung": "Bildbearbeitung ist nicht immer Fälschung. Entscheidend: Ändert sich die Aussage des Bildes?\n- Aufhellen, gerade rücken: verändert die Aussage nicht.\n- Personen entfernen, Dinge hineinmontieren: verändert die Aussage.",
+      "minispiel": "block"
     },
     {
       "id": "filter-erklaerung",
@@ -1260,7 +1286,8 @@
         "Beliebtheit sagt nichts über Wahrheit.",
         "Fälschungen haben oft keine seriöse Quelle."
       ],
-      "ergebnissicherung": "So prüfst du, ob etwas echt ist:\n- Wer hat es zuerst veröffentlicht?\n- Berichten seriöse Medien darüber?\n- Bildrückwärtssuche nach dem Original.\nViele Likes beweisen nichts."
+      "ergebnissicherung": "So prüfst du, ob etwas echt ist:\n- Wer hat es zuerst veröffentlicht?\n- Berichten seriöse Medien darüber?\n- Bildrückwärtssuche nach dem Original.\nViele Likes beweisen nichts.",
+      "minispiel": "ziel"
     },
     {
       "id": "chatgpt-erklaerung",
@@ -1315,7 +1342,8 @@
         "In der Werkstatt wählst du immer das nächste Wort aus.",
         "Je dicker der Faden, desto wahrscheinlicher das Wort."
       ],
-      "ergebnissicherung": "Sprachmodelle wie ChatGPT (2022) schreiben Wort für Wort das wahrscheinlich nächste Wort. Das klingt überzeugend, kann aber falsch sein – Fakten immer prüfen."
+      "ergebnissicherung": "Sprachmodelle wie ChatGPT (2022) schreiben Wort für Wort das wahrscheinlich nächste Wort. Das klingt überzeugend, kann aber falsch sein – Fakten immer prüfen.",
+      "minispiel": "folge"
     },
     {
       "id": "bildgenerator-erklaerung",
@@ -1370,7 +1398,8 @@
         "Schau dir im Reiter »Bilder« den Rückweg an.",
         "Am Anfang sieht das Bild aus wie ein gestörter Fernseher."
       ],
-      "ergebnissicherung": "Bildgeneratoren (Diffusionsmodelle) beginnen mit reinem Rauschen und entfernen es Schritt für Schritt, bis ein Bild entsteht."
+      "ergebnissicherung": "Bildgeneratoren (Diffusionsmodelle) beginnen mit reinem Rauschen und entfernen es Schritt für Schritt, bis ein Bild entsteht.",
+      "minispiel": "ausweichen"
     },
     {
       "id": "kennzeichnung-erklaerung",
@@ -2071,7 +2100,8 @@
         "ki-sprache-aufgabe",
         "ki-bilder-aufgabe",
         "endboss"
-      ]
+      ],
+      "minispiel": "kraft"
     }
   ]
 }

@@ -81,6 +81,10 @@ export default function GebaeudeSpiel({
   const objekte = useMemo(
     () => teile.map((t, k) => t.raeume.map(i => (frei && slides[i].type === "task" ? "monster" : stationsObjekt(slides[i], monster[k])))),
     [teile, slides, monster, frei]);
+  // Minispiele: im TaskCrawler abschaltbar ("gebaeude": {"minispiele": false}); je Folie vorgebbar ("minispiel")
+  const minispiele = data.gebaeude?.minispiele !== false;
+  const kaempfe = useMemo(() => teile.map(t => t.raeume.map(i => slides[i].minispiel)), [teile, slides]);
+  const bosse = useMemo(() => teile.map(t => (t.tuer !== null ? slides[t.tuer].minispiel : undefined)), [teile, slides]);
   const [gegenschlag, setGegenschlag] = useState(0);
   // Kleine Kämpfe: die Stufe wählt man beim ersten Mal und kann sie oben in der Leiste jederzeit ändern.
   const [stufe, setStufe] = useState<Stufe | null>(null);
@@ -188,9 +192,9 @@ export default function GebaeudeSpiel({
         <div className="relative h-[70vh] min-h-[380px] lg:h-auto rounded-2xl border border-line overflow-hidden bg-linear-to-b from-sky-900/30 to-transparent">
           {freiPlan
             ? <FreiWelt plan={freiPlan} stock={stock} zustaende={zustaende} zielOffen={zielOffen} objekte={objekte}
-                stile={freiStile} waechter={waechter} seed={seedAus(code)} gegenschlag={gegenschlag}
-                stufe={stufe ?? "aus"} onKampf={kampfAus}
-                avatar={avatar} aktiv={s === null && !(frei && stufeFragen)} auftrag={auftrag} onAnkunft={ankunft} />
+                stile={freiStile} waechter={waechter} kaempfe={kaempfe} bosse={bosse} seed={seedAus(code)} gegenschlag={gegenschlag}
+                stufe={minispiele ? stufe ?? "aus" : "aus"} onKampf={kampfAus}
+                avatar={avatar} aktiv={s === null && !(frei && minispiele && stufeFragen)} auftrag={auftrag} onAnkunft={ankunft} />
             : plan && <Gebaeude plan={plan} stock={stock} zustaende={zustaende} zielOffen={zielOffen} objekte={objekte}
                 art={art as GebaeudeArt} stil={stil} stile={stile} waechter={waechter}
                 avatar={avatar} aktiv={s === null} auftrag={auftrag} onAnkunft={ankunft} festeKamera />}
@@ -201,7 +205,7 @@ export default function GebaeudeSpiel({
             <AvatarWahl avatar={avatar} onWahl={setAvatar} startOffen={ersteWahl} />
           </div>
 
-          {frei && stufeFragen && (
+          {frei && minispiele && stufeFragen && (
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center p-4" data-stufenwahl>
               <section className="card p-5 flex flex-col gap-3 max-w-md shadow-2xl">
                 <h2 className="font-black text-lg">⚔️ Wie schwer sollen die Kämpfe sein?</h2>
@@ -268,7 +272,12 @@ export default function GebaeudeSpiel({
         </div>
 
         <aside className="card flex flex-col gap-3 p-4 text-sm lg:overflow-y-auto">
-          {frei && (
+          {frei && !minispiele && (
+            <p className="text-xs text-muted pb-3 border-b border-line" data-kampfleiste>
+              🕊️ In diesem TaskCrawler gibt es keine Kämpfe — die Aufgaben kommen direkt. Infos stecken weiter im Erz.
+            </p>
+          )}
+          {frei && minispiele && (
             <div className="flex flex-col gap-1.5 pb-3 border-b border-line" data-kampfleiste>
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs font-bold text-muted">⚔️ Kämpfe</span>
@@ -289,7 +298,7 @@ export default function GebaeudeSpiel({
               )}
               {stufe && stufe !== "aus" && (
                 <p className="text-[11px] text-muted">
-                  Stationen reihum: {KAMPF_ARTEN.map(a => KAMPF_NAME[a]).join(", ")} · Boss am Tor: {BOSS_ARTEN.map(a => KAMPF_NAME[a]).join(", ")} · Erz: Hieb im Takt zählt doppelt
+                  Stationen (vorgegeben oder reihum): {KAMPF_ARTEN.map(a => KAMPF_NAME[a]).join(", ")} · Boss am Tor: {BOSS_ARTEN.map(a => KAMPF_NAME[a]).join(", ")} · Erz: Hieb im Takt zählt doppelt
                 </p>
               )}
             </div>

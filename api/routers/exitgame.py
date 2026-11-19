@@ -312,6 +312,8 @@ def _validate_exitgame(data: dict) -> list[str]:
                     for n, s in enumerate(stile, 1):
                         if s not in GEBAEUDE_STILE:
                             errors.append(f"gebaeude.stile[{n}] '{s}' gibt es nicht (erlaubt: {', '.join(sorted(GEBAEUDE_STILE))})")
+            if gebaeude.get("minispiele") is not None and not isinstance(gebaeude["minispiele"], bool):
+                errors.append("gebaeude.minispiele muss true oder false sein")
     slides = data.get("slides") or []
     if not isinstance(slides, list) or not slides:
         errors.append("'slides' muss eine nicht-leere Liste sein")
@@ -347,6 +349,13 @@ def _validate_exitgame(data: dict) -> list[str]:
             else:
                 errors.append(f"{where}: 'sim' direkt an der Folie gibt es nur bei Erklärung und Beispiel — "
                               f"bei Aufgaben gehört es in die task")
+        minispiel = slide.get("minispiel")
+        if minispiel is not None:
+            erlaubt = katalog.MINISPIELE if stype == "task" else katalog.BOSS_MINISPIELE if stype == "door" else None
+            if erlaubt is None:
+                errors.append(f"{where}: 'minispiel' gibt es nur bei Aufgaben und Türen")
+            elif minispiel not in erlaubt:
+                errors.append(f"{where}: 'minispiel' '{minispiel}' gibt es nicht (erlaubt: {', '.join(erlaubt)})")
         station = slide.get("station")
         if station is not None and station not in STATION_OBJECTS:
             errors.append(f"{where}: 'station' '{station}' gibt es nicht (erlaubt: {', '.join(sorted(STATION_OBJECTS))})")

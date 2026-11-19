@@ -31,6 +31,15 @@ export type KampfArt = "konter" | "ausweichen" | "folge" | "block" | "ziel" | "r
 export const KAMPF_ARTEN: KampfArt[] = ["konter", "ausweichen", "folge", "block", "ziel"];
 /** beim Boss am Tor, abwechselnd */
 export const BOSS_ARTEN: KampfArt[] = ["runen", "kraft"];
+
+/**
+ * Welcher Kampf an einer Station läuft: das im TaskCrawler vorgegebene
+ * Minispiel der Folie (`minispiel`), sonst reihum nach `nr`.
+ */
+export function kampfFuer(vorgabe: unknown, nr: number, boss = false): KampfArt {
+  const liste = boss ? BOSS_ARTEN : KAMPF_ARTEN;
+  return typeof vorgabe === "string" && (liste as string[]).includes(vorgabe) ? (vorgabe as KampfArt) : liste[nr % liste.length];
+}
 export const KAMPF_NAME: Record<KampfArt, string> = {
   konter: "Konter", ausweichen: "Ausweichen", folge: "Kombo", block: "Schildblock", ziel: "Schwachstelle", runen: "Runen", kraft: "Kräftemessen",
 };

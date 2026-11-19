@@ -6,13 +6,13 @@ import type { FreiOrt, FreiPlan } from "@/lib/gebaeude/frei";
 
 // jsdom kann kein WebGL: Die Welt wird durch Knöpfe ersetzt, die »ankommen«.
 vi.mock("@/components/gebaeude/frei/FreiWelt", () => ({
-  default: ({ plan, stock, zielOffen, zustaende, objekte, waechter, stile, gegenschlag, stufe, aktiv, onKampf, onAnkunft }: {
-    plan: FreiPlan; stock: number; zielOffen: boolean[]; zustaende: string[][]; objekte: string[][]; waechter: boolean[]; stile: string[];
+  default: ({ plan, stock, zielOffen, zustaende, objekte, waechter, kaempfe, bosse, stile, gegenschlag, stufe, aktiv, onKampf, onAnkunft }: {
+    plan: FreiPlan; stock: number; zielOffen: boolean[]; zustaende: string[][]; objekte: string[][]; waechter: boolean[]; kaempfe?: (string | undefined)[][]; bosse?: (string | undefined)[]; stile: string[];
     gegenschlag: number; stufe: string; aktiv: boolean; onKampf: (gut: boolean, art: string, reaktion: number | null) => void;
     onAnkunft: (o: FreiOrt) => void;
   }) => (
     <div data-testid="welt" data-stock={stock} data-gegenschlag={gegenschlag} data-stufe={stufe} data-aktiv={String(aktiv)} data-ziel={String(zielOffen[stock])} data-zustaende={zustaende[stock].join(",")}
-      data-objekte={objekte[stock].join(",")} data-waechter={String(waechter[stock])} data-stile={stile.join(",")}
+      data-objekte={objekte[stock].join(",")} data-waechter={String(waechter[stock])} data-stile={stile.join(",")} data-kaempfe={(kaempfe?.[stock] ?? []).map(k => k ?? "-").join(",")} data-boss={bosse?.[stock] ?? "-"}
       data-plaetze={plan.ebenen.map(e => e.raeume.length).join(",")}>
       {zustaende[stock].map((_, k) => (
         <button key={k} onClick={() => onAnkunft({ art: "raum", raum: k })}>ankommen {k}</button>
@@ -48,9 +48,9 @@ const data: ExitGameData = {
 
 const attempt = (solved: string[]) => ({ id: 7, solved_slide_ids: solved } as unknown as ExitGameAttemptSummary);
 
-function spiel(solved: string[], stil?: Stil, stile?: (Stil | undefined)[], onFinish = vi.fn()) {
+function spiel(solved: string[], stil?: Stil, stile?: (Stil | undefined)[], onFinish = vi.fn(), spielDaten: ExitGameData = data) {
   renderWithProviders(
-    <GebaeudeSpiel code="WELT01" attempt={attempt(solved)} exitgameId={1} data={data} variantChoices={{}} art="frei" stil={stil} stile={stile}
+    <GebaeudeSpiel code="WELT01" attempt={attempt(solved)} exitgameId={1} data={spielDaten} variantChoices={{}} art="frei" stil={stil} stile={stile}
       fragments={[]} adaptation={null} onSlideSolved={vi.fn()} onAdaptation={vi.fn()} onFinish={onFinish} />,
   );
   return onFinish;
@@ -58,6 +58,25 @@ function spiel(solved: string[], stil?: Stil, stile?: (Stil | undefined)[], onFi
 
 describe("TaskCrawler als freie 3D-Welt", () => {
   beforeEach(() => { postEvent.mockReset().mockResolvedValue({}); localStorage.clear(); });
+
+  it("reicht die im TaskCrawler vorgegebenen Minispiele je Aufgabe und Tor an die Welt", () => {
+    localStorage.setItem("hp_frei_kampf", "mittel");
+    const mit = { ...data, slides: data.slides.map(s => (s.id === "a1" ? { ...s, minispiel: "block" } : s.id === "t1" ? { ...s, minispiel: "kraft" } : s)) };
+    spiel([], undefined, undefined, vi.fn(), mit);
+    const w = screen.getByTestId("welt");
+    expect(w.dataset.kaempfe).toBe("-,block");
+    expect(w.dataset.boss).toBe("kraft");
+  });
+
+  it("ohne Minispiele (gebaeude.minispiele = false): keine Kämpfe, keine Stufenwahl", () => {
+    spiel([], undefined, undefined, vi.fn(), { ...data, gebaeude: { ansicht: "frei", minispiele: false } });
+    const w = screen.getByTestId("welt");
+    expect(screen.queryByText(/Wie schwer sollen die Kämpfe sein/)).toBeNull();
+    expect(w.dataset.stufe).toBe("aus");
+    expect(w.dataset.aktiv).toBe("true");
+    expect(screen.queryByRole("group", { name: "Schwierigkeit der Kämpfe" })).toBeNull();
+    expect(screen.getByText(/keine Kämpfe/)).toBeInTheDocument();
+  });
 
   it("fragt beim ersten Mal nach der Schwierigkeit der Kämpfe und merkt sie sich", () => {
     spiel([]);

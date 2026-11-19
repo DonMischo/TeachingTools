@@ -10,6 +10,7 @@ import { ChallengeForm, type ChallengeJson } from "./ChallengeForm";
 import { SPIELARTEN } from "@/lib/challenge/spielarten";
 import { THEMES } from "@/lib/challenge/themes";
 import { SimFelder, type Katalog } from "./SimFelder";
+import { BOSS_ARTEN, KAMPF_ARTEN, KAMPF_NAME } from "@/lib/gebaeude/kampf";
 
 /** Bild hochladen (landet in data/exitgames/{id}/assets) und Vorschau-Adresse. */
 type Bilder = { upload: (file: File) => Promise<{ path: string }>; url: (src: string) => string };
@@ -275,6 +276,14 @@ function FolieForm({ slide, slides, onChange, katalog, name, bilder, exitgameId 
             </select>
           </Feld>
         )}
+        {katalog && hatAufgaben && (
+          <Feld label={slide.type === "door" ? "Boss am Tor (3D-Welt)" : "Kampf vor der Aufgabe (3D-Welt)"} hint="ohne Angabe reihum">
+            <select className="input" value={slide.minispiel ?? ""} onChange={e => onChange({ ...slide, minispiel: e.target.value || undefined })}>
+              <option value="">— reihum —</option>
+              {(slide.type === "door" ? BOSS_ARTEN : KAMPF_ARTEN).map(k => <option key={k} value={k}>{KAMPF_NAME[k]}</option>)}
+            </select>
+          </Feld>
+        )}
       </div>
 
       {katalog && (slide.type === "explanation" || slide.type === "example") && (
@@ -401,6 +410,13 @@ export function TaskCrawlerForm({ value, onChange, exitgameId }: { value: Data; 
                 {Object.keys(katalog.stile).map(k => <option key={k} value={k}>{k[0].toUpperCase() + k.slice(1)}</option>)}
               </select>
             </Feld>
+          )}
+          {value.gebaeude?.ansicht === "frei" && (
+            <label className="flex items-center gap-2 text-sm font-semibold sm:col-span-2">
+              <input type="checkbox" checked={value.gebaeude?.minispiele !== false}
+                onChange={e => set({ gebaeude: { ...value.gebaeude, minispiele: e.target.checked ? undefined : false } })} />
+              ⚔️ Minispiele: Kampf vor jeder Aufgabe, Boss an jeder Tür (aus = Aufgaben kommen direkt, Infos bleiben Erz)
+            </label>
           )}
         </section>
       )}

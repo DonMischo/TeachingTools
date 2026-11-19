@@ -50,6 +50,19 @@ STILE = {
     "pilze": "Leuchtpilzwald: Nacht, Riesenpilze mit leuchtenden Hüten.",
 }
 
+# Minispiele der 3D-Welt ("frei") — muss zu KAMPF_ARTEN/BOSS_ARTEN in frontend/src/lib/gebaeude/kampf.ts passen
+MINISPIELE = {
+    "konter": "Konter: im richtigen Moment zuschlagen, wenn der Ring schrumpft.",
+    "ausweichen": "Ausweichen: in die Richtung springen, aus der der Angriff nicht kommt.",
+    "folge": "Kombo: eine Tastenfolge rechtzeitig nachdrücken.",
+    "block": "Schildblock: den Schild laden und im Fenster loslassen.",
+    "ziel": "Schwachstelle: leuchtende Stellen am Monster treffen.",
+}
+BOSS_MINISPIELE = {
+    "runen": "Runen: eine Runenfolge merken und nachlegen.",
+    "kraft": "Kräftemessen: schnell genug drücken, um den Boss wegzuschieben.",
+}
+
 OBJEKTE = {
     "pult": "Schreibtisch (Standard)",
     "computer": "Computer",
@@ -252,6 +265,10 @@ KATALOG = {
     "gebaeude.ansicht": ANSICHTEN,
     "gebaeude.stil": STILE,
     "gebaeude.stile": "Liste mit einem Stil je Abschnitt (Werte wie gebaeude.stil), z.B. [\"steinzeit\", \"gotisch\", \"neon\"]; fehlt ein Eintrag, gilt gebaeude.stil.",
+    "gebaeude.minispiele": "true (Standard) oder false: in der 3D-Welt Kämpfe vor Aufgaben und Bosse an den Türen — "
+                           "false schaltet sie ab (Infos bleiben Erz).",
+    "slide.minispiel (Aufgabe)": MINISPIELE,
+    "slide.minispiel (Tür)": BOSS_MINISPIELE,
     "slide.station": OBJEKTE,
     "task.sim": WERKZEUGE,
 }
