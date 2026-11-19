@@ -365,6 +365,15 @@ export function TaskCrawlerForm({ value, onChange, exitgameId }: { value: Data; 
   };
   const { data: katalog } = useQuery<Katalog>({ queryKey: ["exitgame-katalog"], queryFn: api.exitgame.katalog, staleTime: Infinity });
   const set = (patch: Partial<Data>) => onChange({ ...value, ...patch });
+  /** Stil eines Abschnitts (gebaeude.stile[i]); leer = wie der Baustil. Lücken bleiben null, hinten wird gekürzt. */
+  const setzeAbschnittStil = (i: number, stil: string) => {
+    const stile: (string | null)[] = [...(value.gebaeude?.stile ?? [])];
+    while (stile.length <= i) stile.push(null);
+    stile[i] = stil || null;
+    while (stile.length && !stile[stile.length - 1]) stile.pop();
+    set({ gebaeude: { ...value.gebaeude, stile: stile.length ? stile : undefined } });
+  };
+  const mitStilen = !!katalog && !!value.gebaeude?.ansicht && value.gebaeude.ansicht !== "folien";
   const slides = value.slides;
   const setSlides = (s: ExitGameSlide[]) => set({ slides: s });
   const typ = Object.fromEntries(FOLIEN_TYPEN.map(([v, icon, l]) => [v, `${icon} ${l}`]));
@@ -429,7 +438,21 @@ export function TaskCrawlerForm({ value, onChange, exitgameId }: { value: Data; 
         </p>
         {slides.map((s, i) => {
           const header = i === 0 || slides[i - 1].type === "door"
-            ? <div className="text-xs font-semibold uppercase tracking-wide text-muted mt-2">Abschnitt {abschnitt}</div> : null;
+            ? (
+              <div className="flex flex-wrap items-center gap-2 mt-2">
+                <span className="text-xs font-semibold uppercase tracking-wide text-muted">Abschnitt {abschnitt}</span>
+                {mitStilen && (() => {
+                  const n = abschnitt - 1;
+                  return (
+                    <select className="input py-0.5 text-xs w-auto" aria-label={`Stil von Abschnitt ${abschnitt}`}
+                      value={value.gebaeude?.stile?.[n] ?? ""} onChange={e => setzeAbschnittStil(n, e.target.value)}>
+                      <option value="">🎨 wie Baustil{value.gebaeude?.stil ? ` (${value.gebaeude.stil})` : ""}</option>
+                      {Object.keys(katalog!.stile).map(k => <option key={k} value={k}>{k[0].toUpperCase() + k.slice(1)}</option>)}
+                    </select>
+                  );
+                })()}
+              </div>
+            ) : null;
           if (s.type === "door") abschnitt++;
           return (
             <div key={i} className="flex flex-col gap-2">

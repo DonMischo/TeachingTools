@@ -264,7 +264,7 @@ KATALOG = {
     "_lies_mich": "Nachschlageliste für die 2.5D-Felder. Nur lesen — beim Hochladen wird sie ignoriert.",
     "gebaeude.ansicht": ANSICHTEN,
     "gebaeude.stil": STILE,
-    "gebaeude.stile": "Liste mit einem Stil je Abschnitt (Werte wie gebaeude.stil), z.B. [\"steinzeit\", \"gotisch\", \"neon\"]; fehlt ein Eintrag, gilt gebaeude.stil.",
+    "gebaeude.stile": "Liste mit einem Stil je Abschnitt (Werte wie gebaeude.stil), z.B. [\"steinzeit\", \"gotisch\", \"neon\"]; fehlt ein Eintrag (oder ist er null), gilt gebaeude.stil.",
     "gebaeude.minispiele": "true (Standard) oder false: in der 3D-Welt Kämpfe vor Aufgaben und Bosse an den Türen — "
                            "false schaltet sie ab (Infos sind dann Erz).",
     "slide.minispiel (Aufgabe)": MINISPIELE,

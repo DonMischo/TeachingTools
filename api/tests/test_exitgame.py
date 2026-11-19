@@ -906,6 +906,8 @@ def test_upload_validates_gebaeude(client, teacher_token):
     assert _upload(client, teacher_token, ok).status_code == 201
     epochen = {**SIMPLE_GAME, "gebaeude": {"stile": ["steinzeit", "gotisch", "viktorianisch", "retro", "neon"]}}
     assert _upload(client, teacher_token, epochen).status_code == 201
+    luecke = {**SIMPLE_GAME, "gebaeude": {"stil": "wald", "stile": [None, "hoehle"]}}  # null = wie stil
+    assert _upload(client, teacher_token, luecke).status_code == 201
     for falsch in ({"ansicht": "keller"}, {"stil": "barock"}, "verlies", {"stile": "gotisch"}, {"stile": ["gotisch", "barock"]}):
         r = _upload(client, teacher_token, {**SIMPLE_GAME, "gebaeude": falsch})
         assert r.status_code == 422, falsch

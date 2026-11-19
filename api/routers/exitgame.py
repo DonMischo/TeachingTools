@@ -310,7 +310,7 @@ def _validate_exitgame(data: dict) -> list[str]:
                     errors.append("gebaeude.stile muss eine Liste sein, ein Stil je Abschnitt, z.B. [\"steinzeit\", \"gotisch\"]")
                 else:
                     for n, s in enumerate(stile, 1):
-                        if s not in GEBAEUDE_STILE:
+                        if s is not None and s not in GEBAEUDE_STILE:  # null = wie gebaeude.stil
                             errors.append(f"gebaeude.stile[{n}] '{s}' gibt es nicht (erlaubt: {', '.join(sorted(GEBAEUDE_STILE))})")
             if gebaeude.get("minispiele") is not None and not isinstance(gebaeude["minispiele"], bool):
                 errors.append("gebaeude.minispiele muss true oder false sein")
