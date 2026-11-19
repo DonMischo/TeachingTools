@@ -12,7 +12,7 @@ import { abstand, inPoly, rechteck, type P } from "@/lib/stadt/geometrie";
 import type { Haus } from "@/lib/stadt/haeuser";
 import { BAUTEN, OEPNV, STRASSEN, type Stadt } from "@/lib/stadt/modell";
 import { MODELL_VON, TEILFARBEN } from "./modelle";
-import { dachStoff, fassadenStoff } from "./fassade";
+import { dachStoff, fassadenStoff, bauwerkStoff, steinStoff } from "./fassade";
 
 export interface StadtSzene {
   gruppe: THREE.Group;
@@ -213,9 +213,10 @@ export function baueStadtSzene(g: Gelaende, s: Stadt, hs: Haus[], bodenBild: HTM
 
   // ── Wahrzeichen ──
   const matCache = new Map<string, THREE.MeshLambertMaterial>();
-  const lambert = (c: string) => {
-    let m = matCache.get(c);
-    if (!m) { m = new THREE.MeshLambertMaterial({ vertexColors: true, color: c }); matCache.set(c, m); mats.push(m); }
+  const lambert = (c: string, modell: string, teil: "wand" | "dach" | "akzent") => {
+    const key = `${c}|${modell}|${teil}`;
+    let m = matCache.get(key);
+    if (!m) { m = bauwerkStoff(modell, teil, () => new THREE.MeshLambertMaterial({ vertexColors: true, color: c })); matCache.set(key, m); mats.push(m); }
     return m;
   };
   for (const b of s.bauten) {
@@ -234,7 +235,7 @@ export function baueStadtSzene(g: Gelaende, s: Stadt, hs: Haus[], bodenBild: HTM
       const geo = teile?.[`${name}_${teil}`] ?? (teil === "wand" ? kasten() : null);
       if (!geo) continue;
       if (!teile) geos.push(geo);
-      const m = new THREE.Mesh(geo, lambert(c));
+      const m = new THREE.Mesh(geo, lambert(c, name, teil));
       m.castShadow = m.receiveShadow = true;
       objekt.add(m);
     }
@@ -248,7 +249,7 @@ export function baueStadtSzene(g: Gelaende, s: Stadt, hs: Haus[], bodenBild: HTM
   if (mauerTeile.length) {
     const mGeo = kasten(), tGeo = hell(new THREE.CylinderGeometry(3.2, 3.6, 1, 10).translate(0, 0.5, 0));
     geos.push(mGeo, tGeo);
-    const mMat = new THREE.MeshLambertMaterial({ vertexColors: true, color: 0x9a8f80 });
+    const mMat = steinStoff(new THREE.MeshLambertMaterial({ vertexColors: true, color: 0x9a8f80 }));
     mats.push(mMat);
     const mi = new THREE.InstancedMesh(mGeo, mMat, mauerTeile.length), ti = new THREE.InstancedMesh(tGeo, mMat, mauerTeile.length);
     mauerTeile.forEach(({ a, b }, i) => {

@@ -12,7 +12,9 @@
 import * as THREE from "three";
 
 const BASIS = "/modelle/stadt/kacheln";
-const NAMEN = ["putz", "ziegel", "dach", "flachdach"] as const;
+const NAMEN = ["putz", "ziegel", "dach", "flachdach", "quader"] as const;
+/** Quadermauerwerk leiht sich die Burgmauer der TaskCrawler-Gebäude (scripts/bausatz/kacheln.py) */
+const PFAD: Partial<Record<(typeof NAMEN)[number], string>> = { quader: "/modelle/bausatz/kacheln/burg/mauer" };
 type Name = (typeof NAMEN)[number];
 export type StadtKacheln = Record<Name, { farbe: THREE.Texture; normal: THREE.Texture }>;
 
@@ -24,7 +26,7 @@ export function ladeStadtKacheln(): Promise<StadtKacheln | null> {
   if (laden) return laden;
   if (typeof window === "undefined" || !("WebGL2RenderingContext" in window)) return (laden = Promise.resolve(null));
   const tl = new THREE.TextureLoader();
-  const eine = (name: Name, art: "farbe" | "normal") => tl.loadAsync(`${BASIS}/${name}_${art}.jpg`).then(t => {
+  const eine = (name: Name, art: "farbe" | "normal") => tl.loadAsync(`${PFAD[name] ?? `${BASIS}/${name}`}_${art}.jpg`).then(t => {
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
     t.anisotropy = 8;
     t.colorSpace = art === "farbe" ? THREE.SRGBColorSpace : THREE.NoColorSpace;
@@ -144,5 +146,65 @@ export function dachStoff(m: THREE.MeshLambertMaterial): THREE.MeshLambertMateri
   else if (flach) normal = reliefNormale(texture(uFlachN, duv).xyz, vec3(1.0, 0.0, 0.0), vec3(0.0, 0.0, -1.0), dn, 1.0);`);
   };
   m.customProgramCacheKey = () => "dach|kachel";
+  return m;
+}
+
+/** Seitenlänge einer Quaderkachel in der Stadt (m); die Burgmauer misst 1,4 m, hier gröber für große Bauwerke */
+const QUADER = 2.6;
+
+/** Quadermauerwerk aus Weltkoordinaten: an Wänden entlang der Wand, oben von oben; nimmt die Farbe des Bauwerks an */
+export function steinStoff(m: THREE.MeshLambertMaterial): THREE.MeshLambertMaterial {
+  const K = fertig;
+  if (!K) return m;
+  m.onBeforeCompile = sh => {
+    WELT_VERTEX(sh);
+    Object.assign(sh.uniforms, { uQuader: { value: K.quader.farbe }, uQuaderN: { value: K.quader.normal } });
+    sh.fragmentShader = sh.fragmentShader
+      .replace("#include <common>", `#include <common>
+  varying vec3 vWp;
+  varying vec3 vWn;
+  varying vec2 vHaus;
+  uniform sampler2D uQuader, uQuaderN;
+  ${RELIEF}`)
+      .replace("#include <color_fragment>", `#include <color_fragment>
+  vec3 qn = normalize(vWn);
+  bool qWand = abs(qn.y) < 0.6;
+  vec2 qt = normalize(vec2(-qn.z, qn.x) + 1e-5);
+  vec2 quv = qWand ? vec2(dot(vWp.xz, qt), vWp.y) / ${QUADER.toFixed(2)} : vWp.xz / ${QUADER.toFixed(2)};
+  diffuseColor.rgb *= texture(uQuader, quv).rgb * 1.75;`)
+      .replace("#include <normal_fragment_maps>", `#include <normal_fragment_maps>
+  normal = qWand ? reliefNormale(texture(uQuaderN, quv).xyz, vec3(qt.x, 0.0, qt.y), vec3(0.0, 1.0, 0.0), qn, 1.2)
+                 : reliefNormale(texture(uQuaderN, quv).xyz, vec3(1.0, 0.0, 0.0), vec3(0.0, 0.0, -1.0), qn, 1.0);`);
+  };
+  m.customProgramCacheKey = () => "quader|kachel";
+  return m;
+}
+
+/** Wie die Wände der Bauwerke aussehen: Fensterfelder (Putz, zufällig Backstein), immer Backstein, Quader oder schlicht */
+type Huelle = "fenster" | "ziegel" | "quader" | "schlicht";
+const HUELLE: Record<string, Huelle> = {
+  kaserne: "fenster", rathaus: "fenster", kontor: "fenster", bahnhof: "fenster", schloss: "fenster", theater: "fenster",
+  fabrik: "ziegel", foerderturm: "ziegel",
+  kirche: "quader", kathedrale: "quader", burg: "quader", festungsbau: "quader", tor: "quader", tempel: "quader",
+  kolonnade: "quader", arena: "quader", leuchtturm: "quader", muehle: "quader", kuppelbau: "quader", moschee: "quader",
+  brunnen: "quader", hochofen: "quader", silo: "quader",
+};
+/** Dächer mit Ziegeln bzw. Bahnen; Kuppeln, Glas und Stahl bleiben schlicht */
+const ZIEGELDACH = new Set(["kirche", "kathedrale", "burg", "schloss", "tempel", "kolonnade", "muehle", "tor", "rathaus",
+  "kaserne", "kontor", "fabrik", "bahnhof", "foerderturm", "festungsbau", "theater"]);
+
+/**
+ * Stoff für ein Teil eines Bauwerk-Modells (Wand, Dach, Akzent) aus der Blender-Sammlung der Stadt.
+ * `neu` baut das schlichte Material (Farbe, Durchsicht); hier bekommt es je nach Modell Fenster, Quader oder Ziegel.
+ */
+export function bauwerkStoff(modell: string, teil: "wand" | "dach" | "akzent", neu: () => THREE.MeshLambertMaterial): THREE.MeshLambertMaterial {
+  const m = neu();
+  if (teil === "wand") {
+    const h = HUELLE[modell] ?? "schlicht";
+    if (h === "fenster") return fassadenStoff(m, 0.2);
+    if (h === "ziegel") return fassadenStoff(m, 1);
+    if (h === "quader") return steinStoff(m);
+  }
+  if (teil === "dach" && ZIEGELDACH.has(modell)) return dachStoff(m);
   return m;
 }
