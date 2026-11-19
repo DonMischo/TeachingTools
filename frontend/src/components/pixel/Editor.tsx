@@ -134,7 +134,8 @@ export default function Editor({ id, name: name0, daten, geteilt: geteilt0, nurL
     ctx.clearRect(0, 0, W, H);
     const { zoom, ox, oy } = ansicht, bw = q.breite * zoom, bh = q.hoehe * zoom;
     // Schachbrett
-    const kz = Math.max(4, Math.min(16, zoom * 2));
+    // Kästchen am Pixelraster ausgerichtet: groß gezoomt 2×2 je Pixel, klein gezoomt über ganze Pixel
+    const kz = zoom >= 16 ? zoom / 2 : zoom * Math.max(1, Math.ceil(8 / zoom));
     ctx.save(); ctx.beginPath(); ctx.rect(ox, oy, bw, bh); ctx.clip();
     for (let y = 0; y * kz < bh; y++) for (let x = 0; x * kz < bw; x++) {
       ctx.fillStyle = (x + y) % 2 ? "#cfcfcf" : "#f2f2f2";
