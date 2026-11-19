@@ -840,6 +840,12 @@ ANLEITUNG_25D = (
     "es zum Inhalt: Telefon, Radio, Schriftrolle, Smartphone … Ohne Angabe: Werkzeug → passendes Gerät "
     "(Waage, Abakus …), Zeitstrahl → kalender, sonst reihum wechselnde Objekte, im Verlies jede übrige "
     "Aufgabe → monster. Gelöste Monster liegen besiegt am Boden. "
+    "--- MINISPIELE (3D-Welt, ansicht 'frei') --- Vor jeder Aufgabe läuft ein kurzes Geschicklichkeitsspiel, "
+    "an jeder Tür ein Boss, Erklärungen und Beispiele sind Erz. 'minispiel' an der Slide legt es fest: an "
+    "Aufgaben der Kampf (_katalog['slide.minispiel (Aufgabe)']), an Erklärung/Beispiel ein Sammelspiel statt "
+    "Erz (dieselben Werte, ohne Gegner), an Türen der Boss (_katalog['slide.minispiel (Tür)']). Wähl passend "
+    "zum Inhalt, z.B. 'folge' (Tastenfolge) beim Morsen, 'konter' beim Auslöser einer Kamera. Ohne Angabe: "
+    "Kämpfe reihum, Infos Erz. \"gebaeude\": {\"minispiele\": false} schaltet alle Minispiele ab. "
     "Eine Aufgabe ohne 'codeFragment' ist freiwillig: Sie hält keine Tür auf — gut für Zusatzwissen, "
     "etwa »🌍 Weltweit (freiwillig): …« an einem globus. "
 )
@@ -884,17 +890,17 @@ def download_template_interaktiv(werkzeuge: str | None = None, teacher: Teacher 
         "subject": "mathe",
         "grade": "7,8",
         "tags": ["vorlage", "interaktiv", "verlies"],
-        "gebaeude": {"ansicht": "verlies", "stil": "verlies", "stile": ["verlies", "lava"]},
+        "gebaeude": {"ansicht": "verlies", "stil": "verlies", "stile": ["verlies", "lava"], "minispiele": True},
         "completion": {"message": "Der Endboss ist besiegt — du hast den Schatz gefunden!", "code": "SCHATZ-8"},
         "slides": [
             # ── Ebene 1 ──────────────────────────────────────────────────────────
             {"id": "eingang", "type": "explanation", "title": "Am Eingang des Verlieses",
-             "station": "tafel",
+             "station": "tafel", "minispiel": "folge",
              "text": "Jedes Zimmer ist eine Station. Klicke ein Zimmer an oder tippe seine Nummer (1-9). "
                      "Die Monster geben erst auf, wenn du ihre Aufgabe löst — und jede gelöste Aufgabe "
                      "gibt dir einen Codeschnipsel für den Boss an der Treppe."},
             {"id": "waage", "type": "task", "title": "Das Waagen-Monster",
-             "station": "monster",
+             "station": "monster", "minispiel": "block",
              "text": "Das Monster hält dir eine Waage hin. Bring sie ins Gleichgewicht.",
              "task": {"kind": "input", "codeFragment": "DR",
                       "question": "Löse die Gleichung $3x + 4 = 19$. Wie groß ist $x$?",
@@ -918,7 +924,7 @@ def download_template_interaktiv(werkzeuge: str | None = None, teacher: Teacher 
                       "answers": [{"text": "14", "correct": True}, {"text": "20", "correct": False},
                                   {"text": "9", "correct": False}]},
              "hints": ["Punkt vor Strich: erst die Körbe auskippen."]},
-            {"id": "boss1", "type": "door", "title": "Der Wächter der Treppe",
+            {"id": "boss1", "type": "door", "title": "Der Wächter der Treppe", "minispiel": "runen",
              "text": "Ein Bossmonster versperrt die Treppe hinab. Nenne ihm den Code aus deinen Schnipseln."},
 
             # ── Ebene 2 ──────────────────────────────────────────────────────────

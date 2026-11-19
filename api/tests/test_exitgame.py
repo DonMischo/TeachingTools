@@ -863,7 +863,8 @@ def test_interactive_template_is_a_valid_2_5d_game(client, teacher_token):
     """Die interaktive Vorlage ist ein spielbares Verlies — sie muss sich so,
     wie sie ist, hochladen lassen und alle 2.5D-Bausteine zeigen."""
     tpl = client.get("/api/exitgames/template-interaktiv", headers=_auth(teacher_token)).json()
-    assert tpl["gebaeude"] == {"ansicht": "verlies", "stil": "verlies", "stile": ["verlies", "lava"]}
+    assert tpl["gebaeude"] == {"ansicht": "verlies", "stil": "verlies", "stile": ["verlies", "lava"], "minispiele": True}
+    assert {s["id"]: s.get("minispiel") for s in tpl["slides"] if s.get("minispiel")} == {"eingang": "folge", "waage": "block", "boss1": "runen"}
     stationen = {s.get("station") for s in tpl["slides"]}
     assert {"monster", "boss", "tafel"} <= stationen
     tools = {(t.get("sim") or {}).get("tool") for s in tpl["slides"] for t in ([s["task"]] if s.get("task") else [])}
