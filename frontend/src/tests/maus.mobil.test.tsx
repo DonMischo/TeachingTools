@@ -8,7 +8,7 @@ import {
   SYSTEME, appName, appsFuer, arbeitsflaeche, echtesSystem, fuerSystem, hinweisFremd,
 } from "@/lib/maus/system";
 import { baueDateisystem, pfadText } from "@/lib/maus/dateisystem";
-import { TEILE, HOECHST, GRENZEN } from "@/lib/maus/ergebnis";
+import { TEILE, HOECHST, GRENZEN, merkePunkte, punkteAuf, sterneAusAltstand } from "@/lib/maus/ergebnis";
 import { MausKontext } from "@/components/maus/MausKontext";
 import { WindowsKontext } from "@/components/maus/windows/WindowsKontext";
 import { WindowsDesktop } from "@/components/maus/windows/WindowsDesktop";
@@ -200,5 +200,26 @@ describe("Teil 4 · Stufen", () => {
     fireEvent.click(document.querySelector('[data-antwort="Nicht erlauben"]')!);
     fireEvent.click(screen.getByRole("button", { name: /Nächste Frage/ }));
     expect(screen.getAllByText(/Oma/).length).toBeGreaterThan(0);
+  });
+});
+
+describe("Sterne je System", () => {
+  it("hält Computer- und Handy-Stufen je System getrennt, Klickspiele gelten überall", () => {
+    let je = merkePunkte({}, "explorer", "windows", "android", 900);
+    je = merkePunkte(je, "risiken", "ubuntu", "ios", 700);
+    je = merkePunkte(je, "klick", "windows", "android", 5000);
+    expect(punkteAuf(je, "explorer", "windows", "ios")).toBe(900);
+    expect(punkteAuf(je, "explorer", "macos", "android")).toBe(0);
+    expect(punkteAuf(je, "risiken", "windows", "ios")).toBe(700);
+    expect(punkteAuf(je, "risiken", "ubuntu", "android")).toBe(0);
+    expect(punkteAuf(je, "klick", "macos", "ios")).toBe(5000);
+  });
+
+  it("behält den Bestwert und übernimmt einen alten Stand fürs zuletzt gewählte System", () => {
+    const je = merkePunkte(merkePunkte({}, "apps", "macos", "android", 800), "apps", "macos", "android", 300);
+    expect(punkteAuf(je, "apps", "macos", "android")).toBe(800);
+    const alt = sterneAusAltstand({ apps: { punkte: 600, dauerMs: 1, details: [] } }, "ubuntu", "android");
+    expect(punkteAuf(alt, "apps", "ubuntu", "android")).toBe(600);
+    expect(punkteAuf(alt, "apps", "windows", "android")).toBe(0);
   });
 });

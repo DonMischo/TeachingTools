@@ -96,6 +96,41 @@ export function sterne(stufe: StufeId, punkte: number): 0 | 1 | 2 | 3 {
   return anteil >= 0.8 ? 3 : anteil >= 0.45 ? 2 : 1;
 }
 
+/** Diese Stufen sehen auf jedem System gleich aus — ihre Sterne gelten überall. */
+export const SYSTEMFREI: StufeId[] = ["klick", "doppelklick", "ziehen", "scrollen"];
+
+/**
+ * Sterne zählen je System: Teil 1–3 je Computer (Windows/Ubuntu/macOS),
+ * Teil 4 je Handy (Android/iOS). Punkte und Bestenliste nehmen weiter das
+ * Beste über alle Systeme — wer auf drei Systemen übt, bekommt nicht dreimal Punkte.
+ */
+export type SterneJeSystem = Partial<Record<string, Partial<Record<StufeId, number>>>>;
+
+export function systemSchluessel(stufe: StufeId, system: string, handy: string): string {
+  if (SYSTEMFREI.includes(stufe)) return "alle";
+  return TEILE[4].includes(stufe) ? handy : system;
+}
+
+/** Bestwert einer Stufe auf dem gewählten System. */
+export function punkteAuf(je: SterneJeSystem, stufe: StufeId, system: string, handy: string): number {
+  return je[systemSchluessel(stufe, system, handy)]?.[stufe] ?? 0;
+}
+
+export function merkePunkte(je: SterneJeSystem, stufe: StufeId, system: string, handy: string, punkte: number): SterneJeSystem {
+  const k = systemSchluessel(stufe, system, handy);
+  if ((je[k]?.[stufe] ?? 0) >= punkte) return je;
+  return { ...je, [k]: { ...je[k], [stufe]: punkte } };
+}
+
+/** Alter Stand ohne Aufteilung: was da ist, gehört dem zuletzt gewählten System. */
+export function sterneAusAltstand(ergebnisse: Ergebnisse, system: string, handy: string): SterneJeSystem {
+  let je: SterneJeSystem = {};
+  for (const [id, e] of Object.entries(ergebnisse)) {
+    if (e) je = merkePunkte(je, id as StufeId, system, handy, e.punkte);
+  }
+  return je;
+}
+
 export function gesamt(ergebnisse: Ergebnisse): number {
   return Object.values(ergebnisse).reduce((s, e) => s + (e?.punkte ?? 0), 0);
 }

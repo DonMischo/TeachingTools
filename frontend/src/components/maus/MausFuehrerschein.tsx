@@ -28,8 +28,8 @@ import { wahl, type Vorgabe } from "@/lib/vorgabe";
 import { useQuery } from "@tanstack/react-query";
 import { api, type MausPruefungOut, type MausStufenStand, type MausZugang } from "@/lib/api";
 import {
-  ALLE_TEILE, GRENZEN, TEILE, gesamt, sterne, teilBestanden,
-  type Ergebnisse, type MausModus, type StufeId, type StufenErgebnis, type Teil,
+  ALLE_TEILE, GRENZEN, TEILE, gesamt, merkePunkte, punkteAuf, sterne, sterneAusAltstand, teilBestanden,
+  type Ergebnisse, type SterneJeSystem, type MausModus, type StufeId, type StufenErgebnis, type Teil,
 } from "@/lib/maus/ergebnis";
 import { MausBild, MausStile } from "./MausBild";
 import { MausKontext, type HandySystem } from "./MausKontext";
@@ -108,7 +108,7 @@ const EINZELLISTEN: MausModus[] = ["klick", "doppelklick", "ziehen"];
 
 type Gespeichert = {
   ergebnisse: Ergebnisse; bestanden: Teil[]; hilfe: boolean; aussehen: Aussehen;
-  system: Betriebssystem; handy: HandySystem;
+  system: Betriebssystem; handy: HandySystem; jeSystem: SterneJeSystem;
 };
 
 type Pruefung = {
@@ -173,6 +173,9 @@ function laden(schluessel: string): Gespeichert | null {
       aussehen: aussehenAus(roh.aussehen),
       system: BETRIEBSSYSTEME.includes(roh.system) ? roh.system : "windows",
       handy: roh.handy === "ios" ? "ios" : "android",
+      jeSystem: roh.jeSystem && typeof roh.jeSystem === "object"
+        ? roh.jeSystem
+        : sterneAusAltstand(roh.ergebnisse ?? {}, roh.system ?? "windows", roh.handy ?? "android"),
     };
   } catch {
     return null;
@@ -216,6 +219,8 @@ export default function MausFuehrerschein({
   // Welches System Teil 1–3 nachbilden und welches Handy Teil 4.
   const [system, setSystem] = useState<Betriebssystem>("windows");
   const [handy, setHandy] = useState<HandySystem>("android");
+  // Bestwerte je System — nur für die Sterne.
+  const [jeSystem, setJeSystem] = useState<SterneJeSystem>({});
   const [echt, setEcht] = useState<Betriebssystem | null>("windows");
   const [geladen, setGeladen] = useState(false);
   const [pruefung, setPruefung] = useState<Pruefung | null>(null);
@@ -250,6 +255,7 @@ export default function MausFuehrerschein({
     setAussehen(g?.aussehen ?? STANDARD_AUSSEHEN);
     setSystem(g?.system ?? "windows");
     setHandy(g?.handy ?? "android");
+    setJeSystem(g?.jeSystem ?? {});
     const e = g?.ergebnisse ?? {};
     gemeldet.current = {
       klick: e.klick?.punkte ?? 0, doppelklick: e.doppelklick?.punkte ?? 0,
@@ -260,8 +266,8 @@ export default function MausFuehrerschein({
 
   useEffect(() => {
     if (!geladen) return;
-    try { localStorage.setItem(schluessel, JSON.stringify({ ergebnisse, bestanden, hilfe, aussehen, system, handy })); } catch {}
-  }, [geladen, schluessel, ergebnisse, bestanden, hilfe, aussehen, system, handy]);
+    try { localStorage.setItem(schluessel, JSON.stringify({ ergebnisse, bestanden, hilfe, aussehen, system, handy, jeSystem })); } catch {}
+  }, [geladen, schluessel, ergebnisse, bestanden, hilfe, aussehen, system, handy, jeSystem]);
 
   // Bestenliste: nur melden, was besser ist als das zuletzt Gemeldete.
   useEffect(() => {
@@ -308,6 +314,7 @@ export default function MausFuehrerschein({
   function fertig(stufe: StufeId) {
     return (e: StufenErgebnis) => {
       setErgebnisse(alt => ({ ...alt, [stufe]: besser(alt[stufe], e) }));
+      setJeSystem(alt => merkePunkte(alt, stufe, system, handy, e.punkte));
       setPruefung(p => (p && TEILE[p.teil][p.nr] === stufe
         ? { ...p, ergebnisse: { ...p.ergebnisse, [stufe]: besser(p.ergebnisse[stufe], e) } }
         : p));
@@ -390,8 +397,9 @@ export default function MausFuehrerschein({
   }
 
   function reiterKnopf(r: (typeof REITER)[number]) {
-    const e = r.teil ? ergebnisse[r.id as StufeId] : undefined;
-    const n = e ? sterne(r.id as StufeId, e.punkte) : 0;
+    const n = r.teil && !r.id.startsWith("speichern")
+      ? sterne(r.id as StufeId, punkteAuf(jeSystem, r.id as StufeId, system, handy))
+      : 0;
     const aktiv = reiter === r.id;
     return (
       <button
