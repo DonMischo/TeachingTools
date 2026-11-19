@@ -266,8 +266,9 @@ KATALOG = {
     "gebaeude.stil": STILE,
     "gebaeude.stile": "Liste mit einem Stil je Abschnitt (Werte wie gebaeude.stil), z.B. [\"steinzeit\", \"gotisch\", \"neon\"]; fehlt ein Eintrag, gilt gebaeude.stil.",
     "gebaeude.minispiele": "true (Standard) oder false: in der 3D-Welt Kämpfe vor Aufgaben und Bosse an den Türen — "
-                           "false schaltet sie ab (Infos bleiben Erz).",
+                           "false schaltet sie ab (Infos sind dann Erz).",
     "slide.minispiel (Aufgabe)": MINISPIELE,
+    "slide.minispiel (Erklärung/Beispiel)": "Sammelspiel statt Erz, Werte wie bei der Aufgabe (ohne Gegner); fehlt es, wird Erz abgebaut.",
     "slide.minispiel (Tür)": BOSS_MINISPIELE,
     "slide.station": OBJEKTE,
     "task.sim": WERKZEUGE,

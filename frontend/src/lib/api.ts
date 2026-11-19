@@ -922,7 +922,7 @@ export type ExitGameSlide = {
   ergebnissicherung?: string;
   // Erklärung/Beispiel: eine Simulation zum Ausprobieren (wie task.sim)
   sim?: ExitGameSim;
-  // 3D-Welt: Kampf vor der Aufgabe (konter|ausweichen|folge|block|ziel) bzw. Boss an der Tür (runen|kraft)
+  // 3D-Welt: Kampf vor der Aufgabe bzw. Sammelspiel an Erklärung/Beispiel (konter|ausweichen|folge|block|ziel), Boss an der Tür (runen|kraft)
   minispiel?: string;
   // type "boss": Spielerdaten (der Challenge-Satz selbst bleibt auf dem Server); in der Vorlage steht `challenge`
   bossFragment?: boolean;

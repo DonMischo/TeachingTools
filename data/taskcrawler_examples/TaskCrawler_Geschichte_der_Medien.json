@@ -92,7 +92,8 @@
           "station": "erzaehlen",
           "reiter": "zeitreise"
         }
-      }
+      },
+      "minispiel": "konter"
     },
     {
       "id": "beispiel-steinzeit",
@@ -106,7 +107,8 @@
           "station": "hoehle",
           "reiter": "zeitreise"
         }
-      }
+      },
+      "minispiel": "ziel"
     },
     {
       "id": "steinzeit-aufgabe",
@@ -205,7 +207,8 @@
           "station": "keilschrift",
           "reiter": "zeitreise"
         }
-      }
+      },
+      "minispiel": "folge"
     },
     {
       "id": "welt-orakelknochen",
@@ -304,7 +307,8 @@
           "station": "bibliothek",
           "reiter": "zeitreise"
         }
-      }
+      },
+      "minispiel": "block"
     },
     {
       "id": "tuer-1",
@@ -329,7 +333,8 @@
           "station": "handschrift",
           "reiter": "zeitreise"
         }
-      }
+      },
+      "minispiel": "folge"
     },
     {
       "id": "mittelalter-buch-aufgabe",
@@ -386,7 +391,8 @@
           "station": "buchdruck",
           "reiter": "zeitreise"
         }
-      }
+      },
+      "minispiel": "konter"
     },
     {
       "id": "welt-jikji",
@@ -527,7 +533,8 @@
           "station": "zeitung",
           "reiter": "zeitreise"
         }
-      }
+      },
+      "minispiel": "ausweichen"
     },
     {
       "id": "tuer-2",
@@ -552,7 +559,8 @@
           "station": "telegraf",
           "reiter": "zeitreise"
         }
-      }
+      },
+      "minispiel": "folge"
     },
     {
       "id": "telegraph-aufgabe",
@@ -602,7 +610,8 @@
           "station": "telefon",
           "reiter": "zeitreise"
         }
-      }
+      },
+      "minispiel": "konter"
     },
     {
       "id": "telefon-aufgabe",
@@ -652,7 +661,8 @@
           "station": "radio",
           "reiter": "zeitreise"
         }
-      }
+      },
+      "minispiel": "block"
     },
     {
       "id": "welt-telenovela",
@@ -708,7 +718,8 @@
           "station": "film",
           "reiter": "zeitreise"
         }
-      }
+      },
+      "minispiel": "konter"
     },
     {
       "id": "film-aufgabe",
@@ -758,7 +769,8 @@
           "station": "fernsehen",
           "reiter": "zeitreise"
         }
-      }
+      },
+      "minispiel": "ziel"
     },
     {
       "id": "tuer-3",
@@ -784,7 +796,8 @@
           "station": "computer",
           "reiter": "zeitreise"
         }
-      }
+      },
+      "minispiel": "folge"
     },
     {
       "id": "internet-vorlaeufer",
@@ -798,7 +811,8 @@
           "station": "internet",
           "reiter": "zeitreise"
         }
-      }
+      },
+      "minispiel": "ausweichen"
     },
     {
       "id": "email-erklaerung",
@@ -812,7 +826,8 @@
           "station": "email",
           "reiter": "zeitreise"
         }
-      }
+      },
+      "minispiel": "konter"
     },
     {
       "id": "email-aufgabe",
@@ -898,7 +913,8 @@
           "station": "www",
           "reiter": "zeitreise"
         }
-      }
+      },
+      "minispiel": "ziel"
     },
     {
       "id": "www-aufgabe",
@@ -1002,7 +1018,8 @@
           "station": "wikipedia",
           "reiter": "zeitreise"
         }
-      }
+      },
+      "minispiel": "folge"
     },
     {
       "id": "soziale-medien-erklaerung",
@@ -1016,7 +1033,8 @@
           "station": "socialmedia",
           "reiter": "zeitreise"
         }
-      }
+      },
+      "minispiel": "ausweichen"
     },
     {
       "id": "soziale-medien-aufgabe",
@@ -1066,7 +1084,8 @@
           "station": "smartphone",
           "reiter": "zeitreise"
         }
-      }
+      },
+      "minispiel": "ziel"
     },
     {
       "id": "tablet-erklaerung",
@@ -1080,7 +1099,8 @@
           "station": "tablet",
           "reiter": "zeitreise"
         }
-      }
+      },
+      "minispiel": "block"
     },
     {
       "id": "streaming-erklaerung",
@@ -1094,7 +1114,8 @@
           "station": "streaming",
           "reiter": "zeitreise"
         }
-      }
+      },
+      "minispiel": "konter"
     },
     {
       "id": "welt-mpesa",
@@ -1197,7 +1218,8 @@
           "station": "bildbearbeitung",
           "reiter": "zeitreise"
         }
-      }
+      },
+      "minispiel": "ziel"
     },
     {
       "id": "photoshop-aufgabe",
@@ -1247,7 +1269,8 @@
           "station": "deepfake",
           "reiter": "zeitreise"
         }
-      }
+      },
+      "minispiel": "block"
     },
     {
       "id": "deepfake-aufgabe",
@@ -1301,7 +1324,8 @@
           "station": "ki",
           "reiter": "zeitreise"
         }
-      }
+      },
+      "minispiel": "folge"
     },
     {
       "id": "ki-sprache-aufgabe",
@@ -1357,7 +1381,8 @@
           "station": "bildgenerator",
           "reiter": "zeitreise"
         }
-      }
+      },
+      "minispiel": "block"
     },
     {
       "id": "ki-bilder-aufgabe",
@@ -1414,7 +1439,8 @@
           "station": "deepfake",
           "reiter": "zeitreise"
         }
-      }
+      },
+      "minispiel": "konter"
     },
     {
       "id": "endboss",

@@ -32,6 +32,15 @@ export const KAMPF_ARTEN: KampfArt[] = ["konter", "ausweichen", "folge", "block"
 /** beim Boss am Tor, abwechselnd */
 export const BOSS_ARTEN: KampfArt[] = ["runen", "kraft"];
 
+/** Dieselben Geschicklichkeitsspiele als Sammelspiel an einer Info-Station (statt Erz) */
+export const SAMMEL_NAME: Partial<Record<KampfArt, string>> = {
+  konter: "Im richtigen Moment zugreifen", ausweichen: "Schnell schnappen", folge: "Zeichenfolge entschlüsseln",
+  block: "Ruhig halten", ziel: "Funken einfangen",
+};
+/** Sammelspiel einer Info-Station: nur, wenn es vorgegeben ist — sonst wird Erz abgebaut */
+export const sammelFuer = (vorgabe: unknown): KampfArt | null =>
+  typeof vorgabe === "string" && (KAMPF_ARTEN as string[]).includes(vorgabe) ? (vorgabe as KampfArt) : null;
+
 /**
  * Welcher Kampf an einer Station läuft: das im TaskCrawler vorgegebene
  * Minispiel der Folie (`minispiel`), sonst reihum nach `nr`.

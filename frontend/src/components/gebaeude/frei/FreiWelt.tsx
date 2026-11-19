@@ -32,7 +32,7 @@ import {
 } from "@/lib/gebaeude/frei";
 import type { Objekt } from "@/lib/gebaeude/objekte";
 import {
-  BLOCK_ZIEL, KAMPF_NAME, KONTER_ZIEL, kampfFuer, ZEITEN, kampfEingabe, kampfLoslassen, kampfSchritt, neuerKampf,
+  BLOCK_ZIEL, KAMPF_NAME, KONTER_ZIEL, SAMMEL_NAME, kampfFuer, sammelFuer, ZEITEN, kampfEingabe, kampfLoslassen, kampfSchritt, neuerKampf,
   taktStelle, taktTreffer, type Kampf, type KampfArt, type Stufe, type Taste,
 } from "@/lib/gebaeude/kampf";
 import { tickMonster } from "@/lib/angriffe/monsterLader";
@@ -59,7 +59,7 @@ interface Props {
   avatar?: Avatar;
   /** je Abschnitt: bewacht ein Boss das Tor? */
   waechter?: boolean[];
-  /** im TaskCrawler vorgegebene Minispiele: je Abschnitt und Station bzw. je Tor (fehlt = reihum) */
+  /** im TaskCrawler vorgegebene Minispiele: je Abschnitt und Station bzw. je Tor (fehlt = reihum; an Info-Stationen = Erz) */
   kaempfe?: (string | undefined)[][];
   bosse?: (string | undefined)[];
   /** Tastatur und Zeiger an (aus, solange z. B. ein Aufgabenfenster offen ist) */
@@ -154,6 +154,8 @@ export default function FreiWelt({
   useEffect(() => { let an = true; ladeWeltModelle().then(ok => { if (an && ok) setModelleDa(true); }); return () => { an = false; }; }, []);
   const [kampf, setKampf] = useState(false);
   const [duell, setDuell] = useState<DuellBild | null>(null);
+  /** das laufende Minispiel ist ein Sammelspiel an einer Info-Station (kein Gegner) */
+  const [sammelt, setSammelt] = useState(false);
   const ringEl = useRef<HTMLDivElement>(null);
   const balkenEl = useRef<HTMLDivElement>(null);
   const ladeEl = useRef<HTMLDivElement>(null);
@@ -172,7 +174,7 @@ export default function FreiWelt({
     /** laufender kleiner Kampf, sein Ort und was davon schon geschehen ist */
     duell: null as Kampf | null,
     duellOrt: null as FreiOrt | null,
-    duellGezeigt: false, duellSchlag: false, duellFertig: false, duellNach: 0, duellStand: 0,
+    duellGezeigt: false, duellSchlag: false, duellFertig: false, duellNach: 0, duellStand: 0, duellSammeln: false,
     /** Erz-Takt: Zeit, seit die Figur am Erz steht */
     takt: 0,
     x: 0, z: 0, blick: 0, neigung: 0.34, abstand: 6.5,
@@ -203,7 +205,7 @@ export default function FreiWelt({
     luft: null as ((zeit: number) => void) | null,
     lichter: null as ((x: number, z: number, zeit: number) => void) | null,
     marken: [] as Marke[],
-    setNah, setGuete, setHiebe, setVorlauf, setKampf, setDuell, setVolltreffer, setOben,
+    setNah, setGuete, setHiebe, setVorlauf, setKampf, setDuell, setVolltreffer, setOben, setSammelt,
   });
   Object.assign(lage.current, { plan, stock, aktiv, onAnkunft, guete, zustaende, stufe, onKampf, zielOffen, waechter, kaempfe, bosse, oben });
 
@@ -223,12 +225,14 @@ export default function FreiWelt({
     return aus;
   };
   const station = (raum: number) => ortGruppe({ art: "raum", raum });
-  /** kleinen Kampf an einem Ort beginnen */
-  const beginne = (art: KampfArt, ort: FreiOrt) => {
+  /** kleinen Kampf (bzw. mit `sammeln` ein Sammelspiel an einer Info-Station) an einem Ort beginnen */
+  const beginne = (art: KampfArt, ort: FreiOrt, sammeln = false) => {
     const l = lage.current;
     if (l.stufe === "aus") return;
     l.duell = neuerKampf(art, l.stufe);
     l.duellOrt = ort;
+    l.duellSammeln = sammeln;
+    l.setSammelt(sammeln);
     l.duellGezeigt = l.duellSchlag = l.duellFertig = false;
     l.duellStand = 0;
     l.vorlauf = VORLAUF;
@@ -260,6 +264,13 @@ export default function FreiWelt({
     if (l.warte || l.duell) return;
     const z = ort.art === "raum" ? l.zustaende[l.stock]?.[ort.raum] : null;
     const st = ort.art === "raum" ? station(ort.raum) : null;
+    // vorgegebenes Sammelspiel statt Erz (bei Stufe »aus« bleibt es beim Erz)
+    const sammelArt = z === "info" && ort.art === "raum" && l.stufe !== "aus" ? sammelFuer(l.kaempfe?.[l.stock]?.[ort.raum]) : null;
+    if (sammelArt && st) {
+      schaue(st.position.x, st.position.z);
+      beginne(sammelArt, ort, true);
+      return;
+    }
     if (z === "info" && st) {
       // erst wenn der letzte Schwung durch ist
       if (l.hiebSperre > 0) return;
@@ -542,7 +553,13 @@ export default function FreiWelt({
           l.duellFertig = true;
           l.duellNach = 0.8;
           const [mx, mz] = ortMitte(e, ort);
-          if (k.ergebnis === "gut") {
+          if (l.duellSammeln) {
+            // Sammelspiel: kein Gegner, kein Treffer — gelungen sprühen blaue Splitter, sonst bröckelt es nur
+            const erz = st?.userData.erz as THREE.Object3D | undefined;
+            if (k.ergebnis === "gut") { erz?.scale.setScalar(0.45); d.spritze(mx, 1.2, mz, 0x60a5fa, 14); if (held) bewegeAvatar(held, "jubel"); }
+            else d.spritze(mx, 1.0, mz, 0x9ca3af, 6);
+            l.setDuell(bildVon(k, true));
+          } else if (k.ergebnis === "gut") {
             if (held) bewegeAvatar(held, "angriff");
             monster?.spiele("treffer");
             d.spritze(mx, 1.4, mz, 0xfacc15, 12);
@@ -551,8 +568,10 @@ export default function FreiWelt({
             if (held) bewegeAvatar(held, "treffer");
             d.spritze(l.x, 1.6, l.z, 0xe11d48, 8);
           }
-          l.setDuell(bildVon(k, true));
-          l.onKampf?.(k.ergebnis === "gut", k.art, k.reaktion);
+          if (!l.duellSammeln) {
+            l.setDuell(bildVon(k, true));
+            l.onKampf?.(k.ergebnis === "gut", k.art, k.reaktion);
+          }
         } else if (!k.ergebnis && k.stand !== l.duellStand) {
           // etwas Sichtbares hat sich geändert (Treffer, neue Schwachstelle, nächste Rune …)
           l.duellStand = k.stand;
@@ -988,7 +1007,9 @@ export default function FreiWelt({
           )}
           <div className="card px-5 py-4 flex flex-col items-center gap-3 shadow-2xl max-w-[92%]">
             <div className={`font-black text-xl ${duell.ergebnis === "gut" ? "text-green-500" : duell.ergebnis === "schlecht" ? "text-rose-500" : ""}`}>
-              {duell.ergebnis === "gut" ? SIEG[duell.art] : duell.ergebnis === "schlecht" ? "💥 Getroffen!" : `⚔️ ${KAMPF_NAME[duell.art]}`}
+              {sammelt
+                ? duell.ergebnis === "gut" ? "✨ Info-Splitter geborgen!" : duell.ergebnis === "schlecht" ? "🪨 Knapp daneben — der Splitter kommt trotzdem" : `📜 ${SAMMEL_NAME[duell.art] ?? KAMPF_NAME[duell.art]}`
+                : duell.ergebnis === "gut" ? SIEG[duell.art] : duell.ergebnis === "schlecht" ? "💥 Getroffen!" : `⚔️ ${KAMPF_NAME[duell.art]}`}
             </div>
             {duell.art === "konter" && (
               <>
@@ -1114,9 +1135,10 @@ export default function FreiWelt({
       </div>
       {nah && aktiv && !kampf && !duell && (() => {
         const z = nah.art === "raum" ? zustaende[stock]?.[nah.raum] : null;
+        const sammelArt = z === "info" && nah.art === "raum" && stufe !== "aus" ? sammelFuer(kaempfe?.[stock]?.[nah.raum]) : null;
         return (
           <div className="absolute left-1/2 -translate-x-1/2 bottom-5 flex flex-col items-center gap-1.5">
-            {z === "info" && stufe !== "aus" && (
+            {z === "info" && stufe !== "aus" && !sammelArt && (
               <div className="flex flex-col items-center gap-0.5" data-takt>
                 {volltreffer > 0 && <span key={volltreffer} className="text-xs font-black text-amber-400 animate-bounce">💥 Volltreffer! Zählt doppelt</span>}
                 <div className="relative w-44 h-3 rounded-full bg-surface/90 border border-line overflow-hidden">
@@ -1128,7 +1150,7 @@ export default function FreiWelt({
           <button onClick={() => betrete(nah)} data-ort-knopf
             className="btn-primary text-sm py-2 px-4 shadow-xl">
             {nah.art === "ziel" ? (stufe !== "aus" && waechter?.[stock] && !zielOffen[stock] ? "⚔️ E · Wächter herausfordern" : "E · Zum Tor") : nah.art === "zurueck" ? "E · Zurück in den Abschnitt davor"
-              : z === "info" ? `⛏️ E · Erz abbauen (${hiebe}/${HIEBE})` : z === "offen" ? (stufe === "aus" ? "⚔️ E · Kämpfen" : "⚔️ E · Kampf starten") : z === "gelesen" ? "E · Info-Splitter lesen" : "E · Ansehen"}
+              : sammelArt ? `📜 E · Info bergen: ${SAMMEL_NAME[sammelArt]}` : z === "info" ? `⛏️ E · Erz abbauen (${hiebe}/${HIEBE})` : z === "offen" ? (stufe === "aus" ? "⚔️ E · Kämpfen" : "⚔️ E · Kampf starten") : z === "gelesen" ? "E · Info-Splitter lesen" : "E · Ansehen"}
           </button>
           </div>
         );

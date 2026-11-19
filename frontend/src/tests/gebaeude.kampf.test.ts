@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  BLOCK_ZIEL, KONTER_ZIEL, ZEITEN, istStufe, kampfEingabe, kampfFuer, kampfLoslassen, kampfSchritt, neuerKampf, taktStelle, taktTreffer,
+  BLOCK_ZIEL, KONTER_ZIEL, ZEITEN, istStufe, kampfEingabe, kampfFuer, sammelFuer, kampfLoslassen, kampfSchritt, neuerKampf, taktStelle, taktTreffer,
 } from "@/lib/gebaeude/kampf";
 
 const fest = (...werte: number[]) => { let i = 0; return () => werte[i++ % werte.length]; };
@@ -12,6 +12,14 @@ describe("kampfFuer", () => {
     expect(kampfFuer("runen", 0)).toBe("konter");
     expect(kampfFuer("kraft", 0, true)).toBe("kraft");
     expect(kampfFuer("block", 1, true)).toBe("kraft");
+  });
+});
+
+describe("sammelFuer", () => {
+  it("Info-Stationen: nur vorgegebene Stationsspiele, sonst Erz (null)", () => {
+    expect(sammelFuer("folge")).toBe("folge");
+    expect(sammelFuer(undefined)).toBeNull();
+    expect(sammelFuer("runen")).toBeNull();
   });
 });
 

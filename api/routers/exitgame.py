@@ -351,9 +351,10 @@ def _validate_exitgame(data: dict) -> list[str]:
                               f"bei Aufgaben gehört es in die task")
         minispiel = slide.get("minispiel")
         if minispiel is not None:
-            erlaubt = katalog.MINISPIELE if stype == "task" else katalog.BOSS_MINISPIELE if stype == "door" else None
+            # Aufgabe: Kampf davor; Erklärung/Beispiel: Sammelspiel statt Erz; Tür: Boss
+            erlaubt = katalog.BOSS_MINISPIELE if stype == "door" else None if stype == "boss" else katalog.MINISPIELE
             if erlaubt is None:
-                errors.append(f"{where}: 'minispiel' gibt es nur bei Aufgaben und Türen")
+                errors.append(f"{where}: 'minispiel' gibt es nur bei Aufgaben, Erklärungen, Beispielen und Türen")
             elif minispiel not in erlaubt:
                 errors.append(f"{where}: 'minispiel' '{minispiel}' gibt es nicht (erlaubt: {', '.join(erlaubt)})")
         station = slide.get("station")

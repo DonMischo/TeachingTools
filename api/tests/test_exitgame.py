@@ -916,12 +916,13 @@ def test_upload_validates_minispiele(client, teacher_token):
     slides = [dict(s) for s in SIMPLE_GAME["slides"]]
     slides[1]["minispiel"] = "block"
     slides[2]["minispiel"] = "runen"
+    slides[0]["minispiel"] = "folge"  # Sammelspiel statt Erz
     ok = {**SIMPLE_GAME, "gebaeude": {"ansicht": "frei", "minispiele": False}, "slides": slides}
     assert _upload(client, teacher_token, ok).status_code == 201
     falsch_slides = [
         (1, "runen"),       # Boss-Spiel an einer Aufgabe
         (2, "konter"),      # Aufgaben-Spiel an einer Tür
-        (0, "konter"),      # Erklärungen sind Erz, kein Kampf
+        (0, "runen"),       # an Erklärungen nur Sammelspiele
         (1, "tanzen"),
     ]
     for nr, spiel in falsch_slides:
@@ -943,7 +944,8 @@ def test_medien_example_has_one_style_per_epoch(client, teacher_token):
     assert len(spiel["gebaeude"]["stile"]) == tueren == 6
     # 3D-Welt: jede Aufgabe hat ihren Kampf, jede Tür ihren Boss
     assert spiel["gebaeude"]["ansicht"] == "frei" and spiel["gebaeude"]["minispiele"] is True
-    assert all(s.get("minispiel") for s in spiel["slides"] if s["type"] in ("task", "door"))
+    # Kampf an jeder Aufgabe, Boss an jeder Tür, Sammelspiel an jeder Info
+    assert all(s.get("minispiel") for s in spiel["slides"] if s["type"] != "boss")
     # Jede Station passt zu ihrer Epoche — in der Steinzeit kein Buch, keine Uhr, kein Globus
     erster = spiel["slides"][:next(i for i, s in enumerate(spiel["slides"]) if s["type"] == "door")]
     assert {s["station"] for s in erster} <= {"lagerfeuer", "hoehlenwand", "quipu", "tontafel", "orakelknochen", "schriftrolle"}
@@ -957,7 +959,8 @@ def test_medien_meilensteine_example_runs_as_3d_world(client, teacher_token):
     pfad = Path(__file__).parents[2] / "data" / "taskcrawler_examples" / "TaskCrawler_Geschichte_der_Medien_Meilensteine.json"
     spiel = json.loads(pfad.read_text(encoding="utf-8"))
     assert spiel["gebaeude"]["ansicht"] == "frei"
-    assert all(s.get("minispiel") for s in spiel["slides"] if s["type"] in ("task", "door"))
+    # Kampf an jeder Aufgabe, Boss an jeder Tür, Sammelspiel an jeder Info
+    assert all(s.get("minispiel") for s in spiel["slides"] if s["type"] != "boss")
     r = _upload(client, teacher_token, spiel)
     assert r.status_code == 201, r.json()
 
