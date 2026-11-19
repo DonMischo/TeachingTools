@@ -215,3 +215,36 @@ Verlauf der »gut gespielten« Teststadt (europäisch, Seed 12): Stufe 2 nach et
 - **Geld-Ventil:** Unterhalt +20 % je Stufe; ab der Handelsstadt kommt die Stadtverwaltung dazu (0,015 Taler je Einwohner und Stufe über 2). Die Teststadt verdient spät noch etwa 125 statt 270 Taler je Schritt.
 
 Offen: eigene Ketten je Stadttyp (Phase 7); Engpässe im Verkehr sichtbar machen; teure Großbauten als Geldziel.
+
+## 8. Nächster Ausbau: Warenketten, Arbeitslose, Felder (Plan 2026-11-19)
+
+Rückmeldung aus dem Spiel: 63 % »Handel und Verwaltung« ohne Handwerker, Dörfer wachsen als große Blöcke,
+Felder kaum sichtbar, kein Holz. Plan in drei Schritten, jeder für sich spielbar und getestet.
+
+### A. Arbeit und Arbeitslose
+- Stadtleute ohne Stelle zählen nicht mehr pauschal als Kaufleute: nur 15 % arbeiten selbstständig (Kleinhandel,
+  Hausgewerbe), der Rest ist **arbeitslos** (eigener Balken).
+- Arbeitslosigkeit > 10 %: Zufriedenheit sinkt (weniger Steuern), kein Zuzug; > 25 %: die untersten Häuser leeren sich.
+- Aufstieg nur, wenn die höhere Schicht Stellen findet (heute: nur, wenn die untere besetzt bleibt) — so entsteht
+  kein Bürgerüberhang mehr, und Handwerker bleiben Handwerker, solange Werkstätten sie brauchen.
+
+### B. Höfe, Felder, neue Dörfer
+- Jeder Hof bekommt sein eigenes Feldstück (Hufe; real 7–15 ha je Familie, im Spiel 1,5 ha ≈ 400 Felder), sichtbar
+  als Ackerstreifen, die am Hof hängen (Dreifelderwirtschaft: Winterkorn, Sommerkorn, Brache).
+- Dörfer wachsen in **Gehöften** (mehr Höfe), nicht in größeren Häusern.
+- Ist das Land ums Dorf vergeben, gründen Bauern ein **neues Dorf** an einer passenden Stelle: eben, wenig Wald,
+  trocken, Wasser in der Nähe, mindestens 650 m zum nächsten Dorf; ein Feldweg verbindet es.
+
+### C. Warenketten als Technologiebaum (nach Stufen)
+| Stufe | Kette | Arbeit |
+|---|---|---|
+| Dorf/Siedlung | Holzfäller → Bauholz; Getreide → Mühle → Bäckerei | Bauern, Handwerker |
+| Siedlung | Bauholz → Sägewerk → Bretter → Zimmerei | Handwerker |
+| Marktstadt | Lehmgrube → Ziegelei → Ziegel; Köhler → Holzkohle → Schmiede; Schafhof → Weberei → Tuch | Handwerker |
+| Handelsstadt | Steinbruch → Steinmetz; Hopfen + Getreide → Brauerei → Bier; Tuch → Fernhandel (Kontor) | Handwerker, Bürger |
+| Industriestadt | Erz + Kohle → Hütte → Eisen → Fabrik | Arbeiter |
+
+- Gebäude kosten dann Taler **und** Baustoffe (Bauholz, Bretter, Ziegel, Stein) aus einem Lager am Markt.
+- Bürgerhäuser brauchen Ziegel, Bürger wollen Bier und Tuch, um aufzusteigen bzw. zufrieden zu bleiben.
+- Bevölkerungsgleichgewicht: jede Kette bindet Leute einer Schicht; Zielanteile wie in Abschnitt 4 (Landwirtschaft
+  ~25 %, Handwerk ~25 %, Handel ~15 %). Die Übersicht zeigt Lager, Erzeugung und Verbrauch je Ware.
