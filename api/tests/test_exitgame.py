@@ -952,6 +952,16 @@ def test_medien_example_has_one_style_per_epoch(client, teacher_token):
     assert r.status_code == 201, r.json()
 
 
+def test_medien_meilensteine_example_runs_as_3d_world(client, teacher_token):
+    """25 Meilensteine: 3D-Welt mit Minispiel an jeder Aufgabe und an der Tür — und hochladbar."""
+    pfad = Path(__file__).parents[2] / "data" / "taskcrawler_examples" / "TaskCrawler_Geschichte_der_Medien_Meilensteine.json"
+    spiel = json.loads(pfad.read_text(encoding="utf-8"))
+    assert spiel["gebaeude"]["ansicht"] == "frei"
+    assert all(s.get("minispiel") for s in spiel["slides"] if s["type"] in ("task", "door"))
+    r = _upload(client, teacher_token, spiel)
+    assert r.status_code == 201, r.json()
+
+
 def test_zip_upload_takes_taskcrawler_json_and_old_exitgame_json(client, teacher_token):
     import zipfile
     for name in ("taskcrawler.json", "spiel/exitgame.json"):

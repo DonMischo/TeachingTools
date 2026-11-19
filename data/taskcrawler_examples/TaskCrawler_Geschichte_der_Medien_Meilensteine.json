@@ -117,7 +117,8 @@
       "hints": [
         "Die Bilder zeigen oft Tiere und Jagdszenen.",
         "Sie hatten eine kommunikative Funktion."
-      ]
+      ],
+      "minispiel": "ziel"
     },
     {
       "id": "antike-schrift-erklaerung",
@@ -163,7 +164,8 @@
       "hints": [
         "Das Wort für Papier leitet sich davon ab.",
         "Es wurde aus einer Pflanze hergestellt."
-      ]
+      ],
+      "minispiel": "block"
     },
     {
       "id": "antike-bibliothek",
@@ -222,7 +224,8 @@
       "hints": [
         "Die Herstellung war sehr aufwendig.",
         "Die Bücher waren oft reich verziert."
-      ]
+      ],
+      "minispiel": "block"
     },
     {
       "id": "gutenberg-erklaerung",
@@ -268,7 +271,8 @@
       "hints": [
         "Vorher waren Bücher teuer und selten.",
         "Die Reformation wurde durch den Druck gefördert."
-      ]
+      ],
+      "minispiel": "konter"
     },
     {
       "id": "zeitung-erklaerung",
@@ -327,7 +331,8 @@
       "hints": [
         "Nachrichten brauchten vorher Tage oder Wochen.",
         "Morsen war die Sprache des Telegraphen."
-      ]
+      ],
+      "minispiel": "folge"
     },
     {
       "id": "telefon-erklaerung",
@@ -373,7 +378,8 @@
       "hints": [
         "Der Name Bell ist bekannt.",
         "Das Patent wurde 1876 angemeldet."
-      ]
+      ],
+      "minispiel": "konter"
     },
     {
       "id": "radio-erklaerung",
@@ -432,7 +438,8 @@
       "hints": [
         "Stummfilme waren die Regel.",
         "Ton kam erst später dazu."
-      ]
+      ],
+      "minispiel": "ziel"
     },
     {
       "id": "fernsehen-erklaerung",
@@ -530,7 +537,8 @@
       "hints": [
         "Es wurde vom US-Militär finanziert.",
         "Es sollte ausfallsicher sein."
-      ]
+      ],
+      "minispiel": "ausweichen"
     },
     {
       "id": "www-erklaerung",
@@ -589,7 +597,8 @@
       "hints": [
         "Die Nutzer selbst stellten die Inhalte ein.",
         "Die Plattformen wuchsen schnell."
-      ]
+      ],
+      "minispiel": "ausweichen"
     },
     {
       "id": "smartphone-erklaerung",
@@ -661,7 +670,8 @@
       "hints": [
         "Smartphones vereinen viele Funktionen.",
         "Streaming und On-Demand sind heute normal."
-      ]
+      ],
+      "minispiel": "folge"
     },
     {
       "id": "tuer-medien",
@@ -692,7 +702,13 @@
         "internet-aufgabe",
         "soziale-medien-aufgabe",
         "digital-aufgabe"
-      ]
+      ],
+      "minispiel": "runen"
     }
-  ]
+  ],
+  "gebaeude": {
+    "ansicht": "frei",
+    "stil": "raumstation",
+    "minispiele": true
+  }
 }
