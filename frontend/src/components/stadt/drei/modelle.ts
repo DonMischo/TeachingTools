@@ -58,6 +58,7 @@ export const MODELL_VON: Partial<Record<BauTyp, string>> = {
   kasbah: "festungsbau", hafenkontor: "kontor", kapelle: "kirche", brunnen: "brunnen",
   baecker: "kaserne", schmiede: "fabrik", weberei: "fabrik", zimmerei: "kaserne", brauerei: "silo",
   saegewerk: "muehle", ziegelei: "fabrik", koehler: "silo", schafhof: "kaserne", holzfaeller: "kaserne", steinbruch: "kran",
+  lehmgrube: "kran", hopfengarten: "silo",
 };
 
 /** Farben der Dächer und Akzente je Modell (Wand = Farbe des Bauwerks) */
