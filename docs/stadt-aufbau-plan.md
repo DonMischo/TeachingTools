@@ -248,3 +248,16 @@ Felder kaum sichtbar, kein Holz. Plan in drei Schritten, jeder für sich spielba
 - Bürgerhäuser brauchen Ziegel, Bürger wollen Bier und Tuch, um aufzusteigen bzw. zufrieden zu bleiben.
 - Bevölkerungsgleichgewicht: jede Kette bindet Leute einer Schicht; Zielanteile wie in Abschnitt 4 (Landwirtschaft
   ~25 %, Handwerk ~25 %, Handel ~15 %). Die Übersicht zeigt Lager, Erzeugung und Verbrauch je Ware.
+
+### Umsetzungsstand (2026-11-19)
+- **A fertig:** Selbstständige je Schicht (`SELBST`: Handwerker 85 %, Bürger 12 % … der Stadtbevölkerung), Rest ohne Arbeit;
+  Unmut ab 10 %, kein Zuzug ab 15 %, Abstieg/Abwanderung ab 25 %; Aufstieg nur mit Stelle in der höheren Schicht.
+- **B fertig:** Acker je Hof (`FELD_JE_HOF` = 200 Felder ≈ 0,7 ha, zusammenhängend vom Hof aus, Frucht 1–3 je Hof),
+  Ernte nach Feldgröße; Gehöfte mit einem Feld Abstand und niedriger; Dorfweg wird verlängert, wenn Hofstellen fehlen;
+  ist kein Land mehr frei, gründen Bauern ein neues Dorf (`dorfPlatz`: eben, < 35 % Wald, 40–700 m zum Wasser,
+  ≥ 650 m zu anderen Dörfern, ≤ 2,2 km zur Stadt; höchstens 9 Dörfer).
+- **C fertig (erste Fassung):** Lager am Markt (10 Waren, je höchstens 400), `KETTE` je Betrieb, `produziere` jeden
+  Schritt (Rohstoffe zuerst), Stillstand ohne Rohstoff; Baustoffe nach Stufe (`baustoffe`); Lageregeln für Holzfäller
+  (Wald), Steinbruch (Hang), Lehmgrube (Wassernähe); Bürgerhäuser brauchen 4 Ziegel, Bürger Bier und Tuch.
+- Offen: eigene Blender-Modelle für die neuen Betriebe (bisher geliehene Modelle bzw. Kästen), Holzfäller lichten den
+  Wald sichtbar, Industriestufe (Erz, Kohle, Hütte).

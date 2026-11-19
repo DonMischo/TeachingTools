@@ -43,10 +43,17 @@ export const GRUNDBAUTEN: { bau: BauTyp; stufe: number }[] = [
   // Werkstätten (Berufe); die Mühle für Stadttypen, deren Bauplan keine hat
   { bau: "muehle", stufe: 1 }, { bau: "schmiede", stufe: 1 }, { bau: "zimmerei", stufe: 1 },
   { bau: "baecker", stufe: 2 }, { bau: "weberei", stufe: 2 }, { bau: "brauerei", stufe: 2 },
+  // Warenketten (Rohstoffe und Baustoffe)
+  { bau: "holzfaeller", stufe: 0 }, { bau: "saegewerk", stufe: 1 }, { bau: "koehler", stufe: 1 },
+  { bau: "lehmgrube", stufe: 1 }, { bau: "ziegelei", stufe: 1 }, { bau: "schafhof", stufe: 2 },
+  { bau: "hopfengarten", stufe: 2 }, { bau: "steinbruch", stufe: 2 },
 ];
 
 /** Warenkette: dieser Betrieb arbeitet nur, wenn der vorige läuft (Getreide → Mühle → Mehl → Bäckerei → Brot) */
-export const VORSTUFE: Partial<Record<BauTyp, BauTyp>> = { baecker: "muehle" };
+export const VORSTUFE: Partial<Record<BauTyp, BauTyp>> = {
+  baecker: "muehle", saegewerk: "holzfaeller", koehler: "holzfaeller", ziegelei: "lehmgrube", schmiede: "koehler",
+  zimmerei: "saegewerk", weberei: "schafhof", brauerei: "hopfengarten",
+};
 
 // ---------------------------------------------------------------- Berufe
 
@@ -74,6 +81,9 @@ export const STELLEN: Partial<Record<BauTyp, { schicht: number; n: number; sekto
   burg: { schicht: 1, n: 8, sektor: "dienste" }, kaserne: { schicht: 1, n: 12, sektor: "dienste" },
   fabrik: { schicht: 3, n: 40, sektor: "industrie" }, bahnhof: { schicht: 3, n: 20, sektor: "industrie" }, hochofen: { schicht: 3, n: 60, sektor: "industrie" },
   zechenturm: { schicht: 3, n: 50, sektor: "industrie" }, kai: { schicht: 1, n: 10, sektor: "handel" }, werft: { schicht: 3, n: 30, sektor: "industrie" },
+  holzfaeller: { schicht: 0, n: 3, sektor: "land" }, saegewerk: { schicht: 1, n: 3, sektor: "bau" }, lehmgrube: { schicht: 0, n: 3, sektor: "bau" },
+  ziegelei: { schicht: 1, n: 4, sektor: "bau" }, koehler: { schicht: 0, n: 2, sektor: "handwerk" }, schafhof: { schicht: 0, n: 2, sektor: "land" },
+  steinbruch: { schicht: 1, n: 4, sektor: "bau" }, hopfengarten: { schicht: 0, n: 2, sektor: "land" },
 };
 
 /**
@@ -96,7 +106,8 @@ export const ARBEITSLOS = { unmut: 0.1, zuzug: 0.15, abwanderung: 0.25 };
 /** Anteil der Bewohner, die in Betrieben arbeiten (der Rest arbeitet zu Hause, im Haushalt, auf dem eigenen Acker) */
 export const ERWERBSQUOTE = 0.3;
 /** Reihenfolge, in der Betriebe Personal bekommen: erst die Versorgung, dann der Rest */
-export const VORRANG: BauTyp[] = ["markt", "forum", "plaza", "muehle", "baecker", "kirche", "burg", "rathaus", "schmiede", "zimmerei", "schule", "spital", "weberei", "brauerei"];
+export const VORRANG: BauTyp[] = ["markt", "forum", "plaza", "muehle", "baecker", "holzfaeller", "saegewerk", "kirche", "burg", "rathaus", "koehler", "schmiede",
+  "zimmerei", "lehmgrube", "ziegelei", "schule", "spital", "schafhof", "weberei", "hopfengarten", "brauerei", "steinbruch"];
 
 export interface Schicht { name: string; grund: Gut[]; bewohner: number; steuer: number }
 
@@ -174,3 +185,60 @@ export const unterhalt = (baukosten: number, strassenfelder: number) => 0.005 * 
 export const NAHRUNG_JE_HOF = 30;
 /** Einfuhr über Bahn und Schiff (Getreide aus der Ferne) */
 export const EINFUHR: Partial<Record<BauTyp, number>> = { bahnhof: 1500, depot: 600, kai: 800, hafenkontor: 400, kanalhafen: 600 };
+
+// ---------------------------------------------------------------- Waren und Warenketten
+
+export type Ware = "holz" | "bretter" | "lehm" | "ziegel" | "kohle" | "wolle" | "tuch" | "stein" | "hopfen" | "bier";
+export const WAREN: Record<Ware, { label: string; icon: string }> = {
+  holz: { label: "Bauholz", icon: "🪵" }, bretter: { label: "Bretter", icon: "🪚" }, lehm: { label: "Lehm", icon: "🟫" },
+  ziegel: { label: "Ziegel", icon: "🧱" }, kohle: { label: "Holzkohle", icon: "⚫" }, wolle: { label: "Wolle", icon: "🐑" },
+  tuch: { label: "Tuch", icon: "🧶" }, stein: { label: "Bruchstein", icon: "🪨" }, hopfen: { label: "Hopfen", icon: "🌿" },
+  bier: { label: "Bier", icon: "🍺" },
+};
+/** höchstens so viel je Ware im Lager am Markt */
+export const LAGER_MAX = 400;
+/** Startlager: genug Holz und Bretter für Markt, Brunnen und die ersten Betriebe */
+export const START_LAGER: Partial<Record<Ware, number>> = { holz: 80, bretter: 40 };
+
+/**
+ * Warenketten je Betrieb und Schritt bei voller Besetzung (ein = verbraucht, aus = erzeugt). Ohne Rohstoff steht
+ * der Betrieb still. Nach den Gewerben spätmittelalterlicher Städte: Holz → Sägemühle, Lehm + Brennholz → Ziegelei,
+ * Holz → Köhler → Holzkohle für die Schmiede, Wolle → Weberei, Hopfen → Brauerei.
+ */
+export const KETTE: Partial<Record<BauTyp, { ein?: Partial<Record<Ware, number>>; aus?: Partial<Record<Ware, number>> }>> = {
+  holzfaeller: { aus: { holz: 3 } },
+  saegewerk: { ein: { holz: 2 }, aus: { bretter: 2 } },
+  lehmgrube: { aus: { lehm: 3 } },
+  ziegelei: { ein: { lehm: 2, holz: 1 }, aus: { ziegel: 2 } },
+  koehler: { ein: { holz: 2 }, aus: { kohle: 2 } },
+  schmiede: { ein: { kohle: 1 } },
+  zimmerei: { ein: { bretter: 1 } },
+  schafhof: { aus: { wolle: 2 } },
+  weberei: { ein: { wolle: 2 }, aus: { tuch: 2 } },
+  steinbruch: { aus: { stein: 2 } },
+  hopfengarten: { aus: { hopfen: 2 } },
+  brauerei: { ein: { hopfen: 1 }, aus: { bier: 2 } },
+};
+
+/** Bürger wollen Bier und Tuch (je 1 auf 150 Bürger und Schritt) — ohne sie sinkt ihre Stimmung, und niemand steigt zum Bürger auf */
+export const LUXUS: Ware[] = ["bier", "tuch"];
+export const LUXUS_JE = 150;
+/** ein Bürgerhaus braucht Ziegel (Steinbau statt Fachwerk) */
+export const ZIEGEL_JE_BUERGERHAUS = 4;
+
+/**
+ * Baustoffe eines Gebäudes, nach seiner Stufe: anfangs nur Bauholz, ab der Siedlung Bretter, ab der Marktstadt
+ * Ziegel, ab der Handelsstadt Bruchstein. Betriebe der Warenketten kosten nur Bauholz (sonst käme man nie hinein),
+ * der Holzfäller nichts.
+ */
+export function baustoffe(stil: Stil, b: BauTyp): Partial<Record<Ware, number>> {
+  if (b === "holzfaeller") return {};
+  const k = kosten(b);
+  if (KETTE[b]) return { holz: Math.max(4, Math.round(k / 50)) };
+  const st = palette(stil).find(p => p.bau === b)?.stufe ?? 0;
+  const aus: Partial<Record<Ware, number>> = { holz: Math.max(2, Math.round(k / 40)) };
+  if (st >= 1) aus.bretter = Math.round(k / 60);
+  if (st >= 2) aus.ziegel = Math.round(k / 50);
+  if (st >= 3) aus.stein = Math.round(k / 60);
+  return aus;
+}

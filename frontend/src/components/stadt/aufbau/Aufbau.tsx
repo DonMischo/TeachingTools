@@ -18,7 +18,7 @@ import * as THREE from "three";
 import type { Gelaende } from "@/lib/gelaende/gelaende";
 import { BAUTEN, STILE, type BauTyp, type Stil } from "@/lib/stadt/modell";
 import { lageRegeln } from "@/lib/stadt/bauen";
-import { ANBIETER, aufStufen, GUETER, kosten, METER_JE_MINUTE, palette, SCHICHTEN, SEKTOREN, STELLEN, TROCKEN_KOSTEN, zentrumTyp, type Gut, type Sektor } from "@/lib/stadt/aufbauRegeln";
+import { ANBIETER, aufStufen, baustoffe, GUETER, KETTE, kosten, METER_JE_MINUTE, palette, SCHICHTEN, SEKTOREN, STELLEN, TROCKEN_KOSTEN, WAREN, zentrumTyp, type Gut, type Sektor, type Ware } from "@/lib/stadt/aufbauRegeln";
 import {
   abdeckung, baue, bauBei, baukosten, besetzung, DORF_HOEFE, DORF_SCHMIEDE, dorfSchmiede, geldDetails, gewerbe, hoefeIm, nahrungsDetails, erreichteHaeuser, fussabdruck, hausFarben, mitteVon, naechsteStufeFehlt, neueWelt, pruefePlatz, reichweite, reisseAb, schritt, stufe, versorgungsQuote,
   trockenlegen, TROCKEN_RADIUS, welteAlsText, welteAusText,
@@ -528,6 +528,9 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
             <span className="px-1" title="Taler · Ergebnis je Schritt">💰 {zahl(w.taler)} <span className={netto >= 0 ? "text-ok" : "text-bad"}>{netto >= 0 ? "+" : ""}{netto.toFixed(1).replace(".", ",")}</span></span>
             <span className="px-1" title="Einwohner">👥 {zahl(w.einwohner)}</span>
             <span className={`px-1 ${w.bilanz.nahrung >= w.bilanz.bedarf ? "" : "text-bad"}`} title="Nahrung für Bedarf">🌾 {zahl(w.bilanz.nahrung)}/{zahl(w.bilanz.bedarf)}</span>
+            {(["holz", "bretter", "ziegel", "stein"] as Ware[]).filter(wa => w.lager[wa] > 0 || wa === "holz").map(wa => (
+              <span key={wa} className={`px-1 ${w.lager[wa] < 10 ? "text-bad" : ""}`} title={`${WAREN[wa].label} im Lager`}>{WAREN[wa].icon} {Math.floor(w.lager[wa])}</span>
+            ))}
           </div>
           {vollbild && meldung && <div className="pointer-events-none absolute bottom-10 left-1/2 max-w-[60%] -translate-x-1/2 rounded-lg bg-surface/95 px-3 py-1.5 text-sm shadow">{meldung}</div>}
           <div className="absolute right-2 top-2 flex max-w-[44%] flex-wrap justify-end gap-1.5">
@@ -542,7 +545,7 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
           <div ref={zeigerEl} className="pointer-events-none absolute left-0 top-0 h-4 w-4" style={{ visibility: gefangen ? "visible" : "hidden" }}>
             <svg viewBox="0 0 16 16" className="h-4 w-4 drop-shadow"><path d="M1 1 L1 13 L4.5 9.5 L7 15 L9 14 L6.5 8.5 L11 8.5 Z" fill="white" stroke="black" strokeWidth="1" /></svg>
           </div>
-          {menue && <BauMenue stufen={stufen} pal={pal} stufe={i} taler={w.taler} preis={b => baukosten(w, b)} gewaehlt={wahl}
+          {menue && <BauMenue stufen={stufen} pal={pal} stufe={i} taler={w.taler} preis={b => baukosten(w, b)} stoffe={b => baustoffe(stil, b)} gewaehlt={wahl}
             waehle={b => { setWahl(b); setZiel(null); setAuswahl(null); setMenue(false); huelle.current?.querySelector("canvas")?.focus(); }}
             zu={() => setMenue(false)} />}
           {uebersicht && <Uebersicht w={w} zu={() => setUebersicht(false)} />}
@@ -671,7 +674,8 @@ function Kaertchen({ stil, bau, pr, neu, besetzt, frei }: { stil: Stil; bau: Bau
     <div className="flex flex-col gap-1">
       <div className="text-sm font-black">{BAUTEN[bau].icon} {BAUTEN[bau].label}</div>
       <div className="grid grid-cols-2 gap-x-2">
-        {neu && <><span className="text-muted">Kosten</span><span>{pr.kosten} Taler</span></>}
+        {neu && <><span className="text-muted">Kosten</span><span>{pr.kosten} Taler{stoffText(baustoffe(stil, bau))}</span></>}
+        {KETTE[bau] && <span className="col-span-2">{kettenText(bau)}</span>}
         {gueter.map(x => <span key={x.gut} className="col-span-2">{GUETER[x.gut].icon} {GUETER[x.gut].label} für {x.minuten} min Fußweg (≈ {x.minuten * METER_JE_MINUTE} m Weg)</span>)}
         {gueter.length > 0 && <><span className="text-muted">erreicht</span><span>{pr.versorgt} Häuser</span></>}
         {st && <><span className="text-muted">Personal</span><span>{st.n} {SCHICHTEN[st.schicht].name}{besetzt !== undefined ? ` · ${Math.round(besetzt * 100)} % besetzt` : frei ? ` · frei: ${Math.floor((frei[st.schicht] ?? 0) + (frei[st.schicht - 1] ?? 0))}` : ""}</span></>}
@@ -687,8 +691,9 @@ function Kaertchen({ stil, bau, pr, neu, besetzt, frei }: { stil: Stil; bau: Bau
 }
 
 /** Baumenü (B): alle Gebäude nach Stufen, mit Preis; gesperrte grau */
-function BauMenue({ stufen, pal, stufe, taler, preis, gewaehlt, waehle, zu }: {
+function BauMenue({ stufen, pal, stufe, taler, preis, stoffe, gewaehlt, waehle, zu }: {
   stufen: { name: string }[]; pal: { bau: BauTyp; stufe: number }[]; stufe: number; taler: number; preis: (b: BauTyp) => number;
+  stoffe: (b: BauTyp) => Partial<Record<Ware, number>>;
   gewaehlt: string | null; waehle: (b: BauTyp | "abriss" | "trocken") => void; zu: () => void;
 }) {
   return (
@@ -712,7 +717,7 @@ function BauMenue({ stufen, pal, stufe, taler, preis, gewaehlt, waehle, zu }: {
                     className={`flex items-center gap-2 rounded-lg border px-2 py-1.5 text-left text-xs ${gewaehlt === o.bau ? "border-accent bg-accent/15" : "border-line hover:bg-surface-hover"} ${zuGesperrt ? "opacity-40" : ""}`}>
                     <span className="text-lg">{BAUTEN[o.bau].icon}</span>
                     <span className="flex-1"><span className="block font-bold">{BAUTEN[o.bau].label}</span>
-                      <span className={teuer && !zuGesperrt ? "text-bad" : "text-muted"}>{k0} Taler{STELLEN[o.bau] ? ` · ${STELLEN[o.bau]!.n} ${SCHICHTEN[STELLEN[o.bau]!.schicht].name}` : ""}</span></span>
+                      <span className={teuer && !zuGesperrt ? "text-bad" : "text-muted"}>{k0} Taler{stoffText(stoffe(o.bau))}{STELLEN[o.bau] ? ` · ${STELLEN[o.bau]!.n} ${SCHICHTEN[STELLEN[o.bau]!.schicht].name}` : ""}</span></span>
                   </button>
                 );
               })}
@@ -776,6 +781,15 @@ function Uebersicht({ w, zu }: { w: Welt; zu: () => void }) {
           </div>
         </section>
         <section>
+          <div className="mb-1 font-bold">📦 Lager am Markt (je Schritt)</div>
+          {(Object.keys(WAREN) as Ware[]).filter(wa => w.lager[wa] > 0.05 || (w.fluss?.[wa].plus ?? 0) + (w.fluss?.[wa].minus ?? 0) > 0).map(wa => {
+            const fl = w.fluss?.[wa], netto = (fl?.plus ?? 0) - (fl?.minus ?? 0);
+            return <div key={wa} className="flex justify-between"><span>{WAREN[wa].icon} {WAREN[wa].label}</span>
+              <span>{Math.floor(w.lager[wa])} <span className={netto > 0.01 ? "text-ok" : netto < -0.01 ? "text-bad" : "text-muted"}>({netto >= 0 ? "+" : ""}{f(netto)})</span></span></div>;
+          })}
+          {w.luxus !== undefined && w.haeuser.some(h => h.schicht === 2) && <p className={w.luxus < 0.9 ? "mt-1 text-bad" : "mt-1 text-muted"}>Bürger mit Bier und Tuch: {Math.round(w.luxus * 100)} %{w.luxus < 0.9 ? " — ohne sie sinkt ihre Stimmung, und niemand steigt zum Bürger auf" : ""}</p>}
+        </section>
+        <section>
           <div className="mb-1 font-bold">🏡 Dörfer</div>
           {w.engpass && <p className="mb-1 text-bad">{ENGPASS[w.engpass]}</p>}
           {w.doerfer.map(d => (
@@ -787,11 +801,24 @@ function Uebersicht({ w, zu }: { w: Welt; zu: () => void }) {
           <div className="mb-1 font-bold">🏭 Betriebe ({betriebe.length})</div>
           {betriebe.map(b => {
             const q = bes.quote.get(b.id) ?? 1, v = verk.je.get(b.id);
-            return <div key={b.id} className="flex justify-between gap-2"><span>{BAUTEN[b.bau].icon} {BAUTEN[b.bau].label}</span><span className={q >= 1 ? "text-ok" : q >= 0.5 ? "text-[#ca8a04]" : "text-bad"}>{Math.round(q * 100)} % besetzt{q < 0.5 ? " · steht still" : ""}
+            return <div key={b.id} className="flex justify-between gap-2"><span>{BAUTEN[b.bau].icon} {BAUTEN[b.bau].label}</span><span className={q >= 1 ? "text-ok" : q >= 0.5 ? "text-[#ca8a04]" : "text-bad"}>{Math.round(q * 100)} % besetzt{q < 0.5 ? " · steht still" : w.stillstand?.has(b.id) ? " · Rohstoff fehlt" : ""}
               {v && (v.grund ? <span className="text-bad"> · verkauft nichts ({v.grund})</span> : <span className={v.absatz < 0.7 ? "text-[#ca8a04]" : "text-muted"}> · Absatz {Math.round(v.absatz * 100)} % · +{f(v.ertrag)}</span>)}</span></div>;
           })}
         </section>
       </div>
     </div>
   );
+}
+
+/** Baustoffe als kurzer Text: » · 4 🪵 2 🪚« */
+function stoffText(st: Partial<Record<Ware, number>>) {
+  const t = (Object.entries(st) as [Ware, number][]).filter(([, x]) => x > 0).map(([wa, x]) => `${x} ${WAREN[wa].icon}`).join(" ");
+  return t ? ` · ${t}` : "";
+}
+
+/** was ein Betrieb der Warenkette tut: »macht 2 🪚 Bretter aus 2 🪵 Bauholz« */
+function kettenText(b: BauTyp) {
+  const k = KETTE[b]!, liste = (m?: Partial<Record<Ware, number>>) => (Object.entries(m ?? {}) as [Ware, number][]).map(([wa, x]) => `${x} ${WAREN[wa].icon} ${WAREN[wa].label}`).join(" + ");
+  if (!k.aus) return `verbraucht ${liste(k.ein)} je Schritt`;
+  return k.ein ? `macht ${liste(k.aus)} aus ${liste(k.ein)} je Schritt` : `liefert ${liste(k.aus)} je Schritt`;
 }

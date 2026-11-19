@@ -3,16 +3,18 @@ import { erzeuge, type Gelaende } from "@/lib/gelaende/gelaende";
 import { passendeWahl } from "@/lib/stadt/landschaft";
 import type { BauTyp } from "@/lib/stadt/modell";
 import {
-  abdeckung, baue, baukosten, besetzung, bruecken, DORF_SCHMIEDE, dorfSchmiede, gewerbe, gruendeDorf, hoefeIm, verdraengt, fussabdruck, HAUPT, HAUS, nahrungsBilanz, nasseAue, neueWelt, pruefePlatz, reisseAb, schritt, STRASSE,
+  abdeckung, baue, baukosten, besetzung, bruecken, DORF_SCHMIEDE, dorfSchmiede, gewerbe, gruendeDorf, hoefeIm, produziere, verdraengt, fussabdruck, HAUPT, HAUS, nahrungsBilanz, nasseAue, neueWelt, pruefePlatz, reisseAb, schritt, STRASSE,
   strassenKetten, trockenlegen, versorgungsQuote, welteAlsText, welteAusText, zentrum, type Welt,
 } from "@/lib/stadt/aufbau";
-import { aufStufen, kosten, palette, zentrumTyp } from "@/lib/stadt/aufbauRegeln";
+import { aufStufen, baustoffe, kosten, palette, zentrumTyp } from "@/lib/stadt/aufbauRegeln";
 import { STILE } from "@/lib/stadt/modell";
 
 const g = erzeuge(passendeWahl("europaeisch", 12));
 
 /** besten erlaubten Platz für b nahe (ci, cj) suchen: volle Wirkung zuerst, dann die meisten erreichten Häuser */
 function setze(gg: Gelaende, w: Welt, b: BauTyp, ci: number, cj: number, r = 60) {
+  // nur versuchen, was bezahlbar ist (Taler und Baustoffe) — sonst sucht der Testspieler vergeblich die ganze Gegend ab
+  if (w.taler < baukosten(w, b) || Object.entries(baustoffe(w.stil, b)).some(([wa, x]) => w.lager[wa as keyof Welt["lager"]] < x!)) return null;
   let best: [number, number, number] | null = null;
   for (let y = cj - r; y <= cj + r; y += 2) for (let x = ci - r; x <= ci + r; x += 2) {
     const pr = pruefePlatz(gg, w, b, x, y);
@@ -65,7 +67,10 @@ function gutGespielt(gg: Gelaende, stil = "europaeisch" as const, schritte = 900
     }
     if (t % 10 === 0) {
       const st = aufStufen(stil)[w.stufe];
-      for (const b of [...st.braucht, "kapelle", "kirche", "baecker", "schmiede", "zimmerei", "schule", "spital"] as BauTyp[]) {
+      // ein weiterer Holzfäller, wenn das Holz knapp wird (bis drei)
+      if (w.lager.holz < 25 && w.bauten.filter(o => o.bau === "holzfaeller").length < 3) setze(gg, w, "holzfaeller", z.i, z.j, 90);
+      for (const b of [...st.braucht, "holzfaeller", "saegewerk", "kapelle", "kirche", "muehle", "baecker", "koehler", "schmiede", "zimmerei", "lehmgrube", "ziegelei",
+        "schule", "spital", "schafhof", "weberei", "hopfengarten", "brauerei", "steinbruch"] as BauTyp[]) {
         if (w.bauten.some(o => o.bau === b) || w.taler < kosten(b) + 100) continue;
         if (setze(gg, w, b, z.i, z.j, 70)) break;
       }
@@ -291,6 +296,33 @@ describe("Aufbau: Berufe", { timeout: 120000 }, () => {
     expect(bes.arbeitslos[2]).toBeGreaterThan(100);
     expect(bes.quoteArbeitslos).toBeGreaterThan(0.25);
     expect(bes.sektoren.handel).toBeLessThan(bes.sektoren.arbeitslos);
+  });
+
+  it("Warenketten: Holzfäller → Sägemühle → Bretter; ohne Rohstoff steht der Betrieb still; Bauen kostet Baustoffe", () => {
+    const w = neueWelt(g, "europaeisch", 12, false);
+    w.bauten = []; w.haeuser = [];
+    for (let k = 0; k < 10; k++) w.haeuser.push({ i: k, j: 0, schicht: 0, bewohner: 10, bauer: true } as never);
+    for (let k = 0; k < 30; k++) w.haeuser.push({ i: k, j: 1, schicht: 1, bewohner: 10, bauer: false } as never);
+    w.version.haeuser++;
+    let id = 1;
+    const neu = (bau: BauTyp) => { const b = { id: id++, bau, i: 0, j: 0, w: 2, h: 2, dreh: 0, faktor: 1 } as never as Welt["bauten"][number]; w.bauten.push(b); w.version.bauten++; return b; };
+    w.lager.holz = 0; w.lager.bretter = 0;
+    const saege = neu("saegewerk");
+    produziere(w);
+    expect(w.stillstand!.has(saege.id)).toBe(true);
+    expect(w.lager.bretter).toBe(0);
+    neu("holzfaeller");
+    produziere(w); // Holz kommt …
+    expect(w.lager.holz).toBeGreaterThan(0);
+    produziere(w); // … und wird zu Brettern
+    expect(w.lager.bretter).toBeGreaterThan(0);
+    // ohne Baustoffe kein Bau
+    const leer = neueWelt(g, "europaeisch", 12, false);
+    leer.frei.fill(1); leer.stufe = 3; leer.taler = 99999;
+    for (const k of Object.keys(leer.lager)) leer.lager[k as keyof Welt["lager"]] = 0;
+    const pr = pruefePlatz(g, leer, "kirche", 250, 250);
+    expect(pr.ok).toBe(false);
+    expect(pr.gruende.some(x => x.text.startsWith("es fehlen"))).toBe(true);
   });
 
   it("ein Betrieb ohne Personal steht still und versorgt niemanden", () => {
