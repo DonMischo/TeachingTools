@@ -70,7 +70,7 @@ export default function Gelaende() {
           code={CODE_GELAENDE}
           hintergrund={<>
             <p>
-              Ken Perlin erfand sein Rauschen 1983 für den Film <i>Tron</i> und bekam dafür einen Oscar für Technik.
+              Ken Perlin entwickelte sein Rauschen 1983, weil ihn die glatten, künstlichen Computerbilder im Film <i>Tron</i> störten. 1997 bekam er dafür einen Oscar für Technik.
               Fast jede Spielwelt mit Bergen (Minecraft, No Man's Sky) baut auf solchem Rauschen auf.
             </p>
             <p>
