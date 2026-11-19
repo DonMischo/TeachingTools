@@ -3,7 +3,7 @@ import { erzeuge, type Gelaende } from "@/lib/gelaende/gelaende";
 import { passendeWahl } from "@/lib/stadt/landschaft";
 import type { BauTyp } from "@/lib/stadt/modell";
 import {
-  abdeckung, baue, baukosten, besetzung, bruecken, gewerbe, verdraengt, fussabdruck, HAUPT, HAUS, nahrungsBilanz, nasseAue, neueWelt, pruefePlatz, reisseAb, schritt, STRASSE,
+  abdeckung, baue, baukosten, besetzung, bruecken, DORF_SCHMIEDE, dorfSchmiede, gewerbe, hoefeIm, verdraengt, fussabdruck, HAUPT, HAUS, nahrungsBilanz, nasseAue, neueWelt, pruefePlatz, reisseAb, schritt, STRASSE,
   strassenKetten, trockenlegen, versorgungsQuote, welteAlsText, welteAusText, zentrum, type Welt,
 } from "@/lib/stadt/aufbau";
 import { aufStufen, kosten, palette, zentrumTyp } from "@/lib/stadt/aufbauRegeln";
@@ -29,7 +29,10 @@ function brunnenNachfuellen(gg: Gelaende, w: Welt) {
   if (w.taler < kosten("brunnen") + 50) return;
   const abd = abdeckung(w), wasser = abd.get("wasser"), nahrung = abd.get("nahrung");
   if (!nahrung) return;
-  for (let k = 0; k < w.n * w.n; k++) if (nahrung[k] && !wasser?.[k] && (w.feld[k] === STRASSE || w.feld[k] === HAUPT)) {
+  // höchstens ein paar Versuche je Aufruf (sonst wird der Testspieler bei großer Stadt sehr langsam)
+  let versuche = 0;
+  for (let k = 0; k < w.n * w.n && versuche < 12; k += 3) if (nahrung[k] && !wasser?.[k] && (w.feld[k] === STRASSE || w.feld[k] === HAUPT)) {
+    versuche++;
     if (setze(gg, w, "brunnen", k % w.n, Math.floor(k / w.n), 6)) return;
   }
 }
@@ -109,6 +112,29 @@ describe("Aufbau: Balancing", { timeout: 120000 }, () => {
     const n = nahrungsBilanz(gut.w);
     expect(n.angebot).toBeGreaterThan(0);
     expect(gut.w.haeuser.some(h => !h.bauer && h.schicht >= 2)).toBe(true);
+  });
+
+  it("Dörfer wachsen mit der Stadt, große bekommen eine eigene Schmiede", () => {
+    const vorher = neueWelt(g, "europaeisch", 12);
+    const land = gut.w.doerfer.filter(d => !d.stadt);
+    expect(land.length).toBeGreaterThan(0);
+    for (const d of land) expect(hoefeIm(gut.w, d), d.name).toBeGreaterThan(hoefeIm(vorher, vorher.doerfer.find(x => x.name === d.name)!));
+    for (const d of land) if (hoefeIm(gut.w, d) >= DORF_SCHMIEDE + 1) expect(dorfSchmiede(gut.w, d), d.name).toBeTruthy();
+    expect(land.some(d => dorfSchmiede(gut.w, d))).toBe(true);
+  });
+
+  it("nur ein Markt: die Stadt stößt an die Platzgrenze und sagt es", () => {
+    const w = neueWelt(g, "europaeisch", 12);
+    const d = w.doerfer[0];
+    setze(g, w, zentrumTyp("europaeisch"), d.i, d.j, 40);
+    const z = zentrum(w)!;
+    for (let t = 0; t < 400; t++) {
+      schritt(g, w);
+      if (t % 5 === 0) brunnenNachfuellen(g, w);
+      if (t % 7 === 0) kapelleNachfuellen(g, w);
+    }
+    expect(z).toBeTruthy();
+    expect(w.engpass).toBe("platz");
   });
 
   it("schlecht gespielt: nur ein Markt, keine Kirche, kein Brunnen nachgebaut → keine Stadt", () => {

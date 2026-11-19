@@ -58,6 +58,8 @@ export interface Welt {
   taler: number;
   /** letzte Bilanz je Schritt */
   bilanz: { steuern: number; unterhalt: number; nahrung: number; bedarf: number };
+  /** warum die Stadt gerade nicht wächst (nicht gespeichert, jeden Schritt neu) */
+  engpass?: "nahrung" | "platz" | null;
   strassenRadius: number;
   naechsteId: number;
   bruecken: { i: number; j: number }[];
@@ -153,7 +155,7 @@ const laeuft = (bes: Besetzung, b: AufBau) => (bes.quote.get(b.id) ?? 1) >= 0.5;
 
 /** Wirkung einer Werkstatt-Art: Summe der Besetzung, höchstens `max` Betriebe */
 function werkstatt(w: Welt, bes: Besetzung, typ: BauTyp, max: number) {
-  return w.bauten.filter(b => b.bau === typ).map(b => bes.quote.get(b.id) ?? 0).sort((a, x) => x - a).slice(0, max).reduce((a, x) => a + x, 0);
+  return w.bauten.filter(b => b.bau === typ && !b.dorf).map(b => bes.quote.get(b.id) ?? 0).sort((a, x) => x - a).slice(0, max).reduce((a, x) => a + x, 0);
 }
 
 /**
@@ -392,6 +394,18 @@ function setzeOhneKosten(g: Gelaende, w: Welt, b: BauTyp, i: number, j: number, 
   return neu;
 }
 
+/** Höfe, ab denen ein Dorf seine eigene Schmiede bekommt; Grundgröße der Dörfer (wächst je Stufe um 3 Höfe) */
+export const DORF_SCHMIEDE = 10, DORF_HOEFE = 6;
+const DORF_R = 30;
+/** Bauernhöfe eines Dorfes (im Umkreis von 180 m) */
+export function hoefeIm(w: Welt, d: Dorf) {
+  return w.haeuser.filter(h => h.bauer && (h.i - d.i) ** 2 + (h.j - d.j) ** 2 <= DORF_R * DORF_R).length;
+}
+/** die Dorfschmiede eines Dorfes, falls es eine hat */
+export function dorfSchmiede(w: Welt, d: Dorf) {
+  return w.bauten.find(b => b.dorf && b.bau === "schmiede" && (b.i - d.i) ** 2 + (b.j - d.j) ** 2 <= DORF_R * DORF_R) ?? null;
+}
+
 /** Dorf in der Nähe (≤ 250 m) */
 export function dorfBei(w: Welt, x: number, y: number): Dorf | null {
   let best: Dorf | null = null, bd = 250;
@@ -454,11 +468,6 @@ export function pruefePlatz(g: Gelaende, w: Welt, b: BauTyp, i: number, j: numbe
   if (ok && (tz.i < 0 || tz.j < 0 || tz.i >= w.n || tz.j >= w.n || w.feld[tz.j * w.n + tz.i] === BAU)) {
     ok = false; gruende.push({ ok: false, text: "Zufahrt versperrt — dreh das Gebäude oder rück es ab" });
   }
-  if (ok) {
-    const v = verdraengt(w, i, j, fw, fh, dreh);
-    if (v.getrennt) { ok = false; gruende.push({ ok: false, text: "würde das Wegenetz durchschneiden — etwas verschieben oder drehen" }); }
-    else if (v.haeuser.length || v.wege) gruende.push({ ok: true, text: `weichen: ${[v.haeuser.length ? `${v.haeuser.length} ${v.haeuser.length === 1 ? "Haus" : "Häuser"} (${v.haeuser.reduce((a, h) => a + h.bewohner, 0)} Bewohner)` : "", v.wege ? `${v.wege} Wegfelder` : ""].filter(Boolean).join(", ")}` });
-  }
   const pal = palette(w.stil).find(p => p.bau === b);
   if (!pal) { ok = false; gruende.push({ ok: false, text: "gehört nicht zu diesem Stadttyp" }); }
   else if (pal.stufe > w.stufe) { ok = false; gruende.push({ ok: false, text: `erst ab Stufe ${pal.stufe + 1}` }); }
@@ -466,12 +475,20 @@ export function pruefePlatz(g: Gelaende, w: Welt, b: BauTyp, i: number, j: numbe
   if (vor && !w.bauten.some(o => o.bau === vor)) { ok = false; gruende.push({ ok: false, text: `braucht erst ${BAUTEN[vor].icon} ${BAUTEN[vor].label} (Warenkette)` }); }
   const k0 = baukosten(w, b);
   if (w.taler < k0) { ok = false; gruende.push({ ok: false, text: `zu teuer: ${k0} Taler, du hast ${Math.floor(w.taler)}` }); }
+  // Gebäude, die es (noch) nicht gibt: die teuren Prüfungen sparen
+  if (!pal || pal.stufe > w.stufe) return { ok: false, faktor: 0, gruende, versorgt: 0, kosten: k0 };
+  if (ok) {
+    const v = verdraengt(w, i, j, fw, fh, dreh);
+    if (v.getrennt) { ok = false; gruende.push({ ok: false, text: "würde das Wegenetz durchschneiden — etwas verschieben oder drehen" }); }
+    else if (v.haeuser.length || v.wege) gruende.push({ ok: true, text: `weichen: ${[v.haeuser.length ? `${v.haeuser.length} ${v.haeuser.length === 1 ? "Haus" : "Häuser"} (${v.haeuser.reduce((a, h) => a + h.bewohner, 0)} Bewohner)` : "", v.wege ? `${v.wege} Wegfelder` : ""].filter(Boolean).join(", ")}` });
+  }
+
   const p = mitteVon(w, { i, j, w: fw, h: fh });
   // Lageregeln nur für Gebäude aus dem Bauplan (Grundversorgung hat keine)
   const imPlan = BAUPLAENE[w.stil].orte.some(o => o.bau === b);
-  // ab der Handelsstadt (Stufe 3) darf es mehrere Märkte geben (zentrale Orte niederer Ordnung):
+  // ab der Marktstadt (Stufe 3) darf es mehrere Märkte geben (zentrale Orte niederer Ordnung):
   // geprüft wird ohne die anderen Märkte; stehen sie näher als 600 m, teilen sie sich die Kundschaft
-  const mehrfach = w.stufe >= 3 && !!ANBIETER[b]?.some(a => a.gut === "nahrung");
+  const mehrfach = w.stufe >= 2 && !!ANBIETER[b]?.some(a => a.gut === "nahrung");
   const orte = mehrfach ? orteVon(w).filter(o => o.bau !== b) : orteVon(w);
   const pr = imPlan ? pruefeOrt(g, w.stil, b, p, orte) : { erlaubt: true, faktor: 1, gruende: [] as Bewertung[] };
   if (mehrfach && w.bauten.some(o => o.bau === b && Math.hypot(mitteVon(w, o).x - p.x, mitteVon(w, o).y - p.y) < 600)) {
@@ -752,11 +769,14 @@ export function nahrungsDetails(w: Welt, abd = abdeckung(w)) {
   // Schmiede: Werkzeug für die Höfe (+20 %)
   const werkzeug = 1 + 0.2 * werkstatt(w, bes, "schmiede", 1);
   let hoefe = 0, angebunden = 0, ernte = 0, bedarf = 0;
+  // Höfe in der Nähe einer Dorfschmiede: +15 % (zählt nicht doppelt mit der Stadtschmiede)
+  const dorfS = w.bauten.filter(b => b.dorf && b.bau === "schmiede");
   for (const h of w.haeuser) {
     if (h.bauer) {
       hoefe++;
       if (anbindung?.[h.tor]) angebunden++;
-      ernte += NAHRUNG_JE_HOF * werkzeug * (anbindung?.[h.tor] ? 1 : 0.3) * (h.bewohner / Math.max(1, h.ziel));
+      const dorfWz = dorfS.some(b => (b.i - h.i) ** 2 + (b.j - h.j) ** 2 <= DORF_R * DORF_R) ? 1.15 : 1;
+      ernte += NAHRUNG_JE_HOF * Math.max(werkzeug, dorfWz) * (anbindung?.[h.tor] ? 1 : 0.3) * (h.bewohner / Math.max(1, h.ziel));
     } else bedarf += h.bewohner;
   }
   let einfuhr = 0;
@@ -888,12 +908,26 @@ export function schritt(g: Gelaende, w: Welt): void {
       neu = hausplaetze(g, w, 4, { i: c.i, j: c.j, r: w.strassenRadius, bauer: false, abd: abdeckung(w) });
     }
     for (const h of neu.slice(0, Math.max(1, Math.floor((angebot - bedarf) / 8)))) setzeHaus(w, h);
-  }
-  // Landesausbau: fehlt Nahrung, kommen neue Höfe in die Dörfer
-  if (z && angebot < bedarf * 1.1 && w.tick % 3 === 0) {
+    w.engpass = neu.length ? null : "platz";
+  } else w.engpass = z ? "nahrung" : null;
+  // Landesausbau: fehlt Nahrung, kommen neue Höfe in die Dörfer; dazu wachsen die Dörfer langsam mit der
+  // Stadt, die ihnen das Getreide abnimmt (Absatzmarkt) — je Stufe dürfen sie größer werden
+  if (z && ((angebot < bedarf * 1.1 && w.tick % 3 === 0) || w.tick % 10 === 5)) {
+    const knapp = angebot < bedarf * 1.1;
     for (const d of w.doerfer) {
-      const h = hausplaetze(g, w, 1, { i: d.i, j: d.j, r: d.stadt ? 30 : 24, bauer: true })[0];
+      if (!knapp && (d.stadt || hoefeIm(w, d) >= DORF_HOEFE + 3 * w.stufe)) continue;
+      const h = hausplaetze(g, w, 1, { i: d.i, j: d.j, r: d.stadt ? 30 : 24 + w.stufe * 2, bauer: true })[0];
       if (h) { setzeHaus(w, h); break; }
+    }
+  }
+  // Dorfhandwerk: ein großes Dorf bekommt seine eigene Schmiede (Werkzeug für die eigenen Höfe, kostet die Stadt nichts)
+  if (z && w.tick % 10 === 7) {
+    for (const d of w.doerfer) {
+      if (d.stadt || hoefeIm(w, d) < DORF_SCHMIEDE || dorfSchmiede(w, d)) continue;
+      for (let k = 0; k < 40; k++) {
+        const a = k * 2.4, r0 = 4 + k * 0.4;
+        if (setzeOhneKosten(g, w, "schmiede", Math.round(d.i + Math.cos(a) * r0), Math.round(d.j + Math.sin(a) * r0), k % 4)) break;
+      }
     }
   }
   // Geld

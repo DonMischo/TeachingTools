@@ -20,7 +20,7 @@ import { BAUTEN, STILE, type BauTyp, type Stil } from "@/lib/stadt/modell";
 import { lageRegeln } from "@/lib/stadt/bauen";
 import { ANBIETER, aufStufen, GUETER, kosten, METER_JE_MINUTE, palette, SCHICHTEN, SEKTOREN, STELLEN, TROCKEN_KOSTEN, zentrumTyp, type Gut, type Sektor } from "@/lib/stadt/aufbauRegeln";
 import {
-  abdeckung, baue, bauBei, baukosten, besetzung, geldDetails, gewerbe, nahrungsDetails, erreichteHaeuser, fussabdruck, hausFarben, mitteVon, naechsteStufeFehlt, neueWelt, pruefePlatz, reichweite, reisseAb, schritt, stufe, versorgungsQuote,
+  abdeckung, baue, bauBei, baukosten, besetzung, DORF_HOEFE, DORF_SCHMIEDE, dorfSchmiede, geldDetails, gewerbe, hoefeIm, nahrungsDetails, erreichteHaeuser, fussabdruck, hausFarben, mitteVon, naechsteStufeFehlt, neueWelt, pruefePlatz, reichweite, reisseAb, schritt, stufe, versorgungsQuote,
   trockenlegen, TROCKEN_RADIUS, welteAlsText, welteAusText,
   type Platzpruefung, type Welt,
 } from "@/lib/stadt/aufbau";
@@ -589,6 +589,7 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
             )}
             {i === 0 && <p className="mt-1 font-bold">👉 Wähle {BAUTEN[zentrumTyp(stil)].icon} {BAUTEN[zentrumTyp(stil)].label} und setze es in eines der Dörfer ({w.doerfer.map(d => d.name).join(", ")}) — das erhebt es zum Marktort. Die anderen Dörfer liefern Nahrung.</p>}
             {i > 0 && fehlend.length > 0 && <p className="mt-1">Für den Aufstieg fehlt: {fehlend.join(", ")}</p>}
+            {i > 0 && w.engpass && <p className="mt-1 text-bad">{ENGPASS[w.engpass]}</p>}
           </div>
           {deckung.length > 0 && (
             <div className="text-xs">
@@ -726,6 +727,11 @@ function BauMenue({ stufen, pal, stufe, taler, preis, gewaehlt, waehle, zu }: {
   );
 }
 
+const ENGPASS = {
+  platz: "🚧 Kein Platz mehr für neue Häuser: Wohnstraßen entstehen nur, wo Markt und Brunnen hinreichen. Setz einen weiteren Markt (ab 600 m vom ersten) und Brunnen an den Stadtrand.",
+  nahrung: "🌾 Kein Zuzug: es fehlt Nahrung. Mehr Höfe ans Wegenetz, Mühle, Bäckerei oder Einfuhr.",
+} as const;
+
 /** Übersicht (I): Geld, Nahrung, Bevölkerung und Arbeit, Betriebe — je Posten */
 function Uebersicht({ w, zu }: { w: Welt; zu: () => void }) {
   const geld = geldDetails(w), nah = nahrungsDetails(w), bes = besetzung(w), verk = gewerbe(w, bes);
@@ -764,6 +770,14 @@ function Uebersicht({ w, zu }: { w: Welt; zu: () => void }) {
               return [<span key={`a${k}`}>{sch.name}</span>, <span key={`b${k}`}>{zahl(leute)}</span>, <span key={`c${k}`}>{zahl(bes.angebot[k])}</span>, <span key={`d${k}`} className={bes.fehlend[k] > 0 ? "text-bad" : ""}>{zahl(bes.fehlend[k])}</span>];
             })}
           </div>
+        </section>
+        <section>
+          <div className="mb-1 font-bold">🏡 Dörfer</div>
+          {w.engpass && <p className="mb-1 text-bad">{ENGPASS[w.engpass]}</p>}
+          {w.doerfer.map(d => (
+            <div key={d.name} className="flex justify-between"><span>{d.stadt ? "🏙️" : "🏡"} {d.name}</span>
+              <span className="text-muted">{hoefeIm(w, d)} Höfe{d.stadt ? "" : ` (Platz bis ${DORF_HOEFE + 3 * w.stufe})`}{dorfSchmiede(w, d) ? " · ⚒️ Dorfschmiede +15 %" : !d.stadt ? ` · Schmiede ab ${DORF_SCHMIEDE} Höfen` : ""}</span></div>
+          ))}
         </section>
         <section>
           <div className="mb-1 font-bold">🏭 Betriebe ({betriebe.length})</div>
