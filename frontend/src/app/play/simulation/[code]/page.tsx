@@ -59,6 +59,7 @@ import Vulkan from "@/components/vulkan/Vulkan";
 import Baumleben from "@/components/baum/Baumleben";
 import Stromkreis from "@/components/stromkreis/Stromkreis";
 import DiagrammWerkstatt from "@/components/diagramme/DiagrammWerkstatt";
+import Spielalgorithmen from "@/components/spielalgo/Spielalgorithmen";
 import Schichtenmodell from "@/components/schichten/Schichtenmodell";
 import Tippen from "@/components/tippen/Tippen";
 import KiKompass from "@/components/kikompass/KiKompass";
@@ -116,6 +117,7 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   vulkan: { title: "Vulkane", icon: "🌋", node: <Vulkan /> },
   baum: { title: "Baumleben", icon: "🌳", node: <Baumleben /> },
   diagramme: { title: "Diagramm-Werkstatt", icon: "🔀", node: <DiagrammWerkstatt /> },
+  spielalgo: { title: "Spielalgorithmen", icon: "🎲", node: <Spielalgorithmen /> },
   schichten: { title: "Schichtenmodell", icon: "📶", node: <Schichtenmodell /> },
   pse: { title: "Periodensystem", icon: "🧪", node: <Periodensystem /> },
   atommodelle: { title: "Atommodelle", icon: "⚛️", node: <Atomwerkstatt /> },

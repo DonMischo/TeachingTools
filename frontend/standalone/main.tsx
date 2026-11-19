@@ -43,6 +43,7 @@ import RegelLabor from "@/components/regeln/RegelLabor";
 import Wellenkollaps from "@/components/wfc/Wellenkollaps";
 import Algorithmen from "@/components/algo/Algorithmen";
 import Wachstum from "@/components/dla/Wachstum";
+import Spielalgorithmen from "@/components/spielalgo/Spielalgorithmen";
 import Stadtentwicklung from "@/components/stadt/Stadtentwicklung";
 import Erosion from "@/components/erosion/Erosion";
 import Vulkan from "@/components/vulkan/Vulkan";
@@ -92,6 +93,7 @@ const TOOLS: { id: string; icon: string; label: string; node: ReactNode }[] = [
   { id: "wfc", icon: "🧩", label: "Wellenfunktionskollaps", node: <Wellenkollaps /> },
   { id: "algo", icon: "🔀", label: "Algorithmen", node: <Algorithmen /> },
   { id: "dla", icon: "🪸", label: "Fraktales Wachstum", node: <Wachstum /> },
+  { id: "spielalgo", icon: "🎲", label: "Spielalgorithmen", node: <Spielalgorithmen /> },
   { id: "stadt", icon: "🏘️", label: "Stadtentwicklung", node: <Stadtentwicklung /> },
   { id: "erosion", icon: "🌧️", label: "Erosion", node: <Erosion /> },
   { id: "vulkan", icon: "🌋", label: "Vulkane", node: <Vulkan /> },

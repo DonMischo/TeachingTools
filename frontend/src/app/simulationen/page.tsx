@@ -141,6 +141,14 @@ const ALL_CARDS: Werkzeug[] = [
     color: "#14b8a6",
   },
   {
+    slug: "spielalgo",
+    href: "/simulationen/spielalgo",
+    icon: "🎲",
+    title: "Spielalgorithmen",
+    description: "Wie Spiele ihre Welten selbst bauen: vier Labyrinth-Erzeuger im Vergleich, BSP-Räume, Zellautomat-Höhlen, Poisson-Disc und Voronoi, Gelände aus Rauschen, A*/Dijkstra/Greedy samt Flowfield und ein Ablauf-Graph mit Schlüssel und Schloss, aus dem eine Karte wird — alles Schritt für Schritt.",
+    color: "#7c3aed",
+  },
+  {
     slug: "stadt",
     href: "/simulationen/stadt",
     icon: "🏘️",

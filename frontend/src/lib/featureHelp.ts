@@ -668,6 +668,21 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet)." },
     ],
   },
+  spielalgo: {
+    title: "Spielalgorithmen",
+    intro: "Wie Computerspiele ihre Welten selbst erzeugen (prozedurale Generierung). Jeder Reiter erklärt ein Verfahren kurz und lässt es laufen: ▶ abspielen, ⏭ ein Schritt, ⏩ bis zum Ende, Tempo und Seed. Gleicher Seed = gleiche Welt. Rechnet ganz im Browser.",
+    sections: [
+      { label: "🌀 Labyrinthe", text: "Backtracker, Prim, Kruskal und Wilson bauen gleichzeitig auf demselben Raster. Danach vergleicht eine Tabelle Sackgassen, Kreuzungen, Geraden, mittlere Ganglänge und Lösungsweg. Einzeln in Zeitlupe mit Lösern gibt es das im Regel-Labor." },
+      { label: "🏢 BSP-Räume", text: "Die Fläche wird immer wieder geteilt, in jedes Endstück kommt ein Raum, dann verbinden Gänge die Geschwister. Daneben der Baum. Regler: kleinstes Stück, Tiefe, Raumgröße." },
+      { label: "🕳️ Höhlen", text: "Zellautomat: Zufallsfels, dann Runde für Runde Nachbarn zählen. Geburt und Überleben sind als Zahlen 0–8 anklickbar, dazu Vorlagen (Höhle, labyrinthisch, Inseln, Game of Life). Zum Schluss Flutfüllung: getrennte Höhlen bunt, nur die größte bleibt." },
+      { label: "🌳 Verteilen", text: "Reiner Zufall neben Poisson-Disc (Bridson) mit gleich vielen Punkten und dem kleinsten Abstand im Vergleich. Sichtbar: aktive Punkte, Suchring, passende und zu nahe Kandidaten. Dazu Voronoi-Regionen und Lloyd-Schritte." },
+      { label: "🏔️ Gelände", text: "Gradientenrauschen mit Oktaven (abspielen legt sie nacheinander dazu), Persistenz, Lakunarität, Domain Warping, Inselmaske und Meeresspiegel. Die einzelnen Oktaven sind darunter als kleine Bilder zu sehen." },
+      { label: "🧭 Wegsuche", text: "Dijkstra, A* und Greedy auf Gelände mit Wänden und Sumpf (kostet 5). Wände, Sumpf, Start und Ziel lassen sich mit der Maus malen. Eine Tabelle vergleicht untersuchte Felder, Kosten und Weglänge. Im Modus Flowfield zeigen Pfeile jedem Feld den Weg, 60 Figuren laufen mit." },
+      { label: "🔁 Ablauf-Graph", text: "Zyklische Generierung nach Joris Dormans: Start und Ziel auf einer Schleife, Muster Schlüssel und Schloss, zwei Wege, versteckte Abkürzung oder gefährlicher Weg; dazu längere Wege, Nebenschleifen mit Aussicht und Tempo (Ruhe, Rätsel, Kampf). Eine Prüfung sagt, ob das Ziel erreichbar ist und ob man den Schlüssel braucht. Daneben wird der Graph zur Karte, die Gänge sucht A*, wahlweise in Höhlenform." },
+      { label: "➕ Mehr davon", text: "Verweise auf die verwandten Simulationen Regel-Labor, Wellenfunktionskollaps, Fraktales Wachstum, Algorithmen-Werkstatt, Erosion und Stadtentwicklung." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet)." },
+    ],
+  },
   pse: {
     title: "Periodensystem",
     intro: "Alle 118 Elemente im üblichen Raster. Ein Klick auf ein Feld öffnet den Steckbrief: Foto der Stoffprobe, Kenndaten, kurzer Text — und die typischen Reaktionen, die von dort in die Gleichungswaage führen. Rechnet ganz im Browser; die Fotos liegen im Repo, es geht also nichts nach außen.",

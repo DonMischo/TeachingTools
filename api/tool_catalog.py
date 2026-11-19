@@ -218,6 +218,10 @@ CATALOG: list[CatalogTool] = [
     CatalogTool("wfc", "🧩 Wellenfunktionskollaps", "🧩", "simulationen", {
         "use": _cap(True, True),
     }),
+    # Spielalgorithmen: prozedurale Spielwelten (Labyrinthe, BSP, Hoehlen, Poisson, Rauschen, A*, Dormans-Zyklen).
+    CatalogTool("spielalgo", "🎲 Spielalgorithmen", "🎲", "simulationen", {
+        "use": _cap(True, True),
+    }),
     # Fraktales Wachstum: diffusionsbegrenzte Aggregation in 2D und 3D.
     CatalogTool("dla", "🪸 Fraktales Wachstum", "🪸", "simulationen", {
         "use": _cap(True, True),

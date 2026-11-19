@@ -643,6 +643,18 @@ simulationen:
       - Gebäude aus einer Wachstumsregel (WBB=WAW): Stockwerke in 3D zum Durchlaufen, daneben der Grundriss als Raster; Grundlage der TaskCrawler-Gebäudeansicht
       - 3D-Welt zum freien Durchlaufen (Wald, Höhle, Gebäude) mit dem Regelprogramm der weiten Karte daneben; Grundlage der TaskCrawler-Ansicht 3D-Welt
       - Ganzes Haus als drehbares Modell (alle Stockwerke, Treppen, Stützen, Sockel) in 17 Stilen (Klassisch, Beton, Glas & Neon, Gartenpalast, Verlies, Burg, Holzhütte, Eispalast, Wüstentempel, Raumstation, Lavahöhle, Steinzeithöhle, Antiker Tempel, Mittelalter, Gotik, Viktorianisch, Retro)
+  - id: spielalgo
+    name: Spielalgorithmen
+    kann:
+      - Prozedurale Spielwelten zum Zuschauen, je Reiter Erklärung, Abspielen, Einzelschritt, bis zum Ende, Tempo und Seed (gleicher Seed = gleiche Welt)
+      - Labyrinthe – Backtracker, Prim, Kruskal und Wilson bauen gleichzeitig, danach Vergleich von Sackgassen, Kreuzungen, Geraden, Ganglänge und Lösungsweg
+      - BSP-Räume – Fläche teilen, Räume setzen, Geschwister verbinden, mit Baumansicht; Regler für kleinstes Stück, Tiefe und Raumgröße
+      - Zellautomat-Höhlen mit einstellbarer Geburt/Überleben-Regel, Vorlagen und Flutfüllung (getrennte Höhlen bunt, nur die größte bleibt)
+      - Poisson-Disc (Bridson) neben reinem Zufall mit gleicher Punktzahl, kleinster Abstand im Vergleich, Voronoi-Regionen und Lloyd-Schritte
+      - Gelände aus Gradientenrauschen – Oktaven nacheinander und einzeln, Persistenz, Lakunarität, Domain Warping, Inselmaske, Meeresspiegel
+      - Wegsuche Dijkstra, A* und Greedy auf malbarem Gelände mit Wänden und Sumpf, Vergleichstabelle; Flowfield mit 60 Figuren
+      - Zyklische Generierung nach Joris Dormans – Ablauf-Graph (Schlüssel und Schloss, zwei Wege, versteckte Abkürzung, gefährlicher Weg, Nebenschleifen mit Aussicht, Tempo), Lösbarkeitsprüfung und Karte mit A*-Gängen, wahlweise in Höhlenform
+      - Verweise auf Regel-Labor, Wellenfunktionskollaps, Fraktales Wachstum, Algorithmen-Werkstatt, Erosion und Stadtentwicklung
   - id: verkehr
     name: GTA – Ganztagsaufmerksamkeit im Verkehr – zu Fuß
     kann:

@@ -46,6 +46,7 @@ export const STANDARD_FAECHER: Record<string, string[]> = {
   stromkreis: ["Physik"],
   stroemung: ["Physik", "Technik"],
   diagramme: ["Informatik"],
+  spielalgo: ["Informatik", "Mathematik"],
   dla: ["Physik", "Chemie", "Mathematik", "Biologie", "Informatik"],
   schichten: ["Informatik"],
   pse: ["Chemie"],
