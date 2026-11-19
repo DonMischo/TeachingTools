@@ -12,6 +12,7 @@
  */
 import { neigungBei, type Gelaende } from "@/lib/gelaende/gelaende";
 import { perlin, zufallsquelle } from "@/lib/gelaende/rauschen";
+import { waldMaske } from "@/lib/gelaende/wald";
 import type { P } from "./geometrie";
 import { BAUTEN, ZONEN, type BauTyp, type HausArt, type Stil } from "./modell";
 import { BAUPLAENE, pruefeOrt, type Bewertung, type Ort } from "./bauen";
@@ -32,6 +33,7 @@ export interface AufHaus {
   /** Schritte mit fehlender Versorgung */ mangel: number;
   /** Straßenfeld vor dem Haus (Index) — von dort aus zählt die Versorgung */ tor: number;
   /** Bauernhof eines Dorfes (steigt nicht auf, liefert Nahrung) */ bauer: boolean;
+  /** Ackerfelder des Hofes (Zahl der Felder; voll = FELD_JE_HOF) */ feld?: number;
 }
 export interface AufBau { id: number; bau: BauTyp; i: number; j: number; w: number; h: number; faktor: number; /** Vierteldrehungen (0–3), Zufahrt 0 = Süden */ dreh: number; /** gehört einem Dorf (kein Unterhalt) */ dorf?: boolean }
 export interface Dorf { name: string; i: number; j: number; stadt: boolean }
@@ -369,33 +371,146 @@ export function legeDoerferAn(g: Gelaende, w: Welt) {
     w.doerfer.push({ name: dorfName(z), i: c.i, j: c.j, stadt: false });
   }
   freischalten(w);
-  for (const d of w.doerfer) {
-    // Dorfstraßen: ein Kreuz, dem ebenen Gelände folgend
-    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-      for (let t = 0; t < 18; t++) {
-        const i = d.i + dx * t, j = d.j + dy * t;
-        if (!ok25(g, i, j)) break;
-        markiere(w, i, j, STRASSE);
-      }
-    }
-    setzeOhneKosten(g, w, "brunnen", d.i + 1, d.j - 3, 0);
-    setzeOhneKosten(g, w, "kapelle", d.i - 5, d.j + 1, 3);
-    // Höfe an der Dorfstraße
-    for (const h of hausplaetze(g, w, 6, { i: d.i, j: d.j, r: 20, bauer: true })) setzeHaus(w, h);
-    // Äcker in Ringen um das Dorf (von Thünen: Gärten nah, Felder weiter draußen)
-    for (let j = d.j - 34; j <= d.j + 34; j++) for (let i = d.i - 34; i <= d.i + 34; i++) {
-      if (i < 0 || j < 0 || i >= n || j >= n) continue;
-      const r = Math.hypot(i - d.i, j - d.j), k = j * n + i;
-      if (r < 12 || r > 34 || !e[k] || w.feld[k] !== FREI) continue;
-      if (rausch(i / 14, j / 14) > -0.25) w.acker[k] = 1;
-    }
-  }
+  for (const d of w.doerfer) baueDorf(g, w, d, 6);
   // Feldwege zwischen benachbarten Dörfern
   for (let a = 0; a < w.doerfer.length; a++) {
     let best = -1, bd = Infinity;
     for (let b = 0; b < w.doerfer.length; b++) if (b !== a) { const d = Math.hypot(w.doerfer[a].i - w.doerfer[b].i, w.doerfer[a].j - w.doerfer[b].j); if (d < bd) { bd = d; best = b; } }
     if (best >= 0) strasseZwischen(g, w, w.doerfer[a], w.doerfer[best], STRASSE);
   }
+}
+
+/** Dorfkreuz, Brunnen, Kapelle und die ersten Höfe mit ihren Feldern */
+function baueDorf(g: Gelaende, w: Welt, d: Dorf, hoefe: number) {
+  for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+    for (let t = 0; t < 18; t++) {
+      const i = d.i + dx * t, j = d.j + dy * t;
+      if (!ok25(g, i, j)) break;
+      markiere(w, i, j, STRASSE);
+    }
+  }
+  setzeOhneKosten(g, w, "brunnen", d.i + 1, d.j - 3, 0);
+  setzeOhneKosten(g, w, "kapelle", d.i - 5, d.j + 1, 3);
+  for (let k = 0; k < hoefe; k++) if (!neuerHof(g, w, d)) break;
+}
+
+// ---------------------------------------------------------------- Höfe, Felder, neue Dörfer
+
+/** Ackerland je Hof: real 7–15 ha je Bauernfamilie (Hufe); im Spiel verkleinert auf ≈ 0,7 ha (200 Felder à 36 m²) */
+export const FELD_JE_HOF = 200;
+/** höchstens so viele Dörfer (mit den neu gegründeten) */
+export const MAX_DOERFER = 9;
+const waldCache = new WeakMap<Gelaende, Float32Array>();
+const wald = (g: Gelaende) => { let m = waldCache.get(g); if (!m) { m = waldMaske(g); waldCache.set(g, m); } return m; };
+
+/** Acker darf hier liegen: frei, eben genug, trocken, kein Wasser, nicht schon Acker */
+const ackerbar = (g: Gelaende, w: Welt, k: number) => w.feld[k] === FREI && !w.acker[k] && !g.wasser[k] && !nasseAue(g, w, k) && eben(g).e25[k] === 1;
+
+/**
+ * Felder für einen Hof: von der Hofstelle aus zusammenhängend (Breitensuche) bis FELD_JE_HOF, höchstens 16 Felder
+ * weit. probe = nur zählen. Die Feldfrucht (1 Winterkorn, 2 Sommerkorn, 3 Brache) wechselt von Hof zu Hof.
+ */
+function bestelleFeld(g: Gelaende, w: Welt, h: AufHaus, probe = false): number {
+  const n = w.n, art = 1 + ((h.i * 7 + h.j * 11) % 3), gesehen = new Set<number>(), schlange: number[] = [];
+  const mx = h.i + h.s / 2, my = h.j + h.s / 2;
+  // Start: der Ring um die Hofstelle
+  for (let y = h.j - 1; y <= h.j + h.s; y++) for (let x = h.i - 1; x <= h.i + h.s; x++) {
+    if (x < 0 || y < 0 || x >= n || y >= n || (x >= h.i && x < h.i + h.s && y >= h.j && y < h.j + h.s)) continue;
+    const k = y * n + x;
+    if (ackerbar(g, w, k)) { gesehen.add(k); schlange.push(k); }
+  }
+  let zahl = 0;
+  for (let q = 0; q < schlange.length && zahl < FELD_JE_HOF; q++) {
+    const k = schlange[q], x = k % n;
+    zahl++;
+    if (!probe) w.acker[k] = art;
+    for (const nb of [x > 0 ? k - 1 : -1, x < n - 1 ? k + 1 : -1, k - n, k + n]) {
+      if (nb < 0 || nb >= n * n || gesehen.has(nb)) continue;
+      if (Math.abs((nb % n) - mx) > 22 || Math.abs(Math.floor(nb / n) - my) > 22 || !ackerbar(g, w, nb)) continue;
+      gesehen.add(nb); schlange.push(nb);
+    }
+  }
+  return zahl;
+}
+
+/** einen Hof mit eigenen Feldern im Dorf anlegen; false, wenn kein Platz für Hof und Acker mehr ist */
+function neuerHof(g: Gelaende, w: Welt, d: Dorf): boolean {
+  for (const h of hausplaetze(g, w, 24, { i: d.i, j: d.j, r: d.stadt ? 30 : 24 + w.stufe * 2, bauer: true })) {
+    if (bestelleFeld(g, w, h, true) < FELD_JE_HOF * 0.6) continue;
+    setzeHaus(w, h);
+    h.feld = bestelleFeld(g, w, h);
+    w.version.strassen++; // Äcker neu zeichnen
+    return true;
+  }
+  return false;
+}
+
+/** Dorfweg um ein Stück verlängern (neue Hofstellen am Ortsrand) */
+function dorfwegVerlaengern(g: Gelaende, w: Welt, d: Dorf): boolean {
+  const n = w.n, richtungen = [[1, 0], [0, 1], [-1, 0], [0, -1]];
+  for (let r = 0; r < 4; r++) {
+    const [dx, dy] = richtungen[(r + w.tick) % 4];
+    let ende = 0;
+    for (let t = 1; t < 60; t++) {
+      const i = d.i + dx * t, j = d.j + dy * t;
+      if (i < 0 || j < 0 || i >= n || j >= n) break;
+      const f = w.feld[j * n + i];
+      if (f === STRASSE || f === HAUPT) ende = t; else if (t > ende + 1) break;
+    }
+    let neu = 0;
+    for (let t = ende + 1; t <= ende + 8; t++) {
+      const i = d.i + dx * t, j = d.j + dy * t, k = j * n + i;
+      if (!ok25(g, i, j) || w.feld[k] !== FREI || g.wasser[k] || nasseAue(g, w, k)) break;
+      w.acker[k] = 0;
+      markiere(w, i, j, STRASSE);
+      neu++;
+    }
+    if (neu >= 4) return true;
+  }
+  return false;
+}
+
+/** Bauplatz für ein neues Dorf: eben, trocken, kaum Wald, Wasser in der Nähe, ≥ 650 m zu den anderen, nicht zu weit von der Stadt */
+export function dorfPlatz(g: Gelaende, w: Welt): { i: number; j: number } | null {
+  const n = w.n, e = eben(g).e25, wm = wald(g), z = zentrum(w), zc = z ? { i: z.i, j: z.j } : w.doerfer[0];
+  let best: { i: number; j: number; wert: number } | null = null;
+  for (let j = 30; j < n - 30; j += 4) for (let i = 30; i < n - 30; i += 4) {
+    const k = j * n + i;
+    if (!e[k] || g.aue[k] || g.wasser[k]) continue;
+    const dw = g.abstandWasser[k];
+    if (dw < 40 || dw > 700) continue;
+    if (w.doerfer.some(d => Math.hypot(d.i - i, d.j - j) * w.zelle < 650)) continue;
+    const weit = zc ? Math.hypot(zc.i - i, zc.j - j) * w.zelle : 0;
+    if (weit > 2200) continue;
+    let gut = 0, baum = 0, belegt = 0;
+    for (let b = -12; b <= 12; b += 4) for (let a = -12; a <= 12; a += 4) {
+      const kk = (j + b) * n + i + a;
+      if (e[kk] && !g.aue[kk] && !g.wasser[kk]) gut++;
+      baum += wm[kk];
+      if (w.feld[kk] !== FREI) belegt++;
+    }
+    if (gut < 40 || baum / 49 > 0.35 || belegt > 2) continue;
+    const wert = gut - baum - dw / 150 - weit / 400;
+    if (!best || wert > best.wert) best = { i, j, wert };
+  }
+  return best;
+}
+
+/** neues Dorf gründen (Ausbauzeit: Bauern ziehen dorthin, wo noch Land frei ist); Feldweg zum nächsten Dorf */
+export function gruendeDorf(g: Gelaende, w: Welt): Dorf | null {
+  const p = dorfPlatz(g, w);
+  if (!p) return null;
+  const zq = zufallsquelle(w.seed + w.doerfer.length * 97 + w.tick);
+  let name = dorfName(zq);
+  for (let t = 0; t < 10 && w.doerfer.some(d => d.name === name); t++) name = dorfName(zq);
+  const d: Dorf = { name, i: p.i, j: p.j, stadt: false };
+  const naechstes = [...w.doerfer].sort((a, b) => Math.hypot(a.i - p.i, a.j - p.j) - Math.hypot(b.i - p.i, b.j - p.j))[0];
+  w.doerfer.push(d);
+  freischalten(w);
+  baueDorf(g, w, d, 3);
+  if (naechstes) strasseZwischen(g, w, d, naechstes, STRASSE);
+  freischalten(w);
+  return d;
 }
 
 function setzeOhneKosten(g: Gelaende, w: Welt, b: BauTyp, i: number, j: number, dreh: number) {
@@ -719,6 +834,10 @@ function hausplaetze(g: Gelaende, w: Welt, max: number, ort: { i: number; j: num
       const k = y * n + x;
       if (w.feld[k] !== FREI || !w.frei[k] || !e[k] || nz?.(x, y) || nasseAue(g, w, k) || g.abstandWasser[k] < 15) return false;
     }
+    // Gehöfte stehen einzeln (Hofraum, Garten): ein Feld Abstand zum nächsten Haus
+    if (ort.bauer) for (let y = j - 1; y <= j + S; y++) for (let x = i - 1; x <= i + S; x++) {
+      if (x >= 0 && y >= 0 && x < n && y < n && w.feld[y * n + x] === HAUS) return false;
+    }
     return true;
   };
   const aus: { h: AufHaus; wert: number }[] = [];
@@ -755,7 +874,7 @@ function hausplaetze(g: Gelaende, w: Welt, max: number, ort: { i: number; j: num
 }
 
 function setzeHaus(w: Welt, h: AufHaus) {
-  for (const [x, y] of zellenVon(h)) w.feld[y * w.n + x] = HAUS;
+  for (const [x, y] of zellenVon(h)) { w.feld[y * w.n + x] = HAUS; w.acker[y * w.n + x] = 0; }
   if (h.s === 3) h.hof = (h.i * 7 + h.j * 13) % 3 === 0 ? 4 : 3;
   h.bewohner = h.bauer ? 3 : 2;
   w.haeuser.push(h);
@@ -768,7 +887,7 @@ function hausWerte(w: Welt, h: AufHaus) {
   h.ziel = Math.max(1, Math.round(sch.bewohner * gross * (0.4 + 0.6 * h.versorgt)));
   const art = ZONEN[BAUPLAENE[w.stil].kern].haus;
   const [lo, hi] = art?.hoehe ?? [6, 10];
-  h.hoehe = lo + (hi - lo) * Math.min(1, h.schicht / 2) + Math.max(0, h.schicht - 2) * 5;
+  h.hoehe = h.bauer ? lo * 0.75 : lo + (hi - lo) * Math.min(1, h.schicht / 2) + Math.max(0, h.schicht - 2) * 5;
 }
 
 /** Nahrung: Bauernhöfe mit Weg zum Markt liefern voll, ohne Anbindung nur wenig; dazu Einfuhr über Bahn und Schiff */
@@ -792,7 +911,7 @@ export function nahrungsDetails(w: Welt, abd = abdeckung(w)) {
       hoefe++;
       if (anbindung?.[h.tor]) angebunden++;
       const dorfWz = dorfS.some(b => (b.i - h.i) ** 2 + (b.j - h.j) ** 2 <= DORF_R * DORF_R) ? 1.15 : 1;
-      ernte += NAHRUNG_JE_HOF * Math.max(werkzeug, dorfWz) * (anbindung?.[h.tor] ? 1 : 0.3) * (h.bewohner / Math.max(1, h.ziel));
+      ernte += NAHRUNG_JE_HOF * Math.min(1, (h.feld ?? FELD_JE_HOF) / FELD_JE_HOF) * Math.max(werkzeug, dorfWz) * (anbindung?.[h.tor] ? 1 : 0.3) * (h.bewohner / Math.max(1, h.ziel));
     } else bedarf += h.bewohner;
   }
   let einfuhr = 0;
@@ -949,11 +1068,15 @@ export function schritt(g: Gelaende, w: Welt): void {
   // Stadt, die ihnen das Getreide abnimmt (Absatzmarkt) — je Stufe dürfen sie größer werden
   if (z && ((angebot < bedarf * 1.1 && w.tick % 3 === 0) || w.tick % 10 === 5)) {
     const knapp = angebot < bedarf * 1.1;
+    let gewollt = false, gebaut = false;
     for (const d of w.doerfer) {
       if (!knapp && (d.stadt || hoefeIm(w, d) >= DORF_HOEFE + 3 * w.stufe)) continue;
-      const h = hausplaetze(g, w, 1, { i: d.i, j: d.j, r: d.stadt ? 30 : 24 + w.stufe * 2, bauer: true })[0];
-      if (h) { setzeHaus(w, h); break; }
+      gewollt = true;
+      // neues Gehöft mit eigenem Acker; fehlt die Hofstelle, wird der Dorfweg verlängert
+      if (neuerHof(g, w, d) || (dorfwegVerlaengern(g, w, d) && neuerHof(g, w, d))) { gebaut = true; break; }
     }
+    // alles Land um die Dörfer ist vergeben: Bauern gründen ein neues Dorf
+    if (gewollt && !gebaut && w.doerfer.length < MAX_DOERFER && w.tick % 30 < 10) gruendeDorf(g, w);
   }
   // Dorfhandwerk: ein großes Dorf bekommt seine eigene Schmiede (Werkzeug für die eigenen Höfe, kostet die Stadt nichts)
   if (z && w.tick % 10 === 7) {
@@ -1047,7 +1170,7 @@ export function welteAlsText(w: Welt): string {
   rle.push(alt, zahl);
   return JSON.stringify({
     v: 2, stil: w.stil, seed: w.seed, n, felder: rle,
-    haeuser: w.haeuser.map(h => [h.i, h.j, h.dreh, h.bewohner, h.ziel, Math.round(h.versorgt * 100), Math.round(h.hoehe * 10), h.s, h.hof, h.schicht, h.mangel, h.tor, h.bauer ? 1 : 0]),
+    haeuser: w.haeuser.map(h => [h.i, h.j, h.dreh, h.bewohner, h.ziel, Math.round(h.versorgt * 100), Math.round(h.hoehe * 10), h.s, h.hof, h.schicht, h.mangel, h.tor, h.bauer ? 1 : 0, h.feld ?? 0]),
     bauten: w.bauten.map(b => [b.id, b.bau, b.i, b.j, b.w, b.h, Math.round(b.faktor * 100), b.dreh, b.dorf ? 1 : 0]),
     doerfer: w.doerfer.map(d => [d.name, d.i, d.j, d.stadt ? 1 : 0]),
     einwohner: w.einwohner, tick: w.tick, stufe: w.stufe, taler: Math.round(w.taler), strassenRadius: w.strassenRadius, naechsteId: w.naechsteId,
@@ -1064,10 +1187,10 @@ export function welteAusText(text: string, g: Gelaende, stil: Stil): Welt | null
     let k = 0;
     for (let x = 0; x + 1 < d.felder.length; x += 2) {
       const v = d.felder[x], z = d.felder[x + 1];
-      for (let t = 0; t < z && k < w.n * w.n; t++, k++) { w.feld[k] = v & 7; w.frei[k] = (v >> 3) & 1; w.trocken[k] = (v >> 4) & 1; w.acker[k] = (v >> 5) & 1; }
+      for (let t = 0; t < z && k < w.n * w.n; t++, k++) { w.feld[k] = v & 7; w.frei[k] = (v >> 3) & 1; w.trocken[k] = (v >> 4) & 1; w.acker[k] = (v >> 5) & 3; }
     }
     if (k !== w.n * w.n) return null;
-    w.haeuser = d.haeuser.map((h: number[]) => ({ i: h[0], j: h[1], dreh: h[2], bewohner: h[3], ziel: h[4], versorgt: h[5] / 100, hoehe: h[6] / 10, s: h[7], hof: h[8], schicht: h[9], mangel: h[10], tor: h[11], bauer: !!h[12] }));
+    w.haeuser = d.haeuser.map((h: number[]) => ({ i: h[0], j: h[1], dreh: h[2], bewohner: h[3], ziel: h[4], versorgt: h[5] / 100, hoehe: h[6] / 10, s: h[7], hof: h[8], schicht: h[9], mangel: h[10], tor: h[11], bauer: !!h[12], feld: h[12] ? (h[13] ?? FELD_JE_HOF) : undefined }));
     w.bauten = d.bauten.map((b: [number, BauTyp, number, number, number, number, number, number, number]) => ({ id: b[0], bau: b[1], i: b[2], j: b[3], w: b[4], h: b[5], faktor: b[6] / 100, dreh: b[7], dorf: !!b[8] }));
     w.doerfer = d.doerfer.map((x: [string, number, number, number]) => ({ name: x[0], i: x[1], j: x[2], stadt: !!x[3] }));
     w.einwohner = d.einwohner; w.tick = d.tick; w.stufe = d.stufe; w.taler = d.taler; w.strassenRadius = d.strassenRadius; w.naechsteId = d.naechsteId;

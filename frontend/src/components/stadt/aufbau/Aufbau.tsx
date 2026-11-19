@@ -469,7 +469,8 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
       if (stufe(w) > alt) setMeldung(`🎉 Neue Stufe: ${aufStufen(w.stil)[stufe(w)].name} — mehr Land ist erschlossen, neue Gebäude sind frei.`);
       if (d?.objekte) d.objekte.aktualisiere(w);
       if (d?.gelaende) {
-        const s = w.frei.reduce((a, x) => a + x, 0);
+        // neu erschlossenes Land oder neue Äcker (die kommen mit neuen Höfen, die Wegeversion zählt mit)
+        const s = w.frei.reduce((a, x) => a + x, 0) * 100000 + w.version.strassen;
         if (s !== d.freiSumme) { d.gelaende.setzeMasken(w); d.freiSumme = s; }
       }
       neuZeichnen();

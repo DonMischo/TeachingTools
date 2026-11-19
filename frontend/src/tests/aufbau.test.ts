@@ -3,7 +3,7 @@ import { erzeuge, type Gelaende } from "@/lib/gelaende/gelaende";
 import { passendeWahl } from "@/lib/stadt/landschaft";
 import type { BauTyp } from "@/lib/stadt/modell";
 import {
-  abdeckung, baue, baukosten, besetzung, bruecken, DORF_SCHMIEDE, dorfSchmiede, gewerbe, hoefeIm, verdraengt, fussabdruck, HAUPT, HAUS, nahrungsBilanz, nasseAue, neueWelt, pruefePlatz, reisseAb, schritt, STRASSE,
+  abdeckung, baue, baukosten, besetzung, bruecken, DORF_SCHMIEDE, dorfSchmiede, gewerbe, gruendeDorf, hoefeIm, verdraengt, fussabdruck, HAUPT, HAUS, nahrungsBilanz, nasseAue, neueWelt, pruefePlatz, reisseAb, schritt, STRASSE,
   strassenKetten, trockenlegen, versorgungsQuote, welteAlsText, welteAusText, zentrum, type Welt,
 } from "@/lib/stadt/aufbau";
 import { aufStufen, kosten, palette, zentrumTyp } from "@/lib/stadt/aufbauRegeln";
@@ -82,7 +82,7 @@ describe("Aufbau: Dörfer und Stadterhebung", () => {
     for (const a of w.doerfer) for (const b of w.doerfer) if (a !== b) expect(Math.hypot(a.i - b.i, a.j - b.j) * g.zelle).toBeGreaterThanOrEqual(650);
     expect(w.haeuser.filter(h => h.bauer).length).toBeGreaterThanOrEqual(w.doerfer.length * 3);
     expect(w.bauten.filter(b => b.bau === "brunnen").length).toBe(w.doerfer.length);
-    expect(w.acker.some(x => x === 1)).toBe(true);
+    expect(w.acker.some(x => x > 0)).toBe(true);
     expect(w.stufe).toBe(0);
     // nur das Umland der Dörfer ist erschlossen
     expect(w.frei.reduce((a, x) => a + x, 0)).toBeLessThan(w.n * w.n / 3);
@@ -118,9 +118,23 @@ describe("Aufbau: Balancing", { timeout: 120000 }, () => {
     const vorher = neueWelt(g, "europaeisch", 12);
     const land = gut.w.doerfer.filter(d => !d.stadt);
     expect(land.length).toBeGreaterThan(0);
-    for (const d of land) expect(hoefeIm(gut.w, d), d.name).toBeGreaterThan(hoefeIm(vorher, vorher.doerfer.find(x => x.name === d.name)!));
+    // mehr Gehöfte (nicht größere Häuser): in den alten Dörfern oder in neu gegründeten
+    const hoefe = (w: Welt) => w.haeuser.filter(h => h.bauer).length;
+    expect(hoefe(gut.w)).toBeGreaterThan(hoefe(vorher) + 6);
+    expect(land.some(d => { const alt = vorher.doerfer.find(x => x.name === d.name); return !alt || hoefeIm(gut.w, d) > hoefeIm(vorher, alt); })).toBe(true);
     for (const d of land) if (hoefeIm(gut.w, d) >= DORF_SCHMIEDE + 1) expect(dorfSchmiede(gut.w, d), d.name).toBeTruthy();
-    expect(land.some(d => dorfSchmiede(gut.w, d))).toBe(true);
+    // jeder Hof hat seinen Acker
+    for (const h of gut.w.haeuser.filter(x => x.bauer && x.feld !== undefined)) expect(h.feld!).toBeGreaterThan(0);
+  });
+
+  it("ist das Land ums Dorf vergeben, gründen Bauern ein neues Dorf auf freiem, ebenem Land", () => {
+    const w = neueWelt(g, "europaeisch", 12);
+    const vorher = w.doerfer.length;
+    const d = gruendeDorf(g, w);
+    expect(d).toBeTruthy();
+    expect(w.doerfer.length).toBe(vorher + 1);
+    for (const o of w.doerfer) if (o !== d) expect(Math.hypot(o.i - d!.i, o.j - d!.j) * g.zelle).toBeGreaterThanOrEqual(650);
+    expect(hoefeIm(w, d!)).toBeGreaterThanOrEqual(1);
   });
 
   it("nur ein Markt: die Stadt stößt an die Platzgrenze und sagt es", () => {

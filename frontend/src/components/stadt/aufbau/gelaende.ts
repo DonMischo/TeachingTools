@@ -63,7 +63,8 @@ export function baueGelaende(g: Gelaende, m0: Masken): { gruppe: THREE.Group; un
       d[k * 4] = m.frei[k] ? 255 : 0;
       d[k * 4 + 1] = g.aue[k] && !m.trocken[k] && !g.wasser[k] ? 255 : 0;
       d[k * 4 + 2] = m.trocken[k] ? 255 : 0;
-      d[k * 4 + 3] = m.acker?.[k] ? 0 : 255;
+      // Acker je Hof: 1 Winterkorn, 2 Sommerkorn, 3 Brache → 0, 64, 128; kein Acker 255
+      d[k * 4 + 3] = m.acker?.[k] ? (m.acker[k] - 1) * 64 : 255;
     }
     tex.needsUpdate = true;
   };
@@ -94,14 +95,17 @@ uniform float uBreite;`)
   diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.32, 0.52, 0.5), 0.45 * smoothstep(0.3, 0.7, maske.g));
   float graben = 1.0 - smoothstep(0.0, 0.25 + fwidth(vWp.x), abs(fract((vWp.x + vWp.z) / 18.0) - 0.5) * 18.0);
   diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.36, 0.45, 0.32), 0.5 * graben * smoothstep(0.3, 0.7, maske.b));
-  // Äcker der Dörfer: Streifen in Gold, Braun und Grün (Feldfrüchte, Brache)
-  float acker = 1.0 - smoothstep(0.3, 0.7, maske.a);
+  // Äcker der Höfe (Dreifelderwirtschaft): Winterkorn gold, Sommerkorn grün, Brache braun-grün; Furchen je
+  // Frucht in eigener Richtung, Feldraine dunkel, wo zwei Höfe aneinanderstoßen
+  float acker = 1.0 - smoothstep(0.6, 0.7, maske.a);
   if (acker > 0.01) {
-    float streifen = floor((vWp.x * 0.8 + vWp.z * 0.6) / 14.0);
-    float art = fract(sin(streifen * 12.9898) * 43758.5453);
-    vec3 feld = art < 0.4 ? vec3(0.78, 0.68, 0.36) : art < 0.7 ? vec3(0.55, 0.44, 0.3) : vec3(0.46, 0.6, 0.3);
-    float furche = 0.92 + 0.08 * sin((vWp.x * 0.6 - vWp.z * 0.8) * 2.2);
-    diffuseColor.rgb = mix(diffuseColor.rgb, feld * furche, 0.75 * acker);
+    float a = maske.a;
+    vec3 feld = a < 0.12 ? vec3(0.86, 0.72, 0.32) : a < 0.37 ? vec3(0.5, 0.66, 0.26) : vec3(0.58, 0.5, 0.34);
+    vec2 r = a < 0.12 ? vec2(1.0, 0.0) : a < 0.37 ? vec2(0.0, 1.0) : vec2(0.7, 0.7);
+    float furche = 0.86 + 0.14 * sin(dot(vWp.xz, r) * 2.6);
+    float rain = smoothstep(0.02, 0.08, fwidth(a) * 3.0) * (1.0 - smoothstep(0.6, 0.7, a));
+    diffuseColor.rgb = mix(diffuseColor.rgb, feld * furche, 0.9 * acker);
+    diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.3, 0.38, 0.2), 0.6 * rain);
   }
   // Bauraster (6 m) nur auf erschlossenem Land
   vec2 f = abs(fract(vWp.xz / 6.0 + 0.5) - 0.5) * 6.0;

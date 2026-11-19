@@ -227,7 +227,7 @@ export class AufbauObjekte {
       // Bäume auf bebauten Feldern ausblenden
       const null0 = new THREE.Matrix4().makeScale(0, 0, 0);
       for (const t of this.baeume) {
-        t.zellen.forEach((k, i) => t.mesh.setMatrixAt(i, w.feld[k] === FREI ? t.matrizen[i] : null0));
+        t.zellen.forEach((k, i) => t.mesh.setMatrixAt(i, w.feld[k] === FREI && !w.acker[k] ? t.matrizen[i] : null0));
         t.mesh.instanceMatrix.needsUpdate = true;
       }
     }
