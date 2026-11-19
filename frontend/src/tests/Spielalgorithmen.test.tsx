@@ -15,7 +15,23 @@ describe("Spielalgorithmen", () => {
       }
       expect(document.querySelector("[data-steuerung]") ?? document.querySelector("[data-wegsuche]")).toBeTruthy();
       expect(document.querySelector("section.card h3")?.textContent).toBeTruthy();
+      // »Genauer hinschauen« mit Code und Stellschrauben
+      expect(document.querySelector("[data-vertiefung] [data-code]")?.textContent?.length).toBeGreaterThan(100);
+      expect(document.querySelector("[data-vertiefung] [data-stellschrauben]")).toBeTruthy();
     }
+  });
+
+  it("Growing Tree erscheint als fünfte Spalte und reagiert auf den Regler", async () => {
+    render(<Spielalgorithmen vorgabe={{ reiter: "labyrinth" }} />);
+    await act(async () => { fireEvent.click(screen.getByText("⏩ bis zum Ende")); });
+    const kopf = () => [...document.querySelectorAll("[data-vergleich] thead th")].map(t => t.textContent);
+    expect(kopf()).toContain("Eigen");
+    const sack = () => document.querySelectorAll("[data-vergleich] tbody tr")[0].lastElementChild!.textContent;
+    const vorher = sack();
+    const regler = document.querySelector("[data-stellschrauben] input[type=range]") as HTMLInputElement;
+    await act(async () => { fireEvent.change(regler, { target: { value: "0" } }); });
+    await act(async () => { fireEvent.click(screen.getByText("⏩ bis zum Ende")); });
+    expect(Number(sack())).toBeGreaterThan(Number(vorher)); // »wie Prim« hat mehr Sackgassen
   });
 
   it("»bis zum Ende« fertigt den Ablauf-Graphen und prüft ihn", async () => {

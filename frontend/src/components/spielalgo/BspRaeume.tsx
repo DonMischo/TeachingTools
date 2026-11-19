@@ -2,8 +2,10 @@
 /** BSP-Raumteilung: schneiden, Räume setzen, Geschwister verbinden — mit Baum daneben. */
 import { useRef, useState } from "react";
 import { zufall } from "@/lib/regeln/maschine";
-import { BSP_STANDARD, erzeugeBsp, neuerBsp, type Bsp } from "@/lib/spielalgo/bsp";
+import { BSP_STANDARD, erzeugeBsp, neuerBsp, type Bsp, type BspOptionen } from "@/lib/spielalgo/bsp";
 import { Buehne, Frage, Legende, Notiz, Rahmen, Regler, Steuerung, useAblauf } from "./gemeinsam";
+import { Hinweis, Vertiefung, Wahl } from "./Vertiefung";
+import { CODE_BSP } from "./code";
 
 const PX = 10;
 const TIEFENFARBE = ["#64748b", "#0ea5e9", "#8b5cf6", "#f59e0b", "#10b981", "#ef4444", "#ec4899", "#14b8a6"];
@@ -13,13 +15,17 @@ export default function BspRaeume() {
   const [min, setMin] = useState(BSP_STANDARD.min);
   const [tiefe, setTiefe] = useState(BSP_STANDARD.tiefe);
   const [fuellung, setFuellung] = useState(BSP_STANDARD.fuellung);
-  const o = { ...BSP_STANDARD, min, tiefe, fuellung };
+  const [schnitt, setSchnitt] = useState<NonNullable<BspOptionen["schnitt"]>>("laenger");
+  const [streuung, setStreuung] = useState(1);
+  const [gang, setGang] = useState<NonNullable<BspOptionen["gang"]>>("L");
+  const [rundgaenge, setRundgaenge] = useState(0);
+  const o: BspOptionen = { ...BSP_STANDARD, min, tiefe, fuellung, schnitt, streuung, gang, rundgaenge };
   const s = useRef<Bsp>(neuerBsp(o));
 
   const ablauf = useAblauf(() => {
     s.current = neuerBsp(o);
     return erzeugeBsp(s.current, zufall(seed));
-  }, [seed, min, tiefe, fuellung], 1);
+  }, [seed, min, tiefe, fuellung, schnitt, streuung, gang, rundgaenge], 1);
 
   const zeichne = (ctx: CanvasRenderingContext2D) => {
     const st = s.current;
@@ -64,6 +70,32 @@ export default function BspRaeume() {
         <Regler label="Tiefe" wert={tiefe} min={1} max={7} setWert={setTiefe} />
         <Regler label="Raumgröße" wert={fuellung} min={0.3} max={1} schritt={0.05} setWert={setFuellung} anzeige={`${Math.round(fuellung * 100)} %`} />
       </>}
+      vertiefung={
+        <Vertiefung
+          code={CODE_BSP}
+          hintergrund={<>
+            <p>
+              Der Baum ist der Trick: Weil jedes Stück genau zwei Kinder hat, muss man beim Verbinden nur Geschwister verbinden.
+              Von unten nach oben entsteht so immer ein zusammenhängender Plan, ohne dass man irgendwo prüfen muss, ob alles erreichbar ist.
+            </p>
+            <p>
+              Der Nachteil: Das Ergebnis ist wieder ein <b>Baum</b> – von jedem Raum führt genau ein Weg zum anderen.
+              Mit »Rundgänge« kommen zusätzliche Gänge dazu, dann kann man Gegnern ausweichen oder im Kreis laufen.
+            </p>
+            <p>Ähnlich rechnen Rogue-artige Spiele seit den 1980ern. In Doom (1993) diente ein BSP-Baum dagegen zum schnellen Zeichnen: Er sagt, welche Wand vor welcher liegt.</p>
+          </>}
+          stellschrauben={<>
+            <Wahl label="Schnittrichtung" wert={schnitt} setWert={setSchnitt}
+              optionen={[["laenger", "quer zur längeren Seite"], ["abwechselnd", "abwechselnd senkrecht/waagrecht"], ["zufall", "Münzwurf"]]} />
+            <Hinweis>»Münzwurf« macht schmale Handtuch-Räume, »abwechselnd« ein Schachbrett-Gefühl</Hinweis>
+            <Regler label="Schnitt-Streuung" wert={streuung} min={0} max={1} schritt={0.05} setWert={setStreuung} anzeige={`${Math.round(streuung * 100)} %`} />
+            <Hinweis>0 % = immer genau in der Mitte (gleich große Räume), 100 % = irgendwo</Hinweis>
+            <Wahl label="Gangform" wert={gang} setWert={setGang} optionen={[["L", "L-Form (ein Knick)"], ["Z", "Z-Form (Knick in der Mitte)"]]} />
+            <Regler label="Rundgänge" wert={rundgaenge} min={0} max={8} setWert={setRundgaenge} />
+            <Hinweis>zusätzliche Gänge zwischen nahen Räumen – aus dem Baum wird ein Netz</Hinweis>
+          </>}
+        />
+      }
       buehne={<>
         <Buehne b={o.b * PX} h={o.h * PX} takt={ablauf.takt} zeichne={zeichne} data-bsp />
         <Notiz ablauf={ablauf} />

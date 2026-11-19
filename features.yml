@@ -654,6 +654,7 @@ simulationen:
       - Gelände aus Gradientenrauschen – Oktaven nacheinander und einzeln, Persistenz, Lakunarität, Domain Warping, Inselmaske, Meeresspiegel
       - Wegsuche Dijkstra, A* und Greedy auf malbarem Gelände mit Wänden und Sumpf, Vergleichstabelle; Flowfield mit 60 Figuren
       - Zyklische Generierung nach Joris Dormans – Ablauf-Graph (Schlüssel und Schloss, zwei Wege, versteckte Abkürzung, gefährlicher Weg, Nebenschleifen mit Aussicht, Tempo), Lösbarkeitsprüfung und Karte mit A*-Gängen, wahlweise in Höhlenform
+      - Je Reiter aufklappbar »Genauer hinschauen« – gekürzter Code, Hintergrund und Stellschrauben für Parameter und Regeln (u. a. eigener Growing-Tree-Erzeuger als fünfte Spalte, BSP-Schnittregeln und Rundgänge, Nachbarschaft 4/8/24, Dichte aus Rauschen, Voronoi-Abstandsarten, Grat- und Wertrauschen, gewichtetes A* mit Diagonalen, Graph-Regeln und Kartenform)
       - Verweise auf Regel-Labor, Wellenfunktionskollaps, Fraktales Wachstum, Algorithmen-Werkstatt, Erosion und Stadtentwicklung
   - id: pixel
     name: Pixel-Studio

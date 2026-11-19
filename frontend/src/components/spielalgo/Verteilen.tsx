@@ -2,17 +2,20 @@
 /** Zufall gegen Poisson-Disc, dazu Voronoi-Regionen und Lloyd-Glättung. */
 import { useMemo, useRef, useState } from "react";
 import { zufall } from "@/lib/regeln/maschine";
-import { lloyd, minAbstand, neuerPoisson, poisson, voronoi, zufallsPunkte, type Poisson, type Pt } from "@/lib/spielalgo/verteilen";
+import { lloyd, minAbstand, neuerPoisson, poisson, voronoi, zufallsPunkte, type Metrik, type Poisson, type Pt } from "@/lib/spielalgo/verteilen";
+import { gradientRauschen } from "@/lib/spielalgo/rauschen";
 import { Buehne, Frage, Legende, Notiz, Rahmen, Regler, Steuerung, knopf, useAblauf } from "./gemeinsam";
+import { Hinweis, Vertiefung, Wahl } from "./Vertiefung";
+import { CODE_VERTEILEN } from "./code";
 
 const B = 300, H = 210, S = 2; // Fläche in Einheiten, Zeichenmaßstab
 
-function zeichneFeld(ctx: CanvasRenderingContext2D, punkte: Pt[], mitVoronoi: boolean, r: number, extra?: (ctx: CanvasRenderingContext2D) => void) {
+function zeichneFeld(ctx: CanvasRenderingContext2D, punkte: Pt[], mitVoronoi: boolean, r: number, extra?: (ctx: CanvasRenderingContext2D) => void, metrik: Metrik = "euklid", rOrt?: (x: number, y: number) => number) {
   ctx.fillStyle = "#e9f1dc";
   ctx.fillRect(0, 0, B * S, H * S);
   if (mitVoronoi && punkte.length) {
     const aufl = 3;
-    const v = voronoi(punkte, B, H, aufl);
+    const v = voronoi(punkte, B, H, aufl, metrik);
     const bb = Math.ceil(B / aufl);
     for (let i = 0; i < v.length; i++) {
       ctx.fillStyle = `hsl(${(v[i] * 137.5) % 360} 55% 80%)`;
@@ -21,7 +24,7 @@ function zeichneFeld(ctx: CanvasRenderingContext2D, punkte: Pt[], mitVoronoi: bo
   }
   // Abstandskreise zeigen, wo kein Nachbar hin darf
   ctx.strokeStyle = "rgba(22,101,52,0.18)";
-  for (const p of punkte) { ctx.beginPath(); ctx.arc(p.x * S, p.y * S, (r / 2) * S, 0, Math.PI * 2); ctx.stroke(); }
+  for (const p of punkte) { ctx.beginPath(); ctx.arc(p.x * S, p.y * S, ((rOrt ? rOrt(p.x, p.y) : r) / 2) * S, 0, Math.PI * 2); ctx.stroke(); }
   ctx.fillStyle = "#166534";
   for (const p of punkte) { ctx.beginPath(); ctx.arc(p.x * S, p.y * S, 3, 0, Math.PI * 2); ctx.fill(); }
   extra?.(ctx);
@@ -32,13 +35,23 @@ export default function Verteilen() {
   const [r, setR] = useState(16);
   const [mitVoronoi, setMitVoronoi] = useState(false);
   const [geglaettet, setGeglaettet] = useState<Pt[] | null>(null);
+  const [k, setK] = useState(30);
+  const [ring, setRing] = useState(2);
+  const [dichte, setDichte] = useState(false);
+  const [metrik, setMetrik] = useState<Metrik>("euklid");
   const s = useRef<Poisson>(neuerPoisson(B, H, r));
+  // ortsabhängiger Abstand aus Rauschen: Dickicht (r · 0,35) bis Lichtung (r)
+  const rOrt = useMemo(() => {
+    if (!dichte) return undefined;
+    const n = gradientRauschen(seed + 5);
+    return (x: number, y: number) => r * (0.35 + 0.65 * Math.min(1, Math.max(0, (n(x / 60, y / 60) + 0.7) / 1.4)));
+  }, [dichte, seed, r]);
 
   const ablauf = useAblauf(() => {
-    s.current = neuerPoisson(B, H, r);
+    s.current = neuerPoisson(B, H, r, k, { ring, rOrt, rMin: r * 0.35 });
     setGeglaettet(null);
     return poisson(s.current, zufall(seed));
-  }, [seed, r], 5);
+  }, [seed, r, k, ring, rOrt], 5);
 
   const poissonPunkte = geglaettet ?? s.current.punkte;
   const n = s.current.punkte.length;
@@ -46,7 +59,7 @@ export default function Verteilen() {
   const alleZufall = useMemo(() => zufallsPunkte(4000, B, H, zufall(seed + 7)), [seed]);
   const zufallPunkte = alleZufall.slice(0, n);
 
-  const zeichneZufall = (ctx: CanvasRenderingContext2D) => zeichneFeld(ctx, zufallPunkte, mitVoronoi, r);
+  const zeichneZufall = (ctx: CanvasRenderingContext2D) => zeichneFeld(ctx, zufallPunkte, mitVoronoi, r, undefined, metrik);
   const zeichnePoisson = (ctx: CanvasRenderingContext2D) => zeichneFeld(ctx, poissonPunkte, mitVoronoi, r, c => {
     const st = s.current;
     if (geglaettet || st.mitte < 0) return;
@@ -56,17 +69,18 @@ export default function Verteilen() {
     const m = st.punkte[st.mitte];
     c.strokeStyle = "#f59e0b";
     c.setLineDash([4, 4]);
-    for (const rr of [st.r, 2 * st.r]) { c.beginPath(); c.arc(m.x * S, m.y * S, rr * S, 0, Math.PI * 2); c.stroke(); }
+    const rm = rOrt ? rOrt(m.x, m.y) : st.r;
+    for (const rr of [rm, st.ring * rm]) { c.beginPath(); c.arc(m.x * S, m.y * S, rr * S, 0, Math.PI * 2); c.stroke(); }
     c.setLineDash([]);
-    for (const k of st.kandidaten) {
-      c.fillStyle = k.ok ? "#16a34a" : "#9ca3af";
-      c.fillRect(k.p.x * S - 2, k.p.y * S - 2, 4, 4);
+    for (const kd of st.kandidaten) {
+      c.fillStyle = kd.ok ? "#16a34a" : "#9ca3af";
+      c.fillRect(kd.p.x * S - 2, kd.p.y * S - 2, 4, 4);
     }
-  });
+  }, metrik, rOrt);
 
   const dz = n > 1 ? minAbstand(zufallPunkte) : 0;
   const dp = poissonPunkte.length > 1 ? minAbstand(poissonPunkte) : 0;
-  const takt = `${ablauf.takt}-${mitVoronoi}-${geglaettet ? geglaettet.length + geglaettet[0].x : 0}`;
+  const takt = `${ablauf.takt}-${mitVoronoi}-${metrik}-${geglaettet ? geglaettet.length + geglaettet[0].x : 0}`;
 
   return (
     <Rahmen
@@ -77,6 +91,31 @@ export default function Verteilen() {
           🧲 Lloyd-Schritt
         </button>
       </>}
+      vertiefung={
+        <Vertiefung
+          code={CODE_VERTEILEN}
+          hintergrund={<>
+            <p>
+              Robert Bridson hat 2007 gezeigt, wie man Poisson-Disc in linearer Zeit erzeugt. Der Trick ist das <b>Hilfsgitter</b>:
+              Seine Kästchen sind so klein (r / √2), dass in jedes höchstens ein Punkt passt. Ob ein Kandidat zu nah ist, sieht man dann an wenigen Nachbarkästchen.
+            </p>
+            <p>
+              In Spielen bekommt r oft einen <b>Ort</b>: dichter Wald am Fluss, lichter auf dem Hügel. Schalte »Dichte aus Rauschen« ein –
+              dann gilt zwischen zwei Punkten der größere ihrer beiden Abstände.
+            </p>
+            <p>Die <b>Abstandsart</b> ändert die Form der Voronoi-Grenzen: euklidisch (Luftlinie) gibt schräge Kanten, Manhattan (nur waagrecht und senkrecht laufen) rautenförmige, Tschebyschow (wie der König im Schach) achteckige.</p>
+          </>}
+          stellschrauben={<>
+            <Regler label="Versuche k" wert={k} min={1} max={60} setWert={setK} />
+            <Hinweis>wenige Versuche = schneller, aber Lücken bleiben; Bridson empfiehlt 30</Hinweis>
+            <Regler label="Suchring bis" wert={ring} min={1.2} max={4} schritt={0.1} setWert={setRing} anzeige={`${ring.toFixed(1).replace(".", ",")}·r`} />
+            <Hinweis>breiter Ring = Punkte weiter verstreut, mehr Fehlversuche am Ende</Hinweis>
+            <label className="flex items-center gap-1"><input type="checkbox" checked={dichte} onChange={e => setDichte(e.target.checked)} /> Dichte aus Rauschen (Dickicht und Lichtungen)</label>
+            <Wahl label="Abstand für Voronoi" wert={metrik} setWert={m => { setMetrik(m); setMitVoronoi(true); }}
+              optionen={[["euklid", "euklidisch (Luftlinie)"], ["manhattan", "Manhattan (Taxi)"], ["tschebyschow", "Tschebyschow (König)"]]} />
+          </>}
+        />
+      }
       buehne={<>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <figure className="flex flex-col gap-1">

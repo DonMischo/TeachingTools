@@ -139,10 +139,13 @@ export function Notiz({ ablauf }: { ablauf: Ablauf }) {
 }
 
 /** Zweispaltiger Rahmen: links Bühne, rechts Erklärung. */
-export function Rahmen({ buehne, erklaerung, einstellungen }: { buehne: ReactNode; erklaerung: ReactNode; einstellungen?: ReactNode }) {
+export function Rahmen({ buehne, erklaerung, einstellungen, vertiefung }: {
+  buehne: ReactNode; erklaerung: ReactNode; einstellungen?: ReactNode; vertiefung?: ReactNode;
+}) {
   return (
     <div className="flex flex-col gap-3">
       {einstellungen && <div className="card flex flex-wrap items-center gap-x-4 gap-y-2 text-sm p-3">{einstellungen}</div>}
+      {vertiefung}
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_380px] gap-4 items-start">
         <div className="flex flex-col gap-2 min-w-0">{buehne}</div>
         <section className="card flex flex-col gap-3 p-4 text-sm leading-relaxed">{erklaerung}</section>

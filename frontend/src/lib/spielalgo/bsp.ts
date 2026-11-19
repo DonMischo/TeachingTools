@@ -28,9 +28,17 @@ export interface BspOptionen {
   tiefe: number;
   /** Raum füllt sein Teilstück zu mindestens … (0..1) */
   fuellung: number;
+  /** Schnittrichtung: quer zur längeren Seite, immer abwechselnd oder Münzwurf */
+  schnitt?: "laenger" | "abwechselnd" | "zufall";
+  /** Wo geschnitten wird: 0 = genau in der Mitte, 1 = irgendwo zwischen den Mindestgrößen */
+  streuung?: number;
+  /** Gangform */
+  gang?: "L" | "Z";
+  /** zusätzliche Gänge zwischen nahen Räumen (ergeben Rundwege) */
+  rundgaenge?: number;
 }
 
-export const BSP_STANDARD: BspOptionen = { b: 64, h: 44, min: 8, tiefe: 5, fuellung: 0.55 };
+export const BSP_STANDARD: BspOptionen = { b: 64, h: 44, min: 8, tiefe: 5, fuellung: 0.55, schnitt: "laenger", streuung: 1, gang: "L", rundgaenge: 0 };
 
 export interface Bsp {
   o: BspOptionen;
@@ -63,15 +71,19 @@ export function* erzeugeBsp(s: Bsp, rng: () => number): Generator<string> {
     if (kn.tiefe >= maxTiefe) continue;
     const kannSenkrecht = r.b >= 2 * min, kannWaagrecht = r.h >= 2 * min;
     if (!kannSenkrecht && !kannWaagrecht) continue;
-    // Lange Stücke quer schneiden, sonst zufällig
+    // Regel für die Richtung (nur wenn beide gehen)
+    const regel = s.o.schnitt ?? "laenger";
     let senkrecht: boolean;
     if (!kannWaagrecht) senkrecht = true;
     else if (!kannSenkrecht) senkrecht = false;
-    else if (r.b / r.h > 1.25) senkrecht = true;
-    else if (r.h / r.b > 1.25) senkrecht = false;
+    else if (regel === "abwechselnd") senkrecht = kn.tiefe % 2 === 0;
+    else if (regel === "laenger" && r.b / r.h > 1.25) senkrecht = true;
+    else if (regel === "laenger" && r.h / r.b > 1.25) senkrecht = false;
     else senkrecht = rng() < 0.5;
     const laenge = senkrecht ? r.b : r.h;
-    const pos = min + Math.floor(rng() * (laenge - 2 * min + 1));
+    // Schnittstelle: um die Mitte herum, so weit die Streuung erlaubt
+    const spiel = Math.floor(((laenge - 2 * min) / 2) * (s.o.streuung ?? 1));
+    const pos = Math.floor(laenge / 2) - spiel + Math.floor(rng() * (2 * spiel + 1));
     const a: Rechteck = senkrecht ? { ...r, b: pos } : { ...r, h: pos };
     const b: Rechteck = senkrecht ? { ...r, x: r.x + pos, b: r.b - pos } : { ...r, y: r.y + pos, h: r.h - pos };
     const ia = s.knoten.push({ r: a, tiefe: kn.tiefe + 1 }) - 1;
@@ -110,11 +122,43 @@ export function* erzeugeBsp(s: Bsp, rng: () => number): Generator<string> {
       const d = Math.abs(px - qx) + Math.abs(py - qy);
       if (d < bestD) { bestD = d; best = [p, q]; }
     }
-    s.gaenge.push(lGang(mitte(best[0]), mitte(best[1]), rng() < 0.5));
+    s.gaenge.push(gang(s, mitte(best[0]), mitte(best[1]), rng));
     s.aktiv = i;
     yield `Gang zwischen den beiden Hälften von Ebene ${s.knoten[i].tiefe + 1} – jetzt hängen sie zusammen.`;
   }
+
+  // 4. Rundgänge: zusätzliche Gänge zwischen nahen Räumen, die noch keinen direkten Gang haben
+  const alle = s.knoten.filter(k => k.raum).map(k => k.raum!);
+  const verbunden = new Set<string>();
+  for (let n = 0; n < (s.o.rundgaenge ?? 0); n++) {
+    let best: [number, number] | null = null, bestD = Infinity;
+    for (let i = 0; i < alle.length; i++) for (let j = i + 1; j < alle.length; j++) {
+      if (verbunden.has(`${i}-${j}`)) continue;
+      const [px, py] = mitte(alle[i]), [qx, qy] = mitte(alle[j]);
+      const d = Math.abs(px - qx) + Math.abs(py - qy) + rng() * 6;
+      if (d < bestD) { bestD = d; best = [i, j]; }
+    }
+    if (!best) break;
+    verbunden.add(`${best[0]}-${best[1]}`);
+    s.gaenge.push(gang(s, mitte(alle[best[0]]), mitte(alle[best[1]]), rng));
+    yield `Rundgang ${n + 1}: zwei nahe Räume zusätzlich verbunden – jetzt gibt es einen zweiten Weg.`;
+  }
   return "fertig";
+}
+
+function gang(s: Bsp, a: [number, number], b: [number, number], rng: () => number): [number, number][] {
+  if ((s.o.gang ?? "L") === "L") return lGang(a, b, rng() < 0.5);
+  return zGang(a, b, rng() < 0.5);
+}
+
+/** Gang in Z-Form: Knick in der Mitte zwischen beiden Räumen. */
+export function zGang([ax, ay]: [number, number], [bx, by]: [number, number], waagrecht: boolean): [number, number][] {
+  if (waagrecht) {
+    const mx = Math.floor((ax + bx) / 2);
+    return [...lGang([ax, ay], [mx, by], true).slice(0, -1), ...lGang([mx, by], [bx, by], true)];
+  }
+  const my = Math.floor((ay + by) / 2);
+  return [...lGang([ax, ay], [bx, my], false).slice(0, -1), ...lGang([bx, my], [bx, by], false)];
 }
 
 /** Alle Räume im Teilbaum von `i`. */

@@ -83,11 +83,40 @@ export function nachbarn4(f: Feld, i: number): number[] {
   return r;
 }
 
-export function* suche(f: Feld, start: number, ziel: number, art: Suche, s: SuchStand): Generator<string> {
+export type Heuristik = "manhattan" | "euklid" | "keine";
+
+export interface SuchOptionen {
+  /** A*: f = g + gewicht · h (1 = klassisch, mehr = gieriger) */
+  gewicht?: number;
+  heuristik?: Heuristik;
+  /** auch schräg gehen (kostet ×1,4, keine Wandecken schneiden) */
+  diagonal?: boolean;
+}
+
+/** Nachbarn mit Schrittfaktor (1 gerade, 1,4 schräg). */
+export function nachbarnMit(f: Feld, i: number, diagonal: boolean): [number, number][] {
+  const x = i % f.b, y = (i / f.b) | 0, r: [number, number][] = [];
+  for (const [dx, dy] of RICHTUNGEN) {
+    if (dx && dy && !diagonal) continue;
+    const a = x + dx, b = y + dy;
+    if (a < 0 || b < 0 || a >= f.b || b >= f.h) continue;
+    if (dx && dy && (!f.kosten[y * f.b + a] || !f.kosten[b * f.b + x])) continue;
+    r.push([b * f.b + a, dx && dy ? 1.4 : 1]);
+  }
+  return r;
+}
+
+export function* suche(f: Feld, start: number, ziel: number, art: Suche, s: SuchStand, opt: SuchOptionen = {}): Generator<string> {
   const zx = ziel % f.b, zy = (ziel / f.b) | 0;
-  // Luftlinie in Kästchen (Manhattan, passt zu 4 Richtungen)
-  const hh = (i: number) => Math.abs((i % f.b) - zx) + Math.abs(((i / f.b) | 0) - zy);
-  const prio = (i: number) => art === "dijkstra" ? s.g[i] : art === "greedy" ? hh(i) : s.g[i] + hh(i) * (1 + 1e-6);
+  const heur = opt.heuristik ?? "manhattan", w = opt.gewicht ?? 1, diagonal = opt.diagonal ?? false;
+  // geschätzte Reststrecke in Kästchen
+  const hh = (i: number) => {
+    const dx = Math.abs((i % f.b) - zx), dy = Math.abs(((i / f.b) | 0) - zy);
+    if (heur === "keine") return 0;
+    if (heur === "euklid") return Math.round(Math.hypot(dx, dy) * 10) / 10;
+    return diagonal ? Math.max(dx, dy) + 0.4 * Math.min(dx, dy) : dx + dy;
+  };
+  const prio = (i: number) => art === "dijkstra" ? s.g[i] : art === "greedy" ? hh(i) : s.g[i] + w * hh(i) * (1 + 1e-6);
   const offen = new Heap();
   s.g[start] = 0;
   s.zustand[start] = ZUSTAND.OFFEN;
@@ -105,10 +134,10 @@ export function* suche(f: Feld, start: number, ziel: number, art: Suche, s: Such
       s.wegKosten = s.g[ziel];
       return `Ziel erreicht: ${s.weg.length} Felder, Kosten ${s.wegKosten}, ${s.besucht} Felder untersucht.`;
     }
-    for (const j of nachbarn4(f, i)) {
+    for (const [j, fak] of nachbarnMit(f, i, diagonal)) {
       const k = f.kosten[j];
       if (!k || s.zustand[j] === ZUSTAND.FERTIG) continue;
-      const g = s.g[i] + k;
+      const g = Math.round((s.g[i] + k * fak) * 10) / 10;
       if (g < s.g[j]) {
         s.g[j] = g;
         s.vorher[j] = i;
@@ -118,7 +147,7 @@ export function* suche(f: Feld, start: number, ziel: number, art: Suche, s: Such
     }
     yield art === "dijkstra" ? `Feld mit den kleinsten bisherigen Kosten (${s.g[i]}) untersucht.`
       : art === "greedy" ? `Feld, das dem Ziel am nächsten scheint (Luftlinie ${hh(i)}), untersucht.`
-      : `Feld mit kleinstem f = g + h = ${s.g[i]} + ${hh(i)} untersucht.`;
+      : `Feld mit kleinstem f = g + ${w === 1 ? "" : `${w.toString().replace(".", ",")}·`}h = ${s.g[i].toString().replace(".", ",")} + ${hh(i).toString().replace(".", ",")} untersucht.`;
   }
   return "Kein Weg: Das Ziel ist eingemauert.";
 }

@@ -2,8 +2,10 @@
 /** Gelände aus Rauschen: Oktave für Oktave aufbauen, Domain Warping, Insel, Meeresspiegel. */
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { GELAENDE_STANDARD, gelaende, hoehenFarbe, oktave, type GelaendeOptionen } from "@/lib/spielalgo/rauschen";
+import { GELAENDE_STANDARD, gelaende, hoehenFarbe, oktave, type Form, type GelaendeOptionen } from "@/lib/spielalgo/rauschen";
 import { Buehne, Frage, Notiz, Rahmen, Regler, Steuerung, auswahl, useAblauf } from "./gemeinsam";
+import { Hinweis, Vertiefung, Wahl } from "./Vertiefung";
+import { CODE_GELAENDE } from "./code";
 
 type Ansicht = "karte" | "grau";
 
@@ -26,6 +28,9 @@ export default function Gelaende() {
   const [insel, setInsel] = useState(true);
   const [meer, setMeer] = useState(0.42);
   const [ansicht, setAnsicht] = useState<Ansicht>("karte");
+  const [basis, setBasis] = useState<"gradient" | "wert">("gradient");
+  const [form, setForm] = useState<Form>("glatt");
+  const [inselForm, setInselForm] = useState<"kreis" | "quadrat">("kreis");
   const gezeigt = useRef(1);
 
   // Abspielen = Oktaven nacheinander dazulegen
@@ -35,13 +40,13 @@ export default function Gelaende() {
       yield k === 1 ? "Oktave 1: große, weiche Hügel – die Grundform." : `Oktave ${k} dazu: ${lakunaritaet.toString().replace(".", ",")}-mal so fein, ${Math.round(persistenz ** (k - 1) * 100)} % so stark.`;
     }
     return warp > 0 ? "Fertig – mit Domain Warping: Die Koordinaten selbst wurden verbogen." : "Fertig.";
-  })(), [seed, massstab, oktaven, persistenz, lakunaritaet, warp], 0.05);
+  })(), [seed, massstab, oktaven, persistenz, lakunaritaet, warp, basis, form], 0.05);
 
-  const o: GelaendeOptionen = { seed, groesse: 256, massstab, oktaven: Math.min(gezeigt.current, oktaven), persistenz, lakunaritaet, warp, insel };
-  const z = useMemo(() => gelaende(o), [seed, massstab, o.oktaven, persistenz, lakunaritaet, warp, insel]); // eslint-disable-line react-hooks/exhaustive-deps
+  const o: GelaendeOptionen = { seed, groesse: 256, massstab, oktaven: Math.min(gezeigt.current, oktaven), persistenz, lakunaritaet, warp, insel, basis, form, inselForm };
+  const z = useMemo(() => gelaende(o), [seed, massstab, o.oktaven, persistenz, lakunaritaet, warp, insel, basis, form, inselForm]); // eslint-disable-line react-hooks/exhaustive-deps
   const schichten = useMemo(
     () => Array.from({ length: oktaven }, (_, k) => oktave({ ...o, groesse: 64 }, k)),
-    [seed, massstab, oktaven, lakunaritaet], // eslint-disable-line react-hooks/exhaustive-deps
+    [seed, massstab, oktaven, lakunaritaet, basis, form], // eslint-disable-line react-hooks/exhaustive-deps
   );
   const land = useMemo(() => z.reduce((s, v) => s + (v >= meer ? 1 : 0), 0) / z.length, [z, meer]);
 
@@ -60,13 +65,35 @@ export default function Gelaende() {
           <option value="grau">Höhe als Grau</option>
         </select>
       </>}
+      vertiefung={
+        <Vertiefung
+          code={CODE_GELAENDE}
+          hintergrund={<>
+            <p>
+              Ken Perlin erfand sein Rauschen 1983 für den Film <i>Tron</i> und bekam dafür einen Oscar für Technik.
+              Fast jede Spielwelt mit Bergen (Minecraft, No Man's Sky) baut auf solchem Rauschen auf.
+            </p>
+            <p>
+              <b>Wertrauschen</b> würfelt an den Gitterpunkten Höhen, <b>Gradientenrauschen</b> Richtungen. Wertrauschen zeigt die Kästchen des Gitters,
+              Gradientenrauschen versteckt sie besser. Vergleiche die kleinen Oktavbilder.
+            </p>
+            <p>Die <b>Form</b> verändert jede Oktave: »Grat« faltet das Rauschen an der Null um und macht scharfe Bergkämme wie in den Alpen, »Wolken« runde Kuppen wie Haufenwolken oder Dünen.</p>
+          </>}
+          stellschrauben={<>
+            <Wahl label="Rauschart" wert={basis} setWert={setBasis} optionen={[["gradient", "Gradientenrauschen (Perlin-Art)"], ["wert", "Wertrauschen"]]} />
+            <Wahl label="Form je Oktave" wert={form} setWert={setForm} optionen={[["glatt", "glatt (Hügel)"], ["grat", "Grat (Bergkämme)"], ["wolken", "Wolken (Kuppen)"]]} />
+            <Hinweis>»Grat« mit 6 Oktaven und Persistenz 0,5 sieht aus wie ein Hochgebirge</Hinweis>
+            <Wahl label="Inselform" wert={inselForm} setWert={v => { setInselForm(v); setInsel(true); }} optionen={[["kreis", "rund"], ["quadrat", "eckig"]]} />
+          </>}
+        />
+      }
       buehne={<>
-        <Buehne b={256} h={256} takt={`${ablauf.takt}-${insel}-${meer}-${ansicht}`} zeichne={ctx => male(ctx, z, 256, ansicht, meer)}
+        <Buehne b={256} h={256} takt={`${ablauf.takt}-${insel}-${meer}-${ansicht}-${inselForm}-${z.length && z[1000]}`} zeichne={ctx => male(ctx, z, 256, ansicht, meer)}
           klasse="max-w-[560px]" data-gelaende />
         <div className="flex flex-wrap gap-2 justify-center items-end" aria-label="einzelne Oktaven">
           {schichten.map((s, k) => (
             <figure key={k} className={`flex flex-col items-center text-[10px] text-muted ${k < o.oktaven ? "" : "opacity-30"}`}>
-              <Buehne b={64} h={64} takt={`${seed}-${massstab}-${lakunaritaet}-${k}`} zeichne={ctx => male(ctx, s, 64, "grau", 0)} klasse="w-14 rounded-md" />
+              <Buehne b={64} h={64} takt={`${seed}-${massstab}-${lakunaritaet}-${k}-${basis}-${form}`} zeichne={ctx => male(ctx, s, 64, "grau", 0)} klasse="w-14 rounded-md" />
               <span>{k + 1}: ×{Math.round(persistenz ** k * 100)} %</span>
             </figure>
           ))}

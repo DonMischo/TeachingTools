@@ -27,23 +27,45 @@ export interface Poisson {
   zelle: number;
   gb: number;
   gh: number;
+  ring: number;
+  rOrt?: (x: number, y: number) => number;
+  /** wie viele Gitterzellen man in jede Richtung prüfen muss */
+  spann: number;
 }
 
-export function neuerPoisson(b: number, h: number, r: number, k = 30): Poisson {
-  const zelle = r / Math.SQRT2; // so passt höchstens ein Punkt in eine Gitterzelle
-  const gb = Math.ceil(b / zelle), gh = Math.ceil(h / zelle);
-  return { b, h, r, k, punkte: [], aktiv: [], mitte: -1, kandidaten: [], gitter: new Int32Array(gb * gh).fill(-1), zelle, gb, gh };
+export interface PoissonExtras {
+  /** äußerer Suchring als Vielfaches von r (Bridson: 2) */
+  ring?: number;
+  /** Abstand je Ort statt fest (z. B. aus Rauschen: Lichtungen und Dickicht); Werte zwischen rMin und r */
+  rOrt?: (x: number, y: number) => number;
+  rMin?: number;
 }
+
+export function neuerPoisson(b: number, h: number, r: number, k = 30, extras: PoissonExtras = {}): Poisson {
+  const rMin = extras.rOrt ? Math.min(r, extras.rMin ?? r) : r;
+  const zelle = rMin / Math.SQRT2; // so passt höchstens ein Punkt in eine Gitterzelle
+  const gb = Math.ceil(b / zelle), gh = Math.ceil(h / zelle);
+  return {
+    b, h, r, k, punkte: [], aktiv: [], mitte: -1, kandidaten: [], gitter: new Int32Array(gb * gh).fill(-1), zelle, gb, gh,
+    ring: extras.ring ?? 2, rOrt: extras.rOrt, spann: Math.ceil(r / zelle),
+  };
+}
+
+/** Mindestabstand an einem Ort. */
+export const abstandBei = (s: Poisson, p: Pt) => (s.rOrt ? s.rOrt(p.x, p.y) : s.r);
 
 function frei(s: Poisson, p: Pt): boolean {
   if (p.x < 0 || p.y < 0 || p.x >= s.b || p.y >= s.h) return false;
-  const gx = Math.floor(p.x / s.zelle), gy = Math.floor(p.y / s.zelle);
-  for (let y = Math.max(0, gy - 2); y <= Math.min(s.gh - 1, gy + 2); y++) {
-    for (let x = Math.max(0, gx - 2); x <= Math.min(s.gb - 1, gx + 2); x++) {
+  const gx = Math.floor(p.x / s.zelle), gy = Math.floor(p.y / s.zelle), sp = s.spann + 1;
+  const rp = abstandBei(s, p);
+  for (let y = Math.max(0, gy - sp); y <= Math.min(s.gh - 1, gy + sp); y++) {
+    for (let x = Math.max(0, gx - sp); x <= Math.min(s.gb - 1, gx + sp); x++) {
       const i = s.gitter[y * s.gb + x];
       if (i >= 0) {
         const q = s.punkte[i];
-        if ((q.x - p.x) ** 2 + (q.y - p.y) ** 2 < s.r * s.r) return false;
+        // der größere der beiden Abstände gilt
+        const r = Math.max(rp, abstandBei(s, q));
+        if ((q.x - p.x) ** 2 + (q.y - p.y) ** 2 < r * r) return false;
       }
     }
   }
@@ -69,7 +91,8 @@ export function* poisson(s: Poisson, rng: () => number): Generator<string> {
     s.kandidaten = [];
     let gefunden = false;
     for (let t = 0; t < s.k; t++) {
-      const w = rng() * Math.PI * 2, d = s.r * (1 + rng());
+      const rm = abstandBei(s, m);
+      const w = rng() * Math.PI * 2, d = rm * (1 + rng() * (s.ring - 1));
       const p = { x: m.x + Math.cos(w) * d, y: m.y + Math.sin(w) * d };
       const ok = frei(s, p);
       s.kandidaten.push({ p, ok });
@@ -97,15 +120,23 @@ export function minAbstand(p: Pt[]): number {
   return Math.sqrt(m);
 }
 
-/** Voronoi als Raster: je Pixel der Index des nächsten Punkts. */
-export function voronoi(p: Pt[], b: number, h: number, aufl = 1): Int32Array {
+export type Metrik = "euklid" | "manhattan" | "tschebyschow";
+const ABSTAND: Record<Metrik, (dx: number, dy: number) => number> = {
+  euklid: (dx, dy) => dx * dx + dy * dy,
+  manhattan: (dx, dy) => Math.abs(dx) + Math.abs(dy),
+  tschebyschow: (dx, dy) => Math.max(Math.abs(dx), Math.abs(dy)),
+};
+
+/** Voronoi als Raster: je Pixel der Index des nächsten Punkts (Abstand nach `metrik`). */
+export function voronoi(p: Pt[], b: number, h: number, aufl = 1, metrik: Metrik = "euklid"): Int32Array {
+  const abst = ABSTAND[metrik];
   const bb = Math.ceil(b / aufl), hh = Math.ceil(h / aufl);
   const z = new Int32Array(bb * hh).fill(-1);
   for (let y = 0; y < hh; y++) for (let x = 0; x < bb; x++) {
     const px = (x + 0.5) * aufl, py = (y + 0.5) * aufl;
     let best = -1, bd = Infinity;
     for (let i = 0; i < p.length; i++) {
-      const d = (p[i].x - px) ** 2 + (p[i].y - py) ** 2;
+      const d = abst(p[i].x - px, p[i].y - py);
       if (d < bd) { bd = d; best = i; }
     }
     z[y * bb + x] = best;

@@ -30,6 +30,31 @@ export interface HoehlenOptionen {
   runden: number;
   /** am Ende nur die größte Höhle behalten */
   groessteBehalten: boolean;
+  /** wer zählt als Nachbar: 8 rundum, nur 4 (Kreuz) oder 24 (zwei Ringe) */
+  nachbarschaft?: Nachbarschaft;
+  /** Felder außerhalb zählen als Fels (geschlossene Höhle) */
+  randFels?: boolean;
+}
+
+export type Nachbarschaft = "moore" | "neumann" | "moore2";
+export const NACHBARN_MAX: Record<Nachbarschaft, number> = { moore: 8, neumann: 4, moore2: 24 };
+
+function versatz(n: Nachbarschaft): [number, number][] {
+  const r = n === "moore2" ? 2 : 1, v: [number, number][] = [];
+  for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+    if (!dx && !dy) continue;
+    if (n === "neumann" && dx && dy) continue;
+    v.push([dx, dy]);
+  }
+  return v;
+}
+
+/** Eine Regel aus Mindestanzahlen auf eine andere Nachbarschaft übertragen (gleiche Anteile). */
+export function regelUmrechnen(liste: number[], von: Nachbarschaft, nach: Nachbarschaft): number[] {
+  if (!liste.length) return [];
+  const ab = Math.min(...liste) / NACHBARN_MAX[von];
+  const start = Math.round(ab * NACHBARN_MAX[nach]);
+  return Array.from({ length: NACHBARN_MAX[nach] - start + 1 }, (_, i) => start + i);
 }
 
 export const HOEHLE_STANDARD: HoehlenOptionen = {
@@ -42,23 +67,23 @@ export function neueHoehle(b: number, h: number, fels: number, rng: () => number
   return { b, h, z, generation: 0, region: null };
 }
 
-export function felsNachbarn(hz: Hoehle, x: number, y: number): number {
+export function felsNachbarn(hz: Hoehle, x: number, y: number, art: Nachbarschaft = "moore", randFels = true): number {
   let n = 0;
-  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
-    if (!dx && !dy) continue;
+  for (const [dx, dy] of versatz(art)) {
     const a = x + dx, b = y + dy;
-    if (a < 0 || b < 0 || a >= hz.b || b >= hz.h || hz.z[b * hz.b + a]) n++;
+    if (a < 0 || b < 0 || a >= hz.b || b >= hz.h) { if (randFels) n++; }
+    else if (hz.z[b * hz.b + a]) n++;
   }
   return n;
 }
 
 /** Eine Runde für alle Zellen gleichzeitig; gibt die Zahl der Änderungen zurück. */
-export function runde(hz: Hoehle, geburt: number[], ueberleben: number[]): number {
+export function runde(hz: Hoehle, geburt: number[], ueberleben: number[], art: Nachbarschaft = "moore", randFels = true): number {
   const neu = new Uint8Array(hz.z.length);
   const B = new Set(geburt), S = new Set(ueberleben);
   let wechsel = 0;
   for (let y = 0; y < hz.h; y++) for (let x = 0; x < hz.b; x++) {
-    const i = y * hz.b + x, n = felsNachbarn(hz, x, y);
+    const i = y * hz.b + x, n = felsNachbarn(hz, x, y, art, randFels);
     neu[i] = (hz.z[i] ? S.has(n) : B.has(n)) ? 1 : 0;
     if (neu[i] !== hz.z[i]) wechsel++;
   }
@@ -111,7 +136,7 @@ export function* erzeugeHoehle(stand: { hz: Hoehle }, o: HoehlenOptionen, rng: (
   stand.hz = neueHoehle(o.b, o.h, o.fels, rng);
   yield `Zufall: ${Math.round(o.fels * 100)} % der Zellen sind Fels. Noch sieht das aus wie Fernsehrauschen.`;
   for (let r = 1; r <= o.runden; r++) {
-    const w = runde(stand.hz, o.geburt, o.ueberleben);
+    const w = runde(stand.hz, o.geburt, o.ueberleben, o.nachbarschaft ?? "moore", o.randFels ?? true);
     yield `Runde ${r}: ${w} Zellen haben gewechselt, ${Math.round(anteilFrei(stand.hz) * 100)} % frei.`;
     if (w === 0) break;
   }

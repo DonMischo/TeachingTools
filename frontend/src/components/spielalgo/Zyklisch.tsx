@@ -4,6 +4,8 @@ import { useMemo, useRef, useState } from "react";
 import { zufall } from "@/lib/regeln/maschine";
 import { KZ, ZYKLEN, erzeugeAblauf, karte, neuerAblauf, pruefe, type Ablauf, type KantenArt, type KnotenArt, type Zyklus } from "@/lib/spielalgo/zyklisch";
 import { Buehne, Frage, Legende, Notiz, Rahmen, Regler, Steuerung, auswahl, useAblauf } from "./gemeinsam";
+import { Hinweis, Vertiefung } from "./Vertiefung";
+import { CODE_ZYKLUS } from "./code";
 
 const ART: Record<KnotenArt, { icon: string; name: string; farbe: string }> = {
   start: { icon: "🟢", name: "Start", farbe: "#16a34a" },
@@ -32,17 +34,21 @@ export default function Zyklisch() {
   const [laenge, setLaenge] = useState(3);
   const [neben, setNeben] = useState(2);
   const [organisch, setOrganisch] = useState(true);
+  const [aussicht, setAussicht] = useState(0.5);
+  const [tempo, setTempo] = useState(true);
+  const [raumGroesse, setRaumGroesse] = useState(1);
+  const [runden, setRunden] = useState(3);
   const a = useRef<Ablauf>(neuerAblauf());
 
   const ablauf = useAblauf(() => {
     a.current = neuerAblauf();
-    return erzeugeAblauf(a.current, { zyklus, laenge, neben }, zufall(seed));
-  }, [seed, zyklus, laenge, neben], 0.05);
+    return erzeugeAblauf(a.current, { zyklus, laenge, neben, aussicht, tempo }, zufall(seed));
+  }, [seed, zyklus, laenge, neben, aussicht, tempo], 0.05);
 
   // Karte erst, wenn mindestens die Hauptschleife steht
   const k = useMemo(
-    () => (a.current.kanten.length ? karte(a.current, 64, 44, organisch) : null),
-    [ablauf.takt, organisch], // eslint-disable-line react-hooks/exhaustive-deps
+    () => (a.current.kanten.length ? karte(a.current, 64, 44, organisch, { raumGroesse, runden }) : null),
+    [ablauf.takt, organisch, raumGroesse, runden], // eslint-disable-line react-hooks/exhaustive-deps
   );
   const p = ablauf.fertig ? pruefe(a.current) : null;
 
@@ -72,6 +78,31 @@ export default function Zyklisch() {
         <Regler label="Nebenschleifen" wert={neben} min={0} max={3} setWert={setNeben} />
         <label className="flex items-center gap-1"><input type="checkbox" checked={organisch} onChange={e => setOrganisch(e.target.checked)} /> Höhlenform</label>
       </>}
+      vertiefung={
+        <Vertiefung
+          code={CODE_ZYKLUS}
+          hintergrund={<>
+            <p>
+              Die Regeln sind eine <b>Graph-Grammatik</b>: Wie bei einer Sprache, in der »Satz → Subjekt Prädikat« gilt, ersetzt jede Regel ein kleines Stück des Graphen durch ein größeres.
+              Dormans nennt das erste Ergebnis die <b>Mission</b> (was man tun muss), das zweite den <b>Raum</b> (wo es passiert).
+            </p>
+            <p>
+              Weil der Ablauf zuerst feststeht, kann der Generator <i>vor</i> dem Bauen prüfen, ob das Rätsel aufgeht: Liegt der Schlüssel vor der Tür?
+              Ist das Ziel ohne Schlüssel wirklich zu? Bei »zufällige Räume, dann irgendwo ein Schlüssel« klappt so etwas nur mit Glück.
+            </p>
+            <p>Beim Übertragen auf die Karte darf ein Gang nie einen fremden Raum durchqueren, sonst entstünde eine Abkürzung an der Tür vorbei. Darum sucht A* die Gänge mit Sperrzonen, und das Annagen prüft Bereichsnummern.</p>
+          </>}
+          stellschrauben={<>
+            <Regler label="Aussicht-Anteil" wert={aussicht} min={0} max={1} schritt={0.1} setWert={setAussicht} anzeige={`${Math.round(aussicht * 100)} %`} />
+            <Hinweis>wie viele Nebenschleifen ihre Belohnung schon von Weitem zeigen (Regel 4)</Hinweis>
+            <label className="flex items-center gap-1"><input type="checkbox" checked={tempo} onChange={e => setTempo(e.target.checked)} /> Regel 5 (Tempo) anwenden</label>
+            <Hinweis>aus: Alle Räume bleiben grau – so wirkt der Ablauf ohne Rhythmus</Hinweis>
+            <Regler label="Raumgröße" wert={raumGroesse} min={0.6} max={1.6} schritt={0.1} setWert={setRaumGroesse} anzeige={`×${raumGroesse.toFixed(1).replace(".", ",")}`} />
+            <Regler label="Annag-Runden" wert={runden} min={0} max={8} setWert={v => { setRunden(v); setOrganisch(true); }} />
+            <Hinweis>mehr Runden = wildere Höhlen; Tür und Gitter bleiben trotzdem dicht</Hinweis>
+          </>}
+        />
+      }
       buehne={<>
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
           <figure className="flex flex-col gap-1 min-w-0">
@@ -80,7 +111,7 @@ export default function Zyklisch() {
           </figure>
           <figure className="flex flex-col gap-1 min-w-0">
             <figcaption className="text-sm font-bold">2 · daraus die Karte</figcaption>
-            <Buehne b={64 * KPX} h={44 * KPX} takt={`${ablauf.takt}-${organisch}`} zeichne={zeichneKarte} data-karte />
+            <Buehne b={64 * KPX} h={44 * KPX} takt={`${ablauf.takt}-${organisch}-${raumGroesse}-${runden}`} zeichne={zeichneKarte} data-karte />
           </figure>
         </div>
         <Notiz ablauf={ablauf} />

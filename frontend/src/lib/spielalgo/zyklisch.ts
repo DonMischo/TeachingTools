@@ -41,6 +41,10 @@ export interface AblaufOptionen {
   laenge: number;
   /** Nebenschleifen, die einen Gang ersetzen */
   neben: number;
+  /** Anteil der Nebenschleifen mit Aussicht (0..1, Standard 0,5) */
+  aussicht?: number;
+  /** Regel 5 (Tempo) anwenden */
+  tempo?: boolean;
 }
 
 export interface Ablauf { knoten: Knoten[]; kanten: Kante[] }
@@ -140,7 +144,7 @@ export function* erzeugeAblauf(a: Ablauf, o: AblaufOptionen, rng: () => number):
     a.knoten[n].x = mx + (mx / laenge) * 0.45;
     a.knoten[n].y = my + (my / laenge) * 0.45;
     schonNeben.add(k);
-    const aussicht = rng() < 0.5;
+    const aussicht = rng() < (o.aussicht ?? 0.5);
     a.kanten.push({ a: k.a, b: n, art: aussicht ? "sicht" : "weg" }, { a: n, b: k.b, art: "weg" });
     yield aussicht
       ? "Regel 4: Nebenschleife mit Aussicht – die Belohnung sieht man schon, erreichbar ist sie erst von der anderen Seite."
@@ -148,13 +152,15 @@ export function* erzeugeAblauf(a: Ablauf, o: AblaufOptionen, rng: () => number):
   }
 
   // Regel 5: Tempo — Ruhe, Rätsel, Kampf wechseln sich entlang der Wege ab
-  const reihe: KnotenArt[] = ["ruhe", "raetsel", "kampf"];
-  const tiefe = abstaende(a);
-  for (const k of a.knoten) {
-    if (k.art !== "raum") continue;
-    k.art = reihe[(tiefe[k.id] + Math.floor(rng() * 2)) % 3];
+  if (o.tempo ?? true) {
+    const reihe: KnotenArt[] = ["ruhe", "raetsel", "kampf"];
+    const tiefe = abstaende(a);
+    for (const k of a.knoten) {
+      if (k.art !== "raum") continue;
+      k.art = reihe[(tiefe[k.id] + Math.floor(rng() * 2)) % 3];
+    }
+    yield "Regel 5: Tempo – Ruhe, Rätsel und Kampf wechseln sich ab, damit es nicht eintönig wird.";
   }
-  yield "Regel 5: Tempo – Ruhe, Rätsel und Kampf wechseln sich ab, damit es nicht eintönig wird.";
 
   const p = pruefe(a);
   yield p.loesbar
@@ -220,7 +226,15 @@ export interface Karte {
   notloesungen: number;
 }
 
-export function karte(a: Ablauf, b = 64, h = 44, organisch = false): Karte {
+export interface KartenExtras {
+  /** Raumgröße als Faktor (1 = normal) */
+  raumGroesse?: number;
+  /** Runden beim Annagen der Höhlenform */
+  runden?: number;
+}
+
+export function karte(a: Ablauf, b = 64, h = 44, organisch = false, extras: KartenExtras = {}): Karte {
+  const fak = extras.raumGroesse ?? 1;
   const z = new Uint8Array(b * h);
   // Knoten auf das Raster legen
   const xs = a.knoten.map(k => k.x), ys = a.knoten.map(k => k.y);
@@ -232,7 +246,7 @@ export function karte(a: Ablauf, b = 64, h = 44, organisch = false): Karte {
   for (const k of a.knoten) {
     let mx = Math.round(rand + (k.x - minX) * sx), my = Math.round(rand + (k.y - minY) * sy);
     const gross = k.art === "start" || k.art === "ziel";
-    let rb = gross ? 7 : 5, rh = gross ? 5 : 4;
+    let rb = Math.max(3, Math.round((gross ? 7 : 5) * fak)), rh = Math.max(3, Math.round((gross ? 5 : 4) * fak));
     const lage = (cx: number, cy: number) => [
       Math.max(1, Math.min(b - rb - 1, cx - (rb >> 1))), Math.max(1, Math.min(h - rh - 1, cy - (rh >> 1))),
     ];
@@ -297,7 +311,7 @@ export function karte(a: Ablauf, b = 64, h = 44, organisch = false): Karte {
   }
 
   const karte: Karte = { b, h, z, raeume, notloesungen };
-  if (organisch) annagen(karte);
+  if (organisch) annagen(karte, extras.runden ?? 3);
   return karte;
 }
 
@@ -307,7 +321,7 @@ export function karte(a: Ablauf, b = 64, h = 44, organisch = false): Karte {
  * die Nummer seines Bereichs (Tür und Gitter trennen Bereiche). Ein Fels, der
  * zwei verschiedene Bereiche berühren würde, bleibt stehen.
  */
-function annagen(k: Karte) {
+function annagen(k: Karte, runden: number) {
   const { b, h, z } = k;
   const frei = (v: number) => v !== KZ.FELS && v !== KZ.TUER && v !== KZ.GITTER;
   const bereich = new Int32Array(b * h).fill(-1);
@@ -324,7 +338,7 @@ function annagen(k: Karte) {
     }
     n++;
   }
-  for (let runde = 0; runde < 3; runde++) {
+  for (let runde = 0; runde < runden; runde++) {
     const alt = z.slice();
     for (let y = 1; y < h - 1; y++) for (let x = 1; x < b - 1; x++) {
       const i = y * b + x;

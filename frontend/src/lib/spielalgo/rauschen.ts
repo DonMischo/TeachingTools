@@ -39,11 +39,37 @@ export function gradientRauschen(seed: number): Rauschen {
   };
 }
 
+/** Wertrauschen: an Gitterpunkten ein Zufallswert, dazwischen weich überblendet (wirkt kästchenhafter). */
+export function wertRauschen(seed: number): Rauschen {
+  const hash = (ix: number, iy: number) => {
+    let t = Math.imul(ix, 0x27d4eb2d) ^ Math.imul(iy, 0x165667b1) ^ Math.imul(seed + 1, 0x9e3779b9);
+    t = Math.imul(t ^ (t >>> 15), 0x85ebca6b);
+    t ^= t >>> 13;
+    return ((t >>> 0) / 4294967296) * 2 - 1;
+  };
+  const glatt = (t: number) => t * t * (3 - 2 * t);
+  return (x, y) => {
+    const x0 = Math.floor(x), y0 = Math.floor(y), u = glatt(x - x0), v = glatt(y - y0);
+    const a = hash(x0, y0) + u * (hash(x0 + 1, y0) - hash(x0, y0));
+    const b = hash(x0, y0 + 1) + u * (hash(x0 + 1, y0 + 1) - hash(x0, y0 + 1));
+    return a + v * (b - a);
+  };
+}
+
+/** Form einer Oktave: glatt (Hügel), Grat (1 − |n|, scharfe Bergrücken) oder Wolken (|n|, runde Kuppen). */
+export type Form = "glatt" | "grat" | "wolken";
+const FORM: Record<Form, (n: number) => number> = {
+  glatt: n => n,
+  grat: n => (1 - Math.abs(n)) * 2 - 1,
+  wolken: n => Math.abs(n) * 2 - 1,
+};
+
 /** Oktaven übereinander: jede doppelt so fein (Lakunarität) und halb so stark (Persistenz). Ergebnis etwa −1..1. */
-export function fbm(r: Rauschen, x: number, y: number, oktaven: number, persistenz = 0.5, lakunaritaet = 2): number {
+export function fbm(r: Rauschen, x: number, y: number, oktaven: number, persistenz = 0.5, lakunaritaet = 2, form: Form = "glatt"): number {
+  const f = FORM[form];
   let summe = 0, amp = 1, freq = 1, norm = 0;
   for (let o = 0; o < oktaven; o++) {
-    summe += amp * r(x * freq + o * 17.3, y * freq + o * 31.7);
+    summe += amp * f(r(x * freq + o * 17.3, y * freq + o * 31.7));
     norm += amp;
     amp *= persistenz;
     freq *= lakunaritaet;
@@ -63,6 +89,9 @@ export interface GelaendeOptionen {
   /** Stärke des Domain Warpings (0 = aus) */
   warp: number;
   insel: boolean;
+  basis?: "gradient" | "wert";
+  form?: Form;
+  inselForm?: "kreis" | "quadrat";
 }
 
 export const GELAENDE_STANDARD: GelaendeOptionen = {
@@ -71,7 +100,7 @@ export const GELAENDE_STANDARD: GelaendeOptionen = {
 
 /** Höhen 0..1 je Pixel. */
 export function gelaende(o: GelaendeOptionen): Float32Array {
-  const r = gradientRauschen(o.seed);
+  const r = (o.basis === "wert" ? wertRauschen : gradientRauschen)(o.seed);
   const n = o.groesse;
   const z = new Float32Array(n * n);
   for (let py = 0; py < n; py++) for (let px = 0; px < n; px++) {
@@ -81,10 +110,10 @@ export function gelaende(o: GelaendeOptionen): Float32Array {
       x += o.warp * qx;
       y += o.warp * qy;
     }
-    let h = (fbm(r, x, y, o.oktaven, o.persistenz, o.lakunaritaet) + 1) / 2;
+    let h = (fbm(r, x, y, o.oktaven, o.persistenz, o.lakunaritaet, o.form) + 1) / 2;
     if (o.insel) {
       const dx = (px / n) * 2 - 1, dy = (py / n) * 2 - 1;
-      const d = Math.min(1, Math.sqrt(dx * dx + dy * dy));
+      const d = Math.min(1, o.inselForm === "quadrat" ? Math.max(Math.abs(dx), Math.abs(dy)) : Math.sqrt(dx * dx + dy * dy));
       h = h * (1 - d * d) + 0.35 * (1 - d * d) - 0.15 * d;
     }
     z[py * n + px] = Math.max(0, Math.min(1, h));
@@ -94,12 +123,13 @@ export function gelaende(o: GelaendeOptionen): Float32Array {
 
 /** Eine einzelne Oktave (für die Zerlegung in Schichten), Werte 0..1. */
 export function oktave(o: GelaendeOptionen, nr: number): Float32Array {
-  const r = gradientRauschen(o.seed);
-  const n = o.groesse, f = o.lakunaritaet ** nr;
+  const r = (o.basis === "wert" ? wertRauschen : gradientRauschen)(o.seed);
+  const f = FORM[o.form ?? "glatt"];
+  const n = o.groesse, fr = o.lakunaritaet ** nr;
   const z = new Float32Array(n * n);
   for (let py = 0; py < n; py++) for (let px = 0; px < n; px++) {
     const x = (px / n) * o.massstab, y = (py / n) * o.massstab;
-    z[py * n + px] = (r(x * f + nr * 17.3, y * f + nr * 31.7) + 1) / 2;
+    z[py * n + px] = (f(r(x * fr + nr * 17.3, y * fr + nr * 31.7)) + 1) / 2;
   }
   return z;
 }

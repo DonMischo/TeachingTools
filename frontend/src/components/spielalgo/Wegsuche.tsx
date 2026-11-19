@@ -3,8 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { zufall } from "@/lib/regeln/maschine";
 import { gradientRauschen } from "@/lib/spielalgo/rauschen";
-import { RICHTUNGEN, ZUSTAND, flowfield, neueSuche, suche, type Feld, type Flowfield, type SuchStand, type Suche } from "@/lib/spielalgo/wege";
-import { Buehne, Frage, Legende, Notiz, Rahmen, Steuerung, auswahl, knopf, useAblauf } from "./gemeinsam";
+import { RICHTUNGEN, ZUSTAND, flowfield, neueSuche, suche, type Feld, type Flowfield, type Heuristik, type SuchStand, type Suche } from "@/lib/spielalgo/wege";
+import { Buehne, Frage, Legende, Notiz, Rahmen, Regler, Steuerung, auswahl, knopf, useAblauf } from "./gemeinsam";
+import { Hinweis, Vertiefung, Wahl } from "./Vertiefung";
+import { CODE_WEGE } from "./code";
 
 const B = 40, H = 26, PX = 18;
 const SUCHEN: Record<Suche, { name: string; text: string }> = {
@@ -14,7 +16,7 @@ const SUCHEN: Record<Suche, { name: string; text: string }> = {
 };
 type Pinsel = "wand" | "sumpf" | "weg" | "start" | "ziel";
 const PINSEL: { id: Pinsel; name: string }[] = [
-  { id: "wand", name: "🧱 Wand" }, { id: "sumpf", name: "🟫 Sumpf (×5)" }, { id: "weg", name: "🧽 frei" }, { id: "start", name: "🟢 Start" }, { id: "ziel", name: "🏁 Ziel" },
+  { id: "wand", name: "🧱 Wand" }, { id: "sumpf", name: "🟫 Sumpf" }, { id: "weg", name: "🧽 frei" }, { id: "start", name: "🟢 Start" }, { id: "ziel", name: "🏁 Ziel" },
 ];
 const SUMPF = 5;
 
@@ -37,7 +39,19 @@ export default function Wegsuche() {
   const [version, setVersion] = useState(0);
   const [modus, setModus] = useState<"suche" | "flow">("suche");
   const [vergleich, setVergleich] = useState<Zeile[]>([]);
+  const [gewicht, setGewicht] = useState(1);
+  const [heuristik, setHeuristik] = useState<Heuristik>("manhattan");
+  const [diagonal, setDiagonal] = useState(false);
+  const [sumpf, setSumpfRoh] = useState(SUMPF);
   const feld = useRef<Feld>(erzeugeFeld(seed));
+  /** Sumpfkosten ändern: alle Sumpffelder bekommen den neuen Preis */
+  const setSumpf = (v: number) => {
+    const k = feld.current.kosten;
+    for (let i = 0; i < k.length; i++) if (k[i] > 1) k[i] = v;
+    setSumpfRoh(v);
+    setVergleich([]);
+    setVersion(x => x + 1);
+  };
   const start = useRef(13 * B + 2);
   const ziel = useRef(13 * B + 37);
   const s = useRef<SuchStand>(neueSuche(feld.current));
@@ -45,21 +59,23 @@ export default function Wegsuche() {
   // neuer Seed → neues Gelände, Start/Ziel freiräumen
   useEffect(() => {
     feld.current = erzeugeFeld(seed);
-    for (const i of [start.current, ziel.current]) feld.current.kosten[i] = 1;
+    const k = feld.current.kosten;
+    for (let i = 0; i < k.length; i++) if (k[i] > 1) k[i] = sumpf;
+    for (const i of [start.current, ziel.current]) k[i] = 1;
     setVergleich([]);
     setVersion(v => v + 1);
   }, [seed]);
 
   const ablauf = useAblauf(() => {
     s.current = neueSuche(feld.current);
-    const gen = suche(feld.current, start.current, ziel.current, art, s.current);
+    const gen = suche(feld.current, start.current, ziel.current, art, s.current, { gewicht, heuristik, diagonal });
     return (function* () {
       const r = yield* gen;
       const st = s.current;
       setVergleich(v => [...v.filter(z => z.art !== art), { art, besucht: st.besucht, kosten: st.wegKosten, laenge: st.weg.length }]);
       return r;
     })();
-  }, [art, version], 5);
+  }, [art, version, gewicht, heuristik, diagonal], 5);
 
   // Flowfield + Figuren
   const ff = useRef<Flowfield | null>(null);
@@ -113,7 +129,7 @@ export default function Wegsuche() {
       if (pinsel === "ziel" && i !== start.current) ziel.current = i;
     } else {
       if (i === start.current || i === ziel.current) return;
-      const neu = pinsel === "wand" ? 0 : pinsel === "sumpf" ? SUMPF : 1;
+      const neu = pinsel === "wand" ? 0 : pinsel === "sumpf" ? sumpf : 1;
       if (k[i] === neu) return;
       k[i] = neu;
     }
@@ -198,6 +214,31 @@ export default function Wegsuche() {
           ))}
         </span>
       </>}
+      vertiefung={
+        <Vertiefung
+          code={CODE_WEGE}
+          hintergrund={<>
+            <p>
+              Edsger Dijkstra schrieb sein Verfahren 1956 in zwanzig Minuten in einem Café. A* kam 1968 dazu, für den Roboter »Shakey«.
+              Bis heute laufen damit Figuren in fast jedem Spiel und die Routen im Navi.
+            </p>
+            <p>
+              A* findet nur dann sicher den billigsten Weg, wenn die Schätzung h <b>nie zu hoch</b> ist. Die Luftlinie ist so eine ehrliche Schätzung.
+              Mit <b>Gewicht</b> über 1 schätzt A* absichtlich zu hoch: Er wird schneller und gieriger, der Weg aber manchmal teurer.
+              Viele Spiele nehmen das in Kauf.
+            </p>
+            <p>Mit »schräg gehen« kostet ein Schritt über Eck 1,4 (ungefähr √2). Ecken von Wänden werden nicht geschnitten, sonst würde man durch die Mauer schlüpfen.</p>
+          </>}
+          stellschrauben={<>
+            <Regler label="Gewicht für h" wert={gewicht} min={0} max={5} schritt={0.25} setWert={v => { setGewicht(v); setArt("astar"); setModus("suche"); }} anzeige={gewicht.toString().replace(".", ",")} />
+            <Hinweis>nur für A*: 0 = Dijkstra, 1 = klassisch, groß = fast wie Greedy</Hinweis>
+            <Wahl label="Schätzung h" wert={heuristik} setWert={setHeuristik} optionen={[["manhattan", "Manhattan (Kästchen zählen)"], ["euklid", "Luftlinie (euklidisch)"], ["keine", "keine (h = 0)"]]} />
+            <label className="flex items-center gap-1"><input type="checkbox" checked={diagonal} onChange={e => setDiagonal(e.target.checked)} /> auch schräg gehen</label>
+            <Regler label="Sumpf kostet" wert={sumpf} min={2} max={20} setWert={setSumpf} />
+            <Hinweis>teurer Sumpf: Dijkstra und A* laufen weite Umwege, Greedy stapft trotzdem hindurch</Hinweis>
+          </>}
+        />
+      }
       buehne={<>
         <Buehne b={B * PX} h={H * PX} takt={`${ablauf.takt}-${flowTakt}-${version}`} zeichne={zeichne} klasse="touch-none cursor-crosshair" data-wegsuche
           onPointerDown={e => { malen.current = true; e.currentTarget.setPointerCapture(e.pointerId); male(e); }}
@@ -216,7 +257,7 @@ export default function Wegsuche() {
       erklaerung={modus === "suche" ? <>
         <h3 className="font-black text-lg">{SUCHEN[art].name}</h3>
         <p>{SUCHEN[art].text}</p>
-        <Legende eintraege={[["#1f2937", "Wand"], ["#a3895b", "Sumpf (kostet 5)"], ["rgba(56,189,248,0.55)", "offene Liste"], ["rgba(139,92,246,0.35)", "fertig untersucht"], ["#eab308", "Weg"]]} />
+        <Legende eintraege={[["#1f2937", "Wand"], ["#a3895b", `Sumpf (kostet ${sumpf})`], ["rgba(56,189,248,0.55)", "offene Liste"], ["rgba(139,92,246,0.35)", "fertig untersucht"], ["#eab308", "Weg"]]} />
         <table className="text-xs w-full" data-vergleich>
           <thead><tr className="text-left text-muted"><th>Verfahren</th><th className="text-right">untersucht</th><th className="text-right">Kosten</th><th className="text-right">Felder</th></tr></thead>
           <tbody>
