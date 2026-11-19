@@ -667,6 +667,10 @@ simulationen:
       - Bildbefehle – Spiegeln, Umriss, Schatten, Farbe ersetzen, Drehen, Leinwandgröße, Skalieren, Bild importieren (auf die Palette abgebildet)
       - Export als PNG, animiertes GIF (eigener Kodierer), Sprite-Sheet mit JSON (Lage, Dauer, Tags) und Projektdatei
       - Bibliothek am Konto mit automatischem Speichern und Vorschaubildern; Lehrkräfte teilen Vorlagen, Schüler·innen bearbeiten Kopien; Gäste speichern über den Sitzungscode
+      - Bewegung aus einem Bild erzeugen – Verschieben (mit Umlauf), Hüpfen, Wackeln, Drehen, Pulsieren, Atmen, Blinken, Aus-/Einblenden (Dither), Farbzyklus; nur aktive oder alle Ebenen, mit Tag
+      - Modifier je Ebene (nicht-destruktiv, in allen Bildern) – Farbe (Farbton, Sättigung, Helligkeit, Kontrast, Deckkraft) und Umriss außen/innen 1–8 px; einbacken in die Pixel
+      - Befehle – Inseln ordnen, Inseln zu Bildern, Sprite-Sheet zerschneiden, Farbrampe (Hue Shifter), Pixel-Shift mit Alt+Pfeilen, pixelgenaue Striche
+      - Import animierter GIFs (alle Bilder mit Dauer) und von Sprite-Sheets
   - id: verkehr
     name: GTA – Ganztagsaufmerksamkeit im Verkehr – zu Fuß
     kann:

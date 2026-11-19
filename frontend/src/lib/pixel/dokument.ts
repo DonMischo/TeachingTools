@@ -10,7 +10,13 @@
  * `zusammensetzen` reichen, um ein Bild zu zeichnen.
  */
 
-export interface Ebene { id: string; name: string; sichtbar: boolean; deckkraft: number }
+import { modifierAnwenden, type Modifier } from "./modifier";
+
+export interface Ebene {
+  id: string; name: string; sichtbar: boolean; deckkraft: number;
+  /** nicht-destruktive Effekte (Farbe, Umriss), wirken in jedem Bild */
+  mods?: Modifier[];
+}
 export interface Bild { dauer: number }
 /** benannter Abschnitt der Zeitleiste, z. B. »laufen« = Bilder 2–5 */
 export interface Tag { name: string; von: number; bis: number }
@@ -66,7 +72,7 @@ export function neuesProjekt(breite: number, hoehe: number, palette: string[] = 
 
 export function klonen(p: Projekt): Projekt {
   return {
-    ...p, palette: [...p.palette], ebenen: p.ebenen.map(e => ({ ...e })), bilder: p.bilder.map(b => ({ ...b })),
+    ...p, palette: [...p.palette], ebenen: p.ebenen.map(e => ({ ...e, mods: e.mods?.map(m => ({ ...m })) })), bilder: p.bilder.map(b => ({ ...b })),
     tags: p.tags.map(t => ({ ...t })),
     zellen: Object.fromEntries(Object.entries(p.zellen).map(([k, z]) => [k, z.map(c => c.slice())])),
   };
@@ -151,7 +157,7 @@ export function naechsteFarbe(palette: [number, number, number][], r: number, g:
  * Ein Bild aller sichtbaren Ebenen als RGBA (von unten nach oben, mit Deckkraft).
  * `nurEbene` zeigt eine einzelne Ebene, egal ob sichtbar.
  */
-export function zusammensetzen(p: Projekt, bild: number, nurEbene?: string): Uint8ClampedArray {
+export function zusammensetzen(p: Projekt, bild: number, nurEbene?: string, ohneMods = false): Uint8ClampedArray {
   const n = p.breite * p.hoehe, rgba = new Uint8ClampedArray(n * 4);
   const pal = p.palette.map(hexZuRgb);
   for (const e of p.ebenen) {
@@ -159,19 +165,45 @@ export function zusammensetzen(p: Projekt, bild: number, nurEbene?: string): Uin
     const z = p.zellen[e.id]?.[bild];
     if (!z) continue;
     const a = nurEbene ? 1 : e.deckkraft;
+    const mods = ohneMods ? undefined : e.mods?.filter(m => m.an);
+    if (mods?.length) {
+      // mit Modifiern: Ebene erst für sich, dann darüberlegen
+      const eb = ebenenBild(p, e.id, bild, pal);
+      modifierAnwenden(eb, p.breite, p.hoehe, mods);
+      for (let i = 0; i < n; i++) mische(rgba, i * 4, eb[i * 4], eb[i * 4 + 1], eb[i * 4 + 2], a * eb[i * 4 + 3] / 255);
+      continue;
+    }
     for (let i = 0; i < n; i++) {
       const v = z[i];
       if (!v) continue;
-      const [r, g, b] = pal[v - 1] ?? [255, 0, 255], o = i * 4;
-      if (a >= 1) { rgba[o] = r; rgba[o + 1] = g; rgba[o + 2] = b; rgba[o + 3] = 255; continue; }
-      const da = rgba[o + 3] / 255, na = a + da * (1 - a);
-      rgba[o] = (r * a + rgba[o] * da * (1 - a)) / na;
-      rgba[o + 1] = (g * a + rgba[o + 1] * da * (1 - a)) / na;
-      rgba[o + 2] = (b * a + rgba[o + 2] * da * (1 - a)) / na;
-      rgba[o + 3] = na * 255;
+      const [r, g, b] = pal[v - 1] ?? [255, 0, 255];
+      mische(rgba, i * 4, r, g, b, a);
     }
   }
   return rgba;
+}
+
+/** eine Ebene als RGBA, ohne Modifier */
+export function ebenenBild(p: Projekt, ebene: string, bild: number, pal = p.palette.map(hexZuRgb)): Uint8ClampedArray {
+  const z = p.zellen[ebene][bild], eb = new Uint8ClampedArray(z.length * 4);
+  for (let i = 0; i < z.length; i++) {
+    const v = z[i];
+    if (!v) continue;
+    const [r, g, b] = pal[v - 1] ?? [255, 0, 255];
+    eb[i * 4] = r; eb[i * 4 + 1] = g; eb[i * 4 + 2] = b; eb[i * 4 + 3] = 255;
+  }
+  return eb;
+}
+
+/** Farbe mit Deckkraft a (0…1) über das Ziel legen */
+function mische(rgba: Uint8ClampedArray, o: number, r: number, g: number, b: number, a: number) {
+  if (a <= 0) return;
+  if (a >= 1) { rgba[o] = r; rgba[o + 1] = g; rgba[o + 2] = b; rgba[o + 3] = 255; return; }
+  const da = rgba[o + 3] / 255, na = a + da * (1 - a);
+  rgba[o] = (r * a + rgba[o] * da * (1 - a)) / na;
+  rgba[o + 1] = (g * a + rgba[o + 1] * da * (1 - a)) / na;
+  rgba[o + 2] = (b * a + rgba[o + 2] * da * (1 - a)) / na;
+  rgba[o + 3] = na * 255;
 }
 
 /** Bild als Palettenwerte (für GIF): Deckkraft unter 50 % gilt als durchsichtig, Mischfarben → nächste Farbe */

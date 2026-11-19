@@ -5,6 +5,8 @@
 import { hexZuRgb, leereZelle, naechsteFarbe, type Projekt } from "./dokument";
 
 export type Punkt = [number, number];
+/** Rechteck in Pixeln */
+export interface Rahmen { x: number; y: number; w: number; h: number }
 
 /** Bresenham-Linie, beide Enden eingeschlossen */
 export function linie(x0: number, y0: number, x1: number, y1: number): Punkt[] {

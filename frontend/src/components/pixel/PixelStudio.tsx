@@ -8,6 +8,8 @@ import { api, type MausZugang, type PixelProjektKurz } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { ausDaten, neuesProjekt, PALETTEN, zuDaten, type PixelDaten } from "@/lib/pixel/dokument";
 import { quantisieren } from "@/lib/pixel/werkzeuge";
+import { sheetZuBildern } from "@/lib/pixel/befehle";
+import { gifLesen, gifZuProjekt } from "@/lib/pixel/gifLesen";
 import { bildDateiLesen, vorschauPng } from "./leinwand";
 import Editor from "./Editor";
 
@@ -38,6 +40,7 @@ function Bibliothek({ action, zugang, oeffne }: {
   const [fehler, setFehler] = useState("");
   const [neu, setNeu] = useState({ name: "Mein Sprite", breite: 16, hoehe: 16, palette: PALETTEN[0].id });
   const [importPalette, setImportPalette] = useState(true);
+  const [sheet, setSheet] = useState({ an: false, w: 16, h: 16 });
   const datei = useRef<HTMLInputElement>(null);
 
   const laden = useCallback(() => {
@@ -63,12 +66,23 @@ function Bibliothek({ action, zugang, oeffne }: {
 
   async function importieren(f: File) {
     try {
-      const { rgba, w, h } = await bildDateiLesen(f);
+      const name = f.name.replace(/\.[^.]+$/, "").slice(0, 80) || "Import";
+      // animiertes GIF: alle Bilder samt Dauer
+      if (f.type === "image/gif" || /\.gif$/i.test(f.name)) {
+        const g = gifLesen(new Uint8Array(await f.arrayBuffer()));
+        if (g.bilder.length > 1 && !sheet.an) return await anlegen(zuDaten(gifZuProjekt(g)), name);
+      }
+      const { rgba, w, h } = await bildDateiLesen(f, sheet.an ? 1024 : 256);
       const pal = PALETTEN.find(p => p.id === neu.palette)!.farben;
       const q = quantisieren(rgba, pal, importPalette, 64);
+      if (sheet.an) {
+        const s = sheetZuBildern(q.zelle, w, h, q.palette, sheet.w, sheet.h);
+        if (!s) return setFehler("In dieser Feldgröße wurde nichts gefunden.");
+        return await anlegen(zuDaten(s), name);
+      }
       const p = neuesProjekt(w, h, q.palette);
       p.zellen[p.ebenen[0].id][0] = q.zelle;
-      await anlegen(zuDaten(p), f.name.replace(/\.[^.]+$/, "").slice(0, 80) || "Import");
+      await anlegen(zuDaten(p), name);
     } catch (e) { setFehler(meldung(e)); }
   }
 
@@ -108,6 +122,12 @@ function Bibliothek({ action, zugang, oeffne }: {
         <div className="flex flex-wrap gap-3 items-center text-sm border-t border-line pt-3">
           <button className="btn-secondary" onClick={() => datei.current?.click()}>🖼️ Bild importieren …</button>
           <label className="flex items-center gap-1"><input type="checkbox" checked={importPalette} onChange={e => setImportPalette(e.target.checked)} /> Farben aus dem Bild übernehmen (sonst auf die gewählte Palette abbilden)</label>
+          <label className="flex items-center gap-1" title="ein Bild mit vielen gleich großen Feldern (Sprite-Sheet, Animationsstreifen) wird in Bilder zerlegt">
+            <input type="checkbox" checked={sheet.an} onChange={e => setSheet({ ...sheet, an: e.target.checked })} /> als Sprite-Sheet zerschneiden</label>
+          {sheet.an && <span className="flex items-center gap-1">Feld
+            <input className="input w-16 py-0.5" type="number" min={1} max={256} value={sheet.w} onChange={e => setSheet({ ...sheet, w: grenze(+e.target.value) })} />×
+            <input className="input w-16 py-0.5" type="number" min={1} max={256} value={sheet.h} onChange={e => setSheet({ ...sheet, h: grenze(+e.target.value) })} /></span>}
+          <span className="text-muted">Animierte GIFs werden mit allen Bildern übernommen.</span>
           <input ref={datei} type="file" accept="image/png,image/gif,image/jpeg,image/webp" hidden onChange={e => { const f = e.target.files?.[0]; if (f) importieren(f); e.target.value = ""; }} />
         </div>
       </section>

@@ -8,7 +8,7 @@ import { useCallback, useEffect, useRef, useState, type PointerEvent as RPointer
 import { api, type MausZugang } from "@/lib/api";
 import {
   ausDaten, groesse, hexZuRgb, klonen, leereZelle, MAX_BILDER, MAX_EBENEN, MAX_FARBEN, naechsteFarbe, neueId, PALETTEN,
-  zuDaten, zusammensetzen, type PixelDaten, type Projekt,
+  zuDaten, zusammensetzen, type Ebene, type PixelDaten, type Projekt,
 } from "@/lib/pixel/dokument";
 import {
   alleZellen, ausschnitt, bildEinfuegen, bildLoeschen, bildVerschieben, ditherAn, drehenProjekt, ebeneVerschmelzen, einsetzen,
@@ -16,6 +16,9 @@ import {
   skalieren, spiegelnH, spiegelnV, spiegelpunkte, umfaerben, umriss, verschieben, type Punkt,
 } from "@/lib/pixel/werkzeuge";
 import { gif } from "@/lib/pixel/export";
+import { BEWEGUNGEN, bewegungEinfuegen, STANDARD_BEWEGUNG, type BewegungsOptionen } from "@/lib/pixel/animation";
+import { farbrampe, neuerModifier, type Modifier } from "@/lib/pixel/modifier";
+import { bereichSchieben, einbacken, inselnOrdnen, inselnZuBildern, sheetZuBildern } from "@/lib/pixel/befehle";
 import { bildCanvas, bildDateiLesen, dateiname, herunterladen, pngVon, rgbaCanvas, sheetPng, vorschauPng } from "./leinwand";
 import { meldung, SCHACH } from "./PixelStudio";
 
@@ -37,7 +40,7 @@ const UNDO_PIXEL = 24_000_000;
 
 interface Rahmen { x: number; y: number; w: number; h: number }
 type Zug =
-  | { art: "malen"; letzter: Punkt; wert: number }
+  | { art: "malen"; letzter: Punkt; wert: number; pfad: Punkt[]; alt: Map<number, number> }
   | { art: "form"; start: Punkt; ende: Punkt; wert: number }
   | { art: "auswahl"; start: Punkt }
   | { art: "schieben"; start: Punkt; teil: Uint8Array; r: Rahmen; dx: number; dy: number }
@@ -57,7 +60,7 @@ export default function Editor({ id, name: name0, daten, geteilt: geteilt0, nurL
   const [bereich, setBereich] = useState<[number, number]>([0, 0]);
   const [wz, setWz] = useState<Werkzeug>("stift");
   const [farbe, setFarbe] = useState<[number, number]>([Math.min(1, p.palette.length), 0]);
-  const [opt, setOpt] = useState({ spiegelX: false, spiegelY: false, dither: false, gefuellt: false, groesse: 1, global: false, raster: true, zwiebel: false, kachel3: false });
+  const [opt, setOpt] = useState({ pixelgenau: true, spiegelX: false, spiegelY: false, dither: false, gefuellt: false, groesse: 1, global: false, raster: true, zwiebel: false, kachel3: false });
   const [ansicht, setAnsicht] = useState({ zoom: 8, ox: 0, oy: 0 });
   const [abspielen, setAbspielen] = useState(false);
   const [name, setName] = useState(name0);
@@ -206,10 +209,28 @@ export default function Editor({ id, name: name0, daten, geteilt: geteilt0, nurL
   };
   const innen = ([x, y]: Punkt) => x >= 0 && y >= 0 && x < p.breite && y < p.hoehe;
 
-  function malen(x: number, y: number, wert: number) {
+  function malen(x: number, y: number, wert: number, alt?: Map<number, number>) {
     const q = pRef.current, z = q.zellen[ebeneOk][bildOk];
-    for (const pt of pinsel(x, y, opt.groesse))
-      setze(z, q.breite, q.hoehe, spiegelpunkte(pt, q.breite, q.hoehe, opt.spiegelX, opt.spiegelY), wert, opt.dither ? ditherAn : undefined);
+    for (const pt of pinsel(x, y, opt.groesse)) {
+      const pts = spiegelpunkte(pt, q.breite, q.hoehe, opt.spiegelX, opt.spiegelY);
+      if (alt) for (const [a, b] of pts) { const i = b * q.breite + a; if (a >= 0 && b >= 0 && a < q.breite && b < q.hoehe && !alt.has(i)) alt.set(i, z[i]); }
+      setze(z, q.breite, q.hoehe, pts, wert, opt.dither ? ditherAn : undefined);
+    }
+  }
+
+  /** pixelgenau: ein Eck-Pixel zwischen zwei schräg benachbarten Punkten wird zurückgenommen (keine »L«-Treppen) */
+  function eckeWeg(z: Extract<Zug, { art: "malen" }>) {
+    const f = z.pfad, n = f.length;
+    if (!opt.pixelgenau || opt.groesse !== 1 || n < 3) return;
+    const [a, b, c] = [f[n - 3], f[n - 2], f[n - 1]];
+    const nah = (u: Punkt, v: Punkt) => Math.abs(u[0] - v[0]) + Math.abs(u[1] - v[1]) === 1;
+    if (!(nah(a, b) && nah(b, c) && Math.abs(a[0] - c[0]) === 1 && Math.abs(a[1] - c[1]) === 1)) return;
+    const q = pRef.current, zelleJetzt = q.zellen[ebeneOk][bildOk];
+    for (const [x, y] of spiegelpunkte(b, q.breite, q.hoehe, opt.spiegelX, opt.spiegelY)) {
+      const i = y * q.breite + x;
+      if (z.alt.has(i)) zelleJetzt[i] = z.alt.get(i)!;
+    }
+    f.splice(n - 2, 1);
   }
 
   function nimmFarbe([x, y]: Punkt, slot: 0 | 1) {
@@ -239,7 +260,7 @@ export default function Editor({ id, name: name0, daten, geteilt: geteilt0, nurL
     }
     switch (wz) {
       case "stift": case "radierer":
-        merke(); malen(pt[0], pt[1], wert); zug.current = { art: "malen", letzter: pt, wert }; neu(); break;
+        { merke(); const alt = new Map<number, number>(); malen(pt[0], pt[1], wert, alt); zug.current = { art: "malen", letzter: pt, wert, pfad: [pt], alt }; neu(); break; }
       case "fuellen":
         if (!innen(pt)) return;
         merke();
@@ -269,7 +290,11 @@ export default function Editor({ id, name: name0, daten, geteilt: geteilt0, nurL
     if (!z) { zeichne(); return; }
     if (z.art === "pan") { setAnsicht(a => ({ ...a, ox: z.ox + e.clientX - z.sx, oy: z.oy + e.clientY - z.sy })); return; }
     if (z.art === "malen") {
-      for (const [x, y] of linie(z.letzter[0], z.letzter[1], pt[0], pt[1])) malen(x, y, z.wert);
+      for (const [x, y] of linie(z.letzter[0], z.letzter[1], pt[0], pt[1]).slice(1)) {
+        malen(x, y, z.wert, z.alt);
+        z.pfad.push([x, y]);
+        eckeWeg(z);
+      }
       z.letzter = pt; zeichne(); return;
     }
     if (z.art === "form") { z.ende = e.shiftKey ? gerade(z.start, pt, wz === "linie") : pt; zeichne(); return; }
@@ -361,6 +386,14 @@ export default function Editor({ id, name: name0, daten, geteilt: geteilt0, nurL
       if (e.key === "Escape") { auswahl.current = null; setAuswahlVer(v => v + 1); zeichne(); return; }
       const w = WERKZEUGE.find(x => x.taste.toLowerCase() === k);
       if (w) { setWz(w.id); return; }
+      if (e.altKey && e.key.startsWith("Arrow")) {
+        e.preventDefault();
+        const d: Record<string, Punkt> = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+        const [dx, dy] = d[e.key];
+        const r = auswahl.current ?? { x: 0, y: 0, w: p.breite, h: p.hoehe };
+        aendern(() => bereichSchieben(zelle(), p.breite, r, dx, dy));
+        return;
+      }
       if (k === "x") { setFarbe(f => [f[1], f[0]]); return; }
       if (k === "[") { setOpt(o => ({ ...o, groesse: Math.max(1, o.groesse - 1) })); return; }
       if (k === "]") { setOpt(o => ({ ...o, groesse: Math.min(8, o.groesse + 1) })); return; }
@@ -426,7 +459,8 @@ export default function Editor({ id, name: name0, daten, geteilt: geteilt0, nurL
           <button className="btn-secondary" title="Wiederholen (Strg+Y)" disabled={!redo.current.length} onClick={() => rueckgaengig(true)}>↷</button>
         </>}
         {!nurLesen && <BildMenue p={p} farbe={farbe} aendern={aendern} zelle={zelle} ebene={ebeneOk} bild={bildOk} einpassen={einpassen}
-          importieren={() => bildEingabe.current?.click()} />}
+          importieren={() => bildEingabe.current?.click()} meldung={setFehler}
+          neuesProjekt={(n, q) => kopieren(n, zuDaten(q)).catch(e => setFehler(meldung(e)))} name={name} />}
         <ExportMenue p={p} name={name} bild={bildOk} />
         {nurLesen
           ? <button className="btn-primary" onClick={() => kopieren(`${name} (Kopie)`, zuDaten(p)).catch(e => setFehler(meldung(e)))}>Als Kopie bearbeiten</button>
@@ -454,6 +488,7 @@ export default function Editor({ id, name: name0, daten, geteilt: geteilt0, nurL
                   <input type="range" min={1} max={8} value={opt.groesse} onChange={e => setOpt({ ...opt, groesse: +e.target.value })} className="w-16" />
                   <span className="text-xs">{opt.groesse}</span></label>
               )}
+              {wz === "stift" && opt.groesse === 1 && <Haken an={opt.pixelgenau} setze={v => setOpt({ ...opt, pixelgenau: v })} titel="Striche ohne dicke Ecken: an Knicken bleibt kein zusätzliches Pixel stehen">◢ pixelgenau</Haken>}
               {(wz === "rechteck" || wz === "ellipse") && <Haken an={opt.gefuellt} setze={v => setOpt({ ...opt, gefuellt: v })}>gefüllt</Haken>}
               {wz === "fuellen" && <Haken an={opt.global} setze={v => setOpt({ ...opt, global: v })} titel="alle Pixel dieser Farbe, nicht nur zusammenhängende">überall</Haken>}
               <Haken an={opt.spiegelX} setze={v => setOpt({ ...opt, spiegelX: v })} titel="Symmetrie links/rechts">⇆ spiegeln</Haken>
@@ -482,7 +517,13 @@ export default function Editor({ id, name: name0, daten, geteilt: geteilt0, nurL
           </div>
           <p className="text-xs text-muted">Linke Maustaste: linke Farbe · rechte Maustaste: rechte Farbe · Mausrad: Zoom · Leertaste oder Mitteltaste + Ziehen: Ansicht verschieben · Shift: gerade Linien und Quadrate · Strg+C/X/V mit Auswahl</p>
           <Zeitleiste p={p} ver={ver} bild={bildOk} setBild={setBild} bereich={bereich} setBereich={setBereich} nurLesen={nurLesen}
-            aendern={aendern} zwiebel={opt.zwiebel} setZwiebel={v => setOpt({ ...opt, zwiebel: v })} />
+            aendern={aendern} zwiebel={opt.zwiebel} setZwiebel={v => setOpt({ ...opt, zwiebel: v })}
+            bewegung={(o, alle, dauer) => {
+              const art = BEWEGUNGEN.find(b => b.id === o.art)!;
+              let n = 0;
+              aendern(() => { n = bewegungEinfuegen(p, bildOk, alle ? p.ebenen.map(e => e.id) : [ebeneOk], o, dauer, art.label.toLowerCase()); });
+              setBereich([bildOk, bildOk + n - 1]); setAbspielen(true);
+            }} />
         </div>
 
         {/* rechte Spalte */}
@@ -587,6 +628,7 @@ export default function Editor({ id, name: name0, daten, geteilt: geteilt0, nurL
                 {Math.round(aktiveEbene.deckkraft * 100)} %</label>
             )}
             <p className="text-xs text-muted">Doppelklick auf den Namen: umbenennen</p>
+            {!nurLesen && <ModifierListe ebene={aktiveEbene} p={p} merke={merke} aendern={aendern} neu={() => { setStatus("ungespeichert"); neu(); }} />}
           </section>
         </div>
       </div>
@@ -645,11 +687,13 @@ function EbenenBild({ p, ver, ebene, bild }: { p: Projekt; ver: number; ebene: s
   return <MiniBild zeichne={z} ver={ver} groesse={24} />;
 }
 
-function Zeitleiste({ p, ver, bild, setBild, bereich, setBereich, nurLesen, aendern, zwiebel, setZwiebel }: {
+function Zeitleiste({ p, ver, bild, setBild, bereich, setBereich, nurLesen, aendern, zwiebel, setZwiebel, bewegung }: {
   p: Projekt; ver: number; bild: number; setBild: (k: number) => void; bereich: [number, number]; setBereich: (b: [number, number]) => void;
   nurLesen: boolean; aendern: (f: () => void) => void; zwiebel: boolean; setZwiebel: (v: boolean) => void;
+  bewegung: (o: BewegungsOptionen, alleEbenen: boolean, dauer: number) => void;
 }) {
   const [a, b] = [Math.min(...bereich), Math.max(...bereich)];
+  const [bwOffen, setBwOffen] = useState(false);
   return (
     <section className="card p-2 flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-1 text-sm">
@@ -664,8 +708,10 @@ function Zeitleiste({ p, ver, bild, setBild, bereich, setBereich, nurLesen, aend
             <input type="number" className="input w-20 py-0.5" min={20} max={5000} step={10} value={p.bilder[bild].dauer}
               onChange={e => { const v = Math.max(20, Math.min(5000, +e.target.value || 100)); aendern(() => { p.bilder[bild].dauer = v; }); }} /> ms</label>
         </>}
+        {!nurLesen && <button className={`chip ${bwOffen ? "chip-on" : ""}`} title="aus diesem Bild eine Animation erzeugen" onClick={() => setBwOffen(!bwOffen)}>🎬 Bewegung …</button>}
         <label className="flex items-center gap-1 ml-2" title="vorheriges und nächstes Bild durchscheinen lassen"><input type="checkbox" checked={zwiebel} onChange={e => setZwiebel(e.target.checked)} />🧅 Zwiebelhaut</label>
       </div>
+      {bwOffen && !nurLesen && <BewegungsFeld p={p} frei={MAX_BILDER - p.bilder.length + 1} los={(o, alle, dauer) => { bewegung(o, alle, dauer); setBwOffen(false); }} />}
       <div className="flex gap-1 overflow-x-auto pb-1">
         {p.bilder.map((_, k) => (
           <button key={k} onClick={e => { setBild(k); setBereich(e.shiftKey ? [bild, k] : [k, k]); }}
@@ -732,9 +778,9 @@ function Vorschau({ p, ver, bild, bereich, abspielen, setAbspielen, kachel3, set
   );
 }
 
-function BildMenue({ p, farbe, aendern, zelle, ebene, bild, einpassen, importieren }: {
+function BildMenue({ p, farbe, aendern, zelle, ebene, bild, einpassen, importieren, meldung: melde, neuesProjekt, name }: {
   p: Projekt; farbe: [number, number]; aendern: (f: () => void) => void; zelle: () => Uint8Array; ebene: string; bild: number;
-  einpassen: () => void; importieren: () => void;
+  einpassen: () => void; importieren: () => void; meldung: (t: string) => void; neuesProjekt: (name: string, q: Projekt) => void; name: string;
 }) {
   const zellen = (alle: boolean, f: (z: Uint8Array) => Uint8Array) => aendern(() => {
     if (alle) p.zellen[ebene] = p.zellen[ebene].map(f);
@@ -756,6 +802,31 @@ function BildMenue({ p, farbe, aendern, zelle, ebene, bild, einpassen, importier
         {knopf("🎨 Linke Farbe → rechte Farbe", () => zellen(true, z => umfaerben(z, farbe[0], farbe[1])))}
         {knopf("⇆ Alle Bilder spiegeln", () => zellen(true, z => spiegelnH(z, p.breite, p.hoehe)), "z. B. eine Laufanimation nach links aus der nach rechts")}
         {knopf("🖼️ Bild importieren (ersetzt dieses Bild der Ebene)", importieren)}
+        <span className="text-xs text-muted px-2 pt-2">Befehle</span>
+        {knopf("🧩 Inseln ordnen", () => {
+          const n = inselnOrdnen(zelle(), p.breite, p.hoehe, 1);
+          if (!n) return melde("Die Inseln passen geordnet nicht auf die Leinwand — erst die Leinwand vergrößern.");
+          aendern(() => { p.zellen[ebene][bild] = n; });
+        }, "jedes zusammenhängende Pixelstück kommt in ein eigenes Rasterfeld, von oben links")}
+        {knopf("🎞️ Inseln → Bilder (neues Projekt)", () => {
+          const q = inselnZuBildern(p, ebene, bild);
+          if (!q) return melde("Auf dieser Ebene ist nichts gezeichnet.");
+          neuesProjekt(`${name} (Bilder)`, q);
+        }, "jedes Pixelstück wird ein Bild einer Animation, unten mittig ausgerichtet")}
+        {knopf("✂️ Sprite-Sheet zerschneiden (neues Projekt) …", () => {
+          const t = prompt("Größe eines Bildes im Sheet (Breite×Höhe):", "16x16");
+          const m = t?.match(/(\d+)\s*[x×*]\s*(\d+)/);
+          if (!m) return;
+          const q = sheetZuBildern(zelle(), p.breite, p.hoehe, p.palette, Math.max(1, +m[1]), Math.max(1, +m[2]));
+          if (!q) return melde("Keine belegten Felder in dieser Größe gefunden.");
+          neuesProjekt(`${name} (Sheet)`, q);
+        }, "zeilenweise Felder fester Größe, leere Felder fallen weg")}
+        {knopf("🌈 Farbrampe aus linker Farbe", () => {
+          if (!farbe[0]) return;
+          const neu = farbrampe(p.palette[farbe[0] - 1], 2).filter(c => !p.palette.includes(c));
+          if (p.palette.length + neu.length > 255) return melde("Die Palette ist voll.");
+          aendern(() => { p.palette.push(...neu); });
+        }, "zwei dunklere (Richtung Blau) und zwei hellere Töne (Richtung Gelb) kommen in die Palette")}
         <span className="text-xs text-muted px-2 pt-2">Ganzes Projekt</span>
         {knopf("↻ Um 90° drehen", () => { aendern(() => drehenProjekt(p)); setTimeout(einpassen, 0); })}
         {knopf("📐 Leinwandgröße …", () => {
@@ -797,3 +868,94 @@ function ExportMenue({ p, name, bild }: { p: Projekt; name: string; bild: number
   );
 }
 
+
+/** Bewegung aus dem aktuellen Bild: Art, Bilderzahl, Werte, Ebenen */
+function BewegungsFeld({ p, frei, los }: { p: Projekt; frei: number; los: (o: BewegungsOptionen, alleEbenen: boolean, dauer: number) => void }) {
+  const [o, setO] = useState<BewegungsOptionen>({ ...STANDARD_BEWEGUNG, farbBis: Math.min(4, p.palette.length) });
+  const [alle, setAlle] = useState(false);
+  const [dauer, setDauer] = useState(100);
+  const art = BEWEGUNGEN.find(b => b.id === o.art)!;
+  const zahl = (label: string, wert: number, setze: (v: number) => void, min: number, max: number, schritt = 1) => (
+    <label className="flex items-center gap-1">{label}
+      <input type="number" className="input w-16 py-0.5" min={min} max={max} step={schritt} value={wert} onChange={e => setze(Math.max(min, Math.min(max, +e.target.value || 0)))} /></label>
+  );
+  return (
+    <div className="rounded-lg border border-line p-2 flex flex-col gap-2 text-sm bg-surface-hover/40">
+      <div className="flex flex-wrap gap-1">
+        {BEWEGUNGEN.map(b => <button key={b.id} className={`chip ${o.art === b.id ? "chip-on" : ""}`} title={b.text} onClick={() => setO({ ...o, art: b.id })}>{b.icon} {b.label}</button>)}
+      </div>
+      <p className="text-xs text-muted">{art.text} Das aktuelle Bild wird Bild 1, dahinter kommen die neuen Bilder; ein Tag markiert sie.</p>
+      <div className="flex flex-wrap gap-3 items-center">
+        {zahl("Bilder", o.bilder, v => setO({ ...o, bilder: v }), 2, Math.max(2, Math.min(32, frei)))}
+        {zahl("Dauer (ms)", dauer, setDauer, 20, 2000, 10)}
+        {o.art === "verschieben" && <>{zahl("dx", o.dx, v => setO({ ...o, dx: v }), -256, 256)}{zahl("dy", o.dy, v => setO({ ...o, dy: v }), -256, 256)}
+          <Haken an={o.umlauf} setze={v => setO({ ...o, umlauf: v })} titel="was hinausgleitet, kommt gegenüber wieder herein">Umlauf</Haken></>}
+        {(o.art === "huepfen" || o.art === "wackeln") && zahl(o.art === "huepfen" ? "Höhe (px)" : "Weite (px)", o.weite, v => setO({ ...o, weite: v }), 1, 64)}
+        {o.art === "drehen" && zahl("Winkel (°)", o.winkel, v => setO({ ...o, winkel: v }), -720, 720, 15)}
+        {(o.art === "pulsieren" || o.art === "atmen") && zahl("Stärke (%)", Math.round(o.staerke * 100), v => setO({ ...o, staerke: v / 100 }), 1, 80)}
+        {o.art === "farbzyklus" && <>{zahl("Farbe von", o.farbVon, v => setO({ ...o, farbVon: v }), 1, p.palette.length)}{zahl("bis", o.farbBis, v => setO({ ...o, farbBis: v }), 1, p.palette.length)}</>}
+        <Haken an={alle} setze={setAlle} titel="sonst bewegt sich nur die aktive Ebene, die anderen bleiben stehen">alle Ebenen</Haken>
+        <button className="btn-primary py-1" disabled={frei < 2} onClick={() => los(o, alle, dauer)}>Erzeugen</button>
+      </div>
+      {frei < 2 && <p className="text-xs text-bad">Es passen keine weiteren Bilder hinein (höchstens {MAX_BILDER}).</p>}
+    </div>
+  );
+}
+
+/** Modifier der aktiven Ebene: Farbe und Umriss, nicht-destruktiv; »Anwenden« backt sie ein */
+function ModifierListe({ ebene, p, merke, aendern, neu }: { ebene: Ebene; p: Projekt; merke: () => void; aendern: (f: () => void) => void; neu: () => void }) {
+  const [offen, setOffen] = useState<string | null>(null);
+  const mods = ebene.mods ?? [];
+  const regler = (m: Modifier, feld: string, label: string, min: number, max: number, einheit = "") => {
+    const wert = (m as unknown as Record<string, number>)[feld];
+    return (
+      <label className="flex items-center gap-2 text-xs">{label}
+        <input type="range" min={min} max={max} value={wert} className="flex-1" onPointerDown={merke}
+          onChange={e => { (m as unknown as Record<string, number>)[feld] = +e.target.value; neu(); }} />
+        <span className="w-10 text-right">{wert}{einheit}</span></label>
+    );
+  };
+  return (
+    <div className="border-t border-line pt-2 flex flex-col gap-1">
+      <div className="flex items-center gap-1 text-xs">
+        <span className="font-semibold flex-1">✨ Modifier</span>
+        <button className="chip" title="Farbton, Sättigung, Helligkeit, Kontrast" onClick={() => { const m = neuerModifier("farbe", neueId()); aendern(() => { ebene.mods = [...mods, m]; }); setOffen(m.id); }}>＋ Farbe</button>
+        <button className="chip" title="Umriss außen oder innen" onClick={() => { const m = neuerModifier("umriss", neueId()); aendern(() => { ebene.mods = [...mods, m]; }); setOffen(m.id); }}>＋ Umriss</button>
+      </div>
+      {mods.map((m, k) => (
+        <div key={m.id} className="rounded-lg border border-line p-1.5 flex flex-col gap-1">
+          <div className="flex items-center gap-1 text-xs">
+            <input type="checkbox" checked={m.an} title="ein/aus" onChange={() => aendern(() => { m.an = !m.an; })} />
+            <button className="flex-1 text-left font-semibold" onClick={() => setOffen(offen === m.id ? null : m.id)}>{m.art === "farbe" ? "🎨 Farbe" : "◻ Umriss"} {offen === m.id ? "▾" : "▸"}</button>
+            <button className="text-muted" disabled={k === 0} title="früher anwenden" onClick={() => aendern(() => { const l = [...mods]; [l[k - 1], l[k]] = [l[k], l[k - 1]]; ebene.mods = l; })}>▲</button>
+            <button className="text-muted hover:text-bad" title="entfernen" onClick={() => aendern(() => { ebene.mods = mods.filter(x => x !== m); })}>×</button>
+          </div>
+          {offen === m.id && (m.art === "farbe" ? <>
+            {regler(m, "farbton", "Farbton", -180, 180, "°")}
+            {regler(m, "saettigung", "Sättigung", -100, 100)}
+            {regler(m, "helligkeit", "Helligkeit", -100, 100)}
+            {regler(m, "kontrast", "Kontrast", -100, 100)}
+            {regler(m, "deckkraft", "Deckkraft", 0, 100, " %")}
+          </> : <>
+            <div className="flex items-center gap-2 text-xs">
+              <select className="input text-xs py-0.5" value={m.lage} onChange={e => aendern(() => { m.lage = e.target.value as "aussen" | "innen"; })}>
+                <option value="aussen">außen</option><option value="innen">innen</option>
+              </select>
+              <input type="color" value={m.farbe} onFocus={merke} onChange={e => { m.farbe = e.target.value; neu(); }} />
+              <span className="text-muted">oder</span>
+              <select className="input text-xs py-0.5 w-20" value="" onChange={e => { const c = e.target.value; if (c) aendern(() => { m.farbe = c; }); }}>
+                <option value="">Palette …</option>
+                {p.palette.map((c, i) => <option key={i} value={c} style={{ background: c }}>{i + 1}: {c}</option>)}
+              </select>
+            </div>
+            {regler(m, "breite", "Breite", 1, 8, " px")}
+            {regler(m, "deckkraft", "Deckkraft", 0, 100, " %")}
+          </>)}
+        </div>
+      ))}
+      {mods.length > 0 && <button className="chip self-start" title="Effekte fest in die Pixel aller Bilder schreiben; neue Farben kommen in die Palette"
+        onClick={() => aendern(() => einbacken(p, ebene.id))}>✔ Anwenden (einbacken)</button>}
+      {!mods.length && <p className="text-xs text-muted">Effekte, die die Pixel nicht verändern und in allen Bildern wirken.</p>}
+    </div>
+  );
+}
