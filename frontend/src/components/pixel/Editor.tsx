@@ -298,12 +298,18 @@ export default function Editor({ id, name: name0, daten, geteilt: geteilt0, nurL
     } else if (z.art === "malen") neu();
   }
 
-  function rad(e: RWheelEvent) {
-    const r = canvas.current!.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+  /** eine Zoomstufe weiter um einen Punkt der Leinwand (ohne Punkt: um die Mitte) */
+  function zoomen(richtung: 1 | -1, mx?: number, my?: number) {
+    const b = box.current;
+    const cx = mx ?? (b ? b.clientWidth / 2 : 0), cy = my ?? (b ? b.clientHeight / 2 : 0);
     setAnsicht(a => {
-      const k = ZOOMS.indexOf(a.zoom), nz = ZOOMS[Math.max(0, Math.min(ZOOMS.length - 1, (k < 0 ? 5 : k) + (e.deltaY < 0 ? 1 : -1)))];
-      return { zoom: nz, ox: Math.round(mx - (mx - a.ox) * nz / a.zoom), oy: Math.round(my - (my - a.oy) * nz / a.zoom) };
+      const k = ZOOMS.indexOf(a.zoom), nz = ZOOMS[Math.max(0, Math.min(ZOOMS.length - 1, (k < 0 ? 5 : k) + richtung))];
+      return { zoom: nz, ox: Math.round(cx - (cx - a.ox) * nz / a.zoom), oy: Math.round(cy - (cy - a.oy) * nz / a.zoom) };
     });
+  }
+  function rad(e: RWheelEvent) {
+    const r = canvas.current!.getBoundingClientRect();
+    zoomen(e.deltaY < 0 ? 1 : -1, e.clientX - r.left, e.clientY - r.top);
   }
   // Rad ohne Seitenscrollen
   useEffect(() => {
@@ -360,8 +366,8 @@ export default function Editor({ id, name: name0, daten, geteilt: geteilt0, nurL
       if (k === "]") { setOpt(o => ({ ...o, groesse: Math.min(8, o.groesse + 1) })); return; }
       if (k === ",") { setBild(b => Math.max(0, b - 1)); return; }
       if (k === ".") { setBild(b => Math.min(pRef.current.bilder.length - 1, b + 1)); return; }
-      if (k === "+" || k === "=") { setAnsicht(a => ({ ...a, zoom: ZOOMS[Math.min(ZOOMS.length - 1, ZOOMS.indexOf(a.zoom) + 1)] ?? a.zoom })); return; }
-      if (k === "-") { setAnsicht(a => ({ ...a, zoom: ZOOMS[Math.max(0, ZOOMS.indexOf(a.zoom) - 1)] ?? a.zoom })); return; }
+      if (k === "+" || k === "=") { zoomen(1); return; }
+      if (k === "-") { zoomen(-1); return; }
       if (k === "0") { einpassen(); return; }
     };
     const hochT = (e: KeyboardEvent) => { if (e.key === " ") leertaste.current = false; };
@@ -466,9 +472,9 @@ export default function Editor({ id, name: name0, daten, geteilt: geteilt0, nurL
               onPointerLeave={() => { if (!zug.current) { zeiger.current = null; zeichne(); } }}
               onContextMenu={e => e.preventDefault()} onWheel={rad} />
             <div className="absolute bottom-2 right-2 flex gap-1 items-center text-xs bg-surface/90 rounded-lg border border-line px-2 py-1">
-              <button onClick={() => setAnsicht(a => ({ ...a, zoom: ZOOMS[Math.max(0, ZOOMS.indexOf(a.zoom) - 1)] ?? a.zoom }))}>−</button>
+              <button onClick={() => zoomen(-1)}>−</button>
               <span className="w-10 text-center">{ansicht.zoom * 100}%</span>
-              <button onClick={() => setAnsicht(a => ({ ...a, zoom: ZOOMS[Math.min(ZOOMS.length - 1, ZOOMS.indexOf(a.zoom) + 1)] ?? a.zoom }))}>+</button>
+              <button onClick={() => zoomen(1)}>+</button>
               <button className="ml-1" title="Einpassen (0)" onClick={einpassen}>⤢</button>
               <label className="ml-2 flex items-center gap-1"><input type="checkbox" checked={opt.raster} onChange={e => setOpt({ ...opt, raster: e.target.checked })} />Raster</label>
             </div>
