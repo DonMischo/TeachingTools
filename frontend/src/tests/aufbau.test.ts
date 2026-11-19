@@ -267,6 +267,18 @@ describe("Aufbau: Berufe", { timeout: 120000 }, () => {
     expect(gebaut).toBe(true);
   });
 
+  it("Arbeitslose: Bürger ohne Stellen sind ohne Arbeit statt Kaufleute, die Stadt hat kein Verwaltungs-Übergewicht", () => {
+    const w = neueWelt(g, "europaeisch", 12, false);
+    w.bauten = []; w.haeuser = [];
+    for (let k = 0; k < 20; k++) w.haeuser.push({ i: k, j: 0, schicht: 1, bewohner: 10, bauer: false } as never);
+    for (let k = 0; k < 80; k++) w.haeuser.push({ i: k, j: 1, schicht: 2, bewohner: 12, bauer: false } as never);
+    w.version.haeuser++;
+    const bes = besetzung(w);
+    expect(bes.arbeitslos[2]).toBeGreaterThan(100);
+    expect(bes.quoteArbeitslos).toBeGreaterThan(0.25);
+    expect(bes.sektoren.handel).toBeLessThan(bes.sektoren.arbeitslos);
+  });
+
   it("ein Betrieb ohne Personal steht still und versorgt niemanden", () => {
     const w = neueWelt(g, "europaeisch", 12, false);
     w.frei.fill(1); w.stufe = 1; w.taler = 5000;
@@ -304,6 +316,9 @@ describe("Aufbau: Berufe", { timeout: 120000 }, () => {
     expect(Math.max(...Object.values(bes.sektoren)) / summe).toBeLessThan(0.85);
     expect(bes.sektoren.handwerk + bes.sektoren.handel).toBeGreaterThan(0);
     expect(bes.sektoren.nahrung).toBeGreaterThan(0);
+    // kein Verwaltungs-Übergewicht und keine Massenarbeitslosigkeit in einer gut gespielten Stadt
+    expect(bes.sektoren.handel / summe).toBeLessThan(0.35);
+    expect(bes.quoteArbeitslos).toBeLessThan(0.25);
   });
 });
 });

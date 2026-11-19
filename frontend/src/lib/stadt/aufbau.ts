@@ -16,7 +16,7 @@ import type { P } from "./geometrie";
 import { BAUTEN, ZONEN, type BauTyp, type HausArt, type Stil } from "./modell";
 import { BAUPLAENE, pruefeOrt, type Bewertung, type Ort } from "./bauen";
 import {
-  ANBIETER, aufStufen, EINFUHR, ERLOES_JE_STELLE, ERWERBSQUOTE, KUNDEN, grundVon, kosten, METER_JE_MINUTE, NAHRUNG_JE_HOF, palette, SCHICHTEN, SEKTOREN, START_TALER, STELLEN, steuern,
+  ANBIETER, ARBEITSLOS, aufStufen, EINFUHR, ERLOES_JE_STELLE, ERWERBSQUOTE, KUNDEN, grundVon, kosten, METER_JE_MINUTE, NAHRUNG_JE_HOF, palette, SCHICHTEN, SEKTOREN, SELBST, START_TALER, STELLEN, steuern,
   TROCKEN_KOSTEN, unterhalt, VORRANG, VORSTUFE, zentrumTyp, type Gut, type Sektor,
 } from "./aufbauRegeln";
 
@@ -59,7 +59,7 @@ export interface Welt {
   /** letzte Bilanz je Schritt */
   bilanz: { steuern: number; unterhalt: number; nahrung: number; bedarf: number };
   /** warum die Stadt gerade nicht wächst (nicht gespeichert, jeden Schritt neu) */
-  engpass?: "nahrung" | "platz" | null;
+  engpass?: "nahrung" | "platz" | "arbeit" | null;
   strassenRadius: number;
   naechsteId: number;
   bruecken: { i: number; j: number }[];
@@ -104,8 +104,14 @@ export interface Besetzung {
   frei: number[];
   /** offene Stellen je Schicht */
   fehlend: number[];
-  /** Erwerbstätige je Wirtschaftszweig */
+  /** Erwerbstätige je Wirtschaftszweig (dazu »arbeitslos«) */
   sektoren: Record<Sektor, number>;
+  /** Plätze für Selbstständige je Schicht, die noch frei sind */
+  selbstFrei: number[];
+  /** Arbeitskräfte ohne Stelle je Schicht */
+  arbeitslos: number[];
+  /** Anteil der Stadt-Arbeitskräfte ohne Stelle */
+  quoteArbeitslos: number;
 }
 
 const besetzungCache = new WeakMap<Welt, { schluessel: string; b: Besetzung }>();
@@ -140,12 +146,22 @@ export function besetzung(w: Welt): Besetzung {
     quote.set(b.id, (st.n - rest) / st.n);
     sektoren[st.sektor] += st.n - rest;
   }
-  // Bauern arbeiten auf dem Feld; Stadtleute ohne Stelle arbeiten selbstständig: Handwerker in der eigenen
-  // Werkstatt, Bürger als Kaufleute, Arbeiter in kleinen Betrieben, Angestellte in Büros
+  // Bauern arbeiten auf dem Feld (Bauern, die in der Stadt aushelfen, fehlen dort nicht). Stadtleute ohne Stelle
+  // arbeiten selbstständig, soweit die Stadt sie trägt (SELBST), sonst sind sie ohne Arbeit
   const eigen: Sektor[] = ["land", "handwerk", "handel", "industrie", "handel"];
-  sektoren.land += bauern * 0.6;
-  for (let k = 1; k < SCHICHTEN.length; k++) sektoren[eigen[k]] += leute[k] * 0.2 + frei[k];
-  const b = { quote, angebot, frei, fehlend, sektoren };
+  sektoren.land += bauern * 0.6 + frei[0];
+  const stadtLeute = leute.reduce((a, x) => a + x, 0);
+  const selbstFrei = SCHICHTEN.map(() => 0), arbeitslos = SCHICHTEN.map(() => 0);
+  let stadtKraft = 0, ohne = 0;
+  for (let k = 1; k < SCHICHTEN.length; k++) {
+    const platz = SELBST[k] * stadtLeute * ERWERBSQUOTE, selbst = Math.min(frei[k], platz);
+    sektoren[eigen[k]] += selbst;
+    selbstFrei[k] = platz - selbst;
+    arbeitslos[k] = frei[k] - selbst;
+    stadtKraft += leute[k] * ERWERBSQUOTE; ohne += arbeitslos[k];
+  }
+  sektoren.arbeitslos = ohne;
+  const b = { quote, angebot, frei, fehlend, sektoren, selbstFrei, arbeitslos, quoteArbeitslos: stadtKraft ? ohne / stadtKraft : 0 };
   besetzungCache.set(w, { schluessel, b });
   return b;
 }
@@ -813,7 +829,9 @@ export function geldDetails(w: Welt) {
   for (const h of w.haeuser) { const k = h.bewohner * SCHICHTEN[h.schicht].steuer; kraft += k; kraftJe[h.schicht] += k; zufr += h.versorgt; }
   const bes = besetzung(w);
   // Brauerei hebt die Zufriedenheit, Webereien bringen Tuch in den Fernhandel
-  const zufriedenheit = Math.min(1, (w.haeuser.length ? zufr / w.haeuser.length : 1) + 0.1 * werkstatt(w, bes, "brauerei", 1));
+  // Arbeitslosigkeit über 10 % drückt die Stimmung (und damit die Steuern)
+  const unmut = Math.min(0.5, 1.5 * Math.max(0, bes.quoteArbeitslos - ARBEITSLOS.unmut));
+  const zufriedenheit = Math.min(1, (w.haeuser.length ? zufr / w.haeuser.length : 1) + 0.1 * werkstatt(w, bes, "brauerei", 1)) * (1 - unmut);
   const handel = 1 + 0.1 * werkstatt(w, bes, "weberei", 3);
   const summe = steuern(kraft, zufriedenheit) * handel, verkauf = gewerbe(w, bes).summe;
   const bau = w.bauten.filter(b => !b.dorf).reduce((a, b) => a + kosten(b.bau), 0);
@@ -824,7 +842,7 @@ export function geldDetails(w: Welt) {
   const verwaltung = 0.015 * w.einwohner * Math.max(0, w.stufe - 2);
   return {
     steuern: summe + verkauf, unterhalt: gebaeude + wege + verwaltung, verkauf,
-    steuernJe: kraftJe.map(k => (kraft ? (summe * k) / kraft : 0)), zufriedenheit, handel: handel - 1,
+    steuernJe: kraftJe.map(k => (kraft ? (summe * k) / kraft : 0)), zufriedenheit, unmut, handel: handel - 1,
     gebaeude, wege, verwaltung, strassenfelder: strassen,
   };
 }
@@ -868,15 +886,19 @@ export function schritt(g: Gelaende, w: Welt): void {
   if (w.tick % 4 === 1) {
     const raus: AufHaus[] = [];
     // Aufstiegsbremse: es steigen nur so viele auf, dass die Betriebe ihrer Schicht besetzt bleiben
-    const spielraum = [...besetzung(w).frei];
+    // und die höhere Schicht Arbeit findet (offene Stellen oder Platz für Selbstständige)
+    const bes0 = besetzung(w);
+    const spielraum = [...bes0.frei], arbeitOben = bes0.fehlend.map((x, k) => x + bes0.selbstFrei[k]);
     for (const h of w.haeuser) {
       h.versorgt = versorgungVon(w, h, abd, nahrungOk);
       if (h.versorgt < 0.999) h.mangel += 4; else h.mangel = 0;
       // Aufstieg: Haus voll, alles da, was die nächste Schicht braucht, und die Stufe erlaubt es
       const hoeher = h.schicht + 1;
       if (!h.bauer && h.versorgt >= 0.999 && h.bewohner >= h.ziel && hoeher <= st[w.stufe].maxSchicht && hoeher < SCHICHTEN.length
-        && versorgungVon(w, h, abd, nahrungOk, hoeher) >= 0.999 && spielraum[h.schicht] >= h.bewohner * ERWERBSQUOTE) {
+        && versorgungVon(w, h, abd, nahrungOk, hoeher) >= 0.999 && spielraum[h.schicht] >= h.bewohner * ERWERBSQUOTE
+        && arbeitOben[hoeher] >= h.bewohner * ERWERBSQUOTE) {
         spielraum[h.schicht] -= h.bewohner * ERWERBSQUOTE;
+        arbeitOben[hoeher] -= h.bewohner * ERWERBSQUOTE;
         h.schicht = hoeher; w.version.haeuser++;
       }
       // Abstieg nach längerem Mangel; das unterste Stadthaus steht dann leer
@@ -887,6 +909,18 @@ export function schritt(g: Gelaende, w: Welt): void {
       }
       hausWerte(w, h);
     }
+    // ohne Arbeit: bei hoher Arbeitslosigkeit steigen Häuser der betroffenen Schicht ab, Handwerker ziehen weg
+    if (bes0.quoteArbeitslos > ARBEITSLOS.abwanderung) {
+      const k = bes0.arbeitslos.indexOf(Math.max(...bes0.arbeitslos));
+      let rest = bes0.arbeitslos[k] - ARBEITSLOS.abwanderung * bes0.angebot[k];
+      for (const h of w.haeuser) {
+        if (rest <= 0) break;
+        if (h.bauer || h.schicht !== k || raus.includes(h)) continue;
+        rest -= h.bewohner * ERWERBSQUOTE;
+        if (k > 1) { h.schicht--; w.version.haeuser++; hausWerte(w, h); } else raus.push(h);
+        if (rest < 8) break;
+      }
+    }
     for (const h of raus) leere(w, h);
     if (raus.length) w.haeuser = w.haeuser.filter(h => !raus.includes(h));
   }
@@ -896,7 +930,8 @@ export function schritt(g: Gelaende, w: Welt): void {
   w.einwohner = summe;
   // Zuzug in die Stadt: nur bei Nahrungsüberschuss
   const z = zentrum(w);
-  if (z && angebot > bedarf + 10) {
+  const ohneArbeit = besetzung(w).quoteArbeitslos > ARBEITSLOS.zuzug;
+  if (z && angebot > bedarf + 10 && !ohneArbeit) {
     const c = zufahrt(z.i, z.j, z.w, z.h, z.dreh);
     let neu = hausplaetze(g, w, 4, { i: c.i, j: c.j, r: w.strassenRadius, bauer: false, abd });
     // Straßennetz nur bis zum Rand des erschlossenen Lands weiterbauen
@@ -909,7 +944,7 @@ export function schritt(g: Gelaende, w: Welt): void {
     }
     for (const h of neu.slice(0, Math.max(1, Math.floor((angebot - bedarf) / 8)))) setzeHaus(w, h);
     w.engpass = neu.length ? null : "platz";
-  } else w.engpass = z ? "nahrung" : null;
+  } else w.engpass = !z ? null : ohneArbeit ? "arbeit" : "nahrung";
   // Landesausbau: fehlt Nahrung, kommen neue Höfe in die Dörfer; dazu wachsen die Dörfer langsam mit der
   // Stadt, die ihnen das Getreide abnimmt (Absatzmarkt) — je Stufe dürfen sie größer werden
   if (z && ((angebot < bedarf * 1.1 && w.tick % 3 === 0) || w.tick % 10 === 5)) {

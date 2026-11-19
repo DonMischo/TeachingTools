@@ -59,6 +59,7 @@ export const SEKTOREN = {
   handel: { label: "Handel und Verwaltung", icon: "⚖️", ziel: 0.15 },
   dienste: { label: "Kirche, Schule, Pflege", icon: "⛪", ziel: 0.1 },
   industrie: { label: "Industrie und Verkehr", icon: "🏭", ziel: 0 },
+  arbeitslos: { label: "Ohne Arbeit", icon: "🪧", ziel: 0 },
 } as const;
 export type Sektor = keyof typeof SEKTOREN;
 
@@ -83,6 +84,14 @@ export const ERLOES_JE_STELLE = 0.25;
 export const KUNDEN: Partial<Record<BauTyp, number>> = {
   muehle: 300, baecker: 150, brauerei: 300, schmiede: 250, zimmerei: 250, weberei: 400,
 };
+
+/**
+ * Selbstständige je Schicht als Anteil der Stadtbevölkerung (Handwerker in der eigenen Werkstatt, Kaufleute,
+ * kleine Betriebe, Büros). Wer darüber hinaus keine Stelle findet, ist ohne Arbeit.
+ */
+export const SELBST = [0, 0.85, 0.12, 0.05, 0.1];
+/** Arbeitslosenquote, ab der die Zufriedenheit sinkt, der Zuzug stoppt bzw. Leute absteigen oder wegziehen */
+export const ARBEITSLOS = { unmut: 0.1, zuzug: 0.15, abwanderung: 0.25 };
 
 /** Anteil der Bewohner, die in Betrieben arbeiten (der Rest arbeitet zu Hause, im Haushalt, auf dem eigenen Acker) */
 export const ERWERBSQUOTE = 0.3;

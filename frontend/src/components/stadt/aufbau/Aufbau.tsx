@@ -618,6 +618,7 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
                 </div>
               ))}
               {offen.length > 0 && <p className="mt-1 text-bad">👷 Unbesetzte Stellen: {offen.map(x => `${zahl(x.n)} ${x.name}`).join(", ")} — Betriebe ohne Personal stehen still. Mehr Häuser dieser Schicht, oder weniger Betriebe.</p>}
+              {bes.quoteArbeitslos > 0.05 && <p className="mt-1 text-bad">🪧 Ohne Arbeit: {Math.round(bes.quoteArbeitslos * 100)} % der Stadt-Arbeitskräfte ({bes.arbeitslos.map((n, k) => n >= 1 ? `${zahl(n)} ${SCHICHTEN[k].name}` : "").filter(Boolean).join(", ")}). Ab 10 % sinkt die Stimmung, ab 15 % zieht niemand zu, ab 25 % steigen Häuser ab oder ziehen weg.</p>}
             </div>
           )}
           {meldung && <div className="rounded-lg bg-surface-hover/70 p-2 text-sm">{meldung}</div>}
@@ -730,6 +731,7 @@ function BauMenue({ stufen, pal, stufe, taler, preis, gewaehlt, waehle, zu }: {
 const ENGPASS = {
   platz: "🚧 Kein Platz mehr für neue Häuser: Wohnstraßen entstehen nur, wo Markt und Brunnen hinreichen. Setz einen weiteren Markt (ab 600 m vom ersten) und Brunnen an den Stadtrand.",
   nahrung: "🌾 Kein Zuzug: es fehlt Nahrung. Mehr Höfe ans Wegenetz, Mühle, Bäckerei oder Einfuhr.",
+  arbeit: "🪧 Kein Zuzug: zu viele ohne Arbeit. Baue Betriebe, die Leute dieser Schicht brauchen (Übersicht → Bevölkerung und Arbeit).",
 } as const;
 
 /** Übersicht (I): Geld, Nahrung, Bevölkerung und Arbeit, Betriebe — je Posten */
@@ -749,6 +751,7 @@ function Uebersicht({ w, zu }: { w: Welt; zu: () => void }) {
           {geld.steuernJe.map((x, k) => x > 0.05 && <div key={k} className="flex justify-between"><span>Steuern {SCHICHTEN[k].name}</span><span className="text-ok">+{f(x)}</span></div>)}
           {geld.verkauf > 0.05 && <div className="flex justify-between"><span>Verkauf der Werkstätten</span><span className="text-ok">+{f(geld.verkauf)}</span></div>}
           <div className="flex justify-between text-muted"><span>Zufriedenheit · Handel (Weberei)</span><span>{Math.round(geld.zufriedenheit * 100)} % · +{Math.round(geld.handel * 100)} %</span></div>
+          {geld.unmut > 0 && <div className="flex justify-between text-bad"><span>davon Unmut über Arbeitslosigkeit</span><span>−{Math.round(geld.unmut * 100)} %</span></div>}
           <div className="flex justify-between"><span>Unterhalt Gebäude</span><span className="text-bad">−{f(geld.gebaeude)}</span></div>
           <div className="flex justify-between"><span>Unterhalt Wege ({geld.strassenfelder} Felder)</span><span className="text-bad">−{f(geld.wege)}</span></div>
           {geld.verwaltung > 0 && <div className="flex justify-between"><span>Verwaltung, Wache, Armenpflege</span><span className="text-bad">−{f(geld.verwaltung)}</span></div>}
@@ -762,12 +765,12 @@ function Uebersicht({ w, zu }: { w: Welt; zu: () => void }) {
         </section>
         <section>
           <div className="mb-1 font-bold">👥 Bevölkerung und Arbeit</div>
-          <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-3">
-            <span className="text-muted">Schicht</span><span className="text-muted">Leute</span><span className="text-muted">Arbeitskräfte</span><span className="text-muted">fehlen</span>
+          <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-x-3">
+            <span className="text-muted">Schicht</span><span className="text-muted">Leute</span><span className="text-muted">Arbeitskräfte</span><span className="text-muted">Stellen offen</span><span className="text-muted">ohne Arbeit</span>
             {SCHICHTEN.map((sch, k) => {
               const leute = w.haeuser.filter(h => h.schicht === k).reduce((a, h) => a + h.bewohner, 0);
-              if (!leute && !bes.fehlend[k]) return null;
-              return [<span key={`a${k}`}>{sch.name}</span>, <span key={`b${k}`}>{zahl(leute)}</span>, <span key={`c${k}`}>{zahl(bes.angebot[k])}</span>, <span key={`d${k}`} className={bes.fehlend[k] > 0 ? "text-bad" : ""}>{zahl(bes.fehlend[k])}</span>];
+              if (!leute && !bes.fehlend[k] && !bes.arbeitslos[k]) return null;
+              return [<span key={`a${k}`}>{sch.name}</span>, <span key={`b${k}`}>{zahl(leute)}</span>, <span key={`c${k}`}>{zahl(bes.angebot[k])}</span>, <span key={`d${k}`} className={bes.fehlend[k] > 0 ? "text-bad" : ""}>{zahl(bes.fehlend[k])}</span>, <span key={`e${k}`} className={bes.arbeitslos[k] > 0.5 ? "text-bad" : ""}>{zahl(bes.arbeitslos[k])}</span>];
             })}
           </div>
         </section>
