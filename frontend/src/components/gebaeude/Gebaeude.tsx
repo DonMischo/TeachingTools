@@ -25,6 +25,7 @@ import {
   abschnittBreite, baueStock, entsorge, feldAus, hoeheVon, ortAmStrahl, versatzVon, welt as mitte,
   type KlickOrt, type RaumZustand, type Richtung, type Stil,
 } from "./szene";
+import { useBausatz } from "./bausatz";
 
 export type Ort = KlickOrt;
 export type GebaeudeArt = "haus" | "verlies" | "ebene";
@@ -299,7 +300,8 @@ export default function Gebaeude({
   }, [avatarSchluessel]);
 
   // ── Stockwerke neu bauen, wenn sich etwas ändert ─────────────────────────
-  const schluessel = JSON.stringify([stock, zustaende, zielOffen, objekte, stil, stile, art, waechter]);
+  const bausatzNr = useBausatz([...(stile ?? []), stil ?? (verlies ? "verlies" : undefined)]);
+  const schluessel = JSON.stringify([stock, zustaende, zielOffen, objekte, stil, stile, art, waechter, bausatzNr]);
   useEffect(() => {
     const d = drei.current;
     if (!d) return;

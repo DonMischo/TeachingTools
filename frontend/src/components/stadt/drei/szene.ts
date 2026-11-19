@@ -1,6 +1,6 @@
 /**
  * Szene der 3D-Stadt (three.js): Gelände mit dem Stadtplan als Bodenbild, Wasser, Häuser als
- * Instanzen (Wand + Dach aus Blender, Fenster aus dem Shader), Wahrzeichen, Mauern, Aquädukt und
+ * Instanzen (Wand + Dach aus Blender, Fassaden- und Dachkacheln aus fassade.ts), Wahrzeichen, Mauern, Aquädukt und
  * Wald aus den TaskCrawler-Bäumen. Welt: x = Karte x, z = Karte y, y = Höhe; Ursprung in der Kartenmitte.
  * Dazu Raster für das Laufen: Höhe, Wasser und belegte Flächen.
  */
@@ -12,6 +12,7 @@ import { abstand, inPoly, rechteck, type P } from "@/lib/stadt/geometrie";
 import type { Haus } from "@/lib/stadt/haeuser";
 import { BAUTEN, OEPNV, STRASSEN, type Stadt } from "@/lib/stadt/modell";
 import { MODELL_VON, TEILFARBEN } from "./modelle";
+import { dachStoff, fassadenStoff } from "./fassade";
 
 export interface StadtSzene {
   gruppe: THREE.Group;
@@ -38,30 +39,6 @@ function satteldach(): THREE.BufferGeometry {
   return hell(new THREE.ExtrudeGeometry(s, { depth: 1, bevelEnabled: false }).translate(0, 0, -0.5).rotateY(Math.PI / 2));
 }
 
-/** Fenster: auf senkrechten Flächen ein Raster aus Weltkoordinaten (Geschosse 3,1 m, Achsen 3,4 m) */
-function mitFenstern(m: THREE.MeshLambertMaterial): THREE.MeshLambertMaterial {
-  m.onBeforeCompile = sh => {
-    sh.vertexShader = sh.vertexShader
-      .replace("#include <common>", "#include <common>\nvarying vec3 vWp;\nvarying vec3 vWn;")
-      .replace("#include <project_vertex>", `#include <project_vertex>
-  mat4 wm = modelMatrix;
-  #ifdef USE_INSTANCING
-  wm = modelMatrix * instanceMatrix;
-  #endif
-  vWp = (wm * vec4(transformed, 1.0)).xyz;
-  vWn = normalize(mat3(wm) * objectNormal);`);
-    sh.fragmentShader = sh.fragmentShader
-      .replace("#include <common>", "#include <common>\nvarying vec3 vWp;\nvarying vec3 vWn;")
-      .replace("#include <color_fragment>", `#include <color_fragment>
-  if (abs(vWn.y) < 0.4) {
-    vec2 t = normalize(vec2(-vWn.z, vWn.x));
-    float fu = fract(dot(vWp.xz, t) / 3.4);
-    float fv = fract(vWp.y / 3.1);
-    if (fu > 0.3 && fu < 0.7 && fv > 0.38 && fv < 0.84) diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.17, 0.21, 0.27), 0.8);
-  }`);
-  };
-  return m;
-}
 
 /** Spiegel je Zelle: Flüsse knapp unter dem niedrigsten Ufer, Meer auf Meereshöhe */
 export function wasserspiegel(g: Gelaende): Float32Array {
@@ -190,8 +167,8 @@ export function baueStadtSzene(g: Gelaende, s: Stadt, hs: Haus[], bodenBild: HTM
     if (["einfamilienhaus", "pendler", "vorort", "kolonie", "gated"].includes(h.zone) && (h.c.x * 7 + h.c.y * 3) % 10 < 4) return "walm";
     return "sattel";
   };
-  const wandMat = mitFenstern(new THREE.MeshLambertMaterial({ vertexColors: true }));
-  const dachMat = new THREE.MeshLambertMaterial({ vertexColors: true });
+  const wandMat = fassadenStoff(new THREE.MeshLambertMaterial({ vertexColors: true }));
+  const dachMat = dachStoff(new THREE.MeshLambertMaterial({ vertexColors: true }));
   mats.push(wandMat, dachMat);
   const wand = new THREE.InstancedMesh(wandGeo, wandMat, Math.max(1, hs.length));
   wand.count = hs.length;
