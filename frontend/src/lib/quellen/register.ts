@@ -222,6 +222,18 @@ export const REGISTER: WerkzeugQuellen[] = [
     literatur: ["Witten, T. A. & Sander, L. M. (1981): Diffusion-Limited Aggregation, a Kinetic Critical Phenomenon. Phys. Rev. Lett. 47, 1400–1403."],
   },
   {
+    slug: "spielalgo", name: "🎲 Spielalgorithmen",
+    eintraege: [],
+    literatur: [
+      "Dormans, J. (2010): Adventures in Level Design: Generating Missions and Spaces for Action Adventure Games. Workshop on Procedural Content Generation in Games.",
+      "Dormans, J. (2017): Cyclic Dungeon Generation – die Ablauf-Schleifen hinter »Unexplored« (Ludomotion).",
+      "Bridson, R. (2007): Fast Poisson Disk Sampling in Arbitrary Dimensions. SIGGRAPH Sketches.",
+      "Perlin, K. (2002): Improving Noise. ACM Transactions on Graphics 21 (3), 681–682.",
+      "Hart, P. E., Nilsson, N. J. & Raphael, B. (1968): A Formal Basis for the Heuristic Determination of Minimum Cost Paths. IEEE Transactions on Systems Science and Cybernetics 4 (2), 100–107.",
+      "Wilson, D. B. (1996): Generating Random Spanning Trees More Quickly than the Cover Time. Proceedings of STOC 1996, 296–303.",
+    ],
+  },
+  {
     slug: "wilson", name: "🌋 Wilson-Zyklus",
     eintraege: [],
     literatur: [

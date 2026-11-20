@@ -2652,6 +2652,35 @@ class AlgoFortschritt(Base):
     )
 
 
+class PixelProjekt(Base):
+    """Pixel-Studio: ein Pixel-Art-Projekt eines Kontos oder Gasts (Sitzung)."""
+    __tablename__ = "pixel_projekte"
+    __table_args__ = (
+        Index("ix_pixel_projekte_student", "student_id"),
+        Index("ix_pixel_projekte_teacher", "teacher_id"),
+        Index("ix_pixel_projekte_guest", "guest_id"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    student_id: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"), nullable=True)
+    teacher_id: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="CASCADE"), nullable=True)
+    guest_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    session_id: Mapped[int | None] = mapped_column(
+        ForeignKey("tool_sessions.id", ondelete="CASCADE"), nullable=True, index=True
+    )
+    name: Mapped[str] = mapped_column(String(80), nullable=False)
+    breite: Mapped[int] = mapped_column(Integer, nullable=False)
+    hoehe: Mapped[int] = mapped_column(Integer, nullable=False)
+    bilder: Mapped[int] = mapped_column(Integer, nullable=False)
+    daten: Mapped[dict] = mapped_column(JSON, nullable=False)
+    vorschau: Mapped[str | None] = mapped_column(Text, nullable=True)
+    geteilt: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
+    erstellt_am: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    aktualisiert_am: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
 class KartenSatz(Base):
     """Eine gespeicherte Karte der Lehrkraft (Kartentool »karten«).
 

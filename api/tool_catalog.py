@@ -196,6 +196,7 @@ CATALOG: list[CatalogTool] = [
     CatalogTool("algo", "🔀 Algorithmen-Werkstatt", "🔀", "simulationen", {
         "use": _cap(True, True),
     }),
+    CatalogTool("pixel", "👾 Pixel-Studio", "👾", "simulationen", {"use": _cap(True, True)}),
     # Küstendynamik: Querschnitt mit Erosion und Küstenschutz, Längsstrom
     # in der Draufsicht, Gezeiten — rechnet ganz im Browser.
     CatalogTool("kueste", "🌊 Küstendynamik", "🌊", "simulationen", {
@@ -216,6 +217,10 @@ CATALOG: list[CatalogTool] = [
     }),
     # Wellenfunktionskollaps (Wave Function Collapse): Kacheln und Vorlagen mit Randbedingungen.
     CatalogTool("wfc", "🧩 Wellenfunktionskollaps", "🧩", "simulationen", {
+        "use": _cap(True, True),
+    }),
+    # Spielalgorithmen: prozedurale Spielwelten (Labyrinthe, BSP, Hoehlen, Poisson, Rauschen, A*, Dormans-Zyklen).
+    CatalogTool("spielalgo", "🎲 Spielalgorithmen", "🎲", "simulationen", {
         "use": _cap(True, True),
     }),
     # Fraktales Wachstum: diffusionsbegrenzte Aggregation in 2D und 3D.
