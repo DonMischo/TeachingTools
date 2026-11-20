@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { PLATZ, WAND, baueFreiPlan, freiAbstaende, istFrei } from "@/lib/gebaeude/frei";
 
 describe("Lichtungskarten (Wälder)", () => {
-  for (const art of ["lichtung", "bach"] as const) {
+  for (const art of ["lichtung", "bach", "hoehle", "hoehlebach"] as const) {
     it(`${art}: alle Stationen und das Ziel sind von der Ankunft aus erreichbar`, () => {
       for (const seed of [1, 3, 8, 21, 42]) {
         for (const e of baueFreiPlan([2, 5, 8], seed, [art, art, art]).ebenen) {

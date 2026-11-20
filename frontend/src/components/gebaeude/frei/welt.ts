@@ -15,9 +15,14 @@ import * as THREE from "three";
 import { DURCHGANG, PLATZ, WAND, WEG, ZELLE, feldMitte, istFrei, type FreiEbene, type FreiOrt, type KartenArt } from "@/lib/gebaeude/frei";
 import type { Objekt } from "@/lib/gebaeude/objekte";
 import { baueObjekt } from "../objekte3d";
+import { ROBOTER_MONSTER, ROBOTER_WAECHTER } from "@/lib/angriffe/monster";
 import { felsGeometrie, musterMaterial, textur, zufallAus } from "../stoff";
 import { bauwelt } from "./bauwelt";
 import { pilzwaldLandschaft } from "./pilzwald";
+import { hoehlenLandschaft } from "./hoehlenwelt";
+import { tempelLandschaft } from "./tempelwelt";
+import { neonLandschaft } from "./neonwelt";
+import { herrenhausLandschaft } from "./herrenhauswelt";
 import { FASSUNGEN, weltModelle, type ModellArt } from "./modelle";
 import { AUSSEHEN, STILE, type RaumZustand, type Stil } from "../szene";
 
@@ -35,10 +40,13 @@ export function istOrganisch(stil: Stil): boolean {
   return w !== "gebaeude" && w !== "garten";
 }
 
-/** Welcher Kartenbau zu welcher Welt passt: Lichtungen mit Pfaden im Wald, im Pilzwald dazu ein Bach */
+/** Welcher Kartenbau zu welcher Welt passt: Lichtungen mit Pfaden im Wald (im Pilzwald dazu ein Bach), Hallen und Gänge in der Höhle */
+/** Baukästen aus der Weltenwerkstatt je Stil (FreiWelt lädt sie nach) */
+export const KIT_VON: Partial<Record<Stil, string>> = { pilze: "pilzwald", hoehle: "hoehle", antike: "antike", neon: "neon", viktorianisch: "viktorianisch" };
+
 export function kartenArt(stil: Stil): KartenArt {
   const w = weltVon(stil);
-  return w === "pilze" ? "bach" : w === "wald" || w === "winter" || w === "oase" ? "lichtung" : istOrganisch(stil) ? "genagt" : "raster";
+  return w === "pilze" ? "bach" : w === "wald" || w === "winter" || w === "oase" ? "lichtung" : stil === "hoehle" ? "hoehlebach" : w === "hoehle" ? "hoehle" : "raster";
 }
 
 export interface Stimmung {
@@ -65,6 +73,10 @@ export interface Landschaft {
   lichter?: (x: number, z: number, zeit: number) => void;
   /** Bodenhöhe für die Figur (z. B. auf einer Brücke); ohne: überall 0 */
   hoehe?: (x: number, z: number) => number;
+  /** Abstand der Kamera zu Wandfeldern (Vorgabe 0,3; mehr, wo Wände über die Feldkante ragen) */
+  kameraRand?: number;
+  /** Deckenhöhe: die Kamera bleibt darunter (geschlossene Decken aus Modellen) */
+  decke?: number;
 }
 
 export const farbe = (hex: number) => new THREE.Color(hex);
@@ -1262,6 +1274,10 @@ function gartenLandschaft(e: FreiEbene, seed: number): Landschaft {
 export function baueLandschaft(e: FreiEbene, stil: Stil, seed: number): Landschaft {
   const w = weltVon(stil);
   if (w === "pilze") { const p = pilzwaldLandschaft(e, seed); if (p) return p; }
+  if (stil === "hoehle") { const h = hoehlenLandschaft(e, seed); if (h) return h; }
+  if (stil === "antike") { const t = tempelLandschaft(e, seed); if (t) return t; }
+  if (stil === "neon") { const n = neonLandschaft(e, seed); if (n) return n; }
+  if (stil === "viktorianisch") { const v = herrenhausLandschaft(e, seed); if (v) return v; }
   return w === "wald" || w === "winter" || w === "oase" || w === "pilze" ? waldLandschaft(e, seed, w) : w === "garten" ? gartenLandschaft(e, seed)
     : w === "hoehle" ? hoehleLandschaft(e, stil, seed) : gebaeudeLandschaft(e, stil, seed);
 }
@@ -1355,6 +1371,8 @@ function erz(leer: boolean, r: () => number): THREE.Group {
 }
 
 export function baueOrte(e: FreiEbene, bild: OrteBild): { gruppe: THREE.Group; marken: Marke[] } {
+  // in der Neon-Halle stehen Roboter statt Monster
+  const pool = bild.stil === "neon" ? { monster: ROBOTER_MONSTER, waechter: ROBOTER_WAECHTER } : undefined;
   const g = new THREE.Group();
   const marken: Marke[] = [];
   const w = weltVon(bild.stil);
@@ -1372,7 +1390,7 @@ export function baueOrte(e: FreiEbene, bild: OrteBild): { gruppe: THREE.Group; m
       zg.userData.erz = ader;
       zg.add(ader);
     } else {
-      const ding = baueObjekt(bild.objekte?.[k] ?? "pult", z === "geloest", k + bild.abschnitt * 3);
+      const ding = baueObjekt(bild.objekte?.[k] ?? "pult", z === "geloest", k + bild.abschnitt * 3, pool);
       ding.scale.setScalar(1.5);
       ding.rotation.y = k * 1.3;
       ding.traverse(o => { o.castShadow = true; });
@@ -1391,7 +1409,7 @@ export function baueOrte(e: FreiEbene, bild: OrteBild): { gruppe: THREE.Group; m
   leuchtfeuer(zg, offen ? 0x22c55e : 0xe11d48, true);
   if (bild.waechter) {
     // der Boss steht neben dem Tor; ist es offen, liegt er besiegt da
-    const boss = baueObjekt("boss", offen, bild.abschnitt);
+    const boss = baueObjekt("boss", offen, bild.abschnitt, pool);
     boss.scale.setScalar(1.5);
     boss.position.set(offen ? 2.6 : 0, 0, offen ? 0.5 : 1.6);
     boss.traverse(o => { o.castShadow = true; });

@@ -59,11 +59,11 @@ export const REZEPT: Partial<Record<Stil, Rezept>> = {
     balken: false, ketten: true, pfeiler: true, torrahmen: true, decke: 0x9a96a8, sockel: 0x6b6560, relief: 1.4 },
   mittelalter: { mauerHoch: true, dunkel: false, fackel: 0.04, banner: 0.05, fenster: 0.12, fensterTon: TAG, kram: [0.18, 0.06], sorten: MITTELALTERLICH,
     balken: true, ketten: false, pfeiler: false, torrahmen: false, decke: 0xffffff, sockel: 0x8a7a66, relief: 1, stimmung: HELL },
-  antike: { dunkel: false, fackel: 0, banner: 0, fenster: 0.1, fensterTon: TAG, kram: [0.1, 0.02], sorten: { kerzen: 1 },
+  antike: { mauerHoch: true, dunkel: false, fackel: 0, banner: 0, fenster: 0.1, fensterTon: TAG, kram: [0.1, 0.02], sorten: { kerzen: 1 },
     balken: false, ketten: false, pfeiler: false, torrahmen: false, decke: 0xffffff, sockel: 0xd6cfc2, relief: 0.8, stimmung: { ...HELL, nebel: 0xf2ece0 } },
   klassisch: { dunkel: false, fackel: 0, banner: 0, fenster: 0.14, fensterTon: TAG, kram: [0.06, 0], sorten: { kiste: 1 },
     balken: false, ketten: false, pfeiler: false, torrahmen: false, decke: 0xffffff, sockel: 0x8b7e74, relief: 0.8, stimmung: HELL },
-  viktorianisch: { dunkel: false, fackel: 0, banner: 0, fenster: 0.12, fensterTon: TAG, kram: [0.1, 0.02], sorten: { kerzen: 2, kiste: 1 },
+  viktorianisch: { mauerHoch: true, dunkel: false, fackel: 0, banner: 0, fenster: 0.12, fensterTon: TAG, kram: [0.1, 0.02], sorten: { kerzen: 2, kiste: 1 },
     balken: false, ketten: false, pfeiler: false, torrahmen: false, decke: 0xffffff, sockel: 0x3b1f14, relief: 0.8, stimmung: { ...HELL, umgebung: 1.05 } },
   retro: { dunkel: false, fackel: 0, banner: 0, fenster: 0.14, fensterTon: TAG, kram: [0.06, 0], sorten: { kiste: 1 },
     balken: false, ketten: false, pfeiler: false, torrahmen: false, decke: 0xffffff, sockel: 0x65a30d, relief: 0.8, stimmung: HELL },
@@ -79,7 +79,7 @@ export const REZEPT: Partial<Record<Stil, Rezept>> = {
   raumstation: { dunkel: true, fackel: 0, banner: 0, fenster: 0.16, fensterTon: 0x5eead4, kram: [0.1, 0.03], sorten: { kiste: 1 },
     balken: false, ketten: false, pfeiler: false, torrahmen: false, decke: 0xffffff, sockel: 0x334155, relief: 1,
     stimmung: { fackel: 22, fackelFarbe: 0x9fe8ff, nebel: 0x070b12, oben: 0x6080b0, umgebung: 0.7 } },
-  neon: { dunkel: true, fackel: 0, banner: 0, fenster: 0.18, fensterTon: 0xff4fd8, kram: [0.06, 0.02], sorten: { kiste: 1 },
+  neon: { mauerHoch: true, dunkel: true, fackel: 0, banner: 0, fenster: 0.18, fensterTon: 0xff4fd8, kram: [0.06, 0.02], sorten: { kiste: 1 },
     balken: false, ketten: false, pfeiler: false, torrahmen: false, decke: 0xffffff, sockel: 0x18181b, relief: 1,
     stimmung: { fackel: 22, fackelFarbe: 0xffc0f0, nebel: 0x0a0710, oben: 0x8070b0, umgebung: 0.75 } },
 };
@@ -112,7 +112,7 @@ function kachelStoff(k: Kachel, ton = 0xffffff, relief = 1): THREE.MeshLambertMa
 }
 
 /** Ebene über der ganzen Karte (Boden: Normale nach oben, Decke: nach unten), eine Kachel je Feld */
-function flaeche(e: FreiEbene, k: Kachel, hoehe: number, oben: boolean, ton: number, relief: number): THREE.Mesh {
+export function flaeche(e: FreiEbene, k: Kachel, hoehe: number, oben: boolean, ton: number, relief: number): THREE.Mesh {
   const g = new THREE.PlaneGeometry(e.b * ZELLE, e.h * ZELLE);
   g.rotateX(oben ? -Math.PI / 2 : Math.PI / 2);
   const uv = g.attributes.uv as THREE.BufferAttribute;

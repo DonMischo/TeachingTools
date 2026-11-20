@@ -40,8 +40,7 @@ import { STANDARD_AVATAR, baueAvatar, type Avatar } from "../avatar";
 import { beendeAvatar, bewegeAvatar, tickAvatare } from "../avatarModell";
 import { entsorge, type RaumZustand, type Stil } from "../szene";
 import { baueMaler, type Guete, type Maler } from "./malfilter";
-import { baueLandschaft, baueOrte, type Landschaft, type Marke } from "./welt";
-import { PILZWALD } from "./pilzwald";
+import { KIT_VON, baueLandschaft, baueOrte, type Landschaft, type Marke } from "./welt";
 import { ladeKit, ladeWeltModelle, weltModelle } from "./modelle";
 import { DURCHSICHT, durchsichtFuer } from "./durchsicht";
 import { kachelName, useBausatz } from "../bausatz";
@@ -157,13 +156,12 @@ export default function FreiWelt({
   useEffect(() => { let an = true; ladeWeltModelle().then(ok => { if (an && ok) setModelleDa(true); }); return () => { an = false; }; }, []);
   // Baukästen aus der Weltenwerkstatt (fertig gefärbte Modelle), nur wenn eine Welt sie braucht
   const [kitNr, setKitNr] = useState(0);
-  const brauchtPilzwald = stile.includes("pilze");
+  const kits = [...new Set(stile.flatMap(s => KIT_VON[s] ?? []))].sort().join(",");
   useEffect(() => {
-    if (!brauchtPilzwald) return;
     let an = true;
-    ladeKit(PILZWALD).then(ok => { if (an && ok) setKitNr(n => n + 1); });
+    for (const k of kits ? kits.split(",") : []) ladeKit(k).then(ok => { if (an && ok) setKitNr(n => n + 1); });
     return () => { an = false; };
-  }, [brauchtPilzwald]);
+  }, [kits]);
   const [kampf, setKampf] = useState(false);
   const [duell, setDuell] = useState<DuellBild | null>(null);
   /** das laufende Minispiel ist ein Sammelspiel an einer Info-Station (kein Gegner) */
@@ -220,6 +218,10 @@ export default function FreiWelt({
     lichter: null as ((x: number, z: number, zeit: number) => void) | null,
     /** Bodenhöhe unter der Figur (Brücken); null = flach */
     hoeheBei: null as ((x: number, z: number) => number) | null,
+    /** so viel Abstand hält die Kamera zu Wandfeldern (Höhlenwände wölben sich in den Gang) */
+    kameraRand: 0.3,
+    /** Deckenhöhe (Kamera bleibt darunter); 0 = offen */
+    decke: 0,
     /** geglättete Höhe der Figur */
     y: 0,
     marken: [] as Marke[],
@@ -729,23 +731,30 @@ export default function FreiWelt({
       } else {
       // Kamera über der Schulter; Wände halten sie auf
       kopf.set(l.x, 2.1 + l.y, l.z);
-      const flach = Math.cos(l.neigung) * l.abstand, steil = Math.sin(l.neigung) * l.abstand;
+      let flach = Math.cos(l.neigung) * l.abstand, steil = Math.sin(l.neigung) * l.abstand;
+      // unter einer Decke flacher schauen statt höher steigen (gleicher Abstand)
+      if (l.decke && kopf.y + steil > l.decke - 0.35) {
+        steil = Math.max(0.3, l.decke - 0.35 - kopf.y);
+        flach = Math.sqrt(Math.max(0, l.abstand * l.abstand - steil * steil));
+      }
       let anteil = 1;
       const unterWand = l.wandHoehe > 0 && kopf.y + steil < l.wandHoehe + 0.4;
       if (unterWand) {
-        anteil = freieStrecke(e, l.x, l.z, l.x - Math.sin(l.blick) * flach, l.z - Math.cos(l.blick) * flach, 0.3);
+        anteil = freieStrecke(e, l.x, l.z, l.x - Math.sin(l.blick) * flach, l.z - Math.cos(l.blick) * flach, l.kameraRand);
         anteil = Math.max(0, anteil - 0.05);
       }
       // vor eine Wand sofort heranrücken, danach sacht zurückfedern
       l.kamAnteil = anteil < l.kamAnteil ? anteil : l.kamAnteil + (anteil - l.kamAnteil) * Math.min(1, dt * 2.5);
       const a = Math.max(0.12, l.kamAnteil);
       // nah herangerückt: etwas höher, damit die Figur nicht das ganze Bild füllt
-      punkt.set(l.x - Math.sin(l.blick) * flach * a, kopf.y + steil * a + (1 - a) * 0.9, l.z - Math.cos(l.blick) * flach * a);
+      punkt.set(l.x - Math.sin(l.blick) * flach * a, kopf.y + steil * a + (1 - a) * (l.decke ? 0 : 0.9), l.z - Math.cos(l.blick) * flach * a);
+      // unter einer geschlossenen Decke bleiben
+      if (l.decke) punkt.y = Math.min(punkt.y, l.decke - 0.35);
       auge.lerp(punkt, Math.min(1, dt * 14));
       if (unterWand) {
         // das Nachziehen darf nicht durch eine Ecke führen: verdeckt etwas den Blick zum Kopf, springt die Kamera auf ihren Platz
         if (freieStrecke(e, l.x, l.z, auge.x, auge.z, 0.12) < 1) auge.copy(punkt);
-        [auge.x, auge.z] = schiebeHeraus(e, auge.x, auge.z, 0.25);
+        [auge.x, auge.z] = schiebeHeraus(e, auge.x, auge.z, Math.max(0.25, l.kameraRand - 0.05));
       }
       kamera.position.copy(auge);
       kamera.lookAt(kopf);
@@ -878,6 +887,8 @@ export default function FreiWelt({
     lage.current.luft = land.takt ?? null;
     lage.current.lichter = land.lichter ?? null;
     lage.current.hoeheBei = land.hoehe ?? null;
+    lage.current.kameraRand = land.kameraRand ?? 0.3;
+    lage.current.decke = land.decke ?? 0;
     d.maler.belichtung(s.belichtung);
     lage.current.wandHoehe = land.wandHoehe;
     // eslint-disable-next-line react-hooks/exhaustive-deps

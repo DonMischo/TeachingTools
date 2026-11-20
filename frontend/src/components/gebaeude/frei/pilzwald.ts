@@ -16,6 +16,7 @@
 import * as THREE from "three";
 import { PLATZ, WAND, WEG, ZELLE, type FreiEbene } from "@/lib/gebaeude/frei";
 import { zufallAus } from "../stoff";
+import { bachGelaende, brueckenAus, brueckenHoehe, kitAufsteller, lichtVorrat, wasserFlaeche } from "./kitwelt";
 import { kit } from "./modelle";
 import { aus, boden, himmel, schweben, strich, striche, tiefen, umland, type Landschaft, type Stimmung, type Stueck } from "./welt";
 
@@ -45,35 +46,7 @@ export function pilzwaldLandschaft(e: FreiEbene, seed: number): Landschaft | nul
   const Z = ZELLE, RAND = 8;
   const { t, B } = tiefen(e, RAND, 9);
   const wasser = e.wasser;
-  const istWasser = (x: number, y: number) => !!wasser && x >= 0 && y >= 0 && x < e.b && y < e.h && wasser[y * e.b + x] === 1;
-
-  // ── Gelände: Senke für den Bach, sanfte Hügel im Wald ───────────────────
-  const wTiefe = new Uint8Array(e.b * e.h);
-  if (wasser) {
-    // Abstand ins Wasser hinein (1 = Ufer)
-    const offen: number[] = [];
-    for (let i = 0; i < wasser.length; i++) if (wasser[i]) { wTiefe[i] = 9; } else offen.push(i);
-    for (let k = 0; k < offen.length; k++) {
-      const i = offen[k], x = i % e.b, y = (i - x) / e.b;
-      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-        const nx = x + dx, ny = y + dy, j = ny * e.b + nx;
-        if (nx < 0 || ny < 0 || nx >= e.b || ny >= e.h) continue;
-        if (wTiefe[j] > wTiefe[i] + 1) { wTiefe[j] = wTiefe[i] + 1; offen.push(j); }
-      }
-    }
-  }
-  const welle = (x: number, y: number) => 0.5 + 0.25 * Math.sin(x * 0.37 + seed) * Math.cos(y * 0.29 - seed * 0.5) + 0.25 * Math.sin((x + y) * 0.17);
-  const zellH = new Float32Array(e.b * e.h);
-  for (let y = 0; y < e.h; y++) for (let x = 0; x < e.b; x++) {
-    const i = y * e.b + x;
-    if (wasser?.[i]) zellH[i] = wTiefe[i] <= 1 ? BETT * 0.6 : BETT;
-    else if (e.art[i] === WAND) zellH[i] = 0.55 * welle(x, y) * Math.min(1, (t[(y + RAND) * B + x + RAND] - 1) / 3);
-  }
-  const zelleH = (x: number, y: number) => zellH[Math.max(0, Math.min(e.h - 1, y)) * e.b + Math.max(0, Math.min(e.b - 1, x))];
-  const gelaende = (wx: number, wz: number) => {
-    const u = wx / Z - 0.5, v = wz / Z - 0.5, x0 = Math.floor(u), y0 = Math.floor(v), fx = u - x0, fy = v - y0;
-    return (zelleH(x0, y0) * (1 - fx) + zelleH(x0 + 1, y0) * fx) * (1 - fy) + (zelleH(x0, y0 + 1) * (1 - fx) + zelleH(x0 + 1, y0 + 1) * fx) * fy;
-  };
+  const { gelaende, wTiefe, istWasser } = bachGelaende(e, t, B, RAND, seed, BETT, 0.55);
 
   // ── Boden: gemalt ──────────────────────────────────────────────────────
   const MOOS = [0x3f5a2a, 0x4a6530, 0x384f26, 0x50692f], LAUB = [0x5e4630, 0x6b5030, 0x4f3c28];
@@ -106,38 +79,16 @@ export function pilzwaldLandschaft(e: FreiEbene, seed: number): Landschaft | nul
   }, 0x4f6b2e, gelaende));
 
   // ── Wasser ────────────────────────────────────────────────────────────
-  if (wasser) {
-    const ecken: number[] = [];
-    for (let y = 0; y < e.h; y++) for (let x = 0; x < e.b; x++) {
-      if (!wasser[y * e.b + x]) continue;
-      const x0 = (x - 0.08) * Z, x1 = (x + 1.08) * Z, z0 = (y - 0.08) * Z, z1 = (y + 1.08) * Z, h = BETT * 0.42;
-      ecken.push(x0, h, z0, x0, h, z1, x1, h, z0, x1, h, z0, x0, h, z1, x1, h, z1);
-    }
-    const wg = new THREE.BufferGeometry();
-    wg.setAttribute("position", new THREE.Float32BufferAttribute(ecken, 3));
-    wg.computeVertexNormals();
-    const wm = new THREE.Mesh(wg, new THREE.MeshPhongMaterial({ color: 0x2f6f86, specular: 0x9fe8f0, shininess: 90, emissive: 0x0f3a44, transparent: true, opacity: 0.86 }));
-    wm.receiveShadow = true;
-    g.add(wm);
-  }
+  const wm = wasserFlaeche(e, BETT * 0.42, new THREE.MeshPhongMaterial({ color: 0x2f6f86, specular: 0x9fe8f0, shininess: 90, emissive: 0x0f3a44, transparent: true, opacity: 0.86 }));
+  if (wm) g.add(wm);
 
   // ── Modelle aufstellen ───────────────────────────────────────────────
-  const platziert = new Map<string, Stueck[]>();
-  const belegt: [number, number, number][] = [];
-  const frei = (x: number, z: number, rad: number) => belegt.every(([bx, bz, br]) => Math.hypot(bx - x, bz - z) > (br + rad) * 0.72);
   const hoch = new THREE.Vector3(0, 1, 0);
   const lichtOrte: { p: THREE.Vector3; f: number }[] = [];
-  /** ein Modell (alle seine Teile) bei (x, z), gedreht um `w`, skaliert */
+  const auf = kitAufsteller(K, gelaende, FUSS), frei = auf.frei;
+  /** ein Modell bei (x, z); leuchtende Riesenpilze bekommen ein Punktlicht */
   const setze = (modell: string, x: number, z: number, w: number, s = 1, y?: number) => {
-    const teile = Object.keys(K).filter(k => k.startsWith(`${modell}_`));
-    if (!teile.length) return false;
-    const p = new THREE.Vector3(x, y ?? gelaende(x, z), z), q = new THREE.Quaternion().setFromAxisAngle(hoch, w), sk = new THREE.Vector3(s, s, s);
-    for (const k of teile) {
-      let liste = platziert.get(k);
-      if (!liste) platziert.set(k, liste = []);
-      liste.push({ p, q, s: sk });
-    }
-    if (FUSS[modell]) belegt.push([x, z, FUSS[modell] * s]);
+    if (!auf.setze(modell, x, z, w, s, y)) return false;
     if (/^(lilapilz|tuerkispilz)/.test(modell) && s > 0.8) lichtOrte.push({ p: new THREE.Vector3(x, 2.4, z), f: modell.startsWith("lila") ? 0x9a7bff : 0x6fe8f0 });
     return true;
   };
@@ -230,27 +181,15 @@ export function pilzwaldLandschaft(e: FreiEbene, seed: number): Landschaft | nul
     setze(r() < 0.6 ? `moosstein${1 + Math.floor(r() * 3)}` : `farn${1 + Math.floor(r() * 2)}`, (x + r()) * Z, (y + r()) * Z, zufallsDrehung(), 0.7 + r() * 0.5);
   }
   // Brücken: Längsachse (Modell x) entlang des Pfads
-  const bruecken = (e.bruecken ?? []).map(b => ({ x: b.x * Z, z: b.y * Z, w: b.winkel }));
+  const bruecken = brueckenAus(e);
   for (const b of bruecken) setze("steinbruecke1", b.x, b.z, -b.w, 1, BETT * 0.42 - 0.1);
 
   // je Teil eine InstancedMesh; leuchtende Teile unbeleuchtet in ihrer Farbe
   const lit = new THREE.MeshLambertMaterial({ vertexColors: true });
   const blatt = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
   const glut = new THREE.MeshBasicMaterial({ vertexColors: true, color: new THREE.Color(1.7, 1.7, 1.7) });
-  for (const [k, liste] of platziert) {
-    const teil = K[k];
-    const gross = /^(uraltbaum|hohlbaum|fliegenpilz|lilapilz|tuerkispilz|ockerpilz|steinbruecke|menhir|saeule)/.test(k);
-    const m = (n: THREE.Material) => {
-      const im = new THREE.InstancedMesh(teil.geo, n, liste.length);
-      const mx = new THREE.Matrix4();
-      liste.forEach((s, i) => { im.setMatrixAt(i, mx.compose(s.p, s.q!, s.s)); });
-      im.castShadow = gross && !teil.glut && !k.endsWith("_flechten");
-      im.receiveShadow = !teil.glut;
-      im.frustumCulled = false;
-      return im;
-    };
-    g.add(m(teil.glut ? glut : /_wedel|_lamellen|_flechten/.test(k) ? blatt : lit));
-  }
+  auf.fertig(g, (k, teil) => (teil.glut ? glut : /_wedel|_lamellen|_flechten/.test(k) ? blatt : lit),
+    (k, teil) => !teil.glut && !k.endsWith("_flechten") && /^(uraltbaum|hohlbaum|fliegenpilz|lilapilz|tuerkispilz|ockerpilz|steinbruecke|menhir|saeule)/.test(k));
 
   // ── Licht in Bahnen durchs Laub ───────────────────────────────────────
   const sonne = new THREE.Vector3(...STIMMUNG.sonneVon).normalize();
@@ -281,32 +220,9 @@ export function pilzwaldLandschaft(e: FreiEbene, seed: number): Landschaft | nul
   g.add(luft.punkte);
 
   // ein paar Punktlichter wandern zu den leuchtenden Dingen in der Nähe der Figur
-  const LICHTER = 4;
-  const lampen = lichtOrte.length ? Array.from({ length: LICHTER }, () => { const l = new THREE.PointLight(0x6fe8f0, 0, 11, 1.6); g.add(l); return l; }) : [];
+  const lichter = lichtVorrat(g, lichtOrte);
 
-  const hoeheBei = (x: number, z: number) => {
-    let h = 0;
-    for (const b of bruecken) {
-      const dx = x - b.x, dz = z - b.z, c = Math.cos(b.w), s = Math.sin(b.w);
-      const laengs = dx * c + dz * s, quer = -dx * s + dz * c;
-      if (Math.abs(quer) < 2.4 && Math.abs(laengs) < 4.9) h = Math.max(h, 0.12 + 1.43 * (1 - (laengs / 4.9) ** 2));
-    }
-    return h;
-  };
-
-  return {
-    gruppe: g, wandHoehe: 0, stimmung: STIMMUNG, takt: luft.takt, hoehe: bruecken.length ? hoeheBei : undefined,
-    lichter: lampen.length ? (x, z, zeit) => {
-      const nah = lichtOrte.map(o => ({ o, d: (o.p.x - x) ** 2 + (o.p.z - z) ** 2 })).sort((a, b) => a.d - b.d);
-      lampen.forEach((l, i) => {
-        const n = nah[i];
-        if (!n || n.d > 20 * 20) { l.intensity = 0; return; }
-        l.position.copy(n.o.p);
-        l.color.setHex(n.o.f);
-        l.intensity = 7 + Math.sin(zeit * 1.3 + n.o.p.x) * 1.2;
-      });
-    } : undefined,
-  };
+  return { gruppe: g, wandHoehe: 0, stimmung: STIMMUNG, takt: luft.takt, hoehe: brueckenHoehe(bruecken), lichter };
 }
 
 /** Wegfeld mit freien Nachbarn ringsum: Mitte des Pfads (dort ist die Erde ausgetreten) */

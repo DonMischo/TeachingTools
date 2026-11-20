@@ -58,8 +58,10 @@ export interface FreiEbene {
  *  genagt   dasselbe mit angenagten Rändern (Höhle)
  *  lichtung Lichtungen mit geschwungenen Pfaden und Rundwegen (lichtung.ts; Wälder)
  *  bach     wie lichtung, dazu ein Bach mit Brücken (Pilzwald)
+ *  hoehle   Lichtungs-Graph, per Zellautomat zu Gängen und Hallen aufgeweitet, mit Tropfsteinsäulen
+ *  hoehlebach  dasselbe mit unterirdischem Bach und Brücken
  */
-export type KartenArt = "raster" | "genagt" | "lichtung" | "bach";
+export type KartenArt = "raster" | "genagt" | "lichtung" | "bach" | "hoehle" | "hoehlebach";
 
 export interface FreiPlan { ebenen: FreiEbene[] }
 
@@ -204,7 +206,9 @@ function ebene(zimmer: number, seed: number, organisch: boolean, C: number): Fre
 export function baueFreiPlan(zimmer: number[], seed: number, organisch: (boolean | KartenArt)[] = []): FreiPlan {
   const ebenen = zimmer.map((n, i) => {
     const art = organisch[i] === true ? "genagt" : organisch[i] || "raster";
-    if (art === "lichtung" || art === "bach") return lichtungsEbene(n, seed * 131 + i * 17, { bach: art === "bach" });
+    if (art === "lichtung" || art === "bach" || art === "hoehle" || art === "hoehlebach") {
+      return lichtungsEbene(n, seed * 131 + i * 17, { bach: art === "bach" || art === "hoehlebach", hoehle: art === "hoehle" || art === "hoehlebach" });
+    }
     // ein Platz belegt mit Abstand etwa 9×9 grobe Felder
     let C = Math.max(19, 2 * Math.ceil(Math.sqrt((n + 2) * 90) / 2) + 1);
     for (; C <= 81; C += 4) {

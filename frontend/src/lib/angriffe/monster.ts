@@ -1,12 +1,14 @@
 /**
- * Gegner-Monster aus Quaternius „Ultimate Monsters" (CC0, public/modelle/monster).
+ * Gegner-Monster aus Quaternius „Ultimate Monsters" (CC0, public/modelle/monster), dazu eigene Roboter
+ * aus der Weltenwerkstatt (TT-Weltenwerkstatt/blender/roboter.py, gleicher Aufbau: Skelett, Clips Idle/Weapon/HitReact/Death).
  * Jedes Monster greift mit einem Element an (Heilung: heilt sich selbst); für jedes der 18 Elemente gibt es mindestens eins.
  */
 import type { ElementId } from "./effekte";
 
 export type MonsterId =
   | "dragon_evolved" | "alien_blob" | "demon" | "orc" | "yeti" | "dino" | "armabee_evolved" | "cactoro" | "ghost_skull" | "greenspikyblob"
-  | "ninja" | "hywirl" | "birb" | "alpaking_evolved" | "orc_skull" | "wizard_blob" | "greenblob" | "pinkblob" | "mushnub" | "ghost" | "glub";
+  | "ninja" | "hywirl" | "birb" | "alpaking_evolved" | "orc_skull" | "wizard_blob" | "greenblob" | "pinkblob" | "mushnub" | "ghost" | "glub"
+  | "spaeherdrohne" | "lastmech" | "spinnenbot" | "wartungsbot" | "klingenandroid" | "kamerageschuetz";
 
 export interface Monster {
   id: MonsterId;
@@ -38,6 +40,12 @@ export const MONSTER: Record<MonsterId, Monster> = {
   mushnub: { id: "mushnub", name: "Pilzling", element: "heilung", groesse: "klein" },
   ghost: { id: "ghost", name: "Geist", element: "dunkel", groesse: "klein" },
   glub: { id: "glub", name: "Glub", element: "wasser", groesse: "klein" },
+  spaeherdrohne: { id: "spaeherdrohne", name: "Späherdrohne", element: "licht", groesse: "klein" },
+  lastmech: { id: "lastmech", name: "Lastenmech", element: "erde", groesse: "gross" },
+  spinnenbot: { id: "spinnenbot", name: "Spinnenbot", element: "gift", groesse: "klein" },
+  wartungsbot: { id: "wartungsbot", name: "Schraubi", element: "feuer", groesse: "klein" },
+  klingenandroid: { id: "klingenandroid", name: "Klingen-Android", element: "klingen", groesse: "gross" },
+  kamerageschuetz: { id: "kamerageschuetz", name: "Wachturm", element: "blitz", groesse: "klein" },
 };
 
 /** Für jedes Element ein Gegner, der damit angreift */
@@ -51,7 +59,11 @@ export const ELEMENT_MONSTER: Record<ElementId, MonsterId> = {
 export const SKIN_BOSS: Record<string, MonsterId> = { monster: "dragon_evolved", prinzessin: "alien_blob", einhorn: "demon", rap: "orc" };
 
 /** Kleine Verlies-Monster (TaskCrawler) und Wächter vor Treppe/Ausgang */
-export const VERLIES_MONSTER: MonsterId[] = ["greenblob", "pinkblob", "mushnub", "ghost", "glub", "greenspikyblob", "wizard_blob", "alien_blob"];
-export const VERLIES_WAECHTER: MonsterId[] = ["yeti", "dino", "cactoro", "ninja", "orc_skull", "demon", "birb", "orc"];
+export const VERLIES_MONSTER: MonsterId[] = ["greenblob", "pinkblob", "mushnub", "ghost", "glub", "greenspikyblob", "wizard_blob", "alien_blob",
+  "spaeherdrohne", "spinnenbot", "wartungsbot", "kamerageschuetz"];
+export const VERLIES_WAECHTER: MonsterId[] = ["yeti", "dino", "cactoro", "ninja", "orc_skull", "demon", "birb", "orc", "lastmech", "klingenandroid"];
+/** in Neon-Hallen nur Roboter */
+export const ROBOTER_MONSTER: MonsterId[] = ["spaeherdrohne", "spinnenbot", "wartungsbot", "kamerageschuetz"];
+export const ROBOTER_WAECHTER: MonsterId[] = ["klingenandroid", "lastmech"];
 
 export const monsterUrl = (id: MonsterId) => `/modelle/monster/${id}.glb`;

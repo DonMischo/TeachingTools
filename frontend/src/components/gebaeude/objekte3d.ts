@@ -4,7 +4,7 @@
  */
 import * as THREE from "three";
 import type { Objekt } from "@/lib/gebaeude/objekte";
-import { VERLIES_MONSTER, VERLIES_WAECHTER } from "@/lib/angriffe/monster";
+import { VERLIES_MONSTER, VERLIES_WAECHTER, type MonsterId } from "@/lib/angriffe/monster";
 import { ladeMonster } from "@/lib/angriffe/monsterLader";
 
 const HOLZ = 0x8b5a2b, DUNKEL = 0x3f2a1d, METALL = 0x9ca3af, SCHWARZ = 0x1f2937;
@@ -523,12 +523,12 @@ BAU.boss = g => ungeheuer(g, 0x9f1239, true);
  * welche Aufgabe schon gelöst ist. Monster und Bosse sind Quaternius-Modelle
  * (`variante` wählt welches); bis sie geladen sind, steht das Kugel-Ungeheuer da.
  */
-export function baueObjekt(art: Objekt, besiegt = false, variante = 0): THREE.Group {
+export function baueObjekt(art: Objekt, besiegt = false, variante = 0, pool?: { monster: MonsterId[]; waechter: MonsterId[] }): THREE.Group {
   if (art !== "monster" && art !== "boss") return baueGebaut(art, besiegt);
   const platz = new THREE.Group(), ersatz = baueGebaut(art, besiegt);
   platz.add(ersatz);
   if (besiegt) platz.userData.besiegt = true;
-  const liste = art === "boss" ? VERLIES_WAECHTER : VERLIES_MONSTER;
+  const liste = art === "boss" ? pool?.waechter ?? VERLIES_WAECHTER : pool?.monster ?? VERLIES_MONSTER;
   ladeMonster(liste[variante % liste.length], art === "boss" ? 1.9 : 1.0).then((m) => {
     platz.remove(ersatz);
     entsorgeGebaut(ersatz);

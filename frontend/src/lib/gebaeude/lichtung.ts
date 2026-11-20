@@ -34,6 +34,9 @@ export interface Bruecke {
 export interface LichtungsWahl {
   /** ein Bach quer durch die Karte, mit Brücken */
   bach?: boolean;
+  /** Höhle: Pfade und Lichtungen werden per Zellautomat zu Gängen und Hallen mit Buchten aufgeweitet,
+   *  in großen Hallen stehen Tropfsteinsäulen */
+  hoehle?: boolean;
 }
 
 /** kleiner, schneller Zufall mit Seed */
@@ -276,6 +279,9 @@ function versuch(zimmer: number, seed: number, wahl: LichtungsWahl): (FreiEbene 
     // Bachfelder unter Brücken bleiben Weg, gelten aber als Wasser für das Zeichnen
   }
 
+  // 6. Höhle: Ränder aufweiten (Zufallsfüllung nahe am Weg, dann Zellautomat), Kerne bleiben frei, der Bach bleibt Wasser
+  if (wahl.hoehle) hoehleAusformen(B, art, alle, r, wasser);
+
   const e: FreiEbene & { wasser?: Uint8Array; bruecken?: Bruecke[] } = {
     b: B, h: B, art, start, ziel,
     raeume: rest.map(([x, y]): FreiRaum => ({ x, y, r: LICHTUNG })),
@@ -311,4 +317,49 @@ function erreichbar(e: FreiEbene): boolean {
     }
   }
   return [e.ziel, ...e.raeume.map(p => [p.x, p.y] as Punkt)].every(([x, y]) => gesehen[y * B + x]);
+}
+
+/**
+ * Höhle aus Pfaden und Lichtungen: Felder nahe am Weg werden zufällig frei (je näher, desto eher),
+ * ein Zellautomat (frei bei 5 von 8 freien Nachbarn) glättet das zu runden Hallen mit Buchten und
+ * Nischen. Die Kerne (Pfade, Lichtungen) bleiben frei, damit alles erreichbar bleibt. Zuletzt stehen
+ * in großen Hallen ein paar Tropfsteinsäulen (einzelne Wandfelder), nie im Weg zu den Stationen.
+ */
+function hoehleAusformen(B: number, art: Uint8Array, mitten: Punkt[], r: () => number, wasser?: Uint8Array) {
+  const kern = Uint8Array.from(art, a => (a !== WAND ? 1 : 0));
+  // Abstand zum Kern (8er-Nachbarschaft), bis 4
+  const d = new Uint8Array(B * B).fill(9), offen: number[] = [];
+  for (let i = 0; i < B * B; i++) if (kern[i]) { d[i] = 0; offen.push(i); }
+  for (let k = 0; k < offen.length; k++) {
+    const i = offen[k], x = i % B, y = (i - x) / B;
+    if (d[i] >= 4) continue;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      const nx = x + dx, ny = y + dy, j = ny * B + nx;
+      if (nx < 1 || ny < 1 || nx >= B - 1 || ny >= B - 1 || d[j] <= d[i] + 1) continue;
+      d[j] = d[i] + 1;
+      offen.push(j);
+    }
+  }
+  let frei = Uint8Array.from(d, (v, i) => (v === 0 ? 1 : v <= 4 && r() < [1, 0.62, 0.5, 0.36, 0.2][v] ? 1 : 0) || (kern[i] ? 1 : 0));
+  for (let runde = 0; runde < 4; runde++) {
+    const neu = new Uint8Array(B * B);
+    for (let y = 1; y < B - 1; y++) for (let x = 1; x < B - 1; x++) {
+      const i = y * B + x;
+      if (kern[i]) { neu[i] = 1; continue; }
+      let n = 0;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if ((dx || dy) && frei[(y + dy) * B + x + dx]) n++;
+      neu[i] = n >= 5 || (frei[i] && n >= 4) ? 1 : 0;
+    }
+    frei = neu;
+  }
+  for (let i = 0; i < B * B; i++) if (frei[i] && art[i] === WAND && !wasser?.[i]) art[i] = WEG;
+  // Tropfsteinsäulen: in Hallen, mit Abstand zu den Stationen und nur dort, wo ringsum alles frei ist
+  for (let y = 2; y < B - 2; y++) for (let x = 2; x < B - 2; x++) {
+    if (r() > 0.035) continue;
+    const nahStation = mitten.some(([mx, my]) => Math.hypot(mx - x, my - y) < 3.6);
+    if (nahStation) continue;
+    let ringsFrei = true;
+    for (let dy = -2; dy <= 2 && ringsFrei; dy++) for (let dx = -2; dx <= 2; dx++) if (art[(y + dy) * B + x + dx] === WAND) { ringsFrei = false; break; }
+    if (ringsFrei) art[y * B + x] = WAND;
+  }
 }
