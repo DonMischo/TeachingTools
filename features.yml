@@ -1037,6 +1037,16 @@ tools:
       - Grundlagenkapitel, Grafiken, Mythen-Check, Quellen mit DOI
       - Markieren als Favorit, Einarbeiten, Brauch ich nicht (im Konto gespeichert)
       - Download als eigenständige Offline-HTML
+  - id: main-character
+    name: Main Character
+    faehigkeiten: {use: [true, true]}
+    kann:
+      - Lebenssimulation bis zum Abschluss mit fünf Werten, Wachstum und Verfall je Wert
+      - Zehn Klassen plus NPC, Vorführen am Beamer, Klassenwechsel mitten im Lauf
+      - Fragebogen schlägt Klasse, Talente und Stärken vor
+      - Charakterbogen mit frei wählbaren Stärken, Baustellen und Wochenplan
+      - Zeugnis als PDF mit Stärken, geschafften Baustellen und Fokus-Tipps
+      - Beitritt per Code/QR auch für Gäste, anonyme Klassenübersicht
   - id: curriculum
     name: Curriculinator
     faehigkeiten: {use: [true, false]}

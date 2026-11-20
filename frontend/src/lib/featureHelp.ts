@@ -994,6 +994,16 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "💾 Layout", text: "Die Anordnung wird lokal im Browser gespeichert." },
     ],
   },
+  "main-character": {
+    title: "Main Character",
+    intro: "Lebenssimulation für die Abschlussklassen: Wer stehst du beim Abschluss 2028? Fünf Werte (Wissen, Zielgerichtet, Style, Miteinander, Energie) wachsen und verfallen unterschiedlich — NPCs bleiben stehen, wer plant, nicht.",
+    sections: [
+      { label: "🎬 Vorführen", text: "Alle zehn Klassen am Beamer laufen lassen und mitten im Lauf wechseln. Tasten 1–5 wählen die Figuren im Bild (nochmal = zweite Klasse), 6 das NPC, Leertaste startet, R setzt zurück." },
+      { label: "🧑 Charakter", text: "Zwölf Alltagsfragen schlagen Klasse, Talente und Stärken vor. Im Charakterbogen wählen Schüler·innen selbst: Klasse, beliebig viele Stärken und Baustellen, eigener Wochenplan. Baustellen schrumpfen mit Einsatz." },
+      { label: "📄 Zeugnis", text: "Am Ende gibt es ein PDF mit dem, was man gut kann, geschafften Baustellen und zwei Tipps, wo sich mehr Fokus lohnt." },
+      { label: "👥 Klasse", text: "Über »Zum Mitmachen« treten Schüler·innen per Code oder QR bei, auch als Gäste. Die Klassenübersicht zeigt nur Anzahlen je Klasse und den Klassen-Schnitt (ab drei Figuren) — keine Namen, keine Antworten. Fragebogen und Charakter bleiben auf den Geräten." },
+    ],
+  },
   kompendium: {
     title: "Methoden-Kompendium",
     intro: "Nachschlagewerk mit Methoden aus Didaktik, Pädagogik und Psychologie — jede mit Ablauf, Stolpersteinen, Evidenzstufe und Quellen.",

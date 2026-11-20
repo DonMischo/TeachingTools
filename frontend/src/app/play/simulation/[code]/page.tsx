@@ -64,6 +64,7 @@ import Spielalgorithmen from "@/components/spielalgo/Spielalgorithmen";
 import Schichtenmodell from "@/components/schichten/Schichtenmodell";
 import Tippen from "@/components/tippen/Tippen";
 import KiKompass from "@/components/kikompass/KiKompass";
+import MainCharacter from "@/components/mainCharacter/MainCharacter";
 import MausFuehrerschein, { schluesselFuerGast, schluesselFuerGastName } from "@/components/maus/MausFuehrerschein";
 import { SharedTimeline } from "@/components/timeline/SharedTimeline";
 import KartenQuizSpiel from "@/components/karten/KartenQuizSpiel";
@@ -129,6 +130,8 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   maus: { title: "Maus-Führerschein", icon: "🐭", node: null },
   // Der KI-Kompass spiegelt den Stand über Code und Gast-Token in die Übersicht der Lehrkraft.
   kikompass: { title: "KI-Kompass", icon: "🧭", node: null },
+  // meldet den anonymen Stand mit Code und Gast-Token
+  "main-character": { title: "Main Character", icon: "👑", node: null },
   // Der Flug merkt sich Erforschtes je Code bzw. Konto — dafür braucht er den Code.
   sonnensystem: { title: "Sonnensystem", icon: "🪐", node: null },
   // Die Stadt ist ein Live-Raum je Code — dafür braucht sie Code und Gast-Token.
@@ -310,6 +313,14 @@ export default function SimulationJoinPage() {
               // gemeldeter Stand kommt zurück (anderer Rechner, gelöschter Browser-Speicher)
               ladeServer={auth || guest.token ? () => api.algo.mein({ code, token: auth ? null : guest.token }) : undefined}
               onStand={s => { api.algo.fortschritt({ code, token: guest.token }, s).catch(() => { /* nur für die Übersicht */ }); }} /></D2Kontext.Provider>
+        : session.tool_slug === "main-character"
+          ? <MainCharacter
+              zugang={{ code, token: guest.token }}
+              // Gäste behalten ihren Charakter je Namen in diesem Browser (wie beim Maus-Führerschein).
+              speicherSchluessel={auth
+                ? `konto-${auth.user_type}-${auth.student?.id ?? auth.teacher?.id ?? 0}`
+                : schluesselFuerGastName(guest.session?.name ?? "")
+                  ?? (guest.token ? schluesselFuerGast(code, guest.token) : `gast-${code}`)} />
         : session.tool_slug === "kikompass"
           ? <KiKompass
               zugang={{ code, token: guest.token }}

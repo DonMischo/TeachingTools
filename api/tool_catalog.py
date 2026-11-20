@@ -331,6 +331,12 @@ CATALOG: list[CatalogTool] = [
     }),
     # Snap!: der Editor läuft lokal (frontend/public/snap), "create" deckt das
     # Speichern eigener Programme in der Hauspokal-Bibliothek ab.
+    # Main Character: Lebenssimulation bis zum Abschluss (Fragebogen,
+    # Charakterbogen, Zeugnis). Liegt unter Tools, Schüler·innen dürfen mitmachen;
+    # die Sitzung sammelt nur anonyme Werte (routers/main_character.py).
+    CatalogTool("main-character", "👑 Main Character", "👑", "tools", {
+        "use": _cap(True, True),
+    }),
     CatalogTool("snap", "🧱 Snap!", "🧱", "tools", {
         "use": _cap(True, False),
         "create": _cap(True, False),

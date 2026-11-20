@@ -2126,6 +2126,25 @@ export const api = {
       }),
   },
 
+  // Main Character: nur Klasse, Woche und Werte in die Sitzung; Lehrkraft sieht Anzahlen und Schnitte
+  // (siehe api/routers/main_character.py)
+  mainCharacter: {
+    stand: (zugang: MausZugang, body: { klasse: string; woche: number; werte: Record<string, number> }) =>
+      apiFetch<{ ok: boolean }>(`main-character/sitzung/${encodeURIComponent(zugang.code)}/stand`, {
+        method: "PUT",
+        body: JSON.stringify(body),
+        headers: zugang.token ? { Authorization: `Bearer ${zugang.token}` } : undefined,
+      }),
+    uebersicht: (code: string) =>
+      apiFetch<{
+        anzahl: number;
+        je_klasse: Record<string, number>;
+        schnitt: Record<string, number> | null;
+        woche_schnitt: number | null;
+        min_fuer_schnitt: number;
+      }>(`main-character/sitzung/${encodeURIComponent(code)}/uebersicht`),
+  },
+
   // KI-Kompass: Stand am Konto, Spiegel in die Sitzung, Modul-Prüfung (siehe api/routers/kikompass.py)
   kikompass: {
     stand: () => apiFetch<KiKompassStand>("kikompass/stand"),

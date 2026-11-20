@@ -358,6 +358,14 @@ Das Lehrkraft-Werkzeugset. Standardmäßig nur für Lehrkräfte sichtbar.
 - Export der Endfassung als DOCX und PDF (A4 quer, alle Klassen oder eine) und als SVG je Klasse (`api/curriculum_export.py`; das DOCX wird direkt geschrieben, weil pandoc keine Zellfarben kann, das PDF macht LibreOffice daraus)
 - KI-Prompt für Lehrplanvergleich und Zuordnung; Vorlagen als JSON (`tt-curriculum/1`, Aufbau in `data/curriculum/SCHEMA.md`). Startvorlagen in `frontend/public/curriculum/`: Thüringer Mathe-Lehrpläne (RS 2011, GY 2018 → Erprobungsfassungen 2026, mit Abgleich; die neuen Pläne RS + GY zu einer dreifach differenzierten Karte je Kompetenz zusammengeführt, R/G nur mit ihrem Zusatz) Physik (RS + GY 2026, Kl. 7–10) und Medienbildung und Informatik (RS + GY 2026, Kl. 5–10), beide ohne alten Plan und mit leeren Unterrichtseinheiten je Lernbereich. Der KI-Prompt erfasst eine oder beide Schularten in einem JSON, mit oder ohne alten Plan
 
+### 👑 Main Character
+- Lebenssimulation für Abschlussklassen: fünf Werte (Wissen, Zielgerichtet, Style, Miteinander, Energie) Woche für Woche bis zum Abschluss 2028, jeder mit eigenem Wachstum und Verfall; das NPC hält immer denselben Plan und bleibt stehen
+- Zehn Klassen auf den fünf Figuren des Bildes (je Figur zwei, z. B. Nerd ↔ Gamer) plus NPC; Vorführen am Beamer mit Klassenwechsel mitten im Lauf (Tasten 1–6, Leertaste, R)
+- Fragebogen mit zwölf Alltagsszenen schlägt Klasse, Talente (ungleiches Wachstum je Wert) und Stärken vor; im Charakterbogen frei wählbar: Klasse, beliebig viele Stärken und Baustellen, eigener Wochenplan. Baustellen schrumpfen mit Einsatz
+- Zeugnis als PDF: was man gut kann, geschaffte Baustellen, zwei Tipps für mehr Fokus (`frontend/src/lib/mainCharacterZeugnis.ts`)
+- Beitritt per Code/QR auch für Gäste; die Klassenübersicht zeigt nur Anzahlen je Klasse und den Klassen-Schnitt ab drei Figuren. Fragebogen, Spitzname, Stärken und Baustellen bleiben im Browser (`api/routers/main_character.py`)
+- Rechnung in `frontend/src/lib/mainCharacter.ts`, Fragebogen in `frontend/src/lib/mainCharacterFragebogen.ts`
+
 ### 🧱 Snap!
 - Blockbasiertes Programmieren (Snap!, Berkeley) direkt in der Seite, komplett lokal, ohne Internet und ohne Konto
 - Programme werden in TT gespeichert; Lehrkraft-Programme mit Klasse werden zu Vorlagen, die die Klasse als eigene Kopie speichert

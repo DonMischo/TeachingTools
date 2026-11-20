@@ -104,6 +104,14 @@ const ALL_CARDS: Werkzeug[] = [
     color: "#8b5cf6",
   },
   {
+    slug: "main-character",
+    href: "/tools/main-character",
+    icon: "👑",
+    title: "Main Character",
+    description: "Lebenssimulation bis zum Abschluss: Fragebogen, Charakterbogen, Wochenplan, Zeugnis als PDF — per QR mit anonymer Klassenübersicht.",
+    color: "#a259ec",
+  },
+  {
     slug: "snap",
     href: "/tools/snap",
     icon: "🧱",
