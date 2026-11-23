@@ -164,6 +164,7 @@ aktivitaeten:
       - Regionen Deutschland, Thüringen, Europa, Welt, Kontinente; Kartenarten politisch, topographisch, stumm, Wirtschaft, Physisch
       - Ebenen aus offenen Daten (BKG, BGR, Natural Earth, OPSD, CORINE, Bird PB2002, Köppen-Geiger) mit Quellenangabe auf der Karte
       - Deutschland - Bundes-, Landes- und Kreisstraßen, Bodennutzung einfach oder genau (CORINE), Bodenschätze (BGR-Lagerstätten und Abbaustellen)
+      - Deutschland - Geologie (Kartenart »Geologisch«): Erdzeitalter, Gesteinsarten, Störungen (EGDI 1:1 Mio. über Macrostrat, CC BY 4.0)
       - Europa genauer - BIP pro Kopf und Bevölkerungsdichte je NUTS-2-Region, EU/Eurozone/EFTA, Kraftwerke, Verkehr
       - USA-Wirtschaft - Landwirtschaft und Viehhaltung je Bundesstaat, Manufacturing Belt und Sun Belt, Industriestandorte (schematisch)
       - Atlas-Signaturen für Kraftwerke, Bergbau, Flug- und Seehäfen, Industrie und Sonderkulturen (Karte und Legende)

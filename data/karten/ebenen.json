@@ -1,5 +1,5 @@
 {
-  "stand": "2026-11-17",
+  "stand": "2026-11-23",
   "ebenen": [
     {
       "id": "de-laender",
@@ -2458,6 +2458,159 @@
       },
       "anzahl": 75,
       "bytes": 13027
+    },
+    {
+      "id": "de-geologie",
+      "name": "Geologie: Erdzeitalter",
+      "gruppe": "geologie",
+      "bereich": "de",
+      "geometrie": "flaeche",
+      "quiz": false,
+      "quelle": {
+        "name": "EuroGeoSurveys, EGDI 1:1 Million pan-european Surface Geology (deutscher Teil: BGR), über Macrostrat, bearbeitet",
+        "lizenz": "CC BY 4.0",
+        "url": "https://macrostrat.org/"
+      },
+      "darstellung": {
+        "feld": "zeit",
+        "art": "kategorie",
+        "werte": [
+          {
+            "wert": "quartaer",
+            "text": "Quartär (bis 2,6 Mio. J.)",
+            "farbe": "#fff3a8"
+          },
+          {
+            "wert": "tertiaer",
+            "text": "Tertiär (66–2,6 Mio. J.)",
+            "farbe": "#ffd23f"
+          },
+          {
+            "wert": "kreide",
+            "text": "Kreide (145–66 Mio. J.)",
+            "farbe": "#8fcf5a"
+          },
+          {
+            "wert": "jura",
+            "text": "Jura (201–145 Mio. J.)",
+            "farbe": "#42b6d0"
+          },
+          {
+            "wert": "trias",
+            "text": "Trias (252–201 Mio. J.)",
+            "farbe": "#a774b4"
+          },
+          {
+            "wert": "perm",
+            "text": "Perm (299–252 Mio. J.)",
+            "farbe": "#ef6a4c"
+          },
+          {
+            "wert": "karbon",
+            "text": "Karbon (359–299 Mio. J.)",
+            "farbe": "#6aa89c"
+          },
+          {
+            "wert": "devon",
+            "text": "Devon (419–359 Mio. J.)",
+            "farbe": "#c99a4e"
+          },
+          {
+            "wert": "altpalaeozoikum",
+            "text": "Silur bis Kambrium (539–419 Mio. J.)",
+            "farbe": "#7aa37a"
+          },
+          {
+            "wert": "praekambrium",
+            "text": "Präkambrium (älter als 539 Mio. J.)",
+            "farbe": "#c76a8a"
+          },
+          {
+            "wert": "plutonit",
+            "text": "Tiefengestein (z. B. Granit)",
+            "farbe": "#e33f8f"
+          },
+          {
+            "wert": "vulkanit",
+            "text": "Ergussgestein (z. B. Basalt)",
+            "farbe": "#6e2a63"
+          }
+        ]
+      },
+      "anzahl": 1810,
+      "bytes": 1270981
+    },
+    {
+      "id": "de-gesteine",
+      "name": "Geologie: Gesteinsarten",
+      "gruppe": "geologie",
+      "bereich": "de",
+      "geometrie": "flaeche",
+      "quiz": false,
+      "quelle": {
+        "name": "EuroGeoSurveys, EGDI 1:1 Million pan-european Surface Geology (deutscher Teil: BGR), über Macrostrat, bearbeitet",
+        "lizenz": "CC BY 4.0",
+        "url": "https://macrostrat.org/"
+      },
+      "darstellung": {
+        "feld": "stein",
+        "art": "kategorie",
+        "werte": [
+          {
+            "wert": "locker",
+            "text": "Lockergestein (Sand, Kies, Lehm, Moor)",
+            "farbe": "#fbefc0"
+          },
+          {
+            "wert": "sediment",
+            "text": "Sedimentgestein (Sand-, Kalk-, Tonstein)",
+            "farbe": "#9fc7e8"
+          },
+          {
+            "wert": "plutonit",
+            "text": "Tiefengestein (Granit, Diorit …)",
+            "farbe": "#e33f8f"
+          },
+          {
+            "wert": "vulkanit",
+            "text": "Ergussgestein (Basalt, Porphyr …)",
+            "farbe": "#6e2a63"
+          },
+          {
+            "wert": "metamorphit",
+            "text": "Umwandlungsgestein (Gneis, Schiefer …)",
+            "farbe": "#8c7a6b"
+          }
+        ]
+      },
+      "anzahl": 1187,
+      "bytes": 1006948
+    },
+    {
+      "id": "de-stoerungen",
+      "name": "Geologie: Störungen",
+      "gruppe": "geologie",
+      "bereich": "de",
+      "geometrie": "linie",
+      "quiz": false,
+      "quelle": {
+        "name": "EuroGeoSurveys, EGDI 1:1 Million pan-european Surface Geology (deutscher Teil: BGR), über Macrostrat, bearbeitet",
+        "lizenz": "CC BY 4.0",
+        "url": "https://macrostrat.org/"
+      },
+      "darstellung": {
+        "feld": "art",
+        "art": "kategorie",
+        "werte": [
+          {
+            "wert": "stoerung",
+            "text": "Störung (Bruchlinie)",
+            "farbe": "#b2182b"
+          }
+        ]
+      },
+      "anzahl": 96,
+      "bytes": 25124
     }
   ]
 }
