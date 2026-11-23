@@ -492,6 +492,16 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
     ],
   },
+  schriftlich: {
+    title: "Schriftliche Rechenverfahren",
+    intro: "Die vier schriftlichen Rechenverfahren der Grundschule und Klasse 5, Schritt für Schritt mit der Walzen-Mechanik der Stellenwerttafeln.",
+    sections: [
+      { label: "🎬 Vorführen", text: "Rechenart wählen, zwei Zahlen eintippen oder würfeln. »Nächster Schritt« rechnet eine Spalte bzw. einen Teilschritt: Die Spalte leuchtet, der Satz darunter sagt, was passiert. Die Walze der Spalte dreht Ziffer für Ziffer weiter — über die 9 hinaus heißt Übertrag, der als rote Kugel in die nächste Spalte fliegt. Beim Subtrahieren wird entbündelt (auch über Nullen hinweg, 0 wird 9), der Zehner fliegt herüber. Multiplizieren: Teilprodukte je Ziffer, gemerkte Zahlen fliegen mit, dann stellengerecht addieren. Dividieren: Die Walze zählt, wie oft der Teiler passt; malnehmen, abziehen, nächste Ziffer fliegt herunter, am Ende Rest und Probe. ⏯ spielt alles in Ruhe ab, ◀ geht zurück." },
+      { label: "✍️ Üben", text: "Aufgabe in drei Stufen und vier Rechenarten. Das Ergebnis wird an den Walzen eingestellt (▲▼, Pfeiltasten oder Ziffer tippen), beim Teilen zusätzlich der Rest. »Prüfen« sagt, an welchen Stellen es noch nicht stimmt; »Rechenweg zeigen« führt die Aufgabe Schritt für Schritt vor." },
+      { label: "🕵️ Fehlerdetektiv", text: "Spiel: Acht fertig gerechnete Aufgaben mit einem typischen Fehler (Übertrag vergessen, nicht entbündelt). Die falsche Ziffer im Ergebnis antippen — 10 Punkte je Treffer, danach wird der Fehler erklärt. Rekord bleibt im Browser." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
+    ],
+  },
   stellenwert: {
     title: "Stellenwerttafeln",
     intro: "Zehner-, Zweier- und Sechzehnersystem in der Stellenwerttafel — vier Blätter zum Legen, Verstehen, Üben und Spielen. Der Hex-Farbmischer ist in die Simulation »Farbmodelle« umgezogen.",

@@ -381,6 +381,14 @@ const ALL_CARDS: Werkzeug[] = [
     color: "#7c3aed",
   },
   {
+    slug: "schriftlich",
+    href: "/simulationen/schriftlich",
+    icon: "✏️",
+    title: "Schriftliche Rechenverfahren",
+    description: "Schriftlich addieren, subtrahieren (Abziehen mit Entbündeln), multiplizieren und dividieren — jeder Schritt sichtbar auf Karopapier in den Farben der Stellenwerttafel. Unter jeder Spalte dreht eine Walze wie im Zählwerk: Läuft sie über die 9, fliegt der Übertrag in die nächste Spalte; beim Entbündeln fliegt der Zehner herüber. Üben mit Ergebnis an den Walzen und das Spiel Fehlerdetektiv.",
+    color: "#0d9488",
+  },
+  {
     slug: "farbmodelle",
     href: "/simulationen/farbmodelle",
     icon: "🎨",

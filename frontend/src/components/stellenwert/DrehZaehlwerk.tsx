@@ -22,7 +22,7 @@ const DREHUNG_MS = 220;
 const rest = (z: number, b: number) => ((z % b) + b) % b;
 
 /** Eine Walze: drei Ziffernstreifen hintereinander, damit sie über 0 hinweg weiterrollen kann. */
-function Walze({ dreh, basis, farbe, h }: { dreh: number; basis: number; farbe: string; h: number }) {
+export function Walze({ dreh, basis, farbe, h }: { dreh: number; basis: number; farbe: string; h: number }) {
   const d = rest(dreh, basis);
   const [pos, setPos] = useState(basis + d);
   const [rollt, setRollt] = useState(false);

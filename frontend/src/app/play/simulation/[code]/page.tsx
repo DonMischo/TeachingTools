@@ -35,6 +35,7 @@ import Kreis from "@/components/kreis/Kreis";
 import Koerper from "@/components/koerper/Koerper";
 import Stellenwert from "@/components/stellenwert/Stellenwert";
 import Farbmodelle from "@/components/farbmodelle/Farbmodelle";
+import Schriftlich from "@/components/schriftlich/Schriftlich";
 import Aehnlichkeit from "@/components/aehnlichkeit/Aehnlichkeit";
 import Lgs from "@/components/lgs/Lgs";
 import Brueche from "@/components/brueche/Brueche";
@@ -103,6 +104,7 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   koerper: { title: "Körper", icon: "🧊", node: <Koerper /> },
   stellenwert: { title: "Stellenwerttafeln", icon: "🔢", node: <Stellenwert /> },
   farbmodelle: { title: "Farbmodelle", icon: "🎨", node: <Farbmodelle /> },
+  schriftlich: { title: "Schriftliche Rechenverfahren", icon: "✏️", node: <Schriftlich /> },
   aehnlichkeit: { title: "Ähnlichkeit und Maßstab", icon: "🔍", node: <Aehnlichkeit /> },
   lgs: { title: "Lineare Gleichungssysteme", icon: "🔀", node: <Lgs /> },
   brueche: { title: "Brüche", icon: "🍕", node: <Brueche /> },

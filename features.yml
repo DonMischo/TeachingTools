@@ -1018,6 +1018,15 @@ simulationen:
       - "Maßstab umrechnen in beide Richtungen, Verkleinerung und Vergrößerung, Messen auf einer Inselkarte"
       - "Übungen: Streckfaktor, fehlende Seite, Fläche, Karte, Plan, Maßstab bestimmen"
       - "Spiel Zoom-Treffer: Zentrum und Streckfaktor finden, fünf Runden, drei Stufen"
+  - id: schriftlich
+    name: Schriftliche Rechenverfahren
+    faehigkeiten: {use: [true, true]}
+    kann:
+      - "Schriftliches Addieren, Subtrahieren (Entbündeln), Multiplizieren und Dividieren Schritt für Schritt"
+      - "Walzen je Spalte drehen Ziffer für Ziffer, Überträge und entbündelte Zehner fliegen sichtbar"
+      - "Abspielen, zurück, alle Schritte; Ziffern in den Farben der Stellenwerttafel"
+      - "Üben: Ergebnis am Zählwerk einstellen, Rückmeldung je Stelle, Rechenweg zum Ansehen"
+      - "Spiel Fehlerdetektiv: falsche Ziffer finden, Fehler wird erklärt"
   - id: farbmodelle
     name: Farbmodelle
     faehigkeiten: {use: [true, true]}

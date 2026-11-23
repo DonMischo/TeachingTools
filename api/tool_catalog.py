@@ -156,6 +156,9 @@ CATALOG: list[CatalogTool] = [
     CatalogTool("aehnlichkeit", "🔍 Ähnlichkeit und Maßstab", "🔍", "simulationen", {
         "use": _cap(True, True),
     }),
+    CatalogTool("schriftlich", "✏️ Schriftliche Rechenverfahren", "✏️", "simulationen", {
+        "use": _cap(True, True),
+    }),
     CatalogTool("farbmodelle", "🎨 Farbmodelle", "🎨", "simulationen", {
         "use": _cap(True, True),
     }),
