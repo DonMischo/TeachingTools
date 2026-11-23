@@ -147,6 +147,9 @@ CATALOG: list[CatalogTool] = [
     CatalogTool("zahlenbereiche", "🪆 Zahlenbereiche", "🪆", "simulationen", {
         "use": _cap(True, True),
     }),
+    CatalogTool("brueche", "🍕 Brüche", "🍕", "simulationen", {
+        "use": _cap(True, True),
+    }),
     CatalogTool("farbmodelle", "🎨 Farbmodelle", "🎨", "simulationen", {
         "use": _cap(True, True),
     }),

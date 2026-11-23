@@ -357,6 +357,14 @@ const ALL_CARDS: Werkzeug[] = [
     color: "#16a34a",
   },
   {
+    slug: "brueche",
+    href: "/simulationen/brueche",
+    icon: "🍕",
+    title: "Brüche",
+    description: "Brüche als Pizza, runde Torte, Blechkuchen, Schokolade und Band: Teile antippen, vergleichen, erweitern (feiner schneiden) und kürzen am Bild, gleichnamig machen. Rechnen mit allen vier Grundrechenarten Schritt für Schritt mit Bild (Streifen, Flächenmodell), Regeln und Üben in drei Stufen. Bruchteile von Größen vorwärts und rückwärts, Umwandeln Bruch ↔ Dezimalzahl über Zehntel/Hundertstel/Tausendstel und die Stellenwerttafel, wichtige Brüche und Bruch-Memory.",
+    color: "#f59e0b",
+  },
+  {
     slug: "farbmodelle",
     href: "/simulationen/farbmodelle",
     icon: "🎨",

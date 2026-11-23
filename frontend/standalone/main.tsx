@@ -28,6 +28,7 @@ import Kreis from "@/components/kreis/Kreis";
 import Koerper from "@/components/koerper/Koerper";
 import Stellenwert from "@/components/stellenwert/Stellenwert";
 import Farbmodelle from "@/components/farbmodelle/Farbmodelle";
+import Brueche from "@/components/brueche/Brueche";
 import Zahlenbereiche from "@/components/zahlenbereiche/Zahlenbereiche";
 import Markieren from "@/components/markieren/Markieren";
 import PcWerkstatt from "@/components/pcbau/PcWerkstatt";
@@ -75,6 +76,7 @@ const TOOLS: { id: string; icon: string; label: string; node: ReactNode }[] = [
   { id: "koerper", icon: "🧊", label: "Körper", node: <Koerper /> },
   { id: "stellenwert", icon: "🔢", label: "Stellenwerttafeln", node: <Stellenwert /> },
   { id: "farbmodelle", icon: "🎨", label: "Farbmodelle", node: <Farbmodelle /> },
+  { id: "brueche", icon: "🍕", label: "Brüche", node: <Brueche /> },
   { id: "zahlenbereiche", icon: "🪆", label: "Zahlenbereiche", node: <Zahlenbereiche /> },
   { id: "markieren", icon: "🖍️", label: "Markieren & Bearbeiten", node: <Markieren /> },
   { id: "pcbau", icon: "🪛", label: "PC-Werkstatt", node: <PcWerkstatt /> },

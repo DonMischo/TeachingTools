@@ -986,6 +986,17 @@ simulationen:
       - "Steckbriefe mit Eigenschaften und Beispielen, Erweiterungsleiter, Abgeschlossenheit mit Gegenbeispielen"
       - "Spiel Zahlen-Detektiv: alle zutreffenden Bereiche antippen, 10 Zahlen oder 60 s, drei Stufen, Rekord"
       - "Spiel Zahlenregen: passende Zahlen mit dem Korb fangen, wechselnde Ziele, drei Herzen"
+  - id: brueche
+    name: Brüche
+    faehigkeiten: {use: [true, true]}
+    kann:
+      - "Bruchbilder Pizza, runde Torte, Blechkuchen, Schokoladentafel, Band; Teile antippen, unechte Brüche über mehrere Ganze"
+      - "Name, Art und gemischte Zahl; zwei Brüche vergleichen"
+      - "Erweitern als feineres Schneiden, Kürzen mit ggT, gleichnamig machen mit Hauptnenner"
+      - "Rechnen + − · : mit Rechenweg Schritt für Schritt und Bild, Regeln, Üben in drei Stufen"
+      - "Bruchteile von Größen vorwärts und rückwärts mit Sachaufgaben"
+      - "Bruch ↔ Dezimalzahl über 10/100/1000 und die Stellenwerttafel, periodische Dezimalzahlen"
+      - "Wichtige Brüche mit Dezimalzahl und Prozent, Spiel Bruch-Memory"
   - id: farbmodelle
     name: Farbmodelle
     faehigkeiten: {use: [true, true]}

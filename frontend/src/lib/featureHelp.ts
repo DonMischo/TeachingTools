@@ -451,6 +451,19 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
     ],
   },
+  brueche: {
+    title: "Brüche",
+    intro: "Brüche Klasse 5–7 in sechs Blättern: sehen, erweitern und kürzen, rechnen, Bruchteile von Größen, Dezimalzahlen über die Stellenwerttafel, wichtige Brüche.",
+    sections: [
+      { label: "🍕 Verstehen", text: "Form wählen (Pizza, Torte, Blechkuchen, Schokolade, Band), Teile (Nenner) und Anzahl Ganzer einstellen, Teile antippen. Daneben Bruch, Name (»drei Viertel«), Art (Stammbruch, echt, unecht, Scheinbruch) und gemischte Zahl. Darunter zwei Brüche als Bänder vergleichen, mit Überkreuz-Rechnung." },
+      { label: "✂️ Erweitern & Kürzen", text: "Erweitern mit k schneidet jedes Stück gestrichelt in k Stücke — gefärbte Menge bleibt, Zähler und Nenner · k. Kürzen mit ggT legt Stücke zusammen, mit Rechenweg. Gleichnamig machen: zwei Brüche auf den Hauptnenner (kgV) erweitert." },
+      { label: "🧮 Rechnen", text: "Regeln für + − · : mit Beispiel. Rechner: zwei Brüche (auch gemischt wie 1 1/2), Rechenweg Schritt für Schritt, Bild dazu (Streifen im Hauptnenner, Flächenmodell, »wie oft passt es hinein«). Üben: Rechenart und Stufe wählen, Antwort prüfen (Hinweis, wenn noch zu kürzen ist)." },
+      { label: "⚖️ Bruchteile", text: "»3/4 von 200 g« als Streifen: erst durch den Nenner teilen, dann mit dem Zähler malnehmen — Schritt für Schritt. Sachaufgaben vorwärts (Teil gesucht) und rückwärts (Ganzes gesucht) mit Rechenweg." },
+      { label: "🔢 Dezimalzahlen", text: "Bruch → Dezimalzahl: kürzen, auf 10, 100 oder 1000 erweitern, in die Stellenwerttafel schreiben, ablesen; sonst schriftlich teilen mit Periode. Dezimalzahl → Bruch: Tafel, Zehnerbruch, kürzen." },
+      { label: "⭐ Wichtige Brüche", text: "Tabelle Bruch – Dezimalzahl – Prozent mit Pizza-Bild. Bruch-Memory: 8 Paare Bruch (Zahl oder Pizza) ↔ Dezimalzahl/Prozent, bester Lauf bleibt im Browser." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
+    ],
+  },
   stellenwert: {
     title: "Stellenwerttafeln",
     intro: "Zehner-, Zweier- und Sechzehnersystem in der Stellenwerttafel — vier Blätter zum Legen, Verstehen, Üben und Spielen. Der Hex-Farbmischer ist in die Simulation »Farbmodelle« umgezogen.",
