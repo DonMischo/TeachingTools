@@ -47,6 +47,8 @@ export const GRUNDBAUTEN: { bau: BauTyp; stufe: number }[] = [
   { bau: "holzfaeller", stufe: 0 }, { bau: "saegewerk", stufe: 1 }, { bau: "koehler", stufe: 1 },
   { bau: "lehmgrube", stufe: 1 }, { bau: "ziegelei", stufe: 1 }, { bau: "schafhof", stufe: 2 },
   { bau: "hopfengarten", stufe: 2 }, { bau: "steinbruch", stufe: 2 },
+  // Handel: Kontor (Ein- und Ausfuhr) und Verladehafen (Kähne bringen die Waren über den Fluss zum Kontor)
+  { bau: "hafenkontor", stufe: 2 }, { bau: "verladehafen", stufe: 2 },
 ];
 
 /** Warenkette: dieser Betrieb arbeitet nur, wenn der vorige läuft (Getreide → Mühle → Mehl → Bäckerei → Brot) */
@@ -84,6 +86,7 @@ export const STELLEN: Partial<Record<BauTyp, { schicht: number; n: number; sekto
   holzfaeller: { schicht: 0, n: 3, sektor: "land" }, saegewerk: { schicht: 1, n: 3, sektor: "bau" }, lehmgrube: { schicht: 0, n: 3, sektor: "bau" },
   ziegelei: { schicht: 1, n: 4, sektor: "bau" }, koehler: { schicht: 0, n: 2, sektor: "handwerk" }, schafhof: { schicht: 0, n: 2, sektor: "land" },
   steinbruch: { schicht: 1, n: 4, sektor: "bau" }, hopfengarten: { schicht: 0, n: 2, sektor: "land" },
+  verladehafen: { schicht: 1, n: 3, sektor: "handel" },
 };
 
 /**

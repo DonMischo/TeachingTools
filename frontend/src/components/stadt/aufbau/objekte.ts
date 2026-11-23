@@ -11,6 +11,7 @@ import { FREI, fussabdruck, HAUPT, hausFarben, STRASSE, strassenKetten, type Ket
 import { MODELL_VON, TEILFARBEN } from "../drei/modelle";
 import { hoeheGlatt } from "./gelaende";
 import { bewege, erzeugeVerkehr, type Wanderer } from "@/lib/stadt/aufbauVerkehr";
+import { wasserwege } from "@/lib/stadt/aufbauHandel";
 import { wasserspiegel } from "../drei/szene";
 import { bauwerkStoff, dachStoff, fassadenStoff } from "../drei/fassade";
 
@@ -45,6 +46,10 @@ export class AufbauObjekte {
   private feldV = "";
   private spiegel: Float32Array;
   private pfeiler: THREE.InstancedMesh;
+  /** Kähne zwischen Verladehafen und Kontor */
+  private boote: Wanderer[] = [];
+  private bootRumpf: THREE.InstancedMesh;
+  private bootSegel: THREE.InstancedMesh;
 
   constructor(private g: Gelaende, private teile: Teile, baeume: Teile, stilFarben: { fassade: string; dach: string; flach: boolean }) {
     this.h2 = g.breite / 2;
@@ -83,6 +88,15 @@ export class AufbauObjekte {
     this.geos.push(kGeo, oGeo, fGeo);
     this.mats.push(kMat, oMat, fMat);
     this.gruppe.add(this.karren, this.ochse, this.fuss);
+    // Kähne: flacher Rumpf mit Ladung und kleinem Segel
+    const rGeo = hell(new THREE.BoxGeometry(2.6, 0.9, 7).translate(0, 0.2, 0)), sGeo2 = hell(new THREE.BoxGeometry(0.15, 4.2, 2.6).translate(0, 2.6, 0.4));
+    const rMat = new THREE.MeshLambertMaterial({ vertexColors: true, color: 0x6b4a2f }), seMat = new THREE.MeshLambertMaterial({ vertexColors: true, color: 0xf2ead8 });
+    this.bootRumpf = new THREE.InstancedMesh(rGeo, rMat, 24);
+    this.bootSegel = new THREE.InstancedMesh(sGeo2, seMat, 24);
+    for (const im of [this.bootRumpf, this.bootSegel]) { im.count = 0; im.castShadow = true; im.frustumCulled = false; }
+    this.geos.push(rGeo, sGeo2);
+    this.mats.push(rMat, seMat);
+    this.gruppe.add(this.bootRumpf, this.bootSegel);
     this.mats.push(pMat);
     // Wald aus den TaskCrawler-Bäumen; jeder Baum kennt sein Feld und verschwindet, wenn dort gebaut wird
     const maske = waldMaske(g), z = zufallsquelle(g.wahl.seed + 3), n = g.n;
@@ -131,6 +145,7 @@ export class AufbauObjekte {
 
   /** Figuren bewegen und aufstellen (jedes Bild); dt in Sekunden Spielzeit */
   verkehrBewegen(n: number, dt: number) {
+    this.booteBewegen(n, dt);
     if (!this.verkehr.length) { this.karren.count = this.ochse.count = this.fuss.count = 0; return; }
     if (dt > 0) bewege(this.verkehr, dt);
     const z = this.g.zelle, h2 = this.h2, m = new THREE.Matrix4(), q = new THREE.Quaternion(), achse = new THREE.Vector3(0, 1, 0), c = new THREE.Color();
@@ -156,6 +171,28 @@ export class AufbauObjekte {
     this.karren.count = this.ochse.count = ki;
     this.fuss.count = fi;
     for (const im of [this.karren, this.ochse, this.fuss]) { im.instanceMatrix.needsUpdate = true; if (im.instanceColor) im.instanceColor.needsUpdate = true; }
+  }
+
+  /** Kähne auf dem Wasserweg hin und her bewegen (Höhe = Wasserspiegel) */
+  private booteBewegen(n: number, dt: number) {
+    if (!this.boote.length) { this.bootRumpf.count = this.bootSegel.count = 0; return; }
+    if (dt > 0) bewege(this.boote, dt);
+    const z = this.g.zelle, h2 = this.h2, m = new THREE.Matrix4(), q = new THREE.Quaternion(), achse = new THREE.Vector3(0, 1, 0);
+    const mitte = (k: number) => ({ x: ((k % n) + 0.5) * z, y: (Math.floor(k / n) + 0.5) * z });
+    let i = 0;
+    for (const f of this.boote) {
+      if (i >= 24) break;
+      const a = Math.floor(f.pos), b = Math.min(f.pfad.length - 1, a + 1), t = f.pos - a;
+      const pa = mitte(f.pfad[a]), pb = mitte(f.pfad[b]);
+      const x = pa.x + (pb.x - pa.x) * t, y = pa.y + (pb.y - pa.y) * t;
+      const dx = (pb.x - pa.x) * f.richtung, dy = (pb.y - pa.y) * f.richtung;
+      const k = f.pfad[a], sp = this.spiegel[k];
+      q.setFromAxisAngle(achse, Math.atan2(dx, dy));
+      m.compose(new THREE.Vector3(x - h2, (Number.isNaN(sp) ? hoeheGlatt(this.g, x, y) : sp) + 0.1, y - h2), q, new THREE.Vector3(1, 1, 1));
+      this.bootRumpf.setMatrixAt(i, m); this.bootSegel.setMatrixAt(i, m); i++;
+    }
+    this.bootRumpf.count = this.bootSegel.count = i;
+    this.bootRumpf.instanceMatrix.needsUpdate = this.bootSegel.instanceMatrix.needsUpdate = true;
   }
 
   /** Höhe der Fahrbahn bei (x, y) Karte: an Land das Gelände, über Wasser das Brückendeck */
@@ -213,12 +250,20 @@ export class AufbauObjekte {
     this.feldV = `${this.strassenV}|${w.version.haeuser}`;
     if (strassenNeu) this.strassenZeichnen(w);
     this.haeuserZeichnen(w);
-    const schluessel = w.bauten.map(b => b.id).join(",");
+    // stillgelegte Betriebe grau, Ruinen niedrig und grau
+    const zustand = (b: (typeof w.bauten)[number]) => (b.still === undefined ? undefined : b.still >= 1 ? "ruine" : "still") as "ruine" | "still" | undefined;
+    const schluessel = w.bauten.map(b => `${b.id}${zustand(b)?.[0] ?? ""}`).join(",");
     if (schluessel !== this.bauSchluessel) {
       this.bauSchluessel = schluessel;
       this.bauGruppe.traverse(o => { const me = o as THREE.Mesh; if (me.isMesh && !me.geometry.userData.geteilt) me.geometry.dispose(); });
       this.bauGruppe.clear();
-      for (const b of w.bauten) { const gr = this.gebaeude(b.bau, b.i, b.j, 1, b.dreh); gr.userData.id = b.id; this.bauGruppe.add(gr); }
+      for (const b of w.bauten) { const gr = this.gebaeude(b.bau, b.i, b.j, 1, b.dreh, zustand(b)); gr.userData.id = b.id; this.bauGruppe.add(gr); }
+      // Kähne: zwei je Wasserweg, nur zwischen Hafen und Kontor in Betrieb
+      const laeuft = (id: number) => w.bauten.find(b => b.id === id)?.still === undefined;
+      const zz = zufallsquelle(w.seed + 11);
+      this.boote = wasserwege(this.g, w).filter(x => laeuft(x.hafen) && laeuft(x.kontor) && x.pfad.length > 2).flatMap(x => [0, 1].map(k => ({
+        art: "karren" as const, pfad: x.pfad, pos: k * (x.pfad.length - 1), richtung: (k ? -1 : 1) as 1 | -1, warte: zz() * 4, tempo: 1.1 + zz() * 0.3, farbe: 0,
+      }))).slice(0, 24);
     }
     // Figuren neu verteilen, wenn sich Wege oder Häuser deutlich geändert haben
     const vk = `${w.version.strassen}|${w.version.bauten}|${Math.floor(w.haeuser.length / 20)}`;
@@ -316,7 +361,7 @@ export class AufbauObjekte {
   }
 
   /** ein Gebäude als Gruppe (Modell aus Blender, Plätze als Pflaster) */
-  gebaeude(b: BauTyp, i: number, j: number, deckkraft: number, dreh = 0): THREE.Group {
+  gebaeude(b: BauTyp, i: number, j: number, deckkraft: number, dreh = 0, zustand?: "still" | "ruine"): THREE.Group {
     const g = this.g, z = g.zelle, h2 = this.h2, { w, h } = fussabdruck(b, dreh), roh = fussabdruck(b), art = BAUTEN[b];
     const gr = new THREE.Group();
     const bo = this.boden(i, j, w, h);
@@ -333,13 +378,15 @@ export class AufbauObjekte {
       const modell = new THREE.Group();
       modell.position.y = bo.max - bo.min + 0.8;
       // Modell in eigener Ausrichtung strecken, dann die Vierteldrehung (Zufahrt Süden → Westen → Norden → Osten)
-      modell.scale.set(roh.w * z - 2, Math.max(8, art.hoehe), roh.h * z - 2);
+      modell.scale.set(roh.w * z - 2, Math.max(8, art.hoehe) * (zustand === "ruine" ? 0.35 : 1), roh.h * z - 2);
       const drehung = new THREE.Group();
       drehung.rotation.y = (-dreh * Math.PI) / 2;
       drehung.position.y = modell.position.y;
       modell.position.y = 0;
       drehung.add(modell);
-      for (const [teil, farbe] of [["wand", art.farbe], ["dach", f.dach], ["akzent", f.akzent]] as const) {
+      const grau = zustand === "ruine" ? "#6f6a63" : zustand === "still" ? "#9a958d" : null;
+      for (const [teil, farbe0] of [["wand", art.farbe], ["dach", f.dach], ["akzent", f.akzent]] as const) {
+        const farbe = grau ?? farbe0;
         const geo = this.teile?.[`${name}_${teil}`] ?? (teil === "wand" ? hell(new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0)) : null);
         if (!geo) continue;
         const mesh = new THREE.Mesh(geo, this.mat(farbe, transparent, deckkraft, name, teil));

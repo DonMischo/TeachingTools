@@ -18,6 +18,7 @@ import * as THREE from "three";
 import type { Gelaende } from "@/lib/gelaende/gelaende";
 import { BAUTEN, STILE, type BauTyp, type Stil } from "@/lib/stadt/modell";
 import { lageRegeln } from "@/lib/stadt/bauen";
+import { HANDEL, inBetrieb, kaufpreis, setzeAuftrag, stilllegen, VERFALL_SCHRITTE, verkaufspreis, wiederKosten, zustandText } from "@/lib/stadt/aufbauHandel";
 import { ANBIETER, aufStufen, baustoffe, GUETER, KETTE, kosten, METER_JE_MINUTE, palette, SCHICHTEN, SEKTOREN, STELLEN, TROCKEN_KOSTEN, WAREN, zentrumTyp, type Gut, type Sektor, type Ware } from "@/lib/stadt/aufbauRegeln";
 import {
   abdeckung, baue, bauBei, baukosten, besetzung, DORF_HOEFE, DORF_SCHMIEDE, dorfSchmiede, geldDetails, gewerbe, hoefeIm, nahrungsDetails, erreichteHaeuser, fussabdruck, hausFarben, mitteVon, naechsteStufeFehlt, neueWelt, pruefePlatz, reichweite, reisseAb, schritt, stufe, versorgungsQuote,
@@ -499,7 +500,18 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
   const gewaehlt = auswahl ? w.bauten.find(o => o.id === auswahl.id) ?? null : null;
   const kaertchen = ziel
     ? { bau: ziel.bau, pr: ziel.pr, neu: true, frei: bes.frei }
-    : gewaehlt ? { bau: gewaehlt.bau, pr: { ok: true, faktor: gewaehlt.faktor, gruende: [], kosten: kosten(gewaehlt.bau), versorgt: erreichteHaeuser(w, gewaehlt.bau, gewaehlt.i, gewaehlt.j, gewaehlt.w, gewaehlt.h, gewaehlt.dreh) }, neu: false, besetzt: bes.quote.get(gewaehlt.id) } : null;
+    : gewaehlt ? { bau: gewaehlt.bau, pr: { ok: true, faktor: gewaehlt.faktor, gruende: [], kosten: kosten(gewaehlt.bau), versorgt: erreichteHaeuser(w, gewaehlt.bau, gewaehlt.i, gewaehlt.j, gewaehlt.w, gewaehlt.h, gewaehlt.dreh) }, neu: false, besetzt: bes.quote.get(gewaehlt.id), zustand: zustandText(gewaehlt) } : null;
+  /** Betrieb einstellen bzw. wieder aufnehmen (Kosten = verfallener Anteil) */
+  const umschalten = (id: number) => {
+    const ww = welt.current, o = ww.bauten.find(x => x.id === id);
+    if (!o) return;
+    if (o.still === undefined) { stilllegen(ww, id); setMeldung(`⏸ ${BAUTEN[o.bau].label} stillgelegt — kein Personal, kein Unterhalt; es verfällt, bis es nach ${VERFALL_SCHRITTE} Schritten eine Ruine ist.`); }
+    else { const k = wiederKosten(ww, o), grund = inBetrieb(ww, id); setMeldung(grund ? `❌ ${BAUTEN[o.bau].label}: ${grund}` : `▶ ${BAUTEN[o.bau].label} wieder in Betrieb (${k.taler} Taler${stoffText(k.stoffe)}).`); }
+    drei.current?.objekte?.aktualisiere(ww);
+    speichern();
+    neuZeichnen();
+  };
+  const handelAendern = (f: (x: Welt) => void) => { f(welt.current); speichern(); neuZeichnen(); };
 
   /** Vollbild an/aus (Taste F): nur das Spielfeld, Übersicht und Baumenü bleiben erreichbar */
   function umVollbild() {
@@ -548,12 +560,19 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
           {menue && <BauMenue stufen={stufen} pal={pal} stufe={i} taler={w.taler} preis={b => baukosten(w, b)} stoffe={b => baustoffe(stil, b)} gewaehlt={wahl}
             waehle={b => { setWahl(b); setZiel(null); setAuswahl(null); setMenue(false); huelle.current?.querySelector("canvas")?.focus(); }}
             zu={() => setMenue(false)} />}
-          {uebersicht && <Uebersicht w={w} zu={() => setUebersicht(false)} />}
+          {uebersicht && <Uebersicht w={w} zu={() => setUebersicht(false)} aendern={handelAendern} />}
           {/* Knopfleiste für Touch (und Maus): Ansicht drehen und zoomen, Gebäude drehen und bauen */}
           <div className="absolute bottom-16 right-2 flex flex-col items-end gap-1.5">
             {ziel && <button className="btn-primary py-1.5" disabled={!ziel.pr.ok} onClick={() => bauen(ziel.i, ziel.j)}>✔ Hier bauen</button>}
             {wahl && wahl !== "abriss" && <button className="btn-secondary py-1.5" onClick={() => drehen(1)} title="Gebäude drehen (R oder Mausrad)">↻ Gebäude drehen</button>}
             {(wahl || ziel) && <button className="btn-secondary py-1.5" onClick={() => { setWahl(null); setZiel(null); }}>✕ Abbrechen</button>}
+            {gewaehlt && !wahl && !gewaehlt.dorf && (STELLEN[gewaehlt.bau] || KETTE[gewaehlt.bau]) && (() => {
+              const k = gewaehlt.still !== undefined ? wiederKosten(w, gewaehlt) : null;
+              return <button className="btn-secondary py-1.5" onClick={() => umschalten(gewaehlt.id)}
+                title={k ? "Wieder in Betrieb nehmen — kostet den verfallenen Anteil der Baukosten und Baustoffe" : "Betrieb einstellen: kein Personal, kein Unterhalt — das Gebäude verfällt mit der Zeit"}>
+                {k ? `▶ In Betrieb nehmen · ${k.taler} Taler${stoffText(k.stoffe)}` : `⏸ ${BAUTEN[gewaehlt.bau].label} einstellen`}
+              </button>;
+            })()}
             {gewaehlt && !wahl && <button className="btn-secondary py-1.5" onClick={() => abreissen(gewaehlt.id)} title="Gewähltes Gebäude abreißen (Entf) — ein Viertel der Kosten kommt zurück">🧽 {BAUTEN[gewaehlt.bau].label} abreißen</button>}
             <div className="flex gap-1 rounded-xl bg-black/35 p-1">
               <button className="btn-secondary h-10 w-10 p-0 text-lg" title="Ansicht nach links drehen" onClick={() => kamera(r => { r.yaw += Math.PI / 4; })}>⟲</button>
@@ -666,13 +685,14 @@ export default function Aufbau({ g, stil, setStil, aktiv = true, speicherSchlues
 }
 
 /** Werte-Kärtchen am Bauplatz: Kosten, Güter mit Reichweite, erreichte Häuser, Lage */
-function Kaertchen({ stil, bau, pr, neu, besetzt, frei }: { stil: Stil; bau: BauTyp; pr: Platzpruefung; neu: boolean; besetzt?: number; frei?: number[] }) {
+function Kaertchen({ stil, bau, pr, neu, besetzt, frei, zustand }: { stil: Stil; bau: BauTyp; pr: Platzpruefung; neu: boolean; besetzt?: number; frei?: number[]; zustand?: string | null }) {
   const regeln = lageRegeln(stil, bau);
   const gueter = ANBIETER[bau] ?? [];
   const st = STELLEN[bau];
   return (
     <div className="flex flex-col gap-1">
       <div className="text-sm font-black">{BAUTEN[bau].icon} {BAUTEN[bau].label}</div>
+      {zustand && <div className="font-bold text-[#ca8a04]">{zustand}</div>}
       <div className="grid grid-cols-2 gap-x-2">
         {neu && <><span className="text-muted">Kosten</span><span>{pr.kosten} Taler{stoffText(baustoffe(stil, bau))}</span></>}
         {KETTE[bau] && <span className="col-span-2">{kettenText(bau)}</span>}
@@ -741,7 +761,7 @@ const ENGPASS = {
 } as const;
 
 /** Übersicht (I): Geld, Nahrung, Bevölkerung und Arbeit, Betriebe — je Posten */
-function Uebersicht({ w, zu }: { w: Welt; zu: () => void }) {
+function Uebersicht({ w, zu, aendern }: { w: Welt; zu: () => void; aendern: (f: (x: Welt) => void) => void }) {
   const geld = geldDetails(w), nah = nahrungsDetails(w), bes = besetzung(w), verk = gewerbe(w, bes);
   const f = (x: number) => x.toFixed(1).replace(".", ",");
   const betriebe = w.bauten.filter(b => STELLEN[b.bau] && !b.dorf);
@@ -761,7 +781,12 @@ function Uebersicht({ w, zu }: { w: Welt; zu: () => void }) {
           <div className="flex justify-between"><span>Unterhalt Gebäude</span><span className="text-bad">−{f(geld.gebaeude)}</span></div>
           <div className="flex justify-between"><span>Unterhalt Wege ({geld.strassenfelder} Felder)</span><span className="text-bad">−{f(geld.wege)}</span></div>
           {geld.verwaltung > 0 && <div className="flex justify-between"><span>Verwaltung, Wache, Armenpflege</span><span className="text-bad">−{f(geld.verwaltung)}</span></div>}
+          {w.handelStand && (w.handelStand.erloes > 0 || w.handelStand.kosten > 0) && <>
+            <div className="flex justify-between"><span>Handel: Verkauf</span><span className="text-ok">+{f(w.handelStand.erloes)}</span></div>
+            <div className="flex justify-between"><span>Handel: Einkauf</span><span className="text-bad">−{f(w.handelStand.kosten)}</span></div>
+          </>}
         </section>
+        <Handel w={w} aendern={aendern} />
         <section>
           <div className="mb-1 font-bold">🌾 Nahrung: {zahl(nah.angebot)} für {zahl(nah.bedarf)} Stadtbewohner</div>
           <div className="flex justify-between"><span>Ernte aus {nah.hoefe} Höfen ({nah.angebunden} mit Weg zum Markt)</span><span>{zahl(nah.ernte)}</span></div>
@@ -801,12 +826,48 @@ function Uebersicht({ w, zu }: { w: Welt; zu: () => void }) {
           <div className="mb-1 font-bold">🏭 Betriebe ({betriebe.length})</div>
           {betriebe.map(b => {
             const q = bes.quote.get(b.id) ?? 1, v = verk.je.get(b.id);
-            return <div key={b.id} className="flex justify-between gap-2"><span>{BAUTEN[b.bau].icon} {BAUTEN[b.bau].label}</span><span className={q >= 1 ? "text-ok" : q >= 0.5 ? "text-[#ca8a04]" : "text-bad"}>{Math.round(q * 100)} % besetzt{q < 0.5 ? " · steht still" : w.stillstand?.has(b.id) ? " · Rohstoff fehlt" : ""}
+            if (b.still !== undefined) return <div key={b.id} className="flex justify-between gap-2"><span>{BAUTEN[b.bau].icon} {BAUTEN[b.bau].label}</span><span className="text-[#ca8a04]">{zustandText(b)}</span></div>;
+          return <div key={b.id} className="flex justify-between gap-2"><span>{BAUTEN[b.bau].icon} {BAUTEN[b.bau].label}</span><span className={q >= 1 ? "text-ok" : q >= 0.5 ? "text-[#ca8a04]" : "text-bad"}>{Math.round(q * 100)} % besetzt{q < 0.5 ? " · steht still" : w.stillstand?.has(b.id) ? " · Rohstoff fehlt" : ""}
               {v && (v.grund ? <span className="text-bad"> · verkauft nichts ({v.grund})</span> : <span className={v.absatz < 0.7 ? "text-[#ca8a04]" : "text-muted"}> · Absatz {Math.round(v.absatz * 100)} % · +{f(v.ertrag)}</span>)}</span></div>;
           })}
         </section>
       </div>
     </div>
+  );
+}
+
+/**
+ * Handel (in der Übersicht): Daueraufträge je Ware. Ohne Kontor kein Handel; Kähne über den Verladehafen
+ * schaffen viel mehr als die Fuhrwerke am Kontor.
+ */
+function Handel({ w, aendern }: { w: Welt; aendern: (f: (x: Welt) => void) => void }) {
+  const st = w.handelStand, kap = st?.kapazitaet ?? 0;
+  const f = (x: number) => x.toFixed(1).replace(".", ",");
+  return (
+    <section className="sm:col-span-2" data-testid="handel">
+      <div className="mb-1 font-bold">⚖️ Handel: {st ? `${f(st.menge)} von ${kap} Waren je Schritt` : "noch kein Schritt"}</div>
+      {!st?.kontore ? (
+        <p className="text-bad">Für Ein- und Ausfuhr brauchst du ein Kontor (📦 Hafenkontor, ab der Marktstadt, am Fluss) mit Personal. Mit einem ⚓ Verladehafen am selben Fluss bringen Kähne {HANDEL.jeHafen} statt {HANDEL.jeKontor} Waren je Schritt.</p>
+      ) : (
+        <p className="text-muted">{st.kontore} Kontor{st.kontore > 1 ? "e" : ""} (je {HANDEL.jeKontor} mit Fuhrwerken){st.haefen ? ` · ${st.haefen} Verladehafen mit Kähnen (je ${HANDEL.jeHafen})` : " · ⚓ Verladehafen am Fluss bringt Kähne dazu"}. Einkauf kostet das Doppelte des Grundpreises — selbst herstellen ist billiger.</p>
+      )}
+      <div className="mt-1 grid grid-cols-[1fr_auto_auto_auto] items-center gap-x-3 gap-y-0.5">
+        <span className="text-muted">Ware</span><span className="text-muted">Kauf / Verkauf je Stück</span><span className="text-muted">Auftrag je Schritt</span><span className="text-muted">zuletzt</span>
+        {(Object.keys(WAREN) as Ware[]).map(wa => {
+          const a = w.handel[wa] ?? 0, zuletzt = st?.je[wa];
+          return [
+            <span key={`n${wa}`}>{WAREN[wa].icon} {WAREN[wa].label} <span className="text-muted">({Math.floor(w.lager[wa])})</span></span>,
+            <span key={`p${wa}`} className="text-muted">{f(kaufpreis(wa))} / {f(verkaufspreis(wa))}</span>,
+            <span key={`a${wa}`} className="flex items-center gap-1">
+              <button className="chip px-1.5 py-0" aria-label={`${WAREN[wa].label} weniger kaufen / mehr verkaufen`} onClick={() => aendern(x => setzeAuftrag(x, wa, a - 1))}>−</button>
+              <span className={`w-16 text-center ${a > 0 ? "text-bad" : a < 0 ? "text-ok" : "text-muted"}`}>{a > 0 ? `kauf ${a}` : a < 0 ? `verk. ${-a}` : "—"}</span>
+              <button className="chip px-1.5 py-0" aria-label={`${WAREN[wa].label} mehr kaufen / weniger verkaufen`} onClick={() => aendern(x => setzeAuftrag(x, wa, a + 1))}>+</button>
+            </span>,
+            <span key={`z${wa}`} className="text-muted">{zuletzt ? `${zuletzt > 0 ? "+" : ""}${f(zuletzt)}` : ""}</span>,
+          ];
+        })}
+      </div>
+    </section>
   );
 }
 

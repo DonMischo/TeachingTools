@@ -194,6 +194,7 @@ export const BAUTEN = {
   brunnen: { label: "Brunnen", icon: "🪣", b: 10, h: 10, hoehe: 4, farbe: "#a8a29a", text: "Trinkwasser für die Häuser in 2 Minuten Fußweg — ohne Wasser zieht niemand ein." },
   kapelle: { label: "Kapelle", icon: "⛪", b: 14, h: 22, hoehe: 14, farbe: "#e6ddcc", text: "Kleine Kirche fürs Dorf: Glaube in 3 Minuten Fußweg. Die Stadt braucht später eine Kirche." },
   hafenkontor: { label: "Hafenkontor", icon: "📦", b: 36, h: 24, hoehe: 16, farbe: "#b5654a", text: "Speicher- und Handelshaus am Kai: Schiffe bringen Salz, Tuch und Wein, Kaufleute lagern und verkaufen. Steht direkt am Wasser, die Zufahrt zeigt zur Stadt." },
+  verladehafen: { label: "Verladehafen", icon: "⚓", b: 30, h: 18, hoehe: 6, farbe: "#8b7355", text: "Anlegestelle am Fluss: Waren aus dem Lager gehen auf Kähne und fahren zum Kontor — dort werden sie verkauft oder eingekauft." },
   zollhaus: { label: "Zollhaus / Börse", icon: "💰", b: 40, h: 30, hoehe: 16, farbe: "#e6d6b6", text: "Kaufleute handeln Waren aus aller Welt; der Zoll füllt die Stadtkasse." },
   // Tech-Region
   universitaet: { label: "Universität", icon: "🎓", b: 140, h: 90, hoehe: 18, farbe: "#e2c89a", text: "Keimzelle der Tech-Region: Absolventen gründen Firmen in der Nähe (Stanford → Hewlett-Packard, Google)." },

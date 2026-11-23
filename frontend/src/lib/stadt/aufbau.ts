@@ -11,6 +11,7 @@
  * Deterministisch aus Seed und Zügen.
  */
 import { neigungBei, type Gelaende } from "@/lib/gelaende/gelaende";
+import { amWasser, handle, verfallen, type HandelStand } from "./aufbauHandel";
 import { perlin, zufallsquelle } from "@/lib/gelaende/rauschen";
 import { waldMaske } from "@/lib/gelaende/wald";
 import type { P } from "./geometrie";
@@ -35,7 +36,7 @@ export interface AufHaus {
   /** Bauernhof eines Dorfes (steigt nicht auf, liefert Nahrung) */ bauer: boolean;
   /** Ackerfelder des Hofes (Zahl der Felder; voll = FELD_JE_HOF) */ feld?: number;
 }
-export interface AufBau { id: number; bau: BauTyp; i: number; j: number; w: number; h: number; faktor: number; /** Vierteldrehungen (0–3), Zufahrt 0 = Süden */ dreh: number; /** gehört einem Dorf (kein Unterhalt) */ dorf?: boolean }
+export interface AufBau { id: number; bau: BauTyp; i: number; j: number; w: number; h: number; faktor: number; /** Vierteldrehungen (0–3), Zufahrt 0 = Süden */ dreh: number; /** gehört einem Dorf (kein Unterhalt) */ dorf?: boolean; /** stillgelegt: Verfall 0…1 (1 = Ruine), fehlt = in Betrieb */ still?: number }
 export interface Dorf { name: string; i: number; j: number; stadt: boolean }
 
 export interface Welt {
@@ -59,7 +60,7 @@ export interface Welt {
   stufe: number;
   taler: number;
   /** letzte Bilanz je Schritt */
-  bilanz: { steuern: number; unterhalt: number; nahrung: number; bedarf: number };
+  bilanz: { steuern: number; unterhalt: number; nahrung: number; bedarf: number; /** Handel: Erlös minus Einkauf */ handel?: number };
   /** warum die Stadt gerade nicht wächst (nicht gespeichert, jeden Schritt neu) */
   engpass?: "nahrung" | "platz" | "arbeit" | null;
   strassenRadius: number;
@@ -75,6 +76,10 @@ export interface Welt {
   stillstand?: Set<number>;
   /** Anteil der Bürger, die Bier und Tuch bekommen (0…1; nicht gespeichert) */
   luxus?: number;
+  /** Daueraufträge im Handel je Ware und Schritt: + kaufen, − verkaufen */
+  handel: Partial<Record<Ware, number>>;
+  /** letzter Schritt im Handel (nicht gespeichert) */
+  handelStand?: HandelStand;
 }
 
 const leeresLager = (): Record<Ware, number> => Object.fromEntries(Object.keys(WAREN).map(k => [k, 0])) as Record<Ware, number>;
@@ -148,6 +153,8 @@ export function besetzung(w: Welt): Besetzung {
   const rang = (b: AufBau) => { const k = VORRANG.indexOf(b.bau); return k < 0 ? VORRANG.length : k; };
   for (const b of [...w.bauten].sort((a, x) => rang(a) - rang(x) || a.id - x.id)) {
     const st = STELLEN[b.bau];
+    // stillgelegt: kein Personal, keine Wirkung
+    if (b.still !== undefined) { quote.set(b.id, 0); continue; }
     if (!st || b.dorf) { quote.set(b.id, 1); continue; }
     let rest = st.n;
     for (const sch of [st.schicht, st.schicht - 1]) {
@@ -205,7 +212,7 @@ export function gewerbe(w: Welt, bes = besetzung(w)): { summe: number; je: Map<n
     const absatz = aktiv.length ? Math.min(1, w.einwohner / (aktiv.length * KUNDEN[typ]!)) : 0;
     for (const b of liste) {
       const q = bes.quote.get(b.id) ?? 0;
-      if (!aktiv.includes(b)) { je.set(b.id, { absatz: 0, ertrag: 0, grund: !laeuft(bes, b) ? "kein Personal" : w.stillstand?.has(b.id) ? "Rohstoff fehlt" : `keine ${BAUTEN[vor!].label}` }); continue; }
+      if (!aktiv.includes(b)) { je.set(b.id, { absatz: 0, ertrag: 0, grund: b.still !== undefined ? "stillgelegt" : !laeuft(bes, b) ? "kein Personal" : w.stillstand?.has(b.id) ? "Rohstoff fehlt" : `keine ${BAUTEN[vor!].label}` }); continue; }
       const ertrag = ERLOES_JE_STELLE * STELLEN[typ]!.n * q * absatz;
       je.set(b.id, { absatz, ertrag });
       summe += ertrag;
@@ -343,7 +350,7 @@ export function neueWelt(g: Gelaende, stil: Stil, seed: number, mitDoerfern = tr
     // Startgeld: genug für das Kern-Gebäude und die erste Grundversorgung
     taler: START_TALER + kosten(zentrumTyp(stil)),
     bilanz: { steuern: 0, unterhalt: 0, nahrung: 0, bedarf: 0 }, strassenRadius: 6, naechsteId: 1, bruecken: [],
-    version: { strassen: 0, haeuser: 0, bauten: 0 }, lager: startLager(),
+    version: { strassen: 0, haeuser: 0, bauten: 0 }, lager: startLager(), handel: {},
   };
   if (mitDoerfern) legeDoerferAn(g, w);
   w.einwohner = w.haeuser.reduce((a, h) => a + h.bewohner, 0);
@@ -648,8 +655,10 @@ export function pruefePlatz(g: Gelaende, w: Welt, b: BauTyp, i: number, j: numbe
     if (!w.frei[k]) { ok = false; gruende.push({ ok: false, text: "Land noch nicht erschlossen — wächst mit der nächsten Stufe" }); break; }
     // Häuser und Wege dürfen weichen, andere Gebäude nicht
     if (w.feld[k] === BAU) { ok = false; gruende.push({ ok: false, text: "hier steht schon ein Gebäude" }); break; }
-    if (g.wasser[k] && !["kai", "werft", "hafen", "kanalhafen", "muehle", "hafenkontor"].includes(b)) { ok = false; gruende.push({ ok: false, text: "im Wasser" }); break; }
+    if (g.wasser[k] && !["kai", "werft", "hafen", "kanalhafen", "muehle", "hafenkontor", "verladehafen"].includes(b)) { ok = false; gruende.push({ ok: false, text: "im Wasser" }); break; }
   }
+  // Verladehafen und Kontor brauchen Wasser direkt daneben (Kähne legen an)
+  if (ok && (b === "verladehafen" || b === "hafenkontor") && !amWasser(g, w, { i, j, w: fw, h: fh })) { ok = false; gruende.push({ ok: false, text: "muss direkt am Fluss stehen — Kähne legen hier an" }); }
   // die Zufahrt muss ans Wegenetz können: frei oder schon Straße, nicht im Haus
   const tz = zufahrt(i, j, fw, fh, dreh);
   if (ok && (tz.i < 0 || tz.j < 0 || tz.i >= w.n || tz.j >= w.n || w.feld[tz.j * w.n + tz.i] === BAU)) {
@@ -1022,7 +1031,8 @@ export function geldDetails(w: Welt) {
   const zufriedenheit = Math.min(1, (w.haeuser.length ? zufr / w.haeuser.length : 1) + 0.1 * werkstatt(w, bes, "brauerei", 1)) * (1 - unmut) * (1 - ohneLuxus);
   const handel = 1 + 0.1 * werkstatt(w, bes, "weberei", 3);
   const summe = steuern(kraft, zufriedenheit) * handel, verkauf = gewerbe(w, bes).summe;
-  const bau = w.bauten.filter(b => !b.dorf).reduce((a, b) => a + kosten(b.bau), 0);
+  // stillgelegte Betriebe kosten keinen Unterhalt (dafür verfallen sie)
+  const bau = w.bauten.filter(b => !b.dorf && b.still === undefined).reduce((a, b) => a + kosten(b.bau), 0);
   // Verwaltung, Wache und Rat wachsen mit der Stadt: je Stufe 20 % mehr Unterhalt; ab der Handelsstadt dazu
   // Armenfürsorge, Stadtwache und Kanzlei je Einwohner — sonst häuft eine große Stadt endlos Geld an
   const aufschlag = 1 + 0.2 * Math.max(0, w.stufe - 1), strassen = stadtStrassen(w);
@@ -1056,7 +1066,7 @@ export function naechsteStufeFehlt(w: Welt): string[] {
   const st = aufStufen(w.stil), nx = st[w.stufe + 1];
   if (!nx) return [];
   const aus: string[] = [];
-  for (const b of st[w.stufe].braucht) if (!w.bauten.some(o => o.bau === b)) aus.push(`${BAUTEN[b].icon} ${BAUTEN[b].label}`);
+  for (const b of st[w.stufe].braucht) if (!w.bauten.some(o => o.bau === b && o.still === undefined)) aus.push(`${BAUTEN[b].icon} ${BAUTEN[b].label}`);
   if (w.einwohner < nx.ab) aus.push(`${nx.ab.toLocaleString("de-DE")} Einwohner`);
   if (nx.quote && versorgungsQuote(w) < nx.quote) aus.push(`${Math.round(nx.quote * 100)} % der Häuser voll versorgt`);
   return aus;
@@ -1159,12 +1169,14 @@ export function schritt(g: Gelaende, w: Welt): void {
       }
     }
   }
-  // Waren
+  // Waren, Handel über Kontor und Verladehafen, Verfall stillgelegter Betriebe
   produziere(w);
+  const handel = handle(g, w);
+  verfallen(w);
   // Geld
   const geld = geldBilanz(w);
   w.taler += geld.steuern - geld.unterhalt;
-  w.bilanz = { steuern: geld.steuern, unterhalt: geld.unterhalt, nahrung: angebot, bedarf };
+  w.bilanz = { steuern: geld.steuern, unterhalt: geld.unterhalt, nahrung: angebot, bedarf, handel: handel.erloes - handel.kosten };
   // Stufe
   if (w.stufe > 0 && w.stufe + 1 < st.length && !naechsteStufeFehlt(w).length) { w.stufe++; freischalten(w); }
 }
@@ -1244,7 +1256,8 @@ export function welteAlsText(w: Welt): string {
   return JSON.stringify({
     v: 2, stil: w.stil, seed: w.seed, n, felder: rle,
     haeuser: w.haeuser.map(h => [h.i, h.j, h.dreh, h.bewohner, h.ziel, Math.round(h.versorgt * 100), Math.round(h.hoehe * 10), h.s, h.hof, h.schicht, h.mangel, h.tor, h.bauer ? 1 : 0, h.feld ?? 0]),
-    bauten: w.bauten.map(b => [b.id, b.bau, b.i, b.j, b.w, b.h, Math.round(b.faktor * 100), b.dreh, b.dorf ? 1 : 0]),
+    bauten: w.bauten.map(b => [b.id, b.bau, b.i, b.j, b.w, b.h, Math.round(b.faktor * 100), b.dreh, b.dorf ? 1 : 0, b.still === undefined ? -1 : Math.round(b.still * 1000)]),
+    handel: w.handel,
     doerfer: w.doerfer.map(d => [d.name, d.i, d.j, d.stadt ? 1 : 0]),
     einwohner: w.einwohner, tick: w.tick, stufe: w.stufe, taler: Math.round(w.taler), strassenRadius: w.strassenRadius, naechsteId: w.naechsteId,
     bruecken: w.bruecken.map(b => [b.i, b.j]),
@@ -1265,7 +1278,8 @@ export function welteAusText(text: string, g: Gelaende, stil: Stil): Welt | null
     }
     if (k !== w.n * w.n) return null;
     w.haeuser = d.haeuser.map((h: number[]) => ({ i: h[0], j: h[1], dreh: h[2], bewohner: h[3], ziel: h[4], versorgt: h[5] / 100, hoehe: h[6] / 10, s: h[7], hof: h[8], schicht: h[9], mangel: h[10], tor: h[11], bauer: !!h[12], feld: h[12] ? (h[13] ?? FELD_JE_HOF) : undefined }));
-    w.bauten = d.bauten.map((b: [number, BauTyp, number, number, number, number, number, number, number]) => ({ id: b[0], bau: b[1], i: b[2], j: b[3], w: b[4], h: b[5], faktor: b[6] / 100, dreh: b[7], dorf: !!b[8] }));
+    w.bauten = d.bauten.map((b: [number, BauTyp, number, number, number, number, number, number, number, number?]) => ({ id: b[0], bau: b[1], i: b[2], j: b[3], w: b[4], h: b[5], faktor: b[6] / 100, dreh: b[7], dorf: !!b[8], ...(b[9] !== undefined && b[9] >= 0 ? { still: b[9] / 1000 } : {}) }));
+    w.handel = d.handel && typeof d.handel === "object" ? d.handel : {};
     w.doerfer = d.doerfer.map((x: [string, number, number, number]) => ({ name: x[0], i: x[1], j: x[2], stadt: !!x[3] }));
     w.einwohner = d.einwohner; w.tick = d.tick; w.stufe = d.stufe; w.taler = d.taler; w.strassenRadius = d.strassenRadius; w.naechsteId = d.naechsteId;
     w.bruecken = d.bruecken.map((b: number[]) => ({ i: b[0], j: b[1] }));
