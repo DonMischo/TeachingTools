@@ -2,10 +2,11 @@
 /**
  * Markieren & Bearbeiten — Anschluss an den Maus-Führerschein (Stufe 5/6):
  *   📘 Techniken    je Technik eine Lektion mit drei Aufgaben
- *   ⏱️ Challenge    gewürfelte Aufgaben auf Zeit, Bestzeit im Browser
+ *   🔤 Schreiben    Großbuchstaben, Satz- und Sonderzeichen bis Alt Gr, Rechtschreibung
+ *   ⏱️ Challenge    gewürfelte Aufgaben auf Zeit (auch »Nur Tastatur«), Bestzeit im Browser
  *   📚 Quellen      Zitat und Literaturangabe aus Buch oder Webseite kopieren
  *   🏆 Bestenliste  die schnellsten Challenge-Runden (nur mit Server, nicht in der Offline-Datei)
- *   📋 Spickzettel  alle Kürzel auf einen Blick
+ *   📋 Spickzettel  alle Kürzel auf einen Blick, auch als PDF
  *   👩‍🏫 Übersicht   nur Lehrkraft: wer in der gewählten Sitzung wie weit ist
  *
  * Der Stand liegt je Person im Browser (`speicherSchluessel`: Konto, Gastname
@@ -20,9 +21,12 @@ import Lektionen from "./Lektionen";
 import Challenge from "./Challenge";
 import Bestenliste from "./Bestenliste";
 import Quellen from "./Quellen";
+import Schreiben from "./Schreiben";
+import { SPICKZETTEL, speichereSpickzettelPdf } from "@/lib/markieren/spickzettel";
 
 const BLAETTER = [
   { id: "techniken", icon: "📘", label: "Techniken" },
+  { id: "schreiben", icon: "🔤", label: "Schreiben" },
   { id: "challenge", icon: "⏱️", label: "Challenge" },
   { id: "quellen", icon: "📚", label: "Quellen" },
   { id: "beste", icon: "🏆", label: "Bestenliste" },
@@ -31,65 +35,33 @@ const BLAETTER = [
 ] as const;
 type Blatt = (typeof BLAETTER)[number]["id"];
 
-const SPICKZETTEL: { titel: string; zeilen: [string, string][] }[] = [
-  {
-    titel: "🖱️ Markieren mit der Maus",
-    zeilen: [
-      ["Doppelklick", "ein Wort"],
-      ["Dreifachklick", "eine Zeile (in Word: ein Absatz)"],
-      ["Ziehen mit gedrückter Taste", "beliebiges Stück"],
-      ["Klick, dann [[Umschalt]] + Klick", "von der ersten bis zur zweiten Stelle"],
-    ],
-  },
-  {
-    titel: "⌨️ Markieren mit der Tastatur",
-    zeilen: [
-      ["[[Umschalt]] + [[←]] / [[→]]", "Buchstabe für Buchstabe"],
-      ["[[Strg]] + [[Umschalt]] + [[←]] / [[→]]", "Wort für Wort"],
-      ["[[Umschalt]] + [[Pos1]] / [[Ende]]", "bis zum Zeilenanfang / Zeilenende"],
-      ["[[Umschalt]] + [[↑]] / [[↓]]", "Zeile für Zeile"],
-      ["[[Strg]] + [[A]]", "alles"],
-    ],
-  },
-  {
-    titel: "↔️ Cursor bewegen",
-    zeilen: [
-      ["[[Pos1]] / [[Ende]]", "Anfang / Ende der Zeile"],
-      ["[[Strg]] + [[←]] / [[→]]", "ein Wort zurück / weiter"],
-      ["[[Strg]] + [[Pos1]] / [[Ende]]", "Anfang / Ende des ganzen Textes"],
-    ],
-  },
-  {
-    titel: "✂️ Bearbeiten",
-    zeilen: [
-      ["[[Strg]] + [[C]]", "kopieren"],
-      ["[[Strg]] + [[X]]", "ausschneiden"],
-      ["[[Strg]] + [[V]]", "einfügen"],
-      ["[[Strg]] + [[Z]]", "rückgängig"],
-      ["[[Entf]] / [[Rücktaste]]", "löschen rechts / links vom Cursor (oder die Markierung)"],
-      ["markieren und tippen", "ersetzt das Markierte"],
-    ],
-  },
-];
-
 function Spickzettel() {
+  const [laedt, setLaedt] = useState(false);
   return (
-    <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(20rem,1fr))]">
-      {SPICKZETTEL.map(g => (
-        <div key={g.titel} className="card p-4">
-          <h2 className="font-black mb-2">{g.titel}</h2>
-          <table className="w-full text-sm">
-            <tbody>
-              {g.zeilen.map(([k, was]) => (
-                <tr key={k} className="border-t border-line first:border-t-0">
-                  <td className="py-2 pr-3 whitespace-nowrap">{mitTasten(k)}</td>
-                  <td className="py-2">{was}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ))}
+    <div className="flex flex-col gap-3">
+      <div className="flex justify-end">
+        <button type="button" className="btn-secondary" disabled={laedt}
+          onClick={async () => { setLaedt(true); try { await speichereSpickzettelPdf(); } finally { setLaedt(false); } }}>
+          {laedt ? "…" : "📄 Als PDF herunterladen"}
+        </button>
+      </div>
+      <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(20rem,1fr))]">
+        {SPICKZETTEL.map(g => (
+          <div key={g.titel} className="card p-4">
+            <h2 className="font-black mb-2">{g.icon} {g.titel}</h2>
+            <table className="w-full text-sm">
+              <tbody>
+                {g.zeilen.map(([k, was]) => (
+                  <tr key={k} className="border-t border-line first:border-t-0">
+                    <td className="py-2 pr-3 whitespace-nowrap">{mitTasten(k)}</td>
+                    <td className="py-2">{was}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -150,6 +122,7 @@ export default function Markieren({ action, rangliste, vorgabe, speicherSchluess
   const teile = { stand, aendern, onAktuell: setAktuell };
   const INHALT: Record<Blatt, () => ReactNode> = {
     techniken: () => <Lektionen {...teile} />,
+    schreiben: () => <Schreiben {...teile} />,
     challenge: () => (
       <Challenge {...teile} melden={rangliste
         ? (modus, zeit_ms, aktionen) => api.markierBestenliste.eintragen({ modus, zeit_ms, aktionen }, zugang)

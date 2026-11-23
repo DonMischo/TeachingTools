@@ -3,6 +3,10 @@
  * Challenge auf Zeit: eine Reihe gewürfelter Aufgaben, jede Technik ist
  * erlaubt. Am Ende Gesamtzeit, Bestzeit im Browser und je Aufgabe der Vergleich
  * mit dem Profi-Weg — wer deutlich mehr Aktionen brauchte, sieht den schnelleren.
+ *
+ * »Nur Tastatur« sperrt die Maus per Pointer Lock (der Zeiger verschwindet);
+ * Esc gibt sie frei und pausiert die Anzeige, ein Klick sperrt sie wieder.
+ * Überspringen geht dort mit Strg + Enter.
  */
 import { useEffect, useRef, useState } from "react";
 import { MODI, STRAFE_MS, challengeAufgaben, type Aufgabe, type Modus } from "@/lib/markieren/aufgaben";
@@ -37,10 +41,30 @@ export default function Challenge({ melden, stand, aendern, onAktuell }: {
   const [platz, setPlatz] = useState<number | null>(null);
   const [jetzt, setJetzt] = useState(0);
   const uhr = useRef<ReturnType<typeof setInterval> | null>(null);
+  const flaeche = useRef<HTMLDivElement>(null);
+  const [gesperrt, setGesperrt] = useState(false);
 
   useEffect(() => () => { if (uhr.current) clearInterval(uhr.current); }, []);
 
   const fertig = !!lauf && lauf.ergebnisse.length >= lauf.aufgaben.length;
+  const nurTastatur = lauf?.modus === "tastatur" && !fertig;
+
+  // Maus sperren, solange die Tastatur-Runde läuft
+  const sperren = () => {
+    const el = flaeche.current as (HTMLDivElement & { requestPointerLock?: () => unknown }) | null;
+    try { const p = el?.requestPointerLock?.(); if (p instanceof Promise) p.catch(() => { /* ohne Sperre geht es auch */ }); } catch { /* egal */ }
+  };
+  useEffect(() => {
+    if (!nurTastatur) return;
+    const melde = () => setGesperrt(!!flaeche.current && document.pointerLockElement === flaeche.current);
+    document.addEventListener("pointerlockchange", melde);
+    sperren();
+    return () => {
+      document.removeEventListener("pointerlockchange", melde);
+      if (document.pointerLockElement) document.exitPointerLock?.();
+      setGesperrt(false);
+    };
+  }, [nurTastatur]);
 
   useEffect(() => {
     if (lauf && !fertig) {
@@ -106,8 +130,20 @@ export default function Challenge({ melden, stand, aendern, onAktuell }: {
   const nr = lauf.ergebnisse.length;
   const aufgabe = lauf.aufgaben[nr];
   const laufend = summe(lauf.ergebnisse) + Math.max(0, jetzt - lauf.seit);
+  const ueberspringen = () => weiter(nr, { aufgabe, ms: Math.round(performance.now() - lauf.seit), aktionen: 0, uebersprungen: true });
   return (
-    <div className="card p-4 flex flex-col gap-3">
+    <div ref={flaeche} className="card p-4 flex flex-col gap-3 relative"
+      onKeyDownCapture={nurTastatur ? e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); ueberspringen(); } } : undefined}>
+      {nurTastatur && !gesperrt && typeof document !== "undefined" && "pointerLockElement" in document && (
+        <div className="absolute inset-0 z-10 rounded-[inherit] bg-surface/90 flex flex-col items-center justify-center gap-3 text-center p-4">
+          <p className="font-black text-lg">⌨️ Die Maus ist frei</p>
+          <p className="text-sm text-muted">Die Zeit läuft weiter. Klick, um die Maus wieder zu sperren und weiterzumachen.</p>
+          <div className="flex gap-2">
+            <button type="button" className="btn-primary" onClick={sperren}>Weiter</button>
+            <button type="button" className="btn-secondary" onClick={() => setLauf(null)}>Abbrechen</button>
+          </div>
+        </div>
+      )}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <span className="font-black">{MODI[lauf.modus].icon} {MODI[lauf.modus].titel} · Aufgabe {nr + 1} von {lauf.aufgaben.length}</span>
         <span className="font-mono text-2xl font-black tabular-nums" aria-label="Zeit">⏱️ {sek(laufend)}</span>
@@ -116,13 +152,13 @@ export default function Challenge({ melden, stand, aendern, onAktuell }: {
         <div className="h-full bg-accent transition-all" style={{ width: `${(nr / lauf.aufgaben.length) * 100}%` }} />
       </div>
       <p className="font-bold text-lg">👉 {mitTasten(aufgabe.auftrag)}</p>
-      <Textfeld key={nr} aufgabe={aufgabe} fokus
+      <Textfeld key={nr} aufgabe={aufgabe} fokus ohneMaus={nurTastatur}
         onGeloest={(l: Loesung) => weiter(nr, { aufgabe, ms: Math.round(performance.now() - lauf.seit), aktionen: l.aktionen, uebersprungen: false })} />
       <div className="flex gap-2 justify-end">
         {/* mouseDown verhindert, dass der Knopf den Fokus bekommt: sonst übersprang die nächste Leertaste gleich die nächste Aufgabe. */}
         <button type="button" className="btn-secondary text-sm" onMouseDown={e => e.preventDefault()}
-          onClick={() => weiter(nr, { aufgabe, ms: Math.round(performance.now() - lauf.seit), aktionen: 0, uebersprungen: true })}>
-          Überspringen (+{STRAFE_MS / 1000} s)
+          onClick={ueberspringen}>
+          Überspringen (+{STRAFE_MS / 1000} s){nurTastatur && " · Strg + Enter"}
         </button>
         <button type="button" className="btn-secondary text-sm" onClick={() => setLauf(null)}>Abbrechen</button>
       </div>

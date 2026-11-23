@@ -16,6 +16,8 @@ export type MarkierStand = {
   lektionen: string[];
   quellen: Record<string, number>;
   challenge: Partial<Record<Modus, ChallengeStand>>;
+  /** Geschaffte Lektionen im Training »Schreiben« (fehlt in älteren Ständen). */
+  schreiben?: string[];
 };
 
 export const LEER: MarkierStand = { lektionen: [], quellen: {}, challenge: {} };

@@ -482,7 +482,7 @@ export function lektionsAufgaben(l: Lektion, r: Zufall = Math.random): Aufgabe[]
 
 // ---------------------------------------------------------------- Challenge
 
-export type Modus = "markieren" | "bearbeiten" | "gemischt";
+export type Modus = "markieren" | "bearbeiten" | "gemischt" | "tastatur";
 
 export const MODI: Record<Modus, { titel: string; icon: string; anzahl: number; typen: AufgabenTyp[]; text: string }> = {
   markieren: {
@@ -499,6 +499,11 @@ export const MODI: Record<Modus, { titel: string; icon: string; anzahl: number; 
     titel: "Profi-Mix", icon: "🏆", anzahl: 12,
     typen: ["wortMarkieren", "zeileMarkieren", "mehrereWoerter", "bisZeilenende", "vonBis", "teilwort", "wortLoeschen", "zeileLoeschen", "wortErsetzen", "wortKopieren", "zeileVerschieben", "wortVerschieben", "rueckgaengig"],
     text: "Alles durcheinander — wie beim echten Arbeiten am Text.",
+  },
+  tastatur: {
+    titel: "Nur Tastatur", icon: "⌨️", anzahl: 10,
+    typen: ["wortMarkieren", "zeileMarkieren", "bisZeilenende", "abZeilenanfang", "cursorRand", "allesMarkieren", "wortLoeschen", "zeileLoeschen", "wortErsetzen", "zeileVerschieben", "rueckgaengig"],
+    text: "Die Maus ist gesperrt — alles mit Pfeilen, Pos1/Ende, Umschalt und Strg. Strg + Enter überspringt.",
   },
 };
 

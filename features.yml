@@ -721,7 +721,8 @@ simulationen:
       - Fehlersperre ohne Rücktaste
       - Modi Lektionen, Wortregen, Tastenjagd, Wettschreiben (Klassenrennen)
       - Anschläge pro Minute, Fehlerquote, schwächste Tasten
-      - Bestenliste mit den besten hundert je Modus
+      - Bestenliste mit den besten hundert je Modus; Lektionen und Wettschreiben werten Tempo × (1 − Fehlerquote)²
+      - Wettschreiben-Start schickt der Server an alle, verpasste Starts holt die Seite beim Zurückkehren nach
       - Eigene Texte per JSON, nachträglich per Formular bearbeitbar
   - id: maus
     name: Maus-Führerschein
@@ -759,13 +760,15 @@ simulationen:
       - Echtes Textfeld mit mitwachsenden Zeilennummern (Cursorzeile hervorgehoben), erkennt Doppel-/Dreifachklick, Ziehen, Umschalt-Klick und Tastenkürzel
       - Vorführen je Aufgabe mit Zeiger, Maus und Tastatur, längere Pause nach jeder gelösten Übungsaufgabe
       - 15 Lektionen je Technik, zählt nur mit der verlangten Technik
-      - Challenge auf Zeit in drei Modi mit Bestzeit, Aktionen und Profi-Weg; Überspringen +30 s
+      - Challenge auf Zeit in vier Modi mit Bestzeit, Aktionen und Profi-Weg; Überspringen +30 s
+      - "Challenge »Nur Tastatur«: Maus per Pointer Lock gesperrt, Strg + Enter überspringt"
+      - "Training »Schreiben«: Großbuchstaben, Umlaute, Satzzeichen, Zahlenreihe, Alt-Gr- und weitere Sonderzeichen mit Tastenhilfe auf der Bildschirmtastatur; Rechtschreibung (Satz mit Fehlern verbessern)"
       - Bestenliste je Modus mit Gästen, Filter Sitzung/Klasse, Admin löscht Einträge
       - "Quellen: Zitat + Kurzbeleg + Literaturverzeichnis aus Buch, Webseite, Zeitung, Zeitschrift, Video oder Online-Lexikon kopieren, Hinweise zu Fehlgriffen (Lektorat, Kurzlink, Website-Name, Abrufdatum, Jahrgang, Dachzeile, Videolänge, Stand)"
       - Stand je Konto bzw. je Gastname im Browser
       - Sitzung je Klasse/Kurs und Lehrkraft-Übersicht (Techniken, Bestzeiten, Quellen, gerade dabei)
       - Aufgaben gewürfelt aus sechs Übungstexten (markieren, Cursor setzen, löschen, ersetzen, kopieren, verschieben, rückgängig)
-      - Spickzettel mit allen Kürzeln
+      - Spickzettel mit allen Kürzeln und Sonderzeichen, als PDF zum Ausdrucken
   - id: pcbau
     name: PC-Werkstatt
     faehigkeiten: {use: [true, true]}

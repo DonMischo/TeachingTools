@@ -1333,7 +1333,7 @@ export type KiKompassMaterialIn = {
 export type KiKompassMaterial = KiKompassMaterialIn & { id: number; autor: string; eigen: boolean; erstellt_am: string };
 
 // Bestenliste der Challenge in »Markieren & Bearbeiten« (siehe api/routers/markieren.py)
-export type MarkierModus = "markieren" | "bearbeiten" | "gemischt";
+export type MarkierModus = "markieren" | "bearbeiten" | "gemischt" | "tastatur";
 export type MarkierEintrag = {
   id: number; platz: number; name: string; klasse: string | null; gast: boolean;
   zeit_ms: number; aktionen: number; selbst: boolean;
