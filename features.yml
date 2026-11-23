@@ -1008,6 +1008,15 @@ simulationen:
       - "Gleichsetzungsverfahren und Einsetzungsverfahren mit Drag & Drop des Terms"
       - "Übungen in drei Stufen und Sachaufgaben mit echten Preisen"
       - "Spiel Tarif-Check: Gleichstand berechnen, günstigeres Angebot wählen, Kostengraph"
+  - id: aehnlichkeit
+    name: Ähnlichkeit und Maßstab
+    faehigkeiten: {use: [true, true]}
+    kann:
+      - "Zentrische Streckung mit ziehbarem Zentrum, k von −3 bis 3, Strahlen, Seitenverhältnisse, Umfang und Fläche"
+      - "Ähnlichkeitssätze und Dreieck zum Selberbauen mit Ähnlichkeitsprüfung"
+      - "Maßstab umrechnen in beide Richtungen, Verkleinerung und Vergrößerung, Messen auf einer Inselkarte"
+      - "Übungen: Streckfaktor, fehlende Seite, Fläche, Karte, Plan, Maßstab bestimmen"
+      - "Spiel Zoom-Treffer: Zentrum und Streckfaktor finden, fünf Runden, drei Stufen"
   - id: farbmodelle
     name: Farbmodelle
     faehigkeiten: {use: [true, true]}

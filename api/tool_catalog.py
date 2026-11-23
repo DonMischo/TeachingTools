@@ -153,6 +153,9 @@ CATALOG: list[CatalogTool] = [
     CatalogTool("lgs", "🔀 Lineare Gleichungssysteme", "🔀", "simulationen", {
         "use": _cap(True, True),
     }),
+    CatalogTool("aehnlichkeit", "🔍 Ähnlichkeit und Maßstab", "🔍", "simulationen", {
+        "use": _cap(True, True),
+    }),
     CatalogTool("farbmodelle", "🎨 Farbmodelle", "🎨", "simulationen", {
         "use": _cap(True, True),
     }),

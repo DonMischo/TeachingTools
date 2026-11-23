@@ -479,6 +479,18 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
     ],
   },
+  aehnlichkeit: {
+    title: "Ähnlichkeit und Maßstab",
+    intro: "Ähnlichkeit, zentrische Streckung und Maßstab (Kl. 6–9) in fünf Blättern.",
+    sections: [
+      { label: "🔍 Zentrische Streckung", text: "Figur wählen (Dreieck, Haus, Pfeil, Drachen), das grüne Zentrum Z ziehen und k von −3 bis 3 einstellen. Gestrichelte Strahlen führen von Z durch jede Ecke zur Bildecke. Die Tabelle zeigt Seiten von Original und Bild mit ihrem Verhältnis, dazu Winkel (bleiben), Umfang (mal |k|) und Fläche (mal k²). Negatives k spiegelt zusätzlich am Zentrum." },
+      { label: "📐 Ähnliche Figuren", text: "Was ähnlich heißt und die Ähnlichkeitssätze WW, SSS, SWS, SsW. Ein blaues 3-4-5-Dreieck und ein zweites Dreieck mit drei Reglern: grün, sobald es ähnlich ist, mit Faktor k, Seitenverhältnissen und Winkeln." },
+      { label: "🗺️ Maßstab", text: "Maßstab Bild : Wirklichkeit wählen (Wanderkarte 1 : 25 000 bis Mikroskop 100 : 1) oder eintippen, Länge in mm/cm/m/km umrechnen — in beide Richtungen mit Rechnung. Auf der Inselkarte zwei Orte antippen: Kartenstrecke in cm und echte Entfernung, mit Maßstabsleiste." },
+      { label: "✍️ Üben", text: "Sechs Aufgabenarten: Streckfaktor, fehlende Seite ähnlicher Dreiecke, Fläche nach Streckung, Karte → Wirklichkeit, Wirklichkeit → Plan, Maßstab bestimmen. Rechenweg zum Aufklappen, Zähler." },
+      { label: "🎯 Zoom-Treffer", text: "Spiel: Die blaue Figur soll mit dem orangen Bild genau auf dem gestrichelten Ziel landen — Zentrum Z setzen und k einstellen. Fünf Runden, bis 100 Punkte je Runde nach Genauigkeit; Stufe 3 mit negativen k. Rekord bleibt im Browser." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
+    ],
+  },
   stellenwert: {
     title: "Stellenwerttafeln",
     intro: "Zehner-, Zweier- und Sechzehnersystem in der Stellenwerttafel — vier Blätter zum Legen, Verstehen, Üben und Spielen. Der Hex-Farbmischer ist in die Simulation »Farbmodelle« umgezogen.",
