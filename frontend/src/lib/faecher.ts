@@ -66,6 +66,7 @@ export const STANDARD_FAECHER: Record<string, string[]> = {
   kreis: ["Mathematik"],
   koerper: ["Mathematik"],
   stellenwert: ["Mathematik", "Informatik"],
+  zahlenbereiche: ["Mathematik"],
   farbmodelle: ["Informatik", "Kunst", "Physik"],
   tippen: ["Informatik"],
   maus: ["Informatik"],

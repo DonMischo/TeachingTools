@@ -35,6 +35,7 @@ import Kreis from "@/components/kreis/Kreis";
 import Koerper from "@/components/koerper/Koerper";
 import Stellenwert from "@/components/stellenwert/Stellenwert";
 import Farbmodelle from "@/components/farbmodelle/Farbmodelle";
+import Zahlenbereiche from "@/components/zahlenbereiche/Zahlenbereiche";
 import Markieren from "@/components/markieren/Markieren";
 import PcWerkstatt from "@/components/pcbau/PcWerkstatt";
 import Medien from "@/components/medien/Medien";
@@ -99,6 +100,7 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   koerper: { title: "Körper", icon: "🧊", node: <Koerper /> },
   stellenwert: { title: "Stellenwerttafeln", icon: "🔢", node: <Stellenwert /> },
   farbmodelle: { title: "Farbmodelle", icon: "🎨", node: <Farbmodelle /> },
+  zahlenbereiche: { title: "Zahlenbereiche", icon: "🪆", node: <Zahlenbereiche /> },
   tippen: { title: "Tippen", icon: "⌨️", node: <Tippen /> },
   // Die Bestenliste braucht Code und Gast-Token.
   markieren: { title: "Markieren & Bearbeiten", icon: "🖍️", node: null },

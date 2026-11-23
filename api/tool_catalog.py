@@ -144,6 +144,9 @@ CATALOG: list[CatalogTool] = [
     CatalogTool("stellenwert", "🔢 Stellenwerttafeln", "🔢", "simulationen", {
         "use": _cap(True, True),
     }),
+    CatalogTool("zahlenbereiche", "🪆 Zahlenbereiche", "🪆", "simulationen", {
+        "use": _cap(True, True),
+    }),
     CatalogTool("farbmodelle", "🎨 Farbmodelle", "🎨", "simulationen", {
         "use": _cap(True, True),
     }),

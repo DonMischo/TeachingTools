@@ -349,6 +349,14 @@ const ALL_CARDS: Werkzeug[] = [
     color: "#a855f7",
   },
   {
+    slug: "zahlenbereiche",
+    href: "/simulationen/zahlenbereiche",
+    icon: "🪆",
+    title: "Zahlenbereiche",
+    description: "ℕ ⊂ ℤ ⊂ ℚ ⊂ ℝ zum Anfassen: Mengendiagramm mit eigenen Zahlen zum Einsortieren, Zahlenstrahl mit Lupe (Brüche werden dicht, √2 bleibt eine Lücke, √2 mit dem Zirkel), Steckbriefe mit Eigenschaften, Beispielen und »Welche Rechnung bleibt im Bereich?«. Spiele: Zahlen-Detektiv (alle passenden Bereiche antippen, Fallen wie √16 und 12/4) und Zahlenregen (die richtigen Zahlen mit dem Korb fangen).",
+    color: "#16a34a",
+  },
+  {
     slug: "farbmodelle",
     href: "/simulationen/farbmodelle",
     icon: "🎨",

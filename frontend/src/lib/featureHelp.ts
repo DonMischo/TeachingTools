@@ -439,6 +439,18 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
     ],
   },
+  zahlenbereiche: {
+    title: "Zahlenbereiche",
+    intro: "Die Zahlenbereiche von den natürlichen bis zu den reellen Zahlen — vier Blätter zum Ansehen, Einordnen und Spielen. ℕ enthält hier die 0.",
+    sections: [
+      { label: "🪆 Mengenbild", text: "Vier ineinander liegende Felder ℕ ⊂ ℤ ⊂ ℚ ⊂ ℝ. Jede Zahl steht im innersten Feld, zu dem sie gehört. Ein Feld antippen zeigt den Steckbrief daneben. Eigene Zahlen eintippen (7, −3, 3/4, 2,5, 0,(3) für 0,3 periodisch, √2, pi, e) — die Zahl erscheint im richtigen Feld mit Begründung (√16 = 4 ist natürlich!). »🎯 Einsortieren« stellt eine Zahl hin, die man selbst ins innerste passende Feld tippt; gezählt wird mit." },
+      { label: "📏 Zahlenstrahl", text: "ℕ und ℤ als Punkte, ℚ mit wählbarem größtem Nenner (bis 60) als Striche, ℝ als lückenlose Linie mit √2, √3, √5, φ, e, π. Die Lupe zoomt bis auf ein Zehntel einer Einheit, »🔍 Zu √2« springt hin: Die Brüche rücken immer dichter, treffen √2 aber nie — der beste Bruch und sein Abstand stehen darunter. »📐 √2 mit dem Zirkel« zeigt die Diagonale des Einheitsquadrats auf den Strahl geklappt." },
+      { label: "📋 Steckbriefe", text: "Je Bereich: Menge, wozu man ihn braucht, Eigenschaften (kleinstes Element, Nachfolger, dicht, Lücken), was immer geht und was nicht, Beispiele. Darunter die Leiter x + 5 = 3 → ℤ, 4 · x = 3 → ℚ, x · x = 2 → ℝ und die Tabelle, welche Grundrechenart im Bereich bleibt — ein ✘ antippen zeigt ein Gegenbeispiel." },
+      { label: "🕵️ Zahlen-Detektiv", text: "Zu jeder Zahl alle Bereiche antippen, zu denen sie gehört, dann prüfen. 10 Zahlen oder 60 Sekunden, drei Stufen (ab Stufe 2 mit Fallen wie √16, 12/4, 4,0, 0,9 periodisch und negativen Brüchen). Serien bringen Bonuspunkte, der Rekord bleibt im Browser." },
+      { label: "🌧️ Zahlenregen", text: "Zahlen fallen vom Himmel, oben steht, welche man fangen soll (ℕ, ℤ ohne ℕ, ℚ ohne ℤ, irrationale Zahlen …). Den Korb mit Maus, Finger oder ←/→ bewegen. Eine falsche Zahl kostet ein Herz und wird erklärt, nach drei ist Schluss. Alle 8 Treffer kommt ein neues Ziel, und es regnet schneller." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
+    ],
+  },
   stellenwert: {
     title: "Stellenwerttafeln",
     intro: "Zehner-, Zweier- und Sechzehnersystem in der Stellenwerttafel — vier Blätter zum Legen, Verstehen, Üben und Spielen. Der Hex-Farbmischer ist in die Simulation »Farbmodelle« umgezogen.",

@@ -975,6 +975,17 @@ simulationen:
       - "Zählwerk-Rennen: Antwort durch Drehen der Walzen, Übertrag auf Wunsch automatisch und Walze für Walze"
       - "Zählwerk-Rennen auf Zeit oder mit fester Aufgabenzahl; im Zehnersystem Schritte in Stellenwerten (+ 1 H) bis 1 000, 1 Million oder 1 Milliarde"
       - "Geheimbotschaft: Code direkt an Anwesende derselben Sitzung schicken, Empfänger nimmt an, höchstens eine Botschaft je 3 Minuten"
+  - id: zahlenbereiche
+    name: Zahlenbereiche
+    faehigkeiten: {use: [true, true]}
+    kann:
+      - "Mengendiagramm ℕ ⊂ ℤ ⊂ ℚ ⊂ ℝ, Zahlen im innersten passenden Feld, Steckbrief per Antippen"
+      - "Eigene Zahlen eintippen (Bruch, Dezimalzahl, periodisch, Wurzel, π, e) mit Begründung der Einordnung"
+      - "Einsortieren: Zahl ins richtige Feld tippen, mit Zähler"
+      - "Zahlenstrahl mit Lupe: ℕ/ℤ als Punkte, ℚ bis Nenner 60, ℝ mit irrationalen Zahlen, √2 mit dem Zirkel, beste Bruch-Näherung"
+      - "Steckbriefe mit Eigenschaften und Beispielen, Erweiterungsleiter, Abgeschlossenheit mit Gegenbeispielen"
+      - "Spiel Zahlen-Detektiv: alle zutreffenden Bereiche antippen, 10 Zahlen oder 60 s, drei Stufen, Rekord"
+      - "Spiel Zahlenregen: passende Zahlen mit dem Korb fangen, wechselnde Ziele, drei Herzen"
   - id: farbmodelle
     name: Farbmodelle
     faehigkeiten: {use: [true, true]}
