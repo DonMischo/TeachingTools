@@ -23,6 +23,9 @@ const INNEN_NACH_AUSSEN: Bereich[] = ["N", "Z", "Q", "R"];
 const lage = (b: Bereich, x: number, y: number) => { const f = FELD[b]; return ((x - f.cx) / f.rx) ** 2 + ((y - f.cy) / f.ry) ** 2; };
 export const innerstesFeld = (x: number, y: number): Bereich | null => INNEN_NACH_AUSSEN.find(b => lage(b, x, y) <= 1) ?? null;
 
+/** Platz der Beschriftung: oben rechts im eigenen Ring (dort liegt kein inneres Feld) */
+const etikett = (b: Bereich) => { const f = FELD[b]; return { x: f.cx + f.rx * 0.43, y: f.cy - f.ry * 0.74 }; };
+
 /** Freie Plätze je Ring: Rasterpunkte, die sicher im Ring liegen (Abstand zu beiden Rändern) */
 export const PLAETZE: Record<Bereich, { x: number; y: number }[]> = (() => {
   const aus: Record<Bereich, { x: number; y: number }[]> = { N: [], Z: [], Q: [], R: [] };
@@ -34,7 +37,7 @@ export const PLAETZE: Record<Bereich, { x: number; y: number }[]> = (() => {
     const f = FELD[b];
     const randAbstand = ((x - f.cx) / (f.rx - 34)) ** 2 + ((y - f.cy) / (f.ry - 26)) ** 2 <= 1;
     const vomInneren = !innen || ((x - FELD[innen].cx) / (FELD[innen].rx + 34)) ** 2 + ((y - FELD[innen].cy) / (FELD[innen].ry + 26)) ** 2 > 1;
-    const beschriftung = Math.hypot(x - (f.cx - f.rx * 0.62), y - (f.cy - f.ry * 0.62)) < 40;
+    const beschriftung = Math.hypot(x - etikett(b).x, y - etikett(b).y) < 44;
     if (randAbstand && vomInneren && !beschriftung) aus[b].push({ x, y });
   }
   // rechts zuerst füllen (dort ist jeder Ring am breitesten), dann von oben nach unten
@@ -155,7 +158,7 @@ export default function Mengenbild() {
                 <g key={b}>
                   <ellipse cx={f.cx} cy={f.cy} rx={f.rx} ry={f.ry} fill={FARBE[b]} fillOpacity={an ? 0.2 : 0.07}
                     stroke={FARBE[b]} strokeWidth={an ? 5 : 3} style={{ transition: "fill-opacity 200ms, stroke-width 200ms" }} />
-                  <text x={f.cx - f.rx * 0.62} y={f.cy - f.ry * 0.62 + 10} fontSize={32} fontWeight={900} fill={FARBE[b]} textAnchor="middle">{ZEICHEN[b]}</text>
+                  <text x={etikett(b).x} y={etikett(b).y + 11} fontSize={32} fontWeight={900} fill={FARBE[b]} textAnchor="middle">{ZEICHEN[b]}</text>
                 </g>
               );
             })}
