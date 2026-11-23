@@ -4,12 +4,16 @@
  * dem Käfig fangen, Trainer und Arenen besiegen, gegen Mitschüler·innen
  * duellieren. Energie, Werbevideos und der gesperrte Kristall-Shop zeigen,
  * wie solche Spiele zurückholen — und alles läuft durch AdKit.
+ *
+ * Eigenständig (ohne Klikk-Woche) gibt es keine Werbung und nichts zu kaufen:
+ * stattdessen »Free« und »Pro«, wobei Pro erspielt wird (mehr Energie,
+ * schnellere Heilung, Goldkäfige im Laden). Eigene Orte kommen als QR-Karte.
  */
 import { useEffect, useState } from "react";
 import { ART, ARTEN, ATTACKEN, ELEMENTE, STARTER, TYPEN_SCHWACH, TYPEN_STARK, elementInfo, type ElementId } from "@/lib/elemon/daten";
 import { aktivVon, heile, kiZug, lebt, maxKp, neuesElemon, neuerKampf, runde, xpBis, type Elemon, type Kampf, type Zug } from "@/lib/elemon/kampf";
 import {
-  ENERGIE_MAX, GEBIETE, ITEMS, PREISE, QR_GEBIET, beleben, darfIns, itemEinloesen, karteId, kartenRest, kampfEnde, kaufen, naechsteEnergie, neuerElemonStand, sehen, starten,
+  ENERGIE_MAX, GEBIETE, ITEMS, PREISE, PRO, PRO_ZIELE, QR_GEBIET, beleben, energieMax, ortGebiet, proFrei, darfIns, itemEinloesen, karteId, kartenRest, kampfEnde, kaufen, naechsteEnergie, neuerElemonStand, sehen, starten,
   tauschen, trainerTeam, wildesElemon, type Ausgang, type ElemonOrt, type ElemonStand, type Gebiet, type QrInhalt,
 } from "@/lib/elemon/spiel";
 import type { Aufstieg } from "@/lib/elemon/kampf";
@@ -111,10 +115,15 @@ export default function ElemonApp({ s, setze, online, eigenstaendig }: { s: Stan
   // QR-Code: Karte = wildes Elemon zum Fangen, Mitspieler·in = gezielte Herausforderung
   const qrGefunden = (q: QrInhalt) => {
     setScan(false);
-    if (q.art === "wild") {
+    if (q.art === "wild" || q.art === "ort") {
       if (e.energie <= 0) { setQrHinweis({ text: "Keine Energie für einen Kampf." }); return; }
       if (!e.team.some(lebt)) { setQrHinweis({ text: "Alle deine Elemon sind erschöpft. Erst zur Heilstation!" }); return; }
-      kampfStarten(QR_GEBIET, [neuesElemon(q.elemon, q.stufe)]);
+      if (q.art === "wild") { kampfStarten(QR_GEBIET, [neuesElemon(q.elemon, q.stufe)]); return; }
+      // Eigener Ort: ein zufälliges Elemon von dort; der Ort kommt in die Liste der entdeckten Orte
+      const g = ortGebiet(q);
+      if (!(e.orte ?? []).includes(q.name)) aendere(x => ({ ...x, orte: [...(x.orte ?? []), q.name].slice(-50) }));
+      setQrHinweis({ text: `📍 Du bist hier: ${q.name}`, gut: true });
+      kampfStarten(g, [wildesElemon(g, e.wurf * 17 + s.seed + jetzt, !!e.standort)]);
       return;
     }
     if (q.art === "item") {
@@ -187,12 +196,14 @@ export default function ElemonApp({ s, setze, online, eigenstaendig }: { s: Stan
 
   const ohneEnergie = e.energie <= 0;
   const keinerFit = !e.team.some(lebt);
+  const heilMinuten = e.pro ? PRO.heilMinuten : 10;
 
   return (
     <div className="flex flex-col">
       <div className="sticky top-0 z-10 bg-surface border-b border-line px-3 py-2 flex items-center gap-2 text-xs">
         <span className="font-black text-base">🐾 Elemon</span>
-        <span className="ml-auto" title="Energie">⚡ {e.energie}/{ENERGIE_MAX}</span>
+        {eigenstaendig && <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-black ${e.pro ? "bg-amber-400 text-black" : "bg-surface-hover text-muted"}`}>{e.pro ? "⭐ PRO" : "FREE"}</span>}
+        <span className="ml-auto" title="Energie">⚡ {e.energie}/{energieMax(e)}</span>
         <span title="Münzen">🪙 {e.muenzen}</span>
         <span title="Orden">🏅 {e.orden.length}</span>
         <button title="QR-Code scannen" aria-label="QR-Code scannen" onClick={() => { setQrHinweis(null); setScan(true); }}>📷</button>
@@ -217,14 +228,17 @@ export default function ElemonApp({ s, setze, online, eigenstaendig }: { s: Stan
               <div className="card p-2 text-xs flex flex-col gap-1 border-amber-500">
                 <b>Keine Energie mehr.</b>
                 <span>Nächste ⚡ in {naechsteEnergie(e, jetzt)} Minuten.</span>
-                <button className="btn-primary text-xs" onClick={() => setOrt({ werbung: 15 })}>📺 Werbung ansehen: +2 ⚡</button>
+                {eigenstaendig ? <>
+                  <span>Pause tut gut: Heile dein Team, schau in die Kartei oder scanne eine Item-Karte.</span>
+                  {!e.pro && <span className="text-muted">Mit ⭐ Pro: {PRO.energieMax} ⚡ und alle {PRO.energieMinuten} Minuten eine neue — Pro erspielst du dir (siehe 🛒 Laden).</span>}
+                </> : <button className="btn-primary text-xs" onClick={() => setOrt({ werbung: 15 })}>📺 Werbung ansehen: +2 ⚡</button>}
                 {eigenstaendig ? null : e.elternAntwort?.tag === s.tag ? (
                   <p className={`text-[11px] ${e.elternAntwort.ja ? "text-good" : "text-bad"}`}>{s.eltern === "streng" ? "Papa" : "Mama"}: »{e.elternAntwort.text}«{e.elternAntwort.plus ? ` (+${e.elternAntwort.plus} ⚡)` : ""}</p>
                 ) : (
                   <button className="btn-secondary text-xs" onClick={() => setze(elternUmZeit)}>🙋 Eltern um Extra-Zeit bitten</button>
                 )}
-                <div className="font-bold mt-1">💎 Extra-Nutzung kaufen</div>
-                {EXTRA.map(([plus, preis]) => (
+                {!eigenstaendig && <div className="font-bold mt-1">💎 Extra-Nutzung kaufen</div>}
+                {!eigenstaendig && EXTRA.map(([plus, preis]) => (
                   <button key={preis} className="btn-secondary text-xs flex justify-between" onClick={() => {
                     setKaufHinweis(true);
                     aendere(x => ({ ...x, kaufVersuche: x.kaufVersuche + 1 }), 0, `Kaufversuch »Extra-Nutzung ${plus} für ${preis}« – Zahlungsbereitschaft vermerkt`);
@@ -235,7 +249,7 @@ export default function ElemonApp({ s, setze, online, eigenstaendig }: { s: Stan
             )}
             {keinerFit && <p className="text-xs text-bad">Alle deine Elemon sind erschöpft. Ab zur Heilstation!</p>}
             <button className="btn-secondary text-xs" disabled={e.team.every(x => x.kp === maxKp(x))}
-              onClick={() => aendere(x => ({ ...x, team: heile(x.team) }), 10)}>🏥 Heilstation (10 Min.)</button>
+              onClick={() => aendere(x => ({ ...x, team: heile(x.team) }), heilMinuten)}>🏥 Heilstation ({heilMinuten} Min.)</button>
             {GEBIETE.map(g => {
               const offen = darfIns(e, g);
               return (
@@ -290,6 +304,7 @@ export default function ElemonApp({ s, setze, online, eigenstaendig }: { s: Stan
         {reiter === "kartei" && (
           <>
             <p className="text-xs">Gesehen: {e.gesehen.length} · Gefangen: {e.gefangen.length} von {ARTEN.length}</p>
+            {(e.orte?.length ?? 0) > 0 && <p className="text-[11px] text-muted">📍 Entdeckte Orte: {e.orte!.join(", ")}</p>}
             <div className="grid grid-cols-4 gap-1">
               {ARTEN.map(a => {
                 const gef = e.gefangen.includes(a.id), ges = e.gesehen.includes(a.id);
@@ -320,8 +335,15 @@ export default function ElemonApp({ s, setze, online, eigenstaendig }: { s: Stan
               <span>💫 Beleber ({e.beleber ?? 0}×) <span className="text-muted">– weckt ein erschöpftes Elemon mit halben KP</span></span>
               <button className="btn-secondary text-xs" disabled={e.muenzen < PREISE.beleber} onClick={() => aendere(x => kaufen(x, "beleber"))}>{PREISE.beleber} 🪙</button>
             </div>
+            {eigenstaendig && e.pro && (
+              <div className="card p-2 text-xs flex justify-between items-center border-amber-400">
+                <span>✨ Goldkäfig ({e.goldkaefige}×) <span className="text-muted">– ⭐ Pro: fängt doppelt so gut</span></span>
+                <button className="btn-secondary text-xs" disabled={e.muenzen < PREISE.goldkaefig} onClick={() => aendere(x => kaufen(x, "goldkaefig"))}>{PREISE.goldkaefig} 🪙</button>
+              </div>
+            )}
             <p className="text-[10px] text-muted">Tipp: Item-Karten mit QR-Code scannen (📷) bringt Tränke, Käfige und mehr – jede Karte nur ab und zu.</p>
-            <div className="rounded-xl p-2 text-xs flex flex-col gap-1 bg-gradient-to-r from-fuchsia-600 to-amber-500 text-white">
+            {eigenstaendig && <ProKarte e={e} aendere={aendere} />}
+            {!eigenstaendig && <div className="rounded-xl p-2 text-xs flex flex-col gap-1 bg-gradient-to-r from-fuchsia-600 to-amber-500 text-white">
               <b>💎 NUR HEUTE: Goldkäfig-Paket</b>
               <span>5 Goldkäfige – hält doppelt so gut! <s>4,99 €</s> <b>1,99 €</b></span>
               <span className="text-[10px] opacity-80">Angebot endet in 00:{String(59 - (s.uhr % 60)).padStart(2, "0")} Min.</span>
@@ -330,7 +352,7 @@ export default function ElemonApp({ s, setze, online, eigenstaendig }: { s: Stan
                 aendere(x => ({ ...x, kaufVersuche: x.kaufVersuche + 1 }), 0, "Kaufversuch »Goldkäfig-Paket 1,99 €« – Zahlungsbereitschaft vermerkt");
               }}>Jetzt kaufen</button>
               {kaufHinweis && <p className="text-[11px] bg-black/30 rounded p-1">Kauf abgelehnt: Für In-App-Käufe brauchst du die Zustimmung deiner Eltern. Der Countdown fängt übrigens jede Stunde neu an.</p>}
-            </div>
+            </div>}
           </>
         )}
 
@@ -346,6 +368,25 @@ function aufstiegsZeilen(team: Elemon[], aufstiege: Aufstieg[]) {
     `⬆️ ${ART[team[a.nr].art].name} ist jetzt Lv ${a.stufe}!`,
     ...a.gelernt.map(id => `✨ … und kann jetzt ${ATTACKEN[id].name}${a.vergessen.length ? ` (statt ${a.vergessen.map(v => ATTACKEN[v].name).join(", ")})` : ""}.`),
   ]);
+}
+
+/** Free oder Pro: Pro kostet nichts, man erspielt es (eines der Ziele reicht) */
+function ProKarte({ e, aendere }: { e: ElemonStand; aendere: (f: (e: ElemonStand) => ElemonStand) => void }) {
+  const frei = proFrei(e);
+  return (
+    <div className={`rounded-xl p-2 text-xs flex flex-col gap-1 ${e.pro ? "bg-gradient-to-r from-amber-400 to-yellow-300 text-black" : "card"}`} data-testid="pro-karte">
+      <b>{e.pro ? "⭐ Elemon Pro ist an" : "⭐ Elemon Pro — wird erspielt, nicht gekauft"}</b>
+      <span>Pro: {PRO.energieMax} ⚡ statt {ENERGIE_MAX}, alle {PRO.energieMinuten} statt 45 Minuten neue Energie, Heilstation in {PRO.heilMinuten} Min., Goldkäfige im Laden.</span>
+      {!e.pro && <>
+        <span className="font-bold">Schaffe eines davon:</span>
+        <ul className="flex flex-col gap-0.5">
+          {PRO_ZIELE.map(z => <li key={z.text}>{z.erreicht(e) ? "✅" : "⬜"} {z.text} <span className="text-muted">({z.stand(e)})</span></li>)}
+        </ul>
+        <button className="btn-primary text-xs" disabled={!frei} onClick={() => aendere(x => ({ ...x, pro: true }))}>{frei ? "⭐ Pro einschalten" : "🔒 noch gesperrt"}</button>
+      </>}
+      {e.pro && <button className="text-[10px] underline self-start" onClick={() => aendere(x => ({ ...x, pro: false }))}>Zurück zu Free (zum Vergleichen)</button>}
+    </div>
+  );
 }
 
 function Werbevideo({ sekunden, fertig }: { sekunden: number; fertig: () => void }) {

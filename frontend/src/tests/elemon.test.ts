@@ -177,3 +177,24 @@ describe("Elemon-Spielstand", () => {
     expect(wach.beleber).toBe(0);
   });
 });
+
+describe("Free/Pro und eigene Orte", () => {
+  it("Pro erst nach einem Ziel, dann mehr Energie", async () => {
+    const { neuerElemonStand, proFrei, energieMax, energieAuffuellen, PRO } = await import("@/lib/elemon/spiel");
+    const e = neuerElemonStand();
+    expect(proFrei(e)).toBe(false);
+    expect(proFrei({ ...e, orden: ["a", "b"] })).toBe(true);
+    const pro = { ...e, pro: true, energie: 5, energieAb: 0 };
+    expect(energieMax(pro)).toBe(PRO.energieMax);
+    expect(energieAuffuellen(pro, PRO.energieMinuten * 2).energie).toBe(7);
+  });
+  it("Orts-QR hin und zurück, Name ohne Doppelpunkt", async () => {
+    const { qrOrt, qrLesen, ortGebiet } = await import("@/lib/elemon/spiel");
+    const { ARTEN } = await import("@/lib/elemon/daten");
+    const ids = ARTEN.slice(0, 3).map(a => a.id);
+    const q = qrLesen(qrOrt("Bibliothek: 2. Stock", [12, 4], ids));
+    expect(q).toEqual({ art: "ort", name: "Bibliothek 2. Stock", stufen: [12, 12], wild: ids });
+    expect(ortGebiet(q as never).wild).toEqual(ids);
+    expect(qrLesen("ELEMON:O:1-5:gibtsnicht:Ort")).toBeNull();
+  });
+});

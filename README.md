@@ -129,10 +129,11 @@ Alle Aktivitäten können Schüler nutzen. Hosten dürfen standardmäßig nur Le
 
 ### 🐾 Elemon
 
-Das Monster-Sammelspiel aus Klikk als eigenes Spiel (gleiche Regeln und 3D-Kämpfe, Spielzeit nach der echten Uhr).
+Das Monster-Sammelspiel aus Klikk als eigenes Spiel (gleiche Regeln und 3D-Kämpfe, Spielzeit nach der echten Uhr), groß im Hauptbereich wie die übrigen Simulationen.
 
 - Trainer-Name aus Vorschlägen, Elemon im Käfig fangen, Trainer, Arenen und Orden in vier Gebieten
-- Energie, Werbevideos und gesperrte »Extra-Nutzung« wie im Klikk-Handy
+- Keine Werbung, nichts zu kaufen: »Free« sofort, »⭐ Pro« wird erspielt (2 Orden, 12 Arten oder 25 Siege) — 10 statt 5 Energie, alle 30 statt 45 Minuten neue, Heilstation in 5 Minuten, Goldkäfige im Laden
+- Eigene Orte: Name, bis zu 8 Elemon und Stufenbereich ergeben eine QR-Karte zum Aufhängen; scannen = Kampf gegen eines davon, der Ort landet in der Kartei (für alle, nicht nur Lehrkräfte)
 - Duelle mit Code: Liste aller, die gerade spielen, gezielt herausfordern (muss angenommen werden) oder die ganze Klasse offen; nach jeder Herausforderung drei Minuten Pause
 - Eigener QR-Code je Spieler·in: scannen fordert heraus (Kamera mit jsQR, sonst Nummer abtippen)
 - Lehrkräfte drucken QR-Karten mit wilden Elemon; wer eine scannt, kann es fangen
