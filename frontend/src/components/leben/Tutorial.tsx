@@ -9,11 +9,13 @@ import type { Spielstand } from "@/lib/leben/typen";
 import { Knopf } from "./ui";
 
 /** Was die Aufgabe erledigt. »ok« = Knopf »Weiter« auf der Karte. */
-export type Tat = "ok" | "essen" | "duschen" | "spass" | "bank" | "kauf" | "jobs" | "schlafen" | "zeit";
+export type Tat = "ok" | "haken" | "essen" | "duschen" | "spass" | "bank" | "kauf" | "jobs" | "schlafen" | "zeit";
+/** Dinge, die man in einem Haken-Schritt anschauen muss (Maus drüber oder antippen). */
+export type Haken = "uhr" | "geld";
 /** Knöpfe, die die Übung nach und nach zeigt. »mehr« = erst nach der Übung. */
 export type Frei = "essen" | "duschen" | "spass" | "bank" | "raus" | "jobs" | "schlafen" | "zeit" | "mehr";
 
-type Schritt = { icon: string; titel: string; text: string[]; tat: Tat; neu?: Frei; tipp?: string };
+type Schritt = { icon: string; titel: string; text: string[]; tat: Tat; neu?: Frei; tipp?: string; haken?: { id: Haken; text: string }[] };
 
 export const SCHRITTE: Schritt[] = [
   { icon: "👋", titel: "Hallo!", tat: "ok", text: [
@@ -27,6 +29,13 @@ export const SCHRITTE: Schritt[] = [
     "🍽️ Hunger · ⚡ Kraft · 🚿 Sauber sein · 🎮 Spaß",
     "Voll und grün heißt: gut. Leer und rot heißt: schlecht.",
     "Pass gut auf deine Balken auf!",
+  ] },
+  { icon: "🕒", titel: "Uhr und Geld", tat: "haken", text: [
+    "Oben siehst du die Uhr und dein Geld.",
+    "Fahr mit der Maus darüber oder tippe darauf. Dann steht da, was es bedeutet.",
+  ], haken: [
+    { id: "uhr", text: "Fahr mit der Maus über die Uhr 🕒" },
+    { id: "geld", text: "Fahr mit der Maus über dein Konto 💶" },
   ] },
   { icon: "🍳", titel: "Essen", tat: "essen", neu: "essen", text: [
     "Iss etwas. Drück unten auf den Knopf 🍳 Essen.",
@@ -94,6 +103,25 @@ export function frei(s: Spielstand, was: Frei): boolean {
   return SCHRITTE.slice(0, i + 1).some((x) => x.neu === was);
 }
 
+/** Ist dieser Haken im aktuellen Schritt gefragt und noch offen? */
+export function hakenOffen(s: Spielstand, id: Haken): boolean {
+  const i = tutorialSchritt(s);
+  return i !== null && !!SCHRITTE[i].haken?.some((h) => h.id === id) && !s.flags[`tut_${id}`];
+}
+
+/** Haken setzen; sind alle Haken des Schritts da, geht es weiter. null = nichts zu tun. */
+export function tutorialHaken(s: Spielstand, id: Haken): Spielstand | null {
+  if (!hakenOffen(s, id)) return null;
+  const i = tutorialSchritt(s)!;
+  const neu = klon(s);
+  neu.flags[`tut_${id}`] = true;
+  if (SCHRITTE[i].haken!.every((h) => neu.flags[`tut_${h.id}`])) {
+    for (const h of SCHRITTE[i].haken!) delete neu.flags[`tut_${h.id}`];
+    neu.flags.tutorial = i + 1;
+  }
+  return neu;
+}
+
 /** Soll der Knopf blinken, weil die Aufgabe ihn gerade braucht? */
 export function hervor(s: Spielstand, was: Frei): boolean {
   const i = tutorialSchritt(s);
@@ -140,6 +168,19 @@ export function TutorialKarte({ s, onWeiter, onEnde, onNeu }: {
       <div className="mt-1 space-y-1 text-lg leading-snug">
         {x.text.map((t) => <p key={t}>{t}</p>)}
       </div>
+      {x.haken && (
+        <ul className="mt-2 space-y-1" aria-label="Zu erledigen">
+          {x.haken.map((h) => {
+            const ok = !!s.flags[`tut_${h.id}`];
+            return (
+              <li key={h.id} className="flex items-center gap-2 text-lg" data-haken={h.id} data-erledigt={ok || undefined}>
+                <span className={`flex h-7 w-7 items-center justify-center rounded-md border-2 ${ok ? "border-emerald-600 bg-emerald-500 text-white" : "border-slate-400 bg-white"}`}>{ok ? "✓" : ""}</span>
+                <span className={ok ? "text-slate-500 line-through" : ""}>{h.text}</span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
       {x.tipp && <p className="mt-2 rounded-xl bg-white px-3 py-2 text-base">💡 {x.tipp}</p>}
       {letzter && (
         <div className="mt-3 rounded-xl bg-white p-3">

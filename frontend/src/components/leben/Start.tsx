@@ -10,6 +10,7 @@ import { ELTERN_ORTE } from "@/lib/leben/wohnungen";
 import { bestanden, zeugnisErzeugen, type ZeugnisStufe } from "@/lib/leben/zeugnis";
 import { hochladen } from "@/lib/leben/speichern";
 import type { Spielstand } from "@/lib/leben/typen";
+import { MARKEN_HINWEIS } from "@/lib/leben/werte";
 import { Feld, Hinweis, Knopf, eingabe } from "./ui";
 
 const AVATARE = ["🧑", "👩", "👨", "🧑‍🦱", "👩‍🦰", "👨‍🦱", "🧑‍🦰", "👱", "👩‍🦳", "🧑‍🦲", "🧕", "👧"];
@@ -177,6 +178,7 @@ export function Start({ name: vorname, onStart, onLaden }: { name?: string; onSt
         <Knopf art="leise" onClick={() => datei.current?.click()}>📂 Spielstand laden (.json)</Knopf>
         <input ref={datei} type="file" accept="application/json,.json" className="hidden" onChange={(e) => laden(e.target.files?.[0])} />
       </div>
+      <p className="text-xs text-slate-500" data-testid="markenhinweis">™ {MARKEN_HINWEIS}</p>
     </div>
   );
 }

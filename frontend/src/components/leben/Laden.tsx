@@ -14,6 +14,7 @@ import {
 import { spielwoche, type Korbposten } from "@/lib/leben/aktionen";
 import { monatVon } from "@/lib/leben/zeit";
 import type { Spielstand } from "@/lib/leben/typen";
+import { MARKEN_HINWEIS } from "@/lib/leben/werte";
 import { euro, Fenster, Hinweis, Knopf, Reiter, eingabe } from "./ui";
 
 type Recherche = Record<string, { preis: number; quelle: string }>;
@@ -119,7 +120,7 @@ export function Laden({ s, marktId, onKaufen, onZu, onRecherche, uebung = false 
             className={`rounded-lg px-2 py-1 text-sm font-bold ${x.id === m.id ? "bg-white text-black" : "bg-white/5 hover:bg-white/10"}`}>{x.icon} {x.name}</button>
         ))}
       </div>
-      <p className="mb-2 text-xs text-slate-400">{m.art}: {m.text} Eigenmarke hier: <b>{m.eigenmarke}</b>. Preise simuliert (Stand 2026, Angebote wechseln wöchentlich).</p>
+      <p className="mb-2 text-xs text-slate-400">{m.art}: {m.text} Eigenmarke hier: <b>{m.eigenmarke}</b>. Preise simuliert (Stand 2026, Angebote wechseln wöchentlich). <span title={MARKEN_HINWEIS} className="cursor-help underline decoration-dotted">Markennamen nur als Wort, keine Verbindung zu den Firmen.</span></p>
       {uebung && <Hinweis art="tipp">Drück bei einer Sache auf den gelben Knopf <b>+</b>. Dann drück unten auf <b>»Zur Kasse«</b>.</Hinweis>}
       <Reiter aktiv={ansicht} onWahl={setAnsicht} reiter={[
         { id: "prospekt", name: `🔥 Angebote (${angebote.length})` }, { id: "regal", name: "🛒 Sortiment" },

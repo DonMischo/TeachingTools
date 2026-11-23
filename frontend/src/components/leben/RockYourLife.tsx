@@ -33,17 +33,20 @@ import { type Platz } from "./Wohnungsbild";
 import { Wohnung3D } from "./Wohnung3D";
 import { Checkliste } from "./Checkliste";
 import { MobilApp, Stil } from "./Stil";
-import { BLINKEN, frei, hervor, tutorialEnde, tutorialSchritt, tutorialWeiter, TutorialKarte, type Frei, type Tat } from "./Tutorial";
+import { IchApp } from "./IchApp";
+import { offenePunkte } from "@/lib/leben/notizen";
+import { BLINKEN, frei, hakenOffen, hervor, tutorialEnde, tutorialHaken, tutorialSchritt, tutorialWeiter, TutorialKarte, type Frei, type Haken, type Tat } from "./Tutorial";
 import { Balken, euro, Fenster, Knopf } from "./ui";
 
 export type LebenZugang = { code: string; token: string | null } | null;
 
-type App = "bank" | "post" | "ordner" | "vertraege" | "amt" | "steuer" | "jobs" | "wohnen" | "recherche" | "tagebuch" | "mobil";
+type App = "bank" | "post" | "ordner" | "vertraege" | "amt" | "steuer" | "jobs" | "wohnen" | "recherche" | "tagebuch" | "mobil" | "ich" | "notizen";
 const APPS: { id: App; icon: string; name: string }[] = [
   { id: "jobs", icon: "💼", name: "Jobs" }, { id: "bank", icon: "🏦", name: "Bank" }, { id: "post", icon: "📬", name: "Post" },
   { id: "ordner", icon: "🗂️", name: "Ordner" }, { id: "wohnen", icon: "🏠", name: "Wohnen" }, { id: "vertraege", icon: "📄", name: "Verträge" },
   { id: "amt", icon: "🏛️", name: "Amt" }, { id: "steuer", icon: "🧮", name: "Steuer" }, { id: "recherche", icon: "🔎", name: "Recherche" },
   { id: "mobil", icon: "🚗", name: "Mobil" }, { id: "tagebuch", icon: "📓", name: "Tagebuch" },
+  { id: "ich", icon: "🪪", name: "Ich" }, { id: "notizen", icon: "🗒️", name: "Notizen" },
 ];
 
 type Modal = null | { art: "wohin" } | { art: "laden"; markt: string } | { art: "moebel" } | { art: "ausgehen" } | { art: "app"; app: App } | { art: "lehrer" } | { art: "stil"; start: "kleidung" | "friseur" | "handy" };
@@ -121,6 +124,11 @@ export default function RockYourLife({ speicherSchluessel = "geraet", zugang = n
     const neu = aktuell.current && tutorialWeiter(aktuell.current, tat);
     if (neu) { aktuell.current = neu; setS(neu); }
   }, []);
+  // Übung »Uhr und Geld«: Maus drüber, antippen oder per Tastatur fokussieren hakt ab
+  const angeschaut = useCallback((id: Haken) => {
+    const neu = aktuell.current && tutorialHaken(aktuell.current, id);
+    if (neu) { aktuell.current = neu; setS(neu); }
+  }, []);
 
   if (!geladen) return <div className="p-6 text-center text-slate-400">Lädt …</div>;
 
@@ -156,6 +164,7 @@ export default function RockYourLife({ speicherSchluessel = "geraet", zugang = n
   const job = arbeitHeute(s);
   const ungelesen = s.post.filter((p) => !p.gelesen).length;
   const offeneRechnungen = s.post.filter((p) => p.aktion?.art === "rechnung" && !p.aktion.bezahlt).length;
+  const dringend = offenePunkte(s).filter((p) => p.dringend).length;
   const ft = feiertag(s.tag);
   const mahlzeitJetzt = s.stunde < 10.5 ? "fruehstueck" : s.stunde < 15 ? "mittag" : s.stunde < 22 ? "abend" : "snack";
   const neueBilanz = s.bilanzen.length > bilanzGesehen ? s.bilanzen[s.bilanzen.length - 1] : null;
@@ -214,11 +223,15 @@ export default function RockYourLife({ speicherSchluessel = "geraet", zugang = n
               <div className="font-black">{s.figur.name} <span className="text-xs font-normal text-slate-400">({alter(s)})</span></div>
               <div className="text-xs text-slate-400">{s.job ? `${BERUF.get(s.job.beruf)?.name}${s.tag < s.job.start ? ` ab ${kurzDatum(s.job.start)}` : ""}` : "ohne Job"} · {s.wohnung.form === "eltern" ? "bei den Eltern" : s.wohnung.stadtteil}</div>
             </div>
-            <div className="ml-auto text-right leading-tight">
+            <div className={`ml-auto rounded-xl text-right leading-tight ${hakenOffen(s, "uhr") ? BLINKEN : ""}`} tabIndex={0} data-testid="uhr"
+              title="Uhrzeit und Datum im Spiel. Jede Aktion kostet Zeit — Schlafen, Arbeit und Läden haben feste Zeiten."
+              onMouseEnter={() => angeschaut("uhr")} onFocus={() => angeschaut("uhr")} onClick={() => angeschaut("uhr")}>
               <div className="font-black tabular-nums">🕒 {uhrText(s.stunde)} · {datumText(s.tag, true)}</div>
               <div className="text-xs text-slate-400">{ft ? `🎉 ${ft} · ` : ""}Monat {monatsIndex(s.tag) + 1} von 60{job.muss && !job.erledigt ? ` · heute ${job.schule ? "Berufsschule" : "Arbeit"} ab ${uhrText(job.beginn)}` : ""}</div>
             </div>
-            <div className={`rounded-xl px-3 py-1 text-right ${s.konto.stand < 0 ? "bg-rose-700" : "bg-emerald-800"}`}>
+            <div className={`rounded-xl px-3 py-1 text-right ${s.konto.stand < 0 ? "bg-rose-700" : "bg-emerald-800"} ${hakenOffen(s, "geld") ? BLINKEN : ""}`} tabIndex={0} data-testid="konto"
+              title={`Geld auf deinem Konto. Bargeld in der Tasche: ${euro(s.bargeld ?? 0)}. Rot heißt: Du hast Schulden.`}
+              onMouseEnter={() => angeschaut("geld")} onFocus={() => angeschaut("geld")} onClick={() => angeschaut("geld")}>
               <div className="text-xs opacity-80">Konto</div><div className="font-black tabular-nums">{euro(s.konto.stand)}</div>
             </div>
             <div className="w-full"><div className="h-1 overflow-hidden rounded-full bg-white/10"><div className="h-full bg-amber-400" style={{ width: `${fortschritt * 100}%` }} /></div></div>
@@ -296,6 +309,7 @@ export default function RockYourLife({ speicherSchluessel = "geraet", zugang = n
                   <span className={`flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 text-2xl shadow-sm ring-1 ring-white/10 ${hervor(s, appFrei(a.id)) ? BLINKEN : ""}`}>{a.icon}</span>
                   {a.name}
                   {a.id === "post" && ungelesen > 0 && <span className="absolute -right-0.5 -top-1 rounded-full bg-rose-600 px-1.5 text-[10px] font-black">{ungelesen}</span>}
+                  {a.id === "notizen" && dringend > 0 && <span className="absolute -right-0.5 -top-1 rounded-full bg-rose-600 px-1.5 text-[10px] font-black">{dringend}</span>}
                   {a.id === "bank" && offeneRechnungen > 0 && <span className="absolute -right-0.5 -top-1 rounded-full bg-amber-500 px-1.5 text-[10px] font-black text-black">!</span>}
                 </button>
               ))}
@@ -343,6 +357,7 @@ export default function RockYourLife({ speicherSchluessel = "geraet", zugang = n
           {modal.app === "recherche" && <RechercheApp s={s} tu={tu} />}
           {modal.app === "tagebuch" && <Tagebuch s={s} />}
           {modal.app === "mobil" && <MobilApp s={s} tu={tu} />}
+          {(modal.app === "ich" || modal.app === "notizen") && <IchApp key={modal.app} s={s} tu={tu} start={modal.app === "ich" ? "bogen" : "notizen"} />}
         </Fenster>
       )}
       {modal?.art === "lehrer" && zugang?.code && <LehrerUebersicht code={zugang.code} onZu={zu} />}

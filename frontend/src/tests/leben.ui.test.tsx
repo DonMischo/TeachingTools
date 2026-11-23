@@ -55,7 +55,12 @@ describe("Rock your Life: Übung", () => {
     expect(screen.queryByRole("button", { name: /Raus/ })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Weiter/ }));
     fireEvent.click(screen.getByRole("button", { name: /Weiter/ }));
-    fireEvent.click(screen.getByRole("button", { name: /Essen/ }));
+    // Uhr und Geld: beide anschauen (Maus drüber), erst dann geht es weiter
+    expect(await screen.findByText("🕒 Uhr und Geld")).toBeInTheDocument();
+    fireEvent.mouseEnter(screen.getByTestId("uhr"));
+    expect(screen.getByText("🕒 Uhr und Geld")).toBeInTheDocument();
+    fireEvent.mouseEnter(screen.getByTestId("konto"));
+    fireEvent.click(await screen.findByRole("button", { name: /Essen/ }));
     expect(await screen.findByText("🚿 Duschen")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Putzen/ })).not.toBeInTheDocument();
     // Übung beenden zeigt alles
