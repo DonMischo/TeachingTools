@@ -86,7 +86,7 @@ export function Addition({ sys }: { sys: System }) {
           <KachelZeile n={n2} name="II" />
         </> : <>
           <KachelZeile n={malNormal(n1, f1)} name={`${f1}·I`} />
-          <KachelZeile n={malNormal(n2, f2)} name={`${f2}·II`} stil={phase >= 2 ? { transform: "translateY(-3.25rem)", opacity: phase >= 3 ? 0 : 0.85 } : undefined} />
+          <KachelZeile n={malNormal(n2, f2)} name={`${f2}·II`} stil={phase === 2 ? { transform: "translateY(-3.25rem)", opacity: 0.85 } : undefined} />
           {phase >= 3 && summe && <div className="border-t-4 border-fg pt-2"><KachelZeile n={summe} name="Summe" /></div>}
         </>}
       </div>

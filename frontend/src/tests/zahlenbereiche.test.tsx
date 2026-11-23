@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import Zahlenbereiche from "@/components/zahlenbereiche/Zahlenbereiche";
 import { naeherung } from "@/components/zahlenbereiche/Zahlenstrahl";
+import { innerstesFeld, PLAETZE } from "@/components/zahlenbereiche/Mengenbild";
 import { BEREICHE, bereicheVon, FANGZIELE, kleinsterBereich, leseZahl, pruefeAuswahl, wert, wuerfleZahl, type Zahl } from "@/lib/zahlenbereiche";
 
 function zufall(seed: number) {
@@ -73,6 +74,22 @@ describe("Oberfläche", () => {
     expect(screen.getByRole("heading", { name: /Zahlen-Detektiv/ })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /Zahlenregen/ }));
     expect(screen.getByRole("heading", { name: /Zahlenregen/ })).toBeTruthy();
+  });
+
+  it("Ellipsen: jeder Ring hat genug Plätze, jeder Platz liegt im richtigen Ring", () => {
+    for (const b of BEREICHE) {
+      expect(PLAETZE[b].length).toBeGreaterThanOrEqual(6);
+      for (const p of PLAETZE[b]) expect(innerstesFeld(p.x, p.y)).toBe(b);
+    }
+  });
+
+  it("Hover-Karte zeigt Beispiele und Begründung", () => {
+    render(<Zahlenbereiche />);
+    const zahl = document.querySelector("[aria-label=\"√16\"]")!.parentElement!;
+    fireEvent.pointerEnter(zahl);
+    expect(screen.getByRole("tooltip").textContent).toContain("4 · 4 = 16");
+    fireEvent.pointerLeave(zahl);
+    expect(screen.queryByRole("tooltip")).toBeNull();
   });
 
   it("trägt eine eigene Zahl ins Mengenbild ein und begründet", () => {
