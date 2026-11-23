@@ -95,7 +95,7 @@ export const AUTOMATEN: Automat[] = [
         ohne: { muenze: ausfuehrbar("Ich habe gar keine Münze in der Hand!") },
       },
       {
-        id: "k-drehen", text: "Dreh den Drehgriff einmal ganz herum.", sagt: "Ich drehe den Griff einmal herum. Rrrratsch — da fällt etwas!", teil: "griff",
+        id: "k-drehen", text: "Dreh den Drehgriff nach rechts, einmal ganz herum.", sagt: "Ich drehe den Griff nach rechts, einmal ganz herum. Rrrratsch — da fällt etwas!", teil: "griff",
         braucht: ["drin"], nimmt: ["drin"], setzt: ["fach"],
         ohne: { drin: ausfuehrbar("Der Griff klemmt — es steckt ja keine Münze drin.") },
       },
