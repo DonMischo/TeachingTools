@@ -8,6 +8,7 @@
  *   ✍️ Aufgaben        Dreiecks-Aufgaben nach Fall mit Tipps
  *   🧭 Anwendungen     Sachaufgaben mit Bild
  *   🚨 Küstenwache     Spiel: anpeilen, rechnen, retten
+ *   🕰️ Pendel          ideales Fadenpendel, φ(t) als Kosinuskurve
  */
 import { useState, type ReactNode } from "react";
 import { wahl, type Vorgabe } from "@/lib/vorgabe";
@@ -18,6 +19,7 @@ import Dreiecke from "./Dreiecke";
 import Aufgaben from "./Aufgaben";
 import Anwendungen from "./Anwendungen";
 import Kuestenwache from "./Kuestenwache";
+import Pendel from "./Pendel";
 
 const BLAETTER = [
   { id: "kreis", icon: "⭕", label: "Einheitskreis" },
@@ -26,6 +28,7 @@ const BLAETTER = [
   { id: "dreieck", icon: "🔺", label: "Dreiecksrechner" },
   { id: "aufgaben", icon: "✍️", label: "Aufgaben" },
   { id: "anwendung", icon: "🧭", label: "Anwendungen" },
+  { id: "pendel", icon: "🕰️", label: "Ideales Pendel" },
   { id: "spiel", icon: "🚨", label: "Küstenwache" },
 ] as const;
 type Blatt = (typeof BLAETTER)[number]["id"];
@@ -37,6 +40,7 @@ const INHALT: Record<Blatt, () => ReactNode> = {
   dreieck: () => <Dreiecke />,
   aufgaben: () => <Aufgaben />,
   anwendung: () => <Anwendungen />,
+  pendel: () => <Pendel />,
   spiel: () => <Kuestenwache />,
 };
 
@@ -51,7 +55,7 @@ export default function Trigonometrie({ action, vorgabe }: { action?: ReactNode;
           <h1 className="text-2xl font-black tracking-tight">🔺 Trigonometrie</h1>
           <p className="text-muted text-sm mt-1">
             sin, cos und tan am Einheitskreis und als Funktion, im rechtwinkligen und im allgemeinen Dreieck — mit Aufgaben,
-            Tipps, Fällen mit zwei Lösungen, Sachaufgaben zum Triangulieren und Wegeplanen und dem Spiel Küstenwache.
+            Tipps, Fällen mit zwei Lösungen, Sachaufgaben zum Triangulieren und Wegeplanen, dem idealen Pendel als Kosinuskurve und dem Spiel Küstenwache.
           </p>
         </div>
         <div className="flex items-center gap-2">{action}</div>
