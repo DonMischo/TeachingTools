@@ -11,7 +11,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api, type TippModus } from "@/lib/api";
 
 const LISTEN: { id: TippModus; label: string; einheit: string; hinweis: string }[] = [
-  { id: "lektionen", label: "📚 Lektionen", einheit: "A/min", hinweis: "Anschläge pro Minute — mehr ist besser" },
+  { id: "lektionen", label: "📚 Lektionen", einheit: "P", hinweis: "Punkte = Anschläge pro Minute, durch die Fehlerquote gedämpft — schnell und sauber gewinnt" },
   { id: "wortregen", label: "🌧️ Wortregen", einheit: "Punkte", hinweis: "Punkte einer Runde — mehr ist besser" },
   { id: "tastenjagd", label: "🎯 Tastenjagd", einheit: "ms", hinweis: "Reaktion je Taste — weniger ist besser" },
 ];
@@ -90,8 +90,13 @@ export default function Bestenliste() {
                 >
                   {e.fehler > 0 ? `${e.fehler}✗` : "fehlerfrei"}
                 </span>
+                {modus === "lektionen" && (
+                  <span className="w-20 text-right text-xs tabular-nums text-muted" title="Anschläge pro Minute">
+                    {Math.round(e.wert)} A/min
+                  </span>
+                )}
                 <span className="w-24 text-right font-black tabular-nums">
-                  {Math.round(e.wert)}
+                  {Math.round(e.wertung ?? e.wert)}
                   <span className="text-[10px] font-normal text-muted ml-1">
                     {gewaehlt.einheit}
                   </span>

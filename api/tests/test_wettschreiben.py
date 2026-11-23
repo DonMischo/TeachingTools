@@ -242,3 +242,39 @@ class TestLive:
                     await ws.receive_json()
 
         asyncio.run(lauf())
+
+
+# ── Wertung und Start-Push ─────────────────────────────────────────────────
+
+def test_wertung_daempft_fehler():
+    sauber = wettschreiben.wertung(300, 300, 0, 60000)
+    schlampig = wettschreiben.wertung(300, 330, 30, 60000)
+    assert sauber == 300.0
+    assert schlampig is not None and schlampig < 300 * 0.85
+    assert wettschreiben.wertung(10, 10, 0, None) is None
+
+
+def test_rangliste_nach_wertung_statt_zeit():
+    """Schneller im Ziel, aber viele Fehler: landet hinter dem sauberen Läufer."""
+    wettschreiben._stand["X"] = {
+        1: {"name": "Flink", "pos": 100, "anschlaege": 140, "fehler": 40, "dauer_ms": 20000},
+        2: {"name": "Sorgfalt", "pos": 100, "anschlaege": 101, "fehler": 1, "dauer_ms": 24000},
+        3: {"name": "Unterwegs", "pos": 50, "anschlaege": 50, "fehler": 0, "dauer_ms": None},
+    }
+    namen = [d["name"] for d in wettschreiben._rangliste("X")]
+    assert namen == ["Sorgfalt", "Flink", "Unterwegs"]
+
+
+def test_start_wird_vom_server_gesendet(client, teacher_token, monkeypatch):
+    """Der Start geht vom Server an alle — auch wenn der Host-Socket gerade fehlt."""
+    gesendet = []
+
+    async def merken(code, msg):
+        gesendet.append((code, msg))
+
+    monkeypatch.setattr(wettschreiben.mgr, "broadcast", merken)
+    code = _rennen(client, teacher_token)["code"]
+    assert client.post(f"/api/wettschreiben/{code}/start", headers=auth(teacher_token)).status_code == 200
+    assert (code, {"typ": "start"}) in gesendet
+    client.post(f"/api/wettschreiben/{code}/ende", headers=auth(teacher_token))
+    assert any(m.get("status") == "fertig" for _, m in gesendet)

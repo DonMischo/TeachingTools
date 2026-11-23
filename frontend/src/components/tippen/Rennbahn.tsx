@@ -12,11 +12,17 @@ export type Laeufer = {
   anschlaege: number;
   fehler: number;
   dauer_ms: number | null;
+  /** Punkte im Ziel vom Server: A/min × (1 − Fehlerquote)² */
+  wertung?: number | null;
 };
 
 function tempo(l: Laeufer): number | null {
   if (l.dauer_ms === null || l.dauer_ms <= 0) return null;
   return Math.round(l.pos / (l.dauer_ms / 60000));
+}
+
+function quote(l: Laeufer): number {
+  return l.anschlaege ? Math.round((l.fehler / l.anschlaege) * 100) : 0;
 }
 
 export function Rennbahn({
@@ -61,8 +67,11 @@ export function Rennbahn({
                 }}
               />
             </div>
-            <span className="w-24 text-xs tabular-nums text-right text-muted">
+            <span className="w-24 text-xs tabular-nums text-right text-muted" title={fertig ? `${tempo(l)} A/min, ${quote(l)} % Fehler` : undefined}>
               {fertig ? `${tempo(l)} A/min` : `${Math.round(anteil * 100)} %`}
+            </span>
+            <span className="w-16 text-xs tabular-nums text-right font-bold" title="Wertung: Anschläge/Min, durch die Fehlerquote gedämpft">
+              {fertig && l.wertung != null ? `${Math.round(l.wertung)} P` : ""}
             </span>
             <span
               className="w-10 text-xs tabular-nums text-right"

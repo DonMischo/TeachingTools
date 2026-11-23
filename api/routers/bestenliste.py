@@ -2,7 +2,8 @@
 
 Drei Ranglisten, weil die drei Modi drei verschiedene Dinge messen:
 
-  lektionen   Anschläge/Minute — mehr ist besser
+  lektionen   Anschläge/Minute × (1 − Fehlerquote)² — mehr ist besser
+              (schnell und sauber schlägt schnell und schlampig)
   wortregen   Punkte           — mehr ist besser
   tastenjagd  Reaktion in ms   — **weniger** ist besser
 
@@ -61,6 +62,9 @@ class EintragOut(BaseModel):
     dauer_ms: int
     kontext: str | None
     selbst: bool
+    # Wonach sortiert wird: bei den Lektionen Tempo gedämpft durch die
+    # Fehlerquote, sonst der Wert selbst
+    wertung: float
 
 
 def _anzeigename(user: Union[Teacher, Student]) -> tuple[str, str | None]:
@@ -74,9 +78,29 @@ def _anzeigename(user: Union[Teacher, Student]) -> tuple[str, str | None]:
     return (abbreviate_parts(user.first_name or "", user.last_name or ""), None)
 
 
+def wertung(modus: str, wert: float, anschlaege: int, fehler: int) -> float:
+    """Sortierwert. Lektionen: A/min × (1 − Fehlerquote)² — 5 % Fehler kosten
+    rund 10 % der Punkte. Dieselbe Formel wie beim Wettschreiben."""
+    if modus != "lektionen":
+        return wert
+    quote = min(1.0, fehler / anschlaege) if anschlaege else 0.0
+    return round(wert * (1 - quote) ** 2, 1)
+
+
+def _w(z) -> float:
+    return wertung(z.modus, z.wert, z.anschlaege, z.fehler)
+
+
 def _besser(modus: str, neu: float, alt: float) -> bool:
     mehr_ist_besser, _ = MODI[modus]
     return neu > alt if mehr_ist_besser else neu < alt
+
+
+def _sortiert(db: Session, modus: str) -> list:
+    """Alle Zeilen eines Modus, beste zuerst (je Person ist es nur eine Zeile)."""
+    mehr_ist_besser, _ = MODI[modus]
+    zeilen = db.query(TippBestenliste).filter(TippBestenliste.modus == modus).all()
+    return sorted(zeilen, key=lambda z: (-_w(z) if mehr_ist_besser else _w(z), z.erreicht_am))
 
 
 def _pruefe(body: EintragIn) -> None:
@@ -99,16 +123,7 @@ def liste(
 ):
     if modus not in MODI:
         raise HTTPException(400, f"Unbekannter Modus: {modus}")
-    mehr_ist_besser, _ = MODI[modus]
-    spalte = TippBestenliste.wert.desc() if mehr_ist_besser else TippBestenliste.wert.asc()
-
-    zeilen = (
-        db.query(TippBestenliste)
-        .filter(TippBestenliste.modus == modus)
-        .order_by(spalte, TippBestenliste.erreicht_am.asc())
-        .limit(TOP)
-        .all()
-    )
+    zeilen = _sortiert(db, modus)[:TOP]
     ist_schueler = isinstance(user, Student)
     return [
         EintragOut(
@@ -121,6 +136,7 @@ def liste(
             dauer_ms=z.dauer_ms,
             kontext=z.kontext,
             selbst=(z.student_id == user.id) if ist_schueler else (z.teacher_id == user.id),
+            wertung=_w(z),
         )
         for i, z in enumerate(zeilen, start=1)
     ]
@@ -152,7 +168,7 @@ def eintragen(
             dauer_ms=body.dauer_ms, kontext=body.kontext, name=name, klasse=klasse,
         )
         db.add(zeile)
-    elif _besser(body.modus, body.wert, zeile.wert):
+    elif _besser(body.modus, wertung(body.modus, body.wert, body.anschlaege, body.fehler), _w(zeile)):
         zeile.wert = body.wert
         zeile.anschlaege, zeile.fehler = body.anschlaege, body.fehler
         zeile.dauer_ms, zeile.kontext = body.dauer_ms, body.kontext
@@ -162,16 +178,10 @@ def eintragen(
     db.refresh(zeile)
 
     # Der Platz, auf dem der Eintrag jetzt steht.
-    mehr_ist_besser, _ = MODI[body.modus]
-    vergleich = TippBestenliste.wert > zeile.wert if mehr_ist_besser \
-        else TippBestenliste.wert < zeile.wert
-    davor = (
-        db.query(TippBestenliste)
-        .filter(TippBestenliste.modus == body.modus, vergleich)
-        .count()
-    )
+    davor = sum(1 for z in db.query(TippBestenliste).filter(TippBestenliste.modus == body.modus).all()
+                if z.id != zeile.id and _besser(body.modus, _w(z), _w(zeile)))
     return EintragOut(
-        platz=davor + 1, name=zeile.name, klasse=zeile.klasse, wert=zeile.wert,
+        platz=davor + 1, wertung=_w(zeile), name=zeile.name, klasse=zeile.klasse, wert=zeile.wert,
         anschlaege=zeile.anschlaege, fehler=zeile.fehler, dauer_ms=zeile.dauer_ms,
         kontext=zeile.kontext, selbst=True,
     )

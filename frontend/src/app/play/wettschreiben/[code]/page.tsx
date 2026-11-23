@@ -58,6 +58,18 @@ export default function WettschreibenPlayPage() {
 
   const standRef = useRef(stand);
   const gesendetRef = useRef("");
+  const statusRef = useRef(status);
+  statusRef.current = status;
+
+  /** Vom Warten ins Rennen: einmal frisch aufsetzen — ein zweites Startsignal (Wiederverbinden) setzt nichts zurück. */
+  const losgehen = (text: string) => {
+    if (statusRef.current === "laeuft") return;
+    statusRef.current = "laeuft";
+    setStatus("laeuft");
+    const frisch = start(text);
+    standRef.current = frisch;
+    setStand(frisch);
+  };
 
   useEffect(() => { setMontiert(true); }, []);
 
@@ -93,15 +105,29 @@ export default function WettschreibenPlayPage() {
       : null,
     m => {
       if (m.typ === "stand") setLaeufer(m.teilnehmer);
-      if (m.typ === "status") setStatus(m.status);
-      if (m.typ === "start" && rennen) {
-        setStatus("laeuft");
-        const frisch = start(rennen.text);
-        standRef.current = frisch;
-        setStand(frisch);
+      if (m.typ === "status") {
+        if (m.status === "laeuft" && rennen) losgehen(rennen.text);
+        else setStatus(m.status);
       }
+      if (m.typ === "start" && rennen) losgehen(rennen.text);
     },
   );
+
+  // Zurück aus einem anderen Tab: den Stand beim Server nachfragen — ein Start,
+  // der verpasst wurde, während der Tab im Hintergrund schlief, kommt so doch an.
+  useEffect(() => {
+    if (teilnehmerId === null || !rennen) return;
+    const nachsehen = () => {
+      if (document.visibilityState !== "visible") return;
+      api.wettschreiben.lesen(code, gastToken).then(r => {
+        if (r.status === "laeuft") losgehen(r.text);
+        else setStatus(r.status);
+      }).catch(() => { /* beim nächsten Mal */ });
+    };
+    document.addEventListener("visibilitychange", nachsehen);
+    window.addEventListener("focus", nachsehen);
+    return () => { document.removeEventListener("visibilitychange", nachsehen); window.removeEventListener("focus", nachsehen); };
+  }, [teilnehmerId, rennen, code, gastToken]);  // eslint-disable-line react-hooks/exhaustive-deps
 
   // Gedrosselt melden, was sich getan hat.
   useEffect(() => {

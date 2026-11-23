@@ -42,7 +42,7 @@ export default function Wettschreiben({ texte }: { texte: Lektion[] }) {
   }, [ready]);  // eslint-disable-line react-hooks/exhaustive-deps
 
   // Host-Socket: liefert den Stand aller Mitschreiber.
-  const { send: sende } = useLiveSocket(rennen ? `/api/wettschreiben/${rennen.code}/ws?role=teacher` : null, m => {
+  useLiveSocket(rennen ? `/api/wettschreiben/${rennen.code}/ws?role=teacher` : null, m => {
     if (m.typ === "stand") setLaeufer(m.teilnehmer);
   });
 
@@ -64,8 +64,8 @@ export default function Wettschreiben({ texte }: { texte: Lektion[] }) {
   async function starten() {
     if (!rennen) return;
     try {
+      // Den Start an alle schickt der Server selbst
       setRennen(await api.wettschreiben.starten(rennen.code));
-      sende({ typ: "start" });
     } catch (e) {
       setFehler(e instanceof Error ? e.message : "Start nicht möglich.");
     }

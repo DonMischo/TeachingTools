@@ -1259,6 +1259,8 @@ export type BestenlisteEintrag = {
   kontext: string | null;
   /** Die eigene Zeile — zum Hervorheben. */
   selbst: boolean;
+  /** Sortierwert: bei Lektionen A/min × (1 − Fehlerquote)², sonst = wert */
+  wertung?: number;
 };
 export type ErgebnisIn = {
   modus: TippModus;
