@@ -464,6 +464,20 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
     ],
   },
+  lgs: {
+    title: "Lineare Gleichungssysteme",
+    intro: "Lineare Gleichungssysteme mit zwei Variablen für Klasse 8/9: grafisch, drei Rechenverfahren Schritt für Schritt, Übungen und Alltagsaufgaben.",
+    sections: [
+      { label: "📈 Grafisch", text: "Zwei Gleichungen eintippen (2x + y = 7) oder Beispiel wählen. Beide erscheinen als Geraden, umgestellt zu y = m·x + n; der Schnittpunkt ist die Lösung. Parallele Geraden: keine Lösung, dieselbe Gerade: unendlich viele." },
+      { label: "🔧 Umformer", text: "In allen Verfahren wird gleich umgeformt: »Beide Seiten« z. B. −3, +2x, :4 oder ·(−1) eintippen und anwenden; rechts im Protokoll steht | − 3 usw. wie an der Gleichungswaage. »💡 Tipp« schlägt den nächsten Schritt vor, ⇄ tauscht die Seiten, ↶ nimmt zurück." },
+      { label: "➕ Additionsverfahren", text: "Variable wählen, die wegfallen soll, und die Faktoren für I und II eintragen (Tipp hilft). »Multiplizieren« zeigt die neuen Zeilen als Kacheln, »Addieren« lässt die zweite Zeile auf die erste schweben — die Kacheln der gewählten Variablen heben sich auf. Die übrige Gleichung lösen, den Wert in I einsetzen, Probe." },
+      { label: "🟰 Gleichsetzungsverfahren", text: "Beide Gleichungen nach derselben Variablen freistellen, dann die rechten Seiten gleichsetzen und lösen; zurück einsetzen." },
+      { label: "🧩 Einsetzungsverfahren", text: "I freistellen, dann den Term in Klammern auf die Variable in II ziehen (oder antippen und auf die Variable tippen). Klammer auflösen, lösen, zurück einsetzen." },
+      { label: "✍️ Üben", text: "Gewürfelte Systeme in drei Stufen mit ganzzahliger Lösung und Sachaufgaben (Kino, Freibad, Bäcker, Imbiss, Bus) mit gerundeten echten Preisen 2025, Ansatz zum Aufklappen. »Schritt für Schritt lösen« öffnet die Aufgabe im Additionsverfahren." },
+      { label: "📱 Tarif-Check", text: "Spiel: zwei Angebote mit Grundbetrag und Preis je Einheit — erst den Gleichstand berechnen (2 Punkte), dann für eine Menge das günstigere Angebot wählen (1 Punkt); danach beide Kostengeraden mit Schnittpunkt. Werte gerundet nach typischen Angeboten 2025." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
+    ],
+  },
   stellenwert: {
     title: "Stellenwerttafeln",
     intro: "Zehner-, Zweier- und Sechzehnersystem in der Stellenwerttafel — vier Blätter zum Legen, Verstehen, Üben und Spielen. Der Hex-Farbmischer ist in die Simulation »Farbmodelle« umgezogen.",

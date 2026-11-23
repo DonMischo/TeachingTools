@@ -997,6 +997,16 @@ simulationen:
       - "Bruchteile von Größen vorwärts und rückwärts mit Sachaufgaben"
       - "Bruch ↔ Dezimalzahl über 10/100/1000 und die Stellenwerttafel, periodische Dezimalzahlen"
       - "Wichtige Brüche mit Dezimalzahl und Prozent, Spiel Bruch-Memory"
+  - id: lgs
+    name: Lineare Gleichungssysteme
+    faehigkeiten: {use: [true, true]}
+    kann:
+      - "Grafisch lösen: Geraden, Schnittpunkt, Fälle eine/keine/unendlich viele Lösungen"
+      - "Umformer: beide Seiten umformen mit Protokoll, Tipp, Seiten tauschen, rückgängig"
+      - "Additionsverfahren mit Kachelzeilen, Faktoren und schwebender Addition"
+      - "Gleichsetzungsverfahren und Einsetzungsverfahren mit Drag & Drop des Terms"
+      - "Übungen in drei Stufen und Sachaufgaben mit echten Preisen"
+      - "Spiel Tarif-Check: Gleichstand berechnen, günstigeres Angebot wählen, Kostengraph"
   - id: farbmodelle
     name: Farbmodelle
     faehigkeiten: {use: [true, true]}

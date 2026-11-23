@@ -150,6 +150,9 @@ CATALOG: list[CatalogTool] = [
     CatalogTool("brueche", "🍕 Brüche", "🍕", "simulationen", {
         "use": _cap(True, True),
     }),
+    CatalogTool("lgs", "🔀 Lineare Gleichungssysteme", "🔀", "simulationen", {
+        "use": _cap(True, True),
+    }),
     CatalogTool("farbmodelle", "🎨 Farbmodelle", "🎨", "simulationen", {
         "use": _cap(True, True),
     }),

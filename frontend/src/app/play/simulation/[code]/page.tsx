@@ -35,6 +35,7 @@ import Kreis from "@/components/kreis/Kreis";
 import Koerper from "@/components/koerper/Koerper";
 import Stellenwert from "@/components/stellenwert/Stellenwert";
 import Farbmodelle from "@/components/farbmodelle/Farbmodelle";
+import Lgs from "@/components/lgs/Lgs";
 import Brueche from "@/components/brueche/Brueche";
 import Zahlenbereiche from "@/components/zahlenbereiche/Zahlenbereiche";
 import Markieren from "@/components/markieren/Markieren";
@@ -101,6 +102,7 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   koerper: { title: "Körper", icon: "🧊", node: <Koerper /> },
   stellenwert: { title: "Stellenwerttafeln", icon: "🔢", node: <Stellenwert /> },
   farbmodelle: { title: "Farbmodelle", icon: "🎨", node: <Farbmodelle /> },
+  lgs: { title: "Lineare Gleichungssysteme", icon: "🔀", node: <Lgs /> },
   brueche: { title: "Brüche", icon: "🍕", node: <Brueche /> },
   zahlenbereiche: { title: "Zahlenbereiche", icon: "🪆", node: <Zahlenbereiche /> },
   tippen: { title: "Tippen", icon: "⌨️", node: <Tippen /> },

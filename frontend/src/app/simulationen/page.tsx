@@ -365,6 +365,14 @@ const ALL_CARDS: Werkzeug[] = [
     color: "#f59e0b",
   },
   {
+    slug: "lgs",
+    href: "/simulationen/lgs",
+    icon: "🔀",
+    title: "Lineare Gleichungssysteme",
+    description: "Zwei Gleichungen, zwei Unbekannte: grafisch als Schnittpunkt (eine, keine oder unendlich viele Lösungen), dann Additions-, Gleichsetzungs- und Einsetzungsverfahren langsam Schritt für Schritt — Zeilen schweben aufeinander, Terme werden per Ziehen eingesetzt, umgeformt wird auf beiden Seiten wie an der Gleichungswaage. Übungen in drei Stufen, Sachaufgaben mit echten Preisen und das Spiel Tarif-Check (Handy, Strom, E-Scooter, Fitnessstudio, Taxi).",
+    color: "#0ea5e9",
+  },
+  {
     slug: "farbmodelle",
     href: "/simulationen/farbmodelle",
     icon: "🎨",
