@@ -5,7 +5,7 @@ set -eu
 if [ ! -f .env ]; then
     echo "Creating .env from .env.example ..."
     cp .env.example .env
-    echo "Done. Edit .env to set a real SECRET_KEY before going to production."
+    echo "Done. For a random SECRET_KEY and database password run ./install.sh instead."
     echo
 fi
 

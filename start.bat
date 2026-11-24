@@ -5,7 +5,7 @@ setlocal EnableDelayedExpansion
 if not exist .env (
     echo Creating .env from .env.example ...
     copy .env.example .env >nul
-    echo Done. Edit .env to set a real SECRET_KEY before going to production.
+    echo Done. For a random SECRET_KEY and database password run install.bat instead.
     echo.
 )
 

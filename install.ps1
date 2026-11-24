@@ -130,7 +130,6 @@ if ($dockerInstalledNow) {
 if (-not (Test-Path .env)) {
     Write-Step "Creating .env from .env.example"
     Copy-Item .env.example .env
-    Write-Warn "Edit .env to set a real SECRET_KEY before production use."
 }
 
 # --- Choose conflict-free host ports and persist them to .env ---
@@ -176,6 +175,48 @@ if ($LASTEXITCODE -ne 0) {
         Write-Err "Docker daemon did not become ready. Start Docker Desktop manually and re-run install.ps1."
         exit 1
     }
+}
+
+# --- Per-install secrets instead of the public defaults ---
+# SECRET_KEY signs logins and encrypts stored passwords: a missing, default or
+# too short key is replaced by a random one. On an existing install the old key
+# goes to SECRET_KEY_ALT, so the API re-encrypts stored passwords on its next start.
+# POSTGRES_PASSWORD is only chosen for a fresh install: Postgres sets the password
+# when its data volume is created, so an existing install keeps the old default
+# (docker-compose.yml falls back to it) or the API could no longer connect.
+function Get-EnvVar($key) {
+    $line = Get-Content .env | Where-Object { $_ -match "^$key=" } | Select-Object -Last 1
+    if ($line) { return ($line -replace "^$key=", '').Trim() }
+    return ''
+}
+function New-RandomHex($bytes) {
+    $buf = New-Object byte[] $bytes
+    $rng = [Security.Cryptography.RandomNumberGenerator]::Create()
+    $rng.GetBytes($buf); $rng.Dispose()
+    return -join ($buf | ForEach-Object { $_.ToString('x2') })
+}
+$ErrorActionPreference = 'Continue'   # docker writes to stderr for a missing volume
+$m = docker compose config 2>$null | Select-String -Pattern '^name:\s*(.+)$' | Select-Object -First 1
+$project = if ($m) { $m.Matches[0].Groups[1].Value.Trim() } else { (Split-Path $PSScriptRoot -Leaf).ToLower() }
+docker volume inspect "${project}_hauspokal-pg-data" *> $null
+$dbExists = ($LASTEXITCODE -eq 0)
+$ErrorActionPreference = 'Stop'
+
+$defaultKey = 'change-me-in-production'
+$key = Get-EnvVar 'SECRET_KEY'
+if (-not $key -or $key -eq $defaultKey -or $key.Length -lt 32) {
+    Set-EnvVar 'SECRET_KEY' (New-RandomHex 48)
+    if ($dbExists -and -not (Get-EnvVar 'SECRET_KEY_ALT')) {
+        Set-EnvVar 'SECRET_KEY_ALT' $(if ($key) { $key } else { $defaultKey })
+        Write-Step "New random SECRET_KEY in .env (old one kept as SECRET_KEY_ALT, stored passwords get re-encrypted; everyone logs in once more)."
+    }
+    else {
+        Write-Step "Random SECRET_KEY written to .env."
+    }
+}
+if (-not (Get-EnvVar 'POSTGRES_PASSWORD') -and -not $dbExists) {
+    Set-EnvVar 'POSTGRES_PASSWORD' (New-RandomHex 24)
+    Write-Step "Random database password written to .env (POSTGRES_PASSWORD)."
 }
 
 # --- Build & start the stack (first run downloads images / installs packages) ---

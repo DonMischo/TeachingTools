@@ -50,8 +50,9 @@ if ($Aktion -eq "start") {
     }
     if (-not (Test-Path $envFile)) {
         $key = -join ((1..32) | ForEach-Object { "{0:x2}" -f (Get-Random -Maximum 256) })
+        $pg = -join ((1..24) | ForEach-Object { "{0:x2}" -f (Get-Random -Maximum 256) })
         Set-Content $envFile -Encoding ascii -Value @(
-            "APP_PORT=$port", "API_PORT=8001", "DB_PORT=5436", "SECRET_KEY=$key", "NEXT_SKIP_TYPECHECK=1"
+            "APP_PORT=$port", "API_PORT=8001", "DB_PORT=5436", "SECRET_KEY=$key", "POSTGRES_PASSWORD=$pg", "NEXT_SKIP_TYPECHECK=1"
         )
     }
 

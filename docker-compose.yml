@@ -6,7 +6,8 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: hauspokal
-      POSTGRES_PASSWORD: hauspokal
+      # Zufällig je Installation (install.sh / install.bat); ältere Installationen behalten den Standard
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hauspokal}
       POSTGRES_DB: hauspokal
     ports:
       - "127.0.0.1:${DB_PORT:-5435}:5432"
@@ -23,7 +24,7 @@ services:
     container_name: hauspokal-api
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://hauspokal:hauspokal@postgres:5432/hauspokal
+      DATABASE_URL: postgresql://hauspokal:${POSTGRES_PASSWORD:-hauspokal}@postgres:5432/hauspokal
       SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
       # Nur beim Schlüsselwechsel: der bisherige Schlüssel (gespeicherte Passwörter werden umgeschlüsselt)
       SECRET_KEY_ALT: ${SECRET_KEY_ALT:-}

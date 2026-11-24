@@ -489,10 +489,10 @@ Das Lehrkraft-Werkzeugset. Standardmäßig nur für Lehrkräfte sichtbar.
 
 Der ganze Stack läuft in Docker. Node-, Python- und Systempakete werden in den Containern installiert. Auf dem Host braucht es nur Docker, und das richtet das Setup-Skript bei Bedarf selbst ein.
 
-**Windows** (PowerShell im Projektordner):
+**Windows** (Doppelklick oder im Projektordner):
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\install.ps1
+```bat
+install.bat
 ```
 
 **Linux / macOS**:
@@ -501,7 +501,7 @@ powershell -ExecutionPolicy Bypass -File .\install.ps1
 ./install.sh
 ```
 
-Das Skript installiert Docker, falls es fehlt (Linux: Docker Engine und Compose; Windows: Docker Desktop und WSL2), legt `.env` an und baut und startet alle Dienste. Der erste Build lädt Images und kann einige Minuten dauern.
+Das Skript installiert Docker, falls es fehlt (Linux: Docker Engine und Compose; Windows: Docker Desktop und WSL2), legt `.env` mit einem zufälligen `SECRET_KEY` und Datenbank-Passwort an und baut und startet alle Dienste. Bei einer bestehenden Installation ersetzt es nur einen fehlenden oder Standard-Schlüssel (gespeicherte Zugangsdaten werden dabei umgeschlüsselt); das Datenbank-Passwort bleibt dort, wie es ist. Der erste Build lädt Images und kann einige Minuten dauern.
 
 > Ist Docker schon installiert, reichen danach `start.bat` (Windows) bzw. `./start.sh` (Linux/macOS) zum Starten und `stop.bat` / `./stop.sh` zum Stoppen.
 
@@ -513,7 +513,7 @@ Das Skript installiert Docker, falls es fehlt (Linux: Docker Engine und Compose;
 
 Beim ersten Start legt ein **Setup-Dialog** den ersten Admin und die Klassen an.
 
-> Für den Produktivbetrieb in `.env` einen echten `SECRET_KEY` setzen, sonst sind gespeicherte Zugangsdaten nicht geschützt.
+> Wer ohne `install.bat` / `./install.sh` installiert, setzt in `.env` selbst einen zufälligen `SECRET_KEY` (mindestens 32 Zeichen) und `POSTGRES_PASSWORD`, sonst sind Logins fälschbar und gespeicherte Zugangsdaten nicht geschützt.
 
 ### Workshop-Instanz (online)
 

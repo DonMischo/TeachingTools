@@ -189,7 +189,6 @@ fi
 if [ ! -f .env ]; then
   log "Creating .env from .env.example"
   cp .env.example .env
-  warn "Edit .env to set a real SECRET_KEY before production use."
 fi
 
 # 4b. Choose conflict-free host ports and persist them to .env.
@@ -210,6 +209,35 @@ HOST_IP=$(ip route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="sr
 HOST_IP=${HOST_IP:-localhost}
 export HOST_IP
 log "Detected LAN IP: $HOST_IP"
+
+# 5b. Per-install secrets instead of the public defaults.
+# SECRET_KEY signs logins and encrypts stored passwords: a missing, default or
+# too short key is replaced by a random one. On an existing install the old key
+# goes to SECRET_KEY_ALT, so the API re-encrypts stored passwords on its next start.
+# POSTGRES_PASSWORD is only chosen for a fresh install: Postgres sets the password
+# when its data volume is created, so an existing install keeps the old default
+# (docker-compose.yml falls back to it) or the API could no longer connect.
+get_env_var() { grep -E "^$1=" .env 2>/dev/null | tail -1 | cut -d= -f2- | tr -d '\r'; }
+random_hex() { od -An -tx1 -N"$1" /dev/urandom | tr -d ' \n'; }
+PROJECT=$($DOCKER compose config 2>/dev/null | sed -n 's/^name: *//p' | head -1)
+PROJECT=${PROJECT:-$(basename "$(pwd)" | tr '[:upper:]' '[:lower:]')}
+DB_EXISTS=0
+$DOCKER volume inspect "${PROJECT}_hauspokal-pg-data" >/dev/null 2>&1 && DB_EXISTS=1
+DEFAULT_KEY="change-me-in-production"
+OLD_KEY=$(get_env_var SECRET_KEY)
+if [ -z "$OLD_KEY" ] || [ "$OLD_KEY" = "$DEFAULT_KEY" ] || [ "${#OLD_KEY}" -lt 32 ]; then
+  set_env_var SECRET_KEY "$(random_hex 48)"
+  if [ "$DB_EXISTS" -eq 1 ] && [ -z "$(get_env_var SECRET_KEY_ALT)" ]; then
+    set_env_var SECRET_KEY_ALT "${OLD_KEY:-$DEFAULT_KEY}"
+    log "New random SECRET_KEY in .env (old one kept as SECRET_KEY_ALT, stored passwords get re-encrypted; everyone logs in once more)."
+  else
+    log "Random SECRET_KEY written to .env."
+  fi
+fi
+if [ -z "$(get_env_var POSTGRES_PASSWORD)" ] && [ "$DB_EXISTS" -eq 0 ]; then
+  set_env_var POSTGRES_PASSWORD "$(random_hex 24)"
+  log "Random database password written to .env (POSTGRES_PASSWORD)."
+fi
 
 # 6. Build & start the stack (first build downloads images / installs packages)
 log "Building and starting TT - Teaching Tools (first run may take several minutes)..."
