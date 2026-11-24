@@ -13,7 +13,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { farbe } from "@/lib/stellenwert";
 import { Walze } from "@/components/stellenwert/DrehZaehlwerk";
-import type { Ablauf, Kette, Ort, Schritt, Zerlegung } from "@/lib/schriftlich";
+import type { Ablauf, Borgen, Kette, Ort, Schritt, Zerlegung } from "@/lib/schriftlich";
 
 export const ZELLE = 2.6; // rem — ein Kästchen je Ziffer
 const TICK = 330; // ms je Walzenschritt
@@ -105,6 +105,20 @@ function ZerlegungBild({ z, offen }: { z: Zerlegung; offen: boolean }) {
   );
 }
 
+/** 2 − 8 geht nicht → 10 borgen: 12 − 8 = 4 schreiben, merke eins */
+function BorgenBild({ b, offen }: { b: Borgen; offen: boolean }) {
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-line bg-page p-2" aria-label={`${b.oben} reicht nicht, 10 geborgt: ${b.mit} − ${b.unten} = ${b.ziffer}, merke eins`}>
+      <span className="flex flex-col items-center"><span className="text-xl font-black font-mono line-through decoration-bad">{b.oben} − {b.unten}</span><span className="text-[10px] font-bold">geht nicht</span></span>
+      <span className="text-muted">→</span>
+      <span className="flex flex-col items-center rounded-lg px-2 py-1 bg-bad/15"><span className="text-xl font-black font-mono"><span className="text-bad">1</span>{b.oben}</span><span className="text-[10px] font-bold">Zehner geborgt</span></span>
+      <span className="text-muted">→</span>
+      <span className={`flex flex-col items-center rounded-lg px-2 py-1 transition-all duration-700 ${offen ? "bg-ok/15" : ""}`}><span className="text-xl font-black font-mono">{b.mit} − {b.unten} = <span className="text-ok">{b.ziffer}</span></span><span className="text-[10px] font-bold">{b.ziffer} schreiben</span></span>
+      <span className={`flex flex-col items-center rounded-lg px-2 py-1 transition-all duration-700 ${offen ? "bg-bad/15 -translate-y-1" : ""}`}><span className="text-xl font-black text-bad">+1</span><span className="text-[10px] font-bold">merke eins</span></span>
+    </div>
+  );
+}
+
 /** Walzenreihe; die aktive Walze tickt von `von` nach `bis`, an der Zehnergrenze in Zeitlupe */
 function Walzen({ s, breite, einer, fertig }: { s: Schritt; breite: number; einer?: number; fertig: () => void }) {
   const [dreh, setDreh] = useState<number | null>(s.walze ? s.walze.von : null);
@@ -129,7 +143,6 @@ function Walzen({ s, breite, einer, fertig }: { s: Schritt; breite: number; eine
   const spalten = Object.keys(s.stand).map(Number);
   if (s.walze && !spalten.includes(s.walze.c)) spalten.push(s.walze.c);
   if (!spalten.length) return null;
-  const gedreht = s.walze && dreh !== null ? Math.abs(dreh - s.walze.von) : 0;
   return (
     <div className="flex flex-col gap-1">
       <div className="relative" style={{ height: `${ZELLE * 1.3 + 0.4}rem`, width: `${breite * ZELLE}rem` }}>
@@ -140,9 +153,6 @@ function Walzen({ s, breite, einer, fertig }: { s: Schritt; breite: number; eine
           return (
             <div key={c} className={`absolute top-0 rounded-md transition-shadow ${aktiv ? (langsam ? "ring-4 ring-bad" : "ring-4 ring-accent") : ""}`} style={{ left: `${c * ZELLE + 0.25}rem` }}>
               <Walze dreh={wert} basis={10} farbe={f} h={ZELLE * 1.25} dauer={aktiv && langsam ? ZEITLUPE - 150 : 260} />
-              {aktiv && s.walze?.zaehle && gedreht > 0 && (
-                <span className="absolute -top-3 -right-3 rounded-full bg-accent text-accent-fg text-xs font-black px-1.5">+{gedreht}</span>
-              )}
             </div>
           );
         })}
@@ -194,10 +204,11 @@ export function Rechenblatt({ ablauf, i }: { ablauf: Ablauf; i: number }) {
         </div>
         <Walzen s={s} breite={breite} einer={einer} fertig={fertig} />
       </div>
-      {(s.ketten?.length || s.zerlegung) ? (
+      {(s.ketten?.length || s.zerlegung || s.borgen) ? (
         <div className="flex flex-col gap-3 items-start">
           {s.ketten?.map((k, n) => <KettenBild key={`${i}-${n}`} k={k} />)}
           {s.zerlegung && <ZerlegungBild z={s.zerlegung} offen={phase >= 1} />}
+          {s.borgen && <BorgenBild b={s.borgen} offen={phase >= 1} />}
         </div>
       ) : null}
     </div>

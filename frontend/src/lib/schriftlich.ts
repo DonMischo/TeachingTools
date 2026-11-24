@@ -29,6 +29,8 @@ export type Strich = { r: number; c0: number; c1: number };
 export type Kette = { kaesten: string[]; boegen: { text: string; art: "plus" | "minus" | "mal" | "durch" }[]; titel?: string };
 /** Eine Zahl zerfällt in Zehner (Übertrag) und Einer (schreiben) */
 export type Zerlegung = { zahl: number; zehner: number; einer: number };
+/** Subtrahieren: oben reicht nicht, ein Zehner wird geborgt — oben + 10 − unten = Ziffer, merke eins */
+export type Borgen = { oben: number; mit: number; unten: number; ziffer: number };
 export type Schritt = {
   zellen: Zelle[];
   striche: Strich[];
@@ -37,10 +39,11 @@ export type Schritt = {
   /** Ziffern der Walzen je Spalte (Ergebnis- bzw. Quotientenzeile) */
   stand: Record<number, number>;
   /** Die Walze, die sich in diesem Schritt dreht: von → bis (über 9 hinaus = Übertrag, unter 0 = Entbündeln) */
-  walze?: { c: number; von: number; bis: number; /** Ergänzen: das Ergebnis ist die Zahl der Drehungen, nicht die Ziffer */ zaehle?: boolean };
+  walze?: { c: number; von: number; bis: number };
   flug?: { von: Ort; nach: Ort; t: string };
   ketten?: Kette[];
   zerlegung?: Zerlegung;
+  borgen?: Borgen;
   text: string;
 };
 export type Ablauf = {
@@ -142,18 +145,20 @@ export function subtrahiereErgaenzen(a: number, b: number): Ablauf {
     const d = ziel - unten, neuU = unten > o ? 1 : 0;
     const fuehrendeNull = e > 0 && 10 ** e > diff;
     const n = klon(jetzt, { spalten: [c] });
-    n.walze = { c, von: unten, bis: unten + d, zaehle: true }; // die Walze dreht von unten hoch bis oben — die Zahl der Drehungen ist das Ergebnis, über die 9 = Übertrag
+    // Die Walze der Ergebniszeile zählt die Ergänzung hoch (unten + ? = oben) und bleibt auf der Ziffer stehen, die geschrieben wird
+    n.walze = { c, von: 0, bis: d };
     n.ketten = [{ titel: stellenName(e), kaesten: uebertrag ? [String(u), String(unten), String(ziel)] : [String(unten), String(ziel)],
       boegen: [...(uebertrag ? [{ text: `+ ${uebertrag} Übertrag`, art: "plus" as const }] : []), { text: `+ ${d}`, art: "plus" as const }] }];
     if (!fuehrendeNull) { n.stand[c] = d; n.zellen.push({ r: rE, c, t: String(d), art: "ergebnis", neu: true, ab: "walze" }); }
     if (neuU) {
-      n.zerlegung = { zahl: ziel, zehner: 1, einer: o };
+      n.borgen = { oben: o, mit: ziel, unten, ziffer: d };
       n.zellen.push({ r: rU, c: c - 1, t: "1", art: "uebertrag", neu: true, ab: "flug" });
       n.flug = { von: { r: rE, c }, nach: { r: rU, c: c - 1 }, t: "+1" };
     }
-    n.text = `${stellenName(e)}: ${u}${uebertrag ? ` + ${uebertrag} (Übertrag) = ${unten}` : ""}. ` +
-      (neuU ? `${unten} + ? = ${o} geht nicht — also bis ${ziel}: ${unten} + ${d} = ${ziel}. Schreibe ${d}, 1 Übertrag zu den ${stellenName(e + 1)}n.`
-        : `${unten} + ? = ${o}: ${unten} + ${d} = ${o}. ${fuehrendeNull ? "Eine führende Null schreibt man nicht." : `Schreibe ${d}.`}`);
+    const vorher = uebertrag ? `Unten ${u} + ${uebertrag} gemerkt = ${unten}. ` : "";
+    n.text = `${stellenName(e)}: ${vorher}` +
+      (neuU ? `${o} − ${unten} geht nicht (${unten} + ? = ${o} geht nicht). Einen Zehner borgen: aus ${o} wird ${ziel}. ${ziel} − ${unten} = ${d} (${unten} + ${d} = ${ziel}). Schreibe ${d} — merke eins für die ${stellenName(e + 1)}.`
+        : `${o} − ${unten} = ${d} (${unten} + ${d} = ${o}). ${fuehrendeNull ? "Eine führende Null schreibt man nicht." : `Schreibe ${d}.`}`);
     schritte.push(n); jetzt = n; uebertrag = neuU;
   }
   const ende = klon(jetzt);

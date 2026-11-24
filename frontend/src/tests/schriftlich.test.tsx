@@ -35,7 +35,7 @@ describe("Abläufe", () => {
       const ab = rechne(op, a, b);
       const l = loesung(op, a, b);
       expect(ergebnisVon(ab)).toBe(op === ":" ? `${l.wert}${l.rest ? ` R ${l.rest}` : ""}` : String(l.wert));
-      for (const st of ab.schritte) if (st.walze && !st.walze.zaehle) expect(((st.walze.bis % 10) + 10) % 10).toBe(st.stand[st.walze.c] ?? ((st.walze.bis % 10) + 10) % 10);
+      for (const st of ab.schritte) if (st.walze) expect(((st.walze.bis % 10) + 10) % 10).toBe(st.stand[st.walze.c] ?? ((st.walze.bis % 10) + 10) % 10);
     }
   });
   it("Übertrag fliegt beim Addieren", () => {
@@ -50,6 +50,42 @@ describe("Abläufe", () => {
     expect(er.schritte.some(s => s.flug?.t === "+1")).toBe(true);
     expect(er.schritte.some(s => s.zellen.some(z => z.art === "hilfe"))).toBe(false);
     expect(ergebnisVon(rechne("−", 1000, 999))).toBe("1");
+  });
+  it("827 − 681: Zehner 2 − 8 geht nicht → borgen, 12 − 8 = 4, merke eins (beide Verfahren)", () => {
+    const er = rechne("−", 827, 681, "ergaenzen");
+    expect(ergebnisVon(er)).toBe("146");
+    const zehner = er.schritte.find(s => s.text.startsWith("Zehner"))!;
+    expect(zehner.borgen).toEqual({ oben: 2, mit: 12, unten: 8, ziffer: 4 });
+    expect(zehner.zerlegung).toBeUndefined();
+    expect(zehner.walze!.bis % 10).toBe(4);
+    expect(zehner.stand[zehner.walze!.c]).toBe(4);
+    expect(zehner.text).toContain("2 − 8 geht nicht");
+    expect(zehner.text).toContain("aus 2 wird 12");
+    expect(zehner.text).toContain("12 − 8 = 4");
+    expect(zehner.text).toContain("merke eins");
+    // Hunderter: 6 + 1 gemerkt = 7, 8 − 7 = 1
+    const hunderter = er.schritte.find(s => s.text.startsWith("Hunderter"))!;
+    expect(hunderter.text).toContain("6 + 1 gemerkt = 7");
+    expect(hunderter.walze!.bis).toBe(1);
+    // keine Spalte beim Ergänzen zerlegt in »Zehner → Übertrag + Einer → schreiben«
+    for (const s of er.schritte) expect(s.zerlegung).toBeUndefined();
+    // jede Spalte, beide Verfahren: die Walze endet auf der geschriebenen Ziffer
+    const r = zufall(21);
+    for (let i = 0; i < 150; i++) {
+      const { a, b } = aufgabe("−", 3, r);
+      for (const m of ["ergaenzen", "entbuendeln"] as const) {
+        const ab = rechne("−", a, b, m);
+        expect(ergebnisVon(ab)).toBe(String(a - b));
+        for (const st of ab.schritte) if (st.walze) {
+          const geschrieben = st.zellen.find(z => z.art === "ergebnis" && z.neu && z.c === st.walze!.c);
+          if (geschrieben) expect(String(((st.walze.bis % 10) + 10) % 10)).toBe(geschrieben.t);
+        }
+      }
+    }
+    const ent = rechne("−", 827, 681, "entbuendeln");
+    expect(ergebnisVon(ent)).toBe("146");
+    const z2 = ent.schritte.filter(s => s.walze).find(s => s.text.startsWith("Zehner: 12"))!;
+    expect(z2.walze).toMatchObject({ von: 12, bis: 4 });
   });
   it("Multiplizieren zerlegt das Produkt in Zehner (Übertrag) und Einer", () => {
     const ab = multipliziere(47, 3);
