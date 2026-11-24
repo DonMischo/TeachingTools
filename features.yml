@@ -47,6 +47,14 @@ kern:
       - Gastzugang schließt nach dem eingestellten Fenster von selbst
       - Sitzungen für Klasse, A/B-Hälfte, Kurs oder WPF-Gruppe
       - Lehrkraft spielt selbst mit (alle Aktivitäten), setzt nach dem Dashboard fort, unsichtbar für die Klasse und ohne Hauspunkte
+  - id: erfolge
+    name: Erfolge (Übersicht)
+    kann:
+      - Alle Erfolge aller Werkzeuge auf einer Seite (/erfolge), nach Werkzeug und Bereich geordnet
+      - Fortschrittsbalken je Erfolg und Gesamtzahl; aufklappbar je Werkzeug
+      - Sammelt die vorhandenen Erfolge ein (Sonnensystem, Schichtenmodell, Verkehr, Periodensystem)
+      - Leitet Erfolge aus dem gespeicherten Fortschritt ab, wo ein Werkzeug keine führt (Algorithmen-Werkstatt, Koordinaten-Lauf, Regel-Labor)
+      - Liest nur, schreibt nie; fasst Stände mehrerer Profile eines Geräts zusammen (je Erfolg der beste Wert)
 
 aktivitaeten:
   - id: caputh
@@ -520,14 +528,6 @@ simulationen:
       - Prompt-Baukasten für KI-Chats (Mindmap, Ablaufdiagramm, frei; Thema, Stichworte, bisheriges Diagramm mitschicken) und Vorlage »Mit KI erstellen« mit demselben Auftrag als Kommentar; beim Einfügen wird nur der Codeblock der Antwort übernommen
       - Vorlagen (Mindmap, Ablaufdiagramm, Gruppen), Ablage im Browser, Rückgängig/Wiederholen, Export als PNG, SVG und .d2, .d2 öffnen
       - Übernimmt Diagramme aus anderen Werkzeugen als neues Blatt (localStorage hp_diagramm_import, z. B. KI-Kompass-Workflows)
-  - id: erfolge
-    name: Erfolge (Übersicht)
-    kann:
-      - Alle Erfolge aller Werkzeuge auf einer Seite (/erfolge), nach Werkzeug und Bereich geordnet
-      - Fortschrittsbalken je Erfolg und Gesamtzahl; aufklappbar je Werkzeug
-      - Sammelt die vorhandenen Erfolge ein (Sonnensystem, Schichtenmodell, Verkehr, Periodensystem)
-      - Leitet Erfolge aus dem gespeicherten Fortschritt ab, wo ein Werkzeug keine führt (Algorithmen-Werkstatt, Koordinaten-Lauf, Regel-Labor)
-      - Liest nur, schreibt nie; fasst Stände mehrerer Profile eines Geräts zusammen (je Erfolg der beste Wert)
   - id: pse
     name: Periodensystem
     kann:
