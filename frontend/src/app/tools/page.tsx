@@ -64,6 +64,14 @@ const ALL_CARDS: Werkzeug[] = [
     color: "#2a9db0",
   },
   {
+    slug: "ueberblick",
+    href: "/tools/ueberblick",
+    icon: "🧾",
+    title: "Was kann TT?",
+    description: "Alle Aktivitäten, Simulationen und Werkzeuge mit ihren Funktionen: durchsuchen, aufklappen, für eine KI kopieren.",
+    color: "#e07820",
+  },
+  {
     slug: "curriculum",
     href: "/tools/curriculum",
     icon: "🧭",

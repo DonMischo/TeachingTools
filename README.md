@@ -357,6 +357,11 @@ Das Lehrkraft-Werkzeugset. Standardmäßig nur für Lehrkräfte sichtbar.
 - Download als eigenständige HTML-Datei (offline lesbar, mit Suche, Filtern und Grafiken)
 - Inhalte liegen als YAML in `data/methoden_kompendium/`; `python build.py`, `python svgs.py` und `python standalone.py` dort erzeugen JSON, Grafiken und die Offline-HTML in `frontend/public/kompendium/`
 
+### 🧾 Was kann TT?
+- Die ganze Feature-Liste (`features.yml`) als Seite unter `/tools/ueberblick`: Suche über Namen und Funktionen (mehrere Wörter grenzen ein), Bereiche als Chips, Einträge zum Auf- und Zuklappen
+- »Für KI kopieren« legt die angezeigte Auswahl als Markdown mit kurzer Anleitung in die Zwischenablage, je Eintrag auch einzeln; Download als Markdown-Datei
+- Die API liest `features.yml` direkt (schreibgeschützt eingebunden, `/api/ueberblick`), Änderungen erscheinen ohne Neubau
+
 ### 🧭 Curriculinator
 - Schulinternes Curriculum gegen alten und neuen Lehrplan, dreispaltig je Klassenblock: alte Lehrplan-Karten | eigene Themen (G/R/H/LB/GE, Wochen) | neue Karten
 - Abgleich alt ↔ neu je Karte (identisch, geändert mit Wort-Diff, verschoben, neu, entfällt), getrennt für Real- und Hauptschulniveau; Konflikte am Thema, offene neue Inhalte je Block, Wochensumme gegen verfügbare Wochen

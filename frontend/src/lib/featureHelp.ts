@@ -1068,6 +1068,16 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "👥 Klasse", text: "Über »Zum Mitmachen« treten Schüler·innen per Code oder QR bei, auch als Gäste. Die Klassenübersicht zeigt nur Anzahlen je Klasse und den Klassen-Schnitt (ab drei Figuren) — keine Namen, keine Antworten. Fragebogen und Charakter bleiben auf den Geräten." },
     ],
   },
+  ueberblick: {
+    title: "Was kann TT?",
+    intro: "Die vollständige Funktionsliste von TT, dieselbe wie features.yml im Projekt. Nur lesen, nichts wird gespeichert.",
+    sections: [
+      { label: "🔎 Suchen", text: "Mehrere Wörter grenzen ein (»Quiz Bilder«). Beim Suchen sind alle Treffer aufgeklappt. Die Chips oben zeigen nur einen Bereich, etwa Simulationen." },
+      { label: "▸ Aufklappen", text: "Ein Eintrag zeigt aufgeklappt, was das Werkzeug kann. »Alle auf« und »Alle zu« schalten alle sichtbaren Einträge." },
+      { label: "🤖 Für KI", text: "»Für KI kopieren« legt die angezeigten Einträge als Markdown mit einer kurzen Anleitung in die Zwischenablage. In einen KI-Chat einfügen und fragen, etwa »Was passt für Chemie in Klasse 9?« oder »Was kann die Gleichungswaage?«. Jeder Eintrag hat einen eigenen Knopf. In TT selbst steckt keine KI." },
+      { label: "⬇ Markdown", text: "Lädt dieselbe Auswahl als Datei herunter, etwa für Projektanträge oder zum Weitergeben." },
+    ],
+  },
   kompendium: {
     title: "Methoden-Kompendium",
     intro: "Nachschlagewerk mit Methoden aus Didaktik, Pädagogik und Psychologie — jede mit Ablauf, Stolpersteinen, Evidenzstufe und Quellen.",

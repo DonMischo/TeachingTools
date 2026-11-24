@@ -333,6 +333,10 @@ CATALOG: list[CatalogTool] = [
     CatalogTool("kompendium", "📚 Methoden-Kompendium", "📚", "tools", {
         "use": _cap(True, False),
     }),
+    # »Was kann TT?«: die Feature-Liste zum Durchsuchen (nur lesen).
+    CatalogTool("ueberblick", "🧾 Was kann TT?", "🧾", "tools", {
+        "use": _cap(True, False),
+    }),
     # Curriculum-Abgleich der Fachschaft (nur Lehrkräfte).
     CatalogTool("curriculum", "🧭 Curriculinator", "🧭", "tools", {
         "use": _cap(True, False),

@@ -1099,6 +1099,13 @@ tools:
       - Grundlagenkapitel, Grafiken, Mythen-Check, Quellen mit DOI
       - Markieren als Favorit, Einarbeiten, Brauch ich nicht (im Konto gespeichert)
       - Download als eigenständige Offline-HTML
+  - id: ueberblick
+    name: Was kann TT?
+    faehigkeiten: {use: [true, false]}
+    kann:
+      - Diese Feature-Liste als Seite, durchsuchbar, nach Bereichen gefiltert, Einträge auf- und zuklappbar
+      - Auswahl oder einzelne Einträge als Markdown für einen KI-Chat kopieren, Download als Markdown
+      - Liest features.yml direkt, Änderungen erscheinen ohne Neubau
   - id: main-character
     name: Main Character
     faehigkeiten: {use: [true, true]}

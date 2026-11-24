@@ -2,6 +2,7 @@ import type {
   TimelineBoard, TimelineGameSpec, TimelineSetDetail, TimelineSetOut,
 } from "@/components/timeline/types";
 import type { SlideshowEvent, SlideshowItem } from "@/lib/slideshow";
+import type { Funktionen } from "@/lib/featureListe";
 import type { SicherungsAbschnitt } from "@/lib/taskcrawler/ergebnisPdf";
 import type { Ebene as KartenEbene, Katalog as KartenKatalog } from "@/lib/karten/stil";
 import type { KartenExportIn, KartenSatz, KartenSatzIn, KartenSatzKurz, SatzInhalt as SatzInhaltKarten, SuchTreffer } from "@/lib/karten/satz";
@@ -3304,6 +3305,9 @@ export const api = {
     guestJoin: (code: string, name: string) =>
       apiFetch<{ token: string; name: string; plan_id: number; plan_name: string; permission: string }>(
         "curriculum/guest/join", { method: "POST", body: JSON.stringify({ code, name }) }),
+  },
+  ueberblick: {
+    liste: () => apiFetch<Funktionen>("ueberblick"),
   },
   kompendium: {
     marken: () => apiFetch<Record<string, string>>("kompendium/marken"),

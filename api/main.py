@@ -90,6 +90,8 @@ from .routers import snap as snap_router
 app.include_router(snap_router.router)
 from .routers import kompendium as kompendium_router
 app.include_router(kompendium_router.router)
+from .routers import ueberblick as ueberblick_router
+app.include_router(ueberblick_router.router)
 from .routers import play as play_router
 app.include_router(play_router.router)
 from .routers import school as school_router
