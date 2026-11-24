@@ -185,7 +185,7 @@ void main() {
     mask = (1.0 - smoothstep(hw - 0.03, hw, abs(uv.x - 0.5))) * smoothstep(0.0, 0.05, uv.y);
   }
   alpha *= mask;
-  // Kessel: Blasen, Ringe und Zufluss-Teilchen bleiben in der Suppe, nichts steigt darüber hinaus
+  // Kessel: Blasen, Ringe und Zufluss-Teilchen bleiben in der Suppe, nichts steigt darueber hinaus
   if (u_form == 1) alpha *= 1.0 - smoothstep(fillEdge, fillEdge + 0.012, uv.y);
 
   gl_FragColor = vec4(col, clamp(alpha, 0.0, 0.98));
