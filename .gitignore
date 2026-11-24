@@ -89,3 +89,6 @@ data/karten/ebenen/.namen/
 
 # Workshop-Instanz (workshop.ps1)
 .workshop/
+
+# graphify knowledge graph (local, rebuild with /graphify)
+graphify-out/
