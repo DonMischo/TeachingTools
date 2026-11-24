@@ -26,9 +26,19 @@ const BLAETTER = [
 ] as const;
 type Blatt = (typeof BLAETTER)[number]["id"];
 
-const START: System = { g1: leseGleichung("2x + 3y = 12") as Gleichung, g2: leseGleichung("4x − 5y = 2") as Gleichung };
+const sys = (a: string, b: string): System => ({ g1: leseGleichung(a) as Gleichung, g2: leseGleichung(b) as Gleichung });
+type VerfahrenId = "addition" | "gleichsetzung" | "einsetzung";
+/** Startsystem je Verfahren — so gewählt, dass das Verfahren dort günstig ist (Lösung jeweils (3 | 2)) */
+export const START: Record<VerfahrenId, System> = {
+  // y fällt sofort weg: +2y und −2y
+  addition: sys("3x + 2y = 13", "5x − 2y = 11"),
+  // beide schon nach y aufgelöst
+  gleichsetzung: sys("y = 2x − 4", "y = −x + 5"),
+  // I schon nach y aufgelöst, II hat y zum Einsetzen
+  einsetzung: sys("y = 3x − 7", "2x + 3y = 12"),
+};
 
-const HINWEIS: Record<"addition" | "gleichsetzung" | "einsetzung", string> = {
+const HINWEIS: Record<VerfahrenId, string> = {
   addition: "Gut, wenn vor einer Variablen schon gleiche oder entgegengesetzte Zahlen stehen (3y und −3y) oder sich leicht dazu machen lassen.",
   gleichsetzung: "Gut, wenn beide Gleichungen schon nach derselben Variablen aufgelöst sind (y = … und y = …).",
   einsetzung: "Gut, wenn eine Gleichung schon nach einer Variablen aufgelöst ist oder eine Variable den Faktor 1 hat.",
@@ -37,7 +47,7 @@ const HINWEIS: Record<"addition" | "gleichsetzung" | "einsetzung", string> = {
 export default function Lgs({ action, vorgabe }: { action?: ReactNode; vorgabe?: Vorgabe }) {
   const festerReiter = wahl(vorgabe, "reiter", BLAETTER.map(b => b.id));
   const [blatt, setBlatt] = useState<Blatt>(festerReiter ?? "grafisch");
-  const [sys, setSys] = useState<System>(START);
+  const [systeme, setSysteme] = useState<Record<VerfahrenId, System>>(START);
   const verfahren = blatt === "addition" || blatt === "gleichsetzung" || blatt === "einsetzung";
   return (
     <div className="page">
@@ -63,16 +73,16 @@ export default function Lgs({ action, vorgabe }: { action?: ReactNode; vorgabe?:
       {verfahren && (
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
           <div className="card p-4 flex flex-col gap-3">
-            <SystemWahl sys={sys} setze={setSys} />
+            <SystemWahl sys={systeme[blatt]} setze={s => setSysteme(x => ({ ...x, [blatt]: s }))} />
             <p className="text-sm text-muted">{HINWEIS[blatt]}</p>
-            {blatt === "addition" && <Addition key={JSON.stringify(sys)} sys={sys} />}
-            {blatt === "gleichsetzung" && <Gleichsetzung key={JSON.stringify(sys)} sys={sys} />}
-            {blatt === "einsetzung" && <Einsetzung key={JSON.stringify(sys)} sys={sys} />}
+            {blatt === "addition" && <Addition key={JSON.stringify(systeme.addition)} sys={systeme.addition} />}
+            {blatt === "gleichsetzung" && <Gleichsetzung key={JSON.stringify(systeme.gleichsetzung)} sys={systeme.gleichsetzung} />}
+            {blatt === "einsetzung" && <Einsetzung key={JSON.stringify(systeme.einsetzung)} sys={systeme.einsetzung} />}
           </div>
-          <div className="card p-3 self-start"><Koordinaten gleichungen={[sys.g1, sys.g2]} /></div>
+          <div className="card p-3 self-start"><Koordinaten gleichungen={[systeme[blatt].g1, systeme[blatt].g2]} /></div>
         </div>
       )}
-      {blatt === "ueben" && <Ueben oeffnen={s => { setSys(s); setBlatt("addition"); }} />}
+      {blatt === "ueben" && <Ueben oeffnen={s => { setSysteme(x => ({ ...x, addition: s })); setBlatt("addition"); }} />}
       {blatt === "tarife" && <div className="card p-4"><Tarife /></div>}
     </div>
   );

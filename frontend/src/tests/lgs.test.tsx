@@ -113,7 +113,7 @@ describe("Oberfläche", () => {
       fireEvent.click(screen.getByRole("button", { name: "Multiplizieren" }));
       fireEvent.click(screen.getByRole("button", { name: "⬆ Addieren" }));
       act(() => { vi.advanceTimersByTime(1000); });
-      expect(screen.getByText(/x ist weg/)).toBeTruthy();
+      expect(screen.getByText(/y ist weg/)).toBeTruthy();
       loeseAlleUmformer();
       loeseAlleUmformer();
       expect(screen.getByText(/L = \{\(3 \| 2\)\}/)).toBeTruthy();

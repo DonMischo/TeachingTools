@@ -58,13 +58,21 @@ function Rueckwaerts({ sys, v, wert, onFertig }: { sys: System; v: Var; wert: Q;
 
 // ── Additionsverfahren ───────────────────────────────────────────────
 
+/** Welche Variable fällt am leichtesten weg? Die mit entgegengesetzten (oder gleichen) Zahlen davor. */
+export function guenstigeVariable(sys: System): Var {
+  const a = normal(sys.g1), b = normal(sys.g2);
+  const passt = (p: Q, r: Q) => Math.abs(p.z * r.n) === Math.abs(r.z * p.n) && p.z !== 0;
+  return passt(a.b, b.b) && !passt(a.a, b.a) ? "y" : "x";
+}
+
 export function Addition({ sys }: { sys: System }) {
-  const [v, setV] = useState<Var>("x");
+  const [v, setV] = useState<Var>(() => guenstigeVariable(sys));
   const [f, setF] = useState<[string, string]>(["", ""]);
   const [phase, setPhase] = useState(0);
   const [wert1, setWert1] = useState<Q | null>(null);
   const [loesung, setLoesung] = useState<{ x: Q; y: Q } | null>(null);
-  useEffect(() => { setPhase(0); setF(["", ""]); setWert1(null); setLoesung(null); }, [sys, v]);
+  // Variable wechseln = von vorn (kein Effekt: der liefe nach dem Umformer-Effekt und löschte dessen Ergebnis)
+  const waehle = (k: Var) => { setV(k); setPhase(0); setF(["", ""]); setWert1(null); setLoesung(null); };
   useEffect(() => { if (phase === 2) { const t = setTimeout(() => setPhase(3), 900); return () => clearTimeout(t); } }, [phase]);
 
   const f1 = Number(f[0].replace("−", "-")), f2 = Number(f[1].replace("−", "-"));
@@ -78,7 +86,7 @@ export function Addition({ sys }: { sys: System }) {
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <span>Welche Variable soll wegfallen?</span>
-        {(["x", "y"] as Var[]).map(k => <button key={k} className={`chip text-base ${v === k ? "chip-on" : ""}`} style={{ color: VFARBE[k] }} onClick={() => setV(k)}>{k}</button>)}
+        {(["x", "y"] as Var[]).map(k => <button key={k} className={`chip text-base ${v === k ? "chip-on" : ""}`} style={{ color: VFARBE[k] }} onClick={() => waehle(k)}>{k}</button>)}
       </div>
       <div className="relative flex flex-col gap-2 py-1">
         {phase === 0 ? <>
@@ -134,7 +142,8 @@ export function Gleichsetzung({ sys }: { sys: System }) {
   const [gesetzt, setGesetzt] = useState(false);
   const [wert1, setWert1] = useState<Q | null>(null);
   const [loesung, setLoesung] = useState<{ x: Q; y: Q } | null>(null);
-  useEffect(() => { setFrei([null, null]); setGesetzt(false); setWert1(null); setLoesung(null); }, [sys, v]);
+  // Variable wechseln = von vorn (kein Effekt: der liefe nach dem Umformer-Effekt und löschte dessen Ergebnis)
+  const waehle = (k: Var) => { setV(k); setFrei([null, null]); setGesetzt(false); setWert1(null); setLoesung(null); };
   const rest = andere(v);
   const beide = frei[0] && frei[1];
   const gleich: Gleichung | null = beide ? { l: frei[0]!.r, r: frei[1]!.r } : null;
@@ -143,7 +152,7 @@ export function Gleichsetzung({ sys }: { sys: System }) {
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <span>Beide Gleichungen freistellen nach</span>
-        {(["y", "x"] as Var[]).map(k => <button key={k} className={`chip text-base ${v === k ? "chip-on" : ""}`} style={{ color: VFARBE[k] }} onClick={() => setV(k)}>{k}</button>)}
+        {(["y", "x"] as Var[]).map(k => <button key={k} className={`chip text-base ${v === k ? "chip-on" : ""}`} style={{ color: VFARBE[k] }} onClick={() => waehle(k)}>{k}</button>)}
       </div>
       {!moeglich ? <p className="text-sm text-bad">In einer Gleichung kommt {v} nicht vor — nimm die andere Variable.</p> : <>
         <div className="grid gap-3 md:grid-cols-2">
@@ -183,7 +192,8 @@ export function Einsetzung({ sys }: { sys: System }) {
   const [wert1, setWert1] = useState<Q | null>(null);
   const [loesung, setLoesung] = useState<{ x: Q; y: Q } | null>(null);
   const [ueber, setUeber] = useState(false);
-  useEffect(() => { setFrei(null); setGegriffen(false); setEingesetzt(false); setAusmult(false); setWert1(null); setLoesung(null); }, [sys, v]);
+  // Variable wechseln = von vorn (kein Effekt: der liefe nach dem Umformer-Effekt und löschte dessen Ergebnis)
+  const waehle = (k: Var) => { setV(k); setFrei(null); setGegriffen(false); setEingesetzt(false); setAusmult(false); setWert1(null); setLoesung(null); };
   const rest = andere(v);
   const term: Term | null = frei ? frei.r : null;
   const nachher = term ? einsetzen(sys.g2, v, term) : null;
@@ -204,7 +214,7 @@ export function Einsetzung({ sys }: { sys: System }) {
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <span>I nach dieser Variablen freistellen:</span>
-        {(["y", "x"] as Var[]).map(k => <button key={k} className={`chip text-base ${v === k ? "chip-on" : ""}`} style={{ color: VFARBE[k] }} onClick={() => setV(k)}>{k}</button>)}
+        {(["y", "x"] as Var[]).map(k => <button key={k} className={`chip text-base ${v === k ? "chip-on" : ""}`} style={{ color: VFARBE[k] }} onClick={() => waehle(k)}>{k}</button>)}
       </div>
       {!stelleFrei(sys.g1, v) ? <p className="text-sm text-bad">In I kommt {v} nicht vor — nimm die andere Variable.</p> : <>
         <Umformer key={`${v}${gleichungText(sys.g1)}`} start={sys.g1} ziel={v} titel="1. I freistellen" onFertig={setFrei} />
