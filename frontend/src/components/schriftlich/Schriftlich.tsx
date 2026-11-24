@@ -45,7 +45,7 @@ function Vorfuehren() {
       {op === "−" && <Chips wahl={methode} setze={setMethode} optionen={METHODEN} />}
       {fehler ? <p className="text-sm text-bad">{fehler}</p> : ablauf && <Abspieler ablauf={ablauf} />}
       <p className="text-xs text-muted">
-        {op === "−" && (methode === "ergaenzen" ? "Ergänzen mit Übertrag: unten plus wie viel ergibt oben? Reicht oben nicht, ergänzt man bis zur nächsten Zehnerzahl (2 → 12) und schreibt dafür unten bei der nächsten Stelle +1 dazu — wie der Übertrag beim Addieren." : "Abziehen mit Borgen: oben minus unten. Reicht oben nicht (2 − 8), borgt man links einen Zehner: aus 2 wird 12, links merkt man sich »−1« (8 → 7). Die Walze startet oben und dreht rückwärts — über 0 hinaus auf 9 heißt borgen.")}
+        {op === "−" && (methode === "ergaenzen" ? "Ergänzen mit Übertrag: unten plus wie viel ergibt oben? Reicht oben nicht, ergänzt man bis zur nächsten Zehnerzahl (2 → 12) und schreibt dafür unten bei der nächsten Stelle +1 dazu — wie der Übertrag beim Addieren." : "Abziehen mit Borgen: oben minus unten. Reicht oben nicht (2 − 8), borgt man links einen Zehner: aus 2 wird 12, in der Merkzeile unten merkt man sich »−1« für die Stelle links (8 → 7). Die Walze startet oben und dreht rückwärts — über 0 hinaus auf 9 heißt borgen.")}
         {op === "+" && "Die Walze einer Spalte dreht um jede Ziffer weiter. Läuft sie über die 9 hinaus, fliegt ein Übertrag in die nächste Spalte — wie beim Kilometerzähler."}
         {op === "·" && "Jede Ziffer des zweiten Faktors gibt ein Teilprodukt; die Teilprodukte werden stellengerecht addiert."}
         {op === ":" && "Die Walze zählt, wie oft der Teiler hineinpasst. Dann malnehmen, abziehen, nächste Ziffer herunterholen."}

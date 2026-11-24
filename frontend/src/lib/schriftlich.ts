@@ -396,7 +396,7 @@ export function dividiere(a: number, b: number, opts: { nachkomma?: number } = {
 /**
  * Standardverfahren: oben minus unten, Spalte für Spalte von rechts. Reicht
  * oben nicht, wird von der Stelle links ein Zehner geborgt: hier +10, dort
- * ein »−1« merken (Kreis über der Ziffer, 8 → 7). Nullen verleihen weiter,
+ * ein »−1« merken (Kreis in der Merkzeile unter dieser Stelle, 8 → 7). Nullen verleihen weiter,
  * indem sie selbst borgen (0 − 1 geht nicht → borgen → 9).
  * Die Walze startet auf der oberen Ziffer (minus Gemerktes) und dreht zurück;
  * über 0 hinaus auf 9 = borgen.
@@ -405,11 +405,11 @@ export function subtrahiere(a: number, b: number): Ablauf {
   if (b > a) throw new Error("Minuend muss größer sein.");
   const diff = a - b;
   const stellen = String(a).length, rechts = stellen;
-  const rM = 0, rA = 1, rB = 2, rE = 3; // Merkzeile (−1) über dem Minuenden
+  const rA = 0, rB = 1, rM = 2, rE = 3; // Merkzeile (−1) unter dem Subtrahenden — wie beim Addieren
   const start: Schritt = {
     zellen: [...zahlZellen(a, rA, rechts), ...zahlZellen(b, rB, rechts), { r: rB, c: 0, t: "−", art: "zeichen" }],
-    striche: [{ r: rB, c0: 0, c1: rechts }], spalten: [], stand: {},
-    text: "Stellengerecht untereinander schreiben. Von rechts nach links: oben minus unten. Reicht oben nicht, borgt man von der Stelle links einen Zehner — dort merkt man sich »−1«.",
+    striche: [{ r: rM, c0: 0, c1: rechts }], spalten: [], stand: {},
+    text: "Stellengerecht untereinander schreiben. Von rechts nach links: oben minus unten. Reicht oben nicht, borgt man von der Stelle links einen Zehner — dort merkt man sich »−1« in der Merkzeile.",
   };
   const schritte = [start];
   let jetzt = start, gemerkt = 0;

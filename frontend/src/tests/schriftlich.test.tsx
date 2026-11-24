@@ -119,12 +119,14 @@ describe("Abläufe", () => {
     expect(zehner.text).toContain("aus 2 wird 12");
     expect(zehner.text).toContain("12 − 8 = 4");
     expect(zehner.text).toContain("»−1« merken");
-    // das −1 gehört zur Hunderter-Ziffer 8 des Minuenden: Merkzeile über dem Minuenden, Spalte der 8
+    // das −1 steht in der Spalte der Hunderter, in der Merkzeile unter dem Subtrahenden — wie der Übertrag beim Addieren
     const minus = zehner.zellen.find(z => z.art === "uebertrag" && z.neu)!;
-    const acht = zehner.zellen.find(z => z.art === "zahl" && z.t === "8" && z.r === 1)!;
+    const acht = zehner.zellen.find(z => z.art === "zahl" && z.t === "8" && z.r === 0)!;
+    const sechs = zehner.zellen.find(z => z.art === "zahl" && z.t === "6")!;
     expect(minus.t).toBe("−1");
     expect(minus.c).toBe(acht.c);
-    expect(minus.r).toBeLessThan(acht.r);
+    expect(minus.r).toBe(sechs.r + 1);
+    expect(ab.uebertragZeilen).toEqual([sechs.r + 1]);
     // Hunderter: 8 − 1 (gemerkt) = 7, 7 − 6 = 1; das −1 ist danach verbraucht
     const hunderter = ab.schritte.find(s => s.text.startsWith("Hunderter"))!;
     expect(hunderter.text).toContain("8 − 1 (gemerkt) = 7");
