@@ -7,7 +7,7 @@
  * numerisch gerechnete Kurve.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
-import { gemessenePeriode, grad, ORTSFAKTOREN, periode, rad, simuliere, vMax, winkelKlein } from "@/lib/pendel";
+import { gemessenePeriode, grad, halbwertszeit, huelle, ORTSFAKTOREN, periode, periodeGedaempft, rad, simuliere, vMax, winkelKlein } from "@/lib/pendel";
 
 const de = (x: number, s = 2) => x.toLocaleString("de-DE", { maximumFractionDigits: s });
 type Kurve = { L: number; phi0: number; g: number; m: number; name: string };
@@ -26,6 +26,8 @@ export default function Pendel() {
   const [m, setM] = useState(0.5);
   const [ort, setOrt] = useState<(typeof ORTSFAKTOREN)[number]["id"]>("erde");
   const [exakt, setExakt] = useState(false);
+  /** Dämpfung δ in 1/s (Luftwiderstand, Reibung) — 0 = ideales Pendel */
+  const [daempfung, setDaempfung] = useState(0);
   const [laeuft, setLaeuft] = useState(true);
   const [gehalten, setGehalten] = useState<Kurve | null>(null);
   const [t, setT] = useState(0);
@@ -34,7 +36,9 @@ export default function Pendel() {
   const T = periode(L, g);
   const dauer = Math.max(4, Math.min(20, 3 * T));
 
-  const sim = useMemo(() => (exakt ? simuliere(phi0, L, g, dauer, 0.005) : null), [exakt, phi0, L, g, dauer]);
+  const gedaempft = daempfung > 0;
+  const sim = useMemo(() => (exakt || gedaempft ? simuliere(phi0, L, g, dauer, 0.005, daempfung, !exakt) : null), [exakt, gedaempft, phi0, L, g, dauer, daempfung]);
+  const Td = periodeGedaempft(L, g, daempfung);
   const Texakt = sim ? gemessenePeriode(sim) : null;
   const winkel = (zeit: number) => {
     if (!sim) return winkelKlein(zeit, phi0, L, g);
@@ -75,6 +79,7 @@ export default function Pendel() {
         <Regler label="Fadenlänge L" wert={L} setze={setL} min={0.1} max={3} schritt={0.05} einheit="m" />
         <Regler label="Amplitude φ₀" wert={phi0Grad} setze={setPhi0Grad} min={2} max={80} schritt={1} einheit="°" />
         <Regler label="Masse m" wert={m} setze={setM} min={0.05} max={5} schritt={0.05} einheit="kg" />
+        <Regler label="Dämpfung δ (0 = ideal)" wert={daempfung} setze={setDaempfung} min={0} max={1.5} schritt={0.01} einheit="1/s" />
         <div className="flex flex-col gap-1 text-xs text-muted">Ort
           <div className="flex flex-wrap gap-1">{ORTSFAKTOREN.map(o => <button key={o.id} className={`chip ${ort === o.id ? "chip-on" : ""}`} onClick={() => setOrt(o.id)}>{o.name} ({de(o.g)})</button>)}</div>
         </div>
@@ -113,15 +118,17 @@ export default function Pendel() {
               <text x={gx(T / 2)} y={gy(phi0Grad) - 10} textAnchor="middle" fontSize={12} fontWeight={800} fill="#16a34a">T = {de(T)} s</text>
             </g>}
             {gehaltenPfad && <path d={gehaltenPfad} fill="none" stroke="var(--color-muted)" strokeWidth={2} strokeDasharray="6 4" />}
-            <path d={pfad(z => grad(winkelKlein(z, phi0, L, g)))} fill="none" stroke="#2563eb" strokeWidth={exakt ? 1.5 : 3} strokeDasharray={exakt ? "3 3" : undefined} />
-            {exakt && <path d={pfad(z => grad(winkel(z)))} fill="none" stroke="#dc2626" strokeWidth={3} />}
+            {gedaempft && [1, -1].map(v => <path key={v} d={pfad(z => v * grad(huelle(phi0, daempfung, z)))} fill="none" stroke="#9333ea" strokeWidth={1.5} strokeDasharray="6 4" />)}
+            <path d={pfad(z => grad(winkelKlein(z, phi0, L, g)))} fill="none" stroke="#2563eb" strokeWidth={exakt || gedaempft ? 1.5 : 3} strokeDasharray={exakt || gedaempft ? "3 3" : undefined} />
+            {(exakt || gedaempft) && <path d={pfad(z => grad(winkel(z)))} fill="none" stroke={exakt ? "#dc2626" : "#9333ea"} strokeWidth={3} />}
             <line x1={gx(t)} y1={8} x2={gx(t)} y2={GH - 8} stroke="#f59e0b" strokeWidth={1.5} />
             <circle cx={gx(t)} cy={gy(grad(phi))} r={5} fill="#f59e0b" />
           </svg>
           <div className="text-sm flex flex-col gap-1">
             <p className="font-mono font-bold">φ(t) = {phi0Grad}° · cos(2π/{de(T)} s · t)</p>
             <p>Periode <b>T = 2π · √(L / g) = 2π · √({de(L)} m / {de(g)} m/s²) = {de(T, 3)} s</b>, Frequenz f = 1/T = {de(1 / T, 3)} Hz, schnellster Punkt unten: v = {de(vMax(L, g, phi0))} m/s.</p>
-            {exakt && Texakt && <p className="text-bad">Exakt gerechnet (rot): T = {de(Texakt, 3)} s — bei {phi0Grad}° also {de((Texakt / T - 1) * 100, 1)} % länger. Die Formel gilt nur für kleine Winkel (sin φ ≈ φ).</p>}
+            {gedaempft && <p style={{ color: "#9333ea" }}>Gedämpft (lila): Die Amplitude nimmt ab wie φ₀ · e^(−δ·t) (gestrichelte Hüllkurve) — nach {de(halbwertszeit(daempfung), 1)} s ist sie nur noch halb so groß. {Td ? <>Die Schwingung wird ein wenig langsamer: T = 2π / √(g/L − δ²) = {de(Td, 3)} s.</> : <>δ ist so groß, dass das Pendel gar nicht mehr schwingt, sondern nur noch in die Ruhelage zurückkriecht (Kriechfall).</>} Zum Vergleich gestrichelt blau: das ideale Pendel ohne Reibung.</p>}
+            {exakt && !gedaempft && Texakt && <p className="text-bad">Exakt gerechnet (rot): T = {de(Texakt, 3)} s — bei {phi0Grad}° also {de((Texakt / T - 1) * 100, 1)} % länger. Die Formel gilt nur für kleine Winkel (sin φ ≈ φ).</p>}
             {gehalten && <p className="text-muted">Gestrichelt grau: {gehalten.name} — T = {de(periode(gehalten.L, gehalten.g), 3)} s.</p>}
             <p className="text-muted">Was ändert T? Die Länge (4-mal so lang → doppelt so lange Periode) und der Ortsfaktor g. Die Masse und — für kleine Winkel — die Amplitude ändern T <b>nicht</b>. Der Graph ist eine Kosinuskurve: Amplitude a = φ₀, Periode T, also b = 2π/T wie im Blatt »Funktionsgraphen«.</p>
           </div>

@@ -23,10 +23,13 @@ export const periodeGross = (L: number, g: number, phi0: number) =>
 /** Lösung für kleine Winkel */
 export const winkelKlein = (t: number, phi0: number, L: number, g: number) => phi0 * Math.cos(omega(L, g) * t);
 
-/** Pendel mit voller Gleichung φ'' = −(g/L)·sin φ simulieren; liefert Abtastwerte alle dt Sekunden. */
-export function simuliere(phi0: number, L: number, g: number, dauer: number, dt = 0.002): { t: number; phi: number; w: number }[] {
+/**
+ * Pendel simulieren: φ'' = −(g/L)·sin φ − 2δ·φ' (δ = Dämpfung in 1/s, 0 = ideal).
+ * `linear`: sin φ ≈ φ (kleine Winkel). Liefert Abtastwerte alle dt Sekunden.
+ */
+export function simuliere(phi0: number, L: number, g: number, dauer: number, dt = 0.002, daempfung = 0, linear = false): { t: number; phi: number; w: number }[] {
   const k = g / L;
-  const f = (phi: number, w: number): [number, number] => [w, -k * Math.sin(phi)];
+  const f = (phi: number, w: number): [number, number] => [w, -k * (linear ? phi : Math.sin(phi)) - 2 * daempfung * w];
   let phi = phi0, w = 0;
   const aus = [{ t: 0, phi, w }];
   const schritte = Math.round(dauer / dt);
@@ -51,6 +54,15 @@ export function gemessenePeriode(werte: { t: number; phi: number }[]): number | 
   }
   return nullen.length >= 2 ? nullen[1] - nullen[0] : null;
 }
+
+/** Gedämpft: Hüllkurve der Amplitude φ₀·e^(−δt) und Periode T_d = 2π / √(ω² − δ²) (null = Kriechfall, keine Schwingung) */
+export const huelle = (phi0: number, daempfung: number, t: number) => phi0 * Math.exp(-daempfung * t);
+export function periodeGedaempft(L: number, g: number, daempfung: number): number | null {
+  const wd2 = g / L - daempfung ** 2;
+  return wd2 > 0 ? (2 * Math.PI) / Math.sqrt(wd2) : null;
+}
+/** Zeit, bis die Amplitude auf die Hälfte gefallen ist */
+export const halbwertszeit = (daempfung: number) => (daempfung > 0 ? Math.LN2 / daempfung : Infinity);
 
 /** Höchstgeschwindigkeit im tiefsten Punkt (Energieerhaltung) */
 export const vMax = (L: number, g: number, phi0: number) => Math.sqrt(2 * g * L * (1 - Math.cos(phi0)));
