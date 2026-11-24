@@ -45,7 +45,7 @@ function Vorfuehren() {
       {op === "−" && <Chips wahl={methode} setze={setMethode} optionen={METHODEN} />}
       {fehler ? <p className="text-sm text-bad">{fehler}</p> : ablauf && <Abspieler ablauf={ablauf} />}
       <p className="text-xs text-muted">
-        {op === "−" && (methode === "ergaenzen" ? "Ergänzen mit Übertrag: unten plus wie viel ergibt oben? Reicht oben nicht (2 − 8), wird ein Zehner geborgt — aus 2 wird 12, 12 − 8 = 4 — und man merkt sich eins für die nächste Stelle. Die Walze zählt die Ergänzung und bleibt auf der Ziffer stehen, die geschrieben wird." : "Abziehen mit Entbündeln: oben minus unten; reicht es nicht, wird von links ein Bündel geholt (wie in der Stellenwerttafel).")}
+        {op === "−" && (methode === "ergaenzen" ? "Ergänzen mit Übertrag: unten plus wie viel ergibt oben? Reicht oben nicht (2 − 8), wird ein Zehner geborgt — aus 2 wird 12, 12 − 8 = 4 — und man merkt sich eins für die nächste Stelle. Die Walze startet auf der oberen Ziffer und dreht rückwärts — bei 7 − 1 von 7 auf 6; muss geborgt werden, dreht sie über 0 hinaus auf 9." : "Abziehen mit Entbündeln: oben minus unten; reicht es nicht, wird von links ein Bündel geholt (wie in der Stellenwerttafel).")}
         {op === "+" && "Die Walze einer Spalte dreht um jede Ziffer weiter. Läuft sie über die 9 hinaus, fliegt ein Übertrag in die nächste Spalte — wie beim Kilometerzähler."}
         {op === "·" && "Jede Ziffer des zweiten Faktors gibt ein Teilprodukt; die Teilprodukte werden stellengerecht addiert."}
         {op === ":" && "Die Walze zählt, wie oft der Teiler hineinpasst. Dann malnehmen, abziehen, nächste Ziffer herunterholen."}

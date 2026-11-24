@@ -87,7 +87,11 @@ describe("Abläufe", () => {
     const zehner = er.schritte.find(s => s.text.startsWith("Zehner"))!;
     expect(zehner.borgen).toEqual({ oben: 2, mit: 12, unten: 8, ziffer: 4 });
     expect(zehner.zerlegung).toBeUndefined();
-    expect(zehner.walze!.bis % 10).toBe(4);
+    // die Walze dreht rückwärts: von 2 aus 8-mal zurück (über 0 hinaus = borgen) und steht dann auf 4
+    expect(zehner.walze!.von).toBe(2);
+    expect(zehner.walze!.bis).toBe(-6);
+    expect(((zehner.walze!.bis % 10) + 10) % 10).toBe(4);
+    expect(rechne("−", 7, 1).schritte.find(s => s.walze)!.walze).toEqual({ c: 1, von: 7, bis: 6 });
     expect(zehner.stand[zehner.walze!.c]).toBe(4);
     expect(zehner.text).toContain("2 − 8 geht nicht");
     expect(zehner.text).toContain("aus 2 wird 12");

@@ -124,8 +124,29 @@ export function rechne(a: Bruch, op: Op, b: Bruch): Rechenweg {
   return { schritte: w.schritte, ergebnis: end };
 }
 
+/**
+ * Kreuzmethode (»vedische Mathematik«) für + und −: links oben · rechts unten,
+ * links unten · rechts oben — die Produkte addieren bzw. subtrahieren ergibt den
+ * Zähler; unten einfach mal: Nenner · Nenner. Danach meist noch kürzen, weil
+ * b · d nicht der kleinste gemeinsame Nenner sein muss.
+ */
+export function kreuzWeg(a: Bruch, op: "+" | "−", b: Bruch): { links: number; rechts: number; zaehler: number; nenner: number; schritte: string[]; ergebnis: Bruch } {
+  a = normal(a); b = normal(b);
+  const links = a.z * b.n, rechts = a.n * b.z, zaehler = op === "+" ? links + rechts : links - rechts, nenner = a.n * b.n;
+  const roh = { z: zaehler, n: nenner }, k = kuerze(roh);
+  const schritte = [
+    `Links oben · rechts unten: ${zahl(a.z)} · ${b.n} = ${zahl(links)}`,
+    `Links unten · rechts oben: ${a.n} · ${zahl(b.z)} = ${zahl(rechts)}`,
+    `Zähler: ${zahl(links)} ${op} ${rechts < 0 ? `(${zahl(rechts)})` : rechts} = ${zahl(zaehler)}`,
+    `Unten einfach mal: ${a.n} · ${b.n} = ${nenner}`,
+    `Also ${bt(a)} ${op} ${bt(b)} = ${bt(roh)}`,
+  ];
+  if (k.n !== nenner) schritte.push(`Kürzen mit ${nenner / k.n}: ${bt(roh)} = ${bt(k)}`);
+  return { links, rechts, zaehler, nenner, schritte, ergebnis: k };
+}
+
 export const REGELN: { op: Op; titel: string; regel: string; beispiel: string }[] = [
-  { op: "+", titel: "Addieren", regel: "Gleichnamig machen (Hauptnenner), dann die Zähler addieren. Der Nenner bleibt.", beispiel: "1/4 + 1/6 = 3/12 + 2/12 = 5/12" },
+  { op: "+", titel: "Addieren", regel: "Gleichnamig machen (Hauptnenner), dann die Zähler addieren. Der Nenner bleibt. Oder über Kreuz: links oben · rechts unten + links unten · rechts oben, unten mal unten.", beispiel: "1/4 + 1/6 = 3/12 + 2/12 = 5/12" },
   { op: "−", titel: "Subtrahieren", regel: "Gleichnamig machen, dann die Zähler subtrahieren. Der Nenner bleibt.", beispiel: "3/4 − 1/3 = 9/12 − 4/12 = 5/12" },
   { op: "·", titel: "Multiplizieren", regel: "Zähler mal Zähler, Nenner mal Nenner. Vorher über Kreuz kürzen spart Arbeit.", beispiel: "2/3 · 3/4 = 6/12 = 1/2" },
   { op: ":", titel: "Dividieren", regel: "Mit dem Kehrwert des zweiten Bruchs malnehmen (Zähler und Nenner tauschen).", beispiel: "3/4 : 1/2 = 3/4 · 2/1 = 6/4 = 3/2" },

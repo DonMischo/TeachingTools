@@ -6,7 +6,7 @@
  * und ein Übungsfeld mit gewürfelten Aufgaben.
  */
 import { useMemo, useState } from "react";
-import { bt, erweitere, gleich, kgv, kuerze, leseBruch, OPS, rechne, rechenAufgabe, REGELN, wert, type Bruch, type Op } from "@/lib/brueche";
+import { bt, erweitere, gleich, kgv, kreuzWeg, kuerze, leseBruch, OPS, rechne, rechenAufgabe, REGELN, wert, type Bruch, type Op } from "@/lib/brueche";
 import { BruchBild, BruchSatz, Rechenzeile } from "./bild";
 
 const OP_NAME: Record<Op, string> = { "+": "plus", "−": "minus", "·": "mal", ":": "geteilt durch" };
@@ -63,6 +63,47 @@ function Bild({ a, op, b }: { a: Bruch; op: Op; b: Bruch }) {
   );
 }
 
+export const DORFUCHS = "https://www.youtube.com/watch?v=VOMXhfWBXg0";
+
+/**
+ * Kreuzmethode (vedische Mathematik) für + und −: zwei Kreuzpfeile
+ * (links oben · rechts unten, links unten · rechts oben), unten einfach mal.
+ */
+function Kreuzmethode({ a, op, b }: { a: Bruch; op: "+" | "−"; b: Bruch }) {
+  const w = kreuzWeg(a, op, b);
+  const [zeige, setZeige] = useState(0);
+  const BLAU = "#2563eb", ROT = "#dc2626", GRUEN = "#16a34a";
+  const z = (t: number | string, x: number, y: number, farbe = "var(--color-fg)") => <text x={x} y={y} textAnchor="middle" dominantBaseline="central" fontSize={30} fontWeight={900} fill={farbe}>{t}</text>;
+  return (
+    <section className="rounded-xl border border-line p-3 flex flex-col gap-2">
+      <h4 className="font-black">✖️ Kreuzmethode (vedische Mathematik)</h4>
+      <div className="flex flex-wrap items-start gap-4">
+        <svg viewBox="0 0 300 170" className="w-72 max-w-full" role="img" aria-label="Kreuzmethode">
+          <defs>{[["b", BLAU], ["r", ROT], ["g", GRUEN]].map(([id, f]) => (
+            <marker key={id} id={`kr-${id}`} viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill={f} /></marker>
+          ))}</defs>
+          {z(Math.abs(a.z), 60, 45)}{z(a.n, 60, 125)}<line x1={35} y1={85} x2={85} y2={85} stroke="var(--color-fg)" strokeWidth={3} />
+          {z(op, 150, 85)}
+          {z(Math.abs(b.z), 240, 45)}{z(b.n, 240, 125)}<line x1={215} y1={85} x2={265} y2={85} stroke="var(--color-fg)" strokeWidth={3} />
+          {zeige >= 1 && <line x1={82} y1={52} x2={218} y2={118} stroke={BLAU} strokeWidth={3} markerEnd="url(#kr-b)" />}
+          {zeige >= 2 && <line x1={82} y1={118} x2={218} y2={52} stroke={ROT} strokeWidth={3} markerEnd="url(#kr-r)" />}
+          {zeige >= 4 && <path d="M 60 150 Q 150 185 240 150" fill="none" stroke={GRUEN} strokeWidth={3} markerEnd="url(#kr-g)" />}
+        </svg>
+        <ol className="list-decimal pl-5 text-sm flex flex-col gap-1">
+          {w.schritte.slice(0, zeige).map((t, i) => <li key={t} style={{ color: i === 0 ? BLAU : i === 1 ? ROT : i === 3 ? GRUEN : undefined }}><Rechenzeile text={t} /></li>)}
+        </ol>
+      </div>
+      <div className="flex flex-wrap gap-2 items-center">
+        {zeige < w.schritte.length ? <button className="btn-primary" onClick={() => setZeige(zeige + 1)}>Nächster Schritt →</button>
+          : <span className="font-black">Ergebnis: <BruchSatz z={w.ergebnis.z} n={w.ergebnis.n} /></span>}
+        {zeige > 0 && <button className="btn-secondary" onClick={() => setZeige(0)}>Von vorn</button>}
+        <a className="btn-secondary" href={DORFUCHS} target="_blank" rel="noopener noreferrer">🎵 Lied dazu: DorFuchs – Brüche addieren mit vedischer Mathematik</a>
+      </div>
+      <p className="text-xs text-muted">Geht immer, ohne Hauptnenner zu suchen. Weil »unten mal unten« meist nicht der kleinste gemeinsame Nenner ist, muss man am Ende oft noch kürzen.</p>
+    </section>
+  );
+}
+
 function Rechner() {
   const [ta, setTa] = useState("3/4");
   const [tb, setTb] = useState("1/6");
@@ -95,6 +136,7 @@ function Rechner() {
           {a && b && <Bild a={a} op={op} b={b} />}
         </div>
       )}
+      {weg && a && b && (op === "+" || op === "−") && <Kreuzmethode key={`${bt(a)}${op}${bt(b)}`} a={a} op={op} b={b} />}
     </section>
   );
 }

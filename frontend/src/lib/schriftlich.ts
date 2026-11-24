@@ -145,8 +145,9 @@ export function subtrahiereErgaenzen(a: number, b: number): Ablauf {
     const d = ziel - unten, neuU = unten > o ? 1 : 0;
     const fuehrendeNull = e > 0 && 10 ** e > diff;
     const n = klon(jetzt, { spalten: [c] });
-    // Die Walze der Ergebniszeile zählt die Ergänzung hoch (unten + ? = oben) und bleibt auf der Ziffer stehen, die geschrieben wird
-    n.walze = { c, von: 0, bis: d };
+    // Die Walze startet auf der oberen Ziffer und dreht `unten`-mal zurück (7 − 1: 7 → 6).
+    // Reicht oben nicht, dreht sie über 0 hinaus auf 9 — das ist das Borgen — und bleibt auf der Ziffer stehen, die geschrieben wird.
+    n.walze = { c, von: o, bis: o - unten };
     n.ketten = [{ titel: stellenName(e), kaesten: uebertrag ? [String(u), String(unten), String(ziel)] : [String(unten), String(ziel)],
       boegen: [...(uebertrag ? [{ text: `+ ${uebertrag} Übertrag`, art: "plus" as const }] : []), { text: `+ ${d}`, art: "plus" as const }] }];
     if (!fuehrendeNull) { n.stand[c] = d; n.zellen.push({ r: rE, c, t: String(d), art: "ergebnis", neu: true, ab: "walze" }); }

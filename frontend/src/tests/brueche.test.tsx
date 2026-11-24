@@ -10,7 +10,7 @@ import { ziffernJeStelle } from "@/components/brueche/Dezimal";
 import { legeKarten } from "@/components/brueche/Wichtige";
 import { kuchenStuecke, raster } from "@/components/brueche/bild";
 import {
-  ausDezimal, bruchteilAufgabe, dezimal, dezimalText, gemischtText, kuerze, leseBruch, OPS, rechenAufgabe, rechne, wert, wort, zehnerbruch, type Op,
+  ausDezimal, bruchteilAufgabe, kreuzWeg, dezimal, dezimalText, gemischtText, kuerze, leseBruch, OPS, rechenAufgabe, rechne, wert, wort, zehnerbruch, type Op,
 } from "@/lib/brueche";
 
 function zufall(seed: number) {
@@ -31,6 +31,17 @@ describe("Rechnung", () => {
     expect(w.schritte[0]).toContain("Hauptnenner = kgV(4; 6) = 12");
     expect(rechne({ z: 3, n: 4 }, ":", { z: 1, n: 2 }).ergebnis).toEqual({ z: 3, n: 2 });
     expect(rechne({ z: 2, n: 3 }, "·", { z: 3, n: 4 }).ergebnis).toEqual({ z: 1, n: 2 });
+  });
+  it("Kreuzmethode: links oben · rechts unten ± links unten · rechts oben, unten mal unten", () => {
+    const w = kreuzWeg({ z: 1, n: 4 }, "+", { z: 1, n: 6 });
+    expect([w.links, w.rechts, w.zaehler, w.nenner]).toEqual([6, 4, 10, 24]);
+    expect(w.ergebnis).toEqual({ z: 5, n: 12 });
+    expect(w.schritte.at(-1)).toContain("Kürzen mit 2");
+    const r = zufall(17);
+    for (const op of ["+", "−"] as const) for (let i = 0; i < 80; i++) {
+      const { a, b } = rechenAufgabe(r, op, 3);
+      expect(kreuzWeg(a, op, b).ergebnis).toEqual(rechne(a, op, b).ergebnis);
+    }
   });
   it("jede gewürfelte Aufgabe stimmt", () => {
     const r = zufall(11);
@@ -111,10 +122,12 @@ describe("Oberfläche", () => {
     fireEvent.click(screen.getAllByRole("button", { name: "Teil 4" })[0]);
     expect(screen.getByText("vier Viertel")).toBeTruthy();
   });
-  it("Rechner zeigt Schritt für Schritt", () => {
+  it("Rechner zeigt Schritt für Schritt, dazu die Kreuzmethode mit DorFuchs-Lied", () => {
     render(<Brueche />);
     fireEvent.click(screen.getByRole("button", { name: /Rechnen/ }));
     fireEvent.click(screen.getByRole("button", { name: "Alle" }));
-    expect(screen.getByText(/Ergebnis:/)).toBeTruthy();
+    expect(screen.getAllByText(/Ergebnis:/).length).toBeGreaterThan(0);
+    expect(screen.getByRole("img", { name: "Kreuzmethode" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: /DorFuchs/ }).getAttribute("href")).toContain("youtube.com/watch?v=VOMXhfWBXg0");
   });
 });
