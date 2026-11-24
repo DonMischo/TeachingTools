@@ -1,0 +1,22 @@
+# graphify: nur Quellcode und Doku in den Graphen — keine Daten, Assets oder Vendor-Dateien.
+# Diese Dateien erzeugen tausende Knoten ohne Aussage (Kartenkacheln, Draco-Decoder,
+# Quiz-/Kompendium-Inhalte) und verdrängen bei Abfragen die echten Treffer.
+
+# Ausgelieferte Assets und Bibliotheken (Kartenkacheln, Schriften, MapLibre-Worker, Draco)
+frontend/public/
+
+# Inhalte und Datensätze (GeoJSON, Quiz-JSON, Methoden-Kompendium-YAML …)
+data/
+
+# Präsentationen und Arbeitsblätter
+presentations/
+
+# Paketlisten
+frontend/package.json
+frontend/package-lock.json
+package-lock.json
+
+# Build-Ausgaben
+frontend/.next/
+frontend/standalone/dist/
+**/node_modules/

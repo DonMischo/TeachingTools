@@ -2,9 +2,12 @@
 
 This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
 
-Rules:
-- When graphify-out/graph.json exists, run `graphify query "<question>"` before your first grep, search or source-file read for a codebase question, and put this rule in every subagent prompt that explores code. Read raw files only for lines the graph or an earlier read already located. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. When the answer is under a Markdown heading, `graphify section "<heading>"` prints that section's text, so the .md need not be opened. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
+Rules (relaxed 2026-11-24 — use the graph where it helps, not by rote):
+- Use `graphify query` for orientation in an area you do not know yet. Query with exact symbol or file names (`graphify query "Walze DrehZaehlwerk Rechenblatt"`), not with prose sentences. The start node is matched by label, and ambiguous names such as `walze()` (four functions) otherwise pick an unrelated one. `graphify explain "<Symbol>"` and `graphify path "<A>" "<B>"` work the same way.
+- No graph query is needed for files you just wrote or already know. Read or grep them directly.
+- Do not run `graphify update .` by hand. It takes about 3 minutes, and the git hook rebuilds the graph in the background after every commit.
+- `.graphifyignore` keeps data, assets and vendor files (frontend/public, data, presentations, package lists) out of the graph.
 - If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
-- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
-- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
+- Read graphify-out/GRAPH_REPORT.md only for broad architecture review.
 - graphify-out/ is gitignored and local to each machine. On a fresh clone, run `graphify update .` once to build it.
+- Subagents that explore code get the same guidance: query by symbol names, optional.
