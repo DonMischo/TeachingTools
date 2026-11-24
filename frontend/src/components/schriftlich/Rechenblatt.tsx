@@ -50,7 +50,8 @@ function Flug({ von, nach, t, start }: { von: Ort; nach: Ort; t: string; start: 
 /** Rechenkette mit Bögen wie beim Größen-Umrechnen: plus/mal oben, minus/geteilt unten */
 const BOGEN_FARBE = { plus: "#16a34a", mal: "#2563eb", minus: "#dc2626", durch: "#ea580c" } as const;
 export function KettenBild({ k }: { k: Kette }) {
-  const dx = 104, bw = 64, bh = 40, W = Math.max(160, k.kaesten.length * dx), H = 130, cy = H / 2;
+  // Abstand nach dem längsten Bogen-Etikett, damit nichts überlappt
+  const dx = Math.max(104, 40 + Math.max(0, ...k.boegen.map(b => b.text.length)) * 9.4), bw = 64, bh = 40, W = Math.max(160, k.kaesten.length * dx), H = 130, cy = H / 2;
   const x = (i: number) => W / 2 + (i - (k.kaesten.length - 1) / 2) * dx;
   const bogen = (i: number, b: Kette["boegen"][number]) => {
     const oben = b.art === "plus" || b.art === "mal";

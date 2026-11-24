@@ -177,7 +177,7 @@ export default function Schriftlich({ action, vorgabe }: { action?: ReactNode; v
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-black tracking-tight">✏️ Schriftliche Rechenverfahren</h1>
-          <p className="text-muted text-sm mt-1">Addieren, Subtrahieren, Multiplizieren und Dividieren schriftlich — jeder Schritt sichtbar, mit den Walzen der Stellenwerttafel und fliegenden Überträgen. Dazu Üben am Zählwerk und das Spiel Fehlerdetektiv.</p>
+          <p className="text-muted text-sm mt-1">Addieren, Subtrahieren, Multiplizieren und Dividieren schriftlich — jeder Schritt sichtbar, mit den Walzen der Stellenwerttafel und fliegenden Überträgen. Dazu Üben auf Karopapier mit Übertragskreisen und das Spiel Fehlerdetektiv.</p>
         </div>
         <div className="flex items-center gap-2">{action}</div>
       </div>

@@ -102,7 +102,7 @@ function Ganzes({ form, n, k, voll, onTeil, nr }: { form: Form; n: number; k: nu
       {
         // Belag in jedem Stück, kleiner, je mehr Stücke es sind
         const am = (a0 + a1) / 2, rr = n === 1 ? 0 : r * (form === "torte" ? 0.72 : 0.6);
-        teile.push(<Deko key={`d${i}`} form={form} x={c + rr * Math.sin(am)} y={c - rr * Math.cos(am)} g={Math.max(0.45, Math.min(1.6, 5 / n))} i={i} voll={voll[i]} />);
+        teile.push(<Deko key={`d${i}`} form={form} x={c + rr * Math.sin(am)} y={c - rr * Math.cos(am)} g={Math.max(0.6, Math.min(2.4, 7.5 / n))} i={i} voll={voll[i]} />);
       }
       for (let j = 1; j < k; j++) {
         const a = a0 + ((a1 - a0) * j) / k;
@@ -117,7 +117,7 @@ function Ganzes({ form, n, k, voll, onTeil, nr }: { form: Form; n: number; k: nu
       const x = (i % spalten) * w, y = Math.floor(i / spalten) * h;
       teile.push(<rect key={i} x={x + (form === "tafel" ? 2 : 0)} y={y + (form === "tafel" ? 2 : 0)} width={w - (form === "tafel" ? 4 : 0)} height={h - (form === "tafel" ? 4 : 0)}
         rx={form === "tafel" ? 4 : 0} fill={voll[i] ? f.voll : f.leer} stroke={f.rand} strokeWidth={form === "tafel" ? 1.5 : 2.5} {...klick(i)} />);
-      if (form === "kuchen") teile.push(<Deko key={`d${i}`} form={form} x={x + w / 2} y={y + h * 0.45} g={Math.max(0.4, Math.min(1.6, (w / 22)))} i={i} voll={voll[i]} />);
+      if (form === "kuchen") teile.push(<Deko key={`d${i}`} form={form} x={x + w / 2} y={y + h * 0.45} g={Math.max(0.5, Math.min(2.2, w / 15, h / 22))} i={i} voll={voll[i]} />);
       if (form === "tafel") teile.push(<rect key={`p${i}`} x={x + 7} y={y + 7} width={Math.max(0, w - 14)} height={Math.max(0, h - 14)} rx={3} fill="none"
         stroke={voll[i] ? "#a0522d" : "#d6c3b0"} strokeWidth={1.5} pointerEvents="none" />);
     }

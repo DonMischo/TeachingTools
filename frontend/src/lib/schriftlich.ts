@@ -73,7 +73,7 @@ function summenKette(teile: number[], uebertrag: number, titel?: string): Kette 
   const kaesten = [String(teile[0] ?? 0)], boegen: Kette["boegen"] = [];
   let s = teile[0] ?? 0;
   for (const t of teile.slice(1)) { s += t; boegen.push({ text: `+ ${t}`, art: "plus" }); kaesten.push(String(s)); }
-  if (uebertrag) { s += uebertrag; boegen.push({ text: `+ ${uebertrag} Ü`, art: "plus" }); kaesten.push(String(s)); }
+  if (uebertrag) { s += uebertrag; boegen.push({ text: `+ ${uebertrag} Übertrag`, art: "plus" }); kaesten.push(String(s)); }
   return { kaesten, boegen, titel };
 }
 
@@ -144,7 +144,7 @@ export function subtrahiereErgaenzen(a: number, b: number): Ablauf {
     const n = klon(jetzt, { spalten: [c] });
     n.walze = { c, von: unten, bis: unten + d, zaehle: true }; // die Walze dreht von unten hoch bis oben — die Zahl der Drehungen ist das Ergebnis, über die 9 = Übertrag
     n.ketten = [{ titel: stellenName(e), kaesten: uebertrag ? [String(u), String(unten), String(ziel)] : [String(unten), String(ziel)],
-      boegen: [...(uebertrag ? [{ text: `+ ${uebertrag} Ü`, art: "plus" as const }] : []), { text: `+ ${d}`, art: "plus" as const }] }];
+      boegen: [...(uebertrag ? [{ text: `+ ${uebertrag} Übertrag`, art: "plus" as const }] : []), { text: `+ ${d}`, art: "plus" as const }] }];
     if (!fuehrendeNull) { n.stand[c] = d; n.zellen.push({ r: rE, c, t: String(d), art: "ergebnis", neu: true, ab: "walze" }); }
     if (neuU) {
       n.zerlegung = { zahl: ziel, zehner: 1, einer: o };
@@ -201,7 +201,7 @@ export function multipliziere(a: number, b: number): Ablauf {
         s2.zellen = s2.zellen.map(z => (z.r === rU(j) && z.c === col ? { ...z, durch: true } : z));
         s2.walze = { c: col, von: p0, bis: p };
         s2.stand[col] = p % 10;
-        s2.ketten = [{ titel: "plus Übertrag", kaesten: [String(ra[e]), String(p0), String(p)], boegen: [{ text: `· ${d}`, art: "mal" }, { text: `+ ${u} Ü`, art: "plus" }] }];
+        s2.ketten = [{ titel: "plus Übertrag", kaesten: [String(ra[e]), String(p0), String(p)], boegen: [{ text: `· ${d}`, art: "mal" }, { text: `+ ${u} Übertrag`, art: "plus" }] }];
         s2.text = `Übertrag dazu: ${p0} + ${u} = ${p}.`;
         schritte.push(s2); jetzt = s2;
       }
