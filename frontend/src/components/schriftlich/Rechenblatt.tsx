@@ -188,6 +188,10 @@ export function Rechenblatt({ ablauf, i }: { ablauf: Ablauf; i: number }) {
           {s.striche.map((x, k) => <div key={`s${k}`} className="absolute bg-fg" style={{ left: `${x.c0 * ZELLE}rem`, width: `${(x.c1 - x.c0 + 1) * ZELLE}rem`, top: `${(x.r + 1) * ZELLE - 0.1}rem`, height: "3px" }} />)}
           {s.zellen.filter(z => sichtbar(z.ab)).map((z, k) => {
             const pos = { left: `${z.c * ZELLE}rem`, top: `${z.r * ZELLE}rem`, width: `${ZELLE}rem`, height: `${ZELLE}rem` };
+            if (z.art === "komma") return (
+              <span key={k} className="absolute font-mono font-black text-[1.7rem] leading-none pointer-events-none"
+                style={{ left: `${z.c * ZELLE - 0.3}rem`, top: `${z.r * ZELLE + ZELLE * 0.42}rem` }}>,</span>
+            );
             if (z.art === "uebertrag") return (
               <span key={k} className="absolute flex items-center justify-center" style={pos}>
                 <span className={`flex items-center justify-center rounded-full border-2 border-bad text-bad font-black text-sm size-7 ${z.durch ? "opacity-40" : ""} ${z.neu ? "animate-pulse" : ""}`}>+{z.t}</span>
@@ -197,7 +201,7 @@ export function Rechenblatt({ ablauf, i }: { ablauf: Ablauf; i: number }) {
             const f = (z.art === "zahl" || z.art === "ergebnis" || z.art === "teil") && einer !== undefined && z.c <= einer ? farbe(10, einer - z.c) : undefined;
             return (
               <span key={k} className={`absolute flex justify-center font-mono font-black ${klein ? "text-sm items-start text-bad" : "text-[1.7rem] items-center"} ${z.neu ? "animate-pulse" : ""}`}
-                style={{ ...pos, color: klein ? undefined : f, textDecorationLine: z.durch ? "line-through" : undefined, opacity: z.durch ? 0.45 : 1 }}>{z.t}</span>
+                style={{ ...pos, color: klein ? undefined : f, textDecorationLine: z.durch ? "line-through" : z.strich ? "overline" : undefined, textDecorationThickness: z.strich ? "3px" : undefined, opacity: z.durch ? 0.45 : 1 }}>{z.t}</span>
             );
           })}
           {s.flug && <Flug key={i} von={s.flug.von} nach={s.flug.nach} t={s.flug.t} start={phase === 1} />}

@@ -21,7 +21,7 @@ export function Rechenpapier({ ablauf, onErgebnis }: { ablauf: Ablauf; onErgebni
   /** Felder zum Ausfüllen: alles, was nicht in der Aufgabe stand (außer Rechenzeichen und Überträgen) */
   const felder = useMemo(() => {
     const m = new Map<string, Zelle>();
-    for (const z of ende.zellen) if (!gegeben.has(schl(z.r, z.c)) && z.art !== "zeichen" && z.art !== "uebertrag" && z.art !== "hilfe") m.set(schl(z.r, z.c), z);
+    for (const z of ende.zellen) if (!gegeben.has(schl(z.r, z.c)) && z.art !== "zeichen" && z.art !== "uebertrag" && z.art !== "hilfe" && z.art !== "komma") m.set(schl(z.r, z.c), z);
     return m;
   }, [ende, gegeben]);
   const ueZeilen = ablauf.uebertragZeilen ?? [];

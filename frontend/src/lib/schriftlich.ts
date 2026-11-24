@@ -19,8 +19,10 @@ export type Op = "+" | "−" | "·" | ":";
 export type Methode = "ergaenzen" | "entbuendeln";
 export type Ort = { r: number; c: number };
 export type Zelle = Ort & {
-  t: string; art: "zahl" | "zeichen" | "uebertrag" | "ergebnis" | "hilfe" | "teil";
+  t: string; art: "zahl" | "zeichen" | "uebertrag" | "ergebnis" | "hilfe" | "teil" | "komma";
   durch?: boolean; neu?: boolean;
+  /** Periodenstrich über der Ziffer */
+  strich?: boolean;
   /** erst nach der Walze bzw. nach dem Flug zeigen */
   ab?: "walze" | "flug";
 };
@@ -269,22 +271,47 @@ export function multipliziere(a: number, b: number): Ablauf {
 
 // ── Dividieren ───────────────────────────────────────────────────────
 
-export function dividiere(a: number, b: number): Ablauf {
+/**
+ * Schriftlich dividieren. Mit `nachkomma` (höchstens so viele Stellen nach dem
+ * Komma) wird nicht mit Rest aufgehört, sondern es werden Nullen angehängt —
+ * so wird aus einem Bruch eine Dezimalzahl. Kommt ein Rest zum zweiten Mal,
+ * wiederholt sich alles: periodisch (die Periode bekommt einen Strich).
+ */
+export function dividiere(a: number, b: number, opts: { nachkomma?: number } = {}): Ablauf {
   if (b <= 0) throw new Error("Durch 0 teilt man nicht.");
   const za = String(a), la = za.length, lb = String(b).length;
   const q = Math.floor(a / b), rest = a % b;
+  // Vorab: wie viele Nachkommastellen braucht es, und wo beginnt eine Periode?
+  const nachDigits: number[] = [];
+  let periodeAb: number | null = null;
+  if (opts.nachkomma) {
+    const gesehen = new Map<number, number>();
+    let r = rest;
+    while (r !== 0 && nachDigits.length < opts.nachkomma) {
+      if (gesehen.has(r)) { periodeAb = gesehen.get(r)!; break; }
+      gesehen.set(r, nachDigits.length);
+      r *= 10; nachDigits.push(Math.floor(r / b)); r %= b;
+    }
+  }
+  const nk = nachDigits.length;
+  const ziffern = za + "0".repeat(nk); // angehängte Nullen
   const O = 1; // eine Spalte Rand links für das Minuszeichen
-  const cQ = O + la + 1 + lb + 1; // erste Spalte des Quotienten (nach »= «)
+  const cDurch = O + la + nk;
+  const cQ = cDurch + 1 + lb + 1; // erste Spalte des Quotienten (nach »= «)
   const start: Schritt = {
-    zellen: [...zahlZellen(a, 0, O + la - 1), { r: 0, c: O + la, t: ":", art: "zeichen" }, ...zahlZellen(b, 0, O + la + lb), { r: 0, c: O + la + lb + 1, t: "=", art: "zeichen" }],
+    zellen: [...zahlZellen(a, 0, O + la - 1), { r: 0, c: cDurch, t: ":", art: "zeichen" }, ...zahlZellen(b, 0, cDurch + lb), { r: 0, c: cDurch + lb + 1, t: "=", art: "zeichen" }],
     striche: [], spalten: [], stand: {},
-    text: `Von links beginnen: so viele Ziffern von ${a} nehmen, bis ${b} hineinpasst.`,
+    text: nk
+      ? `${a} : ${b} als Dezimalzahl: Von links beginnen. Geht es mit den Ziffern von ${a} nicht mehr weiter, schreiben wir ein Komma und hängen Nullen an.`
+      : `Von links beginnen: so viele Ziffern von ${a} nehmen, bis ${b} hineinpasst.`,
   };
+  if (nk) start.zellen.push({ r: 0, c: O + la, t: ",", art: "komma" });
   const schritte = [start];
   let jetzt = start;
   let i = 0, teil = 0;
-  do { teil = teil * 10 + Number(za[i]); i++; } while (teil < b && i < la);
+  do { teil = teil * 10 + Number(ziffern[i]); i++; } while (teil < b && i < la);
   let zeile = 1, qStelle = 0;
+  const qZellen: Zelle[] = [];
   for (;;) {
     const ende = O + i - 1; // Spalte, bis zu der die Teilzahl reicht
     const k = Math.floor(teil / b), m = k * b, r = teil - m;
@@ -292,7 +319,8 @@ export function dividiere(a: number, b: number): Ablauf {
     const n = klon(jetzt, { spalten: [ende] });
     n.walze = { c: cQ + qStelle, von: 0, bis: k };
     n.stand[cQ + qStelle] = k;
-    n.zellen.push({ r: 0, c: cQ + qStelle, t: String(k), art: "ergebnis", neu: true, ab: "walze" });
+    const qz: Zelle = { r: 0, c: cQ + qStelle, t: String(k), art: "ergebnis", neu: true, ab: "walze" };
+    n.zellen.push(qz); qZellen.push(qz);
     n.ketten = [
       { titel: "Wie oft passt es?", kaesten: [String(teil), String(k)], boegen: [{ text: `: ${b}`, art: "durch" }] },
       { titel: "Probe im Kopf", kaesten: [String(k), String(m)], boegen: [{ text: `· ${b}`, art: "mal" }] },
@@ -311,27 +339,56 @@ export function dividiere(a: number, b: number): Ablauf {
     n2.text = `${k} · ${b} = ${m} darunter schreiben und abziehen: ${teil} − ${m} = ${r}.`;
     schritte.push(n2); jetzt = n2;
     zeile += 2; qStelle++;
-    if (i >= la) break;
-    // 3. Nächste Ziffer herunterholen
+    if (i >= la + nk || (i >= la && r === 0)) break;
+    // 3. Nächste Ziffer herunterholen — nach dem Komma eine angehängte Null
     const n3 = klon(jetzt, { spalten: [O + i] });
-    n3.zellen.push({ r: zeile - 1, c: O + i, t: za[i], art: "zahl", neu: true, ab: "flug" });
-    n3.flug = { von: { r: 0, c: O + i }, nach: { r: zeile - 1, c: O + i }, t: za[i] };
-    teil = r * 10 + Number(za[i]);
-    n3.ketten = [{ titel: "herunterholen", kaesten: [String(r), String(teil)], boegen: [{ text: `· 10 + ${za[i]}`, art: "plus" }] }];
-    n3.text = `Die nächste Ziffer ${za[i]} herunterholen: weiter mit ${teil}.`;
+    const null_ = i >= la;
+    if (null_) {
+      n3.zellen.push({ r: 0, c: O + i, t: "0", art: "zahl", neu: true });
+      if (i === la) n3.zellen.push({ r: 0, c: cQ + qStelle, t: ",", art: "komma", neu: true });
+    }
+    n3.zellen.push({ r: zeile - 1, c: O + i, t: ziffern[i], art: "zahl", neu: true, ab: "flug" });
+    n3.flug = { von: { r: 0, c: O + i }, nach: { r: zeile - 1, c: O + i }, t: ziffern[i] };
+    teil = r * 10 + Number(ziffern[i]);
+    n3.ketten = [{ titel: null_ ? "Null anhängen" : "herunterholen", kaesten: [String(r), String(teil)], boegen: [{ text: `· 10 + ${ziffern[i]}`, art: "plus" }] }];
+    n3.text = null_
+      ? `${i === la ? `Die Ziffern von ${a} sind aufgebraucht, aber es bleibt Rest ${r}. Also: Komma ins Ergebnis und eine Null anhängen` : `Wieder eine Null anhängen`} — weiter mit ${teil}.`
+      : `Die nächste Ziffer ${ziffern[i]} herunterholen: weiter mit ${teil}.`;
     schritte.push(n3); jetzt = n3;
     i++;
   }
   const fertig = klon(jetzt);
-  // Rest: »R« und jede Ziffer des Rests in ihrem eigenen Kästchen
-  if (rest) fertig.zellen.push({ r: 0, c: cQ + qStelle + 1, t: "R", art: "zeichen", neu: true },
-    ...zahlZellen(rest, 0, cQ + qStelle + 1 + String(rest).length, "ergebnis").map(z => ({ ...z, neu: true })));
-  fertig.ketten = [{ titel: "Probe", kaesten: rest ? [String(q), String(q * b), String(a)] : [String(q), String(a)],
-    boegen: rest ? [{ text: `· ${b}`, art: "mal" }, { text: `+ ${rest}`, art: "plus" }] : [{ text: `· ${b}`, art: "mal" }] }];
-  fertig.text = `Ergebnis: ${a} : ${b} = ${q}${rest ? ` Rest ${rest}` : ""}. Probe: ${q} · ${b}${rest ? ` + ${rest}` : ""} = ${a}.`;
+  let ergebnis: string;
+  if (nk) {
+    // Periode markieren: die letzten (nk − periodeAb) Ziffern
+    const ganzStellen = qZellen.length - nk;
+    const dez = `${q},${nachDigits.join("")}`;
+    if (periodeAb !== null) {
+      const ab = ganzStellen + periodeAb;
+      fertig.zellen = fertig.zellen.map(z => (z.r === 0 && z.art === "ergebnis" && z.c >= cQ + ab ? { ...z, strich: true } : z));
+      const p = nachDigits.slice(periodeAb).join("");
+      ergebnis = `${q},${nachDigits.slice(0, periodeAb).join("")}${p} (Periode ${p})`;
+      fertig.text = `Der Rest ${(() => { let r = rest; for (let x = 0; x < periodeAb; x++) r = (r * 10) % b; return r; })()} kam schon einmal vor — ab hier wiederholt sich alles. ${a} : ${b} = ${q},${nachDigits.slice(0, periodeAb).join("")}${p} mit Periode ${p} (Strich darüber).`;
+    } else if (nk >= (opts.nachkomma ?? 0) && nk > 0 && (() => { let r = rest; for (let x = 0; x < nk; x++) r = (r * 10) % b; return r !== 0; })()) {
+      ergebnis = `${dez}…`;
+      fertig.text = `Nach ${nk} Nachkommastellen hören wir auf: ${a} : ${b} ≈ ${dez}…`;
+    } else {
+      ergebnis = dez;
+      fertig.ketten = [{ titel: "Probe", kaesten: [dez, String(a)], boegen: [{ text: `· ${b}`, art: "mal" }] }];
+      fertig.text = `Der Rest ist 0 — fertig: ${a} : ${b} = ${dez}. Probe: ${dez} · ${b} = ${a}.`;
+    }
+  } else {
+    // Rest: »R« und jede Ziffer des Rests in ihrem eigenen Kästchen
+    if (rest) fertig.zellen.push({ r: 0, c: cQ + qStelle + 1, t: "R", art: "zeichen", neu: true },
+      ...zahlZellen(rest, 0, cQ + qStelle + 1 + String(rest).length, "ergebnis").map(z => ({ ...z, neu: true })));
+    fertig.ketten = [{ titel: "Probe", kaesten: rest ? [String(q), String(q * b), String(a)] : [String(q), String(a)],
+      boegen: rest ? [{ text: `· ${b}`, art: "mal" }, { text: `+ ${rest}`, art: "plus" }] : [{ text: `· ${b}`, art: "mal" }] }];
+    fertig.text = `Ergebnis: ${a} : ${b} = ${q}${rest ? ` Rest ${rest}` : ""}. Probe: ${q} · ${b}${rest ? ` + ${rest}` : ""} = ${a}.`;
+    ergebnis = `${q}${rest ? ` R ${rest}` : ""}`;
+  }
   schritte.push(fertig);
   const hoehe = Math.max(...fertig.zellen.map(z => z.r)) + 1;
-  return { op: ":", breite: cQ + qStelle + 2 + String(rest).length + 1, hoehe, schritte, ergebnis: `${q}${rest ? ` R ${rest}` : ""}` };
+  return { op: ":", breite: cQ + qStelle + 2 + (nk ? 0 : String(rest).length + 1), hoehe, schritte, ergebnis };
 }
 
 // ── Subtrahieren (Abziehen mit Entbündeln) ───────────────────────────

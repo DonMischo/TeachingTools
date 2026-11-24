@@ -55,6 +55,26 @@ describe("Abläufe", () => {
     render(<Rechenpapier ablauf={ab} />);
     for (const z of ergebnis) expect(screen.getByLabelText(`Ergebnis Spalte ${z.c}`)).toBeTruthy();
   });
+  it("Teilen mit Nachkommastellen: Komma, angehängte Nullen, Periode mit Strich", () => {
+    const dez = (ab: ReturnType<typeof dividiere>) => {
+      const z = ab.schritte[ab.schritte.length - 1].zellen.filter(x => x.r === 0 && (x.art === "ergebnis" || x.art === "komma") && x.c > ab.schritte[0].zellen.find(y => y.t === "=")!.c);
+      // Komma steht am linken Rand seines Kästchens, also vor der Ziffer derselben Spalte
+      return z.sort((p, q) => p.c - q.c || (p.art === "komma" ? -1 : 1)).map(x => (x.strich ? `[${x.t}]` : x.t)).join("");
+    };
+    expect(dez(dividiere(3, 8, { nachkomma: 10 }))).toBe("0,375");
+    expect(dividiere(3, 8, { nachkomma: 10 }).ergebnis).toBe("0,375");
+    expect(dez(dividiere(7, 4, { nachkomma: 10 }))).toBe("1,75");
+    expect(dez(dividiere(1, 3, { nachkomma: 10 }))).toBe("0,[3]");
+    expect(dez(dividiere(5, 6, { nachkomma: 10 }))).toBe("0,8[3]");
+    expect(dez(dividiere(1, 7, { nachkomma: 10 }))).toBe("0,[1][4][2][8][5][7]");
+    expect(dividiere(5, 6, { nachkomma: 10 }).ergebnis).toBe("0,83 (Periode 3)");
+    // ohne Nachkomma wie bisher mit Rest
+    expect(dividiere(7, 4).ergebnis).toBe("1 R 3");
+    // keine zwei Zellen im selben Kästchen (außer Komma-Überlagerung)
+    const ab = dividiere(22, 7, { nachkomma: 10 });
+    const zellen = ab.schritte[ab.schritte.length - 1].zellen.filter(z => z.art !== "komma");
+    expect(new Set(zellen.map(z => `${z.r}:${z.c}`)).size).toBe(zellen.length);
+  });
   it("Teilen mit Rest: »R« und jede Restziffer im eigenen Kästchen", () => {
     for (const [a, b] of [[4127, 7], [1000, 37], [5899, 10]]) {
       const ab = dividiere(a, b);

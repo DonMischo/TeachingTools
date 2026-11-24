@@ -117,6 +117,13 @@ describe("Oberfläche", () => {
       expect(screen.getAllByText(text).length).toBeGreaterThan(0);
     }
   });
+  it("Dezimalzahlen: anderer Weg über die schriftliche Division", () => {
+    render(<Brueche />);
+    fireEvent.click(screen.getByRole("button", { name: /Dezimalzahlen/ }));
+    fireEvent.click(screen.getByRole("button", { name: /schriftlich 3 : 8 rechnen/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Alle Schritte" }));
+    expect(screen.getByText(/3 : 8 = 0,375/)).toBeTruthy();
+  });
   it("Teile antippen ändert den Bruch", () => {
     render(<Brueche />);
     fireEvent.click(screen.getAllByRole("button", { name: "Teil 4" })[0]);

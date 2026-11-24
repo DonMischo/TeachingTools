@@ -6,10 +6,12 @@
  * zurück: Ziffern in der Tafel → Zehnerbruch → kürzen. Brüche, die sich nicht
  * auf 10, 100, 1000 erweitern lassen, werden schriftlich geteilt (periodisch).
  */
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { TafelAnsicht } from "@/components/stellenwert/teile";
 import { ausDezimal, bt, dezimal, kuerze, leseBruch, zehnerbruch, type Bruch } from "@/lib/brueche";
 import { BruchSatz, Rechenzeile } from "./bild";
+import { Abspieler } from "@/components/schriftlich/Rechenblatt";
+import { dividiere } from "@/lib/schriftlich";
 
 /** Ziffern einer Kommazahl je Stellenwert (exp 0 = Einer, −1 = Zehntel …) */
 export function ziffernJeStelle(ganz: number, nach: string): Record<number, number> {
@@ -26,6 +28,21 @@ function Schritte({ schritt, setSchritt, anzahl }: { schritt: number; setSchritt
     <div className="flex gap-2">
       {schritt < anzahl && <button className="btn-primary" onClick={() => setSchritt(schritt + 1)}>Nächster Schritt →</button>}
       {schritt > 0 && <button className="btn-secondary" onClick={() => setSchritt(0)}>Von vorn</button>}
+    </div>
+  );
+}
+
+/** Zähler : Nenner schriftlich, mit angehängten Nullen — dieselbe Division wie in »Schriftliche Rechenverfahren« */
+function DivisionsWeg({ b }: { b: Bruch }) {
+  const [offen, setOffen] = useState(false);
+  const ablauf = useMemo(() => dividiere(b.z, b.n, { nachkomma: 10 }), [b.z, b.n]);
+  return (
+    <div className="flex flex-col gap-2 border-t border-line pt-3">
+      <button className="btn-secondary self-start" onClick={() => setOffen(o => !o)}>{offen ? "Division zuklappen" : `✍️ Anderer Weg: schriftlich ${b.z} : ${b.n} rechnen`}</button>
+      {offen && <>
+        <p className="text-sm text-muted">Ein Bruch ist eine Division: Zähler geteilt durch Nenner. Gehen die Ziffern aus, setzt man das Komma und hängt Nullen an — bis der Rest 0 ist oder sich ein Rest wiederholt (dann ist die Dezimalzahl periodisch).</p>
+        <Abspieler ablauf={ablauf} />
+      </>}
     </div>
   );
 }
@@ -74,6 +91,7 @@ function BruchZuDezimal() {
           <p className="text-sm text-muted">Der Rest wiederholt sich, also wiederholen sich auch die Ziffern: eine <b>periodische</b> Dezimalzahl (Periode {d.periode}).</p>
         </div>
       )}
+      {b && k && <DivisionsWeg key={`${k.z}/${k.n}`} b={k} />}
     </section>
   );
 }
