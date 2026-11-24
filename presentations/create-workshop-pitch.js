@@ -2,7 +2,7 @@
  * TT - Teaching Tools — Workshop-Pitch (KI und digitale Bildung, schulübergreifend)
  * Ziel: TT als offenen, erweiterbaren Baukasten zeigen und Mitstreiter·innen gewinnen.
  * Screenshots kommen aus ../screenshots/out (erst screenshots/take-screenshots.js laufen lassen;
- * Baumleben: ONLY=sim-baum). QR-Codes: qr-demo.png und qr-handout.png in diesem Ordner.
+ * Baumleben: ONLY=sim-baum). QR-Code: qr-handout.png in diesem Ordner.
  * Run: node create-workshop-pitch.js
  */
 
@@ -17,8 +17,7 @@ pres.author = "EGE";
 
 const SHOTS = path.join(__dirname, "..", "screenshots", "out");
 
-// Links zu den Begleitseiten (Artifacts); vor dem Workshop auf »öffentlich« teilen.
-const DEMO_URL = "claude.ai/artifact/6jAYzGS5xUQ8UjbXxFpm9b";
+// Link zur Begleitseite (Artifact); vor dem Workshop auf »öffentlich« teilen.
 const HANDOUT_URL = "claude.ai/artifact/45iY9BVaE1CfivcxnUoBfq";
 
 // ── Design tokens (wie create-pitch.js) ───────────────────────────────────────
@@ -317,7 +316,7 @@ function bigStat(s, number, label, x, y, w = 1.8) {
     if (i < 3) s.addText("→", { x: x + 2.08, y: 3.1, w: 0.24, h: 0.4, fontSize: 16, bold: true, color: ORANGE, align: "center", margin: 0 });
   });
   banner(s, "Vorlagen für TaskCrawler, Caputh, Zeitstrahl, Lückentext, Bingo, Karten, Umfrage, Stundenplaner");
-  s.addNotes("Live zeigen, wenn Zeit ist: Zeitstrahl-Vorlage herunterladen, mit Thema in einen Chatbot geben, Ergebnis hochladen. Das dauert drei Minuten. Die Begleitseite hat einen Knopf, der den Prompt kopiert. Wichtig: Jedes Werkzeug hat sein eigenes JSON-Format, die Vorlage bringt es mit.");
+  s.addNotes("Live zeigen, wenn Zeit ist: Zeitstrahl-Vorlage herunterladen, mit Thema in einen Chatbot geben, Ergebnis hochladen. Das dauert drei Minuten. Wichtig: Jedes Werkzeug hat sein eigenes JSON-Format, die Vorlage bringt es mit.");
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -326,9 +325,9 @@ function bigStat(s, number, label, x, y, w = 1.8) {
 {
   const s = pres.addSlide();
   s.background = { color: NAVY };
-  sectionTag(s, "JETZT AUSPROBIEREN");
+  sectionTag(s, "JETZT LIVE");
   title(s, "Zeitreise der Medien", WHITE, 32);
-  sub(s, "Ein Thema, drei Vorlagen. Am Handy öffnen und mitspielen.", CREAM);
+  sub(s, "Ein Thema, drei Vorlagen. Live in TT, am Handy oder Laptop mitspielen.", CREAM);
   bullets(s, [
     "🕰  Zeitstrahl mit 56 Ereignissen in vier Spuren, von der Höhlenmalerei bis zur KI",
     "🔀  Einsortieren: Ereignisse auf den Zeitstrahl ziehen",
@@ -336,8 +335,10 @@ function bigStat(s, number, label, x, y, w = 1.8) {
     "⚖  Endgegner im Gerichtssaal: Behauptungen mit Beweisen widerlegen",
     "🔧  Hinter den Kulissen: die JSON-Vorlage und der KI-Prompt",
   ], 0.5, 2.15, 6.0, CREAM, 0.5, 12.5);
-  qr(s, "qr-demo.png", 7.25, 1.9, 2.0, DEMO_URL);
-  s.addNotes("Alle scannen lassen, fünf Minuten spielen lassen. Danach die Frage: Welches Thema würdet ihr so bauen? Das ist der Übergang zum Mitmachen. Im Online-Workshop zusätzlich die Übungsinstanz: vorher workshop.bat start, die Tunnel-Adresse in den Chat posten, Zugänge ws01 usw. aus .workshop/data/zugaenge.txt verteilen. TT selbst über die Tunnel-Adresse öffnen, dann zeigen alle Beitritts-QRs dorthin. Erfundene Klassen 5a bis 10c sind schon angelegt.");
+  card(s, 6.85, 2.0, 2.75, 2.75, TILE);
+  s.addText("So geht's", { x: 7.05, y: 2.12, w: 2.4, h: 0.35, fontSize: 13, bold: true, color: ORANGE, fontFace: "Calibri", margin: 0 });
+  bullets(s, ["1  Adresse aus dem Chat öffnen", "2  Code aus TT eingeben", "3  Name und Avatar wählen", "4  Mitspielen"], 7.05, 2.6, 2.4, CREAM, 0.48, 12);
+  s.addNotes("Live in der Workshop-Instanz: Sitzung starten, Gäste erlauben, Code zeigen; alle treten über die Tunnel-Adresse unter /play bei. Fünf Minuten spielen lassen. Danach die Frage: Welches Thema würdet ihr so bauen? Das ist der Übergang zum Mitmachen. Vorher: workshop.bat start, die Tunnel-Adresse in den Chat posten, Zugänge ws01 usw. aus .workshop/data/zugaenge.txt verteilen. TT selbst über die Tunnel-Adresse öffnen, dann zeigen alle Beitritts-QRs dorthin. Erfundene Klassen 5a bis 10c sind schon angelegt.");
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -563,8 +564,7 @@ function bigStat(s, number, label, x, y, w = 1.8) {
 
   s.addText("Fragen, Ideen, Mitmachen?", { x: 0.5, y: 0.7, w: 9, h: 0.75, fontSize: 30, bold: true, color: WHITE, fontFace: "Cambria", align: "center", margin: 0 });
   s.addText("Alles zum Nachlesen, alle Funktionen und wie ihr einsteigt:", { x: 0.5, y: 1.45, w: 9, h: 0.4, fontSize: 14, color: CREAM, fontFace: "Calibri", italic: true, align: "center", margin: 0 });
-  qr(s, "qr-handout.png", 2.3, 2.15, 2.0, "Begleitseite");
-  qr(s, "qr-demo.png", 5.7, 2.15, 2.0, "Zeitreise der Medien");
+  qr(s, "qr-handout.png", 4.0, 2.15, 2.0, "Begleitseite");
   s.addText("Kontakt: donflauschelot@gmail.com   ·   Code: github.com/DonMischo/TeachingTools", { x: 0.5, y: 4.95, w: 9, h: 0.35, fontSize: 11, color: MUTED, fontFace: "Calibri", align: "center", margin: 0 });
   s.addNotes("Häufige Einwände: Datenschutz (eigener Server, keine Anfragen nach außen), Aufwand (Installationsskript, Code an die Tafel), Nachhaltigkeit (genau deshalb suchen wir Mitstreiter und einen Träger).");
 }
