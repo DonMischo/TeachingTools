@@ -19,7 +19,7 @@ pypandoc>=1.13
 # Stundenplaner-Export liest die Methoden-Kompendium-YAMLs (kam vorher nur über uvicorn[standard])
 PyYAML>=6
 # Arbeitsblatt-Export: Querformat-Karten auf dem hochkanten Blatt drehen
-Pillow>=11,<12
+Pillow>=13,<14
 # Kartennetze Robinson und Winkel-Tripel (PROJ, MIT-artige Lizenz) — siehe api/karten_projektion.py
 pyproj>=3.6
 # Zwei-Faktor (TOTP) — siehe api/totp.py

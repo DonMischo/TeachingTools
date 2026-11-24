@@ -9,6 +9,9 @@ const API_PORT = process.env.API_PORT ?? "8000";
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   turbopack: {},
+  // D2 läuft nur im Browser. Seine Node-Fassung startet einen WASM-Worker, den
+  // Turbopack ab Next 16.4 nicht mehr für den Server bündeln kann.
+  serverExternalPackages: ["@d2lang/d2"],
   // Der Docker-Start baut bei jeder Quelländerung neu; die Typprüfung dauert dort
   // wegen des Windows-Bind-Mounts ~50 s und doppelt nur `npx tsc --noEmit`.
   typescript: { ignoreBuildErrors: process.env.NEXT_SKIP_TYPECHECK === "1" },
