@@ -1,7 +1,7 @@
 "use client";
 /**
  * Schriftliche Rechenverfahren in drei Blättern:
- *   🎬 Vorführen      Addieren, Subtrahieren (Entbündeln), Multiplizieren, Dividieren
+ *   🎬 Vorführen      Addieren, Subtrahieren (Borgen mit −1 oder Ergänzen), Multiplizieren, Dividieren
  *                     Schritt für Schritt mit Walzen und fliegenden Überträgen
  *   ✍️ Üben           Ergebnis an den Walzen einstellen (wie im Zählwerk), prüfen, Rechenweg ansehen
  *   🕵️ Fehlerdetektiv Spiel: den Fehler in fertig gerechneten Aufgaben finden
@@ -14,7 +14,7 @@ import { Abspieler } from "./Rechenblatt";
 import { Rechenpapier } from "./Rechenpapier";
 
 const METHODEN: { id: Methode; label: string }[] = [
-  { id: "ergaenzen", label: "Ergänzen mit Übertrag" }, { id: "entbuendeln", label: "Abziehen mit Entbündeln" },
+  { id: "entbuendeln", label: "Abziehen mit Borgen (−1 merken)" }, { id: "ergaenzen", label: "Ergänzen mit Übertrag (+1 unten)" },
 ];
 
 const OPS: { id: Op; label: string }[] = [
@@ -24,7 +24,7 @@ const GRENZE: Record<Op, [number, number]> = { "+": [9999999, 9999999], "−": [
 
 function Vorfuehren() {
   const [op, setOp] = useState<Op>("+");
-  const [methode, setMethode] = useState<Methode>("ergaenzen");
+  const [methode, setMethode] = useState<Methode>("entbuendeln");
   const [ta, setTa] = useState("478"), [tb, setTb] = useState("365");
   const a = Number(ta), b = Number(tb);
   const fehler = !Number.isInteger(a) || !Number.isInteger(b) || a < 0 || b < 0 ? "Bitte natürliche Zahlen eingeben."
@@ -45,7 +45,7 @@ function Vorfuehren() {
       {op === "−" && <Chips wahl={methode} setze={setMethode} optionen={METHODEN} />}
       {fehler ? <p className="text-sm text-bad">{fehler}</p> : ablauf && <Abspieler ablauf={ablauf} />}
       <p className="text-xs text-muted">
-        {op === "−" && (methode === "ergaenzen" ? "Ergänzen mit Übertrag: unten plus wie viel ergibt oben? Reicht oben nicht (2 − 8), wird ein Zehner geborgt — aus 2 wird 12, 12 − 8 = 4 — und man merkt sich eins für die nächste Stelle. Die Walze startet auf der oberen Ziffer und dreht rückwärts — bei 7 − 1 von 7 auf 6; muss geborgt werden, dreht sie über 0 hinaus auf 9." : "Abziehen mit Entbündeln: oben minus unten; reicht es nicht, wird von links ein Bündel geholt (wie in der Stellenwerttafel).")}
+        {op === "−" && (methode === "ergaenzen" ? "Ergänzen mit Übertrag: unten plus wie viel ergibt oben? Reicht oben nicht, ergänzt man bis zur nächsten Zehnerzahl (2 → 12) und schreibt dafür unten bei der nächsten Stelle +1 dazu — wie der Übertrag beim Addieren." : "Abziehen mit Borgen: oben minus unten. Reicht oben nicht (2 − 8), borgt man links einen Zehner: aus 2 wird 12, links merkt man sich »−1« (8 → 7). Die Walze startet oben und dreht rückwärts — über 0 hinaus auf 9 heißt borgen.")}
         {op === "+" && "Die Walze einer Spalte dreht um jede Ziffer weiter. Läuft sie über die 9 hinaus, fliegt ein Übertrag in die nächste Spalte — wie beim Kilometerzähler."}
         {op === "·" && "Jede Ziffer des zweiten Faktors gibt ein Teilprodukt; die Teilprodukte werden stellengerecht addiert."}
         {op === ":" && "Die Walze zählt, wie oft der Teiler hineinpasst. Dann malnehmen, abziehen, nächste Ziffer herunterholen."}
@@ -56,7 +56,7 @@ function Vorfuehren() {
 
 function Ueben() {
   const [op, setOp] = useState<Op>("+");
-  const [methode, setMethode] = useState<Methode>("ergaenzen");
+  const [methode, setMethode] = useState<Methode>("entbuendeln");
   const [stufe, setStufe] = useState<1 | 2 | 3>(1);
   const [auf, setAuf] = useState(() => aufgabe("+", 1));
   const [weg, setWeg] = useState(false);

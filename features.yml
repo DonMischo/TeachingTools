@@ -1022,7 +1022,7 @@ simulationen:
     name: Schriftliche Rechenverfahren
     faehigkeiten: {use: [true, true]}
     kann:
-      - "Schriftliches Addieren, Subtrahieren (Ergänzen mit Übertrag oder Entbündeln), Multiplizieren und Dividieren Schritt für Schritt"
+      - "Schriftliches Addieren, Subtrahieren (Borgen mit »−1« merken oder Ergänzen mit Übertrag +1 unten), Multiplizieren und Dividieren Schritt für Schritt"
       - "Walzen je Spalte, Sprung 9 → 0 in Zeitlupe, Übertrag fliegt erst danach als +1-Kreis"
       - "Rechenketten mit Bögen, Zerlegung in Zehner (Übertrag) und Einer, Division mit Probe"
       - "Üben auf Karopapier: eine Ziffer je Kästchen, Übertragskreise, Zwischenschritte, Prüfen je Kästchen"

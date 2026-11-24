@@ -94,52 +94,62 @@ describe("Abläufe", () => {
       expect(f.exp).toBeLessThan(String(f.falsch).length);
     }
   });
-  it("Ergänzen mit Übertrag ist Standard, Entbündeln Option", () => {
-    const er = rechne("−", 5003, 1278);
-    expect(ergebnisVon(er)).toBe("3725");
-    expect(er.schritte.some(s => s.flug?.t === "+1")).toBe(true);
-    expect(er.schritte.some(s => s.zellen.some(z => z.art === "hilfe"))).toBe(false);
+  it("Borgen mit »−1« ist Standard, Ergänzen mit »+1 unten« Option", () => {
+    const st = rechne("−", 5003, 1278);
+    expect(ergebnisVon(st)).toBe("3725");
+    expect(st.merkeMinus).toBe(true);
+    expect(st.schritte.some(s => s.flug?.t === "−1")).toBe(true);
+    expect(st.schritte.some(s => s.zellen.some(z => z.art === "hilfe"))).toBe(false);
     expect(ergebnisVon(rechne("−", 1000, 999))).toBe("1");
+    const er = rechne("−", 5003, 1278, "ergaenzen");
+    expect(ergebnisVon(er)).toBe("3725");
+    expect(er.merkeMinus).toBeFalsy();
+    expect(er.schritte.some(s => s.flug?.t === "+1")).toBe(true);
   });
-  it("827 − 681: Zehner 2 − 8 geht nicht → borgen, 12 − 8 = 4, merke eins (beide Verfahren)", () => {
-    const er = rechne("−", 827, 681, "ergaenzen");
-    expect(ergebnisVon(er)).toBe("146");
-    const zehner = er.schritte.find(s => s.text.startsWith("Zehner"))!;
+  it("827 − 681 (Standard): Zehner 2 − 8 geht nicht → borgen, 12 − 8 = 4, bei den Hundertern »−1« merken", () => {
+    const ab = rechne("−", 827, 681);
+    expect(ergebnisVon(ab)).toBe("146");
+    const zehner = ab.schritte.find(s => s.text.startsWith("Zehner"))!;
     expect(zehner.borgen).toEqual({ oben: 2, mit: 12, unten: 8, ziffer: 4 });
     expect(zehner.zerlegung).toBeUndefined();
     // die Walze dreht rückwärts: von 2 aus 8-mal zurück (über 0 hinaus = borgen) und steht dann auf 4
-    expect(zehner.walze!.von).toBe(2);
-    expect(zehner.walze!.bis).toBe(-6);
-    expect(((zehner.walze!.bis % 10) + 10) % 10).toBe(4);
-    expect(rechne("−", 7, 1).schritte.find(s => s.walze)!.walze).toEqual({ c: 1, von: 7, bis: 6 });
+    expect(zehner.walze).toMatchObject({ von: 2, bis: -6 });
     expect(zehner.stand[zehner.walze!.c]).toBe(4);
     expect(zehner.text).toContain("2 − 8 geht nicht");
     expect(zehner.text).toContain("aus 2 wird 12");
     expect(zehner.text).toContain("12 − 8 = 4");
-    expect(zehner.text).toContain("merke eins");
-    // Hunderter: 6 + 1 gemerkt = 7, 8 − 7 = 1
-    const hunderter = er.schritte.find(s => s.text.startsWith("Hunderter"))!;
-    expect(hunderter.text).toContain("6 + 1 gemerkt = 7");
-    expect(hunderter.walze!.bis).toBe(1);
-    // keine Spalte beim Ergänzen zerlegt in »Zehner → Übertrag + Einer → schreiben«
-    for (const s of er.schritte) expect(s.zerlegung).toBeUndefined();
+    expect(zehner.text).toContain("»−1« merken");
+    // das −1 gehört zur Hunderter-Ziffer 8 des Minuenden: Merkzeile über dem Minuenden, Spalte der 8
+    const minus = zehner.zellen.find(z => z.art === "uebertrag" && z.neu)!;
+    const acht = zehner.zellen.find(z => z.art === "zahl" && z.t === "8" && z.r === 1)!;
+    expect(minus.t).toBe("−1");
+    expect(minus.c).toBe(acht.c);
+    expect(minus.r).toBeLessThan(acht.r);
+    // Hunderter: 8 − 1 (gemerkt) = 7, 7 − 6 = 1; das −1 ist danach verbraucht
+    const hunderter = ab.schritte.find(s => s.text.startsWith("Hunderter"))!;
+    expect(hunderter.text).toContain("8 − 1 (gemerkt) = 7");
+    expect(hunderter.walze).toMatchObject({ von: 8, bis: 1 }); // 8 → 7 (gemerkt) → … → 1
+    expect(hunderter.zellen.find(z => z.t === "−1")!.durch).toBe(true);
+    expect(rechne("−", 7, 1).schritte.find(s => s.walze)!.walze).toEqual({ c: 1, von: 7, bis: 6 });
+    // Ergänzen behält sein +1 unten (Kern des Verfahrens), mit der passenden Erklärung
+    const er = rechne("−", 827, 681, "ergaenzen");
+    const ez = er.schritte.find(s => s.text.startsWith("Zehner"))!;
+    expect(ez.text).toContain("8 + 4 = 12");
+    expect(ez.text).toContain("Übertrag +1");
+    expect(er.schritte.find(s => s.text.startsWith("Hunderter"))!.text).toContain("6 + 1 (Übertrag) = 7");
     // jede Spalte, beide Verfahren: die Walze endet auf der geschriebenen Ziffer
     const r = zufall(21);
     for (let i = 0; i < 150; i++) {
       const { a, b } = aufgabe("−", 3, r);
       for (const m of ["ergaenzen", "entbuendeln"] as const) {
-        const ab = rechne("−", a, b, m);
-        expect(ergebnisVon(ab)).toBe(String(a - b));
-        for (const st of ab.schritte) if (st.walze) {
+        const x = rechne("−", a, b, m);
+        expect(ergebnisVon(x)).toBe(String(a - b));
+        for (const st of x.schritte) if (st.walze) {
           const geschrieben = st.zellen.find(z => z.art === "ergebnis" && z.neu && z.c === st.walze!.c);
           if (geschrieben) expect(String(((st.walze.bis % 10) + 10) % 10)).toBe(geschrieben.t);
         }
       }
     }
-    const ent = rechne("−", 827, 681, "entbuendeln");
-    expect(ergebnisVon(ent)).toBe("146");
-    const z2 = ent.schritte.filter(s => s.walze).find(s => s.text.startsWith("Zehner: 12"))!;
-    expect(z2.walze).toMatchObject({ von: 12, bis: 4 });
   });
   it("Multiplizieren zerlegt das Produkt in Zehner (Übertrag) und Einer", () => {
     const ab = multipliziere(47, 3);
@@ -152,9 +162,12 @@ describe("Abläufe", () => {
     expect(ab.schritte[1].ketten![0].boegen[0]).toEqual({ text: ": 7", art: "durch" });
     expect(ab.schritte[ab.schritte.length - 1].ketten![0].kaesten).toEqual(["1410", "9870", "9876"]);
   });
-  it("Entbündeln über Nullen", () => {
+  it("Borgen über Nullen: die Null borgt selbst weiter (0 − 1 geht nicht → 9)", () => {
     const ab = subtrahiere(5003, 1278);
-    expect(ab.schritte.some(s => s.zellen.some(z => z.art === "hilfe" && z.t === "9"))).toBe(true);
+    expect(ab.schritte.filter(s => s.flug?.t === "−1").length).toBe(3);
+    const zehner = ab.schritte.find(s => s.text.startsWith("Zehner"))!;
+    expect(zehner.text).toContain("aus 0 wird 10, minus 1 gemerkt = 9");
+    expect(zehner.text).not.toContain("-1");
   });
   it("Fehlerdetektiv baut einen echten Fehler", () => {
     const r = zufall(3);

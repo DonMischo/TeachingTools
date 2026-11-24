@@ -9,8 +9,8 @@
  *   2. Zellen mit `ab: "walze"` erscheinen, der Übertrag fliegt los,
  *   3. Zellen mit `ab: "flug"` (das Ziel des Flugs) erscheinen.
  *
- * Addieren mit Übertrag, Subtrahieren durch Ergänzen mit Übertrag (Standard)
- * oder Abziehen mit Entbündeln, Multiplizieren (Produkt → Zehner als Übertrag,
+ * Addieren mit Übertrag, Subtrahieren durch Abziehen mit Borgen (Standard, »−1« merken)
+ * oder Ergänzen mit Übertrag (+1 unten), Multiplizieren (Produkt → Zehner als Übertrag,
  * Einer schreiben; dann Teilprodukte addieren) und Dividieren (wie oft passt …,
  * mit Probe). Nur natürliche Zahlen. Reine Rechnung, ohne React.
  */
@@ -40,7 +40,7 @@ export type Schritt = {
   spalten: number[];
   /** Ziffern der Walzen je Spalte (Ergebnis- bzw. Quotientenzeile) */
   stand: Record<number, number>;
-  /** Die Walze, die sich in diesem Schritt dreht: von → bis (über 9 hinaus = Übertrag, unter 0 = Entbündeln) */
+  /** Die Walze, die sich in diesem Schritt dreht: von → bis (über 9 hinaus = Übertrag, unter 0 = borgen) */
   walze?: { c: number; von: number; bis: number };
   flug?: { von: Ort; nach: Ort; t: string };
   ketten?: Kette[];
@@ -52,9 +52,9 @@ export type Ablauf = {
   op: Op; breite: number; hoehe: number; schritte: Schritt[]; ergebnis: string;
   /** Spalte der Einer im Ergebnis (für die Stellenwert-Farben) */ einer?: number;
   /** Zeilen, in die Überträge geschrieben werden (für das Übungspapier) */ uebertragZeilen?: number[];
+  /** Merkzeichen sind »−1« (Borgen) statt »+1« */ merkeMinus?: boolean;
 };
 
-const ziffern = (n: number) => String(n).split("").map(Number);
 /** Spalte der Stelle `exp` bei rechtsbündiger Ausrichtung an Spalte `rechts` */
 const sp = (rechts: number, exp: number) => rechts - exp;
 const STELLE = ["Einer", "Zehner", "Hunderter", "Tausender", "Zehntausender", "Hunderttausender", "Millionen"];
@@ -154,14 +154,14 @@ export function subtrahiereErgaenzen(a: number, b: number): Ablauf {
       boegen: [...(uebertrag ? [{ text: `+ ${uebertrag} Übertrag`, art: "plus" as const }] : []), { text: `+ ${d}`, art: "plus" as const }] }];
     if (!fuehrendeNull) { n.stand[c] = d; n.zellen.push({ r: rE, c, t: String(d), art: "ergebnis", neu: true, ab: "walze" }); }
     if (neuU) {
-      n.borgen = { oben: o, mit: ziel, unten, ziffer: d };
+      // Ergänzen: oben 10 dazu, dafür unten bei der nächsten Stelle +1 (das ist der Kern des Verfahrens)
       n.zellen.push({ r: rU, c: c - 1, t: "1", art: "uebertrag", neu: true, ab: "flug" });
       n.flug = { von: { r: rE, c }, nach: { r: rU, c: c - 1 }, t: "+1" };
     }
-    const vorher = uebertrag ? `Unten ${u} + ${uebertrag} gemerkt = ${unten}. ` : "";
+    const vorher = uebertrag ? `Unten ${u} + ${uebertrag} (Übertrag) = ${unten}. ` : "";
     n.text = `${stellenName(e)}: ${vorher}` +
-      (neuU ? `${o} − ${unten} geht nicht (${unten} + ? = ${o} geht nicht). Einen Zehner borgen: aus ${o} wird ${ziel}. ${ziel} − ${unten} = ${d} (${unten} + ${d} = ${ziel}). Schreibe ${d} — merke eins für die ${stellenName(e + 1)}.`
-        : `${o} − ${unten} = ${d} (${unten} + ${d} = ${o}). ${fuehrendeNull ? "Eine führende Null schreibt man nicht." : `Schreibe ${d}.`}`);
+      (neuU ? `${unten} + ? = ${o} geht nicht — also bis ${ziel} ergänzen: ${unten} + ${d} = ${ziel}. Schreibe ${d}. Weil oben 10 dazugenommen wurden, kommt unten bei den ${stellenName(e + 1)}n 1 dazu (Übertrag +1).`
+        : `${unten} + ${d} = ${o}. ${fuehrendeNull ? "Eine führende Null schreibt man nicht." : `Schreibe ${d}.`}`);
     schritte.push(n); jetzt = n; uebertrag = neuU;
   }
   const ende = klon(jetzt);
@@ -391,57 +391,66 @@ export function dividiere(a: number, b: number, opts: { nachkomma?: number } = {
   return { op: ":", breite: cQ + qStelle + 2 + (nk ? 0 : String(rest).length + 1), hoehe, schritte, ergebnis };
 }
 
-// ── Subtrahieren (Abziehen mit Entbündeln) ───────────────────────────
+// ── Subtrahieren: Abziehen mit Borgen (−1 merken) ────────────────────
 
-/** Alternative zum Ergänzen: oben minus unten, fehlt etwas, wird links entbündelt. */
+/**
+ * Standardverfahren: oben minus unten, Spalte für Spalte von rechts. Reicht
+ * oben nicht, wird von der Stelle links ein Zehner geborgt: hier +10, dort
+ * ein »−1« merken (Kreis über der Ziffer, 8 → 7). Nullen verleihen weiter,
+ * indem sie selbst borgen (0 − 1 geht nicht → borgen → 9).
+ * Die Walze startet auf der oberen Ziffer (minus Gemerktes) und dreht zurück;
+ * über 0 hinaus auf 9 = borgen.
+ */
 export function subtrahiere(a: number, b: number): Ablauf {
   if (b > a) throw new Error("Minuend muss größer sein.");
+  const diff = a - b;
   const stellen = String(a).length, rechts = stellen;
-  const rH = 0, rA = 1, rB = 2, rE = 3;
-  const oben = ziffern(a).reverse(); // je Stelle, wird beim Entbündeln verändert
+  const rM = 0, rA = 1, rB = 2, rE = 3; // Merkzeile (−1) über dem Minuenden
   const start: Schritt = {
     zellen: [...zahlZellen(a, rA, rechts), ...zahlZellen(b, rB, rechts), { r: rB, c: 0, t: "−", art: "zeichen" }],
     striche: [{ r: rB, c0: 0, c1: rechts }], spalten: [], stand: {},
-    text: "Stellengerecht untereinander schreiben. Von rechts nach links: oben minus unten. Reicht oben nicht, wird ein Bündel von links entbündelt.",
+    text: "Stellengerecht untereinander schreiben. Von rechts nach links: oben minus unten. Reicht oben nicht, borgt man von der Stelle links einen Zehner — dort merkt man sich »−1«.",
   };
   const schritte = [start];
-  let jetzt = start;
+  let jetzt = start, gemerkt = 0;
   for (let e = 0; e < stellen; e++) {
-    const c = sp(rechts, e), unten = Math.floor(b / 10 ** e) % 10;
-    if (oben[e] < unten) {
-      // Entbündeln: nächste Stelle links mit Ziffer > 0 suchen, dazwischen werden Nullen zu Neunen
-      let j = e + 1;
-      while (oben[j] === 0) j++;
-      const n = klon(jetzt, { spalten: [c, sp(rechts, j)] });
-      const durchstreichen = (exp: number, neu: number) => {
-        const cc = sp(rechts, exp);
-        n.zellen = n.zellen.map(z => (z.c === cc && (z.r === rA || z.r === rH) && !z.durch ? { ...z, durch: true } : z));
-        n.zellen.push({ r: rH, c: cc, t: String(neu), art: "hilfe", neu: true });
-      };
-      oben[j] -= 1; durchstreichen(j, oben[j]);
-      for (let m = j - 1; m > e; m--) { oben[m] = 9; durchstreichen(m, 9); }
-      oben[e] += 10; durchstreichen(e, oben[e]);
-      n.flug = { von: { r: rH, c: sp(rechts, j) }, nach: { r: rH, c }, t: "10" };
-      n.text = `${stellenName(e)}: ${oben[e] - 10} − ${unten} geht nicht. Einen ${stellenName(j)} entbündeln (1 ${stellenName(j)} = 10 ${stellenName(j - 1)})` +
-        (j > e + 1 ? ` (über die Nullen hinweg: jede wird zu 9)` : "") + `: jetzt ${oben[e]} ${stellenName(e)}.`;
-      schritte.push(n); jetzt = n;
-    }
-    const d = oben[e] - unten;
-    if (e > 0 && d === 0 && 10 ** e > a - b) { continue; }
+    const c = sp(rechts, e), o = ziffer(a, e), u = ziffer(b, e);
+    const oben = o - gemerkt; // was oben nach dem Gemerkten übrig ist
+    const borgen = oben < u;
+    const d = borgen ? oben + 10 - u : oben - u;
+    const fuehrendeNull = e > 0 && 10 ** e > diff;
     const n = klon(jetzt, { spalten: [c] });
-    n.walze = { c, von: oben[e], bis: d }; // Walze steht auf der oberen Ziffer und dreht `unten`-mal zurück
-    n.stand[c] = d;
-    n.zellen.push({ r: rE, c, t: String(d), art: "ergebnis", neu: true, ab: "walze" });
-    n.text = `${stellenName(e)}: ${oben[e]} − ${unten} = ${d}. Schreibe ${d}.`;
-    schritte.push(n); jetzt = n;
+    if (gemerkt) n.zellen = n.zellen.map(z => (z.r === rM && z.c === c ? { ...z, durch: true } : z)); // −1 ist verbraucht
+    // Walze startet auf der echten oberen Ziffer: erst das gemerkte −1 zurück, dann u — unter 0 = borgen
+    n.walze = { c, von: o, bis: oben - u };
+    const nullBorgt = oben < 0; // 0 mit gemerktem −1: muss selbst borgen
+    n.ketten = [{ titel: stellenName(e),
+      kaesten: nullBorgt ? [String(o), "10", "9", String(d)] : borgen ? [...(gemerkt ? [String(o)] : []), String(oben), String(oben + 10), String(d)] : [...(gemerkt ? [String(o)] : []), String(oben), String(d)],
+      boegen: nullBorgt ? [{ text: "+ 10 geborgt", art: "plus" as const }, { text: "− 1 gemerkt", art: "minus" as const }, { text: `− ${u}`, art: "minus" as const }]
+        : [...(gemerkt ? [{ text: "− 1 gemerkt", art: "minus" as const }] : []), ...(borgen ? [{ text: "+ 10 geborgt", art: "plus" as const }] : []), { text: `− ${u}`, art: "minus" as const }] }];
+    if (!fuehrendeNull) { n.stand[c] = d; n.zellen.push({ r: rE, c, t: String(d), art: "ergebnis", neu: true, ab: "walze" }); }
+    if (borgen) {
+      n.borgen = nullBorgt ? { oben: o, mit: 10 + oben, unten: u, ziffer: d } : { oben, mit: oben + 10, unten: u, ziffer: d };
+      n.zellen.push({ r: rM, c: c - 1, t: "−1", art: "uebertrag", neu: true, ab: "flug" });
+      n.flug = { von: { r: rE, c }, nach: { r: rM, c: c - 1 }, t: "−1" };
+    }
+    const vorher = gemerkt && !nullBorgt ? `${o} − 1 (gemerkt) = ${oben}. ` : "";
+    n.text = `${stellenName(e)}: ${vorher}` +
+      (nullBorgt
+        ? `Von der 0 kann man das gemerkte −1 nicht abziehen — also borgt auch die 0 einen Zehner von den ${stellenName(e + 1)}n: aus 0 wird 10, minus 1 gemerkt = 9. 9 − ${u} = ${d}. Schreibe ${d} — und bei den ${stellenName(e + 1)}n »−1« merken.`
+        : borgen
+        ? `${oben} − ${u} geht nicht. Einen Zehner von den ${stellenName(e + 1)}n borgen: aus ${oben} wird ${oben + 10}. ${oben + 10} − ${u} = ${d}. Schreibe ${d} — und bei den ${stellenName(e + 1)}n »−1« merken.`
+        : `${oben} − ${u} = ${d}. ${fuehrendeNull ? "Eine führende Null schreibt man nicht." : `Schreibe ${d}.`}`);
+    schritte.push(n); jetzt = n; gemerkt = borgen ? 1 : 0;
   }
   const ende = klon(jetzt);
-  ende.text = `Ergebnis: ${a} − ${b} = ${a - b}. Probe: ${a - b} + ${b} = ${a}.`;
+  ende.ketten = [{ titel: "Probe", kaesten: [String(diff), String(a)], boegen: [{ text: `+ ${b}`, art: "plus" }] }];
+  ende.text = `Ergebnis: ${a} − ${b} = ${diff}. Probe: ${diff} + ${b} = ${a}.`;
   schritte.push(ende);
-  return { op: "−", breite: rechts + 1, hoehe: rE + 1, schritte, ergebnis: String(a - b), einer: rechts };
+  return { op: "−", breite: rechts + 1, hoehe: rE + 1, schritte, ergebnis: String(diff), einer: rechts, uebertragZeilen: [rM], merkeMinus: true };
 }
 
-export function rechne(op: Op, a: number, b: number, methode: Methode = "ergaenzen"): Ablauf {
+export function rechne(op: Op, a: number, b: number, methode: Methode = "entbuendeln"): Ablauf {
   return op === "+" ? addiere([a, b]) : op === "−" ? (methode === "ergaenzen" ? subtrahiereErgaenzen(a, b) : subtrahiere(a, b))
     : op === "·" ? multipliziere(a, b) : dividiere(a, b);
 }
@@ -470,7 +479,7 @@ export function loesung(op: Op, a: number, b: number): { wert: number; rest: num
 /**
  * Fehlerdetektiv: richtiges Ergebnis mit einem typischen Fehler — beim
  * Addieren/Multiplizieren Übertrag vergessen, beim Subtrahieren das
- * Entbündeln vergessen (kleinere von größerer Ziffer abgezogen). Liefert das
+ * Borgen vergessen (kleinere von größerer Ziffer abgezogen). Liefert das
  * falsche Ergebnis und die Stelle (exp) der ersten falschen Ziffer, oder null.
  */
 /** Stelle der ersten (von rechts) abweichenden Ziffer */
@@ -497,7 +506,7 @@ export function mitFehler(op: "+" | "−", a: number, b: number): { falsch: numb
     const o = Math.floor(a / 10 ** e) % 10, u = Math.floor(b / 10 ** e) % 10;
     if (o < u) {
       const falsch = a - b + (u - o) * 10 ** e - (10 + o - u) * 10 ** e + 10 ** (e + 1);
-      return { falsch, exp: abweichung(a - b, falsch), grund: `Bei den ${stellenName(e)}n: ${o} − ${u} geht nicht. Statt mit Übertrag zu rechnen (bzw. zu entbündeln), wurde einfach ${u} − ${o} gerechnet.` };
+      return { falsch, exp: abweichung(a - b, falsch), grund: `Bei den ${stellenName(e)}n: ${o} − ${u} geht nicht. Statt zu borgen (»−1« merken), wurde einfach ${u} − ${o} gerechnet.` };
     }
   }
   return null;

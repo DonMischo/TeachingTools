@@ -25,6 +25,7 @@ export function Rechenpapier({ ablauf, onErgebnis }: { ablauf: Ablauf; onErgebni
     return m;
   }, [ende, gegeben]);
   const ueZeilen = ablauf.uebertragZeilen ?? [];
+  const vz = ablauf.merkeMinus ? "−" : "+"; // Borgen: »−1« merken
   const [werte, setWerte] = useState<Record<string, string>>({});
   const [kreise, setKreise] = useState<Record<string, number>>({});
   const [geprueft, setGeprueft] = useState(false);
@@ -67,10 +68,10 @@ export function Rechenpapier({ ablauf, onErgebnis }: { ablauf: Ablauf; onErgebni
           {ueZeilen.flatMap(r => Array.from({ length: ablauf.breite - 1 }, (_, i) => i + 1).map(c => {
             const k = schl(r, c), n = kreise[k] ?? 0;
             return (
-              <button key={`u${k}`} type="button" className="absolute flex items-center justify-center" aria-label={`Übertrag Spalte ${c}: ${n ? `+${n}` : "leer"}`}
+              <button key={`u${k}`} type="button" className="absolute flex items-center justify-center" aria-label={`Übertrag Spalte ${c}: ${n ? `${vz}${n}` : "leer"}`}
                 style={{ left: `${c * ZELLE}rem`, top: `${r * ZELLE}rem`, width: `${ZELLE}rem`, height: `${ZELLE}rem` }}
                 onClick={() => setKreise(x => ({ ...x, [k]: (n + 1) % 4 }))}>
-                <span className={`flex items-center justify-center rounded-full border-2 size-7 text-sm font-black ${n ? "border-bad text-bad bg-bad/10" : "border-dashed border-line text-transparent hover:border-bad/50"}`}>+{n || 1}</span>
+                <span className={`flex items-center justify-center rounded-full border-2 size-7 text-sm font-black ${n ? "border-bad text-bad bg-bad/10" : "border-dashed border-line text-transparent hover:border-bad/50"}`}>{vz}{n || 1}</span>
               </button>
             );
           }))}

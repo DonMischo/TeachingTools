@@ -194,7 +194,7 @@ export function Rechenblatt({ ablauf, i }: { ablauf: Ablauf; i: number }) {
             );
             if (z.art === "uebertrag") return (
               <span key={k} className="absolute flex items-center justify-center" style={pos}>
-                <span className={`flex items-center justify-center rounded-full border-2 border-bad text-bad font-black text-sm size-7 ${z.durch ? "opacity-40" : ""} ${z.neu ? "animate-pulse" : ""}`}>+{z.t}</span>
+                <span className={`flex items-center justify-center rounded-full border-2 border-bad text-bad font-black text-sm size-7 ${z.durch ? "opacity-40 line-through" : ""} ${z.neu ? "animate-pulse" : ""}`}>{z.t.startsWith("−") ? z.t : `+${z.t}`}</span>
               </span>
             );
             const klein = z.art === "hilfe";

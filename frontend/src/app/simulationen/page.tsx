@@ -385,7 +385,7 @@ const ALL_CARDS: Werkzeug[] = [
     href: "/simulationen/schriftlich",
     icon: "✏️",
     title: "Schriftliche Rechenverfahren",
-    description: "Schriftlich addieren, subtrahieren (Ergänzen mit Übertrag oder Entbündeln), multiplizieren und dividieren — jeder Schritt sichtbar auf Karopapier in den Farben der Stellenwerttafel. Unter jeder Spalte dreht eine Walze wie im Zählwerk: Läuft sie über die 9, fliegt der Übertrag in die nächste Spalte; beim Entbündeln fliegt der Zehner herüber. Üben auf Karopapier mit Übertragskreisen und das Spiel Fehlerdetektiv.",
+    description: "Schriftlich addieren, subtrahieren (Borgen mit »−1« oder Ergänzen mit Übertrag), multiplizieren und dividieren — jeder Schritt sichtbar auf Karopapier in den Farben der Stellenwerttafel. Unter jeder Spalte dreht eine Walze wie im Zählwerk: Läuft sie über die 9, fliegt der Übertrag in die nächste Spalte; beim Entbündeln fliegt der Zehner herüber. Üben auf Karopapier mit Übertragskreisen und das Spiel Fehlerdetektiv.",
     color: "#0d9488",
   },
   {
