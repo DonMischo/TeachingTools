@@ -1,18 +1,34 @@
 /**
  * Schriftliche Rechenverfahren als Folge von Schnappschüssen: Was steht nach
- * jedem Schritt auf dem Rechenblatt, welche Spalte ist dran, wie stehen die
- * Walzen (eine je Stellenwert), und welche Ziffer »fliegt« gerade (Übertrag,
- * entbündelter Zehner, heruntergeholte Ziffer)?
+ * jedem Schritt auf dem Rechenblatt, welche Spalte ist dran, wie dreht die
+ * Walze der Spalte, welche Ziffer »fliegt« (Übertrag, entbündelter Zehner,
+ * heruntergeholte Ziffer) und welche Rechenkette mit Bögen steht daneben.
  *
- * Addieren mit Übertrag, Subtrahieren durch Abziehen mit Entbündeln,
- * Multiplizieren (Teilprodukte, dann addieren) und Dividieren (wie oft passt …).
- * Nur natürliche Zahlen. Reine Rechnung, ohne React.
+ * Zeitlicher Ablauf eines Schritts (die Oberfläche hält sich daran):
+ *   1. die Walze dreht (über 9 → 0 in Zeitlupe),
+ *   2. Zellen mit `ab: "walze"` erscheinen, der Übertrag fliegt los,
+ *   3. Zellen mit `ab: "flug"` (das Ziel des Flugs) erscheinen.
+ *
+ * Addieren mit Übertrag, Subtrahieren durch Ergänzen mit Übertrag (Standard)
+ * oder Abziehen mit Entbündeln, Multiplizieren (Produkt → Zehner als Übertrag,
+ * Einer schreiben; dann Teilprodukte addieren) und Dividieren (wie oft passt …,
+ * mit Probe). Nur natürliche Zahlen. Reine Rechnung, ohne React.
  */
 
 export type Op = "+" | "−" | "·" | ":";
+export type Methode = "ergaenzen" | "entbuendeln";
 export type Ort = { r: number; c: number };
-export type Zelle = Ort & { t: string; art: "zahl" | "zeichen" | "uebertrag" | "ergebnis" | "hilfe" | "teil"; durch?: boolean; neu?: boolean };
+export type Zelle = Ort & {
+  t: string; art: "zahl" | "zeichen" | "uebertrag" | "ergebnis" | "hilfe" | "teil";
+  durch?: boolean; neu?: boolean;
+  /** erst nach der Walze bzw. nach dem Flug zeigen */
+  ab?: "walze" | "flug";
+};
 export type Strich = { r: number; c0: number; c1: number };
+/** Rechenkette mit Bögen (wie beim Größen-Umrechnen): Kasten —Bogen→ Kasten … */
+export type Kette = { kaesten: string[]; boegen: { text: string; art: "plus" | "minus" | "mal" | "durch" }[]; titel?: string };
+/** Eine Zahl zerfällt in Zehner (Übertrag) und Einer (schreiben) */
+export type Zerlegung = { zahl: number; zehner: number; einer: number };
 export type Schritt = {
   zellen: Zelle[];
   striche: Strich[];
@@ -21,17 +37,24 @@ export type Schritt = {
   /** Ziffern der Walzen je Spalte (Ergebnis- bzw. Quotientenzeile) */
   stand: Record<number, number>;
   /** Die Walze, die sich in diesem Schritt dreht: von → bis (über 9 hinaus = Übertrag, unter 0 = Entbündeln) */
-  walze?: { c: number; von: number; bis: number };
+  walze?: { c: number; von: number; bis: number; /** Ergänzen: das Ergebnis ist die Zahl der Drehungen, nicht die Ziffer */ zaehle?: boolean };
   flug?: { von: Ort; nach: Ort; t: string };
+  ketten?: Kette[];
+  zerlegung?: Zerlegung;
   text: string;
 };
-export type Ablauf = { op: Op; breite: number; hoehe: number; schritte: Schritt[]; ergebnis: string; /** Spalte der Einer im Ergebnis (für die Stellenwert-Farben) */ einer?: number };
+export type Ablauf = {
+  op: Op; breite: number; hoehe: number; schritte: Schritt[]; ergebnis: string;
+  /** Spalte der Einer im Ergebnis (für die Stellenwert-Farben) */ einer?: number;
+  /** Zeilen, in die Überträge geschrieben werden (für das Übungspapier) */ uebertragZeilen?: number[];
+};
 
 const ziffern = (n: number) => String(n).split("").map(Number);
 /** Spalte der Stelle `exp` bei rechtsbündiger Ausrichtung an Spalte `rechts` */
 const sp = (rechts: number, exp: number) => rechts - exp;
 const STELLE = ["Einer", "Zehner", "Hunderter", "Tausender", "Zehntausender", "Hunderttausender", "Millionen"];
 export const stellenName = (exp: number) => STELLE[exp] ?? `10^${exp}`;
+const ziffer = (n: number, e: number) => Math.floor(n / 10 ** e) % 10;
 
 /** Zahl rechtsbündig als Zellen */
 function zahlZellen(n: number | string, r: number, rechts: number, art: Zelle["art"] = "zahl"): Zelle[] {
@@ -40,7 +63,18 @@ function zahlZellen(n: number | string, r: number, rechts: number, art: Zelle["a
 }
 
 function klon(s: Schritt, extra: Partial<Schritt> = {}): Schritt {
-  return { zellen: s.zellen.map(z => ({ ...z, neu: false })), striche: [...s.striche], spalten: [], stand: { ...s.stand }, text: "", ...extra };
+  return {
+    zellen: s.zellen.map(z => ({ ...z, neu: false, ab: undefined })), striche: [...s.striche], spalten: [], stand: { ...s.stand }, text: "", ...extra,
+  };
+}
+
+/** Kette für eine Spaltensumme: 4 —+7→ 11 —+1 (Übertrag)→ 12 */
+function summenKette(teile: number[], uebertrag: number, titel?: string): Kette {
+  const kaesten = [String(teile[0] ?? 0)], boegen: Kette["boegen"] = [];
+  let s = teile[0] ?? 0;
+  for (const t of teile.slice(1)) { s += t; boegen.push({ text: `+ ${t}`, art: "plus" }); kaesten.push(String(s)); }
+  if (uebertrag) { s += uebertrag; boegen.push({ text: `+ ${uebertrag} Ü`, art: "plus" }); kaesten.push(String(s)); }
+  return { kaesten, boegen, titel };
 }
 
 // ── Addieren ─────────────────────────────────────────────────────────
@@ -54,40 +88,247 @@ export function addiere(zahlen: number[]): Ablauf {
   const start: Schritt = {
     zellen: [...zahlen.flatMap((z, i) => zahlZellen(z, i, rechts)), { r: k - 1, c: 0, t: "+", art: "zeichen" }],
     striche: [{ r: rU, c0: 0, c1: rechts }], spalten: [], stand: {},
-    text: `Die Zahlen stehen stellengerecht untereinander: Einer unter Einern, Zehner unter Zehnern … Gerechnet wird von rechts nach links.`,
+    text: "Die Zahlen stehen stellengerecht untereinander: Einer unter Einern, Zehner unter Zehnern … Gerechnet wird von rechts nach links.",
   };
   const schritte: Schritt[] = [start];
   let jetzt = start, uebertrag = 0;
   for (let e = 0; e < stellen; e++) {
     const c = sp(rechts, e);
-    const z = zahlen.map(n => Math.floor(n / 10 ** e) % 10).filter((d, i) => d > 0 || 10 ** e <= zahlen[i]);
+    const z = zahlen.filter(n => 10 ** e <= n || (e === 0)).map(n => ziffer(n, e));
     const s = z.reduce((a, b) => a + b, 0) + uebertrag;
     if (s === 0 && 10 ** e > summe) break;
-    const teile = [...z.map(String), ...(uebertrag ? [`${uebertrag} (Übertrag)`] : [])];
-    const ziffer = s % 10, neuU = Math.floor(s / 10);
+    const einer = s % 10, zehner = Math.floor(s / 10);
     const n = klon(jetzt, { spalten: [c] });
     // Die Walze startet beim Übertrag und dreht um jede Ziffer weiter; jede volle Runde über die 9 = ein Übertrag
     n.walze = { c, von: uebertrag, bis: s };
-    n.stand[c] = ziffer;
-    n.zellen.push({ r: rE, c, t: String(ziffer), art: "ergebnis", neu: true });
-    if (neuU > 0 && e + 1 < stellen) {
-      n.zellen.push({ r: rU, c: c - 1, t: String(neuU), art: "uebertrag", neu: true });
-      n.flug = { von: { r: rE, c }, nach: { r: rU, c: c - 1 }, t: String(neuU) };
-    } else if (neuU > 0) n.zellen.push({ r: rE, c: c - 1, t: String(neuU), art: "ergebnis", neu: true });
-    n.text = `${stellenName(e)}: ${teile.join(" + ")} = ${s}. ` +
-      (neuU ? `Schreibe ${ziffer}, ${neuU} ${neuU === 1 ? "Übertrag" : "Überträge"} zu den ${stellenName(e + 1)}n — die Walze ist ${neuU}-mal über die 9 gelaufen.` : `Schreibe ${ziffer}.`);
-    if (neuU > 0 && e + 1 >= stellen) n.text += ` Der Übertrag ${neuU} kommt ganz vorn ins Ergebnis.`;
+    n.stand[c] = einer;
+    n.ketten = [summenKette(z, uebertrag, stellenName(e))];
+    const letzte = 10 ** (e + 1) > summe;
+    n.zellen.push({ r: rE, c, t: String(einer), art: "ergebnis", neu: true, ab: "walze" });
+    if (zehner > 0 && !letzte) {
+      n.zerlegung = { zahl: s, zehner, einer };
+      n.zellen.push({ r: rU, c: c - 1, t: String(zehner), art: "uebertrag", neu: true, ab: "flug" });
+      n.flug = { von: { r: rE, c }, nach: { r: rU, c: c - 1 }, t: `+${zehner}` };
+    } else if (zehner > 0) n.zellen.push({ r: rE, c: c - 1, t: String(zehner), art: "ergebnis", neu: true, ab: "walze" });
+    n.text = `${stellenName(e)}: ${[...z.map(String), ...(uebertrag ? [`${uebertrag} (Übertrag)`] : [])].join(" + ")} = ${s}. ` +
+      (zehner && !letzte ? `${s} = ${zehner} Zehner + ${einer} Einer: Schreibe ${einer}, ${zehner} wandert als Übertrag zu den ${stellenName(e + 1)}n — die Walze ist über die 9 gelaufen.` : `Schreibe ${zehner && letzte ? s : einer}.`);
     schritte.push(n);
-    jetzt = n; uebertrag = neuU;
+    jetzt = n; uebertrag = zehner;
   }
   const ende = klon(jetzt);
   ende.text = `Ergebnis: ${zahlen.join(" + ")} = ${summe}.`;
   schritte.push(ende);
-  return { op: "+", breite: rechts + 1, hoehe: rE + 1, schritte, ergebnis: String(summe), einer: rechts };
+  return { op: "+", breite: rechts + 1, hoehe: rE + 1, schritte, ergebnis: String(summe), einer: rechts, uebertragZeilen: [rU] };
+}
+
+// ── Subtrahieren: Ergänzen mit Übertrag ──────────────────────────────
+
+export function subtrahiereErgaenzen(a: number, b: number): Ablauf {
+  if (b > a) throw new Error("Minuend muss größer sein.");
+  const diff = a - b;
+  const stellen = String(a).length, rechts = stellen;
+  const rA = 0, rB = 1, rU = 2, rE = 3;
+  const start: Schritt = {
+    zellen: [...zahlZellen(a, rA, rechts), ...zahlZellen(b, rB, rechts), { r: rB, c: 0, t: "−", art: "zeichen" }],
+    striche: [{ r: rU, c0: 0, c1: rechts }], spalten: [], stand: {},
+    text: "Stellengerecht untereinander schreiben. Gerechnet wird von rechts nach links durch Ergänzen: unten plus wie viel ergibt oben? Reicht oben nicht, ergänzt man bis zur nächsten Zehnerzahl und schreibt einen Übertrag — genau wie beim Addieren.",
+  };
+  const schritte = [start];
+  let jetzt = start, uebertrag = 0;
+  for (let e = 0; e < stellen; e++) {
+    const c = sp(rechts, e), o = ziffer(a, e), u = ziffer(b, e);
+    const unten = u + uebertrag;
+    const ziel = unten > o ? o + 10 : o;
+    const d = ziel - unten, neuU = unten > o ? 1 : 0;
+    const fuehrendeNull = e > 0 && 10 ** e > diff;
+    const n = klon(jetzt, { spalten: [c] });
+    n.walze = { c, von: unten, bis: unten + d, zaehle: true }; // die Walze dreht von unten hoch bis oben — die Zahl der Drehungen ist das Ergebnis, über die 9 = Übertrag
+    n.ketten = [{ titel: stellenName(e), kaesten: uebertrag ? [String(u), String(unten), String(ziel)] : [String(unten), String(ziel)],
+      boegen: [...(uebertrag ? [{ text: `+ ${uebertrag} Ü`, art: "plus" as const }] : []), { text: `+ ${d}`, art: "plus" as const }] }];
+    if (!fuehrendeNull) { n.stand[c] = d; n.zellen.push({ r: rE, c, t: String(d), art: "ergebnis", neu: true, ab: "walze" }); }
+    if (neuU) {
+      n.zerlegung = { zahl: ziel, zehner: 1, einer: o };
+      n.zellen.push({ r: rU, c: c - 1, t: "1", art: "uebertrag", neu: true, ab: "flug" });
+      n.flug = { von: { r: rE, c }, nach: { r: rU, c: c - 1 }, t: "+1" };
+    }
+    n.text = `${stellenName(e)}: ${u}${uebertrag ? ` + ${uebertrag} (Übertrag) = ${unten}` : ""}. ` +
+      (neuU ? `${unten} + ? = ${o} geht nicht — also bis ${ziel}: ${unten} + ${d} = ${ziel}. Schreibe ${d}, 1 Übertrag zu den ${stellenName(e + 1)}n.`
+        : `${unten} + ? = ${o}: ${unten} + ${d} = ${o}. ${fuehrendeNull ? "Eine führende Null schreibt man nicht." : `Schreibe ${d}.`}`);
+    schritte.push(n); jetzt = n; uebertrag = neuU;
+  }
+  const ende = klon(jetzt);
+  ende.ketten = [{ titel: "Probe", kaesten: [String(diff), String(a)], boegen: [{ text: `+ ${b}`, art: "plus" }] }];
+  ende.text = `Ergebnis: ${a} − ${b} = ${diff}. Probe: ${diff} + ${b} = ${a}.`;
+  schritte.push(ende);
+  return { op: "−", breite: rechts + 1, hoehe: rE + 1, schritte, ergebnis: String(diff), einer: rechts, uebertragZeilen: [rU] };
+}
+
+// ── Multiplizieren ───────────────────────────────────────────────────
+
+export function multipliziere(a: number, b: number): Ablauf {
+  const za = String(a), zb = String(b);
+  const la = za.length, lb = zb.length;
+  const produkt = a * b;
+  const endeVon = (j: number) => la + 1 + j; // Teilprodukt j endet unter der j-ten Ziffer von b
+  const teile = zb.split("").map(Number).map(d => a * d);
+  const links = Math.min(0, ...teile.map((t, j) => endeVon(j) - String(t).length + 1), endeVon(lb - 1) - String(produkt).length + 1);
+  const off = 1 - links; // eine Spalte Rand für das Pluszeichen
+  const C = (c: number) => c + off;
+  const rU = (j: number) => 1 + 2 * j, rT = (j: number) => 2 + 2 * j; // Übertragszeile über jedem Teilprodukt
+  const rUs = 1 + 2 * lb, rE = 2 + 2 * lb;
+  const start: Schritt = {
+    zellen: [...zahlZellen(a, 0, C(la - 1)), { r: 0, c: C(la), t: "·", art: "zeichen" }, ...zahlZellen(b, 0, C(la + lb))],
+    striche: [{ r: 0, c0: 0, c1: C(la + lb) }], spalten: [], stand: {},
+    text: `Jede Ziffer von ${b} wird mit ${a} malgenommen — von links nach rechts. Jedes Teilprodukt endet genau unter seiner Ziffer. In jeder Stelle: Produkt bilden, Übertrag dazu, Einer schreiben, Zehner als Übertrag weitergeben.`,
+  };
+  const schritte = [start];
+  let jetzt = start;
+  const ra = za.split("").map(Number).reverse();
+  zb.split("").map(Number).forEach((d, j) => {
+    const rechts = C(endeVon(j));
+    let u = 0;
+    for (let e = 0; e < la; e++) {
+      const col = rechts - e, p0 = ra[e] * d, p = p0 + u;
+      const letzte = e === la - 1;
+      // 1. Produkt
+      const s1 = klon(jetzt, { spalten: [C(la - 1 - e), C(la + 1 + j)] });
+      s1.ketten = [{ titel: `${stellenName(e)} · ${d}`, kaesten: [String(ra[e]), String(p0)], boegen: [{ text: `· ${d}`, art: "mal" }] }];
+      s1.text = `${ra[e]} · ${d} = ${p0}.${u ? ` Dazu kommt gleich der Übertrag ${u}.` : ""}`;
+      schritte.push(s1); jetzt = s1;
+      // 2. Übertrag dazu (nur wenn einer da ist) — langsam, mit der Walze
+      if (u) {
+        const s2 = klon(jetzt, { spalten: [col] });
+        s2.zellen = s2.zellen.map(z => (z.r === rU(j) && z.c === col ? { ...z, durch: true } : z));
+        s2.walze = { c: col, von: p0, bis: p };
+        s2.stand[col] = p % 10;
+        s2.ketten = [{ titel: "plus Übertrag", kaesten: [String(ra[e]), String(p0), String(p)], boegen: [{ text: `· ${d}`, art: "mal" }, { text: `+ ${u} Ü`, art: "plus" }] }];
+        s2.text = `Übertrag dazu: ${p0} + ${u} = ${p}.`;
+        schritte.push(s2); jetzt = s2;
+      }
+      // 3. Zerlegen: Einer schreiben, Zehner als Übertrag
+      const einer = p % 10, zehner = Math.floor(p / 10);
+      const s3 = klon(jetzt, { spalten: [col] });
+      s3.stand[col] = einer;
+      if (letzte) {
+        s3.zellen.push(...zahlZellen(p, rT(j), col, "teil").map(z => ({ ...z, neu: true, ab: "walze" as const })));
+        s3.text = `Letzte Stelle: ${p} ganz hinschreiben.`;
+      } else {
+        s3.zellen.push({ r: rT(j), c: col, t: String(einer), art: "teil", neu: true, ab: "walze" });
+        if (zehner) {
+          s3.zerlegung = { zahl: p, zehner, einer };
+          s3.zellen.push({ r: rU(j), c: col - 1, t: String(zehner), art: "uebertrag", neu: true, ab: "flug" });
+          s3.flug = { von: { r: rT(j), c: col }, nach: { r: rU(j), c: col - 1 }, t: `+${zehner}` };
+          s3.text = `${p} = ${zehner} Zehner + ${einer} Einer: Schreibe ${einer}, ${zehner} wandert als Übertrag eine Stelle nach links.`;
+        } else s3.text = `${p} hat keine Zehner: Schreibe ${einer}, kein Übertrag.`;
+      }
+      schritte.push(s3); jetzt = s3; u = zehner;
+    }
+  });
+  if (lb > 1) {
+    const n = klon(jetzt);
+    n.striche.push({ r: rUs, c0: 0, c1: C(la + lb) });
+    n.zellen.push({ r: rT(lb - 1), c: 0, t: "+", art: "zeichen", neu: true });
+    n.text = "Jetzt die Teilprodukte stellengerecht addieren — wie beim schriftlichen Addieren.";
+    schritte.push(n); jetzt = n;
+    const rechts = C(endeVon(lb - 1));
+    const werte = teile.map((t, j) => t * 10 ** (lb - 1 - j));
+    let u = 0;
+    for (let e = 0; 10 ** e <= produkt; e++) {
+      const col = rechts - e;
+      const z = werte.filter(w => 10 ** e <= w).map(w => ziffer(w, e));
+      const s = z.reduce((x, y) => x + y, 0) + u;
+      const m = klon(jetzt, { spalten: [col] });
+      const einer = s % 10, zehner = Math.floor(s / 10), letzte = 10 ** (e + 1) > produkt;
+      m.walze = { c: col, von: u, bis: s };
+      m.stand[col] = einer;
+      m.ketten = [summenKette(z.length ? z : [0], u, stellenName(e))];
+      m.zellen.push({ r: rE, c: col, t: String(letzte ? s : einer), art: "ergebnis", neu: true, ab: "walze" });
+      if (letzte && zehner) m.zellen = m.zellen.map(x => (x.r === rE && x.c === col && x.neu ? { ...x, t: String(einer) } : x)).concat({ r: rE, c: col - 1, t: String(zehner), art: "ergebnis", neu: true, ab: "walze" });
+      if (zehner && !letzte) {
+        m.zerlegung = { zahl: s, zehner, einer };
+        m.zellen.push({ r: rUs, c: col - 1, t: String(zehner), art: "uebertrag", neu: true, ab: "flug" });
+        m.flug = { von: { r: rE, c: col }, nach: { r: rUs, c: col - 1 }, t: `+${zehner}` };
+      }
+      m.text = `${stellenName(e)}: zusammen ${s}. Schreibe ${letzte ? s : einer}${zehner && !letzte ? `, Übertrag ${zehner}` : ""}.`;
+      schritte.push(m); jetzt = m; u = zehner;
+    }
+  } else {
+    jetzt.zellen = jetzt.zellen.map(z => (z.art === "teil" ? { ...z, art: "ergebnis" } : z));
+  }
+  const ende = klon(jetzt);
+  ende.text = `Ergebnis: ${a} · ${b} = ${produkt}.`;
+  return { op: "·", breite: C(la + lb) + 1, hoehe: lb > 1 ? rE + 1 : rT(0) + 1, schritte: [...schritte, ende], ergebnis: String(produkt), einer: C(endeVon(lb - 1)),
+    uebertragZeilen: [...Array.from({ length: lb }, (_, j) => rU(j)), ...(lb > 1 ? [rUs] : [])] };
+}
+
+// ── Dividieren ───────────────────────────────────────────────────────
+
+export function dividiere(a: number, b: number): Ablauf {
+  if (b <= 0) throw new Error("Durch 0 teilt man nicht.");
+  const za = String(a), la = za.length, lb = String(b).length;
+  const q = Math.floor(a / b), rest = a % b;
+  const O = 1; // eine Spalte Rand links für das Minuszeichen
+  const cQ = O + la + 1 + lb + 1; // erste Spalte des Quotienten (nach »= «)
+  const start: Schritt = {
+    zellen: [...zahlZellen(a, 0, O + la - 1), { r: 0, c: O + la, t: ":", art: "zeichen" }, ...zahlZellen(b, 0, O + la + lb), { r: 0, c: O + la + lb + 1, t: "=", art: "zeichen" }],
+    striche: [], spalten: [], stand: {},
+    text: `Von links beginnen: so viele Ziffern von ${a} nehmen, bis ${b} hineinpasst.`,
+  };
+  const schritte = [start];
+  let jetzt = start;
+  let i = 0, teil = 0;
+  do { teil = teil * 10 + Number(za[i]); i++; } while (teil < b && i < la);
+  let zeile = 1, qStelle = 0;
+  for (;;) {
+    const ende = O + i - 1; // Spalte, bis zu der die Teilzahl reicht
+    const k = Math.floor(teil / b), m = k * b, r = teil - m;
+    // 1. Wie oft passt b hinein? Die Walze zählt hoch
+    const n = klon(jetzt, { spalten: [ende] });
+    n.walze = { c: cQ + qStelle, von: 0, bis: k };
+    n.stand[cQ + qStelle] = k;
+    n.zellen.push({ r: 0, c: cQ + qStelle, t: String(k), art: "ergebnis", neu: true, ab: "walze" });
+    n.ketten = [
+      { titel: "Wie oft passt es?", kaesten: [String(teil), String(k)], boegen: [{ text: `: ${b}`, art: "durch" }] },
+      { titel: "Probe im Kopf", kaesten: [String(k), String(m)], boegen: [{ text: `· ${b}`, art: "mal" }] },
+    ];
+    n.text = `Wie oft passt ${b} in ${teil}? ${k}-mal, denn ${k} · ${b} = ${m}${k < 9 ? ` und ${k + 1} · ${b} = ${(k + 1) * b} wäre zu viel` : ""}. Schreibe ${k} ins Ergebnis.`;
+    schritte.push(n); jetzt = n;
+    // 2. Malnehmen und abziehen
+    const n2 = klon(jetzt, { spalten: [ende] });
+    n2.zellen.push(...zahlZellen(m, zeile, ende, "teil").map(z => ({ ...z, neu: true })), { r: zeile, c: ende - String(m).length, t: "−", art: "zeichen" });
+    n2.striche.push({ r: zeile, c0: ende - String(Math.max(m, teil)).length + 1, c1: ende });
+    n2.zellen.push(...zahlZellen(r, zeile + 1, ende).map(z => ({ ...z, neu: true, ab: "walze" as const })));
+    n2.ketten = [
+      { titel: "malnehmen", kaesten: [String(k), String(m)], boegen: [{ text: `· ${b}`, art: "mal" }] },
+      { titel: "abziehen", kaesten: [String(teil), String(r)], boegen: [{ text: `− ${m}`, art: "minus" }] },
+    ];
+    n2.text = `${k} · ${b} = ${m} darunter schreiben und abziehen: ${teil} − ${m} = ${r}.`;
+    schritte.push(n2); jetzt = n2;
+    zeile += 2; qStelle++;
+    if (i >= la) break;
+    // 3. Nächste Ziffer herunterholen
+    const n3 = klon(jetzt, { spalten: [O + i] });
+    n3.zellen.push({ r: zeile - 1, c: O + i, t: za[i], art: "zahl", neu: true, ab: "flug" });
+    n3.flug = { von: { r: 0, c: O + i }, nach: { r: zeile - 1, c: O + i }, t: za[i] };
+    teil = r * 10 + Number(za[i]);
+    n3.ketten = [{ titel: "herunterholen", kaesten: [String(r), String(teil)], boegen: [{ text: `· 10 + ${za[i]}`, art: "plus" }] }];
+    n3.text = `Die nächste Ziffer ${za[i]} herunterholen: weiter mit ${teil}.`;
+    schritte.push(n3); jetzt = n3;
+    i++;
+  }
+  const fertig = klon(jetzt);
+  if (rest) fertig.zellen.push({ r: 0, c: cQ + qStelle + 1, t: `R ${rest}`, art: "ergebnis", neu: true });
+  fertig.ketten = [{ titel: "Probe", kaesten: rest ? [String(q), String(q * b), String(a)] : [String(q), String(a)],
+    boegen: rest ? [{ text: `· ${b}`, art: "mal" }, { text: `+ ${rest}`, art: "plus" }] : [{ text: `· ${b}`, art: "mal" }] }];
+  fertig.text = `Ergebnis: ${a} : ${b} = ${q}${rest ? ` Rest ${rest}` : ""}. Probe: ${q} · ${b}${rest ? ` + ${rest}` : ""} = ${a}.`;
+  schritte.push(fertig);
+  const hoehe = Math.max(...fertig.zellen.map(z => z.r)) + 1;
+  return { op: ":", breite: cQ + qStelle + 3, hoehe, schritte, ergebnis: `${q}${rest ? ` R ${rest}` : ""}` };
 }
 
 // ── Subtrahieren (Abziehen mit Entbündeln) ───────────────────────────
 
+/** Alternative zum Ergänzen: oben minus unten, fehlt etwas, wird links entbündelt. */
 export function subtrahiere(a: number, b: number): Ablauf {
   if (b > a) throw new Error("Minuend muss größer sein.");
   const stellen = String(a).length, rechts = stellen;
@@ -125,7 +366,7 @@ export function subtrahiere(a: number, b: number): Ablauf {
     const n = klon(jetzt, { spalten: [c] });
     n.walze = { c, von: oben[e], bis: d }; // Walze steht auf der oberen Ziffer und dreht `unten`-mal zurück
     n.stand[c] = d;
-    n.zellen.push({ r: rE, c, t: String(d), art: "ergebnis", neu: true });
+    n.zellen.push({ r: rE, c, t: String(d), art: "ergebnis", neu: true, ab: "walze" });
     n.text = `${stellenName(e)}: ${oben[e]} − ${unten} = ${d}. Schreibe ${d}.`;
     schritte.push(n); jetzt = n;
   }
@@ -135,134 +376,9 @@ export function subtrahiere(a: number, b: number): Ablauf {
   return { op: "−", breite: rechts + 1, hoehe: rE + 1, schritte, ergebnis: String(a - b), einer: rechts };
 }
 
-// ── Multiplizieren ───────────────────────────────────────────────────
-
-export function multipliziere(a: number, b: number): Ablauf {
-  const za = String(a), zb = String(b);
-  const la = za.length, lb = zb.length;
-  const produkt = a * b;
-  // Zeile 0: a · b; Teilprodukt j endet unter der j-ten Ziffer von b (deutsche Schreibweise, links beginnen)
-  const endeVon = (j: number) => la + 1 + j;
-  const teile = zb.split("").map(Number).map(d => a * d);
-  const links = Math.min(0, ...teile.map((t, j) => endeVon(j) - String(t).length + 1), endeVon(lb - 1) - String(produkt).length + 1);
-  const off = -links; // alles um off nach rechts schieben
-  const C = (c: number) => c + off;
-  const rT = (j: number) => 1 + j, rU = lb + 1, rE = lb + 2;
-  const start: Schritt = {
-    zellen: [...zahlZellen(a, 0, C(la - 1)), { r: 0, c: C(la), t: "·", art: "zeichen" }, ...zahlZellen(b, 0, C(la + lb))],
-    striche: [{ r: 0, c0: C(0) - off, c1: C(la + lb) }], spalten: [], stand: {},
-    text: `Jede Ziffer von ${b} wird einzeln mit ${a} malgenommen (Teilprodukte), von links nach rechts. Jedes Teilprodukt endet genau unter seiner Ziffer.`,
-  };
-  const schritte = [start];
-  let jetzt = start;
-  const ra = za.split("").map(Number).reverse();
-  zb.split("").map(Number).forEach((d, j) => {
-    const rechts = C(endeVon(j));
-    let u = 0;
-    for (let e = 0; e < la; e++) {
-      const p = ra[e] * d + u, ziffer = p % 10, neuU = Math.floor(p / 10);
-      const n = klon(jetzt, { spalten: [C(la - 1 - e), C(la + 1 + j)] });
-      n.zellen.push({ r: rT(j), c: rechts - e, t: String(e === la - 1 ? p : ziffer), art: "teil", neu: true });
-      if (e === la - 1 && p >= 10) n.zellen = n.zellen.map(z => (z.r === rT(j) && z.c === rechts - e && z.neu ? { ...z, t: String(ziffer) } : z)).concat({ r: rT(j), c: rechts - e - 1, t: String(neuU), art: "teil", neu: true });
-      n.walze = { c: rechts - e, von: u, bis: p };
-      n.text = `${ra[e]} · ${d}${u ? ` + ${u} (gemerkt)` : ""} = ${p}. ` + (e === la - 1 ? `Alles hinschreiben: ${p}.` : neuU ? `Schreibe ${ziffer}, merke ${neuU}.` : `Schreibe ${ziffer}.`);
-      if (neuU && e < la - 1) n.flug = { von: { r: rT(j), c: rechts - e }, nach: { r: rT(j), c: rechts - e - 1 }, t: `+${neuU}` };
-      schritte.push(n); jetzt = n; u = neuU;
-    }
-  });
-  // Teilprodukte addieren
-  const n = klon(jetzt, { spalten: [] });
-  if (lb > 1) {
-    n.striche.push({ r: rU, c0: 0, c1: C(la + lb) });
-    n.zellen.push({ r: lb, c: 0, t: "+", art: "zeichen", neu: true });
-  }
-  n.text = lb > 1 ? "Jetzt die Teilprodukte stellengerecht addieren." : "Nur eine Ziffer: Das Teilprodukt ist schon das Ergebnis.";
-  schritte.push(n); jetzt = n;
-  if (lb > 1) {
-    const rechts = C(endeVon(lb - 1));
-    const werte = teile.map((t, j) => t * 10 ** (lb - 1 - j));
-    let u = 0;
-    for (let e = 0; 10 ** e <= produkt; e++) {
-      const s = werte.reduce((acc, w) => acc + (Math.floor(w / 10 ** e) % 10), 0) + u;
-      const m = klon(jetzt, { spalten: [rechts - e] });
-      m.zellen.push({ r: rE, c: rechts - e, t: String(s % 10), art: "ergebnis", neu: true });
-      const neuU = Math.floor(s / 10);
-      if (neuU && 10 ** (e + 1) <= produkt) {
-        m.zellen.push({ r: rU, c: rechts - e - 1, t: String(neuU), art: "uebertrag", neu: true });
-        m.flug = { von: { r: rE, c: rechts - e }, nach: { r: rU, c: rechts - e - 1 }, t: String(neuU) };
-      }
-      m.walze = { c: rechts - e, von: u, bis: s };
-      m.stand[rechts - e] = s % 10;
-      m.text = `${stellenName(e)}: zusammen ${s}. Schreibe ${s % 10}${neuU ? `, Übertrag ${neuU}` : ""}.`;
-      schritte.push(m); jetzt = m; u = neuU;
-    }
-  } else {
-    jetzt.zellen = jetzt.zellen.map(z => (z.art === "teil" ? { ...z, art: "ergebnis" } : z));
-    jetzt.zellen.filter(z => z.art === "ergebnis").forEach(z => { jetzt.stand[z.c] = Number(z.t); });
-  }
-  const ende = klon(jetzt);
-  ende.text = `Ergebnis: ${a} · ${b} = ${produkt}.`;
-  schritte.push(ende);
-  const breite = C(la + lb) + 1;
-  return { op: "·", breite, hoehe: lb > 1 ? rE + 1 : lb + 1, schritte, ergebnis: String(produkt), einer: C(endeVon(lb - 1)) };
-}
-
-// ── Dividieren ───────────────────────────────────────────────────────
-
-export function dividiere(a: number, b: number): Ablauf {
-  if (b <= 0) throw new Error("Durch 0 teilt man nicht.");
-  const za = String(a), la = za.length, lb = String(b).length;
-  const q = Math.floor(a / b), rest = a % b;
-  const O = 1; // eine Spalte Rand links für das Minuszeichen
-  const cQ = O + la + 1 + lb + 1; // erste Spalte des Quotienten (nach »= «)
-  const start: Schritt = {
-    zellen: [...zahlZellen(a, 0, O + la - 1), { r: 0, c: O + la, t: ":", art: "zeichen" }, ...zahlZellen(b, 0, O + la + lb), { r: 0, c: O + la + lb + 1, t: "=", art: "zeichen" }],
-    striche: [], spalten: [], stand: {},
-    text: `Von links beginnen: so viele Ziffern von ${a} nehmen, bis ${b} hineinpasst.`,
-  };
-  const schritte = [start];
-  let jetzt = start;
-  // erste Teilzahl
-  let i = 0, teil = 0;
-  do { teil = teil * 10 + Number(za[i]); i++; } while (teil < b && i < la);
-  let zeile = 1, qStelle = 0;
-  for (;;) {
-    const ende = O + i - 1; // Spalte, bis zu der die Teilzahl reicht
-    const k = Math.floor(teil / b), m = k * b, r = teil - m;
-    const n = klon(jetzt, { spalten: [ende] });
-    n.walze = { c: cQ + qStelle, von: 0, bis: k }; // die Quotienten-Walze zählt hoch: 1·b, 2·b, … bis es nicht mehr passt
-    n.stand[cQ + qStelle] = k;
-    n.zellen.push({ r: 0, c: cQ + qStelle, t: String(k), art: "ergebnis", neu: true });
-    const vielfache = Array.from({ length: Math.min(k + 1, 10) }, (_, x) => `${x + 1} · ${b} = ${(x + 1) * b}`);
-    n.text = `Wie oft passt ${b} in ${teil}? ${k}-mal (${vielfache.slice(0, k + 1).join(", ")}${k + 1 <= 9 ? " — zu viel" : ""}). Schreibe ${k} ins Ergebnis.`;
-    schritte.push(n); jetzt = n;
-    const n2 = klon(jetzt, { spalten: [ende] });
-    n2.zellen.push(...zahlZellen(m, zeile, ende, "teil").map(z => ({ ...z, neu: true })), { r: zeile, c: ende - String(m).length, t: "−", art: "zeichen" });
-    n2.striche.push({ r: zeile, c0: ende - String(Math.max(m, teil)).length + 1, c1: ende });
-    n2.zellen.push(...zahlZellen(r, zeile + 1, ende).map(z => ({ ...z, neu: true })));
-    n2.text = `${k} · ${b} = ${m} darunter schreiben und abziehen: ${teil} − ${m} = ${r}.`;
-    schritte.push(n2); jetzt = n2;
-    zeile += 2; qStelle++;
-    if (i >= la) break;
-    // nächste Ziffer herunterholen
-    const n3 = klon(jetzt, { spalten: [O + i] });
-    n3.zellen.push({ r: zeile - 1, c: O + i, t: za[i], art: "zahl", neu: true });
-    n3.flug = { von: { r: 0, c: O + i }, nach: { r: zeile - 1, c: O + i }, t: za[i] };
-    teil = r * 10 + Number(za[i]);
-    n3.text = `Die nächste Ziffer ${za[i]} herunterholen: weiter mit ${teil}.`;
-    schritte.push(n3); jetzt = n3;
-    i++;
-  }
-  const fertig = klon(jetzt);
-  if (rest) fertig.zellen.push({ r: 0, c: cQ + qStelle + 1, t: `R ${rest}`, art: "ergebnis", neu: true });
-  fertig.text = `Ergebnis: ${a} : ${b} = ${q}${rest ? ` Rest ${rest}` : ""}. Probe: ${q} · ${b}${rest ? ` + ${rest}` : ""} = ${a}.`;
-  schritte.push(fertig);
-  const hoehe = Math.max(...fertig.zellen.map(z => z.r)) + 1;
-  return { op: ":", breite: cQ + qStelle + 3, hoehe, schritte, ergebnis: `${q}${rest ? ` R ${rest}` : ""}` };
-}
-
-export function rechne(op: Op, a: number, b: number): Ablauf {
-  return op === "+" ? addiere([a, b]) : op === "−" ? subtrahiere(a, b) : op === "·" ? multipliziere(a, b) : dividiere(a, b);
+export function rechne(op: Op, a: number, b: number, methode: Methode = "ergaenzen"): Ablauf {
+  return op === "+" ? addiere([a, b]) : op === "−" ? (methode === "ergaenzen" ? subtrahiereErgaenzen(a, b) : subtrahiere(a, b))
+    : op === "·" ? multipliziere(a, b) : dividiere(a, b);
 }
 
 // ── Aufgaben ─────────────────────────────────────────────────────────
@@ -315,7 +431,7 @@ export function mitFehler(op: "+" | "−", a: number, b: number): { falsch: numb
     const o = Math.floor(a / 10 ** e) % 10, u = Math.floor(b / 10 ** e) % 10;
     if (o < u) {
       const falsch = a - b + (u - o) * 10 ** e - (10 + o - u) * 10 ** e + 10 ** (e + 1);
-      return { falsch, exp: abweichung(a - b, falsch), grund: `Bei den ${stellenName(e)}n: ${o} − ${u} geht nicht. Statt zu entbündeln wurde ${u} − ${o} gerechnet.` };
+      return { falsch, exp: abweichung(a - b, falsch), grund: `Bei den ${stellenName(e)}n: ${o} − ${u} geht nicht. Statt mit Übertrag zu rechnen (bzw. zu entbündeln), wurde einfach ${u} − ${o} gerechnet.` };
     }
   }
   return null;

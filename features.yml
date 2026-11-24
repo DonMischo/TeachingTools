@@ -1022,10 +1022,10 @@ simulationen:
     name: Schriftliche Rechenverfahren
     faehigkeiten: {use: [true, true]}
     kann:
-      - "Schriftliches Addieren, Subtrahieren (Entbündeln), Multiplizieren und Dividieren Schritt für Schritt"
-      - "Walzen je Spalte drehen Ziffer für Ziffer, Überträge und entbündelte Zehner fliegen sichtbar"
-      - "Abspielen, zurück, alle Schritte; Ziffern in den Farben der Stellenwerttafel"
-      - "Üben: Ergebnis am Zählwerk einstellen, Rückmeldung je Stelle, Rechenweg zum Ansehen"
+      - "Schriftliches Addieren, Subtrahieren (Ergänzen mit Übertrag oder Entbündeln), Multiplizieren und Dividieren Schritt für Schritt"
+      - "Walzen je Spalte, Sprung 9 → 0 in Zeitlupe, Übertrag fliegt erst danach als +1-Kreis"
+      - "Rechenketten mit Bögen, Zerlegung in Zehner (Übertrag) und Einer, Division mit Probe"
+      - "Üben auf Karopapier: eine Ziffer je Kästchen, Übertragskreise, Zwischenschritte, Prüfen je Kästchen"
       - "Spiel Fehlerdetektiv: falsche Ziffer finden, Fehler wird erklärt"
   - id: farbmodelle
     name: Farbmodelle

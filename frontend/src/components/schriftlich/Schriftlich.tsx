@@ -9,9 +9,13 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { wahl, type Vorgabe } from "@/lib/vorgabe";
 import { Chips } from "@/components/prozent/ui";
-import { DrehZaehlwerk } from "@/components/stellenwert/DrehZaehlwerk";
-import { aufgabe, loesung, mitFehler, rechne, stellenName, type Op } from "@/lib/schriftlich";
+import { aufgabe, mitFehler, rechne, stellenName, type Methode, type Op } from "@/lib/schriftlich";
 import { Abspieler } from "./Rechenblatt";
+import { Rechenpapier } from "./Rechenpapier";
+
+const METHODEN: { id: Methode; label: string }[] = [
+  { id: "ergaenzen", label: "Ergänzen mit Übertrag" }, { id: "entbuendeln", label: "Abziehen mit Entbündeln" },
+];
 
 const OPS: { id: Op; label: string }[] = [
   { id: "+", label: "➕ Addieren" }, { id: "−", label: "➖ Subtrahieren" }, { id: "·", label: "✖️ Multiplizieren" }, { id: ":", label: "➗ Dividieren" },
@@ -20,13 +24,14 @@ const GRENZE: Record<Op, [number, number]> = { "+": [9999999, 9999999], "−": [
 
 function Vorfuehren() {
   const [op, setOp] = useState<Op>("+");
+  const [methode, setMethode] = useState<Methode>("ergaenzen");
   const [ta, setTa] = useState("478"), [tb, setTb] = useState("365");
   const a = Number(ta), b = Number(tb);
   const fehler = !Number.isInteger(a) || !Number.isInteger(b) || a < 0 || b < 0 ? "Bitte natürliche Zahlen eingeben."
     : a > GRENZE[op][0] || b > GRENZE[op][1] ? `Zu groß — höchstens ${GRENZE[op][0]} ${op} ${GRENZE[op][1]}.`
     : op === "−" && b > a ? "Die zweite Zahl darf nicht größer sein als die erste."
     : op === ":" && b === 0 ? "Durch 0 teilt man nicht." : "";
-  const ablauf = useMemo(() => (fehler ? null : rechne(op, a, b)), [op, a, b, fehler]);
+  const ablauf = useMemo(() => (fehler ? null : rechne(op, a, b, methode)), [op, a, b, fehler, methode]);
   const wuerfle = (o = op) => { const x = aufgabe(o, 2); setTa(String(x.a)); setTb(String(x.b)); };
   return (
     <div className="card p-4 flex flex-col gap-3">
@@ -37,9 +42,10 @@ function Vorfuehren() {
         <input className="input w-32 text-lg font-mono" value={tb} onChange={e => setTb(e.target.value.replace(/\D/g, ""))} aria-label="Zweite Zahl" />
         <button className="btn-secondary" onClick={() => wuerfle()}>🎲 Neue Aufgabe</button>
       </div>
+      {op === "−" && <Chips wahl={methode} setze={setMethode} optionen={METHODEN} />}
       {fehler ? <p className="text-sm text-bad">{fehler}</p> : ablauf && <Abspieler ablauf={ablauf} />}
       <p className="text-xs text-muted">
-        {op === "−" && "Subtrahiert wird hier durch Abziehen mit Entbündeln (wie in der Stellenwerttafel). Manche Schulen rechnen mit dem Ergänzungsverfahren — das Ergebnis ist dasselbe."}
+        {op === "−" && (methode === "ergaenzen" ? "Ergänzen mit Übertrag: unten plus wie viel ergibt oben? Die Walze zählt von unten hoch bis oben — läuft sie über die 9, gibt es einen Übertrag, genau wie beim Addieren." : "Abziehen mit Entbündeln: oben minus unten; reicht es nicht, wird von links ein Bündel geholt (wie in der Stellenwerttafel).")}
         {op === "+" && "Die Walze einer Spalte dreht um jede Ziffer weiter. Läuft sie über die 9 hinaus, fliegt ein Übertrag in die nächste Spalte — wie beim Kilometerzähler."}
         {op === "·" && "Jede Ziffer des zweiten Faktors gibt ein Teilprodukt; die Teilprodukte werden stellengerecht addiert."}
         {op === ":" && "Die Walze zählt, wie oft der Teiler hineinpasst. Dann malnehmen, abziehen, nächste Ziffer herunterholen."}
@@ -50,28 +56,14 @@ function Vorfuehren() {
 
 function Ueben() {
   const [op, setOp] = useState<Op>("+");
+  const [methode, setMethode] = useState<Methode>("ergaenzen");
   const [stufe, setStufe] = useState<1 | 2 | 3>(1);
   const [auf, setAuf] = useState(() => aufgabe("+", 1));
-  const [wert, setWert] = useState(0);
-  const [rest, setRest] = useState("");
-  const [rueck, setRueck] = useState<null | { ok: boolean; text: string }>(null);
   const [weg, setWeg] = useState(false);
-  const [stand, setStand] = useState({ r: 0, g: 0 });
-  const [zaehler, setZaehler] = useState(0); // erzwingt ein frisches Zählwerk je Aufgabe
-  const l = loesung(op, auf.a, auf.b);
-  const stellen = Math.max(String(l.wert).length + 1, 3);
-  const neu = (o = op, s = stufe) => { setAuf(aufgabe(o, s)); setRest(""); setRueck(null); setWeg(false); setZaehler(z => z + 1); };
-  const pruefe = () => {
-    const ok = wert === l.wert && (op !== ":" || Number(rest || 0) === l.rest);
-    let text = ok ? "Richtig!" : "Noch nicht.";
-    if (!ok && op !== ":") {
-      const falsch = [];
-      for (let e = 0; e < stellen; e++) if (Math.floor(wert / 10 ** e) % 10 !== Math.floor(l.wert / 10 ** e) % 10) falsch.push(stellenName(e));
-      text += ` Schau dir noch einmal diese Stellen an: ${falsch.join(", ")}.`;
-    }
-    if (!rueck) setStand(s => ({ r: s.r + (ok ? 1 : 0), g: s.g + 1 }));
-    setRueck({ ok, text });
-  };
+  const [stand, setStand] = useState({ r: 0, g: 0, zuletzt: null as null | boolean });
+  const [nr, setNr] = useState(0); // frisches Papier je Aufgabe
+  const ablauf = useMemo(() => rechne(op, auf.a, auf.b, methode), [op, auf, methode]);
+  const neu = (o = op, s = stufe) => { setAuf(aufgabe(o, s)); setWeg(false); setNr(n => n + 1); setStand(x => ({ ...x, zuletzt: null })); };
   return (
     <div className="card p-4 flex flex-col gap-3">
       <div className="flex flex-wrap gap-2 items-center">
@@ -80,19 +72,15 @@ function Ueben() {
         {([1, 2, 3] as const).map(s => <button key={s} className={`chip ${stufe === s ? "chip-on" : ""}`} onClick={() => { setStufe(s); neu(op, s); }}>{s}</button>)}
         {stand.g > 0 && <span className="text-sm font-bold ml-3">{stand.r} / {stand.g} richtig</span>}
       </div>
-      <p className="text-3xl font-black font-mono">{auf.a} {op} {auf.b} = ?</p>
-      <p className="text-sm text-muted">Rechne schriftlich (im Heft oder im Kopf) und stelle das Ergebnis an den Walzen ein: ▲▼ drehen, Pfeiltasten oder Ziffer tippen.</p>
-      <div className="flex flex-wrap items-end gap-3">
-        <DrehZaehlwerk key={zaehler} basis={10} stellen={stellen} start={0} mitdrehen={false} beschriftet onWert={setWert} onEnter={pruefe} />
-        {op === ":" && <label className="flex flex-col text-sm">Rest<input className="input w-20" value={rest} onChange={e => setRest(e.target.value.replace(/\D/g, ""))} aria-label="Rest" /></label>}
-      </div>
+      {op === "−" && <Chips wahl={methode} setze={m => { setMethode(m); setNr(n => n + 1); }} optionen={METHODEN} />}
+      <p className="text-sm text-muted">Rechne auf dem Karopapier: jede Ziffer in ihr Kästchen, von rechts nach links. Überträge kannst du dir in den Kreisen merken.{op === ":" ? " Unter der Aufgabe ist Platz für deine Zwischenschritte (malnehmen, abziehen, herunterholen)." : op === "·" ? " Erst die Teilprodukte, dann addieren." : ""}</p>
+      <Rechenpapier key={`${nr}-${op}-${methode}`} ablauf={ablauf} onErgebnis={ok => setStand(x => ({ r: x.r + (ok && x.zuletzt === null ? 1 : 0), g: x.g + (x.zuletzt === null ? 1 : 0), zuletzt: ok }))} />
+      {stand.zuletzt !== null && <p className={`font-bold ${stand.zuletzt ? "text-ok" : "text-bad"}`}>{stand.zuletzt ? "✔ Das Ergebnis stimmt!" : "✘ Im Ergebnis stimmt noch etwas nicht — die roten Kästchen zeigen, wo."}</p>}
       <div className="flex flex-wrap gap-2">
-        <button className="btn-primary" onClick={pruefe}>Prüfen</button>
-        <button className="btn-secondary" onClick={() => setWeg(w => !w)}>{weg ? "Rechenweg zu" : "Rechenweg zeigen"}</button>
+        <button className="btn-secondary" onClick={() => setWeg(w => !w)}>{weg ? "Rechenweg zu" : "Rechenweg Schritt für Schritt"}</button>
         <button className="btn-secondary" onClick={() => neu()}>Neue Aufgabe</button>
       </div>
-      {rueck && <p className={`font-bold ${rueck.ok ? "text-ok" : "text-bad"}`}>{rueck.ok ? "✔ " : "✘ "}{rueck.text}</p>}
-      {weg && <Abspieler ablauf={rechne(op, auf.a, auf.b)} />}
+      {weg && <Abspieler ablauf={ablauf} />}
     </div>
   );
 }

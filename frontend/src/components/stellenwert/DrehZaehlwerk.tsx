@@ -22,7 +22,7 @@ const DREHUNG_MS = 220;
 const rest = (z: number, b: number) => ((z % b) + b) % b;
 
 /** Eine Walze: drei Ziffernstreifen hintereinander, damit sie über 0 hinweg weiterrollen kann. */
-export function Walze({ dreh, basis, farbe, h }: { dreh: number; basis: number; farbe: string; h: number }) {
+export function Walze({ dreh, basis, farbe, h, dauer = DREHUNG_MS }: { dreh: number; basis: number; farbe: string; h: number; /** Dauer einer Drehung (ms), z. B. Zeitlupe */ dauer?: number }) {
   const d = rest(dreh, basis);
   const [pos, setPos] = useState(basis + d);
   const [rollt, setRollt] = useState(false);
@@ -43,7 +43,7 @@ export function Walze({ dreh, basis, farbe, h }: { dreh: number; basis: number; 
   return (
     <div className="relative overflow-hidden rounded-md" style={{ height: `${h}rem`, width: `${h * 0.72}rem`, background: farbe }}>
       <div className="flex flex-col"
-        style={{ transform: `translateY(-${pos * h}rem)`, transition: rollt ? `transform ${DREHUNG_MS}ms ease-out` : "none" }}
+        style={{ transform: `translateY(-${pos * h}rem)`, transition: rollt ? `transform ${dauer}ms ease-out` : "none" }}
         // nach dem Überlauf zurück in den mittleren Streifen springen — ohne Bewegung
         onTransitionEnd={() => { if (pos !== basis + d) { setRollt(false); setPos(basis + d); } }}>
         {Array.from({ length: 3 * basis }, (_, k) => (

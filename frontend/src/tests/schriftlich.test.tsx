@@ -6,6 +6,8 @@
 import { describe, expect, it } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import Schriftlich from "@/components/schriftlich/Schriftlich";
+import { Rechenpapier } from "@/components/schriftlich/Rechenpapier";
+import { tickPlan } from "@/components/schriftlich/Rechenblatt";
 import { addiere, aufgabe, dividiere, loesung, mitFehler, multipliziere, rechne, subtrahiere, type Ablauf, type Op } from "@/lib/schriftlich";
 
 function zufall(seed: number) {
@@ -33,12 +35,32 @@ describe("Abläufe", () => {
       const ab = rechne(op, a, b);
       const l = loesung(op, a, b);
       expect(ergebnisVon(ab)).toBe(op === ":" ? `${l.wert}${l.rest ? ` R ${l.rest}` : ""}` : String(l.wert));
-      for (const st of ab.schritte) if (st.walze) expect(((st.walze.bis % 10) + 10) % 10).toBe(st.stand[st.walze.c] ?? ((st.walze.bis % 10) + 10) % 10);
+      for (const st of ab.schritte) if (st.walze && !st.walze.zaehle) expect(((st.walze.bis % 10) + 10) % 10).toBe(st.stand[st.walze.c] ?? ((st.walze.bis % 10) + 10) % 10);
     }
   });
   it("Übertrag fliegt beim Addieren", () => {
     const ab = addiere([478, 365]);
-    expect(ab.schritte.some(s => s.flug?.t === "1")).toBe(true);
+    expect(ab.schritte.some(s => s.flug?.t === "+1")).toBe(true);
+    // der Übertrag erscheint erst nach dem Flug
+    expect(ab.schritte.find(s => s.flug)!.zellen.find(z => z.art === "uebertrag" && z.neu)!.ab).toBe("flug");
+  });
+  it("Ergänzen mit Übertrag ist Standard, Entbündeln Option", () => {
+    const er = rechne("−", 5003, 1278);
+    expect(ergebnisVon(er)).toBe("3725");
+    expect(er.schritte.some(s => s.flug?.t === "+1")).toBe(true);
+    expect(er.schritte.some(s => s.zellen.some(z => z.art === "hilfe"))).toBe(false);
+    expect(ergebnisVon(rechne("−", 1000, 999))).toBe("1");
+  });
+  it("Multiplizieren zerlegt das Produkt in Zehner (Übertrag) und Einer", () => {
+    const ab = multipliziere(47, 3);
+    const z = ab.schritte.find(s => s.zerlegung)!;
+    expect(z.zerlegung).toEqual({ zahl: 21, zehner: 2, einer: 1 });
+    expect(ab.schritte.some(s => s.text.startsWith("Übertrag dazu: 12 + 2 = 14"))).toBe(true);
+  });
+  it("Dividieren hat Bögen und eine Probe", () => {
+    const ab = dividiere(9876, 7);
+    expect(ab.schritte[1].ketten![0].boegen[0]).toEqual({ text: ": 7", art: "durch" });
+    expect(ab.schritte[ab.schritte.length - 1].ketten![0].kaesten).toEqual(["1410", "9870", "9876"]);
   });
   it("Entbündeln über Nullen", () => {
     const ab = subtrahiere(5003, 1278);
@@ -58,6 +80,35 @@ describe("Abläufe", () => {
 });
 
 describe("Oberfläche", () => {
+  it("Zeitlupe nur beim Sprung über die Zehnergrenze", () => {
+    const plan = tickPlan(7, 12);
+    expect(plan).toHaveLength(5);
+    expect(plan.filter(d => d > plan[0]).length).toBe(1);
+    expect(plan[2]).toBeGreaterThan(plan[0]); // 9 → 10
+  });
+
+  it("Rechenpapier: Ziffern eintippen, Überträge merken, prüfen", () => {
+    let ok: boolean | null = null;
+    render(<Rechenpapier ablauf={addiere([478, 365])} onErgebnis={x => { ok = x; }} />);
+    const felder = ["Ergebnis Spalte 3", "Ergebnis Spalte 2", "Ergebnis Spalte 1"];
+    ["3", "4", "8"].forEach((v, i) => fireEvent.change(screen.getByLabelText(felder[i]), { target: { value: v } }));
+    fireEvent.click(screen.getByRole("button", { name: "Übertrag Spalte 2: leer" }));
+    expect(screen.getByRole("button", { name: "Übertrag Spalte 2: +1" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Prüfen" }));
+    expect(ok).toBe(true);
+    fireEvent.change(screen.getByLabelText("Ergebnis Spalte 1"), { target: { value: "7" } });
+    fireEvent.click(screen.getByRole("button", { name: "Prüfen" }));
+    expect(ok).toBe(false);
+  });
+
+  it("Rechenpapier beim Teilen: Quotient und Rest als Felder", () => {
+    let ok: boolean | null = null;
+    render(<Rechenpapier ablauf={dividiere(29, 4)} onErgebnis={x => { ok = x; }} />);
+    fireEvent.click(screen.getByRole("button", { name: "Lösung eintragen" }));
+    fireEvent.click(screen.getByRole("button", { name: "Prüfen" }));
+    expect(ok).toBe(true);
+  });
+
   it("öffnet Vorführen, Üben, Spiel", () => {
     render(<Schriftlich />);
     fireEvent.click(screen.getByRole("button", { name: "Alle Schritte" }));
