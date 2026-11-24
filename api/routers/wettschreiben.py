@@ -102,14 +102,28 @@ def _to_out(s: WettschreibenSession) -> RennenOut:
                      allow_guests=s.allow_guests, teilnehmer=teilnehmer)
 
 
+def wertung(pos: int, anschlaege: int, fehler: int, dauer_ms: int | None) -> float | None:
+    """Punkte im Ziel: Anschläge/Minute, durch die Fehlerquote gedämpft.
+
+    Faktor (1 − Fehlerquote)²: 5 % Fehler kosten rund 10 % der Punkte, 10 %
+    Fehler knapp 20 %. Wer schnell, aber schlampig tippt, landet so hinter
+    jemandem, der etwas langsamer und sauber ist.
+    """
+    if dauer_ms is None or dauer_ms <= 0:
+        return None
+    tempo = pos / (dauer_ms / 60000)
+    quote = min(1.0, fehler / anschlaege) if anschlaege else 0.0
+    return round(tempo * (1 - quote) ** 2, 1)
+
+
 def _rangliste(code: str) -> list[dict]:
-    """Wer im Ziel ist, zuerst — nach Zeit; danach die Übrigen nach Fortschritt."""
-    eintraege = list(_stand.get(code, {}).items())
-    def schluessel(item):
-        _, d = item
-        fertig = d.get("dauer_ms") is not None
-        return (0 if fertig else 1, d["dauer_ms"] if fertig else -d["pos"])
-    return [{"id": tid, **d} for tid, d in sorted(eintraege, key=schluessel)]
+    """Wer im Ziel ist, zuerst — nach Wertung (Tempo × Sauberkeit); danach die Übrigen nach Fortschritt."""
+    eintraege = [{"id": tid, **d, "wertung": wertung(d["pos"], d["anschlaege"], d["fehler"], d.get("dauer_ms"))}
+                 for tid, d in _stand.get(code, {}).items()]
+    def schluessel(d):
+        fertig = d["wertung"] is not None
+        return (0 if fertig else 1, -d["wertung"] if fertig else -d["pos"])
+    return sorted(eintraege, key=schluessel)
 
 
 async def _sende_stand(code: str) -> None:
@@ -180,7 +194,7 @@ def beitreten(code: str, body: BeitrittIn, db: Session = Depends(get_db),
 
 
 @router.post("/{code}/start", response_model=RennenOut)
-def starten(code: str, db: Session = Depends(get_db),
+async def starten(code: str, db: Session = Depends(get_db),
             teacher: Teacher = Depends(get_current_teacher)):
     s = _rennen(code, db)
     _besitzer(s, teacher)
@@ -190,11 +204,14 @@ def starten(code: str, db: Session = Depends(get_db),
     s.started_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(s)
+    # Der Server schickt den Start selbst an alle (wie bei Caputh) — nicht der
+    # Host-Socket, der in einem Hintergrund-Tab gerade getrennt sein kann.
+    await mgr.broadcast(s.code, {"typ": "start"})
     return _to_out(s)
 
 
 @router.post("/{code}/ende", response_model=RennenOut)
-def beenden(code: str, db: Session = Depends(get_db),
+async def beenden(code: str, db: Session = Depends(get_db),
             teacher: Teacher = Depends(get_current_teacher)):
     """Rennen schliessen und die Zwischenstände als Ergebnis festschreiben."""
     s = _rennen(code, db)
@@ -208,6 +225,7 @@ def beenden(code: str, db: Session = Depends(get_db),
             t.dauer_ms = d.get("dauer_ms")
     db.commit()
     db.refresh(s)
+    await mgr.broadcast(s.code, {"typ": "status", "status": "fertig", "text": s.text})
     return _to_out(s)
 
 
@@ -258,9 +276,6 @@ async def wettschreiben_ws(code: str, websocket: WebSocket, role: str = "student
     try:
         while True:
             nachricht = await receive_json(websocket, db)
-            if nachricht.get("typ") == "start" and role == "teacher":
-                await mgr.broadcast(code, {"typ": "start"})
-                continue
             if nachricht.get("typ") != "fortschritt" or role == "teacher":
                 continue
 

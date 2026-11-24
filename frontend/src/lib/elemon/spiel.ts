@@ -34,6 +34,10 @@ export interface ElemonStand {
   /** Antwort der Eltern auf die Bitte um Extra-Zeit (eine Bitte pro Tag) */
   elternAntwort?: { tag: number; ja: boolean; plus: number; text: string };
   wurf: number;
+  /** Eigenständiges Spiel: »Pro« ist erspielt und eingeschaltet (kein Geld, nur zum Spaß) */
+  pro?: boolean;
+  /** Entdeckte eigene Orte (Namen von QR-Ort-Karten) */
+  orte?: string[];
 }
 
 /** Wo man die App verlassen hat — beim Wiederöffnen geht es genau dort weiter */
@@ -49,7 +53,21 @@ export const ENERGIE_MAX = 5;
 /** so viele Spielminuten pro Energiepunkt */
 export const ENERGIE_MINUTEN = 45;
 export const TEAM_MAX = 6;
-export const PREISE = { kaefig: 20, trank: 25, beleber: 60 } as const;
+export const PREISE = { kaefig: 20, trank: 25, beleber: 60, goldkaefig: 45 } as const;
+
+// ── Free und Pro (eigenständiges Spiel) ───────────────────────────────
+// Pro kostet kein Geld: Man erspielt es. Es zeigt das Free-to-Play-Muster
+// ohne Bezahlschranke — und macht ein bisschen Spaß.
+export const PRO = { energieMax: 10, energieMinuten: 30, heilMinuten: 5 } as const;
+export const PRO_ZIELE: { text: string; erreicht: (e: ElemonStand) => boolean; stand: (e: ElemonStand) => string }[] = [
+  { text: "2 Orden in Arenen gewinnen", erreicht: e => e.orden.length >= 2, stand: e => `${Math.min(2, e.orden.length)}/2` },
+  { text: "12 verschiedene Elemon fangen", erreicht: e => e.gefangen.length >= 12, stand: e => `${Math.min(12, e.gefangen.length)}/12` },
+  { text: "25 Kämpfe gewinnen", erreicht: e => e.siege >= 25, stand: e => `${Math.min(25, e.siege)}/25` },
+];
+/** Pro ist frei, sobald eines der Ziele erreicht ist */
+export const proFrei = (e: ElemonStand) => PRO_ZIELE.some(z => z.erreicht(e));
+export const energieMax = (e: ElemonStand) => (e.pro ? PRO.energieMax : ENERGIE_MAX);
+const energieMinuten = (e: ElemonStand) => (e.pro ? PRO.energieMinuten : ENERGIE_MINUTEN);
 
 export type ItemId = "trank" | "kaefig" | "goldkaefig" | "beleber";
 /** Item-Karten: wie viele es je Art höchstens gibt, wie lange eine gescannte Karte gesperrt bleibt, Standard-Menge */
@@ -127,16 +145,17 @@ export function starten(e: ElemonStand, starter: (typeof STARTER)[number]): Elem
 
 /** Energie seit der letzten Zählung auffüllen; `jetzt` = Spielminute (tag*1440+uhr) */
 export function energieAuffuellen(e: ElemonStand, jetzt: number): ElemonStand {
-  if (e.energie >= ENERGIE_MAX) return e.energieAb === jetzt ? e : { ...e, energieAb: jetzt };
-  const plus = Math.floor((jetzt - e.energieAb) / ENERGIE_MINUTEN);
+  const max = energieMax(e), takt = energieMinuten(e);
+  if (e.energie >= max) return e.energieAb === jetzt ? e : { ...e, energieAb: jetzt };
+  const plus = Math.floor((jetzt - e.energieAb) / takt);
   if (plus <= 0) return e;
-  const energie = Math.min(ENERGIE_MAX, e.energie + plus);
-  return { ...e, energie, energieAb: energie >= ENERGIE_MAX ? jetzt : e.energieAb + plus * ENERGIE_MINUTEN };
+  const energie = Math.min(max, e.energie + plus);
+  return { ...e, energie, energieAb: energie >= max ? jetzt : e.energieAb + plus * takt };
 }
 
 /** Minuten bis zur nächsten Energie */
 export const naechsteEnergie = (e: ElemonStand, jetzt: number) =>
-  e.energie >= ENERGIE_MAX ? 0 : ENERGIE_MINUTEN - ((jetzt - e.energieAb) % ENERGIE_MINUTEN);
+  e.energie >= energieMax(e) ? 0 : energieMinuten(e) - ((jetzt - e.energieAb) % energieMinuten(e));
 
 /** Ein wildes Elemon im Gebiet: Seltenheit 1 häufig, 3 selten; mit Standort tauchen seltene öfter auf */
 export function wildesElemon(g: Gebiet, wurf: number, standort: boolean): Elemon {
@@ -243,6 +262,7 @@ export const QR_GEBIET: Gebiet = {
 
 export type QrInhalt =
   | { art: "wild"; elemon: string; stufe: number }
+  | { art: "ort"; name: string; stufen: [number, number]; wild: string[] }
   | { art: "spieler"; code: string; id: number }
   | { art: "item"; item: ItemId; menge: number; nr: number };
 
@@ -252,8 +272,25 @@ export const qrSpieler = (code: string, id: number) => `ELEMON:S:${code}:${id}`;
 /** »ELEMON:I:<item>:<menge>:<kartennr>« — jede Karte einer Art hat eine eigene Nummer (Sperre je Karte) */
 export const qrItem = (item: ItemId, menge: number, nr: number) => `ELEMON:I:${item}:${menge}:${nr}`;
 
+/** Eigener Ort: Name (ohne Doppelpunkt), Stufenbereich und welche Elemon dort leben */
+export const ORT_NAME_MAX = 30;
+export const ORT_ARTEN_MAX = 8;
+export const ortName = (name: string) => name.replace(/[:\s]+/g, " ").replace(/\s+/g, " ").trim().slice(0, ORT_NAME_MAX);
+/** »ELEMON:O:<lo>-<hi>:<art,art,…>:<Name>« — der Name steht zuletzt, damit er Leerzeichen und Umlaute haben darf */
+export const qrOrt = (name: string, stufen: [number, number], wild: string[]) =>
+  `ELEMON:O:${stufen[0]}-${stufen[1]}:${wild.slice(0, ORT_ARTEN_MAX).join(",")}:${ortName(name)}`;
+/** Spielgebiet zu einem gescannten Ort (für den Kampf) */
+export const ortGebiet = (q: Extract<QrInhalt, { art: "ort" }>): Gebiet => ({ ...QR_GEBIET, id: "qr", name: q.name, emoji: "📍", stufen: q.stufen, wild: q.wild });
+
 export function qrLesen(text: string): QrInhalt | null {
   const t = text.trim();
+  const o = /^ELEMON:O:(\d{1,2})-(\d{1,2}):([a-z_,]+):(.{1,40})$/.exec(t);
+  if (o) {
+    const wild = o[3].split(",").filter(id => ART[id]).slice(0, ORT_ARTEN_MAX);
+    const lo = Math.max(1, Math.min(50, Number(o[1]))), hi = Math.max(lo, Math.min(50, Number(o[2])));
+    const name = ortName(o[4]);
+    if (wild.length && name) return { art: "ort", name, stufen: [lo, hi], wild };
+  }
   const w = /^ELEMON:W:([a-z_]+):(\d{1,2})$/.exec(t);
   if (w && ART[w[1]]) return { art: "wild", elemon: w[1], stufe: Math.max(1, Math.min(50, Number(w[2]))) };
   const s = /^ELEMON:S:([A-Z0-9]{3,12}):(\d{1,9})$/i.exec(t);

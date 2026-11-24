@@ -90,6 +90,8 @@ from .routers import snap as snap_router
 app.include_router(snap_router.router)
 from .routers import kompendium as kompendium_router
 app.include_router(kompendium_router.router)
+from .routers import ueberblick as ueberblick_router
+app.include_router(ueberblick_router.router)
 from .routers import play as play_router
 app.include_router(play_router.router)
 from .routers import school as school_router
@@ -101,6 +103,8 @@ app.include_router(maus_router.router)
 app.include_router(maus_router.router_sitzung)
 from .routers import kikompass as kikompass_router
 app.include_router(kikompass_router.router)
+from .routers import main_character as main_character_router
+app.include_router(main_character_router.router)
 from .routers import medien as medien_router
 app.include_router(medien_router.router)
 from .routers import medien_live as medien_live_router

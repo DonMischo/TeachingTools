@@ -2,7 +2,7 @@
  * TT - Teaching Tools — Workshop-Pitch (KI und digitale Bildung, schulübergreifend)
  * Ziel: TT als offenen, erweiterbaren Baukasten zeigen und Mitstreiter·innen gewinnen.
  * Screenshots kommen aus ../screenshots/out (erst screenshots/take-screenshots.js laufen lassen;
- * Baumleben: ONLY=sim-baum). QR-Codes: qr-demo.png und qr-handout.png in diesem Ordner.
+ * Baumleben: ONLY=sim-baum). QR-Code und Ausgabe liegen in ../workshop (qr-handout.png, TT-Workshop-Pitch.pptx).
  * Run: node create-workshop-pitch.js
  */
 
@@ -17,8 +17,7 @@ pres.author = "EGE";
 
 const SHOTS = path.join(__dirname, "..", "screenshots", "out");
 
-// Links zu den Begleitseiten (Artifacts); vor dem Workshop auf »öffentlich« teilen.
-const DEMO_URL = "claude.ai/artifact/6jAYzGS5xUQ8UjbXxFpm9b";
+// Link zur Begleitseite (Artifact); vor dem Workshop auf »öffentlich« teilen.
 const HANDOUT_URL = "claude.ai/artifact/45iY9BVaE1CfivcxnUoBfq";
 
 // ── Design tokens (wie create-pitch.js) ───────────────────────────────────────
@@ -122,7 +121,7 @@ function bigStat(s, number, label, x, y, w = 1.8) {
 
   screen(s, "13-simulationen", 5.25, 1.25, 4.4, TILE_LINE);
   phone(s, "104-bingo-live-student-playing", 8.55, 2.75, 2.45);
-  s.addNotes("Kurz vorstellen: Lehrkraft, kein Softwarehaus. TT ist aus einem Häuserwettbewerb an einer Schule entstanden und inzwischen eine Plattform mit über 50 Werkzeugen. Heute geht es darum, was man daraus gemeinsam machen kann.");
+  s.addNotes("Kurz vorstellen: Lehrkraft, kein Softwarehaus. TT ist an einer Schule entstanden und heute eine Plattform für den Unterricht: 56 Simulationen, 9 Aktivitäten und 14 Werkzeuge, dazu ein Methoden-Kompendium. Heute geht es darum, was man daraus gemeinsam machen kann.");
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -161,8 +160,8 @@ function bigStat(s, number, label, x, y, w = 1.8) {
 
   const layers = [
     { fill: PEACH, tag: "INHALTE", head: "JSON-Dateien, per Formular oder KI-Vorlage", tags: "Zeitleisten · Fakten + Behauptungen · Kartensätze · Folien + Aufgaben · Lückentexte" },
-    { fill: LIGHT, tag: "RAHMEN", head: "Spielformen, die Inhalte und Simulationen aufnehmen", tags: "Caputh · TaskCrawler · Challenge (10 Spielarten) · Zeitstrahl · Karten-Quiz · Bingo" },
-    { fill: MINT, tag: "BAUSTEINE", head: "Simulationen, allein oder als Station im Spiel", tags: "Gleichungswaage · Maus-Führerschein · KI-Werkstatt · Sonnensystem · Baumleben · … 35" },
+    { fill: LIGHT, tag: "RAHMEN", head: "Spielformen, die Inhalte und Simulationen aufnehmen", tags: "Caputh · TaskCrawler · Challenge (10 Spielarten) · Zeitstrahl · Lückentext · Bingo" },
+    { fill: MINT, tag: "BAUSTEINE", head: "Simulationen, allein oder als Station im Spiel", tags: "Gleichungswaage · Geschichte der Medien · KI-Werkstatt · Digitaler Atlas · Stromkreise · … 56 Simulationen" },
   ];
   layers.forEach((l, i) => {
     const y = 1.6 + i * 1.0;
@@ -172,10 +171,10 @@ function bigStat(s, number, label, x, y, w = 1.8) {
     s.addText(l.tags, { x: 2.3, y: y + 0.45, w: 7.0, h: 0.3, fontSize: 10.5, color: MUTED, fontFace: "Calibri", margin: 0 });
   });
   s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: 0.5, y: 4.62, w: 9, h: 0.5, fill: { color: NAVY }, line: { color: NAVY }, rectRadius: 0.1 });
-  s.addText("PLATTFORM   Ein Code für alles · QR + Gastzugang · Häuser + Punkte · Erfolge · Rechte je Werkzeug · Klassen, Kurse, A/B", {
+  s.addText("PLATTFORM   Ein Code für alles · QR + Gastzugang · Lernstand live · Erfolge · Rechte je Werkzeug · Klassen, Kurse, A/B", {
     x: 0.7, y: 4.62, w: 8.6, h: 0.5, fontSize: 10.5, bold: true, color: CREAM, fontFace: "Calibri", valign: "middle", margin: 0,
   });
-  s.addNotes("Das ist die Kernbotschaft. Jede Schicht wächst unabhängig: Wer eine neue Simulation baut, bekommt Codes, Rechte und Punkte geschenkt, und kann sie als Station im TaskCrawler anbieten. Wer Inhalte baut, braucht gar keinen Code.");
+  s.addNotes("Das ist die Kernbotschaft. Jede Schicht wächst unabhängig: Wer eine neue Simulation baut, bekommt Codes, Rechte und Auswertung geschenkt, und kann sie als Station im TaskCrawler anbieten. Wer Inhalte baut, braucht gar keinen Code.");
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -190,7 +189,7 @@ function bigStat(s, number, label, x, y, w = 1.8) {
   bigStat(s, "3", "Container: PostgreSQL 17, FastAPI, Next.js 16", 0.4, 1.65, 2.1);
   bigStat(s, "1", "Installationsskript für Windows und Linux", 2.7, 1.65, 2.1);
   bigStat(s, "0", "Anfragen an fremde Server, auch Karten und Schriften lokal", 5.0, 1.65, 2.1);
-  bigStat(s, "0", "Apps oder Konten für Schülerinnen und Schüler", 7.3, 1.65, 2.1);
+  bigStat(s, "0", "Apps nötig; Konto optional, für Fortschritt und Erfolge", 7.3, 1.65, 2.1);
 
   card(s, 0.5, 3.15, 4.4, 1.85, TILE);
   s.addText("Was man braucht", { x: 0.7, y: 3.25, w: 4, h: 0.35, fontSize: 13, bold: true, color: ORANGE, fontFace: "Calibri", margin: 0 });
@@ -198,7 +197,7 @@ function bigStat(s, number, label, x, y, w = 1.8) {
   card(s, 5.1, 3.15, 4.4, 1.85, TILE);
   s.addText("Datenschutz eingebaut", { x: 5.3, y: 3.25, w: 4, h: 0.35, fontSize: 13, bold: true, color: ORANGE, fontFace: "Calibri", margin: 0 });
   bullets(s, ["• Keine KI in der App, nur Vorlagen für externe KI", "• Gäste per befristetem Code, Namen nur »Vorname N.«", "• Spielsitzungen gelöscht zum Schuljahreswechsel", "• 2FA, Audit-Log wird zehn Jahre aufbewahrt"], 5.3, 3.65, 4.1, CREAM, 0.33, 11.5);
-  s.addNotes("Bewusst kurz halten. Für Technikinteressierte: Python/FastAPI und React/Next.js, WebSockets für Live-Spiele, three.js für 3D. Alles läuft im Schulnetz, auch die Karten (MapLibre mit amtlichen Daten).");
+  s.addNotes("Bewusst kurz halten. Für Technikinteressierte: Python/FastAPI und React/Next.js, WebSockets für Live-Spiele, three.js für 3D. Alles läuft im Schulnetz, auch die Karten (MapLibre mit amtlichen Daten). Schülerinnen und Schüler brauchen kein Konto, ein Code reicht. Mit Konto sehen sie ihren Fortschritt über die Zeit: Simulationen und Spiele merken sich den Stand, die Erfolge-Seite sammelt alles.");
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -234,7 +233,7 @@ function bigStat(s, number, label, x, y, w = 1.8) {
     "🎮  Klassisch, TÜ, Test, Aufgabe, Wettbewerb, Team-Modus",
     "🧭  Fragetypen bis Zeitstrahl, Karte, Sortieren, Einheiten umrechnen",
     "🖼  Bilder in Fragen, Lückentexte eingebettet",
-    "🏆  Ergebnis fließt als Punkte ins Haus der Klasse",
+    "📊  Auswertung nach Fragen und Gruppen, Ergebnis als CSV",
     "📋  Vorlage mit KI-Anleitung, Formular-Editor",
   ], 0.5, 1.7, 4.0, NAVY, 0.55, 12.5);
   screen(s, "31-caputh", 4.75, 1.65, 4.85);
@@ -275,21 +274,15 @@ function bigStat(s, number, label, x, y, w = 1.8) {
     x: 0.7, y: 2.2, w: 4.1, h: 0.95, fontSize: 10, color: NAVY, fontFace: "Consolas", valign: "middle", margin: 0,
   });
   bullets(s, [
-    "🔗  23 Simulationen als Station im TaskCrawler",
+    "🔗  47 Simulationen als Station im TaskCrawler",
     "🗺  Zeitstrahl und Karte als Fragetyp in Caputh",
     "🐉  Challenge-Minispiele als Zwischen- und Endboss",
     "🤖  KI-Werkstatt direkt in der Medien-Zeitreise",
   ], 0.5, 3.45, 4.4, NAVY, 0.4, 12);
 
-  screen(s, "36-zeitstrahl", 5.15, 2.05, 2.15);
-  caption(s, "Zeitstrahl", 5.15, 3.3, 2.15);
-  screen(s, "66-sim-gleichungswaage", 7.45, 2.05, 2.15);
-  caption(s, "Gleichungswaage", 7.45, 3.3, 2.15);
-  screen(s, "34-karten", 5.15, 3.75, 2.15);
-  caption(s, "Karten", 5.15, 5.0, 2.15);
-  screen(s, "59-sim-ki", 7.45, 3.75, 2.15);
-  caption(s, "KI-Werkstatt", 7.45, 5.0, 2.15);
-  s.addNotes("Das ist der Punkt, der TT von Einzeltools unterscheidet: Eine Simulation lässt sich als Station in den TaskCrawler hängen. Jede bringt dabei ihr eigenes Vorgabe-Format mit (bei der Waage die Gleichung, bei der Karte die Region); 23 sind schon angebunden. Beispiel: In der Medien-Zeitreise öffnen zwei Aufgaben die KI-Werkstatt, Reiter Sprache und Bilder.");
+  screen(s, "66-sim-gleichungswaage", 5.15, 2.15, 4.45);
+  caption(s, "Gleichungswaage: eine Gleichung als Station", 5.15, 4.75, 4.45);
+  s.addNotes("Das ist der Punkt, der TT von Einzeltools unterscheidet: Eine Simulation lässt sich als Station in den TaskCrawler hängen. Jede bringt dabei ihr eigenes Vorgabe-Format mit (bei der Waage die Gleichung, bei der Karte die Region); 47 sind schon angebunden. Beispiel: In der Medien-Zeitreise öffnen zwei Aufgaben die KI-Werkstatt, Reiter Sprache und Bilder.");
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -317,7 +310,7 @@ function bigStat(s, number, label, x, y, w = 1.8) {
     if (i < 3) s.addText("→", { x: x + 2.08, y: 3.1, w: 0.24, h: 0.4, fontSize: 16, bold: true, color: ORANGE, align: "center", margin: 0 });
   });
   banner(s, "Vorlagen für TaskCrawler, Caputh, Zeitstrahl, Lückentext, Bingo, Karten, Umfrage, Stundenplaner");
-  s.addNotes("Live zeigen, wenn Zeit ist: Zeitstrahl-Vorlage herunterladen, mit Thema in einen Chatbot geben, Ergebnis hochladen. Das dauert drei Minuten. Die Begleitseite hat einen Knopf, der den Prompt kopiert. Wichtig: Jedes Werkzeug hat sein eigenes JSON-Format, die Vorlage bringt es mit.");
+  s.addNotes("Live zeigen, wenn Zeit ist: Zeitstrahl-Vorlage herunterladen, mit Thema in einen Chatbot geben, Ergebnis hochladen. Das dauert drei Minuten. Wichtig: Jedes Werkzeug hat sein eigenes JSON-Format, die Vorlage bringt es mit.");
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -326,9 +319,9 @@ function bigStat(s, number, label, x, y, w = 1.8) {
 {
   const s = pres.addSlide();
   s.background = { color: NAVY };
-  sectionTag(s, "JETZT AUSPROBIEREN");
+  sectionTag(s, "JETZT LIVE");
   title(s, "Zeitreise der Medien", WHITE, 32);
-  sub(s, "Ein Thema, drei Vorlagen. Am Handy öffnen und mitspielen.", CREAM);
+  sub(s, "Ein Thema, drei Vorlagen. Live in TT, am Handy oder Laptop mitspielen.", CREAM);
   bullets(s, [
     "🕰  Zeitstrahl mit 56 Ereignissen in vier Spuren, von der Höhlenmalerei bis zur KI",
     "🔀  Einsortieren: Ereignisse auf den Zeitstrahl ziehen",
@@ -336,33 +329,95 @@ function bigStat(s, number, label, x, y, w = 1.8) {
     "⚖  Endgegner im Gerichtssaal: Behauptungen mit Beweisen widerlegen",
     "🔧  Hinter den Kulissen: die JSON-Vorlage und der KI-Prompt",
   ], 0.5, 2.15, 6.0, CREAM, 0.5, 12.5);
-  qr(s, "qr-demo.png", 7.25, 1.9, 2.0, DEMO_URL);
-  s.addNotes("Alle scannen lassen, fünf Minuten spielen lassen. Danach die Frage: Welches Thema würdet ihr so bauen? Das ist der Übergang zum Mitmachen.");
+  card(s, 6.85, 2.0, 2.75, 2.75, TILE);
+  s.addText("So geht's", { x: 7.05, y: 2.12, w: 2.4, h: 0.35, fontSize: 13, bold: true, color: ORANGE, fontFace: "Calibri", margin: 0 });
+  bullets(s, ["1  Adresse aus dem Chat öffnen", "2  Code aus TT eingeben", "3  Name und Avatar wählen", "4  Mitspielen"], 7.05, 2.6, 2.4, CREAM, 0.48, 12);
+  s.addNotes("Live in der Workshop-Instanz: Sitzung starten, Gäste erlauben, Code zeigen; alle treten über die Tunnel-Adresse unter /play bei. Fünf Minuten spielen lassen. Danach die Frage: Welches Thema würdet ihr so bauen? Das ist der Übergang zum Mitmachen. Vorher: workshop.bat start, die Tunnel-Adresse in den Chat posten, Zugänge ws01 usw. aus .workshop/data/zugaenge.txt verteilen. TT selbst über die Tunnel-Adresse öffnen, dann zeigen alle Beitritts-QRs dorthin. Erfundene Klassen 5a bis 10c sind schon angelegt.");
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 11 — Beispiele aus dem Baukasten
+// 10b — Leuchtturm: Geschichte der Medien (Sim + TaskCrawler)
 // ═══════════════════════════════════════════════════════════════════════════
 {
   const s = pres.addSlide();
   s.background = { color: WHITE };
-  sectionTag(s, "BAUSTEINE");
-  title(s, "Vier Beispiele aus 35 Simulationen", NAVY, 30);
-  const baum = hasShot("79-sim-baum") ? "79-sim-baum" : "51-sim-erdaufbau";
-  const items = [
-    ["73-sim-maus", "Maus-Führerschein", "PC-Grundkurs auf nachgebautem Windows. Sterne, Prüfung, Urkunde, Hauspunkte."],
-    ["34-karten", "Karten", "Atlas aus amtlichen Daten: Strömungen, Wind, Bodenschätze. Quiz per Code."],
-    ["66-sim-gleichungswaage", "Gleichungswaage", "Äquivalenzumformung zum Anfassen, von Äpfeln bis Reaktionsgleichungen."],
-    [baum, baum === "79-sim-baum" ? "Baumleben" : "Aufbau der Erde", baum === "79-sim-baum" ? "Vom Samen zum Humus, Stoffströme, Bestimmen und das Spiel »Sei ein Baum«." : "Erdkern bis Kruste in 3D, Erdbebenwellen, Konvektion."],
+  sectionTag(s, "LEUCHTTURM", 0.55, 0.38, 1.8);
+  title(s, "Geschichte der Medien: alles greift ineinander", NAVY, 28);
+  sub(s, "Eine Simulation und ein TaskCrawler zum selben Thema, Station für Station verknüpft. Frage immer: Wie kommt eine Nachricht weiter, schneller, zu mehr Menschen?");
+
+  screen(s, "85-taskcrawler-medien-3d", 0.5, 2.05, 4.35);
+  caption(s, "TaskCrawler: sechs Epochen als begehbare 3D-Welt", 0.5, 4.56, 4.35);
+  screen(s, "83-sim-medien", 5.15, 2.05, 4.35);
+  caption(s, "Simulation: Zeitreise, Flop-Museum, Galerie, Spiele", 5.15, 4.56, 4.35);
+
+  const stats = [
+    ["81", "Stationen, 40 000 Jahre"],
+    ["32", "Demos: morsen, faxen, Rohrpost, SMS"],
+    ["113", "Fotos zum Freischalten"],
+    ["34", "Sprünge aus dem Crawler in die Sim"],
+    ["1", "Live-Raum: Morse an die Klasse"],
   ];
-  items.forEach(([name, h, b], i) => {
-    const x = 0.5 + (i % 2) * 4.6, y = 1.6 + Math.floor(i / 2) * 1.85;
-    screen(s, name, x, y, 2.4);
-    s.addText(h, { x: x + 2.55, y: y + 0.05, w: 1.9, h: 0.35, fontSize: 14, bold: true, color: NAVY, fontFace: "Cambria", margin: 0 });
-    s.addText(b, { x: x + 2.55, y: y + 0.42, w: 1.9, h: 1.0, fontSize: 10.5, color: MUTED, fontFace: "Calibri", valign: "top", margin: 0 });
+  stats.forEach(([n, l], i) => {
+    const x = 0.5 + i * 1.82;
+    s.addText(n, { x, y: 4.88, w: 1.7, h: 0.38, fontSize: 22, bold: true, color: ORANGE, fontFace: "Cambria", align: "center", margin: 0 });
+    s.addText(l, { x, y: 5.24, w: 1.7, h: 0.3, fontSize: 9, color: MUTED, fontFace: "Calibri", align: "center", margin: 0 });
   });
-  s.addNotes("Maus-Führerschein: Viele Fünftklässler können Handy, aber keinen PC. Karten: Statt Schulbuchkarte ein Atlas mit echten, aktuellen Daten. Gleichungswaage: Algebra wird zum Gleichgewicht. Baumleben: Biologie mit echten Wachstumsmodellen.");
+  s.addNotes("Das stärkste Beispiel dafür, was der Baukasten kann. Der TaskCrawler »Zeitreise der Medien« (Klasse 8 bis 10) hat sechs Stockwerke, jedes im Stil seiner Epoche, von der Steinzeithöhle bis zur Raumstation. Jede Erklärung und jede Weltweit-Aufgabe springt direkt an die passende Station der Simulation; ein Test stellt sicher, dass es diese Stationen gibt. Dort probieren die Lernenden das Medium selbst aus: Morsetaste, Fax, Handytastatur, Rohrpost. Über den Live-Raum schicken sie sich gegenseitig Morse, Fax oder SMS. Dazu kommen ein Flop-Museum mit Medien, die sich nicht durchgesetzt haben, und 55 Erfolge. Am Ende steht der Deepfake-Drache: Nicht alles, was echt aussieht, ist echt. Der Fortschritt wird am Konto gespeichert, Gäste per Code.");
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 10c — KI und Medien: Thema im Unterricht, Werkzeug für Lehrkräfte (zwei Folien)
+// ═══════════════════════════════════════════════════════════════════════════
+[
+  ["KI als Thema im Unterricht", [
+    ["86-sim-kikompass", "KI-Kompass", "Kompetenzraster für Lernende und Lehrkräfte, KI-Führerschein mit 14 Stationen von Stufe 0 bis I."],
+    ["87-sim-klikk", "Klikk", "Eine Schulwoche mit Social Media: Challenges, Cybermobbing, Tracking und ein Datenspiegel am Ende."],
+  ]],
+  ["KI verstehen und als Werkzeug nutzen", [
+    ["59-sim-ki", "KI-Werkstatt", "Wie ein Sprachmodell Wörter wählt und wie Bilder aus Rauschen entstehen, zum Selbst-Ausprobieren."],
+    ["88-tool-curriculum", "Curriculinator", "Eine KI liest alten und neuen Lehrplan, TT legt beide nebeneinander: was bleibt, was neu ist, was wandert."],
+  ]],
+].forEach(([titel, items], seite) => {
+  const s = pres.addSlide();
+  s.background = { color: WHITE };
+  sectionTag(s, "KI UND MEDIEN");
+  title(s, titel, NAVY, 28);
+  items.forEach(([name, h, b], i) => {
+    const x = 0.5 + i * 4.6;
+    screen(s, name, x, 1.55, 4.4);
+    s.addText(h, { x, y: 4.18, w: 4.4, h: 0.36, fontSize: 15, bold: true, color: NAVY, fontFace: "Cambria", margin: 0 });
+    s.addText(b, { x, y: 4.56, w: 4.4, h: 0.8, fontSize: 11.5, color: MUTED, fontFace: "Calibri", valign: "top", margin: 0 });
+  });
+  if (seite === 0) s.addNotes("KI-Kompass: Lernende und Lehrkräfte schätzen sich im selben Raster ein (Verstehen, Anwenden, Reflektieren, Mitgestalten; nach Alles, Falck, Flick und Schulz, CC BY 4.0) und sehen es als Spinnennetz. Der KI-Führerschein führt in 14 Stationen von Stufe 0 bis Stufe I; die echte KI ist AIS.chat, Schülerinnen und Schüler kommen nur über den QR-Code der Lehrkraft hinein und geben keine Daten ein. Für Lehrkräfte gibt es den AKTIV(ER)-Weg mit Vorlagen. Klikk: Man ist 14, in der 8b und hat eine neue App. Warnsignale merkt man selbst, statt dass sie jemand zeigt; der Datenspiegel zeigt am Ende, was die App über einen weiß, und die Klasse kann eine Werbeauktion mitspielen.");
+  else s.addNotes("KI-Werkstatt: Wortnetz statt Blackbox, Diffusion Schritt für Schritt, »Echt oder KI« mit eigenen Bildpaaren. Curriculinator: Eine KI liest die Lehrplan-PDFs und gibt Karten als JSON zurück, TT zeigt, was bleibt, was neu ist und was in eine andere Klasse wandert. Auch hier gilt: In TT selbst steckt keine KI.");
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 11 — Beispiele aus dem Baukasten (zwei Folien, große Bilder)
+// ═══════════════════════════════════════════════════════════════════════════
+[
+  ["Digitaler Atlas und PC-Grundkurs", [
+    ["34-karten", "Digitaler Atlas", "Selbst gehostet aus freien Geodaten (BKG, BGR, Natural Earth, OpenStreetMap): Strömungen, Wind, Bodenschätze, Siedlungen. Kartensätze, Arbeitsblätter als PDF, ein Quiz per Code als Zugabe."],
+    ["73-sim-maus", "Maus-Führerschein", "PC-Grundkurs auf nachgebautem Windows, Ubuntu oder macOS. Sterne, Prüfung und Urkunde; die Lehrkraft sieht die ganze Klasse."],
+  ]],
+  ["Mathe und Biologie zum Anfassen", [
+    ["66-sim-gleichungswaage", "Gleichungswaage", "Äquivalenzumformung als Gleichgewicht, von Äpfeln in der Grundschule bis zu Reaktionsgleichungen."],
+    [hasShot("79-sim-baum") ? "79-sim-baum" : "51-sim-erdaufbau", "Baumleben", "Vom Samen zum Humus mit Wasserhaushalt und Stoffströmen, Bäume bestimmen und das Spiel »Sei ein Baum«."],
+  ]],
+].forEach(([titel, items], seite) => {
+  const s = pres.addSlide();
+  s.background = { color: WHITE };
+  sectionTag(s, seite === 0 ? "BAUSTEINE · 56 SIMULATIONEN" : "BAUSTEINE", 0.55, 0.38, seite === 0 ? 3.0 : 2.2);
+  title(s, titel, NAVY, 28);
+  items.forEach(([name, h, b], i) => {
+    const x = 0.5 + i * 4.6;
+    screen(s, name, x, 1.55, 4.4);
+    s.addText(h, { x, y: 4.18, w: 4.4, h: 0.36, fontSize: 15, bold: true, color: NAVY, fontFace: "Cambria", margin: 0 });
+    s.addText(b, { x, y: 4.56, w: 4.4, h: 0.8, fontSize: 11.5, color: MUTED, fontFace: "Calibri", valign: "top", margin: 0 });
+  });
+  if (seite === 0) s.addNotes("Karten: Das Quiz ist nur ein kleiner Teil. Im Kern ist es ein digitaler Atlas, komplett im Schulnetz, mit amtlichen und freien Geodaten statt Schulbuchkarte; Lehrkräfte stellen Kartensätze zusammen und drucken Arbeitsblätter. Maus-Führerschein: Viele Fünftklässler können Handy, aber keinen PC.");
+  else s.addNotes("Gleichungswaage: Algebra wird zum Gleichgewicht. Baumleben: Biologie mit echten Wachstumsmodellen.");
+});
 
 // ═══════════════════════════════════════════════════════════════════════════
 // 12 — Nutzen für Bildung
@@ -373,11 +428,11 @@ function bigStat(s, number, label, x, y, w = 1.8) {
   sectionTag(s, "FÜR DEN UNTERRICHT");
   title(s, "Was Lernende davon haben", WHITE);
   const benefits = [
-    { icon: "🎯", title: "Spielen mit Sinn", body: "Häuser, Erfolge, Bosskämpfe. Spiel- und Wissenswertung getrennt." },
-    { icon: "🌍", title: "Nah an ihrer Welt", body: "Echter Atlas, echtes Windows, Leben in Erfurt, Deepfakes erkennen." },
+    { icon: "🎯", title: "Spielen mit Sinn", body: "Erfolge und Bosskämpfe. Spiel- und Wissenswertung getrennt." },
+    { icon: "🌍", title: "Nah an ihrer Welt", body: "Digitaler Atlas, echtes Windows, Leben in Erfurt, Deepfakes erkennen." },
     { icon: "🪜", title: "Jeder auf seinem Niveau", body: "Schwierigkeit passt sich an, Texte in drei Lesestufen." },
     { icon: "🔬", title: "Unsichtbares sichtbar", body: "Vom Erdkern bis zum Netzwerkpaket, zum Verändern statt Ansehen." },
-    { icon: "🤝", title: "Gemeinschaft", body: "Klassen sammeln für ihr Haus, über Jahrgänge hinweg." },
+    { icon: "📊", title: "Lernstand im Blick", body: "Die Lehrkraft sieht live, wo es hakt, und wertet je Person aus." },
     { icon: "⏰", title: "Zeit für Lehrkräfte", body: "Code an die Tafel, Vorlagen teilen, Auswertung als CSV." },
   ];
   benefits.forEach((b, i) => {
@@ -402,7 +457,7 @@ function bigStat(s, number, label, x, y, w = 1.8) {
   const cols = [
     { h: "Offen", fill: PEACH, body: ["Code: Apache-2.0, Inhalte: CC BY 4.0", "Offene Datenformate (JSON)", "Inhalte teilbar zwischen Schulen"] },
     { h: "Selbst gehostet", fill: LIGHT, body: ["Daten bleiben in der Schule", "Kein Abo, kein Anbieterwechsel", "Läuft auch ohne Internet im Schulnetz"] },
-    { h: "Erweiterbar", fill: MINT, body: ["Neue Simulation = Komponente + Katalogeintrag", "Codes, Rechte, Punkte kommen automatisch", "Jede Simulation wird Station in Spielen"] },
+    { h: "Erweiterbar", fill: MINT, body: ["Neue Simulation = Komponente + Katalogeintrag", "Codes, Rechte, Auswertung kommen automatisch", "Jede Simulation wird Station in Spielen"] },
   ];
   cols.forEach((c, i) => {
     const x = 0.5 + i * 3.05;
@@ -412,6 +467,41 @@ function bigStat(s, number, label, x, y, w = 1.8) {
   });
   banner(s, "Was eine Schule baut, können alle anderen nutzen.");
   s.addNotes("Lizenz: Apache-2.0 für den Code, CC BY 4.0 für eigene Inhalte. Eigene Simulationen dürfen privat bleiben, Pflicht ist nur die NOTICE-Datei mit dem Hinweis auf das Original-Repo. Fremdes Material (Fotos, Schriften, Kartendaten) behält seine eigene Lizenz, alle Nachweise stehen unter /admin/quellen. Vor dem Workshop noch das Repo öffentlich schalten.");
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 13b — Lizenzen und Sicherheit
+// ═══════════════════════════════════════════════════════════════════════════
+{
+  const s = pres.addSlide();
+  s.background = { color: NAVY };
+  sectionTag(s, "NACHPRÜFBAR", 0.55, 0.38, 1.9);
+  title(s, "Lizenzen und Sicherheit, geprüft", WHITE, 30);
+
+  const cols = [
+    { h: "⚖  Lizenzen", body: [
+      "Jede fremde Quelle mit Lizenz im Register, keine offenen ⚠-Einträge",
+      "Browser-Pakete: MIT, BSD, ISC, Apache, MPL",
+      "Fotos: gemeinfrei, CC0, CC BY, CC BY-SA, FAL",
+      "Snap! (AGPL) wird nicht mitgeliefert, nur per Skript geholt",
+      "GPL-Projekte nur als Vorbild, kein Code übernommen",
+    ] },
+    { h: "🛡  Sicherheit", body: [
+      "Abhängigkeiten geprüft mit npm audit und pip-audit",
+      "Bekannte Lücken werden vor jeder Freigabe geschlossen",
+      "Gäste nur mit befristetem Token, je Sitzung freigegeben",
+      "2FA, Audit-Log, Rechte je Werkzeug und Rolle",
+      "Keine Anfragen an fremde Server zur Laufzeit",
+    ] },
+  ];
+  cols.forEach((c, i) => {
+    const x = 0.5 + i * 4.6;
+    card(s, x, 1.6, 4.4, 3.25, TILE);
+    s.addText(c.h, { x: x + 0.2, y: 1.72, w: 4, h: 0.4, fontSize: 15, bold: true, color: ORANGE, fontFace: "Calibri", margin: 0 });
+    bullets(s, c.body.map(t => "• " + t), x + 0.2, 2.22, 4.0, CREAM, 0.5, 11.5);
+  });
+  banner(s, "Offen heißt auch: Jede und jeder kann nachprüfen, was drinsteckt.");
+  s.addNotes("Stand der Prüfung vom 24.11.2026. Lizenzen: Das Quellen-Register (/admin/quellen) hat keinen Eintrag mit ungeklärten Rechten. Von den Browser-Paketen steht nur mapshaper unter MPL-2.0, und das nur im Build. psycopg2 auf dem Server ist LGPL und wird nur als Bibliothek geladen. Die Verdächtigen im Challenge-Modus Detektiv stammten aus einem itch.io-Paket mit unklarer Weitergabe; sie sind jetzt eigene 32×32-Figuren. Offen ist nur noch: drei Fotos tragen nur »Attribution« ohne genaue Lizenz. Sicherheit: python-jose wurde wegen einer ecdsa-Lücke ohne Fix durch PyJWT ersetzt. Am selben Tag behoben: Next.js auf 16.4.6 (kritische Lücken in der Bildoptimierung) und Pillow auf 13; pip-audit ist danach sauber. Übrig sind kleinere Lücken in Entwicklungswerkzeugen (vitest, vite) und indirekten Paketen.");
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -452,13 +542,12 @@ function bigStat(s, number, label, x, y, w = 1.8) {
 
   s.addText("Fragen, Ideen, Mitmachen?", { x: 0.5, y: 0.7, w: 9, h: 0.75, fontSize: 30, bold: true, color: WHITE, fontFace: "Cambria", align: "center", margin: 0 });
   s.addText("Alles zum Nachlesen, alle Funktionen und wie ihr einsteigt:", { x: 0.5, y: 1.45, w: 9, h: 0.4, fontSize: 14, color: CREAM, fontFace: "Calibri", italic: true, align: "center", margin: 0 });
-  qr(s, "qr-handout.png", 2.3, 2.15, 2.0, "Begleitseite");
-  qr(s, "qr-demo.png", 5.7, 2.15, 2.0, "Zeitreise der Medien");
+  qr(s, "../workshop/qr-handout.png", 4.0, 2.15, 2.0, "Begleitseite");
   s.addText("Kontakt: donflauschelot@gmail.com   ·   Code: github.com/DonMischo/TeachingTools", { x: 0.5, y: 4.95, w: 9, h: 0.35, fontSize: 11, color: MUTED, fontFace: "Calibri", align: "center", margin: 0 });
   s.addNotes("Häufige Einwände: Datenschutz (eigener Server, keine Anfragen nach außen), Aufwand (Installationsskript, Code an die Tafel), Nachhaltigkeit (genau deshalb suchen wir Mitstreiter und einen Träger).");
 }
 
 // ── Write file ────────────────────────────────────────────────────────────────
-pres.writeFile({ fileName: path.join(__dirname, "TT-Workshop-Pitch.pptx") }).then(() => {
+pres.writeFile({ fileName: path.join(__dirname, "..", "workshop", "TT-Workshop-Pitch.pptx") }).then(() => {
   console.log("✅  TT-Workshop-Pitch.pptx created");
 }).catch(console.error);

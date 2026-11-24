@@ -156,7 +156,18 @@ export default function FlussEditor({
   const [wahl, setWahl] = useState<{ knoten?: string; kante?: number }>({});
   const [verbindeVon, setVerbindeVon] = useState<string | null>(null);
   const [pfeilModus, setPfeilModus] = useState(pfeilStart);
-  const [ueber, setUeber] = useState<number | null>(null);
+  const [ueber, setUeberRoh] = useState<number | null>(null);
+  // Die Knöpfe am Pfeil verschwinden erst mit kurzer Verzögerung, damit die Maus sie sicher erreicht
+  const ueberUhr = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const setUeber = (u: number | null | ((alt: number | null) => number | null)) => {
+    if (ueberUhr.current) clearTimeout(ueberUhr.current);
+    ueberUhr.current = null;
+    setUeberRoh(u);
+  };
+  const ueberWeg = (i: number) => {
+    if (ueberUhr.current) clearTimeout(ueberUhr.current);
+    ueberUhr.current = setTimeout(() => setUeberRoh(u => (u === i ? null : u)), 450);
+  };
   const [quer, setQuer] = useState(false);
   const [kommentare, setKommentare] = useState(kommentareStart);
   useEffect(() => { try { setQuer(localStorage.getItem(RICHTUNG_KEY) === "1"); } catch { /* senkrecht */ } }, []);
@@ -267,12 +278,14 @@ export default function FlussEditor({
     aendere({ ...anzeige, kanten: anzeige.kanten.map((x, j) => (j === i ? { ...x, marke: neu } : x.von === e.von && x.marke === neu ? { ...x, marke: e.marke } : x)) });
   };
 
+  const kanteLoeschen = (i: number) => {
+    aendere({ ...anzeige, kanten: anzeige.kanten.filter((_, j) => j !== i) });
+    setUeber(null);
+    setWahl({});
+  };
+
   const kanteKlick = (i: number) => {
-    if (pfeilModus && darfVerbinden) {
-      aendere({ ...anzeige, kanten: anzeige.kanten.filter((_, j) => j !== i) });
-      setUeber(null);
-      return;
-    }
+    if (pfeilModus && darfVerbinden) { kanteLoeschen(i); return; }
     setWahl({ kante: i });
     onKanteKlick?.(i);
   };
@@ -329,7 +342,7 @@ export default function FlussEditor({
       </div>
       {verbindeVon
         ? <p className="text-sm text-accent font-bold">➜ Jetzt den Kasten anklicken, zu dem der Pfeil zeigen soll. (Esc oder Klick ins Leere bricht ab.)</p>
-        : pfeilModus && darfVerbinden && <p className="text-xs text-muted">Pfeil-Modus: Kasten anklicken, dann den Zielkasten. Am Pfeil: 🗑 löscht ihn, ⇄ tauscht »ja« und »nein«. Bei einer Raute wird der erste Pfeil »ja«, der zweite »nein«.</p>}
+        : darfVerbinden && <p className="text-xs text-muted">{pfeilModus ? "Pfeil-Modus: Kasten anklicken, dann den Zielkasten." : "Pfeil ziehen: Kasten anklicken, dann den blauen Knopf ➜ und den Zielkasten — oder den Pfeil-Modus einschalten."} Maus auf einen Pfeil: 🗑 löscht ihn, ⇄ tauscht »ja« und »nein«. Bei einer Raute wird der erste Pfeil »ja«, der zweite »nein«.</p>}
       {d2An && (
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <label className="flex items-center gap-1.5">Thema
@@ -380,8 +393,9 @@ export default function FlussEditor({
             const e = anzeige.kanten[i];
             const pfad = p.map(([x, y], j) => `${j ? "L" : "M"}${x},${y}`).join(" ");
             const an = wahl.kante === i || markiertKante?.i === i;
-            const loeschbar = pfeilModus && darfVerbinden && ueber === i;
-            const raus = () => setUeber(u => (u === i ? null : u));
+            // Löschen/Tauschen am Pfeil: in jedem Bearbeiten-Modus gleich (Aufgabe 2 wie 6 und 7)
+            const loeschbar = darfVerbinden && ueber === i;
+            const raus = () => ueberWeg(i);
             const farbe = markiertKante?.i === i ? (markiertKante.ok ? "#16a34a" : "#dc2626") : loeschbar ? "#dc2626" : an ? "#2563eb" : "#334155";
             const [lx, ly] = p[0], [nx, ny] = p[1];
             const rx = lx + (nx > lx ? 10 : nx < lx ? -28 : 6), ry = ly + (ny > ly ? 14 : ny < ly ? -5 : -6);
@@ -398,22 +412,27 @@ export default function FlussEditor({
                     {darfVerbinden && <title>Klick: »ja« und »nein« tauschen</title>}{e.marke}
                   </text>
                 )}
-                {loeschbar && (
-                  <g onPointerEnter={() => setUeber(i)} onPointerLeave={raus} style={{ cursor: "pointer" }}>
-                    <g onPointerDown={ev => { ev.stopPropagation(); kanteKlick(i); }}>
-                      <title>Pfeil löschen</title>
-                      <circle cx={mx} cy={my} r={13} style={{ fill: "#fee2e2", stroke: "#dc2626", strokeWidth: 1.5 }} />
-                      <text x={mx} y={my + 5} textAnchor="middle" style={{ fontSize: 14, pointerEvents: "none" }}>🗑</text>
-                    </g>
-                    {e.marke && (
-                      <g onPointerDown={ev => { ev.stopPropagation(); tauscheMarke(i); }}>
-                        <title>»ja« und »nein« tauschen</title>
-                        <circle cx={mx + 30} cy={my} r={13} style={{ fill: "#dbeafe", stroke: "#2563eb", strokeWidth: 1.5 }} />
-                        <text x={mx + 30} y={my + 5} textAnchor="middle" style={{ fontSize: 14, fontWeight: 700, fill: "#1d4ed8", pointerEvents: "none" }}>⇄</text>
+                {loeschbar && (() => {
+                  // 🗑 und ⇄ dicht nebeneinander, zusammen mittig auf dem Pfeil; die Fläche dahinter hält den Hover ohne Lücke
+                  const zx = e.marke ? mx - 15 : mx, tx = mx + 15, links = zx - 15, rechts = (e.marke ? tx : zx) + 15;
+                  return (
+                    <g onPointerEnter={() => setUeber(i)} onPointerLeave={raus} style={{ cursor: "pointer" }}>
+                      <rect x={links - 4} y={my - 19} width={rechts - links + 8} height={38} rx={19} style={{ fill: "white", fillOpacity: 0.85, stroke: "#cbd5e1", strokeWidth: 1 }} />
+                      <g onPointerDown={ev => { ev.stopPropagation(); kanteLoeschen(i); }}>
+                        <title>Pfeil löschen</title>
+                        <circle cx={zx} cy={my} r={13} style={{ fill: "#fee2e2", stroke: "#dc2626", strokeWidth: 1.5 }} />
+                        <text x={zx} y={my + 5} textAnchor="middle" style={{ fontSize: 14, pointerEvents: "none" }}>🗑</text>
                       </g>
-                    )}
-                  </g>
-                )}
+                      {e.marke && (
+                        <g onPointerDown={ev => { ev.stopPropagation(); tauscheMarke(i); }}>
+                          <title>»ja« und »nein« tauschen</title>
+                          <circle cx={tx} cy={my} r={13} style={{ fill: "#dbeafe", stroke: "#2563eb", strokeWidth: 1.5 }} />
+                          <text x={tx} y={my + 5} textAnchor="middle" style={{ fontSize: 14, fontWeight: 700, fill: "#1d4ed8", pointerEvents: "none" }}>⇄</text>
+                        </g>
+                      )}
+                    </g>
+                  );
+                })()}
               </g>
             );
           })}

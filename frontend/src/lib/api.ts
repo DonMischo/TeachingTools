@@ -2,6 +2,7 @@ import type {
   TimelineBoard, TimelineGameSpec, TimelineSetDetail, TimelineSetOut,
 } from "@/components/timeline/types";
 import type { SlideshowEvent, SlideshowItem } from "@/lib/slideshow";
+import type { Funktionen } from "@/lib/featureListe";
 import type { SicherungsAbschnitt } from "@/lib/taskcrawler/ergebnisPdf";
 import type { Ebene as KartenEbene, Katalog as KartenKatalog } from "@/lib/karten/stil";
 import type { KartenExportIn, KartenSatz, KartenSatzIn, KartenSatzKurz, SatzInhalt as SatzInhaltKarten, SuchTreffer } from "@/lib/karten/satz";
@@ -1259,6 +1260,8 @@ export type BestenlisteEintrag = {
   kontext: string | null;
   /** Die eigene Zeile — zum Hervorheben. */
   selbst: boolean;
+  /** Sortierwert: bei Lektionen A/min × (1 − Fehlerquote)², sonst = wert */
+  wertung?: number;
 };
 export type ErgebnisIn = {
   modus: TippModus;
@@ -1331,7 +1334,7 @@ export type KiKompassMaterialIn = {
 export type KiKompassMaterial = KiKompassMaterialIn & { id: number; autor: string; eigen: boolean; erstellt_am: string };
 
 // Bestenliste der Challenge in »Markieren & Bearbeiten« (siehe api/routers/markieren.py)
-export type MarkierModus = "markieren" | "bearbeiten" | "gemischt";
+export type MarkierModus = "markieren" | "bearbeiten" | "gemischt" | "tastatur";
 export type MarkierEintrag = {
   id: number; platz: number; name: string; klasse: string | null; gast: boolean;
   zeit_ms: number; aktionen: number; selbst: boolean;
@@ -2124,6 +2127,25 @@ export const api = {
         body: JSON.stringify(body),
         headers: zugang?.token ? { Authorization: `Bearer ${zugang.token}` } : undefined,
       }),
+  },
+
+  // Main Character: nur Klasse, Woche und Werte in die Sitzung; Lehrkraft sieht Anzahlen und Schnitte
+  // (siehe api/routers/main_character.py)
+  mainCharacter: {
+    stand: (zugang: MausZugang, body: { klasse: string; woche: number; werte: Record<string, number> }) =>
+      apiFetch<{ ok: boolean }>(`main-character/sitzung/${encodeURIComponent(zugang.code)}/stand`, {
+        method: "PUT",
+        body: JSON.stringify(body),
+        headers: zugang.token ? { Authorization: `Bearer ${zugang.token}` } : undefined,
+      }),
+    uebersicht: (code: string) =>
+      apiFetch<{
+        anzahl: number;
+        je_klasse: Record<string, number>;
+        schnitt: Record<string, number> | null;
+        woche_schnitt: number | null;
+        min_fuer_schnitt: number;
+      }>(`main-character/sitzung/${encodeURIComponent(code)}/uebersicht`),
   },
 
   // KI-Kompass: Stand am Konto, Spiegel in die Sitzung, Modul-Prüfung (siehe api/routers/kikompass.py)
@@ -3283,6 +3305,9 @@ export const api = {
     guestJoin: (code: string, name: string) =>
       apiFetch<{ token: string; name: string; plan_id: number; plan_name: string; permission: string }>(
         "curriculum/guest/join", { method: "POST", body: JSON.stringify({ code, name }) }),
+  },
+  ueberblick: {
+    liste: () => apiFetch<Funktionen>("ueberblick"),
   },
   kompendium: {
     marken: () => apiFetch<Record<string, string>>("kompendium/marken"),

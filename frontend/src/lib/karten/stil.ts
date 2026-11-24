@@ -55,10 +55,11 @@ export type Ebene = {
 
 export type Katalog = { stand: string; ebenen: Ebene[] };
 
-export type Gruppe = "politisch" | "topographisch" | "wirtschaft" | "bevoelkerung" | "stadt" | "eigen";
+export type Gruppe = "politisch" | "topographisch" | "geologie" | "wirtschaft" | "bevoelkerung" | "stadt" | "eigen";
 export const GRUPPEN: { id: Gruppe; name: string }[] = [
   { id: "politisch", name: "Politisch" },
   { id: "topographisch", name: "Topographisch" },
+  { id: "geologie", name: "Geologie" },
   { id: "wirtschaft", name: "Wirtschaft" },
   { id: "bevoelkerung", name: "Bevölkerung" },
   { id: "stadt", name: "Stadt" },
@@ -82,7 +83,7 @@ export type Darstellung = {
   grundfarbe?: string;
 };
 
-export type Kartenart = "politisch" | "topographisch" | "stumm";
+export type Kartenart = "politisch" | "topographisch" | "geologisch" | "stumm";
 
 export type Auswahl = {
   ebenen: string[];
@@ -147,6 +148,13 @@ export const KARTENARTEN: { id: Kartenart; icon: string; name: string; ebenen: R
         "de-gebirge", "de-landschaften", "de-gipfel", "welt-staedte", "de-staedte"],
       welt: ["welt-hoehen", "welt-staaten", "welt-gewaesser", "welt-seen", "welt-fluesse", "welt-meere", "welt-gebirge",
         "welt-landschaften", "welt-gipfel", "welt-staedte"],
+    },
+  },
+  {
+    id: "geologisch", icon: "🪨", name: "Geologisch",
+    ebenen: {
+      de: ["welt-staaten", "de-geologie", "de-stoerungen", "de-gewaesser", "de-seen", "de-fluesse", "welt-staedte", "de-staedte"],
+      welt: ["welt-staaten", "welt-platten", "welt-plattengrenzen", "welt-gewaesser", "welt-meere"],
     },
   },
   {

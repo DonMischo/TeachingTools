@@ -2547,6 +2547,33 @@ class KiKompassStand(Base):
     )
 
 
+class MainCharacterStand(Base):
+    """Main Character: der anonyme Stand einer Figur in einer Sitzung, für die
+    Klassenübersicht am Beamer. Gespeichert werden nur Klasse, Woche und die
+    fünf Werte — nie Fragebogen-Antworten, Spitzname, Stärken oder Baustellen.
+    Die Teilnehmer-Spalten dienen nur dazu, je Person eine Zeile zu halten;
+    die Übersicht gibt sie nicht heraus."""
+    __tablename__ = "main_character_staende"
+    __table_args__ = (
+        UniqueConstraint("session_id", "student_id", name="uq_maincharacter_student"),
+        UniqueConstraint("session_id", "teacher_id", name="uq_maincharacter_teacher"),
+        UniqueConstraint("session_id", "guest_id", name="uq_maincharacter_guest"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    session_id: Mapped[int] = mapped_column(ForeignKey("tool_sessions.id", ondelete="CASCADE"), nullable=False, index=True)
+    student_id: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"), nullable=True)
+    teacher_id: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="CASCADE"), nullable=True)
+    guest_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    klasse: Mapped[str] = mapped_column(String(20), nullable=False)
+    woche: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    # {"W": 0-100, "Z": …, "S": …, "M": …, "E": …}
+    werte: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict, server_default="{}")
+    aktualisiert_am: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
 class KiKompassMaterial(Base):
     """Gemeinsamer Materialpool des KI-Kompass: Lehrkräfte teilen Material,
     verschlagwortet nach Feld im Raster (Bereich × Stufe) und Dimension

@@ -259,7 +259,7 @@ class Erfolg(BaseModel):
 
 
 class SatzInhalt(BaseModel):
-    art: Literal["politisch", "topographisch", "stumm"]
+    art: Literal["politisch", "topographisch", "geologisch", "stumm"]
     # Region aus frontend/src/lib/karten/stil.ts::REGIONEN (Deutschland, Europa, Welt …)
     region: str = Field(default="deutschland", max_length=30, pattern=r"^[a-z]+$")
     ebenen: list[str] = Field(max_length=50)
@@ -639,7 +639,7 @@ class VorlageEbene(BaseModel):
 
 class VorlageIn(BaseModel):
     titel: str = Field(default="Kartensatz", min_length=1, max_length=200)
-    art: Literal["politisch", "topographisch", "stumm"] = "stumm"
+    art: Literal["politisch", "topographisch", "geologisch", "stumm"] = "stumm"
     region: str = Field(default="deutschland", max_length=30, pattern=r"^[a-z]+$")
     ebenen: list[str] = Field(default_factory=list, max_length=50)
     beschriftung: bool = False

@@ -164,3 +164,13 @@ def test_lehrkraft_darf_auch(client, db, teacher, teacher_token):
     assert r.json()["klasse"] is None
     zeile = db.query(TippBestenliste).one()
     assert zeile.teacher_id == teacher.id and zeile.student_id is None
+
+
+def test_lektionen_nach_wertung_mit_fehlerquote(client, db):
+    """Schneller, aber mit vielen Fehlern steht hinter etwas langsamer und sauber."""
+    ada, bo = schueler(db, "Ada"), schueler(db, "Bo", "Brecht")
+    client.post("/api/tippen/bestenliste", json=_eintrag("lektionen", 220, anschlaege=200, fehler=40), headers=als(ada))
+    client.post("/api/tippen/bestenliste", json=_eintrag("lektionen", 200, anschlaege=200, fehler=0), headers=als(bo))
+    liste = client.get("/api/tippen/bestenliste?modus=lektionen", headers=als(ada)).json()
+    assert [e["wert"] for e in liste] == [200, 220]
+    assert liste[1]["wertung"] < liste[0]["wertung"]

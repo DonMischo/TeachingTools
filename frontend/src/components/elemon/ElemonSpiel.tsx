@@ -4,12 +4,16 @@
  * Klikk-Handy, die Spielzeit läuft hier mit der echten Uhr (4 Spielminuten je
  * Minute — eine Energie etwa alle 11 Minuten). Mit Code: Duelle mit allen in
  * der Sitzung. Für Lehrkräfte: QR-Karten mit wilden Elemon zum Ausdrucken.
+ *
+ * Anzeige wie die übrigen Simulationen: das Spiel groß im Hauptbereich, daneben
+ * Free/Pro, eigene Orte (QR für alle) und die Druckkarten der Lehrkraft.
+ * Keine Werbung, nichts zu kaufen — Pro wird erspielt.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import type { MausZugang } from "@/lib/api";
 import { ARTEN, ART } from "@/lib/elemon/daten";
-import { ITEMS, qrItem, qrWild, type ItemId } from "@/lib/elemon/spiel";
+import { ITEMS, ORT_ARTEN_MAX, ORT_NAME_MAX, ortName, qrItem, qrOrt, qrWild, type ItemId } from "@/lib/elemon/spiel";
 import { NAME_MUSTER, namensVorschlaege } from "@/lib/klikk/klasse";
 import { ergaenze, neuerStand } from "@/lib/klikk/motor";
 import type { Stand } from "@/lib/klikk/typen";
@@ -56,8 +60,9 @@ export default function ElemonSpiel({ zugang, speicherSchluessel = "standalone",
   const s = lage.s;
 
   return (
-    <div className="flex flex-col gap-4 items-start">
-      <div className="w-full max-w-md rounded-3xl border border-line bg-surface shadow-lg overflow-hidden min-h-[600px] flex flex-col">
+    <div className="grid w-full gap-4 items-start xl:grid-cols-[minmax(0,40rem)_minmax(0,1fr)]">
+      <div className="flex flex-col gap-2 min-w-0">
+      <div className="w-full rounded-3xl border border-line bg-surface shadow-lg overflow-hidden min-h-[70vh] flex flex-col md:[zoom:1.2]">
         {!NAME_MUSTER.test(s.name) ? (
           <div className="p-4 flex flex-col gap-3">
             <div className="text-center"><div className="text-4xl">🐾</div><div className="font-black text-xl">Elemon</div></div>
@@ -77,7 +82,65 @@ export default function ElemonSpiel({ zugang, speicherSchluessel = "standalone",
           if (confirm("Spielstand löschen und neu anfangen?")) setLage({ schluessel, s: uhrStellen(neuerStand(Math.floor(Math.random() * 1e6))) });
         }}>Spielstand löschen & neu anfangen</button>
       )}
-      {verwaltung && <QrKarten />}
+      </div>
+      <div className="flex flex-col gap-4 min-w-0">
+        <div className="card p-4 text-sm flex flex-col gap-1">
+          <h3 className="font-bold">🐾 So spielst du</h3>
+          <p>In den Gebieten wilde Elemon suchen und mit dem Käfig fangen, Trainer und Arenen besiegen, Orden sammeln. Energie lädt sich mit der Zeit wieder auf.</p>
+          <p><b>Free</b> spielst du sofort. <b>⭐ Pro</b> kostet nichts — du erspielst es (Orden, Fänge oder Siege) und bekommst mehr Energie, schnellere Heilung und Goldkäfige. Keine Werbung, keine Käufe.</p>
+        </div>
+        <EigenerOrt />
+        {verwaltung && <QrKarten />}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Eigener Ort: Name, welche Elemon dort leben und wie stark — ergibt eine
+ * QR-Karte. Aufhängen (Bibliothek, Schulhof, Kinderzimmer), scannen, kämpfen.
+ * Für alle, nicht nur für Lehrkräfte.
+ */
+function EigenerOrt() {
+  const [name, setName] = useState("");
+  const [arten, setArten] = useState<string[]>([]);
+  const [lo, setLo] = useState(3);
+  const [hi, setHi] = useState(8);
+  const fertig = ortName(name) !== "" && arten.length > 0;
+  const umschalten = (id: string) => setArten(v => v.includes(id) ? v.filter(x => x !== id) : v.length < ORT_ARTEN_MAX ? [...v, id] : v);
+  return (
+    <div className="card p-4 flex flex-col gap-3" data-testid="eigener-ort">
+      <style>{`@media print { body * { visibility: hidden; } .elemon-ort-druck, .elemon-ort-druck * { visibility: visible; } .elemon-ort-druck { position: absolute; inset: 0; } }`}</style>
+      <h3 className="font-bold">📍 Eigener Ort mit QR-Code</h3>
+      <p className="text-xs text-muted">Gib einem Ort einen Namen und such aus, welche Elemon dort leben. Die QR-Karte aufhängen — wer sie scannt (📷), trifft eines dieser Elemon und hat den Ort entdeckt.</p>
+      <div className="flex flex-wrap gap-2 items-end text-sm">
+        <label className="flex flex-col gap-1 flex-1 min-w-48">
+          <span className="text-xs text-muted">Name des Orts</span>
+          <input className="input" value={name} maxLength={ORT_NAME_MAX} placeholder="z. B. Bibliothek, Schulhof, Turnhalle" onChange={e => setName(e.target.value)} aria-label="Name des Orts" />
+        </label>
+        <label className="text-xs">Stufe von <input type="number" min={1} max={50} value={lo} className="input w-16" onChange={e => { const v = Math.max(1, Math.min(50, Number(e.target.value) || 1)); setLo(v); if (hi < v) setHi(v); }} /></label>
+        <label className="text-xs">bis <input type="number" min={1} max={50} value={hi} className="input w-16" onChange={e => setHi(Math.max(lo, Math.min(50, Number(e.target.value) || 1)))} /></label>
+      </div>
+      <div className="flex flex-wrap gap-1">
+        {ARTEN.map(a => (
+          <button key={a.id} onClick={() => umschalten(a.id)} aria-pressed={arten.includes(a.id)}
+            className={`rounded-full border px-2 py-0.5 text-xs ${arten.includes(a.id) ? "border-accent bg-accent/15" : "border-line"}`}>
+            {a.emoji} {a.name}{a.seltenheit === 3 ? " ★" : ""}
+          </button>
+        ))}
+      </div>
+      <p className="text-[11px] text-muted">{arten.length} von höchstens {ORT_ARTEN_MAX} Elemon gewählt. Seltene (★) tauchen seltener auf.</p>
+      {fertig && (
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="elemon-ort-druck bg-white text-black p-3 rounded-xl border-2 border-dashed border-emerald-500 flex flex-col items-center gap-1">
+            <div className="text-2xl">📍 {arten.map(id => ART[id].emoji).join("")}</div>
+            <QRCodeSVG value={qrOrt(name, [lo, hi], arten)} size={150} />
+            <div className="text-sm font-bold">{ortName(name)}</div>
+            <div className="text-[10px]">Elemon Lv {lo}–{hi} · scannen in Elemon 📷</div>
+          </div>
+          <button className="btn-primary text-sm" onClick={() => window.print()}>Drucken</button>
+        </div>
+      )}
     </div>
   );
 }

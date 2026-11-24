@@ -33,6 +33,9 @@ import proj4 from "proj4";
 import sharp from "sharp";
 import { stroemungsObjekte, windObjekte } from "./karten-daten/zirkulation.mjs";
 import { formenObjekte } from "./karten-daten/meeresboden.mjs";
+import { GESTEINE, gesteinVon, KACHEL_URL, KACHELN, MAGMATITE, QUELLE_GEOLOGIE, ZEITALTER, zeitalterVon } from "./karten-daten/geologie.mjs";
+import { VectorTile } from "@mapbox/vector-tile";
+import { PbfReader } from "pbf";
 // Node lädt die TypeScript-Datei direkt (Typen werden übersprungen): eine Rechnung für Browser und Kacheln
 import { KACHEL_KUERZEL, KACHEL_NETZE, zurueck } from "../src/lib/karten/projektion.ts";
 import { BERLIN, NEW_YORK, PARIS, ZONEN_LEGENDE } from "./karten-daten/staedte.mjs";
@@ -1125,6 +1128,50 @@ async function rohstoffe() {
     abbau.filter((f) => f.properties.name).map((f) => feature(f.geometry, { id: `ab-${slug(f.properties.name)}`, ...f.properties })));
 }
 
+/** Geologische Karten aus den Macrostrat-Kacheln (Zoom 7), auf Deutschland zugeschnitten. */
+async function geologie() {
+
+  const flaechen = [], linien = [];
+  const { z } = KACHELN;
+  for (let x = KACHELN.x[0]; x <= KACHELN.x[1]; x++) for (let y = KACHELN.y[0]; y <= KACHELN.y[1]; y++) {
+    const kachel = new VectorTile(new PbfReader(readFileSync(await ladeDatei(`macrostrat_${z}_${x}_${y}.mvt`, KACHEL_URL(z, x, y)))));
+    const u = kachel.layers.units, l = kachel.layers.lines;
+    for (let i = 0; u && i < u.length; i++) {
+      const f = u.feature(i).toGeoJSON(x, y, z);
+      const zeit = zeitalterVon(f.properties), stein = gesteinVon(f.properties);
+      if (zeit || stein) flaechen.push(feature(f.geometry, { zeit, stein }));
+    }
+    for (let i = 0; l && i < l.length; i++) {
+      const f = l.feature(i).toGeoJSON(x, y, z);
+      const n = String(f.properties.name ?? "").trim();
+      if (f.properties.type === "fault" && n && !/no name/i.test(n)) linien.push(feature(f.geometry, { name: String(f.properties.name).trim() }));
+    }
+  }
+  const land = JSON.parse(readFileSync(join(ZIEL, "ebenen", "de-laender.geojson"), "utf8"));
+  const zuschnitt = async (fs, feld) => {
+    const aus = await mapshaper.applyCommands(
+      `-i in.json -clean -clip land.json -dissolve2 ${feld} -explode -filter "this.area > 4000000" ` +
+      `-simplify 30% keep-shapes -o format=geojson precision=0.001 out.json`,
+      { "in.json": { type: "FeatureCollection", features: fs.filter((f) => f.properties[feld]) }, "land.json": land });
+    return JSON.parse(aus["out.json"].toString()).features;
+  };
+  const zeit = await zuschnitt(flaechen, "zeit");
+  schreibe("de-geologie", { name: "Geologie: Erdzeitalter", gruppe: "geologie", bereich: "de", geometrie: "flaeche", quiz: false,
+    quelle: QUELLE_GEOLOGIE, darstellung: { feld: "zeit", art: "kategorie",
+      werte: [...ZEITALTER, ...MAGMATITE].map(({ wert, text, farbe }) => ({ wert, text, farbe })) } },
+    zeit.map((f, i) => feature(f.geometry, { id: `gz-${i + 1}`, name: "", zeit: f.properties.zeit })));
+  const stein = await zuschnitt(flaechen, "stein");
+  schreibe("de-gesteine", { name: "Geologie: Gesteinsarten", gruppe: "geologie", bereich: "de", geometrie: "flaeche", quiz: false,
+    quelle: QUELLE_GEOLOGIE, darstellung: { feld: "stein", art: "kategorie", werte: GESTEINE } },
+    stein.map((f, i) => feature(f.geometry, { id: `gs-${i + 1}`, name: "", stein: f.properties.stein })));
+  const aus = await mapshaper.applyCommands(
+    `-i in.json -clip land.json -dissolve fields=name -simplify 30% -o format=geojson precision=0.001 out.json`,
+    { "in.json": { type: "FeatureCollection", features: linien }, "land.json": land });
+  schreibe("de-stoerungen", { name: "Geologie: Störungen", gruppe: "geologie", bereich: "de", geometrie: "linie", quiz: false,
+    quelle: QUELLE_GEOLOGIE, darstellung: { feld: "art", art: "kategorie", werte: [{ wert: "stoerung", text: "Störung (Bruchlinie)", farbe: "#b2182b" }] } },
+    JSON.parse(aus["out.json"].toString()).features.map((f) => feature(f.geometry, { id: `st-${slug(f.properties.name)}`, name: f.properties.name, art: "stoerung" })));
+}
+
 /** Bevölkerungsdichte der Kreise (VG250-EW: Einwohner, Fläche in km²). */
 async function bevoelkerung(vgew) {
   const fs = await lies(finde(vgew, "VG250_KRS.shp"), `-filter "GF==4" -simplify 12% keep-shapes`);
@@ -1526,6 +1573,7 @@ await schritt("boden", () => bodennutzung(ordner.clc5, { id: "de-bodennutzung", 
 await schritt("bodenfein", () => bodennutzung(ordner.clc5, { id: "de-bodennutzung-fein", kurz: "bf", name: "Bodennutzung, genau (CORINE 2018)",
   klassen: CLC_FEIN, legende: BODEN_FEIN_LEGENDE, roh: 400, fein: 400, ab: 1000000 }));
 await schritt("rohstoffe", () => rohstoffe());
+await schritt("geologie", () => geologie());
 await schritt("platten", () => platten(ladeDatei));
 await schritt("wuesten", () => wuesten(ordner));
 await schritt("klima", () => klimazonen(ordner.koeppen));

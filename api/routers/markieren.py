@@ -25,7 +25,7 @@ from ..display_names import abbreviate_parts, abbreviate_stored, short_name
 router = APIRouter(prefix="/api/markieren/bestenliste", tags=["markieren"])
 
 # Modus → Zahl der Aufgaben; spiegelt MODI in frontend/src/lib/markieren/aufgaben.ts.
-MODI: dict[str, int] = {"markieren": 10, "bearbeiten": 8, "gemischt": 12}
+MODI: dict[str, int] = {"markieren": 10, "bearbeiten": 8, "gemischt": 12, "tastatur": 10}
 # Schneller als eine Sekunde je Aufgabe geht es nicht: allein das grüne
 # »Geschafft« steht 0,7 s.
 MIN_MS_JE_AUFGABE = 1000

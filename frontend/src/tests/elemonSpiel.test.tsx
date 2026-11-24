@@ -53,6 +53,29 @@ describe("Elemon als eigenes Spiel", () => {
     expect(screen.getByText(/Diese Karte ist noch 10 Min. leer/)).toBeTruthy();
     expect(JSON.parse(localStorage.getItem("hp_elemon_items")!).elemon.kaefige).toBe(8);
   });
+
+  it("ohne Werbung und Käufe: Laden zeigt Free/Pro, eigener Ort entsteht als QR und lässt sich scannen", async () => {
+    localStorage.clear();
+    render(<ElemonSpiel speicherSchluessel="pro" />);
+    await act(async () => {});
+    fireEvent.click(screen.getAllByRole("button").find(b => /^[a-zäöü]+\.[a-zäöü]+\.\d+$/.test(b.textContent ?? ""))!);
+    fireEvent.click(screen.getByText("Nicht erlauben"));
+    fireEvent.click(screen.getByText("Funkfuchs"));
+    expect(screen.getByText("FREE")).toBeTruthy();
+    fireEvent.click(screen.getByText("🛒 Laden"));
+    expect(screen.queryByText(/Goldkäfig-Paket/)).toBeNull();
+    expect(screen.queryByText(/Werbung ansehen/)).toBeNull();
+    expect(screen.getByTestId("pro-karte").textContent).toMatch(/noch gesperrt/);
+    // eigener Ort
+    fireEvent.change(screen.getByLabelText("Name des Orts"), { target: { value: "Bibliothek" } });
+    fireEvent.click(screen.getByRole("button", { name: /Yeti/ }));
+    expect(screen.getByTestId("eigener-ort").textContent).toMatch(/Bibliothek/);
+    fireEvent.click(screen.getByLabelText("QR-Code scannen"));
+    fireEvent.change(screen.getByLabelText("Code abtippen"), { target: { value: "ELEMON:O:3-3:yeti:Bibliothek" } });
+    fireEvent.click(screen.getByText("OK"));
+    expect(screen.getByText(/Ein wildes Yeti taucht auf/)).toBeTruthy();
+    expect(JSON.parse(localStorage.getItem("hp_elemon_pro")!).elemon.orte).toEqual(["Bibliothek"]);
+  });
 });
 
 describe("Elemon-Duelle: gezielt herausfordern", () => {

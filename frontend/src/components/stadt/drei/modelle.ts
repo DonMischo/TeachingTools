@@ -49,7 +49,7 @@ export const MODELL_VON: Partial<Record<BauTyp, string>> = {
   kirche: "kirche", kloster: "kirche", kathedrale: "kathedrale", burg: "burg", schloss: "schloss", tempel: "tempel",
   forum: "kolonnade", amphitheater: "arena", theater: "theater", thermen: "kuppelbau", kulturhaus: "kuppelbau",
   universitaet: "kuppelbau", zollhaus: "kuppelbau", poliklinik: "kaserne", schacht: "foerderturm", zechenturm: "foerderturm",
-  hochofen: "hochofen", huettenwerk: "hochofen", werk: "hochofen", fabrik: "fabrik", rechenzentrum: "fabrik", kai: "kran",
+  hochofen: "hochofen", huettenwerk: "hochofen", werk: "hochofen", fabrik: "fabrik", rechenzentrum: "fabrik", kai: "kran", verladehafen: "kran",
   werft: "kran", hafen: "kran", kanalhafen: "kran", leuchtturm: "leuchtturm", moschee: "moschee", bahnhof: "bahnhof",
   depot: "bahnhof", hochhaus: "hochhaus", buero: "hochhaus", silo: "silo", muehle: "muehle", tor: "tor", castellum: "tor",
   rathaus: "rathaus", cabildo: "rathaus", bergamt: "rathaus", gericht: "rathaus", spital: "kaserne", kaserne: "kaserne",

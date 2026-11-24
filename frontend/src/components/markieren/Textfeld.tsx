@@ -48,7 +48,7 @@ function ortVon(el: HTMLTextAreaElement, i: number): Ort {
 
 const zeileVon = (text: string, pos: number) => text.slice(0, pos).split("\n").length - 1;
 
-export function Textfeld({ aufgabe, verlangt = [], onGeloest, pauseMs = 700, fokus = false, vorfuehren = false }: {
+export function Textfeld({ aufgabe, verlangt = [], onGeloest, pauseMs = 700, fokus = false, vorfuehren = false, ohneMaus = false }: {
   aufgabe: Aufgabe;
   /** Lektion: gilt erst, wenn diese Techniken benutzt wurden. */
   verlangt?: Technik[];
@@ -59,6 +59,8 @@ export function Textfeld({ aufgabe, verlangt = [], onGeloest, pauseMs = 700, fok
   fokus?: boolean;
   /** Knopf »Vorführen« zeigen. */
   vorfuehren?: boolean;
+  /** Challenge »Nur Tastatur«: Klicks ins Feld wirken nicht. */
+  ohneMaus?: boolean;
 }) {
   const feld = useRef<HTMLTextAreaElement>(null);
   const benutzt = useRef(new Set<Technik>());
@@ -218,6 +220,7 @@ export function Textfeld({ aufgabe, verlangt = [], onGeloest, pauseMs = 700, fok
           className="flex-1 resize-none bg-transparent px-3 py-3 text-lg leading-8 outline-none overflow-hidden"
           style={{ minWidth: `${breite + 4}ch` }}
           onMouseDown={e => {
+            if (ohneMaus) { e.preventDefault(); setHinweis("Nur Tastatur — die Maus bleibt heute liegen!"); return; }
             if (e.button !== 0) { aktionen.current++; return; }
             if (e.detail <= 1) aktionen.current++;
             if (e.detail === 2) merke("doppelklick");
@@ -234,6 +237,8 @@ export function Textfeld({ aufgabe, verlangt = [], onGeloest, pauseMs = 700, fok
           onSelect={pruefen}
           onFocus={zeilenNachziehen}
           onBlur={() => setAktZeile(null)}
+          onContextMenu={ohneMaus ? e => e.preventDefault() : undefined}
+          onDoubleClick={ohneMaus ? e => e.preventDefault() : undefined}
           onCopy={() => merke("kopieren")}
           onCut={() => merke("ausschneiden")}
           onPaste={() => merke("einfuegen")}

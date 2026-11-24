@@ -144,6 +144,21 @@ CATALOG: list[CatalogTool] = [
     CatalogTool("stellenwert", "🔢 Stellenwerttafeln", "🔢", "simulationen", {
         "use": _cap(True, True),
     }),
+    CatalogTool("zahlenbereiche", "🪆 Zahlenbereiche", "🪆", "simulationen", {
+        "use": _cap(True, True),
+    }),
+    CatalogTool("brueche", "🍕 Brüche", "🍕", "simulationen", {
+        "use": _cap(True, True),
+    }),
+    CatalogTool("lgs", "🔀 Lineare Gleichungssysteme", "🔀", "simulationen", {
+        "use": _cap(True, True),
+    }),
+    CatalogTool("aehnlichkeit", "🔍 Ähnlichkeit und Maßstab", "🔍", "simulationen", {
+        "use": _cap(True, True),
+    }),
+    CatalogTool("schriftlich", "✏️ Schriftliche Rechenverfahren", "✏️", "simulationen", {
+        "use": _cap(True, True),
+    }),
     CatalogTool("farbmodelle", "🎨 Farbmodelle", "🎨", "simulationen", {
         "use": _cap(True, True),
     }),
@@ -318,6 +333,10 @@ CATALOG: list[CatalogTool] = [
     CatalogTool("kompendium", "📚 Methoden-Kompendium", "📚", "tools", {
         "use": _cap(True, False),
     }),
+    # »Was kann TT?«: die Feature-Liste zum Durchsuchen (nur lesen).
+    CatalogTool("ueberblick", "🧾 Was kann TT?", "🧾", "tools", {
+        "use": _cap(True, False),
+    }),
     # Curriculum-Abgleich der Fachschaft (nur Lehrkräfte).
     CatalogTool("curriculum", "🧭 Curriculinator", "🧭", "tools", {
         "use": _cap(True, False),
@@ -331,6 +350,12 @@ CATALOG: list[CatalogTool] = [
     }),
     # Snap!: der Editor läuft lokal (frontend/public/snap), "create" deckt das
     # Speichern eigener Programme in der Hauspokal-Bibliothek ab.
+    # Main Character: Lebenssimulation bis zum Abschluss (Fragebogen,
+    # Charakterbogen, Zeugnis). Liegt unter Tools, Schüler·innen dürfen mitmachen;
+    # die Sitzung sammelt nur anonyme Werte (routers/main_character.py).
+    CatalogTool("main-character", "👑 Main Character", "👑", "tools", {
+        "use": _cap(True, True),
+    }),
     CatalogTool("snap", "🧱 Snap!", "🧱", "tools", {
         "use": _cap(True, False),
         "create": _cap(True, False),

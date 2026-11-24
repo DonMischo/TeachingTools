@@ -47,6 +47,14 @@ kern:
       - Gastzugang schließt nach dem eingestellten Fenster von selbst
       - Sitzungen für Klasse, A/B-Hälfte, Kurs oder WPF-Gruppe
       - Lehrkraft spielt selbst mit (alle Aktivitäten), setzt nach dem Dashboard fort, unsichtbar für die Klasse und ohne Hauspunkte
+  - id: erfolge
+    name: Erfolge (Übersicht)
+    kann:
+      - Alle Erfolge aller Werkzeuge auf einer Seite (/erfolge), nach Werkzeug und Bereich geordnet
+      - Fortschrittsbalken je Erfolg und Gesamtzahl; aufklappbar je Werkzeug
+      - Sammelt die vorhandenen Erfolge ein (Sonnensystem, Schichtenmodell, Verkehr, Periodensystem)
+      - Leitet Erfolge aus dem gespeicherten Fortschritt ab, wo ein Werkzeug keine führt (Algorithmen-Werkstatt, Koordinaten-Lauf, Regel-Labor)
+      - Liest nur, schreibt nie; fasst Stände mehrerer Profile eines Geräts zusammen (je Erfolg der beste Wert)
 
 aktivitaeten:
   - id: caputh
@@ -164,6 +172,7 @@ aktivitaeten:
       - Regionen Deutschland, Thüringen, Europa, Welt, Kontinente; Kartenarten politisch, topographisch, stumm, Wirtschaft, Physisch
       - Ebenen aus offenen Daten (BKG, BGR, Natural Earth, OPSD, CORINE, Bird PB2002, Köppen-Geiger) mit Quellenangabe auf der Karte
       - Deutschland - Bundes-, Landes- und Kreisstraßen, Bodennutzung einfach oder genau (CORINE), Bodenschätze (BGR-Lagerstätten und Abbaustellen)
+      - Deutschland - Geologie (Kartenart »Geologisch«): Erdzeitalter, Gesteinsarten, Störungen (EGDI 1:1 Mio. über Macrostrat, CC BY 4.0)
       - Europa genauer - BIP pro Kopf und Bevölkerungsdichte je NUTS-2-Region, EU/Eurozone/EFTA, Kraftwerke, Verkehr
       - USA-Wirtschaft - Landwirtschaft und Viehhaltung je Bundesstaat, Manufacturing Belt und Sun Belt, Industriestandorte (schematisch)
       - Atlas-Signaturen für Kraftwerke, Bergbau, Flug- und Seehäfen, Industrie und Sonderkulturen (Karte und Legende)
@@ -205,6 +214,8 @@ aktivitaeten:
       - Duelle mit Code — gezielt (andere Seite nimmt an oder lehnt ab) oder offen an alle; drei Minuten Pause nach jeder Herausforderung
       - Eigener QR-Code je Spieler·in zum Herausfordern, Scanner mit Kamera oder Abtippen
       - Druckbare QR-Karten mit wilden Elemon zum Fangen (Lehrkraft)
+      - Eigenständig ohne Werbung und Käufe; Free und erspielbares Pro (mehr Energie, schnellere Heilung, Goldkäfige)
+      - Eigene Orte als QR-Karte (Name, Elemon, Stufen), entdeckte Orte in der Kartei
       - Item-Karten mit Multiplikator (Trank, Käfig, Goldkäfig, Beleber), je Karte eine Sperre für die ganze Sitzung, bis zu 10 Karten je Item
 simulationen:
   - id: gleichungswaage
@@ -300,6 +311,9 @@ simulationen:
       - Kleidung (sechs Teile, Billig/Kette/Marke/Second-Hand) mit Verschleiß, Friseur und Handy-Alter; Auftreten zählt im Vorstellungsgespräch
       - Mobil-App: Deutschlandticket, Rad, Führerschein (Fahrschule ≈ 3 900 €, Theorie/Praxis, Probezeit), Auto mit Versicherung nach Alter, Kfz-Steuer, Sprit, TÜV, Pannen
       - Checkliste »Nächste Schritte«, Möbel im Grundriss ziehen und drehen, Nachsendeauftrag, Internet mit Schalttermin
+      - "App »Ich«: Charakterbogen (Personalien, Schule, Arbeit, Wohnen, Versicherungen, Geld) und Notizblock mit allem Offenen (Bewerbungen, Anträge, Rechnungen, Kündigungen, Termine) plus eigenen Notizen"
+      - "Übung: Schritt »Uhr und Geld« mit zwei Haken (Maus drüber oder antippen)"
+      - Marken nur als Wort (keine Logos), Markenhinweis auf dem Startbildschirm und im Laden
       - Bewerbung mit Anschreiben-Bausteinen, Chance nach Noten/Abschluss/Konkurrenz, Einstellungstest und Vorstellungsgespräch als Minispiel, Zusage annehmen
       - Ausbildung mit Probezeit, Berufsschule, Urlaub, Abmahnung/Kündigung, Zwischen- und Abschlussprüfung, Übernahme als Fachkraft
       - Lohnabrechnung 2026 (Lohnsteuer § 32a, Soli, Kirchensteuer, KV/PV/RV/AV), Werte ab 2027 als gekennzeichnete Annahme
@@ -417,7 +431,7 @@ simulationen:
       - Europäische Stadt bis um 2020 (Konversion, Gentrifizierung, Reurbanisierung); sozialistische Stadt mit Schrumpfung und Rückbau
       - Stadtstrukturmodelle als Schema (Burgess, Hoyt, Harris-Ullman, Lateinamerika, Orient)
       - Wachstum Epoche für Epoche mit Erklärung, »Neu in dieser Epoche« und Viertel-Legende
-      - Aufbau in 2,5D wie Anno - drehbare Ansicht, Zoom vom Haus bis zur Stadt, bikubisch interpoliertes Gelände, Bauraster; Häuser und Straßen wachsen feldgenau je Stadttyp im Einzugsbereich der Gebäude, Versorgung bestimmt Bewohner und Hausgröße, Land wird mit jeder Stufe erschlossen; Werte-Kärtchen und Einzugsbereich am Bauplatz; Drei- und Vierseithöfe bzw. Hofhäuser (Europa, Orient), Brücken über schmale Flussstellen, nasse Aue sichtbar und per »Trockenlegen« bebaubar, Hafenkontor am Ufer; Touch-Gesten und Knopfleiste, Gebäude drehbar; Spielstand automatisch im Browser je Konto bzw. Gastname, Stadttyp und Gelände; Start mit Dörfern (Höfe, Äcker, Feldwege), Markt erhebt ein Dorf zum Marktort; Güter mit Reichweite in Gehminuten über das Wegenetz, Schichten Bauern bis Angestellte mit Auf- und Abstieg, Nahrung aus den Dörfern, Taler mit Baukosten, Unterhalt (∝ Straßen^0,8) und Steuern (∝ Einwohner^1,15); Berufe: Betriebe brauchen Personal einer Schicht, Werkstätten (Bäckerei, Schmiede, Weberei, Zimmerei, Brauerei), Aufstiegsbremse, Berufsgefüge gegen Anteile um 1450; Ochsenkarren und Fußgänger auf dem Wegenetz; Verwaltungskosten wachsen mit der Stadt; Bedienung wie im Echtzeit-Strategiespiel: Baumenü (B), Übersicht je Posten (I), Umschalt für Werte und Mehrfachbau, Mausrad dreht beim Bauen, Randscrollen, Maus fangen, Vollbild (F), Gewähltes mit Entf abreißen, Spielleiste im Spielfeld (Pause per Leertaste, Tempo 1 2 3, Kennzahlen), Werkzeuge im Baumenü, Rechtsklick bricht Bauen ab; Werkstätten verkaufen an die Stadt (Absatz nach Kundschaft); Gebäude dürfen auf Häuser und Wege (die weichen, das Wegenetz bleibt verbunden); weitere Märkte ab der Marktstadt, Engpass-Hinweis (Platz/Nahrung); Dörfer wachsen mit der Stadt, große bekommen eine Dorfschmiede; Arbeitslose statt Verwaltungsüberhang (Selbstständige je Schicht, Aufstieg nur mit Stelle, Unmut, Abwanderung); jeder Hof mit eigenem Acker (Dreifelderwirtschaft sichtbar, Feldraine), Dörfer wachsen in Gehöften, ist das Land vergeben, gründen Bauern neue Dörfer auf ebenem, waldarmem Land; Warenketten mit Lager (Holzfäller → Sägemühle, Lehmgrube → Ziegelei, Köhlerei → Schmiede, Schäferei → Weberei, Hopfengarten → Brauerei, Steinbruch), Baustoffe je Stufe, Bürger brauchen Ziegel, Bier und Tuch; Warenkette Mühle → Bäckerei
+      - 'Aufbau in 2,5D wie Anno - drehbare Ansicht, Zoom vom Haus bis zur Stadt, bikubisch interpoliertes Gelände, Bauraster; Häuser und Straßen wachsen feldgenau je Stadttyp im Einzugsbereich der Gebäude, Versorgung bestimmt Bewohner und Hausgröße, Land wird mit jeder Stufe erschlossen; Werte-Kärtchen und Einzugsbereich am Bauplatz; Drei- und Vierseithöfe bzw. Hofhäuser (Europa, Orient), Brücken über schmale Flussstellen, nasse Aue sichtbar und per »Trockenlegen« bebaubar, Hafenkontor am Ufer; Touch-Gesten und Knopfleiste, Gebäude drehbar; Spielstand automatisch im Browser je Konto bzw. Gastname, Stadttyp und Gelände; Start mit Dörfern (Höfe, Äcker, Feldwege), Markt erhebt ein Dorf zum Marktort; Güter mit Reichweite in Gehminuten über das Wegenetz, Schichten Bauern bis Angestellte mit Auf- und Abstieg, Nahrung aus den Dörfern, Taler mit Baukosten, Unterhalt (∝ Straßen^0,8) und Steuern (∝ Einwohner^1,15); Berufe: Betriebe brauchen Personal einer Schicht, Werkstätten (Bäckerei, Schmiede, Weberei, Zimmerei, Brauerei), Aufstiegsbremse, Berufsgefüge gegen Anteile um 1450; Ochsenkarren und Fußgänger auf dem Wegenetz; Verwaltungskosten wachsen mit der Stadt; Bedienung wie im Echtzeit-Strategiespiel: Baumenü (B), Übersicht je Posten (I), Umschalt für Werte und Mehrfachbau, Mausrad dreht beim Bauen, Randscrollen, Maus fangen, Vollbild (F), Gewähltes mit Entf abreißen, Spielleiste im Spielfeld (Pause per Leertaste, Tempo 1 2 3, Kennzahlen), Werkzeuge im Baumenü, Rechtsklick bricht Bauen ab; Werkstätten verkaufen an die Stadt (Absatz nach Kundschaft); Gebäude dürfen auf Häuser und Wege (die weichen, das Wegenetz bleibt verbunden); weitere Märkte ab der Marktstadt, Engpass-Hinweis (Platz/Nahrung); Dörfer wachsen mit der Stadt, große bekommen eine Dorfschmiede; Arbeitslose statt Verwaltungsüberhang (Selbstständige je Schicht, Aufstieg nur mit Stelle, Unmut, Abwanderung); jeder Hof mit eigenem Acker (Dreifelderwirtschaft sichtbar, Feldraine), Dörfer wachsen in Gehöften, ist das Land vergeben, gründen Bauern neue Dörfer auf ebenem, waldarmem Land; Warenketten mit Lager (Holzfäller → Sägemühle, Lehmgrube → Ziegelei, Köhlerei → Schmiede, Schäferei → Weberei, Hopfengarten → Brauerei, Steinbruch), Baustoffe je Stufe, Bürger brauchen Ziegel, Bier und Tuch; Warenkette Mühle → Bäckerei; Handel über ein Kontor (Daueraufträge Ein-/Ausfuhr je Ware, Einkauf doppelt so teuer wie der Grundpreis, Verkauf 80 %), Verladehafen am Fluss mit Kähnen zum Kontor (mehr Menge je Schritt); Betriebe stilllegen (kein Personal, kein Unterhalt, Verfall bis zur Ruine in 500 Schritten, Wiederaufnahme kostet den verfallenen Anteil)'
       - Bau-Modus (2D) - wichtige Orte selbst setzen (Forum, Markt, Burg, Zeche, Kai, Universität …), Lageregeln vorab und Eignungskarte (grün/gelb/orange/rot) beim Zielen, mehrere Bahnhöfe, deren Viertel zusammenwachsen, Häuser und Straßen wachsen je Stadttyp von selbst, Stufen erst mit den nötigen Bauten, Zeit mit 1×/2×/4×
       - Quiz zur Karte — Bauwerke, Viertel und Straßen anklicken, Wissensfragen mit Begründung, Epoche erkennen
       - Acht Planungsaufträge (auch Residenz-, Festungsstadt und Nahverkehr) mit Regelprüfung (✅/❌, Hinweis, Warum, Stelle in der Karte) und Beispiel-Lösung auf demselben Gelände
@@ -514,14 +528,6 @@ simulationen:
       - Prompt-Baukasten für KI-Chats (Mindmap, Ablaufdiagramm, frei; Thema, Stichworte, bisheriges Diagramm mitschicken) und Vorlage »Mit KI erstellen« mit demselben Auftrag als Kommentar; beim Einfügen wird nur der Codeblock der Antwort übernommen
       - Vorlagen (Mindmap, Ablaufdiagramm, Gruppen), Ablage im Browser, Rückgängig/Wiederholen, Export als PNG, SVG und .d2, .d2 öffnen
       - Übernimmt Diagramme aus anderen Werkzeugen als neues Blatt (localStorage hp_diagramm_import, z. B. KI-Kompass-Workflows)
-  - id: erfolge
-    name: Erfolge (Übersicht)
-    kann:
-      - Alle Erfolge aller Werkzeuge auf einer Seite (/erfolge), nach Werkzeug und Bereich geordnet
-      - Fortschrittsbalken je Erfolg und Gesamtzahl; aufklappbar je Werkzeug
-      - Sammelt die vorhandenen Erfolge ein (Sonnensystem, Schichtenmodell, Verkehr, Periodensystem)
-      - Leitet Erfolge aus dem gespeicherten Fortschritt ab, wo ein Werkzeug keine führt (Algorithmen-Werkstatt, Koordinaten-Lauf, Regel-Labor)
-      - Liest nur, schreibt nie; fasst Stände mehrerer Profile eines Geräts zusammen (je Erfolg der beste Wert)
   - id: pse
     name: Periodensystem
     kann:
@@ -721,7 +727,8 @@ simulationen:
       - Fehlersperre ohne Rücktaste
       - Modi Lektionen, Wortregen, Tastenjagd, Wettschreiben (Klassenrennen)
       - Anschläge pro Minute, Fehlerquote, schwächste Tasten
-      - Bestenliste mit den besten hundert je Modus
+      - Bestenliste mit den besten hundert je Modus; Lektionen und Wettschreiben werten Tempo × (1 − Fehlerquote)²
+      - Wettschreiben-Start schickt der Server an alle, verpasste Starts holt die Seite beim Zurückkehren nach
       - Eigene Texte per JSON, nachträglich per Formular bearbeitbar
   - id: maus
     name: Maus-Führerschein
@@ -747,6 +754,7 @@ simulationen:
       - Portfolio mit KI-Nutzungserklärung als .docx
       - Klassenübersicht mit Mittelwert-Spinne und Reflexionen, Stand am Konto über Sitzungen hinweg
       - AKTIV(ER)-Weg für Lehrkräfte mit Checklisten und sieben Word-Vorlagen
+      - "KI-Werkzeuge im Netz: sortierte Liste mit Alter, Konto, Kosten, Datenschutz-Ampel; Sicht je Rolle (Lehrkraft alles, Schüler unter 18, Gäste kindersicher ohne Konto)"
       - Material-Werkstatt (Prompt je Rasterfeld, Aufgaben-Umbauer, Erwartungshorizont)
       - Sechs Projektkarten für Stufe II
       - Materialpool aller Lehrkräfte mit Filter nach Bereich, Stufe, Dimension und Suche
@@ -759,13 +767,15 @@ simulationen:
       - Echtes Textfeld mit mitwachsenden Zeilennummern (Cursorzeile hervorgehoben), erkennt Doppel-/Dreifachklick, Ziehen, Umschalt-Klick und Tastenkürzel
       - Vorführen je Aufgabe mit Zeiger, Maus und Tastatur, längere Pause nach jeder gelösten Übungsaufgabe
       - 15 Lektionen je Technik, zählt nur mit der verlangten Technik
-      - Challenge auf Zeit in drei Modi mit Bestzeit, Aktionen und Profi-Weg; Überspringen +30 s
+      - Challenge auf Zeit in vier Modi mit Bestzeit, Aktionen und Profi-Weg; Überspringen +30 s
+      - "Challenge »Nur Tastatur«: Maus per Pointer Lock gesperrt, Strg + Enter überspringt"
+      - "Training »Schreiben«: Großbuchstaben, Umlaute, Satzzeichen, Zahlenreihe, Alt-Gr- und weitere Sonderzeichen mit Tastenhilfe auf der Bildschirmtastatur; Rechtschreibung (Satz mit Fehlern verbessern)"
       - Bestenliste je Modus mit Gästen, Filter Sitzung/Klasse, Admin löscht Einträge
       - "Quellen: Zitat + Kurzbeleg + Literaturverzeichnis aus Buch, Webseite, Zeitung, Zeitschrift, Video oder Online-Lexikon kopieren, Hinweise zu Fehlgriffen (Lektorat, Kurzlink, Website-Name, Abrufdatum, Jahrgang, Dachzeile, Videolänge, Stand)"
       - Stand je Konto bzw. je Gastname im Browser
       - Sitzung je Klasse/Kurs und Lehrkraft-Übersicht (Techniken, Bestzeiten, Quellen, gerade dabei)
       - Aufgaben gewürfelt aus sechs Übungstexten (markieren, Cursor setzen, löschen, ersetzen, kopieren, verschieben, rückgängig)
-      - Spickzettel mit allen Kürzeln
+      - Spickzettel mit allen Kürzeln und Sonderzeichen, als PDF zum Ausdrucken
   - id: pcbau
     name: PC-Werkstatt
     faehigkeiten: {use: [true, true]}
@@ -883,6 +893,7 @@ simulationen:
     name: Trigonometrie
     faehigkeiten: {use: [true, true]}
     kann:
+      - "Ideales Pendel: Fadenpendel mit Graph φ(t) als Kosinuskurve, Länge/Amplitude/Masse/Ortsfaktor, Kurve festhalten, exakte Lösung für große Winkel, Dämpfung mit Hüllkurve und Kriechfall"
       - "Einheitskreis: sin, cos, tan, cot, sec, csc einzeln zuschaltbar in eigenen Farben, Graph im selben Maßstab mit Spur und Umlauf"
       - Grad- und Bogenmaß, exakte Werte, Vorzeichen je Quadrant, Winkel mit gleichem Wert
       - "Funktionsgraphen a · g(b(x − c)) + d für sin, cos, tan, cot, sec, csc mit Polstellen, y-Bereich und Spiel »Welle treffen«"
@@ -942,6 +953,7 @@ simulationen:
       - "Teilflächen anklicken: Hervorhebung mit Formel und Wert; Netz stufenlos auf- und zuklappen, Mantel von Zylinder und Kegel rollt ab"
       - "Bastelbogen als PDF: Netz in Originalgröße auf A4 mit Klebelaschen (eine je aufgeschnittener Kante, Zahnkranz an Kreisen), Schneide- und Falzlinien, 1-cm-Prüfkästchen"
       - "Notation: Ecken, Kanten, Flächen mit Euler e + f − k = 2; Höhe, Seitenhöhe, Mantellinie, Radius, Seitenkante, Flächen- und Raumdiagonale zuschaltbar"
+      - "Schrägbild Schritt für Schritt, Zweitafel- und Dreitafelbild jedes Körpers mit Ordnungslinien; Würfelbau-Editor mit Schrägbild und Rissen, Ansichten zeichnen, nach Plan bauen"
       - "Zusammengesetzte Körper: Haus, Silo, Turm, Werkstück mit Bohrung, Eistüte; auseinanderziehen zeigt verdeckte Flächen"
       - "Übungen: Volumen, Oberfläche, rückwärts, Euler, Raumeinheiten, erkennen (Steckbrief, Netz), Pythagoras im Körper, zusammengesetzt — mit Schrägbild"
       - "Sachaufgaben: Aquarium, Dose, Zelt, Eistüte, Pool, Schwimmbecken, Paket, Kerze"
@@ -965,6 +977,56 @@ simulationen:
       - "Zählwerk-Rennen: Antwort durch Drehen der Walzen, Übertrag auf Wunsch automatisch und Walze für Walze"
       - "Zählwerk-Rennen auf Zeit oder mit fester Aufgabenzahl; im Zehnersystem Schritte in Stellenwerten (+ 1 H) bis 1 000, 1 Million oder 1 Milliarde"
       - "Geheimbotschaft: Code direkt an Anwesende derselben Sitzung schicken, Empfänger nimmt an, höchstens eine Botschaft je 3 Minuten"
+  - id: zahlenbereiche
+    name: Zahlenbereiche
+    faehigkeiten: {use: [true, true]}
+    kann:
+      - "Mengendiagramm ℕ ⊂ ℤ ⊂ ℚ ⊂ ℝ, Zahlen im innersten passenden Feld, Steckbrief per Antippen"
+      - "Eigene Zahlen eintippen (Bruch, Dezimalzahl, periodisch, Wurzel, π, e) mit Begründung der Einordnung"
+      - "Einsortieren: Zahl ins richtige Feld tippen, mit Zähler"
+      - "Zahlenstrahl mit Lupe: ℕ/ℤ als Punkte, ℚ bis Nenner 60, ℝ mit irrationalen Zahlen, √2 mit dem Zirkel, beste Bruch-Näherung"
+      - "Steckbriefe mit Eigenschaften und Beispielen, Erweiterungsleiter, Abgeschlossenheit mit Gegenbeispielen"
+      - "Spiel Zahlen-Detektiv: alle zutreffenden Bereiche antippen, 10 Zahlen oder 60 s, drei Stufen, Rekord"
+      - "Spiel Zahlenregen: passende Zahlen mit dem Korb fangen, wechselnde Ziele, drei Herzen"
+  - id: brueche
+    name: Brüche
+    faehigkeiten: {use: [true, true]}
+    kann:
+      - "Bruchbilder Pizza, runde Torte, Blechkuchen, Schokoladentafel, Band; Teile antippen, unechte Brüche über mehrere Ganze"
+      - "Name, Art und gemischte Zahl; zwei Brüche vergleichen"
+      - "Erweitern als feineres Schneiden, Kürzen mit ggT, gleichnamig machen mit Hauptnenner"
+      - "Rechnen + − · : mit Rechenweg Schritt für Schritt und Bild, Regeln, Üben in drei Stufen"
+      - "Bruchteile von Größen vorwärts und rückwärts mit Sachaufgaben"
+      - "Bruch ↔ Dezimalzahl über 10/100/1000 und die Stellenwerttafel, periodische Dezimalzahlen"
+      - "Wichtige Brüche mit Dezimalzahl und Prozent, Spiel Bruch-Memory"
+  - id: lgs
+    name: Lineare Gleichungssysteme
+    faehigkeiten: {use: [true, true]}
+    kann:
+      - "Grafisch lösen: Geraden, Schnittpunkt, Fälle eine/keine/unendlich viele Lösungen"
+      - "Umformer: beide Seiten umformen mit Protokoll, Tipp, Seiten tauschen, rückgängig"
+      - "Additionsverfahren mit Kachelzeilen, Faktoren und schwebender Addition"
+      - "Gleichsetzungsverfahren und Einsetzungsverfahren mit Drag & Drop des Terms"
+      - "Übungen in drei Stufen und Sachaufgaben mit echten Preisen"
+      - "Spiel Tarif-Check: Gleichstand berechnen, günstigeres Angebot wählen, Kostengraph"
+  - id: aehnlichkeit
+    name: Ähnlichkeit und Maßstab
+    faehigkeiten: {use: [true, true]}
+    kann:
+      - "Zentrische Streckung mit ziehbarem Zentrum, k von −3 bis 3, Strahlen, Seitenverhältnisse, Umfang und Fläche"
+      - "Ähnlichkeitssätze und Dreieck zum Selberbauen mit Ähnlichkeitsprüfung"
+      - "Maßstab umrechnen in beide Richtungen, Verkleinerung und Vergrößerung, Beispielbild je Maßstab zum Nachmessen (Karten, Modellbahn, Bauplan, Lageplan, Lupe, Mikroskop)"
+      - "Übungen: Streckfaktor, fehlende Seite, Fläche, Karte, Plan, Maßstab bestimmen"
+      - "Spiel Zoom-Treffer: Zentrum und Streckfaktor finden, fünf Runden, drei Stufen"
+  - id: schriftlich
+    name: Schriftliche Rechenverfahren
+    faehigkeiten: {use: [true, true]}
+    kann:
+      - "Schriftliches Addieren, Subtrahieren (Borgen mit »−1« merken oder Ergänzen mit Übertrag +1 unten), Multiplizieren und Dividieren Schritt für Schritt"
+      - "Walzen je Spalte, Sprung 9 → 0 in Zeitlupe, Übertrag fliegt erst danach als +1-Kreis"
+      - "Rechenketten mit Bögen, Zerlegung in Zehner (Übertrag) und Einer, Division mit Probe"
+      - "Üben auf Karopapier: eine Ziffer je Kästchen, Übertragskreise, Zwischenschritte, Prüfen je Kästchen"
+      - "Spiel Fehlerdetektiv: falsche Ziffer finden, Fehler wird erklärt"
   - id: farbmodelle
     name: Farbmodelle
     faehigkeiten: {use: [true, true]}
@@ -1037,6 +1099,23 @@ tools:
       - Grundlagenkapitel, Grafiken, Mythen-Check, Quellen mit DOI
       - Markieren als Favorit, Einarbeiten, Brauch ich nicht (im Konto gespeichert)
       - Download als eigenständige Offline-HTML
+  - id: ueberblick
+    name: Was kann TT?
+    faehigkeiten: {use: [true, false]}
+    kann:
+      - Diese Feature-Liste als Seite, durchsuchbar, nach Bereichen gefiltert, Einträge auf- und zuklappbar
+      - Auswahl oder einzelne Einträge als Markdown für einen KI-Chat kopieren, Download als Markdown
+      - Liest features.yml direkt, Änderungen erscheinen ohne Neubau
+  - id: main-character
+    name: Main Character
+    faehigkeiten: {use: [true, true]}
+    kann:
+      - Lebenssimulation bis zum Abschluss mit fünf Werten, Wachstum und Verfall je Wert
+      - Zehn Klassen plus NPC, Vorführen am Beamer, Klassenwechsel mitten im Lauf
+      - Fragebogen schlägt Klasse, Talente und Stärken vor
+      - Charakterbogen mit frei wählbaren Stärken, Baustellen und Wochenplan
+      - Zeugnis als PDF mit Stärken, geschafften Baustellen und Fokus-Tipps
+      - Beitritt per Code/QR auch für Gäste, anonyme Klassenübersicht
   - id: curriculum
     name: Curriculinator
     faehigkeiten: {use: [true, false]}

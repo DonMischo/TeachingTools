@@ -23,6 +23,8 @@ const CODES: Record<string, string> = {
   // Ubuntu und macOS: Super und ⌘ liegen dort, wo am PC die Windows-Taste sitzt; ⌥ ist Alt, ⌃ ist Strg.
   "Super": "MetaLeft", "⌘": "MetaLeft", "⌥": "AltLeft", "⌃": "ControlLeft", "⇧ Umschalt": "ShiftLeft",
   "⌫": "Backspace",
+  "AltGr": "AltRight", "Alt Gr": "AltRight", "Feststelltaste": "CapsLock",
+  "ß": "Minus", "+": "BracketRight", "<": "IntlBackslash", "^": "Backquote",
   "F2": "F2", "F3": "F3", "F4": "F4", "F5": "F5",
 };
 

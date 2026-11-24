@@ -156,3 +156,12 @@ export function mindestAzubi(jahr: number, ausbildungsjahr: number): number {
   const aufschlag = [0, 0, 0.18, 0.35, 0.4][Math.min(4, Math.max(1, ausbildungsjahr))];
   return Math.round(basis * (1 + aufschlag));
 }
+
+/**
+ * Markenhinweis: Rock your Life nennt echte Marken und Händler nur als Wort
+ * (keine Logos, Verpackungen, Produktbilder), damit Jugendliche die Produkte
+ * aus ihrem Alltag wiedererkennen (§ 23 MarkenG, beschreibende Nennung).
+ * Der Hinweis stellt klar, dass keine Verbindung zu den Inhabern besteht.
+ */
+export const MARKEN_HINWEIS =
+  "Marken- und Firmennamen (z. B. von Supermärkten, Produkten, Banken, Versicherungen) gehören ihren Inhabern. Sie stehen hier nur als Wort, damit du sie aus dem Alltag wiedererkennst — ohne Logos und ohne Verbindung zu den Unternehmen. Niemand hat dafür bezahlt, und keine Firma hat das Spiel geprüft oder empfiehlt es. Preise und Angebote sind simuliert.";

@@ -23,9 +23,9 @@ router = APIRouter(prefix="/api/tool-sessions", tags=["tool-sessions"])
 
 # Tools that can be joined this way — everything that runs purely client-side.
 SESSION_TOOLS = ("abacus", "gleichungswaage", "bildformate", "tippen", "zeitstrahl",
-                 "vierecke", "geometrie", "binaerrechner", "funktionen", "rechenregeln", "groessen", "rechenzeichen", "prozent", "dreiecke", "trigonometrie", "quadratisch", "stochastik", "kreis", "koerper", "stellenwert", "farbmodelle", "uebung",
+                 "vierecke", "geometrie", "binaerrechner", "funktionen", "rechenregeln", "groessen", "rechenzeichen", "prozent", "dreiecke", "trigonometrie", "quadratisch", "stochastik", "kreis", "koerper", "stellenwert", "zahlenbereiche", "brueche", "lgs", "aehnlichkeit", "schriftlich", "farbmodelle", "uebung",
                  "ki", "maus", "kikompass", "markieren", "pcbau", "klikk", "medien", "elemon", "sonnensystem", "verkehr", "leben", "kueste",
-                 "erdaufbau", "wilson", "regeln", "wfc", "leviathan", "karten", "algo", "dla", "schichten", "pse", "atommodelle", "strukturformeln", "challenge", "stadt", "erosion", "vulkan", "baum", "stromkreis", "stroemung", "diagramme", "spielalgo", "pixel")
+                 "erdaufbau", "wilson", "regeln", "wfc", "leviathan", "karten", "algo", "dla", "schichten", "pse", "atommodelle", "strukturformeln", "challenge", "stadt", "erosion", "vulkan", "baum", "stromkreis", "stroemung", "diagramme", "spielalgo", "pixel", "main-character")
 
 # Werkzeuge, die einen konkreten Inhalt teilen statt nur sich selbst. Der
 # Zeitstrahl ist eine Bibliothek: geteilt wird immer *eine* Zeitleiste, also

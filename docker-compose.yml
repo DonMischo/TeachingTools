@@ -30,6 +30,8 @@ services:
     volumes:
       - ./api:/workspace/api
       - ./data:/workspace/data
+      # Feature-Liste für »Was kann TT?« (/api/ueberblick)
+      - ./features.yml:/workspace/features.yml:ro
     ports:
       - "127.0.0.1:${API_PORT:-8000}:8000"
     depends_on:

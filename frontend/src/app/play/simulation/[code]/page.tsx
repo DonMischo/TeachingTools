@@ -35,6 +35,11 @@ import Kreis from "@/components/kreis/Kreis";
 import Koerper from "@/components/koerper/Koerper";
 import Stellenwert from "@/components/stellenwert/Stellenwert";
 import Farbmodelle from "@/components/farbmodelle/Farbmodelle";
+import Schriftlich from "@/components/schriftlich/Schriftlich";
+import Aehnlichkeit from "@/components/aehnlichkeit/Aehnlichkeit";
+import Lgs from "@/components/lgs/Lgs";
+import Brueche from "@/components/brueche/Brueche";
+import Zahlenbereiche from "@/components/zahlenbereiche/Zahlenbereiche";
 import Markieren from "@/components/markieren/Markieren";
 import PcWerkstatt from "@/components/pcbau/PcWerkstatt";
 import Medien from "@/components/medien/Medien";
@@ -64,6 +69,7 @@ import Spielalgorithmen from "@/components/spielalgo/Spielalgorithmen";
 import Schichtenmodell from "@/components/schichten/Schichtenmodell";
 import Tippen from "@/components/tippen/Tippen";
 import KiKompass from "@/components/kikompass/KiKompass";
+import MainCharacter from "@/components/mainCharacter/MainCharacter";
 import MausFuehrerschein, { schluesselFuerGast, schluesselFuerGastName } from "@/components/maus/MausFuehrerschein";
 import { SharedTimeline } from "@/components/timeline/SharedTimeline";
 import KartenQuizSpiel from "@/components/karten/KartenQuizSpiel";
@@ -98,6 +104,11 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   koerper: { title: "Körper", icon: "🧊", node: <Koerper /> },
   stellenwert: { title: "Stellenwerttafeln", icon: "🔢", node: <Stellenwert /> },
   farbmodelle: { title: "Farbmodelle", icon: "🎨", node: <Farbmodelle /> },
+  schriftlich: { title: "Schriftliche Rechenverfahren", icon: "✏️", node: <Schriftlich /> },
+  aehnlichkeit: { title: "Ähnlichkeit und Maßstab", icon: "🔍", node: <Aehnlichkeit /> },
+  lgs: { title: "Lineare Gleichungssysteme", icon: "🔀", node: <Lgs /> },
+  brueche: { title: "Brüche", icon: "🍕", node: <Brueche /> },
+  zahlenbereiche: { title: "Zahlenbereiche", icon: "🪆", node: <Zahlenbereiche /> },
   tippen: { title: "Tippen", icon: "⌨️", node: <Tippen /> },
   // Die Bestenliste braucht Code und Gast-Token.
   markieren: { title: "Markieren & Bearbeiten", icon: "🖍️", node: null },
@@ -129,6 +140,8 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   maus: { title: "Maus-Führerschein", icon: "🐭", node: null },
   // Der KI-Kompass spiegelt den Stand über Code und Gast-Token in die Übersicht der Lehrkraft.
   kikompass: { title: "KI-Kompass", icon: "🧭", node: null },
+  // meldet den anonymen Stand mit Code und Gast-Token
+  "main-character": { title: "Main Character", icon: "👑", node: null },
   // Der Flug merkt sich Erforschtes je Code bzw. Konto — dafür braucht er den Code.
   sonnensystem: { title: "Sonnensystem", icon: "🪐", node: null },
   // Die Stadt ist ein Live-Raum je Code — dafür braucht sie Code und Gast-Token.
@@ -310,6 +323,14 @@ export default function SimulationJoinPage() {
               // gemeldeter Stand kommt zurück (anderer Rechner, gelöschter Browser-Speicher)
               ladeServer={auth || guest.token ? () => api.algo.mein({ code, token: auth ? null : guest.token }) : undefined}
               onStand={s => { api.algo.fortschritt({ code, token: guest.token }, s).catch(() => { /* nur für die Übersicht */ }); }} /></D2Kontext.Provider>
+        : session.tool_slug === "main-character"
+          ? <MainCharacter
+              zugang={{ code, token: guest.token }}
+              // Gäste behalten ihren Charakter je Namen in diesem Browser (wie beim Maus-Führerschein).
+              speicherSchluessel={auth
+                ? `konto-${auth.user_type}-${auth.student?.id ?? auth.teacher?.id ?? 0}`
+                : schluesselFuerGastName(guest.session?.name ?? "")
+                  ?? (guest.token ? schluesselFuerGast(code, guest.token) : `gast-${code}`)} />
         : session.tool_slug === "kikompass"
           ? <KiKompass
               zugang={{ code, token: guest.token }}

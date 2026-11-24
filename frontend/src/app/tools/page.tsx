@@ -64,6 +64,14 @@ const ALL_CARDS: Werkzeug[] = [
     color: "#2a9db0",
   },
   {
+    slug: "ueberblick",
+    href: "/tools/ueberblick",
+    icon: "🧾",
+    title: "Was kann TT?",
+    description: "Alle Aktivitäten, Simulationen und Werkzeuge mit ihren Funktionen: durchsuchen, aufklappen, für eine KI kopieren.",
+    color: "#e07820",
+  },
+  {
     slug: "curriculum",
     href: "/tools/curriculum",
     icon: "🧭",
@@ -102,6 +110,14 @@ const ALL_CARDS: Werkzeug[] = [
     title: "Fragmente",
     description: "Pinnwände mit Karten & Clippings — teilbar mit Klassen und per QR-Gastzugang.",
     color: "#8b5cf6",
+  },
+  {
+    slug: "main-character",
+    href: "/tools/main-character",
+    icon: "👑",
+    title: "Main Character",
+    description: "Lebenssimulation bis zum Abschluss: Fragebogen, Charakterbogen, Wochenplan, Zeugnis als PDF — per QR mit anonymer Klassenübersicht.",
+    color: "#a259ec",
   },
   {
     slug: "snap",
