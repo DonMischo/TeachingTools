@@ -8,7 +8,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import Brueche from "@/components/brueche/Brueche";
 import { ziffernJeStelle } from "@/components/brueche/Dezimal";
 import { legeKarten } from "@/components/brueche/Wichtige";
-import { raster } from "@/components/brueche/bild";
+import { kuchenStuecke, raster } from "@/components/brueche/bild";
 import {
   ausDezimal, bruchteilAufgabe, dezimal, dezimalText, gemischtText, kuerze, leseBruch, OPS, rechenAufgabe, rechne, wert, wort, zehnerbruch, type Op,
 } from "@/lib/brueche";
@@ -84,6 +84,15 @@ describe("Bruchteile und Spielteile", () => {
     expect(new Set(k.map(x => x.paar)).size).toBe(8);
     expect(raster(12)).toEqual([3, 4]);
     expect(raster(7)).toEqual([1, 7]);
+  });
+  it("Blechkuchen: jedes Stück gleich groß, auch bei Primzahlen in mehreren Reihen", () => {
+    for (const n of [2, 3, 5, 7, 11, 12]) {
+      const st = kuchenStuecke(n, 300, 200);
+      expect(st).toHaveLength(n);
+      for (const x of st) expect(x.w * x.h).toBeCloseTo((300 * 200) / n, 6);
+      expect(st.reduce((a, x) => a + x.w * x.h, 0)).toBeCloseTo(300 * 200, 6);
+    }
+    expect(new Set(kuchenStuecke(7, 300, 200).map(x => x.y)).size).toBe(2); // 7 = 4 + 3 in zwei Reihen
   });
 });
 

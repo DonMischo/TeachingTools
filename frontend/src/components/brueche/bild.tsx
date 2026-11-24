@@ -25,6 +25,24 @@ export function raster(n: number): [number, number] {
   return best;
 }
 
+/**
+ * Blechkuchen in n gleich große Stücke: Reihen mit möglichst gleich vielen
+ * Stücken; eine Reihe mit c Stücken ist c/n der Höhe hoch, jedes Stück 1/c
+ * der Breite breit — so hat jedes Stück genau 1/n der Fläche (7 = 4 + 3).
+ */
+export function kuchenStuecke(n: number, W: number, H: number): { x: number; y: number; w: number; h: number }[] {
+  const reihen = Math.max(1, Math.min(n, Math.round(Math.sqrt((n * H) / W))));
+  const basis = Math.floor(n / reihen), mehr = n % reihen;
+  const aus: { x: number; y: number; w: number; h: number }[] = [];
+  let y = 0;
+  for (let r = 0; r < reihen; r++) {
+    const c = basis + (r < mehr ? 1 : 0), h = (H * c) / n, w = W / c;
+    for (let j = 0; j < c; j++) aus.push({ x: j * w, y, w, h });
+    y += h;
+  }
+  return aus;
+}
+
 const sektor = (cx: number, cy: number, r: number, a0: number, a1: number) => {
   const p = (a: number) => `${cx + r * Math.sin(a)} ${cy - r * Math.cos(a)}`;
   if (a1 - a0 >= 2 * Math.PI - 1e-9) return `M ${cx} ${cy - r} A ${r} ${r} 0 1 1 ${cx - 0.01} ${cy - r} Z`;
@@ -42,8 +60,8 @@ const FARBEN: Record<Form, Farben> = {
 
 /**
  * Belag für jedes Stück: Pizza mit Salami, Olive und Basilikum, Torte mit
- * Sahnetupfer und Kirsche, Blechkuchen abwechselnd mit Erdbeere, Kirsche und
- * Blaubeeren. Auf leeren Stücken blass, damit man trotzdem jedes Stück sieht.
+ * Sahnetupfer und Kirsche, Blechkuchen mit Erdbeere (jedes Stück gleich).
+ * Auf leeren Stücken blass, damit man trotzdem jedes Stück sieht.
  */
 function Deko({ form, x, y, g, i, voll }: { form: Form; x: number; y: number; g: number; i: number; voll: boolean }) {
   const o = voll ? 1 : 0.3;
@@ -91,7 +109,8 @@ function Ganzes({ form, n, k, voll, onTeil, nr }: { form: Form; n: number; k: nu
   const teile: ReactNode[] = [];
   const linien: ReactNode[] = [];
   const klick = (i: number) => (onTeil ? { onClick: () => onTeil(i), style: { cursor: "pointer" }, role: "button", "aria-label": `Teil ${i + 1}`, "aria-pressed": voll[i] } : {});
-  const breite = form === "band" ? 2 * S : S, hoehe = form === "band" ? S / 3 : S;
+  // Blechkuchen ist breiter als hoch — wie ein echtes Blech
+  const breite = form === "band" ? 2 * S : form === "kuchen" ? 1.5 * S : S, hoehe = form === "band" ? S / 3 : S;
 
   if (form === "pizza" || form === "torte") {
     const c = S / 2, r = S / 2 - 8;
@@ -110,14 +129,20 @@ function Ganzes({ form, n, k, voll, onTeil, nr }: { form: Form; n: number; k: nu
       }
     }
   } else {
-    // eckig: Kuchen und Band in senkrechte Streifen, Tafel als Raster; k teilt waagerecht
-    const [zeilen, spalten] = form === "tafel" ? raster(n) : [1, n];
-    const w = breite / spalten, h = hoehe / zeilen;
+    // eckig: Kuchen und Tafel als Raster (Stücke möglichst quadratisch), Band in Streifen; k teilt waagerecht
+    const [zeilen, spalten] = form === "band" ? [1, n] : raster(n);
+    const w0 = breite / spalten, h0 = hoehe / zeilen;
+    const stuecke = form === "kuchen" ? kuchenStuecke(n, breite, hoehe) : null;
     for (let i = 0; i < n; i++) {
-      const x = (i % spalten) * w, y = Math.floor(i / spalten) * h;
+      const x = stuecke ? stuecke[i].x : (i % spalten) * w0, y = stuecke ? stuecke[i].y : Math.floor(i / spalten) * h0;
+      const w = stuecke ? stuecke[i].w : w0, h = stuecke ? stuecke[i].h : h0;
       teile.push(<rect key={i} x={x + (form === "tafel" ? 2 : 0)} y={y + (form === "tafel" ? 2 : 0)} width={w - (form === "tafel" ? 4 : 0)} height={h - (form === "tafel" ? 4 : 0)}
         rx={form === "tafel" ? 4 : 0} fill={voll[i] ? f.voll : f.leer} stroke={f.rand} strokeWidth={form === "tafel" ? 1.5 : 2.5} {...klick(i)} />);
-      if (form === "kuchen") teile.push(<Deko key={`d${i}`} form={form} x={x + w / 2} y={y + h * 0.45} g={Math.max(0.5, Math.min(2.2, w / 15, h / 22))} i={i} voll={voll[i]} />);
+      if (form === "kuchen") {
+        // Boden unten im Stück, Frucht obendrauf — jedes Stück gleich
+        teile.push(<rect key={`b${i}`} x={x + 1.5} y={y + h * 0.74} width={w - 3} height={h * 0.26 - 1.5} fill={voll[i] ? "#a0703c" : "#e9d8b8"} pointerEvents="none" />);
+        teile.push(<Deko key={`d${i}`} form={form} x={x + w / 2} y={y + h * 0.4} g={Math.max(0.5, Math.min(2.4, w / 15, h / 20))} i={0} voll={voll[i]} />);
+      }
       if (form === "tafel") teile.push(<rect key={`p${i}`} x={x + 7} y={y + 7} width={Math.max(0, w - 14)} height={Math.max(0, h - 14)} rx={3} fill="none"
         stroke={voll[i] ? "#a0522d" : "#d6c3b0"} strokeWidth={1.5} pointerEvents="none" />);
     }
@@ -143,7 +168,7 @@ export function BruchBild({ form, n, z, k = 1, auswahl, onTeil, ganze = 1, breit
   return (
     <div className="flex flex-wrap gap-3 items-center">
       {Array.from({ length: anzahl }, (_, g) => (
-        <div key={g} style={{ width: form === "band" ? `calc(${breite} * 2)` : breite, maxWidth: "100%" }}>
+        <div key={g} style={{ width: form === "band" ? `calc(${breite} * 2)` : form === "kuchen" ? `calc(${breite} * 1.5)` : breite, maxWidth: "100%" }}>
           <Ganzes form={form} n={n} k={k} nr={g + 1} voll={Array.from({ length: n }, (_, i) => istVoll(g * n + i))}
             onTeil={onTeil ? i => onTeil(g * n + i) : undefined} />
         </div>

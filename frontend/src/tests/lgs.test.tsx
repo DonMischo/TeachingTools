@@ -111,9 +111,29 @@ describe("Oberfläche", () => {
       fireEvent.click(screen.getByRole("button", { name: /Additionsverfahren/ }));
       fireEvent.click(screen.getAllByRole("button", { name: "💡 Tipp" })[0]);
       fireEvent.click(screen.getByRole("button", { name: "Multiplizieren" }));
-      fireEvent.click(screen.getByRole("button", { name: "⬆ Addieren" }));
+      fireEvent.click(screen.getByRole("button", { name: "⬆ Addieren (I + II)" }));
       act(() => { vi.advanceTimersByTime(1000); });
       expect(screen.getByText(/y ist weg/)).toBeTruthy();
+      loeseAlleUmformer();
+      loeseAlleUmformer();
+      expect(screen.getByText(/L = \{\(3 \| 2\)\}/)).toBeTruthy();
+    } finally { vi.useRealTimers(); }
+  });
+
+  it("Additionsverfahren: leere Faktoren = 1, ohne Malnehmen weiter, Subtrahieren", () => {
+    vi.useFakeTimers();
+    try {
+      render(<Lgs />);
+      fireEvent.click(screen.getByRole("button", { name: /Additionsverfahren/ }));
+      // eigenes System mit gleichen Zahlen vor x: 2x + y = 8, 2x − y = 4 → subtrahieren lässt x wegfallen
+      fireEvent.change(screen.getByLabelText("Gleichung I"), { target: { value: "2x + y = 8" } });
+      fireEvent.change(screen.getByLabelText("Gleichung II"), { target: { value: "2x + 3y = 12" } });
+      fireEvent.click(screen.getByRole("button", { name: "Übernehmen" }));
+      fireEvent.click(screen.getByRole("button", { name: "x" }));
+      fireEvent.click(screen.getByRole("button", { name: "Ohne Malnehmen weiter" }));
+      fireEvent.click(screen.getByRole("button", { name: "⬆ Subtrahieren (I − II)" }));
+      act(() => { vi.advanceTimersByTime(1000); });
+      expect(screen.getByText(/x ist weg/)).toBeTruthy();
       loeseAlleUmformer();
       loeseAlleUmformer();
       expect(screen.getByText(/L = \{\(3 \| 2\)\}/)).toBeTruthy();

@@ -69,16 +69,21 @@ export function Addition({ sys }: { sys: System }) {
   const [v, setV] = useState<Var>(() => guenstigeVariable(sys));
   const [f, setF] = useState<[string, string]>(["", ""]);
   const [phase, setPhase] = useState(0);
+  /** I + II oder I − II (gleiche Zahlen vor der Variablen: subtrahieren) */
+  const [rech, setRech] = useState<"+" | "−">("+");
   const [wert1, setWert1] = useState<Q | null>(null);
   const [loesung, setLoesung] = useState<{ x: Q; y: Q } | null>(null);
   // Variable wechseln = von vorn (kein Effekt: der liefe nach dem Umformer-Effekt und löschte dessen Ergebnis)
-  const waehle = (k: Var) => { setV(k); setPhase(0); setF(["", ""]); setWert1(null); setLoesung(null); };
+  const waehle = (k: Var) => { setV(k); setPhase(0); setF(["", ""]); setRech("+"); setWert1(null); setLoesung(null); };
   useEffect(() => { if (phase === 2) { const t = setTimeout(() => setPhase(3), 900); return () => clearTimeout(t); } }, [phase]);
 
-  const f1 = Number(f[0].replace("−", "-")), f2 = Number(f[1].replace("−", "-"));
+  // leeres Feld = mal 1
+  const faktor = (t: string) => (t.trim() === "" ? 1 : Number(t.trim().replace("−", "-")));
+  const f1 = faktor(f[0]), f2 = faktor(f[1]);
   const gueltig = Number.isInteger(f1) && Number.isInteger(f2) && f1 !== 0 && f2 !== 0;
   const n1 = normal(sys.g1), n2 = normal(sys.g2);
-  const summe = gueltig ? addiere(sys.g1, f1, sys.g2, f2) : null;
+  const summe = gueltig ? addiere(sys.g1, f1, sys.g2, rech === "+" ? f2 : -f2) : null;
+  const zeile = (k: number, name: string) => (k === 1 ? name : `${k}·${name}`);
   const faellt = summe && summe[v === "x" ? "a" : "b"].z === 0;
   const rest = andere(v);
 
@@ -93,9 +98,9 @@ export function Addition({ sys }: { sys: System }) {
           <KachelZeile n={n1} name="I" />
           <KachelZeile n={n2} name="II" />
         </> : <>
-          <KachelZeile n={malNormal(n1, f1)} name={`${f1}·I`} />
-          <KachelZeile n={malNormal(n2, f2)} name={`${f2}·II`} stil={phase === 2 ? { transform: "translateY(-3.25rem)", opacity: 0.85 } : undefined} />
-          {phase >= 3 && summe && <div className="border-t-4 border-fg pt-2"><KachelZeile n={summe} name="Summe" /></div>}
+          <KachelZeile n={malNormal(n1, f1)} name={zeile(f1, "I")} />
+          <KachelZeile n={malNormal(n2, f2)} name={(phase >= 2 ? rech + " " : "") + zeile(f2, "II")} stil={phase === 2 ? { transform: "translateY(-3.25rem)", opacity: 0.85 } : undefined} />
+          {phase >= 3 && summe && <div className="border-t-4 border-fg pt-2"><KachelZeile n={summe} name={rech === "+" ? "Summe" : "Differenz"} /></div>}
         </>}
       </div>
 
@@ -103,20 +108,29 @@ export function Addition({ sys }: { sys: System }) {
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-sm">I mal</span><input className="input w-16" value={f[0]} onChange={e => setF([e.target.value, f[1]])} aria-label="Faktor I" />
           <span className="text-sm">II mal</span><input className="input w-16" value={f[1]} onChange={e => setF([f[0], e.target.value])} aria-label="Faktor II" />
-          <button className="btn-secondary" onClick={() => { const k = additionsFaktoren(sys.g1, sys.g2, v); if (k) setF([String(k[0]), String(k[1])]); }}>💡 Tipp</button>
+          <button className="btn-secondary" onClick={() => {
+            const k = additionsFaktoren(sys.g1, sys.g2, v);
+            if (!k) return;
+            // negativer Faktor bei II = gleiche Zahlen: lieber subtrahieren
+            const t = (x: number) => (x === 1 ? "" : String(x));
+            if (k[1] < 0) { setF([t(k[0]), t(-k[1])]); setRech("−"); } else { setF([t(k[0]), t(k[1])]); setRech("+"); }
+          }}>💡 Tipp</button>
           <button className="btn-primary" disabled={!gueltig} onClick={() => setPhase(1)}>Multiplizieren</button>
-          <span className="text-xs text-muted w-full">Ziel: Die {v}-Kacheln sollen gleich groß, aber mit verschiedenem Vorzeichen sein — dann heben sie sich beim Addieren auf.</span>
+          <button className="btn-secondary" onClick={() => { setF(["", ""]); setPhase(1); }}>Ohne Malnehmen weiter</button>
+          <span className="text-xs text-muted w-full">Leeres Feld = mal 1. Ziel: Die {v}-Kacheln sollen gleich groß sein. Mit verschiedenem Vorzeichen (+2y und −2y) heben sie sich beim <b>Addieren</b> auf, mit gleichem Vorzeichen (3x und 3x) beim <b>Subtrahieren</b>.</span>
         </div>
       )}
       {phase === 1 && (
         <div className="flex gap-2">
-          <button className="btn-primary" onClick={() => setPhase(2)}>⬆ Addieren</button>
+          <button className={rech === "+" ? "btn-primary" : "btn-secondary"} onClick={() => { setRech("+"); setPhase(2); }}>⬆ Addieren (I + II)</button>
+          <button className={rech === "−" ? "btn-primary" : "btn-secondary"} onClick={() => { setRech("−"); setPhase(2); }}>⬆ Subtrahieren (I − II)</button>
           <button className="btn-secondary" onClick={() => setPhase(0)}>↶ Faktoren ändern</button>
         </div>
       )}
       {phase >= 3 && summe && !faellt && (
         <div className="flex gap-2 items-center">
-          <p className="text-sm text-bad font-bold">{v} fällt nicht weg — die {v}-Kacheln waren nicht entgegengesetzt gleich.</p>
+          <p className="text-sm text-bad font-bold">{v} fällt nicht weg — {rech === "+" ? `beim Addieren müssen die Zahlen vor ${v} entgegengesetzt gleich sein` : `beim Subtrahieren müssen die Zahlen vor ${v} gleich sein`}.</p>
+          <button className="btn-secondary" onClick={() => setPhase(1)}>↶ {rech === "+" ? "Subtrahieren" : "Addieren"} versuchen</button>
           <button className="btn-secondary" onClick={() => setPhase(0)}>↶ Andere Faktoren</button>
         </div>
       )}
