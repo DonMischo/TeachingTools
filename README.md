@@ -517,17 +517,17 @@ Beim ersten Start legt ein **Setup-Dialog** den ersten Admin und die Klassen an.
 
 ### Workshop-Instanz (online)
 
-Für Online-Workshops startet `workshop.bat` (ruft `workshop.ps1` ohne Änderung der Ausführungsrichtlinie auf) eine zweite, getrennte Instanz und macht sie über einen [Cloudflare-Quick-Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/do-more-with-tunnels/trycloudflare/) aus dem Internet erreichbar, ohne Konto und ohne Portfreigabe (`winget install Cloudflare.cloudflared`).
+Alles für Online-Workshops liegt in [`workshop/`](workshop/README.md) (Ablauf, Checkliste, Verteilung der Zugänge). `workshop/workshop.bat` (ruft `workshop.ps1` ohne Änderung der Ausführungsrichtlinie auf) startet eine zweite, getrennte Instanz und macht sie über einen [Cloudflare-Quick-Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/do-more-with-tunnels/trycloudflare/) aus dem Internet erreichbar, ohne Konto und ohne Portfreigabe (`winget install Cloudflare.cloudflared`).
 
 ```bat
-workshop.bat start -Anzahl 30   :: Instanz auf Port 1340, Tunnel, Zugänge ws01–ws30 + moderation
-workshop.bat stop               :: Tunnel zu, Instanz angehalten, Daten bleiben
-workshop.bat reset              :: alles löschen
+workshop\workshop.bat start -Anzahl 30   :: Instanz auf Port 1340, Tunnel, Zugänge ws01–ws30 + moderation
+workshop\workshop.bat stop               :: Tunnel zu, Instanz angehalten, Daten bleiben
+workshop\workshop.bat reset              :: alles löschen
 ```
 
 - Eigene Datenbank, eigener Port, eigener `SECRET_KEY`; die Schulinstanz läuft unberührt weiter.
-- `data/` wird nur mit den versionierten Dateien nach `.workshop/data` kopiert, nicht versionierte Schuldaten kommen nicht mit.
-- Beispiele (Zeitstrahlen, Challenge, TaskCrawler) werden einmal hochgeladen, dazu 360 erfundene Schülerinnen und Schüler in 5a–10c aus `data/workshop/schueler.csv`. Zugangsliste und QR-Code liegen in `.workshop/data/`.
+- `data/` wird nur mit den versionierten Dateien nach `workshop/instanz/data` kopiert, nicht versionierte Schuldaten kommen nicht mit.
+- Beispiele (Zeitstrahlen, Challenge, TaskCrawler) werden einmal hochgeladen, dazu 360 erfundene Schülerinnen und Schüler in 5a–10c aus `data/workshop/schueler.csv`. Zugangskarten, Chat- und Privatnachrichten mit der aktuellen Adresse schreibt jeder Start nach `workshop/zugaenge/`.
 - Die Adresse ist bei jedem Start neu und landet in der Zwischenablage. Die Moderation öffnet TT über diese Adresse, dann zeigen alle Beitritts-QRs auf den Tunnel.
 - Nicht für den Produktivbetrieb: Der Tunnel lebt nur, solange der Rechner läuft.
 

@@ -1,6 +1,6 @@
-# Übungsinstanz für Online-Workshops — nur über workshop.ps1 starten.
+# Übungsinstanz für Online-Workshops — nur über workshop/workshop.bat starten.
 # Eigenes Compose-Projekt (tt-workshop) mit eigener Datenbank, eigenem Port und
-# einer Kopie der versionierten data/-Dateien in .workshop/data. Hochgeladenes
+# einer Kopie der versionierten data/-Dateien in workshop/instanz/data. Hochgeladenes
 # und nicht versionierte Schuldaten aus data/ bleiben so außen vor.
 services:
   postgres:
@@ -10,7 +10,8 @@ services:
     container_name: tt-workshop-api
     restart: "no"
     volumes:
-      - ./.workshop/data:/workspace/data
+      # Pfad relativ zum Repo (Projektordner = Ort der ersten Compose-Datei)
+      - ./workshop/instanz/data:/workspace/data
   frontend:
     container_name: tt-workshop-frontend
     restart: "no"

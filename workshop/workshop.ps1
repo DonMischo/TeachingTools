@@ -14,14 +14,16 @@ param(
 # Continue: docker schreibt Fortschritt nach stderr, das wäre unter "Stop" ein Abbruch.
 # Fehler prüfen wir selbst über $LASTEXITCODE bzw. -ErrorAction Stop.
 $ErrorActionPreference = "Continue"
-$root = $PSScriptRoot
-$ws = Join-Path $root ".workshop"
+$here = $PSScriptRoot                     # workshop/
+$root = Split-Path $here -Parent          # Repo
+$ws = Join-Path $here "instanz"           # Zustand der Instanz (nicht im Repo)
+$out = Join-Path $here "zugaenge"         # Zugänge und Nachrichten zum Verteilen (nicht im Repo)
 $envFile = Join-Path $ws "workshop.env"
 $pidFile = Join-Path $ws "tunnel.pid"
 $port = 1340
 
 function Compose {
-    docker compose -p tt-workshop --env-file $envFile -f (Join-Path $root "docker-compose.yml") -f (Join-Path $root "docker-compose.workshop.yml") @args
+    docker compose -p tt-workshop --env-file $envFile -f (Join-Path $root "docker-compose.yml") -f (Join-Path $here "docker-compose.workshop.yml") @args
     if ($LASTEXITCODE -ne 0) { throw "docker compose $args fehlgeschlagen" }
 }
 
@@ -78,10 +80,12 @@ if ($Aktion -eq "start") {
 
     docker exec tt-workshop-api python -m api.workshop_seed --anzahl $Anzahl --url $url
     if ($LASTEXITCODE -ne 0) { throw "Befüllen fehlgeschlagen" }
+    if (Test-Path $out) { Remove-Item -Recurse -Force $out }
+    Copy-Item -Recurse (Join-Path $ws "data\zugaenge") $out
     Set-Clipboard $url
     Write-Host ""
     Write-Host "Workshop-Adresse (in der Zwischenablage): $url"
-    Write-Host "Zugänge: $(Join-Path $ws 'data\zugaenge.txt')   QR: $(Join-Path $ws 'data\workshop-qr.png')"
+    Write-Host "Zugänge zum Verteilen: $out (Zugangskarten.html, chat-nachricht.txt, privat-nachrichten.txt)"
     Write-Host "Beenden mit: workshop.bat stop"
 }
 elseif ($Aktion -eq "stop") {
@@ -92,6 +96,6 @@ elseif ($Aktion -eq "stop") {
 else {
     Stop-Tunnel
     if (Test-Path $envFile) { Compose down -v }
-    if (Test-Path $ws) { Remove-Item -Recurse -Force $ws }
+    foreach ($d in @($ws, $out)) { if (Test-Path $d) { Remove-Item -Recurse -Force $d } }
     Write-Host "Workshop-Instanz samt Daten gelöscht."
 }

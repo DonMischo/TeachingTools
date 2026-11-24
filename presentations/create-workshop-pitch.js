@@ -2,7 +2,7 @@
  * TT - Teaching Tools — Workshop-Pitch (KI und digitale Bildung, schulübergreifend)
  * Ziel: TT als offenen, erweiterbaren Baukasten zeigen und Mitstreiter·innen gewinnen.
  * Screenshots kommen aus ../screenshots/out (erst screenshots/take-screenshots.js laufen lassen;
- * Baumleben: ONLY=sim-baum). QR-Code: qr-handout.png in diesem Ordner.
+ * Baumleben: ONLY=sim-baum). QR-Code und Ausgabe liegen in ../workshop (qr-handout.png, TT-Workshop-Pitch.pptx).
  * Run: node create-workshop-pitch.js
  */
 
@@ -542,12 +542,12 @@ function bigStat(s, number, label, x, y, w = 1.8) {
 
   s.addText("Fragen, Ideen, Mitmachen?", { x: 0.5, y: 0.7, w: 9, h: 0.75, fontSize: 30, bold: true, color: WHITE, fontFace: "Cambria", align: "center", margin: 0 });
   s.addText("Alles zum Nachlesen, alle Funktionen und wie ihr einsteigt:", { x: 0.5, y: 1.45, w: 9, h: 0.4, fontSize: 14, color: CREAM, fontFace: "Calibri", italic: true, align: "center", margin: 0 });
-  qr(s, "qr-handout.png", 4.0, 2.15, 2.0, "Begleitseite");
+  qr(s, "../workshop/qr-handout.png", 4.0, 2.15, 2.0, "Begleitseite");
   s.addText("Kontakt: donflauschelot@gmail.com   ·   Code: github.com/DonMischo/TeachingTools", { x: 0.5, y: 4.95, w: 9, h: 0.35, fontSize: 11, color: MUTED, fontFace: "Calibri", align: "center", margin: 0 });
   s.addNotes("Häufige Einwände: Datenschutz (eigener Server, keine Anfragen nach außen), Aufwand (Installationsskript, Code an die Tafel), Nachhaltigkeit (genau deshalb suchen wir Mitstreiter und einen Träger).");
 }
 
 // ── Write file ────────────────────────────────────────────────────────────────
-pres.writeFile({ fileName: path.join(__dirname, "TT-Workshop-Pitch.pptx") }).then(() => {
+pres.writeFile({ fileName: path.join(__dirname, "..", "workshop", "TT-Workshop-Pitch.pptx") }).then(() => {
   console.log("✅  TT-Workshop-Pitch.pptx created");
 }).catch(console.error);

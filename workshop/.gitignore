@@ -1,0 +1,7 @@
+# Erzeugt bzw. je Workshop neu, nicht ins Repo:
+# Zustand der Übungsinstanz, Zugänge mit Passwörtern, Deck und Kopie der Begleitseite
+instanz/
+zugaenge/
+*.pptx
+*.png
+begleitseite.html

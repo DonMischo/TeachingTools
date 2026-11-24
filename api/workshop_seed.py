@@ -1,14 +1,14 @@
 """Workshop-Instanz befüllen: Moderations-Admin, Teilnehmer-Zugänge, Beispielinhalte
 und die erfundene Schülerliste data/workshop/schueler.csv (5a–10c).
 
-Nur für die Übungsinstanz aus workshop.ps1 gedacht (eigene Datenbank, erfundene
+Nur für die Übungsinstanz aus workshop/workshop.bat gedacht (eigene Datenbank, erfundene
 Daten), nie für eine Schulinstanz. Läuft im API-Container:
 
     python -m api.workshop_seed [--anzahl 30] [--url https://….trycloudflare.com]
 
 Mehrfach aufrufbar: vorhandene Zugänge bleiben, Beispiele werden nur einmal
 hochgeladen. Die Zugangsliste landet in data/zugaenge.txt (bei der
-Workshop-Instanz also in .workshop/data/, nicht im Repo).
+Workshop-Instanz also in workshop/instanz/data/, nicht im Repo).
 """
 import argparse
 import json
@@ -105,7 +105,7 @@ def main() -> None:
     if neu:
         with ZUGAENGE.open("a", encoding="utf-8") as f:
             f.writelines(f"{u}\t{p}\n" for u, p in neu)
-    print(f"{len(neu)} neue Zugänge, Liste: .workshop/data/zugaenge.txt")
+    print(f"{len(neu)} neue Zugänge")
 
     zugaenge = dict(z.split("\t") for z in ZUGAENGE.read_text(encoding="utf-8").split("\n") if z)
     token = _login("moderation", zugaenge["moderation"]) if ohne_schueler or not MARKER.exists() else ""
@@ -125,7 +125,51 @@ def main() -> None:
         qr = qrcode.QRCode(border=1)
         qr.add_data(args.url)
         qr.print_ascii(invert=True)
-        qrcode.make(args.url).save(DATA / "workshop-qr.png")
+        _verteilung(args.url, zugaenge)
+
+
+def _verteilung(url: str, zugaenge: dict[str, str]) -> None:
+    """Dateien zum Verteilen der Zugänge nach data/zugaenge/ (workshop.ps1 kopiert sie nach workshop/zugaenge/).
+    Die Tunnel-Adresse ist bei jedem Start neu, deshalb wird alles jedes Mal neu geschrieben."""
+    import base64
+    import html
+    import io
+
+    import qrcode
+
+    ziel = DATA / "zugaenge"
+    ziel.mkdir(exist_ok=True)
+    puffer = io.BytesIO()
+    qrcode.make(url).save(puffer, format="PNG")
+    (ziel / "workshop-qr.png").write_bytes(puffer.getvalue())
+    qr_src = "data:image/png;base64," + base64.b64encode(puffer.getvalue()).decode()
+    teilnehmende = [(u, p) for u, p in zugaenge.items() if u != "moderation"]
+
+    (ziel / "zugaenge.txt").write_text(
+        f"Adresse: {url}\n\n" + "".join(f"{u}\t{p}\n" for u, p in zugaenge.items()), encoding="utf-8")
+    (ziel / "chat-nachricht.txt").write_text(
+        "Willkommen! Wir spielen gleich live in TT.\n"
+        f"1. Öffnet {url}/play\n"
+        "2. Gebt den Code ein, den ich gleich zeige, und wählt Name und Avatar. Ein Konto braucht ihr dafür nicht.\n"
+        "Zum Selberbauen bekommt ihr gleich per Privatnachricht einen eigenen Lehrkraft-Zugang.\n", encoding="utf-8")
+    (ziel / "privat-nachrichten.txt").write_text("".join(
+        f"[{u}] Dein Workshop-Zugang zum Selberbauen: {url} · unten links »Anmelden« · "
+        f"Benutzer {u} · Passwort {p} · Die Übungsinstanz wird nach dem Workshop gelöscht.\n"
+        for u, p in teilnehmende), encoding="utf-8")
+    karten = "".join(
+        f'<div class="karte"><img src="{qr_src}" alt=""><div><b>TT-Workshop</b><span>{html.escape(url)}</span>'
+        f'<span>Benutzer <code>{u}</code></span><span>Passwort <code>{html.escape(p)}</code></span>'
+        f'<small>Unten links »Anmelden«. Wird nach dem Workshop gelöscht.</small></div></div>'
+        for u, p in teilnehmende)
+    (ziel / "Zugangskarten.html").write_text(
+        '<!doctype html><meta charset="utf-8"><title>TT-Workshop: Zugangskarten</title><style>'
+        'body{font:14px system-ui,sans-serif;margin:16px}.raster{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px}'
+        '.karte{display:flex;gap:10px;align-items:center;border:1px dashed #888;border-radius:8px;padding:10px;break-inside:avoid}'
+        '.karte img{width:96px;height:96px}.karte div{display:grid;gap:3px}.karte span{overflow-wrap:anywhere}'
+        'code{font-size:15px;font-weight:700}small{color:#555}@media print{h1,p{display:none}}</style>'
+        f'<h1>Zugangskarten</h1><p>Je Teilnehmer·in eine Karte. Drucken und schneiden oder einzeln per Privatnachricht schicken '
+        f'(Text dafür in privat-nachrichten.txt).</p><div class="raster">{karten}</div>', encoding="utf-8")
+    print(f"Verteilung: {len(teilnehmende)} Zugangskarten, Chat- und Privatnachrichten in data/zugaenge/")
 
 
 if __name__ == "__main__":
