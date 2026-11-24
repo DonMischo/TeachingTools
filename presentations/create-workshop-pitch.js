@@ -337,7 +337,7 @@ function bigStat(s, number, label, x, y, w = 1.8) {
     "🔧  Hinter den Kulissen: die JSON-Vorlage und der KI-Prompt",
   ], 0.5, 2.15, 6.0, CREAM, 0.5, 12.5);
   qr(s, "qr-demo.png", 7.25, 1.9, 2.0, DEMO_URL);
-  s.addNotes("Alle scannen lassen, fünf Minuten spielen lassen. Danach die Frage: Welches Thema würdet ihr so bauen? Das ist der Übergang zum Mitmachen.");
+  s.addNotes("Alle scannen lassen, fünf Minuten spielen lassen. Danach die Frage: Welches Thema würdet ihr so bauen? Das ist der Übergang zum Mitmachen. Im Online-Workshop zusätzlich die Übungsinstanz: vorher workshop.bat start, die Tunnel-Adresse in den Chat posten, Zugänge ws01 usw. aus .workshop/data/zugaenge.txt verteilen. TT selbst über die Tunnel-Adresse öffnen, dann zeigen alle Beitritts-QRs dorthin. Erfundene Klassen 5a bis 10c sind schon angelegt.");
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -368,6 +368,29 @@ function bigStat(s, number, label, x, y, w = 1.8) {
     s.addText(l, { x, y: 5.24, w: 1.7, h: 0.3, fontSize: 9, color: MUTED, fontFace: "Calibri", align: "center", margin: 0 });
   });
   s.addNotes("Das stärkste Beispiel dafür, was der Baukasten kann. Der TaskCrawler »Zeitreise der Medien« (Klasse 8 bis 10) hat sechs Stockwerke, jedes im Stil seiner Epoche, von der Steinzeithöhle bis zur Raumstation. Jede Erklärung und jede Weltweit-Aufgabe springt direkt an die passende Station der Simulation; ein Test stellt sicher, dass es diese Stationen gibt. Dort probieren die Lernenden das Medium selbst aus: Morsetaste, Fax, Handytastatur, Rohrpost. Über den Live-Raum schicken sie sich gegenseitig Morse, Fax oder SMS. Dazu kommen ein Flop-Museum mit Medien, die sich nicht durchgesetzt haben, und 55 Erfolge. Am Ende steht der Deepfake-Drache: Nicht alles, was echt aussieht, ist echt. Der Fortschritt wird am Konto gespeichert, Gäste per Code.");
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 10c — KI und Medien: Thema im Unterricht, Werkzeug für Lehrkräfte
+// ═══════════════════════════════════════════════════════════════════════════
+{
+  const s = pres.addSlide();
+  s.background = { color: WHITE };
+  sectionTag(s, "KI UND MEDIEN");
+  title(s, "KI als Thema im Unterricht und als Werkzeug", NAVY, 28);
+  const items = [
+    ["86-sim-kikompass", "KI-Kompass", "Kompetenzraster für Lernende und Lehrkräfte, KI-Führerschein mit 14 Stationen."],
+    ["87-sim-klikk", "Klikk", "Eine Schulwoche mit Social Media: Challenges, Cybermobbing, Tracking, Datenspiegel."],
+    ["59-sim-ki", "KI-Werkstatt", "Wie ein Sprachmodell Wörter wählt und wie Bilder aus Rauschen entstehen."],
+    ["88-tool-curriculum", "Curriculinator", "KI liest alten und neuen Lehrplan, TT legt beide nebeneinander."],
+  ];
+  items.forEach(([name, h, b], i) => {
+    const x = 0.5 + (i % 2) * 4.6, y = 1.6 + Math.floor(i / 2) * 1.85;
+    screen(s, name, x, y, 2.4);
+    s.addText(h, { x: x + 2.55, y: y + 0.05, w: 1.9, h: 0.35, fontSize: 14, bold: true, color: NAVY, fontFace: "Cambria", margin: 0 });
+    s.addText(b, { x: x + 2.55, y: y + 0.42, w: 1.9, h: 1.0, fontSize: 10.5, color: MUTED, fontFace: "Calibri", valign: "top", margin: 0 });
+  });
+  s.addNotes("KI-Kompass: Lernende und Lehrkräfte schätzen sich im selben Raster ein (Verstehen, Anwenden, Reflektieren, Mitgestalten; nach Alles, Falck, Flick und Schulz, CC BY 4.0) und sehen es als Spinnennetz. Der KI-Führerschein führt in 14 Stationen von Stufe 0 bis Stufe I; die echte KI ist AIS.chat, Schülerinnen und Schüler kommen nur über den QR-Code der Lehrkraft hinein und geben keine Daten ein. Für Lehrkräfte gibt es den AKTIV(ER)-Weg mit Vorlagen. Klikk: Man ist 14, in der 8b und hat eine neue App. Warnsignale merkt man selbst, statt dass sie jemand zeigt; der Datenspiegel zeigt am Ende, was die App über einen weiß, und die Klasse kann eine Werbeauktion mitspielen. Curriculinator: Eine KI liest die Lehrplan-PDFs und gibt Karten als JSON zurück, TT zeigt, was bleibt, was neu ist und was in eine andere Klasse wandert. Auch hier: In TT selbst steckt keine KI.");
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -477,6 +500,29 @@ function bigStat(s, number, label, x, y, w = 1.8) {
   });
   banner(s, "Offen heißt auch: Jede und jeder kann nachprüfen, was drinsteckt.");
   s.addNotes("Stand der Prüfung vom 24.11.2026. Lizenzen: Das Quellen-Register (/admin/quellen) hat keinen Eintrag mit ungeklärten Rechten. Von den Browser-Paketen steht nur mapshaper unter MPL-2.0, und das nur im Build. psycopg2 auf dem Server ist LGPL und wird nur als Bibliothek geladen. Die Verdächtigen im Challenge-Modus Detektiv stammten aus einem itch.io-Paket mit unklarer Weitergabe; sie sind jetzt eigene 32×32-Figuren. Offen ist nur noch: drei Fotos tragen nur »Attribution« ohne genaue Lizenz. Sicherheit: python-jose wurde wegen einer ecdsa-Lücke ohne Fix durch PyJWT ersetzt. Am selben Tag behoben: Next.js auf 16.4.6 (kritische Lücken in der Bildoptimierung) und Pillow auf 13; pip-audit ist danach sauber. Übrig sind kleinere Lücken in Entwicklungswerkzeugen (vitest, vite) und indirekten Paketen.");
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 13c — So entsteht TT: Lehrkraft, KI-Agent und ein Wissensgraph
+// ═══════════════════════════════════════════════════════════════════════════
+{
+  const s = pres.addSlide();
+  s.background = { color: DARK };
+  sectionTag(s, "SO ENTSTEHT TT");
+  title(s, "Mitbauen, ohne den ganzen Code zu kennen", WHITE, 28);
+  if (hasShot("89-graphify")) {
+    screen(s, "89-graphify", 0.5, 1.65, 4.6, TILE_LINE);
+    caption(s, "Wissensgraph des Repos (graphify)", 0.5, 4.32, 4.6, CREAM);
+  }
+  bullets(s, [
+    "🧑‍🏫  Lehrkraft plant und prüft, ein KI-Coding-Agent schreibt mit",
+    "🕸  Wissensgraph: 2 000 Dateien, 23 500 Bausteine, 500 Themengruppen",
+    "🔄  Nach jedem Commit automatisch neu gebaut",
+    "🧭  Fragen wie »Wo wird ein Gastcode geprüft?« beantwortet der Graph",
+    "✅  Tests, Projektregeln und Lizenzregister liegen im Repo",
+  ], 5.4, 1.7, 4.2, CREAM, 0.55, 12);
+  banner(s, "Wer eine Simulation beisteuert, findet den Weg durch den Graphen statt durch 2 000 Dateien.");
+  s.addNotes("Offen gesagt: TT ist mit einem KI-Coding-Agenten entstanden. Fast alle Commits seit Oktober tragen den Agenten als Co-Autor, die Planung und jede Prüfung im Browser liegen bei der Lehrkraft. Damit Neue nicht im Code versinken, gibt es seit November einen Wissensgraphen (graphify): Er zerlegt das Repo in Dateien, Funktionen und ihre Beziehungen, gruppiert sie nach Themen und wird nach jedem Commit neu gebaut. Menschen und KI-Agenten fragen ihn mit Symbolnamen, etwa »player_identity« oder »useLiveSocket«, und bekommen die passenden Dateien und Zeilen. Dazu kommen Tests, Projektregeln (CLAUDE.md) und das Lizenzregister. Mitbauen heißt also: eine Idee, eine Vorlage, eine Simulation, nicht das ganze System verstehen.");
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
