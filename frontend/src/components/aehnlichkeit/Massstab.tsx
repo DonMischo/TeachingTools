@@ -23,7 +23,7 @@ function Insel({ m, wahl, setWahl }: { m: M; wahl: number[]; setWahl: (w: number
   const cm = a && b ? Math.hypot(a.x - b.x, a.y - b.y) : null;
   return (
     <div className="flex flex-col gap-2">
-      <svg viewBox={`0 0 ${16 * PX} ${10 * PX}`} className="w-full rounded-xl" style={{ background: "#bfdbfe" }} role="img" aria-label="Inselkarte">
+      <svg viewBox={`0 0 ${16 * PX} ${10 * PX}`} className="w-full h-auto rounded-xl" style={{ background: "#bfdbfe", maxHeight: "min(60vh, 34rem)" }} role="img" aria-label="Inselkarte">
         <path d={`M ${0.4 * PX} ${3 * PX} C ${2 * PX} ${0.3 * PX}, ${9 * PX} ${0.2 * PX}, ${12 * PX} ${1.6 * PX} S ${15.8 * PX} ${3 * PX}, ${15.2 * PX} ${5 * PX} S ${12 * PX} ${9.4 * PX}, ${7 * PX} ${9 * PX} S ${0.6 * PX} ${8.6 * PX}, ${0.4 * PX} ${3 * PX} Z`}
           fill="#d9f99d" stroke="#65a30d" strokeWidth={3} />
         <path d={`M ${6.5 * PX} ${2.8 * PX} l ${1.5 * PX} ${-1.6 * PX} l ${1.5 * PX} ${1.6 * PX} Z`} fill="#a16207" opacity={0.6} />
@@ -57,10 +57,11 @@ export default function Massstab() {
   const cm = Number.isFinite(zahl) ? zahl * EINHEIT_CM[einheit] : NaN;
   const ergebnis = richtung === "echt" ? inWirklichkeit(cm, m) : imBild(cm, m);
   return (
-    <div className="flex flex-col gap-4">
+    // Einstellungen links, Karte rechts daneben — beides gleichzeitig im Blick
+    <div className="grid gap-4 lg:grid-cols-[24rem_minmax(0,1fr)] items-start">
       <section className="card p-4 flex flex-col gap-3">
         <h3 className="font-black">📏 Maßstab umrechnen</h3>
-        <p className="text-sm text-muted max-w-3xl">Der Maßstab <b>Bild : Wirklichkeit</b> sagt, wie oft die Wirklichkeit größer ist als das Bild. 1 : 50 000 heißt: 1 cm auf der Karte sind 50 000 cm = 500 m in echt. 10 : 1 ist eine Vergrößerung — 10 mm im Bild sind 1 mm in echt.</p>
+        <p className="text-sm text-muted">Der Maßstab <b>Bild : Wirklichkeit</b> sagt, wie oft die Wirklichkeit größer ist als das Bild. 1 : 50 000 heißt: 1 cm auf der Karte sind 50 000 cm = 500 m in echt. 10 : 1 ist eine Vergrößerung — 10 mm im Bild sind 1 mm in echt.</p>
         <div className="flex flex-wrap gap-1.5">
           {MASSSTAEBE.map(x => <button key={x.wo} className={`chip ${x.m.bild === m.bild && x.m.echt === m.echt ? "chip-on" : ""}`} onClick={() => setM(x.m)}>{massstabText(x.m)} · {x.wo}</button>)}
         </div>
@@ -79,7 +80,7 @@ export default function Massstab() {
         </div>
         {Number.isFinite(ergebnis) && <p className="text-sm">Rechnung: {de(cm)} cm {richtung === "echt" ? `· ${de(m.echt)} : ${de(m.bild)}` : `· ${de(m.bild)} : ${de(m.echt)}`} = {de(ergebnis, 4)} cm</p>}
       </section>
-      <section className="card p-4 flex flex-col gap-3">
+      <section className="card p-4 flex flex-col gap-3 lg:sticky lg:top-4">
         <h3 className="font-black">🗺️ Auf der Karte messen</h3>
         <Insel m={m.bild === 1 && m.echt >= 10000 ? m : { bild: 1, echt: 50000 }} wahl={wahl} setWahl={setWahl} />
       </section>
