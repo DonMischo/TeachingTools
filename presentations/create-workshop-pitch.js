@@ -122,7 +122,7 @@ function bigStat(s, number, label, x, y, w = 1.8) {
 
   screen(s, "13-simulationen", 5.25, 1.25, 4.4, TILE_LINE);
   phone(s, "104-bingo-live-student-playing", 8.55, 2.75, 2.45);
-  s.addNotes("Kurz vorstellen: Lehrkraft, kein Softwarehaus. TT ist aus einem Häuserwettbewerb an einer Schule entstanden und inzwischen eine Plattform mit über 50 Werkzeugen. Heute geht es darum, was man daraus gemeinsam machen kann.");
+  s.addNotes("Kurz vorstellen: Lehrkraft, kein Softwarehaus. TT ist aus einem Häuserwettbewerb an einer Schule entstanden und inzwischen eine Plattform mit über 50 Simulationen und vielen weiteren Werkzeugen. Heute geht es darum, was man daraus gemeinsam machen kann.");
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -162,7 +162,7 @@ function bigStat(s, number, label, x, y, w = 1.8) {
   const layers = [
     { fill: PEACH, tag: "INHALTE", head: "JSON-Dateien, per Formular oder KI-Vorlage", tags: "Zeitleisten · Fakten + Behauptungen · Kartensätze · Folien + Aufgaben · Lückentexte" },
     { fill: LIGHT, tag: "RAHMEN", head: "Spielformen, die Inhalte und Simulationen aufnehmen", tags: "Caputh · TaskCrawler · Challenge (10 Spielarten) · Zeitstrahl · Karten-Quiz · Bingo" },
-    { fill: MINT, tag: "BAUSTEINE", head: "Simulationen, allein oder als Station im Spiel", tags: "Gleichungswaage · Maus-Führerschein · KI-Werkstatt · Sonnensystem · Baumleben · … 35" },
+    { fill: MINT, tag: "BAUSTEINE", head: "Simulationen, allein oder als Station im Spiel", tags: "Gleichungswaage · Geschichte der Medien · KI-Werkstatt · Stromkreise · Sonnensystem · … über 50" },
   ];
   layers.forEach((l, i) => {
     const y = 1.6 + i * 1.0;
@@ -275,7 +275,7 @@ function bigStat(s, number, label, x, y, w = 1.8) {
     x: 0.7, y: 2.2, w: 4.1, h: 0.95, fontSize: 10, color: NAVY, fontFace: "Consolas", valign: "middle", margin: 0,
   });
   bullets(s, [
-    "🔗  23 Simulationen als Station im TaskCrawler",
+    "🔗  47 Simulationen als Station im TaskCrawler",
     "🗺  Zeitstrahl und Karte als Fragetyp in Caputh",
     "🐉  Challenge-Minispiele als Zwischen- und Endboss",
     "🤖  KI-Werkstatt direkt in der Medien-Zeitreise",
@@ -289,7 +289,7 @@ function bigStat(s, number, label, x, y, w = 1.8) {
   caption(s, "Karten", 5.15, 5.0, 2.15);
   screen(s, "59-sim-ki", 7.45, 3.75, 2.15);
   caption(s, "KI-Werkstatt", 7.45, 5.0, 2.15);
-  s.addNotes("Das ist der Punkt, der TT von Einzeltools unterscheidet: Eine Simulation lässt sich als Station in den TaskCrawler hängen. Jede bringt dabei ihr eigenes Vorgabe-Format mit (bei der Waage die Gleichung, bei der Karte die Region); 23 sind schon angebunden. Beispiel: In der Medien-Zeitreise öffnen zwei Aufgaben die KI-Werkstatt, Reiter Sprache und Bilder.");
+  s.addNotes("Das ist der Punkt, der TT von Einzeltools unterscheidet: Eine Simulation lässt sich als Station in den TaskCrawler hängen. Jede bringt dabei ihr eigenes Vorgabe-Format mit (bei der Waage die Gleichung, bei der Karte die Region); 47 sind schon angebunden. Beispiel: In der Medien-Zeitreise öffnen zwei Aufgaben die KI-Werkstatt, Reiter Sprache und Bilder.");
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -341,13 +341,43 @@ function bigStat(s, number, label, x, y, w = 1.8) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// 10b — Leuchtturm: Geschichte der Medien (Sim + TaskCrawler)
+// ═══════════════════════════════════════════════════════════════════════════
+{
+  const s = pres.addSlide();
+  s.background = { color: WHITE };
+  sectionTag(s, "LEUCHTTURM", 0.55, 0.38, 1.8);
+  title(s, "Geschichte der Medien: alles greift ineinander", NAVY, 28);
+  sub(s, "Eine Simulation und ein TaskCrawler zum selben Thema, Station für Station verknüpft. Frage immer: Wie kommt eine Nachricht weiter, schneller, zu mehr Menschen?");
+
+  screen(s, "85-taskcrawler-medien-3d", 0.5, 2.05, 4.35);
+  caption(s, "TaskCrawler: sechs Epochen als begehbare 3D-Welt", 0.5, 4.56, 4.35);
+  screen(s, "83-sim-medien", 5.15, 2.05, 4.35);
+  caption(s, "Simulation: Zeitreise, Flop-Museum, Galerie, Spiele", 5.15, 4.56, 4.35);
+
+  const stats = [
+    ["81", "Stationen, 40 000 Jahre"],
+    ["32", "Demos: morsen, faxen, Rohrpost, SMS"],
+    ["113", "Fotos zum Freischalten"],
+    ["34", "Sprünge aus dem Crawler in die Sim"],
+    ["1", "Live-Raum: Morse an die Klasse"],
+  ];
+  stats.forEach(([n, l], i) => {
+    const x = 0.5 + i * 1.82;
+    s.addText(n, { x, y: 4.88, w: 1.7, h: 0.38, fontSize: 22, bold: true, color: ORANGE, fontFace: "Cambria", align: "center", margin: 0 });
+    s.addText(l, { x, y: 5.24, w: 1.7, h: 0.3, fontSize: 9, color: MUTED, fontFace: "Calibri", align: "center", margin: 0 });
+  });
+  s.addNotes("Das stärkste Beispiel dafür, was der Baukasten kann. Der TaskCrawler »Zeitreise der Medien« (Klasse 8 bis 10) hat sechs Stockwerke, jedes im Stil seiner Epoche, von der Steinzeithöhle bis zur Raumstation. Jede Erklärung und jede Weltweit-Aufgabe springt direkt an die passende Station der Simulation; ein Test stellt sicher, dass es diese Stationen gibt. Dort probieren die Lernenden das Medium selbst aus: Morsetaste, Fax, Handytastatur, Rohrpost. Über den Live-Raum schicken sie sich gegenseitig Morse, Fax oder SMS. Dazu kommen ein Flop-Museum mit Medien, die sich nicht durchgesetzt haben, und 55 Erfolge. Am Ende steht der Deepfake-Drache: Nicht alles, was echt aussieht, ist echt. Der Fortschritt wird am Konto gespeichert, Gäste per Code.");
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // 11 — Beispiele aus dem Baukasten
 // ═══════════════════════════════════════════════════════════════════════════
 {
   const s = pres.addSlide();
   s.background = { color: WHITE };
   sectionTag(s, "BAUSTEINE");
-  title(s, "Vier Beispiele aus 35 Simulationen", NAVY, 30);
+  title(s, "Vier Beispiele aus über 50 Simulationen", NAVY, 30);
   const baum = hasShot("79-sim-baum") ? "79-sim-baum" : "51-sim-erdaufbau";
   const items = [
     ["73-sim-maus", "Maus-Führerschein", "PC-Grundkurs auf nachgebautem Windows. Sterne, Prüfung, Urkunde, Hauspunkte."],
@@ -412,6 +442,41 @@ function bigStat(s, number, label, x, y, w = 1.8) {
   });
   banner(s, "Was eine Schule baut, können alle anderen nutzen.");
   s.addNotes("Lizenz: Apache-2.0 für den Code, CC BY 4.0 für eigene Inhalte. Eigene Simulationen dürfen privat bleiben, Pflicht ist nur die NOTICE-Datei mit dem Hinweis auf das Original-Repo. Fremdes Material (Fotos, Schriften, Kartendaten) behält seine eigene Lizenz, alle Nachweise stehen unter /admin/quellen. Vor dem Workshop noch das Repo öffentlich schalten.");
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 13b — Lizenzen und Sicherheit
+// ═══════════════════════════════════════════════════════════════════════════
+{
+  const s = pres.addSlide();
+  s.background = { color: NAVY };
+  sectionTag(s, "NACHPRÜFBAR", 0.55, 0.38, 1.9);
+  title(s, "Lizenzen und Sicherheit, geprüft", WHITE, 30);
+
+  const cols = [
+    { h: "⚖  Lizenzen", body: [
+      "Jede fremde Quelle mit Lizenz im Register, keine offenen ⚠-Einträge",
+      "Browser-Pakete: MIT, BSD, ISC, Apache, MPL",
+      "Fotos: gemeinfrei, CC0, CC BY, CC BY-SA, FAL",
+      "Snap! (AGPL) wird nicht mitgeliefert, nur per Skript geholt",
+      "GPL-Projekte nur als Vorbild, kein Code übernommen",
+    ] },
+    { h: "🛡  Sicherheit", body: [
+      "Abhängigkeiten geprüft mit npm audit und pip-audit",
+      "Bekannte Lücken werden vor jeder Freigabe geschlossen",
+      "Gäste nur mit befristetem Token, je Sitzung freigegeben",
+      "2FA, Audit-Log, Rechte je Werkzeug und Rolle",
+      "Keine Anfragen an fremde Server zur Laufzeit",
+    ] },
+  ];
+  cols.forEach((c, i) => {
+    const x = 0.5 + i * 4.6;
+    card(s, x, 1.6, 4.4, 3.25, TILE);
+    s.addText(c.h, { x: x + 0.2, y: 1.72, w: 4, h: 0.4, fontSize: 15, bold: true, color: ORANGE, fontFace: "Calibri", margin: 0 });
+    bullets(s, c.body.map(t => "• " + t), x + 0.2, 2.22, 4.0, CREAM, 0.5, 11.5);
+  });
+  banner(s, "Offen heißt auch: Jede und jeder kann nachprüfen, was drinsteckt.");
+  s.addNotes("Stand der Prüfung vom 24.11.2026. Lizenzen: Das Quellen-Register (/admin/quellen) hat keinen Eintrag mit ungeklärten Rechten. Von den Browser-Paketen steht nur mapshaper unter MPL-2.0, und das nur im Build. psycopg2 auf dem Server ist LGPL und wird nur als Bibliothek geladen. Offene Kleinigkeiten: Das Pixel-Paket von itch.io (»Free for commercial use«, nur die sechs Verdächtigen im Challenge-Modus Detektiv) erlaubt nicht unbedingt die Weitergabe im offenen Repo, und drei Fotos tragen nur »Attribution« ohne genaue Lizenz. Sicherheit: python-jose wurde wegen einer ecdsa-Lücke ohne Fix durch PyJWT ersetzt. Am selben Tag behoben: Next.js auf 16.4.6 (kritische Lücken in der Bildoptimierung) und Pillow auf 13; pip-audit ist danach sauber. Übrig sind kleinere Lücken in Entwicklungswerkzeugen (vitest, vite) und indirekten Paketen.");
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
