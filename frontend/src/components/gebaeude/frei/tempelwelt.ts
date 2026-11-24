@@ -14,15 +14,17 @@
  * Gibt null zurück, solange Baukasten oder Kacheln fehlen (dann baut bauwelt.ts den Kachelbau).
  */
 import * as THREE from "three";
-import { PLATZ, feldMitte, type FreiEbene } from "@/lib/gebaeude/frei";
+import { PLATZ, WAND, ZELLE, feldMitte, type FreiEbene } from "@/lib/gebaeude/frei";
 import { zufallAus } from "../stoff";
 import { bauKacheln, kachelName } from "../bausatz";
-import { H3, flaeche } from "./bauwelt";
-import { deckenRaster, eckBloecke, kitAufsteller, lichtVorrat, schauNach, wandKanten } from "./kitwelt";
+import { flaeche } from "./bauwelt";
+import { deckenRaster, eckBloecke, kitAufsteller, lichtVorrat, schauNach, wandKanten, type WandKante } from "./kitwelt";
 import { kit } from "./modelle";
 import { himmel, schweben, umland, type Landschaft, type Stimmung, type Stueck } from "./welt";
 
 export const ANTIKE = "antike";
+/** Hallenhöhe des Tempels (Wandmodule und Decke aus dem Baukasten), höher als die übrigen Gebäude (H3 = 4,05 m) */
+const HA = 6.0;
 
 const STIMMUNG: Stimmung = {
   himmelOben: 0x3a86e0, himmelUnten: 0xb8dcf4, nebel: 0xe8d6b8, dichte: 0.012,
@@ -51,17 +53,34 @@ export function tempelLandschaft(e: FreiEbene, seed: number): Landschaft | null 
   const lichtOrte: { p: THREE.Vector3; f: number; staerke?: number }[] = [];
   const licht = (x: number, y: number, z: number, f: number, staerke: number) => lichtOrte.push({ p: new THREE.Vector3(x, y, z), f, staerke });
 
-  // ── Wände: ein Modul je Kante Gang/Wandfeld, Grundlinie auf der Zellkante, Schauseite zum Gang ──
+  // ── Wände: Kolonnaden (2,8 m breit, zwei Zellen tief) an Hallenwänden, wo zwei Wandzellen dahinter liegen;
+  //    sonst die Cellawand (ein Feld breit und tief), Grundlinie auf der Zellkante, Schauseite zum Gang ──
   const istHalle = (a: number) => a === PLATZ;
   const kanten = wandKanten(e, istHalle);
+  const wandZelle = (wx: number, wz: number) => {
+    const x = Math.floor(wx / ZELLE), y = Math.floor(wz / ZELLE);
+    return x < 0 || y < 0 || x >= e.b || y >= e.h || e.art[y * e.b + x] === WAND;
+  };
+  /** liegen hinter der Kante zwei Wandzellen (Platz für Seitengang und Rückwand der Kolonnade)? */
+  const tief = (k: WandKante) => [0.7, 2.1].every(d => wandZelle(k.x - k.dx * d, k.z - k.dy * d));
+  const schluessel = (x: number, z: number, dx: number, dy: number) => `${Math.round(x * 10)}|${Math.round(z * 10)}|${dx}|${dy}`;
+  const nach = new Map(kanten.map(k => [schluessel(k.x, k.z, k.dx, k.dy), k]));
+  const belegt = new Set<WandKante>();
   for (const k of kanten) {
+    if (!k.halle || belegt.has(k) || !tief(k)) continue;
+    const n = nach.get(schluessel(k.x + Math.abs(k.dy) * ZELLE, k.z + Math.abs(k.dx) * ZELLE, k.dx, k.dy));
+    if (!n || belegt.has(n) || !n.halle || !tief(n)) continue;
+    belegt.add(k).add(n);
     const w = r();
-    const modell = k.halle ? (w < 0.62 ? "kolonnade1" : w < 0.76 ? "kolonnade2" : w < 0.88 ? "kolonnade4" : "kolonnade3")
-      : (w < 0.75 ? "wand1" : w < 0.88 ? "wand3" : "wand2");
-    setze(modell, k.x, k.z, schauNach(k.dx, k.dy), 1, 0);
+    setze(w < 0.62 ? "kolonnade1" : w < 0.76 ? "kolonnade2" : w < 0.88 ? "kolonnade4" : "kolonnade3", (k.x + n.x) / 2, (k.z + n.z) / 2, schauNach(k.dx, k.dy), 1, 0);
+  }
+  for (const k of kanten) {
+    if (belegt.has(k)) continue;
+    const w = r();
+    setze(w < 0.75 ? "wand1" : w < 0.88 ? "wand3" : "wand2", k.x, k.z, schauNach(k.dx, k.dy), 1, 0);
   }
   // Eckzellen ohne Modul: schlichter Marmorblock
-  const ecken = eckBloecke(e, H3, 0xd8ccb4);
+  const ecken = eckBloecke(e, HA, 0xd8ccb4);
   if (ecken) g.add(ecken);
 
   // ── Decke: Kassetten im 2,8-m-Raster über allem Begehbaren; manche eingebrochen, mit Sonnenstrahl ──
@@ -69,13 +88,13 @@ export function tempelLandschaft(e: FreiEbene, seed: number): Landschaft | null 
   const hoch = new THREE.Vector3(0, 1, 0);
   deckenRaster(e, istHalle, (mx, mz, halle) => {
     const kaputt = halle && r() < 0.12;
-    setze(kaputt ? "decke2" : "decke1", mx, mz, Math.floor(r() * 4) * Math.PI / 2, 1, H3);
+    setze(kaputt ? "decke2" : "decke1", mx, mz, Math.floor(r() * 4) * Math.PI / 2, 1, HA);
     if (kaputt) {
       // Licht fällt durchs Loch
       for (const w2 of [0, Math.PI / 2]) {
-        bahnen.push({ p: new THREE.Vector3(mx, 0, mz), s: new THREE.Vector3(1.8, H3 + 1, 1), q: new THREE.Quaternion().setFromAxisAngle(hoch, w2) });
+        bahnen.push({ p: new THREE.Vector3(mx, 0, mz), s: new THREE.Vector3(1.8, HA + 1, 1), q: new THREE.Quaternion().setFromAxisAngle(hoch, w2) });
       }
-      if (r() < 0.7) setze("efeu1", mx + (r() - 0.5) * 1.6, mz + (r() - 0.5) * 1.6, dreh(), 1, H3 - 0.1);
+      if (r() < 0.7) setze("efeu1", mx + (r() - 0.5) * 1.6, mz + (r() - 0.5) * 1.6, dreh(), 1, HA - 0.1);
     }
   });
 
@@ -131,7 +150,7 @@ export function tempelLandschaft(e: FreiEbene, seed: number): Landschaft | null 
       setze("feuerschale1", k.x + k.dx * 0.55, k.z + k.dy * 0.55, dreh(), 1, 0);
       licht(k.x + k.dx * 0.6, 1.2, k.z + k.dy * 0.6, 0xff9a40, 5);
     } else if (w < 0.06) setze("bruchstein1", k.x + k.dx * 0.6, k.z + k.dy * 0.6, dreh(), 0.7, 0);
-    else if (w < 0.1) setze("efeu1", k.x + k.dx * 0.25, k.z + k.dy * 0.25, dreh(), 1, H3 - 0.15);
+    else if (w < 0.1) setze("efeu1", k.x + k.dx * 0.25, k.z + k.dy * 0.25, dreh(), 1, HA - 0.15);
   }
 
   const lit = new THREE.MeshLambertMaterial({ vertexColors: true });
@@ -155,5 +174,5 @@ export function tempelLandschaft(e: FreiEbene, seed: number): Landschaft | null 
   const luft = schweben(e, r, { farben: [0xfff0d8, 0xffe2b0], anzahl: 240, groesse: 0.05, fall: 0.02, hoehe: 3.6, leuchtet: true });
   g.add(luft.punkte);
 
-  return { gruppe: g, wandHoehe: 99, decke: H3, stimmung: STIMMUNG, takt: luft.takt, lichter: lichtVorrat(g, lichtOrte, 5, 12) };
+  return { gruppe: g, wandHoehe: 99, decke: HA, stimmung: STIMMUNG, takt: luft.takt, lichter: lichtVorrat(g, lichtOrte, 5, 12) };
 }

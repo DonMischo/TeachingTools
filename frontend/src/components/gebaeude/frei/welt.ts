@@ -23,6 +23,7 @@ import { hoehlenLandschaft } from "./hoehlenwelt";
 import { tempelLandschaft } from "./tempelwelt";
 import { neonLandschaft } from "./neonwelt";
 import { herrenhausLandschaft } from "./herrenhauswelt";
+import { burgLandschaft } from "./burgwelt";
 import { FASSUNGEN, weltModelle, type ModellArt } from "./modelle";
 import { AUSSEHEN, STILE, type RaumZustand, type Stil } from "../szene";
 
@@ -42,7 +43,7 @@ export function istOrganisch(stil: Stil): boolean {
 
 /** Welcher Kartenbau zu welcher Welt passt: Lichtungen mit Pfaden im Wald (im Pilzwald dazu ein Bach), Hallen und Gänge in der Höhle */
 /** Baukästen aus der Weltenwerkstatt je Stil (FreiWelt lädt sie nach) */
-export const KIT_VON: Partial<Record<Stil, string>> = { pilze: "pilzwald", hoehle: "hoehle", antike: "antike", neon: "neon", viktorianisch: "viktorianisch" };
+export const KIT_VON: Partial<Record<Stil, string>> = { pilze: "pilzwald", hoehle: "hoehle", antike: "antike", neon: "neon", viktorianisch: "viktorianisch", burg: "burg" };
 
 export function kartenArt(stil: Stil): KartenArt {
   const w = weltVon(stil);
@@ -1278,6 +1279,7 @@ export function baueLandschaft(e: FreiEbene, stil: Stil, seed: number): Landscha
   if (stil === "antike") { const t = tempelLandschaft(e, seed); if (t) return t; }
   if (stil === "neon") { const n = neonLandschaft(e, seed); if (n) return n; }
   if (stil === "viktorianisch") { const v = herrenhausLandschaft(e, seed); if (v) return v; }
+  if (stil === "burg") { const b = burgLandschaft(e, seed); if (b) return b; }
   return w === "wald" || w === "winter" || w === "oase" || w === "pilze" ? waldLandschaft(e, seed, w) : w === "garten" ? gartenLandschaft(e, seed)
     : w === "hoehle" ? hoehleLandschaft(e, stil, seed) : gebaeudeLandschaft(e, stil, seed);
 }

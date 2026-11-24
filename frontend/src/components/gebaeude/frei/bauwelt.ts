@@ -52,7 +52,7 @@ const TAG = 0xfff1d6;
 export const REZEPT: Partial<Record<Stil, Rezept>> = {
   verlies: { dunkel: true, fackel: 0.13, banner: 0.07, fenster: 0.04, fensterTon: 0xffffff, kram: [0.22, 0.08],
     sorten: { fass: 27, kiste: 20, knochen: 15, kerzen: 18, geroell: 20 }, balken: true, ketten: true, pfeiler: true, torrahmen: true, decke: 0x9a8f86, sockel: 0x8c8279, relief: 1.4 },
-  burg: { dunkel: false, fackel: 0.09, banner: 0.14, fenster: 0.08, fensterTon: TAG, kram: [0.16, 0.05], sorten: MITTELALTERLICH,
+  burg: { mauerHoch: true, dunkel: false, fackel: 0.09, banner: 0.14, fenster: 0.08, fensterTon: TAG, kram: [0.16, 0.05], sorten: MITTELALTERLICH,
     balken: true, ketten: false, pfeiler: true, torrahmen: true, decke: 0xb0a090, sockel: 0x8c8279, relief: 1.4,
     stimmung: { ...HELL, umgebung: 0.95, sonneStaerke: 1.1, fackel: 14, nebel: 0xc9c2b8 } },
   gotisch: { dunkel: true, fackel: 0.05, banner: 0.1, fenster: 0.12, fensterTon: 0xc4a0ff, kram: [0.14, 0.04], sorten: { kerzen: 6, knochen: 1, geroell: 1 },
