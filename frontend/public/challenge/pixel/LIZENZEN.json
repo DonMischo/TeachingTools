@@ -1,5 +1,5 @@
 {
   "gfx": {"name": "Zelda-like tilesets and sprites", "autor": "ArMM1998", "lizenz": "CC0", "quelle": "https://opengameart.org/content/zelda-like-tilesets-and-sprites"},
   "ninja": {"name": "Ninja Adventure", "autor": "Pixel-boy & AAA", "lizenz": "CC0", "quelle": "https://pixel-boy.itch.io/ninja-adventure-asset-pack"},
-  "npcs": {"name": "16x16 Fantasy RPG Characters", "autor": "Superdark", "lizenz": "Free for commercial use", "quelle": "https://superdark.itch.io/16x16-free-npc-pack"}
+  "npcs": {"name": "Verdächtige für den Modus Detektiv", "autor": "TT - Teaching Tools (eigene Arbeit, scripts/npcs/zeichne_npcs.py)", "lizenz": "CC BY 4.0", "quelle": "https://github.com/DonMischo/TeachingTools"}
 }
