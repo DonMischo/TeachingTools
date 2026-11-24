@@ -20,7 +20,7 @@ function leute(w: Welt) {
 }
 /** zwei Wasserfelder am selben Gewässer, weit auseinander */
 function wasserPaar(): [number, number] {
-  const n = g.n, start = g.wasser.findIndex(x => x);
+  const n = g.n, start = g.wasser.findIndex(x => x > 0);
   const gesehen = new Set([start]), q = [start];
   for (let k = 0; k < q.length; k++) {
     const c = q[k], i = c % n;
