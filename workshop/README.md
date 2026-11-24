@@ -9,8 +9,8 @@ die Schulinstanz (Port 1339) läuft unberührt weiter. Nicht für den Produktivb
 | `workshop.bat` | Start, Stopp, Zurücksetzen (ruft `workshop.ps1` auf) | ja |
 | `beschreibung.md` | Kurzbeschreibung für die Anmeldung | ja |
 | `docker-compose.workshop.yml` | Overlay für die zweite Instanz (Port 1340) | ja |
-| `TT-Workshop-Pitch.pptx` | Folien, gebaut von `presentations/create-workshop-pitch.js` | nein |
-| `qr-handout.png`, `begleitseite.html` | QR und Kopie der Begleitseite | nein |
+| `TT-Workshop-Pitch.pptx` | Folien, gebaut von `presentations/create-workshop-pitch.js` | ja |
+| `qr-handout.png`, `begleitseite.html` | QR und Kopie der Begleitseite | ja |
 | `zugaenge/` | Zugänge und fertige Nachrichten, bei jedem Start neu | nein |
 | `instanz/` | Zustand der Übungsinstanz (Daten, Schlüssel, Tunnel-Log) | nein |
 
