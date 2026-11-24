@@ -3,7 +3,7 @@
  * Ähnlichkeit und Maßstab in fünf Blättern:
  *   🔍 Streckung     zentrische Streckung mit ziehbarem Zentrum und Faktor k
  *   📐 Ähnlich       was ähnlich heißt, Ähnlichkeitssätze, Dreieck selbst bauen
- *   🗺️ Maßstab       umrechnen, auf der Inselkarte messen
+ *   🗺️ Maßstab       umrechnen, je Maßstab ein Beispielbild zum Nachmessen
  *   ✍️ Üben          Streckfaktor, fehlende Seite, Fläche, Karte, Plan, Maßstab
  *   🎯 Zoom-Treffer  Spiel: Zentrum und k finden
  */

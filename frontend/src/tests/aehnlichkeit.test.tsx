@@ -3,9 +3,9 @@ import { describe, expect, it } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import Aehnlichkeit from "@/components/aehnlichkeit/Aehnlichkeit";
 import { dreieckAusSeiten } from "@/components/aehnlichkeit/Aehnlich";
-import { ORTE } from "@/components/aehnlichkeit/Massstab";
+import { BEISPIELE, beispielFuer } from "@/components/aehnlichkeit/Beispiele";
 import {
-  aehnlichkeitsFaktor, aufgabe, AUFGABEN_ARTEN, flaeche, inWirklichkeit, imBild, laengeText, passung, streckeFigur, umfang, winkel, zoomZiel, FIGUREN,
+  aehnlichkeitsFaktor, aufgabe, AUFGABEN_ARTEN, MASSSTAEBE, flaeche, inWirklichkeit, imBild, laengeText, passung, streckeFigur, umfang, winkel, zoomZiel, FIGUREN,
 } from "@/lib/aehnlichkeit";
 
 function zufall(seed: number) {
@@ -31,7 +31,13 @@ describe("Rechnung", () => {
     expect(laengeText(inWirklichkeit(4, { bild: 1, echt: 50000 }))).toBe("2 km");
     expect(imBild(500, { bild: 1, echt: 100 })).toBe(5);
     expect(laengeText(inWirklichkeit(10, { bild: 10, echt: 1 }))).toBe("1 cm");
-    expect(ORTE.length).toBeGreaterThan(4);
+    // je Maßstab ein Beispiel, die Bildlängen geben echte Maße
+    for (const x of MASSSTAEBE) expect(beispielFuer(x.m)).not.toBeNull();
+    const laenge = (id: string, name: string) => { const s = BEISPIELE.find(b => b.id === id)!.strecken.find(t => t.name.startsWith(name))!; return Math.hypot(s.nach[0] - s.von[0], s.nach[1] - s.von[1]); };
+    expect(laengeText(inWirklichkeit(laenge("lageplan", "Laufbahn"), { bild: 1, echt: 1000 }))).toBe("100 m");
+    expect(laengeText(inWirklichkeit(laenge("bauplan", "Tür"), { bild: 1, echt: 100 }))).toBe("90 cm");
+    expect(laengeText(inWirklichkeit(laenge("modellbahn", "Figur"), { bild: 1, echt: 87 }))).toBe("1,74 m");
+    expect(Math.round(inWirklichkeit(laenge("atlas", "Berlin"), { bild: 1, echt: 3000000 }) / 100000)).toBeGreaterThan(480);
   });
   it("Aufgaben: Lösung passt zum Rechenweg-Ende", () => {
     const r = zufall(8);
@@ -58,7 +64,11 @@ describe("Oberfläche", () => {
     fireEvent.click(screen.getByRole("button", { name: /Ähnliche Figuren/ }));
     expect(screen.getByText(/Ähnlich mit k = 1,5/)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /Maßstab/ }));
-    expect(screen.getByRole("img", { name: "Inselkarte" })).toBeTruthy();
+    expect(screen.getByRole("img", { name: /Wanderkarte im Maßstab 1 : 25/ })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /Bauplan eines Hauses/ }));
+    expect(screen.getByRole("img", { name: /Bauplan eines Hauses im Maßstab 1 : 100/ })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /📏 Tür/ }));
+    expect(document.body.textContent).toContain("= 90 cm in Wirklichkeit");
     fireEvent.click(screen.getByRole("button", { name: /Üben/ }));
     expect(screen.getByRole("button", { name: "Prüfen" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /Zoom-Treffer/ }));

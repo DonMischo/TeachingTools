@@ -377,7 +377,7 @@ const ALL_CARDS: Werkzeug[] = [
     href: "/simulationen/aehnlichkeit",
     icon: "🔍",
     title: "Ähnlichkeit und Maßstab",
-    description: "Zentrische Streckung zum Ziehen: Zentrum und Faktor k verändern, Strahlen zeigen die Bildecken, Längen mal |k|, Fläche mal k², Winkel bleiben. Ähnlichkeitssätze und ein Dreieck zum Selberbauen, Maßstab umrechnen (Karte, Bauplan, Modellbahn, Mikroskop) und auf einer Inselkarte messen. Übungen mit Rechenweg und das Spiel Zoom-Treffer.",
+    description: "Zentrische Streckung zum Ziehen: Zentrum und Faktor k verändern, Strahlen zeigen die Bildecken, Längen mal |k|, Fläche mal k², Winkel bleiben. Ähnlichkeitssätze und ein Dreieck zum Selberbauen, Maßstab umrechnen (Karte, Bauplan, Modellbahn, Mikroskop) mit eigenem Beispielbild je Maßstab zum Nachmessen (Bauplan, Modellbahn, Lageplan, Atlas, Mikroskop …). Übungen mit Rechenweg und das Spiel Zoom-Treffer.",
     color: "#7c3aed",
   },
   {
