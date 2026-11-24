@@ -189,7 +189,7 @@ function bigStat(s, number, label, x, y, w = 1.8) {
   bigStat(s, "3", "Container: PostgreSQL 17, FastAPI, Next.js 16", 0.4, 1.65, 2.1);
   bigStat(s, "1", "Installationsskript für Windows und Linux", 2.7, 1.65, 2.1);
   bigStat(s, "0", "Anfragen an fremde Server, auch Karten und Schriften lokal", 5.0, 1.65, 2.1);
-  bigStat(s, "0", "Apps oder Konten für Schülerinnen und Schüler", 7.3, 1.65, 2.1);
+  bigStat(s, "0", "Apps nötig; Konto optional, für Fortschritt und Erfolge", 7.3, 1.65, 2.1);
 
   card(s, 0.5, 3.15, 4.4, 1.85, TILE);
   s.addText("Was man braucht", { x: 0.7, y: 3.25, w: 4, h: 0.35, fontSize: 13, bold: true, color: ORANGE, fontFace: "Calibri", margin: 0 });
@@ -197,7 +197,7 @@ function bigStat(s, number, label, x, y, w = 1.8) {
   card(s, 5.1, 3.15, 4.4, 1.85, TILE);
   s.addText("Datenschutz eingebaut", { x: 5.3, y: 3.25, w: 4, h: 0.35, fontSize: 13, bold: true, color: ORANGE, fontFace: "Calibri", margin: 0 });
   bullets(s, ["• Keine KI in der App, nur Vorlagen für externe KI", "• Gäste per befristetem Code, Namen nur »Vorname N.«", "• Spielsitzungen gelöscht zum Schuljahreswechsel", "• 2FA, Audit-Log wird zehn Jahre aufbewahrt"], 5.3, 3.65, 4.1, CREAM, 0.33, 11.5);
-  s.addNotes("Bewusst kurz halten. Für Technikinteressierte: Python/FastAPI und React/Next.js, WebSockets für Live-Spiele, three.js für 3D. Alles läuft im Schulnetz, auch die Karten (MapLibre mit amtlichen Daten).");
+  s.addNotes("Bewusst kurz halten. Für Technikinteressierte: Python/FastAPI und React/Next.js, WebSockets für Live-Spiele, three.js für 3D. Alles läuft im Schulnetz, auch die Karten (MapLibre mit amtlichen Daten). Schülerinnen und Schüler brauchen kein Konto, ein Code reicht. Mit Konto sehen sie ihren Fortschritt über die Zeit: Simulationen und Spiele merken sich den Stand, die Erfolge-Seite sammelt alles.");
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -502,29 +502,6 @@ function bigStat(s, number, label, x, y, w = 1.8) {
   });
   banner(s, "Offen heißt auch: Jede und jeder kann nachprüfen, was drinsteckt.");
   s.addNotes("Stand der Prüfung vom 24.11.2026. Lizenzen: Das Quellen-Register (/admin/quellen) hat keinen Eintrag mit ungeklärten Rechten. Von den Browser-Paketen steht nur mapshaper unter MPL-2.0, und das nur im Build. psycopg2 auf dem Server ist LGPL und wird nur als Bibliothek geladen. Die Verdächtigen im Challenge-Modus Detektiv stammten aus einem itch.io-Paket mit unklarer Weitergabe; sie sind jetzt eigene 32×32-Figuren. Offen ist nur noch: drei Fotos tragen nur »Attribution« ohne genaue Lizenz. Sicherheit: python-jose wurde wegen einer ecdsa-Lücke ohne Fix durch PyJWT ersetzt. Am selben Tag behoben: Next.js auf 16.4.6 (kritische Lücken in der Bildoptimierung) und Pillow auf 13; pip-audit ist danach sauber. Übrig sind kleinere Lücken in Entwicklungswerkzeugen (vitest, vite) und indirekten Paketen.");
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// 13c — So entsteht TT: Lehrkraft, KI-Agent und ein Wissensgraph
-// ═══════════════════════════════════════════════════════════════════════════
-{
-  const s = pres.addSlide();
-  s.background = { color: DARK };
-  sectionTag(s, "SO ENTSTEHT TT");
-  title(s, "Mitbauen, ohne den ganzen Code zu kennen", WHITE, 28);
-  if (hasShot("89-graphify")) {
-    screen(s, "89-graphify", 0.5, 1.65, 4.6, TILE_LINE);
-    caption(s, "Wissensgraph des Repos (graphify)", 0.5, 4.32, 4.6, CREAM);
-  }
-  bullets(s, [
-    "🧑‍🏫  Lehrkraft plant und prüft, ein KI-Coding-Agent schreibt mit",
-    "🕸  Wissensgraph: 2 000 Dateien, 23 500 Bausteine, 500 Themengruppen",
-    "🔄  Nach jedem Commit automatisch neu gebaut",
-    "🧭  Fragen wie »Wo wird ein Gastcode geprüft?« beantwortet der Graph",
-    "✅  Tests, Projektregeln und Lizenzregister liegen im Repo",
-  ], 5.4, 1.7, 4.2, CREAM, 0.55, 12);
-  banner(s, "Wer eine Simulation beisteuert, findet den Weg durch den Graphen statt durch 2 000 Dateien.");
-  s.addNotes("Offen gesagt: TT ist mit einem KI-Coding-Agenten entstanden. Fast alle Commits seit Oktober tragen den Agenten als Co-Autor, die Planung und jede Prüfung im Browser liegen bei der Lehrkraft. Damit Neue nicht im Code versinken, gibt es seit November einen Wissensgraphen (graphify): Er zerlegt das Repo in Dateien, Funktionen und ihre Beziehungen, gruppiert sie nach Themen und wird nach jedem Commit neu gebaut. Menschen und KI-Agenten fragen ihn mit Symbolnamen, etwa »player_identity« oder »useLiveSocket«, und bekommen die passenden Dateien und Zeilen. Dazu kommen Tests, Projektregeln (CLAUDE.md) und das Lizenzregister. Mitbauen heißt also: eine Idee, eine Vorlage, eine Simulation, nicht das ganze System verstehen.");
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
