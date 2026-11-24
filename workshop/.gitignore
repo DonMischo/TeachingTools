@@ -2,3 +2,5 @@
 # Zustand der Übungsinstanz und Zugänge mit Passwörtern
 instanz/
 zugaenge/
+# Sperrdateien von PowerPoint/Office, solange eine Datei offen ist
+~$*
