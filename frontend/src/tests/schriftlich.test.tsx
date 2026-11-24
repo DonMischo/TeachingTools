@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
-import Schriftlich from "@/components/schriftlich/Schriftlich";
+import Schriftlich, { neuerFall } from "@/components/schriftlich/Schriftlich";
 import { Rechenpapier } from "@/components/schriftlich/Rechenpapier";
 import { tickPlan } from "@/components/schriftlich/Rechenblatt";
 import { addiere, aufgabe, dividiere, loesung, mitFehler, multipliziere, rechne, subtrahiere, type Ablauf, type Op } from "@/lib/schriftlich";
@@ -16,8 +16,8 @@ function zufall(seed: number) {
 
 /** Ergebniszeile als Zahl lesen (größte Zeile mit Ergebnis-Zellen bzw. Zeile 0 beim Teilen) */
 function ergebnisVon(ab: Ablauf): string {
-  const z = ab.schritte[ab.schritte.length - 1].zellen.filter(x => x.art === "ergebnis");
-  return z.sort((a, b) => a.c - b.c).map(x => x.t).join("").replace(/R /, " R ");
+  const z = ab.schritte[ab.schritte.length - 1].zellen.filter(x => x.art === "ergebnis" || (x.art === "zeichen" && x.t === "R"));
+  return z.sort((a, b) => a.c - b.c).map(x => x.t).join("").replace(/R/, " R ");
 }
 
 describe("Abläufe", () => {
@@ -43,6 +43,36 @@ describe("Abläufe", () => {
     expect(ab.schritte.some(s => s.flug?.t === "+1")).toBe(true);
     // der Übertrag erscheint erst nach dem Flug
     expect(ab.schritte.find(s => s.flug)!.zellen.find(z => z.art === "uebertrag" && z.neu)!.ab).toBe("flug");
+  });
+  it("4130 + 6453 = 10583: fünf Ergebnisstellen, Zehntausender sichtbar und tippbar", () => {
+    const ab = addiere([4130, 6453]);
+    expect(ergebnisVon(ab)).toBe("10583");
+    const ergebnis = ab.schritte[ab.schritte.length - 1].zellen.filter(z => z.art === "ergebnis");
+    expect(ergebnis).toHaveLength(5);
+    expect(new Set(ergebnis.map(z => z.c)).size).toBe(5);
+    expect(Math.min(...ergebnis.map(z => z.c))).toBeGreaterThanOrEqual(1); // Spalte 0 bleibt fürs Pluszeichen
+    expect(ab.breite).toBe(6);
+    render(<Rechenpapier ablauf={ab} />);
+    for (const z of ergebnis) expect(screen.getByLabelText(`Ergebnis Spalte ${z.c}`)).toBeTruthy();
+  });
+  it("Teilen mit Rest: »R« und jede Restziffer im eigenen Kästchen", () => {
+    for (const [a, b] of [[4127, 7], [1000, 37], [5899, 10]]) {
+      const ab = dividiere(a, b);
+      const ende = ab.schritte[ab.schritte.length - 1].zellen.filter(z => z.r === 0);
+      const plaetze = ende.map(z => z.c);
+      expect(new Set(plaetze).size).toBe(plaetze.length); // keine zwei Zellen im selben Kästchen
+      expect(ende.every(z => z.t.length === 1)).toBe(true); // jede Zelle genau ein Zeichen
+      expect(Math.max(...plaetze)).toBeLessThan(ab.breite);
+      expect(ergebnisVon(ab)).toBe(`${Math.floor(a / b)} R ${a % b}`);
+    }
+  });
+  it("Fehlerdetektiv: falsches Ergebnis hat so viele Stellen wie das richtige, der Fehler liegt auf einer Ziffer", () => {
+    for (let i = 0; i < 200; i++) {
+      const f = neuerFall();
+      const richtig = f.op === "+" ? f.a + f.b : f.a - f.b;
+      expect(String(f.falsch).length).toBe(String(richtig).length);
+      expect(f.exp).toBeLessThan(String(f.falsch).length);
+    }
   });
   it("Ergänzen mit Übertrag ist Standard, Entbündeln Option", () => {
     const er = rechne("−", 5003, 1278);

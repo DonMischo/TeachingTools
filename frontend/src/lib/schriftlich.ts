@@ -322,13 +322,15 @@ export function dividiere(a: number, b: number): Ablauf {
     i++;
   }
   const fertig = klon(jetzt);
-  if (rest) fertig.zellen.push({ r: 0, c: cQ + qStelle + 1, t: `R ${rest}`, art: "ergebnis", neu: true });
+  // Rest: »R« und jede Ziffer des Rests in ihrem eigenen Kästchen
+  if (rest) fertig.zellen.push({ r: 0, c: cQ + qStelle + 1, t: "R", art: "zeichen", neu: true },
+    ...zahlZellen(rest, 0, cQ + qStelle + 1 + String(rest).length, "ergebnis").map(z => ({ ...z, neu: true })));
   fertig.ketten = [{ titel: "Probe", kaesten: rest ? [String(q), String(q * b), String(a)] : [String(q), String(a)],
     boegen: rest ? [{ text: `· ${b}`, art: "mal" }, { text: `+ ${rest}`, art: "plus" }] : [{ text: `· ${b}`, art: "mal" }] }];
   fertig.text = `Ergebnis: ${a} : ${b} = ${q}${rest ? ` Rest ${rest}` : ""}. Probe: ${q} · ${b}${rest ? ` + ${rest}` : ""} = ${a}.`;
   schritte.push(fertig);
   const hoehe = Math.max(...fertig.zellen.map(z => z.r)) + 1;
-  return { op: ":", breite: cQ + qStelle + 3, hoehe, schritte, ergebnis: `${q}${rest ? ` R ${rest}` : ""}` };
+  return { op: ":", breite: cQ + qStelle + 2 + String(rest).length + 1, hoehe, schritte, ergebnis: `${q}${rest ? ` R ${rest}` : ""}` };
 }
 
 // ── Subtrahieren (Abziehen mit Entbündeln) ───────────────────────────
@@ -421,7 +423,8 @@ export function abweichung(x: number, y: number): number {
 
 export function mitFehler(op: "+" | "−", a: number, b: number): { falsch: number; exp: number; grund: string } | null {
   if (op === "+") {
-    for (let e = 0; 10 ** (e + 1) <= Math.max(a, b) * 10; e++) {
+    // nur Überträge in eine Spalte, in der schon eine Zahl steht — sonst fehlte im falschen Ergebnis eine ganze Stelle
+    for (let e = 0; 10 ** (e + 1) <= Math.max(a, b); e++) {
       const s = (Math.floor(a / 10 ** e) % 10) + (Math.floor(b / 10 ** e) % 10);
       if (s >= 10 && 10 ** (e + 1) <= a + b) {
         // Übertrag dieser Stelle vergessen: nächste Stelle um 1 zu klein (falls dort selbst kein Übertrag entsteht)

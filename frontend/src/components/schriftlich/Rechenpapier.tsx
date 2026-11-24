@@ -30,7 +30,7 @@ export function Rechenpapier({ ablauf, onErgebnis }: { ablauf: Ablauf; onErgebni
   const [geprueft, setGeprueft] = useState(false);
   const refs = useRef<Record<string, HTMLInputElement | null>>({});
 
-  const soll = (z: Zelle) => (z.t.startsWith("R ") ? z.t.slice(2) : z.t);
+  const soll = (z: Zelle) => z.t;
   const richtig = (k: string) => (werte[k] ?? "").trim() === soll(felder.get(k)!);
   const weiterNachLinks = (r: number, c: number) => {
     for (let x = c - 1; x >= 0; x--) { const k = schl(r, x); if (felder.has(k)) { refs.current[k]?.focus(); return; } }
@@ -76,21 +76,19 @@ export function Rechenpapier({ ablauf, onErgebnis }: { ablauf: Ablauf; onErgebni
           }))}
           {/* Eingabefelder */}
           {[...felder.entries()].map(([k, z]) => {
-            const rest = z.t.startsWith("R ");
             const zustand = geprueft && (werte[k] ?? "") !== "" ? (richtig(k) ? "border-ok bg-ok/10" : "border-bad bg-bad/10") : geprueft ? "border-bad/60" : "border-accent/40";
             return (
-              <span key={`e${k}`} className="absolute flex items-center justify-center gap-0.5" style={{ left: `${z.c * ZELLE}rem`, top: `${z.r * ZELLE}rem`, width: `${rest ? 2 * ZELLE : ZELLE}rem`, height: `${ZELLE}rem` }}>
-                {rest && <span className="font-black text-lg">R</span>}
-                <input ref={el => { refs.current[k] = el; }} inputMode="numeric" maxLength={rest ? 3 : 1}
+              <span key={`e${k}`} className="absolute flex items-center justify-center gap-0.5" style={{ left: `${z.c * ZELLE}rem`, top: `${z.r * ZELLE}rem`, width: `${ZELLE}rem`, height: `${ZELLE}rem` }}>
+                <input ref={el => { refs.current[k] = el; }} inputMode="numeric" maxLength={1}
                   value={werte[k] ?? ""} aria-label={z.art === "ergebnis" ? `Ergebnis Spalte ${z.c}` : `Zwischenschritt Zeile ${z.r} Spalte ${z.c}`}
                   onChange={e => {
                     const v = e.target.value.replace(/\D/g, "");
                     setWerte(x => ({ ...x, [k]: v })); setGeprueft(false);
-                    if (v && !rest) weiterNachLinks(z.r, z.c);
+                    if (v) weiterNachLinks(z.r, z.c);
                   }}
                   onKeyDown={e => taste(z.r, z.c, e)}
                   className={`text-center font-mono font-black text-[1.5rem] bg-transparent rounded-md border-2 outline-none focus:border-accent ${zustand}`}
-                  style={{ width: `${(rest ? 1.4 : 1) * ZELLE - 0.4}rem`, height: `${ZELLE - 0.4}rem` }} />
+                  style={{ width: `${ZELLE - 0.4}rem`, height: `${ZELLE - 0.4}rem` }} />
               </span>
             );
           })}

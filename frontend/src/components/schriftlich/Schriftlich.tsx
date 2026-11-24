@@ -87,12 +87,13 @@ function Ueben() {
 
 const BEST = "hp_schriftlich_detektiv_best";
 type Fall = { op: "+" | "−"; a: number; b: number; falsch: number; exp: number; grund: string };
-function neuerFall(): Fall {
+export function neuerFall(): Fall {
   for (;;) {
     const op = Math.random() < 0.5 ? "+" : "−";
     const { a, b } = aufgabe(op, 2);
     const f = mitFehler(op, a, b);
-    if (f && f.falsch > 0) return { op, a, b, ...f };
+    // nur Fehler, bei denen das falsche Ergebnis gleich viele Stellen hat — jede Ziffer muss antippbar sein
+    if (f && f.falsch > 0 && String(f.falsch).length === String(op === "+" ? a + b : a - b).length) return { op, a, b, ...f };
   }
 }
 
@@ -127,7 +128,8 @@ function Fehlerdetektiv() {
       <button className="btn-primary" onClick={() => { setLaeuft(true); setPunkte(0); setRunde(0); setFall(neuerFall()); setRueck(null); }}>▶ Los</button>
     </div>
   );
-  const w = String(Math.max(fall.a, fall.b, fall.falsch)).length + 1;
+  // so viele Spalten wie die längste Zahl (auch das richtige Ergebnis, z. B. Zehntausender) plus Rechenzeichen
+  const w = String(Math.max(fall.a, fall.b, fall.falsch, fall.op === "+" ? fall.a + fall.b : fall.a - fall.b)).length + 1;
   const zeile = (n: number | string, zeichen = "") => (
     <div className="flex font-mono text-3xl font-black">
       <span className="w-10 text-center">{zeichen}</span>
