@@ -49,11 +49,26 @@ def _pruefe_algo(daten: dict) -> None:
     pruefe_stand(daten)
 
 
+def _pruefe_zeitstrahl(daten: dict) -> None:
+    """Übungsrunden im geteilten Zeitstrahl: Zähler plus je Ereignis-Id, ob es
+    zuletzt richtig lag (frontend/src/lib/zeitstrahl/sitzung.ts)."""
+    zaehler = [daten.get(k, 0) for k in ("runden", "richtig", "gesamt")]
+    if any(not isinstance(z, int) or isinstance(z, bool) or z < 0 for z in zaehler):
+        raise HTTPException(400, "Ungültige Zähler.")
+    if zaehler[1] > zaehler[2]:
+        raise HTTPException(400, "Mehr richtig als gesamt.")
+    ereignisse = daten.get("ereignisse", {})
+    if not isinstance(ereignisse, dict) or any(
+            not isinstance(v, bool) or len(k) > 80 for k, v in ereignisse.items()):
+        raise HTTPException(400, "Ungültige Ereignisse.")
+
+
 # Werkzeuge mit strengeren Regeln als der allgemeinen Größengrenze
 PRUEFUNGEN: dict[str, Callable[[dict], None]] = {
     "markieren": _pruefe_markieren,
     "maus": _pruefe_maus,
     "algo": _pruefe_algo,
+    "zeitstrahl": _pruefe_zeitstrahl,
 }
 
 

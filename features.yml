@@ -164,6 +164,7 @@ aktivitaeten:
     kann:
       - Zeitleisten mit parallelen Spuren und Zahlenstrahlen
       - Anzeigen, einsortieren, Fehler finden
+      - Üben im geteilten Zeitstrahl (Code/QR, auch Gäste), Runden im Sitzungs-Dashboard mit Matrix je Ereignis
       - JSON-Import, Vorlage, Beispiel-Zeitleisten (u. a. Entdeckungen der Geowissenschaften)
   - id: karten
     name: Karten

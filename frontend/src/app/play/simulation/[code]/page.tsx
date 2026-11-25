@@ -247,7 +247,12 @@ export default function SimulationJoinPage() {
   }
 
   const body = session.tool_slug === "zeitstrahl"
-    ? <SharedTimeline code={code} guestToken={guest.token} />
+    ? <SharedTimeline code={code} guestToken={guest.token}
+        // Übungsrunden ins Dashboard: nur Lernende und Gäste, wie die Anwesenheit
+        zugang={lernend ? { code, token: auth ? null : guest.token } : undefined}
+        speicherSchluessel={auth
+          ? `konto-${auth.user_type}-${auth.student?.id ?? auth.teacher?.id ?? 0}-${code}`
+          : guest.token ? schluesselFuerGast(code, guest.token) : `gast-${code}`} />
     : session.tool_slug === "karten"
       // mit Kartensatz ein Quiz, ohne das ganze Kartentool zum Erkunden
       ? session.ref_id != null

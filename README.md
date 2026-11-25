@@ -101,6 +101,7 @@ Alle Aktivitäten können Schüler nutzen. Hosten dürfen standardmäßig nur Le
 ### 📏 Zeitstrahl
 - Zeitleisten mit parallelen Spuren und Zahlenstrahlen
 - Anzeigen, Ereignisse einsortieren, Fehler finden
+- Geteilt per Code/QR: Lernende und Gäste sehen und üben (»🎯 Üben«); ihre Runden landen im ☰-Dashboard der Lehrkraft (Matrix je Ereignis, »am schwersten«, CSV/PDF/DOCX)
 - JSON-Import, Vorlage und mitgelieferte Beispiele (u. a. Erdgeschichte, Antike, Entdeckungen der Geowissenschaften)
 
 ### 🗺️ Karten
