@@ -17,7 +17,7 @@ import { PLATZ, feldMitte, type FreiEbene } from "@/lib/gebaeude/frei";
 import { zufallAus } from "../stoff";
 import { bauKacheln, kachelName } from "../bausatz";
 import { flaeche } from "./bauwelt";
-import { deckenRaster, eckBloecke, kitAufsteller, lichtVorrat, schauNach, wandKanten, type WandKante, durchgangsRahmen, fuelleHallen, hatModell, saalVor } from "./kitwelt";
+import { deckenRaster, eckBloecke, kitAufsteller, lichtVorrat, schauNach, wandKanten, type WandKante, durchgangsRahmen, fuelleHallen, hatModell, saalVor, mauerKappen } from "./kitwelt";
 import { glutStoff, kit } from "./modelle";
 import { himmel, schweben, umland, type Landschaft, type Stimmung } from "./welt";
 
@@ -162,6 +162,7 @@ export function burgLandschaft(e: FreiEbene, seed: number): Landschaft | null {
   const lit = new THREE.MeshLambertMaterial({ vertexColors: true });
   const stoff = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
   const glut = glutStoff(1.5);
+  mauerKappen(e, K, g, r);
   auf.fertig(g, (k, teil) => (teil.glut ? glut : /_stoff/.test(k) || /^wand2/.test(k) || /^thron/.test(k) ? stoff : lit),
     (k, teil) => !teil.glut && /^(kamin|thron|treppe|tafel|ruestung|waffenstaender|radleuchter)/.test(k));
 

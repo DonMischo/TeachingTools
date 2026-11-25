@@ -6,7 +6,9 @@
 import * as THREE from "three";
 import { WAND, ZELLE, type FreiEbene } from "@/lib/gebaeude/frei";
 import type { Saal } from "@/lib/gebaeude/karte";
-import type { KitTeil } from "./modelle";
+import { glutStoff, type KitTeil } from "./modelle";
+import { weltStoff } from "./weltstoff";
+import { DURCHSICHT } from "./durchsicht";
 
 const Z = ZELLE;
 
@@ -283,4 +285,57 @@ export function fuelleHallen(e: FreiEbene, kanten: WandKante[], setze: (m: strin
       setze(plan.boden[Math.floor(r() * plan.boden.length)], x, z, r() * Math.PI * 2, 1, 0);
     }
   });
+}
+
+// ── Mauerkappen für die Draufsicht ───────────────────────────────────────
+
+/** Material nur in der Draufsicht zeichnen (solange die Durchsicht schneidet) */
+function nurOben<M extends THREE.Material>(mat: M): M {
+  const alt = mat.onBeforeCompile, altSchluessel = mat.customProgramCacheKey.bind(mat);
+  mat.onBeforeCompile = (shader, renderer) => {
+    alt.call(mat, shader, renderer);
+    shader.uniforms.uKappeAn = DURCHSICHT.uDsAn;
+    shader.fragmentShader = shader.fragmentShader
+      .replace("#include <common>", "#include <common>\nuniform float uKappeAn;")
+      .replace("#include <clipping_planes_fragment>", "#include <clipping_planes_fragment>\nif ( uKappeAn < 0.5 ) discard;");
+  };
+  mat.customProgramCacheKey = () => `${altSchluessel()}|oben`;
+  return mat;
+}
+
+/**
+ * Mauerkappen (kappe1…N des Baukastens, Weltenwerkstatt: »Mauerkappen für die Draufsicht«): auf jedes
+ * Wandfeld eine Platte, Oberseite knapp unter der Schnitthöhe der Durchsicht, nur in der Draufsicht
+ * sichtbar. So sieht man von oben eine geschlossene Mauerkrone statt in den aufgeschnittenen Wandkörper.
+ * Felder am Gang: kappe1/2, die Kante (−y im Modell) zum Gang, gedreht wie das Wandmodul; die übrigen
+ * Felder bis 2 Felder vom Begehbaren: kappe3 und höher, zufällig in 90°-Schritten.
+ */
+export function mauerKappen(e: FreiEbene, K: Record<string, KitTeil>, g: THREE.Group, r: () => number): void {
+  if (!hatModell(K, "kappe1")) return;
+  const innen: string[] = [];
+  for (let n = 3; hatModell(K, `kappe${n}`); n++) innen.push(`kappe${n}`);
+  const rand = hatModell(K, "kappe2") ? ["kappe1", "kappe2"] : ["kappe1"];
+  const kappen = kitAufsteller(K, () => 0);
+  const y = DURCHSICHT.uDsHoehe.value - 0.005;
+  const istWand = (x: number, y2: number) => x < 0 || y2 < 0 || x >= e.b || y2 >= e.h || e.art[y2 * e.b + x] === WAND;
+  for (let cy = 0; cy < e.h; cy++) for (let cx = 0; cx < e.b; cx++) {
+    if (!istWand(cx, cy)) continue;
+    const mx = (cx + 0.5) * Z, mz = (cy + 0.5) * Z;
+    const gang = VIER.find(([dx, dy]) => !istWand(cx + dx, cy + dy));
+    if (gang) { kappen.setze(rand[r() < 0.3 ? rand.length - 1 : 0], mx, mz, schauNach(gang[0], gang[1]), 1, y); continue; }
+    let nah = false;
+    for (let dy = -2; dy <= 2 && !nah; dy++) for (let dx = -2; dx <= 2; dx++) if (!istWand(cx + dx, cy + dy)) { nah = true; break; }
+    if (nah && innen.length) kappen.setze(innen[Math.floor(r() * innen.length)], mx, mz, Math.floor(r() * 4) * Math.PI / 2, 1, y);
+  }
+  // eigene Materialien (nicht die geteilten der Wände: die sollen in 3D sichtbar bleiben)
+  const lit = nurOben(new THREE.MeshLambertMaterial({ vertexColors: true })), glut = nurOben(glutStoff(1.5));
+  const textur = new Map<string, THREE.Material>();
+  kappen.fertig(g, (_k, teil) => {
+    if (teil.glut) return glut;
+    if (!teil.map) return lit;
+    const s = `${teil.map.uuid}|${teil.normalMap?.uuid ?? ""}`;
+    let m = textur.get(s);
+    if (!m) textur.set(s, m = nurOben(weltStoff(teil.map, teil.normalMap ?? null, { kachel: /kalk/i.test(teil.stoffName ?? "") ? 2.8 : 4.2 })));
+    return m;
+  }, () => false);
 }

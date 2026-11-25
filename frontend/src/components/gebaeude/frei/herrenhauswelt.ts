@@ -17,7 +17,7 @@ import { PLATZ, feldMitte, type FreiEbene } from "@/lib/gebaeude/frei";
 import { zufallAus } from "../stoff";
 import { bauKacheln, kachelName } from "../bausatz";
 import { H3, flaeche } from "./bauwelt";
-import { eckBloecke, kitAufsteller, lichtVorrat, schauNach, wandKanten, type WandKante, durchgangsRahmen, fuelleHallen, hatModell, saalVor } from "./kitwelt";
+import { eckBloecke, kitAufsteller, lichtVorrat, schauNach, wandKanten, type WandKante, durchgangsRahmen, fuelleHallen, hatModell, saalVor, mauerKappen } from "./kitwelt";
 import { glutStoff, kit } from "./modelle";
 import { himmel, schweben, umland, type Landschaft, type Stimmung } from "./welt";
 
@@ -156,6 +156,7 @@ export function herrenhausLandschaft(e: FreiEbene, seed: number): Landschaft | n
     licht: (m, x, z) => { if (m === "kandelaber1") licht(x, 1.6, z, 0xffc070, 4); },
   }, k => !belegt.has(k));
 
+  mauerKappen(e, K, g, r);
   auf.fertig(g, (k, teil) => (teil.glut ? glut : /_stoff|_samt|_pflanze/.test(k) || /^wand5/.test(k) ? stoff : lit),
     (k, teil) => !teil.glut && /^(kamin|treppe|sofa|ohrensessel|vitrine|standuhr|kronleuchter)/.test(k));
 

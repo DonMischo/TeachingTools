@@ -1357,23 +1357,29 @@ function erz(leer: boolean, r: () => number): THREE.Group {
     m.castShadow = true;
     g.add(m);
   };
-  const zacke = (x: number, y: number, z: number, h: number, kippX: number, kippZ: number) => {
-    const m = new THREE.Mesh(new THREE.ConeGeometry(0.16, h, 5), kristall);
-    m.position.set(x, y + h / 2, z);
-    m.rotation.set(kippX, r() * 6, kippZ);
+  // Zacke: Fuß bei (x, y, z) im Fels, nach außen geneigt (Richtung a, Neigung kipp); gedreht wird um den Fuß
+  const zacke = (x: number, y: number, z: number, h: number, a: number, kipp: number) => {
+    const form = new THREE.ConeGeometry(0.16, h, 5);
+    form.translate(0, h / 2, 0);
+    form.rotateY(r() * Math.PI * 2);
+    const m = new THREE.Mesh(form, kristall);
+    m.position.set(x, y, z);
+    const richtung = new THREE.Vector3(Math.cos(a) * Math.sin(kipp), Math.cos(kipp), Math.sin(a) * Math.sin(kipp));
+    m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), richtung);
     g.add(m);
   };
   if (leer) {
     for (let k = 0; k < 5; k++) brocken((r() - 0.5) * 1.3, 0.12, (r() - 0.5) * 1.3, 0.35 + r() * 0.3, 0.25 + r() * 0.15);
-    zacke(0, 0.1, 0, 0.5, 0.3, 0.2);
+    zacke(0, 0.05, 0, 0.5, r() * Math.PI * 2, 0.35);
     return g;
   }
   brocken(0, 0.55, 0, 1.5, 1.2);
   brocken(0.5, 0.3, 0.4, 0.9, 0.7);
   brocken(-0.55, 0.3, -0.3, 0.8, 0.6);
+  // aus der Kuppe des großen Brockens, je weiter außen desto schräger und tiefer angesetzt
   for (let k = 0; k < 7; k++) {
-    const a = r() * Math.PI * 2, ab = 0.2 + r() * 0.45;
-    zacke(Math.cos(a) * ab, 0.7 + r() * 0.3, Math.sin(a) * ab, 0.6 + r() * 0.6, Math.sin(a) * 0.6, -Math.cos(a) * 0.6);
+    const a = r() * Math.PI * 2, ab = 0.05 + r() * 0.35;
+    zacke(Math.cos(a) * ab, 0.95 - ab * 0.6, Math.sin(a) * ab, 0.6 + r() * 0.6, a, 0.15 + ab * 1.3);
   }
   return g;
 }

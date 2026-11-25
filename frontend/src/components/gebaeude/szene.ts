@@ -599,6 +599,8 @@ export function ortAmStrahl(stockwerk: THREE.Object3D, zeiger: THREE.Raycaster):
 export function entsorge(o: THREE.Object3D) {
   o.traverse(k => {
     const m = k as THREE.Mesh;
+    // eigene Aufräumarbeit (z. B. Render-Ziel des Spiegelbodens)
+    (k.userData.entsorge as (() => void) | undefined)?.();
     // geteilte Geometrien und Muster (stoff.ts) bleiben für das nächste Stockwerk
     if (m.geometry && m.geometry !== box && !m.geometry.userData.geteilt) m.geometry.dispose();
     const mats = Array.isArray(m.material) ? m.material : m.material ? [m.material] : [];

@@ -17,7 +17,7 @@
 import * as THREE from "three";
 import { PLATZ, WAND, ZELLE, type FreiEbene } from "@/lib/gebaeude/frei";
 import { zufallAus } from "../stoff";
-import { bachGelaende, brueckenAus, brueckenHoehe, kitAufsteller, lichtVorrat, wasserFlaeche } from "./kitwelt";
+import { bachGelaende, brueckenAus, brueckenHoehe, kitAufsteller, lichtVorrat, wasserFlaeche, mauerKappen } from "./kitwelt";
 import { glutStoff, kit, texturStoff } from "./modelle";
 import { aus, boden, schweben, strich, striche, tiefen, type Landschaft, type Stimmung } from "./welt";
 
@@ -293,6 +293,7 @@ export function hoehlenLandschaft(e: FreiEbene, seed: number): Landschaft | null
   const innen = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
   const glut = glutStoff(1.6), kristall = glutStoff(1.4, true);
   const sanft = new THREE.MeshBasicMaterial({ vertexColors: true, color: new THREE.Color(1.1, 1.1, 1.1), transparent: true, opacity: 0.85, depthWrite: false });
+  mauerKappen(e, K, g, r);
   auf.fertig(g,
     (k, teil) => (teil.glut ? (/_wasser$|_becken$|_schaum$/.test(k) && !k.startsWith("wasserfall1_wasser") ? sanft : /kristall/.test(k) ? kristall : glut)
       : texturStoff(teil, /_gang|decke/.test(k)) ?? (/_wedel|_lamellen|_wurzel|_gang|decke/.test(k) ? innen : lit)),

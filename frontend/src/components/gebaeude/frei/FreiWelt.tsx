@@ -43,6 +43,7 @@ import { baueMaler, type Guete, type Maler } from "./malfilter";
 import { KIT_VON, baueLandschaft, baueOrte, type Landschaft, type Marke } from "./welt";
 import { ladeKit, ladeWeltModelle, weltModelle } from "./modelle";
 import { DURCHSICHT, durchsichtFuer } from "./durchsicht";
+import { NASS } from "./nassboden";
 import { neueSicht, type Sicht } from "./sicht";
 import { kachelName, useBausatz } from "../bausatz";
 import { REZEPT } from "./bauwelt";
@@ -753,7 +754,10 @@ export default function FreiWelt({
       let flach = Math.cos(l.neigung) * l.abstand, steil = Math.sin(l.neigung) * l.abstand;
       const decke = l.deckeBei ? l.deckeBei(l.x, l.z) : l.decke;
       // unter einer Decke flacher schauen statt höher steigen (gleicher Abstand)
+      // wie weit die Decke die Kamera herunterdrückt (0…1): dann auch tiefer zielen, sonst füllt die Decke das halbe Bild
+      let gedrueckt = 0;
       if (decke && kopf.y + steil > decke - 0.35) {
+        gedrueckt = Math.min(1, (kopf.y + steil - (decke - 0.35)) / 3);
         steil = Math.max(0.3, decke - 0.35 - kopf.y);
         flach = Math.sqrt(Math.max(0, l.abstand * l.abstand - steil * steil));
       }
@@ -777,7 +781,7 @@ export default function FreiWelt({
         [auge.x, auge.z] = schiebeHeraus(e, auge.x, auge.z, Math.max(0.25, l.kameraRand - 0.05));
       }
       kamera.position.copy(auge);
-      kamera.lookAt(kopf);
+      kamera.lookAt(kopf.x, kopf.y - 1.1 * gedrueckt, kopf.z);
       }
 
       // Licht wandert mit
@@ -855,6 +859,7 @@ export default function FreiWelt({
   // Güte: an den Maler geben und merken
   useEffect(() => {
     drei.current?.maler.guete(guete);
+    NASS.spiegel = guete > 0;
     const s = drei.current?.sonne.shadow;
     if (s) { s.mapSize.setScalar(guete === 2 ? 2048 : 1024); s.map?.dispose(); s.map = null; }
   }, [guete]);

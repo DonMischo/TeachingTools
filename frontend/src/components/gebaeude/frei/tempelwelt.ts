@@ -23,7 +23,7 @@ import { PLATZ, WAND, ZELLE, feldMitte, type FreiEbene } from "@/lib/gebaeude/fr
 import { zufallAus } from "../stoff";
 import { bauKacheln, kachelName } from "../bausatz";
 import { flaeche } from "./bauwelt";
-import { deckenRaster, durchgangsRahmen, eckBloecke, fuelleHallen, hatModell, kitAufsteller, lichtVorrat, schauNach, wandKanten, type WandKante } from "./kitwelt";
+import { deckenRaster, durchgangsRahmen, eckBloecke, fuelleHallen, hatModell, kitAufsteller, lichtVorrat, schauNach, wandKanten, type WandKante, mauerKappen } from "./kitwelt";
 import { glutStoff, kit } from "./modelle";
 import { himmel, schweben, umland, type Landschaft, type Stimmung, type Stueck } from "./welt";
 
@@ -211,6 +211,7 @@ export function tempelLandschaft(e: FreiEbene, seed: number): Landschaft | null 
   const lit = new THREE.MeshLambertMaterial({ vertexColors: true });
   const blatt = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
   const glut = glutStoff(1.6);
+  mauerKappen(e, K, g, r);
   auf.fertig(g, (k, teil) => (teil.glut ? glut : /_efeu|_blatt|_halme|_wasser/.test(k) ? blatt : lit),
     (k, teil) => !teil.glut && /^(thron|goettin|dreifuss|trommeln|sarkophag|altar)/.test(k));
 

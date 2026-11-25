@@ -6,6 +6,11 @@
  * Dazu die Sicht (sicht.ts): In der Draufsicht ist nur hell, was die Figur von ihrem Feld aus sehen kann;
  * schon Gesehenes bleibt gedämpft, der Rest schwarz. So schaut man von oben nicht in Nachbarräume.
  *
+ * Aufgeschnittene Wände: Einseitige Materialien werden beidseitig gezeichnet, die Rückseiten aber
+ * verworfen, solange nicht geschnitten wird (also wie vorher). In der Draufsicht sieht man in einen
+ * angeschnittenen Wandkörper hinein auf seine Rückseiten: die werden flach dunkel gemalt — eine
+ * geschlossene Mauerkrone statt eines hohlen Inneren. (Die Neon-Halle legt echte Kappen darüber.)
+ *
  * Alle Materialien teilen dieselben Uniforms: Ein- und Ausschalten kostet keinen neuen Shader.
  */
 import * as THREE from "three";
@@ -21,6 +26,8 @@ export const DURCHSICHT = {
   uDsGroesse: { value: new THREE.Vector2(1, 1) },
   /** Sicht anwenden (nur Draufsicht mit Karte) */
   uDsSichtAn: { value: 0 },
+  /** Farbe der Mauerkrone, wo ein Wandkörper aufgeschnitten ist */
+  uDsKappe: { value: new THREE.Color(0x1e2226) },
 };
 
 function weiss(): THREE.DataTexture {
@@ -33,6 +40,9 @@ function weiss(): THREE.DataTexture {
 export function durchsicht(mat: THREE.Material): void {
   if (mat.userData.durchsicht || (mat as THREE.ShaderMaterial).isShaderMaterial) return;
   mat.userData.durchsicht = true;
+  // einseitig und deckend: beidseitig zeichnen, Rückseiten nur für die Mauerkrone (Schatten wie bisher)
+  const kappe = mat.side === THREE.FrontSide && !mat.transparent;
+  if (kappe) { mat.side = THREE.DoubleSide; mat.shadowSide = THREE.BackSide; }
   const alt = mat.onBeforeCompile;
   const altSchluessel = mat.customProgramCacheKey.bind(mat);
   mat.onBeforeCompile = (shader, renderer) => {
@@ -52,14 +62,15 @@ export function durchsicht(mat: THREE.Material): void {
         uniform vec3 uDsSpieler;
         uniform float uDsAn, uDsRadius, uDsHoehe, uDsSichtAn;
         uniform sampler2D uDsSicht;
-        uniform vec2 uDsGroesse;`)
+        uniform vec2 uDsGroesse;
+        uniform vec3 uDsKappe;`)
       .replace("#include <clipping_planes_fragment>", `#include <clipping_planes_fragment>
         if ( uDsAn > 0.5 && vDsWelt.y > uDsHoehe ) {
           float dsD = length( vDsWelt.xz - uDsSpieler.xz );
           float dsRand = clamp( ( uDsRadius - dsD ) / 2.0, 0.0, 1.0 );
           float dsZufall = fract( sin( dot( floor( gl_FragCoord.xy ), vec2( 12.9898, 78.233 ) ) ) * 43758.5453 );
           if ( dsZufall < dsRand ) discard;
-        }`);
+        }${kappe ? "\n        if ( !gl_FrontFacing && uDsAn < 0.5 ) discard;" : ""}`);
     // Sicht: zuletzt, nach Nebel und Farbraum
     const sicht = `
         if ( uDsSichtAn > 0.5 ) {
@@ -68,9 +79,11 @@ export function durchsicht(mat: THREE.Material): void {
           gl_FragColor.rgb *= dsSicht;
         }`;
     const ende = shader.fragmentShader.includes("#include <dithering_fragment>") ? "#include <dithering_fragment>" : "#include <premultiplied_alpha_fragment>";
-    shader.fragmentShader = shader.fragmentShader.replace(ende, `${ende}${sicht}`);
+    const krone = kappe ? `
+        if ( !gl_FrontFacing ) gl_FragColor = vec4( uDsKappe, gl_FragColor.a );` : "";
+    shader.fragmentShader = shader.fragmentShader.replace(ende, `${ende}${krone}${sicht}`);
   };
-  mat.customProgramCacheKey = () => `${altSchluessel()}|ds2`;
+  mat.customProgramCacheKey = () => `${altSchluessel()}|ds3${kappe ? "k" : ""}`;
   mat.needsUpdate = true;
 }
 
