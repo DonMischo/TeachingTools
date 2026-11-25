@@ -18,7 +18,7 @@ from ..auth import Guest, get_current_user, get_player
 from ..availability import is_allowed
 from ..database import get_db
 from ..models import MedienStand, Student, Teacher, ToolSession
-from .maus import _teilnehmer
+from ..sitzung import teilnehmer
 
 router = APIRouter(prefix="/api/medien", tags=["medien"])
 SLUG = "medien"
@@ -53,7 +53,7 @@ def _aus(zeile: MedienStand | None) -> StandOut:
 
 
 def _laden(db: Session, spieler) -> MedienStand | None:
-    return db.query(MedienStand).filter_by(**_teilnehmer(spieler)).first()
+    return db.query(MedienStand).filter_by(**teilnehmer(spieler)).first()
 
 
 def _speichern(db: Session, spieler, body: StandIn) -> StandOut:
@@ -61,7 +61,7 @@ def _speichern(db: Session, spieler, body: StandIn) -> StandOut:
     ids = [i[:40] for i in dict.fromkeys(x.strip() for x in body.geschafft) if i]
     zeile = _laden(db, spieler)
     if zeile is None:
-        zeile = MedienStand(geschafft=[], erprobt=[], eilbote=0, sortieren=0, **_teilnehmer(spieler))
+        zeile = MedienStand(geschafft=[], erprobt=[], eilbote=0, sortieren=0, **teilnehmer(spieler))
         db.add(zeile)
     erprobt = [i[:40] for i in dict.fromkeys(x.strip() for x in body.erprobt) if i]
     if body.zuruecksetzen:

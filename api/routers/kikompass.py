@@ -27,7 +27,8 @@ from ..availability import is_allowed, require_capability
 from ..database import get_db
 from ..display_names import short_name
 from ..models import KiKompassMaterial, KiKompassPruefung, KiKompassStand, Student, Teacher, ToolSession, Transaction
-from .maus import _anzeigename, _buchende_lehrkraft, _haus_name, _teilnehmer
+from .maus import _buchende_lehrkraft, _haus_name
+from ..sitzung import anzeigename, sitzung_fuer, teilnehmer
 
 router = APIRouter(prefix="/api/kikompass", tags=["kikompass"])
 
@@ -120,19 +121,14 @@ def _darf(db: Session, spieler) -> None:
 
 
 def _sitzung(code: str, db: Session) -> ToolSession:
-    session = db.query(ToolSession).filter_by(code=code.upper()).first()
-    if not session:
-        raise HTTPException(404, "Sitzung nicht gefunden")
-    if session.tool_slug != SLUG:
-        raise HTTPException(400, "Diese Sitzung gehört nicht zum KI-Kompass.")
-    return session
+    return sitzung_fuer(db, code, SLUG, "Diese Sitzung gehört nicht zum KI-Kompass.")
 
 
 def _eigene_zeile(db: Session, user: Union[Teacher, Student]) -> KiKompassStand | None:
     return (
         db.query(KiKompassStand)
         .filter(KiKompassStand.session_id.is_(None))
-        .filter_by(**_teilnehmer(user))
+        .filter_by(**teilnehmer(user))
         .first()
     )
 
@@ -151,9 +147,9 @@ def stand_speichern(
 ):
     _darf(db, user)
     zeile = _eigene_zeile(db, user)
-    name, klasse, gast = _anzeigename(user)
+    name, klasse, gast = anzeigename(user)
     if zeile is None:
-        zeile = KiKompassStand(session_id=None, name=name, klasse=klasse, gast=gast, **_teilnehmer(user))
+        zeile = KiKompassStand(session_id=None, name=name, klasse=klasse, gast=gast, **teilnehmer(user))
         db.add(zeile)
     zeile.name, zeile.klasse = name, klasse
     _speichern(zeile, body)
@@ -172,8 +168,8 @@ def sitzung_stand(
     if session.status == "closed":
         raise HTTPException(403, "Diese Sitzung ist geschlossen")
     _darf(db, spieler)
-    name, klasse, gast = _anzeigename(spieler)
-    wer = _teilnehmer(spieler)
+    name, klasse, gast = anzeigename(spieler)
+    wer = teilnehmer(spieler)
     zeile = db.query(KiKompassStand).filter_by(session_id=session.id, **wer).first()
     if zeile is None:
         zeile = KiKompassStand(session_id=session.id, name=name, klasse=klasse, gast=gast, **wer)
@@ -213,7 +209,7 @@ def meine_sitzung(db: Session = Depends(get_db), user: Union[Teacher, Student] =
         db.query(KiKompassStand, ToolSession)
         .join(ToolSession, ToolSession.id == KiKompassStand.session_id)
         .filter(ToolSession.tool_slug == SLUG, ToolSession.status != "closed")
-        .filter(*[getattr(KiKompassStand, k) == v for k, v in _teilnehmer(user).items()])
+        .filter(*[getattr(KiKompassStand, k) == v for k, v in teilnehmer(user).items()])
         .order_by(KiKompassStand.aktualisiert_am.desc(), KiKompassStand.id.desc())
         .first()
     )
@@ -401,7 +397,7 @@ def material_liste(
 @router.post("/material", response_model=MaterialOut, status_code=201)
 def material_anlegen(body: MaterialIn, db: Session = Depends(get_db), teacher: Teacher = Depends(get_current_teacher)):
     _lehrkraft_darf(db, teacher)
-    autor, _, _ = _anzeigename(teacher)
+    autor, _, _ = anzeigename(teacher)
     m = KiKompassMaterial(teacher_id=teacher.id, autor=autor, **body.model_dump())
     db.add(m)
     db.commit()

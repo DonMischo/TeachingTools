@@ -9,7 +9,6 @@ Einstellungen der Sitzung (ToolSession.settings):
   startstufen {student_id: stufe}, etappen_mischen bool (Etappen je Lauf in zufälliger Reihenfolge), punkte_vergeben (Zeitstempel, verhindert doppelte Buchung)
 """
 import copy
-import csv
 import io
 import json
 import statistics
@@ -28,6 +27,7 @@ from ..auth import get_current_teacher, get_current_user, get_player
 from ..authorship import author_fields, can_modify, is_student, scope_to_student_pool
 from ..availability import require_capability
 from ..database import get_db
+from ..sitzung import csv_antwort
 from ..display_names import short_name
 from ..challenge_lauf import AntwortIn, DeckIn, SKINS, STANDARD_STARTSTUFE, StartIn
 from .. import scoping
@@ -625,15 +625,10 @@ def uebersicht(code: str, db: Session = Depends(get_db), lehrkraft: Teacher = De
 def export_csv(code: str, db: Session = Depends(get_db), lehrkraft: Teacher = Depends(get_current_teacher)):
     s = _eigene_sitzung(db, code, lehrkraft)
     zeilen = _teilnehmerliste(db, s)
-    puffer = io.StringIO()
-    schreiber = csv.writer(puffer, delimiter=";")
     spalten = ["name", "klasse", "stufe_start", "stufe", "guete", "ergebnis", "punkte", "fragen", "erstversuch_richtig",
                "kombos", "ablenker_gewaehlt", "deck_ablenker", "lesetempo_median", "geraten", "fertig", "edelsteine"]
-    schreiber.writerow(spalten)
-    for z in zeilen:
-        schreiber.writerow([" | ".join(z[k]) if k in ("ablenker_gewaehlt", "deck_ablenker") else ("" if z[k] is None else z[k]) for k in spalten])
-    return Response(puffer.getvalue().encode("utf-8-sig"), media_type="text/csv",
-                    headers={"Content-Disposition": f'attachment; filename="challenge_{s.code}.csv"'})
+    zeilen_aus = [[" | ".join(z[k]) if k in ("ablenker_gewaehlt", "deck_ablenker") else ("" if z[k] is None else z[k]) for k in spalten] for z in zeilen]
+    return csv_antwort(spalten, zeilen_aus, f"challenge_{s.code}.csv", trenner=";")
 
 
 @router.post("/{code}/punkte")

@@ -172,11 +172,19 @@ type ConfirmState = { msg: string; onYes: () => void } | null;
 
 // ─── Main component ──────────────────────────────────────────────────────────
 
+const FRAGEN_ZEIGEN = "hp_caputh_fragen_zeigen";
+
 export default function HostPage() {
   const { code } = useParams<{ code: string }>();
   const [phase, setPhase] = useState<HostPhase>({ kind: "connecting" });
   const [lanIp, setLanIp] = useState<string | null>(null);
   const [showJoinQR, setShowJoinQR] = useState(false);
+  // Fragen auf dem Beamer zeigen? Aus: Lernende lesen am eigenen Gerät, der Beamer zeigt nur den Ablauf.
+  const [zeigen, setZeigen] = useState(() => { try { return localStorage.getItem(FRAGEN_ZEIGEN) !== "0"; } catch { return true; } });
+  const schalteZeigen = () => setZeigen(z => {
+    try { localStorage.setItem(FRAGEN_ZEIGEN, z ? "0" : "1"); } catch { /* nur Bequemlichkeit */ }
+    return !z;
+  });
   const [confirmDialog, setConfirmDialog] = useState<ConfirmState>(null);
   const [mounted, setMounted] = useState(false);
   const [teamMode, setTeamMode] = useState(false);
@@ -391,6 +399,14 @@ export default function HostPage() {
       </div>
     </div>
   ) : null;
+
+  const zeigenKnopf = (
+    <button type="button" onClick={schalteZeigen} aria-pressed={zeigen}
+      title="Fragen und Antworten auf dem Beamer zeigen oder nur auf den Geräten der Lernenden"
+      className="text-xs border border-line rounded-lg px-2.5 py-1 hover:border-accent">
+      {zeigen ? "👁 Fragen zeigen" : "🙈 Fragen verborgen"}
+    </button>
+  );
 
   const qrOverlay = showJoinQR ? (
     <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center" onClick={() => setShowJoinQR(false)}>
@@ -638,11 +654,15 @@ export default function HostPage() {
           <span className="text-fg font-semibold">
             Frage {q.idx + 1} / {q.total}
           </span>
-          <span className="text-muted text-sm">{phase.participantCount} Teilnehmer</span>
+          <span className="flex items-center gap-3">
+            {zeigenKnopf}
+            <span className="text-muted text-sm">{phase.participantCount} Teilnehmer</span>
+          </span>
         </div>
 
         {/* Question content — large for beamer */}
         <div className="flex-1 flex flex-col items-center justify-center gap-6 px-8">
+          {!zeigen ? <h2 className="text-4xl font-bold text-center text-muted">📱 Frage {q.idx + 1} — lest sie auf eurem Gerät</h2> : <>
           {q.imagePath && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -652,6 +672,7 @@ export default function HostPage() {
             />
           )}
           <h2 className="text-4xl font-bold text-center max-w-3xl leading-snug whitespace-pre-line"><MathText text={q.text} /></h2>
+          </>}
           <div className="flex items-center gap-3 mt-1">
             <QuestionTypeBadge type={q.type} size="md" />
             <span className="text-muted text-sm">Antwortzeit: {q.timeLimit}s</span>
@@ -696,19 +717,24 @@ export default function HostPage() {
         <div className="flex items-center justify-between px-6 py-3 bg-surface border-b border-line">
           <button onClick={() => setShowJoinQR(true)} className="font-mono text-muted hover:text-fg transition-colors" title="QR zeigen">{code}</button>
           <span className="text-fg font-semibold">Frage {q.idx + 1} / {q.total}</span>
-          <span className="text-green-400 text-sm font-medium">
-            {responses} / {participantCount} geantwortet
+          <span className="flex items-center gap-3">
+            {zeigenKnopf}
+            <span className="text-green-400 text-sm font-medium">
+              {responses} / {participantCount} geantwortet
+            </span>
           </span>
         </div>
 
         {/* Question + countdown */}
         <div className="flex items-center justify-between px-8 py-4 border-b border-line">
           <div className="flex-1">
-            {q.imagePath && (
+            {zeigen && q.imagePath && (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={`/uploads/quizzes/${q.imagePath}`} alt="" className="h-24 rounded-lg object-contain mb-2" />
             )}
-            <h2 className="text-2xl font-bold whitespace-pre-line leading-snug"><MathText text={q.text} /></h2>
+            <h2 className="text-2xl font-bold whitespace-pre-line leading-snug">
+              {zeigen ? <MathText text={q.text} /> : <span className="text-muted">📱 Frage {q.idx + 1} — auf eurem Gerät</span>}
+            </h2>
             <div className="mt-1"><QuestionTypeBadge type={q.type} size="sm" /></div>
           </div>
           <div className="ml-8 shrink-0">
@@ -717,7 +743,9 @@ export default function HostPage() {
         </div>
 
         {/* Answer grid with live bars */}
-        {q.type === "karte" && currentKarte.current ? (
+        {!zeigen && (q.type === "karte" || q.type === "timeline" || q.type === "sort") ? (
+          <div className="flex-1 flex items-center justify-center p-6 text-muted text-lg">Die Lernenden antworten auf ihrem Gerät …</div>
+        ) : q.type === "karte" && currentKarte.current ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-3 p-6 min-h-0 overflow-y-auto">
             <p className="text-muted text-sm">Schüler benennen oder finden die Objekte auf der Karte…</p>
             <div className="w-full max-w-4xl bg-page text-fg rounded-2xl p-4">
@@ -777,7 +805,7 @@ export default function HostPage() {
                   style={{ height: `${pct * 100}%` }}
                 />
                 <div className="relative p-4 flex justify-between items-end">
-                  <span className="text-lg font-bold"><MathText text={a.text} /></span>
+                  <span className="text-lg font-bold">{zeigen ? <MathText text={a.text} /> : String.fromCharCode(65 + i)}</span>
                   <span className="text-3xl font-black">{count}</span>
                 </div>
               </div>

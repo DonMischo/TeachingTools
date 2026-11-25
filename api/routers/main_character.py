@@ -22,7 +22,7 @@ from ..auth import Guest, get_current_teacher, get_player
 from ..availability import is_allowed
 from ..database import get_db
 from ..models import MainCharacterStand, Student, Teacher, ToolSession
-from .maus import _teilnehmer
+from ..sitzung import sitzung_fuer, teilnehmer
 
 router = APIRouter(prefix="/api/main-character", tags=["main-character"])
 
@@ -64,12 +64,7 @@ class Uebersicht(BaseModel):
 
 
 def _sitzung(code: str, db: Session) -> ToolSession:
-    session = db.query(ToolSession).filter_by(code=code.upper()).first()
-    if not session:
-        raise HTTPException(404, "Sitzung nicht gefunden")
-    if session.tool_slug != SLUG:
-        raise HTTPException(400, "Diese Sitzung gehört nicht zu Main Character.")
-    return session
+    return sitzung_fuer(db, code, SLUG, "Diese Sitzung gehört nicht zu Main Character.")
 
 
 def _darf(db: Session, spieler) -> None:
@@ -92,7 +87,7 @@ def sitzung_stand(
     if session.status == "closed":
         raise HTTPException(403, "Diese Sitzung ist geschlossen")
     _darf(db, spieler)
-    wer = _teilnehmer(spieler)
+    wer = teilnehmer(spieler)
     zeile = db.query(MainCharacterStand).filter_by(session_id=session.id, **wer).first()
     if zeile is None:
         zeile = MainCharacterStand(session_id=session.id, **wer)

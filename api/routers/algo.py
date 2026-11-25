@@ -14,7 +14,7 @@ from ..auth import Guest, get_current_teacher, get_player
 from ..availability import is_allowed
 from ..database import get_db
 from ..models import AlgoFortschritt, Student, Teacher, ToolSession
-from .leben import _anzeigename, _teilnehmer
+from ..sitzung import anzeigename, sitzung_fuer, teilnehmer
 
 router = APIRouter(prefix="/api/algo", tags=["algo"])
 
@@ -56,12 +56,7 @@ class UebersichtZeile(BaseModel):
 
 
 def _sitzung(code: str, db: Session) -> ToolSession:
-    session = db.query(ToolSession).filter_by(code=code.upper()).first()
-    if not session:
-        raise HTTPException(404, "Sitzung nicht gefunden")
-    if session.tool_slug != "algo":
-        raise HTTPException(400, "Diese Sitzung gehört nicht zur Algorithmen-Werkstatt.")
-    return session
+    return sitzung_fuer(db, code, "algo", "Diese Sitzung gehört nicht zur Algorithmen-Werkstatt.")
 
 
 @router.put("/sitzung/{code}/fortschritt")
@@ -84,8 +79,8 @@ def fortschritt_melden(
             or len(body.wertung) > MAX_WERTUNG or any(len(k) > MAX_TEXT for k in body.wertung)):
         raise HTTPException(400, "Fortschritt zu groß.")
 
-    name, klasse, gast = _anzeigename(spieler)
-    wer = _teilnehmer(spieler)
+    name, klasse, gast = anzeigename(spieler)
+    wer = teilnehmer(spieler)
     zeile = db.query(AlgoFortschritt).filter_by(session_id=session.id, **wer).first()
     if zeile is None:
         zeile = AlgoFortschritt(session_id=session.id, name=name, klasse=klasse, gast=gast, **wer)
@@ -109,7 +104,7 @@ def mein_fortschritt(
     gelöschtem Browser-Speicher wieder da ist. Konten bekommen das Beste aus all
     ihren Sitzungen, Gäste nur ihre Zeile in dieser Sitzung."""
     session = _sitzung(code, db)
-    wer = _teilnehmer(spieler)
+    wer = teilnehmer(spieler)
     q = db.query(AlgoFortschritt).filter_by(**wer)
     zeilen = q.filter_by(session_id=session.id).all() if isinstance(spieler, Guest) else q.all()
     level: dict = {}

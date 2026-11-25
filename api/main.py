@@ -111,7 +111,8 @@ from .routers import medien_live as medien_live_router
 app.include_router(medien_live_router.router)
 from .routers import markieren as markieren_router
 app.include_router(markieren_router.router)
-app.include_router(markieren_router.fortschritt_router)
+from .routers import sitzungen as sitzungen_router
+app.include_router(sitzungen_router.router)
 from .routers import klikk as klikk_router
 app.include_router(klikk_router.router)
 app.include_router(klikk_router.router_spiele)
@@ -179,6 +180,28 @@ app.mount("/uploads/slideshow", StaticFiles(directory=str(slideshow_router.SLIDE
 BILDPAARE_DIR = Path(__file__).parent.parent / "data" / "bildpaare"
 BILDPAARE_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/uploads/bildpaare", StaticFiles(directory=str(BILDPAARE_DIR)), name="bildpaare")
+
+
+# Alte Stand-Tabellen je Werkzeug → sitzung_staende (docs/plan-sitzung-dashboard-auswertung.md).
+# Je Tabelle: wie ihre Spalten zu ``daten`` werden. Läuft bei jedem Start, übernimmt
+# aber nur Zeilen, die es dort noch nicht gibt — also genau einmal.
+STAND_UEBERNAHMEN = {
+    "markier_fortschritt": "json_build_object('lektionen', f.lektionen, 'quellen', f.quellen, 'challenge', f.challenge)",
+}
+
+
+def _staende_uebernehmen() -> list[str]:
+    sql = []
+    for tabelle, daten in STAND_UEBERNAHMEN.items():
+        sql.append(
+            "INSERT INTO sitzung_staende (session_id, student_id, teacher_id, guest_id, name, klasse, gast,"
+            " daten, aktuell, beigetreten_am, aktualisiert_am)"
+            f" SELECT f.session_id, f.student_id, f.teacher_id, f.guest_id, f.name, f.klasse, f.gast,"
+            f" {daten}, f.aktuell, f.aktualisiert_am, f.aktualisiert_am FROM {tabelle} f"
+            " WHERE NOT EXISTS (SELECT 1 FROM sitzung_staende s WHERE s.session_id = f.session_id"
+            " AND (s.student_id = f.student_id OR s.teacher_id = f.teacher_id OR s.guest_id = f.guest_id))"
+        )
+    return sql
 
 
 def _run_migrations(db_engine):
@@ -461,7 +484,7 @@ def _run_migrations(db_engine):
         "(group_type, COALESCE(class_id, -1), COALESCE(grade, -1), name)",
         # Ein Kurs/WPF verdient an einem Quiz genauso nur einmal Punkte wie eine Klasse.
         add_unique("quiz_sessions", "uq_quiz_group", "quiz_id, group_id"),
-    ]
+    ] + _staende_uebernehmen()
     # Each statement runs in its OWN transaction (commit on success, rollback on
     # failure). These migrations are best-effort and idempotent: any one may fail
     # because it was already applied or doesn't apply to this DB's history. On

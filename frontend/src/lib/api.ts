@@ -1005,7 +1005,7 @@ export type DdaAdaptation = {
 
 export type ExitGameReportRow = {
   attempt_id: number;
-  student_id: number;
+  student_id: number | null;
   student_name: string;
   student_class: string;
   status: string;
@@ -1015,8 +1015,14 @@ export type ExitGameReportRow = {
   hints_total: number;
   easier_taken_total: number;
   elapsed_seconds: number;
+  boss_ergebnis?: number | null;
+  solved_slide_ids?: string[];
 };
-export type ExitGameReport = { session_code: string; exitgame_title: string; status: string; attempts: ExitGameReportRow[] };
+export type ExitGameReport = {
+  session_code: string; exitgame_title: string; status: string; attempts: ExitGameReportRow[];
+  /** Folien in Reihenfolge — für »am schwersten« in der Auswertung */
+  slides?: { id: string; title: string }[];
+};
 
 export type ExitGameLogEvent = { slide_id: string; event_type: string; payload: Record<string, unknown>; created_at: string };
 export type ExitGameAttemptLog = { attempt: ExitGameAttemptSummary; student_name: string; student_class: string; events: ExitGameLogEvent[] };
@@ -1340,13 +1346,14 @@ export type MarkierEintrag = {
   zeit_ms: number; aktionen: number; selbst: boolean;
 };
 export type MarkierEintragIn = { modus: MarkierModus; zeit_ms: number; aktionen: number };
-export type MarkierFortschrittIn = {
-  lektionen: string[];
-  quellen: Record<string, number>;
-  challenge: Partial<Record<MarkierModus, { best_ms: number | null; runden: number }>>;
-  aktuell: string | null;
+// Gemeinsamer Sitzungsstand aller Werkzeuge (siehe api/routers/sitzungen.py)
+export type SitzungStandIn = { daten: Record<string, unknown>; aktuell?: string | null; fertig?: boolean };
+export type SitzungZeile = {
+  name: string; klasse: string | null; gast: boolean;
+  daten: Record<string, unknown>; aktuell: string | null;
+  beigetreten_am: string; aktualisiert_am: string; fertig_am: string | null;
 };
-export type MarkierUebersichtZeile = MarkierFortschrittIn & { name: string; klasse: string | null; gast: boolean; aktualisiert_am: string };
+export type SitzungUebersicht = { code: string; tool_slug: string; status: string; zeilen: SitzungZeile[] };
 
 // Werbeauktion zu »Klikk« (siehe api/routers/klikk.py)
 export type KlikkMerkmal = { titel: string; wert: string; heikel: boolean };
@@ -1911,16 +1918,16 @@ export const api = {
     /** Nur Admin — für unpassende Gastnamen. */
     loeschen: (id: number) => apiFetch<void>(`markieren/bestenliste/eintrag/${id}`, { method: "DELETE" }),
   },
-  // Fortschritt je Sitzung und Übersicht der Lehrkraft (siehe api/routers/markieren.py)
-  markieren: {
-    fortschritt: (zugang: MausZugang, body: MarkierFortschrittIn) =>
-      apiFetch<{ ok: boolean }>(`markieren/sitzung/${encodeURIComponent(zugang.code)}/fortschritt`, {
+  // Gemeinsamer Sitzungsstand: melden (Konto oder Gast), Übersicht und neue Runde (Lehrkraft)
+  sitzungen: {
+    stand: (zugang: MausZugang, body: SitzungStandIn) =>
+      apiFetch<{ ok: boolean }>(`sitzungen/${encodeURIComponent(zugang.code)}/stand`, {
         method: "PUT",
         body: JSON.stringify(body),
         headers: zugang.token ? { Authorization: `Bearer ${zugang.token}` } : undefined,
       }),
-    uebersicht: (code: string) =>
-      apiFetch<MarkierUebersichtZeile[]>(`markieren/sitzung/${encodeURIComponent(code)}/uebersicht`),
+    uebersicht: (code: string) => apiFetch<SitzungUebersicht>(`sitzungen/${encodeURIComponent(code)}/uebersicht`),
+    loeschen: (code: string) => apiFetch<void>(`sitzungen/${encodeURIComponent(code)}/staende`, { method: "DELETE" }),
   },
 
   // Maus-Führerschein: Fortschritt je Sitzung, Live-Übersicht, Prüfung (siehe api/routers/maus.py)

@@ -5,17 +5,16 @@ Content lives in LueckentextSet (JSON-blob pattern like BingoSet/TimelineSet):
 a text template with gaps. The library is open to every teacher; students may
 READ a set. Validation and scoring helpers live in api/lueckentext_engine.py.
 """
-import csv
-import io
 import json
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, WebSocket, WebSocketDisconnect
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from ..database import get_db
+from ..sitzung import csv_antwort
 from ..models import LueckentextSet, LueckentextSession, LueckentextParticipant, LueckentextResponse, LueckentextErrorPattern, Student, Teacher
 from ..auth import get_current_teacher, get_current_user, get_player, Guest
 from ..availability import require_capability
@@ -602,17 +601,10 @@ def session_report(code: str, fmt: str = "json", db: Session = Depends(get_db), 
     rows.sort(key=lambda r: r["name"].lower())
 
     if fmt == "csv":
-        buf = io.StringIO()
-        writer = csv.writer(buf)
-        writer.writerow(["Name", "Gelöst", "Lücken gesamt", "Versuche", "Hinweise", "Aufgedeckt", "Zeit (s)"])
-        for r in rows:
-            writer.writerow([r["name"], r["gaps_solved"], r["gaps_total"], r["attempts_total"],
-                              r["hints_total"], r["revealed_total"], r["time_total_seconds"] or ""])
-        # utf-8-sig: Excel reads umlauts as garbage without the BOM.
-        return StreamingResponse(
-            iter([buf.getvalue().encode("utf-8-sig")]), media_type="text/csv",
-            headers={"Content-Disposition": f'attachment; filename="lueckentext_{code}.csv"'},
-        )
+        kopf = ["Name", "Gelöst", "Lücken gesamt", "Versuche", "Hinweise", "Aufgedeckt", "Zeit (s)"]
+        zeilen = [[r["name"], r["gaps_solved"], r["gaps_total"], r["attempts_total"],
+                   r["hints_total"], r["revealed_total"], r["time_total_seconds"] or ""] for r in rows]
+        return csv_antwort(kopf, zeilen, f"lueckentext_{code}.csv")
 
     return {"session_code": code, "lueckentext_title": s.lueckentext.title, "status": s.status, "participants": rows}
 

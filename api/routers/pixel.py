@@ -11,7 +11,7 @@ from ..auth import Guest, get_current_user, get_player
 from ..availability import is_allowed
 from ..database import get_db
 from ..models import PixelProjekt, Student, Teacher, ToolSession
-from .leben import _anzeigename, _teilnehmer
+from ..sitzung import anzeigename, sitzung_fuer, teilnehmer
 
 router = APIRouter(prefix="/api/pixel", tags=["pixel"])
 
@@ -86,16 +86,11 @@ def _pruefe_recht(db: Session, spieler):
 
 
 def _sitzung(code: str, db: Session) -> ToolSession:
-    session = db.query(ToolSession).filter_by(code=code.upper()).first()
-    if not session:
-        raise HTTPException(404, "Sitzung nicht gefunden")
-    if session.tool_slug != "pixel":
-        raise HTTPException(400, "Diese Sitzung gehört nicht zum Pixel-Studio.")
-    return session
+    return sitzung_fuer(db, code, "pixel", "Diese Sitzung gehört nicht zum Pixel-Studio.")
 
 
 def _eigene(db: Session, spieler, session: ToolSession | None):
-    q = db.query(PixelProjekt).filter_by(**_teilnehmer(spieler))
+    q = db.query(PixelProjekt).filter_by(**teilnehmer(spieler))
     if isinstance(spieler, Guest):
         q = q.filter(PixelProjekt.session_id == session.id)
     return q
@@ -106,7 +101,7 @@ def _kurz(db: Session, p: PixelProjekt, voll: bool = False):
     if p.teacher_id:
         t = db.get(Teacher, p.teacher_id)
         if t:
-            besitzer = _anzeigename(t)[0]
+            besitzer = anzeigename(t)[0]
     felder = dict(id=p.id, name=p.name, breite=p.breite, hoehe=p.hoehe, bilder=p.bilder,
                   vorschau=p.vorschau, geteilt=p.geteilt, aktualisiert_am=p.aktualisiert_am, besitzer=besitzer)
     return Projekt(daten=p.daten, **felder) if voll else ProjektKurz(**felder)
@@ -139,7 +134,7 @@ def _anlegen(db, spieler, session, body: ProjektIn):
     if _eigene(db, spieler, session).count() >= grenze:
         raise HTTPException(400, "Zu viele Projekte")
     p = PixelProjekt(name=name, breite=b, hoehe=h, bilder=n, daten=body.daten, vorschau=vorschau,
-                     session_id=session.id if isinstance(spieler, Guest) else None, **_teilnehmer(spieler))
+                     session_id=session.id if isinstance(spieler, Guest) else None, **teilnehmer(spieler))
     db.add(p)
     db.commit()
     db.refresh(p)

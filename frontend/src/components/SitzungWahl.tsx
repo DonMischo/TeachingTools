@@ -5,32 +5,52 @@
  * Kurs oder setzt eine eigene Sitzung fort; jede Klasse bekommt einen eigenen
  * Code, eigenen QR und eine eigene Übersicht.
  */
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, type ToolSessionOut } from "@/lib/api";
 import { ScopeSelect, scopeBody, type Scope } from "@/components/ScopeSelect";
 
-export function useWerkzeugSitzung(werkzeug: string, aktiv: boolean) {
+/**
+ * Die gewählte Sitzung der Lehrkraft für ein Werkzeug, je Klasse bzw. Kurs eine.
+ *
+ * - `refId`: Werkzeuge mit Inhalt (Challenge-Satz, Kartensatz) — je Inhalt eigene Sitzungen.
+ * - `vorwaehlen`: die neueste eigene Sitzung gleich wählen, statt zuerst den Startbildschirm zu zeigen.
+ */
+export function useWerkzeugSitzung(werkzeug: string, aktiv: boolean,
+  { refId, vorwaehlen = false }: { refId?: number; vorwaehlen?: boolean } = {}) {
   const qc = useQueryClient();
   const liste = useMemo(() => ["tool-sessions-list", werkzeug], [werkzeug]);
-  const [sitzung, setSitzung] = useState<ToolSessionOut | null>(null);
+  const [sitzung, setze] = useState<ToolSessionOut | null>(null);
   const [fehler, setFehler] = useState("");
   const { data: alle, isLoading } = useQuery({
     queryKey: liste, queryFn: () => api.play.sessions("simulation", werkzeug), enabled: aktiv,
   });
-  const meine = useMemo(() => (alle ?? []).filter(z => z.mine), [alle]);
+  const meine = useMemo(
+    () => (alle ?? []).filter(z => z.mine && (refId === undefined || z.ref_id === refId)),
+    [alle, refId],
+  );
 
   async function waehle(code: string) {
-    try { setSitzung(await api.toolSessions.get(code)); setFehler(""); } catch { setFehler("Die Sitzung ließ sich nicht laden."); }
+    try { setze(await api.toolSessions.get(code)); setFehler(""); } catch { setFehler("Die Sitzung ließ sich nicht laden."); }
   }
   async function neu(scope: Scope) {
     try {
-      setSitzung(await api.toolSessions.create(werkzeug, undefined, scopeBody(scope)));
+      setze(await api.toolSessions.create(werkzeug, refId, scopeBody(scope)));
       setFehler("");
       qc.invalidateQueries({ queryKey: liste });
     } catch (e) { setFehler((e as Error).message || "Die Sitzung ließ sich nicht anlegen."); }
   }
-  return { sitzung, meine, waehle, neu, fehler, laedt: aktiv && isLoading };
+
+  // Anderer Inhalt, andere Sitzungen
+  useEffect(() => { setze(null); }, [refId]);
+  const ersteCode = vorwaehlen ? meine[0]?.code : undefined;
+  useEffect(() => {
+    if (!sitzung && ersteCode) waehle(ersteCode);
+    // waehle ist je Render neu, hängt aber nur an ersteCode
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ersteCode, sitzung]);
+
+  return { sitzung, setze, meine, waehle, neu, fehler, laedt: aktiv && isLoading };
 }
 
 export type SitzungWahl = ReturnType<typeof useWerkzeugSitzung>;
@@ -86,7 +106,7 @@ export function SitzungLeiste({ wahl }: { wahl: SitzungWahl }) {
           {meine.map(z => <option key={z.code} value={z.code}>{z.scope_label ?? "Alle (ohne Klasse)"} · {z.code}</option>)}
         </select>
         <label className="flex items-center gap-1.5">Neu für <ScopeSelect value={scope} onChange={setScope} className="input w-56" /></label>
-        <button type="button" className="btn-primary" disabled={!scope} onClick={() => { neu(scope); setScope(null); }}>Für diese Klasse starten</button>
+        <button type="button" className="btn-primary" disabled={!scope} onClick={() => { neu(scope); setScope(null); }}>{meine.length ? "Für diese Klasse starten" : "Starten"}</button>
       </div>
       <p className="text-muted">
         Jede Klasse bzw. jeder Kurs bekommt einen eigenen Code. Den QR zur gewählten Sitzung zeigt »Zum Mitmachen« oben.

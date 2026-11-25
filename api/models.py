@@ -2097,6 +2097,43 @@ class ToolSession(Base):
     creator: Mapped["Teacher"] = relationship()
 
 
+class SitzungStand(Base):
+    """Stand einer Person in einer Werkzeugsitzung — eine Zeile je Teilnehmer.
+
+    Gemeinsame Tabelle für alle Simulationen und Werkzeuge mit Lehrer-Übersicht
+    (siehe api/sitzung.py, docs/plan-sitzung-dashboard-auswertung.md). Was das
+    Werkzeug meldet, steht in ``daten``; wie es in Dashboard und Auswertung
+    erscheint, legt das Frontend je Werkzeug fest (lib/sitzung/werkzeuge.ts).
+    Teilnehmer wie überall: Schüler, Lehrkraft oder Gast (guest_id aus dem Token).
+    """
+    __tablename__ = "sitzung_staende"
+    __table_args__ = (
+        UniqueConstraint("session_id", "student_id", name="uq_sitzung_stand_student"),
+        UniqueConstraint("session_id", "teacher_id", name="uq_sitzung_stand_teacher"),
+        UniqueConstraint("session_id", "guest_id", name="uq_sitzung_stand_guest"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    session_id: Mapped[int] = mapped_column(
+        ForeignKey("tool_sessions.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    student_id: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"), nullable=True)
+    teacher_id: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="CASCADE"), nullable=True)
+    guest_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    klasse: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    gast: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
+    daten: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict, server_default="{}")
+    # was die Person gerade tut, z. B. Reiter und Aufgabe
+    aktuell: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    beigetreten_am: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    aktualisiert_am: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+    # gesetzt, sobald das Werkzeug »fertig« meldet (alle Aufgaben, Abgabe …)
+    fertig_am: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
 class SimBeitrag(Base):
     """Ein abgegebenes Ergebnis aus einer Simulation — bisher: der Text, den
     jemand in der KI-Werkstatt durch das Wortnetz geschrieben hat.

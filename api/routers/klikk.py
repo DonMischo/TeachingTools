@@ -21,6 +21,7 @@ from ..auth import Guest, get_player
 from ..availability import is_allowed
 from ..database import get_db
 from ..models import KlikkBeitrag, KlikkGebot, KlikkProfil, KlikkReaktion, KlikkSpielstand, KlikkWoche, Student, Teacher, ToolSession
+from ..sitzung import sitzung_fuer, teilnehmer
 
 router = APIRouter(prefix="/api/klikk/sitzung", tags=["klikk"])
 
@@ -90,21 +91,8 @@ class SteuernIn(BaseModel):
     aktion: Literal["naechstes", "zuschlag", "zuruecksetzen"]
 
 
-def _teilnehmer(spieler: Union[Teacher, Student, Guest]) -> dict:
-    if isinstance(spieler, Student):
-        return {"student_id": spieler.id}
-    if isinstance(spieler, Teacher):
-        return {"teacher_id": spieler.id}
-    return {"guest_id": spieler.id}
-
-
 def _sitzung(code: str, db: Session, tools: tuple[str, ...] = ("klikk",)) -> ToolSession:
-    session = db.query(ToolSession).filter_by(code=code.upper()).first()
-    if not session:
-        raise HTTPException(404, "Sitzung nicht gefunden")
-    if session.tool_slug not in tools:
-        raise HTTPException(400, "Diese Sitzung gehört nicht zu »Klikk«.")
-    return session
+    return sitzung_fuer(db, code, tools, "Diese Sitzung gehört nicht zu »Klikk«.")
 
 
 def _darf_mitmachen(db: Session, session: ToolSession, spieler) -> None:
@@ -144,7 +132,7 @@ def profil_abgeben(
     Nummer und Firma bleiben."""
     session = _sitzung(code, db)
     _darf_mitmachen(db, session, spieler)
-    wer = _teilnehmer(spieler)
+    wer = teilnehmer(spieler)
     profil = db.query(KlikkProfil).filter_by(session_id=session.id, **wer).first()
     if profil is None:
         nr = (db.query(func.max(KlikkProfil.nr)).filter_by(session_id=session.id).scalar() or 0) + 1
@@ -166,7 +154,7 @@ def auktion(
     session = _sitzung(code, db)
     stand = _stand(session)
     profile = {p.nr: p for p in db.query(KlikkProfil).filter_by(session_id=session.id).all()}
-    ich_profil = db.query(KlikkProfil).filter_by(session_id=session.id, **_teilnehmer(spieler)).first()
+    ich_profil = db.query(KlikkProfil).filter_by(session_id=session.id, **teilnehmer(spieler)).first()
     ich = ich_profil and Ich(
         nr=ich_profil.nr, firma=ich_profil.firma, sucht=SUCHT[ich_profil.firma],
         budget=BUDGET - _ausgegeben(stand, ich_profil.id),
@@ -207,7 +195,7 @@ def bieten(
     stand = _stand(session)
     if not stand["offen"] or stand["aktuell"] is None:
         raise HTTPException(409, "Gerade läuft keine Versteigerung.")
-    ich = db.query(KlikkProfil).filter_by(session_id=session.id, **_teilnehmer(spieler)).first()
+    ich = db.query(KlikkProfil).filter_by(session_id=session.id, **teilnehmer(spieler)).first()
     if ich is None:
         raise HTTPException(403, "Nur wer sein Profil abgegeben hat, bietet mit.")
     if ich.nr == stand["aktuell"]:
@@ -399,11 +387,11 @@ def beitrag_posten(
         if body.hygiene is not None:
             inhalt["hygiene"] = body.hygiene
         name = body.name
-    b = KlikkBeitrag(session_id=session.id, name=name, art=body.art, inhalt=inhalt, tag=body.tag, **_teilnehmer(spieler))
+    b = KlikkBeitrag(session_id=session.id, name=name, art=body.art, inhalt=inhalt, tag=body.tag, **teilnehmer(spieler))
     db.add(b)
     db.commit()
     db.refresh(b)
-    return _beitrag_out(b, [], _teilnehmer(spieler))
+    return _beitrag_out(b, [], teilnehmer(spieler))
 
 
 @router.get("/{code}/beitraege", response_model=list[BeitragOut])
@@ -416,7 +404,7 @@ def beitraege(
     liste = db.query(KlikkBeitrag).filter_by(session_id=session.id).order_by(KlikkBeitrag.id.desc()).limit(100).all()
     ids = [b.id for b in liste]
     reaktionen = db.query(KlikkReaktion).filter(KlikkReaktion.beitrag_id.in_(ids)).all() if ids else []
-    wer = _teilnehmer(spieler)
+    wer = teilnehmer(spieler)
     return [_beitrag_out(b, [r for r in reaktionen if r.beitrag_id == b.id], wer) for b in liste]
 
 
@@ -438,7 +426,7 @@ def reagieren(
     leitung = _ist_leitung(session, spieler)
     if not leitung and not NAME.match(body.name):
         raise HTTPException(400, "Unbekannter Klikk-Name.")
-    wer = _teilnehmer(spieler)
+    wer = teilnehmer(spieler)
     r = db.query(KlikkReaktion).filter_by(beitrag_id=b.id, **wer).first()
     if r is None:
         r = KlikkReaktion(beitrag_id=b.id, name="Lehrkraft" if leitung else body.name, **wer)
@@ -463,7 +451,7 @@ def beitrag_loeschen(
     b = db.get(KlikkBeitrag, beitrag_id)
     if not b or b.session_id != session.id:
         raise HTTPException(404, "Beitrag nicht gefunden")
-    if not (_ist_leitung(session, spieler) or _wer_gleich(b, _teilnehmer(spieler))):
+    if not (_ist_leitung(session, spieler) or _wer_gleich(b, teilnehmer(spieler))):
         raise HTTPException(403, "Das ist nicht dein Beitrag.")
     db.delete(b)
     db.commit()
@@ -484,7 +472,7 @@ def woche_melden(
     session = _sitzung(code, db)
     _darf_mitmachen(db, session, spieler)
     werte = {k[:40]: (v[:30] if isinstance(v, str) else v) for k, v in body.werte.items()}
-    wer = _teilnehmer(spieler)
+    wer = teilnehmer(spieler)
     zeile = db.query(KlikkWoche).filter_by(session_id=session.id, **wer).first()
     if zeile is None:
         zeile = KlikkWoche(session_id=session.id, **wer)
@@ -590,7 +578,7 @@ def uhr_steuern(code: str, body: UhrIn, db: Session = Depends(get_db), spieler: 
 # eine Zeile je Person und Spiel, mehr ist besser, Namen wie beim
 # Maus-Führerschein aus Konto bzw. Gast-Token.
 
-from .maus import _anzeigename  # noqa: E402 — gleiche Namensregeln wie dort
+from ..sitzung import anzeigename  # noqa: E402 — gleiche Namensregeln wie dort
 
 router_spiele = APIRouter(prefix="/api/klikk/spiele", tags=["klikk"])
 
@@ -627,8 +615,8 @@ def _spiel_eintragen(db: Session, spiel: str, wert: int, spieler, session_id: in
         raise HTTPException(400, f"Unbekanntes Spiel: {spiel}")
     if wert > SPIELE[spiel]:
         raise HTTPException(400, "Dieser Wert ist nicht plausibel.")
-    name, klasse, gast = _anzeigename(spieler)
-    wer = _teilnehmer(spieler)
+    name, klasse, gast = anzeigename(spieler)
+    wer = teilnehmer(spieler)
     z = db.query(KlikkSpielstand).filter_by(spiel=spiel, **wer).first()
     if z is None:
         z = KlikkSpielstand(spiel=spiel, wert=wert, name=name, klasse=klasse, gast=gast, session_id=session_id, **wer)
@@ -642,7 +630,7 @@ def _spiel_eintragen(db: Session, spiel: str, wert: int, spieler, session_id: in
 
 @router_spiele.get("/{spiel}", response_model=list[SpielEintrag])
 def spiel_liste(spiel: str, db: Session = Depends(get_db), spieler: Union[Teacher, Student] = Depends(get_player)):
-    return _spiel_liste(db, spiel, _teilnehmer(spieler), None)
+    return _spiel_liste(db, spiel, teilnehmer(spieler), None)
 
 
 @router_spiele.post("/{spiel}", response_model=SpielEintrag)
@@ -656,7 +644,7 @@ def spiel_eintragen(spiel: str, body: SpielIn, db: Session = Depends(get_db), sp
 def spiel_liste_sitzung(spiel: str, code: str, nur_sitzung: bool = False, db: Session = Depends(get_db),
                         spieler: Union[Teacher, Student, Guest] = Depends(get_player)):
     session = _sitzung(code, db)
-    return _spiel_liste(db, spiel, _teilnehmer(spieler), session.id if nur_sitzung else None)
+    return _spiel_liste(db, spiel, teilnehmer(spieler), session.id if nur_sitzung else None)
 
 
 @router_spiele.post("/{spiel}/{code}", response_model=SpielEintrag)

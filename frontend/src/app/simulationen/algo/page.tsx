@@ -19,7 +19,7 @@ export default function AlgoPage() {
       {lehrkraft && !wahl.sitzung
         ? <SitzungStart wahl={wahl} titel="🔀 Algorithmen-Werkstatt"
             text="Für welche Klasse bzw. welchen Kurs läuft es? Jede bekommt einen eigenen Code und eine eigene Klassenübersicht mit Sternen und Punkten." />
-        : <Algorithmen action={<ToolSessionBar key={wahl.sitzung?.code ?? "-"} tool="algo" title={titel} sitzung={wahl.sitzung ?? undefined} />}
+        : <Algorithmen action={<ToolSessionBar key={wahl.sitzung?.code ?? "-"} tool="algo" title={titel} sitzung={wahl.sitzung ?? undefined} wahl={wahl} />}
             wahl={lehrkraft ? wahl : undefined}
             speicherSchluessel={auth ? `hp_algo_stand_konto-${auth.user_type}-${auth.student?.id ?? auth.teacher?.id ?? 0}` : "hp_algo_stand"} />}
       </D2Kontext.Provider>

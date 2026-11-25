@@ -58,6 +58,7 @@ from .. import karten_quiz as karten_engine
 from .karten_quiz import karten_aufloesen
 from ..task_generators import check_input_answer
 from ..database import get_db
+from ..sitzung import csv_antwort
 from ..models import ExitGame, ExitGameSession, ExitGameAttempt, ExitGameEvent, Teacher, Student, Class
 from ..auth import (
     get_current_teacher, get_current_user, get_current_user_optional,
@@ -1746,24 +1747,20 @@ def get_session_report(code: str, fmt: str = "json", db: Session = Depends(get_d
             "easier_taken_total": a.easier_taken_total,
             "elapsed_seconds": _attempt_summary(a)["elapsed_seconds"],
             "boss_ergebnis": _boss_ergebnis(a, s.exitgame.data, boss_anzahl),
+            "solved_slide_ids": list(a.solved_slide_ids or []),
         })
 
     if fmt == "csv":
-        import csv as csv_mod
-        buf = io.StringIO()
-        writer = csv_mod.writer(buf)
-        writer.writerow(["Name", "Klasse", "Status", "Gelöst", "Gesamt", "Fehler", "Hinweise", "Erleichterte Aufgaben", "Dauer (s)", "Boss-Ergebnis"])
-        for r in rows:
-            writer.writerow([r["student_name"], r["student_class"], r["status"], r["slides_solved"], r["slides_total"],
-                              r["errors_total"], r["hints_total"], r["easier_taken_total"], r["elapsed_seconds"],
-                              "" if r["boss_ergebnis"] is None else r["boss_ergebnis"]])
-        from fastapi.responses import StreamingResponse
-        return StreamingResponse(
-            iter([buf.getvalue().encode("utf-8-sig")]), media_type="text/csv",
-            headers={"Content-Disposition": f'attachment; filename="taskcrawler_{code}.csv"'},
-        )
+        kopf = ["Name", "Klasse", "Status", "Gelöst", "Gesamt", "Fehler", "Hinweise", "Erleichterte Aufgaben", "Dauer (s)", "Boss-Ergebnis"]
+        zeilen = [[r["student_name"], r["student_class"], r["status"], r["slides_solved"], r["slides_total"],
+                   r["errors_total"], r["hints_total"], r["easier_taken_total"], r["elapsed_seconds"],
+                   "" if r["boss_ergebnis"] is None else r["boss_ergebnis"]] for r in rows]
+        return csv_antwort(kopf, zeilen, f"taskcrawler_{code}.csv")
 
-    return {"session_code": code, "exitgame_title": s.exitgame.title, "status": s.status, "attempts": rows}
+    # Folien in Reihenfolge — die gemeinsame Auswertung zeigt daraus »am schwersten«
+    slides = [{"id": sl["id"], "title": sl.get("title") or ""} for sl in s.exitgame.data["slides"] if sl.get("id")]
+    return {"session_code": code, "exitgame_title": s.exitgame.title, "status": s.status, "attempts": rows,
+            "slides": slides}
 
 
 @router.get("/api/exitgame-attempts/{attempt_id}/log")

@@ -1,13 +1,15 @@
 /**
  * Kleinster Word-Export ohne eigene Bibliothek: ein .docx ist ein ZIP mit
  * ein paar XML-Dateien. Kann Überschriften, Absätze (fett/klein/grau),
- * Schreiblinien, Bilder (PNG) und Seitenumbrüche — genug für Arbeitsblätter.
+ * Schreiblinien, Bilder (PNG), Tabellen und Seitenumbrüche — genug für
+ * Arbeitsblätter und Auswertungen.
  */
 export type DocxBlock =
   | { art: "titel" | "ueberschrift"; text: string }
   | { art: "text"; text: string; fett?: boolean; klein?: boolean; grau?: boolean; mono?: boolean }
   | { art: "linie"; text: string }
   | { art: "bild"; png: Uint8Array; breite: number; hoehe: number }
+  | { art: "tabelle"; kopf: string[]; zeilen: string[][] }
   | { art: "umbruch" };
 
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -22,6 +24,16 @@ function lauf(text: string, f: { fett?: boolean; groesse?: number; grau?: boolea
   return `<w:r>${rpr ? `<w:rPr>${rpr}</w:rPr>` : ""}<w:t xml:space="preserve">${esc(text)}</w:t></w:r>`;
 }
 const absatz = (inhalt: string, nach = 120, vor = 0) => `<w:p><w:pPr><w:spacing w:before="${vor}" w:after="${nach}"/></w:pPr>${inhalt}</w:p>`;
+
+function tabelleXml(kopf: string[], zeilen: string[][]) {
+  const rand = ["top", "left", "bottom", "right", "insideH", "insideV"]
+    .map(r => `<w:${r} w:val="single" w:sz="4" w:space="0" w:color="BBBBBB"/>`).join("");
+  const zelle = (t: string, fett = false) =>
+    `<w:tc><w:p><w:pPr><w:spacing w:before="20" w:after="20"/></w:pPr>${lauf(t, { fett, groesse: 18 })}</w:p></w:tc>`;
+  const zeile = (z: string[], fett = false) => `<w:tr>${z.map(t => zelle(t, fett)).join("")}</w:tr>`;
+  return `<w:tbl><w:tblPr><w:tblW w:w="5000" w:type="pct"/><w:tblBorders>${rand}</w:tblBorders></w:tblPr>`
+    + `${zeile(kopf, true)}${zeilen.map(z => zeile(z)).join("")}</w:tbl>${absatz("", 120)}`;
+}
 
 const EMU = 9525; // pro Pixel bei 96 dpi
 function bildXml(id: number, rel: string, breite: number, hoehe: number) {
@@ -46,6 +58,7 @@ export async function baueDocx(bloecke: DocxBlock[]): Promise<Blob> {
       case "ueberschrift": return absatz(lauf(b.text, { fett: true, groesse: 28 }), 80, 240);
       case "text": return absatz(lauf(b.text, { fett: b.fett, grau: b.grau, mono: b.mono, groesse: b.klein ? 18 : undefined }));
       case "linie": return absatz(lauf(`${b.text} ________________________`), 160, 80);
+      case "tabelle": return tabelleXml(b.kopf, b.zeilen);
       case "umbruch": return '<w:p><w:r><w:br w:type="page"/></w:r></w:p>';
       case "bild": {
         const n = bilder.length + 1, rel = `rIdBild${n}`;

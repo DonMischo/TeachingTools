@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session
 from ..auth import Guest, get_player
 from ..database import get_db
 from ..models import GeheimPost, Student, Teacher, ToolSession
+from ..sitzung import sitzung_fuer
 
 router = APIRouter(prefix="/api/tool-sessions", tags=["geheimpost"])
 
@@ -53,12 +54,7 @@ def _name(spieler: Spieler) -> str:
 
 
 def _sitzung(code: str, db: Session) -> ToolSession:
-    session = db.query(ToolSession).filter_by(code=code.upper()).first()
-    if not session:
-        raise HTTPException(404, "Sitzung nicht gefunden")
-    if session.tool_slug != "stellenwert":
-        raise HTTPException(400, "Geheimpost gibt es nur in den Stellenwerttafeln.")
-    return session
+    return sitzung_fuer(db, code, "stellenwert", "Geheimpost gibt es nur in den Stellenwerttafeln.")
 
 
 def _da(session_id: int) -> dict[str, tuple[str, datetime]]:

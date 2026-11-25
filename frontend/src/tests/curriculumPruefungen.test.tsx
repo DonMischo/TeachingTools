@@ -90,7 +90,7 @@ describe("Alte Karten entfernen", () => {
 
 describe("☰-Menü", () => {
   it("öffnet, führt einen Punkt aus und schließt", async () => {
-    const { Menue, MenueAbschnitt, MenuePunkt } = await import("@/components/curriculum/Menue");
+    const { Menue, MenueAbschnitt, MenuePunkt } = await import("@/components/Menue");
     const los = vi.fn();
     render(<Menue><MenueAbschnitt titel="Plan"><MenuePunkt onClick={los}>⧉ Kopie</MenuePunkt></MenueAbschnitt></Menue>);
     expect(screen.queryByRole("menu")).toBeNull();

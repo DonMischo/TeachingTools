@@ -15,7 +15,8 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..auth import get_current_teacher, get_player
-from ..models import ChallengeSet, KartenSatz, SimBeitrag, Student, Teacher, TimelineSet, ToolSession
+from ..models import ChallengeSet, KartenSatz, SimBeitrag, Teacher, TimelineSet, ToolSession
+from ..sitzung import teilnehmer
 from ..utils import gen_code
 from .. import availability, scoping, tool_catalog
 
@@ -34,8 +35,6 @@ REF_TOOLS = {"zeitstrahl": TimelineSet, "karten": KartenSatz, "challenge": Chall
 # Werkzeuge, die auch ohne Inhalt einen Code bekommen: Karten ohne Kartensatz
 # ist das ganze Kartentool zum Erkunden (routers/karten.py, /sitzung/{code}).
 OHNE_INHALT_MOEGLICH = ("karten",)
-# Werkzeuge, deren Sitzung einer Klasse bzw. einem Kurs/WPF gehört: je Geltungsbereich ein eigener Code
-MIT_KLASSE = ("challenge", "markieren")
 # Werkzeuge, deren geteilter Satz über /content an Spieler gehen darf (ein Challenge-Satz enthält die Lösungen)
 OEFFENTLICHER_INHALT = ("zeitstrahl", "karten")
 
@@ -58,7 +57,7 @@ class ToolSessionOut(BaseModel):
 class ToolSessionIn(BaseModel):
     tool_slug: str
     ref_id: int | None = None
-    # Nur für MIT_KLASSE: genau eines von beiden
+    # Je Klasse bzw. Kurs/WPF eine eigene Sitzung: höchstens eines von beiden
     class_id: int | None = None
     group_id: int | None = None
 
@@ -115,10 +114,10 @@ def create_or_get(
         if db.get(ref_model, body.ref_id) is None:
             raise HTTPException(404, "Inhalt nicht gefunden")
     ref_id = body.ref_id if ref_model is not None else None
-    # Challenge: je Klasse bzw. Kurs eine eigene Sitzung (wie Caputh, TaskCrawler).
+    # Jedes Werkzeug: je Klasse bzw. Kurs eine eigene Sitzung (wie Caputh, TaskCrawler).
     # Ohne beides bleibt es die alte, für alle offene Sitzung — gedruckte Codes gelten weiter.
     class_id = group_id = None
-    if body.tool_slug in MIT_KLASSE and (body.class_id is not None or body.group_id is not None):
+    if body.class_id is not None or body.group_id is not None:
         scoping.validate_scope(body.class_id, body.group_id)
         if body.group_id is not None:
             scoping.load_group(db, body.group_id)
@@ -257,15 +256,6 @@ def _beitrag_session(code: str, db: Session) -> ToolSession:
     return session
 
 
-def _teilnehmer(spieler) -> dict:
-    """Die Spalte, in der dieser Teilnehmer steht — wie in routers/practice.py."""
-    if isinstance(spieler, Student):
-        return {"student_id": spieler.id}
-    if isinstance(spieler, Teacher):
-        return {"teacher_id": spieler.id}
-    return {"guest_id": spieler.id}
-
-
 @router.post("/{code}/beitraege", response_model=BeitragOut, status_code=201)
 def beitrag_abgeben(
     code: str,
@@ -283,7 +273,7 @@ def beitrag_abgeben(
     if body.art not in BEITRAG_ARTEN:
         raise HTTPException(422, f"Unbekannte Art: {body.art}")
 
-    wer = _teilnehmer(spieler)
+    wer = teilnehmer(spieler)
     beitrag = (
         db.query(SimBeitrag)
         .filter_by(session_id=session.id, art=body.art, **wer)
@@ -327,7 +317,7 @@ def beitraege(
     session = _beitrag_session(code, db)
     if art not in BEITRAG_ARTEN:
         raise HTTPException(422, f"Unbekannte Art: {art}")
-    wer = _teilnehmer(spieler)
+    wer = teilnehmer(spieler)
     sortierung = (
         (SimBeitrag.id,) if art == "korpus"
         else (SimBeitrag.wert.desc(), SimBeitrag.id)

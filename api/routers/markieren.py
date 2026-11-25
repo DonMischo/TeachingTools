@@ -9,7 +9,7 @@ kleinste Zeit.
 Die Zeiten meldet der Browser; geschützt sind sie nur durch eine
 Plausibilitätsgrenze — eine Klassenliste, keine Wertung mit Konsequenzen.
 """
-from datetime import datetime
+
 from typing import Union
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -17,10 +17,10 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..auth import Guest, get_current_teacher, get_current_user, get_player, require_admin
+from ..auth import Guest, get_current_user, get_player, require_admin
 from ..availability import is_allowed, require_capability
-from ..models import MarkierBestenliste, MarkierFortschritt, Student, Teacher, ToolSession
-from ..display_names import abbreviate_parts, abbreviate_stored, short_name
+from ..models import MarkierBestenliste, Student, Teacher, ToolSession
+from ..sitzung import anzeigename, sitzung_fuer, teilnehmer
 
 router = APIRouter(prefix="/api/markieren/bestenliste", tags=["markieren"])
 
@@ -57,24 +57,6 @@ def _pruefe(body: EintragIn) -> None:
         raise HTTPException(400, "Diese Zeit ist nicht plausibel.")
 
 
-def _anzeigename(spieler: Union[Teacher, Student, Guest]) -> tuple[str, str | None, bool]:
-    """Name, Klasse und Gast-Kennzeichen aus dem Konto bzw. dem Gast-Token —
-    nie aus dem Browser."""
-    if isinstance(spieler, Student):
-        return (short_name(spieler), spieler.klasse, False)
-    if isinstance(spieler, Teacher):
-        return (abbreviate_parts(spieler.first_name or "", spieler.last_name or ""), None, False)
-    return (abbreviate_stored(spieler.name)[:120], None, True)
-
-
-def _teilnehmer(spieler: Union[Teacher, Student, Guest]) -> dict:
-    if isinstance(spieler, Student):
-        return {"student_id": spieler.id}
-    if isinstance(spieler, Teacher):
-        return {"teacher_id": spieler.id}
-    return {"guest_id": spieler.id}
-
-
 def _ausgabe(z: MarkierBestenliste, platz: int, wer: dict) -> EintragOut:
     return EintragOut(
         id=z.id, platz=platz, name=z.name, klasse=z.klasse, gast=z.gast,
@@ -84,12 +66,7 @@ def _ausgabe(z: MarkierBestenliste, platz: int, wer: dict) -> EintragOut:
 
 
 def _sitzung(code: str, db: Session) -> ToolSession:
-    session = db.query(ToolSession).filter_by(code=code.upper()).first()
-    if not session:
-        raise HTTPException(404, "Sitzung nicht gefunden")
-    if session.tool_slug != "markieren":
-        raise HTTPException(400, "Diese Sitzung gehört nicht zu »Markieren & Bearbeiten«.")
-    return session
+    return sitzung_fuer(db, code, "markieren", "Diese Sitzung gehört nicht zu »Markieren & Bearbeiten«.")
 
 
 def _liste(db: Session, modus: str, wer: dict, klasse: str | None, sitzung: str | None) -> list[EintragOut]:
@@ -109,8 +86,8 @@ def _eintragen(
 ) -> EintragOut:
     """Ein Ergebnis melden. Nur eine Verbesserung wird übernommen."""
     _pruefe(body)
-    name, klasse, gast = _anzeigename(spieler)
-    wer = _teilnehmer(spieler)
+    name, klasse, gast = anzeigename(spieler)
+    wer = teilnehmer(spieler)
 
     zeile = db.query(MarkierBestenliste).filter_by(modus=body.modus, **wer).first()
     if zeile is None:
@@ -141,7 +118,7 @@ def liste(
     db: Session = Depends(get_db),
     user: Union[Teacher, Student] = Depends(get_current_user),
 ):
-    return _liste(db, modus, _teilnehmer(user), klasse, sitzung)
+    return _liste(db, modus, teilnehmer(user), klasse, sitzung)
 
 
 @router.post("", response_model=EintragOut,
@@ -164,7 +141,7 @@ def liste_ueber_code(
     spieler: Union[Teacher, Student, Guest] = Depends(get_player),
 ):
     _sitzung(code, db)
-    return _liste(db, modus, _teilnehmer(spieler), klasse, sitzung)
+    return _liste(db, modus, teilnehmer(spieler), klasse, sitzung)
 
 
 @router.post("/{code}", response_model=EintragOut)
@@ -196,88 +173,3 @@ def eintrag_loeschen(
         raise HTTPException(404, "Eintrag nicht gefunden")
     db.delete(zeile)
     db.commit()
-
-
-# --- Fortschritt je Person und Lehrer-Übersicht ------------------------------
-
-fortschritt_router = APIRouter(prefix="/api/markieren", tags=["markieren"])
-
-MAX_LISTE = 40
-MAX_ID = 40
-MAX_AKTUELL = 120
-MAX_QUELLE_MS = 3_600_000
-
-
-class ChallengeStand(BaseModel):
-    best_ms: int | None = Field(default=None, ge=0)
-    runden: int = Field(ge=0, le=10000)
-
-
-class FortschrittIn(BaseModel):
-    lektionen: list[str]
-    quellen: dict[str, int]
-    challenge: dict[str, ChallengeStand]
-    aktuell: str | None = None
-
-
-class UebersichtZeile(BaseModel):
-    name: str
-    klasse: str | None
-    gast: bool
-    lektionen: list
-    quellen: dict
-    challenge: dict
-    aktuell: str | None
-    aktualisiert_am: datetime
-
-
-@fortschritt_router.put("/sitzung/{code}/fortschritt")
-def fortschritt_melden(
-    code: str,
-    body: FortschrittIn,
-    db: Session = Depends(get_db),
-    spieler: Union[Teacher, Student, Guest] = Depends(get_player),
-):
-    session = _sitzung(code, db)
-    if session.status == "closed":
-        raise HTTPException(403, "Diese Sitzung ist geschlossen")
-    if not isinstance(spieler, Guest):
-        admin = isinstance(spieler, Teacher) and spieler.role == "admin"
-        if not admin and not is_allowed(db, spieler, "markieren", "use"):
-            raise HTTPException(403, "Dieses Werkzeug ist für dich nicht freigeschaltet (markieren/use).")
-    if any(k not in MODI for k in body.challenge):
-        raise HTTPException(400, "Unbekannter Modus.")
-    if (len(body.lektionen) > MAX_LISTE or any(len(t) > MAX_ID for t in body.lektionen)
-            or len(body.quellen) > MAX_LISTE or any(len(k) > MAX_ID for k in body.quellen)
-            or any(v < 0 or v > MAX_QUELLE_MS for v in body.quellen.values())
-            or (body.aktuell is not None and len(body.aktuell) > MAX_AKTUELL)):
-        raise HTTPException(400, "Fortschritt zu groß.")
-
-    name, klasse, gast = _anzeigename(spieler)
-    wer = _teilnehmer(spieler)
-    zeile = db.query(MarkierFortschritt).filter_by(session_id=session.id, **wer).first()
-    if zeile is None:
-        zeile = MarkierFortschritt(session_id=session.id, name=name, klasse=klasse, gast=gast, **wer)
-        db.add(zeile)
-    zeile.name, zeile.klasse, zeile.gast = name, klasse, gast
-    zeile.lektionen = list(body.lektionen)
-    zeile.quellen = dict(body.quellen)
-    zeile.challenge = {k: v.model_dump() for k, v in body.challenge.items()}
-    zeile.aktuell = body.aktuell
-    db.commit()
-    return {"ok": True}
-
-
-@fortschritt_router.get("/sitzung/{code}/uebersicht", response_model=list[UebersichtZeile])
-def uebersicht(code: str, db: Session = Depends(get_db), teacher: Teacher = Depends(get_current_teacher)):
-    session = _sitzung(code, db)
-    if session.created_by != teacher.id and teacher.role != "admin":
-        raise HTTPException(403, "Diese Sitzung gehört jemand anderem.")
-    zeilen = db.query(MarkierFortschritt).filter_by(session_id=session.id).all()
-    zeilen.sort(key=lambda z: z.name.lower())
-    return [
-        UebersichtZeile(name=z.name, klasse=z.klasse, gast=z.gast, lektionen=z.lektionen or [],
-                        quellen=z.quellen or {}, challenge=z.challenge or {}, aktuell=z.aktuell,
-                        aktualisiert_am=z.aktualisiert_am)
-        for z in zeilen
-    ]

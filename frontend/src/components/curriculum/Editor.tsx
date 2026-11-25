@@ -29,7 +29,7 @@ import {
 import { KarteBox, KartenAnsicht, StatusChip } from "./KarteBox";
 import { MaterialSammlung, Verknuepfungen } from "./Verknuepfungen";
 import { Pruefungen } from "./Pruefungen";
-import { Menue, MenueAbschnitt, MenueFeld, MenuePunkt } from "./Menue";
+import { Menue, MenueAbschnitt, MenueFeld, MenuePunkt } from "@/components/Menue";
 
 /** Aktionen der Seite (Umbenennen, Kopie, Löschen) für den Abschnitt »Plan« im ☰-Menü. */
 export type PlanAktion = { label: string; onClick: () => void; gefahr?: boolean; title?: string };

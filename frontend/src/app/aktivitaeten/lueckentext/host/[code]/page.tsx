@@ -1,4 +1,6 @@
 "use client";
+import { AuswertungKnopf } from "@/components/sitzung/AuswertungKnopf";
+import { lueckentextAnsicht, lueckentextZeilen } from "@/lib/lueckentext/sitzung";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
@@ -87,13 +89,14 @@ export default function LueckentextHostPage() {
             ■ Beenden
           </button>
         )}
-        {status === "finished" && (
-          <div className="flex gap-3 items-center flex-wrap text-sm">
-            <Link href={`/aktivitaeten/lueckentext/review/${code}`} className="text-accent hover:underline">
-              Auswertung →
-            </Link>
-          </div>
-        )}
+        {/* Auswertung jederzeit, auch während der Runde */}
+        <div className="flex gap-3 items-center flex-wrap text-sm">
+          <AuswertungKnopf titel="Lückentext" schluessel={["lueckentext", code]}
+            laden={async () => { const r = await api.lueckentexte.review(code); return { zeilen: lueckentextZeilen(r), ansicht: lueckentextAnsicht(r) }; }} />
+          <Link href={`/aktivitaeten/lueckentext/review/${code}`} className="text-accent hover:underline">
+            Einzelne Lücken →
+          </Link>
+        </div>
       </div>
 
       <div className="flex flex-col gap-2">

@@ -27,6 +27,7 @@ from .. import timeline_engine
 from .. import karten_quiz as karten_engine
 from .karten_quiz import karten_aufloesen
 from ..database import get_db
+from ..sitzung import csv_antwort
 from ..models import (
     Quiz, QuizQuestion, QuizAnswer, QuizSession, QuizParticipant, QuizResponse, QuizTeam, Transaction, Teacher, Class,
     Student
@@ -1176,10 +1177,6 @@ def reset_session(code: str, db: Session = Depends(get_db), current: Teacher = D
 
 @router.get("/api/sessions/{code}/report")
 def get_session_report(code: str, fmt: str = "json", db: Session = Depends(get_db), current: Teacher = Depends(get_current_teacher)):
-    import csv as csv_mod
-    import io as io_mod
-    from fastapi.responses import StreamingResponse
-
     s = db.query(QuizSession).filter_by(join_code=code).first()
     if not s:
         raise HTTPException(404, "Session not found")
@@ -1221,10 +1218,8 @@ def get_session_report(code: str, fmt: str = "json", db: Session = Depends(get_d
         })
 
     if fmt == "csv":
-        buf = io_mod.StringIO()
-        writer = csv_mod.writer(buf)
         header = ["Name", "Klasse", "Richtig", "Gesamt", "%"] + [f"F{i+1}: {q.question_text[:40]}" for i, q in enumerate(questions)]
-        writer.writerow(header)
+        zeilen = []
         for r in rows:
             cells = [r["name"], r["class_code"], r["correct"], r["total_scored"],
                      f"{r['percent']}%" if r["percent"] is not None else "–"]
@@ -1235,14 +1230,8 @@ def get_session_report(code: str, fmt: str = "json", db: Session = Depends(get_d
                     cells.append("✓")
                 else:
                     cells.append("✗" if qr["answered"] else "–")
-            writer.writerow(cells)
-        buf.seek(0)
-        filename = f"report_{code}.csv"
-        return StreamingResponse(
-            iter([buf.getvalue().encode("utf-8-sig")]),
-            media_type="text/csv",
-            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
-        )
+            zeilen.append(cells)
+        return csv_antwort(header, zeilen, f"report_{code}.csv")
 
     return {
         "session_code": code,

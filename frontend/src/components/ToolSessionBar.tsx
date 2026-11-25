@@ -1,12 +1,15 @@
 "use client";
 /**
- * Beitritts-Code + QR für ein zustandsloses Werkzeug (Abakus, Zeitstrahl, …).
+ * Sitzungsleiste der Lehrkraft für jedes Werkzeug: »📱 Zum Mitmachen« (Code,
+ * QR, Gastzugang) und daneben das ☰-Sitzungsmenü mit Dashboard, Auswertung,
+ * Sitzung wechseln und neuer Runde. Dashboard und Auswertung öffnen sich als
+ * Schublade, das Werkzeug bleibt daneben bedienbar.
  *
- * Die Session ist nur der Einstieg: ein Code zum Scannen und der Schalter, ob
- * Gäste ohne Konto hereindürfen. Der Code bleibt pro Lehrkraft, Werkzeug und
- * geteiltem Inhalt derselbe, ein ausgedruckter QR gilt also weiter.
+ * Der Code bleibt pro Lehrkraft, Werkzeug, Inhalt und Klasse derselbe, ein
+ * ausgedruckter QR gilt also weiter. Siehe docs/plan-sitzung-dashboard-auswertung.md.
  */
 import { useState, type ReactNode } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { api, type ToolSessionOut } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { JoinQR } from "@/components/JoinQR";
@@ -14,8 +17,16 @@ import { GuestAccessToggle } from "@/components/GuestAccessToggle";
 import { useLanUrl } from "@/hooks/useLanUrl";
 import { ToolSessionList } from "@/components/ToolSessionList";
 import { SelbstSpielenKnopf } from "@/components/LehrkraftSpielt";
+import { Menue, MenueAbschnitt, MenuePunkt } from "@/components/Menue";
+import { SitzungLeiste, type SitzungWahl } from "@/components/SitzungWahl";
+import SitzungDashboard from "@/components/sitzung/SitzungDashboard";
+import SitzungAuswertung from "@/components/sitzung/SitzungAuswertung";
+import { Schublade } from "@/components/sitzung/Schublade";
+import type { SitzungAnsicht } from "@/lib/sitzung/typen";
 
-export function ToolSessionBar({ tool, title, refId, sitzung, optionen }: {
+type Fenster = "beitritt" | "dashboard" | "auswertung" | "wechseln";
+
+export function ToolSessionBar({ tool, title, refId, sitzung, optionen, ansicht, wahl, menue }: {
   tool: string;
   title: string;
   /** Einstellungen, die das Werkzeug für seine Sitzung anbietet (Geschichte der Medien: alles freischalten) */
@@ -24,9 +35,16 @@ export function ToolSessionBar({ tool, title, refId, sitzung, optionen }: {
   refId?: number;
   /** Schon gewählte Sitzung (Challenge: die der gewählten Klasse) — dann wird keine geholt. */
   sitzung?: ToolSessionOut;
+  /** Spalten, Aufgaben und Wertung für Dashboard und Auswertung (lib/<werkzeug>/sitzung.ts) */
+  ansicht?: SitzungAnsicht;
+  /** Sitzung je Klasse (useWerkzeugSitzung): bietet »Sitzung wechseln« an */
+  wahl?: SitzungWahl;
+  /** Weitere Punkte im ☰-Menü (Anzeige-Optionen des Werkzeugs) */
+  menue?: (session: ToolSessionOut) => ReactNode;
 }) {
   const { auth } = useAuth();
-  const [open, setOpen] = useState(false);
+  const qc = useQueryClient();
+  const [fenster, setFenster] = useState<Fenster | null>(null);
   const [geholt, setSession] = useState<ToolSessionOut | null>(null);
   const session = sitzung ?? geholt;
   const [error, setError] = useState<string | null>(null);
@@ -37,8 +55,8 @@ export function ToolSessionBar({ tool, title, refId, sitzung, optionen }: {
   const isTeacher = auth?.role === "teacher" || auth?.role === "admin";
   if (!isTeacher) return null;
 
-  async function show() {
-    setOpen(true);
+  async function oeffne(f: Fenster) {
+    setFenster(f);
     if (session) return;
     try {
       setSession(await api.toolSessions.create(tool, refId));
@@ -46,6 +64,12 @@ export function ToolSessionBar({ tool, title, refId, sitzung, optionen }: {
     } catch (e) {
       setError(e instanceof Error ? e.message : "Der Code ließ sich nicht anlegen.");
     }
+  }
+
+  async function neueRunde() {
+    if (!session || !window.confirm("Alle Stände dieser Sitzung löschen und neu beginnen?")) return;
+    await api.sitzungen.loeschen(session.code);
+    qc.invalidateQueries({ queryKey: ["sitzung-uebersicht", session.code] });
   }
 
   async function copy() {
@@ -57,33 +81,65 @@ export function ToolSessionBar({ tool, title, refId, sitzung, optionen }: {
     } catch { /* Zwischenablage gesperrt — der Link steht ja da */ }
   }
 
+  const schliessen = () => setFenster(null);
+  const warten = <>
+    {error && <p className="text-sm text-bad">{error}</p>}
+    {!session && !error && <p className="text-sm text-muted">Code wird geholt …</p>}
+  </>;
+
   return (
-    <>
+    <span className="inline-flex items-center gap-1.5">
       <button
-        onClick={show}
+        onClick={() => oeffne("beitritt")}
         title="Beitritts-Code und QR für die Schüler"
         className="text-sm border border-line rounded-lg px-3 py-1.5 hover:border-accent"
       >
         📱 Zum Mitmachen
       </button>
+      <Menue titel="Sitzungsmenü">
+        <MenueAbschnitt titel={session?.scope_label ? `Sitzung · ${session.scope_label}` : "Sitzung"}>
+          <MenuePunkt onClick={() => oeffne("dashboard")} title="Live: wer macht mit, wie weit, was gerade">📈 Dashboard</MenuePunkt>
+          <MenuePunkt onClick={() => oeffne("auswertung")} title="Kennzahlen, schwerste Aufgaben, Download">📊 Auswertung</MenuePunkt>
+          {wahl && <MenuePunkt onClick={() => setFenster("wechseln")}>🔄 Sitzung wechseln / neue Klasse</MenuePunkt>}
+          <MenuePunkt onClick={() => oeffne("beitritt")}>📱 Code, QR und Gastzugang</MenuePunkt>
+          {session && <MenuePunkt onClick={neueRunde} gefahr title="Löscht die gemeldeten Stände dieser Sitzung">🧹 Neue Runde</MenuePunkt>}
+        </MenueAbschnitt>
+        {session && menue && <MenueAbschnitt titel="Anzeige">{menue(session)}</MenueAbschnitt>}
+      </Menue>
 
-      {open && (
+      {fenster === "dashboard" && (
+        <Schublade titel={`📈 ${title}`} onClose={schliessen}>
+          {warten}
+          {session && <SitzungDashboard code={session.code} ansicht={ansicht} />}
+        </Schublade>
+      )}
+      {fenster === "auswertung" && (
+        <Schublade titel={`📊 ${title}`} onClose={schliessen}>
+          {warten}
+          {session && <SitzungAuswertung code={session.code} ansicht={ansicht} titel={title} />}
+        </Schublade>
+      )}
+      {fenster === "wechseln" && wahl && (
+        <Schublade titel="🔄 Sitzung wechseln" onClose={schliessen}>
+          <SitzungLeiste wahl={wahl} />
+        </Schublade>
+      )}
+
+      {fenster === "beitritt" && (
         <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/70 p-6"
-          onClick={() => setOpen(false)}>
+          onClick={schliessen}>
           <div role="dialog" aria-modal="true" aria-label={`Beitritt zu ${title}`}
             className="bg-surface border border-line rounded-2xl w-full max-w-md
               max-h-[85vh] overflow-y-auto shadow-2xl text-left"
             onClick={e => e.stopPropagation()}>
             <div className="flex items-center gap-2 px-5 py-3 border-b border-line">
               <span className="font-black text-base flex-1">{title} — zum Mitmachen</span>
-              <button onClick={() => setOpen(false)} aria-label="Schließen"
+              <button onClick={schliessen} aria-label="Schließen"
                 className="text-muted hover:text-fg text-xl leading-none px-1">×</button>
             </div>
 
             <div className="p-5 flex flex-col gap-4">
-              {error && <p className="text-sm text-bad">{error}</p>}
-
-              {!session && !error && <p className="text-sm text-muted">Code wird geholt …</p>}
+              {warten}
 
               {session && (
                 <>
@@ -133,6 +189,6 @@ export function ToolSessionBar({ tool, title, refId, sitzung, optionen }: {
           </div>
         </div>
       )}
-    </>
+    </span>
   );
 }

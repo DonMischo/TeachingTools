@@ -24,7 +24,8 @@ from ..models import (
     Haus, HausMember, MausBestenliste, MausFortschritt, MausPruefung, Student, Teacher,
     ToolSession, Transaction,
 )
-from ..display_names import abbreviate_parts, abbreviate_stored, short_name
+from ..display_names import short_name
+from ..sitzung import anzeigename, sitzung_fuer, teilnehmer
 
 router = APIRouter(prefix="/api/maus/bestenliste", tags=["maus"])
 
@@ -60,25 +61,6 @@ def _pruefe(body: EintragIn) -> None:
         raise HTTPException(400, f"Unbekannter Modus: {body.modus}")
     if body.wert <= 0 or body.wert > MODI[body.modus]:
         raise HTTPException(400, "Dieser Wert ist nicht plausibel.")
-
-
-def _anzeigename(spieler: Union[Teacher, Student, Guest]) -> tuple[str, str | None, bool]:
-    """Name, Klasse und Gast-Kennzeichen aus dem Konto bzw. dem Gast-Token —
-    nie aus dem Browser."""
-    if isinstance(spieler, Student):
-        return (short_name(spieler), spieler.klasse, False)
-    if isinstance(spieler, Teacher):
-        return (abbreviate_parts(spieler.first_name or "", spieler.last_name or ""), None, False)
-    return (abbreviate_stored(spieler.name)[:120], None, True)
-
-
-def _teilnehmer(spieler: Union[Teacher, Student, Guest]) -> dict:
-    """Die Spalte, in der dieser Teilnehmer steht — wie in routers/tool_sessions.py."""
-    if isinstance(spieler, Student):
-        return {"student_id": spieler.id}
-    if isinstance(spieler, Teacher):
-        return {"teacher_id": spieler.id}
-    return {"guest_id": spieler.id}
 
 
 def _selbst(zeile: MausBestenliste, wer: dict) -> bool:
@@ -123,8 +105,8 @@ def _liste(
 def _eintragen(db: Session, body: EintragIn, spieler: Union[Teacher, Student, Guest]) -> EintragOut:
     """Ein Ergebnis melden. Nur eine Verbesserung wird übernommen."""
     _pruefe(body)
-    name, klasse, gast = _anzeigename(spieler)
-    wer = _teilnehmer(spieler)
+    name, klasse, gast = anzeigename(spieler)
+    wer = teilnehmer(spieler)
 
     zeile = db.query(MausBestenliste).filter_by(modus=body.modus, **wer).first()
     if zeile is None:
@@ -164,7 +146,7 @@ def liste(
     if modus not in MODI:
         raise HTTPException(400, f"Unbekannter Modus: {modus}")
     sitzung_id = _sitzung(sitzung, db).id if sitzung else None
-    return _liste(db, modus, _teilnehmer(user), klasse=klasse, sitzung_id=sitzung_id)
+    return _liste(db, modus, teilnehmer(user), klasse=klasse, sitzung_id=sitzung_id)
 
 
 @router.post("", response_model=EintragOut,
@@ -178,12 +160,7 @@ def eintragen(
 
 
 def _sitzung(code: str, db: Session) -> ToolSession:
-    session = db.query(ToolSession).filter_by(code=code.upper()).first()
-    if not session:
-        raise HTTPException(404, "Sitzung nicht gefunden")
-    if session.tool_slug != "maus":
-        raise HTTPException(400, "Diese Sitzung gehört nicht zum Maus-Führerschein.")
-    return session
+    return sitzung_fuer(db, code, "maus", "Diese Sitzung gehört nicht zum Maus-Führerschein.")
 
 
 @router.get("/{code}", response_model=list[EintragOut])
@@ -199,7 +176,7 @@ def liste_ueber_code(
     if modus not in MODI:
         raise HTTPException(400, f"Unbekannter Modus: {modus}")
     sitzung_id = _sitzung(sitzung, db).id if sitzung else None
-    return _liste(db, modus, _teilnehmer(spieler), klasse=klasse, sitzung_id=sitzung_id)
+    return _liste(db, modus, teilnehmer(spieler), klasse=klasse, sitzung_id=sitzung_id)
 
 
 @router.post("/{code}", response_model=EintragOut)
@@ -303,8 +280,8 @@ def fortschritt_melden(
             raise HTTPException(403, "Dieses Werkzeug ist für dich nicht freigeschaltet (maus/use).")
     _pruefe_fortschritt(body)
 
-    name, klasse, gast = _anzeigename(spieler)
-    wer = _teilnehmer(spieler)
+    name, klasse, gast = anzeigename(spieler)
+    wer = teilnehmer(spieler)
     zeile = db.query(MausFortschritt).filter_by(session_id=session.id, **wer).first()
     if zeile is None:
         zeile = MausFortschritt(session_id=session.id, name=name, klasse=klasse, gast=gast, **wer)

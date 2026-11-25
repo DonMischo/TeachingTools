@@ -4,11 +4,11 @@
  * live mitverfolgen, Hauspunkte vergeben, CSV holen, neue Runde.
  * Je Klasse bzw. Kurs/WPF/A-B-Gruppe eine eigene Sitzung mit eigenem Code (wie Caputh, TaskCrawler).
  */
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { api, type ChallengeKalibrierungWerte, type ToolSessionOut } from "@/lib/api";
+import { api, type ChallengeKalibrierungWerte } from "@/lib/api";
 import { ToolSessionBar } from "@/components/ToolSessionBar";
-import { ScopeSelect, scopeBody, type Scope } from "@/components/ScopeSelect";
+import { SitzungLeiste, useWerkzeugSitzung } from "@/components/SitzungWahl";
 import { SPIELARTEN } from "@/lib/challenge/spielarten";
 import { THEMES } from "@/lib/challenge/themes";
 
@@ -97,54 +97,20 @@ function Kalibrierung() {
 
 export default function ChallengeLehrkraft({ satzId, titel }: { satzId: number; titel: string }) {
   const qc = useQueryClient();
-  const [sitzung, setSitzung] = useState<ToolSessionOut | null>(null);
+  const wahl = useWerkzeugSitzung("challenge", true, { refId: satzId, vorwaehlen: true });
+  const { sitzung, setze: setSitzung } = wahl;
   const [meldung, setMeldung] = useState("");
-  const [scope, setScope] = useState<Scope>(null);
-  // Die Sitzungen dieses Satzes (je Klasse eine); die neueste ist vorgewählt
-  const { data: alle = [], refetch: neuLaden } = useQuery({
-    queryKey: ["tool-sessions-list", "challenge"], queryFn: () => api.play.sessions("simulation", "challenge"),
-  });
-  const meine = alle.filter((z) => z.ref_id === satzId && z.mine);
-  useEffect(() => { setSitzung(null); }, [satzId]);
-  const ersteCode = meine[0]?.code;
-  useEffect(() => {
-    if (sitzung || !ersteCode) return;
-    api.toolSessions.get(ersteCode).then(setSitzung).catch(() => setMeldung("Challenge-Sitzung ließ sich nicht laden."));
-  }, [ersteCode, sitzung]);
-  const starten = async () => {
-    if (!scope) return;
-    try {
-      setSitzung(await api.toolSessions.create("challenge", satzId, scopeBody(scope)));
-      setScope(null); setMeldung("");
-      neuLaden();
-    } catch (err) { setMeldung((err as Error).message || "Challenge-Sitzung ließ sich nicht anlegen."); }
-  };
-  const waehleSitzung = async (c: string) => {
-    try { setSitzung(await api.toolSessions.get(c)); } catch { setMeldung("Challenge-Sitzung ließ sich nicht laden."); }
-  };
   const code = sitzung?.code;
   const { data: ueb } = useQuery({
     queryKey: ["challenge", "uebersicht", code], queryFn: () => api.challenge.uebersicht(code!), enabled: !!code, refetchInterval: 5000,
   });
 
-  const sitzungsWahl = (
-    <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Sitzung je Klasse">
-      {meine.length > 0 && (
-        <select className="input w-56" aria-label="Sitzung" value={code ?? ""} onChange={(e) => waehleSitzung(e.target.value)}>
-          {meine.map((z) => <option key={z.code} value={z.code}>{z.scope_label ?? "Alle (ohne Klasse)"} · {z.code}</option>)}
-        </select>
-      )}
-      <label className="flex items-center gap-1.5">Neu für <ScopeSelect value={scope} onChange={setScope} className="input w-56" /></label>
-      <button className="btn-primary" disabled={!scope} onClick={starten}>{meine.length ? "Für diese Klasse starten" : "Starten"}</button>
-    </div>
-  );
   if (!sitzung) {
     return (
       <section className="card p-4 flex flex-col gap-3 text-sm" aria-label="Challenge-Sitzung">
         <h2 className="font-black text-base">⚔️ Challenge: {titel}</h2>
         <p className="text-muted">Für welche Klasse bzw. welchen Kurs läuft die Challenge? Jede bekommt einen eigenen Code.</p>
-        {sitzungsWahl}
-        {meldung && <p className="text-sm text-bad">{meldung}</p>}
+        <SitzungLeiste wahl={wahl} />
       </section>
     );
   }
@@ -190,7 +156,7 @@ export default function ChallengeLehrkraft({ satzId, titel }: { satzId: number; 
         <h2 className="font-black text-base">⚔️ Challenge: {titel}{sitzung.scope_label && <span className="font-normal text-muted"> · {sitzung.scope_label}</span>}</h2>
         <ToolSessionBar tool="challenge" title={`Challenge: ${titel}${sitzung.scope_label ? ` (${sitzung.scope_label})` : ""}`} refId={satzId} sitzung={sitzung} />
       </div>
-      {sitzungsWahl}
+      <SitzungLeiste wahl={wahl} />
       <label className="flex items-center gap-1.5">
         Startstufe
         <select className="input w-20" value={startstufe} onChange={(e) => setzeStufe(Number(e.target.value))}>

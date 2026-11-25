@@ -45,7 +45,9 @@ kern:
       - QR-Code je Sitzung
       - Befristeter Gastzugang ohne Konto, gilt nur für eine Sitzung
       - Gastzugang schließt nach dem eingestellten Fenster von selbst
-      - Sitzungen für Klasse, A/B-Hälfte, Kurs oder WPF-Gruppe
+      - Sitzungen für Klasse, A/B-Hälfte, Kurs oder WPF-Gruppe (jedes Werkzeug, je Klasse ein eigener Code)
+      - "Sitzungsmenü ☰: Dashboard (Tabelle, Kacheln, Matrix, Rangliste) und Auswertung (Kennzahlen, schwerste Aufgaben, CSV/PDF/DOCX) als Schublade, jederzeit"
+      - Gemeinsamer Sitzungsstand aller Werkzeuge (/api/sitzungen)
       - Lehrkraft spielt selbst mit (alle Aktivitäten), setzt nach dem Dashboard fort, unsichtbar für die Klasse und ohne Hauspunkte
   - id: erfolge
     name: Erfolge (Übersicht)
@@ -64,6 +66,7 @@ aktivitaeten:
     kann:
       - Modi Klassisch, TÜ, Test, Aufgabe, Wettbewerb, Benutzerdefiniert
       - Live-Sitzung mit Host-Screen, Beitritt per Code, Team-Modus
+      - "Host-Screen: »Fragen zeigen« schaltbar, aus = Fragen und Antworten nur auf den Geräten"
       - Bilder in Fragen, eingebettete Lückentexte und Zeitstrahlen
       - Gruppenauswertung
       - Import als .json/.zip, Vorlage

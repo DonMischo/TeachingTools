@@ -12,6 +12,7 @@
  * Der Stand liegt je Person im Browser (`speicherSchluessel`: Konto, Gastname
  * bzw. Gast-Id) und geht mit Code zusätzlich an die Übersicht der Lehrkraft.
  */
+import { useMeinStand } from "@/hooks/useMeinStand";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { wahl, type Vorgabe } from "@/lib/vorgabe";
 import { liesStand, schreibStand, speicherName, type MarkierStand } from "@/lib/markieren/speicher";
@@ -109,15 +110,8 @@ export default function Markieren({ action, rangliste, vorgabe, speicherSchluess
   const { stand, aendern } = useStand(speicherSchluessel);
   const [aktuell, setAktuell] = useState<string | null>(null);
 
-  // Mit Code: Stand und »gerade dabei« an die Übersicht der Lehrkraft (gebündelt, still bei Fehlern).
-  const code = zugang?.code, token = zugang?.token ?? null;
-  useEffect(() => {
-    if (!code || !stand) return;
-    const t = setTimeout(() => {
-      api.markieren.fortschritt({ code, token }, { ...stand, aktuell: aktuell?.slice(0, 120) ?? null }).catch(() => { /* nur für die Übersicht */ });
-    }, 800);
-    return () => clearTimeout(t);
-  }, [code, token, stand, aktuell]);
+  // Mit Code: Stand und »gerade dabei« an das Dashboard der Lehrkraft.
+  useMeinStand(zugang, stand, aktuell);
 
   const teile = { stand, aendern, onAktuell: setAktuell };
   const INHALT: Record<Blatt, () => ReactNode> = {

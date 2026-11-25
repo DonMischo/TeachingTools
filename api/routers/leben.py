@@ -9,20 +9,17 @@ Protokoll als CSV herunterladen.
 Gäste melden sich wie beim Maus-Führerschein über den Sitzungscode und ihre
 Gast-Id (siehe ``routers/maus.py``).
 """
-import csv
-import io
 from datetime import datetime
 from typing import Union
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from ..auth import Guest, get_current_teacher, get_player
 from ..availability import is_allowed
 from ..database import get_db
-from ..display_names import abbreviate_parts, abbreviate_stored, short_name
+from ..sitzung import anzeigename, csv_antwort, sitzung_fuer, teilnehmer
 from ..models import LebenStand, Student, Teacher, ToolSession
 
 router = APIRouter(prefix="/api/leben", tags=["leben"])
@@ -62,28 +59,7 @@ class StandOut(BaseModel):
 
 
 def _sitzung(code: str, db: Session) -> ToolSession:
-    session = db.query(ToolSession).filter_by(code=code.upper()).first()
-    if not session:
-        raise HTTPException(404, "Sitzung nicht gefunden")
-    if session.tool_slug != "leben":
-        raise HTTPException(400, "Diese Sitzung gehört nicht zu »Rock your Life«.")
-    return session
-
-
-def _anzeigename(spieler: Union[Teacher, Student, Guest]) -> tuple[str, str | None, bool]:
-    if isinstance(spieler, Student):
-        return (short_name(spieler), spieler.klasse, False)
-    if isinstance(spieler, Teacher):
-        return (abbreviate_parts(spieler.first_name or "", spieler.last_name or ""), None, False)
-    return (abbreviate_stored(spieler.name)[:120], None, True)
-
-
-def _teilnehmer(spieler: Union[Teacher, Student, Guest]) -> dict:
-    if isinstance(spieler, Student):
-        return {"student_id": spieler.id}
-    if isinstance(spieler, Teacher):
-        return {"teacher_id": spieler.id}
-    return {"guest_id": spieler.id}
+    return sitzung_fuer(db, code, "leben", "Diese Sitzung gehört nicht zu »Rock your Life«.")
 
 
 def _zusammenfassung_kuerzen(z: dict) -> dict:
@@ -118,8 +94,8 @@ def stand_melden(
     if len(body.neu) > MAX_NEUE_ZEILEN:
         raise HTTPException(400, "Zu viele Protokollzeilen auf einmal.")
 
-    name, klasse, gast = _anzeigename(spieler)
-    wer = _teilnehmer(spieler)
+    name, klasse, gast = anzeigename(spieler)
+    wer = teilnehmer(spieler)
     zeile = db.query(LebenStand).filter_by(session_id=session.id, **wer).first()
     if zeile is None:
         zeile = LebenStand(session_id=session.id, name=name, klasse=klasse, gast=gast, protokoll=[], **wer)
@@ -170,17 +146,12 @@ def protokoll(code: str, name: str | None = None, db: Session = Depends(get_db),
 def protokoll_csv(code: str, db: Session = Depends(get_db), teacher: Teacher = Depends(get_current_teacher)):
     session = _lehrkraft_sitzung(code, db, teacher)
     zeilen = db.query(LebenStand).filter_by(session_id=session.id).all()
-    puffer = io.StringIO()
-    # Semikolon + BOM: so öffnet Excel die Datei in deutscher Einstellung direkt richtig
-    puffer.write("﻿")
-    w = csv.writer(puffer, delimiter=";")
-    w.writerow(["Name", "Klasse", "Figur", "Spieltag", "Datum", "Uhrzeit", "Art", "Ereignis", "Betrag (€)"])
+    kopf = ["Name", "Klasse", "Figur", "Spieltag", "Datum", "Uhrzeit", "Art", "Ereignis", "Betrag (€)"]
+    ausgabe = []
     for z in sorted(zeilen, key=lambda x: x.name.lower()):
         for e in z.protokoll or []:
             stunde = float(e.get("stunde", 0))
-            w.writerow([z.name, z.klasse or "", z.figur, e.get("tag", ""), e.get("datum", ""),
-                        f"{int(stunde):02d}:{int((stunde % 1) * 60):02d}", e.get("art", ""), e.get("text", ""),
-                        "" if e.get("betrag") is None else f"{e['betrag']:.2f}".replace(".", ",")])
-    puffer.seek(0)
-    return StreamingResponse(iter([puffer.getvalue()]), media_type="text/csv; charset=utf-8",
-                             headers={"Content-Disposition": f'attachment; filename="rock-your-life-{session.code}.csv"'})
+            ausgabe.append([z.name, z.klasse or "", z.figur, e.get("tag", ""), e.get("datum", ""),
+                            f"{int(stunde):02d}:{int((stunde % 1) * 60):02d}", e.get("art", ""), e.get("text", ""),
+                            "" if e.get("betrag") is None else f"{e['betrag']:.2f}".replace(".", ",")])
+    return csv_antwort(kopf, ausgabe, f"rock-your-life-{session.code}.csv", trenner=";")

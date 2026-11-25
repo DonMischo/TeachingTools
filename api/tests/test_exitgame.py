@@ -442,6 +442,9 @@ def test_report_reflects_attempt(client, db, teacher_token, klass):
     assert r.status_code == 200
     row = r.json()["attempts"][0]
     assert row["slides_solved"] == 1
+    # Für die gemeinsame Auswertung: welche Folien gelöst sind, und alle Folien in Reihenfolge
+    assert len(row["solved_slide_ids"]) == 1
+    assert row["solved_slide_ids"][0] in [sl["id"] for sl in r.json()["slides"]]
 
     r_csv = client.get(f"/api/exitgame-sessions/{s['join_code']}/report?fmt=csv", headers=_auth(teacher_token))
     assert r_csv.status_code == 200
