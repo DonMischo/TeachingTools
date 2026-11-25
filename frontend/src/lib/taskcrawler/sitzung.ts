@@ -3,8 +3,8 @@
  * (/exitgame-sessions/{code}/report) wird zu Sitzungszeilen, die Folien zu Aufgaben.
  * Der TaskCrawler behält seine eigenen Tabellen — das hier ist nur der Adapter.
  */
-import type { ExitGameReport, SitzungZeile } from "@/lib/api";
-import { liste, zahl, type SitzungAnsicht } from "@/lib/sitzung/typen";
+import { api, type ExitGameReport, type SitzungZeile } from "@/lib/api";
+import { liste, zahl, type SitzungAnsicht, type SitzungQuelle } from "@/lib/sitzung/typen";
 
 export function taskcrawlerZeilen(r: ExitGameReport, jetzt = Date.now()): SitzungZeile[] {
   return r.attempts.map(a => ({
@@ -37,5 +37,13 @@ export function taskcrawlerAnsicht(r: ExitGameReport): SitzungAnsicht {
     geschafft: (d, id) => liste(d, "folien").includes(id),
     fortschritt: d => (gesamt ? (zahl(d, "geloest") ?? 0) / gesamt : 0),
     rang: { titel: "Fehler", art: "zahl", richtung: "min", wert: d => zahl(d, "fehler") },
+  };
+}
+
+/** Datenquelle für Dashboard und Auswertung (Host-Seite, Sitzungsmenü). */
+export function taskcrawlerQuelle(code: string): SitzungQuelle {
+  return {
+    schluessel: ["taskcrawler", code],
+    laden: async () => { const r = await api.exitgame.sessions.report(code); return { zeilen: taskcrawlerZeilen(r), ansicht: taskcrawlerAnsicht(r) }; },
   };
 }

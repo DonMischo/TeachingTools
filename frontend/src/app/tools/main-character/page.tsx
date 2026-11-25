@@ -10,7 +10,7 @@ export default function MainCharacterPage() {
   return (
     <RequireAccount icon="👑" title="Main Character">
       <MainCharacter
-        action={<ToolSessionBar tool="main-character" title="Main Character" />}
+        action={<ToolSessionBar tool="main-character" title="Main Character" anonym />}
         lehrkraft={!!auth && auth.user_type !== "student"}
         speicherSchluessel={`konto-${auth?.user_type ?? "unbekannt"}-${id}`}
       />

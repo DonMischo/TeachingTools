@@ -146,4 +146,10 @@ Aktivitäten mit eigenen Tabellen (TaskCrawler, Caputh, Lückentext, Bingo, Chal
 - [x] Phase 2: `SitzungStand`, `/api/sitzungen`, `SitzungDashboard` (Tabelle, Kacheln, Matrix, Rangliste); Pilot Markieren mit Datenübernahme.
 - [x] Phase 3: `SitzungAuswertung` mit CSV, PDF und DOCX; Adapter für TaskCrawler und Lückentext.
 - [x] Phase 4: ☰ und Schublade über `ToolSessionBar`; Caputh »Fragen zeigen«.
-- [ ] Phase 5–8
+- [x] Phase 5: Maus, Algo und Rock your Life auf `SitzungStand`.
+  - Rock your Life: Das Protokoll (bis 6000 Zeilen) bleibt in `LebenStand`; im Dashboard steht eine Zusammenfassung.
+  - KI-Kompass und Main Character bleiben bewusst anonym (`anonym` an `ToolSessionBar`): ohne Dashboard, ohne Auswertung, ohne Anwesenheit.
+- [x] Phase 6: Adapter (`SitzungQuelle`) für Challenge, Kartenquiz, Caputh (Matrix je Frage) und Bingo; das Kartenquiz bekommt Sitzungen je Klasse.
+  - Offen: Zeitstrahl und Kartenübung. Lernende können eine geteilte Zeitleiste bisher nur ansehen; dafür bräuchte es erst einen Übungsmodus.
+- [x] Phase 7: Anwesenheit `PUT /api/sitzungen/{code}/da` per `useAnwesenheit` im Play-Rahmen. Sie fasst `daten` nicht an und läuft nur für Lernende und Gäste.
+- [ ] Phase 8: Bestenlisten

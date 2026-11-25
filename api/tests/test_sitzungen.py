@@ -100,3 +100,24 @@ def test_jedes_werkzeug_bekommt_je_klasse_eine_eigene_sitzung(client, db, teache
     mit = client.post("/api/tool-sessions", json={"tool_slug": "algo", "class_id": klass.id},
                       headers=auth(teacher_token)).json()
     assert mit["code"] != ohne and mit["class_id"] == klass.id
+
+
+def test_anwesenheit_legt_an_und_laesst_daten_stehen(client, db, teacher_token):
+    code = _sitzung(client, teacher_token)
+    ada = schueler(db)
+    client.cookies.clear()
+    assert client.put(f"/api/sitzungen/{code}/da", headers=als(ada)).status_code == 204
+    client.put(f"/api/sitzungen/{code}/stand", json={"daten": _daten()}, headers=als(ada))
+    assert client.put(f"/api/sitzungen/{code}/da", headers=als(ada)).status_code == 204
+    client.cookies.clear()
+    [z] = client.get(f"/api/sitzungen/{code}/uebersicht", headers=auth(teacher_token)).json()["zeilen"]
+    assert z["daten"]["lektionen"] == ["doppelklick"]
+
+
+def test_anwesenheit_nicht_bei_anonymen_werkzeugen(client, db, teacher_token):
+    code = _sitzung(client, teacher_token, slug="main-character")
+    ada = schueler(db)
+    client.cookies.clear()
+    assert client.put(f"/api/sitzungen/{code}/da", headers=als(ada)).status_code == 204
+    client.cookies.clear()
+    assert client.get(f"/api/sitzungen/{code}/uebersicht", headers=auth(teacher_token)).json()["zeilen"] == []

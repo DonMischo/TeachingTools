@@ -187,7 +187,12 @@ app.mount("/uploads/bildpaare", StaticFiles(directory=str(BILDPAARE_DIR)), name=
 # aber nur Zeilen, die es dort noch nicht gibt — also genau einmal.
 STAND_UEBERNAHMEN = {
     "markier_fortschritt": "json_build_object('lektionen', f.lektionen, 'quellen', f.quellen, 'challenge', f.challenge)",
+    "maus_fortschritt": "json_build_object('stufen', f.stufen, 'hilfe', f.hilfe, 'bestanden', f.bestanden)",
+    "algo_fortschritt": "json_build_object('level', f.level, 'fluss', f.fluss, 'automat', f.automat, 'wertung', f.wertung)",
+    "leben_staende": "json_build_object('figur', f.figur, 'spiel_id', f.spiel_id, 'zusammenfassung', f.zusammenfassung, 'protokoll_zeilen', json_array_length(f.protokoll))",
 }
+# Nur markier_fortschritt hat die Spalte »aktuell«; bei den anderen bleibt sie leer.
+STAND_MIT_AKTUELL = {"markier_fortschritt"}
 
 
 def _staende_uebernehmen() -> list[str]:
@@ -197,7 +202,7 @@ def _staende_uebernehmen() -> list[str]:
             "INSERT INTO sitzung_staende (session_id, student_id, teacher_id, guest_id, name, klasse, gast,"
             " daten, aktuell, beigetreten_am, aktualisiert_am)"
             f" SELECT f.session_id, f.student_id, f.teacher_id, f.guest_id, f.name, f.klasse, f.gast,"
-            f" {daten}, f.aktuell, f.aktualisiert_am, f.aktualisiert_am FROM {tabelle} f"
+            f" {daten}, {'f.aktuell' if tabelle in STAND_MIT_AKTUELL else 'NULL'}, f.aktualisiert_am, f.aktualisiert_am FROM {tabelle} f"
             " WHERE NOT EXISTS (SELECT 1 FROM sitzung_staende s WHERE s.session_id = f.session_id"
             " AND (s.student_id = f.student_id OR s.teacher_id = f.teacher_id OR s.guest_id = f.guest_id))"
         )

@@ -1024,6 +1024,15 @@ export type ExitGameReport = {
   slides?: { id: string; title: string }[];
 };
 
+export type CaputhReport = {
+  session_code: string; quiz_title: string; status: string; scope_label: string | null;
+  questions: { id: number; text: string; type: string }[];
+  participants: {
+    name: string; avatar: string; class_code: string; correct: number; total_scored: number; percent: number | null;
+    questions: { question: string; type: string; answered: boolean; correct: boolean | null }[];
+  }[];
+};
+
 export type ExitGameLogEvent = { slide_id: string; event_type: string; payload: Record<string, unknown>; created_at: string };
 export type ExitGameAttemptLog = { attempt: ExitGameAttemptSummary; student_name: string; student_class: string; events: ExitGameLogEvent[] };
 
@@ -1297,16 +1306,6 @@ export type MausEintragIn = { modus: MausModus; wert: number; dauer_ms: number; 
 /** Bestenliste eingrenzen: nur diese Sitzung bzw. nur diese Klasse. */
 export type MausFilter = { sitzung?: string; klasse?: string };
 export type MausStufenStand = Record<string, { punkte: number; sterne: number; dauer_ms: number }>;
-export type MausFortschrittIn = { stufen: MausStufenStand; hilfe: boolean; bestanden: number[] };
-export type MausUebersichtZeile = {
-  name: string;
-  klasse: string | null;
-  gast: boolean;
-  hilfe: boolean;
-  stufen: MausStufenStand;
-  bestanden: number[];
-  aktualisiert_am: string;
-};
 /** `code`: über welche Sitzung geprüft wurde — deren Lehrkraft bucht die Hauspunkte. */
 export type MausPruefungIn = { teil: 1 | 2 | 3 | 4; stufen: MausStufenStand; hilfe: boolean; code?: string | null };
 export type MausPruefungOut = { bestanden: boolean; punkte: number; schon_vergeben: boolean; haus: string | null };
@@ -1407,16 +1406,10 @@ export type KlikkSpielEintrag = { platz: number; name: string; klasse: string | 
 // »Rock your Life« (siehe api/routers/leben.py)
 export type LebenLogZeile = { tag: number; stunde: number; datum: string; art: string; text: string; betrag?: number | null };
 export type LebenStandIn = { spiel_id: string; figur: string; zusammenfassung: Record<string, unknown>; neu: LebenLogZeile[]; neustart?: boolean };
-export type LebenUebersichtZeile = {
-  name: string; klasse: string | null; gast: boolean; figur: string;
-  zusammenfassung: Record<string, unknown>; protokoll_zeilen: number; aktualisiert_am: string;
-};
-
 // Algorithmen-Werkstatt (siehe api/routers/algo.py)
 export type AlgoLevelStand = { sterne: number; bloecke: number; punkte?: number };
 export type AlgoWertung = { sterne: number; punkte: number };
 export type AlgoFortschrittIn = { level: Record<string, AlgoLevelStand>; fluss: string[]; automat: string[]; wertung: Record<string, AlgoWertung> };
-export type AlgoUebersichtZeile = AlgoFortschrittIn & { name: string; klasse: string | null; gast: boolean; aktualisiert_am: string };
 
 export type WettschreibenTeilnehmer = {
   id: number;
@@ -1926,21 +1919,18 @@ export const api = {
         body: JSON.stringify(body),
         headers: zugang.token ? { Authorization: `Bearer ${zugang.token}` } : undefined,
       }),
+    /** Anwesenheit: Zeile anlegen bzw. »zuletzt« auffrischen, ohne den Stand anzufassen */
+    da: (zugang: MausZugang) =>
+      apiFetch<void>(`sitzungen/${encodeURIComponent(zugang.code)}/da`, {
+        method: "PUT",
+        headers: zugang.token ? { Authorization: `Bearer ${zugang.token}` } : undefined,
+      }),
     uebersicht: (code: string) => apiFetch<SitzungUebersicht>(`sitzungen/${encodeURIComponent(code)}/uebersicht`),
     loeschen: (code: string) => apiFetch<void>(`sitzungen/${encodeURIComponent(code)}/staende`, { method: "DELETE" }),
   },
 
-  // Maus-Führerschein: Fortschritt je Sitzung, Live-Übersicht, Prüfung (siehe api/routers/maus.py)
+  // Maus-Führerschein: Prüfung (der Stand geht über sitzungen.stand) (siehe api/routers/maus.py)
   maus: {
-    fortschritt: (zugang: MausZugang, body: MausFortschrittIn) =>
-      apiFetch<{ ok: boolean }>(`maus/sitzung/${encodeURIComponent(zugang.code)}/fortschritt`, {
-        method: "PUT",
-        body: JSON.stringify(body),
-        headers: zugang.token ? { Authorization: `Bearer ${zugang.token}` } : undefined,
-      }),
-    /** Nur die Lehrkraft, der die Sitzung gehört (oder Admin). */
-    uebersicht: (code: string) =>
-      apiFetch<MausUebersichtZeile[]>(`maus/sitzung/${encodeURIComponent(code)}/uebersicht`),
     /** Prüfung melden — Schülerkonten bekommen beim ersten Bestehen Hauspunkte. */
     pruefung: (body: MausPruefungIn) =>
       apiFetch<MausPruefungOut>("maus/pruefung", { method: "POST", body: JSON.stringify(body) }),
@@ -2085,8 +2075,6 @@ export const api = {
         body: JSON.stringify(body),
         headers: zugang.token ? { Authorization: `Bearer ${zugang.token}` } : undefined,
       }),
-    uebersicht: (code: string) =>
-      apiFetch<LebenUebersichtZeile[]>(`leben/sitzung/${encodeURIComponent(code)}/uebersicht`),
     protokoll: (code: string, name?: string) =>
       apiFetch<{ name: string; figur: string; protokoll: LebenLogZeile[] }[]>(
         `leben/sitzung/${encodeURIComponent(code)}/protokoll${name ? `?name=${encodeURIComponent(name)}` : ""}`),
@@ -2094,16 +2082,8 @@ export const api = {
     csvPfad: (code: string) => `/api/leben/sitzung/${encodeURIComponent(code)}/protokoll.csv`,
   },
 
-  // Algorithmen-Werkstatt: Fortschritt je Sitzung, Lehrer-Übersicht (siehe api/routers/algo.py)
+  // Algorithmen-Werkstatt: der eigene Stand (gemeldet wird über sitzungen.stand, siehe api/routers/algo.py)
   algo: {
-    fortschritt: (zugang: MausZugang, body: AlgoFortschrittIn) =>
-      apiFetch<{ ok: boolean }>(`algo/sitzung/${encodeURIComponent(zugang.code)}/fortschritt`, {
-        method: "PUT",
-        body: JSON.stringify(body),
-        headers: zugang.token ? { Authorization: `Bearer ${zugang.token}` } : undefined,
-      }),
-    uebersicht: (code: string) =>
-      apiFetch<AlgoUebersichtZeile[]>(`algo/sitzung/${encodeURIComponent(code)}/uebersicht`),
     mein: (zugang: MausZugang) =>
       apiFetch<AlgoFortschrittIn>(`algo/sitzung/${encodeURIComponent(zugang.code)}/mein`, {
         headers: zugang.token ? { Authorization: `Bearer ${zugang.token}` } : undefined,
@@ -2496,6 +2476,8 @@ export const api = {
         body: JSON.stringify({ ...scope, max_points, team_mode: team_mode ?? false }),
       }),
     getSession: (code: string) => apiFetch<SessionOut>(`sessions/${code}`),
+    /** Bericht je Teilnehmer und Frage (✓/✗) — Grundlage der gemeinsamen Auswertung */
+    sessionReport: (code: string) => apiFetch<CaputhReport>(`sessions/${code}/report`),
     listSessions: (quizId: number) =>
       apiFetch<{ join_code: string; status: string; class_id: number | null; group_id: number | null; scope_label: string; participant_count: number; points_awarded: number | null; points_by_class: ClassPoints[]; started_at: string | null; finished_at: string | null }[]>(`capuths/${quizId}/sessions`),
     resetSession: (code: string) =>

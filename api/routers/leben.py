@@ -3,13 +3,13 @@
 Das Spiel rechnet komplett im Browser; der Spielstand selbst liegt dort (bzw.
 als JSON-Download bei den Schüler:innen). Hierher meldet der Browser nur eine
 Zusammenfassung (Spielmonat, Konto, Job, Wohnung …) und die neuen Zeilen des
-Protokolls. Die Lehrkraft sieht je Sitzung eine Zeile pro Person und kann das
-Protokoll als CSV herunterladen.
+Protokolls. Die Lehrkraft sieht je Sitzung eine Zeile pro Person (Übersicht über
+/api/sitzungen, Zusammenfassung dort in ``daten``) und kann das Protokoll
+als CSV herunterladen; das Protokoll selbst bleibt in ``LebenStand``.
 
 Gäste melden sich wie beim Maus-Führerschein über den Sitzungscode und ihre
 Gast-Id (siehe ``routers/maus.py``).
 """
-from datetime import datetime
 from typing import Union
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -20,7 +20,7 @@ from ..auth import Guest, get_current_teacher, get_player
 from ..availability import is_allowed
 from ..database import get_db
 from ..sitzung import anzeigename, csv_antwort, sitzung_fuer, teilnehmer
-from ..models import LebenStand, Student, Teacher, ToolSession
+from ..models import LebenStand, SitzungStand, Student, Teacher, ToolSession
 
 router = APIRouter(prefix="/api/leben", tags=["leben"])
 
@@ -46,16 +46,6 @@ class StandIn(BaseModel):
     neu: list[LogZeile] = []
     # Neustart: altes Protokoll verwerfen
     neustart: bool = False
-
-
-class StandOut(BaseModel):
-    name: str
-    klasse: str | None
-    gast: bool
-    figur: str
-    zusammenfassung: dict
-    protokoll_zeilen: int
-    aktualisiert_am: datetime
 
 
 def _sitzung(code: str, db: Session) -> ToolSession:
@@ -107,6 +97,14 @@ def stand_melden(
     zeile.spiel_id = body.spiel_id
     zeile.zusammenfassung = _zusammenfassung_kuerzen(body.zusammenfassung)
     zeile.protokoll = protokoll[-MAX_PROTOKOLL:]
+    # Die Übersicht liest den Sitzungsstand (api/routers/sitzungen.py); das lange Protokoll bleibt hier.
+    stand = db.query(SitzungStand).filter_by(session_id=session.id, **wer).first()
+    if stand is None:
+        stand = SitzungStand(session_id=session.id, **wer)
+        db.add(stand)
+    stand.name, stand.klasse, stand.gast = name, klasse, gast
+    stand.daten = {"figur": zeile.figur, "spiel_id": zeile.spiel_id, "zusammenfassung": zeile.zusammenfassung,
+                   "protokoll_zeilen": len(zeile.protokoll)}
     db.commit()
     return {"ok": True, "zeilen": len(zeile.protokoll)}
 
@@ -116,18 +114,6 @@ def _lehrkraft_sitzung(code: str, db: Session, teacher: Teacher) -> ToolSession:
     if session.created_by != teacher.id and teacher.role != "admin":
         raise HTTPException(403, "Diese Sitzung gehört jemand anderem.")
     return session
-
-
-@router.get("/sitzung/{code}/uebersicht", response_model=list[StandOut])
-def uebersicht(code: str, db: Session = Depends(get_db), teacher: Teacher = Depends(get_current_teacher)):
-    session = _lehrkraft_sitzung(code, db, teacher)
-    zeilen = db.query(LebenStand).filter_by(session_id=session.id).all()
-    zeilen.sort(key=lambda z: z.name.lower())
-    return [
-        StandOut(name=z.name, klasse=z.klasse, gast=z.gast, figur=z.figur, zusammenfassung=z.zusammenfassung or {},
-                 protokoll_zeilen=len(z.protokoll or []), aktualisiert_am=z.aktualisiert_am)
-        for z in zeilen
-    ]
 
 
 @router.get("/sitzung/{code}/protokoll")

@@ -9,6 +9,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, type ChallengeKalibrierungWerte } from "@/lib/api";
 import { ToolSessionBar } from "@/components/ToolSessionBar";
 import { SitzungLeiste, useWerkzeugSitzung } from "@/components/SitzungWahl";
+import { challengeQuelle } from "@/lib/challenge/sitzung";
 import { SPIELARTEN } from "@/lib/challenge/spielarten";
 import { THEMES } from "@/lib/challenge/themes";
 
@@ -154,7 +155,7 @@ export default function ChallengeLehrkraft({ satzId, titel }: { satzId: number; 
     <section className="card p-4 flex flex-col gap-3 text-sm" aria-label="Challenge-Sitzung">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h2 className="font-black text-base">⚔️ Challenge: {titel}{sitzung.scope_label && <span className="font-normal text-muted"> · {sitzung.scope_label}</span>}</h2>
-        <ToolSessionBar tool="challenge" title={`Challenge: ${titel}${sitzung.scope_label ? ` (${sitzung.scope_label})` : ""}`} refId={satzId} sitzung={sitzung} />
+        <ToolSessionBar tool="challenge" title={`Challenge: ${titel}${sitzung.scope_label ? ` (${sitzung.scope_label})` : ""}`} refId={satzId} sitzung={sitzung} wahl={wahl} quelle={challengeQuelle(sitzung.code)} />
       </div>
       <SitzungLeiste wahl={wahl} />
       <label className="flex items-center gap-1.5">

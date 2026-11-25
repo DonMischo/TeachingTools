@@ -9,7 +9,6 @@ Alle vier Modi sind »mehr ist besser«; die Obergrenze ist eine reine
 Plausibilitätsgrenze gegen frisierte Werte aus den Entwicklerwerkzeugen des
 Browsers, siehe ``bestenliste.py`` für die Begründung.
 """
-from datetime import datetime
 from typing import Literal, Union
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -18,10 +17,10 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..auth import Guest, get_current_teacher, get_current_user, get_player, require_admin
+from ..auth import Guest, get_current_user, get_player, require_admin
 from ..availability import is_allowed, require_capability
 from ..models import (
-    Haus, HausMember, MausBestenliste, MausFortschritt, MausPruefung, Student, Teacher,
+    Haus, HausMember, MausBestenliste, MausPruefung, SitzungStand, Student, Teacher,
     ToolSession, Transaction,
 )
 from ..display_names import short_name
@@ -69,7 +68,7 @@ def _selbst(zeile: MausBestenliste, wer: dict) -> bool:
 
 def _sitzung_teilnehmer_ids(db: Session, session_id: int) -> dict[str, list]:
     """Wer in dieser Sitzung Fortschritt gemeldet hat — je Spalte ihre Ids."""
-    zeilen = db.query(MausFortschritt).filter_by(session_id=session_id).all()
+    zeilen = db.query(SitzungStand).filter_by(session_id=session_id).all()
     return {
         "student_id": [z.student_id for z in zeilen if z.student_id is not None],
         "teacher_id": [z.teacher_id for z in zeilen if z.teacher_id is not None],
@@ -234,90 +233,27 @@ class StufeStand(BaseModel):
     dauer_ms: int = Field(ge=0)
 
 
-class FortschrittIn(BaseModel):
-    stufen: dict[str, StufeStand]
-    hilfe: bool = False
-    bestanden: list[int] = []
-
-
-class FortschrittOut(BaseModel):
-    name: str
-    klasse: str | None
-    gast: bool
-    hilfe: bool
-    stufen: dict
-    bestanden: list[int]
-    aktualisiert_am: datetime
-
-
-def _pruefe_fortschritt(body: FortschrittIn) -> None:
-    unbekannt = set(body.stufen) - STUFEN
+def pruefe_stand(daten: dict) -> None:
+    """Regeln für den gemeldeten Stand (PUT /api/sitzungen/{code}/stand, siehe PRUEFUNGEN)."""
+    stufen = daten.get("stufen", {})
+    bestanden = daten.get("bestanden", [])
+    if not isinstance(stufen, dict) or not isinstance(bestanden, list):
+        raise HTTPException(400, "Stand ungültig.")
+    unbekannt = set(stufen) - STUFEN
     if unbekannt:
         raise HTTPException(400, f"Unbekannte Stufe: {', '.join(sorted(unbekannt))}")
-    for teil in body.bestanden:
+    for stand in stufen.values():
+        try:
+            StufeStand(**stand)
+        except (TypeError, ValueError):
+            raise HTTPException(400, "Stufe ungültig.")
+    for teil in bestanden:
         if teil not in TEILE:
             raise HTTPException(400, f"Unbekannter Teil: {teil}")
         for sid in TEILE[teil]:
-            stand = body.stufen.get(sid)
-            if stand is None or stand.punkte <= 0:
+            stand = stufen.get(sid)
+            if stand is None or stand.get("punkte", 0) <= 0:
                 raise HTTPException(400, f"Teil {teil} ist noch nicht vollständig bestanden.")
-
-
-@router_sitzung.put("/sitzung/{code}/fortschritt")
-def fortschritt_melden(
-    code: str,
-    body: FortschrittIn,
-    db: Session = Depends(get_db),
-    spieler: Union[Teacher, Student, Guest] = Depends(get_player),
-):
-    """Fortschritt in dieser Sitzung melden — je Teilnehmer bleibt eine Zeile stehen."""
-    session = _sitzung(code, db)
-    if session.status == "closed":
-        raise HTTPException(403, "Diese Sitzung ist geschlossen")
-    if not isinstance(spieler, Guest):
-        admin = isinstance(spieler, Teacher) and spieler.role == "admin"
-        if not admin and not is_allowed(db, spieler, "maus", "use"):
-            raise HTTPException(403, "Dieses Werkzeug ist für dich nicht freigeschaltet (maus/use).")
-    _pruefe_fortschritt(body)
-
-    name, klasse, gast = anzeigename(spieler)
-    wer = teilnehmer(spieler)
-    zeile = db.query(MausFortschritt).filter_by(session_id=session.id, **wer).first()
-    if zeile is None:
-        zeile = MausFortschritt(session_id=session.id, name=name, klasse=klasse, gast=gast, **wer)
-        db.add(zeile)
-    zeile.name, zeile.klasse, zeile.gast = name, klasse, gast
-    zeile.stufen = {sid: stand.model_dump() for sid, stand in body.stufen.items()}
-    zeile.hilfe = body.hilfe
-    zeile.bestanden = body.bestanden
-    db.commit()
-    return {"ok": True}
-
-
-@router_sitzung.get("/sitzung/{code}/uebersicht", response_model=list[FortschrittOut])
-def fortschritt_uebersicht(
-    code: str,
-    db: Session = Depends(get_db),
-    teacher: Teacher = Depends(get_current_teacher),
-):
-    """Fortschritt aller Teilnehmer dieser Sitzung — nur für die Lehrkraft, der
-    die Sitzung gehört, oder einen Admin."""
-    session = _sitzung(code, db)
-    if session.created_by != teacher.id and teacher.role != "admin":
-        raise HTTPException(403, "Diese Sitzung gehört jemand anderem.")
-    zeilen = (
-        db.query(MausFortschritt)
-        .filter_by(session_id=session.id)
-        .all()
-    )
-    zeilen.sort(key=lambda z: z.name.lower())
-    return [
-        FortschrittOut(
-            name=z.name, klasse=z.klasse, gast=z.gast, hilfe=z.hilfe,
-            stufen=z.stufen, bestanden=z.bestanden, aktualisiert_am=z.aktualisiert_am,
-        )
-        for z in zeilen
-    ]
 
 
 def _haus_name(db: Session, class_id: int | None) -> str | None:

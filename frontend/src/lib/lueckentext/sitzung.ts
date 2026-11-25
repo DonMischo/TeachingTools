@@ -3,8 +3,8 @@
  * (/lueckentexte/sessions/{code}/review) werden zu Sitzungszeilen, die Lücken
  * zu Aufgaben. Der Lückentext behält seine eigenen Tabellen — nur ein Adapter.
  */
-import type { LueckentextReviewEntry, SitzungZeile } from "@/lib/api";
-import { liste, zahl, type SitzungAnsicht } from "@/lib/sitzung/typen";
+import { api, type LueckentextReviewEntry, type SitzungZeile } from "@/lib/api";
+import { liste, zahl, type SitzungAnsicht, type SitzungQuelle } from "@/lib/sitzung/typen";
 
 export function lueckentextZeilen(eintraege: LueckentextReviewEntry[], jetzt = Date.now()): SitzungZeile[] {
   return eintraege.map(e => {
@@ -40,5 +40,13 @@ export function lueckentextAnsicht(eintraege: LueckentextReviewEntry[]): Sitzung
     ],
     aufgaben: luecken.map((id, i) => ({ id, titel: `Lücke ${i + 1}` })),
     geschafft: (d, id) => liste(d, "geloest").includes(id),
+  };
+}
+
+/** Datenquelle für Dashboard und Auswertung (Host-Seite). */
+export function lueckentextQuelle(code: string): SitzungQuelle {
+  return {
+    schluessel: ["lueckentext", code],
+    laden: async () => { const r = await api.lueckentexte.review(code); return { zeilen: lueckentextZeilen(r), ansicht: lueckentextAnsicht(r) }; },
   };
 }

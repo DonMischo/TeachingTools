@@ -3,25 +3,33 @@
  * Lehrkraft: einen gespeicherten Kartensatz als Quiz teilen (Code/QR), Modus
  * und Punkte einstellen, live mitverfolgen, Hauspunkte vergeben, neue Runde.
  */
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { api, type ToolSessionOut } from "@/lib/api";
+import { api } from "@/lib/api";
 import { ToolSessionBar } from "@/components/ToolSessionBar";
+import { SitzungLeiste, useWerkzeugSitzung } from "@/components/SitzungWahl";
+import { kartenQuizQuelle } from "@/lib/karten/sitzung";
 
 export default function KartenQuizLehrkraft({ satzId, titel }: { satzId: number; titel: string }) {
   const qc = useQueryClient();
-  const [sitzung, setSitzung] = useState<ToolSessionOut | null>(null);
+  // Je Klasse bzw. Kurs eine eigene Quiz-Sitzung (wie Challenge, TaskCrawler); die neueste ist vorgewählt
+  const wahl = useWerkzeugSitzung("karten", true, { refId: satzId, vorwaehlen: true });
+  const { sitzung, setze: setSitzung } = wahl;
   const [meldung, setMeldung] = useState("");
-  useEffect(() => {
-    setSitzung(null);
-    api.toolSessions.create("karten", satzId).then(setSitzung).catch(() => setMeldung("Quiz-Sitzung ließ sich nicht anlegen."));
-  }, [satzId]);
   const code = sitzung?.code;
   const { data: ueb } = useQuery({
     queryKey: ["karten", "quiz", code], queryFn: () => api.karten.quizUebersicht(code!), enabled: !!code, refetchInterval: 5000,
   });
 
-  if (!sitzung) return meldung ? <p className="text-sm text-bad">{meldung}</p> : null;
+  if (!sitzung) {
+    return (
+      <section className="card p-4 flex flex-col gap-3 text-sm" aria-label="Kartenquiz">
+        <h2 className="font-black text-base">🎮 Kartenquiz: {titel}</h2>
+        <p className="text-muted">Für welche Klasse bzw. welchen Kurs läuft das Quiz? Jede bekommt einen eigenen Code.</p>
+        <SitzungLeiste wahl={wahl} />
+      </section>
+    );
+  }
   const e = { modus: "benennen", wortbank: false, max_punkte: 10, ueben: true, ...sitzung.settings } as Record<string, unknown>;
   const setze = async (aenderung: Record<string, unknown>) => {
     setSitzung(await api.toolSessions.einstellungen(sitzung.code, { ...sitzung.settings, ...aenderung }));
@@ -49,9 +57,11 @@ export default function KartenQuizLehrkraft({ satzId, titel }: { satzId: number;
   return (
     <section className="card p-4 flex flex-col gap-3 text-sm" aria-label="Kartenquiz">
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <h2 className="font-black text-base">🎮 Kartenquiz: {titel}</h2>
-        <ToolSessionBar tool="karten" title={`Kartenquiz: ${titel}`} refId={satzId} />
+        <h2 className="font-black text-base">🎮 Kartenquiz: {titel}{sitzung.scope_label && <span className="font-normal text-muted"> · {sitzung.scope_label}</span>}</h2>
+        <ToolSessionBar tool="karten" title={`Kartenquiz: ${titel}${sitzung.scope_label ? ` (${sitzung.scope_label})` : ""}`}
+          refId={satzId} sitzung={sitzung} wahl={wahl} quelle={kartenQuizQuelle(sitzung.code)} />
       </div>
+      <SitzungLeiste wahl={wahl} />
       <div className="flex flex-wrap items-center gap-4">
         {([["benennen", "Nummern benennen"], ["finden", "Orte finden (anklicken)"]] as const).map(([wert, text]) => (
           <label key={wert} className="flex items-center gap-1.5">

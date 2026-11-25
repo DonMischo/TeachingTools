@@ -11,7 +11,7 @@ import { useLanUrl } from "@/hooks/useLanUrl";
 import { MathText } from "@/components/MathText";
 import { SelbstSpielenKnopf } from "@/components/LehrkraftSpielt";
 import { AuswertungKnopf } from "@/components/sitzung/AuswertungKnopf";
-import { taskcrawlerAnsicht, taskcrawlerZeilen } from "@/lib/taskcrawler/sitzung";
+import { taskcrawlerQuelle } from "@/lib/taskcrawler/sitzung";
 
 /** Ergebnissicherung (Merksätze aller Aufgaben) als PDF — wie am Ende des Spiels, zum Drucken oder Austeilen. */
 function ErgebnisPdfKnopf({ code }: { code: string }) {
@@ -137,8 +137,7 @@ export default function ExitgameHostPage() {
           <a href={api.exitgame.sessions.reportCsvUrl(code)} className="text-sm border border-line rounded-lg px-3 py-1.5 hover:border-accent">
             ⬇ CSV
           </a>
-          <AuswertungKnopf titel="TaskCrawler" schluessel={["taskcrawler", code]}
-            laden={async () => { const r = await api.exitgame.sessions.report(code); return { zeilen: taskcrawlerZeilen(r), ansicht: taskcrawlerAnsicht(r) }; }} />
+          <AuswertungKnopf titel="TaskCrawler" quelle={taskcrawlerQuelle(code)} />
           <ErgebnisPdfKnopf code={code} />
         </div>
       </div>

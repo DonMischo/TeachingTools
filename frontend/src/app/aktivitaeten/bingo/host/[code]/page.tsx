@@ -1,4 +1,6 @@
 "use client";
+import { AuswertungKnopf } from "@/components/sitzung/AuswertungKnopf";
+import { bingoQuelle, type BingoErgebnis } from "@/lib/bingo/sitzung";
 import { useState } from "react";
 import { useLiveSocket } from "@/hooks/useLiveSocket";
 import { useParams } from "next/navigation";
@@ -27,7 +29,7 @@ type LiveState = {
 };
 
 type BingoEvent = { student_name: string; student_id: number };
-type Result = { name: string; hits: number; called_on_card: number; has_bingo: boolean };
+type Result = BingoErgebnis;
 
 export default function BingoHostPage() {
   const { code } = useParams<{ code: string }>();
@@ -223,7 +225,11 @@ export default function BingoHostPage() {
       {/* Auswertung: Treffer gegen das, was von der eigenen Karte gerufen wurde */}
       {results.length > 0 && live.called_count > 0 && (
         <div className="flex flex-col gap-2">
-          <h2 className="font-semibold text-sm">📊 Auswertung</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="font-semibold text-sm flex-1">📊 Auswertung</h2>
+            <AuswertungKnopf titel={live.title || "Bingo"} quelle={bingoQuelle(code, results)}
+              className="text-xs border border-line rounded-lg px-2.5 py-1 hover:border-accent" />
+          </div>
           <p className="text-xs text-muted">
             Treffer = markierte Felder · gerufen = davon auf der eigenen Karte gerufene Begriffe
           </p>

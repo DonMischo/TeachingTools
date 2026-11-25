@@ -8,18 +8,21 @@
  */
 import { useMemo, useState } from "react";
 import type { SitzungZeile } from "@/lib/api";
-import type { SitzungAnsicht } from "@/lib/sitzung/typen";
+import type { SitzungAnsicht, SitzungQuelle } from "@/lib/sitzung/typen";
 import { auswerten, csvHerunterladen, docxHerunterladen, kennzahlenText, pdfHerunterladen } from "@/lib/sitzung/auswertung";
 import { useSitzungZeilen } from "./SitzungDashboard";
 
-export default function SitzungAuswertung({ code, zeilen: vorgegeben, ansicht, titel }: {
+export default function SitzungAuswertung({ code, zeilen: vorgegeben, ansicht: ansichtVorgabe, quelle, titel }: {
   code?: string;
   zeilen?: SitzungZeile[];
   ansicht?: SitzungAnsicht;
+  /** Eigene Datenquelle (Adapter) statt des gemeinsamen Sitzungsstands */
+  quelle?: SitzungQuelle;
   titel: string;
 }) {
-  const { data, isLoading, isError } = useSitzungZeilen(vorgegeben ? undefined : code, 15000);
+  const { data, isLoading, isError } = useSitzungZeilen(vorgegeben ? undefined : code, 15000, vorgegeben ? undefined : quelle);
   const zeilen = useMemo(() => vorgegeben ?? data?.zeilen ?? [], [vorgegeben, data]);
+  const ansicht = ansichtVorgabe ?? data?.ansicht;
   const a = useMemo(() => auswerten(zeilen, ansicht), [zeilen, ansicht]);
   const [laeuft, setLaeuft] = useState<string | null>(null);
   const [fehler, setFehler] = useState("");
@@ -29,7 +32,7 @@ export default function SitzungAuswertung({ code, zeilen: vorgegeben, ansicht, t
     try { await f(); } catch { setFehler("Der Download ließ sich nicht erzeugen."); } finally { setLaeuft(null); }
   }
 
-  if (!vorgegeben && isLoading && code) return <p className="text-sm text-muted p-6 text-center">wird geladen …</p>;
+  if (!vorgegeben && isLoading && (code || quelle)) return <p className="text-sm text-muted p-6 text-center">wird geladen …</p>;
   if (!vorgegeben && isError) return <p className="text-sm text-bad p-6 text-center">Die Auswertung ließ sich nicht laden.</p>;
 
   return (

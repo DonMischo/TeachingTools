@@ -7,7 +7,19 @@
  * daraus Spalten, Aufgaben und Wertung — dieselbe Beschreibung für alles.
  * Ohne Ansicht zeigt das Dashboard nur, wer da ist und was er gerade tut.
  */
+import type { SitzungZeile } from "@/lib/api";
+
 export type Daten = Record<string, unknown>;
+
+/**
+ * Eigene Datenquelle für Werkzeuge mit eigenen Tabellen (TaskCrawler, Challenge …):
+ * ein Adapter liefert Zeilen und Ansicht, Dashboard und Auswertung zeigen sie wie
+ * den gemeinsamen Sitzungsstand.
+ */
+export interface SitzungQuelle {
+  schluessel: unknown[];
+  laden: () => Promise<{ zeilen: SitzungZeile[]; ansicht?: SitzungAnsicht }>;
+}
 
 export type Spalte = {
   id: string;

@@ -12,7 +12,7 @@ export default function KiKompassPage() {
   return (
     <RequireAccount icon="🧭" title="KI-Kompass">
       <KiKompass
-        action={<ToolSessionBar tool="kikompass" title="KI-Kompass" />}
+        action={<ToolSessionBar tool="kikompass" title="KI-Kompass" anonym />}
         name={name}
         konto={!!auth}
         verwaltung={!!auth && auth.user_type !== "student"}

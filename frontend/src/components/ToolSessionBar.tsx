@@ -22,11 +22,11 @@ import { SitzungLeiste, type SitzungWahl } from "@/components/SitzungWahl";
 import SitzungDashboard from "@/components/sitzung/SitzungDashboard";
 import SitzungAuswertung from "@/components/sitzung/SitzungAuswertung";
 import { Schublade } from "@/components/sitzung/Schublade";
-import type { SitzungAnsicht } from "@/lib/sitzung/typen";
+import type { SitzungAnsicht, SitzungQuelle } from "@/lib/sitzung/typen";
 
 type Fenster = "beitritt" | "dashboard" | "auswertung" | "wechseln";
 
-export function ToolSessionBar({ tool, title, refId, sitzung, optionen, ansicht, wahl, menue }: {
+export function ToolSessionBar({ tool, title, refId, sitzung, optionen, ansicht, wahl, menue, anonym = false, quelle }: {
   tool: string;
   title: string;
   /** Einstellungen, die das Werkzeug für seine Sitzung anbietet (Geschichte der Medien: alles freischalten) */
@@ -41,6 +41,10 @@ export function ToolSessionBar({ tool, title, refId, sitzung, optionen, ansicht,
   wahl?: SitzungWahl;
   /** Weitere Punkte im ☰-Menü (Anzeige-Optionen des Werkzeugs) */
   menue?: (session: ToolSessionOut) => ReactNode;
+  /** Werkzeuge, die bewusst keine Einzelstände zeigen (Main Character, KI-Kompass): kein Dashboard, keine Auswertung */
+  anonym?: boolean;
+  /** Eigene Datenquelle (Adapter) für Werkzeuge mit eigenen Tabellen — dann ohne »Neue Runde« (macht das Werkzeug selbst) */
+  quelle?: SitzungQuelle;
 }) {
   const { auth } = useAuth();
   const qc = useQueryClient();
@@ -98,11 +102,11 @@ export function ToolSessionBar({ tool, title, refId, sitzung, optionen, ansicht,
       </button>
       <Menue titel="Sitzungsmenü">
         <MenueAbschnitt titel={session?.scope_label ? `Sitzung · ${session.scope_label}` : "Sitzung"}>
-          <MenuePunkt onClick={() => oeffne("dashboard")} title="Live: wer macht mit, wie weit, was gerade">📈 Dashboard</MenuePunkt>
-          <MenuePunkt onClick={() => oeffne("auswertung")} title="Kennzahlen, schwerste Aufgaben, Download">📊 Auswertung</MenuePunkt>
+          {!anonym && <MenuePunkt onClick={() => oeffne("dashboard")} title="Live: wer macht mit, wie weit, was gerade">📈 Dashboard</MenuePunkt>}
+          {!anonym && <MenuePunkt onClick={() => oeffne("auswertung")} title="Kennzahlen, schwerste Aufgaben, Download">📊 Auswertung</MenuePunkt>}
           {wahl && <MenuePunkt onClick={() => setFenster("wechseln")}>🔄 Sitzung wechseln / neue Klasse</MenuePunkt>}
           <MenuePunkt onClick={() => oeffne("beitritt")}>📱 Code, QR und Gastzugang</MenuePunkt>
-          {session && <MenuePunkt onClick={neueRunde} gefahr title="Löscht die gemeldeten Stände dieser Sitzung">🧹 Neue Runde</MenuePunkt>}
+          {session && !anonym && !quelle && <MenuePunkt onClick={neueRunde} gefahr title="Löscht die gemeldeten Stände dieser Sitzung">🧹 Neue Runde</MenuePunkt>}
         </MenueAbschnitt>
         {session && menue && <MenueAbschnitt titel="Anzeige">{menue(session)}</MenueAbschnitt>}
       </Menue>
@@ -110,13 +114,13 @@ export function ToolSessionBar({ tool, title, refId, sitzung, optionen, ansicht,
       {fenster === "dashboard" && (
         <Schublade titel={`📈 ${title}`} onClose={schliessen}>
           {warten}
-          {session && <SitzungDashboard code={session.code} ansicht={ansicht} />}
+          {session && <SitzungDashboard code={session.code} ansicht={ansicht} quelle={quelle} />}
         </Schublade>
       )}
       {fenster === "auswertung" && (
         <Schublade titel={`📊 ${title}`} onClose={schliessen}>
           {warten}
-          {session && <SitzungAuswertung code={session.code} ansicht={ansicht} titel={title} />}
+          {session && <SitzungAuswertung code={session.code} ansicht={ansicht} quelle={quelle} titel={title} />}
         </Schublade>
       )}
       {fenster === "wechseln" && wahl && (

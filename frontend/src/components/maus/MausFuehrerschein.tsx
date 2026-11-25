@@ -63,6 +63,7 @@ import { STANDARD_AUSSEHEN, aussehenAus, type Aussehen } from "@/lib/maus/window
 import { benutzernameAus } from "@/lib/maus/dateisystem";
 import MausBestenliste from "./MausBestenliste";
 import MausUebersicht from "./MausUebersicht";
+import { useMeinStand } from "@/hooks/useMeinStand";
 
 type SpeicherReiter = "speichern1" | "speichern2" | "speichern3" | "speichern4";
 type ReiterId = StufeId | SpeicherReiter | "bestenliste" | "uebersicht";
@@ -295,16 +296,7 @@ export default function MausFuehrerschein({
   }, [geladen, ergebnisse, hilfe, zugang]);
 
   // Stand an die Live-Übersicht der Sitzung — gebündelt, nicht bei jedem Klick.
-  const zugangCode = zugang?.code;
-  const zugangToken = zugang?.token ?? null;
-  useEffect(() => {
-    if (!geladen || !zugangCode) return;
-    const uhr = setTimeout(() => {
-      api.maus.fortschritt({ code: zugangCode, token: zugangToken }, { stufen: stand(ergebnisse), hilfe, bestanden })
-        .catch(() => {});
-    }, 800);
-    return () => clearTimeout(uhr);
-  }, [geladen, zugangCode, zugangToken, ergebnisse, hilfe, bestanden]);
+  useMeinStand(zugang, geladen ? { stufen: stand(ergebnisse), hilfe, bestanden } : null);
 
   const waehleTier = useCallback((id: string) => {
     setAvatar(id);

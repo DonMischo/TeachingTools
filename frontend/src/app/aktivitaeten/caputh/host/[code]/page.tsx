@@ -1,4 +1,6 @@
 "use client";
+import { AuswertungKnopf } from "@/components/sitzung/AuswertungKnopf";
+import { caputhQuelle } from "@/lib/caputh/sitzung";
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
@@ -408,6 +410,12 @@ export default function HostPage() {
     </button>
   );
 
+  // Auswertung jederzeit, auch mitten im Quiz — als Schublade über dem Beamerbild
+  const auswertungKnopf = (
+    <AuswertungKnopf titel={`Caputh ${code}`} quelle={caputhQuelle(code)}
+      className="text-xs border border-line rounded-lg px-2.5 py-1 hover:border-accent" />
+  );
+
   const qrOverlay = showJoinQR ? (
     <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center" onClick={() => setShowJoinQR(false)}>
       <div className="bg-white rounded-2xl p-6 flex flex-col items-center gap-3 shadow-2xl" onClick={e => e.stopPropagation()}>
@@ -511,6 +519,7 @@ export default function HostPage() {
               </svg>
               Auswertung (CSV)
             </a>
+            <AuswertungKnopf titel={phase.title} quelle={caputhQuelle(code)} className="px-6 py-3 border border-line rounded-xl font-semibold hover:border-accent" />
           </div>
         </div>
 
@@ -656,6 +665,7 @@ export default function HostPage() {
           </span>
           <span className="flex items-center gap-3">
             {zeigenKnopf}
+            {auswertungKnopf}
             <span className="text-muted text-sm">{phase.participantCount} Teilnehmer</span>
           </span>
         </div>
@@ -719,6 +729,7 @@ export default function HostPage() {
           <span className="text-fg font-semibold">Frage {q.idx + 1} / {q.total}</span>
           <span className="flex items-center gap-3">
             {zeigenKnopf}
+            {auswertungKnopf}
             <span className="text-green-400 text-sm font-medium">
               {responses} / {participantCount} geantwortet
             </span>

@@ -31,11 +31,11 @@ def test_gast_meldet_und_lehrkraft_sieht_uebersicht_und_csv(client, teacher_toke
     r = client.put(f"/api/leben/sitzung/{code}/stand", json=_stand(neu=[{"tag": 4, "stunde": 8, "art": "arbeit", "text": "zu spät"}]), headers=auth(gast))
     assert r.json()["zeilen"] == 2
 
-    liste = client.get(f"/api/leben/sitzung/{code}/uebersicht", headers=auth(teacher_token)).json()
+    liste = client.get(f"/api/sitzungen/{code}/uebersicht", headers=auth(teacher_token)).json()["zeilen"]
     assert len(liste) == 1
     assert liste[0]["gast"] is True
-    assert liste[0]["zusammenfassung"]["konto"] == 812.5
-    assert liste[0]["protokoll_zeilen"] == 2
+    assert liste[0]["daten"]["zusammenfassung"]["konto"] == 812.5
+    assert liste[0]["daten"]["protokoll_zeilen"] == 2
 
     csv = client.get(f"/api/leben/sitzung/{code}/protokoll.csv", headers=auth(teacher_token))
     assert csv.status_code == 200
@@ -48,8 +48,8 @@ def test_neues_spiel_ersetzt_das_protokoll(client, teacher_token):
     gast = _gast(client, teacher_token, code)
     client.put(f"/api/leben/sitzung/{code}/stand", json=_stand(spiel_id="alt"), headers=auth(gast))
     client.put(f"/api/leben/sitzung/{code}/stand", json=_stand(spiel_id="neu"), headers=auth(gast))
-    liste = client.get(f"/api/leben/sitzung/{code}/uebersicht", headers=auth(teacher_token)).json()
-    assert liste[0]["protokoll_zeilen"] == 1
+    liste = client.get(f"/api/sitzungen/{code}/uebersicht", headers=auth(teacher_token)).json()["zeilen"]
+    assert liste[0]["daten"]["protokoll_zeilen"] == 1
 
 
 def test_schueler_mit_konto_und_fremde_lehrkraft(client, db, teacher_token):
@@ -62,7 +62,7 @@ def test_schueler_mit_konto_und_fremde_lehrkraft(client, db, teacher_token):
                    headers=auth(create_access_token({"sub": str(ada.id), "type": "student"})))
     assert r.status_code == 200, r.text
     # Schüler:innen sehen die Übersicht nicht
-    r = client.get(f"/api/leben/sitzung/{code}/uebersicht", headers=auth(create_access_token({"sub": str(ada.id), "type": "student"})))
+    r = client.get(f"/api/sitzungen/{code}/uebersicht", headers=auth(create_access_token({"sub": str(ada.id), "type": "student"})))
     assert r.status_code in (401, 403)
 
 

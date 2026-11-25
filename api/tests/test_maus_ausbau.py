@@ -98,8 +98,7 @@ def test_sitzung_filter_zeigt_nur_teilnehmer_mit_fortschritt_in_der_sitzung(clie
     client.post("/api/maus/bestenliste", json=_eintrag(wert=100), headers=als(ada))
     # Der Gast meldet Fortschritt in der Sitzung (Abschnitt B) und trägt sich
     # zusätzlich in die Bestenliste der Sitzung ein.
-    client.put(f"/api/maus/sitzung/{code}/fortschritt",
-               json={"stufen": {"klick": {"punkte": 500, "sterne": 1, "dauer_ms": 1000}},
+    _melde(client, code, {"stufen": {"klick": {"punkte": 500, "sterne": 1, "dauer_ms": 1000}},
                      "hilfe": False, "bestanden": []},
                headers=auth(gast_token))
     client.post(f"/api/maus/bestenliste/{code}", json=_eintrag(wert=300), headers=auth(gast_token))
@@ -131,6 +130,18 @@ def test_gesamt_obergrenze_mit_teil_4_ist_80000(client, db, wert, status):
 
 # ── B) Fortschritt je Sitzung ───────────────────────────────────────────────
 
+def _melde(client, code, body, **kw):
+    """Stand über den gemeinsamen Sitzungsstand melden (api/routers/sitzungen.py)."""
+    return client.put(f"/api/sitzungen/{code}/stand", json={"daten": body}, **kw)
+
+
+def _zeilen(client, code, **kw) -> list[dict]:
+    """Übersichtszeilen, ``daten`` flach neben Name/Klasse/Gast."""
+    r = client.get(f"/api/sitzungen/{code}/uebersicht", **kw)
+    assert r.status_code == 200, r.text
+    return [{**{k: z[k] for k in ("name", "klasse", "gast", "aktualisiert_am")}, **z["daten"]} for z in r.json()["zeilen"]]
+
+
 def _fortschritt_body(teil=1, hilfe=False, bestanden=None) -> dict:
     return {"stufen": _stufen(teil), "hilfe": hilfe, "bestanden": bestanden or []}
 
@@ -139,13 +150,12 @@ def test_gast_meldet_fortschritt_und_lehrkraft_sieht_ihn_in_der_uebersicht(clien
     code = _sitzung(client, teacher_token)
     gast_token = _gast(client, teacher_token, code, name="Mia Schulz")
 
-    r = client.put(f"/api/maus/sitzung/{code}/fortschritt",
-                   json=_fortschritt_body(teil=1, bestanden=[1]),
+    r = _melde(client, code, _fortschritt_body(teil=1, bestanden=[1]),
                    headers=auth(gast_token))
     assert r.status_code == 200, r.text
     assert r.json() == {"ok": True}
 
-    uebersicht = client.get(f"/api/maus/sitzung/{code}/uebersicht", headers=auth(teacher_token)).json()
+    uebersicht = _zeilen(client, code, headers=auth(teacher_token))
     assert len(uebersicht) == 1
     zeile = uebersicht[0]
     assert zeile["name"] == "Mia S."  # abgekürzt wie in api.display_names.abbreviate_stored
@@ -163,10 +173,10 @@ def test_student_meldet_fortschritt_mit_klasse(client, db, teacher_token):
     # Der teacher_token-Login hinterliess einen Cookie, der die Schueler-Identitaet
     # aus als(ada) sonst schlagen wuerde.
     client.cookies.clear()
-    r = client.put(f"/api/maus/sitzung/{code}/fortschritt", json=_fortschritt_body(), headers=als(ada))
+    r = _melde(client, code, _fortschritt_body(), headers=als(ada))
     assert r.status_code == 200, r.text
 
-    uebersicht = client.get(f"/api/maus/sitzung/{code}/uebersicht", headers=auth(teacher_token)).json()
+    uebersicht = _zeilen(client, code, headers=auth(teacher_token))
     assert uebersicht[0]["name"] == "Ada L."
     assert uebersicht[0]["klasse"] == "7a"
     assert uebersicht[0]["gast"] is False
@@ -176,13 +186,13 @@ def test_zweiter_put_ersetzt_statt_eine_zweite_zeile_anzulegen(client, teacher_t
     code = _sitzung(client, teacher_token)
     gast_token = _gast(client, teacher_token, code, name="Max")
 
-    client.put(f"/api/maus/sitzung/{code}/fortschritt", json=_fortschritt_body(hilfe=False),
+    _melde(client, code, _fortschritt_body(hilfe=False),
                headers=auth(gast_token))
-    r = client.put(f"/api/maus/sitzung/{code}/fortschritt", json=_fortschritt_body(hilfe=True, bestanden=[1]),
+    r = _melde(client, code, _fortschritt_body(hilfe=True, bestanden=[1]),
                    headers=auth(gast_token))
     assert r.status_code == 200, r.text
 
-    uebersicht = client.get(f"/api/maus/sitzung/{code}/uebersicht", headers=auth(teacher_token)).json()
+    uebersicht = _zeilen(client, code, headers=auth(teacher_token))
     assert len(uebersicht) == 1
     assert uebersicht[0]["hilfe"] is True
     assert uebersicht[0]["bestanden"] == [1]
@@ -194,7 +204,7 @@ def test_unbekannte_stufe_wird_abgelehnt(client, teacher_token):
 
     body = _fortschritt_body()
     body["stufen"]["fliegen"] = {"punkte": 100, "sterne": 1, "dauer_ms": 100}
-    r = client.put(f"/api/maus/sitzung/{code}/fortschritt", json=body, headers=auth(gast_token))
+    r = _melde(client, code, body, headers=auth(gast_token))
     assert r.status_code == 400
 
 
@@ -204,8 +214,8 @@ def test_sterne_ausserhalb_0_bis_3_wird_abgelehnt(client, teacher_token):
 
     body = _fortschritt_body()
     body["stufen"]["klick"]["sterne"] = 4
-    r = client.put(f"/api/maus/sitzung/{code}/fortschritt", json=body, headers=auth(gast_token))
-    assert r.status_code == 422
+    r = _melde(client, code, body, headers=auth(gast_token))
+    assert r.status_code == 400
 
 
 def test_bestanden_teil_1_ohne_alle_stufen_wird_abgelehnt(client, teacher_token):
@@ -214,7 +224,7 @@ def test_bestanden_teil_1_ohne_alle_stufen_wird_abgelehnt(client, teacher_token)
 
     body = {"stufen": {"klick": {"punkte": 900, "sterne": 2, "dauer_ms": 1000}},
             "hilfe": False, "bestanden": [1]}
-    r = client.put(f"/api/maus/sitzung/{code}/fortschritt", json=body, headers=auth(gast_token))
+    r = _melde(client, code, body, headers=auth(gast_token))
     assert r.status_code == 400
 
 
@@ -224,7 +234,7 @@ def test_bestanden_unbekannter_teil_wird_abgelehnt(client, teacher_token):
 
     body = _fortschritt_body(teil=1)
     body["bestanden"] = [4]
-    r = client.put(f"/api/maus/sitzung/{code}/fortschritt", json=body, headers=auth(gast_token))
+    r = _melde(client, code, body, headers=auth(gast_token))
     assert r.status_code == 400
 
 
@@ -232,11 +242,11 @@ def test_bestanden_teil_1_mit_allen_sechs_stufen_geht_durch(client, teacher_toke
     code = _sitzung(client, teacher_token)
     gast_token = _gast(client, teacher_token, code)
 
-    r = client.put(f"/api/maus/sitzung/{code}/fortschritt", json=_fortschritt_body(teil=1, bestanden=[1]),
+    r = _melde(client, code, _fortschritt_body(teil=1, bestanden=[1]),
                    headers=auth(gast_token))
     assert r.status_code == 200, r.text
 
-    uebersicht = client.get(f"/api/maus/sitzung/{code}/uebersicht", headers=auth(teacher_token)).json()
+    uebersicht = _zeilen(client, code, headers=auth(teacher_token))
     assert uebersicht[0]["bestanden"] == [1]
 
 
@@ -246,20 +256,12 @@ def test_geschlossene_sitzung_nimmt_keinen_fortschritt_mehr_an(client, teacher_t
     assert client.post(f"/api/play/sessions/{code}/close", params={"tool": "simulation"},
                        headers=auth(teacher_token)).status_code == 200
 
-    r = client.put(f"/api/maus/sitzung/{code}/fortschritt", json=_fortschritt_body(), headers=auth(gast_token))
+    r = _melde(client, code, _fortschritt_body(), headers=auth(gast_token))
     assert r.status_code == 403
 
 
-def test_fortschritt_ueber_ein_anderes_werkzeug_wird_abgelehnt(client, teacher_token):
-    abacus_code = _sitzung(client, teacher_token, "abacus")
-    token = _gast(client, teacher_token, abacus_code)
-
-    r = client.put(f"/api/maus/sitzung/{abacus_code}/fortschritt", json=_fortschritt_body(), headers=auth(token))
-    assert r.status_code == 400
-
-
 def test_fortschritt_unbekannter_code(client, teacher_token):
-    r = client.put("/api/maus/sitzung/NOPECODE/fortschritt", json=_fortschritt_body(),
+    r = _melde(client, "NOPECODE", _fortschritt_body(),
                    headers=auth(teacher_token))
     assert r.status_code == 404
 
@@ -267,7 +269,7 @@ def test_fortschritt_unbekannter_code(client, teacher_token):
 def test_fortschritt_ohne_ausweis(client, teacher_token):
     code = _sitzung(client, teacher_token)
     client.cookies.clear()
-    r = client.put(f"/api/maus/sitzung/{code}/fortschritt", json=_fortschritt_body())
+    r = _melde(client, code, _fortschritt_body())
     assert r.status_code == 401
 
 
@@ -278,13 +280,13 @@ def test_fortschritt_gesperrtes_werkzeug_fuer_schueler(client, db, teacher_token
                             class_id=None, allowed=False))
     db.flush()
     client.cookies.clear()
-    r = client.put(f"/api/maus/sitzung/{code}/fortschritt", json=_fortschritt_body(), headers=als(ada))
+    r = _melde(client, code, _fortschritt_body(), headers=als(ada))
     assert r.status_code == 403
 
 
 def test_uebersicht_eigentuemer_darf(client, teacher_token):
     code = _sitzung(client, teacher_token)
-    r = client.get(f"/api/maus/sitzung/{code}/uebersicht", headers=auth(teacher_token))
+    r = client.get(f"/api/sitzungen/{code}/uebersicht", headers=auth(teacher_token))
     assert r.status_code == 200, r.text
 
 
@@ -293,7 +295,7 @@ def test_uebersicht_admin_darf(client, teacher_token, admin_token):
     # noch der explizite Header je Aufruf.
     client.cookies.clear()
     code = _sitzung(client, teacher_token)
-    r = client.get(f"/api/maus/sitzung/{code}/uebersicht", headers=auth(admin_token))
+    r = client.get(f"/api/sitzungen/{code}/uebersicht", headers=auth(admin_token))
     assert r.status_code == 200, r.text
 
 
@@ -301,7 +303,7 @@ def test_uebersicht_andere_lehrkraft_darf_nicht(client, db, teacher_token):
     andere = _zweite_lehrkraft(db)
     code = _sitzung(client, teacher_token)
     client.cookies.clear()
-    r = client.get(f"/api/maus/sitzung/{code}/uebersicht", headers=als(andere, "teacher"))
+    r = client.get(f"/api/sitzungen/{code}/uebersicht", headers=als(andere, "teacher"))
     assert r.status_code == 403
 
 
@@ -309,14 +311,14 @@ def test_uebersicht_schueler_darf_nicht(client, db, teacher_token):
     ada = schueler(db)
     code = _sitzung(client, teacher_token)
     client.cookies.clear()
-    r = client.get(f"/api/maus/sitzung/{code}/uebersicht", headers=als(ada))
+    r = client.get(f"/api/sitzungen/{code}/uebersicht", headers=als(ada))
     assert r.status_code == 403
 
 
 def test_uebersicht_anonym_darf_nicht(client, teacher_token):
     code = _sitzung(client, teacher_token)
     client.cookies.clear()
-    r = client.get(f"/api/maus/sitzung/{code}/uebersicht")
+    r = client.get(f"/api/sitzungen/{code}/uebersicht")
     assert r.status_code == 401
 
 
@@ -324,9 +326,9 @@ def test_uebersicht_ist_nach_namen_sortiert(client, teacher_token):
     code = _sitzung(client, teacher_token)
     for name in ["Zoe", "anna", "Mona"]:
         gast_token = _gast(client, teacher_token, code, name=name)
-        client.put(f"/api/maus/sitzung/{code}/fortschritt", json=_fortschritt_body(), headers=auth(gast_token))
+        _melde(client, code, _fortschritt_body(), headers=auth(gast_token))
 
-    uebersicht = client.get(f"/api/maus/sitzung/{code}/uebersicht", headers=auth(teacher_token)).json()
+    uebersicht = _zeilen(client, code, headers=auth(teacher_token))
     namen = [z["name"] for z in uebersicht]
     assert namen == sorted(namen, key=str.lower)
 
@@ -368,8 +370,7 @@ def test_teil_4_mobil_vergibt_hauspunkte(client, db, teacher_token, klass):
     assert r.json()["punkte"] == HAUSPUNKTE_JE_TEIL
 
     unvollstaendig = {k: v for k, v in _stufen(4).items() if k != "risiken"}
-    r = client.put(f"/api/maus/sitzung/{code}/fortschritt",
-                    json={"stufen": unvollstaendig, "hilfe": False, "bestanden": [4]}, headers=als(ada))
+    r = _melde(client, code, {"stufen": unvollstaendig, "hilfe": False, "bestanden": [4]}, headers=als(ada))
     assert r.status_code == 400
 
 

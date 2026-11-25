@@ -39,9 +39,21 @@ def _pruefe_markieren(daten: dict) -> None:
         raise HTTPException(400, "Unbekannter Modus.")
 
 
+def _pruefe_maus(daten: dict) -> None:
+    from .maus import pruefe_stand
+    pruefe_stand(daten)
+
+
+def _pruefe_algo(daten: dict) -> None:
+    from .algo import pruefe_stand
+    pruefe_stand(daten)
+
+
 # Werkzeuge mit strengeren Regeln als der allgemeinen Größengrenze
 PRUEFUNGEN: dict[str, Callable[[dict], None]] = {
     "markieren": _pruefe_markieren,
+    "maus": _pruefe_maus,
+    "algo": _pruefe_algo,
 }
 
 
@@ -140,4 +152,29 @@ def uebersicht(code: str, db: Session = Depends(get_db), teacher: Teacher = Depe
 def staende_loeschen(code: str, db: Session = Depends(get_db), teacher: Teacher = Depends(get_current_teacher)):
     session = _eigene_sitzung(db, code, teacher)
     db.query(SitzungStand).filter_by(session_id=session.id).delete()
+    db.commit()
+
+# Werkzeuge, die bewusst keine Einzelstände zeigen (nur anonyme Klassenwerte)
+ANONYM = ("main-character", "kikompass")
+
+
+@router.put("/{code}/da", status_code=204)
+def anwesend(
+    code: str,
+    db: Session = Depends(get_db),
+    spieler: Union[Teacher, Student, Guest] = Depends(get_player),
+):
+    """Anwesenheit für Werkzeuge ohne eigenen Stand: legt die Zeile an bzw.
+    frischt »zuletzt« auf, ohne ``daten`` anzufassen — ein Werkzeug, das
+    selbst meldet, verliert dadurch nichts."""
+    session = _sitzung(db, code)
+    if session.tool_slug not in SESSION_TOOLS or session.tool_slug in ANONYM or session.status == "closed":
+        return
+    wer = teilnehmer(spieler)
+    zeile = db.query(SitzungStand).filter_by(session_id=session.id, **wer).first()
+    if zeile is None:
+        name, klasse, gast = anzeigename(spieler)
+        db.add(SitzungStand(session_id=session.id, name=name, klasse=klasse, gast=gast, daten={}, **wer))
+    else:
+        zeile.aktualisiert_am = datetime.now(timezone.utc)
     db.commit()

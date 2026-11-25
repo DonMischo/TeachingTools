@@ -8,6 +8,7 @@
  * rufen nichts ab; der Gast-Token ist der Nachweis, dass die Lehrkraft
  * Gäste hereingelassen hat.
  */
+import { useAnwesenheit } from "@/hooks/useAnwesenheit";
 import { useEffect, useState, type ReactNode } from "react";
 import { useParams } from "next/navigation";
 import { api, type ToolSessionOut } from "@/lib/api";
@@ -209,6 +210,9 @@ export default function SimulationJoinPage() {
   const [joining, setJoining] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
+  // Anwesenheit fürs Dashboard der Lehrkraft — nur Lernende und Gäste, Lehrkräfte spielen unsichtbar mit
+  const lernend = auth ? auth.user_type === "student" : !!guest.token;
+  useAnwesenheit(session && lernend ? { code, token: auth ? null : guest.token } : undefined);
 
   useEffect(() => {
     if (!code) return;
@@ -322,7 +326,7 @@ export default function SimulationJoinPage() {
                 : `hp_algo_stand_gast-${(guest.session?.name ?? code).trim().toLowerCase().replace(/\s+/g, " ")}`}
               // gemeldeter Stand kommt zurück (anderer Rechner, gelöschter Browser-Speicher)
               ladeServer={auth || guest.token ? () => api.algo.mein({ code, token: auth ? null : guest.token }) : undefined}
-              onStand={s => { api.algo.fortschritt({ code, token: guest.token }, s).catch(() => { /* nur für die Übersicht */ }); }} /></D2Kontext.Provider>
+              onStand={s => { api.sitzungen.stand({ code, token: guest.token }, { daten: { ...s } }).catch(() => { /* nur für die Übersicht */ }); }} /></D2Kontext.Provider>
         : session.tool_slug === "main-character"
           ? <MainCharacter
               zugang={{ code, token: guest.token }}

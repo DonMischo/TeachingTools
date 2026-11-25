@@ -10,7 +10,7 @@
 import { useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api, type SitzungZeile } from "@/lib/api";
-import { fortschrittVon, sekunden, vor, zelle, type SitzungAnsicht } from "@/lib/sitzung/typen";
+import { fortschrittVon, sekunden, vor, zelle, type SitzungAnsicht, type SitzungQuelle } from "@/lib/sitzung/typen";
 
 export type DashboardArt = "tabelle" | "kacheln" | "matrix" | "rangliste";
 
@@ -26,11 +26,13 @@ function gemerkt(): DashboardArt | null {
   try { return (localStorage.getItem(SPEICHER) as DashboardArt | null) ?? null; } catch { return null; }
 }
 
-export function useSitzungZeilen(code: string | undefined, takt = 5000) {
+/** Zeilen aus dem gemeinsamen Sitzungsstand oder aus der eigenen Quelle des Werkzeugs. */
+export function useSitzungZeilen(code: string | undefined, takt = 5000, quelle?: SitzungQuelle) {
   return useQuery({
-    queryKey: ["sitzung-uebersicht", code],
-    queryFn: () => api.sitzungen.uebersicht(code!),
-    enabled: !!code,
+    queryKey: quelle ? ["sitzung-quelle", ...quelle.schluessel] : ["sitzung-uebersicht", code],
+    queryFn: async (): Promise<{ zeilen: SitzungZeile[]; ansicht?: SitzungAnsicht }> =>
+      quelle ? quelle.laden() : { zeilen: (await api.sitzungen.uebersicht(code!)).zeilen },
+    enabled: !!quelle || !!code,
     refetchInterval: takt,
   });
 }
@@ -54,15 +56,18 @@ function Balken({ wert }: { wert: number }) {
   );
 }
 
-export default function SitzungDashboard({ code, ansicht, takt = 5000, leer }: {
+export default function SitzungDashboard({ code, ansicht: vorgegeben, quelle, takt = 5000, leer }: {
   code: string | undefined;
   ansicht?: SitzungAnsicht;
+  /** Eigene Datenquelle (Adapter) statt des gemeinsamen Sitzungsstands */
+  quelle?: SitzungQuelle;
   takt?: number;
   /** Text, solange niemand da ist */
   leer?: ReactNode;
 }) {
-  const { data, isLoading, isError } = useSitzungZeilen(code, takt);
+  const { data, isLoading, isError } = useSitzungZeilen(code, takt, quelle);
   const zeilen = data?.zeilen ?? [];
+  const ansicht = vorgegeben ?? data?.ansicht;
   const moeglich = ARTEN.filter(a => (a.id !== "matrix" || ansicht?.aufgaben?.length) && (a.id !== "rangliste" || ansicht?.rang));
   const [gewaehlt, setGewaehlt] = useState<DashboardArt | null>(gemerkt);
   const art = moeglich.some(a => a.id === gewaehlt) ? gewaehlt! : "tabelle";
@@ -75,7 +80,7 @@ export default function SitzungDashboard({ code, ansicht, takt = 5000, leer }: {
   const aufgaben = ansicht?.aufgaben ?? [];
 
   let inhalt: ReactNode;
-  if (isLoading && code) inhalt = <p className="text-sm text-muted p-6 text-center">wird geladen …</p>;
+  if (isLoading && (code || quelle)) inhalt = <p className="text-sm text-muted p-6 text-center">wird geladen …</p>;
   else if (isError) inhalt = <p className="text-sm text-bad p-6 text-center">Die Übersicht ließ sich nicht laden.</p>;
   else if (zeilen.length === 0) inhalt = (
     <p className="text-sm text-muted p-6 text-center">
