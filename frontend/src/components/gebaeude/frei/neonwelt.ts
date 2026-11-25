@@ -17,7 +17,7 @@ import { PLATZ, feldMitte, type FreiEbene } from "@/lib/gebaeude/frei";
 import { zufallAus } from "../stoff";
 import { bauKacheln, kachelName } from "../bausatz";
 import { H3, flaeche } from "./bauwelt";
-import { deckenRaster, eckBloecke, kitAufsteller, lichtVorrat, schauNach, wandKanten, type WandKante } from "./kitwelt";
+import { deckenRaster, eckBloecke, kitAufsteller, lichtVorrat, schauNach, wandKanten, type WandKante, durchgangsRahmen, fuelleHallen, hatModell, saalVor } from "./kitwelt";
 import { kit } from "./modelle";
 import { himmel, schweben, umland, type Landschaft, type Stimmung } from "./welt";
 
@@ -54,12 +54,23 @@ export function neonLandschaft(e: FreiEbene, seed: number): Landschaft | null {
   const schluessel = (k: WandKante) => `${Math.round(k.x * 10)}|${Math.round(k.z * 10)}|${k.dx}|${k.dy}`;
   const nach = new Map(kanten.map(k => [schluessel(k), k]));
   const belegt = new Set<WandKante>();
+  // begehbare Rahmen in den Durchgängen der Karte (sobald der Baukasten sie hat); daneben kein Wandmodul (Laibung)
+  const tueren = durchgangsRahmen(e);
+  if (hatModell(K, "tor3")) {
+    for (const t of tueren.rahmen) setze("tor3", t.x, t.z, t.w, 1, 0);
+    for (const k of kanten) if (tueren.neben(k)) belegt.add(k);
+  }
+  // Blindtüren (die alten Tormodule) nur auf voller Wand, höchstens zwei je Saal
+  const blinde = new Map<number, number>();
+  const blindFrei = (k: WandKante) => { const s = saalVor(e, k); return !tueren.nah(k) && (s < 0 || (blinde.get(s) ?? 0) < 2); };
+  const blindZaehle = (k: WandKante) => { const s = saalVor(e, k); if (s >= 0) blinde.set(s, (blinde.get(s) ?? 0) + 1); };
   for (const k of kanten) {
-    if (!k.halle || belegt.has(k) || r() > 0.06) continue;
+    if (!k.halle || belegt.has(k) || r() > 0.06 || !blindFrei(k)) continue;
     // Nachbarkante entlang der Wand (quer zur Blickrichtung)
     const n = nach.get(schluessel({ ...k, x: k.x + Math.abs(k.dy) * 1.4, z: k.z + Math.abs(k.dx) * 1.4 }));
-    if (!n || belegt.has(n)) continue;
+    if (!n || belegt.has(n) || !blindFrei(n)) continue;
     belegt.add(k).add(n);
+    blindZaehle(k);
     setze(r() < 0.6 ? "tor1" : "tor2", (k.x + n.x) / 2, (k.z + n.z) / 2, schauNach(k.dx, k.dy), 1, 0);
     licht((k.x + n.x) / 2 + k.dx * 0.8, 3.4, (k.z + n.z) / 2 + k.dy * 0.8, 0xff4040, 4);
   }
@@ -147,6 +158,20 @@ export function neonLandschaft(e: FreiEbene, seed: number): Landschaft | null {
   const glut = new THREE.MeshBasicMaterial({ vertexColors: true, color: new THREE.Color(1.5, 1.5, 1.5) });
   const glas = new THREE.MeshBasicMaterial({ vertexColors: true, color: new THREE.Color(1.3, 1.3, 1.3), transparent: true, opacity: 0.75, depthWrite: false });
   const oel = new THREE.MeshPhongMaterial({ vertexColors: true, shininess: 120, specular: 0x88aacc, transparent: true, opacity: 0.85 });
+  // ── Hallen ohne Aufgabe: Holotisch mit Terminal, Serverreihen und Monitorwände, Kleinkram am Boden ──
+  fuelleHallen(e, kanten, setze, r, {
+    mitte: (x, z, w) => {
+      // Holotisch, das Terminal 1,2 m davor, zum Tisch gewandt
+      const fx = Math.sin(w), fz = Math.cos(w);
+      setze("holotisch1", x, z, w, 1, 0);
+      setze("terminal1", x + fx * 1.2, z + fz * 1.2, w + Math.PI, 1, 0);
+      licht(x, 1.8, z, 0x40e0f0, 8);
+    },
+    wand: [["server1", 0.6], ["server1", 0.6], ["monitorwand1", 0.1], ["automat1", 0.5], ["automat2", 0.5], ["roboterarm1", 0.8]],
+    boden: ["wagen1", "pfuetze1", "bodenlicht1"],
+    licht: (m, x, z) => { if (m.startsWith("automat")) licht(x, 1.4, z, m === "automat1" ? 0x7fd0ff : 0xff9a7a, 4); },
+  }, k => !belegt.has(k));
+
   auf.fertig(g, (k, teil) => (k.endsWith("_glas") ? glas : teil.glut ? glut : k.endsWith("_oel") ? oel : lit),
     (k, teil) => !teil.glut && /^(automat|server|roboterarm|wagen|aufzug|treppe|laufsteg|holotisch)/.test(k));
 

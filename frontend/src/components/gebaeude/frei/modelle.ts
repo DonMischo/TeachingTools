@@ -9,6 +9,7 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
+import { weltStoff } from "./weltstoff";
 
 export const MODELL_URL = "/modelle/welten/welten.glb";
 
@@ -51,11 +52,30 @@ export function ladeWeltModelle(): Promise<boolean> {
   return laden;
 }
 
+const texturStoffe = new Map<string, THREE.MeshLambertMaterial>();
+
+/**
+ * Teile mit Kacheltextur: Fels-Material in Weltkoordinaten (weltstoff.ts), eins je Textur und Seite;
+ * Kalk (Tropfsteine) mit 2,8 m je Kachel, Fels mit 4,2 m. Sonst null.
+ */
+export function texturStoff(teil: KitTeil, doppelt = false): THREE.MeshLambertMaterial | null {
+  if (!teil.map) return null;
+  const schluessel = `${teil.map.uuid}|${teil.normalMap?.uuid ?? ""}|${doppelt ? 2 : 1}`;
+  let m = texturStoffe.get(schluessel);
+  if (!m) {
+    const kalk = /kalk/i.test(teil.stoffName ?? "");
+    m = weltStoff(teil.map, teil.normalMap ?? null, { kachel: kalk ? 2.8 : 4.2, doppelseitig: doppelt });
+    texturStoffe.set(schluessel, m);
+  }
+  return m;
+}
+
 // ── Baukästen aus der Weltenwerkstatt ────────────────────────────────────
 // Fertig gefärbte Modelle (Eckenfarben mit eingebackener Verdeckung), gebaut in TT-Weltenwerkstatt
 // (blender/<welt>.py) und als /modelle/welten/<welt>.glb abgelegt. Leuchtende Teile tragen `glut`.
 
-export interface KitTeil { geo: THREE.BufferGeometry; glut: boolean }
+/** Teil eines Baukastens; manche tragen eine Kacheltextur (Endfarbe = Textur × Eckenfarbe, z. B. Fels der Höhle) */
+export interface KitTeil { geo: THREE.BufferGeometry; glut: boolean; map?: THREE.Texture; normalMap?: THREE.Texture; stoffName?: string }
 const kits = new Map<string, Record<string, KitTeil>>();
 const kitLaden = new Map<string, Promise<boolean>>();
 
@@ -82,7 +102,8 @@ export function ladeKit(name: string): Promise<boolean> {
       const g = m.geometry.clone();
       g.applyMatrix4(m.matrixWorld);
       g.userData.geteilt = true;
-      teile[m.name] = { geo: g, glut: !!(m.userData.glut ?? m.parent?.userData.glut) };
+      const stoff = (Array.isArray(m.material) ? m.material[0] : m.material) as THREE.MeshStandardMaterial | undefined;
+      teile[m.name] = { geo: g, glut: !!(m.userData.glut ?? m.parent?.userData.glut), map: stoff?.map ?? undefined, normalMap: stoff?.normalMap ?? undefined, stoffName: stoff?.name };
     });
     kits.set(name, teile);
     return true;

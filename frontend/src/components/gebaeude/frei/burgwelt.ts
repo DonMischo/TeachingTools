@@ -17,7 +17,7 @@ import { PLATZ, feldMitte, type FreiEbene } from "@/lib/gebaeude/frei";
 import { zufallAus } from "../stoff";
 import { bauKacheln, kachelName } from "../bausatz";
 import { flaeche } from "./bauwelt";
-import { deckenRaster, eckBloecke, kitAufsteller, lichtVorrat, schauNach, wandKanten, type WandKante } from "./kitwelt";
+import { deckenRaster, eckBloecke, kitAufsteller, lichtVorrat, schauNach, wandKanten, type WandKante, durchgangsRahmen, fuelleHallen, hatModell, saalVor } from "./kitwelt";
 import { kit } from "./modelle";
 import { himmel, schweben, umland, type Landschaft, type Stimmung } from "./welt";
 
@@ -56,11 +56,22 @@ export function burgLandschaft(e: FreiEbene, seed: number): Landschaft | null {
   const schluessel = (x: number, z: number, dx: number, dy: number) => `${Math.round(x * 10)}|${Math.round(z * 10)}|${dx}|${dy}`;
   const nach = new Map(kanten.map(k => [schluessel(k.x, k.z, k.dx, k.dy), k]));
   const belegt = new Set<WandKante>();
+  // begehbare Rahmen in den Durchgängen der Karte (sobald der Baukasten sie hat); daneben kein Wandmodul (Laibung)
+  const tueren = durchgangsRahmen(e);
+  if (hatModell(K, "bogen2")) {
+    for (const t of tueren.rahmen) setze("bogen2", t.x, t.z, t.w, 1, 0);
+    for (const k of kanten) if (tueren.neben(k)) belegt.add(k);
+  }
+  // Blindtüren (die alten Tormodule) nur auf voller Wand, höchstens zwei je Saal
+  const blinde = new Map<number, number>();
+  const blindFrei = (k: WandKante) => { const s = saalVor(e, k); return !tueren.nah(k) && (s < 0 || (blinde.get(s) ?? 0) < 2); };
+  const blindZaehle = (k: WandKante) => { const s = saalVor(e, k); if (s >= 0) blinde.set(s, (blinde.get(s) ?? 0) + 1); };
   for (const k of kanten) {
-    if (belegt.has(k) || r() > 0.06) continue;
+    if (belegt.has(k) || r() > 0.06 || !blindFrei(k)) continue;
     const n = nach.get(schluessel(k.x + Math.abs(k.dy) * 1.4, k.z + Math.abs(k.dx) * 1.4, k.dx, k.dy));
-    if (!n || belegt.has(n)) continue;
+    if (!n || belegt.has(n) || !blindFrei(n)) continue;
     belegt.add(k).add(n);
+    blindZaehle(k);
     const gitter = r() < 0.4;
     setze(gitter ? "fallgitter1" : "bogen1", (k.x + n.x) / 2, (k.z + n.z) / 2, schauNach(k.dx, k.dy), 1, 0);
     if (gitter) licht((k.x + n.x) / 2 + k.dx * 0.8, 2.2, (k.z + n.z) / 2 + k.dy * 0.8, 0xc8dcff, 5);
@@ -127,6 +138,25 @@ export function burgLandschaft(e: FreiEbene, seed: number): Landschaft | null {
       setze("treppe1", x, z, laengs(k), 1, 0);
     }
   }
+
+  // ── Hallen ohne Aufgabe: Tafel mit Stühlen unter dem Radleuchter, an den Wänden Rüstungen und Vorräte ──
+  fuelleHallen(e, kanten, setze, r, {
+    mitte: (x, z, w) => {
+      const lx = Math.cos(w), lz = -Math.sin(w);
+      setze("radleuchter1", x, z, dreh(), 1, HB);
+      licht(x, HB - 2.3, z, 0xffc070, 10);
+      if (r() < 0.6) {
+        // Tafel (4,2 × 2,0 mit Bänken) längs, je ein Stuhl an den Enden (±2,45 m), zur Tafel gewandt
+        setze("tafel1", x, z, w, 1, 0);
+        for (const s of [-1, 1]) setze("stuhl1", x + lx * s * 2.45, z + lz * s * 2.45, schauNach(-lx * s, -lz * s), 1, 0);
+      } else {
+        // Teppich mit Fellsessel, 0,4 m neben der Mitte, zur Saalmitte gedreht
+        setze("teppich1", x, z, w, 1, 0.01);
+        setze("fellsessel1", x + lx * 0.4, z + lz * 0.4, schauNach(-lx, -lz), 1, 0);
+      }
+    },
+    wand: [["ruestung1", 0.5], ["waffenstaender1", 0.3], ["fass1", 0.5], ["fass2", 0.5], ["truhe1", 0.5], ["holzregal1", 0.4]],
+  }, k => !belegt.has(k));
 
   const lit = new THREE.MeshLambertMaterial({ vertexColors: true });
   const stoff = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });

@@ -17,7 +17,7 @@ import { PLATZ, feldMitte, type FreiEbene } from "@/lib/gebaeude/frei";
 import { zufallAus } from "../stoff";
 import { bauKacheln, kachelName } from "../bausatz";
 import { H3, flaeche } from "./bauwelt";
-import { eckBloecke, kitAufsteller, lichtVorrat, schauNach, wandKanten, type WandKante } from "./kitwelt";
+import { eckBloecke, kitAufsteller, lichtVorrat, schauNach, wandKanten, type WandKante, durchgangsRahmen, fuelleHallen, hatModell, saalVor } from "./kitwelt";
 import { kit } from "./modelle";
 import { himmel, schweben, umland, type Landschaft, type Stimmung } from "./welt";
 
@@ -55,11 +55,22 @@ export function herrenhausLandschaft(e: FreiEbene, seed: number): Landschaft | n
   const schluessel = (x: number, z: number, dx: number, dy: number) => `${Math.round(x * 10)}|${Math.round(z * 10)}|${dx}|${dy}`;
   const nach = new Map(kanten.map(k => [schluessel(k.x, k.z, k.dx, k.dy), k]));
   const belegt = new Set<WandKante>();
+  // begehbare Rahmen in den Durchgängen der Karte (sobald der Baukasten sie hat); daneben kein Wandmodul (Laibung)
+  const tueren = durchgangsRahmen(e);
+  if (hatModell(K, "bogen2")) {
+    for (const t of tueren.rahmen) setze("bogen2", t.x, t.z, t.w, 1, 0);
+    for (const k of kanten) if (tueren.neben(k)) belegt.add(k);
+  }
+  // Blindtüren (die alten Tormodule) nur auf voller Wand, höchstens zwei je Saal
+  const blinde = new Map<number, number>();
+  const blindFrei = (k: WandKante) => { const s = saalVor(e, k); return !tueren.nah(k) && (s < 0 || (blinde.get(s) ?? 0) < 2); };
+  const blindZaehle = (k: WandKante) => { const s = saalVor(e, k); if (s >= 0) blinde.set(s, (blinde.get(s) ?? 0) + 1); };
   for (const k of kanten) {
-    if (belegt.has(k) || r() > 0.05) continue;
+    if (belegt.has(k) || r() > 0.05 || !blindFrei(k)) continue;
     const n = nach.get(schluessel(k.x + Math.abs(k.dy) * 1.4, k.z + Math.abs(k.dx) * 1.4, k.dx, k.dy));
-    if (!n || belegt.has(n)) continue;
+    if (!n || belegt.has(n) || !blindFrei(n)) continue;
     belegt.add(k).add(n);
+    blindZaehle(k);
     setze("bogen1", (k.x + n.x) / 2, (k.z + n.z) / 2, schauNach(k.dx, k.dy), 1, 0);
     licht((k.x + n.x) / 2 - k.dx * 0.6, 2.4, (k.z + n.z) / 2 - k.dy * 0.6, 0xffc070, 4);
   }
@@ -124,6 +135,26 @@ export function herrenhausLandschaft(e: FreiEbene, seed: number): Landschaft | n
   const lit = new THREE.MeshLambertMaterial({ vertexColors: true });
   const stoff = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
   const glut = new THREE.MeshBasicMaterial({ vertexColors: true, color: new THREE.Color(1.5, 1.5, 1.5) });
+  // ── Hallen ohne Aufgabe: Sitzgruppe auf dem Teppich unter dem Kronleuchter, an den Wänden Vitrinen, Uhren, Farne ──
+  fuelleHallen(e, kanten, setze, r, {
+    mitte: (x, z, w) => {
+      // Sitzgruppe (etwa 4,5 × 3,5 m): Teppich längs, Teetisch in der Mitte, Sofa 1,05 m dahinter zum Tisch,
+      // zwei Ohrensessel ±1,6 m seitlich, zum Tisch gedreht und 20° zum Sofa geneigt; Kronleuchter darüber
+      const lx = Math.cos(w), lz = -Math.sin(w), fx = Math.sin(w), fz = Math.cos(w);
+      setze("kronleuchter1", x, z, r() * Math.PI, 1, H3);
+      licht(x, 2.9, z, 0xffc878, 10);
+      setze(r() < 0.5 ? "teppich1" : "teppich2", x, z, w, 1, 0.01);
+      setze("teetisch1", x, z, w, 1, 0);
+      setze("sofa1", x - fx * 1.05, z - fz * 1.05, w, 1, 0);
+      for (const s of [-1, 1]) {
+        const dx = -lx * s - fx * 0.36, dz = -lz * s - fz * 0.36;
+        setze("ohrensessel1", x + lx * s * 1.6, z + lz * s * 1.6, schauNach(dx, dz), 1, 0);
+      }
+    },
+    wand: [["vitrine1", 0.4], ["standuhr1", 0.35], ["konsole1", 0.3], ["kandelaber1", 0.4], ["farn1", 0.5]],
+    licht: (m, x, z) => { if (m === "kandelaber1") licht(x, 1.6, z, 0xffc070, 4); },
+  }, k => !belegt.has(k));
+
   auf.fertig(g, (k, teil) => (teil.glut ? glut : /_stoff|_samt|_pflanze/.test(k) || /^wand5/.test(k) ? stoff : lit),
     (k, teil) => !teil.glut && /^(kamin|treppe|sofa|ohrensessel|vitrine|standuhr|kronleuchter)/.test(k));
 

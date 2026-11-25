@@ -47,7 +47,8 @@ export const KIT_VON: Partial<Record<Stil, string>> = { pilze: "pilzwald", hoehl
 
 export function kartenArt(stil: Stil): KartenArt {
   const w = weltVon(stil);
-  return w === "pilze" ? "bach" : w === "wald" || w === "winter" || w === "oase" ? "lichtung" : stil === "hoehle" ? "hoehlebach" : w === "hoehle" ? "hoehle" : "raster";
+  return w === "pilze" ? "bach" : w === "wald" || w === "winter" || w === "oase" ? "lichtung" : stil === "hoehle" ? "hoehlebach" : w === "hoehle" ? "hoehle"
+    : stil === "antike" ? "tempel" : stil === "burg" ? "burgsaal" : stil === "viktorianisch" || stil === "neon" ? "saal" : "raster";
 }
 
 export interface Stimmung {
@@ -78,6 +79,8 @@ export interface Landschaft {
   kameraRand?: number;
   /** Deckenhöhe: die Kamera bleibt darunter (geschlossene Decken aus Modellen) */
   decke?: number;
+  /** Deckenhöhe je Ort (0 = offener Himmel, z. B. der Vorplatz des Tempels); hat Vorrang vor `decke` */
+  deckeBei?: (x: number, z: number) => number;
 }
 
 export const farbe = (hex: number) => new THREE.Color(hex);

@@ -18,7 +18,7 @@ import * as THREE from "three";
 import { PLATZ, WAND, ZELLE, type FreiEbene } from "@/lib/gebaeude/frei";
 import { zufallAus } from "../stoff";
 import { bachGelaende, brueckenAus, brueckenHoehe, kitAufsteller, lichtVorrat, wasserFlaeche } from "./kitwelt";
-import { kit } from "./modelle";
+import { kit, texturStoff } from "./modelle";
 import { aus, boden, schweben, strich, striche, tiefen, type Landschaft, type Stimmung } from "./welt";
 
 export const HOEHLE = "hoehle";
@@ -85,13 +85,22 @@ export function hoehlenLandschaft(e: FreiEbene, seed: number): Landschaft | null
   const waende: [number, number, number, number][] = [];
   for (let y = -RAND; y < e.h + RAND; y++) for (let x = -RAND; x < e.b + RAND; x++) {
     if (frei(x, y) || istWasser(x, y)) continue;
+    // dünner Fels (ein Feld, Gang auf beiden Seiten): Wandstücke reichen 2,6 m in den Fels und kämen
+    // auf der anderen Seite heraus; dort steht ein Felsen statt zweier Wände Rücken an Rücken
+    const offen = (a: number, b: number) => frei(a, b) || istWasser(a, b);
+    if ((offen(x - 1, y) && offen(x + 1, y)) || (offen(x, y - 1) && offen(x, y + 1))) {
+      // ringsum frei: Tropfsteinsäule (weiter unten), sonst ein Felsen
+      const saeule = offen(x - 1, y) && offen(x + 1, y) && offen(x, y - 1) && offen(x, y + 1);
+      if (!saeule && x >= 0 && y >= 0 && x < e.b && y < e.h) setze(r() < 0.5 ? "felsen1" : "felsen2", (x + 0.5) * Z, (y + 0.5) * Z, dreh(), 0.7, 0);
+      continue;
+    }
     for (const [dx, dy] of RICHTUNGEN) {
       if (!frei(x + dx, y + dy) && !istWasser(x + dx, y + dy)) continue;
       // Grundlinie: Zellkante, 1,3 m in den Fels zurück (die Wand wölbt sich oben bis 2 m vor, die Kamera prüft nur die Felder); Schauseite zum Gang
       const kx = (x + 0.5 + dx * 0.5) * Z - dx * 1.3, kz = (y + 0.5 + dy * 0.5) * Z - dy * 1.3;
       if (waende.some(([wx, wz, wdx, wdy]) => wdx === dx && wdy === dy && Math.hypot(wx - kx, wz - kz) < 2.3)) continue;
       waende.push([kx, kz, dx, dy]);
-      setze(`wand${1 + Math.floor(r() * 3)}`, kx, kz, schauNach(dx, dy), new THREE.Vector3(1, 0.95 + r() * 0.1, 1), 0);
+      setze(`wand${1 + Math.floor(r() * 6)}`, kx, kz, schauNach(dx, dy), new THREE.Vector3(1, 0.95 + r() * 0.1, 1), 0);
     }
   }
   // tiefer im Fels: Felsmassen, damit zwischen den Wandstücken nie ein Loch bleibt
@@ -159,6 +168,13 @@ export function hoehlenLandschaft(e: FreiEbene, seed: number): Landschaft | null
       if (nachbarn <= 2 && amFels && (x < 3 || y < 3 || x > e.b - 4 || y > e.h - 4)) enden.push([x, y]);
     }
     const gesetzt: [number, number][] = [];
+    // die Karte legt die Quelle fest: gerade Felswand von 4 Feldern, davor das Becken
+    if (e.quelle) {
+      const q = e.quelle;
+      setze("wasserfall1", q.x * Z, q.y * Z, schauNach(q.dx, q.dy), 1, 0);
+      lichtOrte.push({ p: new THREE.Vector3((q.x + q.dx * 2) * Z, 2.5, (q.y + q.dy * 2) * Z), f: 0x6fd8f0, staerke: 6 });
+      enden.length = 0;
+    }
     for (const [x, y] of enden) {
       if (gesetzt.some(([gx, gy]) => Math.hypot(gx - x, gy - y) < 12)) continue;
       // zur Mitte des Wassers schauen
@@ -179,7 +195,13 @@ export function hoehlenLandschaft(e: FreiEbene, seed: number): Landschaft | null
   {
     const [zx, zy] = e.ziel;
     let best: [number, number, number, number] | null = null, bd = Infinity;
-    for (const [kx, kz, dx, dy] of waende) {
+    // die Karte legt das Tor fest (3 Felder breit, 4 Felder Fels dahinter): Mitte der Wandkante, Blick in die Halle
+    if (e.tor) {
+      const t = e.tor;
+      best = [(t.x + 0.5 - t.dx * 0.5) * Z, (t.y + 0.5 - t.dy * 0.5) * Z, -t.dx, -t.dy];
+      bd = 0;
+    }
+    if (!best) for (const [kx, kz, dx, dy] of waende) {
       const d = Math.hypot(kx - (zx + 0.5) * Z, kz - (zy + 0.5) * Z);
       // die Wand der Zielhalle, die zur Mitte schaut
       const zurMitte = ((zx + 0.5) * Z - kx) * dx + ((zy + 0.5) * Z - kz) * dy > 0;
@@ -244,6 +266,27 @@ export function hoehlenLandschaft(e: FreiEbene, seed: number): Landschaft | null
     } else if (w < 0.26) setze("laterne1", px, pz, dreh(), 1);
   }
 
+  // ── Hallen ohne Aufgabe: Geröll, Quarz, Kristalle, Pilze, Stalagmiten, hier und da Knochen ──
+  for (const s of e.saele ?? []) {
+    if (s.art !== "halle") continue;
+    for (let n = 0; n < 10; n++) {
+      const w = r() * Math.PI * 2, d = 1.5 + r() * 3.2;
+      const x = s.mx + 0.5 + Math.cos(w) * d, y = s.my + 0.5 + Math.sin(w) * d;
+      if (!frei(Math.floor(x), Math.floor(y)) || istWasser(Math.floor(x), Math.floor(y))) continue;
+      const px = x * Z, pz = y * Z, v = r();
+      if (v < 0.22) setze(`geroell${1 + Math.floor(r() * 2)}`, px, pz, dreh(), 0.6 + r() * 0.5);
+      else if (v < 0.4) setze(`quarz${1 + Math.floor(r() * 2)}`, px, pz, dreh(), 0.6 + r() * 0.5);
+      else if (v < 0.58) {
+        setze(`kristallchen${1 + Math.floor(r() * 3)}`, px, pz, dreh(), 0.8 + r() * 0.4);
+        if (r() < 0.4) lichtOrte.push({ p: new THREE.Vector3(px, 0.8, pz), f: 0xa080f0, staerke: 3 });
+      } else if (v < 0.72 && auf.frei(px, pz, 1)) {
+        setze(r() < 0.4 ? "hoehlenpilz1" : "hoehlenpilz2", px, pz, dreh(), 0.8 + r() * 0.3);
+        lichtOrte.push({ p: new THREE.Vector3(px, 1.6, pz), f: 0x6fe8f0, staerke: 4 });
+      } else if (v < 0.9) setze(`stalagmit${1 + Math.floor(r() * 3)}`, px, pz, dreh(), 0.7 + r() * 0.4, 0);
+      else setze(r() < 0.6 ? "knochen1" : "skelett1", px, pz, dreh(), 0.9 + r() * 0.2);
+    }
+  }
+
   // ── Stoffe: Kristalle, Feuer, Licht kräftig; Wasser und Gischt schwach ──
   const lit = new THREE.MeshLambertMaterial({ vertexColors: true });
   const innen = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
@@ -251,7 +294,7 @@ export function hoehlenLandschaft(e: FreiEbene, seed: number): Landschaft | null
   const sanft = new THREE.MeshBasicMaterial({ vertexColors: true, color: new THREE.Color(1.1, 1.1, 1.1), transparent: true, opacity: 0.85, depthWrite: false });
   auf.fertig(g,
     (k, teil) => (teil.glut ? (/_wasser$|_becken$|_schaum$/.test(k) && !k.startsWith("wasserfall1_wasser") ? sanft : glut)
-      : /_wedel|_lamellen|_wurzel|_gang|decke/.test(k) ? innen : lit),
+      : texturStoff(teil, /_gang|decke/.test(k)) ?? (/_wedel|_lamellen|_wurzel|_gang|decke/.test(k) ? innen : lit)),
     (k, teil) => !teil.glut && /^(tropfsaeule|stalagmit1|steinbruecke|torbogen|statue|lore|tuerkiskristall1|lilakristall1)/.test(k));
 
   const luft = schweben(e, r, { farben: [0x6fd8f0, 0xa080f0, 0x9ad0d8, 0xffd0a0], anzahl: 320, groesse: 0.06, fall: -0.04, hoehe: 6, leuchtet: true });

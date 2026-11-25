@@ -18,6 +18,9 @@
  */
 import { laufeDurch, programm, starte } from "@/lib/regeln/maschine";
 import { lichtungsEbene, type Bruecke } from "./lichtung";
+import { hoehlenEbene } from "./hoehlenkarte";
+import { saalEbene } from "./saalkarte";
+import { fleckSaal, wanddicken, type Durchgang, type KartenAblauf, type Quelle, type Saal, type Tor, type Vorplatz } from "./karte";
 import type { Punkt } from "./plan";
 
 /** Kantenlänge eines Feldes in Welteinheiten */
@@ -50,6 +53,25 @@ export interface FreiEbene {
   wasser?: Uint8Array;
   /** Brücken über den Bach */
   bruecken?: Bruecke[];
+  // ── Vertrag mit den Baukästen (TT-Weltenwerkstatt/docs/karten-vertrag.md) ──
+  /** Wand- bzw. Deckenhöhe in m (Antike, Burg 6,0; Viktorianisch, Neon 4,05; Höhle 8,0); ohne: offener Himmel */
+  hoehe?: number;
+  /** Säle: Rechtecke (Gebäude) bzw. Flecken (Höhle, Wald) je Knoten des Ablaufs */
+  saele?: Saal[];
+  /** je Wandfeld an einer Kante: Wandfelder bis zum nächsten begehbaren Feld (9 = Kartenrand); 0 = keine Kante */
+  wanddicke?: Uint8Array;
+  /** Türen bzw. Bögen zwischen Saal und Gang (2 Felder breit, auf gerade Felder ausgerichtet) */
+  durchgaenge?: Durchgang[];
+  /** Höhle: das Ziel als Steintor in der Wand */
+  tor?: Tor;
+  /** Antike: Vorplatz mit Tempel unter freiem Himmel; dort beginnt die Ebene */
+  vorplatz?: Vorplatz;
+  /** Höhle mit Bach: die Quelle an einer geraden Felswand (Wasserfall) */
+  quelle?: Quelle;
+  /** der Ablauf aus zyklisch.ts und der Saal je Knoten */
+  ablauf?: KartenAblauf;
+  /** Seed dieser Ebene */
+  seed?: number;
 }
 
 /**
@@ -61,7 +83,15 @@ export interface FreiEbene {
  *  hoehle   Lichtungs-Graph, per Zellautomat zu Gängen und Hallen aufgeweitet, mit Tropfsteinsäulen
  *  hoehlebach  dasselbe mit unterirdischem Bach und Brücken
  */
-export type KartenArt = "raster" | "genagt" | "lichtung" | "bach" | "hoehle" | "hoehlebach";
+export type KartenArt = "raster" | "genagt" | "lichtung" | "bach" | "hoehle" | "hoehlebach" | "saal" | "burgsaal" | "tempel";
+
+/**
+ * Neue Gebäudekarten aus den Spielalgorithmen (saalkarte.ts):
+ *  saal      Säle durch Teilung (bsp.ts) mit Gängen aus dem Ablauf, Wand 1 Feld, Höhe 4,05 m (Viktorianisch, Neon)
+ *  burgsaal  dasselbe mit 6,0 m Höhe (Burg)
+ *  tempel    Wand 2 Felder für die Kolonnaden, 6,0 m Höhe (Antike)
+ */
+export const KARTEN_HOEHE: Partial<Record<KartenArt, number>> = { saal: 4.05, burgsaal: 6.0, tempel: 6.0, hoehle: 8.0, hoehlebach: 8.0, genagt: 8.0 };
 
 export interface FreiPlan { ebenen: FreiEbene[] }
 
@@ -205,21 +235,36 @@ function ebene(zimmer: number, seed: number, organisch: boolean, C: number): Fre
  */
 export function baueFreiPlan(zimmer: number[], seed: number, organisch: (boolean | KartenArt)[] = []): FreiPlan {
   const ebenen = zimmer.map((n, i) => {
-    const art = organisch[i] === true ? "genagt" : organisch[i] || "raster";
-    if (art === "lichtung" || art === "bach" || art === "hoehle" || art === "hoehlebach") {
-      return lichtungsEbene(n, seed * 131 + i * 17, { bach: art === "bach" || art === "hoehlebach", hoehle: art === "hoehle" || art === "hoehlebach" });
-    }
+    const art: KartenArt = organisch[i] === true ? "genagt" : organisch[i] || "raster";
+    const s = seed * 131 + i * 17;
+    const neu = art === "lichtung" || art === "bach" ? lichtungsEbene(n, s, { bach: art === "bach" })
+      : art === "hoehle" || art === "hoehlebach" ? hoehlenEbene(n, s, { bach: art === "hoehlebach" })
+      : art === "saal" || art === "burgsaal" || art === "tempel" ? saalEbene(n, s, { wand: art === "tempel" ? 2 : 1, vorplatz: art === "tempel" })
+      : null;
+    if (neu) return ergaenze(neu, art, s);
     // ein Platz belegt mit Abstand etwa 9×9 grobe Felder
     let C = Math.max(19, 2 * Math.ceil(Math.sqrt((n + 2) * 90) / 2) + 1);
     for (; C <= 81; C += 4) {
       for (let v = 0; v < 6; v++) {
-        const e = ebene(n, seed * 131 + i * 17 + v, art === "genagt", C);
-        if (e) return e;
+        const e = ebene(n, s + v, art === "genagt", C);
+        if (e) return ergaenze(e, art, s);
       }
     }
     throw new Error("Karte zu groß");
   });
   return { ebenen };
+}
+
+/** Angaben für die Weltbauer, die jede Karte hat: Höhe, Wanddicken, Seed, Säle (bei alten Rasterkarten aus den Plätzen) */
+function ergaenze(e: FreiEbene, art: KartenArt, seed: number): FreiEbene {
+  e.hoehe = KARTEN_HOEHE[art];
+  e.wanddicke = wanddicken(e);
+  e.seed = seed;
+  e.saele ??= [
+    fleckSaal(e, "start", e.start, 6, 0), fleckSaal(e, "ziel", e.ziel, 6, 1),
+    ...e.raeume.map((p, k) => fleckSaal(e, "station", [p.x, p.y], p.r + 1, k + 2)),
+  ];
+  return e;
 }
 
 // ── Bewegung ─────────────────────────────────────────────────────────────

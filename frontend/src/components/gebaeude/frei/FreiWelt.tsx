@@ -43,6 +43,7 @@ import { baueMaler, type Guete, type Maler } from "./malfilter";
 import { KIT_VON, baueLandschaft, baueOrte, type Landschaft, type Marke } from "./welt";
 import { ladeKit, ladeWeltModelle, weltModelle } from "./modelle";
 import { DURCHSICHT, durchsichtFuer } from "./durchsicht";
+import { neueSicht, type Sicht } from "./sicht";
 import { kachelName, useBausatz } from "../bausatz";
 import { REZEPT } from "./bauwelt";
 
@@ -222,6 +223,11 @@ export default function FreiWelt({
     kameraRand: 0.3,
     /** Deckenhöhe (Kamera bleibt darunter); 0 = offen */
     decke: 0,
+    /** Sicht der Draufsicht (sicht.ts) und die Ebene, für die sie gilt */
+    sicht: null as Sicht | null,
+    sichtEbene: null as unknown,
+    /** Deckenhöhe je Ort, wenn die Welt sie kennt */
+    deckeBei: null as ((x: number, z: number) => number) | null,
     /** geglättete Höhe der Figur */
     y: 0,
     marken: [] as Marke[],
@@ -720,6 +726,19 @@ export default function FreiWelt({
       // Draufsicht: schräg von Süden, weit oben; die Durchsicht schneidet um die Figur alles Hohe weg
       DURCHSICHT.uDsAn.value = l.oben ? 1 : 0;
       DURCHSICHT.uDsSpieler.value.set(l.x, 0, l.z);
+      // Sicht: nur, was die Figur sehen kann, ist hell (je Ebene neu, Erkundetes bleibt gedämpft)
+      {
+        const eb = l.plan.ebenen[l.stock];
+        if (!l.sicht || l.sichtEbene !== eb) {
+          l.sicht?.textur.dispose();
+          l.sicht = neueSicht(eb);
+          l.sichtEbene = eb;
+          DURCHSICHT.uDsSicht.value = l.sicht.textur;
+          DURCHSICHT.uDsGroesse.value.copy(l.sicht.groesse);
+        }
+        l.sicht.aktualisiere(l.x, l.z);
+        DURCHSICHT.uDsSichtAn.value = l.oben ? 1 : 0;
+      }
       d.nebel.density = l.nebelBasis * (l.oben ? 0.4 : 1);
       if (l.oben) {
         const weit = l.abstand * 3.3;
@@ -732,9 +751,10 @@ export default function FreiWelt({
       // Kamera über der Schulter; Wände halten sie auf
       kopf.set(l.x, 2.1 + l.y, l.z);
       let flach = Math.cos(l.neigung) * l.abstand, steil = Math.sin(l.neigung) * l.abstand;
+      const decke = l.deckeBei ? l.deckeBei(l.x, l.z) : l.decke;
       // unter einer Decke flacher schauen statt höher steigen (gleicher Abstand)
-      if (l.decke && kopf.y + steil > l.decke - 0.35) {
-        steil = Math.max(0.3, l.decke - 0.35 - kopf.y);
+      if (decke && kopf.y + steil > decke - 0.35) {
+        steil = Math.max(0.3, decke - 0.35 - kopf.y);
         flach = Math.sqrt(Math.max(0, l.abstand * l.abstand - steil * steil));
       }
       let anteil = 1;
@@ -747,9 +767,9 @@ export default function FreiWelt({
       l.kamAnteil = anteil < l.kamAnteil ? anteil : l.kamAnteil + (anteil - l.kamAnteil) * Math.min(1, dt * 2.5);
       const a = Math.max(0.12, l.kamAnteil);
       // nah herangerückt: etwas höher, damit die Figur nicht das ganze Bild füllt
-      punkt.set(l.x - Math.sin(l.blick) * flach * a, kopf.y + steil * a + (1 - a) * (l.decke ? 0 : 0.9), l.z - Math.cos(l.blick) * flach * a);
+      punkt.set(l.x - Math.sin(l.blick) * flach * a, kopf.y + steil * a + (1 - a) * (decke ? 0 : 0.9), l.z - Math.cos(l.blick) * flach * a);
       // unter einer geschlossenen Decke bleiben
-      if (l.decke) punkt.y = Math.min(punkt.y, l.decke - 0.35);
+      if (decke) punkt.y = Math.min(punkt.y, decke - 0.35);
       auge.lerp(punkt, Math.min(1, dt * 14));
       if (unterWand) {
         // das Nachziehen darf nicht durch eine Ecke führen: verdeckt etwas den Blick zum Kopf, springt die Kamera auf ihren Platz
@@ -889,6 +909,7 @@ export default function FreiWelt({
     lage.current.hoeheBei = land.hoehe ?? null;
     lage.current.kameraRand = land.kameraRand ?? 0.3;
     lage.current.decke = land.decke ?? 0;
+    lage.current.deckeBei = land.deckeBei ?? null;
     d.maler.belichtung(s.belichtung);
     lage.current.wandHoehe = land.wandHoehe;
     // eslint-disable-next-line react-hooks/exhaustive-deps

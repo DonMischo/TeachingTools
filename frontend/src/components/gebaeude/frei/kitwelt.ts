@@ -5,6 +5,7 @@
  */
 import * as THREE from "three";
 import { WAND, ZELLE, type FreiEbene } from "@/lib/gebaeude/frei";
+import type { Saal } from "@/lib/gebaeude/karte";
 import type { KitTeil } from "./modelle";
 
 const Z = ZELLE;
@@ -195,4 +196,91 @@ export function deckenRaster(e: FreiEbene, istHalle: (art: number) => boolean, s
     if (![frei(x, y), frei(x + 1, y), frei(x, y + 1), frei(x + 1, y + 1)].some(Boolean)) continue;
     setze((x + 1) * Z, (y + 1) * Z, istHalle(e.art[Math.min(e.h - 1, y) * e.b + Math.min(e.b - 1, x)]));
   }
+}
+
+// ── Säle, Durchgänge und Ausstattung nach den Angaben der Karte (karten-vertrag.md) ──
+
+/** hat der Baukasten dieses Modell? */
+export const hatModell = (K: Record<string, KitTeil>, modell: string) => Object.keys(K).some(k => k.startsWith(`${modell}_`));
+
+/** Saal, in den eine Wandkante schaut (Index in e.saele, −1 = Gang) */
+export function saalVor(e: FreiEbene, k: WandKante): number {
+  const x = Math.floor(k.x / Z + k.dx * 0.5), y = Math.floor(k.z / Z + k.dy * 0.5);
+  return (e.saele ?? []).findIndex(s => x >= s.x && x < s.x + s.b && y >= s.y && y < s.y + s.h);
+}
+
+/**
+ * Begehbare Rahmen in den Durchgängen der Karte (2 Felder = 2,8 m breit): je Durchgang einer auf der Saalseite,
+ * Ursprung in der Mitte der Öffnung auf der Wandfläche, Schauseite in den Saal. `neben(k)`: eine Laibung
+ * (Wandfläche, die in die Öffnung schaut) — die bringt der Rahmen mit, dort kein Wandmodul.
+ */
+export function durchgangsRahmen(e: FreiEbene): { rahmen: { x: number; z: number; w: number }[]; neben: (k: WandKante) => boolean; nah: (k: WandKante) => boolean } {
+  const tueren = (e.durchgaenge ?? []).map(t => {
+    const ax = Math.abs(t.dx), ay = Math.abs(t.dy);
+    // Fläche zur Saalseite: bei Richtung + liegt der Saal vor dem ersten Feld, bei − hinter dem letzten
+    const flaeche = t.dx + t.dy > 0 ? (ax ? t.x : t.y) : (ax ? t.x : t.y) + t.tiefe;
+    const laengs = ax ? t.y : t.x;
+    return { t, ax, ay, flaeche, laengs };
+  });
+  const rahmen = tueren.map(({ t, ax, flaeche, laengs }) => ({
+    x: ax ? flaeche * Z : (laengs + 1) * Z,
+    z: ax ? (laengs + 1) * Z : flaeche * Z,
+    w: schauNach(-t.dx, -t.dy),
+  }));
+  const tuerFeld = new Set<number>();
+  // Felder der Öffnung: q quer durch die Wand, w längs der Wand
+  for (const { t, ax, ay } of tueren) for (let q = 0; q < t.tiefe; q++) for (let w = 0; w < 2; w++) tuerFeld.add((t.y + ay * q + ax * w) * e.b + t.x + ax * q + ay * w);
+  // nur die Laibungen (Wandflächen, die in die Öffnung schauen): die bringt der Rahmen selbst mit;
+  // die Wandfelder neben der Öffnung behalten ihre Module, der Rahmen steht davor und deckt die Kanten
+  const neben = (k: WandKante) => {
+    const vx = Math.floor(k.x / Z + k.dx * 0.5), vy = Math.floor(k.z / Z + k.dy * 0.5);
+    return tueren.some(({ t }) => (k.dx !== 0) !== (t.dx !== 0) && tuerFeld.has(vy * e.b + vx));
+  };
+  /** Wandkante, vor der die Laibung des Rahmens steht (die Felder direkt neben der Öffnung, beide Seiten): dort keine Blindtür */
+  const nah = (k: WandKante) => neben(k) || tueren.some(({ t, ax, flaeche, laengs }) => {
+    if (k.dx !== 0 ? !ax : !!ax) return false;
+    const f = ax ? k.x / Z : k.z / Z, l = (ax ? k.z / Z : k.x / Z) - 0.5;
+    return (Math.abs(f - flaeche) < 0.1 || Math.abs(f - (flaeche + (t.dx + t.dy > 0 ? t.tiefe : -t.tiefe))) < 0.1)
+      && l >= laengs - 1.1 && l <= laengs + 2.1;
+  });
+  return { rahmen, neben, nah };
+}
+
+export interface HallenPlan {
+  /** Mittelstück(e) in der Saalmitte: Mitte und Drehung w, die die Modell-x-Achse längs des Saals legt (Maße Mitte zu Mitte, karten-vertrag.md) */
+  mitte?: (x: number, z: number, w: number, s: Saal) => void;
+  /** an die Wand, Schauseite in den Saal; je Eintrag Abstand vor der Wand */
+  wand: [string, number][];
+  /** lose auf dem Boden, zufällig gedreht */
+  boden?: string[];
+  /** Lichtfarbe eines Modells an der Wand (für den Lichtvorrat) */
+  licht?: (modell: string, x: number, z: number) => void;
+}
+
+/**
+ * Hallen ohne Aufgabe (`saele` mit Art »halle«) günstig ausstatten: ein Mittelstück, je nach Größe 3–6 Dinge
+ * an den Wänden, ein paar lose am Boden. `frei(k)`: darf an dieser Wandkante etwas stehen?
+ */
+export function fuelleHallen(e: FreiEbene, kanten: WandKante[], setze: (m: string, x: number, z: number, w: number, s?: number | THREE.Vector3, y?: number) => boolean,
+  r: () => number, plan: HallenPlan, frei: (k: WandKante) => boolean = () => true) {
+  (e.saele ?? []).forEach((s, nr) => {
+    if (s.art !== "halle") return;
+    const mx = (s.x + s.b / 2) * Z, mz = (s.y + s.h / 2) * Z;
+    // w dreht die Modell-x-Achse auf die Längsachse des Saals (Drehung um y: +x → (cos w, −sin w), Schauseite +z → (sin w, cos w))
+    plan.mitte?.(mx, mz, s.b >= s.h ? 0 : -Math.PI / 2, s);
+    const rand = kanten.filter(k => k.halle && frei(k) && saalVor(e, k) === nr);
+    const zahl = Math.min(rand.length, 3 + Math.floor((s.b * s.h) / 48));
+    for (let n = 0; n < zahl; n++) {
+      const k = rand.splice(Math.floor(r() * rand.length), 1)[0];
+      const [modell, ab] = plan.wand[Math.floor(r() * plan.wand.length)];
+      const x = k.x + k.dx * ab, z = k.z + k.dy * ab;
+      setze(modell, x, z, schauNach(k.dx, k.dy), 1, 0);
+      plan.licht?.(modell, x, z);
+    }
+    for (let n = 0; plan.boden && n < 2 + Math.floor(r() * 3); n++) {
+      const x = (s.x + 1.5 + r() * (s.b - 3)) * Z, z = (s.y + 1.5 + r() * (s.h - 3)) * Z;
+      if (Math.hypot(x - mx, z - mz) < 3) continue;
+      setze(plan.boden[Math.floor(r() * plan.boden.length)], x, z, r() * Math.PI * 2, 1, 0);
+    }
+  });
 }
