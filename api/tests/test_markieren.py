@@ -1,4 +1,4 @@
-"""Bestenliste der Challenge in »Markieren & Bearbeiten«: kleinste Zeit gewinnt,
+"""Bestenliste (gemeinsamer Router) der Challenge in »Markieren & Bearbeiten«: kleinste Zeit gewinnt,
 nur Verbesserungen bleiben stehen, Gäste tragen sich über den Sitzungscode ein,
 und »Diese Sitzung« zeigt, wer seine Bestzeit dort erzielt hat.
 """
@@ -20,7 +20,7 @@ def als(user, typ="student") -> dict:
 
 
 def _eintrag(modus="markieren", zeit_ms=40000, aktionen=12) -> dict:
-    return {"modus": modus, "zeit_ms": zeit_ms, "aktionen": aktionen}
+    return {"modus": modus, "wert": zeit_ms, "extra": {"aktionen": aktionen}}
 
 
 def _sitzung(client, token, slug="markieren") -> str:
@@ -38,61 +38,61 @@ def _gast(client, token, code, name="Mia") -> str:
 
 def test_kleinste_zeit_gewinnt_und_nur_verbesserungen_bleiben(client, db):
     ada, bob = schueler(db), schueler(db, "Bob", "Builder", "7b")
-    assert client.post("/api/markieren/bestenliste", json=_eintrag(zeit_ms=50000), headers=als(ada)).status_code == 200
-    client.post("/api/markieren/bestenliste", json=_eintrag(zeit_ms=30000), headers=als(ada))
-    client.post("/api/markieren/bestenliste", json=_eintrag(zeit_ms=45000), headers=als(ada))
-    r = client.post("/api/markieren/bestenliste", json=_eintrag(zeit_ms=35000), headers=als(bob))
+    assert client.post("/api/bestenlisten/markieren", json=_eintrag(zeit_ms=50000), headers=als(ada)).status_code == 200
+    client.post("/api/bestenlisten/markieren", json=_eintrag(zeit_ms=30000), headers=als(ada))
+    client.post("/api/bestenlisten/markieren", json=_eintrag(zeit_ms=45000), headers=als(ada))
+    r = client.post("/api/bestenlisten/markieren", json=_eintrag(zeit_ms=35000), headers=als(bob))
     assert r.json()["platz"] == 2
 
-    liste = client.get("/api/markieren/bestenliste?modus=markieren", headers=als(ada)).json()
-    assert [(e["name"], e["zeit_ms"], e["selbst"]) for e in liste] == [("Ada L.", 30000, True), ("Bob B.", 35000, False)]
+    liste = client.get("/api/bestenlisten/markieren?modus=markieren", headers=als(ada)).json()
+    assert [(e["name"], e["wert"], e["selbst"]) for e in liste] == [("Ada L.", 30000, True), ("Bob B.", 35000, False)]
     # Klassenfilter und getrennte Modi
-    assert len(client.get("/api/markieren/bestenliste?modus=markieren&klasse=7b", headers=als(ada)).json()) == 1
-    assert client.get("/api/markieren/bestenliste?modus=bearbeiten", headers=als(ada)).json() == []
+    assert len(client.get("/api/bestenlisten/markieren?modus=markieren&klasse=7b", headers=als(ada)).json()) == 1
+    assert client.get("/api/bestenlisten/markieren?modus=bearbeiten", headers=als(ada)).json() == []
 
 
 def test_unplausible_zeiten_und_modi_werden_abgelehnt(client, db):
     ada = schueler(db)
     zu_schnell = _eintrag(zeit_ms=10 * 1000 - 1)
-    assert client.post("/api/markieren/bestenliste", json=zu_schnell, headers=als(ada)).status_code == 400
-    assert client.post("/api/markieren/bestenliste", json=_eintrag("quatsch"), headers=als(ada)).status_code == 400
-    assert client.get("/api/markieren/bestenliste?modus=quatsch", headers=als(ada)).status_code == 400
+    assert client.post("/api/bestenlisten/markieren", json=zu_schnell, headers=als(ada)).status_code == 400
+    assert client.post("/api/bestenlisten/markieren", json=_eintrag("quatsch"), headers=als(ada)).status_code == 400
+    assert client.get("/api/bestenlisten/markieren?modus=quatsch", headers=als(ada)).status_code == 400
 
 
 def test_gast_traegt_sich_ueber_den_code_ein(client, db, teacher_token):
     code = _sitzung(client, teacher_token)
     gast = _gast(client, teacher_token, code)
-    r = client.post(f"/api/markieren/bestenliste/{code}", json=_eintrag(), headers=auth(gast))
+    r = client.post(f"/api/bestenlisten/markieren/code/{code}", json=_eintrag(), headers=auth(gast))
     assert r.status_code == 200, r.text
     assert r.json()["gast"] is True and r.json()["name"].startswith("Mia")
 
     # »Diese Sitzung«: der Gast ja, ein Kind mit Bestzeit außerhalb nicht.
-    client.post("/api/markieren/bestenliste", json=_eintrag(zeit_ms=20000), headers=als(schueler(db)))
-    sitzung = client.get(f"/api/markieren/bestenliste/{code}?modus=markieren&sitzung={code}", headers=auth(gast)).json()
+    client.post("/api/bestenlisten/markieren", json=_eintrag(zeit_ms=20000), headers=als(schueler(db)))
+    sitzung = client.get(f"/api/bestenlisten/markieren/code/{code}?modus=markieren&sitzung={code}", headers=auth(gast)).json()
     assert [e["gast"] for e in sitzung] == [True]
     assert sitzung[0]["selbst"] is True
-    alle = client.get(f"/api/markieren/bestenliste/{code}?modus=markieren", headers=auth(gast)).json()
+    alle = client.get(f"/api/bestenlisten/markieren/code/{code}?modus=markieren", headers=auth(gast)).json()
     assert len(alle) == 2
 
 
 def test_fremde_sitzung_und_ohne_token(client, db, teacher_token):
     code = _sitzung(client, teacher_token, "maus")
     gast = _gast(client, teacher_token, code)
-    assert client.post(f"/api/markieren/bestenliste/{code}", json=_eintrag(), headers=auth(gast)).status_code == 400
-    assert client.post("/api/markieren/bestenliste", json=_eintrag()).status_code == 401
+    assert client.post(f"/api/bestenlisten/markieren/code/{code}", json=_eintrag(), headers=auth(gast)).status_code == 400
+    assert client.post("/api/bestenlisten/markieren", json=_eintrag()).status_code == 401
 
 
 def test_admin_loescht_eintrag(client, db, teacher_token, admin_token):
     ada = schueler(db)
     # Die Login-Fixtures hinterlassen ein Cookie, das den Bearer-Header schlüge.
     client.cookies.clear()
-    eid = client.post("/api/markieren/bestenliste", json=_eintrag(), headers=als(ada)).json()["id"]
-    assert client.delete(f"/api/markieren/bestenliste/eintrag/{eid}", headers=als(ada)).status_code in (401, 403)
+    eid = client.post("/api/bestenlisten/markieren", json=_eintrag(), headers=als(ada)).json()["id"]
+    assert client.delete(f"/api/bestenlisten/eintrag/{eid}", headers=als(ada)).status_code in (401, 403)
     client.cookies.clear()
-    assert client.delete(f"/api/markieren/bestenliste/eintrag/{eid}", headers=auth(teacher_token)).status_code == 403
+    assert client.delete(f"/api/bestenlisten/eintrag/{eid}", headers=auth(teacher_token)).status_code == 403
     client.cookies.clear()
-    assert client.delete(f"/api/markieren/bestenliste/eintrag/{eid}", headers=auth(admin_token)).status_code == 204
-    assert client.get("/api/markieren/bestenliste?modus=markieren", headers=als(ada)).json() == []
+    assert client.delete(f"/api/bestenlisten/eintrag/{eid}", headers=auth(admin_token)).status_code == 204
+    assert client.get("/api/bestenlisten/markieren?modus=markieren", headers=als(ada)).json() == []
 
 
 # --- Fortschritt + Lehrer-Übersicht -----------------------------------------

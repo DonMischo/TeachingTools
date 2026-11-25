@@ -33,7 +33,7 @@ MAX_AKTUELL = 120
 
 
 def _pruefe_markieren(daten: dict) -> None:
-    from .markieren import MODI
+    from ..bestenliste_regeln import MARKIEREN_AUFGABEN as MODI
     challenge = daten.get("challenge", {})
     if not isinstance(challenge, dict) or any(k not in MODI for k in challenge):
         raise HTTPException(400, "Unbekannter Modus.")

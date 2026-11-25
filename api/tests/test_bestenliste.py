@@ -6,7 +6,7 @@ langsamsten Kinder oben auf der Beamerwand stehen.
 """
 import pytest
 
-from api.models import Student, TippBestenliste, ToolAvailability
+from api.models import Bestenliste, Student, ToolAvailability
 from api.auth import create_access_token, hash_password
 from .conftest import auth
 
@@ -26,21 +26,20 @@ def als(user, typ="student") -> dict:
 
 
 def _eintrag(modus="lektionen", wert=200.0, **rest) -> dict:
-    daten = {"modus": modus, "wert": wert, "anschlaege": 100, "fehler": 2,
-             "dauer_ms": 30000, "kontext": "Grundstellung"}
-    daten.update(rest)
-    return daten
+    extra = {"anschlaege": 100, "fehler": 0, "dauer_ms": 30000, "kontext": "Grundstellung"}
+    extra.update(rest)
+    return {"modus": modus, "wert": wert, "extra": extra}
 
 
 # ── Eintragen ───────────────────────────────────────────────────────────────
 
 def test_eintragen_und_wiederfinden(client, db, teacher_token):
     ada = schueler(db)
-    r = client.post("/api/tippen/bestenliste", json=_eintrag(), headers=als(ada))
+    r = client.post("/api/bestenlisten/tippen", json=_eintrag(), headers=als(ada))
     assert r.status_code == 200, r.text
     assert r.json()["platz"] == 1
 
-    liste = client.get("/api/tippen/bestenliste?modus=lektionen", headers=als(ada)).json()
+    liste = client.get("/api/bestenlisten/tippen?modus=lektionen", headers=als(ada)).json()
     assert len(liste) == 1
     assert liste[0]["wert"] == 200
     assert liste[0]["selbst"] is True
@@ -49,18 +48,18 @@ def test_eintragen_und_wiederfinden(client, db, teacher_token):
 def test_name_kommt_aus_dem_konto_nicht_aus_dem_browser(client, db):
     ada = schueler(db, "Ada", "Lovelace", "7a")
     # Der Browser schickt gar keinen Namen; er wird abgekürzt aus dem Konto gebildet.
-    r = client.post("/api/tippen/bestenliste", json=_eintrag(), headers=als(ada))
+    r = client.post("/api/bestenlisten/tippen", json=_eintrag(), headers=als(ada))
     assert r.json()["name"] == "Ada L."
     assert r.json()["klasse"] == "7a"
 
 
 def test_nur_die_beste_leistung_bleibt_stehen(client, db):
     ada = schueler(db)
-    client.post("/api/tippen/bestenliste", json=_eintrag(wert=200), headers=als(ada))
-    client.post("/api/tippen/bestenliste", json=_eintrag(wert=260), headers=als(ada))
-    client.post("/api/tippen/bestenliste", json=_eintrag(wert=180), headers=als(ada))
+    client.post("/api/bestenlisten/tippen", json=_eintrag(wert=200), headers=als(ada))
+    client.post("/api/bestenlisten/tippen", json=_eintrag(wert=260), headers=als(ada))
+    client.post("/api/bestenlisten/tippen", json=_eintrag(wert=180), headers=als(ada))
 
-    liste = client.get("/api/tippen/bestenliste?modus=lektionen", headers=als(ada)).json()
+    liste = client.get("/api/bestenlisten/tippen?modus=lektionen", headers=als(ada)).json()
     assert len(liste) == 1          # eine Zeile je Person
     assert liste[0]["wert"] == 260  # die beste, nicht die letzte
 
@@ -68,25 +67,25 @@ def test_nur_die_beste_leistung_bleibt_stehen(client, db):
 def test_bei_der_tastenjagd_gewinnt_die_kleinere_zahl(client, db):
     ada = schueler(db, "Ada", "L")
     bo = schueler(db, "Bo", "M")
-    client.post("/api/tippen/bestenliste", json=_eintrag("tastenjagd", 420), headers=als(ada))
-    client.post("/api/tippen/bestenliste", json=_eintrag("tastenjagd", 310), headers=als(bo))
+    client.post("/api/bestenlisten/tippen", json=_eintrag("tastenjagd", 420), headers=als(ada))
+    client.post("/api/bestenlisten/tippen", json=_eintrag("tastenjagd", 310), headers=als(bo))
 
-    liste = client.get("/api/tippen/bestenliste?modus=tastenjagd", headers=als(ada)).json()
+    liste = client.get("/api/bestenlisten/tippen?modus=tastenjagd", headers=als(ada)).json()
     assert [e["wert"] for e in liste] == [310, 420]
     assert liste[0]["name"] == "Bo M."
 
     # Und eine Verbesserung ist hier die kleinere Zahl.
-    client.post("/api/tippen/bestenliste", json=_eintrag("tastenjagd", 500), headers=als(bo))
-    liste = client.get("/api/tippen/bestenliste?modus=tastenjagd", headers=als(ada)).json()
+    client.post("/api/bestenlisten/tippen", json=_eintrag("tastenjagd", 500), headers=als(bo))
+    liste = client.get("/api/bestenlisten/tippen?modus=tastenjagd", headers=als(ada)).json()
     assert liste[0]["wert"] == 310
 
 
 def test_rangfolge_ueber_mehrere_koepfe(client, db):
     namen = [schueler(db, f"Kind{i}", "X") for i in range(3)]
     for i, kind in enumerate(namen):
-        client.post("/api/tippen/bestenliste", json=_eintrag(wert=100 + i * 50), headers=als(kind))
+        client.post("/api/bestenlisten/tippen", json=_eintrag(wert=100 + i * 50), headers=als(kind))
 
-    liste = client.get("/api/tippen/bestenliste?modus=lektionen", headers=als(namen[0])).json()
+    liste = client.get("/api/bestenlisten/tippen?modus=lektionen", headers=als(namen[0])).json()
     assert [e["platz"] for e in liste] == [1, 2, 3]
     assert [e["wert"] for e in liste] == [200, 150, 100]
     # »selbst« markiert nur die eigene Zeile.
@@ -95,20 +94,20 @@ def test_rangfolge_ueber_mehrere_koepfe(client, db):
 
 def test_die_modi_haben_getrennte_listen(client, db):
     ada = schueler(db)
-    client.post("/api/tippen/bestenliste", json=_eintrag("lektionen", 200), headers=als(ada))
-    client.post("/api/tippen/bestenliste", json=_eintrag("wortregen", 90), headers=als(ada))
+    client.post("/api/bestenlisten/tippen", json=_eintrag("lektionen", 200), headers=als(ada))
+    client.post("/api/bestenlisten/tippen", json=_eintrag("wortregen", 90), headers=als(ada))
 
-    assert len(client.get("/api/tippen/bestenliste?modus=lektionen", headers=als(ada)).json()) == 1
-    assert len(client.get("/api/tippen/bestenliste?modus=wortregen", headers=als(ada)).json()) == 1
+    assert len(client.get("/api/bestenlisten/tippen?modus=lektionen", headers=als(ada)).json()) == 1
+    assert len(client.get("/api/bestenlisten/tippen?modus=wortregen", headers=als(ada)).json()) == 1
 
 
 def test_liste_bleibt_bei_hundert(client, db):
     for i in range(105):
         kind = schueler(db, f"K{i}", "X")
-        client.post("/api/tippen/bestenliste", json=_eintrag(wert=100 + i), headers=als(kind))
+        client.post("/api/bestenlisten/tippen", json=_eintrag(wert=100 + i), headers=als(kind))
 
     ada = schueler(db, "Ada", "L")
-    liste = client.get("/api/tippen/bestenliste?modus=lektionen", headers=als(ada)).json()
+    liste = client.get("/api/bestenlisten/tippen?modus=lektionen", headers=als(ada)).json()
     assert len(liste) == 100
     assert liste[0]["wert"] == 204  # die schnellsten hundert, nicht die ersten hundert
 
@@ -122,30 +121,30 @@ def test_liste_bleibt_bei_hundert(client, db):
 ])
 def test_unplausible_werte_werden_abgelehnt(client, db, modus, wert):
     ada = schueler(db)
-    r = client.post("/api/tippen/bestenliste", json=_eintrag(modus, wert), headers=als(ada))
+    r = client.post("/api/bestenlisten/tippen", json=_eintrag(modus, wert), headers=als(ada))
     assert r.status_code == 400
 
 
 def test_mehr_fehler_als_anschlaege_ist_unmoeglich(client, db):
     ada = schueler(db)
-    r = client.post("/api/tippen/bestenliste",
+    r = client.post("/api/bestenlisten/tippen",
                     json=_eintrag(anschlaege=10, fehler=11), headers=als(ada))
     assert r.status_code == 400
 
 
 def test_unbekannter_modus(client, db):
     ada = schueler(db)
-    assert client.post("/api/tippen/bestenliste", json=_eintrag("fliegen"),
+    assert client.post("/api/bestenlisten/tippen", json=_eintrag("fliegen"),
                        headers=als(ada)).status_code == 400
-    assert client.get("/api/tippen/bestenliste?modus=fliegen",
+    assert client.get("/api/bestenlisten/tippen?modus=fliegen",
                       headers=als(ada)).status_code == 400
 
 
 def test_ohne_anmeldung_geht_nichts(client, db):
     """Gäste tragen sich nicht ein — eine Liste frei gewählter Namen wäre keine."""
     client.cookies.clear()
-    assert client.post("/api/tippen/bestenliste", json=_eintrag()).status_code == 401
-    assert client.get("/api/tippen/bestenliste?modus=lektionen").status_code == 401
+    assert client.post("/api/bestenlisten/tippen", json=_eintrag()).status_code == 401
+    assert client.get("/api/bestenlisten/tippen?modus=lektionen").status_code == 401
 
 
 def test_gesperrtes_werkzeug_traegt_nicht_ein(client, db):
@@ -153,24 +152,25 @@ def test_gesperrtes_werkzeug_traegt_nicht_ein(client, db):
     db.add(ToolAvailability(tool_slug="tippen", capability="use", audience="student",
                             class_id=None, allowed=False))
     db.flush()
-    r = client.post("/api/tippen/bestenliste", json=_eintrag(), headers=als(ada))
+    r = client.post("/api/bestenlisten/tippen", json=_eintrag(), headers=als(ada))
     assert r.status_code == 403
 
 
 def test_lehrkraft_darf_auch(client, db, teacher, teacher_token):
-    r = client.post("/api/tippen/bestenliste", json=_eintrag(), headers=auth(teacher_token))
+    r = client.post("/api/bestenlisten/tippen", json=_eintrag(), headers=auth(teacher_token))
     assert r.status_code == 200
     assert r.json()["name"] == "Anna M."
     assert r.json()["klasse"] is None
-    zeile = db.query(TippBestenliste).one()
+    zeile = db.query(Bestenliste).one()
     assert zeile.teacher_id == teacher.id and zeile.student_id is None
 
 
 def test_lektionen_nach_wertung_mit_fehlerquote(client, db):
     """Schneller, aber mit vielen Fehlern steht hinter etwas langsamer und sauber."""
     ada, bo = schueler(db, "Ada"), schueler(db, "Bo", "Brecht")
-    client.post("/api/tippen/bestenliste", json=_eintrag("lektionen", 220, anschlaege=200, fehler=40), headers=als(ada))
-    client.post("/api/tippen/bestenliste", json=_eintrag("lektionen", 200, anschlaege=200, fehler=0), headers=als(bo))
-    liste = client.get("/api/tippen/bestenliste?modus=lektionen", headers=als(ada)).json()
-    assert [e["wert"] for e in liste] == [200, 220]
-    assert liste[1]["wertung"] < liste[0]["wertung"]
+    client.post("/api/bestenlisten/tippen", json=_eintrag("lektionen", 220, anschlaege=200, fehler=40), headers=als(ada))
+    client.post("/api/bestenlisten/tippen", json=_eintrag("lektionen", 200, anschlaege=200, fehler=0), headers=als(bo))
+    liste = client.get("/api/bestenlisten/tippen?modus=lektionen", headers=als(ada)).json()
+    assert [e["extra"]["roh"] for e in liste] == [200, 220]
+    assert liste[1]["wert"] < liste[0]["wert"]
+    assert liste[1]["extra"]["roh"] == 220  # das reine Tempo bleibt sichtbar

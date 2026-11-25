@@ -335,15 +335,15 @@ describe("Wettschreiben im Werkzeug", () => {
 
 describe("Bestenliste", () => {
   const EINTRAEGE = [
-    { platz: 1, name: "Ada L.", klasse: "7a", wert: 260, anschlaege: 300, fehler: 0,
-      dauer_ms: 60000, kontext: "Grundstellung", selbst: false },
-    { platz: 2, name: "Bo M.", klasse: "7a", wert: 210, anschlaege: 280, fehler: 4,
-      dauer_ms: 70000, kontext: "Grundstellung", selbst: true },
+    { id: 1, platz: 1, name: "Ada L.", klasse: "7a", gast: false, wert: 260, selbst: false,
+      extra: { roh: 260, anschlaege: 300, fehler: 0, dauer_ms: 60000, kontext: "Grundstellung" } },
+    { id: 2, platz: 2, name: "Bo M.", klasse: "7a", gast: false, wert: 210, selbst: true,
+      extra: { roh: 215, anschlaege: 280, fehler: 4, dauer_ms: 70000, kontext: "Grundstellung" } },
   ];
 
   beforeEach(() => {
     vi.spyOn(api.tipptexte, "list").mockResolvedValue([]);
-    vi.spyOn(api.tippenBestenliste, "liste").mockResolvedValue(EINTRAEGE);
+    vi.spyOn(api.bestenlisten, "liste").mockResolvedValue(EINTRAEGE);
   });
 
   it("bleibt Gästen ohne Konto verborgen", () => {
@@ -364,16 +364,16 @@ describe("Bestenliste", () => {
     renderWithProviders(<Tippen verwaltung />);
     fireEvent.click(screen.getByRole("tab", { name: /Bestenliste/ }));
     await screen.findByText("Ada L.");
-    expect(api.tippenBestenliste.liste).toHaveBeenCalledWith("lektionen");
+    expect(api.bestenlisten.liste).toHaveBeenCalledWith("tippen", "lektionen", undefined, {});
 
     fireEvent.click(screen.getByRole("button", { name: /Tastenjagd/ }));
-    await waitFor(() => expect(api.tippenBestenliste.liste).toHaveBeenCalledWith("tastenjagd"));
+    await waitFor(() => expect(api.bestenlisten.liste).toHaveBeenCalledWith("tippen", "tastenjagd", undefined, {}));
     // Bei der Tastenjagd zählt die kleinere Zahl — das muss dranstehen.
     expect(screen.getByText(/weniger ist besser/)).toBeInTheDocument();
   });
 
   it("sagt es, wenn noch niemand eingetragen ist", async () => {
-    vi.spyOn(api.tippenBestenliste, "liste").mockResolvedValue([]);
+    vi.spyOn(api.bestenlisten, "liste").mockResolvedValue([]);
     renderWithProviders(<Tippen verwaltung />);
     fireEvent.click(screen.getByRole("tab", { name: /Bestenliste/ }));
     expect(await screen.findByText(/Noch kein Eintrag/)).toBeInTheDocument();

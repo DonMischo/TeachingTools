@@ -11,7 +11,7 @@ from .challenge_lauf import LaufFehler
 from .database import engine
 from .models import Base
 from .database import get_db
-from .routers import classes, teachers, transactions, auth as auth_router, setup as setup_router, capuths as capuths_router, wettkampf as wettkampf_router, haeuser as haeuser_router, students as students_router, style as style_router, roles as roles_router, barometer as barometer_router, auction as auction_router, bingo as bingo_router, exit_ticket as exit_ticket_router, chores as chores_router, trackers as trackers_router, stundenplaner as stundenplaner_router, groups as groups_router, calendar as calendar_router, exitgame as exitgame_router, practice as practice_router, generators as generators_router, timelines as timelines_router, lueckentexte as lueckentexte_router, seating as seating_router, availability as availability_router, tipptexte as tipptexte_router, wettschreiben as wettschreiben_router, bestenliste as bestenliste_router
+from .routers import classes, teachers, transactions, auth as auth_router, setup as setup_router, capuths as capuths_router, wettkampf as wettkampf_router, haeuser as haeuser_router, students as students_router, style as style_router, roles as roles_router, barometer as barometer_router, auction as auction_router, bingo as bingo_router, exit_ticket as exit_ticket_router, chores as chores_router, trackers as trackers_router, stundenplaner as stundenplaner_router, groups as groups_router, calendar as calendar_router, exitgame as exitgame_router, practice as practice_router, generators as generators_router, timelines as timelines_router, lueckentexte as lueckentexte_router, seating as seating_router, availability as availability_router, tipptexte as tipptexte_router, wettschreiben as wettschreiben_router
 from .routers.sportfest import disciplines as sf_disciplines, results as sf_results, auswertung as sf_auswertung
 from .routers.schreibraum import rooms as schreibraum_rooms, collab as schreibraum_collab
 from .routers.capuths import _inactivity_watchdog
@@ -65,7 +65,8 @@ app.include_router(timelines_router.router)
 app.include_router(lueckentexte_router.router)
 app.include_router(tipptexte_router.router)
 app.include_router(wettschreiben_router.router)
-app.include_router(bestenliste_router.router)
+from .routers import bestenlisten as bestenlisten_router
+app.include_router(bestenlisten_router.router)
 app.include_router(seating_router.router)
 app.include_router(availability_router.router)
 from .routers import admin_access as admin_access_router
@@ -99,7 +100,6 @@ app.include_router(school_router.router)
 from .routers import twofa as twofa_router
 app.include_router(twofa_router.router)
 from .routers import maus as maus_router
-app.include_router(maus_router.router)
 app.include_router(maus_router.router_sitzung)
 from .routers import kikompass as kikompass_router
 app.include_router(kikompass_router.router)
@@ -109,8 +109,6 @@ from .routers import medien as medien_router
 app.include_router(medien_router.router)
 from .routers import medien_live as medien_live_router
 app.include_router(medien_live_router.router)
-from .routers import markieren as markieren_router
-app.include_router(markieren_router.router)
 from .routers import sitzungen as sitzungen_router
 app.include_router(sitzungen_router.router)
 from .routers import klikk as klikk_router
@@ -184,7 +182,7 @@ app.mount("/uploads/bildpaare", StaticFiles(directory=str(BILDPAARE_DIR)), name=
 
 # Alte Stand-Tabellen je Werkzeug → sitzung_staende (docs/plan-sitzung-dashboard-auswertung.md).
 # Je Tabelle: wie ihre Spalten zu ``daten`` werden. Läuft bei jedem Start, übernimmt
-# aber nur Zeilen, die es dort noch nicht gibt — also genau einmal.
+# aber nur einmal (_einmal) und nur Zeilen, die es dort noch nicht gibt.
 STAND_UEBERNAHMEN = {
     "markier_fortschritt": "json_build_object('lektionen', f.lektionen, 'quellen', f.quellen, 'challenge', f.challenge)",
     "maus_fortschritt": "json_build_object('stufen', f.stufen, 'hilfe', f.hilfe, 'bestanden', f.bestanden)",
@@ -195,17 +193,61 @@ STAND_UEBERNAHMEN = {
 STAND_MIT_AKTUELL = {"markier_fortschritt"}
 
 
+def _einmal(name: str, sql: str) -> str:
+    """Eine Datenübernahme genau einmal ausführen. Die alten Tabellen bleiben als
+    Quelle liegen; liefe die Übernahme bei jedem Start, kämen gelöschte Einträge
+    (Admin löscht einen Namen, »Neue Runde« leert eine Sitzung) beim nächsten
+    Neustart zurück. Deshalb merkt sich ``datenuebernahmen``, was schon lief."""
+    return (f"DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM datenuebernahmen WHERE name = '{name}') THEN "
+            f"{sql}; INSERT INTO datenuebernahmen (name) VALUES ('{name}'); END IF; END $$")
+
+
+DATENUEBERNAHMEN_TABELLE = ("CREATE TABLE IF NOT EXISTS datenuebernahmen "
+                            "(name VARCHAR(80) PRIMARY KEY, am TIMESTAMPTZ NOT NULL DEFAULT now())")
+
+
 def _staende_uebernehmen() -> list[str]:
-    sql = []
+    sql = [DATENUEBERNAHMEN_TABELLE]
     for tabelle, daten in STAND_UEBERNAHMEN.items():
-        sql.append(
+        sql.append(_einmal(f"staende:{tabelle}",
             "INSERT INTO sitzung_staende (session_id, student_id, teacher_id, guest_id, name, klasse, gast,"
             " daten, aktuell, beigetreten_am, aktualisiert_am)"
             f" SELECT f.session_id, f.student_id, f.teacher_id, f.guest_id, f.name, f.klasse, f.gast,"
             f" {daten}, {'f.aktuell' if tabelle in STAND_MIT_AKTUELL else 'NULL'}, f.aktualisiert_am, f.aktualisiert_am FROM {tabelle} f"
             " WHERE NOT EXISTS (SELECT 1 FROM sitzung_staende s WHERE s.session_id = f.session_id"
             " AND (s.student_id = f.student_id OR s.teacher_id = f.teacher_id OR s.guest_id = f.guest_id))"
-        )
+        ))
+    return sql
+
+
+# Alte Bestenlisten-Tabellen → bestenlisten (docs/plan-sitzung-dashboard-auswertung.md, Phase 8).
+# Je Eintrag: Werkzeug, Quelltabelle, Ausdrücke für Wert und Extra, Spalten für Gast und Sitzung.
+# Läuft genau einmal (_einmal), und auch dann nur für Zeilen, die es dort noch nicht gibt.
+# Tippen: der Sortierwert ist die Wertung (Lektionen: A/min × (1 − Fehlerquote)²), das Tempo steht als »roh« im Extra.
+BESTENLISTE_UEBERNAHMEN = [
+    ("markieren", "markier_bestenliste", "f.zeit_ms", "json_build_object('aktionen', f.aktionen)", "f.guest_id", "f.session_id"),
+    ("maus", "maus_bestenliste", "f.wert", "json_build_object('dauer_ms', f.dauer_ms, 'kontext', f.kontext, 'hilfe', f.hilfe)", "f.guest_id", "NULL"),
+    (
+        "tippen", "tipp_bestenliste",
+        "(CASE WHEN f.modus = 'lektionen' THEN round((f.wert * power(1 - LEAST(1.0, CASE WHEN f.anschlaege > 0 THEN f.fehler::float / f.anschlaege ELSE 0 END), 2))::numeric, 1)::float ELSE f.wert END)",
+        "json_build_object('anschlaege', f.anschlaege, 'fehler', f.fehler, 'dauer_ms', f.dauer_ms, 'kontext', f.kontext, 'roh', f.wert)",
+        "NULL", "NULL",
+    ),
+]
+
+
+def _bestenlisten_uebernehmen() -> list[str]:
+    sql = []
+    for werkzeug, tabelle, wert, extra, guest, session in BESTENLISTE_UEBERNAHMEN:
+        gast = "f.gast" if werkzeug != "tippen" else "FALSE"
+        sql.append(_einmal(f"bestenliste:{werkzeug}",
+            "INSERT INTO bestenlisten (werkzeug, modus, student_id, teacher_id, guest_id, name, klasse, gast,"
+            " session_id, wert, extra, erreicht_am)"
+            f" SELECT '{werkzeug}', f.modus, f.student_id, f.teacher_id, {guest}, f.name, f.klasse, {gast},"
+            f" {session}, {wert}, {extra}, f.erreicht_am FROM {tabelle} f"
+            f" WHERE NOT EXISTS (SELECT 1 FROM bestenlisten b WHERE b.werkzeug = '{werkzeug}' AND b.modus = f.modus"
+            f" AND (b.student_id = f.student_id OR b.teacher_id = f.teacher_id OR b.guest_id = {guest}))"
+        ))
     return sql
 
 
@@ -489,7 +531,7 @@ def _run_migrations(db_engine):
         "(group_type, COALESCE(class_id, -1), COALESCE(grade, -1), name)",
         # Ein Kurs/WPF verdient an einem Quiz genauso nur einmal Punkte wie eine Klasse.
         add_unique("quiz_sessions", "uq_quiz_group", "quiz_id, group_id"),
-    ] + _staende_uebernehmen()
+    ] + _staende_uebernehmen() + _bestenlisten_uebernehmen()
     # Each statement runs in its OWN transaction (commit on success, rollback on
     # failure). These migrations are best-effort and idempotent: any one may fail
     # because it was already applied or doesn't apply to this DB's history. On

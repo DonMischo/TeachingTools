@@ -2455,6 +2455,37 @@ class MarkierBestenliste(Base):
     erreicht_am: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class Bestenliste(Base):
+    """Gemeinsame Bestenliste aller Werkzeuge — eine Zeile je Person, Werkzeug
+    und Modus (docs/plan-sitzung-dashboard-auswertung.md, Phase 8).
+
+    ``wert`` ist die Zahl, nach der gereiht wird; ob mehr oder weniger gewinnt,
+    steht je Werkzeug und Modus in ``bestenliste_regeln.py``. Alles Weitere
+    (Aktionen, Dauer, Fehler, Lektionstitel …) liegt in ``extra``.
+    ``session_id`` ist die Sitzung, in der die Bestleistung fiel.
+    """
+    __tablename__ = "bestenlisten"
+    __table_args__ = (
+        UniqueConstraint("werkzeug", "modus", "student_id", name="uq_bestenliste_student"),
+        UniqueConstraint("werkzeug", "modus", "teacher_id", name="uq_bestenliste_teacher"),
+        UniqueConstraint("werkzeug", "modus", "guest_id", name="uq_bestenliste_guest"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    werkzeug: Mapped[str] = mapped_column(String(30), nullable=False, index=True)
+    modus: Mapped[str] = mapped_column(String(30), nullable=False)
+    student_id: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"), nullable=True)
+    teacher_id: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="CASCADE"), nullable=True)
+    guest_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    klasse: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    gast: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
+    session_id: Mapped[int | None] = mapped_column(ForeignKey("tool_sessions.id", ondelete="SET NULL"), nullable=True)
+    wert: Mapped[float] = mapped_column(Float, nullable=False)
+    extra: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict, server_default="{}")
+    erreicht_am: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class MarkierFortschritt(Base):
     """»Markieren & Bearbeiten«: Fortschritt einer Person in einer Sitzung — eine Zeile
     je Teilnehmer (Lektionen, Quellen-Bestzeiten, Challenge-Stand)."""

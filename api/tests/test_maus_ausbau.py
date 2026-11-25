@@ -63,28 +63,28 @@ def _zweite_lehrkraft(db, vorname="Bert", nachname="Bauer", klasse_id=None) -> T
 
 def test_hilfe_flag_wird_gespeichert_und_zurueckgegeben(client, db):
     ada = schueler(db)
-    r = client.post("/api/maus/bestenliste", json=_eintrag(hilfe=True), headers=als(ada))
+    r = client.post("/api/bestenlisten/maus", json=_eintrag(hilfe=True), headers=als(ada))
     assert r.status_code == 200, r.text
-    assert r.json()["hilfe"] is True
+    assert r.json()["extra"]["hilfe"] is True
 
-    liste = client.get("/api/maus/bestenliste?modus=klick", headers=als(ada)).json()
-    assert liste[0]["hilfe"] is True
+    liste = client.get("/api/bestenlisten/maus?modus=klick", headers=als(ada)).json()
+    assert liste[0]["extra"]["hilfe"] is True
 
 
 def test_hilfe_flag_ohne_angabe_ist_false(client, db):
     ada = schueler(db)
-    r = client.post("/api/maus/bestenliste", json=_eintrag(), headers=als(ada))
+    r = client.post("/api/bestenlisten/maus", json=_eintrag(), headers=als(ada))
     assert r.status_code == 200, r.text
-    assert r.json()["hilfe"] is False
+    assert r.json()["extra"]["hilfe"] is False
 
 
 def test_klasse_filter_zeigt_nur_die_eigene_klasse(client, db):
     ada = schueler(db, "Ada", "L", klasse="7a")
     ben = schueler(db, "Ben", "K", klasse="7b")
-    client.post("/api/maus/bestenliste", json=_eintrag(wert=100), headers=als(ada))
-    client.post("/api/maus/bestenliste", json=_eintrag(wert=200), headers=als(ben))
+    client.post("/api/bestenlisten/maus", json=_eintrag(wert=100), headers=als(ada))
+    client.post("/api/bestenlisten/maus", json=_eintrag(wert=200), headers=als(ben))
 
-    liste = client.get("/api/maus/bestenliste?modus=klick&klasse=7a", headers=als(ada)).json()
+    liste = client.get("/api/bestenlisten/maus?modus=klick&klasse=7a", headers=als(ada)).json()
     assert len(liste) == 1
     assert liste[0]["klasse"] == "7a"
 
@@ -95,15 +95,15 @@ def test_sitzung_filter_zeigt_nur_teilnehmer_mit_fortschritt_in_der_sitzung(clie
     gast_token = _gast(client, teacher_token, code, name="Mia")
 
     # Ada postet nur an die globale Bestenliste, nie an diese Sitzung.
-    client.post("/api/maus/bestenliste", json=_eintrag(wert=100), headers=als(ada))
+    client.post("/api/bestenlisten/maus", json=_eintrag(wert=100), headers=als(ada))
     # Der Gast meldet Fortschritt in der Sitzung (Abschnitt B) und trägt sich
     # zusätzlich in die Bestenliste der Sitzung ein.
     _melde(client, code, {"stufen": {"klick": {"punkte": 500, "sterne": 1, "dauer_ms": 1000}},
                      "hilfe": False, "bestanden": []},
                headers=auth(gast_token))
-    client.post(f"/api/maus/bestenliste/{code}", json=_eintrag(wert=300), headers=auth(gast_token))
+    client.post(f"/api/bestenlisten/maus/code/{code}", json=_eintrag(wert=300), headers=auth(gast_token))
 
-    liste = client.get(f"/api/maus/bestenliste?modus=klick&sitzung={code}", headers=als(ada)).json()
+    liste = client.get(f"/api/bestenlisten/maus?modus=klick&sitzung={code}", headers=als(ada)).json()
     namen = [e["name"] for e in liste]
     assert "Mia" in namen
     assert not any(e["wert"] == 100 for e in liste)  # Ada hat keinen Fortschritt in der Sitzung
@@ -111,20 +111,20 @@ def test_sitzung_filter_zeigt_nur_teilnehmer_mit_fortschritt_in_der_sitzung(clie
 
 
 def test_sitzung_filter_unbekannter_code(client, db, teacher_token):
-    r = client.get("/api/maus/bestenliste?modus=klick&sitzung=NOPECODE", headers=auth(teacher_token))
+    r = client.get("/api/bestenlisten/maus?modus=klick&sitzung=NOPECODE", headers=auth(teacher_token))
     assert r.status_code == 404
 
 
 def test_sitzung_filter_falsches_werkzeug(client, teacher_token):
     abacus_code = _sitzung(client, teacher_token, "abacus")
-    r = client.get(f"/api/maus/bestenliste?modus=klick&sitzung={abacus_code}", headers=auth(teacher_token))
+    r = client.get(f"/api/bestenlisten/maus?modus=klick&sitzung={abacus_code}", headers=auth(teacher_token))
     assert r.status_code == 400
 
 
 @pytest.mark.parametrize("wert,status", [(80000, 200), (80001, 400)])
 def test_gesamt_obergrenze_mit_teil_4_ist_80000(client, db, wert, status):
     ada = schueler(db)
-    r = client.post("/api/maus/bestenliste", json=_eintrag("gesamt", wert), headers=als(ada))
+    r = client.post("/api/bestenlisten/maus", json=_eintrag("gesamt", wert), headers=als(ada))
     assert r.status_code == status, r.text
 
 

@@ -36,7 +36,7 @@ function Bestenliste({ spiel, online, neu }: { spiel: SpielId; online: Online; n
   useEffect(() => {
     let aus = false;
     const laden = spiel === "klick" || spiel === "doppelklick"
-      ? api.mausBestenliste.liste(spiel, online.zugang, nurSitzung && online.zugang ? { sitzung: online.zugang.code } : {})
+      ? api.bestenlisten.liste("maus", spiel, online.zugang, nurSitzung && online.zugang ? { sitzung: online.zugang.code } : {})
       : api.klikkSpiele.liste(spiel, online.zugang, nurSitzung);
     laden.then(z => { if (!aus) { setZeilen(z.slice(0, 10)); setFehler(false); } }).catch(() => { if (!aus) setFehler(true); });
     return () => { aus = true; };
@@ -78,7 +78,7 @@ export default function SpieleApp({ s, setze, online }: { s: Stand; setze: Setze
     if (!darfMelden || wert <= 0) return;
     const fertig = () => setNeu(n => n + 1);
     if (id === "klick" || id === "doppelklick") {
-      api.mausBestenliste.eintragen({ modus: id, wert: Math.min(wert, GRENZEN[id]), dauer_ms: dauerMs, kontext: `Klikk · ${kontext}`, hilfe: false }, online?.zugang)
+      api.bestenlisten.eintragen("maus", { modus: id, wert: Math.min(wert, GRENZEN[id]), extra: { dauer_ms: dauerMs, kontext: `Klikk · ${kontext}`, hilfe: false } }, online?.zugang)
         .then(fertig).catch(() => {});
     } else {
       api.klikkSpiele.eintragen(id, wert, online?.zugang).then(fertig).catch(() => {});

@@ -1264,45 +1264,26 @@ const seatingBase = (s: SeatingScope) => (s.kind === "class" ? `classes/${s.id}`
 
 // ── Tool availability ──
 export type TippModus = "lektionen" | "wortregen" | "tastenjagd";
-export type BestenlisteEintrag = {
-  platz: number;
-  name: string;
-  klasse: string | null;
-  wert: number;
-  anschlaege: number;
-  fehler: number;
-  dauer_ms: number;
-  kontext: string | null;
-  /** Die eigene Zeile — zum Hervorheben. */
-  selbst: boolean;
-  /** Sortierwert: bei Lektionen A/min × (1 − Fehlerquote)², sonst = wert */
-  wertung?: number;
-};
-export type ErgebnisIn = {
-  modus: TippModus;
-  wert: number;
-  anschlaege: number;
-  fehler: number;
-  dauer_ms: number;
-  kontext?: string | null;
-};
-
-// Bestenliste des Maus-Führerscheins (siehe api/routers/maus.py)
-export type MausModus = "klick" | "doppelklick" | "ziehen" | "gesamt";
-export type MausEintrag = {
+/** Eine Zeile der gemeinsamen Bestenliste (siehe api/routers/bestenlisten.py). */
+export type BestenlisteZeile = {
   id: number;
   platz: number;
   name: string;
   klasse: string | null;
   gast: boolean;
+  /** Die Zahl, nach der gereiht wird (Tippen/Lektionen: Wertung, das reine Tempo steht als extra.roh). */
   wert: number;
-  dauer_ms: number;
-  kontext: string | null;
+  /** Zusatzfelder je Werkzeug: aktionen (Markieren), dauer_ms/kontext/hilfe (Maus), anschlaege/fehler/… (Tippen). */
+  extra: Record<string, unknown>;
+  /** Die eigene Zeile — zum Hervorheben. */
   selbst: boolean;
-  /** Im Hilfsmodus erspielt (größere Ziele, mehr Zeit). */
-  hilfe: boolean;
 };
-export type MausEintragIn = { modus: MausModus; wert: number; dauer_ms: number; kontext?: string | null; hilfe?: boolean };
+export type BestenlisteWerkzeug = "markieren" | "maus" | "tippen";
+/** Ergebnis melden: `wert` und je Werkzeug passende `extra`-Felder. */
+export type BestenlisteIn = { modus: string; wert: number; extra?: Record<string, unknown> };
+
+// Maus-Führerschein: Modi und Beitritt (Bestenliste: bestenlisten)
+export type MausModus = "klick" | "doppelklick" | "ziehen" | "gesamt";
 /** Bestenliste eingrenzen: nur diese Sitzung bzw. nur diese Klasse. */
 export type MausFilter = { sitzung?: string; klasse?: string };
 export type MausStufenStand = Record<string, { punkte: number; sterne: number; dauer_ms: number }>;
@@ -1338,13 +1319,8 @@ export type KiKompassMaterialIn = {
 };
 export type KiKompassMaterial = KiKompassMaterialIn & { id: number; autor: string; eigen: boolean; erstellt_am: string };
 
-// Bestenliste der Challenge in »Markieren & Bearbeiten« (siehe api/routers/markieren.py)
+// »Markieren & Bearbeiten«: Modi der Challenge (Bestenliste: bestenlisten)
 export type MarkierModus = "markieren" | "bearbeiten" | "gemischt" | "tastatur";
-export type MarkierEintrag = {
-  id: number; platz: number; name: string; klasse: string | null; gast: boolean;
-  zeit_ms: number; aktionen: number; selbst: boolean;
-};
-export type MarkierEintragIn = { modus: MarkierModus; zeit_ms: number; aktionen: number };
 // Gemeinsamer Sitzungsstand aller Werkzeuge (siehe api/routers/sitzungen.py)
 export type SitzungStandIn = { daten: Record<string, unknown>; aktuell?: string | null; fertig?: boolean };
 export type SitzungZeile = {
@@ -1763,33 +1739,25 @@ export const api = {
   },
 
   // Beitritts-Sitzungen für zustandslose Werkzeuge (Abakus, Gleichungswaage)
-  // Bestenliste der Schreibübung (siehe api/routers/bestenliste.py)
-  tippenBestenliste: {
-    liste: (modus: TippModus) =>
-      apiFetch<BestenlisteEintrag[]>(`tippen/bestenliste?modus=${encodeURIComponent(modus)}`),
-    eintragen: (body: ErgebnisIn) =>
-      apiFetch<BestenlisteEintrag>("tippen/bestenliste", { method: "POST", body: JSON.stringify(body) }),
-  },
-
-  // Bestenliste des Maus-Führerscheins — mit Zugang über den Code (auch Gäste)
-  mausBestenliste: {
-    liste: (modus: MausModus, zugang?: MausZugang, filter: MausFilter = {}) => {
+  // Gemeinsame Bestenliste (Markieren, Maus, Schreibübung) — mit Zugang über den Code (auch Gäste)
+  bestenlisten: {
+    liste: (werkzeug: BestenlisteWerkzeug, modus: string, zugang?: MausZugang, filter: MausFilter = {}) => {
       const q = new URLSearchParams({ modus });
       if (filter.sitzung) q.set("sitzung", filter.sitzung);
       if (filter.klasse) q.set("klasse", filter.klasse);
-      return apiFetch<MausEintrag[]>(
-        `maus/bestenliste${zugang ? `/${encodeURIComponent(zugang.code)}` : ""}?${q}`,
+      return apiFetch<BestenlisteZeile[]>(
+        `bestenlisten/${werkzeug}${zugang ? `/code/${encodeURIComponent(zugang.code)}` : ""}?${q}`,
         { headers: zugang?.token ? { Authorization: `Bearer ${zugang.token}` } : undefined },
       );
     },
-    eintragen: (body: MausEintragIn, zugang?: MausZugang) =>
-      apiFetch<MausEintrag>(`maus/bestenliste${zugang ? `/${encodeURIComponent(zugang.code)}` : ""}`, {
+    eintragen: (werkzeug: BestenlisteWerkzeug, body: BestenlisteIn, zugang?: MausZugang) =>
+      apiFetch<BestenlisteZeile>(`bestenlisten/${werkzeug}${zugang ? `/code/${encodeURIComponent(zugang.code)}` : ""}`, {
         method: "POST",
         body: JSON.stringify(body),
         headers: zugang?.token ? { Authorization: `Bearer ${zugang.token}` } : undefined,
       }),
     /** Nur Admin — für unpassende Gastnamen. */
-    loeschen: (id: number) => apiFetch<void>(`maus/bestenliste/eintrag/${id}`, { method: "DELETE" }),
+    loeschen: (id: number) => apiFetch<void>(`bestenlisten/eintrag/${id}`, { method: "DELETE" }),
   },
 
   // Werbeauktion zu »Klikk« — über den Sitzungscode, auch für Gäste
@@ -1879,7 +1847,7 @@ export const api = {
       }),
   },
 
-  // Bestenlisten der Klikk-Handyspiele (Klicker/Doppelklicker: siehe mausBestenliste)
+  // Bestenlisten der Klikk-Handyspiele (Klicker/Doppelklicker: siehe bestenlisten)
   klikkSpiele: {
     liste: (spiel: KlikkSpiel, zugang?: MausZugang, nurSitzung = false) =>
       apiFetch<KlikkSpielEintrag[]>(`klikk/spiele/${spiel}${zugang ? `/${encodeURIComponent(zugang.code)}?nur_sitzung=${nurSitzung}` : ""}`, {
@@ -1891,26 +1859,6 @@ export const api = {
       }),
   },
 
-  // Bestenliste von »Markieren & Bearbeiten« — mit Zugang über den Code (auch Gäste)
-  markierBestenliste: {
-    liste: (modus: MarkierModus, zugang?: MausZugang, filter: MausFilter = {}) => {
-      const q = new URLSearchParams({ modus });
-      if (filter.sitzung) q.set("sitzung", filter.sitzung);
-      if (filter.klasse) q.set("klasse", filter.klasse);
-      return apiFetch<MarkierEintrag[]>(
-        `markieren/bestenliste${zugang ? `/${encodeURIComponent(zugang.code)}` : ""}?${q}`,
-        { headers: zugang?.token ? { Authorization: `Bearer ${zugang.token}` } : undefined },
-      );
-    },
-    eintragen: (body: MarkierEintragIn, zugang?: MausZugang) =>
-      apiFetch<MarkierEintrag>(`markieren/bestenliste${zugang ? `/${encodeURIComponent(zugang.code)}` : ""}`, {
-        method: "POST",
-        body: JSON.stringify(body),
-        headers: zugang?.token ? { Authorization: `Bearer ${zugang.token}` } : undefined,
-      }),
-    /** Nur Admin — für unpassende Gastnamen. */
-    loeschen: (id: number) => apiFetch<void>(`markieren/bestenliste/eintrag/${id}`, { method: "DELETE" }),
-  },
   // Gemeinsamer Sitzungsstand: melden (Konto oder Gast), Übersicht und neue Runde (Lehrkraft)
   sitzungen: {
     stand: (zugang: MausZugang, body: SitzungStandIn) =>

@@ -152,4 +152,7 @@ Aktivitäten mit eigenen Tabellen (TaskCrawler, Caputh, Lückentext, Bingo, Chal
 - [x] Phase 6: Adapter (`SitzungQuelle`) für Challenge, Kartenquiz, Caputh (Matrix je Frage) und Bingo; das Kartenquiz bekommt Sitzungen je Klasse.
   - Offen: Zeitstrahl und Kartenübung. Lernende können eine geteilte Zeitleiste bisher nur ansehen; dafür bräuchte es erst einen Übungsmodus.
 - [x] Phase 7: Anwesenheit `PUT /api/sitzungen/{code}/da` per `useAnwesenheit` im Play-Rahmen. Sie fasst `daten` nicht an und läuft nur für Lernende und Gäste.
-- [ ] Phase 8: Bestenlisten
+- [x] Phase 8: Bestenlisten. Eine Tabelle `bestenlisten`, Regeln in `api/bestenliste_regeln.py`, Router `/api/bestenlisten`, Komponente `components/Bestenliste.tsx`; Markieren, Maus und Tippen sind umgezogen.
+  - Die Challenge-💎-Liste bleibt, wie sie ist: Sie wird aus dem Spielstand berechnet und hat eine andere Form.
+- Datenübernahmen laufen genau einmal (Tabelle `datenuebernahmen`). Sonst kämen gelöschte Einträge und geleerte Runden beim Neustart aus den alten Tabellen zurück.
+- Zeitstrahl: Üben auch hinter dem QR, Runden im Dashboard (4afdf39a).

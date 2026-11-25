@@ -285,12 +285,14 @@ export default function MausFuehrerschein({
       gemeldet.current[modus] = wert;
       const e = modus === "gesamt" ? null : ergebnisse[modus as StufeId];
       const anzahl = (t: Teil) => TEILE[t].filter(id => ergebnisse[id]).length;
-      api.mausBestenliste.eintragen({
+      api.bestenlisten.eintragen("maus", {
         modus,
         wert: Math.min(wert, GRENZEN[modus]),
-        dauer_ms: e ? e.dauerMs : Object.values(ergebnisse).reduce((s, x) => s + (x?.dauerMs ?? 0), 0),
-        kontext: e ? e.details[0] ?? "" : ALLE_TEILE.map(t => `Teil ${t}: ${anzahl(t)}/${TEILE[t].length}`).join(" · "),
-        hilfe,
+        extra: {
+          dauer_ms: e ? e.dauerMs : Object.values(ergebnisse).reduce((s, x) => s + (x?.dauerMs ?? 0), 0),
+          kontext: e ? e.details[0] ?? "" : ALLE_TEILE.map(t => `Teil ${t}: ${anzahl(t)}/${TEILE[t].length}`).join(" · "),
+          hilfe,
+        },
       }, zugang).catch(() => {});
     }
   }, [geladen, ergebnisse, hilfe, zugang]);

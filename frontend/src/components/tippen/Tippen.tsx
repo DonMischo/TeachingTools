@@ -77,7 +77,8 @@ export default function Tippen({
     (modus: TippModus) =>
       verwaltung
         ? (e: { wert: number; anschlaege: number; fehler: number; dauer_ms: number; kontext: string }) => {
-            api.tippenBestenliste.eintragen({ modus, ...e }).catch(() => {});
+            const { wert, ...extra } = e;
+            api.bestenlisten.eintragen("tippen", { modus, wert, extra }).catch(() => {});
           }
         : undefined,
     [verwaltung],

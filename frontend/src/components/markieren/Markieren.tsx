@@ -119,7 +119,7 @@ export default function Markieren({ action, rangliste, vorgabe, speicherSchluess
     schreiben: () => <Schreiben {...teile} />,
     challenge: () => (
       <Challenge {...teile} melden={rangliste
-        ? (modus, zeit_ms, aktionen) => api.markierBestenliste.eintragen({ modus, zeit_ms, aktionen }, zugang)
+        ? (modus, zeit_ms, aktionen) => api.bestenlisten.eintragen("markieren", { modus, wert: zeit_ms, extra: { aktionen } }, zugang)
         : undefined} />
     ),
     quellen: () => <Quellen {...teile} />,
