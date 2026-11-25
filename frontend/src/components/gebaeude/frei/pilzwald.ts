@@ -17,7 +17,7 @@ import * as THREE from "three";
 import { PLATZ, WAND, WEG, ZELLE, type FreiEbene } from "@/lib/gebaeude/frei";
 import { zufallAus } from "../stoff";
 import { bachGelaende, brueckenAus, brueckenHoehe, kitAufsteller, lichtVorrat, wasserFlaeche } from "./kitwelt";
-import { kit } from "./modelle";
+import { glutStoff, kit } from "./modelle";
 import { aus, boden, himmel, schweben, strich, striche, tiefen, umland, type Landschaft, type Stimmung, type Stueck } from "./welt";
 
 export const PILZWALD = "pilzwald";
@@ -26,6 +26,7 @@ const STIMMUNG: Stimmung = {
   himmelOben: 0x9fd0c8, himmelUnten: 0x7ab2bc, nebel: 0x7ab2bc, dichte: 0.026,
   sonne: 0xffdc96, sonneStaerke: 3.4, sonneVon: [-0.45, 0.72, -0.5],
   oben: 0xa8dcd4, unten: 0x55702f, umgebung: 0.95, fackel: 0, belichtung: 1.05,
+  bild: { schatten: [0.9, 0.98, 1.1], licht: [1.08, 1.03, 0.9], leuchten: 0.75, schwelle: 1.1 },
 };
 
 /** Grundfläche der Modelle (Radius in m) — damit nichts ineinander wächst */
@@ -187,8 +188,8 @@ export function pilzwaldLandschaft(e: FreiEbene, seed: number): Landschaft | nul
   // je Teil eine InstancedMesh; leuchtende Teile unbeleuchtet in ihrer Farbe
   const lit = new THREE.MeshLambertMaterial({ vertexColors: true });
   const blatt = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
-  const glut = new THREE.MeshBasicMaterial({ vertexColors: true, color: new THREE.Color(1.7, 1.7, 1.7) });
-  auf.fertig(g, (k, teil) => (teil.glut ? glut : /_wedel|_lamellen|_flechten/.test(k) ? blatt : lit),
+  const glut = glutStoff(1.7), kristall = glutStoff(1.45, true);
+  auf.fertig(g, (k, teil) => (teil.glut ? (k.startsWith("kristallsockel") ? kristall : glut) : /_wedel|_lamellen|_flechten/.test(k) ? blatt : lit),
     (k, teil) => !teil.glut && !k.endsWith("_flechten") && /^(uraltbaum|hohlbaum|fliegenpilz|lilapilz|tuerkispilz|ockerpilz|steinbruecke|menhir|saeule)/.test(k));
 
   // ── Licht in Bahnen durchs Laub ───────────────────────────────────────

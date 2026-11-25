@@ -24,7 +24,7 @@ import { zufallAus } from "../stoff";
 import { bauKacheln, kachelName } from "../bausatz";
 import { flaeche } from "./bauwelt";
 import { deckenRaster, durchgangsRahmen, eckBloecke, fuelleHallen, hatModell, kitAufsteller, lichtVorrat, schauNach, wandKanten, type WandKante } from "./kitwelt";
-import { kit } from "./modelle";
+import { glutStoff, kit } from "./modelle";
 import { himmel, schweben, umland, type Landschaft, type Stimmung, type Stueck } from "./welt";
 
 export const ANTIKE = "antike";
@@ -35,6 +35,7 @@ const STIMMUNG: Stimmung = {
   himmelOben: 0x3a86e0, himmelUnten: 0xb8dcf4, nebel: 0xe8d6b8, dichte: 0.012,
   sonne: 0xffdca0, sonneStaerke: 1.6, sonneVon: [-0.35, 1, 0.25],
   oben: 0xfff0d8, unten: 0xb08a5a, umgebung: 1.05, fackel: 0, belichtung: 1.0,
+  bild: { schatten: [0.93, 0.96, 1.1], licht: [1.06, 1.02, 0.93], leuchten: 0.45, schwelle: 1.4 },
 };
 
 export function tempelLandschaft(e: FreiEbene, seed: number): Landschaft | null {
@@ -209,7 +210,7 @@ export function tempelLandschaft(e: FreiEbene, seed: number): Landschaft | null 
 
   const lit = new THREE.MeshLambertMaterial({ vertexColors: true });
   const blatt = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
-  const glut = new THREE.MeshBasicMaterial({ vertexColors: true, color: new THREE.Color(1.6, 1.6, 1.6) });
+  const glut = glutStoff(1.6);
   auf.fertig(g, (k, teil) => (teil.glut ? glut : /_efeu|_blatt|_halme|_wasser/.test(k) ? blatt : lit),
     (k, teil) => !teil.glut && /^(thron|goettin|dreifuss|trommeln|sarkophag|altar)/.test(k));
 

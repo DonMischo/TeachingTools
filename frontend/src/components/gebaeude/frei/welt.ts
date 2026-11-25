@@ -14,6 +14,7 @@
 import * as THREE from "three";
 import { DURCHGANG, PLATZ, WAND, WEG, ZELLE, feldMitte, istFrei, type FreiEbene, type FreiOrt, type KartenArt } from "@/lib/gebaeude/frei";
 import type { Objekt } from "@/lib/gebaeude/objekte";
+import type { Bildton } from "./malfilter";
 import { baueObjekt } from "../objekte3d";
 import { ROBOTER_MONSTER, ROBOTER_WAECHTER } from "@/lib/angriffe/monster";
 import { felsGeometrie, musterMaterial, textur, zufallAus } from "../stoff";
@@ -62,6 +63,8 @@ export interface Stimmung {
   /** Farbe dieses Lichts (Vorgabe: warm wie eine Fackel) */
   fackelFarbe?: number;
   belichtung: number;
+  /** Bildton und Leuchten im Malfilter (Vorgabe: neutral, mäßiges Leuchten) */
+  bild?: Bildton;
 }
 
 export interface Landschaft {

@@ -18,7 +18,7 @@ import { zufallAus } from "../stoff";
 import { bauKacheln, kachelName } from "../bausatz";
 import { H3, flaeche } from "./bauwelt";
 import { deckenRaster, eckBloecke, kitAufsteller, lichtVorrat, schauNach, wandKanten, type WandKante, durchgangsRahmen, fuelleHallen, hatModell, saalVor } from "./kitwelt";
-import { kit } from "./modelle";
+import { glutStoff, kit } from "./modelle";
 import { himmel, schweben, umland, type Landschaft, type Stimmung } from "./welt";
 
 export const NEON = "neon";
@@ -27,6 +27,7 @@ const STIMMUNG: Stimmung = {
   himmelOben: 0x0a1418, himmelUnten: 0x10242c, nebel: 0x1e4450, dichte: 0.016,
   sonne: 0xbfe0ff, sonneStaerke: 0.5, sonneVon: [0.2, 1, 0.1],
   oben: 0x9ac8d8, unten: 0x2a3036, umgebung: 1.45, fackel: 7, fackelFarbe: 0xdff2ff, belichtung: 1.45,
+  bild: { schatten: [0.9, 0.94, 1.16], licht: [1.06, 0.98, 1.04], leuchten: 1.0, schwelle: 0.9 },
 };
 
 export function neonLandschaft(e: FreiEbene, seed: number): Landschaft | null {
@@ -155,7 +156,7 @@ export function neonLandschaft(e: FreiEbene, seed: number): Landschaft | null {
   }
 
   const lit = new THREE.MeshLambertMaterial({ vertexColors: true });
-  const glut = new THREE.MeshBasicMaterial({ vertexColors: true, color: new THREE.Color(1.5, 1.5, 1.5) });
+  const glut = glutStoff(1.5);
   const glas = new THREE.MeshBasicMaterial({ vertexColors: true, color: new THREE.Color(1.3, 1.3, 1.3), transparent: true, opacity: 0.75, depthWrite: false });
   const oel = new THREE.MeshPhongMaterial({ vertexColors: true, shininess: 120, specular: 0x88aacc, transparent: true, opacity: 0.85 });
   // ── Hallen ohne Aufgabe: Holotisch mit Terminal, Serverreihen und Monitorwände, Kleinkram am Boden ──

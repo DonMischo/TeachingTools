@@ -911,6 +911,7 @@ export default function FreiWelt({
     lage.current.decke = land.decke ?? 0;
     lage.current.deckeBei = land.deckeBei ?? null;
     d.maler.belichtung(s.belichtung);
+    d.maler.bildton(s.bild);
     lage.current.wandHoehe = land.wandHoehe;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plan, stock, stil, seed, modelleDa, bausatzNr, kitNr]);

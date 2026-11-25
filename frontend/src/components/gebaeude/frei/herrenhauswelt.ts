@@ -18,7 +18,7 @@ import { zufallAus } from "../stoff";
 import { bauKacheln, kachelName } from "../bausatz";
 import { H3, flaeche } from "./bauwelt";
 import { eckBloecke, kitAufsteller, lichtVorrat, schauNach, wandKanten, type WandKante, durchgangsRahmen, fuelleHallen, hatModell, saalVor } from "./kitwelt";
-import { kit } from "./modelle";
+import { glutStoff, kit } from "./modelle";
 import { himmel, schweben, umland, type Landschaft, type Stimmung } from "./welt";
 
 export const VIKTORIANISCH = "viktorianisch";
@@ -27,6 +27,7 @@ const STIMMUNG: Stimmung = {
   himmelOben: 0x2a1a12, himmelUnten: 0x3a2a20, nebel: 0x4a3426, dichte: 0.014,
   sonne: 0xffd8a0, sonneStaerke: 0.6, sonneVon: [-0.3, 1, 0.2],
   oben: 0xffe0b0, unten: 0x5a3a28, umgebung: 1.15, fackel: 0, belichtung: 1.2,
+  bild: { schatten: [0.98, 0.93, 1.0], licht: [1.1, 1.01, 0.86], leuchten: 0.8, schwelle: 0.95 },
 };
 
 export function herrenhausLandschaft(e: FreiEbene, seed: number): Landschaft | null {
@@ -134,7 +135,7 @@ export function herrenhausLandschaft(e: FreiEbene, seed: number): Landschaft | n
 
   const lit = new THREE.MeshLambertMaterial({ vertexColors: true });
   const stoff = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
-  const glut = new THREE.MeshBasicMaterial({ vertexColors: true, color: new THREE.Color(1.5, 1.5, 1.5) });
+  const glut = glutStoff(1.5);
   // ── Hallen ohne Aufgabe: Sitzgruppe auf dem Teppich unter dem Kronleuchter, an den Wänden Vitrinen, Uhren, Farne ──
   fuelleHallen(e, kanten, setze, r, {
     mitte: (x, z, w) => {

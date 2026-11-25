@@ -18,7 +18,7 @@ import * as THREE from "three";
 import { PLATZ, WAND, ZELLE, type FreiEbene } from "@/lib/gebaeude/frei";
 import { zufallAus } from "../stoff";
 import { bachGelaende, brueckenAus, brueckenHoehe, kitAufsteller, lichtVorrat, wasserFlaeche } from "./kitwelt";
-import { kit, texturStoff } from "./modelle";
+import { glutStoff, kit, texturStoff } from "./modelle";
 import { aus, boden, schweben, strich, striche, tiefen, type Landschaft, type Stimmung } from "./welt";
 
 export const HOEHLE = "hoehle";
@@ -28,6 +28,7 @@ const STIMMUNG: Stimmung = {
   sonne: 0x9ad0d8, sonneStaerke: 0.35, sonneVon: [0.3, 0.9, -0.2],
   // Grundlicht dunkel blaugrün, über der Figur ein schwaches warmes Licht, damit sie nicht zum Schattenriss wird
   oben: 0x7aa8b8, unten: 0x2a3036, umgebung: 1.1, fackel: 9, fackelFarbe: 0xffd2a0, belichtung: 1.35,
+  bild: { schatten: [0.86, 0.97, 1.12], licht: [1.08, 1.0, 0.92], leuchten: 1.0, schwelle: 0.9 },
 };
 
 const DECKE = 8.0;
@@ -290,10 +291,10 @@ export function hoehlenLandschaft(e: FreiEbene, seed: number): Landschaft | null
   // ── Stoffe: Kristalle, Feuer, Licht kräftig; Wasser und Gischt schwach ──
   const lit = new THREE.MeshLambertMaterial({ vertexColors: true });
   const innen = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
-  const glut = new THREE.MeshBasicMaterial({ vertexColors: true, color: new THREE.Color(1.6, 1.6, 1.6) });
+  const glut = glutStoff(1.6), kristall = glutStoff(1.4, true);
   const sanft = new THREE.MeshBasicMaterial({ vertexColors: true, color: new THREE.Color(1.1, 1.1, 1.1), transparent: true, opacity: 0.85, depthWrite: false });
   auf.fertig(g,
-    (k, teil) => (teil.glut ? (/_wasser$|_becken$|_schaum$/.test(k) && !k.startsWith("wasserfall1_wasser") ? sanft : glut)
+    (k, teil) => (teil.glut ? (/_wasser$|_becken$|_schaum$/.test(k) && !k.startsWith("wasserfall1_wasser") ? sanft : /kristall/.test(k) ? kristall : glut)
       : texturStoff(teil, /_gang|decke/.test(k)) ?? (/_wedel|_lamellen|_wurzel|_gang|decke/.test(k) ? innen : lit)),
     (k, teil) => !teil.glut && /^(tropfsaeule|stalagmit1|steinbruecke|torbogen|statue|lore|tuerkiskristall1|lilakristall1)/.test(k));
 

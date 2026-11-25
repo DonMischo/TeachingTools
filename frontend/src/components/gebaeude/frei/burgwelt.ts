@@ -18,7 +18,7 @@ import { zufallAus } from "../stoff";
 import { bauKacheln, kachelName } from "../bausatz";
 import { flaeche } from "./bauwelt";
 import { deckenRaster, eckBloecke, kitAufsteller, lichtVorrat, schauNach, wandKanten, type WandKante, durchgangsRahmen, fuelleHallen, hatModell, saalVor } from "./kitwelt";
-import { kit } from "./modelle";
+import { glutStoff, kit } from "./modelle";
 import { himmel, schweben, umland, type Landschaft, type Stimmung } from "./welt";
 
 export const BURG = "burg";
@@ -29,6 +29,7 @@ const STIMMUNG: Stimmung = {
   himmelOben: 0x1a1612, himmelUnten: 0x2a2420, nebel: 0x3a3028, dichte: 0.016,
   sonne: 0xbcd4ff, sonneStaerke: 0.7, sonneVon: [-0.4, 1, 0.3],
   oben: 0xf0dcc0, unten: 0x4a3a2c, umgebung: 1.15, fackel: 0, belichtung: 1.2,
+  bild: { schatten: [0.9, 0.95, 1.1], licht: [1.1, 1.0, 0.86], leuchten: 0.8, schwelle: 0.95 },
 };
 
 export function burgLandschaft(e: FreiEbene, seed: number): Landschaft | null {
@@ -160,7 +161,7 @@ export function burgLandschaft(e: FreiEbene, seed: number): Landschaft | null {
 
   const lit = new THREE.MeshLambertMaterial({ vertexColors: true });
   const stoff = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
-  const glut = new THREE.MeshBasicMaterial({ vertexColors: true, color: new THREE.Color(1.5, 1.5, 1.5) });
+  const glut = glutStoff(1.5);
   auf.fertig(g, (k, teil) => (teil.glut ? glut : /_stoff/.test(k) || /^wand2/.test(k) || /^thron/.test(k) ? stoff : lit),
     (k, teil) => !teil.glut && /^(kamin|thron|treppe|tafel|ruestung|waffenstaender|radleuchter)/.test(k));
 

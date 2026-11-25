@@ -76,6 +76,39 @@ export function texturStoff(teil: KitTeil, doppelt = false): THREE.MeshLambertMa
 
 /** Teil eines Baukastens; manche tragen eine Kacheltextur (Endfarbe = Textur × Eckenfarbe, z. B. Fels der Höhle) */
 export interface KitTeil { geo: THREE.BufferGeometry; glut: boolean; map?: THREE.Texture; normalMap?: THREE.Texture; stoffName?: string }
+/**
+ * Stoff für leuchtende Teile: unbeleuchtet in der eigenen Eckenfarbe × `hell`, beidseitig (die Modelle der
+ * Weltenwerkstatt sind beidseitig gebaut; einseitig fehlen Kristallen und Flammen ganze Flächen).
+ * `facetten`: jede Fläche bekommt ihre eigene Helligkeit nach Lage zum Blick und zu einem gedachten
+ * Oberlicht, die Kanten zum Rand hin leuchten auf — so liest sich ein Kristall als geschliffener Stein
+ * statt als flacher Umriss.
+ * Leuchtende Teile schreiben Alpha 2 ins Zwischenbild: daran erkennt der Malfilter, was leuchten darf
+ * (beleuchtete Flächen wie die Figur unter ihrem Licht müssen viel heller sein, um zu strahlen).
+ */
+export function glutStoff(hell: number, facetten = false): THREE.MeshBasicMaterial {
+  const m = new THREE.MeshBasicMaterial({ vertexColors: true, color: new THREE.Color(hell, hell, hell), side: THREE.DoubleSide });
+  m.onBeforeCompile = shader => {
+    shader.fragmentShader = shader.fragmentShader.replace("#include <opaque_fragment>", "#include <opaque_fragment>\ngl_FragColor.a = 2.0;");
+    if (!facetten) return;
+    shader.vertexShader = shader.vertexShader
+      .replace("#include <common>", "#include <common>\nvarying vec3 vFacBlick;")
+      .replace("#include <project_vertex>", "#include <project_vertex>\nvFacBlick = -mvPosition.xyz;");
+    shader.fragmentShader = shader.fragmentShader
+      .replace("#include <common>", "#include <common>\nvarying vec3 vFacBlick;")
+      .replace("#include <color_fragment>", `#include <color_fragment>
+        {
+          vec3 blick = normalize(vFacBlick);
+          vec3 n = normalize(cross(dFdx(vFacBlick), dFdy(vFacBlick)));
+          if (dot(n, blick) < 0.0) n = -n;
+          float zu = clamp(dot(n, blick), 0.0, 1.0);
+          float oben = max(dot(n, normalize(vec3(-0.35, 0.85, 0.4))), 0.0);
+          diffuseColor.rgb *= 0.62 + 0.42 * oben + 0.55 * pow(1.0 - zu, 2.5);
+        }`);
+  };
+  m.customProgramCacheKey = () => (facetten ? "glut-facetten" : "glut");
+  return m;
+}
+
 const kits = new Map<string, Record<string, KitTeil>>();
 const kitLaden = new Map<string, Promise<boolean>>();
 
