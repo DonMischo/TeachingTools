@@ -266,7 +266,7 @@ def _challenge_launch(db: Session, teacher: Teacher, ref_id: str | None, klasse:
 # ── classroom ─────────────────────────────────────────────────────────────────
 
 def _classroom_refs(db: Session, teacher: Teacher) -> list[dict]:
-    return [{"ref_id": None, "label": "Classroom Screen"}]
+    return [{"ref_id": None, "label": "Tafelorganizer"}]
 
 
 def _classroom_launch(db: Session, teacher: Teacher, ref_id: str | None, klasse: str | None) -> LaunchResult:

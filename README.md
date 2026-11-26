@@ -341,7 +341,7 @@ Das Lehrkraft-Werkzeugset. Standardmäßig nur für Lehrkräfte sichtbar.
 - Die Lehrkraft bietet Items an, die Haussprecher bieten mit Hauspunkten
 - Phasen: wartend, offen, abgeschlossen
 
-### 🖥️ Classroom Screen
+### 🖥️ Tafelorganizer
 - Beamer-Ansicht mit frei platzierbaren Widgets: Uhr, Timer mit Signalton, Stoppuhr, Arbeitsform, Notizen
 - Die Anordnung wird im Browser gespeichert
 

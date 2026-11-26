@@ -244,7 +244,7 @@ const FANTASY: Record<NavKey, React.ReactElement> = {
     </svg>
   ),
 
-  // ── Classroom Screen (monitor + widgets) ─────────────────────────────
+  // ── Tafelorganizer (monitor + widgets) ─────────────────────────────
   classroom: (
     <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
       <rect x="1.5" y="3" width="17" height="11" rx="1.5" fill="none" stroke="currentColor" strokeWidth="1.3"/>

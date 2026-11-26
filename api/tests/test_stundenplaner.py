@@ -621,7 +621,7 @@ class TestToolRefs:
         classroom = next(t for t in r.json() if t["type"] == "classroom")
         assert classroom["requires_ref"] is False
         assert len(classroom["items"]) == 1
-        assert classroom["items"][0]["label"] == "Classroom Screen"
+        assert classroom["items"][0]["label"] == "Tafelorganizer"
 
     def test_requires_auth(self, client):
         r = client.get("/api/stundenplaner/tool-refs")

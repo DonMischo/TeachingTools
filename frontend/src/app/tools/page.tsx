@@ -51,7 +51,7 @@ const ALL_CARDS: Werkzeug[] = [
     slug: "classroom",
     href: "/classroom",
     icon: "🖥️",
-    title: "Classroom Screen",
+    title: "Tafelorganizer",
     description: "Uhr, Timer und Stoppuhr als frei positionierbare Widgets auf dem Beamer.",
     color: "#60a5fa",
   },

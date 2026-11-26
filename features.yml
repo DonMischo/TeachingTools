@@ -1078,7 +1078,7 @@ tools:
       - Haussprecher bieten mit Hauspunkten auf Items
       - Phasen wartend, offen, abgeschlossen
   - id: classroom
-    name: Classroom Screen
+    name: Tafelorganizer
     faehigkeiten: {use: [true, false]}
     kann:
       - Widgets Uhr, Timer, Stoppuhr, Arbeitsform, Notizen

@@ -295,7 +295,7 @@ function simGrid(s, sims) {
   const tools = [
     ["40-barometer",   "Umfrage & Barometer", "Live-Meinungsbild, anonym, mit Diagrammen"],
     ["41-exit-ticket", "Exit-Ticket",         "Schnelles Feedback am Stundenende"],
-    ["24-classroom",   "Classroom Screen",    "Uhr, Timer, Stoppuhr, Ampel am Beamer"],
+    ["24-classroom",   "Tafelorganizer",    "Uhr, Timer, Stoppuhr, Ampel am Beamer"],
     ["45-kompendium",  "Methoden-Kompendium", "413 Unterrichtsmethoden, mit Quellen"],
   ];
   tools.forEach(([name, label, desc], i) => {

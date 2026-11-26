@@ -314,7 +314,7 @@ CATALOG: list[CatalogTool] = [
         "use": _cap(True, False),
         "host": _cap(True, False),
     }),
-    CatalogTool("classroom", "🖥️ Classroom Screen", "🖥️", "tools", {
+    CatalogTool("classroom", "🖥️ Tafelorganizer", "🖥️", "tools", {
         "use": _cap(True, False),
     }),
     CatalogTool("stundenplaner", "📋 Stundenplaner", "📋", "tools", {

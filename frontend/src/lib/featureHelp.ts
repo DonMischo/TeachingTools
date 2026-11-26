@@ -1051,7 +1051,7 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
     ],
   },
   classroom: {
-    title: "Classroom Screen",
+    title: "Tafelorganizer",
     intro: "Anzeige-Screen für Beamer/Board mit frei platzierbaren Widgets.",
     sections: [
       { label: "🎯 Nutzung", text: "Widgets ein-/ausblenden und frei anordnen: Uhr, Timer, Stoppuhr, Arbeitsform, Notizen." },
