@@ -156,3 +156,17 @@ Aktivitäten mit eigenen Tabellen (TaskCrawler, Caputh, Lückentext, Bingo, Chal
   - Die Challenge-💎-Liste bleibt, wie sie ist: Sie wird aus dem Spielstand berechnet und hat eine andere Form.
 - Datenübernahmen laufen genau einmal (Tabelle `datenuebernahmen`). Sonst kämen gelöschte Einträge und geleerte Runden beim Neustart aus den alten Tabellen zurück.
 - Zeitstrahl: Üben auch hinter dem QR, Runden im Dashboard (4afdf39a).
+
+## Einheitliches Aussehen (2026-11-26)
+Vorbild ist der TaskCrawler: seine Sitzungsliste und sein Live-Dashboard.
+- **`components/sitzung/SitzungListe.tsx`**: oben »▶ Neue Sitzung« (Klasse/Kurs, Starten, optional »Ohne Klasse«, Hinweis, Extra-Einstellungen), darunter je Sitzung eine Zeile: Status-Pille, Code, Klassen-Pille, Fakten, Aktionen als Textlinks (`SitzungAktion`: haupt/normal/gefahr).
+  - Nutzer: TaskCrawler, Caputh (`components/caputh/CaputhSitzungen.tsx`, Bibliothek und Startseite), Bingo, Lückentext (startet jetzt aus der Liste), `ToolSessionList` (QR-Dialog) und über sie `SitzungStart`/`SitzungLeiste` (Markieren, Algo, Challenge, Kartenquiz, »Sitzung wechseln« im ☰).
+  - `SessionGrid` ist entfallen.
+- **`components/sitzung/SitzungKopf.tsx`**: Kopf jeder Host-Seite. Links stehen Zurück, Titel, Code, 🟢 live und Fakten, darunter die Knöpfe (`KOPF_KNOPF`). Rechts stehen QR, Pfad, Gastzugang und »selbst spielen«.
+  - Nutzer: TaskCrawler, Bingo, Lückentext, Auktion, Barometer, Exit-Ticket.
+  - Der Caputh-Host bleibt eine Beamer-Ansicht mit eigenem Aufbau.
+- **`SitzungDashboard`, Ansicht »Tabelle«**: je Person eine Zeile mit Balken, fertig/läuft, Kennzahlen als Chips und »gerade«, optional aufklappbar (`detail`, `detailLabel`).
+  - TaskCrawler: Log je Versuch; der Socket lädt nur neu.
+  - Challenge: Stufe ändern.
+  - Kartenquiz und Bingo: Ihre eigenen Tabellen sind entfallen.
+- Der Lückentext-Host behält seine Punkte-Rangliste mit Avataren (Spielstand, kein Dashboard).
