@@ -13,6 +13,7 @@ import Verstehen from "./Verstehen";
 import Ueben from "./Ueben";
 import Spiele from "./Spiele";
 import { Eingang, useGeheimpost, type Empfangen, type Geheimpost } from "./spiele/Geheimpost";
+import { SimKopf } from "@/components/SimKopf";
 
 const BLAETTER = [
   { id: "tafel", icon: "🧱", label: "Tafel" },
@@ -43,16 +44,10 @@ export default function Stellenwert({ action, zugang, vorgabe }: { action?: Reac
   const [empfangen, setEmpfangen] = useState<Empfangen | null>(null);
   return (
     <div className="page">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">🔢 Stellenwerttafeln</h1>
-          <p className="text-muted text-sm mt-1">
-            Zehnersystem, Zweiersystem (binär) und Sechzehnersystem (hexadezimal) in der Stellenwerttafel:
-            Plättchen legen und bündeln, umrechnen Schritt für Schritt, üben — und drei Spiele.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">{action}</div>
-      </div>
+      <SimKopf titel="🔢 Stellenwerttafeln" action={action}>
+        Zehnersystem, Zweiersystem (binär) und Sechzehnersystem (hexadezimal) in der Stellenwerttafel:
+        Plättchen legen und bündeln, umrechnen Schritt für Schritt, üben — und drei Spiele.
+      </SimKopf>
 
       {!festerReiter && <div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface">
         {BLAETTER.map(b => (

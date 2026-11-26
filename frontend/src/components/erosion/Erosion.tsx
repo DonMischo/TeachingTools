@@ -16,6 +16,7 @@ import FlussErosion, { ANSICHTEN } from "./FlussErosion";
 import KuestenModus from "./KuestenModus";
 import VerwitterungModus from "./VerwitterungModus";
 import { GESTEINE } from "@/lib/gelaende/verwitterung";
+import { SimKopf } from "@/components/SimKopf";
 
 const MODI = [
   { id: "fluss", label: "🏞️ Flüsse & Täler" },
@@ -41,13 +42,7 @@ export default function Erosion({ action, vorgabe }: { action?: ReactNode; vorga
   }, []);
   return (
     <div className="flex flex-col gap-4 p-4 sm:p-6 max-w-seite mx-auto w-full">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">🌧️ Erosion</h1>
-          <p className="text-muted text-sm mt-1">Wasser formt Gelände: Regen gräbt Täler, Flüsse schwellen in der Regenzeit an, Seen füllen Senken — und an der Küste nagt die Brandung.</p>
-        </div>
-        <div className="flex items-center gap-2">{action}</div>
-      </div>
+      <SimKopf titel="🌧️ Erosion" action={action}>Wasser formt Gelände: Regen gräbt Täler, Flüsse schwellen in der Regenzeit an, Seen füllen Senken — und an der Küste nagt die Brandung.</SimKopf>
       {!fest && (
         <div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface">
           {MODI.map(m => <button key={m.id} onClick={() => setModus(m.id)} className={chip(modus === m.id)}>{m.label}</button>)}

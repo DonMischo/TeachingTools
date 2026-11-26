@@ -33,6 +33,7 @@ import Aufgabenblatt from "@/components/geometrie/Aufgabenblatt";
 import FlaechenDuell from "@/components/vierecke/FlaechenDuell";
 import Bauhof from "@/components/vierecke/Bauhof";
 import { ANWENDUNG_ARTEN, UEBUNG_ARTEN, erzeugeAnwendung, erzeugeUebung } from "@/lib/vierecke-aufgaben";
+import { SimKopf } from "@/components/SimKopf";
 
 type Tab = "formen" | "umfang" | "flaeche" | "uebungen" | "anwendungen" | "spiel" | "bauhof";
 
@@ -346,16 +347,10 @@ export default function Vierecke({ action, vorgabe }: { action?: ReactNode; vorg
 
   return (
     <div className="page">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">📐 Vierecke</h1>
-          <p className="text-muted text-sm mt-1">
-            Sechs Vierecke mit Formeln und Eigenschaften, zwei Aufgaben zum Anfassen (Weide einzäunen,
-            Fläche auslegen), gewürfelte Übungen und Sachaufgaben mit Word-Export, das Flächen-Duell und der Bauhof (Gehege bauen, Wand streichen).
-          </p>
-        </div>
-        <div className="flex items-center gap-2">{action}</div>
-      </div>
+      <SimKopf titel="📐 Vierecke" action={action}>
+        Sechs Vierecke mit Formeln und Eigenschaften, zwei Aufgaben zum Anfassen (Weide einzäunen,
+        Fläche auslegen), gewürfelte Übungen und Sachaufgaben mit Word-Export, das Flächen-Duell und der Bauhof (Gehege bauen, Wand streichen).
+      </SimKopf>
 
       {/* Blätter */}
       {!festeForm && <div className="inline-flex self-start rounded-xl border border-line p-1 bg-surface">

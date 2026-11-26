@@ -16,6 +16,7 @@ import Denkwege from "./Denkwege";
 import Zinsen from "./Zinsen";
 import Ueben from "./Ueben";
 import Spiele from "./Spiele";
+import { SimKopf } from "@/components/SimKopf";
 
 const BLAETTER = [
   { id: "anschauen", icon: "👀", label: "Anschauen" },
@@ -42,16 +43,10 @@ export default function Prozent({ action, vorgabe }: { action?: ReactNode; vorga
   const [blatt, setBlatt] = useState<Blatt>(festerReiter ?? "anschauen");
   return (
     <div className="page">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">💯 Prozent- und Zinsrechnung</h1>
-          <p className="text-muted text-sm mt-1">
-            Prozente sehen (Kreis, Streifen, Hunderterfeld), mit dem Dreisatz rechnen, im Kopf rechnen lernen,
-            Zinsen und Zinseszins verstehen — dazu Übungsaufgaben und vier Spiele.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">{action}</div>
-      </div>
+      <SimKopf titel="💯 Prozent- und Zinsrechnung" action={action}>
+        Prozente sehen (Kreis, Streifen, Hunderterfeld), mit dem Dreisatz rechnen, im Kopf rechnen lernen,
+        Zinsen und Zinseszins verstehen — dazu Übungsaufgaben und vier Spiele.
+      </SimKopf>
 
       {!festerReiter && <div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface">
         {BLAETTER.map(b => (

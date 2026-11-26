@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { wahl, type Vorgabe } from "@/lib/vorgabe";
+import { SimKopf } from "@/components/SimKopf";
 
 /**
  * PBM / PGM / PPM (Netpbm-Textformate) zum Anfassen: links die Datei als Text,
@@ -357,16 +358,10 @@ export default function Bildformate({ action, vorgabe }: { action?: ReactNode; v
 
   return (
     <div className="page">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">🖼️ Bildformate</h1>
-          <p className="text-muted text-sm mt-1">
-            PBM, PGM und PPM sind Bilddateien aus lauter Zahlen. Links tippen, rechts sofort sehen —
-            oder ins Bild klicken und zusehen, wie sich die Zahlen ändern.
-          </p>
-        </div>
-        {action}
-      </div>
+      <SimKopf titel="🖼️ Bildformate" action={action}>
+        PBM, PGM und PPM sind Bilddateien aus lauter Zahlen. Links tippen, rechts sofort sehen —
+        oder ins Bild klicken und zusehen, wie sich die Zahlen ändern.
+      </SimKopf>
 
       {/* Formatwahl — jedes Format hat sein eigenes Blatt, nichts geht verloren */}
       <div className="flex flex-wrap items-center gap-2">

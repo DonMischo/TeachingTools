@@ -12,6 +12,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { ToolSessionBar } from "@/components/ToolSessionBar";
 import { zeitstrahlAnsicht } from "@/lib/zeitstrahl/sitzung";
+import { SimKopf } from "@/components/SimKopf";
 
 type Tab = "ansehen" | "ueben" | "bearbeiten";
 
@@ -105,15 +106,11 @@ export default function ZeitstrahlDetailPage() {
 
   return (
     <div className="flex flex-col gap-5 p-6 max-w-seite mx-auto w-full">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <Link href="/aktivitaeten/zeitstrahl" className="text-xs text-muted hover:text-accent">
-            ← Bibliothek
-          </Link>
-          <h1 className="text-2xl font-black tracking-tight">📏 {set.title}</h1>
-          {set.description && <p className="text-muted text-sm mt-1 max-w-2xl">{set.description}</p>}
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex flex-col gap-1">
+        <Link href="/aktivitaeten/zeitstrahl" className="text-xs text-muted hover:text-accent w-fit">
+          ← Bibliothek
+        </Link>
+        <SimKopf titel={<>📏 {set.title}</>} action={<>
           {/* Teilen: ein Code je Zeitleiste, damit ein gedruckter QR immer
               dieselbe Zeitleiste oeffnet. */}
           <ToolSessionBar tool="zeitstrahl" title={set.title} refId={set.id} ansicht={ansicht} />
@@ -127,7 +124,9 @@ export default function ZeitstrahlDetailPage() {
             </button>
           ))}
         </div>
-        </div>
+        </>}>
+          {set.description}
+        </SimKopf>
       </div>
 
       {/* lane toggles — the "parallel timelines" selector */}

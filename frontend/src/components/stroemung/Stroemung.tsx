@@ -22,6 +22,7 @@ import Druckluft from "./Druckluft";
 import Baukasten from "./Baukasten";
 import { vorgabeAus, type Vorgabe as BaukastenVorgabe } from "@/lib/stroemung/baukastenDatei";
 import { api } from "@/lib/api";
+import { SimKopf } from "@/components/SimKopf";
 
 /** Fertige Stationen; was hier fehlt, zeigt eine Vorschau. */
 const STATION_INHALT: Record<string, () => ReactNode> = {
@@ -69,16 +70,10 @@ export default function Stroemung({ action, vorgabe, code, lehrkraft = false }: 
 
   return (
     <div className="page">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">💧 Druck & Strömung</h1>
-          <p className="text-muted text-sm mt-1">
-            Wasser und Luft in Behältern, Rohren und Zylindern: Schweredruck, Pascal, Luftdruck, Rohrreibung, Bernoulli —
-            bis zu Heizkreis, Hausanschluss und Druckluft. Wer mag, blendet den passenden Stromkreis darüber.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">{action}</div>
-      </div>
+      <SimKopf titel={<>💧 Druck & Strömung</>} action={action}>
+        Wasser und Luft in Behältern, Rohren und Zylindern: Schweredruck, Pascal, Luftdruck, Rohrreibung, Bernoulli —
+        bis zu Heizkreis, Hausanschluss und Druckluft. Wer mag, blendet den passenden Stromkreis darüber.
+      </SimKopf>
 
       {!fest && (
         <div className="flex flex-wrap gap-3">

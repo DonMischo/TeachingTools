@@ -18,6 +18,7 @@ import { Vorbereitung } from "./Einstellungen";
 import OpferWoche from "./OpferWoche";
 import Morgen from "./Morgen";
 import type { MausZugang } from "@/lib/api";
+import { SimKopf } from "@/components/SimKopf";
 
 const SCHLUESSEL = "hp_klikk_stand";
 
@@ -76,20 +77,17 @@ export default function Klikk({ action, zugang, verwaltung, konto }: { action?: 
 
   return (
     <div className="page">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">📱 Klikk</h1>
-          <p className="text-muted text-sm mt-1">Eine Schulwoche mit einer Social-Media-App. Was du tust, zählt — auch das, was du nicht tust.</p>
-        </div>
-        <div className="flex items-center gap-2">
+      <SimKopf titel={<>📱 Klikk</>}
+        action={<>
           {uhr?.u.laeuft && stand?.flags.klassenuhr && (
             <span className="rounded-full bg-accent text-accent-fg text-xs font-bold px-3 py-1">
               🏫 Klassenzeit {uhr.u.pausiert ? "⏸" : "▶"} {TAGE[stand.tag]?.slice(0, 2)} {zeit(stand.uhr)}
             </span>
           )}
           {action}
-        </div>
-      </div>
+        </>}>
+        Eine Schulwoche mit einer Social-Media-App. Was du tust, zählt — auch das, was du nicht tust.
+      </SimKopf>
 
       {verwaltung && (
         <div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface">

@@ -21,6 +21,7 @@ import FotoGalerie, { BildStreifen } from "@/components/galerie/FotoGalerie";
 import { BEREICHE, bilderZuTyp, GALERIE, nachweisFuer } from "@/lib/vulkan/galerie";
 import { WISSEN_ZU_STOFF } from "@/lib/vulkan/wissen";
 import VulkanWissen from "./VulkanWissen";
+import { SimKopf } from "@/components/SimKopf";
 
 type Wahl = TypId | "eigen";
 const SCHNITT_W = 800, SCHNITT_H = 640;
@@ -216,13 +217,7 @@ export default function Vulkan({ action, vorgabe }: { action?: ReactNode; vorgab
 
   return (
     <div className="flex flex-col gap-4 p-4 sm:p-6 max-w-seite mx-auto w-full">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">🌋 Vulkane</h1>
-          <p className="text-muted text-sm mt-1">Schildvulkan oder Schichtvulkan? Das entscheidet das Magma: Ausbruch für Ausbruch wächst der Berg — aus dünnflüssiger Lava, zäher Lava und Asche.</p>
-        </div>
-        <div className="flex items-center gap-2">{action}</div>
-      </div>
+      <SimKopf titel="🌋 Vulkane" action={action}>Schildvulkan oder Schichtvulkan? Das entscheidet das Magma: Ausbruch für Ausbruch wächst der Berg — aus dünnflüssiger Lava, zäher Lava und Asche.</SimKopf>
       <div className="flex flex-wrap items-center gap-2">
         {!festTyp && (
           <div className="inline-flex flex-wrap rounded-xl border border-line p-1 bg-surface">

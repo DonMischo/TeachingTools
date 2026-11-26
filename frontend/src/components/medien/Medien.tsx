@@ -25,6 +25,7 @@ import WerWarZuerst from "./WerWarZuerst";
 import Posteingang from "./Posteingang";
 import { MedienLiveKontext, useMedienLive, type LiveZugang } from "@/lib/medien/live";
 import { useAuth } from "@/contexts/AuthContext";
+import { SimKopf } from "@/components/SimKopf";
 
 /** Lehrkraft: alles freischalten gilt nur für diese Browser-Sitzung (Tab), gespeichert wird nichts */
 const ALLES_FREI = "hp_medien_alles_frei";
@@ -125,16 +126,10 @@ export default function Medien({ action, vorgabe, speicher, live, sitzungFrei }:
     <MedienLiveKontext.Provider value={live ? raum : null}>
     <ErprobtKontext.Provider value={(id: ErprobtId) => aendere(mitErprobt(id))}>
     <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-seite mx-auto w-full" data-sim="medien">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">📜 Geschichte der Medien</h1>
-          <p className="text-muted text-sm mt-1 max-w-3xl">
-            Wie kommt eine Nachricht von A nach B — weiter, schneller, haltbarer, zu mehr Menschen? 40 000 Jahre in {MEDIEN.length} Stationen,
-            mit Flops, Kuriosem und Fotos zum Freischalten.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">{action}</div>
-      </div>
+      <SimKopf titel="📜 Geschichte der Medien" action={action}>
+        Wie kommt eine Nachricht von A nach B — weiter, schneller, haltbarer, zu mehr Menschen? 40 000 Jahre in {MEDIEN.length} Stationen,
+        mit Flops, Kuriosem und Fotos zum Freischalten.
+      </SimKopf>
       <div className="flex flex-wrap items-center gap-3">
         {!fest && <div className="inline-flex flex-wrap rounded-xl border border-line p-1 bg-surface gap-1">
           <span className="self-center px-2 text-xs font-bold text-muted uppercase">Kennenlernen</span>

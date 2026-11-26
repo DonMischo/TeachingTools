@@ -33,6 +33,7 @@ import { Kodex, type KodexBereich } from "./Kodex";
 import { useForschung } from "./fortschritt";
 import { useFlugLive, type Zugang } from "./useFlugLive";
 import { useMusik } from "./musik";
+import { SimKopf } from "@/components/SimKopf";
 
 const Uebersicht = lazy(() => import("./Uebersicht"));
 const Flug = lazy(() => import("./Flug"));
@@ -135,16 +136,10 @@ export default function Sonnensystem({ action, speicherSchluessel = "geraet", le
 
   return (
     <div className="flex flex-col gap-4 p-4 sm:p-6 max-w-seite mx-auto w-full">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">🪐 Sonnensystem</h1>
-          <p className="text-muted text-sm mt-1 max-w-2xl">
-            Sonne, Planeten und ihre wichtigsten Monde — auf echten Bahnen, maßstabsgetreu verglichen und zum Selberfliegen.
-            Mit Bildern von Hubble, Webb, Raumsonden, Rovern und Astronauten.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">{action}</div>
-      </div>
+      <SimKopf titel="🪐 Sonnensystem" action={action}>
+        Sonne, Planeten und ihre wichtigsten Monde — auf echten Bahnen, maßstabsgetreu verglichen und zum Selberfliegen.
+        Mit Bildern von Hubble, Webb, Raumsonden, Rovern und Astronauten.
+      </SimKopf>
 
       <div
         ref={rahmenRef}

@@ -16,6 +16,7 @@ import Tiefenprofil from "./Tiefenprofil";
 import Seismik from "./Seismik";
 import KonvektionsAnsicht from "./KonvektionsAnsicht";
 import { ELEMENTE, SCHICHTEN } from "@/lib/erde/schichten";
+import { SimKopf } from "@/components/SimKopf";
 
 // three.js nur im Browser laden.
 const Keil3D = lazy(() => import("./Keil3D"));
@@ -39,15 +40,9 @@ export default function ErdAufbau({ action, vorgabe }: { action?: ReactNode; vor
   const [reiter, setReiter] = useState<Reiter>(festerReiter ?? "keil");
   return (
     <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-seite mx-auto w-full">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">🌍 Aufbau der Erde</h1>
-          <p className="text-muted text-sm mt-1">
-            Von der Kruste bis zum Kern: Schichten, Gesteine, Minerale, Temperatur, Druck, Zähigkeit — und wie man das ohne Bohrloch herausgefunden hat.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">{action}</div>
-      </div>
+      <SimKopf titel="🌍 Aufbau der Erde" action={action}>
+        Von der Kruste bis zum Kern: Schichten, Gesteine, Minerale, Temperatur, Druck, Zähigkeit — und wie man das ohne Bohrloch herausgefunden hat.
+      </SimKopf>
 
       {!festerReiter && <div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface">
         {REITER.map(r => (

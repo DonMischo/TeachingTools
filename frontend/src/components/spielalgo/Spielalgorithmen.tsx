@@ -14,6 +14,7 @@ import Verteilen from "./Verteilen";
 import Gelaende from "./Gelaende";
 import Wegsuche from "./Wegsuche";
 import Zyklisch from "./Zyklisch";
+import { SimKopf } from "@/components/SimKopf";
 
 const REITER = [
   { id: "labyrinth", icon: "🌀", label: "Labyrinthe" },
@@ -36,15 +37,9 @@ export default function Spielalgorithmen({ action, vorgabe }: { action?: ReactNo
   const [reiter, setReiter] = useState<Reiter>(fest ?? "labyrinth");
   return (
     <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-seite mx-auto w-full">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">🎲 Spielalgorithmen</h1>
-          <p className="text-muted text-sm mt-1">
-            Wie bauen Spiele ihre Welten selbst? Labyrinthe, Räume, Höhlen, Wälder, Gebirge, Wege und ganze Abenteuer – Schritt für Schritt zum Zuschauen und Ausprobieren.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">{action}</div>
-      </div>
+      <SimKopf titel="🎲 Spielalgorithmen" action={action}>
+        Wie bauen Spiele ihre Welten selbst? Labyrinthe, Räume, Höhlen, Wälder, Gebirge, Wege und ganze Abenteuer – Schritt für Schritt zum Zuschauen und Ausprobieren.
+      </SimKopf>
       {!fest && (
         <div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface" role="tablist">
           {REITER.map(r => (

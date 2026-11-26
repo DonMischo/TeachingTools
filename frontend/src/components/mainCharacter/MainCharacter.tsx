@@ -17,6 +17,7 @@ import { Fragebogen } from "./Fragebogen";
 import { Spiel } from "./Spiel";
 import { LEER, laden, loeschen, speichern, type Charakter } from "./speicher";
 import { Uebersicht } from "./Uebersicht";
+import { SimKopf } from "@/components/SimKopf";
 
 type Reiter = "vorfuehren" | "uebersicht" | "selbst";
 
@@ -35,13 +36,9 @@ export default function MainCharacter({ zugang, speicherSchluessel, lehrkraft = 
   });
   return (
     <div className="mx-auto w-full max-w-[var(--seite-breite)] flex flex-col gap-4 p-4">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">👑 Main Character</h1>
-          <p className="text-sm text-muted">Du entscheidest, wo du beim Abschluss 2028 stehst. NPCs folgen einem Skript — du nicht.</p>
-        </div>
-        {action}
-      </header>
+      <SimKopf titel="👑 Main Character" action={action}>
+        Du entscheidest, wo du beim Abschluss 2028 stehst. NPCs folgen einem Skript — du nicht.
+      </SimKopf>
       {lehrkraft && (
         <nav className="flex flex-wrap gap-2 border-b border-line pb-2">
           {([["vorfuehren", "🎬 Vorführen"], ["uebersicht", "👥 Klassenübersicht"], ["selbst", "🧑 Selbst ausprobieren"]] as [Reiter, string][]).map(([id, l]) => (

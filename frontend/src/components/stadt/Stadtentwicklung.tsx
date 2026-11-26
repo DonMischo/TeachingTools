@@ -27,6 +27,7 @@ import BauModus from "./BauModus";
 import Aufbau from "./aufbau/Aufbau";
 import Planen from "./Planen";
 import Erklaerung from "./Erklaerung";
+import { SimKopf } from "@/components/SimKopf";
 
 const REITER = [
   { id: "wachstum", icon: "🕰️", label: "Wachstum" },
@@ -68,15 +69,9 @@ export default function Stadtentwicklung({ action, vorgabe, speicherSchluessel }
 
   return (
     <div className="flex flex-col gap-4 p-4 sm:p-6 max-w-seite mx-auto w-full">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">🏘️ Stadtentwicklung</h1>
-          <p className="text-muted text-sm mt-1">
-            Warum liegt eine Stadt, wo sie liegt — und warum sieht sie so aus? Zwölf Stadttypen — von der Römerstadt bis zum Silicon Valley — wachsen auf einem Gelände, das du passend zum Typ formen lassen oder frei wählen kannst.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">{action}</div>
-      </div>
+      <SimKopf titel="🏘️ Stadtentwicklung" action={action}>
+        Warum liegt eine Stadt, wo sie liegt — und warum sieht sie so aus? Zwölf Stadttypen — von der Römerstadt bis zum Silicon Valley — wachsen auf einem Gelände, das du passend zum Typ formen lassen oder frei wählen kannst.
+      </SimKopf>
       <div className="flex flex-wrap items-center justify-between gap-2">
         {!fest && (
           <div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface">

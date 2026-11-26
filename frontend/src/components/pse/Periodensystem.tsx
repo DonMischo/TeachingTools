@@ -17,6 +17,7 @@ import RallyePanel from "./RallyePanel";
 import Atommodelle from "./Atommodelle";
 import { useRallye } from "./useRallye";
 import { elementeIm } from "@/lib/pse/rallye";
+import { SimKopf } from "@/components/SimKopf";
 
 /** Die drei Reiter: nachschlagen, Modelle bauen, Rallye spielen. */
 type Modus = "nachschlagen" | "modelle" | "rallye";
@@ -193,19 +194,12 @@ export default function Periodensystem({ action, vorgabe, nur }: {
   // mit 18 Spalten und lesbaren Feldern braucht den Platz.
   return (
     <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-[1900px] mx-auto w-full">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">
-            {nur === "modelle" ? "⚛️ Atommodelle" : "🧪 Periodensystem"}
-          </h1>
-          <p className="text-muted text-sm mt-1 max-w-2xl">
-            {nur === "modelle"
-              ? "Wie stellt man sich ein Atom vor? Fünf Modelle, eines nach dem anderen — jedes erklärt mehr als das vorige. Klick ein Element im Raster an; im Bindungslabor rechts entstehen daraus Verbindungen."
-              : "Alle 118 Elemente, geordnet nach der Ordnungszahl. Elemente einer Spalte verhalten sich ähnlich — sie haben gleich viele Außenelektronen. Klick auf ein Feld für den Steckbrief."}
-          </p>
-        </div>
-        {action}
-      </div>
+      <SimKopf titel={<>{nur === "modelle" ? "⚛️ Atommodelle" : "🧪 Periodensystem"}</>}
+        action={action}>
+        {nur === "modelle"
+          ? "Wie stellt man sich ein Atom vor? Fünf Modelle, eines nach dem anderen — jedes erklärt mehr als das vorige. Klick ein Element im Raster an; im Bindungslabor rechts entstehen daraus Verbindungen."
+          : "Alle 118 Elemente, geordnet nach der Ordnungszahl. Elemente einer Spalte verhalten sich ähnlich — sie haben gleich viele Außenelektronen. Klick auf ein Feld für den Steckbrief."}
+      </SimKopf>
 
       {!nur && <div className="inline-flex self-start rounded-xl border border-line p-1 bg-surface">
         {([["nachschlagen", "🔎 Nachschlagen"], ["modelle", "⚛️ Atommodelle"], ["rallye", "🎯 PSE-Rallye"]] as const).map(([id, label]) => (

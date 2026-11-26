@@ -14,6 +14,7 @@ import Bauen from "./Bauen";
 import Erkennen from "./Erkennen";
 import Vergleich from "./Vergleich";
 import { PcbDefs } from "./zeichnungen";
+import { SimKopf } from "@/components/SimKopf";
 
 const BLAETTER = [
   { id: "bauen", icon: "🔧", label: "Bauen" },
@@ -34,16 +35,10 @@ export default function PcWerkstatt({ action, vorgabe }: { action?: ReactNode; v
   return (
     <div className="page">
       <PcbDefs />
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">🪛 PC-Werkstatt</h1>
-          <p className="text-muted text-sm mt-1">
-            Schraub einen Gaming-PC, einen 386er von 1990 und einen Raspberry Pi zusammen — mit Kabeln, Netzteil und allem.
-            Schalte ein und finde heraus, was fehlt. Im Smartphone erkennst du die Teile.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">{action}</div>
-      </div>
+      <SimKopf titel="🪛 PC-Werkstatt" action={action}>
+        Schraub einen Gaming-PC, einen 386er von 1990 und einen Raspberry Pi zusammen — mit Kabeln, Netzteil und allem.
+        Schalte ein und finde heraus, was fehlt. Im Smartphone erkennst du die Teile.
+      </SimKopf>
 
       <div className="flex flex-wrap items-center gap-3">
         {!festerReiter && <div className="inline-flex flex-wrap rounded-xl border border-line p-1 bg-surface">

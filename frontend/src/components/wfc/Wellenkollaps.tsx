@@ -19,6 +19,7 @@ import { text, wahl, type Vorgabe } from "@/lib/vorgabe";
 import Buehne, { type Pinsel } from "./Buehne";
 import TexturSynthese from "./TexturSynthese";
 import { zeichneKachel } from "./zeichnen";
+import { SimKopf } from "@/components/SimKopf";
 
 type Reiter = "kacheln" | "vorlage" | "textur" | "erklaerung";
 const REITER: { id: Reiter; icon: string; label: string }[] = [
@@ -60,15 +61,9 @@ export default function Wellenkollaps({ action, vorgabe }: { action?: ReactNode;
   const [reiter, setReiter] = useState<Reiter>(fest ?? "kacheln");
   return (
     <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-seite mx-auto w-full">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">🧩 Wellenfunktionskollaps</h1>
-          <p className="text-muted text-sm mt-1">
-            Aus wenigen Nachbarschaftsregeln entsteht Stück für Stück ein Bild, das überall zusammenpasst — wie beim Sudoku.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">{action}</div>
-      </div>
+      <SimKopf titel="🧩 Wellenfunktionskollaps" action={action}>
+        Aus wenigen Nachbarschaftsregeln entsteht Stück für Stück ein Bild, das überall zusammenpasst — wie beim Sudoku.
+      </SimKopf>
       {!fest && (
         <div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface">
           {REITER.map(r => <button key={r.id} onClick={() => setReiter(r.id)} className={chip(reiter === r.id)}>{r.icon} {r.label}</button>)}

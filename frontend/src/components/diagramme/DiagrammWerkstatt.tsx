@@ -21,6 +21,7 @@ import { DIAGRAMM_IMPORT, FARBEN, FORMEN, RICHTUNGEN, THEMEN, VORLAGEN } from "@
 import { CodeFeld } from "./CodeFeld";
 import { Spickzettel } from "./Spickzettel";
 import { KiPrompt } from "./KiPrompt";
+import { SimKopf } from "@/components/SimKopf";
 
 const SPEICHER = "hp_diagramme";
 
@@ -382,15 +383,9 @@ export default function DiagrammWerkstatt({ action }: { action?: ReactNode }) {
 
   return (
     <div className="flex flex-col gap-4 p-4 sm:p-6 max-w-seite mx-auto w-full">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">🔀 Diagramm-Werkstatt</h1>
-          <p className="text-muted text-sm mt-1">
-            Ablaufdiagramme und Mindmaps — mit Bausteinen zusammenklicken oder in D2 selbst schreiben.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">{action}</div>
-      </div>
+      <SimKopf titel="🔀 Diagramm-Werkstatt" action={action}>
+        Ablaufdiagramme und Mindmaps — mit Bausteinen zusammenklicken oder in D2 selbst schreiben.
+      </SimKopf>
 
       {/* Ablage */}
       <div className="card p-3 flex flex-wrap items-center gap-2">

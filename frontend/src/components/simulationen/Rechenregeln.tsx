@@ -26,6 +26,7 @@ import {
   STELLEN_NAMEN, RechenError,
   type Node, type Op, type Pfad, type Zug, type StufenModus, type Rechenart,
 } from "@/lib/rechenregeln";
+import { SimKopf } from "@/components/SimKopf";
 
 type Reiter = "korb" | "zug" | "stufen";
 
@@ -913,15 +914,9 @@ export default function Rechenregeln({ action, vorgabe }: { action?: ReactNode; 
 
   return (
     <div className="flex flex-col gap-5 p-6 max-w-seite mx-auto w-full">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">🍎 Rechenregeln</h1>
-          <p className="text-muted text-sm mt-1">
-            Klammern vor Punkt vor Strich, Vertauschen und Stufenzahlen — zum Ansehen statt zum Auswendiglernen.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">{action}</div>
-      </div>
+      <SimKopf titel="🍎 Rechenregeln" action={action}>
+        Klammern vor Punkt vor Strich, Vertauschen und Stufenzahlen — zum Ansehen statt zum Auswendiglernen.
+      </SimKopf>
 
       {!festerReiter && <div className="flex gap-2 flex-wrap">
         {REITER.map(r => (

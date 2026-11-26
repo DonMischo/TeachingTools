@@ -35,6 +35,7 @@ import ErfolgeEditor from "./ErfolgeEditor";
 import VorlageJson from "./VorlageJson";
 import KartenMenue from "./KartenMenue";
 import UebenListe from "./UebenListe";
+import { SimKopf } from "@/components/SimKopf";
 
 const START_ART: Kartenart = "topographisch";
 const neuerInhalt = (art: Kartenart): SatzInhalt => ({ art, region: "deutschland", ...auswahlFuer(art, "de"), ausschnitt: null, auswahl: {},
@@ -160,17 +161,11 @@ export default function Karten({ action, zugang }: { action?: ReactNode; zugang?
 
   return (
     <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-seite mx-auto w-full">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">🗺️ Karten</h1>
-          <p className="text-muted text-sm mt-1">
-            {zugang
-              ? "Deutschland, Europa und die Welt erkunden — Ebenen an- und ausschalten, Orte suchen, Kartenart und Kartennetz wechseln."
-              : "Deutschland politisch und topographisch — Objekte auswählen, nummerieren und als Kartensatz speichern."}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">{action}<HelpButton slug="karten" /></div>
-      </div>
+      <SimKopf titel="🗺️ Karten" action={<>{action}<HelpButton slug="karten" /></>}>
+        {zugang
+        ? "Deutschland, Europa und die Welt erkunden — Ebenen an- und ausschalten, Orte suchen, Kartenart und Kartennetz wechseln."
+        : "Deutschland politisch und topographisch — Objekte auswählen, nummerieren und als Kartensatz speichern."}
+      </SimKopf>
 
       {lehrkraft && <SatzLeiste satz={satz} inhalt={inhalt} ausschnitt={() => ausschnitt.current} onLaden={lade} vorschlag={vorschlagTitel}
         onGespeichert={(s) => setSatz({ id: s.id, titel: s.titel, geteilt: s.geteilt, eigen: s.eigen })} />}

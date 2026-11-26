@@ -15,6 +15,7 @@ import Grafisch, { Koordinaten } from "./Grafisch";
 import { Addition, Einsetzung, Gleichsetzung, SystemWahl, type System } from "./Verfahren";
 import Ueben from "./Ueben";
 import Tarife from "./Tarife";
+import { SimKopf } from "@/components/SimKopf";
 
 const BLAETTER = [
   { id: "grafisch", icon: "📈", label: "Grafisch" },
@@ -51,16 +52,10 @@ export default function Lgs({ action, vorgabe }: { action?: ReactNode; vorgabe?:
   const verfahren = blatt === "addition" || blatt === "gleichsetzung" || blatt === "einsetzung";
   return (
     <div className="page">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">🔀 Lineare Gleichungssysteme</h1>
-          <p className="text-muted text-sm mt-1">
-            Zwei Gleichungen, zwei Unbekannte: grafisch als Schnittpunkt zweier Geraden, rechnerisch mit Additions-,
-            Gleichsetzungs- und Einsetzungsverfahren — langsam, Schritt für Schritt umgeformt. Dazu Übungen und Alltagsaufgaben.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">{action}</div>
-      </div>
+      <SimKopf titel="🔀 Lineare Gleichungssysteme" action={action}>
+        Zwei Gleichungen, zwei Unbekannte: grafisch als Schnittpunkt zweier Geraden, rechnerisch mit Additions-,
+        Gleichsetzungs- und Einsetzungsverfahren — langsam, Schritt für Schritt umgeformt. Dazu Übungen und Alltagsaufgaben.
+      </SimKopf>
       {!festerReiter && <div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface">
         {BLAETTER.map(b => (
           <button key={b.id} onClick={() => setBlatt(b.id)}

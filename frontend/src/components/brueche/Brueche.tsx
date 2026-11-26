@@ -16,6 +16,7 @@ import Rechnen from "./Rechnen";
 import Groessen from "./Groessen";
 import Dezimal from "./Dezimal";
 import Wichtige from "./Wichtige";
+import { SimKopf } from "@/components/SimKopf";
 
 const BLAETTER = [
   { id: "verstehen", icon: "🍕", label: "Verstehen" },
@@ -41,16 +42,10 @@ export default function Brueche({ action, vorgabe }: { action?: ReactNode; vorga
   const [blatt, setBlatt] = useState<Blatt>(festerReiter ?? "verstehen");
   return (
     <div className="page">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">🍕 Brüche</h1>
-          <p className="text-muted text-sm mt-1">
-            Brüche sehen und verstehen, erweitern und kürzen, rechnen mit Rechenweg, Bruchteile von Größen
-            und Umwandeln in Dezimalzahlen über die Stellenwerttafel.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">{action}</div>
-      </div>
+      <SimKopf titel="🍕 Brüche" action={action}>
+        Brüche sehen und verstehen, erweitern und kürzen, rechnen mit Rechenweg, Bruchteile von Größen
+        und Umwandeln in Dezimalzahlen über die Stellenwerttafel.
+      </SimKopf>
       {!festerReiter && <div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface">
         {BLAETTER.map(b => (
           <button key={b.id} onClick={() => setBlatt(b.id)}

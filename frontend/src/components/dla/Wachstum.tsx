@@ -14,6 +14,7 @@ import type { Farbkarte } from "@/lib/dla/kern";
 import Flaeche from "./Flaeche";
 import Raum from "./Raum";
 import Erklaerung from "./Erklaerung";
+import { SimKopf } from "@/components/SimKopf";
 
 const REITER = [
   { id: "flaeche", icon: "🌿", label: "Fläche (2D)" },
@@ -33,15 +34,9 @@ export default function Wachstum({ action, vorgabe }: { action?: ReactNode; vorg
   const [karte, setKarte] = useState<Farbkarte>("ozean");
   return (
     <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-seite mx-auto w-full">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">🪸 Fraktales Wachstum</h1>
-          <p className="text-muted text-sm mt-1">
-            Tausende Teilchen, eine Regel: zufällig wandern, dann haften. Daraus wachsen Äste wie bei Korallen, Eisblumen und Blitzen.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">{action}</div>
-      </div>
+      <SimKopf titel="🪸 Fraktales Wachstum" action={action}>
+        Tausende Teilchen, eine Regel: zufällig wandern, dann haften. Daraus wachsen Äste wie bei Korallen, Eisblumen und Blitzen.
+      </SimKopf>
       {!fest && (
         <div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface">
           {REITER.map(r => <button key={r.id} onClick={() => setReiter(r.id)} className={chip(reiter === r.id)}>{r.icon} {r.label}</button>)}

@@ -12,6 +12,7 @@ import { Chips } from "@/components/prozent/ui";
 import { aufgabe, mitFehler, rechne, stellenName, type Methode, type Op } from "@/lib/schriftlich";
 import { Abspieler } from "./Rechenblatt";
 import { Rechenpapier } from "./Rechenpapier";
+import { SimKopf } from "@/components/SimKopf";
 
 const METHODEN: { id: Methode; label: string }[] = [
   { id: "entbuendeln", label: "Abziehen mit Borgen (−1 merken)" }, { id: "ergaenzen", label: "Ergänzen mit Übertrag (+1 unten)" },
@@ -176,13 +177,7 @@ export default function Schriftlich({ action, vorgabe }: { action?: ReactNode; v
   const [blatt, setBlatt] = useState<Blatt>(festerReiter ?? "vorfuehren");
   return (
     <div className="page">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">✏️ Schriftliche Rechenverfahren</h1>
-          <p className="text-muted text-sm mt-1">Addieren, Subtrahieren, Multiplizieren und Dividieren schriftlich — jeder Schritt sichtbar, mit den Walzen der Stellenwerttafel und fliegenden Überträgen. Dazu Üben auf Karopapier mit Übertragskreisen und das Spiel Fehlerdetektiv.</p>
-        </div>
-        <div className="flex items-center gap-2">{action}</div>
-      </div>
+      <SimKopf titel="✏️ Schriftliche Rechenverfahren" action={action}>Addieren, Subtrahieren, Multiplizieren und Dividieren schriftlich — jeder Schritt sichtbar, mit den Walzen der Stellenwerttafel und fliegenden Überträgen. Dazu Üben auf Karopapier mit Übertragskreisen und das Spiel Fehlerdetektiv.</SimKopf>
       {!festerReiter && <div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface">
         {BLAETTER.map(b => (
           <button key={b.id} onClick={() => setBlatt(b.id)}

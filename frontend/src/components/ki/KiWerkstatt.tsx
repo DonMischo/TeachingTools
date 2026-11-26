@@ -19,6 +19,7 @@ import { Sprachmodell } from "@/components/ki/Sprachmodell";
 import { Bilder } from "@/components/ki/Bilder";
 import { Lernen } from "@/components/ki/Lernen";
 import { EchtOderKi } from "@/components/ki/EchtOderKi";
+import { SimKopf } from "@/components/SimKopf";
 
 /** Woran die Tafel hängt: der Sitzungscode und, bei Gästen, ihr Token. */
 export type KiZugang = { code: string; token?: string | null; name?: string };
@@ -65,17 +66,11 @@ export default function KiWerkstatt({ action, zugang, vorgabe }: {
 
   return (
     <div className="flex flex-col gap-5 p-6 max-w-seite mx-auto w-full">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">🤖 KI-Werkstatt</h1>
-          <p className="text-muted text-sm mt-1">
-            Vier Reiter zum Anfassen: Wörter würfeln, Bilder aus Rauschen holen, eine Maschine
-            anlernen — und zum Schluss die Probe aufs Exempel. Alle zeigen dasselbe: Es wird
-            gerechnet, nicht gedacht.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">{action}</div>
-      </div>
+      <SimKopf titel="🤖 KI-Werkstatt" action={action}>
+        Vier Reiter zum Anfassen: Wörter würfeln, Bilder aus Rauschen holen, eine Maschine
+        anlernen — und zum Schluss die Probe aufs Exempel. Alle zeigen dasselbe: Es wird
+        gerechnet, nicht gedacht.
+      </SimKopf>
 
       {!festerReiter && <div className="flex gap-2 flex-wrap">
         <Knopf an={reiter === "sprache"} onClick={() => setReiter("sprache")}>🔤 Sprachmodell</Knopf>

@@ -22,6 +22,7 @@ import Winkelsaetze from "./Winkelsaetze";
 import Linien from "./Linien";
 import Flaeche from "./Flaeche";
 import DreiecksBlitz from "./DreiecksBlitz";
+import { SimKopf } from "@/components/SimKopf";
 
 const BLAETTER = [
   { id: "arten", icon: "△", label: "Dreiecksarten" },
@@ -60,16 +61,10 @@ export default function Dreiecke({ action, vorgabe }: { action?: ReactNode; vorg
 
   return (
     <div className="page">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">△ Dreiecke</h1>
-          <p className="text-muted text-sm mt-1">
-            Dreiecksarten zum Ziehen, Winkelsumme, Außenwinkel, Basiswinkel und Thales, die besonderen Linien mit Umkreis und Inkreis,
-            Umfang und Fläche mit Herleitung, Kongruenzsätze — dazu gewürfelte Übungen und Sachaufgaben mit Word-Export und der Dreiecks-Blitz.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">{action}</div>
-      </div>
+      <SimKopf titel="△ Dreiecke" action={action}>
+        Dreiecksarten zum Ziehen, Winkelsumme, Außenwinkel, Basiswinkel und Thales, die besonderen Linien mit Umkreis und Inkreis,
+        Umfang und Fläche mit Herleitung, Kongruenzsätze — dazu gewürfelte Übungen und Sachaufgaben mit Word-Export und der Dreiecks-Blitz.
+      </SimKopf>
 
       <div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface">
         {BLAETTER.map(b => (

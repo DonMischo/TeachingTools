@@ -17,6 +17,7 @@ import Werkbank from "./Werkbank";
 import Labyrinthe from "./Labyrinthe";
 import GebaeudeDemo from "./GebaeudeDemo";
 import Beispiele from "./Beispiele";
+import { SimKopf } from "@/components/SimKopf";
 
 type Reiter = "lehrgang" | "raetsel" | "labor" | "beispiele" | "labyrinthe" | "gebaeude";
 
@@ -47,15 +48,9 @@ export default function RegelLabor({ action, vorgabe }: { action?: ReactNode; vo
   const [reiter, setReiter] = useState<Reiter>(festerReiter ?? "lehrgang");
   return (
     <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-seite mx-auto w-full">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">🧬 Regel-Labor</h1>
-          <p className="text-muted text-sm mt-1">
-            Ein paar Ersetzungsregeln auf einem Raster — und daraus wachsen Labyrinthe, Muster und Grundrisse.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">{action}</div>
-      </div>
+      <SimKopf titel="🧬 Regel-Labor" action={action}>
+        Ein paar Ersetzungsregeln auf einem Raster — und daraus wachsen Labyrinthe, Muster und Grundrisse.
+      </SimKopf>
       {!festerReiter && <div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface">
         {REITER.map(r => (
           <button key={r.id} onClick={() => setReiter(r.id)} className={chip(reiter === r.id)}>{r.icon} {r.label}</button>

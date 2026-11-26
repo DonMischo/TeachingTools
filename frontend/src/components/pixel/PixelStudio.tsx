@@ -13,6 +13,7 @@ import { gifLesen, gifZuProjekt } from "@/lib/pixel/gifLesen";
 import { BEISPIELE } from "@/lib/pixel/beispiele";
 import { bildDateiLesen, vorschauPng } from "./leinwand";
 import Editor from "./Editor";
+import { SimKopf } from "@/components/SimKopf";
 
 const GROESSEN = [8, 16, 24, 32, 48, 64, 128];
 
@@ -92,13 +93,7 @@ function Bibliothek({ action, zugang, oeffne }: {
 
   return (
     <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-[var(--seite-breite)] mx-auto w-full">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">👾 Pixel-Studio</h1>
-          <p className="text-muted text-sm mt-1">Sprites, Figuren und Kacheln Pixel für Pixel zeichnen und animieren. Alles wird an deinem Konto gespeichert.</p>
-        </div>
-        <div className="flex items-center gap-2">{action}</div>
-      </div>
+      <SimKopf titel="👾 Pixel-Studio" action={action}>Sprites, Figuren und Kacheln Pixel für Pixel zeichnen und animieren. Alles wird an deinem Konto gespeichert.</SimKopf>
       {fehler && <p className="text-bad text-sm">{fehler}</p>}
 
       <section className="card p-4 flex flex-col gap-3">

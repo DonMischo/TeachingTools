@@ -12,6 +12,7 @@ import { useState, type ReactNode } from "react";
 import { wahl, type Vorgabe } from "@/lib/vorgabe";
 import { AbspielKnopf, Dinge, Regler, Wuerfel, feld, useZaehler, wuerfelMass } from "@/components/groessen/bausteine";
 import { Ableitung, Integral } from "./Analysis";
+import { SimKopf } from "@/components/SimKopf";
 
 type Id = "plus" | "minus" | "mal" | "geteilt" | "quadrat" | "hoch3" | "wurzel" | "vergleich" | "zahlenstrahl" | "integral" | "ableitung";
 
@@ -361,15 +362,9 @@ export default function Rechenzeichen({ action, vorgabe }: { action?: ReactNode;
   const z = ZEICHEN.find(x => x.id === id)!;
   return (
     <div className="page">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">➗ Rechenzeichen</h1>
-          <p className="text-muted text-sm mt-1">
-            Was bedeutet eigentlich + − · : ² ³ √ &lt; &gt; ≤ ≥ — und für später ∫ und f′? Zu jedem Zeichen ein Bild zum Anfassen.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">{action}</div>
-      </div>
+      <SimKopf titel="➗ Rechenzeichen" action={action}>
+        Was bedeutet eigentlich + − · : ² ³ √ &lt; &gt; ≤ ≥ — und für später ∫ und f′? Zu jedem Zeichen ein Bild zum Anfassen.
+      </SimKopf>
 
       {!festerReiter && <div className="flex flex-wrap gap-2">
         {ZEICHEN.map(x => (

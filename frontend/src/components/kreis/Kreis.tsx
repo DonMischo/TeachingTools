@@ -17,6 +17,7 @@ import KreisLabor from "./KreisLabor";
 import Geraden from "./Geraden";
 import Kreisteile from "./Kreisteile";
 import RadRollen from "./RadRollen";
+import { SimKopf } from "@/components/SimKopf";
 
 const BLAETTER = [
   { id: "labor", icon: "⭕", label: "Kreis-Labor" },
@@ -43,16 +44,10 @@ export default function Kreis({ action, vorgabe }: { action?: ReactNode; vorgabe
   const [blatt, setBlatt] = useState<Blatt>(festerReiter ?? "labor");
   return (
     <div className="page">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">⭕ Kreis</h1>
-          <p className="text-muted text-sm mt-1">
-            Radius, Durchmesser, Umfang und Fläche zum Ziehen, woher π kommt, Sekante, Tangente und Passante, Kreisteile vom
-            Tortenstück bis zum Ring — dazu Übungen und Sachaufgaben mit Word-Export und das Spiel Rad-Rollen.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">{action}</div>
-      </div>
+      <SimKopf titel="⭕ Kreis" action={action}>
+        Radius, Durchmesser, Umfang und Fläche zum Ziehen, woher π kommt, Sekante, Tangente und Passante, Kreisteile vom
+        Tortenstück bis zum Ring — dazu Übungen und Sachaufgaben mit Word-Export und das Spiel Rad-Rollen.
+      </SimKopf>
 
       {!festerReiter && <div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface">
         {BLAETTER.map(b => (

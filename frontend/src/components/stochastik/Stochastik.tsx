@@ -22,6 +22,7 @@ import { Kombinatorik, Vierfelder, Zufallsgroessen } from "./Oberstufe";
 import Ueben from "./Ueben";
 import Spiele from "./Spiele";
 import { ErfolgsMelder, Navi, useMelden } from "./ui";
+import { SimKopf } from "@/components/SimKopf";
 
 const EXTRA = [
   { id: "ueben", icon: "✍️", label: "Üben" },
@@ -101,17 +102,11 @@ export default function Stochastik({ action, vorgabe }: { action?: ReactNode; vo
       <Navi.Provider value={{ gehe, niveau }}>
         <Besuch id={blatt} />
         <div className="page">
-          <div className="flex items-start justify-between gap-3 flex-wrap">
-            <div>
-              <h1 className="text-2xl font-black tracking-tight">🎲 Daten und Stochastik</h1>
-              <p className="text-muted text-sm mt-1 max-w-4xl">
-                Von der Strichliste bis zum Erwartungswert, aufsteigend für Kl. 5–10 nach dem Thüringer Lehrplan 2026: Daten erfassen und darstellen, Kenngrößen und Boxplot,
-                eigene Umfragen auswerten, Zufallsexperimente und das Gesetz der großen Zahlen, Baumdiagramme, Venn, Vierfeldertafel, Kombinatorik und Zufallsgrößen –
-                mit Übungen, fünf Spielen und Erfolgen.
-              </p>
-            </div>
-            <div className="flex items-center gap-2">{action}</div>
-          </div>
+          <SimKopf titel="🎲 Daten und Stochastik" action={action}>
+            Von der Strichliste bis zum Erwartungswert, aufsteigend für Kl. 5–10 nach dem Thüringer Lehrplan 2026: Daten erfassen und darstellen, Kenngrößen und Boxplot,
+            eigene Umfragen auswerten, Zufallsexperimente und das Gesetz der großen Zahlen, Baumdiagramme, Venn, Vierfeldertafel, Kombinatorik und Zufallsgrößen –
+            mit Übungen, fünf Spielen und Erfolgen.
+          </SimKopf>
 
           {!festerReiter && (
             <>

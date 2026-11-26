@@ -13,6 +13,7 @@
  */
 import { useEffect, useState, type ReactNode } from "react";
 import { zahl, type Vorgabe } from "@/lib/vorgabe";
+import { SimKopf } from "@/components/SimKopf";
 
 const POWERS = [128, 64, 32, 16, 8, 4, 2, 1];
 
@@ -60,16 +61,11 @@ export default function Binaerrechner({ action, vorgabe, eingebettet = false, zi
 
   return (
     <div className={eingebettet ? "" : "page"}>
-      {!eingebettet && <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">◈ Binär-Rechner</h1>
-          <p className="text-muted text-sm mt-1">
-            Acht Bits zum Umschalten. Jedes Bit hat seinen Stellenwert — zusammen ergeben
-            sie jede Zahl von 0 bis 255.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">{action}</div>
-      </div>}
+      {!eingebettet && <SimKopf titel={<>◈ Binär-Rechner</>}
+        action={action}>
+        Acht Bits zum Umschalten. Jedes Bit hat seinen Stellenwert — zusammen ergeben
+        sie jede Zahl von 0 bis 255.
+      </SimKopf>}
 
       <div
         style={{

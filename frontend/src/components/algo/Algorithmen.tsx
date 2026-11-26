@@ -17,6 +17,7 @@ import AutomatEinstieg from "./AutomatEinstieg";
 import FlussReiter from "./FlussReiter";
 import AlgoUebersicht from "./AlgoUebersicht";
 import type { SitzungWahl } from "@/components/SitzungWahl";
+import { SimKopf } from "@/components/SimKopf";
 
 type Reiter = "automat" | "fluss" | "abenteuer" | "uebersicht";
 
@@ -70,14 +71,8 @@ export default function Algorithmen({ action, vorgabe, speicherSchluessel = "hp_
 
   return (
     <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-seite mx-auto w-full">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">🔀 Algorithmen-Werkstatt</h1>
-          <p className="text-muted text-sm mt-1">
-            Tu, was du tun musst — aber tu&apos;s richtig! Vom Automaten über das Flussdiagramm bis zum eigenen Programm.
-          </p>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
+      <SimKopf titel={<>🔀 Algorithmen-Werkstatt</>}
+        action={<>
           <span className="chip" title="Punkte und Sterne aus allen drei Reitern" data-testid="algo-gesamt">🏆 {gesamt.punkte} Punkte · <span className="text-amber-400">★</span> {gesamt.sterne}</span>
           <button type="button" className={`chip ${hilfsmodus ? "chip-on" : ""}`}
             title="Hilfsmodus: mehr Zeit, Hinweise kommen früher, »Vorführen« ist immer da"
@@ -85,8 +80,9 @@ export default function Algorithmen({ action, vorgabe, speicherSchluessel = "hp_
             🤝 Hilfsmodus {hilfsmodus ? "an" : "aus"}
           </button>
           {action}
-        </div>
-      </div>
+        </>}>
+        Tu, was du tun musst — aber tu&apos;s richtig! Vom Automaten über das Flussdiagramm bis zum eigenen Programm.
+      </SimKopf>
       {!festerReiter && (
         <div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface">
           {REITER.filter(r => r.id !== "uebersicht" || wahl).map(r => (

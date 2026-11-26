@@ -15,6 +15,7 @@ import { KATEGORIEN, PSE, pseNummer, suche, type PseElement } from "@/lib/pse/el
 import Atommodelle from "@/components/pse/Atommodelle";
 import LewisLabor from "./LewisLabor";
 import Teilchenmodell from "./Teilchenmodell";
+import { SimKopf } from "@/components/SimKopf";
 
 type Reiter = "atom" | "bindung" | "lewis" | "teilchen";
 
@@ -60,13 +61,7 @@ export default function Atomwerkstatt({ action }: { action?: ReactNode }) {
 
   return (
     <div className="flex flex-col gap-4 p-4 sm:p-6 max-w-[var(--seite-breite)] mx-auto w-full">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">⚛️ Atommodelle</h1>
-          <p className="text-muted text-sm mt-1 max-w-2xl">{info[2]}</p>
-        </div>
-        {action}
-      </div>
+      <SimKopf titel="⚛️ Atommodelle" action={action}>{info[2]}</SimKopf>
 
       <div className="inline-flex self-start flex-wrap rounded-xl border border-line p-1 bg-surface">
         {REITER.map(([id, label]) => (

@@ -14,6 +14,7 @@ import Zahlenstrahl from "./Zahlenstrahl";
 import Steckbriefe from "./Steckbriefe";
 import Sortierer from "./Sortierer";
 import Zahlenregen from "./Zahlenregen";
+import { SimKopf } from "@/components/SimKopf";
 
 const BLAETTER = [
   { id: "menge", icon: "🪆", label: "Mengenbild" },
@@ -50,16 +51,10 @@ export default function Zahlenbereiche({ action, vorgabe }: { action?: ReactNode
   const [blatt, setBlatt] = useState<Blatt>(festerReiter ?? "menge");
   return (
     <div className="page">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">🪆 Zahlenbereiche</h1>
-          <p className="text-muted text-sm mt-1">
-            Von den natürlichen bis zu den reellen Zahlen: ℕ ⊂ ℤ ⊂ ℚ ⊂ ℝ als Mengenbild und auf dem Zahlenstrahl,
-            Steckbriefe mit Eigenschaften und Beispielen — und zwei Spiele.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">{action}</div>
-      </div>
+      <SimKopf titel="🪆 Zahlenbereiche" action={action}>
+        Von den natürlichen bis zu den reellen Zahlen: ℕ ⊂ ℤ ⊂ ℚ ⊂ ℝ als Mengenbild und auf dem Zahlenstrahl,
+        Steckbriefe mit Eigenschaften und Beispielen — und zwei Spiele.
+      </SimKopf>
       {!festerReiter && <div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface">
         {BLAETTER.map(b => (
           <button key={b.id} onClick={() => setBlatt(b.id)}

@@ -15,6 +15,7 @@ import VariablenModus from "./VariablenModus";
 import ChemieModus from "./ChemieModus";
 import RechnenModus from "./RechnenModus";
 import { text, wahl, zahlen, type Vorgabe } from "@/lib/vorgabe";
+import { SimKopf } from "@/components/SimKopf";
 
 const MODES = [
   { id: "rechnen", icon: "🍎", label: "Rechnen", sub: "Dinge zusammenlegen, wegnehmen und vergleichen — in der Mitte steht <, = oder >." },
@@ -63,16 +64,10 @@ export default function Gleichungswaage({ action, vorgabe, start }: { action?: R
     <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-seite mx-auto w-full">
       <WaageStyles />
 
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-        <h1 className="text-2xl font-black tracking-tight">⚖️ Gleichungswaage</h1>
-        <p className="text-muted text-sm mt-1 max-w-2xl">
-          Beide Seiten liegen in den Schalen. Was du auf der einen Seite tust, musst du auch auf
-          der anderen tun — sonst kippt die Waage. {active.sub}
-        </p>
-        </div>
-        {action}
-      </div>
+      <SimKopf titel="⚖️ Gleichungswaage" action={action}>
+        Beide Seiten liegen in den Schalen. Was du auf der einen Seite tust, musst du auch auf
+        der anderen tun — sonst kippt die Waage. {active.sub}
+      </SimKopf>
 
       {!fest && <div className="inline-flex self-start rounded-xl border border-line p-1 bg-surface">
         {MODES.map(m => (

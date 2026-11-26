@@ -23,6 +23,7 @@ import Inspektor, { type Stand } from "./Inspektor";
 import Oszilloskop from "./Oszilloskop";
 import KlassenVorgabe from "./KlassenVorgabe";
 import Wassermodell from "./Wassermodell";
+import { SimKopf } from "@/components/SimKopf";
 
 const TEMPI = [
   { wert: 1, label: "Echtzeit" },
@@ -205,13 +206,7 @@ export default function Stromkreis({ action, start, code, lehrkraft = false }: P
 
   return (
     <div className="flex flex-col gap-4 p-4 sm:p-6 max-w-seite mx-auto w-full">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">💡 Stromkreise</h1>
-          <p className="text-muted text-sm mt-1">Schaltungen bauen und zusehen, wie der Strom fließt — mit Batterie, Lämpchen, Schaltern, Messgeräten, Kondensator, Spule und Trafo.</p>
-        </div>
-        <div className="flex items-center gap-2">{action}</div>
-      </div>
+      <SimKopf titel="💡 Stromkreise" action={action}>Schaltungen bauen und zusehen, wie der Strom fließt — mit Batterie, Lämpchen, Schaltern, Messgeräten, Kondensator, Spule und Trafo.</SimKopf>
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="inline-flex rounded-xl border border-line p-1 bg-surface">

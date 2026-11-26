@@ -15,6 +15,7 @@ import {
 import { spalten, zeichne } from "./zeichnen";
 import { WilsonMantel } from "./mantel";
 import { wahl, type Vorgabe } from "@/lib/vorgabe";
+import { SimKopf } from "@/components/SimKopf";
 
 type Reiter = "schnitt" | "quiz" | "wissen";
 
@@ -40,15 +41,9 @@ export default function WilsonZyklus({ action, vorgabe }: { action?: ReactNode; 
   const [reiter, setReiter] = useState<Reiter>(festerReiter ?? "schnitt");
   return (
     <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-seite mx-auto w-full">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">🌋 Wilson-Zyklus</h1>
-          <p className="text-muted text-sm mt-1">
-            Ein Kontinent zerbricht, ein Ozean öffnet sich — und schließt sich nach Hunderten Millionen Jahren wieder zu einem Gebirge.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">{action}</div>
-      </div>
+      <SimKopf titel="🌋 Wilson-Zyklus" action={action}>
+        Ein Kontinent zerbricht, ein Ozean öffnet sich — und schließt sich nach Hunderten Millionen Jahren wieder zu einem Gebirge.
+      </SimKopf>
       {!festerReiter && <div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface">
         {REITER.map(r => (
           <button key={r.id} onClick={() => setReiter(r.id)}

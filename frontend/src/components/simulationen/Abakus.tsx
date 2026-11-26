@@ -1,6 +1,7 @@
 "use client";
 import { useMemo, useState, type ReactNode } from "react";
 import { wahl, type Vorgabe } from "@/lib/vorgabe";
+import { SimKopf } from "@/components/SimKopf";
 
 const ROWS = 10;
 const COLS = 10;
@@ -58,15 +59,8 @@ export default function Abakus({ action, vorgabe }: { action?: ReactNode; vorgab
 
   return (
     <div className="page">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">🧮 Abakus</h1>
-          <p className="text-muted text-sm mt-1">
-            Schiebe die Kugeln und lies die Zahl ab. Wechsle zwischen „Alle gleich" und
-            „Stellenwert" — dieselben Kugeln, zwei Zahlen.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
+      <SimKopf titel={<>🧮 Abakus</>}
+        action={<>
           {action}
           <button
             onClick={reset}
@@ -74,8 +68,10 @@ export default function Abakus({ action, vorgabe }: { action?: ReactNode; vorgab
           >
             ↺ Zurücksetzen
           </button>
-        </div>
-      </div>
+        </>}>
+        Schiebe die Kugeln und lies die Zahl ab. Wechsle zwischen „Alle gleich" und
+        „Stellenwert" — dieselben Kugeln, zwei Zahlen.
+      </SimKopf>
 
       {/* Mode switch */}
       {!festerModus && <div className="inline-flex self-start rounded-xl border border-line p-1 bg-surface">

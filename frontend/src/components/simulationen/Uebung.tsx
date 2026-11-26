@@ -18,6 +18,7 @@ import { api, type PracticeTopicOut, type PracticeTaskOut, type PracticeAnswerOu
 import { MathText } from "@/components/MathText";
 import { TimelineGameBoard, timelineAnswerComplete } from "@/components/timeline/TimelineGameBoard";
 import { TimelineAnswer, TimelineSolution } from "@/components/timeline/types";
+import { SimKopf } from "@/components/SimKopf";
 
 function DifficultyStars({ level }: { level: number }) {
   return (
@@ -200,15 +201,9 @@ export default function Uebung({ action, zugang }: {
 
   return (
     <div className="flex flex-col gap-5 p-6 max-w-seite mx-auto w-full">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">📚 Übung</h1>
-          <p className="text-muted text-sm mt-1">
-            Aufgaben zum Trainieren — die Schwierigkeit passt sich deinem Können an.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">{action}</div>
-      </div>
+      <SimKopf titel="📚 Übung" action={action}>
+        Aufgaben zum Trainieren — die Schwierigkeit passt sich deinem Können an.
+      </SimKopf>
 
       {isError ? (
         <p className="text-sm text-muted">

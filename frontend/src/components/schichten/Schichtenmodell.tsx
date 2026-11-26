@@ -18,6 +18,7 @@ import Pakete from "./Pakete";
 import Wissen from "./Wissen";
 import Fehlersuche from "./Fehlersuche";
 import Mission from "./spiel/Mission";
+import { SimKopf } from "@/components/SimKopf";
 
 const REITER = [
   { id: "reise", ebene: "kennen", icon: "📸", label: "Reise" },
@@ -49,13 +50,7 @@ export default function Schichtenmodell({ action, vorgabe }: { action?: ReactNod
   const ebene = REITER.find(r => r.id === reiter)!.ebene;
   return (
     <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-seite mx-auto w-full">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">📶 Schichtenmodell</h1>
-          <p className="text-muted text-sm mt-1">Lena schickt ihrem Bruder in Tokio mit der App PurrMsg ein Foto. In der einen Sekunde bis zur Ankunft geht es durch sieben Schichten hinunter, um die halbe Welt und wieder hinauf.</p>
-        </div>
-        <div className="flex items-center gap-2">{action}</div>
-      </div>
+      <SimKopf titel="📶 Schichtenmodell" action={action}>Lena schickt ihrem Bruder in Tokio mit der App PurrMsg ein Foto. In der einen Sekunde bis zur Ankunft geht es durch sieben Schichten hinunter, um die halbe Welt und wieder hinauf.</SimKopf>
       <div className="flex flex-wrap items-center gap-3">
         {!fest && (
           <div className="inline-flex flex-wrap rounded-xl border border-line p-1 bg-surface gap-1">

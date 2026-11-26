@@ -24,6 +24,7 @@ import Bestenliste from "./Bestenliste";
 import Quellen from "./Quellen";
 import Schreiben from "./Schreiben";
 import { SPICKZETTEL, speichereSpickzettelPdf } from "@/lib/markieren/spickzettel";
+import { SimKopf } from "@/components/SimKopf";
 
 const BLAETTER = [
   { id: "techniken", icon: "📘", label: "Techniken" },
@@ -129,16 +130,10 @@ export default function Markieren({ action, rangliste, vorgabe, speicherSchluess
   };
   return (
     <div className="page">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">🖍️ Markieren & Bearbeiten</h1>
-          <p className="text-muted text-sm mt-1">
-            Markieren, kopieren, ausschneiden, einfügen, löschen und rückgängig machen — mit Maus und Tastatur,
-            erst Technik für Technik, dann auf Zeit. Weiter geht es dort, wo der Maus-Führerschein aufhört.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">{action}</div>
-      </div>
+      <SimKopf titel={<>🖍️ Markieren & Bearbeiten</>} action={action}>
+        Markieren, kopieren, ausschneiden, einfügen, löschen und rückgängig machen — mit Maus und Tastatur,
+        erst Technik für Technik, dann auf Zeit. Weiter geht es dort, wo der Maus-Führerschein aufhört.
+      </SimKopf>
 
       {!festerReiter && <div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface">
         {BLAETTER.filter(b => (b.id !== "beste" || rangliste) && (b.id !== "uebersicht" || uebersicht)).map(b => (

@@ -33,6 +33,7 @@ import Renovieren from "./Renovieren";
 import Fuellen from "./Fuellen";
 import Risse from "./Risse";
 import { FARBE, LINIENFARBE, type Ansicht, type ZAnsicht } from "./szene";
+import { SimKopf } from "@/components/SimKopf";
 
 type Tab = "labor" | "netz" | "linien" | "risse" | "zusammen" | "uebungen" | "anwendungen" | "spiel" | "renovieren" | "fuellen";
 const TABS: { id: Tab; label: string; icon: string }[] = [
@@ -166,16 +167,10 @@ export default function Koerper({ action, vorgabe }: { action?: ReactNode; vorga
 
   return (
     <div className="page">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">🧊 Körper</h1>
-          <p className="text-muted text-sm mt-1">
-            Würfel bis Kegelstumpf drehbar in 3D, mit Volumen, Oberfläche und Rechenweg, Netzen zum Aufklappen,
-            besonderen Linien und zusammengesetzten Körpern — dazu Übungen und Sachaufgaben mit Word-Export und das Spiel »Wer fasst mehr?«.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">{action}</div>
-      </div>
+      <SimKopf titel="🧊 Körper" action={action}>
+        Würfel bis Kegelstumpf drehbar in 3D, mit Volumen, Oberfläche und Rechenweg, Netzen zum Aufklappen,
+        besonderen Linien und zusammengesetzten Körpern — dazu Übungen und Sachaufgaben mit Word-Export und das Spiel »Wer fasst mehr?«.
+      </SimKopf>
 
       {!festerReiter && <div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface">
         {TABS.map(t => (

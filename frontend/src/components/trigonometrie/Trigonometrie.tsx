@@ -20,6 +20,7 @@ import Aufgaben from "./Aufgaben";
 import Anwendungen from "./Anwendungen";
 import Kuestenwache from "./Kuestenwache";
 import Pendel from "./Pendel";
+import { SimKopf } from "@/components/SimKopf";
 
 const BLAETTER = [
   { id: "kreis", icon: "⭕", label: "Einheitskreis" },
@@ -50,16 +51,10 @@ export default function Trigonometrie({ action, vorgabe }: { action?: ReactNode;
   const [blatt, setBlatt] = useState<Blatt>(festerReiter ?? "kreis");
   return (
     <div className="page">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">🔺 Trigonometrie</h1>
-          <p className="text-muted text-sm mt-1">
-            sin, cos und tan am Einheitskreis und als Funktion, im rechtwinkligen und im allgemeinen Dreieck — mit Aufgaben,
-            Tipps, Fällen mit zwei Lösungen, Sachaufgaben zum Triangulieren und Wegeplanen, dem idealen Pendel als Kosinuskurve und dem Spiel Küstenwache.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">{action}</div>
-      </div>
+      <SimKopf titel="🔺 Trigonometrie" action={action}>
+        sin, cos und tan am Einheitskreis und als Funktion, im rechtwinkligen und im allgemeinen Dreieck — mit Aufgaben,
+        Tipps, Fällen mit zwei Lösungen, Sachaufgaben zum Triangulieren und Wegeplanen, dem idealen Pendel als Kosinuskurve und dem Spiel Küstenwache.
+      </SimKopf>
 
       {!festerReiter && <div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface">
         {BLAETTER.map(b => (

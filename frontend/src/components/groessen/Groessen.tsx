@@ -8,6 +8,7 @@ import { useState, type ReactNode } from "react";
 import { wahl, type Vorgabe } from "@/lib/vorgabe";
 import Umrechnen from "./Umrechnen";
 import Dimensionen from "./Dimensionen";
+import { SimKopf } from "@/components/SimKopf";
 
 const BLAETTER = [
   { id: "umrechnen", icon: "🔁", label: "Umrechnen" },
@@ -20,16 +21,10 @@ export default function Groessen({ action, vorgabe }: { action?: ReactNode; vorg
   const [blatt, setBlatt] = useState<(typeof BLAETTER)[number]["id"]>(festerReiter ?? "umrechnen");
   return (
     <div className="page">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">🪜 Größen &amp; Einheiten</h1>
-          <p className="text-muted text-sm mt-1">
-            Länge, Fläche, Volumen, Gewicht, Zeit und Geld umrechnen — mit Einheitenleiter, Alltagsbeispielen und der Frage,
-            warum Fläche mit 100 und Volumen mit 1 000 rechnet.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">{action}</div>
-      </div>
+      <SimKopf titel={<>🪜 Größen &amp; Einheiten</>} action={action}>
+        Länge, Fläche, Volumen, Gewicht, Zeit und Geld umrechnen — mit Einheitenleiter, Alltagsbeispielen und der Frage,
+        warum Fläche mit 100 und Volumen mit 1 000 rechnet.
+      </SimKopf>
 
       {!festerReiter && <div className="inline-flex self-start rounded-xl border border-line p-1 bg-surface">
         {BLAETTER.map(b => (

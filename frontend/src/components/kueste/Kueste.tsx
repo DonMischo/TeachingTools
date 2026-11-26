@@ -20,6 +20,7 @@ import Draufsicht from "./Draufsicht";
 import Gezeiten from "./Gezeiten";
 import KuestenGalerie from "./KuestenGalerie";
 import SimVerweis from "@/components/gelaende/SimVerweis";
+import { SimKopf } from "@/components/SimKopf";
 
 type Reiter = "profil" | "draufsicht" | "gezeiten" | "galerie" | "wissen";
 
@@ -40,15 +41,9 @@ export default function Kueste({ action, vorgabe }: { action?: ReactNode; vorgab
   const [reiter, setReiter] = useState<Reiter>(festerReiter ?? "profil");
   return (
     <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-seite mx-auto w-full">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">🌊 Küstendynamik</h1>
-          <p className="text-muted text-sm mt-1">
-            Wie Wellen, Strömung, Wind und Gezeiten unsere Küsten formen — und wie Menschen sie schützen.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">{action}</div>
-      </div>
+      <SimKopf titel="🌊 Küstendynamik" action={action}>
+        Wie Wellen, Strömung, Wind und Gezeiten unsere Küsten formen — und wie Menschen sie schützen.
+      </SimKopf>
 
       {!festerReiter && <div className="flex flex-wrap items-center gap-2"><div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface">
         {REITER.map(r => (

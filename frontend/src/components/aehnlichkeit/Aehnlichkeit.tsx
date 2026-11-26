@@ -14,6 +14,7 @@ import Aehnlich from "./Aehnlich";
 import Massstab from "./Massstab";
 import Ueben from "./Ueben";
 import ZoomTreffer from "./ZoomTreffer";
+import { SimKopf } from "@/components/SimKopf";
 
 const BLAETTER = [
   { id: "streckung", icon: "🔍", label: "Zentrische Streckung" },
@@ -37,13 +38,7 @@ export default function Aehnlichkeit({ action, vorgabe }: { action?: ReactNode; 
   const [blatt, setBlatt] = useState<Blatt>(festerReiter ?? "streckung");
   return (
     <div className="page">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">🔍 Ähnlichkeit und Maßstab</h1>
-          <p className="text-muted text-sm mt-1">Zentrische Streckung zum Ziehen, ähnliche Dreiecke, Maßstab auf Karten und Plänen — mit Übungen und dem Spiel Zoom-Treffer.</p>
-        </div>
-        <div className="flex items-center gap-2">{action}</div>
-      </div>
+      <SimKopf titel="🔍 Ähnlichkeit und Maßstab" action={action}>Zentrische Streckung zum Ziehen, ähnliche Dreiecke, Maßstab auf Karten und Plänen — mit Übungen und dem Spiel Zoom-Treffer.</SimKopf>
       {!festerReiter && <div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface">
         {BLAETTER.map(b => (
           <button key={b.id} onClick={() => setBlatt(b.id)}

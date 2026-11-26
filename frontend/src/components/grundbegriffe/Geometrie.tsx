@@ -19,6 +19,7 @@ import Winkelsaetze from "./Winkelsaetze";
 import Symmetrie from "./Symmetrie";
 import Koordinaten from "./Koordinaten";
 import WinkelBillard from "./WinkelBillard";
+import { SimKopf } from "@/components/SimKopf";
 
 const BLAETTER = [
   { id: "winkel", icon: "📐", label: "Winkel" },
@@ -49,16 +50,10 @@ export default function Geometrie({ action, vorgabe }: { action?: ReactNode; vor
   const [blatt, setBlatt] = useState<Blatt>(fest ?? "winkel");
   return (
     <div className="page">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">📏 Geometrie</h1>
-          <p className="text-muted text-sm mt-1">
-            Grundbegriffe für Klasse 5–7: Winkel messen und zeichnen, Lage von Geraden, Winkel an Parallelen, Symmetrie auf
-            Kästchenpapier und im Koordinatensystem — mit gewürfelten Übungen und Sachaufgaben (Word-Export) und dem Spiel Winkel-Billard.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">{action}</div>
-      </div>
+      <SimKopf titel="📏 Geometrie" action={action}>
+        Grundbegriffe für Klasse 5–7: Winkel messen und zeichnen, Lage von Geraden, Winkel an Parallelen, Symmetrie auf
+        Kästchenpapier und im Koordinatensystem — mit gewürfelten Übungen und Sachaufgaben (Word-Export) und dem Spiel Winkel-Billard.
+      </SimKopf>
 
       {!fest && <div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface">
         {BLAETTER.map(b => (

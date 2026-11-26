@@ -17,6 +17,7 @@ import Nachbesprechung from "./Nachbesprechung";
 import Quellen from "./Quellen";
 import Spiel from "./Spiel";
 import Start from "./Start";
+import { SimKopf } from "@/components/SimKopf";
 
 const VERSION = 1;
 
@@ -108,20 +109,15 @@ export default function Leviathan({ action, code, lehrkraft = false, speicherSch
 
   return (
     <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-seite mx-auto w-full">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">🐋 Leviathan – Kunst des Regierens</h1>
-          <p className="text-muted text-sm mt-1">
-            Regiere ein Land durch Krisen, Wahlen und Rückkopplungen – und halte Staat und Gesellschaft im Gleichgewicht.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
+      <SimKopf titel={<>🐋 Leviathan – Kunst des Regierens</>}
+        action={<>
           <button onClick={() => setQuellenOffen((o) => !o)} aria-expanded={quellenOffen}
             className="px-3 py-1.5 rounded-lg text-sm font-bold border border-line">📚 Quellen</button>
           {z && <button onClick={neu} className="px-3 py-1.5 rounded-lg text-sm font-bold border border-line">Neues Land</button>}
           {action}
-        </div>
-      </div>
+        </>}>
+        Regiere ein Land durch Krisen, Wahlen und Rückkopplungen – und halte Staat und Gesellschaft im Gleichgewicht.
+      </SimKopf>
 
       {quellenOffen && <Quellen onSchliessen={() => setQuellenOffen(false)} />}
 

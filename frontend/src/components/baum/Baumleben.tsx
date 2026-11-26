@@ -6,6 +6,7 @@
  * Die Simulation selbst steckt in lib/baum und arbeitet direkt am DOM.
  */
 import { useEffect, useRef, type ReactNode } from "react";
+import { SimKopf } from "@/components/SimKopf";
 
 export default function Baumleben({ action }: { action?: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -19,13 +20,7 @@ export default function Baumleben({ action }: { action?: ReactNode }) {
   }, []);
   return (
     <div className="flex flex-col gap-4 p-4 sm:p-6 max-w-seite mx-auto w-full">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">🌳 Baumleben</h1>
-          <p className="text-muted text-sm mt-1">Vom Samen bis zum Humus: wie ein Baum wächst, trinkt, Zucker baut, wer in ihm lebt — und wie man 30 Bäume erkennt.</p>
-        </div>
-        <div className="flex items-center gap-2">{action}</div>
-      </div>
+      <SimKopf titel="🌳 Baumleben" action={action}>Vom Samen bis zum Humus: wie ein Baum wächst, trinkt, Zucker baut, wer in ihm lebt — und wie man 30 Bäume erkennt.</SimKopf>
       <div ref={ref} className="baumleben" />
     </div>
   );

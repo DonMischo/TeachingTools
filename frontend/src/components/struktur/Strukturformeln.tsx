@@ -11,6 +11,7 @@ import { ausName } from "@/lib/struktur/iupac";
 import { formelTief, molareMasse, summenformel } from "@/lib/struktur/molekuel";
 import { text as vorgabeText, type Vorgabe } from "@/lib/vorgabe";
 import Formelbild, { STANDARD, type Optionen } from "./Formelbild";
+import { SimKopf } from "@/components/SimKopf";
 
 // three.js ist groß — das Modell wird erst geladen, wenn jemand auf 3D schaltet.
 const Raumbild = lazy(() => import("./Raumbild"));
@@ -72,16 +73,10 @@ export default function Strukturformeln({ action, vorgabe }: { action?: ReactNod
 
   return (
     <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-seite mx-auto w-full">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">⬡ Strukturformeln</h1>
-          <p className="text-muted text-sm mt-1 max-w-2xl">
-            Schreib den Namen einer organischen Verbindung — die Strukturformel entsteht beim Tippen.
-            Die Hauptkette liegt waagerecht, Abzweigungen stehen senkrecht darüber oder darunter.
-          </p>
-        </div>
-        {action}
-      </div>
+      <SimKopf titel="⬡ Strukturformeln" action={action}>
+        Schreib den Namen einer organischen Verbindung — die Strukturformel entsteht beim Tippen.
+        Die Hauptkette liegt waagerecht, Abzweigungen stehen senkrecht darüber oder darunter.
+      </SimKopf>
 
       <div className="flex flex-wrap gap-2 items-center">
         <input

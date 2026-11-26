@@ -27,6 +27,7 @@ import Ueben from "./Ueben";
 import PruefungsBlatt from "./Pruefung";
 import Korbwurf from "./Korbwurf";
 import Feuerwehr from "./Feuerwehr";
+import { SimKopf } from "@/components/SimKopf";
 
 const BLAETTER = [
   { id: "normal", icon: "🔵", label: "Normalparabel" },
@@ -65,17 +66,11 @@ export default function Quadratisch({ action, vorgabe }: { action?: ReactNode; v
   const i = BLAETTER.findIndex(b => b.id === blatt);
   return (
     <div className="page">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">⛲ Quadratische Funktionen</h1>
-          <p className="text-muted text-sm mt-1">
-            Von der Normalparabel bis zur p-q-Formel, Schritt für Schritt: verschieben, strecken, Scheitelpunktform
-            y = a(x + d)² + e mit S(−d | e) wie im Tafelwerk, Klammern quadrieren, Umformen, Nullstellen und Schnittpunkte —
-            mit Übungen nach Thema, Prüfungsaufgaben zum Exportieren und dem Spiel Korbwurf.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">{action}</div>
-      </div>
+      <SimKopf titel="⛲ Quadratische Funktionen" action={action}>
+        Von der Normalparabel bis zur p-q-Formel, Schritt für Schritt: verschieben, strecken, Scheitelpunktform
+        y = a(x + d)² + e mit S(−d | e) wie im Tafelwerk, Klammern quadrieren, Umformen, Nullstellen und Schnittpunkte —
+        mit Übungen nach Thema, Prüfungsaufgaben zum Exportieren und dem Spiel Korbwurf.
+      </SimKopf>
 
       {!festerReiter && <div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface">
         {BLAETTER.map((b, n) => (
