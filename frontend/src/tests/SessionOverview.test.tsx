@@ -1,8 +1,7 @@
 /**
- * Sitzungsübersicht: Karten zu zweit pro Reihe, plus Schließen/Wiederöffnen.
+ * Sitzungsübersicht: eine Liste für alle Werkzeuge, plus Schließen/Wiederöffnen.
  *
- * Zwei Dinge sind hier vertraglich: das Raster ist wirklich zweispaltig (darum
- * ging es bei der Umstellung), und in der Werkzeugliste darf man nur die
+ * Vertraglich: in der Werkzeugliste darf man nur die
  * eigenen Sitzungen schließen — fremde sieht man als Admin, anfassen nicht.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -28,10 +27,12 @@ vi.mock("@/lib/api", () => ({
       close: (...a: unknown[]) => close(...a),
       reopen: (...a: unknown[]) => reopen(...a),
     },
+    classes: { list: async () => [] },
+    groups: { list: async () => [] },
   },
 }));
 
-import { SessionGrid } from "@/components/SessionGrid";
+import { SitzungListe } from "@/components/sitzung/SitzungListe";
 import { ToolSessionList } from "@/components/ToolSessionList";
 
 function row(over: Record<string, unknown> = {}) {
@@ -48,19 +49,30 @@ function withQuery(ui: React.ReactNode) {
   return render(<QueryClientProvider client={qc}>{ui}</QueryClientProvider>);
 }
 
-describe("SessionGrid", () => {
-  it("stellt die Karten zu zweit in eine Reihe", () => {
-    const { container } = render(
-      <SessionGrid items={[{ code: "A", title: "5a" }, { code: "B", title: "5b" }]} />,
-    );
-    const list = container.querySelector("ul")!;
-    expect(list.className).toContain("sm:grid-cols-2");
-    expect(within(list).getAllByRole("listitem")).toHaveLength(2);
+describe("SitzungListe", () => {
+  it("zeigt je Sitzung eine Zeile mit Status, Code und Klasse", () => {
+    render(<SitzungListe eintraege={[
+      { code: "A1", klasse: "5a", status: { label: "offen", ton: "live" } },
+      { code: "B2", klasse: "5b" },
+    ]} />);
+    const zeilen = within(screen.getByRole("list")).getAllByRole("listitem");
+    expect(zeilen).toHaveLength(2);
+    expect(within(zeilen[0]).getByText("offen")).toBeInTheDocument();
+    expect(within(zeilen[0]).getByText("5a")).toBeInTheDocument();
   });
 
   it("sagt Bescheid, wenn nichts läuft", () => {
-    render(<SessionGrid items={[]} empty="Nichts los." />);
+    render(<SitzungListe eintraege={[]} leer="Nichts los." />);
     expect(screen.getByText("Nichts los.")).toBeInTheDocument();
+  });
+
+  it("startet erst, wenn eine Klasse gewählt ist — außer »Ohne Klasse«", async () => {
+    const user = userEvent.setup();
+    const start = vi.fn();
+    withQuery(<SitzungListe eintraege={[]} neu={{ onStart: start, ohneKlasse: true }} />);
+    expect(screen.getByRole("button", { name: "Starten" })).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: "Ohne Klasse" }));
+    expect(start).toHaveBeenCalledWith(null);
   });
 });
 
@@ -94,7 +106,7 @@ describe("ToolSessionList", () => {
     sessions.mockResolvedValue([row({ mine: false })]);
     withQuery(<ToolSessionList slug="tippen" />);
 
-    expect(await screen.findByRole("button", { name: "Ansehen" })).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: "Ansehen" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Schließen" })).not.toBeInTheDocument();
   });
 

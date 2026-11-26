@@ -4,7 +4,8 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { Scope, ScopeSelect, scopeBody } from "@/components/ScopeSelect";
+import { type Scope, scopeBody } from "@/components/ScopeSelect";
+import { CaputhSitzungen } from "@/components/caputh/CaputhSitzungen";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { VorlagenEditor } from "@/components/vorlagen/VorlagenEditor";
@@ -23,12 +24,11 @@ export default function CaputhDetailPage() {
     queryFn: () => api.capuths.get(quizId),
   });
 
-  const [scope, setScope] = useState<Scope>(null);
   const [teamMode, setTeamMode] = useState(false);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleStart() {
+  async function handleStart(scope: Scope) {
     if (!scope || !quiz) return;
     setStarting(true);
     setError(null);
@@ -86,37 +86,19 @@ export default function CaputhDetailPage() {
         ))}
       </div>
 
-      {/* Start session */}
-      <div className="border-t border-line pt-6 space-y-4">
-        <h2 className="font-semibold">Neue Session</h2>
-        <div>
-          <label className="label">Klasse oder Kurs/WPF</label>
-          <ScopeSelect value={scope} onChange={setScope} />
-          {scope?.kind === "group" && (
-            <p className="text-xs text-muted mt-1">
-              Klassenübergreifend: jede beteiligte Klasse bekommt Punkte nach ihrer eigenen
-              Trefferquote.
-            </p>
-          )}
-        </div>
-        <label className="flex items-center gap-3 cursor-pointer text-sm">
-          <div
-            onClick={() => setTeamMode(v => !v)}
-            className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${teamMode ? "bg-accent" : "bg-line"}`}
-          >
-            <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${teamMode ? "translate-x-4" : "translate-x-0.5"}`} />
-          </div>
-          Team-Modus (Schüler wählen ein Team beim Beitreten)
-        </label>
-        {error && <p className="text-sm text-red-500">{error}</p>}
-        <button
-          disabled={!scope || starting}
-          onClick={handleStart}
-          className="btn-primary w-full"
-        >
-          {starting ? "Starte…" : "Session erstellen & Raum öffnen"}
-        </button>
-      </div>
+      <CaputhSitzungen quizId={quizId} neu={{
+        onStart: handleStart, laeuft: starting, label: "Sitzung erstellen & Raum öffnen",
+        hinweis: sc => <>
+          {sc?.kind === "group" && "Klassenübergreifend: jede beteiligte Klasse bekommt Punkte nach ihrer eigenen Trefferquote. "}
+          {error && <span className="text-bad">{error}</span>}
+        </>,
+        extra: (
+          <label className="flex items-center gap-2 cursor-pointer text-sm w-fit">
+            <input type="checkbox" checked={teamMode} onChange={e => setTeamMode(e.target.checked)} />
+            Team-Modus (Schüler wählen ein Team beim Beitreten)
+          </label>
+        ),
+      }} />
     </div>
   );
 }

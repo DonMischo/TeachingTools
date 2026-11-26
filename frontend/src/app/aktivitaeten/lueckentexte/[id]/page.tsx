@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, LueckentextGap, LueckentextSessionOut, LueckentextSetDetail } from "@/lib/api";
-import { SessionGrid, SessionAction, type SessionCardItem } from "@/components/SessionGrid";
+import { SitzungListe, SitzungAktion, type SitzungEintrag } from "@/components/sitzung/SitzungListe";
 import { parseUploadError } from "@/lib/uploadError";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
@@ -56,7 +56,6 @@ export default function LueckentextDetailPage() {
   const isTeacher = auth?.user_type === "teacher";
   const { toast } = useToast();
   const qc = useQueryClient();
-  const router = useRouter();
 
   const { data: set, isLoading, isError } = useQuery<LueckentextSetDetail>({
     queryKey: ["lueckentext", setId],
@@ -99,12 +98,6 @@ export default function LueckentextDetailPage() {
   });
 
   const mismatches = useMemo(() => draft ? findMismatches(draft.text, draft.gaps) : [], [draft]);
-
-  const startSessionMut = useMutation({
-    mutationFn: () => api.lueckentexte.createSession(setId),
-    onSuccess: (session) => router.push(`/aktivitaeten/lueckentext/host/${session.join_code}`),
-    onError: (e: Error) => toast(e.message, "error"),
-  });
 
   function addGap() {
     if (!draft) return;
@@ -213,12 +206,6 @@ export default function LueckentextDetailPage() {
             className="text-sm border border-line rounded-lg px-3 py-1.5 hover:border-accent whitespace-nowrap">
             📄 PDF (gefüllt)
           </a>
-          {isTeacher && (
-            <button onClick={() => startSessionMut.mutate()} disabled={startSessionMut.isPending}
-              className="text-sm border border-line rounded-lg px-6 py-1.5 hover:border-accent disabled:opacity-40 whitespace-nowrap">
-              {startSessionMut.isPending ? "Starte…" : "▶ Sitzung starten"}
-            </button>
-          )}
           <button onClick={() => saveMut.mutate()} disabled={saveMut.isPending}
             className="btn-primary text-sm py-1.5 px-4 whitespace-nowrap">
             {saveMut.isPending ? "Speichere…" : "Speichern"}
@@ -369,51 +356,36 @@ function SessionHistory({ setId }: { setId: number }) {
     onError: (e: Error) => toast(parseUploadError(e, "Löschen fehlgeschlagen").message, "error"),
   });
 
+  const startSessionMut = useMutation({
+    mutationFn: () => api.lueckentexte.createSession(setId),
+    onSuccess: (session) => router.push(`/aktivitaeten/lueckentext/host/${session.join_code}`),
+    onError: (e: Error) => toast(e.message, "error"),
+  });
+
   return (
-    <section className="card p-4 flex flex-col gap-2">
-      <h2 className="font-semibold text-sm">Sitzungen</h2>
-      {isLoading ? (
-        <p className="text-sm text-muted">Lade…</p>
-      ) : (
-        <SessionGrid
-          items={sessions.map((s): SessionCardItem => ({
-            code: s.join_code,
-            title: `${s.participant_count} ${s.participant_count === 1 ? "Teilnehmer" : "Teilnehmende"}`,
-            status: {
-              label: STATUS_LABEL[s.status] ?? s.status,
-              tone: s.status === "active" ? "live" : s.status === "waiting" ? "waiting" : "done",
-            },
-            meta: [formatWhen(s.created_at)],
-          }))}
-          empty="Noch keine Sitzungen gestartet."
-          renderActions={(item) => {
-            const s = sessions.find(x => x.join_code === item.code)!;
-            return (
-              <>
-                <SessionAction onClick={() => router.push(`/aktivitaeten/lueckentext/host/${s.join_code}`)}>
-                  Sitzung
-                </SessionAction>
-                <SessionAction onClick={() => router.push(`/aktivitaeten/lueckentext/review/${s.join_code}`)}>
-                  Auswertung
-                </SessionAction>
-                <SessionAction href={api.lueckentexte.reportCsvUrl(s.join_code)}>CSV</SessionAction>
-                <SessionAction
-                  danger
-                  disabled={deleteMut.isPending}
-                  onClick={() => {
-                    const what = s.participant_count > 0
-                      ? `Sitzung ${s.join_code} mit der Auswertung von ${s.participant_count} Teilnehmenden löschen?`
-                      : `Sitzung ${s.join_code} löschen?`;
-                    if (confirm(what)) deleteMut.mutate(s.join_code);
-                  }}
-                >
-                  🗑
-                </SessionAction>
-              </>
-            );
-          }}
-        />
-      )}
-    </section>
+    <SitzungListe
+      laedt={isLoading}
+      leer="Noch keine Sitzungen gestartet."
+      neu={{ onStart: () => startSessionMut.mutate(), laeuft: startSessionMut.isPending, mitKlasse: false, label: "▶ Sitzung starten" }}
+      eintraege={sessions.map((s): SitzungEintrag => ({
+        code: s.join_code,
+        status: {
+          label: STATUS_LABEL[s.status] ?? s.status,
+          ton: s.status === "active" ? "live" : s.status === "waiting" ? "wartet" : "aus",
+        },
+        info: [`${s.participant_count} ${s.participant_count === 1 ? "Teilnehmer" : "Teilnehmende"}`, formatWhen(s.created_at)],
+        aktionen: <>
+          <SitzungAktion art="haupt" href={`/aktivitaeten/lueckentext/host/${s.join_code}`}>Dashboard</SitzungAktion>
+          <SitzungAktion href={`/aktivitaeten/lueckentext/review/${s.join_code}`}>Auswertung</SitzungAktion>
+          <SitzungAktion href={api.lueckentexte.reportCsvUrl(s.join_code)}>CSV</SitzungAktion>
+          <SitzungAktion art="gefahr" disabled={deleteMut.isPending} onClick={() => {
+            const what = s.participant_count > 0
+              ? `Sitzung ${s.join_code} mit der Auswertung von ${s.participant_count} Teilnehmenden löschen?`
+              : `Sitzung ${s.join_code} löschen?`;
+            if (confirm(what)) deleteMut.mutate(s.join_code);
+          }}>Löschen</SitzungAktion>
+        </>,
+      }))}
+    />
   );
 }

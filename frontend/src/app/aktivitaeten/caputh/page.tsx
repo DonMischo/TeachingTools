@@ -3,10 +3,9 @@ import { useRef, useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { api, QuizOut, ClassOut, ClassPoints } from "@/lib/api";
-import { SessionGrid, SessionAction, type SessionCardItem } from "@/components/SessionGrid";
+import { api, QuizOut } from "@/lib/api";
+import { CaputhSitzungen } from "@/components/caputh/CaputhSitzungen";
 import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/contexts/ToastContext";
 import { useAvailability } from "@/hooks/useAvailability";
 import { UploadErrorDialog } from "@/components/UploadErrorDialog";
 import { parseUploadError, UploadError } from "@/lib/uploadError";
@@ -32,21 +31,6 @@ const QUIZ_TYPE_COLORS: Record<string, string> = {
 const ALL_TYPE_KEYS = ["classic", "tue", "test", "assignment", "competition", "custom"];
 const GRADES = [5, 6, 7, 8, 9, 10];
 
-type SessionRow = {
-  join_code: string;
-  status: string;
-  class_id: number | null;
-  group_id: number | null;
-  /** »9a« bzw. »9 NaT« — bei einem Kurs/WPF steckt keine Klasse dahinter. */
-  scope_label: string;
-  participant_count: number;
-  points_awarded: number | null;
-  /** Je Klasse eine Zeile — bei einer klassenübergreifenden Runde mehrere. */
-  points_by_class: ClassPoints[];
-  started_at: string | null;
-  finished_at: string | null;
-};
-
 export default function CaputhsPage() {
   const qc = useQueryClient();
   const { auth } = useAuth();
@@ -54,12 +38,6 @@ export default function CaputhsPage() {
   const { data: capuths = [], isLoading } = useQuery({
     queryKey: ["capuths"],
     queryFn: api.capuths.list,
-  });
-
-  const { data: classes = [] } = useQuery<ClassOut[]>({
-    queryKey: ["classes"],
-    queryFn: api.classes.list,
-    staleTime: 60_000,
   });
 
   const router = useRouter();
@@ -246,7 +224,7 @@ export default function CaputhsPage() {
       ) : (
         <ul className="space-y-3">
           {filtered.map((q) => (
-            <QuizCard key={q.id} quiz={q} canDelete={isTeacher} classes={classes}
+            <QuizCard key={q.id} quiz={q} canDelete={isTeacher}
               onDelete={() => deleteMutation.mutate(q.id)}
               activeTagFilter={activeTags} onTagClick={toggleTag} />
           ))}
@@ -258,114 +236,11 @@ export default function CaputhsPage() {
   );
 }
 
-function SessionsSection({ quizId, classes }: { quizId: number; classes: ClassOut[] }) {
-  const qc = useQueryClient();
-  const router = useRouter();
-  const { toast } = useToast();
-
-  const { data: sessions = [], isLoading } = useQuery<SessionRow[]>({
-    queryKey: ["caputh-sessions", quizId],
-    queryFn: () => api.capuths.listSessions(quizId),
-  });
-
-  const deleteMut = useMutation({
-    mutationFn: (code: string) => api.capuths.deleteSession(code),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["caputh-sessions", quizId] }),
-    onError: (e: unknown) => toast((e as Error).message ?? "Fehler", "error"),
-  });
-
-  const clearMut = useMutation({
-    mutationFn: () => api.capuths.clearSessions(quizId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["caputh-sessions", quizId] }),
-    onError: (e: unknown) => toast((e as Error).message ?? "Fehler", "error"),
-  });
-
-  const resetMut = useMutation({
-    mutationFn: (code: string) => api.capuths.resetSession(code),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["caputh-sessions", quizId] }),
-    onError: (e: unknown) => toast((e as Error).message ?? "Fehler", "error"),
-  });
-
-  if (isLoading) return <p className="text-xs text-muted pt-2">Laden…</p>;
-
-  return (
-    <div className="border-t border-line pt-3 mt-3 flex flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold text-muted uppercase tracking-wide">Sessions</span>
-        {sessions.length > 0 && (
-          <button
-            onClick={() => {
-              if (confirm("Alle Sessions löschen? Bereits vergebene Punkte bleiben erhalten.")) clearMut.mutate();
-            }}
-            disabled={clearMut.isPending}
-            className="text-xs text-red-400/80 hover:text-red-400 transition-colors disabled:opacity-40"
-          >
-            Alle löschen
-          </button>
-        )}
-      </div>
-      <SessionGrid
-        items={sessions.map((s): SessionCardItem => {
-          const cls = s.class_id != null ? classes.find(c => c.id === s.class_id) : undefined;
-          // Bei mehreren Klassen sagt die Summe wenig — dann steht hier, was
-          // jede einzelne bekommen hat.
-          const points = s.points_by_class.length > 1
-            ? s.points_by_class.map(c => `${c.class_code}: ${c.points} Pkt.`)
-            : s.points_awarded !== null ? [`${s.points_awarded} Pkt.`] : [];
-          return {
-            code: s.join_code,
-            title: cls?.display_name ?? s.scope_label,
-            status: s.status === "active" ? { label: "Läuft", tone: "live" }
-              : s.status === "waiting" ? { label: "Wartet", tone: "waiting" }
-              : { label: "Beendet", tone: "done" },
-            meta: [
-              `${s.participant_count} Teiln.`,
-              ...points,
-            ],
-          };
-        })}
-        renderActions={(item) => {
-          const s = sessions.find(x => x.join_code === item.code)!;
-          const scored = s.points_awarded !== null;
-          return (
-            <>
-              {s.status !== "finished" && (
-                <SessionAction onClick={() => router.push(`/aktivitaeten/caputh/host/${s.join_code}`)}>
-                  Öffnen
-                </SessionAction>
-              )}
-              {scored && (
-                <SessionAction href={`/api/sessions/${s.join_code}/report?fmt=csv`} download>
-                  ↓ Bericht
-                </SessionAction>
-              )}
-              {!scored && (
-                <SessionAction onClick={() => resetMut.mutate(s.join_code)} disabled={resetMut.isPending}>
-                  ↺ Reset
-                </SessionAction>
-              )}
-              <SessionAction
-                danger
-                onClick={() => deleteMut.mutate(s.join_code)}
-                disabled={deleteMut.isPending}
-                title="Session löschen (Punkte bleiben erhalten)"
-              >
-                🗑
-              </SessionAction>
-            </>
-          );
-        }}
-      />
-    </div>
-  );
-}
-
 function QuizCard({
-  quiz, canDelete, classes, onDelete, activeTagFilter, onTagClick,
+  quiz, canDelete, onDelete, activeTagFilter, onTagClick,
 }: {
   quiz: QuizOut;
   canDelete: boolean;
-  classes: ClassOut[];
   onDelete: () => void;
   activeTagFilter: Set<string>;
   onTagClick: (t: string) => void;
@@ -432,7 +307,7 @@ function QuizCard({
           )}
         </div>
       </div>
-      {sessionsOpen && <SessionsSection quizId={quiz.id} classes={classes} />}
+      {sessionsOpen && <div className="mt-3"><CaputhSitzungen quizId={quiz.id} /></div>}
     </li>
   );
 }

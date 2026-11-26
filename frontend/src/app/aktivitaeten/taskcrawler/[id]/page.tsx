@@ -1,10 +1,10 @@
 "use client";
-import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { api, ExitGameDetailOut, ExitGameSessionOut } from "@/lib/api";
-import { Scope, ScopeSelect, scopeBody } from "@/components/ScopeSelect";
+import { type Scope, scopeBody } from "@/components/ScopeSelect";
+import { SitzungListe, SitzungAktion, type SitzungEintrag } from "@/components/sitzung/SitzungListe";
 import { useToast } from "@/contexts/ToastContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { VorlagenEditor } from "@/components/vorlagen/VorlagenEditor";
@@ -19,7 +19,6 @@ export default function ExitgameDetailPage() {
   const { auth } = useAuth();
   // Students may author TaskCrawler but not host live sessions.
   const isTeacher = auth?.user_type === "teacher";
-  const [scope, setScope] = useState<Scope>(null);
 
   const { data: game } = useQuery<ExitGameDetailOut>({
     queryKey: ["exitgame", gameId], queryFn: () => api.exitgame.get(gameId),
@@ -30,7 +29,7 @@ export default function ExitgameDetailPage() {
   });
 
   const createSessionMut = useMutation({
-    mutationFn: () => api.exitgame.sessions.create(gameId, scopeBody(scope)),
+    mutationFn: (scope: Scope) => api.exitgame.sessions.create(gameId, scopeBody(scope)),
     onSuccess: (s) => {
       qc.invalidateQueries({ queryKey: ["exitgame-sessions", gameId] });
       router.push(`/aktivitaeten/taskcrawler/host/${s.join_code}`);
@@ -88,54 +87,26 @@ export default function ExitgameDetailPage() {
       )}
 
       {isTeacher && (
-      <section className="card p-4 flex flex-col gap-3">
-        <h2 className="font-semibold text-sm">▶ Neue Session starten</h2>
-        <div className="flex gap-2">
-          <ScopeSelect value={scope} onChange={setScope} />
-          <button onClick={() => createSessionMut.mutate()} disabled={!scope || createSessionMut.isPending}
-            className="btn-primary text-sm py-1.5 px-4">
-            Starten
-          </button>
-        </div>
-      </section>
-      )}
-
-      {isTeacher && (
-      <section className="card p-4 flex flex-col gap-2">
-        <h2 className="font-semibold text-sm">Sessions</h2>
-        {sessions.length === 0 ? (
-          <p className="text-sm text-muted">Noch keine Sessions.</p>
-        ) : (
-          <ul className="divide-y divide-line">
-            {sessions.map(s => (
-              <li key={s.id} className="py-2 flex items-center gap-3 flex-wrap">
-                <span className={`text-xs px-2 py-0.5 rounded-full border ${s.status === "open" ? "border-green-500/40 text-green-500" : "border-line text-muted"}`}>
-                  {s.status === "open" ? "offen" : "geschlossen"}
-                </span>
-                <span className="text-sm font-mono">{s.join_code}</span>
-                {s.scope_label && (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-page text-muted">
-                    {s.scope_label}
-                  </span>
-                )}
-                <span className="text-xs text-muted">{s.attempt_count} Versuch(e)</span>
-                <div className="flex-1" />
-                <Link href={`/aktivitaeten/taskcrawler/host/${s.join_code}`} className="text-xs text-accent hover:underline">Dashboard</Link>
-                <a href={api.exitgame.sessions.reportCsvUrl(s.join_code)} className="text-xs text-muted hover:underline">CSV</a>
-                {s.status === "open" ? (
-                  <button onClick={() => closeMut.mutate(s.join_code)} disabled={closeMut.isPending}
-                    className="text-xs text-muted hover:underline disabled:opacity-40">Schließen</button>
-                ) : (
-                  <button onClick={() => reopenMut.mutate(s.join_code)} disabled={reopenMut.isPending}
-                    title="Wieder öffnen — der Code bleibt derselbe"
-                    className="text-xs text-muted hover:underline disabled:opacity-40">Wieder öffnen</button>
-                )}
-                <button onClick={() => { if (confirm("Session löschen?")) deleteSessionMut.mutate(s.join_code); }} className="text-xs text-red-400 hover:underline">Löschen</button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+        <SitzungListe
+          neu={{ onStart: s => createSessionMut.mutate(s), laeuft: createSessionMut.isPending }}
+          eintraege={sessions.map((s): SitzungEintrag => ({
+            code: s.join_code,
+            status: s.status === "open" ? { label: "offen", ton: "live" } : { label: "geschlossen", ton: "aus" },
+            klasse: s.scope_label,
+            info: [`${s.attempt_count} Versuch(e)`],
+            aktionen: <>
+              <SitzungAktion art="haupt" href={`/aktivitaeten/taskcrawler/host/${s.join_code}`}>Dashboard</SitzungAktion>
+              <SitzungAktion href={api.exitgame.sessions.reportCsvUrl(s.join_code)}>CSV</SitzungAktion>
+              {s.status === "open" ? (
+                <SitzungAktion onClick={() => closeMut.mutate(s.join_code)} disabled={closeMut.isPending}>Schließen</SitzungAktion>
+              ) : (
+                <SitzungAktion onClick={() => reopenMut.mutate(s.join_code)} disabled={reopenMut.isPending}
+                  title="Wieder öffnen — der Code bleibt derselbe">Wieder öffnen</SitzungAktion>
+              )}
+              <SitzungAktion art="gefahr" onClick={() => { if (confirm("Sitzung löschen?")) deleteSessionMut.mutate(s.join_code); }}>Löschen</SitzungAktion>
+            </>,
+          }))}
+        />
       )}
     </div>
   );

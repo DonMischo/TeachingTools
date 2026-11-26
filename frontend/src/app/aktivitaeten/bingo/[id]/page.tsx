@@ -1,13 +1,12 @@
 "use client";
-import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, BingoSetDetail, BingoOut } from "@/lib/api";
-import { SessionGrid, SessionAction, type SessionCardItem } from "@/components/SessionGrid";
+import { SitzungListe, SitzungAktion, type SitzungEintrag } from "@/components/sitzung/SitzungListe";
 import { useToast } from "@/contexts/ToastContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { Scope, ScopeSelect, scopeBody } from "@/components/ScopeSelect";
+import { type Scope, scopeBody } from "@/components/ScopeSelect";
 
 const STATUS_LABEL: Record<string, string> = {
   waiting: "Wartend", active: "Läuft", closed: "Beendet",
@@ -34,10 +33,8 @@ export default function BingoSetDetailPage() {
     enabled: !!setId,
   });
 
-  const [scope, setScope] = useState<Scope>(null);
-
   const startMut = useMutation({
-    mutationFn: () => api.bingo.startSet(setId, scopeBody(scope)),
+    mutationFn: (scope: Scope) => api.bingo.startSet(setId, scopeBody(scope)),
     onSuccess: (s) => {
       qc.invalidateQueries({ queryKey: ["bingo", setId] });
       router.push(`/aktivitaeten/bingo/host/${s.code}`);
@@ -58,7 +55,7 @@ export default function BingoSetDetailPage() {
 
   const reopenMut = useMutation({
     mutationFn: (code: string) => api.bingo.reopen(code),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["bingo-sessions", setId] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["bingo", setId] }),
     onError: (e: unknown) => toast((e as Error).message ?? "Fehler", "error"),
   });
   const resetMut = useMutation({
@@ -92,77 +89,47 @@ export default function BingoSetDetailPage() {
         {set.description && <p className="text-sm text-muted mt-2">{set.description}</p>}
       </div>
 
-      {canEdit && (
-        <div className="flex items-center gap-3 flex-wrap">
-          <ScopeSelect value={scope} onChange={setScope} className="input text-sm py-2 w-56" />
-          <button
-            onClick={() => startMut.mutate()}
-            disabled={startMut.isPending}
-            className="btn-primary text-sm px-5 py-2"
-          >
-            {startMut.isPending ? "Startet…" : "▶ Neue Runde starten"}
-          </button>
-          <span className="text-xs text-muted">
-            {scope?.kind === "group"
-              ? "Klassenübergreifend: Punkte gehen an die Klasse, die jeder Spieler beim Beitritt wählt."
-              : "Gäste-Punkte gehen an die gewählte Klasse."}
-          </span>
-        </div>
-      )}
-
-      <div className="flex flex-col gap-3">
-        <div className="font-semibold text-sm text-muted uppercase tracking-wide">Runden</div>
-        {sessionsLoading ? (
-          <div className="text-muted text-sm">Laden…</div>
-        ) : (
-          <SessionGrid
-            items={sessions.map((s): SessionCardItem => ({
-              code: s.code,
-              title: s.scope_label || "Ohne Klasse",
-              status: {
-                label: STATUS_LABEL[s.status] ?? s.status,
-                tone: s.status === "active" ? "live" : s.status === "waiting" ? "waiting" : "done",
-              },
-              meta: [
-                new Date(s.created_at).toLocaleDateString("de-DE"),
-                ...(s.awarded ? ["ausgewertet"] : []),
-                // Bei einer klassenübergreifenden Runde steht hier, was jede
-                // Klasse bekommen hat — sonst nur die eine Zahl.
-                ...s.points_by_class.map(c => `${c.class_code}: ${c.points} Pkt.`),
-              ],
-            }))}
-            empty="Noch keine Runde gestartet."
-            renderActions={canEdit ? (item) => (
-              <>
-                <SessionAction onClick={() => router.push(`/aktivitaeten/bingo/host/${item.code}`)}>
-                  Öffnen
-                </SessionAction>
-                {sessions.find(x => x.code === item.code)?.status === "active" && (
-                  <SessionAction danger onClick={() => closeMut.mutate(item.code)} disabled={closeMut.isPending}>
-                    Beenden
-                  </SessionAction>
-                )}
-                {/* Zu früh beendet: zurückholen, solange nicht ausgewertet ist.
-                    Danach wäre ein zweites Schließen eine zweite Punktevergabe. */}
-                {sessions.find(x => x.code === item.code)?.status === "closed"
-                  && !sessions.find(x => x.code === item.code)?.awarded && (
-                  <SessionAction onClick={() => reopenMut.mutate(item.code)} disabled={reopenMut.isPending}>
-                    Wieder öffnen
-                  </SessionAction>
-                )}
-                {sessions.find(x => x.code === item.code)?.status !== "waiting" && (
-                  <SessionAction onClick={() => resetMut.mutate(item.code)} disabled={resetMut.isPending}>
-                    ↺ Zurücksetzen
-                  </SessionAction>
-                )}
-                <SessionAction danger onClick={() => deleteMut.mutate(item.code)} disabled={deleteMut.isPending}>
-                  🗑
-                </SessionAction>
-              </>
-            ) : undefined}
-          />
-        )}
-      </div>
+      <SitzungListe
+        titel="Runden"
+        leer="Noch keine Runde gestartet."
+        laedt={sessionsLoading}
+        neu={{
+          onStart: sc => startMut.mutate(sc), laeuft: startMut.isPending, ohneKlasse: true, label: "Neue Runde starten",
+          hinweis: sc => sc?.kind === "group"
+            ? "Klassenübergreifend: Punkte gehen an die Klasse, die jeder Spieler beim Beitritt wählt."
+            : "Gäste-Punkte gehen an die gewählte Klasse.",
+        }}
+        eintraege={sessions.map((s): SitzungEintrag => ({
+          code: s.code,
+          status: {
+            label: STATUS_LABEL[s.status] ?? s.status,
+            ton: s.status === "active" ? "live" : s.status === "waiting" ? "wartet" : "aus",
+          },
+          klasse: s.scope_label || "ohne Klasse",
+          info: [
+            new Date(s.created_at).toLocaleDateString("de-DE"),
+            ...(s.awarded ? ["ausgewertet"] : []),
+            // Bei einer klassenübergreifenden Runde steht hier, was jede
+            // Klasse bekommen hat — sonst nur die eine Zahl.
+            ...s.points_by_class.map(c => `${c.class_code}: ${c.points} Pkt.`),
+          ],
+          aktionen: <>
+            <SitzungAktion art="haupt" href={`/aktivitaeten/bingo/host/${s.code}`}>Dashboard</SitzungAktion>
+            {s.status === "active" && (
+              <SitzungAktion art="gefahr" onClick={() => closeMut.mutate(s.code)} disabled={closeMut.isPending}>Beenden</SitzungAktion>
+            )}
+            {/* Zu früh beendet: zurückholen, solange nicht ausgewertet ist.
+                Danach wäre ein zweites Schließen eine zweite Punktevergabe. */}
+            {s.status === "closed" && !s.awarded && (
+              <SitzungAktion onClick={() => reopenMut.mutate(s.code)} disabled={reopenMut.isPending}>Wieder öffnen</SitzungAktion>
+            )}
+            {s.status !== "waiting" && (
+              <SitzungAktion onClick={() => resetMut.mutate(s.code)} disabled={resetMut.isPending}>Zurücksetzen</SitzungAktion>
+            )}
+            <SitzungAktion art="gefahr" onClick={() => { if (confirm("Runde löschen?")) deleteMut.mutate(s.code); }} disabled={deleteMut.isPending}>Löschen</SitzungAktion>
+          </>,
+        }))}
+      />
     </div>
   );
 }

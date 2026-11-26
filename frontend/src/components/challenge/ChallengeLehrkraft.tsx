@@ -108,11 +108,11 @@ export default function ChallengeLehrkraft({ satzId, titel }: { satzId: number; 
 
   if (!sitzung) {
     return (
-      <section className="card p-4 flex flex-col gap-3 text-sm" aria-label="Challenge-Sitzung">
+      <div className="flex flex-col gap-3 text-sm" aria-label="Challenge-Sitzung">
         <h2 className="font-black text-base">⚔️ Challenge: {titel}</h2>
         <p className="text-muted">Für welche Klasse bzw. welchen Kurs läuft die Challenge? Jede bekommt einen eigenen Code.</p>
         <SitzungLeiste wahl={wahl} />
-      </section>
+      </div>
     );
   }
   const startstufe = Number(sitzung.settings?.startstufe ?? 2);
@@ -157,7 +157,6 @@ export default function ChallengeLehrkraft({ satzId, titel }: { satzId: number; 
         <h2 className="font-black text-base">⚔️ Challenge: {titel}{sitzung.scope_label && <span className="font-normal text-muted"> · {sitzung.scope_label}</span>}</h2>
         <ToolSessionBar tool="challenge" title={`Challenge: ${titel}${sitzung.scope_label ? ` (${sitzung.scope_label})` : ""}`} refId={satzId} sitzung={sitzung} wahl={wahl} quelle={challengeQuelle(sitzung.code)} />
       </div>
-      <SitzungLeiste wahl={wahl} />
       <label className="flex items-center gap-1.5">
         Startstufe
         <select className="input w-20" value={startstufe} onChange={(e) => setzeStufe(Number(e.target.value))}>

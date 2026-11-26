@@ -23,11 +23,11 @@ export default function KartenQuizLehrkraft({ satzId, titel }: { satzId: number;
 
   if (!sitzung) {
     return (
-      <section className="card p-4 flex flex-col gap-3 text-sm" aria-label="Kartenquiz">
+      <div className="flex flex-col gap-3 text-sm" aria-label="Kartenquiz">
         <h2 className="font-black text-base">🎮 Kartenquiz: {titel}</h2>
         <p className="text-muted">Für welche Klasse bzw. welchen Kurs läuft das Quiz? Jede bekommt einen eigenen Code.</p>
         <SitzungLeiste wahl={wahl} />
-      </section>
+      </div>
     );
   }
   const e = { modus: "benennen", wortbank: false, max_punkte: 10, ueben: true, ...sitzung.settings } as Record<string, unknown>;
@@ -61,7 +61,6 @@ export default function KartenQuizLehrkraft({ satzId, titel }: { satzId: number;
         <ToolSessionBar tool="karten" title={`Kartenquiz: ${titel}${sitzung.scope_label ? ` (${sitzung.scope_label})` : ""}`}
           refId={satzId} sitzung={sitzung} wahl={wahl} quelle={kartenQuizQuelle(sitzung.code)} />
       </div>
-      <SitzungLeiste wahl={wahl} />
       <div className="flex flex-wrap items-center gap-4">
         {([["benennen", "Nummern benennen"], ["finden", "Orte finden (anklicken)"]] as const).map(([wert, text]) => (
           <label key={wert} className="flex items-center gap-1.5">

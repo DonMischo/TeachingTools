@@ -1,34 +1,42 @@
 "use client";
 /**
- * Laufende Sitzungen eines zustandslosen Werkzeugs — ansehen, öffnen, schließen.
+ * Sitzungen eines Werkzeugs aus der gemeinsamen Tabelle (Abakus, Tippen,
+ * Markieren, Challenge …) — als `SitzungListe`.
  *
- * Abakus, Tippen, Zeitstrahl & Co. teilen sich eine Tabelle, deshalb kommt die
- * Liste über den gemeinsamen Endpunkt und grenzt per Slug ein. Man sieht die
- * eigenen Sitzungen; Admins sehen alle, dann steht die Lehrkraft dabei.
+ * Ohne `wahl`: alle laufenden Sitzungen ansehen, eigene schließen; Admins sehen
+ * auch fremde, dann steht die Lehrkraft dabei.
+ * Mit `wahl` (Sitzung je Klasse): die eigenen Sitzungen wählen und für eine
+ * weitere Klasse starten.
  *
  * Schließen nimmt Gäste heraus, lässt den Code aber stehen — ein gedruckter QR
  * funktioniert nach dem Wiederöffnen weiter.
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import type { ReactNode } from "react";
 import { api, type PlaySessionRow } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
-import { SessionGrid, SessionAction, type SessionCardItem } from "@/components/SessionGrid";
+import { SitzungListe, SitzungAktion, type SitzungEintrag } from "@/components/sitzung/SitzungListe";
+import type { SitzungWahl } from "@/components/SitzungWahl";
 
-export function ToolSessionList({ slug }: { slug: string }) {
+export function ToolSessionList({ slug, wahl, titel, text }: {
+  slug: string;
+  wahl?: SitzungWahl;
+  titel?: ReactNode;
+  text?: ReactNode;
+}) {
   const { auth } = useAuth();
   const qc = useQueryClient();
-  const router = useRouter();
   const { toast } = useToast();
   const key = ["tool-sessions-list", slug];
 
   const isTeacher = auth?.role === "teacher" || auth?.role === "admin";
 
-  const { data: sessions = [], isLoading } = useQuery<PlaySessionRow[]>({
+  const { data: alle = [], isLoading } = useQuery<PlaySessionRow[]>({
     queryKey: key,
     queryFn: () => api.play.sessions("simulation", slug),
-    enabled: isTeacher,
+    // Mit `wahl` kommt die Liste aus useWerkzeugSitzung (derselbe Schlüssel).
+    enabled: isTeacher && !wahl,
   });
 
   const toggleMut = useMutation({
@@ -38,53 +46,45 @@ export function ToolSessionList({ slug }: { slug: string }) {
     onError: (e: unknown) => toast((e as Error).message ?? "Fehler", "error"),
   });
 
-  if (!isTeacher) return null;
+  if (!isTeacher && !wahl) return null;
+
+  const sessions = wahl ? wahl.meine : alle;
+  const gewaehlt = wahl?.sitzung?.code;
 
   return (
-    <section className="card flex flex-col gap-2 p-4">
-      <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">
-        Laufende Sitzungen
-      </h2>
-
-      {isLoading ? (
-        <p className="text-xs text-muted">Laden…</p>
-      ) : (
-        <SessionGrid
-          items={sessions.map((s): SessionCardItem => ({
-            code: s.code,
-            title: s.ref_title ?? s.owner ?? "Sitzung",
-            status: s.closed
-              ? { label: "Geschlossen", tone: "closed" }
-              : { label: "Offen", tone: "live" },
-            meta: [
-              ...(s.scope_label ? [s.scope_label] : []),
-              ...(s.mine ? [] : [s.owner ?? "fremde Sitzung"]),
-              ...(s.created_at ? [new Date(s.created_at).toLocaleDateString("de-DE")] : []),
-            ],
-          }))}
-          empty="Für dieses Werkzeug läuft gerade keine Sitzung."
-          renderActions={(item) => {
-            const s = sessions.find(x => x.code === item.code)!;
-            return (
-              <>
-                <SessionAction onClick={() => router.push(s.join_url)}>Ansehen</SessionAction>
-                {s.mine && (
-                  <SessionAction
-                    danger={!s.closed}
-                    disabled={toggleMut.isPending}
-                    onClick={() => toggleMut.mutate(s)}
-                    title={s.closed
-                      ? "Wieder öffnen — der Code bleibt derselbe"
-                      : "Schließen — der Code bleibt gültig"}
-                  >
-                    {s.closed ? "Wieder öffnen" : "Schließen"}
-                  </SessionAction>
-                )}
-              </>
-            );
-          }}
-        />
-      )}
-    </section>
+    <SitzungListe
+      titel={titel ?? (wahl ? "Deine Sitzungen" : "Laufende Sitzungen")}
+      text={text}
+      laedt={wahl ? wahl.laedt : isLoading}
+      leer={wahl ? "Noch keine Sitzung — starte oben eine." : "Für dieses Werkzeug läuft gerade keine Sitzung."}
+      neu={wahl && { onStart: wahl.neu, ohneKlasse: true }}
+      eintraege={sessions.map((s): SitzungEintrag => ({
+        code: s.code,
+        status: s.closed ? { label: "geschlossen", ton: "aus" } : { label: "offen", ton: "live" },
+        klasse: s.scope_label ?? (wahl ? "ohne Klasse" : null),
+        info: [
+          ...(s.ref_title && !wahl ? [s.ref_title] : []),
+          ...(s.mine ? [] : [s.owner ?? "fremde Sitzung"]),
+          ...(s.created_at ? [new Date(s.created_at).toLocaleDateString("de-DE")] : []),
+        ],
+        gewaehlt: s.code === gewaehlt,
+        aktionen: (
+          <>
+            {wahl
+              ? s.code !== gewaehlt && <SitzungAktion art="haupt" onClick={() => wahl.waehle(s.code)}>Wählen</SitzungAktion>
+              : <SitzungAktion art="haupt" href={s.join_url}>Ansehen</SitzungAktion>}
+            {s.mine && (
+              <SitzungAktion
+                disabled={toggleMut.isPending}
+                onClick={() => toggleMut.mutate(s)}
+                title={s.closed ? "Wieder öffnen — der Code bleibt derselbe" : "Schließen — der Code bleibt gültig"}
+              >
+                {s.closed ? "Wieder öffnen" : "Schließen"}
+              </SitzungAktion>
+            )}
+          </>
+        ),
+      }))}
+    />
   );
 }

@@ -82,7 +82,7 @@ describe("ChallengeLehrkraft", () => {
     render(<QueryClientProvider client={new QueryClient()}><ChallengeLehrkraft satzId={1} titel="Hebel" /></QueryClientProvider>);
     const start = await screen.findByRole("button", { name: "Starten" });
     expect(start).toBeDisabled();
-    const wahl = screen.getByLabelText("Neu für");
+    const wahl = screen.getByLabelText("Für");
     await waitFor(() => expect(wahl.querySelectorAll("option")).toHaveLength(2));
     await u.selectOptions(wahl, "c7");
     await u.click(start);
