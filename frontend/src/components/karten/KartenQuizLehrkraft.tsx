@@ -7,6 +7,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { ToolSessionBar } from "@/components/ToolSessionBar";
+import SitzungDashboard from "@/components/sitzung/SitzungDashboard";
 import { SitzungLeiste, useWerkzeugSitzung } from "@/components/SitzungWahl";
 import { kartenQuizQuelle } from "@/lib/karten/sitzung";
 
@@ -83,18 +84,8 @@ export default function KartenQuizLehrkraft({ satzId, titel }: { satzId: number;
       </div>
 
       {ueb && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <table className="w-full">
-            <thead><tr className="text-left text-xs text-muted"><th>Name</th><th>Klasse</th><th>richtig</th><th>🏆</th></tr></thead>
-            <tbody>
-              {ueb.teilnehmer.map((t, i) => (
-                <tr key={i} className="border-t border-line">
-                  <td>{t.name}</td><td>{t.klasse}</td><td>{t.richtig} / {ueb.aufgaben}</td><td>{t.erfolge || ""}</td>
-                </tr>
-              ))}
-              {!ueb.teilnehmer.length && <tr><td colSpan={4} className="text-muted">Noch niemand dabei.</td></tr>}
-            </tbody>
-          </table>
+        <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4 items-start">
+          <SitzungDashboard code={code} quelle={kartenQuizQuelle(sitzung.code)} leer="Noch niemand dabei." />
           <div className="flex flex-col gap-1">
             <span className="text-xs text-muted">Am schwersten</span>
             {[...ueb.je_aufgabe].filter((a) => a.versucht).sort((x, y) => x.richtig / x.versucht - y.richtig / y.versucht).slice(0, 5).map((a) => (

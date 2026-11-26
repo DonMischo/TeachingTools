@@ -8,6 +8,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, type ChallengeKalibrierungWerte } from "@/lib/api";
 import { ToolSessionBar } from "@/components/ToolSessionBar";
+import SitzungDashboard from "@/components/sitzung/SitzungDashboard";
 import { SitzungLeiste, useWerkzeugSitzung } from "@/components/SitzungWahl";
 import { challengeQuelle } from "@/lib/challenge/sitzung";
 import { SPIELARTEN } from "@/lib/challenge/spielarten";
@@ -148,8 +149,8 @@ export default function ChallengeLehrkraft({ satzId, titel }: { satzId: number; 
   const stufeAendern = async (standId: number, stufe: number) => {
     await api.challenge.standStufe(sitzung.code, standId, stufe);
     qc.invalidateQueries({ queryKey: ["challenge", "uebersicht", code] });
+    qc.invalidateQueries({ queryKey: ["sitzung-quelle", "challenge", code] });
   };
-  const prozent = (x: number) => `${Math.round(100 * x)} %`;
 
   return (
     <section className="card p-4 flex flex-col gap-3 text-sm" aria-label="Challenge-Sitzung">
@@ -191,31 +192,16 @@ export default function ChallengeLehrkraft({ satzId, titel }: { satzId: number; 
       <Startstufen code={sitzung.code} />
       <Kalibrierung />
 
-      {ueb && (
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="text-left text-xs text-muted">
-                <th>Name</th><th>Klasse</th><th>Stufe</th><th>Güte</th><th>Ergebnis</th><th>Punkte</th><th>Fragen</th>
-                <th>Erstversuch richtig</th><th>Kombos</th><th>Ablenker gewählt</th><th>Deck-Ablenker</th><th>Lesetempo (W/min)</th><th>geraten</th><th>fertig</th><th>💎</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ueb.teilnehmer.map((t, i) => (
-                <tr key={i} className="border-t border-line">
-                  <td>{t.name}</td><td>{t.klasse}</td><td>{t.stufe_start}→{t.stufe}{t.stand_id != null && (
-                    <select className="input w-14 ml-1" aria-label={`Stufe ${t.name}`} value={t.stufe} onChange={(e) => stufeAendern(t.stand_id!, Number(e.target.value))}>
-                      {[1, 2, 3, 4].map((n) => <option key={n} value={n}>{n}</option>)}
-                    </select>)}</td><td>{prozent(t.guete)}</td>
-                  <td>{prozent(t.ergebnis)}</td><td>{t.punkte}</td><td>{t.fragen}</td><td>{t.erstversuch_richtig}</td><td>{t.kombos}</td>
-                  <td>{t.ablenker_gewaehlt.join(", ")}</td><td>{(t.deck_ablenker ?? []).join(", ")}</td><td>{t.lesetempo_median ?? "—"}</td><td>{t.geraten}</td><td>{t.fertig ? "✓" : ""}</td><td>{t.edelsteine ?? "—"}</td>
-                </tr>
-              ))}
-              {!ueb.teilnehmer.length && <tr><td colSpan={15} className="text-muted">Noch niemand dabei.</td></tr>}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <SitzungDashboard code={code} quelle={challengeQuelle(sitzung.code)} leer="Noch niemand dabei." detailLabel="Stufe"
+        detail={z => typeof z.daten.stand === "number" && (
+          <label className="flex items-center gap-1.5 text-xs">
+            Stufe {String(z.daten.stufe_start)}→ ändern auf
+            <select className="input w-14" aria-label={`Stufe ${z.name}`} value={Number(z.daten.stufe)}
+              onChange={(e) => stufeAendern(z.daten.stand as number, Number(e.target.value))}>
+              {[1, 2, 3, 4].map((n) => <option key={n} value={n}>{n}</option>)}
+            </select>
+          </label>
+        )} />
 
       <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-line">
         {ueb?.punkte.length ? <span>Vorschau: {ueb.punkte.map((z) => `${z.klasse} ${z.punkte} P.`).join(" · ")}</span> : null}

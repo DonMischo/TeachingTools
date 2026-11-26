@@ -1,5 +1,6 @@
 "use client";
 import { AuswertungKnopf } from "@/components/sitzung/AuswertungKnopf";
+import SitzungDashboard from "@/components/sitzung/SitzungDashboard";
 import { bingoQuelle, type BingoErgebnis } from "@/lib/bingo/sitzung";
 import { useState } from "react";
 import { useLiveSocket } from "@/hooks/useLiveSocket";
@@ -209,35 +210,14 @@ export default function BingoHostPage() {
       {results.length > 0 && live.called_count > 0 && (
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
-            <h2 className="font-semibold text-sm flex-1">📊 Auswertung</h2>
+            <h2 className="font-semibold text-sm flex-1">📈 Dashboard</h2>
             <AuswertungKnopf titel={live.title || "Bingo"} quelle={bingoQuelle(code, results)}
               className="text-xs border border-line rounded-lg px-2.5 py-1 hover:border-accent" />
           </div>
           <p className="text-xs text-muted">
             Treffer = markierte Felder · gerufen = davon auf der eigenen Karte gerufene Begriffe
           </p>
-          <div className="rounded-xl border border-line overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-surface text-xs text-muted">
-                <tr>
-                  <th className="text-left font-medium px-3 py-2">Name</th>
-                  <th className="text-right font-medium px-3 py-2">Treffer / gerufen</th>
-                  <th className="text-right font-medium px-3 py-2">Quote</th>
-                </tr>
-              </thead>
-              <tbody>
-                {results.map((r, i) => (
-                  <tr key={i} className="border-t border-line">
-                    <td className="px-3 py-1.5">{r.name}{r.has_bingo && " 🎉"}</td>
-                    <td className="px-3 py-1.5 text-right tabular-nums">{r.hits} / {r.called_on_card}</td>
-                    <td className="px-3 py-1.5 text-right tabular-nums text-muted">
-                      {r.called_on_card > 0 ? `${Math.round((r.hits / r.called_on_card) * 100)} %` : "–"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <SitzungDashboard code={code} quelle={bingoQuelle(code, results)} />
         </div>
       )}
 

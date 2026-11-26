@@ -13,6 +13,8 @@ export function challengeZeilen(u: ChallengeUebersicht, jetzt = Date.now()): Sit
     daten: {
       stufe: t.stufe, guete: t.guete, ergebnis: t.ergebnis, punkte: t.punkte, fragen: t.fragen,
       erstversuch: t.erstversuch_richtig, kombos: t.kombos, geraten: t.geraten, edelsteine: t.edelsteine ?? null,
+      stufe_start: t.stufe_start, stand: t.stand_id, lesetempo: t.lesetempo_median,
+      ablenker: t.ablenker_gewaehlt.join(", "), deck: (t.deck_ablenker ?? []).join(", "),
     },
     aktuell: t.fertig ? null : `Stufe ${t.stufe}`,
     beigetreten_am: zeit, aktualisiert_am: zeit, fertig_am: t.fertig ? zeit : null,
@@ -31,6 +33,9 @@ export const CHALLENGE_ANSICHT: SitzungAnsicht = {
     { id: "erstversuch", titel: "Beim ersten Mal richtig", art: "zahl", wert: d => zahl(d, "erstversuch") },
     { id: "kombos", titel: "Kombos", art: "zahl", wert: d => zahl(d, "kombos") },
     { id: "geraten", titel: "Geraten", art: "zahl", wert: d => zahl(d, "geraten") },
+    { id: "lesetempo", titel: "Lesetempo", art: "zahl", einheit: "W/min", wert: d => zahl(d, "lesetempo") },
+    { id: "ablenker", titel: "Ablenker gewählt", art: "text", wert: d => (d.ablenker as string) || null },
+    { id: "deck", titel: "Deck-Ablenker", art: "text", wert: d => (d.deck as string) || null },
     { id: "edelsteine", titel: "Edelsteine", icon: "💎", art: "zahl", wert: d => zahl(d, "edelsteine") },
   ],
   fortschritt: d => zahl(d, "ergebnis") ?? 0,

@@ -14,7 +14,7 @@ export function taskcrawlerZeilen(r: ExitGameReport, jetzt = Date.now()): Sitzun
     daten: {
       geloest: a.slides_solved, gesamt: a.slides_total, fehler: a.errors_total, hinweise: a.hints_total,
       erleichtert: a.easier_taken_total, sekunden: a.elapsed_seconds, boss: a.boss_ergebnis ?? null,
-      folien: a.solved_slide_ids ?? [],
+      folien: a.solved_slide_ids ?? [], versuch: a.attempt_id,
     },
     aktuell: a.status === "finished" ? null : `Folie ${Math.min(a.slides_solved + 1, a.slides_total)}/${a.slides_total}`,
     beigetreten_am: new Date(jetzt - a.elapsed_seconds * 1000).toISOString(),

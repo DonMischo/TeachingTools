@@ -56,7 +56,7 @@ function Balken({ wert }: { wert: number }) {
   );
 }
 
-export default function SitzungDashboard({ code, ansicht: vorgegeben, quelle, takt = 5000, leer }: {
+export default function SitzungDashboard({ code, ansicht: vorgegeben, quelle, takt = 5000, leer, detail, detailLabel = "Log" }: {
   code: string | undefined;
   ansicht?: SitzungAnsicht;
   /** Eigene Datenquelle (Adapter) statt des gemeinsamen Sitzungsstands */
@@ -64,7 +64,12 @@ export default function SitzungDashboard({ code, ansicht: vorgegeben, quelle, ta
   takt?: number;
   /** Text, solange niemand da ist */
   leer?: ReactNode;
+  /** Aufklappbares Detail je Person in der Tabelle (TaskCrawler: Ereignis-Log) */
+  detail?: (z: SitzungZeile) => ReactNode;
+  /** Beschriftung des Aufklapp-Knopfs */
+  detailLabel?: string;
 }) {
+  const [offen, setOffen] = useState<string | null>(null);
   const { data, isLoading, isError } = useSitzungZeilen(code, takt, quelle);
   const zeilen = data?.zeilen ?? [];
   const ansicht = vorgegeben ?? data?.ansicht;
@@ -147,31 +152,38 @@ export default function SitzungDashboard({ code, ansicht: vorgegeben, quelle, ta
         </ol>
       );
   } else inhalt = (
-    <table className="w-full text-sm" data-testid="dashboard-tabelle">
-      <thead className="text-muted border-b border-line text-xs">
-        <tr>
-          <th className="px-3 py-2 text-left font-normal">Name</th>
-          {ansicht && fortschrittVon(ansicht, {}) != null && <th className="px-2 py-2 text-left font-normal w-24">Fortschritt</th>}
-          {spalten.map(s => <th key={s.id} className="px-2 py-2 text-right font-normal" title={s.titel}>{s.icon ?? s.titel}</th>)}
-          <th className="px-3 py-2 text-left font-normal">gerade</th>
-          <th className="px-3 py-2 text-right font-normal">zuletzt</th>
-        </tr>
-      </thead>
-      <tbody>
-        {zeilen.map((z, i) => {
-          const f = fortschrittVon(ansicht, z.daten);
-          return (
-            <tr key={`${z.name}-${i}`} className="border-b border-line last:border-0">
-              <td className="px-3 py-2 whitespace-nowrap"><Name z={z} /></td>
-              {f != null && <td className="px-2"><Balken wert={f} /></td>}
-              {spalten.map(s => <td key={s.id} className="px-2 text-right tabular-nums whitespace-nowrap">{zelle(s, z.daten) || <span className="text-muted">·</span>}</td>)}
-              <td className="px-3 text-xs text-muted max-w-[16rem] truncate" title={z.aktuell ?? undefined}>{z.aktuell ?? "—"}</td>
-              <td className="px-3 text-right text-xs text-muted whitespace-nowrap">{vor(z.aktualisiert_am)}</td>
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
+    // Eine Zeile je Person wie im TaskCrawler-Dashboard: Name, Balken, Status, Kennzahlen, gerade.
+    <ul className="divide-y divide-line px-3" data-testid="dashboard-tabelle">
+      {zeilen.map((z, i) => {
+        const f = fortschrittVon(ansicht, z.daten);
+        const schluessel = `${z.name}-${i}`;
+        const auf = detail && offen === schluessel;
+        return (
+          <li key={schluessel} className="py-2.5 flex flex-col gap-2">
+            <div className="flex items-center gap-3 flex-wrap text-sm">
+              <span className="w-40 truncate" title={z.klasse ?? undefined}><Name z={z} /></span>
+              {f != null
+                ? <div className="flex-1 min-w-24 flex items-center gap-2"><div className="flex-1"><Balken wert={f} /></div><span className="text-xs text-muted w-10 text-right tabular-nums">{Math.round(f * 100)} %</span></div>
+                : <span className="flex-1 text-xs text-muted truncate" title={z.aktuell ?? undefined}>{z.aktuell ?? "—"}</span>}
+              <span className={`text-xs px-2 py-0.5 rounded-full border ${z.fertig_am ? "border-green-500/40 text-green-500" : "border-line text-muted"}`}>
+                {z.fertig_am ? "fertig" : "läuft"}
+              </span>
+              {spalten.map(sp => {
+                const w = zelle(sp, z.daten);
+                return w ? <span key={sp.id} className="text-xs text-muted whitespace-nowrap" title={sp.titel}>{sp.icon ?? sp.titel} <b className="text-fg tabular-nums font-normal">{w}</b></span> : null;
+              })}
+              {f != null && z.aktuell && <span className="text-xs text-muted max-w-[14rem] truncate" title={z.aktuell}>{z.aktuell}</span>}
+              <span className="text-xs text-muted whitespace-nowrap">{vor(z.aktualisiert_am)}</span>
+              {detail && (
+                <button type="button" onClick={() => setOffen(auf ? null : schluessel)} aria-expanded={!!auf}
+                  className="text-xs text-accent hover:underline">{detailLabel}</button>
+              )}
+            </div>
+            {auf && detail(z)}
+          </li>
+        );
+      })}
+    </ul>
   );
 
   return (
