@@ -1,3 +1,7 @@
+## UI-Styleguide
+
+Before building or changing any page, sim, game or activity UI, follow docs/styleguide.md. It defines the shared building blocks: SimKopf, ToolSessionBar, SitzungListe, SitzungKopf, SitzungDashboard and the tokens. Do not hand-roll headers, session lists, host headers or participant tables.
+
 ## graphify
 
 This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
