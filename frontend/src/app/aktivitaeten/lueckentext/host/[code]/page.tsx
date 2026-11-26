@@ -6,24 +6,20 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useLiveSocket } from "@/hooks/useLiveSocket";
 import { useToast } from "@/contexts/ToastContext";
-import { JoinQR } from "@/components/JoinQR";
-import { GuestAccessToggle } from "@/components/GuestAccessToggle";
-import { useLanUrl } from "@/hooks/useLanUrl";
+import { SitzungKopf } from "@/components/sitzung/SitzungKopf";
 import { AvatarDisplay } from "@/components/AvatarPicker";
 import { api } from "@/lib/api";
-import { SelbstSpielenKnopf } from "@/components/LehrkraftSpielt";
 
 type RankingEntry = { pid: number; name: string; avatar: string; score: number; rank: number };
 
 export default function LueckentextHostPage() {
   const { code } = useParams<{ code: string }>();
   const { toast } = useToast();
-  const joinUrl = useLanUrl(`/aktivitaeten/lueckentext/play/${code}`);
 
   const [status, setStatus] = useState<"waiting" | "active" | "finished">("waiting");
   const [ranking, setRanking] = useState<RankingEntry[]>([]);
 
-  useLiveSocket(
+  const { connected } = useLiveSocket(
     `/api/lueckentexte/sessions/${code}/ws`,
     (msg) => {
       if (msg.event === "ranking") {
@@ -60,24 +56,9 @@ export default function LueckentextHostPage() {
 
   return (
     <div className="page">
-      <div className="flex items-start gap-4 flex-wrap">
-        <div className="flex-1 min-w-0">
-          <Link href="/aktivitaeten/lueckentexte" className="text-sm text-muted hover:text-fg">← Lückentexte</Link>
-          <h1 className="text-2xl font-black tracking-tight mt-1">📝 Lückentext-Sitzung</h1>
-          <div className="text-xs text-muted mt-1 flex gap-3">
-            <span className="font-mono tracking-widest">{code}</span>
-            <span>{status === "waiting" ? "Wartet auf Start" : status === "active" ? "Aktiv" : "Beendet"}</span>
-          </div>
-        </div>
-        {joinUrl && (
-          <div className="flex flex-col items-center gap-1">
-            <JoinQR url={joinUrl} />
-            <span className="text-xs text-muted">/aktivitaeten/lueckentext/play/{code}</span>
-            <GuestAccessToggle tool="lueckentext" code={code} />
-            <SelbstSpielenKnopf href={`/aktivitaeten/lueckentext/play/${code}`} className="text-xs border border-line rounded-lg px-2 py-1 hover:border-accent" />
-          </div>
-        )}
-      </div>
+      <SitzungKopf titel="📝 Lückentext-Sitzung" code={code} pfad={`/aktivitaeten/lueckentext/play/${code}`} gast="lueckentext" live={connected}
+        zurueck={{ href: "/aktivitaeten/lueckentexte", label: "Lückentexte" }}
+        info={[status === "waiting" ? "Wartet auf Start" : status === "active" ? "Aktiv" : "Beendet"]} />
 
       <div className="flex gap-3 flex-wrap">
         {status === "waiting" && (

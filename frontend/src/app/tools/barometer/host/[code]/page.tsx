@@ -6,7 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, BarometerQuestionOut, BarometerSessionOut, BarometerResults } from "@/lib/api";
 import { useToast } from "@/contexts/ToastContext";
 import { JoinQR } from "@/components/JoinQR";
-import { GuestAccessToggle } from "@/components/GuestAccessToggle";
+import { SitzungKopf } from "@/components/sitzung/SitzungKopf";
 import { UploadErrorDialog } from "@/components/UploadErrorDialog";
 import { parseUploadError, UploadError } from "@/lib/uploadError";
 import { useLanUrl } from "@/hooks/useLanUrl";
@@ -39,7 +39,6 @@ export default function BarometerHostPage() {
   const { code } = useParams<{ code: string }>();
   const { toast } = useToast();
   const qc = useQueryClient();
-  const joinUrl = useLanUrl(`/play/barometer/${code}`);
   const resultsUrl = useLanUrl(`/play/barometer/${code}/ergebnisse`);
 
   const { data: session } = useQuery<BarometerSessionOut>({
@@ -208,25 +207,11 @@ export default function BarometerHostPage() {
 
   return (
     <div className="page">
-      <div className="flex items-start gap-4 flex-wrap">
-        <div className="flex-1 min-w-0">
-          <Link href="/tools/barometer" className="text-sm text-muted hover:text-fg transition-colors">← Barometer</Link>
-          <h1 className="text-2xl font-black tracking-tight mt-1">📊 {session?.title ?? "…"}</h1>
-          <div className="flex gap-3 mt-1 text-xs text-muted">
-            <span>Code: <b className="text-fg">{code}</b></span>
-            <span>{live.participants} Teilnehmer</span>
-            {live.status === "closed" && <span className="text-amber-400">Abgeschlossen</span>}
-          </div>
-          {live.mode === "self" && (
-            <div className="text-xs text-muted mt-1">
-              Selbst ausfüllen: Die Teilnehmenden sehen alle Fragen auf einmal.
-            </div>
-          )}
-        </div>
-        <div className="flex flex-col items-center gap-1">
-          <JoinQR url={joinUrl} />
-          <span className="text-xs text-muted">/play/barometer/{code}</span>
-          <GuestAccessToggle tool="barometer" code={code} />
+      <SitzungKopf titel={`📊 ${session?.title ?? "…"}`} code={code} pfad={`/play/barometer/${code}`} gast="barometer" selbst={false}
+        zurueck={{ href: "/tools/barometer", label: "Barometer" }}
+        info={[`${live.participants} Teilnehmer`, ...(live.status === "closed" ? [<span key="z" className="text-amber-400">Abgeschlossen</span>] : [])]}
+        untertitel={live.mode === "self" && <span className="text-xs">Selbst ausfüllen: Die Teilnehmenden sehen alle Fragen auf einmal.</span>}
+        qrExtra={<>
           <label className="flex items-center gap-2 text-xs cursor-pointer mt-1">
             <button type="button" onClick={handleToggleResultsPublic}
               className="relative inline-flex h-5 w-9 items-center rounded-full transition-colors"
@@ -242,8 +227,7 @@ export default function BarometerHostPage() {
               <span className="text-xs text-muted">Ergebnisse</span>
             </div>
           )}
-        </div>
-      </div>
+        </>} />
 
       {/* Slide navigator */}
       {session && (

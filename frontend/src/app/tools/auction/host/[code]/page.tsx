@@ -2,11 +2,8 @@
 import { useState } from "react";
 import { useLiveSocket } from "@/hooks/useLiveSocket";
 import { useParams } from "next/navigation";
-import Link from "next/link";
 import { useToast } from "@/contexts/ToastContext";
-import { JoinQR } from "@/components/JoinQR";
-import { GuestAccessToggle } from "@/components/GuestAccessToggle";
-import { useLanUrl } from "@/hooks/useLanUrl";
+import { SitzungKopf } from "@/components/sitzung/SitzungKopf";
 
 type Bid = { house_id: number; house_name: string; amount: number; student_id: number | null };
 
@@ -24,7 +21,6 @@ type LiveState = {
 export default function AuctionHostPage() {
   const { code } = useParams<{ code: string }>();
   const { toast } = useToast();
-  const joinUrl = useLanUrl(`/play/auction/${code}`);
   const [live, setLive] = useState<LiveState>({
     status: "waiting", title: "", description: null, prize_description: null,
     bids: [], winner_house_id: null, winner_name: null, winning_bid: null,
@@ -63,28 +59,10 @@ export default function AuctionHostPage() {
 
   return (
     <div className="page">
-      <div className="flex items-start gap-4 flex-wrap">
-        <div className="flex-1 min-w-0">
-          <Link href="/tools/auction" className="text-sm text-muted hover:text-fg">← Auktion</Link>
-          <h1 className="text-2xl font-black tracking-tight mt-1">🏷 {live.title || "…"}</h1>
-          {live.prize_description && (
-            <div className="text-sm text-muted mt-0.5">🏆 {live.prize_description}</div>
-          )}
-          <div className="text-xs text-muted mt-1">
-            Code: <b className="text-fg">{code}</b>
-            {live.status === "waiting" && " · Noch nicht geöffnet"}
-            {live.status === "bidding" && " · Gebote laufen"}
-            {live.status === "closed" && " · Abgeschlossen"}
-          </div>
-        </div>
-        {joinUrl && (
-          <div className="flex flex-col items-center gap-1">
-            <JoinQR url={joinUrl} />
-            <span className="text-xs text-muted">/play/auction/{code}</span>
-            <GuestAccessToggle tool="auction" code={code} />
-          </div>
-        )}
-      </div>
+      <SitzungKopf titel={`🏷 ${live.title || "…"}`} code={code} pfad={`/play/auction/${code}`} gast="auction" selbst={false}
+        zurueck={{ href: "/tools/auction", label: "Auktion" }}
+        untertitel={live.prize_description && <>🏆 {live.prize_description}</>}
+        info={[live.status === "waiting" ? "Noch nicht geöffnet" : live.status === "bidding" ? "Gebote laufen" : "Abgeschlossen"]} />
 
       {/* Bids */}
       <div className="flex flex-col gap-2">

@@ -1,11 +1,8 @@
 "use client";
 import { useState } from "react";
 import { useLiveSocket } from "@/hooks/useLiveSocket";
-import Link from "next/link";
 import { useParams } from "next/navigation";
-import { JoinQR } from "@/components/JoinQR";
-import { GuestAccessToggle } from "@/components/GuestAccessToggle";
-import { useLanUrl } from "@/hooks/useLanUrl";
+import { SitzungKopf, KOPF_KNOPF } from "@/components/sitzung/SitzungKopf";
 
 type Response = {
   id: number;
@@ -30,7 +27,6 @@ export default function ExitTicketHostPage() {
   const { code } = useParams<{ code: string }>();
   const [state, setState] = useState<State | null>(null);
 
-  const playUrl = useLanUrl(`/play/exit-ticket/${code}`);
 
   const live = useLiveSocket(
     code ? `/api/exit-ticket/${code}/ws?role=teacher` : null,
@@ -81,38 +77,16 @@ export default function ExitTicketHostPage() {
 
   return (
     <div className="page">
-      <div className="flex items-start gap-4 justify-between flex-wrap">
-        <div>
-          <Link href="/tools/exit-ticket" className="text-sm text-muted hover:text-fg transition-colors">← Exit-Ticket</Link>
-          <h1 className="text-2xl font-black tracking-tight mt-1">🎫 {state.title}</h1>
-          <p className="text-muted text-sm mt-1">{state.question}</p>
-        </div>
-        <div className="flex gap-2 shrink-0">
-          {state.status === "open" && (
-            <button onClick={close} className="btn-secondary text-sm py-1.5 px-4">
-              Schließen
-            </button>
-          )}
-          {state.status === "closed" && (
-            <span className="text-xs px-3 py-1.5 rounded-xl bg-line text-muted">
-              Geschlossen
-            </span>
-          )}
-        </div>
-      </div>
+      <SitzungKopf titel={`🎫 ${state.title}`} code={code} pfad={`/play/exit-ticket/${code}`} gast="exit-ticket" selbst={false}
+        zurueck={{ href: "/tools/exit-ticket", label: "Exit-Ticket" }} untertitel={state.question}
+        info={[`${state.participant_count} verbunden · ${state.responses.length} Antworten`, ...(state.status === "closed" ? ["Geschlossen"] : [])]}>
+        {state.status === "open" && <button onClick={close} className={KOPF_KNOPF}>Schließen</button>}
+      </SitzungKopf>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* QR Code */}
-        <div className="card p-4 flex flex-col items-center gap-2">
-          <JoinQR url={playUrl} size={200} className="rounded-xl" />
-          <div className="text-xs text-muted text-center font-mono break-all">{code}</div>
-          <div className="text-xs text-muted">{state.participant_count} verbunden · {state.responses.length} Antworten</div>
-          <GuestAccessToggle tool="exit-ticket" code={code} />
-        </div>
-
         {/* Rating distribution */}
         {state.rating_enabled && (
-          <div className="card p-4 flex flex-col gap-3 col-span-2">
+          <div className="card p-4 flex flex-col gap-3 md:col-span-3">
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold">Bewertungen</span>
               {avgRating != null && (

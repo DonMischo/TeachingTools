@@ -3,14 +3,10 @@ import { useState } from "react";
 import { useLiveSocket } from "@/hooks/useLiveSocket";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import Link from "next/link";
 import { api, ExitGameSessionOut, ExitGameAttemptLog, ExitGameLogEvent } from "@/lib/api";
-import { JoinQR } from "@/components/JoinQR";
-import { GuestAccessToggle } from "@/components/GuestAccessToggle";
-import { useLanUrl } from "@/hooks/useLanUrl";
 import { MathText } from "@/components/MathText";
-import { SelbstSpielenKnopf } from "@/components/LehrkraftSpielt";
 import { AuswertungKnopf } from "@/components/sitzung/AuswertungKnopf";
+import { SitzungKopf, KOPF_KNOPF } from "@/components/sitzung/SitzungKopf";
 import { taskcrawlerQuelle } from "@/lib/taskcrawler/sitzung";
 
 /** Ergebnissicherung (Merksätze aller Aufgaben) als PDF — wie am Ende des Spiels, zum Drucken oder Austeilen. */
@@ -29,13 +25,13 @@ function ErgebnisPdfKnopf({ code }: { code: string }) {
     }
   }
   return (
-    <div className="flex flex-col items-end gap-0.5">
+    <div className="flex flex-col items-start gap-0.5">
       <button onClick={laden} disabled={status === "laedt"}
         title="Die Merksätze aller Aufgaben, je Abschnitt — dasselbe PDF, das die Lernenden am Ende bekommen"
-        className="text-sm border border-line rounded-lg px-3 py-1.5 hover:border-accent disabled:opacity-60">
+        className={KOPF_KNOPF}>
         {status === "laedt" ? "⏳ PDF wird erstellt …" : "📄 Ergebnissicherung (PDF)"}
       </button>
-      {status === "leer" && <span className="text-[11px] text-muted max-w-56 text-right">Dieser TaskCrawler hat keine Ergebnissicherung (Feld »ergebnissicherung« an den Folien).</span>}
+      {status === "leer" && <span className="text-[11px] text-muted max-w-56">Dieser TaskCrawler hat keine Ergebnissicherung (Feld »ergebnissicherung« an den Folien).</span>}
       {status === "fehler" && <span className="text-[11px] text-bad">PDF ging nicht — bitte noch einmal.</span>}
     </div>
   );
@@ -82,7 +78,6 @@ export default function ExitgameHostPage() {
   const { code } = useParams<{ code: string }>();
   const [roster, setRoster] = useState<RosterRow[]>([]);
   const [logAttemptId, setLogAttemptId] = useState<number | null>(null);
-  const joinUrl = useLanUrl(`/play/taskcrawler/${code}`);
 
   const { data: session } = useQuery<ExitGameSessionOut>({
     queryKey: ["exitgame-session", code], queryFn: () => api.exitgame.sessions.get(code),
@@ -118,29 +113,12 @@ export default function ExitgameHostPage() {
 
   return (
     <div className="page">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">🗝️ TaskCrawler — Live-Dashboard</h1>
-          <p className="text-muted text-sm mt-1">
-            Code: <span className="font-mono">{code}</span> · {connected ? "🟢 live" : "🔴 getrennt"}
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          {joinUrl && (
-            <div className="flex flex-col items-center gap-1">
-              <JoinQR url={joinUrl} />
-              <span className="text-[10px] text-muted">/play/taskcrawler/{code}</span>
-              <GuestAccessToggle tool="exitgame" code={code} />
-              <SelbstSpielenKnopf href={`/play/taskcrawler/${code}`} className="text-xs border border-line rounded-lg px-2 py-1 hover:border-accent" />
-            </div>
-          )}
-          <a href={api.exitgame.sessions.reportCsvUrl(code)} className="text-sm border border-line rounded-lg px-3 py-1.5 hover:border-accent">
-            ⬇ CSV
-          </a>
-          <AuswertungKnopf titel="TaskCrawler" quelle={taskcrawlerQuelle(code)} />
-          <ErgebnisPdfKnopf code={code} />
-        </div>
-      </div>
+      <SitzungKopf titel="🗝️ TaskCrawler — Live-Dashboard" code={code} pfad={`/play/taskcrawler/${code}`} gast="exitgame"
+        live={connected} zurueck={{ href: `/aktivitaeten/taskcrawler/${session?.exitgame_id ?? ""}`, label: "Zur Übersicht" }}>
+        <a href={api.exitgame.sessions.reportCsvUrl(code)} className={KOPF_KNOPF}>⬇ CSV</a>
+        <AuswertungKnopf titel="TaskCrawler" quelle={taskcrawlerQuelle(code)} />
+        <ErgebnisPdfKnopf code={code} />
+      </SitzungKopf>
 
       <section className="card p-4 flex flex-col gap-2">
         {roster.length === 0 ? (
@@ -198,8 +176,6 @@ export default function ExitgameHostPage() {
           </ul>
         </section>
       )}
-
-      <Link href={`/aktivitaeten/taskcrawler/${session?.exitgame_id ?? ""}`} className="text-xs text-muted hover:text-fg">← Zurück zur Übersicht</Link>
     </div>
   );
 }

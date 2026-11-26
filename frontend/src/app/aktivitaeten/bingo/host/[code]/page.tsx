@@ -4,12 +4,8 @@ import { bingoQuelle, type BingoErgebnis } from "@/lib/bingo/sitzung";
 import { useState } from "react";
 import { useLiveSocket } from "@/hooks/useLiveSocket";
 import { useParams } from "next/navigation";
-import Link from "next/link";
 import { useToast } from "@/contexts/ToastContext";
-import { JoinQR } from "@/components/JoinQR";
-import { GuestAccessToggle } from "@/components/GuestAccessToggle";
-import { useLanUrl } from "@/hooks/useLanUrl";
-import { SelbstSpielenKnopf } from "@/components/LehrkraftSpielt";
+import { SitzungKopf } from "@/components/sitzung/SitzungKopf";
 
 type CalledItem = { index: number; caller: string; answer: string };
 type Player = { name: string; avatar: string };
@@ -34,7 +30,6 @@ type Result = BingoErgebnis;
 export default function BingoHostPage() {
   const { code } = useParams<{ code: string }>();
   const { toast } = useToast();
-  const joinUrl = useLanUrl(`/play/bingo/${code}`);
   const [live, setLive] = useState<LiveState>({
     status: "waiting", title: "", grid_size: 3, total_pairs: 0,
     called_count: 0, called_indices: [], last_called: null, bingo_count: 0, players: [], called_pairs: [],
@@ -90,25 +85,13 @@ export default function BingoHostPage() {
 
   return (
     <div className="page">
-      <div className="flex items-start gap-4 flex-wrap">
-        <div className="flex-1 min-w-0">
-          <Link href="/aktivitaeten/bingo" className="text-sm text-muted hover:text-fg">← Bingo</Link>
-          <h1 className="text-2xl font-black tracking-tight mt-1">🎰 {live.title || "…"}</h1>
-          <div className="text-xs text-muted mt-1 flex gap-3">
-            <span>{live.grid_size}×{live.grid_size}</span>
-            <span>{live.called_count}/{live.total_pairs} Begriffe gerufen</span>
-            <span>{live.bingo_count} Bingo{live.bingo_count !== 1 ? "s" : ""}</span>
-          </div>
-        </div>
-        {joinUrl && (
-          <div className="flex flex-col items-center gap-1">
-            <JoinQR url={joinUrl} />
-            <span className="text-xs text-muted">/play/bingo/{code}</span>
-            <GuestAccessToggle tool="bingo" code={code} />
-            <SelbstSpielenKnopf href={`/play/bingo/${code}`} className="text-xs border border-line rounded-lg px-2 py-1 hover:border-accent" />
-          </div>
-        )}
-      </div>
+      <SitzungKopf titel={`🎰 ${live.title || "…"}`} code={code} pfad={`/play/bingo/${code}`} gast="bingo"
+        live={liveSocket.connected} zurueck={{ href: "/aktivitaeten/bingo", label: "Bingo" }}
+        info={[
+          `${live.grid_size}×${live.grid_size}`,
+          `${live.called_count}/${live.total_pairs} Begriffe gerufen`,
+          `${live.bingo_count} Bingo${live.bingo_count !== 1 ? "s" : ""}`,
+        ]} />
 
       {/* Currently called */}
       <div className="card p-6 text-center min-h-[120px] flex flex-col items-center justify-center">
